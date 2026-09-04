@@ -107,7 +107,11 @@ button{cursor:pointer;background:none;border:none}
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
 #couches .cal{color:var(--plan-line)}
 #couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
-#couches .cal text{fill:currentColor;font-family:"Instrument Sans",sans-serif}
+/* Le groupe d'un calque porte stroke: currentColor pour ses tracés. Un texte
+   en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
+   trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
+   se peint, il ne se contourne pas. */
+#couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
 
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.22;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
