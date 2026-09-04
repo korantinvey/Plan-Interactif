@@ -1077,6 +1077,23 @@ function lien(v){
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
 }
 
+/* Un appui tactile produit, quelque trois cents millisecondes plus tard, un
+   clic de compatibilité aux mêmes coordonnées. La fiche venant d'apparaître
+   sous le doigt, ce clic fantôme la refermait aussitôt — d'où l'impression
+   d'un double clic — ou suivait un lien qu'elle contient. On la rend
+   insensible le temps qu'il passe, et seulement après un appui : à la souris,
+   rien ne justifierait ce temps mort. */
+let dernierAppuiTactile = false;
+let degel = null;
+
+function ecarteClicFantome(){
+  if (!dernierAppuiTactile) return;
+  const zones = [$("detail"), $("voile")].filter(Boolean);
+  zones.forEach(z => { z.style.pointerEvents = "none"; });
+  clearTimeout(degel);
+  degel = setTimeout(() => zones.forEach(z => { z.style.pointerEvents = ""; }), 450);
+}
+
 function ouvre(o, rect){
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
@@ -1127,6 +1144,7 @@ function ouvre(o, rect){
   }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
+  ecarteClicFantome();
   anime(rect, 1);
 }
 function ferme(){
@@ -1142,13 +1160,74 @@ $("voile").onclick = ferme;
    8. Interactions du plan
    ============================================================ */
 let drag = null;
+
+/* ------------------------------------------------------------------
+   Pincement à deux doigts.
+
+   Le plan interdit au navigateur de gérer le toucher — « touch-action: none »
+   — parce qu'il déplace la vue lui-même. Il lui revient donc aussi de gérer le
+   pincement, sinon il n'existe pas : c'est ce qui manquait sur téléphone.
+
+   On garde le point du plan qui était sous le milieu des deux doigts, et on
+   le maintient dessous. L'écartement donne l'échelle, le déplacement du milieu
+   donne la translation : les deux gestes se font d'un seul mouvement, comme on
+   s'y attend.
+   ------------------------------------------------------------------ */
+const doigts = new Map();
+let pince = null;
+
+const milieu = () => {
+  const l = [...doigts.values()];
+  return { x: (l[0].x + l[1].x) / 2, y: (l[0].y + l[1].y) / 2,
+           d: Math.hypot(l[0].x - l[1].x, l[0].y - l[1].y) };
+};
+
+function commencePince(){
+  const m = milieu();
+  const r = svg.getBoundingClientRect();
+  pince = {
+    d: Math.max(1, m.d),
+    w: view.w, h: view.h,
+    // le point du plan sous le milieu, celui qui ne doit pas bouger
+    ancre: [view.x + (m.x - r.left) / r.width * view.w,
+            view.y + (m.y - r.top) / r.height * view.h],
+  };
+  drag = null;
+  svg.classList.remove("dragging");
+}
+
+function suitPince(){
+  const m = milieu();
+  const r = svg.getBoundingClientRect();
+  const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
+  const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
+  const nh = pince.h * (nw / pince.w);
+  view = {
+    x: pince.ancre[0] - (m.x - r.left) / r.width * nw,
+    y: pince.ancre[1] - (m.y - r.top) / r.height * nh,
+    w: nw, h: nh,
+  };
+  appliqueVue(); echelle(); libelles();
+}
+
 svg.addEventListener("pointerdown", e => {
+  dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
+  /* Un « pointerup » se perd parfois — la main sort de l'écran, le navigateur
+     passe la main à un geste système. Le doigt restait alors inscrit, et
+     l'appui suivant passait pour le second d'un pincement : plus rien ne
+     répondait. Le premier doigt d'un geste ouvre donc une table vierge. */
+  if (e.isPrimary) doigts.clear();
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (doigts.size === 2){ commencePince(); return; }
+  if (doigts.size > 2) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
+  if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -1159,6 +1238,10 @@ svg.addEventListener("pointermove", e => {
 /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
    au pointerdown et on tranche au pointerup. */
 svg.addEventListener("pointerup", e => {
+  doigts.delete(e.pointerId);
+  // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
+  // main sur le déplacement, sans quoi la vue sauterait
+  if (pince){ if (doigts.size < 2){ pince = null; drag = null; } return; }
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -1166,7 +1249,12 @@ svg.addEventListener("pointerup", e => {
   if (!d) return;
   if (d.cible) select(d.cible.dataset.id, false); else ferme();
 });
-svg.addEventListener("pointercancel", () => { drag = null; svg.classList.remove("dragging"); });
+svg.addEventListener("pointercancel", e => {
+  doigts.delete(e.pointerId);
+  if (doigts.size < 2) pince = null;
+  drag = null;
+  svg.classList.remove("dragging");
+});
 svg.addEventListener("wheel", e => {
   e.preventDefault();
   const r = svg.getBoundingClientRect();
