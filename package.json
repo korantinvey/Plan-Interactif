@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Plans de salon interactifs alimentés par Klipso",
   "scripts": {
+    "construire": "node outils/assemble.js && node outils/genere.js",
+    "verifie": "node outils/verifie.js",
+    "essai": "node outils/serve.js",
+    "bd": "supabase db push",
+    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public",
     "sup": "supabase"
   },
   "type": "commonjs",

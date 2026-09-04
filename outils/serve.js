@@ -4,7 +4,8 @@
  * déployé.
  */
 const http = require("http"), https = require("https"), fs = require("fs");
-const DIR = "C:/projets/Plan Interactif/web/";
+const path = require("path");
+const DIR = path.join(__dirname, "..", "web") + path.sep;
 const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
 
 const TYPES = { html: "text/html; charset=utf-8", js: "text/javascript; charset=utf-8" };

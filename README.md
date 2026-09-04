@@ -67,12 +67,51 @@ npx supabase link --project-ref jylkfskotuafptaxujao
 npx supabase db push
 npx supabase secrets set KLIPSO_INSTANCE=infoprodigital
 npx supabase secrets set KLIPSO_API_KEY=...
-npx supabase functions deploy sync-evenement
-npx supabase functions deploy plan-public
+npx supabase secrets set EVENTMAKER_TOKEN=...
+npx supabase secrets set ORIGINES_AUTORISEES=https://mon-domaine
+npm run fonctions
 ```
+
+`EVENTMAKER_TOKEN` n'est nécessaire que si un domaine — exposants, conférences
+— est réglé sur Eventmaker. `ORIGINES_AUTORISEES` complète la liste inscrite
+dans le code : sans elle, une nouvelle adresse de déploiement se verra refuser
+les appels.
 
 La référence du projet est la partie variable de l'URL :
 `https://<référence>.supabase.co`.
+
+## Fabriquer les pages
+
+Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,
+puis **versionnées** : c'est ce qui permet à Cloudflare de les servir sans étape
+de construction. Le revers est qu'on peut modifier un module et oublier de
+reconstruire — le dépôt paraît juste, et les visiteurs reçoivent l'ancienne page.
+
+```bash
+npm run construire   # gabarit/ → tpl-multi.html → web/*.html
+npm run verifie      # reconstruit, et signale si web/ était en retard
+npm run essai        # sert web/ sur http://localhost:4180
+```
+
+`npm run verifie` sort en erreur si les pages versionnées ne correspondaient pas
+à leurs sources. À passer avant chaque validation qui touche à `outils/gabarit/`.
+
+## Tout remettre en place ailleurs
+
+Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre suffit
+à reconstituer l'ensemble sur un compte neuf.
+
+| Élément | Où il vit | Comment il s'applique |
+|---|---|---|
+| Schéma de la base | `supabase/migrations/` | `npm run bd` |
+| Fonctions serveur | `supabase/functions/` | `npm run fonctions` |
+| Secrets | nulle part — c'est voulu | `npx supabase secrets set …` |
+| Pages | `outils/gabarit/` → `web/` | `npm run construire`, puis validées |
+| Worker et cache | `src/index.mjs`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
+| Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | `npm run construire` |
+
+Les migrations sont numérotées et rejouables : `db push` n'applique que celles
+qui manquent. Les fonctions, elles, se redéploient entièrement à chaque fois.
 
 ## Sécurité
 

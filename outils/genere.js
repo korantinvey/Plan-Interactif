@@ -1,6 +1,8 @@
 const fs = require("fs");
+const path = require("path");
 const D = __dirname;
-const W = "C:/projets/Plan Interactif/web/";
+// relatif au script : le dépôt doit se cloner n'importe où
+const W = path.join(D, "..", "web") + path.sep;
 /* Les pages passent par le Worker, qui relaie et met en cache (src/index.js).
    Adresse relative : même origine que la page, donc aucun contrôle d'origine
    croisée, et un déplacement de domaine ne demande rien. */
