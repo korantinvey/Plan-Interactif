@@ -986,6 +986,26 @@ function appliqueApparence(){
   appliqueCouleursData();
 }
 
+/** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
+ *  remontés vers la base. */
+const enregistreConf = () => {
+  try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+};
+
+/** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
+ *  sélecteur de couleur. */
+const rgbHex = (s) => {
+  const m = String(s || "").match(/d+/g);
+  if (!m || m.length < 3) return null;
+  return "#" + m.slice(0, 3)
+    .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+};
+
+/** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */
+const joli = (id) => String(id)
+  .replace(/^[0-9]+-/, "").replace(/[_-]+/g, " ").toLowerCase()
+  .replace(/^./, (c) => c.toUpperCase());
+
 /* ============================================================
    10. Mode administration
    Il n'existe que dans la page dédiée, et seulement une fois l'utilisateur
