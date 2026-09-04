@@ -66,7 +66,13 @@ async function fonction(nom, corps) {
 /* ------------------------------------------------------------------
    Fenêtres
    ------------------------------------------------------------------ */
-function ouvreModale(titre, remplit, boutons) {
+// Une fenêtre de réglage doit rafraîchir son résumé en se fermant, et elle se
+// ferme de quatre façons : le bouton, la croix, l'arrière-plan, la touche
+// Échap. D'où un rappel porté par la fermeture plutôt que par le bouton.
+let apresModale = null;
+
+function ouvreModale(titre, remplit, boutons, apres) {
+  apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplit($("mCorps"));
@@ -80,7 +86,12 @@ function ouvreModale(titre, remplit, boutons) {
   });
   $("modale").classList.add("open");
 }
-const fermeModale = () => $("modale").classList.remove("open");
+const fermeModale = () => {
+  $("modale").classList.remove("open");
+  const f = apresModale;
+  apresModale = null;
+  if (f) f();
+};
 $("mFermer").onclick = fermeModale;
 $("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
 addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
@@ -409,36 +420,11 @@ function dessineFiche() {
   f.appendChild(b2);
   $("btnSync").onclick = () => synchronise(e);
 
-  const bs = bloc("Provenance par domaine");
-  const gs = grille();
-  DOMAINES.forEach(([dom, lib, offerts, aide]) => {
-    const l = ligneSource(dom, lib, offerts, aide);
-    if (dom === "conferences" || dom === "produits") l.classList.add("source-inerte");
-    gs.appendChild(l);
-  });
-  bs.appendChild(gs);
-  f.appendChild(bs);
-
-  const bf = bloc("Fiche détail");
-  const gf = grille();
-  [["stand", "Stands"], ["zone", "Zones organisateur"]].forEach(([type, titre]) => {
-    const col = document.createElement("div");
-    col.className = "colonne-cases";
-    const t = document.createElement("span");
-    t.className = "eyebrow";
-    t.textContent = titre;
-    col.appendChild(t);
-    CHAMPS_FICHE[type].forEach(([cle, lib, aide]) =>
-      col.appendChild(caseFiche(type, cle, lib, aide)));
-    gf.appendChild(col);
-  });
-  bf.appendChild(gf);
-  const note = document.createElement("p");
-  note.className = "aide";
-  note.textContent = "Le nom et le pavillon sont toujours affichés : sans eux " +
-    "la fiche ne désigne plus rien.";
-  bf.appendChild(note);
-  f.appendChild(bf);
+  const br = bloc("Réglages");
+  br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
+    ouvreProvenance));
+  br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
+  f.appendChild(br);
   majMsgSync(e);
 
   /* --- pavillons --- */
@@ -563,6 +549,27 @@ const CHAMPS_FICHE = {
   ],
 };
 
+/** Ce qu'on lit sans ouvrir : les exceptions, pas la liste complète. */
+function resumeProvenance(e) {
+  const s = e.sources || {};
+  const autres = DOMAINES
+    .filter(([d]) => ((s[d] || {}).fournisseur || "klipso") !== "klipso")
+    .map(([d, lib]) => lib + " : " +
+      (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
+  return autres.length ? autres.join(" · ") : "Klipso pour tout";
+}
+
+function resumeFiche(e) {
+  const caches = [];
+  Object.keys(CHAMPS_FICHE).forEach((type) => {
+    const r = (e.fiche && e.fiche[type]) || {};
+    CHAMPS_FICHE[type].forEach(([cle, lib]) => { if (r[cle] === false) caches.push(lib); });
+  });
+  // « Surface » figure des deux côtés : on ne la nomme pas deux fois
+  const uniques = caches.filter((v, i) => caches.indexOf(v) === i);
+  return uniques.length ? "Masqué : " + uniques.join(", ") : "Tout affiché";
+}
+
 /** Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
  *  tard ne doit pas le faire disparaître des salons déjà réglés. */
 function caseFiche(type, cle, libelle, aide) {
@@ -583,6 +590,63 @@ function caseFiche(type, cle, libelle, aide) {
     catch (err) { signale(err.message, true); i.checked = !i.checked; }
   };
   return l;
+}
+
+/**
+ * Une ligne de réglage : ce qu'il vaut, et de quoi l'ouvrir. Le détail tient
+ * dans une fenêtre — quatre listes déroulantes et neuf cases à cocher rendaient
+ * la fiche illisible alors qu'on n'y touche qu'une fois par salon.
+ */
+function ligneReglage(titre, resume, ouvre) {
+  const d = document.createElement("div");
+  d.className = "reglage-ligne";
+  d.innerHTML = '<span class="rt"></span><span class="rv"></span>' +
+                '<button class="btn petit">Modifier</button>';
+  d.querySelector(".rt").textContent = titre;
+  const v = d.querySelector(".rv");
+  const maj = () => { v.textContent = resume(); };
+  maj();
+  d.querySelector("button").onclick = () => ouvre(maj);
+  return d;
+}
+
+function ouvreProvenance(apres) {
+  ouvreModale("Provenance des données", (corps) => {
+    const g = grille();
+    DOMAINES.forEach(([dom, lib, offerts, aide]) => {
+      const l = ligneSource(dom, lib, offerts, aide);
+      if (dom === "conferences" || dom === "produits") l.classList.add("source-inerte");
+      g.appendChild(l);
+    });
+    corps.appendChild(g);
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = "La clé d'identification reste celle de l'événement.";
+    corps.appendChild(note);
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+function ouvreFiche(apres) {
+  ouvreModale("Fiche détail", (corps) => {
+    const g = grille();
+    [["stand", "Stands"], ["zone", "Zones organisateur"]].forEach(([type, titre]) => {
+      const col = document.createElement("div");
+      col.className = "colonne-cases";
+      const t = document.createElement("span");
+      t.className = "eyebrow";
+      t.textContent = titre;
+      col.appendChild(t);
+      CHAMPS_FICHE[type].forEach(([cle, lib, aide]) =>
+        col.appendChild(caseFiche(type, cle, lib, aide)));
+      g.appendChild(col);
+    });
+    corps.appendChild(g);
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = "Le nom et le pavillon sont toujours affichés : sans eux " +
+      "la fiche ne désigne plus rien.";
+    corps.appendChild(note);
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 
 const bloc = (titre) => {
