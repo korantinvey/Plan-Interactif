@@ -52,6 +52,76 @@ async function rest(chemin, options = {}) {
   return corps;
 }
 
+/**
+ * Appel d'une fonction qui rend compte au fil de l'eau.
+ *
+ * La réponse est un flux de lignes JSON plutôt qu'un objet unique : une
+ * synchronisation dure trop longtemps pour qu'un message figé dise où l'on en
+ * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
+ * la dernière — celle qui porte le résultat.
+ */
+async function fluxFonction(nom, corps, surLigne) {
+  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
+    method: "POST",
+    headers: entetes(true),
+    body: JSON.stringify(corps),
+  });
+  // un refus arrive avant le flux, sous forme d'objet unique
+  if (!r.ok || !r.body) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error(j.erreur || "Erreur " + r.status);
+  }
+
+  const lecteur = r.body.getReader();
+  const dec = new TextDecoder();
+  const FIN = String.fromCharCode(10);
+  let reste = "", dernier = null;
+  for (;;) {
+    const { done, value } = await lecteur.read();
+    if (done) break;
+    reste += dec.decode(value, { stream: true });
+    let i;
+    while ((i = reste.indexOf(FIN)) >= 0) {
+      const ligne = reste.slice(0, i).trim();
+      reste = reste.slice(i + 1);
+      if (!ligne) continue;
+      let o;
+      try { o = JSON.parse(ligne); } catch (e) { continue; }
+      if (o.erreur) throw new Error(o.erreur);
+      surLigne(o);
+      if (o.ok) dernier = o;
+    }
+  }
+  return dernier;
+}
+
+/**
+ * Barre d'avancement à étapes. Les étapes sont annoncées par le serveur, non
+ * devinées ici : lui seul sait ce qu'il va réellement faire.
+ */
+function barreAvancement(hote, etapes) {
+  hote.innerHTML = "";
+  const b = document.createElement("div");
+  b.className = "avance";
+  etapes.forEach((e) => {
+    const d = document.createElement("div");
+    d.className = "pas";
+    d.dataset.cle = e.cle;
+    d.dataset.etat = "attente";
+    d.innerHTML = '<span class="jauge"></span><span class="lib"></span><span class="det"></span>';
+    d.querySelector(".lib").textContent = e.libelle;
+    if (e.source && e.source !== "klipso") d.querySelector(".det").textContent = e.source;
+    b.appendChild(d);
+  });
+  hote.appendChild(b);
+  return (cle, etat, info) => {
+    const d = b.querySelector('.pas[data-cle="' + CSS.escape(cle) + '"]');
+    if (!d) return;
+    d.dataset.etat = etat;
+    if (info !== undefined) d.querySelector(".det").textContent = info;
+  };
+}
+
 async function fonction(nom, corps) {
   const r = await fetch(CFG.url + "/functions/v1/" + nom, {
     method: "POST",
@@ -420,6 +490,9 @@ function dessineFiche() {
   ligne.innerHTML = '<button class="btn petit" id="btnSync">Synchroniser maintenant</button>' +
     '<span id="msgSync"></span>';
   b2.appendChild(ligne);
+  const zoneAv = document.createElement("div");
+  zoneAv.id = "avancement";
+  b2.appendChild(zoneAv);
   f.appendChild(b2);
   $("btnSync").onclick = () => synchronise(e);
 
@@ -794,9 +867,18 @@ function majMsgSync(e) {
 async function synchronise(e) {
   const b = $("btnSync");
   b.disabled = true;
-  signale("Interrogation de Klipso…");
+  const zone = $("avancement");
+  let maj = null, enCours = null;
+  signale("Synchronisation en cours…");
   try {
-    const j = await fonction("sync-evenement", { evenementId: e.id });
+    const j = await fluxFonction("sync-evenement", { evenementId: e.id }, (o) => {
+      if (o.etapes && zone) maj = barreAvancement(zone, o.etapes);
+      else if (o.etape && maj) {
+        if (o.etat === "encours") enCours = o.etape;
+        maj(o.etape, o.etat, o.info);
+      }
+    });
+    if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
     // sans libellés, la nomenclature s'affiche en codes : le dire tout de
@@ -809,6 +891,8 @@ async function synchronise(e) {
       total + " emplacements." + suite, !!n.erreur);
     await charge();
   } catch (err) {
+    // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
+    if (maj && enCours) maj(enCours, "echec", err.message);
     signale(err.message, true);
   } finally {
     if ($("btnSync")) $("btnSync").disabled = false;

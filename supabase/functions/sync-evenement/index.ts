@@ -138,230 +138,299 @@ Deno.serve(async (req) => {
     let expoEm: Map<string, ExposantEm> | null = null;
     let resumeEm: Record<string, unknown> | null = null;
     const srcStands = fournisseur(evt, "stands");
+    // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
+    // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
     if (srcStands === "eventmaker") {
-      const cle = String((evt.cles ?? {}).eventmaker ?? "");
-      if (!cle) {
+      if (!String((evt.cles ?? {}).eventmaker ?? "")) {
         return repond({
           erreur: "Identifiant de l'événement Eventmaker manquant : " +
-            "renseignez-le dans « Provenance des données ».",
+            "renseignez-le dans « Source des données ».",
         }, 400);
       }
-      const jeton = Deno.env.get("EVENTMAKER_TOKEN") ?? "";
-      if (!jeton) return repond({ erreur: "Jeton Eventmaker absent des secrets." }, 500);
-      const em = new Eventmaker({ jeton });
-      const r = await em.exposants(cle);
-      expoEm = r.parStand;
-      resumeEm = {
-        categories: r.categories,
-        lus: r.lus,
-        exposants: r.retenus,
-        nonInscrits: r.ecartesNonInscrits,
-      };
+      if (!Deno.env.get("EVENTMAKER_TOKEN")) {
+        return repond({ erreur: "Jeton Eventmaker absent des secrets." }, 500);
+      }
     } else if (srcStands !== "klipso") {
       return repond({
-        erreur: `Source « ${srcStands} » pas encore prise en charge pour les stands.`,
+        erreur: `Source « ${srcStands} » pas encore prise en charge pour les exposants.`,
       }, 400);
     }
 
-    const g = gaia(evt.instance, evt.event_id ?? undefined);
-    const resume: Record<string, unknown>[] = [];
+    /* ------------------------------------------------------------------
+       Compte rendu au fil de l'eau.
 
-    /* Les nomenclatures ne portent qu'un code — « FEP26_NOM10201 » — dont le
-       libellé vit dans le service « codification ». On le résout ici, une fois
-       pour tout l'événement, plutôt qu'à chaque affichage.
+       Une synchronisation dure plusieurs dizaines de secondes et enchaîne des
+       étapes de nature différente ; un message figé pendant tout ce temps ne
+       dit pas où l'on en est, ni si quelque chose est bloqué. La réponse est
+       donc un flux de lignes JSON : la première annonce les étapes, les
+       suivantes disent laquelle est en cours, la dernière porte le résultat.
 
-       L'échec n'est pas bloquant : sans libellé le plan reste juste, avec des
-       codes. Perdre une synchronisation entière pour un défaut d'habillage
-       serait disproportionné. */
-    let libNomencl: Record<string, string> = {};
-    let errNomencl: string | null = null;
-    let cheminNomencl: string | null = null;
-    try {
-      cheminNomencl = await g.cheminCodification("DossierExp", "x_Nomenclature");
-      libNomencl = await g.codification(cheminNomencl);
-    } catch (e) {
-      errNomencl = e instanceof Error ? e.message : String(e);
-    }
+       Les étapes que cette synchronisation ne sait pas encore faire sont
+       annoncées « ignorée » plutôt que tues : l'exploitant les a réglées, il
+       doit voir qu'elles ne sont pas reprises.
+       ------------------------------------------------------------------ */
+    const ETAPES = [
+      { cle: "plan", libelle: "Plan", fait: true },
+      { cle: "exposants", libelle: "Exposants", fait: true },
+      { cle: "conferences", libelle: "Conférences", fait: false },
+      { cle: "produits", libelle: "Produits", fait: false },
+    ].map((e) => ({ ...e, source: fournisseur(evt, e.cle === "exposants" ? "stands" : e.cle) }));
 
-    /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
-     *  salon — « FEP26_NOM10201 » ne dit rien de plus que « NOM10201 ». */
-    const nomenclature = (v: unknown): string[] | null => {
-      if (!v) return null;
-      const liste = ([] as unknown[]).concat(v).map(String).filter(Boolean);
-      if (!liste.length) return null;
-      return liste.map((c) => libNomencl[c] || c.replace(/^[A-Z0-9]+_/, ""));
-    };
+    const flux = new ReadableStream({
+      async start(ctrl) {
+        const enc = new TextEncoder();
+        const emet = (o: Record<string, unknown>) => {
+          ctrl.enqueue(enc.encode(JSON.stringify(o) + String.fromCharCode(10)));
+        };
+        const etape = (cle: string, etat: string, info?: unknown) =>
+          emet({ etape: cle, etat, ...(info === undefined ? {} : { info }) });
 
-    let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
-    // Un pavillon représente plusieurs mégaoctets de SVG à alléger : on peut
-    // le traiter seul si la synchronisation complète dépasse le temps imparti.
-    if (corps.idPlan) plans = plans.filter((p) => p.Id === corps.idPlan);
-    if (!plans.length) return repond({ erreur: "Aucun pavillon à traiter." }, 404);
+        emet({ etapes: ETAPES });
+        try {
+      const g = gaia(evt.instance, evt.event_id ?? undefined);
+      const resume: Record<string, unknown>[] = [];
 
-    for (const plan of plans) {
-      /* --- le pavillon --- */
-      const { data: ligne } = await db.from("plan").upsert({
-        evenement_id: evt.id,
-        id_klipso: plan.Id,
-        libelle: String(plan.Libelle ?? "")
-          .replace(/^[A-Z]+\d*_/, "").replace(/^PAVILLON /i, "Pavillon "),
-        hall: plan.HallExp ?? null,
-        modifie_le: new Date().toISOString(),
-      }, { onConflict: "evenement_id,id_klipso" }).select("id").single();
-      if (!ligne) continue;
-      const planId = ligne.id as string;
-
-      /* --- calques d'habillage --- */
-      const calques = await g.tout<Record<string, any>>("Calque", {
-        fields: ["Id", "IdPlan", "Libelle", "Type", "Ordre", "VisibleParDefaut", "SVG"],
-        filter: egal("IdPlan", plan.Id),
-      }, "Ordre");
-
-      const textesZone: { x: number; y: number; txt: string }[] = [];
-      for (const c of calques) {
-        if (!c.SVG?.idMedia) continue;
-        const brut = await g.media(c.SVG.idMedia);
-        if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...textes(brut));
-        const { svg } = allege(brut);
-        await db.from("calque").upsert({
-          plan_id: planId,
-          id_klipso: c.Id,
-          cle: c.Libelle,
-          libelle: NOMS[c.Libelle] ?? c.Libelle,
-          type: c.Type ?? null,
-          ordre_klipso: c.Ordre ?? null,
-          svg,
-        }, { onConflict: "plan_id,id_klipso" });
+      /* Les exposants peuvent venir d'Eventmaker. Le rattachement se fait par
+         le numéro de stand : Klipso le compose de l'allée et du numéro,
+         Eventmaker le saisit à la main, et les deux sont comparés sous forme
+         normalisée. C'est l'étape la plus longue — plusieurs centaines de
+         fiches à parcourir — d'où sa place dans le flux. */
+      etape("exposants", "encours");
+      if (srcStands === "eventmaker") {
+        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
+        const r = await em.exposants(String((evt.cles ?? {}).eventmaker));
+        expoEm = r.parStand;
+        resumeEm = {
+          categories: r.categories,
+          lus: r.lus,
+          exposants: r.retenus,
+          nonInscrits: r.ecartesNonInscrits,
+        };
+        etape("exposants", "encours", r.retenus + " exposants lus");
       }
 
-      /* --- stands --- */
-      const bruts = await g.tout<Record<string, any>>("Stand", {
-        fields: [
-          "Id", "IdPlan", "IdIlot", "IdDossierExpAff", "NomSurPlan", "Enseigne",
-          "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
-          "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
-          "StandFictif", "x_CouleurPlan",
-        ],
-        entities: {
-          SetStandShapeStand: { fields: ["Shape", "IdCalque", "SurfaceBrute"] },
-          RefDossierExpAff: {
-            fields: [
-              "Id", "AvancementImplantation", "x_ExcluListeexposants",
-              "x_Catalogue_RaisonSociale", "x_Nomenclature",
-              "x_Catalogue_SiteWeb", "Categorie",
-            ],
+      etape("plan", "encours");
+
+      /* Les nomenclatures ne portent qu'un code — « FEP26_NOM10201 » — dont le
+         libellé vit dans le service « codification ». On le résout ici, une fois
+         pour tout l'événement, plutôt qu'à chaque affichage.
+
+         L'échec n'est pas bloquant : sans libellé le plan reste juste, avec des
+         codes. Perdre une synchronisation entière pour un défaut d'habillage
+         serait disproportionné. */
+      let libNomencl: Record<string, string> = {};
+      let errNomencl: string | null = null;
+      let cheminNomencl: string | null = null;
+      try {
+        cheminNomencl = await g.cheminCodification("DossierExp", "x_Nomenclature");
+        libNomencl = await g.codification(cheminNomencl);
+      } catch (e) {
+        errNomencl = e instanceof Error ? e.message : String(e);
+      }
+
+      /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
+       *  salon — « FEP26_NOM10201 » ne dit rien de plus que « NOM10201 ». */
+      const nomenclature = (v: unknown): string[] | null => {
+        if (!v) return null;
+        const liste = ([] as unknown[]).concat(v).map(String).filter(Boolean);
+        if (!liste.length) return null;
+        return liste.map((c) => libNomencl[c] || c.replace(/^[A-Z0-9]+_/, ""));
+      };
+
+      let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
+      // Un pavillon représente plusieurs mégaoctets de SVG à alléger : on peut
+      // le traiter seul si la synchronisation complète dépasse le temps imparti.
+      if (corps.idPlan) plans = plans.filter((p) => p.Id === corps.idPlan);
+      if (!plans.length) return emet({ erreur: "Aucun pavillon à traiter." });
+
+      for (const plan of plans) {
+        etape("plan", "encours", String(plan.Libelle ?? ""));
+        /* --- le pavillon --- */
+        const { data: ligne } = await db.from("plan").upsert({
+          evenement_id: evt.id,
+          id_klipso: plan.Id,
+          libelle: String(plan.Libelle ?? "")
+            .replace(/^[A-Z]+\d*_/, "").replace(/^PAVILLON /i, "Pavillon "),
+          hall: plan.HallExp ?? null,
+          modifie_le: new Date().toISOString(),
+        }, { onConflict: "evenement_id,id_klipso" }).select("id").single();
+        if (!ligne) continue;
+        const planId = ligne.id as string;
+
+        /* --- calques d'habillage --- */
+        const calques = await g.tout<Record<string, any>>("Calque", {
+          fields: ["Id", "IdPlan", "Libelle", "Type", "Ordre", "VisibleParDefaut", "SVG"],
+          filter: egal("IdPlan", plan.Id),
+        }, "Ordre");
+
+        const textesZone: { x: number; y: number; txt: string }[] = [];
+        for (const c of calques) {
+          if (!c.SVG?.idMedia) continue;
+          const brut = await g.media(c.SVG.idMedia);
+          if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...textes(brut));
+          const { svg } = allege(brut);
+          await db.from("calque").upsert({
+            plan_id: planId,
+            id_klipso: c.Id,
+            cle: c.Libelle,
+            libelle: NOMS[c.Libelle] ?? c.Libelle,
+            type: c.Type ?? null,
+            ordre_klipso: c.Ordre ?? null,
+            svg,
+          }, { onConflict: "plan_id,id_klipso" });
+        }
+
+        /* --- stands --- */
+        const bruts = await g.tout<Record<string, any>>("Stand", {
+          fields: [
+            "Id", "IdPlan", "IdIlot", "IdDossierExpAff", "NomSurPlan", "Enseigne",
+            "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
+            "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
+            "StandFictif", "x_CouleurPlan",
+          ],
+          entities: {
+            SetStandShapeStand: { fields: ["Shape", "IdCalque", "SurfaceBrute"] },
+            RefDossierExpAff: {
+              fields: [
+                "Id", "AvancementImplantation", "x_ExcluListeexposants",
+                "x_Catalogue_RaisonSociale", "x_Nomenclature",
+                "x_Catalogue_SiteWeb", "Categorie",
+              ],
+            },
           },
+          filter: egal("IdPlan", plan.Id),
+        });
+
+        const stands = [];
+        let apparies = 0;
+        for (const s of bruts) {
+          const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
+          const anneaux = formes.flatMap((f: any) => versAnneaux(f?.Shape) ?? []);
+          if (!anneaux.length) continue;
+          const dos = s.RefDossierExpAff;
+          // engagement contractuel : un exposant qui refuse le catalogue ne sort
+          // pas, quelle que soit la source
+          const exclu = dos?.x_ExcluListeexposants === true;
+          const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
+
+          // La source choisie fait foi : si elle ne connaît pas ce stand, il
+          // reste vide plutôt que de retomber sur l'autre, ce qui donnerait un
+          // plan à moitié dans chaque référentiel.
+          const em = expoEm && code ? expoEm.get(cleStand(code)) : undefined;
+          const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
+          if (expoEm && em) apparies++;
+
+          stands.push({
+            id: "s" + String(s.Id).slice(0, 8),
+            code,
+            plan: (expoEm ? em?.raison : null) ?? s.NomSurPlan ?? null,
+            nom: !ok ? null : expoEm ? em!.nom : dos.x_Catalogue_RaisonSociale,
+            site: !ok ? null : expoEm ? nettoieUrl(em!.site) : nettoieUrl(dos.x_Catalogue_SiteWeb),
+            nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
+                                         : nomenclature(dos.x_Nomenclature),
+            m2: s.SurfaceBrute,
+            angles: s.NbAngles,
+            niveaux: s.NbNiveau,
+            etat: s.EtatCommercialisation,
+            d: versTrace(anneaux),
+            ...boite(anneaux),
+          });
+        }
+
+        /* --- zones de dessin --- */
+        const grappes = groupeTextes(textesZone);
+        const zonesBrutes = await g.tout<Record<string, any>>("ZoneDessin", {
+          fields: ["_AllFields"],
+          filter: egal("IdPlan", plan.Id),
+        });
+
+        const zones = [];
+        for (const z of zonesBrutes) {
+          const anneaux = versAnneaux(z.Shape);
+          if (!anneaux) continue;
+          const b = boite(anneaux);
+          // à défaut de x_LibZOD renseigné, on lit le libellé posé sur le plan
+          const dedansMoi = grappes
+            .filter((l) => dedans([l.x, l.y], anneaux[0]) && !TECHNIQUE.test(l.txt))
+            .sort((a, c) =>
+              Math.hypot(a.x - b.c[0], a.y - b.c[1]) -
+              Math.hypot(c.x - b.c[0], c.y - b.c[1]));
+          zones.push({
+            id: "z" + String(z.Id).slice(0, 8),
+            nom: z.x_LibZOD ?? (dedansMoi.length ? dedansMoi[0].txt : null),
+            m2: z.Surface,
+            d: versTrace(anneaux),
+            ...b,
+          });
+        }
+
+        const emp = emprise([...stands, ...zones]);
+        await db.from("plan").update({
+          emprise: emp,
+          nb_stands: stands.length,
+          nb_zones: zones.length,
+          modifie_le: new Date().toISOString(),
+        }).eq("id", planId);
+
+        await db.from("instantane").upsert({
+          plan_id: planId,
+          charge: { stands, zones, emprise: emp },
+          genere_le: new Date().toISOString(),
+        }, { onConflict: "plan_id" });
+
+        resume.push({
+          pavillon: plan.Libelle,
+          stands: stands.length,
+          exposants: stands.filter((s) => s.nom).length,
+          ...(expoEm ? { apparies } : {}),
+          zones: zones.length,
+          zonesNommees: zones.filter((z) => z.nom).length,
+        });
+      }
+
+      etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
+      etape("exposants", "fait",
+        resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés");
+      // réglées mais pas encore reprises : le taire laisserait croire l'inverse
+      etape("conferences", "ignoree");
+      etape("produits", "ignoree");
+
+      // une synchronisation partielle ne fait pas foi comme date de référence
+      if (!corps.idPlan) {
+        await db.from("evenement").update({
+          derniere_sync: new Date().toISOString(),
+          derniere_err: null,
+          modifie_le: new Date().toISOString(),
+        }).eq("id", evt.id);
+      }
+
+      // Le compte des libellés dit tout de suite si la codification a répondu :
+      // sans lui, un plan rempli de codes passerait pour un plan correct.
+      return emet({
+        ok: true,
+        pavillons: resume,
+        nomenclature: {
+          libelles: Object.keys(libNomencl).length,
+          chemin: cheminNomencl,
+          erreur: errNomencl,
         },
-        filter: egal("IdPlan", plan.Id),
+        ...(resumeEm ? { eventmaker: resumeEm } : {}),
       });
-
-      const stands = [];
-      let apparies = 0;
-      for (const s of bruts) {
-        const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
-        const anneaux = formes.flatMap((f: any) => versAnneaux(f?.Shape) ?? []);
-        if (!anneaux.length) continue;
-        const dos = s.RefDossierExpAff;
-        // engagement contractuel : un exposant qui refuse le catalogue ne sort
-        // pas, quelle que soit la source
-        const exclu = dos?.x_ExcluListeexposants === true;
-        const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
-
-        // La source choisie fait foi : si elle ne connaît pas ce stand, il
-        // reste vide plutôt que de retomber sur l'autre, ce qui donnerait un
-        // plan à moitié dans chaque référentiel.
-        const em = expoEm && code ? expoEm.get(cleStand(code)) : undefined;
-        const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
-        if (expoEm && em) apparies++;
-
-        stands.push({
-          id: "s" + String(s.Id).slice(0, 8),
-          code,
-          plan: (expoEm ? em?.raison : null) ?? s.NomSurPlan ?? null,
-          nom: !ok ? null : expoEm ? em!.nom : dos.x_Catalogue_RaisonSociale,
-          site: !ok ? null : expoEm ? nettoieUrl(em!.site) : nettoieUrl(dos.x_Catalogue_SiteWeb),
-          nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
-                                       : nomenclature(dos.x_Nomenclature),
-          m2: s.SurfaceBrute,
-          angles: s.NbAngles,
-          niveaux: s.NbNiveau,
-          etat: s.EtatCommercialisation,
-          d: versTrace(anneaux),
-          ...boite(anneaux),
-        });
-      }
-
-      /* --- zones de dessin --- */
-      const grappes = groupeTextes(textesZone);
-      const zonesBrutes = await g.tout<Record<string, any>>("ZoneDessin", {
-        fields: ["_AllFields"],
-        filter: egal("IdPlan", plan.Id),
-      });
-
-      const zones = [];
-      for (const z of zonesBrutes) {
-        const anneaux = versAnneaux(z.Shape);
-        if (!anneaux) continue;
-        const b = boite(anneaux);
-        // à défaut de x_LibZOD renseigné, on lit le libellé posé sur le plan
-        const dedansMoi = grappes
-          .filter((l) => dedans([l.x, l.y], anneaux[0]) && !TECHNIQUE.test(l.txt))
-          .sort((a, c) =>
-            Math.hypot(a.x - b.c[0], a.y - b.c[1]) -
-            Math.hypot(c.x - b.c[0], c.y - b.c[1]));
-        zones.push({
-          id: "z" + String(z.Id).slice(0, 8),
-          nom: z.x_LibZOD ?? (dedansMoi.length ? dedansMoi[0].txt : null),
-          m2: z.Surface,
-          d: versTrace(anneaux),
-          ...b,
-        });
-      }
-
-      const emp = emprise([...stands, ...zones]);
-      await db.from("plan").update({
-        emprise: emp,
-        nb_stands: stands.length,
-        nb_zones: zones.length,
-        modifie_le: new Date().toISOString(),
-      }).eq("id", planId);
-
-      await db.from("instantane").upsert({
-        plan_id: planId,
-        charge: { stands, zones, emprise: emp },
-        genere_le: new Date().toISOString(),
-      }, { onConflict: "plan_id" });
-
-      resume.push({
-        pavillon: plan.Libelle,
-        stands: stands.length,
-        exposants: stands.filter((s) => s.nom).length,
-        ...(expoEm ? { apparies } : {}),
-        zones: zones.length,
-        zonesNommees: zones.filter((z) => z.nom).length,
-      });
-    }
-
-    // une synchronisation partielle ne fait pas foi comme date de référence
-    if (!corps.idPlan) {
-      await db.from("evenement").update({
-        derniere_sync: new Date().toISOString(),
-        derniere_err: null,
-        modifie_le: new Date().toISOString(),
-      }).eq("id", evt.id);
-    }
-
-    // Le compte des libellés dit tout de suite si la codification a répondu :
-    // sans lui, un plan rempli de codes passerait pour un plan correct.
-    return repond({
-      ok: true,
-      pavillons: resume,
-      nomenclature: {
-        libelles: Object.keys(libNomencl).length,
-        chemin: cheminNomencl,
-        erreur: errNomencl,
+        } catch (e) {
+          emet({ erreur: e instanceof Error ? e.message : String(e) });
+          try {
+            await client().from("evenement")
+              .update({ derniere_err: e instanceof Error ? e.message : String(e) })
+              .eq("id", corps.evenementId);
+          } catch (_) { /* la trace ne doit pas masquer l'erreur d'origine */ }
+        } finally {
+          ctrl.close();
+        }
       },
-      ...(resumeEm ? { eventmaker: resumeEm } : {}),
+    });
+
+    return new Response(flux, {
+      headers: { ...CORS, "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

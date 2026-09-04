@@ -169,6 +169,23 @@ tr.eteint td{opacity:.45}
 .astuce{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin:0}
 .astuce code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
   background:var(--surface-2);padding:1px 5px;border-radius:3px}
+/* Barre d'avancement : une colonne par étape, sa jauge au-dessus. La couleur
+   distingue ce qui est fait, ce qui tourne, et ce qui n'est pas repris. */
+.avance{display:flex;gap:10px;margin-top:14px}
+.pas{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.pas .jauge{height:3px;border-radius:2px;background:var(--line);transition:background .25s}
+.pas .lib{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pas .det{font-size:11px;color:var(--ink-3);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pas[data-etat="encours"] .jauge{background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
+.pas[data-etat="encours"] .lib{color:var(--accent)}
+.pas[data-etat="fait"] .jauge{background:var(--vert,#3F7D58)}
+.pas[data-etat="fait"] .lib{color:var(--ink)}
+.pas[data-etat="ignoree"]{opacity:.5}
+.pas[data-etat="echec"] .jauge{background:var(--rouge)}
+.pas[data-etat="echec"] .lib,.pas[data-etat="echec"] .det{color:var(--rouge)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.pas .jauge{animation:none}}
+@media (max-width:560px){.avance{flex-wrap:wrap}.pas{flex:1 1 45%}}
 .etat-ligne{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-3);
   margin-top:10px;flex-wrap:wrap}
 .etat-ligne .err{color:var(--rouge)}
