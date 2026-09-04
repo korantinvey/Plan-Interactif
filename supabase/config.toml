@@ -1,0 +1,7 @@
+project_id = "jylkfskotuafptaxujao"
+
+[functions.sync-evenement]
+verify_jwt = false
+
+[functions.plan-public]
+verify_jwt = false
