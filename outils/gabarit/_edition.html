@@ -80,9 +80,10 @@ function majElement(){
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
-                 texte: "Texte", image: "Image" };
+                 texte: "Texte", image: "Image", repere: "Repère" };
   $("elemType").textContent = NOMS[f.t] || f.t;
-  const estTexte = f.t === "texte";
+  // un repère porte lui aussi un libellé et une taille
+  const estTexte = f.t === "texte" || f.t === "repere";
   $("elemTexte").hidden = !estTexte;
   $("elemTaille").hidden = !estTexte;
   if (estTexte){
@@ -142,7 +143,7 @@ function appliqueLiaison(){
 
 function appliqueTexte(){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || cible.f.t !== "texte") return;
+  if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
   memorise();
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));

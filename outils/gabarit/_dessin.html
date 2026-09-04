@@ -90,6 +90,8 @@ function dessineDessins(){
         '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
         '" height="' + (f.pts[1][1] - f.pts[0][1]) +
         '" preserveAspectRatio="xMidYMid meet"/></g>'
+      : f.t === "repere"
+      ? traceRepere(f)
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
@@ -128,6 +130,31 @@ function ajouteForme(f){
   dessineDessins();
   aide();
   return f.id;
+}
+
+/* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
+const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
+                 "Restauration", "Vestiaire", "Ascenseur", "Escalier",
+                 "Secours", "PMR", "Distributeur"];
+
+/**
+ * Un repère : une pastille dans la couleur du calque, son libellé dedans.
+ *
+ * La largeur suit le texte, mesurée dans la police de rendu — une pastille
+ * taillée au jugé serait trop courte sur « Restauration » et trop longue sur
+ * « WC ». Tout est en mètres, comme le reste du plan : le repère grandit donc
+ * avec le zoom, à l'inverse d'une épingle d'interface.
+ */
+function traceRepere(f){
+  const t = f.taille || 2;
+  const l = largeur(f.txt || "", P_NOM) * t;
+  const w = l + t * 1.1, ht = t * 1.65;
+  const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
+  return '<g class="forme repere' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '">' +
+    '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
+    '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
+    '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
+    '" font-size="' + t.toFixed(2) + '">' + esc(f.txt || "") + '</text></g>';
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
@@ -236,6 +263,12 @@ function dessinPointerDown(e){
     ajouteForme({ t: "texte", pts: [p], txt: txt, taille: 2 });
     return true;
   }
+  if (outil === "repere"){
+    const txt = $("repereTexte").value.trim();
+    if (!txt){ $("repereTexte").focus(); return true; }
+    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: 2 });
+    return true;
+  }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
   if (outil === "image"){
     if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
@@ -300,6 +333,7 @@ function aide(){
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
               ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
               texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
+              repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
               image: imageEnAttente ? "Glissez sur le plan pour poser une autre copie."
                                     : "Choisissez une image, ou déposez le fichier sur le plan.",
               _: "" };
@@ -318,7 +352,9 @@ function choisitOutil(o){
   dessinePoignees(); majElement();
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
+  b.classList.toggle("mode-repere", o === "repere");
   if (o === "texte") $("texteADessiner").focus();
+  if (o === "repere") $("repereTexte").focus();
   aide();
 }
 $("outils").querySelectorAll(".outilsBtns button")
@@ -329,6 +365,16 @@ $("renommeOutils").onclick = () => {
   const c = trouveCalque(calqueActif);
   if (c) renommeCalque(c);
 };
+/* La liste ne fait que remplir le champ : un libellé libre reste possible. */
+$("repereChoix").innerHTML = '<option value="">Libellés courants…</option>' +
+  REPERES.map(r => '<option>' + esc(r) + '</option>').join("");
+$("repereChoix").onchange = e => {
+  if (!e.target.value) return;
+  $("repereTexte").value = e.target.value;
+  e.target.value = "";
+  $("repereTexte").focus();
+};
+
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;

@@ -195,6 +195,14 @@ button{cursor:pointer;background:none;border:none}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
   border-top:1px solid var(--line)}
 .elem[hidden]{display:none}
+/* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
+   accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
+#repereChoix,#repereTexte{display:none}
+.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
+#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+.dcal .repere rect{fill:currentColor;stroke:none}
+.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
@@ -462,8 +470,11 @@ button{cursor:pointer;background:none;border:none}
         <button data-o="ligne" title="Ligne — clic pour chaque point, Entrée pour terminer">&#9585;</button>
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
+        <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
+      <select id="repereChoix"></select>
+      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>

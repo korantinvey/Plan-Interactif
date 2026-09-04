@@ -195,6 +195,14 @@ button{cursor:pointer;background:none;border:none}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
   border-top:1px solid var(--line)}
 .elem[hidden]{display:none}
+/* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
+   accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
+#repereChoix,#repereTexte{display:none}
+.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
+#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+.dcal .repere rect{fill:currentColor;stroke:none}
+.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
@@ -462,8 +470,11 @@ button{cursor:pointer;background:none;border:none}
         <button data-o="ligne" title="Ligne — clic pour chaque point, Entrée pour terminer">&#9585;</button>
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
+        <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
+      <select id="repereChoix"></select>
+      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
@@ -1485,6 +1496,8 @@ function dessineDessins(){
         '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
         '" height="' + (f.pts[1][1] - f.pts[0][1]) +
         '" preserveAspectRatio="xMidYMid meet"/></g>'
+      : f.t === "repere"
+      ? traceRepere(f)
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
@@ -1523,6 +1536,31 @@ function ajouteForme(f){
   dessineDessins();
   aide();
   return f.id;
+}
+
+/* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
+const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
+                 "Restauration", "Vestiaire", "Ascenseur", "Escalier",
+                 "Secours", "PMR", "Distributeur"];
+
+/**
+ * Un repère : une pastille dans la couleur du calque, son libellé dedans.
+ *
+ * La largeur suit le texte, mesurée dans la police de rendu — une pastille
+ * taillée au jugé serait trop courte sur « Restauration » et trop longue sur
+ * « WC ». Tout est en mètres, comme le reste du plan : le repère grandit donc
+ * avec le zoom, à l'inverse d'une épingle d'interface.
+ */
+function traceRepere(f){
+  const t = f.taille || 2;
+  const l = largeur(f.txt || "", P_NOM) * t;
+  const w = l + t * 1.1, ht = t * 1.65;
+  const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
+  return '<g class="forme repere' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '">' +
+    '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
+    '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
+    '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
+    '" font-size="' + t.toFixed(2) + '">' + esc(f.txt || "") + '</text></g>';
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
@@ -1631,6 +1669,12 @@ function dessinPointerDown(e){
     ajouteForme({ t: "texte", pts: [p], txt: txt, taille: 2 });
     return true;
   }
+  if (outil === "repere"){
+    const txt = $("repereTexte").value.trim();
+    if (!txt){ $("repereTexte").focus(); return true; }
+    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: 2 });
+    return true;
+  }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
   if (outil === "image"){
     if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
@@ -1695,6 +1739,7 @@ function aide(){
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
               ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
               texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
+              repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
               image: imageEnAttente ? "Glissez sur le plan pour poser une autre copie."
                                     : "Choisissez une image, ou déposez le fichier sur le plan.",
               _: "" };
@@ -1713,7 +1758,9 @@ function choisitOutil(o){
   dessinePoignees(); majElement();
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
+  b.classList.toggle("mode-repere", o === "repere");
   if (o === "texte") $("texteADessiner").focus();
+  if (o === "repere") $("repereTexte").focus();
   aide();
 }
 $("outils").querySelectorAll(".outilsBtns button")
@@ -1724,6 +1771,16 @@ $("renommeOutils").onclick = () => {
   const c = trouveCalque(calqueActif);
   if (c) renommeCalque(c);
 };
+/* La liste ne fait que remplir le champ : un libellé libre reste possible. */
+$("repereChoix").innerHTML = '<option value="">Libellés courants…</option>' +
+  REPERES.map(r => '<option>' + esc(r) + '</option>').join("");
+$("repereChoix").onchange = e => {
+  if (!e.target.value) return;
+  $("repereTexte").value = e.target.value;
+  e.target.value = "";
+  $("repereTexte").focus();
+};
+
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
@@ -1875,9 +1932,10 @@ function majElement(){
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
-                 texte: "Texte", image: "Image" };
+                 texte: "Texte", image: "Image", repere: "Repère" };
   $("elemType").textContent = NOMS[f.t] || f.t;
-  const estTexte = f.t === "texte";
+  // un repère porte lui aussi un libellé et une taille
+  const estTexte = f.t === "texte" || f.t === "repere";
   $("elemTexte").hidden = !estTexte;
   $("elemTaille").hidden = !estTexte;
   if (estTexte){
@@ -1937,7 +1995,7 @@ function appliqueLiaison(){
 
 function appliqueTexte(){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || cible.f.t !== "texte") return;
+  if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
   memorise();
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
