@@ -220,6 +220,8 @@ export class Eventmaker {
           texte: texteSeul(a.description?.html),
           debut: a.start_date ?? null,
           fin: a.end_date ?? null,
+          debutLocal: a.start_date_to_timezone ?? null,
+          finLocal: a.end_date_to_timezone ?? null,
           salleId: a.session_room_id ? String(a.session_room_id) : null,
           salle: a.session_room?.name ?? a.location ?? null,
           type: a.session_type ?? null,
@@ -363,6 +365,10 @@ export interface ConferenceEm {
   texte: string | null;
   debut: string | null;
   fin: string | null;
+  // heure locale du salon, telle qu'Eventmaker la donne : elle évite d'avoir à
+  // deviner un fuseau depuis le navigateur d'un visiteur
+  debutLocal: string | null;
+  finLocal: string | null;
   salleId: string | null;
   salle: string | null;
   type: string | null;

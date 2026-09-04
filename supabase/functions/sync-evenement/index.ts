@@ -465,7 +465,9 @@ Deno.serve(async (req) => {
 
             if (fiche.zone && anneauxZone.has(fiche.zone)) {
               conferences.push({
-                id: c.id, nom: c.nom, texte: c.texte, debut: c.debut, fin: c.fin,
+                id: c.id, nom: c.nom, texte: c.texte,
+                debut: c.debut, fin: c.fin,
+                debutLocal: c.debutLocal, finLocal: c.finLocal,
                 salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
                 zone: fiche.zone,
               });

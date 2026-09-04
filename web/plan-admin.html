@@ -263,6 +263,19 @@ button{cursor:pointer;background:none;border:none}
    de trois caractères ; les libellés sont des phrases. */
 .field .v .ligne{display:block}
 .field .v .ligne + .ligne{margin-top:3px}
+/* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
+   c'est par elle qu'on se repère, et un filet de la couleur de son type. */
+.prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
+.prog .jour{font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-3);margin-top:8px}
+.prog .jour:first-child{margin-top:0}
+.prog .conf{display:flex;flex-direction:column;gap:2px;padding:7px 9px;
+  background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--line-strong))}
+.prog .h{font-size:11.5px;font-weight:600;color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace}
+.prog .t{font-size:13px;line-height:1.35;color:var(--ink)}
+.prog .ty{font-size:11px;color:var(--ink-3)}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
@@ -522,6 +535,16 @@ function indexe(d){
     p.zones = p.zones || [];
     p.stands = p.stands || [];
     p.fond = p.fond || [];
+    p.conferences = p.conferences || [];
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (!c.zone) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort((a, b) =>
+      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || ""))));
     p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
     p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
   });
@@ -824,6 +847,48 @@ function montre(type, cle){
  * complète, tantôt un simple nom de compte. On complète ce qui manque plutôt
  * que d'afficher un lien mort.
  */
+/**
+ * Le programme d'une zone, en vignettes chronologiques.
+ *
+ * L'heure vient d'Eventmaker sous sa forme locale — « 03/14/2026 10:30 » — ce
+ * qui évite de deviner le fuseau du salon depuis le navigateur d'un visiteur
+ * qui peut être ailleurs. On la relit telle quelle plutôt que d'en faire une
+ * date, dont le rendu dépendrait justement du fuseau.
+ */
+const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+              "août", "septembre", "octobre", "novembre", "décembre"];
+
+function momentLocal(v){
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})/.exec(String(v || ""));
+  if (!m) return null;
+  return { jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
+           cle: m[3] + m[1] + m[2] };
+}
+
+function programme(o){
+  const l = (P().parZone && P().parZone.get(o.id)) || [];
+  if (!l.length) return "";
+  let out = '<div class="field"><span class="eyebrow">Programme</span><div class="prog">';
+  let jourCourant = null;
+  for (const c of l){
+    const d = momentLocal(c.debutLocal) || momentLocal(c.debut);
+    const f = momentLocal(c.finLocal) || momentLocal(c.fin);
+    if (d && d.cle !== jourCourant){
+      jourCourant = d.cle;
+      const dt = new Date(d.an, d.mois - 1, d.jour);
+      out += '<div class="jour">' + esc(JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]) + '</div>';
+    }
+    const heure = d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "";
+    out += '<div class="conf"' + (c.couleur ? ' style="--tc:' + esc(c.couleur) + '"' : "") + '>' +
+      (heure ? '<span class="h">' + esc(heure) + '</span>' : "") +
+      '<span class="t">' + esc(c.nom) + '</span>' +
+      (c.type ? '<span class="ty">' + esc(c.type) + '</span>' : "") +
+      '</div>';
+  }
+  return out + '</div></div>';
+}
+
 function lien(v){
   let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
   if (!u) return "";
@@ -851,6 +916,7 @@ function ouvre(o, rect){
     // la surface renseigne sur une zone ; sur un stand elle n'apprend rien au
     // visiteur, pas plus que les angles ouverts ou l'état de commercialisation
     (zone ? ok("surface", f("Surface", o.m2 ? o.m2 + " m²" : "")) : "") +
+    (zone ? ok("conferences", programme(o)) : "") +
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
     ok("ville", f("Ville", o.ville ? esc(o.ville) : "")) +

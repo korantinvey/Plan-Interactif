@@ -712,13 +712,13 @@ const CHAMPS_FICHE = {
   zone: [
     ["surface",     "Surface"],
     ["conferences", "Conférences",
-     "Le programme tenu dans la zone. Aucune synchronisation ne l'alimente encore."],
+     "Le programme tenu dans la zone, par ordre chronologique."],
   ],
 };
 
 /* Ce qui se règle mais que rien n'alimente : à montrer en retrait plutôt qu'à
    taire, sans quoi on croirait le champ déjà repris. */
-const FICHE_INERTE = { zone: ["conferences"] };
+const FICHE_INERTE = {};
 
 /** Ce qu'on lit sans ouvrir : les exceptions, pas la liste complète. */
 function resumeProvenance(e) {
