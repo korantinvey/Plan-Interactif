@@ -80,6 +80,15 @@ button{cursor:pointer;background:none;border:none}
   display:flex;flex-direction:column;min-height:0}
 .rail header{padding:13px 16px 11px;border-bottom:1px solid var(--line);
   display:flex;align-items:center;justify-content:space-between;gap:8px}
+.railActs{display:flex;align-items:center;gap:6px}
+.icone{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
+.icone:hover{border-color:var(--line-strong);color:var(--ink)}
+.icone svg{width:14px;height:14px}
+.icone[disabled]{opacity:.5;cursor:default}
+@keyframes tourne{to{transform:rotate(360deg)}}
+.icone.occupe svg{animation:tourne .9s linear infinite}
+@media (prefers-reduced-motion:reduce){.icone.occupe svg{animation:none}}
 .rail .liste{overflow-y:auto;flex:1;min-height:0}
 .evt{display:block;width:100%;text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
 .evt:hover{background:var(--surface-2)}
@@ -172,7 +181,12 @@ tr.eteint td{opacity:.45}
   <aside class="rail">
     <header>
       <span class="eyebrow">Événements</span>
-      <button class="btn petit primaire" id="btnNouveau">Nouveau</button>
+      <span class="railActs">
+        <button class="icone" id="btnRecharger" title="Recharger depuis le serveur" aria-label="Recharger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </button>
+        <button class="btn petit primaire" id="btnNouveau">Nouveau</button>
+      </span>
     </header>
     <div class="liste" id="listeEvts"></div>
   </aside>
@@ -679,6 +693,27 @@ $("btnNouveau").onclick = () =>
       await charge();
     } catch (err) { signale(err.message, true); }
   });
+
+/* Rechargement à la demande : la console ne surveille pas la base, et une
+   synchronisation lancée ailleurs ne se voit pas toute seule. */
+$("btnRecharger").onclick = async () => {
+  const b = $("btnRecharger");
+  if (b.disabled) return;
+  b.disabled = true;
+  b.classList.add("occupe");
+  try {
+    const avant = PLANS;
+    PLANS = {};
+    await charge();
+    signale("Données rechargées.");
+    void avant;
+  } catch (e) {
+    signale(e.message, true);
+  } finally {
+    b.disabled = false;
+    b.classList.remove("occupe");
+  }
+};
 
 $("btnExport").onclick = (ev) => {
   const txt = JSON.stringify({ evenements: EVTS, plans: PLANS }, null, 2);

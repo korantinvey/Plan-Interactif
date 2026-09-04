@@ -490,6 +490,27 @@ $("btnNouveau").onclick = () =>
     } catch (err) { signale(err.message, true); }
   });
 
+/* Rechargement à la demande : la console ne surveille pas la base, et une
+   synchronisation lancée ailleurs ne se voit pas toute seule. */
+$("btnRecharger").onclick = async () => {
+  const b = $("btnRecharger");
+  if (b.disabled) return;
+  b.disabled = true;
+  b.classList.add("occupe");
+  try {
+    const avant = PLANS;
+    PLANS = {};
+    await charge();
+    signale("Données rechargées.");
+    void avant;
+  } catch (e) {
+    signale(e.message, true);
+  } finally {
+    b.disabled = false;
+    b.classList.remove("occupe");
+  }
+};
+
 $("btnExport").onclick = (ev) => {
   const txt = JSON.stringify({ evenements: EVTS, plans: PLANS }, null, 2);
   navigator.clipboard?.writeText(txt).then(
