@@ -188,6 +188,11 @@ function ecranConnexion(message) {
     mdp = l2.querySelector("input");
     setTimeout(() => mail.focus(), 30);
     mdp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); tente(); } };
+    const info = document.createElement("p");
+    info.className = "aide";
+    info.style.marginTop = "-4px";
+    info.textContent = "Projet : " + (CFG?.url || "non configuré");
+    corps.appendChild(info);
   }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
@@ -195,13 +200,25 @@ function ecranConnexion(message) {
     msg.textContent = "Connexion…";
     msg.style.color = "var(--ink-3)";
     try {
-      const r = await fetch(CFG.url + "/auth/v1/token?grant_type=password", {
+      const url = CFG.url;
+      const r = await fetch(url + "/auth/v1/token?grant_type=password", {
         method: "POST",
         headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
         body: JSON.stringify({ email: mail.value.trim(), password: mdp.value }),
       });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error_description || j.msg || "Identifiants refusés.");
+      // Une réponse vide ne doit pas ressortir en « Unexpected end of JSON
+      // input » : on lit le texte, puis on tente de l'interpréter.
+      const txt = await r.text();
+      let j = {};
+      try { j = txt ? JSON.parse(txt) : {}; } catch (e) { j = { msg: txt.slice(0, 120) }; }
+      if (!r.ok) {
+        throw new Error((j.error_description || j.msg || "Identifiants refusés.") +
+          " (HTTP " + r.status + ")");
+      }
+      if (!j.access_token) {
+        throw new Error("Réponse inattendue de " + url + " — HTTP " + r.status +
+          (txt ? "" : ", corps vide") + ". Vérifiez l'adresse du projet.");
+      }
       SESSION = j;
       localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
       fermeModale();
