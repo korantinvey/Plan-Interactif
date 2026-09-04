@@ -248,11 +248,12 @@ button{cursor:pointer;background:none;border:none}
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
 .field{display:flex;flex-direction:column;gap:3px}
-.field .v{font-size:14px}
+.field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
-.tags{display:flex;flex-wrap:wrap;gap:5px}
-.tag{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;
-  color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+/* Une valeur multiple s'écrit en lignes. Les pastilles convenaient à des codes
+   de trois caractères ; les libellés sont des phrases. */
+.field .v .ligne{display:block}
+.field .v .ligne + .ligne{margin-top:3px}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
