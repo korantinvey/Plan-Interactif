@@ -844,10 +844,10 @@ function ouvre(o, rect){
   $("dBody").innerHTML =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
-    ok("surface", f("Surface", o.m2 ? o.m2 + " m²" : "")) +
-    ok("angles", f("Angles ouverts", o.angles != null && !zone ? String(o.angles) : "")) +
+    // la surface renseigne sur une zone ; sur un stand elle n'apprend rien au
+    // visiteur, pas plus que les angles ouverts ou l'état de commercialisation
+    (zone ? ok("surface", f("Surface", o.m2 ? o.m2 + " m²" : "")) : "") +
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
-    ok("etat", f("Commercialisation", !zone && o.etat ? esc(o.etat) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
     ok("ville", f("Ville", o.ville ? esc(o.ville) : "")) +
     ok("pays", f("Pays", o.pays ? esc(o.pays) : "")) +
