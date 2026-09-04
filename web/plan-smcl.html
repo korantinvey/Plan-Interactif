@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plan du SMCL 2026</title>
+<title>Plan du salon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -515,7 +515,11 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
 
-  $("titre").textContent = DATA.evenement || "Plan du salon";
+  const nom = DATA.evenement || "Plan du salon";
+  $("titre").textContent = nom;
+  // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
+  document.title = (document.documentElement.dataset.role === "admin"
+    ? "Administration — " : "") + nom;
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
@@ -707,7 +711,8 @@ function liste(){
     return '<button class="row ' + (o.kind === "zone" ? "z" : "") + '" data-id="' + o.id +
       '" aria-current="' + (state.sel === o.id) + '">' +
       '<span class="code">' + esc(o.code || (o.kind === "zone" ? "ZOD" : "—")) + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || ""))) + '</span><br>' +
+      '<span><span class="nm">' + esc(o.nom || o.plan ||
+        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span><br>' +
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
@@ -785,7 +790,8 @@ function centre(o){
 function ouvre(o, rect){
   const zone = o.kind === "zone";
   $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
-  $("dName").textContent = o.nom || o.plan || ("Stand " + (o.code || ""));
+  $("dName").textContent = o.nom || o.plan ||
+    (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dCode").textContent = DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
   const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
                           '</span><span class="v">' + v + '</span></div>' : "";
@@ -979,37 +985,30 @@ function appliqueApparence(){
 }
 
 /* ============================================================
-   10. Menu d'administration
-   Ctrl + Alt + A. Le paramètre d'URL ne traverse pas l'iframe d'une page
-   publiée, ce raccourci si — et il reste invisible pour un visiteur.
+   10. Mode administration
+   Il n'existe que dans la page dédiée, et seulement une fois l'utilisateur
+   authentifié. La page publique ne l'active jamais et retire ses commandes
+   du document. Un raccourci clavier ne serait pas une frontière.
    ============================================================ */
-const CLE_ADMIN = "plan-admin";
-let ADMIN = /(?:^|[?&])admin=1(?:&|$)/.test(location.search) || /^#admin\b/.test(location.hash);
-try { if (localStorage.getItem(CLE_ADMIN) === "1") ADMIN = true; } catch (e) {}
-addEventListener("keydown", e => {
-  if (e.ctrlKey && e.altKey && (e.key === "a" || e.key === "A")){
-    e.preventDefault();
-    try { localStorage.setItem(CLE_ADMIN, ADMIN ? "0" : "1"); } catch (err) {}
-    location.reload();
+let ADMIN = false;
+
+/** Retire toute trace d'administration : page publique. */
+function retireAdmin(){
+  ["btnLayers", "panel", "outils"].forEach(id => { const e = $(id); if (e) e.remove(); });
+}
+
+/** Ouvre le mode administration, une fois l'identité vérifiée. */
+function activeAdmin(){
+  if (ADMIN) return;
+  ADMIN = true;
+  const b = $("btnLayers");
+  if (b){
+    b.hidden = false;
+    b.onclick = () => {
+      const o = $("panel").classList.toggle("open");
+      b.setAttribute("aria-pressed", o);
+    };
   }
-});
-
-const enregistreConf = () => { try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {} };
-const rgbHex = s => {
-  const m = /rgb((d+),s*(d+),s*(d+))/.exec(s || "");
-  return m ? "#" + [1, 2, 3].map(i => (+m[i]).toString(16).padStart(2, "0")).join("") : null;
-};
-const joli = id => id.replace(/^d+-/, "").replace(/[_-]+/g, " ").toLowerCase()
-                     .replace(/^./, c => c.toUpperCase());
-
-if (!ADMIN){
-  $("btnLayers").remove();
-  $("panel").remove();
-} else {
-  $("btnLayers").onclick = () => {
-    const o = $("panel").classList.toggle("open");
-    $("btnLayers").setAttribute("aria-pressed", o);
-  };
   const barre = document.createElement("div");
   barre.className = "adminbar";
   barre.innerHTML = '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>' +
@@ -1022,7 +1021,8 @@ if (!ADMIN){
     appliqueApparence(); construitPanneau();
   };
   $("copieConf").onclick = e => {
-    navigator.clipboard && navigator.clipboard.writeText(JSON.stringify({ apparence: CONF, dessins: DESSINS }, null, 2)).then(
+    navigator.clipboard && navigator.clipboard.writeText(
+      JSON.stringify({ apparence: CONF, dessins: DESSINS }, null, 2)).then(
       () => { e.target.textContent = "Configuration copiée";
               setTimeout(() => e.target.textContent = "Copier la configuration", 1800); },
       () => { e.target.textContent = "Copie impossible"; });
@@ -1990,6 +1990,8 @@ if (document.fonts && document.fonts.ready)
 
 addEventListener("resize", () => { if (DATA && view) fit(); });
 
+
+retireAdmin();
 </script>
 
 </body>

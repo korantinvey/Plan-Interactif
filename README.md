@@ -119,8 +119,17 @@ sur `main` redéploie.
 
 Une fois en ligne, les adresses sont :
 
-- `https://<projet>.pages.dev/plan.html?plan=smcl-2026` — le plan public
-- `https://<projet>.pages.dev/admin-plans.html` — la console
+Cloudflare sert les pages sans l'extension `.html`.
+
+| adresse | rôle | accès |
+|---|---|---|
+| `/plan?plan=<slug>` | le plan des visiteurs | libre |
+| `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
+| `/admin-plans` | la console des événements | authentifié |
+
+La page publique ne contient aucune commande d'administration : elles sont
+retirées du document au chargement. La page d'administration exige une session
+Supabase valide, vérifiée auprès du serveur à chaque ouverture.
 
 ### À faire côté Supabase
 

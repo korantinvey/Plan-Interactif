@@ -41,7 +41,11 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
 
-  $("titre").textContent = DATA.evenement || "Plan du salon";
+  const nom = DATA.evenement || "Plan du salon";
+  $("titre").textContent = nom;
+  // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
+  document.title = (document.documentElement.dataset.role === "admin"
+    ? "Administration — " : "") + nom;
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
@@ -233,7 +237,8 @@ function liste(){
     return '<button class="row ' + (o.kind === "zone" ? "z" : "") + '" data-id="' + o.id +
       '" aria-current="' + (state.sel === o.id) + '">' +
       '<span class="code">' + esc(o.code || (o.kind === "zone" ? "ZOD" : "—")) + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || ""))) + '</span><br>' +
+      '<span><span class="nm">' + esc(o.nom || o.plan ||
+        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span><br>' +
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
@@ -311,7 +316,8 @@ function centre(o){
 function ouvre(o, rect){
   const zone = o.kind === "zone";
   $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
-  $("dName").textContent = o.nom || o.plan || ("Stand " + (o.code || ""));
+  $("dName").textContent = o.nom || o.plan ||
+    (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dCode").textContent = DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
   const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
                           '</span><span class="v">' + v + '</span></div>' : "";

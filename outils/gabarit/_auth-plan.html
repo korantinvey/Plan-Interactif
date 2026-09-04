@@ -1,0 +1,96 @@
+
+/* ============================================================
+   Accès à l'administration du plan
+   Cette page n'existe que pour l'exploitant. On réutilise la session ouverte
+   dans la console : même projet, même compte, mêmes clés locales.
+   ============================================================ */
+const CLE_CFG_A = "console-config";
+const CLE_SESSION_A = "console-session";
+
+function litLocal(cle){
+  try { return JSON.parse(localStorage.getItem(cle) || "null"); } catch (e) { return null; }
+}
+
+function normaliseUrlA(saisie){
+  let u = String(saisie || "").trim();
+  while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
+  if (!u) return "";
+  const marque = "supabase.com/dashboard/project/";
+  const i = u.toLowerCase().indexOf(marque);
+  if (i >= 0){
+    const ref = u.slice(i + marque.length).split("/")[0].split("?")[0];
+    if (ref) return "https://" + ref + ".supabase.co";
+  }
+  if (u.indexOf(".") < 0 && u.indexOf(":") < 0) return "https://" + u + ".supabase.co";
+  if (u.slice(0, 4).toLowerCase() !== "http") u = "https://" + u;
+  return u;
+}
+
+/** Le jeton est-il encore valable ? On le vérifie auprès du serveur. */
+async function sessionValide(cfg, session){
+  if (!cfg?.url || !cfg?.anonKey || !session?.access_token) return false;
+  try {
+    const r = await fetch(cfg.url + "/auth/v1/user", {
+      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + session.access_token },
+    });
+    return r.ok;
+  } catch (e) { return false; }
+}
+
+function ecranAcces(message){
+  const cfg = litLocal(CLE_CFG_A) || {};
+  const voile = document.createElement("div");
+  voile.className = "modale open";
+  voile.id = "acces";
+  voile.innerHTML =
+    '<div class="mfen" role="dialog" aria-modal="true">' +
+    '<header><h2>Administration du plan</h2></header>' +
+    '<div class="mcorps">' +
+    '<p class="astuce" id="accesMsg"></p>' +
+    '<label><span>Adresse du projet</span><input id="aUrl" placeholder="https://xxxx.supabase.co"></label>' +
+    '<label><span>Clé publique (anon)</span><input id="aCle" placeholder="eyJhbGciOi…"></label>' +
+    '<label><span>Adresse e-mail</span><input id="aMail" type="email" autocomplete="username"></label>' +
+    '<label><span>Mot de passe</span><input id="aMdp" type="password" autocomplete="current-password"></label>' +
+    '</div>' +
+    '<footer><a class="btn" id="aPublic">Voir le plan public</a>' +
+    '<button class="btn primaire" id="aOk">Se connecter</button></footer></div>';
+  document.body.appendChild(voile);
+
+  $("aUrl").value = cfg.url || "";
+  $("aCle").value = cfg.anonKey || "";
+  $("accesMsg").textContent = message || "Cette page est réservée à l'exploitant.";
+  $("aPublic").href = "plan" + location.search;
+  setTimeout(() => ($("aUrl").value ? $("aMail") : $("aUrl")).focus(), 40);
+
+  const tente = async () => {
+    const url = normaliseUrlA($("aUrl").value);
+    const anonKey = $("aCle").value.trim();
+    $("aUrl").value = url;
+    if (!url || !anonKey){ $("accesMsg").textContent = "Adresse et clé publique sont nécessaires."; return; }
+    $("accesMsg").textContent = "Connexion…";
+    try {
+      const r = await fetch(url + "/auth/v1/token?grant_type=password", {
+        method: "POST",
+        headers: { "apikey": anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: $("aMail").value.trim(), password: $("aMdp").value }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error_description || j.msg || "Identifiants refusés.");
+      localStorage.setItem(CLE_CFG_A, JSON.stringify({ url, anonKey }));
+      localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
+      voile.remove();
+      activeAdmin();
+    } catch (e) {
+      $("accesMsg").textContent = e.message;
+    }
+  };
+  $("aOk").onclick = tente;
+  $("aMdp").onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); tente(); } };
+}
+
+(async () => {
+  const cfg = litLocal(CLE_CFG_A);
+  const session = litLocal(CLE_SESSION_A);
+  if (await sessionValide(cfg, session)) activeAdmin();
+  else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
+})();
