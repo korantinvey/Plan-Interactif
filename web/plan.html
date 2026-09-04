@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
+  new URLSearchParams(location.search).get("plan") || "smcl-2026"));
+</script>
 <title>Plan du salon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2083,7 +2087,15 @@ function chargeFond(i){
 function charge(){
   annonce("Chargement du plan…");
   const entetes = entetesApi();
-  return fetch(API + "?slug=" + encodeURIComponent(SLUG), { headers: entetes, cache: "no-store" })
+  // La demande a pu partir dès l'en-tête de la page, avant même que le reste
+  // soit lu : on la récupère plutôt que d'en lancer une seconde. En
+  // administration elle n'existe pas — il faut y présenter sa session.
+  const depart = (!entetes.Authorization && window.__plan) || fetch(
+    API + "?slug=" + encodeURIComponent(SLUG),
+    // un brouillon ne doit pas rester dans le cache du navigateur
+    { headers: entetes, cache: entetes.Authorization ? "no-store" : "default" });
+  window.__plan = null;
+  return depart
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que
       // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire

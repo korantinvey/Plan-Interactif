@@ -11,13 +11,32 @@ const API = "/api/plan";
  * se décomposent et tout caractère non-ASCII présent dans le code change de
  * valeur. Le squelette n'est donc pas de la décoration.
  */
-function page(contenu, role) {
+function page(contenu, role, tete) {
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    (tete || "") +
     contenu + "\n</body>\n</html>\n";
 }
+
+const SLUG_DEFAUT = "smcl-2026";
+
+/**
+ * Le plan est ce que le visiteur vient voir : la demande part depuis l'en-tête,
+ * avant que le navigateur ait lu le reste du document. Cela gagne le temps de
+ * lecture et d'analyse de la page — deux cents millisecondes environ.
+ *
+ * Réservé à la page publique : l'administration doit d'abord présenter sa
+ * session, sans quoi les brouillons resteraient invisibles.
+ */
+const PRECHARGE = [
+  "<script>",
+  'window.__plan = fetch("' + API + '?slug=" + encodeURIComponent(',
+  '  new URLSearchParams(location.search).get("plan") || "' + SLUG_DEFAUT + '"));',
+  "</" + "script>",
+  "",
+].join("\n");
 
 const tpl = fs.readFileSync(D + "/tpl-multi.html", "utf8");
 const auth = fs.readFileSync(D + "/gabarit/_auth-plan.html", "utf8");
@@ -29,12 +48,12 @@ function connecte(t) {
   return t
     .replace('<script id="data" type="application/json">/*__DATA__*/</script>',
              '<script id="data" type="application/json"></script>')
-    .replace(marque, '<script data-api="' + API + '" data-slug="smcl-2026">\n/* Sans viewport');
+    .replace(marque, '<script data-api="' + API + '" data-slug="' + SLUG_DEFAUT + '">\n/* Sans viewport');
 }
 
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();")));
+  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), null, PRECHARGE));
 
 /* --- page d'administration : accès après authentification --- */
 fs.writeFileSync(W + "plan-admin.html",
