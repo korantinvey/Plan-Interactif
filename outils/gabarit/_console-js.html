@@ -43,8 +43,12 @@ async function rest(chemin, options = {}) {
     throw new Error("Non autorisé.");
   }
   const txt = await r.text();
-  const corps = txt ? JSON.parse(txt) : null;
-  if (!r.ok) throw new Error(corps?.message || corps?.hint || "Erreur " + r.status);
+  let corps = null;
+  try { corps = txt ? JSON.parse(txt) : null; } catch (e) { corps = { message: txt }; }
+  if (!r.ok) {
+    const d = [corps?.message, corps?.details, corps?.hint].filter(Boolean).join(" — ");
+    throw new Error(d || "Erreur " + r.status + " sur " + chemin);
+  }
   return corps;
 }
 
@@ -118,9 +122,10 @@ function ecranConfig() {
   let url, cle;
   ouvreModale("Connexion au projet", (corps) => {
     const p = document.createElement("p");
-    p.textContent = "L'adresse du projet et sa clé publique. La clé publique est " +
-      "faite pour circuler côté navigateur : c'est son rôle. Ne mettez jamais ici " +
-      "la clé de service.";
+    p.innerHTML = "L'adresse de l'<strong>API</strong> du projet, en " +
+      "<code>.supabase.co</code> — pas celle du tableau de bord. La clé publique " +
+      "est faite pour circuler côté navigateur : c'est son rôle. Ne mettez jamais " +
+      "ici la clé de service.";
     const l1 = document.createElement("label");
     l1.innerHTML = "<span>Adresse du projet</span><input placeholder='https://xxxx.supabase.co'>";
     const l2 = document.createElement("label");
@@ -138,6 +143,33 @@ function ecranConfig() {
     localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
     ecranConnexion();
   } }]);
+}
+
+/**
+ * L'adresse du tableau de bord et celle de l'API se ressemblent assez pour
+ * qu'on les confonde. On accepte les deux formes et on retient la bonne.
+ *   tableau de bord : https://supabase.com/dashboard/project/<ref>
+ *   API             : https://<ref>.supabase.co
+ * Écrit sans expression régulière : la lecture y gagne, et le fichier ne
+ * dépend d'aucun échappement.
+ */
+function normaliseUrl(saisie) {
+  let u = String(saisie || "").trim();
+  while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
+  if (!u) return "";
+
+  const marque = "supabase.com/dashboard/project/";
+  const i = u.toLowerCase().indexOf(marque);
+  if (i >= 0) {
+    const ref = u.slice(i + marque.length).split("/")[0].split("?")[0];
+    if (ref) return "https://" + ref + ".supabase.co";
+  }
+
+  // la seule référence du projet, sans point ni protocole
+  if (u.indexOf(".") < 0 && u.indexOf(":") < 0) return "https://" + u + ".supabase.co";
+
+  if (u.slice(0, 4).toLowerCase() !== "http") u = "https://" + u;
+  return u;
 }
 
 function ecranConnexion(message) {
@@ -270,11 +302,20 @@ function champ(cle, libelle, aide, attrs) {
   return l;
 }
 
+/* Le message va dans la barre du haut, qui existe toujours, et en écho dans
+   la fiche quand elle est ouverte. Une erreur avalée est pire qu'une erreur. */
+let effaceur;
 function signale(txt, erreur) {
+  const s = $("statut");
+  if (s) {
+    s.className = "statut " + (erreur ? "err" : "ok");
+    s.textContent = txt;
+    clearTimeout(effaceur);
+    if (!erreur) effaceur = setTimeout(() => { s.textContent = ""; s.className = "statut"; }, 6000);
+  }
   const m = $("msgSync");
-  if (!m) return;
-  m.className = erreur ? "err" : "ok";
-  m.textContent = txt;
+  if (m) { m.className = erreur ? "err" : "ok"; m.textContent = txt; }
+  if (erreur) console.error("[console]", txt);
 }
 
 function dessineFiche() {
@@ -479,14 +520,19 @@ function dupliquer(e) {
    ------------------------------------------------------------------ */
 $("btnNouveau").onclick = () =>
   demande("Nouvel événement", "Nom de l'événement", "", async (nom) => {
+    signale("Création…");
     try {
-      const [cree] = await rest("evenement", {
+      const rep = await rest("evenement", {
         method: "POST",
         headers: { "Prefer": "return=representation" },
-        body: JSON.stringify({ nom, slug: slugifie(nom), instance: "", etat: "brouillon" }),
+        body: JSON.stringify({
+          nom, slug: slugifie(nom) || "evenement", instance: "", etat: "brouillon",
+        }),
       });
-      selection = cree.id;
+      const cree = Array.isArray(rep) ? rep[0] : rep;
+      if (cree?.id) selection = cree.id;
       await charge();
+      signale("Événement créé.");
     } catch (err) { signale(err.message, true); }
   });
 
