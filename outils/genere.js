@@ -42,12 +42,16 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
           .replace("/*__PORTE_ADMIN__*/", "retireAdmin();")));
 
+/* --- page d'accueil : la racine ne doit pas répondre 404 --- */
+fs.writeFileSync(W + "index.html",
+  page(fs.readFileSync(D + "/gabarit/_index.html", "utf8")));
+
 /* --- la console --- */
 fs.writeFileSync(W + "admin-plans.html", page(
   fs.readFileSync(D + "/gabarit/_console-head.html", "utf8") +
   fs.readFileSync(D + "/gabarit/_console-js.html", "utf8")));
 
-for (const f of ["plan.html", "plan-admin.html", "plan-smcl.html", "admin-plans.html"]) {
+for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html", "admin-plans.html"]) {
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
