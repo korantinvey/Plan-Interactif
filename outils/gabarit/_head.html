@@ -117,6 +117,8 @@ button{cursor:pointer;background:none;border:none}
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
    se lit sur le fond de la zone. */
+/* Une image liée à un stand s'ouvre au clic comme le stand lui-même. */
+.dcal .forme.lie{cursor:pointer}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
@@ -470,6 +472,9 @@ button{cursor:pointer;background:none;border:none}
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <input id="elemTaille" type="number" min="0.3" max="30" step="0.1" hidden>
+        <input id="elemStand" list="listeStands" spellcheck="false" hidden
+          placeholder="Lier à un stand — numéro ou exposant">
+        <datalist id="listeStands"></datalist>
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>

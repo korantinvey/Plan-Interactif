@@ -89,6 +89,55 @@ function majElement(){
     $("elemTexte").value = f.txt || "";
     $("elemTaille").value = f.taille || 2;
   }
+
+  /* Une image peut désigner un stand : le logo d'un exposant posé sur son
+     emplacement ouvre sa fiche au clic. */
+  const estImage = f.t === "image";
+  const ch = $("elemStand");
+  if (ch){
+    ch.hidden = !estImage;
+    if (estImage){
+      remplitListeStands();
+      const s = f.stand && parId.get(f.stand);
+      ch.value = s ? etiquetteStand(s) : "";
+    }
+  }
+}
+
+/** « G55 — SMC2 », ou le seul des deux qui existe. */
+const etiquetteStand = (s) =>
+  [s.code, s.nom].filter(Boolean).join(" — ") || s.id;
+
+/** La liste de choix suit le pavillon courant : un stand d'un autre pavillon
+ *  ne pourrait pas porter une image posée ici. */
+function remplitListeStands(){
+  const l = $("listeStands");
+  if (!l) return;
+  l.innerHTML = P().stands
+    .filter(s => s.code || s.nom)
+    .map(s => '<option value="' + esc(etiquetteStand(s)) + '">').join("");
+}
+
+/** Retrouve le stand désigné par ce qui a été saisi. */
+function standSaisi(txt){
+  const v = String(txt || "").trim().toLowerCase();
+  if (!v) return null;
+  const st = P().stands;
+  return st.find(s => etiquetteStand(s).toLowerCase() === v)
+      || st.find(s => String(s.code || "").toLowerCase() === v)
+      || st.find(s => String(s.nom || "").toLowerCase() === v)
+      || null;
+}
+
+function appliqueLiaison(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "image") return;
+  const ch = $("elemStand");
+  const s = standSaisi(ch.value);
+  memorise();
+  if (s){ cible.f.stand = s.id; ch.value = etiquetteStand(s); }
+  else { delete cible.f.stand; ch.value = ""; }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
 function appliqueTexte(){

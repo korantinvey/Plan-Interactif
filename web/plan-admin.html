@@ -122,6 +122,8 @@ button{cursor:pointer;background:none;border:none}
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
    se lit sur le fond de la zone. */
+/* Une image liée à un stand s'ouvre au clic comme le stand lui-même. */
+.dcal .forme.lie{cursor:pointer}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
@@ -475,6 +477,9 @@ button{cursor:pointer;background:none;border:none}
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <input id="elemTaille" type="number" min="0.3" max="30" step="0.1" hidden>
+        <input id="elemStand" list="listeStands" spellcheck="false" hidden
+          placeholder="Lier à un stand — numéro ou exposant">
+        <datalist id="listeStands"></datalist>
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
@@ -1465,8 +1470,13 @@ function dessineDessins(){
     g.style.color = cal.couleur || "var(--accent)";
     g.style.display = cal.visible === false ? "none" : "";
     g.innerHTML = cal.formes.map(f => f.t === "image"
-      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><image href="' + f.src + '" x="' + f.pts[0][0] +
+      // Le clic sur le plan cherche l'ancêtre porteur d'un data-id : une image
+      // liée à un stand ouvre donc sa fiche sans code supplémentaire. C'est
+      // ainsi qu'on pose le logo d'un exposant sur son emplacement.
+      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") +
+        (f.stand && parId.has(f.stand) ? " lie" : "") + '" data-f="' + f.id + '"' +
+        (f.stand && parId.has(f.stand) ? ' data-id="' + esc(f.stand) + '"' : "") +
+        '><image href="' + f.src + '" x="' + f.pts[0][0] +
         '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
         '" height="' + (f.pts[1][1] - f.pts[0][1]) +
         '" preserveAspectRatio="xMidYMid meet"/></g>'
@@ -1712,6 +1722,10 @@ $("renommeOutils").onclick = () => {
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+// on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
+// partielle ne désigne aucun stand et effacerait le lien
+$("elemStand").onchange = appliqueLiaison;
+$("elemStand").onblur = appliqueLiaison;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
@@ -1864,6 +1878,55 @@ function majElement(){
     $("elemTexte").value = f.txt || "";
     $("elemTaille").value = f.taille || 2;
   }
+
+  /* Une image peut désigner un stand : le logo d'un exposant posé sur son
+     emplacement ouvre sa fiche au clic. */
+  const estImage = f.t === "image";
+  const ch = $("elemStand");
+  if (ch){
+    ch.hidden = !estImage;
+    if (estImage){
+      remplitListeStands();
+      const s = f.stand && parId.get(f.stand);
+      ch.value = s ? etiquetteStand(s) : "";
+    }
+  }
+}
+
+/** « G55 — SMC2 », ou le seul des deux qui existe. */
+const etiquetteStand = (s) =>
+  [s.code, s.nom].filter(Boolean).join(" — ") || s.id;
+
+/** La liste de choix suit le pavillon courant : un stand d'un autre pavillon
+ *  ne pourrait pas porter une image posée ici. */
+function remplitListeStands(){
+  const l = $("listeStands");
+  if (!l) return;
+  l.innerHTML = P().stands
+    .filter(s => s.code || s.nom)
+    .map(s => '<option value="' + esc(etiquetteStand(s)) + '">').join("");
+}
+
+/** Retrouve le stand désigné par ce qui a été saisi. */
+function standSaisi(txt){
+  const v = String(txt || "").trim().toLowerCase();
+  if (!v) return null;
+  const st = P().stands;
+  return st.find(s => etiquetteStand(s).toLowerCase() === v)
+      || st.find(s => String(s.code || "").toLowerCase() === v)
+      || st.find(s => String(s.nom || "").toLowerCase() === v)
+      || null;
+}
+
+function appliqueLiaison(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "image") return;
+  const ch = $("elemStand");
+  const s = standSaisi(ch.value);
+  memorise();
+  if (s){ cible.f.stand = s.id; ch.value = etiquetteStand(s); }
+  else { delete cible.f.stand; ch.value = ""; }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
 function appliqueTexte(){

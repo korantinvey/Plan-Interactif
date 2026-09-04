@@ -80,8 +80,13 @@ function dessineDessins(){
     g.style.color = cal.couleur || "var(--accent)";
     g.style.display = cal.visible === false ? "none" : "";
     g.innerHTML = cal.formes.map(f => f.t === "image"
-      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><image href="' + f.src + '" x="' + f.pts[0][0] +
+      // Le clic sur le plan cherche l'ancêtre porteur d'un data-id : une image
+      // liée à un stand ouvre donc sa fiche sans code supplémentaire. C'est
+      // ainsi qu'on pose le logo d'un exposant sur son emplacement.
+      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") +
+        (f.stand && parId.has(f.stand) ? " lie" : "") + '" data-f="' + f.id + '"' +
+        (f.stand && parId.has(f.stand) ? ' data-id="' + esc(f.stand) + '"' : "") +
+        '><image href="' + f.src + '" x="' + f.pts[0][0] +
         '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
         '" height="' + (f.pts[1][1] - f.pts[0][1]) +
         '" preserveAspectRatio="xMidYMid meet"/></g>'
@@ -327,6 +332,10 @@ $("renommeOutils").onclick = () => {
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+// on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
+// partielle ne désigne aucun stand et effacerait le lien
+$("elemStand").onchange = appliqueLiaison;
+$("elemStand").onblur = appliqueLiaison;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
