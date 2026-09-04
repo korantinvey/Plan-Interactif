@@ -472,7 +472,9 @@ function ouvre(o, rect){
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
-  $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
+  // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
+  $("dKind").textContent = zone ? "" : "Stand";
+  $("dKind").hidden = zone;
   const titre = o.nom || o.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
@@ -504,10 +506,13 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    (ADMIN && zone ? '<button class="btn" id="dRen">Renommer</button>' : "") +
+    '</div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   $("dGo").onclick = () => centre(o);
+  if ($("dRen")) $("dRen").onclick = () => renommeZone(o);
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   anime(rect, 1);

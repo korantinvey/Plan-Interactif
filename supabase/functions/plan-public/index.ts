@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau")
+      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -190,6 +190,8 @@ Deno.serve(async (req) => {
       fiche: evt.fiche ?? {},
       // sans lui, une heure ISO se lirait dans le fuseau du visiteur
       fuseau: evt.fuseau ?? null,
+      // l'administration en a besoin pour savoir ce qui a déjà été renommé
+      nomsZones: evt.zones ?? {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -208,7 +210,12 @@ Deno.serve(async (req) => {
               ordre: c.ordre_klipso,
             })),
           stands: charge.stands ?? [],
-          zones: charge.zones ?? [],
+          // le nom choisi par l'exploitant l'emporte, et s'applique ici plutôt
+          // qu'à la synchronisation : renommer doit se voir tout de suite
+          zones: ((charge.zones ?? []) as Record<string, unknown>[]).map((z) => {
+            const choisi = (evt.zones ?? {})[String(z.id)];
+            return choisi ? { ...z, nom: choisi } : z;
+          }),
           conferences: charge.conferences ?? [],
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }

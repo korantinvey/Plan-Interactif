@@ -967,7 +967,9 @@ function ouvre(o, rect){
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
-  $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
+  // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
+  $("dKind").textContent = zone ? "" : "Stand";
+  $("dKind").hidden = zone;
   const titre = o.nom || o.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
@@ -999,10 +1001,13 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    (ADMIN && zone ? '<button class="btn" id="dRen">Renommer</button>' : "") +
+    '</div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   $("dGo").onclick = () => centre(o);
+  if ($("dRen")) $("dRen").onclick = () => renommeZone(o);
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   anime(rect, 1);
@@ -1192,7 +1197,7 @@ const enregistreConf = () => {
 /** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
  *  sélecteur de couleur. */
 const rgbHex = (s) => {
-  const m = String(s || "").match(/d+/g);
+  const m = String(s || "").match(/\d+/g);
   if (!m || m.length < 3) return null;
   return "#" + m.slice(0, 3)
     .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
@@ -1286,6 +1291,79 @@ function activeAdmin(){
   if (MONTE) construitPanneau();
 }
 
+
+/* ============================================================
+   Renommer une zone organisateur
+   Une zone tire son nom de Klipso, ou des textes posés sur le plan. Quand ni
+   l'un ni l'autre ne donne rien — les vingt-deux zones de Franchise Expo
+   s'affichent « Zone sans nom » — il faut pouvoir le saisir.
+
+   Le nom est enregistré sur l'événement, pas dans le navigateur : c'est le
+   visiteur qui doit le lire. Et il s'applique à la lecture, si bien qu'il
+   paraît sans attendre la prochaine synchronisation.
+   ============================================================ */
+function renommeZone(o){
+  let champ;
+  ouvreModale("Renommer la zone", corps => {
+    const l = document.createElement("label");
+    l.innerHTML = "<span>Nom de la zone</span><input>";
+    champ = l.querySelector("input");
+    champ.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
+    champ.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+    corps.appendChild(l);
+    const aide = document.createElement("p");
+    aide.className = "aide";
+    aide.textContent = "Laissez vide pour revenir au nom d'origine, s'il y en a un.";
+    corps.appendChild(aide);
+    setTimeout(() => { champ.focus(); champ.select(); }, 30);
+    champ.onkeydown = e => {
+      if (e.key === "Enter"){ e.preventDefault(); enregistreNomZone(o, champ.value); fermeModale(); }
+    };
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Enregistrer", genre: "primaire",
+      action: () => enregistreNomZone(o, champ.value) },
+  ]);
+}
+
+async function enregistreNomZone(o, valeur){
+  const nom = String(valeur || "").trim();
+  const noms = { ...(DATA.nomsZones || {}) };
+  if (nom) noms[o.id] = nom; else delete noms[o.id];
+
+  let cfg = null, ses = null;
+  try {
+    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
+    ses = JSON.parse(localStorage.getItem("console-session") || "null");
+  } catch (e) {}
+  if (!cfg?.url || !ses?.access_token){
+    annonce("Session absente : reconnectez-vous pour renommer.", true);
+    return;
+  }
+
+  try {
+    const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+      method: "PATCH",
+      headers: {
+        "apikey": cfg.anonKey,
+        "Authorization": "Bearer " + ses.access_token,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({ zones: noms, modifie_le: new Date().toISOString() }),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
+
+    DATA.nomsZones = noms;
+    // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
+    if (o.origine === undefined) o.origine = o.nom;
+    o.nom = nom || o.origine || null;
+    libelles(); liste();
+    ouvre(o, null);
+  } catch (e) {
+    annonce("Renommage impossible : " + e.message, true);
+  }
+}
 
 /* ============================================================
    11. Calques de dessin
