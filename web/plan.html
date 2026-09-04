@@ -817,6 +817,21 @@ function montre(type, cle){
   return !r || r[cle] !== false;
 }
 
+/**
+ * Une adresse en lien cliquable, affichée sans son protocole.
+ *
+ * Les champs de réseaux sociaux sont saisis à la main : tantôt une adresse
+ * complète, tantôt un simple nom de compte. On complète ce qui manque plutôt
+ * que d'afficher un lien mort.
+ */
+function lien(v){
+  let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  if (!u) return "";
+  if (!/^https?:/i.test(u)) u = "https://" + u.replace(/^\/+/, "");
+  return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' +
+         esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
+}
+
 function ouvre(o, rect){
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
@@ -837,8 +852,17 @@ function ouvre(o, rect){
     ok("angles", f("Angles ouverts", o.angles != null && !zone ? String(o.angles) : "")) +
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
     ok("etat", f("Commercialisation", !zone && o.etat ? esc(o.etat) : "")) +
-    ok("site", f("Site web", url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' +
-                        esc(url.replace(/^https?:\/\//, "")) + '</a>' : "")) +
+    ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
+    ok("ville", f("Ville", o.ville ? esc(o.ville) : "")) +
+    ok("pays", f("Pays", o.pays ? esc(o.pays) : "")) +
+    // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
+    ok("telephone", f("Téléphone", o.tel
+      ? '<a href="tel:' + esc(String(o.tel).replace(/[^+\d]/g, "")) + '">' + esc(o.tel) + '</a>'
+      : "")) +
+    ok("site", f("Site web", lien(o.site))) +
+    ok("facebook", f("Facebook", lien(o.fb))) +
+    ok("linkedin", f("LinkedIn", lien(o.li))) +
+    ok("instagram", f("Instagram", lien(o.ig))) +
     // le libellé est résolu à la synchronisation : la page l'affiche tel quel
     ok("nomenclature", o.nomencl && o.nomencl.length
       ? f("Nomenclature", o.nomencl

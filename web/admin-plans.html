@@ -962,7 +962,14 @@ const CHAMPS_FICHE = {
     ["angles",      "Angles ouverts"],
     ["niveaux",     "Niveaux",             "Seulement au-delà d'un niveau."],
     ["etat",        "Commercialisation",   "Option, signé… Rarement public."],
+    ["adresse",     "Adresse"],
+    ["ville",       "Ville"],
+    ["pays",        "Pays"],
+    ["telephone",   "Téléphone société"],
     ["site",        "Site web"],
+    ["facebook",    "Facebook"],
+    ["linkedin",    "LinkedIn"],
+    ["instagram",   "Instagram"],
     ["nomenclature", "Nomenclature"],
   ],
   zone: [
@@ -1049,6 +1056,7 @@ function ligneReglage(titre, resume, ouvre) {
 
 function ouvreProvenance(apres) {
   ouvreModale("Provenance des données", (corps) => {
+    const e = courant();
     const g = grille();
     DOMAINES.forEach(([dom, lib, offerts, aide]) => {
       const l = ligneSource(dom, lib, offerts, aide);
@@ -1059,7 +1067,7 @@ function ouvreProvenance(apres) {
     const note = document.createElement("p");
     note.className = "aide";
     note.textContent = "Les identifiants d'événement se saisissent dans " +
-      "« Source des données », sur la fiche.";
+      "« Sources de données », en haut de la fiche.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
