@@ -135,6 +135,7 @@ function ecranConfig() {
     cle = l2.querySelector("input");
     url.value = CFG?.url || "";
     cle.value = CFG?.anonKey || "";
+    p.hidden = !!(CFG?.url && CFG?.anonKey);
     setTimeout(() => url.focus(), 30);
   }, [{ libelle: "Valider", genre: "primaire", action: () => {
     const u = url.value.trim().replace(/\/+$/, ""), k = cle.value.trim();

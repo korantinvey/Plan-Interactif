@@ -11,6 +11,11 @@ function litLocal(cle){
   try { return JSON.parse(localStorage.getItem(cle) || "null"); } catch (e) { return null; }
 }
 
+/** Réglage du poste s'il existe, configuration livrée sinon. */
+function configuration(){
+  return litLocal(CLE_CFG_A) || window.PLAN_CONFIG || null;
+}
+
 function normaliseUrlA(saisie){
   let u = String(saisie || "").trim();
   while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
@@ -38,7 +43,7 @@ async function sessionValide(cfg, session){
 }
 
 function ecranAcces(message){
-  const cfg = litLocal(CLE_CFG_A) || {};
+  const cfg = configuration() || {};
   const voile = document.createElement("div");
   voile.className = "modale open";
   voile.id = "acces";
@@ -58,6 +63,11 @@ function ecranAcces(message){
 
   $("aUrl").value = cfg.url || "";
   $("aCle").value = cfg.anonKey || "";
+  // la configuration est livrée avec les pages : on ne la redemande pas
+  if (cfg.url && cfg.anonKey){
+    $("aUrl").closest("label").hidden = true;
+    $("aCle").closest("label").hidden = true;
+  }
   $("accesMsg").textContent = message || "Cette page est réservée à l'exploitant.";
   $("aPublic").href = "plan" + location.search;
   setTimeout(() => ($("aUrl").value ? $("aMail") : $("aUrl")).focus(), 40);
@@ -89,7 +99,7 @@ function ecranAcces(message){
 }
 
 (async () => {
-  const cfg = litLocal(CLE_CFG_A);
+  const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
   if (await sessionValide(cfg, session)) activeAdmin();
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);

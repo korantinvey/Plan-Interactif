@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 
+<script src="config.js"></script>
+
 <style>
 :root{
   --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC;
@@ -1974,7 +1976,19 @@ if (fige && fige.indexOf("__DATA__") < 0){
   demarre(JSON.parse(fige));
 } else if (API){
   annonce("Chargement du plan…");
-  fetch(API + "?slug=" + encodeURIComponent(SLUG))
+  // en administration on présente sa session : elle donne accès aux brouillons
+  const entetes = {};
+  if (document.documentElement.dataset.role === "admin"){
+    try {
+      const cfg = JSON.parse(localStorage.getItem("console-config") || "null");
+      const ses = JSON.parse(localStorage.getItem("console-session") || "null");
+      if (cfg?.anonKey && ses?.access_token){
+        entetes["apikey"] = cfg.anonKey;
+        entetes["Authorization"] = "Bearer " + ses.access_token;
+      }
+    } catch (e) {}
+  }
+  fetch(API + "?slug=" + encodeURIComponent(SLUG), { headers: entetes })
     .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status)))))
     .then(d => { if (!d.plans?.length) throw new Error("Aucun pavillon publié."); demarre(d); })
     .catch(e => annonce("Plan indisponible : " + e.message, true));

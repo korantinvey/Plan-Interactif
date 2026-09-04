@@ -42,6 +42,9 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
           .replace("/*__PORTE_ADMIN__*/", "retireAdmin();")));
 
+/* --- configuration livrée avec les pages --- */
+fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
+
 /* --- page d'accueil : la racine ne doit pas répondre 404 --- */
 fs.writeFileSync(W + "index.html",
   page(fs.readFileSync(D + "/gabarit/_index.html", "utf8")));

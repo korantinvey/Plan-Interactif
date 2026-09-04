@@ -4,76 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plan interactif</title>
+<meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&display=swap">
 
 <style>
-:root{
-  --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC;
-  --line:#D2D5CB; --line-strong:#B4B9AC;
-  --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
-  --accent:#2F49D1; --accent-soft:#DCE1FA;
-}
+:root{ --ground:#E9EAE4; --ink-3:#7C8285; --accent:#2F49D1 }
 @media (prefers-color-scheme: dark){
-  :root{
-    --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
-    --line:#2A3034; --line-strong:#3B4348;
-    --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55;
-  }
+  :root{ --ground:#0E1113; --ink-3:#767D80; --accent:#7A8CFF }
 }
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:var(--ground);color:var(--ink);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;
-  line-height:1.6;-webkit-font-smoothing:antialiased;
-  display:grid;place-items:center;padding:28px}
-main{width:min(620px,100%)}
-.eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
-h1{font-family:"Archivo",sans-serif;font-size:26px;font-weight:700;
-  letter-spacing:-.025em;margin:8px 0 10px}
-.intro{color:var(--ink-2);margin:0 0 26px;max-width:52ch}
-.cartes{display:grid;gap:10px}
-a.carte{display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;
-  padding:16px 18px;background:var(--surface);border:1px solid var(--line);
-  border-radius:7px;text-decoration:none;color:inherit}
-a.carte:hover{border-color:var(--accent)}
-a.carte:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.carte .t{font-weight:600;font-size:15px}
-.carte .d{font-size:13px;color:var(--ink-3);margin-top:2px}
-.carte .fleche{color:var(--ink-3);font-size:17px}
-a.carte:hover .fleche{color:var(--accent)}
-.note{margin-top:22px;font-size:12.5px;color:var(--ink-3);line-height:1.65}
-.note code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
-  background:var(--surface-2);padding:1px 5px;border-radius:3px}
+body{margin:0;min-height:100vh;background:var(--ground);color:var(--ink-3);
+  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:14px;
+  display:grid;place-items:center;padding:24px;text-align:center}
+a{color:var(--accent)}
 </style>
 
-<main>
-  <span class="eyebrow">Plans de salon</span>
-  <h1>Plan interactif</h1>
-  <p class="intro">Plans d'exposition alimentés par Klipso : emplacements, exposants
-    et zones organisateur, tenus à jour depuis la source.</p>
-
-  <div class="cartes">
-    <a class="carte" href="admin-plans">
-      <span><span class="t">Console des événements</span>
-        <span class="d">Créer un salon, le synchroniser, choisir les pavillons publiés</span></span>
-      <span class="fleche" aria-hidden="true">&rarr;</span>
-    </a>
-  </div>
-
-  <p class="note">Le plan d'un salon s'ouvre à l'adresse
-    <code>/plan?plan=identifiant</code>, et sa version d'administration à
-    <code>/plan-admin?plan=identifiant</code>. La console donne le lien de chaque
-    événement et le fragment à coller dans la page du salon.</p>
-</main>
+<p>Redirection vers la console…<br><a id="secours" href="admin-plans">Continuer</a></p>
 
 <script>
-/* Un lien vers la racine avec un identifiant de plan mène quand même au plan. */
+/* La racine mène à la console. Un identifiant de plan dans l'adresse mène au
+   plan correspondant : les liens partagés continuent de fonctionner. */
 const slug = new URLSearchParams(location.search).get("plan");
-if (slug) location.replace("plan?plan=" + encodeURIComponent(slug) + location.hash);
+const cible = slug
+  ? "plan?plan=" + encodeURIComponent(slug) + location.hash
+  : "admin-plans";
+document.getElementById("secours").href = cible;
+location.replace(cible);
 </script>
+<noscript><meta http-equiv="refresh" content="0; url=admin-plans"></noscript>
 
 </body>
 </html>
