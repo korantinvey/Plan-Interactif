@@ -248,11 +248,17 @@ Deno.serve(async (req) => {
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
          une fois, on les rattachera pavillon par pavillon. */
       let confEm: ConferenceEm[] | null = null;
+      let fuseau: string | null = null;
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
         const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
-        confEm = await em.conferences(String((evt.cles ?? {}).eventmaker));
+        const idEm = String((evt.cles ?? {}).eventmaker);
+        confEm = await em.conferences(idEm);
+        try {
+          const detail = await em.evenement(idEm);
+          if (detail?.timezone) fuseau = String(detail.timezone);
+        } catch (_) { /* le fuseau est un confort, pas une condition */ }
         etape("conferences", "encours", confEm.length + " conférences lues");
       }
 
@@ -503,7 +509,8 @@ Deno.serve(async (req) => {
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés");
       if (confEm) {
-        await db.from("evenement").update({ salles: sallesConf }).eq("id", evt.id);
+        await db.from("evenement")
+          .update({ salles: sallesConf, fuseau }).eq("id", evt.id);
         const rattachees = Object.values(sallesConf).filter((s: any) => s.zone).length;
         etape("conferences", "fait",
           rattachees + " / " + Object.keys(sallesConf).length + " salles situées");

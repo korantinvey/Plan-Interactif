@@ -93,8 +93,11 @@ export class Eventmaker {
     return await r.json() as T;
   }
 
-  /** Vérifie que l'événement existe et renvoie son intitulé. */
-  async evenement(id: string): Promise<{ _id: string; title: string }> {
+  /**
+   * L'événement : son intitulé, et surtout son fuseau horaire — sans lui, une
+   * heure ISO se lirait dans le fuseau du visiteur, qui peut être ailleurs.
+   */
+  async evenement(id: string): Promise<{ _id: string; title: string; timezone?: string }> {
     return await this.json(`/events/${id}.json`);
   }
 

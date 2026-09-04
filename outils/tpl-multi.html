@@ -854,11 +854,35 @@ const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "s
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet",
               "août", "septembre", "octobre", "novembre", "décembre"];
 
-function momentLocal(v){
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})/.exec(String(v || ""));
-  if (!m) return null;
-  return { jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
-           cle: m[3] + m[1] + m[2] };
+/**
+ * L'heure d'une conférence, dans le fuseau du salon.
+ *
+ * Eventmaker donne deux formes. « 03/14/2026 10:30 » est l'heure locale du
+ * salon : on la relit telle quelle, c'est la seule qui ne demande rien. La
+ * forme ISO, elle, porte un décalage — souvent Z — qu'il faut ramener au
+ * fuseau de l'événement, sans quoi un visiteur d'un autre pays lirait des
+ * horaires faux.
+ */
+function momentLocal(v, fuseau){
+  const t = String(v || "");
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})/.exec(t);
+  if (m){
+    return { jour: +m[2], mois: +m[1], an: +m[3], h: m[4].padStart(2, "0"), min: m[5],
+             cle: m[3] + m[1] + m[2] };
+  }
+  const d = new Date(t);
+  if (isNaN(d)) return null;
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("fr-FR", {
+      timeZone: fuseau || undefined, year: "numeric", month: "2-digit",
+      day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(d).map(x => [x.type, x.value]));
+    return { jour: +p.day, mois: +p.month, an: +p.year,
+             h: String(p.hour).padStart(2, "0"), min: p.minute,
+             cle: p.year + p.month + p.day };
+  } catch (e) {
+    return null;   // fuseau inconnu : mieux vaut taire l'heure que la fausser
+  }
 }
 
 function programme(o){
@@ -867,8 +891,9 @@ function programme(o){
   let out = '<div class="field"><span class="eyebrow">Programme</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
-    const d = momentLocal(c.debutLocal) || momentLocal(c.debut);
-    const f = momentLocal(c.finLocal) || momentLocal(c.fin);
+    const fz = DATA.fuseau;
+    const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
+    const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
     if (d && d.cle !== jourCourant){
       jourCourant = d.cle;
       const dt = new Date(d.an, d.mois - 1, d.jour);
@@ -908,9 +933,8 @@ function ouvre(o, rect){
   $("dBody").innerHTML =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
-    // la surface renseigne sur une zone ; sur un stand elle n'apprend rien au
-    // visiteur, pas plus que les angles ouverts ou l'état de commercialisation
-    (zone ? ok("surface", f("Surface", o.m2 ? o.m2 + " m²" : "")) : "") +
+    // ni la surface, ni les angles ouverts, ni l'état de commercialisation
+    // n'apprennent quoi que ce soit au visiteur
     (zone ? ok("conferences", programme(o)) : "") +
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +

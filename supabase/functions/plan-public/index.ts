@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche")
+      .select("id, nom, slug, derniere_sync, fiche, fuseau")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -188,6 +188,8 @@ Deno.serve(async (req) => {
       genereLe: evt.derniere_sync,
       // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
       fiche: evt.fiche ?? {},
+      // sans lui, une heure ISO se lirait dans le fuseau du visiteur
+      fuseau: evt.fuseau ?? null,
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
