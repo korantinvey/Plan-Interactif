@@ -250,6 +250,12 @@ button{cursor:pointer;background:none;border:none}
   box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);will-change:transform,opacity}
 .detail.open{transform:none}
 .detail-hd{padding:18px 18px 14px;border-bottom:1px solid var(--line);position:relative}
+/* Un crayon accolé au nom : c'est la marque du renommage partout dans la
+   page — sur un calque de dessin comme sur une zone. */
+.crayon{border:none;background:none;color:var(--ink-3);font-size:14px;line-height:1;
+  padding:2px 4px;border-radius:var(--radius);vertical-align:middle;cursor:pointer}
+.crayon:hover{color:var(--accent);background:var(--surface-2)}
+.detail-hd .crayon{margin-left:6px}
 .detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
   text-wrap:balance;padding-right:26px}
@@ -498,7 +504,8 @@ button{cursor:pointer;background:none;border:none}
       <div class="detail-hd">
         <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         <span class="eyebrow" id="dKind"></span>
-        <h2 id="dName"></h2>
+        <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
+          title="Renommer" aria-label="Renommer">&#9998;</button>
         <span class="badge" id="dCode"></span>
       </div>
       <div class="detail-bd" id="dBody"></div>
@@ -1014,13 +1021,16 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
-    (ADMIN && zone ? '<button class="btn" id="dRen">Renommer</button>' : "") +
-    '</div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   $("dGo").onclick = () => centre(o);
-  if ($("dRen")) $("dRen").onclick = () => renommeZone(o);
+  // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
+  const cr = $("dRen");
+  if (cr){
+    cr.hidden = !(ADMIN && zone);
+    cr.onclick = () => renommeZone(o);
+  }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   anime(rect, 1);
@@ -2034,7 +2044,7 @@ function construitPanneau(){
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      (x.t === "dessin" ? '<button class="ren" title="Renommer le calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -2072,14 +2082,14 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus, double-cliquez pour renommer";
+      nom.title = "Cliquez pour dessiner dessus";
+      // Le crayon renomme, ici comme ailleurs. Le calque sur lequel on dessine
+      // se choisit en cliquant son nom, et la ligne active se voit déjà.
       const cr = d.querySelector(".ren");
-      cr.setAttribute("aria-pressed", x.ref.id === calqueActif);
-      cr.onclick = ev => { ev.stopPropagation(); activeCalque(x.ref.id); };
+      cr.onclick = ev => { ev.stopPropagation(); renommeCalque(x.ref); };
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
-      nom.ondblclick = ev => { ev.preventDefault(); renommeCalque(x.ref); };
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",

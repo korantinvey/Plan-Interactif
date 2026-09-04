@@ -79,7 +79,7 @@ function construitPanneau(){
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      (x.t === "dessin" ? '<button class="ren" title="Renommer le calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -117,14 +117,14 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus, double-cliquez pour renommer";
+      nom.title = "Cliquez pour dessiner dessus";
+      // Le crayon renomme, ici comme ailleurs. Le calque sur lequel on dessine
+      // se choisit en cliquant son nom, et la ligne active se voit déjà.
       const cr = d.querySelector(".ren");
-      cr.setAttribute("aria-pressed", x.ref.id === calqueActif);
-      cr.onclick = ev => { ev.stopPropagation(); activeCalque(x.ref.id); };
+      cr.onclick = ev => { ev.stopPropagation(); renommeCalque(x.ref); };
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
-      nom.ondblclick = ev => { ev.preventDefault(); renommeCalque(x.ref); };
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",

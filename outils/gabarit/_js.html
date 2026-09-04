@@ -506,13 +506,16 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
-    (ADMIN && zone ? '<button class="btn" id="dRen">Renommer</button>' : "") +
-    '</div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   $("dGo").onclick = () => centre(o);
-  if ($("dRen")) $("dRen").onclick = () => renommeZone(o);
+  // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
+  const cr = $("dRen");
+  if (cr){
+    cr.hidden = !(ADMIN && zone);
+    cr.onclick = () => renommeZone(o);
+  }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   anime(rect, 1);
