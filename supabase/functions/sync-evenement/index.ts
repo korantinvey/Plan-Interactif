@@ -15,9 +15,12 @@ import { Gaia, egal } from "../_partage/gaia.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
-/** Origines autorisées. Le joker convenait au développement ; en production
- *  une fonction ouverte à tous est une invitation. */
+/** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
+ *  une liste séparée par des virgules — pour qu'un changement de domaine ne
+ *  demande pas de modification de code. */
 const ORIGINES = [
+  ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
+    .split(",").map((s) => s.trim()).filter(Boolean),
   "https://plan-interactif.korantin-vey.workers.dev",
   "http://localhost:4180",
 ];

@@ -12,9 +12,12 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-/** Origines autorisées. Le joker convenait au développement ; le plan
- *  reste public, mais on sait d'où il est appelé. */
+/** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
+ *  une liste séparée par des virgules — pour qu'un changement de domaine ne
+ *  demande pas de modification de code. */
 const ORIGINES = [
+  ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
+    .split(",").map((s) => s.trim()).filter(Boolean),
   "https://plan-interactif.korantin-vey.workers.dev",
   "http://localhost:4180",
 ];
