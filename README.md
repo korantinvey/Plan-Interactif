@@ -80,3 +80,53 @@ La clé `service_role` contourne toutes les règles de sécurité de la base. El
 n'a sa place que dans les variables d'environnement des fonctions, jamais dans
 une page, jamais dans le dépôt. La clé Klipso donne accès à l'ensemble des
 données de l'événement, commentaires commerciaux compris : même règle.
+
+## Mise en ligne
+
+Trois briques, chacune à sa place :
+
+| brique | rôle |
+|---|---|
+| **GitHub** | le dépôt |
+| **Cloudflare Pages** | sert `web/` — pages statiques, sans build |
+| **Supabase** | base, API, synchronisation |
+
+### Le dépôt
+
+```bash
+git remote add origin https://github.com/VOTRE_COMPTE/plan-interactif.git
+git branch -M main
+git push -u origin main
+```
+
+Rien de secret n'y est versionné : `.env` est exclu, les clés vivent dans les
+secrets Supabase, et la console demande l'adresse du projet et la clé publique
+au premier lancement puis les garde sur le poste.
+
+### Cloudflare Pages
+
+Dans le tableau de bord Cloudflare, **Workers & Pages → Create → Pages →
+Connect to Git**, puis :
+
+| réglage | valeur |
+|---|---|
+| Build command | *laisser vide* |
+| Build output directory | `web` |
+| Root directory | *laisser vide* |
+
+Il n'y a rien à compiler : `web/` contient des pages autonomes. Chaque poussée
+sur `main` redéploie.
+
+Une fois en ligne, les adresses sont :
+
+- `https://<projet>.pages.dev/plan.html?plan=smcl-2026` — le plan public
+- `https://<projet>.pages.dev/admin-plans.html` — la console
+
+### À faire côté Supabase
+
+Créer le compte administrateur dans **Authentication → Users → Add user**, avec
+un mot de passe. C'est ce compte qui ouvre la console ; il n'y a pas
+d'inscription libre, et c'est voulu.
+
+Restreindre ensuite les origines autorisées : le CORS des fonctions accepte
+aujourd'hui `*`, ce qui convient au développement mais pas à la production.

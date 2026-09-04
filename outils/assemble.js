@@ -10,3 +10,11 @@ for (const b of bouts){
 fs.writeFileSync(D + "/tpl-multi.html", tpl);
 fs.writeFileSync(D + "/chk.js", tpl.match(/<script>([\s\S]*)<\/script>/)[1].replace("/*__DATA__*/", "{}"));
 console.log("gabarit :", (tpl.length / 1024).toFixed(0), "Ko");
+
+/* la console est assemblée du même mouvement */
+{
+  const head = fs.readFileSync(D + "/gabarit/_console-head.html", "utf8");
+  const js = fs.readFileSync(D + "/gabarit/_console-js.html", "utf8");
+  fs.writeFileSync("C:/projets/Plan Interactif/web/admin-plans.html", head + js);
+  console.log("console :", ((head + js).length / 1024).toFixed(0), "Ko");
+}
