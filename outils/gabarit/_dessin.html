@@ -147,6 +147,10 @@ function ajouteForme(f){
 }
 
 /* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
+/* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
+   un repère doit se repérer de loin, sans qu'on le cherche. */
+const TAILLE_REPERE = 4;
+
 const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
                  "Restauration", "Vestiaire", "Ascenseur", "Escalier",
                  "Secours", "PMR", "Distributeur"];
@@ -336,7 +340,8 @@ function dessinPointerDown(e){
   if (outil === "repere"){
     const txt = $("repereTexte").value.trim();
     if (!txt){ $("repereTexte").focus(); return true; }
-    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: 2 });
+    // un repère se lit de loin : il naît deux fois plus grand qu'un texte
+    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: TAILLE_REPERE });
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }

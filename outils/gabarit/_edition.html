@@ -85,7 +85,7 @@ function majElement(){
   // un repère porte lui aussi un libellé et une taille
   const estTexte = f.t === "texte" || f.t === "repere";
   $("elemTexte").hidden = !estTexte;
-  $("elemTaille").hidden = !estTexte;
+  $("elemTailleBloc").hidden = !estTexte;
   if (estTexte){
     $("elemTexte").value = f.txt || "";
     $("elemTaille").value = f.taille || 2;
@@ -181,9 +181,16 @@ function editionPointerDown(e){
   if (g){
     const id = g.dataset.f;
     const cible = formeParId(id);
+    const sienne = cible && cible.c.id === calqueActif;
+
+    /* Une image liée à un stand ouvre sa fiche, comme pour un visiteur — sauf
+       sur le calque qu'on est en train de modifier, où le clic sert à la
+       déplacer. Le calque actif est donc l'atelier, les autres la vitrine. */
+    if (!sienne && g.dataset.id) return false;
+
     // cliquer une forme d'un autre calque l'ouvre : c'est le geste qu'on
     // attend, plutôt que de devoir d'abord le désigner dans le panneau
-    if (cible && cible.c.id !== calqueActif) activeCalque(cible.c.id);
+    if (!sienne) activeCalque(cible.c.id);
     if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
