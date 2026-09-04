@@ -695,6 +695,7 @@ function dessineFiche() {
     '<div class="droite">' +
     '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
     '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
+    '<button class="btn petit" id="btnSources">Sources de données</button>' +
     '<button class="btn petit" id="btnEtat"></button>' +
     '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
     '<button class="btn petit danger" id="btnSupprimer">Supprimer</button></div>';
@@ -708,6 +709,7 @@ function dessineFiche() {
     try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
     catch (err) { signale(err.message, true); }
   };
+  $("btnSources").onclick = () => ouvreSources(() => dessine());
   $("btnDupliquer").onclick = () => dupliquer(e);
   $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
     "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
@@ -726,11 +728,8 @@ function dessineFiche() {
   b1.appendChild(g1);
   f.appendChild(b1);
 
-  const b2 = bloc("Source des données");
+  const b2 = bloc("Synchronisation");
   const g2 = grille();
-  g2.appendChild(champ("instance", "Instance", "Le sous-domaine Klipso."));
-  g2.appendChild(champ("event_id", "Identifiant d'événement",
-    "Le GUID transmis dans l'en-tête X-GAIA-EventId.", 'spellcheck="false"'));
   const lr = document.createElement("label");
   lr.innerHTML = '<span>Rythme de rafraîchissement</span><select>' +
     RYTHMES.map((r) => '<option value="' + r[0] + '"' +
@@ -741,9 +740,6 @@ function dessineFiche() {
     catch (err) { signale(err.message, true); }
   };
   g2.appendChild(lr);
-  // l'identifiant d'un autre fournisseur est de même nature que ceux-ci :
-  // il désigne l'événement à interroger, il vit donc au même endroit
-  CLES_FOURNISSEUR.forEach((c) => g2.appendChild(champCle(...c)));
   b2.appendChild(g2);
 
   const ligne = document.createElement("div");
@@ -835,25 +831,63 @@ const DOMAINES = [
    "La géométrie des pavillons et des calques."],
   ["stands",      "Exposants",   ["klipso", "eventmaker"],
    "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan."],
-  ["conferences", "Conférences", ["klipso", "eventmaker"],
-   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
-  ["produits",    "Produits",    ["klipso", "eventmaker"],
-   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
+  ["conferences", "Conférences", ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
+  ["produits",    "Produits",    ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
 ];
-const FOURNISSEURS = { klipso: "Klipso", eventmaker: "Eventmaker" };
+const FOURNISSEURS = {
+  aucun: "Non synchronisé", klipso: "Klipso", eventmaker: "Eventmaker",
+};
+
+/* Un domaine que rien ne reprend vaut mieux « non synchronisé » qu'un
+   fournisseur choisi par défaut : celui-ci laisserait croire à une reprise. */
+const DEFAUT_DOMAINE = {
+  plan: "klipso", stands: "klipso", conferences: "aucun", produits: "aucun",
+};
 
 /* Chaque fournisseur désigne l'événement à sa façon. Klipso n'est pas dans
    cette liste : son identité tient dans « Instance » et « Identifiant
    d'événement », déjà saisis plus haut dans la fiche. */
-const CLES_FOURNISSEUR = [
-  ["eventmaker", "Identifiant de l'événement Eventmaker",
-   "Vingt-quatre caractères, visibles dans l'adresse de l'événement sur app.eventmaker.io.",
-   /^[0-9a-f]{24}$/i, "69ef6fb4406b394eda9b8a3e"],
+/**
+ * Les réglages de raccordement, fournisseur par fournisseur.
+ *
+ * C'est cette liste qui décide des onglets de la fenêtre « Sources de
+ * données » : brancher un outil de plus revient à y ajouter une entrée, sans
+ * toucher au reste.
+ *
+ * Un champ vit soit dans une colonne de l'événement — c'est le cas de Klipso,
+ * dont l'instance et l'identifiant précèdent le modèle multi-fournisseurs —
+ * soit dans la colonne « cles », indexée par fournisseur.
+ */
+const FOURNISSEURS_CONF = [
+  {
+    cle: "klipso",
+    nom: "Klipso",
+    champs: [
+      { colonne: "instance", libelle: "Instance", aide: "Le sous-domaine Klipso." },
+      { colonne: "event_id", libelle: "Identifiant d'événement",
+        aide: "Le GUID transmis dans l'en-tête X-GAIA-EventId." },
+    ],
+  },
+  {
+    cle: "eventmaker",
+    nom: "Eventmaker",
+    champs: [
+      { dansCles: "eventmaker", libelle: "Identifiant de l'événement",
+        aide: "Vingt-quatre caractères, visibles dans l'adresse de l'événement sur app.eventmaker.io.",
+        forme: /^[0-9a-f]{24}$/i, exemple: "69ef6fb4406b394eda9b8a3e" },
+    ],
+  },
 ];
 
 /** Un fournisseur est-il retenu quelque part ? */
 const fournisseurUtilise = (e, cle) =>
   DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle);
+
+/** Le fournisseur retenu pour un domaine, défaut compris. */
+const source = (e, dom) =>
+  ((e.sources || {})[dom] || {}).fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
 
 /** Champ de clé. Il n'est pas caché quand le fournisseur n'est pas encore
  *  retenu : on saisit souvent l'identifiant avant de basculer la source. */
@@ -895,10 +929,11 @@ function champCle(cle, libelle, aide, forme, exemple) {
 function ligneSource(dom, libelle, offerts, aide) {
   const e = courant();
   const src = (e.sources && e.sources[dom]) || {};
+  const choisi = src.fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
   const l = document.createElement("label");
   l.innerHTML = '<span></span><select>' +
     offerts.map((k) => '<option value="' + k + '"' +
-      ((src.fournisseur || "klipso") === k ? " selected" : "") + '>' +
+      (choisi === k ? " selected" : "") + '>' +
       FOURNISSEURS[k] + '</option>').join("") +
     '</select><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
@@ -945,15 +980,17 @@ const FICHE_INERTE = { zone: ["conferences"] };
 function resumeProvenance(e) {
   const s = e.sources || {};
   const autres = DOMAINES
-    .filter(([d]) => ((s[d] || {}).fournisseur || "klipso") !== "klipso")
+    .filter(([d]) => ((s[d] || {}).fournisseur || DEFAUT_DOMAINE[d] || "klipso") !==
+      (DEFAUT_DOMAINE[d] || "klipso"))
     .map(([d, lib]) => lib + " : " +
       (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
   // une source retenue sans son identifiant ne peut rien lire : le dire ici
   // plutôt que d'attendre l'échec de la synchronisation
-  const manque = CLES_FOURNISSEUR
-    .filter(([k, lib]) => fournisseurUtilise(e, k) && !(e.cles || {})[k])
-    .map(([k]) => FOURNISSEURS[k] || k);
-  if (manque.length) autres.push("identifiant " + manque.join(", ") + " manquant");
+  const manque = FOURNISSEURS_CONF
+    .filter((f) => fournisseurUtilise(e, f.cle) && f.champs.some((c) =>
+      c.dansCles ? !(e.cles || {})[c.dansCles] : !e[c.colonne]))
+    .map((f) => f.nom);
+  if (manque.length) autres.push("raccordement " + manque.join(", ") + " incomplet");
   return autres.length ? autres.join(" · ") : "Klipso pour tout";
 }
 
@@ -1015,7 +1052,7 @@ function ouvreProvenance(apres) {
     const g = grille();
     DOMAINES.forEach(([dom, lib, offerts, aide]) => {
       const l = ligneSource(dom, lib, offerts, aide);
-      if (dom === "conferences" || dom === "produits") l.classList.add("source-inerte");
+      if (source(e, dom) === "aucun") l.classList.add("source-inerte");
       g.appendChild(l);
     });
     corps.appendChild(g);
@@ -1024,6 +1061,56 @@ function ouvreProvenance(apres) {
     note.textContent = "Les identifiants d'événement se saisissent dans " +
       "« Source des données », sur la fiche.";
     corps.appendChild(note);
+  }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Fenêtre des raccordements, un onglet par fournisseur. Chaque onglet dit
+ * aussi ce qu'il alimente : un identifiant saisi sans qu'aucun domaine ne
+ * s'en serve ne produirait rien, et c'est le genre d'oubli qu'on ne voit pas.
+ */
+function ouvreSources(apres) {
+  ouvreModale("Sources de données", (corps) => {
+    const e = courant();
+    const barre = document.createElement("div");
+    barre.className = "onglets";
+    const boutons = [], panneaux = [];
+
+    FOURNISSEURS_CONF.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = f.nom;
+      b.setAttribute("aria-pressed", String(i === 0));
+      barre.appendChild(b);
+      boutons.push(b);
+
+      const pan = document.createElement("div");
+      pan.hidden = i > 0;
+      const g = grille();
+      f.champs.forEach((c) => {
+        g.appendChild(c.dansCles
+          ? champCle(c.dansCles, c.libelle, c.aide, c.forme, c.exemple)
+          : champ(c.colonne, c.libelle, c.aide, 'spellcheck="false"'));
+      });
+      pan.appendChild(g);
+
+      const sert = DOMAINES.filter(([d]) => source(e, d) === f.cle).map(([, lib]) => lib);
+      const note = document.createElement("p");
+      note.className = "aide";
+      note.textContent = sert.length
+        ? "Alimente : " + sert.join(", ") + "."
+        : "Aucun domaine n'utilise cette source pour le moment.";
+      pan.appendChild(note);
+      panneaux.push(pan);
+
+      b.onclick = () => {
+        boutons.forEach((x, k) => x.setAttribute("aria-pressed", String(k === i)));
+        panneaux.forEach((x, k) => { x.hidden = k !== i; });
+      };
+    });
+
+    corps.appendChild(barre);
+    panneaux.forEach((x) => corps.appendChild(x));
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 
