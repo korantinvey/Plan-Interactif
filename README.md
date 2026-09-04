@@ -113,6 +113,14 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 Les migrations sont numérotées et rejouables : `db push` n'applique que celles
 qui manquent. Les fonctions, elles, se redéploient entièrement à chaque fois.
 
+## Emprunts
+
+Les pictogrammes des points d'intérêt — sanitaires, ascenseur, escalier,
+information, restauration… — viennent de **Material Symbols** (Google), sous
+licence Apache 2.0. Ils sont recopiés dans la page plutôt qu'appelés à
+distance : une page publiée ne doit dépendre d'aucun service tiers pour
+s'afficher, et le plan se consulte parfois sur un réseau de salon capricieux.
+
 ## Sécurité
 
 La clé `service_role` contourne toutes les règles de sécurité de la base. Elle
