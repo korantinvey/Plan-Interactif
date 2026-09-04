@@ -1034,7 +1034,12 @@ function styleData(cle){
 
 function appliqueApparence(){
   P().fond.forEach(f => {
-    if (CONF[f.cle] === undefined && !f.visible) conf(f.cle).visible = false;
+    // Un calque absent de la configuration est montré. La règle disait
+    // l'inverse — masquer tout ce qui n'était pas explicitement marqué visible
+    // — et convenait aux données figées, qui portaient ce drapeau. La charge
+    // utile servie par l'API n'en porte pas : tout le fond de plan
+    // disparaissait, sans que rien ne le signale.
+    if (CONF[f.cle] === undefined && f.visible === false) conf(f.cle).visible = false;
     styleFond(f.cle);
   });
   ["zones", "stands", "labels"].forEach(n =>
