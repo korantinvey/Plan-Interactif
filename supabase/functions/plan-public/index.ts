@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync")
+      .select("id, nom, slug, derniere_sync, fiche")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -186,6 +186,8 @@ Deno.serve(async (req) => {
       evenement: evt.nom,
       slug: evt.slug,
       genereLe: evt.derniere_sync,
+      // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
+      fiche: evt.fiche ?? {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;

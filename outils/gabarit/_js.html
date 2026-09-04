@@ -320,23 +320,39 @@ function centre(o){
   view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2, w: w, h: h };
   appliqueVue(); echelle(); libelles();
 }
+/**
+ * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
+ * Une entrée absente vaut « affiché », pour qu'un champ ajouté plus tard ne
+ * disparaisse pas des salons déjà réglés.
+ */
+function montre(type, cle){
+  const r = DATA && DATA.fiche && DATA.fiche[type];
+  return !r || r[cle] !== false;
+}
+
 function ouvre(o, rect){
   const zone = o.kind === "zone";
+  const t = zone ? "zone" : "stand";
+  const ok = (cle, v) => montre(t, cle) ? v : "";
   $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
-  $("dName").textContent = o.nom || o.plan ||
-    (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
-  $("dCode").textContent = DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
+  const titre = o.nom || o.plan ||
+    (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
+  $("dName").textContent = titre;
+  $("dCode").textContent = DATA.plans[o.p].libelle +
+    (ok("code", o.code) ? " · " + o.code : "");
   const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
                           '</span><span class="v">' + v + '</span></div>' : "";
   const url = o.site ? String(o.site).replace(/\\/g, "").replace(/^(?!https?:)/, "https://") : "";
   $("dBody").innerHTML =
-    f("Surface", o.m2 ? o.m2 + " m²" : "") +
-    f("Angles ouverts", o.angles != null && !zone ? String(o.angles) : "") +
-    f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "") +
-    f("Commercialisation", !zone && o.etat ? esc(o.etat) : "") +
-    f("Site web", url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' +
-                        esc(url.replace(/^https?:\/\//, "")) + '</a>' : "") +
-    (o.nomencl && o.nomencl.length
+    // la raison sociale n'apprend rien quand elle est déjà le titre
+    ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
+    ok("surface", f("Surface", o.m2 ? o.m2 + " m²" : "")) +
+    ok("angles", f("Angles ouverts", o.angles != null && !zone ? String(o.angles) : "")) +
+    ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
+    ok("etat", f("Commercialisation", !zone && o.etat ? esc(o.etat) : "")) +
+    ok("site", f("Site web", url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' +
+                        esc(url.replace(/^https?:\/\//, "")) + '</a>' : "")) +
+    ok("nomenclature", o.nomencl && o.nomencl.length
       ? '<div class="field"><span class="eyebrow">Nomenclature</span><div class="tags">' +
         o.nomencl.map(n => '<span class="tag">' + esc(String(n).replace(/^SMCL26_/, "")) + '</span>').join("") +
         '</div></div>' : "") +

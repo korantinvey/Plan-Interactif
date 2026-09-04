@@ -123,11 +123,14 @@ a.btn.inactif{opacity:.45;pointer-events:none}
   padding:16px 18px;margin-bottom:14px}
 .bloc > .eyebrow{display:block;margin-bottom:12px}
 .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
-.source-rangee{display:flex;gap:8px}
-.source-rangee select{flex:0 0 150px}
-.source-rangee input{flex:1;min-width:0}
 .source-inerte{opacity:.62}
-@media (max-width:560px){.source-rangee{flex-direction:column}.source-rangee select{flex:none}}
+.colonne-cases{display:flex;flex-direction:column;gap:9px;min-width:0}
+.colonne-cases > .eyebrow{margin-bottom:2px}
+label.case{display:grid;grid-template-columns:auto 1fr;align-items:center;
+  gap:4px 8px;color:var(--ink);cursor:pointer}
+label.case input{width:15px;height:15px;padding:0;accent-color:var(--accent);cursor:pointer}
+label.case .aide{grid-column:2}
+.bloc > p.aide{margin:12px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
 label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
 label input,label select,label textarea{padding:8px 10px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);width:100%}
@@ -636,6 +639,27 @@ function dessineFiche() {
   });
   bs.appendChild(gs);
   f.appendChild(bs);
+
+  const bf = bloc("Fiche détail");
+  const gf = grille();
+  [["stand", "Stands"], ["zone", "Zones organisateur"]].forEach(([type, titre]) => {
+    const col = document.createElement("div");
+    col.className = "colonne-cases";
+    const t = document.createElement("span");
+    t.className = "eyebrow";
+    t.textContent = titre;
+    col.appendChild(t);
+    CHAMPS_FICHE[type].forEach(([cle, lib, aide]) =>
+      col.appendChild(caseFiche(type, cle, lib, aide)));
+    gf.appendChild(col);
+  });
+  bf.appendChild(gf);
+  const note = document.createElement("p");
+  note.className = "aide";
+  note.textContent = "Le nom et le pavillon sont toujours affichés : sans eux " +
+    "la fiche ne désigne plus rien.";
+  bf.appendChild(note);
+  f.appendChild(bf);
   majMsgSync(e);
 
   /* --- pavillons --- */
@@ -700,10 +724,9 @@ function dessineFiche() {
 
 /* ============================================================
    Provenance des données
-   Un domaine, un fournisseur, une clé. La liste des fournisseurs diffère par
-   domaine : la géométrie du plan ne vient que de Klipso, le reste pourra
-   venir d'ailleurs. Une clé vide renvoie à celle de l'événement, ce qui
-   couvre le cas courant sans faire recopier le même identifiant partout.
+   Un domaine, un fournisseur. La liste des fournisseurs diffère par domaine :
+   la géométrie du plan ne vient que de Klipso, le reste pourra venir
+   d'ailleurs. La clé d'identification reste celle de l'événement.
    ============================================================ */
 const DOMAINES = [
   ["plan",        "Plan",        ["klipso"],
@@ -722,27 +745,64 @@ function ligneSource(dom, libelle, offerts, aide) {
   const e = courant();
   const src = (e.sources && e.sources[dom]) || {};
   const l = document.createElement("label");
-  l.className = "large";
-  l.innerHTML = '<span></span><div class="source-rangee"><select>' +
+  l.innerHTML = '<span></span><select>' +
     offerts.map((k) => '<option value="' + k + '"' +
       ((src.fournisseur || "klipso") === k ? " selected" : "") + '>' +
       FOURNISSEURS[k] + '</option>').join("") +
-    '</select><input spellcheck="false"></div><span class="aide"></span>';
+    '</select><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
-  const sel = l.querySelector("select"), inp = l.querySelector("input");
-  inp.value = src.cle || "";
-  inp.placeholder = "Clé d'identification — vide : celle de l'événement";
   l.querySelector(".aide").textContent = aide;
-
-  const enregistre = async () => {
+  l.querySelector("select").onchange = async (ev) => {
     e.sources = { ...(e.sources || {}) };
-    e.sources[dom] = { fournisseur: sel.value, cle: inp.value.trim() || null };
+    e.sources[dom] = { fournisseur: ev.target.value };
     try { await majEvenement(e.id, { sources: e.sources }); }
     catch (err) { signale(err.message, true); }
   };
-  sel.onchange = enregistre;
-  let attente;
-  inp.oninput = () => { clearTimeout(attente); attente = setTimeout(enregistre, 500); };
+  return l;
+}
+
+/* ============================================================
+   Contenu de la fiche détail
+   Ce qu'une fiche montre est une décision d'exploitant : l'état de
+   commercialisation d'un stand, par exemple, n'a pas à sortir sur le site du
+   salon. Le réglage vit donc à côté de l'événement, et non dans le navigateur
+   de celui qui l'a fait — sinon le visiteur n'en verrait rien.
+   ============================================================ */
+const CHAMPS_FICHE = {
+  stand: [
+    ["raison",      "Raison sociale",      "Quand elle diffère de l'enseigne."],
+    ["code",        "Numéro de stand",     "Affiché à côté du pavillon."],
+    ["surface",     "Surface"],
+    ["angles",      "Angles ouverts"],
+    ["niveaux",     "Niveaux",             "Seulement au-delà d'un niveau."],
+    ["etat",        "Commercialisation",   "Option, signé… Rarement public."],
+    ["site",        "Site web"],
+    ["nomenclature", "Nomenclature"],
+  ],
+  zone: [
+    ["surface", "Surface"],
+  ],
+};
+
+/** Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
+ *  tard ne doit pas le faire disparaître des salons déjà réglés. */
+function caseFiche(type, cle, libelle, aide) {
+  const e = courant();
+  const regle = (e.fiche && e.fiche[type]) || {};
+  const l = document.createElement("label");
+  l.className = "case";
+  l.innerHTML = '<input type="checkbox"><span></span>' +
+                (aide ? '<span class="aide"></span>' : "");
+  l.querySelector("span").textContent = libelle;
+  if (aide) l.querySelector(".aide").textContent = aide;
+  const i = l.querySelector("input");
+  i.checked = regle[cle] !== false;
+  i.onchange = async () => {
+    e.fiche = { ...(e.fiche || {}) };
+    e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
+    try { await majEvenement(e.id, { fiche: e.fiche }); }
+    catch (err) { signale(err.message, true); i.checked = !i.checked; }
+  };
   return l;
 }
 

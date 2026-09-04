@@ -66,18 +66,9 @@ const client = () =>
 const gaia = (instance: string, eventId?: string) =>
   new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
 
-/**
- * Provenance d'un domaine. Chaque fournisseur désigne l'événement par sa
- * propre clé ; une clé vide renvoie à celle de l'événement, qui est le cas
- * courant où tout vient du même dossier.
- */
-function source(evt: Record<string, any>, domaine: string) {
-  const s = (evt.sources ?? {})[domaine] ?? {};
-  return {
-    fournisseur: String(s.fournisseur || "klipso"),
-    cle: (s.cle || evt.event_id || "") as string,
-  };
-}
+/** Fournisseur retenu pour un domaine, Klipso à défaut. */
+const fournisseur = (evt: Record<string, any>, domaine: string) =>
+  String((evt.sources ?? {})[domaine]?.fournisseur || "klipso");
 
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
@@ -129,23 +120,16 @@ Deno.serve(async (req) => {
     // Les domaines que cette synchronisation alimente. Les conférences et les
     // produits se configurent déjà mais rien ne les lit encore : les passer
     // sous silence ferait croire qu'ils sont repris.
-    const sPlan = source(evt, "plan");
-    const sStands = source(evt, "stands");
-    for (const [nom, s] of [["le plan", sPlan], ["les stands", sStands]] as const) {
-      if (s.fournisseur !== "klipso") {
+    for (const [nom, dom] of [["le plan", "plan"], ["les stands", "stands"]] as const) {
+      const f = fournisseur(evt, dom);
+      if (f !== "klipso") {
         return repond({
-          erreur: `Source « ${s.fournisseur} » pas encore prise en charge pour ${nom}.`,
+          erreur: `Source « ${f} » pas encore prise en charge pour ${nom}.`,
         }, 400);
       }
     }
-    if (sPlan.cle !== sStands.cle) {
-      return repond({
-        erreur: "Le plan et les stands pointent deux clés différentes : " +
-          "une seule provenance à la fois pour l'instant.",
-      }, 400);
-    }
 
-    const g = gaia(evt.instance, sPlan.cle || undefined);
+    const g = gaia(evt.instance, evt.event_id ?? undefined);
     const resume: Record<string, unknown>[] = [];
 
     let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
