@@ -496,6 +496,7 @@ function dessineFiche() {
   br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
   br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
+  br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
   f.appendChild(br);
   majMsgSync(e);
 
@@ -737,6 +738,17 @@ function resumeProvenance(e) {
   return autres.length ? autres.join(" · ") : "Klipso pour tout";
 }
 
+function resumeSalles(e) {
+  const s = e.salles || {};
+  const ids = Object.keys(s);
+  if (!ids.length) return "Aucune salle connue";
+  const situees = ids.filter((i) => s[i].zone).length;
+  const manuelles = ids.filter((i) => s[i].manuel).length;
+  return situees + " / " + ids.length + " situées" +
+    (manuelles ? " · " + manuelles + " à la main" : "") +
+    (situees < ids.length ? " · " + (ids.length - situees) + " à situer" : "");
+}
+
 function resumeFiche(e) {
   // « Surface » figure des deux côtés : sans le type devant, on ne saurait pas
   // laquelle est masquée.
@@ -856,6 +868,111 @@ function ouvreSources(apres) {
     corps.appendChild(barre);
     panneaux.forEach((x) => corps.appendChild(x));
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Salles de conférence et zones organisateur.
+ *
+ * Une salle Eventmaker s'appelle « Agora (P160) ». Le code entre parenthèses
+ * est un emplacement du plan, et la synchronisation retrouve la zone qui le
+ * contient — dix fois sur onze. Le reste se désigne ici, à la main : un code
+ * absent du plan ne se devine pas.
+ *
+ * Un rattachement manuel est marqué comme tel et n'est plus jamais écrasé par
+ * la synchronisation, qui continue pourtant de proposer ce qu'elle trouve.
+ */
+async function ouvreSalles(apres) {
+  const e = courant();
+  const salles = JSON.parse(JSON.stringify(e.salles || {}));
+  const ids = Object.keys(salles);
+
+  // les zones du plan, pour les proposer au choix
+  let zones = [];
+  try {
+    const pl = await rest("plan?select=id&evenement_id=eq." + e.id);
+    if (pl.length) {
+      const inst = await rest("instantane?select=charge&plan_id=in.(" +
+        pl.map((x) => x.id).join(",") + ")");
+      zones = inst.flatMap((i) => (i.charge?.zones || [])
+        .map((z) => ({ id: z.id, nom: z.nom, m2: z.m2 })));
+    }
+  } catch (err) { signale(err.message, true); }
+  const parZone = Object.fromEntries(zones.map((z) => [z.id, z]));
+  const nomZone = (id) => {
+    const z = parZone[id];
+    if (!z) return id ? id + " (absente du plan)" : "";
+    return (z.nom || "Zone sans nom") + (z.m2 ? " · " + Math.round(z.m2) + " m²" : "");
+  };
+
+  ouvreModale("Salles de conférence", (corps) => {
+    if (!ids.length) {
+      const p = document.createElement("p");
+      p.textContent = "Aucune salle connue. Synchronisez l'événement avec " +
+        "Conférences réglé sur Eventmaker.";
+      corps.appendChild(p);
+      return;
+    }
+
+    const t = document.createElement("table");
+    t.className = "salles";
+    t.innerHTML = "<thead><tr><th>Salle</th><th>Code</th><th>Zone organisateur</th></tr></thead>";
+    const corpsT = document.createElement("tbody");
+
+    ids.sort((a, b) => String(salles[a].nom || "").localeCompare(String(salles[b].nom || ""), "fr"))
+      .forEach((id) => {
+        const s = salles[id];
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td class=\"n\"></td><td class=\"c\"></td><td></td>";
+        tr.querySelector(".n").textContent = s.nom || id;
+        tr.querySelector(".c").textContent = s.code || "—";
+
+        const sel = document.createElement("select");
+        sel.innerHTML = '<option value="">— non située —</option>' +
+          zones.map((z) => '<option value="' + z.id + '">' + esc(nomZone(z.id)) + '</option>').join("");
+        sel.value = s.zone || "";
+        tr.lastElementChild.appendChild(sel);
+
+        const etat = document.createElement("span");
+        etat.className = "etat-salle";
+        const dis = () => {
+          etat.textContent = !s.zone
+            ? (s.auto ? "proposition ignorée" : "à situer")
+            : s.manuel ? "choisi à la main"
+            : "trouvé automatiquement";
+          etat.dataset.genre = !s.zone ? "manque" : s.manuel ? "manuel" : "auto";
+          tr.dataset.etat = etat.dataset.genre;
+        };
+        dis();
+        tr.lastElementChild.appendChild(etat);
+
+        sel.onchange = () => {
+          s.zone = sel.value || null;
+          // ne redevient automatique que si l'on retrouve exactement la
+          // proposition de la synchronisation
+          s.manuel = Boolean(s.zone) && s.zone !== s.auto;
+          dis();
+        };
+        corpsT.appendChild(tr);
+      });
+
+    t.appendChild(corpsT);
+    corps.appendChild(t);
+
+    const note = document.createElement("p");
+    note.className = "aide";
+    const situees = ids.filter((i) => salles[i].zone).length;
+    note.textContent = situees + " salle" + (situees > 1 ? "s" : "") + " sur " + ids.length +
+      " située" + (situees > 1 ? "s" : "") + ". Un rattachement choisi à la main " +
+      "n'est plus modifié par les synchronisations suivantes.";
+    corps.appendChild(note);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Enregistrer", genre: "primaire", action: () => {
+      majEvenement(e.id, { salles })
+        .then(() => { e.salles = salles; signale("Rattachements enregistrés."); })
+        .catch((err) => signale(err.message, true));
+    } },
+  ], apres);
 }
 
 function ouvreFiche(apres) {

@@ -12,7 +12,10 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { Gaia, egal } from "../_partage/gaia.ts";
-import { Eventmaker, cleStand, type ExposantEm } from "../_partage/eventmaker.ts";
+import {
+  Eventmaker, cleStand, codeSalle,
+  type ExposantEm, type ConferenceEm,
+} from "../_partage/eventmaker.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
@@ -242,6 +245,17 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
+         une fois, on les rattachera pavillon par pavillon. */
+      let confEm: ConferenceEm[] | null = null;
+      const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
+      if (fournisseur(evt, "conferences") === "eventmaker") {
+        etape("conferences", "encours");
+        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
+        confEm = await em.conferences(String((evt.cles ?? {}).eventmaker));
+        etape("conferences", "encours", confEm.length + " conférences lues");
+      }
+
       etape("plan", "encours");
 
       /* Les nomenclatures ne portent qu'un code — « FEP26_NOM10201 » — dont le
@@ -297,10 +311,17 @@ Deno.serve(async (req) => {
         }, "Ordre");
 
         const textesZone: { x: number; y: number; txt: string }[] = [];
+        // Tous les textes du plan, tous calques confondus : c'est parmi eux que
+        // se trouvent les numéros d'emplacement — « P160 » — qui désignent les
+        // salles de conférence. Le calque qui les porte ne s'appelle pas pareil
+        // d'un salon à l'autre, on ne peut donc pas le nommer.
+        const tousTextes: { x: number; y: number; txt: string }[] = [];
         for (const c of calques) {
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
-          if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...textes(brut));
+          const lus = textes(brut);
+          tousTextes.push(...lus);
+          if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
           const { svg } = allege(brut);
           await db.from("calque").upsert({
             plan_id: planId,
@@ -406,6 +427,52 @@ Deno.serve(async (req) => {
           });
         }
 
+        /* --- les conférences, rattachées par le code de leur salle ---
+
+           Une salle s'appelle « Agora (P160) ». Le code entre parenthèses est
+           un emplacement du plan, posé comme texte : on retrouve sa position,
+           puis la zone qui la contient. Dix salles sur onze aboutissent ainsi
+           sur Franchise Expo ; la onzième porte un code absent du plan et se
+           rattache à la main depuis la console. */
+        const conferences: Record<string, unknown>[] = [];
+        if (confEm) {
+          const parCode = new Map<string, { x: number; y: number }>();
+          for (const t of tousTextes) {
+            const k = cleStand(t.txt);
+            if (k && !parCode.has(k)) parCode.set(k, t);
+          }
+          const anneauxZone = new Map(zonesBrutes.map((z) => [
+            "z" + String(z.Id).slice(0, 8), versAnneaux(z.Shape),
+          ]));
+
+          for (const c of confEm) {
+            const idSalle = c.salleId || c.salle || "";
+            if (!idSalle) continue;
+            let fiche = sallesConf[idSalle];
+            if (!fiche) fiche = sallesConf[idSalle] = { nom: c.salle, code: null, zone: null, auto: null, manuel: false };
+            fiche.nom = c.salle;
+
+            const segments = codeSalle(c.salle);
+            fiche.code = segments.join("-") || null;
+            const pos = segments.map((x) => parCode.get(cleStand(x))).find(Boolean);
+            if (pos) {
+              for (const [idZone, anneaux] of anneauxZone) {
+                if (anneaux?.some((a) => dedans([pos.x, pos.y], a))) { fiche.auto = idZone; break; }
+              }
+            }
+            // un choix de l'exploitant n'est jamais écrasé
+            if (!fiche.manuel && fiche.auto) fiche.zone = fiche.auto;
+
+            if (fiche.zone && anneauxZone.has(fiche.zone)) {
+              conferences.push({
+                id: c.id, nom: c.nom, texte: c.texte, debut: c.debut, fin: c.fin,
+                salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
+                zone: fiche.zone,
+              });
+            }
+          }
+        }
+
         const emp = emprise([...stands, ...zones]);
         await db.from("plan").update({
           emprise: emp,
@@ -416,7 +483,7 @@ Deno.serve(async (req) => {
 
         await db.from("instantane").upsert({
           plan_id: planId,
-          charge: { stands, zones, emprise: emp },
+          charge: { stands, zones, conferences, emprise: emp },
           genere_le: new Date().toISOString(),
         }, { onConflict: "plan_id" });
 
@@ -433,10 +500,18 @@ Deno.serve(async (req) => {
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés");
+      if (confEm) {
+        await db.from("evenement").update({ salles: sallesConf }).eq("id", evt.id);
+        const rattachees = Object.values(sallesConf).filter((s: any) => s.zone).length;
+        etape("conferences", "fait",
+          rattachees + " / " + Object.keys(sallesConf).length + " salles situées");
+      }
+
       /* Deux raisons de ne rien faire, et elles ne se disent pas pareil : soit
          l'exploitant n'a rien demandé, soit il a désigné une source que la
          synchronisation ne sait pas encore lire. */
       for (const cle of ["conferences", "produits"]) {
+        if (cle === "conferences" && confEm) continue;
         const src = fournisseur(evt, cle);
         etape(cle, "ignoree",
           src === "aucun" ? "non synchronisé" : src + " — pas encore repris");

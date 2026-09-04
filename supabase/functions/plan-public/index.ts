@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
             })),
           stands: charge.stands ?? [],
           zones: charge.zones ?? [],
+          conferences: charge.conferences ?? [],
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }
             : { pile: [], reglages: {} },

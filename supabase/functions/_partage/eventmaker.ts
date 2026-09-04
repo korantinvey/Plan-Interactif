@@ -198,6 +198,42 @@ export class Eventmaker {
   }
 
   /**
+   * Conférences de l'événement.
+   *
+   * Une session se distingue d'une entrée ou d'un badge par son type : les
+   * « accesspoints » servent aussi bien à contrôler l'accès au salon qu'à
+   * décrire le programme, et seuls les seconds portent un session_type_id.
+   */
+  async conferences(id: string): Promise<ConferenceEm[]> {
+    const out: ConferenceEm[] = [];
+    for (let page = 1; ; page++) {
+      const l = await this.json<Record<string, any>[]>(
+        `/events/${id}/accesspoints.json`,
+        { per_page: PAR_PAGE, page },
+      );
+      for (const a of l) {
+        if (!a.session_type_id) continue;
+        out.push({
+          id: String(a._id),
+          nom: String(a.display_name || a.name || "").trim(),
+          // la description arrive en HTML rédigé ; le plan n'affiche que du texte
+          texte: texteSeul(a.description?.html),
+          debut: a.start_date ?? null,
+          fin: a.end_date ?? null,
+          salleId: a.session_room_id ? String(a.session_room_id) : null,
+          salle: a.session_room?.name ?? a.location ?? null,
+          type: a.session_type ?? null,
+          couleur: a.session_type_ref?.color ?? null,
+          theme: a.traits?.thematique_conference ?? null,
+        });
+      }
+      if (l.length < PAR_PAGE) break;
+    }
+    // l'ordre chronologique est celui dans lequel on les affichera
+    return out.sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
+  }
+
+  /**
    * Exposants indexés par numéro de stand.
    *
    * Deux règles, et rien d'autre : la fiche porte un numéro de stand, et son
@@ -294,6 +330,20 @@ async function enParallele<T, R>(
   return out;
 }
 
+/** Une description rédigée en HTML, ramenée à son texte. */
+function texteSeul(html: unknown): string | null {
+  const t = String(html ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/\s+/g, " ")
+    .trim();
+  return t || null;
+}
+
 /** Les champs personnalisés arrivent en liste de { name, value }. */
 function champs(meta: unknown): Record<string, string> {
   const out: Record<string, string> = {};
@@ -305,3 +355,25 @@ function champs(meta: unknown): Record<string, string> {
   }
   return out;
 }
+
+/** Une conférence telle que le plan en a besoin. */
+export interface ConferenceEm {
+  id: string;
+  nom: string;
+  texte: string | null;
+  debut: string | null;
+  fin: string | null;
+  salleId: string | null;
+  salle: string | null;
+  type: string | null;
+  couleur: string | null;
+  theme: string | null;
+}
+
+/** Le code d'emplacement caché dans un nom de salle : « Agora (P160) ». */
+export const codeSalle = (nom: unknown): string[] => {
+  const m = /\(([^)]+)\)\s*$/.exec(String(nom ?? ""));
+  // « M52-N51 » désigne deux emplacements réunis : on garde les deux, le
+  // premier retrouvé sur le plan suffira à désigner la zone
+  return m ? String(m[1]).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean) : [];
+};
