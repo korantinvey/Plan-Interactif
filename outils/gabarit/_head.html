@@ -118,7 +118,11 @@ button{cursor:pointer;background:none;border:none}
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
    se lit sur le fond de la zone. */
 /* Une image liée à un stand s'ouvre au clic comme le stand lui-même. */
-.dcal .forme.lie{cursor:pointer}
+/* Les calques de dessin laissent passer le clic vers le plan. Une image liée à
+   un stand est l'exception : elle doit s'ouvrir comme lui, y compris sur la
+   page publique où le mode édition n'existe pas. */
+.dcal .forme.lie{cursor:pointer;pointer-events:auto}
+.dcal .forme.lie image{pointer-events:all}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
