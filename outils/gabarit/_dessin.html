@@ -9,7 +9,20 @@ const CLE_DESSINS = "plan-dessins";
 let DESSINS = {};
 try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
-const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
+/**
+ * Les calques de dessin d'un pavillon.
+ *
+ * Ils vivent dans le navigateur de celui qui les trace, et le service en
+ * renvoie de son côté. Tant que l'enregistrement en base n'est pas branché, on
+ * reprend ceux du service quand le poste n'en a aucun : sans quoi un visiteur
+ * ne verrait jamais rien, et l'exploitant perdrait son travail à chaque
+ * chargement.
+ */
+const mesCalques = () => {
+  const id = P().id;
+  if (!DESSINS[id]) DESSINS[id] = (P().dessins || []).map(c => ({ ...c }));
+  return DESSINS[id];
+};
 const enregistreDessins = () => {
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
@@ -100,6 +113,7 @@ function dessineDessins(){
     c.appendChild(g);
   }
   ordonneDom();
+  cartouchePoi();
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -138,33 +152,6 @@ const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
                  "Secours", "PMR", "Distributeur"];
 
 /**
- * Certains repères se lisent mieux en image qu'en mot : « WC » écrit dans une
- * pastille prend la place de trois stands, là où le pictogramme se reconnaît
- * de loin et se passe de traduction.
- *
- * Les glyphes sont dessinés dans une grille de 24 × 24, à partir de formes
- * simples plutôt que d'un tracé unique : c'est plus long à lire, mais on peut
- * les corriger sans outil de dessin.
- */
-const PICTOS = {
-  wc: '<circle cx="7" cy="5" r="2"/>' +
-      '<rect x="5.2" y="7.6" width="3.6" height="6" rx="1.2"/>' +
-      '<rect x="5.5" y="13" width="1.3" height="6" rx=".5"/>' +
-      '<rect x="7.2" y="13" width="1.3" height="6" rx=".5"/>' +
-      '<circle cx="17" cy="5" r="2"/>' +
-      '<path d="M17 7.6 20.4 14 13.6 14Z"/>' +
-      '<rect x="15.5" y="13.6" width="1.3" height="5.4" rx=".5"/>' +
-      '<rect x="17.2" y="13.6" width="1.3" height="5.4" rx=".5"/>',
-};
-
-/** Le pictogramme qui correspond à un libellé, s'il en existe un. */
-const pictoDe = (txt) => {
-  const v = String(txt || "").trim().toLowerCase();
-  if (v === "wc" || v === "toilettes" || v === "sanitaires") return "wc";
-  return null;
-};
-
-/**
  * Un repère : une pastille dans la couleur du calque, son libellé dedans.
  *
  * La largeur suit le texte, mesurée dans la police de rendu — une pastille
@@ -176,20 +163,6 @@ function traceRepere(f){
   const t = f.taille || 2;
   const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '">';
-  const glyphe = PICTOS[f.picto || pictoDe(f.txt)];
-
-  if (glyphe){
-    // pastille carrée, glyphe dessiné dans sa grille de 24 puis mis à l'échelle
-    const cote = t * 2.4, m = cote * .16;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
-    const k = (cote - 2 * m) / 24;
-    return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
-      '" height="' + cote.toFixed(2) + '" rx="' + (cote * .22).toFixed(2) + '"/>' +
-      '<g class="glyphe" transform="translate(' + (x + m).toFixed(2) + ' ' + (y + m).toFixed(2) +
-      ') scale(' + k.toFixed(4) + ')">' + glyphe + '</g></g>';
-  }
-
   const l = largeur(f.txt || "", P_NOM) * t;
   const w = l + t * 1.1, ht = t * 1.65;
   const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
@@ -198,6 +171,60 @@ function traceRepere(f){
     '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
     '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
     '" font-size="' + t.toFixed(2) + '">' + esc(f.txt || "") + '</text></g>';
+}
+
+/**
+ * Cartouche des points d'intérêt.
+ *
+ * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
+ * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
+ * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ */
+let poiChoisi = null;
+
+function cartouchePoi(){
+  const z = $("poi");
+  if (!z) return;
+  const parNom = new Map();
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes){
+      if (f.t !== "repere" || !f.txt) continue;
+      const cle = f.txt.trim();
+      if (!parNom.has(cle)) parNom.set(cle, { n: 0 });
+      parNom.get(cle).n++;
+    }
+  }
+  z.hidden = parNom.size === 0;
+  if (z.hidden){ poiChoisi = null; eclairePoi(); return; }
+
+  z.innerHTML = "";
+  [...parNom.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "fr"))
+    .forEach(([nom, o]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "poiBtn";
+      b.setAttribute("aria-pressed", nom === poiChoisi);
+      b.innerHTML = '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
+      b.querySelector("span").textContent = nom;
+      b.onclick = () => {
+        poiChoisi = poiChoisi === nom ? null : nom;
+        cartouchePoi();
+      };
+      z.appendChild(b);
+    });
+  eclairePoi();
+}
+
+/** Met en avant les repères du type choisi. */
+function eclairePoi(){
+  $("couches").querySelectorAll(".dcal .repere").forEach(g => {
+    const f = formeParId(g.dataset.f);
+    const on = poiChoisi && f && String(f.f.txt || "").trim() === poiChoisi;
+    g.classList.toggle("phare", !!on);
+  });
+  racine.classList.toggle("poi-actif", !!poiChoisi);
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
@@ -396,6 +423,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-repere", o === "repere");
+  racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
   if (o === "repere") $("repereTexte").focus();
   aide();

@@ -161,7 +161,7 @@ function supprimeForme(){
 
 /* --- gestes d'édition ; renvoient true si l'événement est consommé --- */
 function editionPointerDown(e){
-  if (!ADMIN || !calqueActif || outil !== "main") return false;
+  if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
   const pgn = e.target.closest(".pgn");
@@ -180,8 +180,11 @@ function editionPointerDown(e){
   const g = e.target.closest(".dcal .forme");
   if (g){
     const id = g.dataset.f;
-    if (id !== formeSel) choisitForme(id);
     const cible = formeParId(id);
+    // cliquer une forme d'un autre calque l'ouvre : c'est le geste qu'on
+    // attend, plutôt que de devoir d'abord le désigner dans le panneau
+    if (cible && cible.c.id !== calqueActif) activeCalque(cible.c.id);
+    if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
       geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };

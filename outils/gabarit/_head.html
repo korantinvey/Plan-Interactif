@@ -151,6 +151,12 @@ button{cursor:pointer;background:none;border:none}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
 .dcal.editable{pointer-events:auto}
+/* En mode sélection, tous les calques de dessin répondent, pas seulement celui
+   qu'on modifie : cliquer une forme d'un autre calque l'active. Sans cela, une
+   image posée sur un calque inactif restait sourde et rien ne le disait. */
+html.mode-edition .dcal{pointer-events:auto}
+html.mode-edition .dcal path,html.mode-edition .dcal image,
+html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 /* une forme en contour seul doit rester attrapable par son intérieur */
 .dcal.editable path,.dcal.editable image,.dcal.editable text{pointer-events:all}
 .dcal .forme{cursor:pointer}
@@ -201,9 +207,8 @@ button{cursor:pointer;background:none;border:none}
 .outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
 #repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
-.dcal .repere rect{fill:currentColor;stroke:none}
+.dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
-.dcal .repere .glyphe *{fill:var(--surface);stroke:none}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
@@ -243,6 +248,26 @@ button{cursor:pointer;background:none;border:none}
 .zoombar button+button{border-top:1px solid var(--line)}
 .zoombar button:hover{color:var(--ink);background:var(--surface-2)}
 .zoombar svg{width:14px;height:14px}
+/* Cartouche des points d'intérêt, au bas du plan. Il ne paraît que s'il y a
+   des repères, et se retire de l'échelle pour ne pas la masquer. */
+.poi{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:12;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
+  padding:7px 9px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+.poi[hidden]{display:none}
+.poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  font-size:12px;cursor:pointer}
+.poiBtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.poiBtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.poiBtn i{font-style:normal;font-size:10.5px;opacity:.7}
+/* Le repère mis en avant pulse ; les autres s'effacent pour le laisser voir. */
+.dcal .repere.phare{animation:pulsePoi 1.1s ease-in-out infinite}
+html.poi-actif .dcal .repere:not(.phare){opacity:.3}
+@keyframes pulsePoi{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.dcal .repere.phare{animation:none}}
+@media (max-width:760px){.poi{max-width:88%;bottom:12px}}
+
 .scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
   font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
 .scalebar i{display:block;height:6px;border:1px solid var(--ink-3);border-top:none}
@@ -455,6 +480,7 @@ button{cursor:pointer;background:none;border:none}
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <div class="poi" id="poi" hidden></div>
 
     <div class="outils" id="outils">
       <div class="outilsTete">

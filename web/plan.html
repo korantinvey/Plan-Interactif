@@ -160,6 +160,12 @@ button{cursor:pointer;background:none;border:none}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
 .dcal.editable{pointer-events:auto}
+/* En mode sélection, tous les calques de dessin répondent, pas seulement celui
+   qu'on modifie : cliquer une forme d'un autre calque l'active. Sans cela, une
+   image posée sur un calque inactif restait sourde et rien ne le disait. */
+html.mode-edition .dcal{pointer-events:auto}
+html.mode-edition .dcal path,html.mode-edition .dcal image,
+html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 /* une forme en contour seul doit rester attrapable par son intérieur */
 .dcal.editable path,.dcal.editable image,.dcal.editable text{pointer-events:all}
 .dcal .forme{cursor:pointer}
@@ -210,9 +216,8 @@ button{cursor:pointer;background:none;border:none}
 .outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
 #repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
-.dcal .repere rect{fill:currentColor;stroke:none}
+.dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
-.dcal .repere .glyphe *{fill:var(--surface);stroke:none}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
@@ -252,6 +257,26 @@ button{cursor:pointer;background:none;border:none}
 .zoombar button+button{border-top:1px solid var(--line)}
 .zoombar button:hover{color:var(--ink);background:var(--surface-2)}
 .zoombar svg{width:14px;height:14px}
+/* Cartouche des points d'intérêt, au bas du plan. Il ne paraît que s'il y a
+   des repères, et se retire de l'échelle pour ne pas la masquer. */
+.poi{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:12;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
+  padding:7px 9px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+.poi[hidden]{display:none}
+.poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  font-size:12px;cursor:pointer}
+.poiBtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.poiBtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.poiBtn i{font-style:normal;font-size:10.5px;opacity:.7}
+/* Le repère mis en avant pulse ; les autres s'effacent pour le laisser voir. */
+.dcal .repere.phare{animation:pulsePoi 1.1s ease-in-out infinite}
+html.poi-actif .dcal .repere:not(.phare){opacity:.3}
+@keyframes pulsePoi{0%,100%{opacity:1}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.dcal .repere.phare{animation:none}}
+@media (max-width:760px){.poi{max-width:88%;bottom:12px}}
+
 .scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
   font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
 .scalebar i{display:block;height:6px;border:1px solid var(--ink-3);border-top:none}
@@ -464,6 +489,7 @@ button{cursor:pointer;background:none;border:none}
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <div class="poi" id="poi" hidden></div>
 
     <div class="outils" id="outils">
       <div class="outilsTete">
@@ -1287,6 +1313,8 @@ function retireAdmin(){
 function activeAdmin(){
   if (ADMIN) return;
   ADMIN = true;
+  // l'outil de départ est la sélection : les dessins deviennent cliquables
+  racine.classList.add("mode-edition");
   const b = $("btnLayers");
   if (b){
     b.hidden = false;
@@ -1425,7 +1453,20 @@ const CLE_DESSINS = "plan-dessins";
 let DESSINS = {};
 try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
-const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
+/**
+ * Les calques de dessin d'un pavillon.
+ *
+ * Ils vivent dans le navigateur de celui qui les trace, et le service en
+ * renvoie de son côté. Tant que l'enregistrement en base n'est pas branché, on
+ * reprend ceux du service quand le poste n'en a aucun : sans quoi un visiteur
+ * ne verrait jamais rien, et l'exploitant perdrait son travail à chaque
+ * chargement.
+ */
+const mesCalques = () => {
+  const id = P().id;
+  if (!DESSINS[id]) DESSINS[id] = (P().dessins || []).map(c => ({ ...c }));
+  return DESSINS[id];
+};
 const enregistreDessins = () => {
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
@@ -1516,6 +1557,7 @@ function dessineDessins(){
     c.appendChild(g);
   }
   ordonneDom();
+  cartouchePoi();
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -1554,33 +1596,6 @@ const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
                  "Secours", "PMR", "Distributeur"];
 
 /**
- * Certains repères se lisent mieux en image qu'en mot : « WC » écrit dans une
- * pastille prend la place de trois stands, là où le pictogramme se reconnaît
- * de loin et se passe de traduction.
- *
- * Les glyphes sont dessinés dans une grille de 24 × 24, à partir de formes
- * simples plutôt que d'un tracé unique : c'est plus long à lire, mais on peut
- * les corriger sans outil de dessin.
- */
-const PICTOS = {
-  wc: '<circle cx="7" cy="5" r="2"/>' +
-      '<rect x="5.2" y="7.6" width="3.6" height="6" rx="1.2"/>' +
-      '<rect x="5.5" y="13" width="1.3" height="6" rx=".5"/>' +
-      '<rect x="7.2" y="13" width="1.3" height="6" rx=".5"/>' +
-      '<circle cx="17" cy="5" r="2"/>' +
-      '<path d="M17 7.6 20.4 14 13.6 14Z"/>' +
-      '<rect x="15.5" y="13.6" width="1.3" height="5.4" rx=".5"/>' +
-      '<rect x="17.2" y="13.6" width="1.3" height="5.4" rx=".5"/>',
-};
-
-/** Le pictogramme qui correspond à un libellé, s'il en existe un. */
-const pictoDe = (txt) => {
-  const v = String(txt || "").trim().toLowerCase();
-  if (v === "wc" || v === "toilettes" || v === "sanitaires") return "wc";
-  return null;
-};
-
-/**
  * Un repère : une pastille dans la couleur du calque, son libellé dedans.
  *
  * La largeur suit le texte, mesurée dans la police de rendu — une pastille
@@ -1592,20 +1607,6 @@ function traceRepere(f){
   const t = f.taille || 2;
   const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '">';
-  const glyphe = PICTOS[f.picto || pictoDe(f.txt)];
-
-  if (glyphe){
-    // pastille carrée, glyphe dessiné dans sa grille de 24 puis mis à l'échelle
-    const cote = t * 2.4, m = cote * .16;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
-    const k = (cote - 2 * m) / 24;
-    return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
-      '" height="' + cote.toFixed(2) + '" rx="' + (cote * .22).toFixed(2) + '"/>' +
-      '<g class="glyphe" transform="translate(' + (x + m).toFixed(2) + ' ' + (y + m).toFixed(2) +
-      ') scale(' + k.toFixed(4) + ')">' + glyphe + '</g></g>';
-  }
-
   const l = largeur(f.txt || "", P_NOM) * t;
   const w = l + t * 1.1, ht = t * 1.65;
   const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
@@ -1614,6 +1615,60 @@ function traceRepere(f){
     '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
     '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
     '" font-size="' + t.toFixed(2) + '">' + esc(f.txt || "") + '</text></g>';
+}
+
+/**
+ * Cartouche des points d'intérêt.
+ *
+ * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
+ * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
+ * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ */
+let poiChoisi = null;
+
+function cartouchePoi(){
+  const z = $("poi");
+  if (!z) return;
+  const parNom = new Map();
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes){
+      if (f.t !== "repere" || !f.txt) continue;
+      const cle = f.txt.trim();
+      if (!parNom.has(cle)) parNom.set(cle, { n: 0 });
+      parNom.get(cle).n++;
+    }
+  }
+  z.hidden = parNom.size === 0;
+  if (z.hidden){ poiChoisi = null; eclairePoi(); return; }
+
+  z.innerHTML = "";
+  [...parNom.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "fr"))
+    .forEach(([nom, o]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "poiBtn";
+      b.setAttribute("aria-pressed", nom === poiChoisi);
+      b.innerHTML = '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
+      b.querySelector("span").textContent = nom;
+      b.onclick = () => {
+        poiChoisi = poiChoisi === nom ? null : nom;
+        cartouchePoi();
+      };
+      z.appendChild(b);
+    });
+  eclairePoi();
+}
+
+/** Met en avant les repères du type choisi. */
+function eclairePoi(){
+  $("couches").querySelectorAll(".dcal .repere").forEach(g => {
+    const f = formeParId(g.dataset.f);
+    const on = poiChoisi && f && String(f.f.txt || "").trim() === poiChoisi;
+    g.classList.toggle("phare", !!on);
+  });
+  racine.classList.toggle("poi-actif", !!poiChoisi);
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
@@ -1812,6 +1867,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-repere", o === "repere");
+  racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
   if (o === "repere") $("repereTexte").focus();
   aide();
@@ -2066,7 +2122,7 @@ function supprimeForme(){
 
 /* --- gestes d'édition ; renvoient true si l'événement est consommé --- */
 function editionPointerDown(e){
-  if (!ADMIN || !calqueActif || outil !== "main") return false;
+  if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
   const pgn = e.target.closest(".pgn");
@@ -2085,8 +2141,11 @@ function editionPointerDown(e){
   const g = e.target.closest(".dcal .forme");
   if (g){
     const id = g.dataset.f;
-    if (id !== formeSel) choisitForme(id);
     const cible = formeParId(id);
+    // cliquer une forme d'un autre calque l'ouvre : c'est le geste qu'on
+    // attend, plutôt que de devoir d'abord le désigner dans le panneau
+    if (cible && cible.c.id !== calqueActif) activeCalque(cible.c.id);
+    if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
       geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };

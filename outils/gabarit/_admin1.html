@@ -126,6 +126,8 @@ function retireAdmin(){
 function activeAdmin(){
   if (ADMIN) return;
   ADMIN = true;
+  // l'outil de départ est la sélection : les dessins deviennent cliquables
+  racine.classList.add("mode-edition");
   const b = $("btnLayers");
   if (b){
     b.hidden = false;
