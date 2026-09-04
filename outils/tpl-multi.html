@@ -591,6 +591,11 @@ function monteHabillage(){
   });
 }
 
+/* Le panneau des calques ne peut se construire qu'une fois le plan monté.
+   L'identité de l'exploitant, elle, peut être vérifiée avant ou après :
+   ce drapeau permet aux deux ordres d'arrivée d'aboutir. */
+let MONTE = false;
+
 function montePlan(){
   const p = P();
   $("zones").innerHTML = p.zones.map(z =>
@@ -606,6 +611,7 @@ function montePlan(){
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
+  MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
 }
@@ -1079,6 +1085,9 @@ function activeAdmin(){
       $("impMsg").textContent = "Configuration reprise";
     };
   };
+
+  // le plan peut avoir été monté avant la connexion : le panneau se rattrape
+  if (MONTE) construitPanneau();
 }
 
 

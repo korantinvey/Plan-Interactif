@@ -170,5 +170,8 @@ function activeAdmin(){
       $("impMsg").textContent = "Configuration reprise";
     };
   };
+
+  // le plan peut avoir été monté avant la connexion : le panneau se rattrape
+  if (MONTE) construitPanneau();
 }
 
