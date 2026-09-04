@@ -122,7 +122,11 @@ button{cursor:pointer;background:none;border:none}
    se peint, il ne se contourne pas. */
 #couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
 
-.zone path{fill:var(--c-zone,var(--zone));fill-opacity:.22;
+/* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
+   telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
+   beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
+   se lit sur le fond de la zone. */
+.zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
