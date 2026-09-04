@@ -6,3 +6,5 @@ outils/svg/
 outils/*.json
 !outils/package.json
 supabase/.temp/
+
+outils/chk.js
