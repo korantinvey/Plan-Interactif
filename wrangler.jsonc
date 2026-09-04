@@ -1,0 +1,9 @@
+{
+  // Déploiement Cloudflare : un Worker qui ne sert que des fichiers statiques.
+  // `web/` contient des pages autonomes, il n'y a rien à compiler.
+  "name": "plan-interactif",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./web"
+  }
+}
