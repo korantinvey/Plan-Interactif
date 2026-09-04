@@ -387,13 +387,14 @@ function demandeNom(titre, valeur, suite){
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 
-function renommeCalque(c){
+function renommeCalque(c, apres){
   demandeNom("Renommer le calque", c.nom, nom => {
     memorise();
     c.nom = nom;
     enregistreDessins();
     construitPanneau();
     if (calqueActif === c.id) $("outilsCalque").textContent = "Dessin · " + c.nom;
+    if (apres) apres();
   });
 }
 

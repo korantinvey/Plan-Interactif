@@ -173,6 +173,14 @@ function changePlan(i){
 /* ============================================================
    4. Libellés — le nom de l'exposant prime sur le numéro
    ============================================================ */
+/* Où écrire le nom, et de quelle place on dispose.
+   Sur une forme découpée — un L, un U, un stand à redent — le centre de la
+   boîte englobante tombe hors de la forme et cette boîte promet une largeur
+   qui n'existe pas. La synchronisation calcule alors un ancrage intérieur et
+   la place réellement libre autour de lui ; un rectangle n'en a pas besoin. */
+const ancre = o => o.lc || o.c;
+const place = o => o.lb || o.bb;
+
 function libelles(){
   const l = $("labels"), p = P();
   const r = svg.getBoundingClientRect();
@@ -184,16 +192,18 @@ function libelles(){
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visible(z) || !dansVue(z)))) continue;
-    const a = habille(z.nom, z.bb[0] * .88, z.bb[1] * .7, 3.4, P_NOM);
+    const pz = place(z), az = ancre(z);
+    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, z.c[0], z.c[1], "zn" + (sel ? " sel" : ""));
+    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
   }
 
   for (const s of p.stands){
     const sel = s.id === state.sel;
     if (!sel && (!visible(s) || !dansVue(s))) continue;
     if (!s.code && !s.nom) continue;
-    const w = s.bb[0], h = s.bb[1];
+    const ps = place(s), as = ancre(s);
+    const w = ps[0], h = ps[1];
 
     const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
     const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
@@ -205,10 +215,10 @@ function libelles(){
     const c = sel ? " sel" : "";
     const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
     const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = s.c[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, s.c[0], y + hNom / 2, "nm" + c); y += hNom; }
+    let y = as[1] - (hNom + hCode) / 2;
+    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
     if (codeLisible)
-      out += '<text class="' + c.trim() + '" x="' + s.c[0] + '" y="' + (y + fc * .92).toFixed(2) +
+      out += '<text class="' + c.trim() + '" x="' + as[0] + '" y="' + (y + fc * .92).toFixed(2) +
              '" font-size="' + fc.toFixed(2) + '">' + esc(s.code) + '</text>';
   }
   l.innerHTML = out;

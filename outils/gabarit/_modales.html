@@ -72,7 +72,12 @@ function remplitOrdre(hote){
     li.dataset.k = x.k;
     li.innerHTML = '<span class="poignee" aria-hidden="true">&#8942;&#8942;</span>' +
       '<span class="nom"></span>' +
-      '<span class="bouts"><button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
+      '<span class="bouts">' +
+      // seul un calque de dessin nous appartient : les autres portent le nom
+      // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      (x.t === "dessin"
+        ? '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>' : "") +
+      '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
       '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
     const nom = li.querySelector(".nom");
     nom.textContent = x.nom;
@@ -80,8 +85,16 @@ function remplitOrdre(hote){
     g.className = "genre"; g.textContent = GENRE[x.t];
     nom.appendChild(g);
 
-    li.querySelectorAll(".bouts button").forEach(b =>
+    li.querySelectorAll(".bouts button[data-h]").forEach(b =>
       b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === "1"); });
+    const cr = li.querySelector("[data-ren]");
+    if (cr){
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        // la fenêtre de renommage remplace celle-ci, puis on revient
+        renommeCalque(x.ref, () => ouvreOrdre());
+      };
+    }
 
     li.ondragstart = ev => { tireK = x.k; li.classList.add("drag");
                              ev.dataTransfer.effectAllowed = "move";

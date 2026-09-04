@@ -693,6 +693,14 @@ function changePlan(i){
 /* ============================================================
    4. Libellés — le nom de l'exposant prime sur le numéro
    ============================================================ */
+/* Où écrire le nom, et de quelle place on dispose.
+   Sur une forme découpée — un L, un U, un stand à redent — le centre de la
+   boîte englobante tombe hors de la forme et cette boîte promet une largeur
+   qui n'existe pas. La synchronisation calcule alors un ancrage intérieur et
+   la place réellement libre autour de lui ; un rectangle n'en a pas besoin. */
+const ancre = o => o.lc || o.c;
+const place = o => o.lb || o.bb;
+
 function libelles(){
   const l = $("labels"), p = P();
   const r = svg.getBoundingClientRect();
@@ -704,16 +712,18 @@ function libelles(){
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visible(z) || !dansVue(z)))) continue;
-    const a = habille(z.nom, z.bb[0] * .88, z.bb[1] * .7, 3.4, P_NOM);
+    const pz = place(z), az = ancre(z);
+    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, z.c[0], z.c[1], "zn" + (sel ? " sel" : ""));
+    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
   }
 
   for (const s of p.stands){
     const sel = s.id === state.sel;
     if (!sel && (!visible(s) || !dansVue(s))) continue;
     if (!s.code && !s.nom) continue;
-    const w = s.bb[0], h = s.bb[1];
+    const ps = place(s), as = ancre(s);
+    const w = ps[0], h = ps[1];
 
     const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
     const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
@@ -725,10 +735,10 @@ function libelles(){
     const c = sel ? " sel" : "";
     const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
     const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = s.c[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, s.c[0], y + hNom / 2, "nm" + c); y += hNom; }
+    let y = as[1] - (hNom + hCode) / 2;
+    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
     if (codeLisible)
-      out += '<text class="' + c.trim() + '" x="' + s.c[0] + '" y="' + (y + fc * .92).toFixed(2) +
+      out += '<text class="' + c.trim() + '" x="' + as[0] + '" y="' + (y + fc * .92).toFixed(2) +
              '" font-size="' + fc.toFixed(2) + '">' + esc(s.code) + '</text>';
   }
   l.innerHTML = out;
@@ -1781,13 +1791,14 @@ function demandeNom(titre, valeur, suite){
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 
-function renommeCalque(c){
+function renommeCalque(c, apres){
   demandeNom("Renommer le calque", c.nom, nom => {
     memorise();
     c.nom = nom;
     enregistreDessins();
     construitPanneau();
     if (calqueActif === c.id) $("outilsCalque").textContent = "Dessin · " + c.nom;
+    if (apres) apres();
   });
 }
 
@@ -2107,7 +2118,7 @@ function construitPanneau(){
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Renommer le calque">&#9998;</button>' +
+      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -2146,10 +2157,11 @@ function construitPanneau(){
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
       nom.title = "Cliquez pour dessiner dessus";
-      // Le crayon renomme, ici comme ailleurs. Le calque sur lequel on dessine
-      // se choisit en cliquant son nom, et la ligne active se voit déjà.
+      // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
+      // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
-      cr.onclick = ev => { ev.stopPropagation(); renommeCalque(x.ref); };
+      cr.setAttribute("aria-pressed", x.ref.id === calqueActif);
+      cr.onclick = ev => { ev.stopPropagation(); activeCalque(x.ref.id); };
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
@@ -2293,7 +2305,12 @@ function remplitOrdre(hote){
     li.dataset.k = x.k;
     li.innerHTML = '<span class="poignee" aria-hidden="true">&#8942;&#8942;</span>' +
       '<span class="nom"></span>' +
-      '<span class="bouts"><button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
+      '<span class="bouts">' +
+      // seul un calque de dessin nous appartient : les autres portent le nom
+      // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      (x.t === "dessin"
+        ? '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>' : "") +
+      '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
       '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
     const nom = li.querySelector(".nom");
     nom.textContent = x.nom;
@@ -2301,8 +2318,16 @@ function remplitOrdre(hote){
     g.className = "genre"; g.textContent = GENRE[x.t];
     nom.appendChild(g);
 
-    li.querySelectorAll(".bouts button").forEach(b =>
+    li.querySelectorAll(".bouts button[data-h]").forEach(b =>
       b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === "1"); });
+    const cr = li.querySelector("[data-ren]");
+    if (cr){
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        // la fenêtre de renommage remplace celle-ci, puis on revient
+        renommeCalque(x.ref, () => ouvreOrdre());
+      };
+    }
 
     li.ondragstart = ev => { tireK = x.k; li.classList.add("drag");
                              ev.dataTransfer.effectAllowed = "move";
