@@ -499,7 +499,8 @@ function majLiens(e) {
   }
   if (adm) {
     adm.href = BASE_PAGES + "plan-admin" + q;
-    adm.title = "Ouvrir le plan avec les calques et les outils de dessin";
+    adm.title = "Ouvrir le plan avec les calques et les outils de dessin" +
+      (e.etat !== "publie" ? " — accessible même en brouillon" : "");
   }
 }
 

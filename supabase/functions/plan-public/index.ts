@@ -6,6 +6,11 @@
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
  *
+ * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
+ * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
+ * la configuration d'un salon avant sa mise en ligne. C'est la politique de
+ * sécurité de la base qui tranche, pas cette fonction.
+ *
  * Elle ne parle jamais à Klipso : elle lit ce que la synchronisation a écrit.
  * Le plan reste donc servi si GAIA est indisponible, et la clé API ne peut pas
  * fuiter par ce chemin.
@@ -26,7 +31,8 @@ const cors = (req: Request) => {
   return {
     "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
     "Access-Control-Allow-Headers": "authorization, content-type, apikey",
-    "Vary": "Origin",
+    // la réponse dépend aussi de l'identité : un exploitant voit ses brouillons
+    "Vary": "Origin, Authorization",
   };
 };
 const METHODES = { "Access-Control-Allow-Methods": "GET, OPTIONS" };
@@ -53,17 +59,23 @@ Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
+  // Une réponse rendue à un exploitant authentifié peut contenir des
+  // brouillons : elle ne doit jamais atterrir dans un cache partagé.
+  const identifie = Boolean(req.headers.get("Authorization"));
+
   const repond = (corps: unknown, code = 200, cache = 60) =>
     new Response(JSON.stringify(corps), {
       status: code,
       headers: {
         ...CORS,
         "Content-Type": "application/json",
-        // le contenu ne bouge qu'à la synchronisation : on autorise le cache,
-        // avec un délai de grâce large en cas d'indisponibilité
-        "Cache-Control": code === 200
-          ? `public, max-age=${cache}, stale-while-revalidate=600`
-          : "no-store",
+        // le contenu public ne bouge qu'à la synchronisation : on autorise le
+        // cache, avec un délai de grâce large en cas d'indisponibilité
+        "Cache-Control": code !== 200
+          ? "no-store"
+          : identifie
+          ? "private, no-store"
+          : `public, max-age=${cache}, stale-while-revalidate=600`,
       },
     });
 
@@ -73,20 +85,43 @@ Deno.serve(async (req) => {
 
     const sb = db(req);
 
-    // la politique de sécurité ne laisse passer que les événements publiés
-    const { data: evt } = await sb
+    // la politique de sécurité ne laisse passer que les événements publiés,
+    // sauf à l'exploitant dont la session est valide
+    const { data: evt, error: err } = await sb
       .from("evenement")
       .select("id, nom, slug, derniere_sync")
       .eq("slug", slug)
       .maybeSingle();
-    if (!evt) return repond({ erreur: "Événement introuvable ou non publié." }, 404);
+
+    // Un jeton périmé ne doit pas se traduire par « introuvable » : l'appelant
+    // a besoin de savoir qu'il lui suffit de se reconnecter.
+    if (err) {
+      const jwt = /jwt|token|expired/i.test(err.message ?? "");
+      if (identifie && jwt) {
+        return repond({ erreur: "Session expirée : reconnectez-vous." }, 401);
+      }
+      return repond({ erreur: err.message }, 500);
+    }
+    if (!evt) {
+      return repond({
+        erreur: identifie
+          ? "Événement introuvable."
+          : "Événement introuvable ou non publié.",
+      }, 404);
+    }
 
     const { data: plans } = await sb
       .from("plan")
       .select("id, id_klipso, libelle, hall, emprise")
       .eq("evenement_id", evt.id)
       .order("libelle", { ascending: true });
-    if (!plans?.length) return repond({ erreur: "Aucun pavillon publié." }, 404);
+    if (!plans?.length) {
+      return repond({
+        erreur: identifie
+          ? "Aucun pavillon : lancez une synchronisation."
+          : "Aucun pavillon publié.",
+      }, 404);
+    }
 
     const ids = plans.map((p) => p.id);
     const [calques, apparences, dessins, instantanes] = await Promise.all([

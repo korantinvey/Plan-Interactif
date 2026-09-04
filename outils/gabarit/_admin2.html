@@ -25,16 +25,18 @@ function annonce(txt, erreur){
   $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
 }
 
-const fige = document.getElementById("data").textContent.trim();
-if (fige && fige.indexOf("__DATA__") < 0){
-  demarre(JSON.parse(fige));
-} else if (API){
+/**
+ * Charge le plan. Les en-têtes sont lus à l'appel, pas au démarrage : en
+ * administration la session n'existe qu'une fois l'identité vérifiée, et
+ * c'est elle qui donne accès aux événements encore en brouillon.
+ */
+function charge(){
   annonce("Chargement du plan…");
-  // en administration on présente sa session : elle donne accès aux brouillons
   const entetes = {};
   if (document.documentElement.dataset.role === "admin"){
     try {
-      const cfg = JSON.parse(localStorage.getItem("console-config") || "null");
+      const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
+                  || window.PLAN_CONFIG || null;
       const ses = JSON.parse(localStorage.getItem("console-session") || "null");
       if (cfg?.anonKey && ses?.access_token){
         entetes["apikey"] = cfg.anonKey;
@@ -42,13 +44,31 @@ if (fige && fige.indexOf("__DATA__") < 0){
       }
     } catch (e) {}
   }
-  fetch(API + "?slug=" + encodeURIComponent(SLUG), { headers: entetes })
-    .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status)))))
-    .then(d => { if (!d.plans?.length) throw new Error("Aucun pavillon publié."); demarre(d); })
+  return fetch(API + "?slug=" + encodeURIComponent(SLUG), { headers: entetes, cache: "no-store" })
+    .then(r => {
+      // session périmée : on repasse par l'écran de connexion plutôt que
+      // d'afficher une erreur dans laquelle l'exploitant ne peut rien faire
+      if (r.status === 401 && typeof ecranAcces === "function"){
+        try { localStorage.removeItem("console-session"); } catch (e) {}
+        ecranAcces("Session expirée, reconnectez-vous.");
+        return Promise.reject(new Error("Session expirée."));
+      }
+      return r.ok ? r.json()
+                  : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status))));
+    })
+    .then(d => {
+      if (!d.plans?.length) throw new Error("Aucun pavillon : lancez une synchronisation depuis la console.");
+      demarre(d);
+    })
     .catch(e => annonce("Plan indisponible : " + e.message, true));
-} else {
-  annonce("Aucune source de données configurée.", true);
 }
+
+const fige = document.getElementById("data").textContent.trim();
+if (fige && fige.indexOf("__DATA__") < 0) demarre(JSON.parse(fige));
+else if (!API) annonce("Aucune source de données configurée.", true);
+// en administration, on attend la session : sans elle les brouillons sont invisibles
+else if (document.documentElement.dataset.role === "admin") annonce("Vérification de l'identité…");
+else charge();
 
 // les mesures de texte dépendent des polices : on retrace une fois chargées
 // les polices peuvent arriver avant les données : on ne retrace que si

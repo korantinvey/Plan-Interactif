@@ -101,6 +101,7 @@ function ecranAcces(message){
       localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
       voile.remove();
       activeAdmin();
+      charge();
     } catch (e) {
       $("accesMsg").textContent = e.message;
     }
@@ -112,6 +113,6 @@ function ecranAcces(message){
 (async () => {
   const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
-  if (await sessionValide(cfg, session)) activeAdmin();
+  if (await sessionValide(cfg, session)){ activeAdmin(); charge(); }
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
 })();
