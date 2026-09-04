@@ -189,8 +189,6 @@ function renommeZone(o){
 
 async function enregistreNomZone(o, valeur){
   const nom = String(valeur || "").trim();
-  const noms = { ...(DATA.nomsZones || {}) };
-  if (nom) noms[o.id] = nom; else delete noms[o.id];
 
   let cfg = null, ses = null;
   try {
@@ -203,6 +201,18 @@ async function enregistreNomZone(o, valeur){
   }
 
   try {
+    /* Les noms tiennent dans une seule colonne : l'enregistrement la réécrit
+       entière. La renvoyer telle que la page l'avait chargée effacerait tout
+       renommage survenu depuis — d'un autre poste, ou d'un onglet resté
+       ouvert. On repart donc de ce que la base contient à l'instant, et on
+       n'y touche que la zone concernée. */
+    const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=zones&slug=eq." +
+      encodeURIComponent(DATA.slug), {
+      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token },
+    }).then(r => r.ok ? r.json() : []).catch(() => []);
+    const noms = { ...(enBase[0]?.zones || DATA.nomsZones || {}) };
+    if (nom) noms[o.id] = nom; else delete noms[o.id];
+
     const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
       method: "PATCH",
       headers: {

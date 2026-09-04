@@ -878,18 +878,51 @@ const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
 };
+/* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
+   « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
+   objets du pavillon et mesure chaque texte pour décider s'il tient et s'il
+   reste lisible : près de six millisecondes sur un poste de bureau, bien
+   davantage sur un téléphone, là où une image n'en a que seize.
+
+   Pendant un geste on ne fait donc que le premier, et une seule fois par
+   image — un écran tactile échantillonne souvent deux fois plus vite qu'il
+   n'affiche, et le travail était fait deux fois pour rien. Les libellés
+   attendent : leur taille étant exprimée en mètres, ils grandissent avec le
+   plan sans qu'on y touche. Seul leur tri par lisibilité patiente, jusqu'à la
+   fin du geste ou une pause de la main. */
+let imageDemandee = null, libellesEnAttente = null;
+
+/** Pendant un geste : le strict nécessaire, une fois par image. */
+function rafraichitVue(){
+  if (!imageDemandee){
+    imageDemandee = requestAnimationFrame(() => {
+      imageDemandee = null;
+      appliqueVue(); echelle();
+    });
+  }
+  clearTimeout(libellesEnAttente);
+  libellesEnAttente = setTimeout(() => { libellesEnAttente = null; libelles(); }, 150);
+}
+
+/** À la fin d'un geste, ou pour un saut de vue : tout, sans attendre. */
+function poseVue(){
+  if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
+  clearTimeout(libellesEnAttente); libellesEnAttente = null;
+  appliqueVue(); echelle(); libelles();
+}
+
 function fit(){
   const r = svg.getBoundingClientRect();
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
   const k = Math.max(w / (r.width || 1), h / (r.height || 1));
   view = { x: emp.x0 + w / 2 - (k * r.width) / 2, y: emp.y0 + h / 2 - (k * r.height) / 2,
            w: k * r.width, h: k * r.height };
-  appliqueVue(); echelle(); libelles();
+  poseVue();
 }
 function zoom(f, cx, cy){
   const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, view.w * f)), k = nw / view.w;
   view = { x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w: nw, h: view.h * k };
-  appliqueVue(); echelle(); libelles();
+  rafraichitVue();
 }
 function echelle(){
   const r = svg.getBoundingClientRect();
@@ -937,7 +970,7 @@ function select(id, recentrer){
 function centre(o){
   const w = Math.min(view.w, 55), h = w * (view.h / view.w);
   view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2, w: w, h: h };
-  appliqueVue(); echelle(); libelles();
+  poseVue();
 }
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
@@ -1207,7 +1240,7 @@ function suitPince(){
     y: pince.ancre[1] - (m.y - r.top) / r.height * nh,
     w: nw, h: nh,
   };
-  appliqueVue(); echelle(); libelles();
+  rafraichitVue();
 }
 
 svg.addEventListener("pointerdown", e => {
@@ -1233,7 +1266,7 @@ svg.addEventListener("pointermove", e => {
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
-  view.x = drag.vx - dx; view.y = drag.vy - dy; appliqueVue();
+  view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
 /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
    au pointerdown et on tranche au pointerup. */
@@ -1241,11 +1274,11 @@ svg.addEventListener("pointerup", e => {
   doigts.delete(e.pointerId);
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
-  if (pince){ if (doigts.size < 2){ pince = null; drag = null; } return; }
+  if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
-  if (d && d.bouge){ libelles(); return; }
+  if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
   if (d.cible) select(d.cible.dataset.id, false); else ferme();
 });
@@ -1505,8 +1538,6 @@ function renommeZone(o){
 
 async function enregistreNomZone(o, valeur){
   const nom = String(valeur || "").trim();
-  const noms = { ...(DATA.nomsZones || {}) };
-  if (nom) noms[o.id] = nom; else delete noms[o.id];
 
   let cfg = null, ses = null;
   try {
@@ -1519,6 +1550,18 @@ async function enregistreNomZone(o, valeur){
   }
 
   try {
+    /* Les noms tiennent dans une seule colonne : l'enregistrement la réécrit
+       entière. La renvoyer telle que la page l'avait chargée effacerait tout
+       renommage survenu depuis — d'un autre poste, ou d'un onglet resté
+       ouvert. On repart donc de ce que la base contient à l'instant, et on
+       n'y touche que la zone concernée. */
+    const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=zones&slug=eq." +
+      encodeURIComponent(DATA.slug), {
+      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token },
+    }).then(r => r.ok ? r.json() : []).catch(() => []);
+    const noms = { ...(enBase[0]?.zones || DATA.nomsZones || {}) };
+    if (nom) noms[o.id] = nom; else delete noms[o.id];
+
     const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
       method: "PATCH",
       headers: {
@@ -1849,7 +1892,13 @@ function cartouchePoi(){
         : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
       b.querySelector("span").textContent = nom;
       b.onclick = () => {
-        poiChoisi = poiChoisi === nom ? null : nom;
+        const choisit = poiChoisi !== nom;
+        poiChoisi = choisit ? nom : null;
+        /* Les repères d'un même type sont dispersés dans le hall. Les mettre
+           en avant sans reculer ne montrerait que ceux déjà à l'écran, et
+           l'exploitant conclurait qu'il n'y en a pas d'autres. On revient donc
+           sur le plan entier, où ils se comptent d'un coup d'œil. */
+        if (choisit) fit();
         cartouchePoi();
       };
       z.appendChild(b);

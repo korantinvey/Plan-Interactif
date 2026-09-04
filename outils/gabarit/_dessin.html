@@ -306,7 +306,13 @@ function cartouchePoi(){
         : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
       b.querySelector("span").textContent = nom;
       b.onclick = () => {
-        poiChoisi = poiChoisi === nom ? null : nom;
+        const choisit = poiChoisi !== nom;
+        poiChoisi = choisit ? nom : null;
+        /* Les repères d'un même type sont dispersés dans le hall. Les mettre
+           en avant sans reculer ne montrerait que ceux déjà à l'écran, et
+           l'exploitant conclurait qu'il n'y en a pas d'autres. On revient donc
+           sur le plan entier, où ils se comptent d'un coup d'œil. */
+        if (choisit) fit();
         cartouchePoi();
       };
       z.appendChild(b);
