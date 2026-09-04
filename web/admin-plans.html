@@ -654,6 +654,9 @@ function dessineFiche() {
     catch (err) { signale(err.message, true); }
   };
   g2.appendChild(lr);
+  // l'identifiant d'un autre fournisseur est de même nature que ceux-ci :
+  // il désigne l'événement à interroger, il vit donc au même endroit
+  CLES_FOURNISSEUR.forEach((c) => g2.appendChild(champCle(...c)));
   b2.appendChild(g2);
 
   const ligne = document.createElement("div");
@@ -767,7 +770,6 @@ const fournisseurUtilise = (e, cle) =>
 function champCle(cle, libelle, aide, forme, exemple) {
   const e = courant();
   const l = document.createElement("label");
-  l.className = "large";
   l.innerHTML = '<span></span><input spellcheck="false"><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
   const i = l.querySelector("input"), a = l.querySelector(".aide");
@@ -927,15 +929,10 @@ function ouvreProvenance(apres) {
       g.appendChild(l);
     });
     corps.appendChild(g);
-
-    const gc = grille();
-    CLES_FOURNISSEUR.forEach((c) => gc.appendChild(champCle(...c)));
-    corps.appendChild(gc);
-
     const note = document.createElement("p");
     note.className = "aide";
-    note.textContent = "Klipso garde l'instance et l'identifiant d'événement " +
-      "saisis plus haut dans la fiche.";
+    note.textContent = "Les identifiants d'événement se saisissent dans " +
+      "« Source des données », sur la fiche.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
