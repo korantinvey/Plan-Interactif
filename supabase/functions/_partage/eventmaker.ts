@@ -19,19 +19,48 @@ export interface ConfigEm {
 const BASE = "https://app.eventmaker.io/api/v1";
 const PAR_PAGE = 500;
 
+/* Sonder chaque catégorie coûte un appel : trente-deux sur un salon comme
+   Franchise Expo. Vingt-cinq fiches suffisent à savoir si l'une d'elles porte
+   des numéros de stand — la catégorie des exposants en est pleine, les autres
+   n'en ont aucune. */
+const ECHANTILLON = 25;
+
+/* Les appels sont indépendants et l'attente est celle du réseau, pas du calcul.
+   Six de front tiennent l'API sans la brusquer et divisent le temps d'autant. */
+const DE_FRONT = 6;
+
 /* « Inscrit » dans l'interface Eventmaker. Une fiche en attente, refusée ou
    désinscrite ne doit pas paraître sur le plan public. */
 const INSCRIT = "registered";
 
-/** Un exposant tel que le plan en a besoin, débarrassé du reste. */
+/**
+ * Un exposant tel que le plan en a besoin, débarrassé du reste.
+ *
+ * Une fiche Eventmaker porte deux cent soixante-douze champs ; on n'en retient
+ * que ce qu'une fiche détail peut montrer. Le reste — quotas, badges, suivi
+ * commercial — n'a rien à faire dans une charge utile publique.
+ */
 export interface ExposantEm {
   stand: string;
   nom: string | null;
   raison: string | null;
   site: string | null;
+  adresse: string | null;
+  ville: string | null;
+  pays: string | null;
+  tel: string | null;
+  facebook: string | null;
+  linkedin: string | null;
+  instagram: string | null;
   nomencl: string[];
   exclu: boolean;
 }
+
+/** Rien plutôt qu'une chaîne vide : le rendu masque les champs absents. */
+const ou = (...v: unknown[]): string | null => {
+  for (const x of v) { const s = String(x ?? "").trim(); if (s) return s; }
+  return null;
+};
 
 /**
  * Le numéro de stand est la clé de rattachement au plan. Klipso le compose de
@@ -90,32 +119,45 @@ export class Eventmaker {
   /**
    * Catégories dont au moins une fiche porte un numéro de stand.
    *
-   * On ne peut pas balayer tous les invités : un salon en compte des dizaines
-   * de milliers et une fiche avec ses champs personnalisés pèse une vingtaine
-   * de kilo-octets — près d'un gigaoctet par synchronisation. On sonde donc la
-   * première page de chaque catégorie.
+   * L'API ne sait pas filtrer sur un champ personnalisé — ni sur sa valeur, ni
+   * sur sa présence ; seule une recherche plein texte existe, et elle réclame
+   * un terme. Impossible donc de demander « les fiches qui ont un numéro de
+   * stand ». Et l'on ne peut pas non plus tout balayer : un salon compte des
+   * dizaines de milliers d'invités et une fiche avec ses champs personnalisés
+   * pèse une vingtaine de kilo-octets.
+   *
+   * Reste à sonder la première page de chaque catégorie. C'est le prix d'entrée
+   * — d'où le cache : les catégories connues sont reprises telles quelles et
+   * seules les nouvelles sont sondées, ce qui ramène les trente-deux appels de
+   * la première fois à un seul les fois suivantes.
    *
    * Les catégories ne portent pas les mêmes noms d'un salon à l'autre, et rien
    * ne dit qu'elles contiennent « exposant » dans leur intitulé : c'est la
-   * présence d'un numéro de stand qui décide, pas le libellé. Une catégorie
-   * retenue à tort ne coûte rien — les fiches sans numéro sont écartées de
-   * toute façon.
+   * présence d'un numéro de stand qui décide, pas le libellé.
    */
   async categoriesAvecStand(
     id: string,
-    echantillon = 100,
-  ): Promise<{ _id: string; name: string; vus: number; avecStand: number }[]> {
+    connues: string[] = [],
+    echantillon = ECHANTILLON,
+  ): Promise<{ retenues: { _id: string; name: string }[]; sondees: number }> {
     const cats = await this.categories(id);
-    const gardees = [];
-    for (const c of cats) {
+    const deja = new Set(connues);
+    // une catégorie supprimée disparaît d'elle-même de la liste
+    const acquises = cats.filter((c) => deja.has(c._id));
+    const aSonder = cats.filter((c) => !deja.has(c._id));
+
+    const sondes = await enParallele(aSonder, DE_FRONT, async (c) => {
       const l = await this.json<Record<string, any>[]>(
         `/events/${id}/guests.json`,
         { per_page: echantillon, page: 1, guest_metadata: "true", "category[]": c._id },
       );
-      const n = l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata))).length;
-      if (n) gardees.push({ ...c, vus: l.length, avecStand: n });
-    }
-    return gardees;
+      return { c, avec: l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata))).length };
+    });
+
+    return {
+      retenues: [...acquises, ...sondes.filter((s) => s.avec).map((s) => s.c)],
+      sondees: aSonder.length,
+    };
   }
 
   /**
@@ -125,52 +167,92 @@ export class Eventmaker {
    * inscription est effective. Le reste n'est que le moyen d'y arriver sans
    * télécharger le salon entier.
    */
-  async exposants(id: string): Promise<{
+  async exposants(id: string, connues: string[] = []): Promise<{
     parStand: Map<string, ExposantEm>;
     categories: string[];
+    categoriesIds: string[];
+    sondees: number;
     lus: number;
     retenus: number;
     ecartesNonInscrits: number;
   }> {
     const parStand = new Map<string, ExposantEm>();
-    const cats = await this.categoriesAvecStand(id);
+    const { retenues: cats, sondees } = await this.categoriesAvecStand(id, connues);
     let lus = 0, ecartesNonInscrits = 0;
 
-    for (const cat of cats) {
+    // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
+    // les pages restent séquentielles — on ne sait pas combien il y en a
+    // avant d'en recevoir une plus courte que les autres.
+    const paquets = await enParallele(cats, DE_FRONT, async (cat) => {
+      const tout: Record<string, any>[] = [];
       for (let page = 1; ; page++) {
         const l = await this.json<Record<string, any>[]>(
           `/events/${id}/guests.json`,
           { per_page: PAR_PAGE, page, guest_metadata: "true", "category[]": cat._id },
         );
-        for (const g of l) {
-          lus++;
-          const m = champs(g.guest_metadata);
-          const stand = Eventmaker.stand(g, m);
-          if (!stand) continue;
-          if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
-          // premier arrivé, premier servi : un stand partagé garde l'enseigne
-          // rencontrée d'abord plutôt qu'une des suivantes, prise au hasard
-          if (parStand.has(stand)) continue;
-          parStand.set(stand, {
-            stand,
-            nom: m.enseigne || g.company_name || null,
-            raison: m.company_name_2 || null,
-            site: m.company_website || null,
-            nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
-            exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
-          });
-        }
-        if (l.length < PAR_PAGE) break;
+        tout.push(...l);
+        if (l.length < PAR_PAGE) return tout;
       }
+    });
+
+    for (const g of paquets.flat()) {
+      lus++;
+      const m = champs(g.guest_metadata);
+      const stand = Eventmaker.stand(g, m);
+      if (!stand) continue;
+      if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
+      // premier arrivé, premier servi : un stand partagé garde l'enseigne
+      // rencontrée d'abord plutôt qu'une des suivantes, prise au hasard
+      if (parStand.has(stand)) continue;
+      parStand.set(stand, {
+        stand,
+        nom: ou(m.enseigne, g.company_name),
+        raison: ou(m.company_name_2),
+        site: ou(m.company_website),
+        // le code postal n'a pas de champ à lui sur la fiche : il tient sur
+        // la même ligne que la voie, comme sur une enveloppe
+        adresse: ou([ou(g.address, m.address_2), ou(g.postal_code)]
+          .filter(Boolean).join(", ")),
+        ville: ou(m.locality, g.city),
+        pays: ou(g.country_name),
+        tel: ou(m.company_phone, g.phone_number),
+        facebook: ou(m.company_facebook),
+        linkedin: ou(m.company_linkedin),
+        instagram: ou(m.instagram_societe),
+        nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
+        exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
+      });
     }
     return {
       parStand,
       categories: cats.map((c) => c.name),
+      categoriesIds: cats.map((c) => c._id),
+      sondees,
       lus,
       retenus: parStand.size,
       ecartesNonInscrits,
     };
   }
+}
+
+/** Exécute une tâche par élément, quelques-unes de front, dans l'ordre. */
+async function enParallele<T, R>(
+  items: T[],
+  n: number,
+  fn: (x: T) => Promise<R>,
+): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let i = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(n, items.length) }, async () => {
+      for (;;) {
+        const k = i++;
+        if (k >= items.length) return;
+        out[k] = await fn(items[k]);
+      }
+    }),
+  );
+  return out;
 }
 
 /** Les champs personnalisés arrivent en liste de { name, value }. */

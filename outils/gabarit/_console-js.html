@@ -574,12 +574,20 @@ const DOMAINES = [
    "La géométrie des pavillons et des calques."],
   ["stands",      "Exposants",   ["klipso", "eventmaker"],
    "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan."],
-  ["conferences", "Conférences", ["klipso", "eventmaker"],
-   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
-  ["produits",    "Produits",    ["klipso", "eventmaker"],
-   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
+  ["conferences", "Conférences", ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
+  ["produits",    "Produits",    ["aucun", "klipso", "eventmaker"],
+   "Aucune synchronisation ne les reprend encore."],
 ];
-const FOURNISSEURS = { klipso: "Klipso", eventmaker: "Eventmaker" };
+const FOURNISSEURS = {
+  aucun: "Non synchronisé", klipso: "Klipso", eventmaker: "Eventmaker",
+};
+
+/* Un domaine que rien ne reprend vaut mieux « non synchronisé » qu'un
+   fournisseur choisi par défaut : celui-ci laisserait croire à une reprise. */
+const DEFAUT_DOMAINE = {
+  plan: "klipso", stands: "klipso", conferences: "aucun", produits: "aucun",
+};
 
 /* Chaque fournisseur désigne l'événement à sa façon. Klipso n'est pas dans
    cette liste : son identité tient dans « Instance » et « Identifiant
@@ -593,6 +601,10 @@ const CLES_FOURNISSEUR = [
 /** Un fournisseur est-il retenu quelque part ? */
 const fournisseurUtilise = (e, cle) =>
   DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle);
+
+/** Le fournisseur retenu pour un domaine, défaut compris. */
+const source = (e, dom) =>
+  ((e.sources || {})[dom] || {}).fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
 
 /** Champ de clé. Il n'est pas caché quand le fournisseur n'est pas encore
  *  retenu : on saisit souvent l'identifiant avant de basculer la source. */
@@ -634,10 +646,11 @@ function champCle(cle, libelle, aide, forme, exemple) {
 function ligneSource(dom, libelle, offerts, aide) {
   const e = courant();
   const src = (e.sources && e.sources[dom]) || {};
+  const choisi = src.fournisseur || DEFAUT_DOMAINE[dom] || "klipso";
   const l = document.createElement("label");
   l.innerHTML = '<span></span><select>' +
     offerts.map((k) => '<option value="' + k + '"' +
-      ((src.fournisseur || "klipso") === k ? " selected" : "") + '>' +
+      (choisi === k ? " selected" : "") + '>' +
       FOURNISSEURS[k] + '</option>').join("") +
     '</select><span class="aide"></span>';
   l.querySelector("span").textContent = libelle;
@@ -684,7 +697,8 @@ const FICHE_INERTE = { zone: ["conferences"] };
 function resumeProvenance(e) {
   const s = e.sources || {};
   const autres = DOMAINES
-    .filter(([d]) => ((s[d] || {}).fournisseur || "klipso") !== "klipso")
+    .filter(([d]) => ((s[d] || {}).fournisseur || DEFAUT_DOMAINE[d] || "klipso") !==
+      (DEFAUT_DOMAINE[d] || "klipso"))
     .map(([d, lib]) => lib + " : " +
       (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
   // une source retenue sans son identifiant ne peut rien lire : le dire ici
@@ -754,7 +768,7 @@ function ouvreProvenance(apres) {
     const g = grille();
     DOMAINES.forEach(([dom, lib, offerts, aide]) => {
       const l = ligneSource(dom, lib, offerts, aide);
-      if (dom === "conferences" || dom === "produits") l.classList.add("source-inerte");
+      if (source(e, dom) === "aucun") l.classList.add("source-inerte");
       g.appendChild(l);
     });
     corps.appendChild(g);

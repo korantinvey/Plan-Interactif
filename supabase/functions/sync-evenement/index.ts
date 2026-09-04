@@ -67,9 +67,15 @@ const client = () =>
 const gaia = (instance: string, eventId?: string) =>
   new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
 
-/** Fournisseur retenu pour un domaine, Klipso à défaut. */
+/* Un domaine que rien ne reprend vaut mieux « aucun » qu'un fournisseur choisi
+   par défaut : celui-ci laisserait croire à une reprise qui n'a pas lieu. */
+const DEFAUT: Record<string, string> = {
+  plan: "klipso", stands: "klipso", conferences: "aucun", produits: "aucun",
+};
+
+/** Fournisseur retenu pour un domaine. */
 const fournisseur = (evt: Record<string, any>, domaine: string) =>
-  String((evt.sources ?? {})[domaine]?.fournisseur || "klipso");
+  String((evt.sources ?? {})[domaine]?.fournisseur || DEFAUT[domaine] || "klipso");
 
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
@@ -170,11 +176,11 @@ Deno.serve(async (req) => {
        doit voir qu'elles ne sont pas reprises.
        ------------------------------------------------------------------ */
     const ETAPES = [
-      { cle: "plan", libelle: "Plan", fait: true },
-      { cle: "exposants", libelle: "Exposants", fait: true },
-      { cle: "conferences", libelle: "Conférences", fait: false },
-      { cle: "produits", libelle: "Produits", fait: false },
-    ].map((e) => ({ ...e, source: fournisseur(evt, e.cle === "exposants" ? "stands" : e.cle) }));
+      { cle: "plan", libelle: "Plan", domaine: "plan" },
+      { cle: "exposants", libelle: "Exposants", domaine: "stands" },
+      { cle: "conferences", libelle: "Conférences", domaine: "conferences" },
+      { cle: "produits", libelle: "Produits", domaine: "produits" },
+    ].map((e) => ({ ...e, source: fournisseur(evt, e.domaine) }));
 
     const flux = new ReadableStream({
       async start(ctrl) {
@@ -198,15 +204,29 @@ Deno.serve(async (req) => {
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
         const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
-        const r = await em.exposants(String((evt.cles ?? {}).eventmaker));
+        // Les catégories déjà reconnues évitent de tout resonder : la première
+        // synchronisation coûte trente-deux appels, les suivantes un seul.
+        const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
+        const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues);
         expoEm = r.parStand;
         resumeEm = {
           categories: r.categories,
+          sondees: r.sondees,
           lus: r.lus,
           exposants: r.retenus,
           nonInscrits: r.ecartesNonInscrits,
         };
         etape("exposants", "encours", r.retenus + " exposants lus");
+
+        // On retient ce qu'on vient d'apprendre. Écriture ciblée : le reste de
+        // la configuration appartient à l'exploitant, pas à la synchronisation.
+        const memes = connues.length === r.categoriesIds.length &&
+          connues.every((c) => r.categoriesIds.includes(c));
+        if (!memes) {
+          const src = { ...(evt.sources ?? {}) };
+          src.stands = { ...(src.stands ?? {}), categories: r.categoriesIds };
+          await db.from("evenement").update({ sources: src }).eq("id", evt.id);
+        }
       }
 
       etape("plan", "encours");
@@ -328,6 +348,15 @@ Deno.serve(async (req) => {
             site: !ok ? null : expoEm ? nettoieUrl(em!.site) : nettoieUrl(dos.x_Catalogue_SiteWeb),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(dos.x_Nomenclature),
+            // Coordonnées et réseaux : Eventmaker les porte, Klipso ne les
+            // expose pas dans ce qu'on lui demande. Absents, ils ne
+            // s'affichent simplement pas.
+            ...(ok && em
+              ? {
+                adr: em.adresse, ville: em.ville, pays: em.pays, tel: em.tel,
+                fb: em.facebook, li: em.linkedin, ig: em.instagram,
+              }
+              : {}),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
             niveaux: s.NbNiveau,
@@ -391,9 +420,14 @@ Deno.serve(async (req) => {
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés");
-      // réglées mais pas encore reprises : le taire laisserait croire l'inverse
-      etape("conferences", "ignoree");
-      etape("produits", "ignoree");
+      /* Deux raisons de ne rien faire, et elles ne se disent pas pareil : soit
+         l'exploitant n'a rien demandé, soit il a désigné une source que la
+         synchronisation ne sait pas encore lire. */
+      for (const cle of ["conferences", "produits"]) {
+        const src = fournisseur(evt, cle);
+        etape(cle, "ignoree",
+          src === "aucun" ? "non synchronisé" : src + " — pas encore repris");
+      }
 
       // une synchronisation partielle ne fait pas foi comme date de référence
       if (!corps.idPlan) {
