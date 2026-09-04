@@ -1,0 +1,193 @@
+
+/* ============================================================
+   Pile des calques
+   Habillage Klipso, zones, stands, textes et calques de dessin vivent dans
+   un seul empilement : n'importe lequel peut se glisser entre deux autres.
+   L'ordre de la liste est l'ordre de tracé — le premier est derrière.
+   ============================================================ */
+const clePile = () => "_pile:" + P().id;
+
+function entrees(){
+  const e = [];
+  P().fond.forEach(f => e.push({ k: "fond:" + f.cle, t: "fond", nom: f.nom, ref: f }));
+  e.push({ k: "data:zones",  t: "data", nom: "Zones organisateur", ref: "zones" });
+  e.push({ k: "data:stands", t: "data", nom: "Stands",             ref: "stands" });
+  e.push({ k: "data:labels", t: "data", nom: "Textes",             ref: "labels" });
+  mesCalques().forEach(c => e.push({ k: "dessin:" + c.id, t: "dessin", nom: c.nom, ref: c }));
+  return e;
+}
+
+/* ordre effectif : celui qui a été choisi, complété par les nouveautés */
+function pile(){
+  const enregistre = CONF[clePile()];
+  const e = entrees();
+  const defaut = e.map(x => x.k);
+  if (!Array.isArray(enregistre)) return e;
+  const rang = x => {
+    const i = enregistre.indexOf(x.k);
+    return i >= 0 ? i : 10000 + defaut.indexOf(x.k);   // les nouvelles couches à la fin
+  };
+  return e.slice().sort((a, b) => rang(a) - rang(b));
+}
+
+function groupe(k){
+  const c = $("couches");
+  if (k.indexOf("fond:") === 0)   return c.querySelector('.cal[data-cle="' + CSS.escape(k.slice(5)) + '"]');
+  if (k.indexOf("dessin:") === 0) return c.querySelector('.dcal[data-dcal="' + CSS.escape(k.slice(7)) + '"]');
+  return $(k.slice(5));
+}
+
+/* déplacer les nœuds plutôt que tout reconstruire : réordonner est instantané */
+function ordonneDom(){
+  const c = $("couches");
+  pile().forEach(x => { const g = groupe(x.k); if (g) c.appendChild(g); });
+}
+
+function deplaceCouche(k, dir){
+  const liste = pile().map(x => x.k);
+  const i = liste.indexOf(k), j = i + dir;
+  if (i < 0 || j < 0 || j >= liste.length) return;
+  liste[i] = liste[j]; liste[j] = k;
+  CONF[clePile()] = liste;
+  enregistreConf();
+  ordonneDom();
+  construitPanneau();
+}
+
+/* ============================================================
+   Panneau : une seule liste, tous types confondus
+   ============================================================ */
+function construitPanneau(){
+  const hote = $("pile");
+  hote.innerHTML = "";
+  const reorg = document.createElement("button");
+  reorg.className = "reorg";
+  reorg.textContent = "⇅ Réorganiser les calques";
+  reorg.onclick = ouvreOrdre;
+  hote.appendChild(reorg);
+  const liste = pile().slice().reverse();   // premier plan en tête
+
+  liste.forEach((x, i) => {
+    const d = document.createElement("div");
+    d.className = "calq" + (x.t === "dessin" ? " perso" : "") +
+                  (x.t === "dessin" && x.ref.id === calqueActif ? " actif" : "");
+    if (x.t === "dessin") d.dataset.dcal = x.ref.id;
+
+    const c = x.t === "dessin" ? x.ref : conf(x.t === "fond" ? x.k.slice(5) : x.k);
+    const coche = c.visible === false ? "" : " checked";
+    d.innerHTML = '<label><input type="checkbox"' + coche + '><span></span></label>' +
+      '<span class="opts">' +
+      (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
+      '<input type="color" class="cc">' +
+      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+                          '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
+      '</span>';
+
+    const nom = d.querySelector("label span");
+    nom.textContent = x.nom;
+
+    /* visibilité */
+    d.querySelector('input[type="checkbox"]').onchange = ev => {
+      const on = ev.target.checked;
+      if (x.t === "dessin"){ x.ref.visible = on; enregistreDessins(); dessineDessins(); }
+      else { c.visible = on; enregistreConf();
+             x.t === "fond" ? styleFond(x.k.slice(5)) : styleDataGroupe(x.k.slice(5), on); }
+    };
+
+    /* couleur */
+    const cc = d.querySelector(".cc");
+    cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
+    cc.oninput = ev => {
+      if (x.t === "dessin"){ x.ref.couleur = ev.target.value; enregistreDessins(); dessineDessins(); }
+      else { c.couleur = ev.target.value; enregistreConf();
+             x.t === "fond" ? styleFond(x.k.slice(5)) : appliqueCouleursData(); }
+    };
+
+    /* trait ou aplat */
+    const fb = d.querySelector(".fillbtn");
+    if (fb){
+      fb.setAttribute("aria-pressed", !!c.rempli);
+      fb.onclick = () => {
+        c.rempli = !c.rempli;
+        fb.setAttribute("aria-pressed", !!c.rempli);
+        if (x.t === "dessin"){ enregistreDessins(); dessineDessins(); }
+        else { enregistreConf(); styleFond(x.k.slice(5)); }
+      };
+    }
+
+    /* propre aux calques de dessin */
+    if (x.t === "dessin"){
+      nom.title = "Cliquez pour dessiner dessus, double-cliquez pour renommer";
+      const cr = d.querySelector(".ren");
+      cr.setAttribute("aria-pressed", x.ref.id === calqueActif);
+      cr.onclick = ev => { ev.stopPropagation(); activeCalque(x.ref.id); };
+      d.querySelector("label").onclick = ev => {
+        if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
+      };
+      nom.ondblclick = ev => { ev.preventDefault(); renommeCalque(x.ref); };
+      d.querySelector(".sup").onclick = () => {
+        const n = x.ref.formes.length;
+        confirme("Supprimer le calque ?",
+          "« " + x.ref.nom + " » et " +
+          (n ? "ses " + n + " forme" + (n > 1 ? "s" : "") : "son contenu") +
+          " seront définitivement perdus.",
+          "Supprimer", () => {
+            memorise();
+            DESSINS[P().id] = mesCalques().filter(y => y.id !== x.ref.id);
+            if (calqueActif === x.ref.id) activeCalque(null);
+            enregistreDessins(); dessineDessins(); construitPanneau();
+          });
+      };
+    }
+
+    hote.appendChild(d);
+
+    /* sous-calques de l'habillage : couleur et visibilité, pas d'ordre */
+    if (x.t === "fond"){
+      const sous = sousCalques(x.k.slice(5));
+      if (sous.length > 1) sous.forEach(sc =>
+        rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
+                 () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
+    }
+    /* les deux couleurs de texte se règlent sous la couche Textes */
+    if (x.k === "data:labels"){
+      rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
+      rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
+    }
+  });
+
+  const plus = document.createElement("button");
+  plus.className = "ajout";
+  plus.textContent = "+ Nouveau calque de dessin";
+  plus.onclick = creeCalque;
+  hote.appendChild(plus);
+}
+
+/* ligne secondaire : visibilité et couleur seulement */
+function rangSous(hote, cle, libelle, defaut, applique){
+  const c = conf(cle);
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox"' + (c.visible === false ? "" : " checked") +
+    '><span></span></label><span class="opts">' +
+    '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>' +
+    '<input type="color" class="cc"></span>';
+  d.querySelector("label span").textContent = libelle;
+  d.querySelector('input[type="checkbox"]').onchange = e => {
+    c.visible = e.target.checked; enregistreConf(); applique();
+  };
+  const cc = d.querySelector(".cc");
+  cc.value = c.couleur || defaut();
+  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
+  const fb = d.querySelector(".fillbtn");
+  fb.setAttribute("aria-pressed", !!c.rempli);
+  fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
+                       enregistreConf(); applique(); };
+  hote.appendChild(d);
+}
+
+function defautCouleur(x){
+  if (x.t === "dessin") return "#2F49D1";
+  if (x.t === "fond") return jeton("--plan-line");
+  return jeton(x.k === "data:zones" ? "--zone" : x.k === "data:stands" ? "--stand" : "--ink");
+}

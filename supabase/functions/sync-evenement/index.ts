@@ -89,7 +89,11 @@ Deno.serve(async (req) => {
     const g = gaia(evt.instance, evt.event_id ?? undefined);
     const resume: Record<string, unknown>[] = [];
 
-    const plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
+    let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
+    // Un pavillon représente plusieurs mégaoctets de SVG à alléger : on peut
+    // le traiter seul si la synchronisation complète dépasse le temps imparti.
+    if (corps.idPlan) plans = plans.filter((p) => p.Id === corps.idPlan);
+    if (!plans.length) return repond({ erreur: "Aucun pavillon à traiter." }, 404);
 
     for (const plan of plans) {
       /* --- le pavillon --- */
@@ -222,11 +226,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    await db.from("evenement").update({
-      derniere_sync: new Date().toISOString(),
-      derniere_err: null,
-      modifie_le: new Date().toISOString(),
-    }).eq("id", evt.id);
+    // une synchronisation partielle ne fait pas foi comme date de référence
+    if (!corps.idPlan) {
+      await db.from("evenement").update({
+        derniere_sync: new Date().toISOString(),
+        derniere_err: null,
+        modifie_le: new Date().toISOString(),
+      }).eq("id", evt.id);
+    }
 
     return repond({ ok: true, pavillons: resume });
   } catch (err) {

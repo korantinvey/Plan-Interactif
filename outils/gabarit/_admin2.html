@@ -1,0 +1,49 @@
+/* ============================================================
+   12. Démarrage
+   ============================================================ */
+/* ------------------------------------------------------------------
+   Démarrage : données figées si elles sont dans la page, sinon appel
+   à l'API. Une panne du réseau doit se voir, pas laisser un écran vide.
+   ------------------------------------------------------------------ */
+function demarre(d){
+  indexe(d);
+  montePlan();
+  fit();
+  liste();
+  const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
+  if (v && v !== "admin"){
+    const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
+    if (cible) setTimeout(() => select(cible.id, true), 80);
+  }
+}
+
+function annonce(txt, erreur){
+  const l = $("list");
+  l.innerHTML = '<div class="empty"></div>';
+  l.querySelector(".empty").textContent = txt;
+  if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
+  $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+}
+
+const fige = document.getElementById("data").textContent.trim();
+if (fige && fige.indexOf("__DATA__") < 0){
+  demarre(JSON.parse(fige));
+} else if (API){
+  annonce("Chargement du plan…");
+  fetch(API + "?slug=" + encodeURIComponent(SLUG))
+    .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status)))))
+    .then(d => { if (!d.plans?.length) throw new Error("Aucun pavillon publié."); demarre(d); })
+    .catch(e => annonce("Plan indisponible : " + e.message, true));
+} else {
+  annonce("Aucune source de données configurée.", true);
+}
+
+// les mesures de texte dépendent des polices : on retrace une fois chargées
+// les polices peuvent arriver avant les données : on ne retrace que si
+// quelque chose est déjà affiché
+if (document.fonts && document.fonts.ready)
+  document.fonts.ready.then(() => { if (DATA && view){ _lg.clear(); libelles(); } });
+
+addEventListener("resize", () => { if (DATA && view) fit(); });
+
+</script>

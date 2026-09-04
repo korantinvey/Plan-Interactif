@@ -478,33 +478,44 @@ if (!document.querySelector('meta[name="viewport"]')){
   document.head.appendChild(mv);
 }
 
-const DATA = JSON.parse(document.getElementById("data").textContent);
 const $ = id => document.getElementById(id);
 const svg = $("plan");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
   c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* ============================================================
-   1. Index global — la recherche porte sur tous les pavillons
-   ============================================================ */
-DATA.plans.forEach((p, i) => {
-  p.i = i;
-  p.court = p.libelle.replace(/^Pavillon\s*/i, "");
-  p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
-  p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
-});
-const TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
-const parId = new Map(TOUS.map(o => [o.id, o]));
+/* Deux origines possibles pour les données : figées dans la page, ou
+   servies par l'API. La page est la même, seul le démarrage diffère. */
+const API = document.currentScript?.dataset.api || "";
+const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
+let DATA = null, TOUS = [], parId = new Map();
 const state = { q: "", filtre: null, sel: null, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
-$("titre").textContent = DATA.evenement;
-$("sub").textContent = DATA.plans.length + " pavillons";
-$("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
-$("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
-$("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+/* ============================================================
+   1. Index global — la recherche porte sur tous les pavillons
+   ============================================================ */
+function indexe(d){
+  DATA = d;
+  DATA.plans.forEach((p, i) => {
+    p.i = i;
+    p.court = String(p.libelle).replace(/^Pavillons*/i, "");
+    p.zones = p.zones || [];
+    p.stands = p.stands || [];
+    p.fond = p.fond || [];
+    p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
+    p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
+  });
+  TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
+  parId = new Map(TOUS.map(o => [o.id, o]));
+
+  $("titre").textContent = DATA.evenement || "Plan du salon";
+  $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
+  $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
+  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
+  $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+}
 
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu
@@ -1929,20 +1940,49 @@ function ouvreOrdre(){
 /* ============================================================
    12. Démarrage
    ============================================================ */
-montePlan();
-fit();
-liste();
+/* ------------------------------------------------------------------
+   Démarrage : données figées si elles sont dans la page, sinon appel
+   à l'API. Une panne du réseau doit se voir, pas laisser un écran vide.
+   ------------------------------------------------------------------ */
+function demarre(d){
+  indexe(d);
+  montePlan();
+  fit();
+  liste();
+  const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
+  if (v && v !== "admin"){
+    const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
+    if (cible) setTimeout(() => select(cible.id, true), 80);
+  }
+}
+
+function annonce(txt, erreur){
+  const l = $("list");
+  l.innerHTML = '<div class="empty"></div>';
+  l.querySelector(".empty").textContent = txt;
+  if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
+  $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+}
+
+const fige = document.getElementById("data").textContent.trim();
+if (fige && fige.indexOf("__DATA__") < 0){
+  demarre(JSON.parse(fige));
+} else if (API){
+  annonce("Chargement du plan…");
+  fetch(API + "?slug=" + encodeURIComponent(SLUG))
+    .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status)))))
+    .then(d => { if (!d.plans?.length) throw new Error("Aucun pavillon publié."); demarre(d); })
+    .catch(e => annonce("Plan indisponible : " + e.message, true));
+} else {
+  annonce("Aucune source de données configurée.", true);
+}
 
 // les mesures de texte dépendent des polices : on retrace une fois chargées
+// les polices peuvent arriver avant les données : on ne retrace que si
+// quelque chose est déjà affiché
 if (document.fonts && document.fonts.ready)
-  document.fonts.ready.then(() => { _lg.clear(); libelles(); });
+  document.fonts.ready.then(() => { if (DATA && view){ _lg.clear(); libelles(); } });
 
-addEventListener("resize", () => { if (view) fit(); });
+addEventListener("resize", () => { if (DATA && view) fit(); });
 
-// lien profond : #G56 ouvre la fiche, quel que soit le pavillon
-const vise = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
-if (vise && vise !== "admin"){
-  const cible = TOUS.find(o => (o.code || "").toLowerCase() === vise);
-  if (cible) setTimeout(() => select(cible.id, true), 80);
-}
 </script>

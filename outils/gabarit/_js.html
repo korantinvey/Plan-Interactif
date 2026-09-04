@@ -1,0 +1,433 @@
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+/* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
+   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. */
+if (!document.querySelector('meta[name="viewport"]')){
+  const mv = document.createElement("meta");
+  mv.name = "viewport";
+  mv.content = "width=device-width, initial-scale=1, viewport-fit=cover";
+  document.head.appendChild(mv);
+}
+
+const $ = id => document.getElementById(id);
+const svg = $("plan");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* Deux origines possibles pour les données : figées dans la page, ou
+   servies par l'API. La page est la même, seul le démarrage diffère. */
+const API = document.currentScript?.dataset.api || "";
+const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
+
+let DATA = null, TOUS = [], parId = new Map();
+const state = { q: "", filtre: null, sel: null, plan: 0 };
+const P = () => DATA.plans[state.plan];
+let view, emp;
+
+/* ============================================================
+   1. Index global — la recherche porte sur tous les pavillons
+   ============================================================ */
+function indexe(d){
+  DATA = d;
+  DATA.plans.forEach((p, i) => {
+    p.i = i;
+    p.court = String(p.libelle).replace(/^Pavillons*/i, "");
+    p.zones = p.zones || [];
+    p.stands = p.stands || [];
+    p.fond = p.fond || [];
+    p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
+    p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
+  });
+  TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
+  parId = new Map(TOUS.map(o => [o.id, o]));
+
+  $("titre").textContent = DATA.evenement || "Plan du salon";
+  $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
+  $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
+  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
+  $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+}
+
+/* ============================================================
+   2. Mesure de texte — largeur réelle dans la police de rendu
+   ============================================================ */
+const _cvs = document.createElement("canvas").getContext("2d");
+const _lg = new Map();
+function largeur(txt, police){
+  const k = police[0] + police[1] + "|" + txt;
+  let v = _lg.get(k);
+  if (v === undefined){
+    _cvs.font = police[0] + " 100px " + police[1];
+    v = _cvs.measureText(txt).width / 100;
+    if (!(v > 0)) v = txt.length * .55;
+    _lg.set(k, v);
+  }
+  return v;
+}
+const P_NOM = ["600", '"Instrument Sans", sans-serif'];
+const P_CODE = ["500", '"IBM Plex Mono", monospace'];
+
+function decoupe(txt, n){
+  if (n === 1) return [txt];
+  const mots = txt.split(/\s+/);
+  if (mots.length < n) return null;
+  const cible = Math.ceil(txt.length / n);
+  const out = [""];
+  for (const m of mots){
+    const cur = out[out.length - 1];
+    if (cur && (cur + " " + m).length > cible && out.length < n) out.push(m);
+    else out[out.length - 1] = cur ? cur + " " + m : m;
+  }
+  return out.length === n ? out : null;
+}
+function habille(txt, w, h, maxPolice, police){
+  let best = null;
+  for (let n = 1; n <= 3; n++){
+    const lignes = decoupe(txt, n);
+    if (!lignes) continue;
+    const plusLarge = Math.max(...lignes.map(l => largeur(l, police)));
+    const f = Math.min(w / plusLarge, h / (lignes.length * 1.18), maxPolice);
+    if (!best || f > best.f) best = { f, lignes };
+  }
+  return best;
+}
+function lignesSvg(lignes, f, x, yCentre, cls){
+  const dep = yCentre - ((lignes.length - 1) * f * 1.18) / 2 + f * .33;
+  return lignes.map((t, i) =>
+    '<text class="' + cls + '" x="' + x + '" y="' + (dep + i * f * 1.18).toFixed(2) +
+    '" font-size="' + f.toFixed(2) + '">' + esc(t) + '</text>').join("");
+}
+
+/* ============================================================
+   3. Rendu du pavillon courant
+   ============================================================ */
+/* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
+   ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
+   instantané malgré le poids du fond de plan. */
+function monteHabillage(){
+  const c = $("couches");
+  c.querySelectorAll(".cal").forEach(g => g.remove());
+  P().fond.forEach(f => {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("class", "cal");
+    g.dataset.cle = f.cle;
+    g.innerHTML = f.svg;
+    c.appendChild(g);
+  });
+}
+
+function montePlan(){
+  const p = P();
+  $("zones").innerHTML = p.zones.map(z =>
+    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
+  $("stands").innerHTML = p.stands.map(s =>
+    '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
+    esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
+  emp = p.emprise;
+  calqueActif = null;
+  HIST.length = REFAIRE.length = 0;
+  $("outils").classList.remove("open");
+  monteHabillage();
+  dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  appliqueApparence();
+  if (ADMIN) construitPanneau();
+  onglets();
+}
+
+function onglets(){
+  $("halls").innerHTML = DATA.plans.map((p, i) =>
+    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '">' +
+    esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
+  $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
+}
+
+function changePlan(i){
+  if (i === state.plan) return;
+  state.plan = i;
+  ferme();
+  montePlan(); fit(); liste();
+}
+
+/* ============================================================
+   4. Libellés — le nom de l'exposant prime sur le numéro
+   ============================================================ */
+function libelles(){
+  const l = $("labels"), p = P();
+  const r = svg.getBoundingClientRect();
+  const pxParM = (r.width || 1) / view.w;
+  const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
+                       o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
+  let out = "";
+
+  for (const z of p.zones){
+    const sel = z.id === state.sel;
+    if (!z.nom || (!sel && (!visible(z) || !dansVue(z)))) continue;
+    const a = habille(z.nom, z.bb[0] * .88, z.bb[1] * .7, 3.4, P_NOM);
+    if (!a || (!sel && a.f * pxParM < 6.5)) continue;
+    out += lignesSvg(a.lignes, a.f, z.c[0], z.c[1], "zn" + (sel ? " sel" : ""));
+  }
+
+  for (const s of p.stands){
+    const sel = s.id === state.sel;
+    if (!sel && (!visible(s) || !dansVue(s))) continue;
+    if (!s.code && !s.nom) continue;
+    const w = s.bb[0], h = s.bb[1];
+
+    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+    const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
+    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+    const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
+    const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
+    if (!codeLisible && !nomLisible) continue;
+
+    const c = sel ? " sel" : "";
+    const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
+    const hCode = codeLisible ? fc * 1.25 : 0;
+    let y = s.c[1] - (hNom + hCode) / 2;
+    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, s.c[0], y + hNom / 2, "nm" + c); y += hNom; }
+    if (codeLisible)
+      out += '<text class="' + c.trim() + '" x="' + s.c[0] + '" y="' + (y + fc * .92).toFixed(2) +
+             '" font-size="' + fc.toFixed(2) + '">' + esc(s.code) + '</text>';
+  }
+  l.innerHTML = out;
+}
+
+/* ============================================================
+   5. Recherche — sans mot-clé on reste sur le pavillon affiché,
+      dès qu'on cherche on balaie les trois
+   ============================================================ */
+function visible(o){
+  const q = state.q.trim().toLowerCase();
+  if (state.filtre && o.kind !== state.filtre) return false;
+  if (!q) return true;
+  return ((o.nom || "") + " " + (o.code || "") + " " + (o.plan || "")).toLowerCase().includes(q);
+}
+
+function appliqueFiltre(){
+  document.querySelectorAll("#stands g, #zones g").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visible(o));
+  });
+  libelles(); liste();
+}
+
+function liste(){
+  const box = $("list");
+  const q = state.q.trim();
+  const portee = q ? TOUS : [...P().zones, ...P().stands];
+  const vus = portee.filter(visible).sort((a, b) =>
+    (a.p - b.p) ||
+    (a.kind === b.kind ? 0 : a.kind === "zone" ? -1 : 1) ||
+    ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
+    String(a.nom || a.code || "").localeCompare(String(b.nom || b.code || ""), "fr", { numeric: true }));
+
+  $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
+    (q ? " · tous pavillons" : " · " + P().libelle);
+
+  box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
+    const sous = o.kind === "zone" ? "Zone organisateur"
+      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    const badge = o.p !== state.plan
+      ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
+    return '<button class="row ' + (o.kind === "zone" ? "z" : "") + '" data-id="' + o.id +
+      '" aria-current="' + (state.sel === o.id) + '">' +
+      '<span class="code">' + esc(o.code || (o.kind === "zone" ? "ZOD" : "—")) + '</span>' +
+      '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || ""))) + '</span><br>' +
+      '<span class="s">' + sous + badge + '</span></span></button>';
+  }).join("")
+    : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
+  box.querySelectorAll(".row").forEach(b => b.onclick = () => select(b.dataset.id, true));
+}
+
+/* ============================================================
+   6. Vue
+   ============================================================ */
+const appliqueVue = () => {
+  svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+  if (typeof dessinePoignees === "function") dessinePoignees();
+};
+function fit(){
+  const r = svg.getBoundingClientRect();
+  const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
+  const k = Math.max(w / (r.width || 1), h / (r.height || 1));
+  view = { x: emp.x0 + w / 2 - (k * r.width) / 2, y: emp.y0 + h / 2 - (k * r.height) / 2,
+           w: k * r.width, h: k * r.height };
+  appliqueVue(); echelle(); libelles();
+}
+function zoom(f, cx, cy){
+  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, view.w * f)), k = nw / view.w;
+  view = { x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w: nw, h: view.h * k };
+  appliqueVue(); echelle(); libelles();
+}
+function echelle(){
+  const r = svg.getBoundingClientRect();
+  const mParPx = view.w / (r.width || 1);
+  const pas = [1, 2, 5, 10, 20, 50, 100, 200].find(p => p >= mParPx * 90) || 200;
+  $("scaleBar").style.width = (pas / mParPx) + "px";
+  $("scaleTxt").textContent = pas + " m";
+}
+
+/* ============================================================
+   7. Sélection et fiche
+   ============================================================ */
+const REDUIT = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let anim = null;
+function anime(rect, sens){
+  const p = $("detail");
+  if (anim){ anim.cancel(); anim = null; }
+  if (REDUIT || !rect){ if (sens < 0) p.classList.remove("open"); return; }
+  const b = p.getBoundingClientRect();
+  p.style.transformOrigin = (rect.left + rect.width / 2 - b.left) + "px " +
+                            (rect.top + rect.height / 2 - b.top) + "px";
+  const seed = { transform: "scale(" + Math.max(.05, rect.width / b.width) + "," +
+                            Math.max(.03, rect.height / b.height) + ")", opacity: 0 };
+  const plein = { transform: "none", opacity: 1 };
+  anim = p.animate(sens > 0 ? [seed, plein] : [plein, seed],
+    { duration: sens > 0 ? 340 : 200,
+      easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
+  if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
+}
+const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+
+function select(id, recentrer){
+  const o = parId.get(id);
+  if (!o) return;
+  if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
+    state.plan = o.p; montePlan(); fit();
+  }
+  document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  state.sel = id;
+  const n = noeud(id); if (n) n.classList.add("sel");
+  if (recentrer) centre(o);
+  liste(); libelles();
+  ouvre(o, n ? n.getBoundingClientRect() : null);
+}
+function centre(o){
+  const w = Math.min(view.w, 55), h = w * (view.h / view.w);
+  view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2, w: w, h: h };
+  appliqueVue(); echelle(); libelles();
+}
+function ouvre(o, rect){
+  const zone = o.kind === "zone";
+  $("dKind").textContent = zone ? "Zone organisateur" : "Stand";
+  $("dName").textContent = o.nom || o.plan || ("Stand " + (o.code || ""));
+  $("dCode").textContent = DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
+  const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
+                          '</span><span class="v">' + v + '</span></div>' : "";
+  const url = o.site ? String(o.site).replace(/\\/g, "").replace(/^(?!https?:)/, "https://") : "";
+  $("dBody").innerHTML =
+    f("Surface", o.m2 ? o.m2 + " m²" : "") +
+    f("Angles ouverts", o.angles != null && !zone ? String(o.angles) : "") +
+    f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "") +
+    f("Commercialisation", !zone && o.etat ? esc(o.etat) : "") +
+    f("Site web", url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener">' +
+                        esc(url.replace(/^https?:\/\//, "")) + '</a>' : "") +
+    (o.nomencl && o.nomencl.length
+      ? '<div class="field"><span class="eyebrow">Nomenclature</span><div class="tags">' +
+        o.nomencl.map(n => '<span class="tag">' + esc(String(n).replace(/^SMCL26_/, "")) + '</span>').join("") +
+        '</div></div>' : "") +
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+  $("dGo").onclick = () => centre(o);
+  $("detail").classList.add("open");
+  $("voile").classList.add("on");
+  anime(rect, 1);
+}
+function ferme(){
+  const id = state.sel, ouvert = $("detail").classList.contains("open");
+  document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  state.sel = null; liste(); libelles(); $("voile").classList.remove("on");
+  if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
+}
+$("closeDetail").onclick = ferme;
+$("voile").onclick = ferme;
+
+/* ============================================================
+   8. Interactions du plan
+   ============================================================ */
+let drag = null;
+svg.addEventListener("pointerdown", e => {
+  if (dessinPointerDown(e)) return;
+  drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
+           cible: e.target.closest("[data-id]") };
+  svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+});
+svg.addEventListener("pointermove", e => {
+  if (dessinPointerMove(e)) return;
+  if (!drag) return;
+  const r = svg.getBoundingClientRect(), k = view.w / r.width;
+  const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
+  if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
+  view.x = drag.vx - dx; view.y = drag.vy - dy; appliqueVue();
+});
+/* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
+   au pointerdown et on tranche au pointerup. */
+svg.addEventListener("pointerup", e => {
+  if (dessinPointerUp(e)) return;
+  const d = drag; drag = null; svg.classList.remove("dragging");
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  if (d && d.bouge){ libelles(); return; }
+  if (!d) return;
+  if (d.cible) select(d.cible.dataset.id, false); else ferme();
+});
+svg.addEventListener("pointercancel", () => { drag = null; svg.classList.remove("dragging"); });
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = svg.getBoundingClientRect();
+  zoom(e.deltaY > 0 ? 1.18 : .85,
+       view.x + (e.clientX - r.left) / r.width * view.w,
+       view.y + (e.clientY - r.top) / r.height * view.h);
+}, { passive: false });
+svg.addEventListener("keydown", e => {
+  const g = e.target.closest("[data-id]");
+  if (g && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); select(g.dataset.id, false); }
+});
+document.addEventListener("keydown", e => {
+  const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  if (ADMIN && !saisie && (e.ctrlKey || e.metaKey)){
+    const t = e.key.toLowerCase();
+    if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return; }
+    if (t === "y" || (t === "z" && e.shiftKey)){ e.preventDefault(); refais(); return; }
+  }
+  if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
+    e.preventDefault(); supprimeForme(); return;
+  }
+  if (e.key === "Escape"){
+    if (enCours){ termineTrace(false); return; }
+    if (formeSel){ choisitForme(null); return; }
+    if (calqueActif){ activeCalque(calqueActif); return; }
+    ferme();
+    if ($("panel")) $("panel").classList.remove("open");
+  }
+  if (e.key === "Enter" && e.target.id !== "q" && e.target.id !== "texteADessiner") termineTrace(true);
+});
+
+$("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
+$("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
+$("zFit").onclick = fit;
+$("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre(); });
+
+[["Tout", null], ["Stands", "stand"], ["Zones", "zone"]].forEach(([lbl, v], i) => {
+  const b = document.createElement("button");
+  b.className = "chip"; b.textContent = lbl;
+  b.setAttribute("aria-pressed", state.filtre === v);
+  b.onclick = () => {
+    state.filtre = v;
+    $("filters").querySelectorAll(".chip").forEach((c, j) =>
+      c.setAttribute("aria-pressed", [null, "stand", "zone"][j] === v));
+    appliqueFiltre();
+  };
+  $("filters").appendChild(b);
+});
+
+/* thème */
+const CLE_THEME = "plan-theme";
+try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+$("btnTheme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = sombre ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+};
+</script>

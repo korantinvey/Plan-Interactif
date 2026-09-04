@@ -1,0 +1,148 @@
+
+/* ============================================================
+   9. Apparence des calques
+   Les réglages vivent dans CONF, partagés par les trois pavillons :
+   changer la couleur du bâtiment une fois vaut pour tous.
+   ============================================================ */
+const CLE_CONF = "plan-conf";
+const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
+let CONF = JSON.parse(JSON.stringify(DEFAUTS));
+try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+const conf = c => (CONF[c] = CONF[c] || {});
+const jeton = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888888";
+const sousCle = (cle, id) => cle + "/" + id;
+
+function styleFond(cle){
+  const c = conf(cle);
+  const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
+  if (!g) return;
+  g.style.display = c.visible === false ? "none" : "";
+  g.querySelectorAll("g[data-s]").forEach(sub => {
+    const sc = CONF[sousCle(cle, sub.id)] || {};
+    const src = sub.dataset.s || "";
+    const noir = !src || src === "rgb(0,0,0)";
+    sub.style.display = sc.visible === false ? "none" : "";
+    sub.style.color = sc.couleur || c.couleur || (noir ? "" : src);
+    const rempli = sc.rempli !== undefined ? sc.rempli : c.rempli;
+    if (rempli){
+      sub.setAttribute("fill", "currentColor");
+      sub.setAttribute("stroke", "none");
+    } else {
+      sub.setAttribute("fill", sub.dataset.f || "none");
+      sub.setAttribute("stroke", "currentColor");
+    }
+  });
+}
+function sousCalques(cle){
+  const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(cle) + '"]');
+  return g ? [...g.querySelectorAll("g[data-s]")].map(s => ({ id: s.id, src: s.dataset.s })) : [];
+}
+
+const racine = document.documentElement;
+
+/* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
+   l'affichage du groupe, leur couleur sur une variable CSS. */
+function styleDataGroupe(nom, on){ $(nom).style.display = on ? "" : "none"; }
+
+function appliqueCouleursData(){
+  const pose = (v, n) => v ? racine.style.setProperty(n, v) : racine.style.removeProperty(n);
+  pose(conf("data:stands").couleur, "--c-stand");
+  pose(conf("data:zones").couleur, "--c-zone");
+  const general = conf("data:labels").couleur;
+  pose(conf("labStand").couleur || general, "--c-lab-stand");
+  pose(conf("labZone").couleur || general, "--c-lab-zone");
+}
+
+function styleData(cle){
+  racine.classList.toggle(cle === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
+                          conf(cle).visible === false);
+  appliqueCouleursData();
+}
+
+function appliqueApparence(){
+  P().fond.forEach(f => {
+    if (CONF[f.cle] === undefined && !f.visible) conf(f.cle).visible = false;
+    styleFond(f.cle);
+  });
+  ["zones", "stands", "labels"].forEach(n =>
+    styleDataGroupe(n, conf("data:" + n).visible !== false));
+  ["labStand", "labZone"].forEach(k =>
+    racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
+                            conf(k).visible === false));
+  appliqueCouleursData();
+}
+
+/* ============================================================
+   10. Menu d'administration
+   Ctrl + Alt + A. Le paramètre d'URL ne traverse pas l'iframe d'une page
+   publiée, ce raccourci si — et il reste invisible pour un visiteur.
+   ============================================================ */
+const CLE_ADMIN = "plan-admin";
+let ADMIN = /(?:^|[?&])admin=1(?:&|$)/.test(location.search) || /^#admin\b/.test(location.hash);
+try { if (localStorage.getItem(CLE_ADMIN) === "1") ADMIN = true; } catch (e) {}
+addEventListener("keydown", e => {
+  if (e.ctrlKey && e.altKey && (e.key === "a" || e.key === "A")){
+    e.preventDefault();
+    try { localStorage.setItem(CLE_ADMIN, ADMIN ? "0" : "1"); } catch (err) {}
+    location.reload();
+  }
+});
+
+const enregistreConf = () => { try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {} };
+const rgbHex = s => {
+  const m = /rgb((d+),s*(d+),s*(d+))/.exec(s || "");
+  return m ? "#" + [1, 2, 3].map(i => (+m[i]).toString(16).padStart(2, "0")).join("") : null;
+};
+const joli = id => id.replace(/^d+-/, "").replace(/[_-]+/g, " ").toLowerCase()
+                     .replace(/^./, c => c.toUpperCase());
+
+if (!ADMIN){
+  $("btnLayers").remove();
+  $("panel").remove();
+} else {
+  $("btnLayers").onclick = () => {
+    const o = $("panel").classList.toggle("open");
+    $("btnLayers").setAttribute("aria-pressed", o);
+  };
+  const barre = document.createElement("div");
+  barre.className = "adminbar";
+  barre.innerHTML = '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>' +
+                    '<button class="reset" id="copieConf">Copier la configuration</button>' +
+                    '<button class="reset" id="importConf">Importer une configuration</button>';
+  $("panel").appendChild(barre);
+  $("razConf").onclick = () => {
+    CONF = JSON.parse(JSON.stringify(DEFAUTS));
+    try { localStorage.removeItem(CLE_CONF); } catch (e) {}
+    appliqueApparence(); construitPanneau();
+  };
+  $("copieConf").onclick = e => {
+    navigator.clipboard && navigator.clipboard.writeText(JSON.stringify({ apparence: CONF, dessins: DESSINS }, null, 2)).then(
+      () => { e.target.textContent = "Configuration copiée";
+              setTimeout(() => e.target.textContent = "Copier la configuration", 1800); },
+      () => { e.target.textContent = "Copie impossible"; });
+  };
+
+  /* Reprendre une configuration exportée depuis un autre poste, ou celle
+     d'une édition précédente : rien n'est perdu à la mise à jour du plan. */
+  $("importConf").onclick = () => {
+    if ($("zoneImport")) { $("zoneImport").remove(); return; }
+    const z = document.createElement("div");
+    z.className = "importzone"; z.id = "zoneImport";
+    z.innerHTML = '<textarea placeholder="Collez ici le JSON copié"></textarea>' +
+                  '<div class="rangee"><button class="reset" id="impOk">Appliquer</button>' +
+                  '<span id="impMsg"></span></div>';
+    barre.after(z);
+    z.querySelector("textarea").focus();
+    $("impOk").onclick = () => {
+      let lu;
+      try { lu = JSON.parse(z.querySelector("textarea").value); }
+      catch (err) { $("impMsg").textContent = "JSON illisible"; return; }
+      if (lu.apparence) Object.assign(CONF, lu.apparence);
+      if (lu.dessins) Object.keys(lu.dessins).forEach(k => { DESSINS[k] = lu.dessins[k]; });
+      enregistreConf(); enregistreDessins();
+      appliqueApparence(); monteHabillage(); dessineDessins(); construitPanneau();
+      $("impMsg").textContent = "Configuration reprise";
+    };
+  };
+}
+

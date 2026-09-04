@@ -1,0 +1,122 @@
+
+/* ============================================================
+   Fenêtres modales : confirmation et réorganisation des calques
+   ============================================================ */
+function ouvreModale(titre, remplitCorps, boutons){
+  $("mTitre").textContent = titre;
+  $("mCorps").innerHTML = "";
+  remplitCorps($("mCorps"));
+  $("mPied").innerHTML = "";
+  boutons.forEach(b => {
+    const el = document.createElement("button");
+    el.className = "btn" + (b.genre ? " " + b.genre : "");
+    el.textContent = b.libelle;
+    el.onclick = () => { if (b.action) b.action(); if (b.ferme !== false) fermeModale(); };
+    $("mPied").appendChild(el);
+  });
+  $("modale").classList.add("open");
+}
+function fermeModale(){ $("modale").classList.remove("open"); }
+$("mFermer").onclick = fermeModale;
+$("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && $("modale").classList.contains("open")) fermeModale();
+});
+
+function confirme(titre, message, libelleOui, action){
+  ouvreModale(titre, corps => {
+    const p = document.createElement("p");
+    p.textContent = message;
+    corps.appendChild(p);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: libelleOui, genre: "danger", action: action },
+  ]);
+}
+
+/* ------------------------------------------------------------
+   Réorganisation : le premier rang de la liste est le calque le
+   plus en avant, comme dans n'importe quel gestionnaire de calques.
+   ------------------------------------------------------------ */
+const GENRE = { fond: "plan", data: "données", dessin: "dessin" };
+let tireK = null;
+
+function deplaceVers(k, cible, apres){
+  const liste = pile().map(x => x.k);
+  const i = liste.indexOf(k);
+  if (i < 0) return;
+  liste.splice(i, 1);
+  let j = liste.indexOf(cible);
+  if (j < 0) j = liste.length - 1;
+  liste.splice(apres ? j + 1 : j, 0, k);
+  CONF[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+function versExtremite(k, devant){
+  const liste = pile().map(x => x.k).filter(x => x !== k);
+  devant ? liste.push(k) : liste.unshift(k);   // fin de tableau = premier plan
+  CONF[clePile()] = liste;
+  enregistreConf();
+  ordonneDom(); construitPanneau(); remplitOrdre();
+}
+
+function remplitOrdre(hote){
+  const ul = hote || $("mCorps").querySelector(".ordre");
+  if (!ul) return;
+  ul.innerHTML = "";
+  // affichage du premier plan vers l'arrière-plan
+  pile().slice().reverse().forEach(x => {
+    const li = document.createElement("li");
+    li.draggable = true;
+    li.dataset.k = x.k;
+    li.innerHTML = '<span class="poignee" aria-hidden="true">&#8942;&#8942;</span>' +
+      '<span class="nom"></span>' +
+      '<span class="bouts"><button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
+      '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
+    const nom = li.querySelector(".nom");
+    nom.textContent = x.nom;
+    const g = document.createElement("span");
+    g.className = "genre"; g.textContent = GENRE[x.t];
+    nom.appendChild(g);
+
+    li.querySelectorAll(".bouts button").forEach(b =>
+      b.onclick = ev => { ev.stopPropagation(); versExtremite(x.k, b.dataset.h === "1"); });
+
+    li.ondragstart = ev => { tireK = x.k; li.classList.add("drag");
+                             ev.dataTransfer.effectAllowed = "move";
+                             try { ev.dataTransfer.setData("text/plain", x.k); } catch (e) {} };
+    li.ondragend = () => { tireK = null; li.classList.remove("drag");
+                           ul.querySelectorAll("li").forEach(n => n.classList.remove("avant", "apres")); };
+    li.ondragover = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      li.classList.toggle("apres", bas);
+      li.classList.toggle("avant", !bas);
+    };
+    li.ondragleave = () => li.classList.remove("avant", "apres");
+    li.ondrop = ev => {
+      if (!tireK || tireK === x.k) return;
+      ev.preventDefault();
+      const r = li.getBoundingClientRect();
+      const bas = ev.clientY > r.top + r.height / 2;
+      // la liste est inversée : « en dessous » à l'écran = plus en arrière
+      deplaceVers(tireK, x.k, !bas);
+      tireK = null;
+    };
+    ul.appendChild(li);
+  });
+}
+
+function ouvreOrdre(){
+  ouvreModale("Ordre des calques", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Glissez pour réordonner. Le premier de la liste est au premier plan.";
+    const ul = document.createElement("ul");
+    ul.className = "ordre";
+    corps.appendChild(p); corps.appendChild(ul);
+    remplitOrdre(ul);
+  }, [{ libelle: "Terminé" }]);
+}

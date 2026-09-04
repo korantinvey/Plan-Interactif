@@ -1,0 +1,186 @@
+
+/* ============================================================
+   Édition des formes existantes
+   En mode Sélection : un clic choisit, un glisser déplace, les poignées
+   redimensionnent ou déplacent les sommets. Les poignées sont recalculées
+   à chaque changement de vue pour garder une taille constante à l'écran.
+   ============================================================ */
+let formeSel = null;
+let geste = null;
+
+function formeParId(id){
+  for (const c of mesCalques()){
+    const f = c.formes.find(x => x.id === id);
+    if (f) return { c: c, f: f };
+  }
+  return null;
+}
+
+function boite(f){
+  const xs = f.pts.map(p => p[0]), ys = f.pts.map(p => p[1]);
+  return [Math.min.apply(null, xs), Math.min.apply(null, ys),
+          Math.max.apply(null, xs), Math.max.apply(null, ys)];
+}
+
+/* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
+   sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
+function curseurPoignee(f, i){
+  if (f.t === "rect" || f.t === "image") return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
+  return "move";
+}
+
+function poignees(f){
+  if (f.t === "rect" || f.t === "image"){
+    const b = boite(f);
+    return [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+  }
+  if (f.t === "texte") return [f.pts[0]];
+  return f.pts;
+}
+
+function dessinePoignees(){
+  let g = $("poignees");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "poignees";
+    svg.appendChild(g);
+  }
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
+  const f = cible.f;
+  const r = svg.getBoundingClientRect();
+  const t = Math.max(.15, view.w / (r.width || 1) * 5);   // demi-côté, en mètres
+  const b = boite(f);
+  const marge = t;
+  g.innerHTML =
+    '<rect class="cadreSel" x="' + (b[0] - marge) + '" y="' + (b[1] - marge) +
+    '" width="' + (b[2] - b[0] + 2 * marge) + '" height="' + (b[3] - b[1] + 2 * marge) + '"/>' +
+    poignees(f).map((p, i) =>
+      '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurPoignee(f, i) + '"' +
+      ' x="' + (p[0] - t) + '" y="' + (p[1] - t) +
+      '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
+}
+
+function choisitForme(id){
+  formeSel = id;
+  // on bascule la classe plutôt que de tout retracer : inutile de réanalyser
+  // les images à chaque changement de sélection
+  $("couches").querySelectorAll(".dcal .forme")
+    .forEach(g => g.classList.toggle("pick", g.dataset.f === id));
+  dessinePoignees();
+  majElement();
+}
+
+/* --- panneau de la forme choisie --- */
+function majElement(){
+  const z = $("elemSel");
+  if (!z) return;
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || outil !== "main"){ z.hidden = true; return; }
+  z.hidden = false;
+  const f = cible.f;
+  const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
+                 texte: "Texte", image: "Image" };
+  $("elemType").textContent = NOMS[f.t] || f.t;
+  const estTexte = f.t === "texte";
+  $("elemTexte").hidden = !estTexte;
+  $("elemTaille").hidden = !estTexte;
+  if (estTexte){
+    $("elemTexte").value = f.txt || "";
+    $("elemTaille").value = f.taille || 2;
+  }
+}
+
+function appliqueTexte(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "texte") return;
+  memorise();
+  cible.f.txt = $("elemTexte").value;
+  cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+function supprimeForme(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible) return;
+  memorise();
+  cible.c.formes = cible.c.formes.filter(x => x.id !== formeSel);
+  formeSel = null;
+  enregistreDessins(); dessineDessins(); dessinePoignees(); majElement();
+}
+
+/* --- gestes d'édition ; renvoient true si l'événement est consommé --- */
+function editionPointerDown(e){
+  if (!ADMIN || !calqueActif || outil !== "main") return false;
+  const p = versPlan(e.clientX, e.clientY);
+
+  const pgn = e.target.closest(".pgn");
+  if (pgn && formeSel){
+    const cible = formeParId(formeSel);
+    if (cible){
+      memorise();
+      geste = { type: "poignee", i: +pgn.dataset.i, depart: p,
+                pts: cible.f.pts.map(q => q.slice()), f: cible.f };
+      svg.style.cursor = curseurPoignee(cible.f, geste.i);
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+      return true;
+    }
+  }
+
+  const g = e.target.closest(".dcal .forme");
+  if (g){
+    const id = g.dataset.f;
+    if (id !== formeSel) choisitForme(id);
+    const cible = formeParId(id);
+    if (cible){
+      memorise();
+      geste = { type: "deplace", depart: p, pts: cible.f.pts.map(q => q.slice()), f: cible.f };
+      svg.style.cursor = "move";
+      try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+    return true;
+  }
+
+  if (formeSel){ choisitForme(null); return true; }
+  return false;    // rien sous le pointeur : on laisse le déplacement de la vue
+}
+
+function editionPointerMove(e){
+  if (!geste) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
+  const f = geste.f;
+
+  if (geste.type === "deplace"){
+    f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
+  } else if (f.t === "rect" || f.t === "image"){
+    // la poignée opposée reste fixe ; l'image garde ses proportions
+    const b = [Math.min(geste.pts[0][0], geste.pts[1][0]), Math.min(geste.pts[0][1], geste.pts[1][1]),
+               Math.max(geste.pts[0][0], geste.pts[1][0]), Math.max(geste.pts[0][1], geste.pts[1][1])];
+    const coins = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+    const fixe = coins[(geste.i + 2) % 4];
+    let mx = coins[geste.i][0] + dx, my = coins[geste.i][1] + dy;
+    if (f.t === "image" && f.pts.length === 2){
+      const ratio = (b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
+      const l = Math.abs(mx - fixe[0]);
+      my = fixe[1] + Math.sign(my - fixe[1] || 1) * (l / ratio);
+    }
+    f.pts = [[+Math.min(fixe[0], mx).toFixed(2), +Math.min(fixe[1], my).toFixed(2)],
+             [+Math.max(fixe[0], mx).toFixed(2), +Math.max(fixe[1], my).toFixed(2)]];
+  } else {
+    const q = geste.pts.map(x => x.slice());
+    q[geste.i] = [+(q[geste.i][0] + dx).toFixed(2), +(q[geste.i][1] + dy).toFixed(2)];
+    f.pts = q;
+  }
+  dessineDessins(); dessinePoignees();
+  return true;
+}
+
+function editionPointerUp(e){
+  if (!geste) return false;
+  geste = null;
+  svg.style.cursor = "";
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  enregistreDessins();
+  return true;
+}
