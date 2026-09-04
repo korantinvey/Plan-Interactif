@@ -12,6 +12,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { Gaia, egal } from "../_partage/gaia.ts";
+import { Eventmaker, cleStand, type ExposantEm } from "../_partage/eventmaker.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
@@ -117,16 +118,49 @@ Deno.serve(async (req) => {
       .from("evenement").select("*").eq("id", corps.evenementId).single();
     if (e1 || !evt) return repond({ erreur: "Événement introuvable." }, 404);
 
-    // Les domaines que cette synchronisation alimente. Les conférences et les
-    // produits se configurent déjà mais rien ne les lit encore : les passer
-    // sous silence ferait croire qu'ils sont repris.
-    for (const [nom, dom] of [["le plan", "plan"], ["les stands", "stands"]] as const) {
-      const f = fournisseur(evt, dom);
-      if (f !== "klipso") {
+    // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
+    // et leurs contours. Les conférences et les produits se configurent déjà
+    // mais rien ne les lit encore.
+    if (fournisseur(evt, "plan") !== "klipso") {
+      return repond({
+        erreur: `Source « ${fournisseur(evt, "plan")} » pas encore prise en charge pour le plan.`,
+      }, 400);
+    }
+
+    /* Les exposants peuvent venir d'Eventmaker. Le rattachement se fait par le
+       numéro de stand : Klipso le compose de l'allée et du numéro, Eventmaker
+       le saisit à la main, et les deux sont comparés sous forme normalisée.
+
+       La règle de reprise tient en une phrase : une fiche qui porte un numéro
+       de stand nous intéresse, les autres non. Les catégories d'invités
+       diffèrent d'un salon à l'autre, elles sont donc détectées et non
+       configurées. */
+    let expoEm: Map<string, ExposantEm> | null = null;
+    let resumeEm: Record<string, unknown> | null = null;
+    const srcStands = fournisseur(evt, "stands");
+    if (srcStands === "eventmaker") {
+      const cle = String((evt.cles ?? {}).eventmaker ?? "");
+      if (!cle) {
         return repond({
-          erreur: `Source « ${f} » pas encore prise en charge pour ${nom}.`,
+          erreur: "Identifiant de l'événement Eventmaker manquant : " +
+            "renseignez-le dans « Provenance des données ».",
         }, 400);
       }
+      const jeton = Deno.env.get("EVENTMAKER_TOKEN") ?? "";
+      if (!jeton) return repond({ erreur: "Jeton Eventmaker absent des secrets." }, 500);
+      const em = new Eventmaker({ jeton });
+      const r = await em.exposants(cle);
+      expoEm = r.parStand;
+      resumeEm = {
+        categories: r.categories,
+        lus: r.lus,
+        exposants: r.retenus,
+        nonInscrits: r.ecartesNonInscrits,
+      };
+    } else if (srcStands !== "klipso") {
+      return repond({
+        erreur: `Source « ${srcStands} » pas encore prise en charge pour les stands.`,
+      }, 400);
     }
 
     const g = gaia(evt.instance, evt.event_id ?? undefined);
@@ -222,20 +256,32 @@ Deno.serve(async (req) => {
       });
 
       const stands = [];
+      let apparies = 0;
       for (const s of bruts) {
         const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
         const anneaux = formes.flatMap((f: any) => versAnneaux(f?.Shape) ?? []);
         if (!anneaux.length) continue;
         const dos = s.RefDossierExpAff;
-        // engagement contractuel : un exposant qui refuse le catalogue ne sort pas
+        // engagement contractuel : un exposant qui refuse le catalogue ne sort
+        // pas, quelle que soit la source
         const exclu = dos?.x_ExcluListeexposants === true;
+        const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
+
+        // La source choisie fait foi : si elle ne connaît pas ce stand, il
+        // reste vide plutôt que de retomber sur l'autre, ce qui donnerait un
+        // plan à moitié dans chaque référentiel.
+        const em = expoEm && code ? expoEm.get(cleStand(code)) : undefined;
+        const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
+        if (expoEm && em) apparies++;
+
         stands.push({
           id: "s" + String(s.Id).slice(0, 8),
-          code: [s.Allee, s.NoStand].filter(Boolean).join("") || null,
-          plan: s.NomSurPlan ?? null,
-          nom: dos && !exclu ? dos.x_Catalogue_RaisonSociale : null,
-          site: dos && !exclu ? nettoieUrl(dos.x_Catalogue_SiteWeb) : null,
-          nomencl: dos && !exclu ? nomenclature(dos.x_Nomenclature) : null,
+          code,
+          plan: (expoEm ? em?.raison : null) ?? s.NomSurPlan ?? null,
+          nom: !ok ? null : expoEm ? em!.nom : dos.x_Catalogue_RaisonSociale,
+          site: !ok ? null : expoEm ? nettoieUrl(em!.site) : nettoieUrl(dos.x_Catalogue_SiteWeb),
+          nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
+                                       : nomenclature(dos.x_Nomenclature),
           m2: s.SurfaceBrute,
           angles: s.NbAngles,
           niveaux: s.NbNiveau,
@@ -290,6 +336,7 @@ Deno.serve(async (req) => {
         pavillon: plan.Libelle,
         stands: stands.length,
         exposants: stands.filter((s) => s.nom).length,
+        ...(expoEm ? { apparies } : {}),
         zones: zones.length,
         zonesNommees: zones.filter((z) => z.nom).length,
       });
@@ -314,6 +361,7 @@ Deno.serve(async (req) => {
         chemin: cheminNomencl,
         erreur: errNomencl,
       },
+      ...(resumeEm ? { eventmaker: resumeEm } : {}),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
