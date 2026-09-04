@@ -117,7 +117,11 @@ Connect to Git**, puis :
 Il n'y a rien à compiler : `web/` contient des pages autonomes. Chaque poussée
 sur `main` redéploie.
 
-Une fois en ligne, les adresses sont :
+Adresse de service :
+
+    https://plan-interactif.interactiveplan.workers.dev
+
+Les pages :
 
 Cloudflare sert les pages sans l'extension `.html`.
 
