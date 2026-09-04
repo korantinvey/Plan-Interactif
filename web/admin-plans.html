@@ -76,6 +76,8 @@ button{cursor:pointer;background:none;border:none}
 .btn.danger:hover{background:var(--rouge-soft);border-color:var(--rouge)}
 .btn.petit{padding:5px 10px;font-size:12.5px}
 .btn[disabled]{opacity:.5;cursor:default}
+a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+a.btn.inactif{opacity:.45;pointer-events:none}
 .lien{font-size:12.5px;color:var(--ink-3);text-decoration:underline}
 .lien:hover{color:var(--ink)}
 
@@ -541,12 +543,16 @@ function dessineFiche() {
   entete.className = "entete";
   entete.innerHTML = '<div><span class="eyebrow">Événement</span><h2></h2>' +
     '<span class="etat ' + e.etat + '">' + (e.etat === "publie" ? "Publié" : "Brouillon") + '</span></div>' +
-    '<div class="droite"><button class="btn petit" id="btnEtat"></button>' +
+    '<div class="droite">' +
+    '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
+    '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
+    '<button class="btn petit" id="btnEtat"></button>' +
     '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
     '<button class="btn petit danger" id="btnSupprimer">Supprimer</button></div>';
   entete.querySelector("h2").textContent = e.nom;
   f.appendChild(entete);
 
+  majLiens(e);
   $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier";
   $("btnEtat").onclick = async () => {
     e.etat = e.etat === "publie" ? "brouillon" : "publie";
@@ -668,10 +674,32 @@ const bloc = (titre) => {
 };
 const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
 
+/** Adresse de base des pages, déduite de celle de la console. */
+const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+function majLiens(e) {
+  const q = "?plan=" + encodeURIComponent(e.slug || "");
+  const pub = $("lienPublic"), adm = $("lienAdmin");
+  if (pub) {
+    pub.href = BASE_PAGES + "plan" + q;
+    // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
+    // laisser cliquer vers une page qui répondra « introuvable »
+    const brouillon = e.etat !== "publie";
+    pub.classList.toggle("inactif", brouillon);
+    pub.title = brouillon
+      ? "L'événement est en brouillon : le plan public n'est pas encore servi."
+      : "Ouvrir le plan tel que le voient les visiteurs";
+  }
+  if (adm) {
+    adm.href = BASE_PAGES + "plan-admin" + q;
+    adm.title = "Ouvrir le plan avec les calques et les outils de dessin";
+  }
+}
+
 function majIntegration() {
   const e = courant(), t = $("fragment");
   if (!e || !t) return;
-  t.value = '<iframe src="https://plan-interactif.korantin-vey.workers.dev/plan?plan=' + (e.slug || "evenement") +
+  t.value = '<iframe src="' + BASE_PAGES + 'plan?plan=' + (e.slug || "evenement") +
     '" style="width:100%;height:80vh;border:0" title="Plan du salon" loading="lazy"></iframe>';
 }
 

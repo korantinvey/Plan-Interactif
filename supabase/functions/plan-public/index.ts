@@ -31,12 +31,23 @@ const cors = (req: Request) => {
 };
 const METHODES = { "Access-Control-Allow-Methods": "GET, OPTIONS" };
 
-const db = () =>
-  createClient(
+/**
+ * Le client emprunte l'identité de l'appelant quand il en a une : un
+ * exploitant authentifié voit ses brouillons, un visiteur ne voit que le
+ * publié. C'est la politique de sécurité de la base qui tranche, pas la
+ * fonction — elle se contente de transmettre le jeton.
+ */
+const db = (req: Request) => {
+  const jeton = req.headers.get("Authorization") ?? "";
+  return createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
-    { auth: { persistSession: false } },
+    {
+      auth: { persistSession: false },
+      global: jeton ? { headers: { Authorization: jeton } } : {},
+    },
   );
+};
 
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
@@ -60,7 +71,7 @@ Deno.serve(async (req) => {
     const slug = new URL(req.url).searchParams.get("slug");
     if (!slug) return repond({ erreur: "Paramètre slug manquant." }, 400);
 
-    const sb = db();
+    const sb = db(req);
 
     // la politique de sécurité ne laisse passer que les événements publiés
     const { data: evt } = await sb
