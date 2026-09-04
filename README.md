@@ -128,5 +128,12 @@ Créer le compte administrateur dans **Authentication → Users → Add user**, 
 un mot de passe. C'est ce compte qui ouvre la console ; il n'y a pas
 d'inscription libre, et c'est voulu.
 
-Restreindre ensuite les origines autorisées : le CORS des fonctions accepte
-aujourd'hui `*`, ce qui convient au développement mais pas à la production.
+### Sécurité des fonctions
+
+`sync-evenement` exige un utilisateur authentifié : elle écrit en base et
+interroge Klipso avec la clé de l'organisateur. La simple clé publique, qui
+circule dans toutes les pages, ne suffit pas.
+
+`plan-public` reste en lecture libre — c'est son rôle — mais les deux fonctions
+n'annoncent leurs en-têtes CORS que pour les origines déclarées dans
+`ORIGINES`. Toute nouvelle adresse de déploiement doit y être ajoutée.

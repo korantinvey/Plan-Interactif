@@ -12,11 +12,21 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+/** Origines autorisées. Le joker convenait au développement ; le plan
+ *  reste public, mais on sait d'où il est appelé. */
+const ORIGINES = [
+  "https://plan-interactif.korantin-vey.workers.dev",
+  "http://localhost:4180",
+];
+const cors = (req: Request) => {
+  const o = req.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
+    "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+    "Vary": "Origin",
+  };
 };
+const METHODES = { "Access-Control-Allow-Methods": "GET, OPTIONS" };
 
 const db = () =>
   createClient(
@@ -26,6 +36,7 @@ const db = () =>
   );
 
 Deno.serve(async (req) => {
+  const CORS = { ...cors(req), ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const repond = (corps: unknown, code = 200, cache = 60) =>

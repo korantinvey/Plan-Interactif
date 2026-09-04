@@ -15,11 +15,21 @@ import { Gaia, egal } from "../_partage/gaia.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+/** Origines autorisées. Le joker convenait au développement ; en production
+ *  une fonction ouverte à tous est une invitation. */
+const ORIGINES = [
+  "https://plan-interactif.korantin-vey.workers.dev",
+  "http://localhost:4180",
+];
+const cors = (req: Request) => {
+  const o = req.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
+    "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+    "Vary": "Origin",
+  };
 };
+const METHODES = { "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
 const NOMS: Record<string, string> = {
   "Batiment": "Bâtiment",
@@ -54,6 +64,7 @@ const gaia = (instance: string, eventId?: string) =>
   new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
 
 Deno.serve(async (req) => {
+  const CORS = { ...cors(req), ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const repond = (corps: unknown, code = 200) =>
@@ -63,6 +74,19 @@ Deno.serve(async (req) => {
     });
 
   try {
+    /* La synchronisation écrit dans la base et interroge Klipso avec la clé
+       de l'organisateur : elle exige un utilisateur authentifié, pas la
+       simple clé publique qui circule dans toutes les pages. */
+    const utilisateur = await createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+        auth: { persistSession: false } },
+    ).auth.getUser();
+    if (!utilisateur.data?.user) {
+      return repond({ erreur: "Authentification requise." }, 401);
+    }
+
     const corps = await req.json();
 
     /* ------------------ découverte des pavillons ------------------ */
