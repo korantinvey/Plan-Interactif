@@ -25,6 +25,10 @@ const PAR_PAGE = 500;
    n'en ont aucune. */
 const ECHANTILLON = 25;
 
+/* Douze numéros pris à intervalle régulier dans le plan suffisent à retrouver
+   les catégories qui portent les exposants : ils y sont par centaines. */
+const SONDES = 12;
+
 /* Les appels sont indépendants et l'attente est celle du réseau, pas du calcul.
    Six de front tiennent l'API sans la brusquer et divisent le temps d'autant. */
 const DE_FRONT = 6;
@@ -117,19 +121,23 @@ export class Eventmaker {
   }
 
   /**
-   * Catégories dont au moins une fiche porte un numéro de stand.
+   * Catégories dont les fiches portent des numéros de stand.
    *
    * L'API ne sait pas filtrer sur un champ personnalisé — ni sur sa valeur, ni
-   * sur sa présence ; seule une recherche plein texte existe, et elle réclame
-   * un terme. Impossible donc de demander « les fiches qui ont un numéro de
-   * stand ». Et l'on ne peut pas non plus tout balayer : un salon compte des
-   * dizaines de milliers d'invités et une fiche avec ses champs personnalisés
-   * pèse une vingtaine de kilo-octets.
+   * sur sa présence — et ne sait pas non plus ne renvoyer qu'une partie des
+   * champs. Impossible donc de demander « les fiches qui ont un numéro de
+   * stand », et hors de question de tout balayer : un salon compte des dizaines
+   * de milliers d'invités et une fiche complète pèse une vingtaine de
+   * kilo-octets.
    *
-   * Reste à sonder la première page de chaque catégorie. C'est le prix d'entrée
-   * — d'où le cache : les catégories connues sont reprises telles quelles et
-   * seules les nouvelles sont sondées, ce qui ramène les trente-deux appels de
-   * la première fois à un seul les fois suivantes.
+   * Mais une recherche plein texte existe, et le plan nous fournit justement
+   * des termes à chercher : ses propres numéros de stand. Une poignée de
+   * numéros pris à intervalle régulier ramène les fiches correspondantes, qui
+   * portent chacune leur catégorie. Douze appels légers au lieu de trente-deux
+   * lourds.
+   *
+   * Le sondage par catégorie reste en second recours, pour le premier passage
+   * d'un événement dont on n'a encore aucun plan.
    *
    * Les catégories ne portent pas les mêmes noms d'un salon à l'autre, et rien
    * ne dit qu'elles contiennent « exposant » dans leur intitulé : c'est la
@@ -138,25 +146,54 @@ export class Eventmaker {
   async categoriesAvecStand(
     id: string,
     connues: string[] = [],
-    echantillon = ECHANTILLON,
-  ): Promise<{ retenues: { _id: string; name: string }[]; sondees: number }> {
+    codes: string[] = [],
+  ): Promise<{ retenues: { _id: string; name: string }[]; appels: number; voie: string }> {
     const cats = await this.categories(id);
-    const deja = new Set(connues);
+    const parId = new Map(cats.map((c) => [c._id, c]));
     // une catégorie supprimée disparaît d'elle-même de la liste
-    const acquises = cats.filter((c) => deja.has(c._id));
-    const aSonder = cats.filter((c) => !deja.has(c._id));
+    const trouvees = new Set(connues.filter((c) => parId.has(c)));
 
+    /* --- première voie : chercher les numéros du plan --- */
+    let appels = 1;
+    if (codes.length) {
+      const pas = Math.max(1, Math.floor(codes.length / SONDES));
+      const echantillon = Array.from({ length: Math.min(SONDES, codes.length) },
+        (_, i) => codes[i * pas]).filter(Boolean);
+      const trouves = await enParallele(echantillon, DE_FRONT, async (code) => {
+        const l = await this.json<Record<string, any>[]>(
+          `/events/${id}/guests.json`,
+          { per_page: ECHANTILLON, page: 1, guest_metadata: "true", search: code },
+        );
+        return l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata)))
+          .map((g) => String(g.guest_category_id));
+      });
+      appels += echantillon.length;
+      trouves.flat().forEach((c) => { if (parId.has(c)) trouvees.add(c); });
+      if (trouvees.size) {
+        return {
+          retenues: [...trouvees].map((c) => parId.get(c)!),
+          appels,
+          voie: "recherche par numéro",
+        };
+      }
+    }
+
+    /* --- second recours : sonder chaque catégorie --- */
+    const aSonder = cats.filter((c) => !trouvees.has(c._id));
     const sondes = await enParallele(aSonder, DE_FRONT, async (c) => {
       const l = await this.json<Record<string, any>[]>(
         `/events/${id}/guests.json`,
-        { per_page: echantillon, page: 1, guest_metadata: "true", "category[]": c._id },
+        { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
       );
       return { c, avec: l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata))).length };
     });
+    appels += aSonder.length;
+    sondes.filter((s) => s.avec).forEach((s) => trouvees.add(s.c._id));
 
     return {
-      retenues: [...acquises, ...sondes.filter((s) => s.avec).map((s) => s.c)],
-      sondees: aSonder.length,
+      retenues: [...trouvees].map((c) => parId.get(c)!),
+      appels,
+      voie: "sondage des catégories",
     };
   }
 
@@ -167,17 +204,18 @@ export class Eventmaker {
    * inscription est effective. Le reste n'est que le moyen d'y arriver sans
    * télécharger le salon entier.
    */
-  async exposants(id: string, connues: string[] = []): Promise<{
+  async exposants(id: string, connues: string[] = [], codes: string[] = []): Promise<{
     parStand: Map<string, ExposantEm>;
     categories: string[];
     categoriesIds: string[];
-    sondees: number;
+    appels: number;
+    voie: string;
     lus: number;
     retenus: number;
     ecartesNonInscrits: number;
   }> {
     const parStand = new Map<string, ExposantEm>();
-    const { retenues: cats, sondees } = await this.categoriesAvecStand(id, connues);
+    const { retenues: cats, appels, voie } = await this.categoriesAvecStand(id, connues, codes);
     let lus = 0, ecartesNonInscrits = 0;
 
     // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
@@ -227,7 +265,8 @@ export class Eventmaker {
       parStand,
       categories: cats.map((c) => c.name),
       categoriesIds: cats.map((c) => c._id),
-      sondees,
+      appels,
+      voie,
       lus,
       retenus: parStand.size,
       ecartesNonInscrits,

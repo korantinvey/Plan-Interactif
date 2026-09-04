@@ -207,11 +207,24 @@ Deno.serve(async (req) => {
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
-        const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues);
+
+        /* Les numéros de stand du dernier instantané servent de termes de
+           recherche : c'est par eux qu'on retrouve les catégories qui portent
+           les exposants, sans avoir à toutes les sonder. Au tout premier
+           passage il n'y en a pas, et le sondage prend le relais. */
+        const { data: pl } = await db.from("plan").select("id").eq("evenement_id", evt.id);
+        const { data: inst } = await db.from("instantane").select("charge")
+          .in("plan_id", (pl ?? []).map((p) => p.id));
+        const codes = (inst ?? [])
+          .flatMap((i) => ((i.charge as any)?.stands ?? []) as Record<string, unknown>[])
+          .map((st) => String(st.code ?? "")).filter(Boolean);
+
+        const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
         expoEm = r.parStand;
         resumeEm = {
           categories: r.categories,
-          sondees: r.sondees,
+          voie: r.voie,
+          appels: r.appels,
           lus: r.lus,
           exposants: r.retenus,
           nonInscrits: r.ecartesNonInscrits,
