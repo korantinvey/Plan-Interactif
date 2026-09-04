@@ -545,9 +545,15 @@ const CHAMPS_FICHE = {
     ["nomenclature", "Nomenclature"],
   ],
   zone: [
-    ["surface", "Surface"],
+    ["surface",     "Surface"],
+    ["conferences", "Conférences",
+     "Le programme tenu dans la zone. Aucune synchronisation ne l'alimente encore."],
   ],
 };
+
+/* Ce qui se règle mais que rien n'alimente : à montrer en retrait plutôt qu'à
+   taire, sans quoi on croirait le champ déjà repris. */
+const FICHE_INERTE = { zone: ["conferences"] };
 
 /** Ce qu'on lit sans ouvrir : les exceptions, pas la liste complète. */
 function resumeProvenance(e) {
@@ -560,14 +566,16 @@ function resumeProvenance(e) {
 }
 
 function resumeFiche(e) {
-  const caches = [];
-  Object.keys(CHAMPS_FICHE).forEach((type) => {
+  // « Surface » figure des deux côtés : sans le type devant, on ne saurait pas
+  // laquelle est masquée.
+  const parts = [];
+  [["stand", "Stand"], ["zone", "Zone"]].forEach(([type, court]) => {
     const r = (e.fiche && e.fiche[type]) || {};
-    CHAMPS_FICHE[type].forEach(([cle, lib]) => { if (r[cle] === false) caches.push(lib); });
+    const caches = CHAMPS_FICHE[type]
+      .filter(([cle]) => r[cle] === false).map(([, lib]) => lib);
+    if (caches.length) parts.push(court + " : " + caches.join(", "));
   });
-  // « Surface » figure des deux côtés : on ne la nomme pas deux fois
-  const uniques = caches.filter((v, i) => caches.indexOf(v) === i);
-  return uniques.length ? "Masqué : " + uniques.join(", ") : "Tout affiché";
+  return parts.length ? "Masqué — " + parts.join(" · ") : "Tout affiché";
 }
 
 /** Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
@@ -628,19 +636,39 @@ function ouvreProvenance(apres) {
 
 function ouvreFiche(apres) {
   ouvreModale("Fiche détail", (corps) => {
-    const g = grille();
-    [["stand", "Stands"], ["zone", "Zones organisateur"]].forEach(([type, titre]) => {
-      const col = document.createElement("div");
-      col.className = "colonne-cases";
-      const t = document.createElement("span");
-      t.className = "eyebrow";
-      t.textContent = titre;
-      col.appendChild(t);
-      CHAMPS_FICHE[type].forEach(([cle, lib, aide]) =>
-        col.appendChild(caseFiche(type, cle, lib, aide)));
-      g.appendChild(col);
+    // Deux types, deux listes qui n'ont presque rien en commun : côte à côte
+    // elles se lisaient comme une seule. Des onglets les séparent.
+    const barre = document.createElement("div");
+    barre.className = "onglets";
+    const boutons = [], panneaux = [];
+
+    [["stand", "Stand"], ["zone", "Zone organisateur"]].forEach(([type, titre], i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = titre;
+      b.setAttribute("aria-pressed", String(i === 0));
+      barre.appendChild(b);
+      boutons.push(b);
+
+      const pan = document.createElement("div");
+      pan.className = "colonne-cases";
+      pan.hidden = i > 0;
+      const inertes = FICHE_INERTE[type] || [];
+      CHAMPS_FICHE[type].forEach(([cle, lib, aide]) => {
+        const c = caseFiche(type, cle, lib, aide);
+        if (inertes.indexOf(cle) >= 0) c.classList.add("source-inerte");
+        pan.appendChild(c);
+      });
+      panneaux.push(pan);
+
+      b.onclick = () => {
+        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+        panneaux.forEach((x, j) => { x.hidden = j !== i; });
+      };
     });
-    corps.appendChild(g);
+
+    corps.appendChild(barre);
+    panneaux.forEach((x) => corps.appendChild(x));
     const note = document.createElement("p");
     note.className = "aide";
     note.textContent = "Le nom et le pavillon sont toujours affichés : sans eux " +
