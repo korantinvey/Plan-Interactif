@@ -405,13 +405,59 @@ function programme(o){
       out += '<div class="jour">' + esc(JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]) + '</div>';
     }
     const heure = d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "";
-    out += '<div class="conf"' + (c.couleur ? ' style="--tc:' + esc(c.couleur) + '"' : "") + '>' +
+    out += '<button type="button" class="conf" data-conf="' + esc(c.id) + '"' +
+      (c.couleur ? ' style="--tc:' + esc(c.couleur) + '"' : "") + '>' +
       (heure ? '<span class="h">' + esc(heure) + '</span>' : "") +
       '<span class="t">' + esc(c.nom) + '</span>' +
       (c.type ? '<span class="ty">' + esc(c.type) + '</span>' : "") +
-      '</div>';
+      '</button>';
   }
   return out + '</div></div>';
+}
+
+/** Une date écrite en toutes lettres : « samedi 14 mars 2026 ». */
+function jourLong(d){
+  if (!d) return "";
+  const dt = new Date(d.an, d.mois - 1, d.jour);
+  return JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1] + " " + d.an;
+}
+
+/**
+ * La fiche d'une conférence. Le programme d'une zone ne montre que l'essentiel
+ * — l'heure et le titre — parce qu'il en aligne parfois vingt ; le reste,
+ * description comprise, tient ici.
+ */
+function ficheConf(id){
+  const c = (P().conferences || []).find(x => String(x.id) === String(id));
+  if (!c) return;
+  const fz = DATA.fuseau;
+  const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
+  const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
+
+  ouvreModale(c.nom, corps => {
+    const bloc = (l, v, cls) => {
+      if (!v) return;
+      const w = document.createElement("div");
+      w.className = "field" + (cls ? " " + cls : "");
+      w.innerHTML = '<span class="eyebrow"></span><span class="v"></span>';
+      w.querySelector(".eyebrow").textContent = l;
+      w.querySelector(".v").textContent = v;
+      corps.appendChild(w);
+    };
+    if (c.type){
+      const t = document.createElement("div");
+      t.className = "conf-type";
+      if (c.couleur) t.style.setProperty("--tc", c.couleur);
+      t.textContent = c.type;
+      corps.appendChild(t);
+    }
+    bloc("Quand", d
+      ? jourLong(d) + " · " + d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "")
+      : "");
+    bloc("Où", c.salle);
+    bloc("Thématique", c.theme);
+    bloc("Présentation", c.texte, "large");
+  }, [{ libelle: "Fermer", genre: "primaire" }]);
 }
 
 function lien(v){
@@ -459,6 +505,8 @@ function ouvre(o, rect){
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+  $("dBody").querySelectorAll("[data-conf]").forEach(b =>
+    b.onclick = () => ficheConf(b.dataset.conf));
   $("dGo").onclick = () => centre(o);
   $("detail").classList.add("open");
   $("voile").classList.add("on");
