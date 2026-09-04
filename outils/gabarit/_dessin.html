@@ -9,20 +9,9 @@ const CLE_DESSINS = "plan-dessins";
 let DESSINS = {};
 try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
-/**
- * Les calques de dessin d'un pavillon.
- *
- * Ils vivent dans le navigateur de celui qui les trace, et le service en
- * renvoie de son côté. Tant que l'enregistrement en base n'est pas branché, on
- * reprend ceux du service quand le poste n'en a aucun : sans quoi un visiteur
- * ne verrait jamais rien, et l'exploitant perdrait son travail à chaque
- * chargement.
- */
-const mesCalques = () => {
-  const id = P().id;
-  if (!DESSINS[id]) DESSINS[id] = (P().dessins || []).map(c => ({ ...c }));
-  return DESSINS[id];
-};
+/** Les calques de dessin du pavillon courant. Ceux du service ont été repris
+ *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
+const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {

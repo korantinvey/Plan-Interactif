@@ -1,0 +1,117 @@
+
+/* ============================================================
+   Pousser la configuration
+   Les couleurs, la visibilité, l'ordre des calques et les dessins vivaient
+   dans le navigateur de celui qui les réglait. Un visiteur ne voyait donc
+   rien, et l'exploitant retrouvait un plan nu depuis un autre poste ou depuis
+   son téléphone.
+
+   Un bouton les envoie en base, d'où le service les rend à tout le monde.
+   Explicite plutôt qu'automatique : régler une couleur au sélecteur produit
+   une rafale d'événements, et l'exploitant doit pouvoir essayer sans publier.
+   ============================================================ */
+
+/** Session et projet, tels que la console les a laissés sur le poste. */
+function accesBase(){
+  try {
+    const cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
+    const ses = JSON.parse(localStorage.getItem("console-session") || "null");
+    if (cfg?.url && cfg?.anonKey && ses?.access_token) return { cfg, ses };
+  } catch (e) {}
+  return null;
+}
+
+async function base(acces, chemin, options = {}){
+  const r = await fetch(acces.cfg.url + "/rest/v1/" + chemin, {
+    ...options,
+    headers: {
+      "apikey": acces.cfg.anonKey,
+      "Authorization": "Bearer " + acces.ses.access_token,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  const txt = await r.text();
+  if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
+  return txt ? JSON.parse(txt) : null;
+}
+
+/** Les réglages d'apparence, sans les ordres de pile qui sont par pavillon. */
+function reglagesSeuls(){
+  const out = {};
+  Object.keys(CONF).forEach(k => { if (k.indexOf("_pile:") !== 0) out[k] = CONF[k]; });
+  return out;
+}
+
+async function pousseConfiguration(bouton){
+  const acces = accesBase();
+  if (!acces){
+    annonce("Session absente : reconnectez-vous pour publier.", true);
+    return;
+  }
+  const dit = (t) => { if (bouton) bouton.textContent = t; };
+  dit("Publication…");
+
+  try {
+    /* Le plan connaît les pavillons par leur identifiant Klipso ; la base par
+       le sien. Une seule requête suffit à faire le lien. */
+    const evt = await base(acces,
+      "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+    if (!evt.length) throw new Error("Événement introuvable.");
+    const plans = await base(acces,
+      "plan?select=id,id_klipso&evenement_id=eq." + evt[0].id);
+    const parKlipso = Object.fromEntries(plans.map(p => [p.id_klipso, p.id]));
+
+    const reglages = reglagesSeuls();
+    let calques = 0;
+
+    for (const p of DATA.plans){
+      const planId = parKlipso[p.id];
+      if (!planId) continue;
+
+      await base(acces, "apparence?on_conflict=plan_id", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify([{
+          plan_id: planId,
+          pile: CONF["_pile:" + p.id] || [],
+          reglages: reglages,
+          modifie_le: new Date().toISOString(),
+        }]),
+      });
+
+      const liste = DESSINS[p.id] || [];
+      if (liste.length){
+        await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
+          method: "POST",
+          headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+          body: JSON.stringify(liste.map((c, i) => ({
+            plan_id: planId, cle: c.id, nom: c.nom || "Calque",
+            couleur: c.couleur || "#2F49D1", rempli: !!c.rempli,
+            visible: c.visible !== false, rang: i,
+            formes: c.formes || [], modifie_le: new Date().toISOString(),
+          }))),
+        });
+        calques += liste.length;
+      }
+
+      /* Ce qui a disparu de la page disparaît de la base. On retire après
+         avoir écrit, jamais avant : un échec en cours de route laisse alors
+         l'ancienne version en place plutôt qu'un plan vide. */
+      const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
+      await base(acces,
+        "calque_dessin?plan_id=eq." + planId +
+        (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
+        { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+    }
+
+    dit("Configuration publiée");
+    annonce("Configuration publiée : " + DATA.plans.length +
+      (DATA.plans.length > 1 ? " pavillons" : " pavillon") +
+      (calques ? ", " + calques + " calque" + (calques > 1 ? "s" : "") + " de dessin" : "") + ".");
+  } catch (e) {
+    dit("Publication impossible");
+    annonce("Publication impossible : " + e.message, true);
+  }
+  setTimeout(() => dit("Pousser la configuration"), 2600);
+}

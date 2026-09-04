@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
       sb.from("calque").select("plan_id, id_klipso, cle, libelle, ordre_klipso")
         .in("plan_id", ids).not("svg", "is", null),
       sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
-      sb.from("calque_dessin").select("plan_id, id, nom, couleur, rempli, visible, rang, formes")
+      sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
         .in("plan_id", ids).order("rang", { ascending: true }),
       sb.from("instantane").select("plan_id, charge, genere_le").in("plan_id", ids),
     ]);
@@ -220,8 +220,10 @@ Deno.serve(async (req) => {
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }
             : { pile: [], reglages: {} },
+          // la page reconnaît ses calques à sa propre clé ; l uuid ne lui sert
+          // à rien, et changerait son identité à chaque enregistrement
           dessins: (parDessin[p.id] ?? []).map((d) => ({
-            id: d.id, nom: d.nom, couleur: d.couleur,
+            id: d.cle ?? d.id, nom: d.nom, couleur: d.couleur,
             rempli: d.rempli, visible: d.visible, formes: d.formes,
           })),
         };

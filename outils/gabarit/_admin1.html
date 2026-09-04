@@ -138,48 +138,18 @@ function activeAdmin(){
   }
   const barre = document.createElement("div");
   barre.className = "adminbar";
-  barre.innerHTML = '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>' +
-                    '<button class="reset" id="copieConf">Copier la configuration</button>' +
-                    '<button class="reset" id="importConf">Importer une configuration</button>';
+  /* Copier et importer une configuration servaient à la transporter d'un poste
+     à l'autre, faute de mieux. Maintenant qu'elle se publie, ils n'ajoutent
+     qu'un chemin de plus pour arriver au même endroit. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>' +
+                    '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>';
   $("panel").appendChild(barre);
   $("razConf").onclick = () => {
     CONF = JSON.parse(JSON.stringify(DEFAUTS));
     try { localStorage.removeItem(CLE_CONF); } catch (e) {}
     appliqueApparence(); construitPanneau();
   };
-  $("copieConf").onclick = e => {
-    navigator.clipboard && navigator.clipboard.writeText(
-      JSON.stringify({ apparence: CONF, dessins: DESSINS }, null, 2)).then(
-      () => { e.target.textContent = "Configuration copiée";
-              setTimeout(() => e.target.textContent = "Copier la configuration", 1800); },
-      () => { e.target.textContent = "Copie impossible"; });
-  };
-
-  /* Reprendre une configuration exportée depuis un autre poste, ou celle
-     d'une édition précédente : rien n'est perdu à la mise à jour du plan. */
-  $("importConf").onclick = () => {
-    if ($("zoneImport")) { $("zoneImport").remove(); return; }
-    const z = document.createElement("div");
-    z.className = "importzone"; z.id = "zoneImport";
-    z.innerHTML = '<textarea placeholder="Collez ici le JSON copié"></textarea>' +
-                  '<div class="rangee"><button class="reset" id="impOk">Appliquer</button>' +
-                  '<span id="impMsg"></span></div>';
-    barre.after(z);
-    z.querySelector("textarea").focus();
-    $("impOk").onclick = () => {
-      let lu;
-      try { lu = JSON.parse(z.querySelector("textarea").value); }
-      catch (err) { $("impMsg").textContent = "JSON illisible"; return; }
-      if (lu.apparence) Object.assign(CONF, lu.apparence);
-      if (lu.dessins) Object.keys(lu.dessins).forEach(k => { DESSINS[k] = lu.dessins[k]; });
-      enregistreConf(); enregistreDessins();
-      appliqueApparence(); monteHabillage(); dessineDessins(); construitPanneau();
-      $("impMsg").textContent = "Configuration reprise";
-    };
-  };
-
-  // le plan peut avoir été monté avant la connexion : le panneau se rattrape
-  if (MONTE) construitPanneau();
+  $("pousseConf").onclick = e => pousseConfiguration(e.target);
 }
 
 

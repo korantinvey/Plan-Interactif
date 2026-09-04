@@ -48,6 +48,19 @@ function indexe(d){
     p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
     p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
   });
+  /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
+     que garde le poste : c'est lui que les visiteurs doivent voir, et un
+     téléphone n'a rien dans son stockage local. Le poste ne sert plus que de
+     cache, et de refuge si un enregistrement a échoué. */
+  DATA.plans.forEach(p => {
+    const a = p.apparence || {};
+    if (a.reglages && Object.keys(a.reglages).length) Object.assign(CONF, a.reglages);
+    if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
+    if (Array.isArray(p.dessins) && p.dessins.length){
+      DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+    }
+  });
+
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
 
