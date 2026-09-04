@@ -50,23 +50,25 @@ cours. Prévoyez le passage au plan payant avant l'ouverture.
 
 ## Déployer
 
-L'installation globale par npm n'est pas prise en charge par Supabase : on
-passe par npx, qui récupère la version courante à chaque appel.
+Le CLI est installé comme dépendance de développement du projet — l'installation
+globale par npm n'est pas prise en charge par Supabase, et `npx supabase@latest`
+ouvre une invite de confirmation qui casse tout collage groupé.
 
 ```bash
-npx supabase@latest login
-npx supabase@latest link --project-ref jylkfskotuafptaxujao
+npm install
+```
 
-# schéma
-npx supabase@latest db push
+Puis, **une commande à la fois** : `login` ouvre le navigateur et `db push`
+demande le mot de passe de la base.
 
-# secrets des fonctions (jamais dans le dépôt)
-npx supabase@latest secrets set KLIPSO_INSTANCE=infoprodigital
-npx supabase@latest secrets set KLIPSO_API_KEY=...
-
-# fonctions
-npx supabase@latest functions deploy sync-evenement
-npx supabase@latest functions deploy plan-public
+```bash
+npx supabase login
+npx supabase link --project-ref jylkfskotuafptaxujao
+npx supabase db push
+npx supabase secrets set KLIPSO_INSTANCE=infoprodigital
+npx supabase secrets set KLIPSO_API_KEY=...
+npx supabase functions deploy sync-evenement
+npx supabase functions deploy plan-public
 ```
 
 La référence du projet est la partie variable de l'URL :

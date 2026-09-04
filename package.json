@@ -1,0 +1,13 @@
+{
+  "name": "plan-interactif",
+  "version": "1.0.0",
+  "description": "Plans de salon interactifs alimentés par Klipso",
+  "scripts": {
+    "sup": "supabase"
+  },
+  "type": "commonjs",
+  "private": true,
+  "devDependencies": {
+    "supabase": "^2.116.0"
+  }
+}
