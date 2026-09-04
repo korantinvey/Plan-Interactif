@@ -16,6 +16,8 @@ export class Gaia {
   private jeton: string | null = null;
   private expire = 0;
   private base: string;
+  // les métadonnées décrivent tout le schéma : on ne les lit qu'une fois
+  private meta: Record<string, any> | null = null;
 
   constructor(private cfg: Config) {
     this.base = `https://${cfg.instance}.svc.calypso-event.net/${cfg.instance}`;
@@ -89,6 +91,61 @@ export class Gaia {
     }
   }
 
+  /**
+   * Chemin de la codification d'une propriété, tel que le déclarent les
+   * métadonnées — « Global.Pays » pour un pays, par exemple.
+   *
+   * Une propriété de type « choix » ne porte pas ses libellés : elle désigne
+   * une codification, qui peut appartenir à une autre entité que la sienne.
+   * Deviner ce chemin serait fragile ; le serveur le donne.
+   */
+  async cheminCodification(entite: string, propriete: string): Promise<string> {
+    if (!this.meta) {
+      const r = await fetch(`${this.base}/metadata/get?local=fr`, {
+        headers: await this.entetes(),
+      });
+      const j = await r.json();
+      if (!j.isValid) {
+        throw new Error(j.error?.[0]?.message ?? "Métadonnées refusées par GAIA.");
+      }
+      this.meta = j.data ?? {};
+    }
+    const p = this.meta?.[entite]?.properties?.[propriete];
+    // à défaut de déclaration, la codification porte le nom de la propriété
+    return p?.codificationPath || `${entite}.${propriete}`;
+  }
+
+  /**
+   * Libellés d'une codification désignée par son chemin.
+   *
+   * La demande nomme l'entité puis ses propriétés :
+   *
+   *     { "DossierExp": ["x_Nomenclature"] }
+   *
+   * La réponse est un arbre : entité → propriété → code → { id, label }. Une
+   * codification arborescente ajoute des niveaux, d'où l'aplatissement.
+   */
+  async codification(chemin: string, langue = "fr"): Promise<Record<string, string>> {
+    const point = chemin.indexOf(".");
+    if (point < 0) throw new Error(`Chemin de codification illisible : ${chemin}`);
+    const entite = chemin.slice(0, point);
+    const propriete = chemin.slice(point + 1);
+
+    const r = await fetch(`${this.base}/codification/get`, {
+      method: "POST",
+      headers: await this.entetes(),
+      body: JSON.stringify({ [entite]: [propriete] }),
+    });
+    const j = await r.json();
+    if (!j.isValid) {
+      throw new Error(j.error?.[0]?.message ?? "Codification refusée par GAIA.");
+    }
+
+    const table: Record<string, string> = {};
+    aplatit(j.data?.[entite]?.[propriete], table, langue);
+    return table;
+  }
+
   /** Un média (les SVG d'habillage) est renvoyé tel quel, pas en JSON. */
   async media(idMedia: string): Promise<string> {
     const r = await fetch(`${this.base}/media/getById?idMedia=${idMedia}`, {
@@ -96,6 +153,35 @@ export class Gaia {
     });
     if (!r.ok) throw new Error(`Média ${idMedia} indisponible (${r.status}).`);
     return await r.text();
+  }
+}
+
+/**
+ * Parcourt l'arbre d'une codification et retient chaque code portant un
+ * libellé. Les nœuds intermédiaires d'une codification arborescente en portent
+ * un aussi : les garder ne coûte rien et sert si une fiche référence une
+ * branche plutôt qu'une feuille.
+ */
+function aplatit(
+  noeud: unknown,
+  table: Record<string, string>,
+  langue: string,
+  code?: string,
+): void {
+  if (!noeud || typeof noeud !== "object") return;
+  const n = noeud as Record<string, any>;
+
+  const lib = n.label?.[langue] ?? n.label?.fr ??
+    (n.label && typeof n.label === "object" ? Object.values(n.label)[0] : undefined);
+  const cle = (n.id ?? code) as string | undefined;
+  if (code && typeof lib === "string" && lib) table[code] = lib;
+  // certaines réponses désignent la valeur par son identifiant plutôt que par
+  // la clé de l'objet : on accepte les deux
+  if (cle && cle !== code && typeof lib === "string" && lib) table[cle] = lib;
+
+  for (const [k, v] of Object.entries(n)) {
+    if (k === "label" || k === "id") continue;
+    aplatit(v, table, langue, k);
   }
 }
 

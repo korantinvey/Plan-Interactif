@@ -738,9 +738,16 @@ async function synchronise(e) {
   signale("Interrogation de Klipso…");
   try {
     const j = await fonction("sync-evenement", { evenementId: e.id });
-    const total = (j.pavillons || []).reduce((a, p) => a + (p.stands || 0), 0);
-    signale((j.pavillons || []).length + " pavillon" +
-      ((j.pavillons || []).length > 1 ? "s" : "") + ", " + total + " emplacements.");
+    const pav = j.pavillons || [];
+    const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
+    // sans libellés, la nomenclature s'affiche en codes : le dire tout de
+    // suite plutôt que de laisser découvrir des « FEP26_NOM10201 » sur le plan
+    const n = j.nomenclature || {};
+    const suite = n.erreur
+      ? " Nomenclature en codes : " + n.erreur
+      : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
+    signale(pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
+      total + " emplacements." + suite, !!n.erreur);
     await charge();
   } catch (err) {
     signale(err.message, true);

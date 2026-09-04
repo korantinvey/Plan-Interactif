@@ -354,7 +354,8 @@ function ouvre(o, rect){
                         esc(url.replace(/^https?:\/\//, "")) + '</a>' : "")) +
     ok("nomenclature", o.nomencl && o.nomencl.length
       ? '<div class="field"><span class="eyebrow">Nomenclature</span><div class="tags">' +
-        o.nomencl.map(n => '<span class="tag">' + esc(String(n).replace(/^SMCL26_/, "")) + '</span>').join("") +
+        // le libellé est résolu à la synchronisation : la page l'affiche tel quel
+        o.nomencl.map(n => '<span class="tag">' + esc(String(n)) + '</span>').join("") +
         '</div></div>' : "") +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dGo").onclick = () => centre(o);

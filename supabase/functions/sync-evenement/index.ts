@@ -132,6 +132,32 @@ Deno.serve(async (req) => {
     const g = gaia(evt.instance, evt.event_id ?? undefined);
     const resume: Record<string, unknown>[] = [];
 
+    /* Les nomenclatures ne portent qu'un code — « FEP26_NOM10201 » — dont le
+       libellé vit dans le service « codification ». On le résout ici, une fois
+       pour tout l'événement, plutôt qu'à chaque affichage.
+
+       L'échec n'est pas bloquant : sans libellé le plan reste juste, avec des
+       codes. Perdre une synchronisation entière pour un défaut d'habillage
+       serait disproportionné. */
+    let libNomencl: Record<string, string> = {};
+    let errNomencl: string | null = null;
+    let cheminNomencl: string | null = null;
+    try {
+      cheminNomencl = await g.cheminCodification("DossierExp", "x_Nomenclature");
+      libNomencl = await g.codification(cheminNomencl);
+    } catch (e) {
+      errNomencl = e instanceof Error ? e.message : String(e);
+    }
+
+    /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
+     *  salon — « FEP26_NOM10201 » ne dit rien de plus que « NOM10201 ». */
+    const nomenclature = (v: unknown): string[] | null => {
+      if (!v) return null;
+      const liste = ([] as unknown[]).concat(v).map(String).filter(Boolean);
+      if (!liste.length) return null;
+      return liste.map((c) => libNomencl[c] || c.replace(/^[A-Z0-9]+_/, ""));
+    };
+
     let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
     // Un pavillon représente plusieurs mégaoctets de SVG à alléger : on peut
     // le traiter seul si la synchronisation complète dépasse le temps imparti.
@@ -209,7 +235,7 @@ Deno.serve(async (req) => {
           plan: s.NomSurPlan ?? null,
           nom: dos && !exclu ? dos.x_Catalogue_RaisonSociale : null,
           site: dos && !exclu ? nettoieUrl(dos.x_Catalogue_SiteWeb) : null,
-          nomencl: dos && !exclu ? dos.x_Nomenclature : null,
+          nomencl: dos && !exclu ? nomenclature(dos.x_Nomenclature) : null,
           m2: s.SurfaceBrute,
           angles: s.NbAngles,
           niveaux: s.NbNiveau,
@@ -278,7 +304,17 @@ Deno.serve(async (req) => {
       }).eq("id", evt.id);
     }
 
-    return repond({ ok: true, pavillons: resume });
+    // Le compte des libellés dit tout de suite si la codification a répondu :
+    // sans lui, un plan rempli de codes passerait pour un plan correct.
+    return repond({
+      ok: true,
+      pavillons: resume,
+      nomenclature: {
+        libelles: Object.keys(libNomencl).length,
+        chemin: cheminNomencl,
+        erreur: errNomencl,
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     try {
