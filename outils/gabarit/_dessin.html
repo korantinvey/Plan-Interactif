@@ -288,6 +288,7 @@ function termineTrace(valider){
 }
 
 function aide(){
+  if (!$("outilsAide")) return;
   const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
                              : "Cliquez une forme pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
@@ -332,8 +333,8 @@ function activeCalque(id){
   formeSel = null;
   termineTrace(false);
   const c = trouveCalque(calqueActif);
-  $("outils").classList.toggle("open", !!c);
-  if (c) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
+  if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
   document.querySelectorAll("#pile .calq").forEach(d => {

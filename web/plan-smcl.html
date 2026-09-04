@@ -607,7 +607,7 @@ function montePlan(){
   emp = p.emprise;
   calqueActif = null;
   HIST.length = REFAIRE.length = 0;
-  $("outils").classList.remove("open");
+  { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
@@ -1014,9 +1014,21 @@ const joli = (id) => String(id)
    ============================================================ */
 let ADMIN = false;
 
-/** Retire toute trace d'administration : page publique. */
+/**
+ * Page publique : les commandes d'administration sont neutralisées.
+ * On les masque et on les vide plutôt que de les supprimer — le montage du
+ * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
+ */
 function retireAdmin(){
-  ["btnLayers", "panel", "outils"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  const b = $("btnLayers"); if (b) b.remove();
+  ["panel", "outils", "elemSel"].forEach(id => {
+    const e = $(id);
+    if (!e) return;
+    e.hidden = true;
+    e.classList.remove("open");
+    e.setAttribute("aria-hidden", "true");
+    if (id !== "outils") e.innerHTML = "";
+  });
 }
 
 /** Ouvre le mode administration, une fois l'identité vérifiée. */
@@ -1364,6 +1376,7 @@ function termineTrace(valider){
 }
 
 function aide(){
+  if (!$("outilsAide")) return;
   const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
                              : "Cliquez une forme pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
@@ -1408,8 +1421,8 @@ function activeCalque(id){
   formeSel = null;
   termineTrace(false);
   const c = trouveCalque(calqueActif);
-  $("outils").classList.toggle("open", !!c);
-  if (c) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
+  if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
   document.querySelectorAll("#pile .calq").forEach(d => {

@@ -131,7 +131,7 @@ function montePlan(){
   emp = p.emprise;
   calqueActif = null;
   HIST.length = REFAIRE.length = 0;
-  $("outils").classList.remove("open");
+  { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();

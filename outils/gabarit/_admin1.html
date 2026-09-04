@@ -100,9 +100,21 @@ const joli = (id) => String(id)
    ============================================================ */
 let ADMIN = false;
 
-/** Retire toute trace d'administration : page publique. */
+/**
+ * Page publique : les commandes d'administration sont neutralisées.
+ * On les masque et on les vide plutôt que de les supprimer — le montage du
+ * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
+ */
 function retireAdmin(){
-  ["btnLayers", "panel", "outils"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  const b = $("btnLayers"); if (b) b.remove();
+  ["panel", "outils", "elemSel"].forEach(id => {
+    const e = $(id);
+    if (!e) return;
+    e.hidden = true;
+    e.classList.remove("open");
+    e.setAttribute("aria-hidden", "true");
+    if (id !== "outils") e.innerHTML = "";
+  });
 }
 
 /** Ouvre le mode administration, une fois l'identité vérifiée. */

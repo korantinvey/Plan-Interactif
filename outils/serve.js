@@ -1,25 +1,22 @@
+/**
+ * Serveur d'essai. Les pages portent désormais leur propre squelette : on les
+ * sert telles quelles, sans rien ajouter, pour tester exactement ce qui est
+ * déployé.
+ */
 const http = require("http"), fs = require("fs");
 const DIR = "C:/projets/Plan Interactif/web/";
-const page = f => '<!doctype html><html><head><meta charset="utf-8"></head><body>'
-  + fs.readFileSync(DIR + f, "utf8") + "</body></html>";
-const mobile = cible => '<!doctype html><html><head><meta charset="utf-8"><style>'
-  + 'body{margin:0;background:#2b2b2b;padding:14px;font:12px system-ui;color:#bbb}'
-  + 'iframe{width:390px;height:844px;border:0;border-radius:14px;background:#fff}</style></head>'
-  + '<body><div>390 x 844</div><iframe id="f" src="' + cible + '"></iframe></body></html>';
+
+const TYPES = { html: "text/html; charset=utf-8", js: "text/javascript; charset=utf-8" };
 
 http.createServer((q, s) => {
-  const u = q.url.split("?")[0];
-  let corps;
-  if (u === "/") corps = page("plan-smcl.html");
-  else if (u.startsWith("/71")) corps = page("plan-71.html");
-  else if (u.startsWith("/salon")) corps = page("plan-salon.html");
-  else if (u.startsWith("/smcl")) corps = page("plan-smcl.html");
-  else if (u.startsWith("/admin")) corps = page("admin-plans.html");
-  else if (u.startsWith("/api")) corps = page("plan.html");
-  else if (u === "/m71") corps = mobile("/71");
-  else if (u === "/msmcl") corps = mobile("/smcl");
-  else if (u === "/msalon") corps = mobile("/salon");
-  else { s.writeHead(404); return s.end("introuvable"); }
-  s.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-  s.end(corps);
+  let u = q.url.split("?")[0];
+  if (u === "/") u = "/index.html";
+  if (u.indexOf(".") < 0) u += ".html";
+  const f = DIR + u.slice(1);
+  if (u.indexOf("..") >= 0 || !fs.existsSync(f)) { s.writeHead(404); return s.end("introuvable"); }
+  s.writeHead(200, {
+    "Content-Type": TYPES[u.split(".").pop()] || "application/octet-stream",
+    "Cache-Control": "no-store",
+  });
+  s.end(fs.readFileSync(f));
 }).listen(4180, () => console.log("http://localhost:4180 pret"));
