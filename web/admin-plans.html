@@ -123,6 +123,11 @@ a.btn.inactif{opacity:.45;pointer-events:none}
   padding:16px 18px;margin-bottom:14px}
 .bloc > .eyebrow{display:block;margin-bottom:12px}
 .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
+.source-rangee{display:flex;gap:8px}
+.source-rangee select{flex:0 0 150px}
+.source-rangee input{flex:1;min-width:0}
+.source-inerte{opacity:.62}
+@media (max-width:560px){.source-rangee{flex-direction:column}.source-rangee select{flex:none}}
 label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
 label input,label select,label textarea{padding:8px 10px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);width:100%}
@@ -621,6 +626,16 @@ function dessineFiche() {
   b2.appendChild(ligne);
   f.appendChild(b2);
   $("btnSync").onclick = () => synchronise(e);
+
+  const bs = bloc("Provenance par domaine");
+  const gs = grille();
+  DOMAINES.forEach(([dom, lib, offerts, aide]) => {
+    const l = ligneSource(dom, lib, offerts, aide);
+    if (dom === "conferences" || dom === "produits") l.classList.add("source-inerte");
+    gs.appendChild(l);
+  });
+  bs.appendChild(gs);
+  f.appendChild(bs);
   majMsgSync(e);
 
   /* --- pavillons --- */
@@ -681,6 +696,54 @@ function dessineFiche() {
       () => { ev.target.textContent = "Copié"; setTimeout(() => ev.target.textContent = "Copier", 1600); },
       () => { ev.target.textContent = "Échec"; });
   };
+}
+
+/* ============================================================
+   Provenance des données
+   Un domaine, un fournisseur, une clé. La liste des fournisseurs diffère par
+   domaine : la géométrie du plan ne vient que de Klipso, le reste pourra
+   venir d'ailleurs. Une clé vide renvoie à celle de l'événement, ce qui
+   couvre le cas courant sans faire recopier le même identifiant partout.
+   ============================================================ */
+const DOMAINES = [
+  ["plan",        "Plan",        ["klipso"],
+   "La géométrie des pavillons et des calques."],
+  ["stands",      "Stands",      ["klipso", "eventmaker"],
+   "Emplacements, exposants et zones organisateur."],
+  ["conferences", "Conférences", ["klipso", "eventmaker"],
+   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
+  ["produits",    "Produits",    ["klipso", "eventmaker"],
+   "Configuration enregistrée ; aucune synchronisation ne la lit encore."],
+];
+const FOURNISSEURS = { klipso: "Klipso", eventmaker: "Eventmaker" };
+
+/** Une ligne de provenance, enregistrée à chaque modification. */
+function ligneSource(dom, libelle, offerts, aide) {
+  const e = courant();
+  const src = (e.sources && e.sources[dom]) || {};
+  const l = document.createElement("label");
+  l.className = "large";
+  l.innerHTML = '<span></span><div class="source-rangee"><select>' +
+    offerts.map((k) => '<option value="' + k + '"' +
+      ((src.fournisseur || "klipso") === k ? " selected" : "") + '>' +
+      FOURNISSEURS[k] + '</option>').join("") +
+    '</select><input spellcheck="false"></div><span class="aide"></span>';
+  l.querySelector("span").textContent = libelle;
+  const sel = l.querySelector("select"), inp = l.querySelector("input");
+  inp.value = src.cle || "";
+  inp.placeholder = "Clé d'identification — vide : celle de l'événement";
+  l.querySelector(".aide").textContent = aide;
+
+  const enregistre = async () => {
+    e.sources = { ...(e.sources || {}) };
+    e.sources[dom] = { fournisseur: sel.value, cle: inp.value.trim() || null };
+    try { await majEvenement(e.id, { sources: e.sources }); }
+    catch (err) { signale(err.message, true); }
+  };
+  sel.onchange = enregistre;
+  let attente;
+  inp.oninput = () => { clearTimeout(attente); attente = setTimeout(enregistre, 500); };
+  return l;
 }
 
 const bloc = (titre) => {

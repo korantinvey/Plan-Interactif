@@ -118,6 +118,11 @@ a.btn.inactif{opacity:.45;pointer-events:none}
   padding:16px 18px;margin-bottom:14px}
 .bloc > .eyebrow{display:block;margin-bottom:12px}
 .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
+.source-rangee{display:flex;gap:8px}
+.source-rangee select{flex:0 0 150px}
+.source-rangee input{flex:1;min-width:0}
+.source-inerte{opacity:.62}
+@media (max-width:560px){.source-rangee{flex-direction:column}.source-rangee select{flex:none}}
 label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
 label input,label select,label textarea{padding:8px 10px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);width:100%}
