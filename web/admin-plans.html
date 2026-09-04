@@ -156,6 +156,10 @@ label input,label select,label textarea{padding:8px 10px;background:var(--surfac
 label input:focus,label select:focus,label textarea:focus{border-color:var(--accent);
   background:var(--surface);outline:none}
 label .aide{font-size:11px;color:var(--ink-3);line-height:1.45}
+label .aide.alerte{color:var(--rouge)}
+/* le champ reste modifiable : on saisit souvent l'identifiant avant de
+   basculer la source, et un champ en retrait ne doit pas être un champ mort */
+.source-inerte input,.source-inerte select{opacity:1}
 label.large{grid-column:1/-1}
 textarea{resize:vertical;min-height:72px;font-family:"IBM Plex Mono",monospace;font-size:11.5px}
 
@@ -745,6 +749,56 @@ const DOMAINES = [
 ];
 const FOURNISSEURS = { klipso: "Klipso", eventmaker: "Eventmaker" };
 
+/* Chaque fournisseur désigne l'événement à sa façon. Klipso n'est pas dans
+   cette liste : son identité tient dans « Instance » et « Identifiant
+   d'événement », déjà saisis plus haut dans la fiche. */
+const CLES_FOURNISSEUR = [
+  ["eventmaker", "Identifiant de l'événement Eventmaker",
+   "Vingt-quatre caractères, visibles dans l'adresse de l'événement sur app.eventmaker.io.",
+   /^[0-9a-f]{24}$/i, "69ef6fb4406b394eda9b8a3e"],
+];
+
+/** Un fournisseur est-il retenu quelque part ? */
+const fournisseurUtilise = (e, cle) =>
+  DOMAINES.some(([d]) => ((e.sources || {})[d] || {}).fournisseur === cle);
+
+/** Champ de clé. Il n'est pas caché quand le fournisseur n'est pas encore
+ *  retenu : on saisit souvent l'identifiant avant de basculer la source. */
+function champCle(cle, libelle, aide, forme, exemple) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.className = "large";
+  l.innerHTML = '<span></span><input spellcheck="false"><span class="aide"></span>';
+  l.querySelector("span").textContent = libelle;
+  const i = l.querySelector("input"), a = l.querySelector(".aide");
+  i.value = (e.cles || {})[cle] || "";
+  i.placeholder = exemple;
+  if (!fournisseurUtilise(e, cle)) l.classList.add("source-inerte");
+
+  const dit = () => {
+    const v = i.value.trim();
+    a.textContent = v && forme && !forme.test(v)
+      ? "Format inattendu — un identifiant ressemble à « " + exemple + " »."
+      : aide;
+    a.classList.toggle("alerte", Boolean(v && forme && !forme.test(v)));
+  };
+  dit();
+
+  let attente;
+  i.oninput = () => {
+    dit();
+    clearTimeout(attente);
+    attente = setTimeout(async () => {
+      e.cles = { ...(e.cles || {}) };
+      const v = i.value.trim();
+      if (v) e.cles[cle] = v; else delete e.cles[cle];
+      try { await majEvenement(e.id, { cles: e.cles }); }
+      catch (err) { signale(err.message, true); }
+    }, 500);
+  };
+  return l;
+}
+
 /** Une ligne de provenance, enregistrée à chaque modification. */
 function ligneSource(dom, libelle, offerts, aide) {
   const e = courant();
@@ -802,6 +856,12 @@ function resumeProvenance(e) {
     .filter(([d]) => ((s[d] || {}).fournisseur || "klipso") !== "klipso")
     .map(([d, lib]) => lib + " : " +
       (FOURNISSEURS[s[d].fournisseur] || s[d].fournisseur));
+  // une source retenue sans son identifiant ne peut rien lire : le dire ici
+  // plutôt que d'attendre l'échec de la synchronisation
+  const manque = CLES_FOURNISSEUR
+    .filter(([k, lib]) => fournisseurUtilise(e, k) && !(e.cles || {})[k])
+    .map(([k]) => FOURNISSEURS[k] || k);
+  if (manque.length) autres.push("identifiant " + manque.join(", ") + " manquant");
   return autres.length ? autres.join(" · ") : "Klipso pour tout";
 }
 
@@ -867,9 +927,15 @@ function ouvreProvenance(apres) {
       g.appendChild(l);
     });
     corps.appendChild(g);
+
+    const gc = grille();
+    CLES_FOURNISSEUR.forEach((c) => gc.appendChild(champCle(...c)));
+    corps.appendChild(gc);
+
     const note = document.createElement("p");
     note.className = "aide";
-    note.textContent = "La clé d'identification reste celle de l'événement.";
+    note.textContent = "Klipso garde l'instance et l'identifiant d'événement " +
+      "saisis plus haut dans la fiche.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
