@@ -1,0 +1,7 @@
+.env
+.env.local
+node_modules/
+outils/brut/
+outils/svg/
+outils/*.json
+!outils/package.json

@@ -1,0 +1,1079 @@
+<title>Plan de Salon Klipso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#E9EAE4;
+  --surface:#FBFBF8;
+  --surface-2:#F1F2EC;
+  --line:#D2D5CB;
+  --line-strong:#B4B9AC;
+  --ink:#15181A;
+  --ink-2:#4A4F52;
+  --ink-3:#7C8285;
+  --accent:#2F49D1;
+  --accent-soft:#DCE1FA;
+  --zone:#E0A008;
+  --zone-soft:#FAEDCB;
+  --stand-fill:#FFFFFF;
+  --stand-line:#A9AEA2;
+  --sold:#2F49D1;
+  --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
+  --radius:3px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1113;
+    --surface:#171B1E;
+    --surface-2:#1F2427;
+    --line:#2A3034;
+    --line-strong:#3B4348;
+    --ink:#EDEFEC;
+    --ink-2:#A8AEB0;
+    --ink-3:#767D80;
+    --accent:#7A8CFF;
+    --accent-soft:#232C55;
+    --zone:#F0B429;
+    --zone-soft:#3A2F12;
+    --stand-fill:#232A2E;
+    --stand-line:#454E53;
+    --sold:#7A8CFF;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1113;
+  --surface:#171B1E;
+  --surface-2:#1F2427;
+  --line:#2A3034;
+  --line-strong:#3B4348;
+  --ink:#EDEFEC;
+  --ink-2:#A8AEB0;
+  --ink-3:#767D80;
+  --accent:#7A8CFF;
+  --accent-soft:#232C55;
+  --zone:#F0B429;
+  --zone-soft:#3A2F12;
+  --stand-fill:#232A2E;
+  --stand-line:#454E53;
+  --sold:#7A8CFF;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.eyebrow{
+  font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);
+}
+
+/* ---------- shell ---------- */
+.app{
+  display:grid;
+  grid-template-columns:320px 1fr;
+  grid-template-rows:auto 1fr;
+  height:100vh;
+  min-height:560px;
+}
+.topbar{
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:20px;
+  padding:0 18px;height:60px;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  position:relative;z-index:5;
+}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{
+  font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;
+  letter-spacing:-.02em;margin:0;white-space:nowrap;
+}
+.brand .edition{color:var(--ink-3);font-size:12px;white-space:nowrap}
+
+.halls{display:flex;gap:2px;margin-left:auto;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
+.halls button{
+  padding:5px 12px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);
+}
+.halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+.tools{display:flex;gap:6px;align-items:center}
+.iconbtn{
+  width:32px;height:32px;display:grid;place-items:center;
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink-2);
+  background:var(--surface);
+}
+.iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
+.iconbtn svg{width:15px;height:15px}
+.syncrow{display:flex;align-items:center;gap:12px;margin-top:-4px}
+.syncrow .btn{padding:7px 12px;font-size:12.5px;white-space:nowrap}
+.syncrow .btn[disabled]{opacity:.55;cursor:default}
+
+/* ---------- sidebar ---------- */
+.side{
+  background:var(--surface);
+  border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0;
+}
+.search{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.search-field{position:relative}
+.search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
+.search input{
+  width:100%;padding:9px 10px 9px 32px;
+  background:var(--surface-2);border:1px solid transparent;border-radius:var(--radius);
+}
+.search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.filters{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.chip{
+  font-size:11.5px;padding:3.5px 9px;border-radius:999px;
+  border:1px solid var(--line);color:var(--ink-2);white-space:nowrap;
+}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+
+.count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.list{overflow-y:auto;flex:1;min-height:0}
+.row{
+  display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;
+  width:100%;text-align:left;padding:10px 16px;border-bottom:1px solid var(--line);
+}
+.row:hover{background:var(--surface-2)}
+.row[aria-current="true"]{background:var(--accent-soft)}
+.row .code{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;
+  padding:3px 0;text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2);
+}
+.row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
+.row .nm{font-weight:500;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .sub{font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.is-zone .code{border-style:dashed;border-color:var(--zone);color:var(--zone)}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
+
+/* ---------- plan ---------- */
+.stage{position:relative;overflow:hidden;background:var(--ground)}
+.stage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage svg.dragging{cursor:grabbing}
+.stand{cursor:pointer}
+.stand rect{fill:var(--stand-fill);stroke:var(--stand-line);stroke-width:1.2;transition:fill .12s}
+.stand.zone rect{fill:var(--zone-soft);stroke:var(--zone);stroke-dasharray:4 3}
+.stand:hover rect{fill:var(--accent-soft)}
+.stand.sel rect{fill:var(--accent);stroke:var(--accent);stroke-width:2}
+.stand.dim{opacity:.28}
+.stand text{pointer-events:none;font-family:"IBM Plex Mono",monospace;fill:var(--ink-2);font-weight:500}
+.stand .nm{font-family:"Instrument Sans",sans-serif;fill:var(--ink);font-weight:600}
+.stand.sel text,.stand.sel .nm{fill:#fff}
+.aisle{fill:none;stroke:var(--line-strong);stroke-width:1;stroke-dasharray:2 5}
+.aisle-label{font-family:"IBM Plex Mono",monospace;fill:var(--ink-3);font-size:9px;letter-spacing:.1em}
+.wall{fill:none;stroke:var(--line-strong);stroke-width:2.5}
+.entrance{fill:var(--accent)}
+
+.zoombar{
+  position:absolute;left:14px;bottom:14px;display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.zoombar button{width:34px;height:34px;display:grid;place-items:center;color:var(--ink-2)}
+.zoombar button+button{border-top:1px solid var(--line)}
+.zoombar button:hover{color:var(--ink);background:var(--surface-2)}
+.zoombar svg{width:14px;height:14px}
+
+.legend{
+  position:absolute;right:14px;bottom:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 12px;box-shadow:var(--shadow);font-size:11.5px;color:var(--ink-2);
+  display:flex;flex-direction:column;gap:6px;
+}
+.legend div{display:flex;align-items:center;gap:7px}
+.swatch{width:12px;height:10px;border:1px solid var(--stand-line);background:var(--stand-fill)}
+.swatch.z{background:var(--zone-soft);border-color:var(--zone);border-style:dashed}
+.swatch.s{background:var(--accent);border-color:var(--accent)}
+
+/* ---------- detail ---------- */
+.detail{
+  position:absolute;top:0;right:0;bottom:0;width:330px;
+  background:var(--surface);border-left:1px solid var(--line);
+  transform:translateX(100%);
+  display:flex;flex-direction:column;z-index:4;
+  box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  will-change:transform,opacity;
+}
+.detail.open{transform:none}
+.detail-hd{padding:18px 18px 14px;border-bottom:1px solid var(--line);position:relative}
+.detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
+.detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;text-wrap:balance;padding-right:24px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field .v{font-size:14px}
+.field .v a{color:var(--accent)}
+.desc{font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:999px;color:var(--ink-2)}
+.acts{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.acts .btn{padding:7px 12px;font-size:12.5px}
+
+/* ---------- config ---------- */
+.modal{
+  position:fixed;inset:0;background:rgba(10,12,14,.5);
+  display:none;place-items:center;padding:20px;z-index:20;
+}
+.modal.open{display:grid}
+.sheet{
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  width:min(560px,100%);max-height:88vh;overflow-y:auto;box-shadow:var(--shadow);
+}
+.sheet header{padding:20px 22px 14px;border-bottom:1px solid var(--line)}
+.sheet h2{font-family:"Archivo",sans-serif;font-size:18px;margin:6px 0 4px;letter-spacing:-.02em}
+.sheet p{margin:0;font-size:13px;color:var(--ink-2)}
+.sheet .body{padding:18px 22px;display:grid;gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2)}
+label input,label select{
+  padding:8px 10px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink);
+}
+label input:focus{border-color:var(--accent);outline:none}
+.hint{font-size:12px;color:var(--ink-3);line-height:1.5}
+.hint code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;background:var(--surface-2);padding:1px 4px;border-radius:2px}
+.sheet footer{padding:14px 22px 20px;display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.btn{padding:9px 16px;border-radius:var(--radius);font-size:13.5px;font-weight:500;border:1px solid var(--line)}
+.btn:hover{border-color:var(--line-strong)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.status{margin-right:auto;font-size:12.5px;color:var(--ink-3)}
+.status.err{color:#C2372B}
+:root[data-theme="dark"] .status.err,:root:not([data-theme="light"]) .status.err{color:#FF8B7E}
+
+/* le contour de focus par défaut dessine un gros rectangle noir autour du
+   groupe SVG : on renforce le tracé du stand à la place */
+.stage svg{-webkit-tap-highlight-color:transparent}
+.stand:focus,.stand:focus-visible{outline:none}
+.stand:focus-visible rect{stroke:var(--accent);stroke-width:3}
+
+.voile{position:fixed;inset:0;background:rgba(8,10,12,.55);z-index:14;
+  opacity:0;pointer-events:none;transition:opacity .2s;display:none}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 216px 1fr}
+  .side{border-right:none;border-bottom:1px solid var(--line)}
+  .brand .edition{display:none}
+  .legend{display:none}
+
+  /* le détail devient une fenêtre modale centrée */
+  .voile{display:block}
+  .voile.on{opacity:1;pointer-events:auto}
+  .detail{
+    position:fixed;inset:0;margin:auto;
+    width:min(430px,calc(100% - 28px));height:fit-content;max-height:74vh;
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    box-shadow:0 30px 70px -22px rgba(0,0,0,.6);
+    transform:scale(.96);opacity:0;pointer-events:none;z-index:15;
+  }
+  .detail.open{transform:none;opacity:1;pointer-events:auto}
+}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <h1 id="salonName">Chargement…</h1>
+      <span class="edition" id="salonEdition"></span>
+    </div>
+    <nav class="halls" id="halls" aria-label="Halls"></nav>
+    <div class="tools">
+      <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="iconbtn" id="btnConfig" title="Connexion Klipso" aria-label="Connexion Klipso">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H23a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <aside class="side">
+    <div class="search">
+      <div class="search-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Exposant, stand, produit…" autocomplete="off">
+      </div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="count"><span id="countTxt">—</span><span class="eyebrow" id="srcTxt">Démo</span></div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <svg id="plan" role="img" aria-label="Plan du salon"></svg>
+    <div class="zoombar">
+      <button id="zIn" aria-label="Zoom avant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="zOut" aria-label="Zoom arrière"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+      <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
+    </div>
+    <div class="legend">
+      <div><span class="swatch"></span> Stand exposant</div>
+      <div><span class="swatch z"></span> Zone d'animation</div>
+      <div><span class="swatch s"></span> Sélection</div>
+    </div>
+
+    <div class="voile" id="voile"></div>
+    <section class="detail" id="detail" aria-live="polite">
+      <div class="detail-hd">
+        <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
+        <span class="eyebrow" id="dKind">Stand</span>
+        <h2 id="dName"></h2>
+        <span class="badge mono" id="dCode"></span>
+      </div>
+      <div class="detail-bd" id="dBody"></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Connexion Klipso">
+    <header>
+      <span class="eyebrow">GAIA Web Service v3.9</span>
+      <h2>Connexion Klipso</h2>
+      <p>Renseignez votre instance pour charger les exposants et les zones réelles. Sans configuration, le plan affiche un jeu de démonstration.</p>
+    </header>
+    <div class="body">
+      <div class="grid2">
+        <label>Instance<input id="cfgInstance" placeholder="monsalon" autocomplete="off"></label>
+        <label>Event ID (GUID)<input id="cfgEvent" placeholder="e6b0…-…" autocomplete="off"></label>
+      </div>
+      <label>Clé API<input id="cfgKey" type="password" placeholder="XX/fVHCiML3…" autocomplete="off"></label>
+      <div class="grid2">
+        <label>Entité stands<input id="cfgEntStand" value="DossierExp" autocomplete="off"></label>
+        <label>Entité zones<input id="cfgEntZone" value="Animation" autocomplete="off"></label>
+      </div>
+      <label>Proxy (recommandé)<input id="cfgProxy" placeholder="https://…/functions/v1/klipso-proxy" autocomplete="off"></label>
+      <label>Rafraîchissement du plan
+        <select id="cfgRefresh">
+          <option value="0">Manuel uniquement</option>
+          <option value="15">Toutes les 15 minutes</option>
+          <option value="60">Toutes les heures</option>
+          <option value="360">Toutes les 6 heures</option>
+          <option value="1440">Une fois par jour</option>
+        </select>
+      </label>
+      <div class="syncrow">
+        <button class="btn" id="btnRefresh">Actualiser maintenant</button>
+        <span class="hint" id="lastSync">Jamais synchronisé</span>
+      </div>
+      <p class="hint">Le plan relit les données Klipso à l'intervalle choisi, et à chaque clic sur <strong>Actualiser maintenant</strong>. À part ça, rien ne part vers l'API : le jeton GAIA, lui, se renouvelle tout seul côté proxy (il expire au bout de 15 minutes, c'est imposé par Klipso) — ça n'a aucun rapport avec la fréquence de mise à jour du plan.</p>
+      <p class="hint">L'API Klipso n'autorise pas les appels navigateur directs (CORS) et la clé ne doit jamais être exposée côté client. Passez par un proxy serveur qui relaie vers <code>https://{instance}.svc.calypso-event.net</code> — le modèle de fonction est décrit sous le bouton <strong>Proxy</strong>.</p>
+    </div>
+    <footer>
+      <span class="status" id="cfgStatus"></span>
+      <button class="btn" id="cfgProxyDoc">Proxy</button>
+      <button class="btn" id="cfgCancel">Annuler</button>
+      <button class="btn primary" id="cfgSave">Charger</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+/* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
+   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. */
+if (!document.querySelector(String.raw`meta[name="viewport"]`)){
+  const mv = document.createElement("meta");
+  mv.name = "viewport";
+  mv.content = "width=device-width, initial-scale=1, viewport-fit=cover";
+  document.head.appendChild(mv);
+}
+
+/* ============================================================
+   1. Modèle de données
+   ============================================================ */
+const SECTEURS = {
+  "Sécurité & Prévention"      : "#2F49D1",
+  "Équipement & Signalétique"  : "#17876B",
+  "Services & Formation"       : "#B8563F",
+  "Digital & Data"             : "#6C4FB6",
+};
+
+const state = {
+  items: [],          // tous les stands + zones
+  halls: [],          // ["Hall A", "Hall B"]
+  hall: null,
+  sel: null,
+  q: "",
+  secteurs: new Set(), // filtres actifs
+  source: "Démo",
+};
+
+/* ============================================================
+   2. Jeu de démonstration — un salon plausible, pas du lorem
+   ============================================================ */
+const DEMO = (() => {
+  const S = Object.keys(SECTEURS);
+  const items = [];
+  let n = 0;
+
+  // pose une rangée de stands le long d'un axe horizontal
+  function row(hall, prefix, x0, y, h, list){
+    let x = x0;
+    list.forEach((e, i) => {
+      const w = e[3] || 74;
+      items.push({
+        id: "s" + (++n),
+        code: prefix + String((i + 1) * 2).padStart(2, "0"),
+        name: e[0], secteur: e[1], desc: e[2],
+        kind: "stand", hall, x, y, w, h,
+        surface: Math.round(w * h / 100) * 3 + " m²",
+      });
+      x += w + 6;
+    });
+  }
+
+  row("Hall A", "A", 90, 110, 60, [
+    ["Ardelis Protection", S[0], "EPI, harnais et lignes de vie pour le travail en hauteur."],
+    ["Novaseuil", S[1], "Barrières mobiles et gestion des flux de visiteurs."],
+    ["Kalixo Formation", S[2], "Habilitations électriques et recyclages SST.", 96],
+    ["Ferralux", S[1], "Structures aluminium, gradins et praticables."],
+    ["Vigilis Systems", S[0], "Détection incendie et désenfumage pour ERP.", 92],
+    ["Ombrière & Cie", S[1], "Voiles d'ombrage et abris temporaires."],
+  ]);
+  row("Hall A", "B", 90, 210, 60, [
+    ["Trameo", S[3], "Plateforme de billetterie et contrôle d'accès NFC.", 92],
+    ["Sécuriphone", S[0], "Radios DMR et talkies longue portée."],
+    ["Atelier Signal", S[1], "Signalétique directionnelle et totems.", 88],
+    ["Groupe Vercel", S[2], "Agents de sécurité événementielle (CQP APS)."],
+    ["Datamétrie", S[3], "Comptage de flux et heatmaps de fréquentation.", 96],
+    ["Halogis", S[1], "Logistique de montage et manutention."],
+  ]);
+  row("Hall A", "C", 90, 330, 60, [
+    ["Prévencia", S[0], "Audit de conformité et plans de prévention.", 96],
+    ["Lumibase", S[1], "Éclairage scénique et blocs de secours."],
+    ["Confortis", S[3], "Application terrain de contrôle de conformité.", 100],
+    ["Ateliers Roussel", S[1], "Mobilier de stand sur mesure."],
+    ["Certipro", S[2], "Certification et veille réglementaire ERP."],
+    ["Nordal Cables", S[1], "Distribution électrique temporaire."],
+  ]);
+  row("Hall A", "D", 90, 430, 60, [
+    ["Sanitex Event", S[2], "Sanitaires mobiles et gestion des déchets.", 88],
+    ["Aeris Climatisation", S[1], "Chauffage et climatisation sous chapiteau."],
+    ["Pixelrun", S[3], "Écrans LED et régie vidéo.", 92],
+    ["Maréva Traiteur", S[2], "Restauration exposants et VIP."],
+    ["Boréal Sûreté", S[0], "Cynotechnie et levée de doute."],
+    ["Ecran Vert", S[1], "Décors éco-conçus et réemploi.", 88],
+  ]);
+
+  // zones d'animation Hall A
+  const zones = [
+    ["Z1", "Agora Conférences", "Hall A", 600, 108, 300, 116,
+     "Plénières et tables rondes — 220 places assises, traduction simultanée FR/EN."],
+    ["Z2", "Village Start-up", "Hall A", 600, 246, 300, 76,
+     "24 jeunes pousses de la filière sécurité, pitchs toutes les 30 minutes."],
+    ["Z3", "Atelier Démo Terrain", "Hall A", 600, 344, 148, 146,
+     "Démonstrations d'équipements en conditions réelles, toutes les heures."],
+    ["Z4", "Espace Networking", "Hall A", 764, 344, 136, 146,
+     "Rendez-vous d'affaires pré-qualifiés et bar exposants."],
+    ["Z5", "Studio Podcast", "Hall B", 620, 150, 200, 110,
+     "Interviews en direct des exposants, diffusion sur la web-radio du salon."],
+  ];
+  zones.forEach(z => items.push({
+    id: "z" + z[0], code: z[0], name: z[1], kind: "zone", hall: z[2],
+    x: z[3], y: z[4], w: z[5], h: z[6], desc: z[7],
+    secteur: "Animation", surface: Math.round(z[5] * z[6] / 100) * 3 + " m²",
+  }));
+
+  row("Hall B", "E", 90, 130, 60, [
+    ["Talmar Industries", S[1], "Groupes électrogènes insonorisés.", 96],
+    ["Institut Séquoia", S[2], "Formation évacuation et exercices incendie."],
+    ["Bureau Astride", S[0], "Bureau de contrôle agréé, visites de conformité.", 100],
+    ["Mediastand", S[3], "Bornes interactives et applications visiteurs."],
+  ]);
+  row("Hall B", "F", 90, 250, 60, [
+    ["Compagnie du Sol", S[1], "Moquettes, planchers et podiums."],
+    ["Vigie Numérique", S[3], "Vidéoprotection temporaire et PC sécurité.", 96],
+    ["Ergopole", S[2], "Prévention TMS pour les équipes de montage."],
+    ["Alizé Levage", S[1], "Nacelles, chariots et engins de levage.", 92],
+  ]);
+  row("Hall B", "G", 90, 370, 60, [
+    ["Fibrelo", S[1], "Réseau fibre et wifi événementiel.", 92],
+    ["Cabinet Vaunier", S[2], "Assurance et responsabilité organisateur."],
+    ["Sentinel Access", S[0], "Portiques, magnétomètres et fouille.", 96],
+    ["Reprographie Nord", S[1], "Impression grand format et pose adhésive."],
+  ]);
+
+  return items;
+})();
+
+/* ============================================================
+   3. Rendu du plan (SVG)
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const svg = $("plan"), stage = $("stage");
+const NS = "http://www.w3.org/2000/svg";
+let view = { x: 0, y: 0, w: 1000, h: 640 }, bounds = null;
+
+const el = (t, a) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); return n; };
+const hallItems = () => state.items.filter(i => i.hall === state.hall);
+
+function matches(i){
+  const q = state.q.trim().toLowerCase();
+  const okQ = !q || (i.name + " " + i.code + " " + (i.desc || "") + " " + (i.secteur || "")).toLowerCase().includes(q);
+  const okS = !state.secteurs.size || state.secteurs.has(i.secteur);
+  return okQ && okS;
+}
+
+function computeBounds(){
+  const list = hallItems();
+  if (!list.length) return { x: 0, y: 0, w: 1000, h: 640 };
+  const x0 = Math.min(...list.map(i => i.x)), y0 = Math.min(...list.map(i => i.y));
+  const x1 = Math.max(...list.map(i => i.x + i.w)), y1 = Math.max(...list.map(i => i.y + i.h));
+  const p = 64;
+  return { x: x0 - p, y: y0 - p, w: (x1 - x0) + p * 2, h: (y1 - y0) + p * 2 };
+}
+
+function applyView(){ svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`); }
+
+function fit(){ bounds = computeBounds(); view = { ...bounds }; applyView(); }
+
+function zoomBy(f, cx, cy){
+  const nw = Math.min(bounds.w * 2.2, Math.max(bounds.w * 0.12, view.w * f));
+  const k = nw / view.w;
+  view = { x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w: nw, h: view.h * k };
+  applyView();
+}
+
+function drawPlan(){
+  svg.textContent = "";
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  const list = hallItems();
+  if (!list.length) return;
+  const b = computeBounds();
+
+  // enveloppe du hall + entrée
+  svg.appendChild(el("rect", { class: "wall", x: b.x + 26, y: b.y + 26, width: b.w - 52, height: b.h - 52, rx: 4 }));
+  svg.appendChild(el("rect", { class: "entrance", x: b.x + 26, y: b.y + b.h / 2 - 34, width: 5, height: 68 }));
+  const lbl = el("text", { class: "aisle-label", x: b.x + 40, y: b.y + b.h / 2 + 46, transform: `rotate(-90 ${b.x + 40} ${b.y + b.h / 2 + 46})` });
+  lbl.textContent = "ENTRÉE VISITEURS";
+  svg.appendChild(lbl);
+
+  // allées : une ligne pointillée entre chaque rangée
+  const rows = [...new Set(list.filter(i => i.kind === "stand").map(i => i.y))].sort((a, b2) => a - b2);
+  rows.forEach((y, k) => {
+    const ay = y - 20;
+    svg.appendChild(el("path", { class: "aisle", d: `M ${b.x + 34} ${ay} H ${b.x + b.w - 34}` }));
+    const t = el("text", { class: "aisle-label", x: b.x + 72, y: ay - 5 });
+    t.textContent = "ALLÉE " + String.fromCharCode(65 + k);
+    svg.appendChild(t);
+  });
+
+  for (const i of list){
+    const g = el("g", { class: "stand" + (i.kind === "zone" ? " zone" : "") + (state.sel === i.id ? " sel" : "") + (matches(i) ? "" : " dim") });
+    g.dataset.id = i.id;
+    g.setAttribute("tabindex", "0");
+    g.setAttribute("role", "button");
+    g.setAttribute("aria-label", `${i.name}, stand ${i.code}`);
+    g.appendChild(el("rect", { x: i.x, y: i.y, width: i.w, height: i.h, rx: 2, "vector-effect": "non-scaling-stroke" }));
+
+    if (i.kind === "stand" && SECTEURS[i.secteur]){
+      g.appendChild(el("rect", { x: i.x, y: i.y, width: i.w, height: 4, fill: SECTEURS[i.secteur], stroke: "none" }));
+    }
+
+    const code = el("text", { x: i.x + i.w / 2, y: i.y + (i.kind === "zone" ? i.h / 2 - 4 : 24), "text-anchor": "middle", "font-size": i.kind === "zone" ? 11 : 10 });
+    code.textContent = i.code;
+    g.appendChild(code);
+
+    const max = Math.floor(i.w / 4.3);
+    const nm = el("text", { class: "nm", x: i.x + i.w / 2, y: i.y + (i.kind === "zone" ? i.h / 2 + 12 : 40), "text-anchor": "middle", "font-size": i.kind === "zone" ? 13 : 8.2 });
+    nm.textContent = i.name.length > max ? i.name.slice(0, max - 1) + "…" : i.name;
+    g.appendChild(nm);
+
+    svg.appendChild(g);
+  }
+}
+
+/* ============================================================
+   4. Sidebar : filtres, liste, compteur
+   ============================================================ */
+function drawFilters(){
+  const box = $("filters"); box.textContent = "";
+  const secs = [...new Set(state.items.map(i => i.secteur))].filter(Boolean);
+  secs.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.setAttribute("aria-pressed", state.secteurs.has(s));
+    b.innerHTML = `<span class="dot" style="background:${SECTEURS[s] || "var(--zone)"}"></span>${s}`;
+    b.onclick = () => { state.secteurs.has(s) ? state.secteurs.delete(s) : state.secteurs.add(s); render(); };
+    box.appendChild(b);
+  });
+}
+
+function drawList(){
+  const box = $("list"); box.textContent = "";
+  const list = hallItems().filter(matches)
+    .sort((a, b) => a.kind === b.kind ? a.name.localeCompare(b.name, "fr") : (a.kind === "zone" ? -1 : 1));
+  $("countTxt").textContent = list.length + (list.length > 1 ? " résultats" : " résultat") + " · " + (state.hall || "");
+  $("srcTxt").textContent = syncLabel();
+  if (!list.length){
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = "Aucun exposant ne correspond. Essayez un autre mot-clé ou retirez un filtre.";
+    box.appendChild(d); return;
+  }
+  for (const i of list){
+    const b = document.createElement("button");
+    b.className = "row" + (i.kind === "zone" ? " is-zone" : "");
+    b.setAttribute("aria-current", state.sel === i.id);
+    b.innerHTML = `<span class="code">${i.code}</span><span><span class="nm">${esc(i.name)}</span><br><span class="sub">${esc(i.secteur || "")}</span></span>`;
+    b.onclick = () => select(i.id, true);
+    box.appendChild(b);
+  }
+}
+
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function drawHalls(){
+  const box = $("halls"); box.textContent = "";
+  state.halls.forEach(h => {
+    const b = document.createElement("button");
+    b.textContent = h;
+    b.setAttribute("aria-pressed", state.hall === h);
+    b.onclick = () => { state.hall = h; state.sel = null; closeDetail(); render(); fit(); };
+    box.appendChild(b);
+  });
+}
+
+function render(){ drawHalls(); drawList(); drawPlan(); }
+
+/* ============================================================
+   5. Sélection & fiche
+   ============================================================ */
+function select(id, recenter){
+  const i = state.items.find(x => x.id === id);
+  if (!i) return;
+  if (i.hall !== state.hall){ state.hall = i.hall; }
+  state.sel = id;
+  render();
+  if (recenter) centerOn(i);
+  openDetail(i, standRect(id));
+}
+
+/* Position à l'écran du stand, pour faire naître la fiche depuis lui. */
+function standRect(id){
+  const n = svg.querySelector(`.stand[data-id="${CSS.escape(id)}"] rect`);
+  return n ? n.getBoundingClientRect() : null;
+}
+
+function centerOn(i){
+  const cx = i.x + i.w / 2, cy = i.y + i.h / 2;
+  const w = Math.min(view.w, bounds.w * 0.45), h = w * (view.h / view.w);
+  view = { x: cx - w / 2, y: cy - h / 2, w, h };
+  applyView();
+}
+
+/* La fiche se déploie depuis le rectangle du stand : on cale l'origine de la
+   transformation sur le centre du stand et on part de sa taille exacte. */
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let panelAnim = null;
+
+function animatePanel(rect, dir){
+  const panel = $("detail");
+  if (panelAnim){ panelAnim.cancel(); panelAnim = null; }
+  if (REDUCED || !rect){ if (dir < 0) panel.classList.remove("open"); return; }
+
+  const p = panel.getBoundingClientRect();
+  panel.style.transformOrigin = `${rect.left + rect.width / 2 - p.left}px ${rect.top + rect.height / 2 - p.top}px`;
+  const seed = {
+    transform: `scale(${Math.max(.05, rect.width / p.width)}, ${Math.max(.03, rect.height / p.height)})`,
+    opacity: 0,
+  };
+  const full = { transform: "none", opacity: 1 };
+  panelAnim = panel.animate(dir > 0 ? [seed, full] : [full, seed], {
+    duration: dir > 0 ? 340 : 200,
+    easing: dir > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)",
+  });
+  if (dir < 0) panelAnim.finished.then(() => panel.classList.remove("open"), () => {});
+}
+
+function openDetail(i, rect){
+  $("dKind").textContent = i.kind === "zone" ? "Zone d'animation" : "Stand exposant";
+  $("dName").textContent = i.name;
+  $("dCode").textContent = i.hall + " · " + i.code;
+  const f = (l, v) => v ? `<div class="field"><span class="eyebrow">${l}</span><span class="v">${v}</span></div>` : "";
+  $("dBody").innerHTML =
+    (i.desc ? `<p class="desc">${esc(i.desc)}</p>` : "") +
+    f("Secteur", esc(i.secteur)) +
+    f("Surface au sol", esc(i.surface)) +
+    f("Site web", i.site ? `<a href="${esc(i.site)}" target="_blank" rel="noopener">${esc(i.site.replace(/^https?:\/\//, ""))}</a>` : "") +
+    f("Contact", esc(i.contact)) +
+    (i.tags && i.tags.length ? `<div class="field"><span class="eyebrow">Mots-clés</span><div class="tags">${i.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div></div>` : "") +
+    `<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button><button class="btn" id="dLink">Copier le lien</button></div>`;
+  $("dGo").onclick = () => centerOn(i);
+  $("dLink").onclick = e => {
+    const url = location.origin + location.pathname + "#" + encodeURIComponent(i.code);
+    navigator.clipboard?.writeText(url).then(
+      () => { e.target.textContent = "Lien copié"; setTimeout(() => e.target.textContent = "Copier le lien", 1600); },
+      () => { e.target.textContent = "Copie impossible"; }
+    );
+  };
+  try { history.replaceState(null, "", "#" + encodeURIComponent(i.code)); } catch {}
+  $("detail").classList.add("open");
+  $("voile").classList.add("on");
+  animatePanel(rect, 1);
+}
+
+function closeDetail(){
+  const id = state.sel;
+  const wasOpen = $("detail").classList.contains("open");
+  state.sel = null; drawList(); drawPlan(); $("voile").classList.remove("on");
+  if (wasOpen) animatePanel(id ? standRect(id) : null, -1);
+  try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+}
+$("closeDetail").onclick = closeDetail;
+$("voile").onclick = closeDetail;
+
+/* ============================================================
+   6. Interactions plan : clic, pan, zoom
+   ============================================================ */
+svg.addEventListener("keydown", e => {
+  const g = e.target.closest(".stand");
+  if (g && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); select(g.dataset.id, false); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ closeDetail(); $("modal").classList.remove("open"); } });
+
+/* La capture de pointeur (nécessaire au pan) redirige l'événement `click` vers
+   le <svg> : on retient donc le stand visé au pointerdown et on décide au
+   pointerup, selon que le geste était un clic ou un déplacement. */
+let drag = null;
+svg.addEventListener("pointerdown", e => {
+  drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false, hit: e.target.closest(".stand") };
+  svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+});
+svg.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const r = svg.getBoundingClientRect(), k = view.w / r.width;
+  const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
+  if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
+  view.x = drag.vx - dx; view.y = drag.vy - dy; applyView();
+});
+svg.addEventListener("pointerup", e => {
+  const d = drag; drag = null; svg.classList.remove("dragging");
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch {}
+  if (!d || d.moved) return;
+  if (d.hit) select(d.hit.dataset.id, false); else closeDetail();
+});
+svg.addEventListener("pointercancel", () => { drag = null; svg.classList.remove("dragging"); });
+
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = svg.getBoundingClientRect();
+  const cx = view.x + (e.clientX - r.left) / r.width * view.w;
+  const cy = view.y + (e.clientY - r.top) / r.height * view.h;
+  zoomBy(e.deltaY > 0 ? 1.15 : 0.87, cx, cy);
+}, { passive: false });
+
+$("zIn").onclick  = () => zoomBy(0.8, view.x + view.w / 2, view.y + view.h / 2);
+$("zOut").onclick = () => zoomBy(1.25, view.x + view.w / 2, view.y + view.h / 2);
+$("zFit").onclick = fit;
+
+$("q").addEventListener("input", e => { state.q = e.target.value; render(); });
+
+/* thème */
+const THEME_KEY = "plan-salon-theme";
+try { const t = localStorage.getItem(THEME_KEY); if (t) document.documentElement.setAttribute("data-theme", t); } catch {}
+$("btnTheme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(THEME_KEY, next); } catch {}
+};
+
+/* ============================================================
+   7. Client GAIA / Klipso
+   ------------------------------------------------------------
+   Deux modes :
+   · proxy  → POST {proxy} { path, body, eventId }   (recommandé)
+   · direct → https://{instance}.svc.calypso-event.net/{instance}/…
+              (bloqué par CORS depuis un navigateur dans la
+               plupart des configurations Klipso)
+   ============================================================ */
+const CFG_KEY = "plan-salon-cfg";
+let cfg = {};
+try { cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch {}
+if (cfg.refreshMin == null) cfg.refreshMin = 60;   // défaut : une relecture par heure
+
+const klipso = {
+  token: null,
+
+  async call(path, body){
+    if (cfg.proxy){
+      const r = await fetch(cfg.proxy, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path, body, eventId: cfg.eventId }),
+      });
+      if (!r.ok) throw new Error("Proxy " + r.status + " — " + (await r.text()).slice(0, 160));
+      return r.json();
+    }
+    const h = { "Content-Type": "Application/Json", "X-GAIA-ClientApp": "ApiWsFO" };
+    if (this.token) h["Authorization"] = "Bearer " + this.token;
+    if (cfg.eventId) h["X-GAIA-EventId"] = cfg.eventId;
+    const r = await fetch(`https://${cfg.instance}.svc.calypso-event.net/${cfg.instance}${path}`, {
+      method: "POST", headers: h, body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error("GAIA " + r.status);
+    return r.json();
+  },
+
+  async auth(){
+    if (cfg.proxy) return;               // le proxy gère le jeton côté serveur
+    const res = await this.call("/account/getApiKeyAccessToken", { apiKey: cfg.apiKey });
+    if (!res.isValid || !res.data?.accessToken) throw new Error("Clé API refusée par GAIA.");
+    this.token = res.data.accessToken;
+  },
+
+  async entity(name){
+    const res = await this.call("/entity/get", {
+      [name]: { inlineCount: true, fields: ["_AllFields"], start: 1, take: 500 },
+    });
+    if (!res.isValid) throw new Error((res.error?.[0]?.message) || `Entité « ${name} » introuvable.`);
+    return res.data || [];
+  },
+};
+
+/* Mapping tolérant : les noms de champs varient d'une instance à l'autre. */
+const pick = (o, keys) => { for (const k of keys) { for (const kk in o) if (kk.toLowerCase() === k.toLowerCase() && o[kk] != null && o[kk] !== "") return o[kk]; } return null; };
+
+function mapRecord(rec, kind, idx){
+  const name = pick(rec, ["RaisonSociale", "Nom", "Name", "Libelle", "Societe", "Titre"]) || "Sans nom";
+  const code = pick(rec, ["NumStand", "NumeroStand", "CodeStand", "Stand", "Emplacement", "Code"]) || String(idx + 1);
+  const hall = pick(rec, ["Hall", "Salle", "Zone", "Batiment", "Espace"]) || "Hall 1";
+  const x = Number(pick(rec, ["X", "PosX", "PositionX", "CoordX"]));
+  const y = Number(pick(rec, ["Y", "PosY", "PositionY", "CoordY"]));
+  const w = Number(pick(rec, ["Largeur", "Width", "W"]));
+  const h = Number(pick(rec, ["Profondeur", "Hauteur", "Height", "H"]));
+  return {
+    id: kind + "-" + (pick(rec, ["Id", "IdDossier", "Guid"]) || idx),
+    code: String(code), name: String(name), kind, hall: String(hall),
+    secteur: pick(rec, ["Secteur", "Categorie", "Activite", "Domaine"]) || (kind === "zone" ? "Animation" : "Exposants"),
+    desc: pick(rec, ["Description", "Presentation", "Descriptif", "Resume"]) || "",
+    site: pick(rec, ["SiteWeb", "Url", "Website"]) || "",
+    contact: pick(rec, ["Email", "Contact", "Telephone"]) || "",
+    surface: pick(rec, ["Surface", "SurfaceStand"]) ? pick(rec, ["Surface", "SurfaceStand"]) + " m²" : null,
+    x: isFinite(x) ? x : null, y: isFinite(y) ? y : null,
+    w: isFinite(w) && w ? w : null, h: isFinite(h) && h ? h : null,
+  };
+}
+
+/* Sans coordonnées dans Klipso, on dispose les stands en rangées régulières
+   pour obtenir un plan lisible immédiatement. */
+function autoLayout(items){
+  const byHall = {};
+  items.forEach(i => (byHall[i.hall] ||= []).push(i));
+  for (const hall in byHall){
+    const list = byHall[hall];
+    const zones = list.filter(i => i.kind === "zone"), stands = list.filter(i => i.kind === "stand");
+    const perRow = 6, cw = 80, ch = 60, gx = 6, gy = 40;
+    stands.forEach((i, k) => {
+      if (i.x != null && i.y != null) return;
+      i.x = 90 + (k % perRow) * (cw + gx);
+      i.y = 110 + Math.floor(k / perRow) * (ch + gy);
+      i.w = i.w || cw; i.h = i.h || ch;
+    });
+    const right = 90 + perRow * (cw + gx) + 40;
+    zones.forEach((z, k) => {
+      if (z.x != null && z.y != null) return;
+      z.x = right; z.y = 108 + k * 138; z.w = z.w || 280; z.h = z.h || 110;
+    });
+  }
+  return items;
+}
+
+/* Rafraîchissement périodique — intervalle réglé dans la configuration.
+   Indépendant du jeton GAIA, qui se renouvelle de son côté à l'expiration. */
+let syncTimer = null;
+
+function scheduleSync(){
+  clearInterval(syncTimer); syncTimer = null;
+  const m = Number(cfg.refreshMin);
+  if (m > 0 && isConnected()) syncTimer = setInterval(() => loadFromKlipso(true), m * 60000);
+}
+
+const isConnected = () => !!(cfg.proxy || (cfg.instance && cfg.apiKey));
+
+function syncLabel(){
+  if (!state.lastSync) return state.source;
+  const t = state.lastSync.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return state.source + " · maj " + t;
+}
+
+function paintLastSync(){
+  $("lastSync").textContent = state.lastSync
+    ? "Dernière mise à jour : " + state.lastSync.toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
+    : "Jamais synchronisé";
+}
+
+/* silent = rafraîchissement de fond : on garde le hall, la recherche et la sélection. */
+async function loadFromKlipso(silent){
+  const st = $("cfgStatus"), btn = $("btnRefresh");
+  if (!silent){ st.className = "status"; st.textContent = "Authentification…"; }
+  btn.disabled = true; btn.textContent = "Actualisation…";
+  try {
+    await klipso.auth();
+    if (!silent) st.textContent = "Chargement des exposants…";
+    const stands = (await klipso.entity(cfg.entStand)).map((r, k) => mapRecord(r, "stand", k));
+    let zones = [];
+    if (cfg.entZone){
+      try { zones = (await klipso.entity(cfg.entZone)).map((r, k) => mapRecord(r, "zone", k)); }
+      catch { /* entité zones optionnelle */ }
+    }
+    const items = autoLayout([...stands, ...zones]);
+    if (!items.length) throw new Error("Aucun enregistrement retourné.");
+    state.lastSync = new Date();
+    boot(items, "Klipso · " + cfg.instance, silent);
+    $("modal").classList.remove("open");
+    scheduleSync();
+  } catch (e){
+    const msg = /Failed to fetch|NetworkError/i.test(e.message)
+      ? "Appel bloqué (CORS ou réseau). Renseignez un proxy serveur."
+      : e.message;
+    if (silent){ $("srcTxt").textContent = "Échec de la mise à jour"; }
+    else { st.className = "status err"; st.textContent = msg; }
+  } finally {
+    btn.disabled = false; btn.textContent = "Actualiser maintenant";
+    paintLastSync();
+  }
+}
+
+$("btnRefresh").onclick = () => {
+  if (isConnected()) return loadFromKlipso(false);
+  $("cfgStatus").className = "status err";
+  $("cfgStatus").textContent = "Renseignez d'abord une instance ou un proxy.";
+};
+
+/* ============================================================
+   8. Fenêtre de configuration
+   ============================================================ */
+const modal = $("modal");
+$("btnConfig").onclick = () => {
+  $("cfgInstance").value = cfg.instance || "";
+  $("cfgEvent").value = cfg.eventId || "";
+  $("cfgKey").value = cfg.apiKey || "";
+  $("cfgEntStand").value = cfg.entStand || "DossierExp";
+  $("cfgEntZone").value = cfg.entZone || "Animation";
+  $("cfgProxy").value = cfg.proxy || "";
+  $("cfgRefresh").value = String(cfg.refreshMin ?? 60);
+  $("cfgStatus").textContent = ""; $("cfgStatus").className = "status";
+  paintLastSync();
+  modal.classList.add("open");
+};
+$("cfgCancel").onclick = () => modal.classList.remove("open");
+modal.addEventListener("click", e => { if (e.target === modal) modal.classList.remove("open"); });
+
+$("cfgSave").onclick = () => {
+  cfg = {
+    instance: $("cfgInstance").value.trim(),
+    eventId: $("cfgEvent").value.trim(),
+    apiKey: $("cfgKey").value.trim(),
+    entStand: $("cfgEntStand").value.trim() || "DossierExp",
+    entZone: $("cfgEntZone").value.trim(),
+    proxy: $("cfgProxy").value.trim(),
+    refreshMin: Number($("cfgRefresh").value),
+  };
+  if (!cfg.proxy && !cfg.instance){ $("cfgStatus").className = "status err"; $("cfgStatus").textContent = "Instance ou proxy requis."; return; }
+  try { localStorage.setItem(CFG_KEY, JSON.stringify({ ...cfg, apiKey: cfg.proxy ? "" : cfg.apiKey })); } catch {}
+  klipso.token = null;
+  loadFromKlipso();
+};
+
+$("cfgProxyDoc").onclick = () => {
+  const body = document.querySelector(".sheet .body");
+  body.innerHTML = `<p class="hint">Déployez cette fonction (Supabase Edge Function, Netlify Function, ou toute route serveur) puis collez son URL dans le champ <strong>Proxy</strong>. La clé API reste côté serveur.</p>
+<pre style="overflow-x:auto;background:var(--surface-2);padding:14px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6;margin:0">const I = Deno.env.get("KLIPSO_INSTANCE");
+const K = Deno.env.get("KLIPSO_API_KEY");
+const BASE = \`https://\${I}.svc.calypso-event.net/\${I}\`;
+let tok = null, exp = 0;
+
+async function token(){
+  if (tok &amp;&amp; Date.now() &lt; exp) return tok;
+  const r = await fetch(BASE + "/account/getApiKeyAccessToken", {
+    method: "POST",
+    headers: { "Content-Type": "Application/Json" },
+    body: JSON.stringify({ apiKey: K }),
+  }).then(r =&gt; r.json());
+  // le jeton GAIA expire au bout de 15 min : on le garde 13, sans rapport
+  // avec la fréquence de rafraîchissement du plan côté visiteur
+  tok = r.data.accessToken; exp = Date.now() + 13 * 60_000;
+  return tok;
+}
+
+Deno.serve(async (req) =&gt; {
+  const cors = { "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "content-type" };
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  const { path, body, eventId } = await req.json();
+  const res = await fetch(BASE + path, {
+    method: "POST",
+    headers: {
+      "Content-Type": "Application/Json",
+      "Authorization": "Bearer " + (await token()),
+      "X-GAIA-ClientApp": "ApiWsFO",
+      ...(eventId ? { "X-GAIA-EventId": eventId } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+  return new Response(await res.text(), {
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+});</pre>`;
+  $("cfgProxyDoc").textContent = "Retour";
+  $("cfgProxyDoc").onclick = () => location.reload();
+};
+
+/* ============================================================
+   9. Démarrage
+   ============================================================ */
+function boot(items, source, keep){
+  const prev = keep ? { hall: state.hall, sel: state.sel, q: state.q, secteurs: new Set(state.secteurs), view } : null;
+  state.items = items;
+  state.source = source;
+  state.halls = [...new Set(items.map(i => i.hall))].sort();
+  state.hall = prev && state.halls.includes(prev.hall) ? prev.hall : state.halls[0];
+  state.sel = null; state.secteurs.clear(); state.q = "";
+  $("q").value = "";
+  $("salonName").textContent = source.startsWith("Klipso") ? "Plan du salon" : "Salon Expogate";
+  $("salonEdition").textContent = source.startsWith("Klipso") ? cfg.instance : "Édition 2026 · Parc des expositions";
+  drawFilters(); render(); fit();
+
+  // rafraîchissement de fond : on restitue l'écran tel que le visiteur l'avait laissé
+  if (prev){
+    prev.secteurs.forEach(s => state.secteurs.add(s));
+    state.q = prev.q; $("q").value = prev.q;
+    const still = prev.sel && items.find(i => i.id === prev.sel);
+    state.sel = still ? still.id : null;
+    drawFilters(); render();
+    view = prev.view; applyView();
+    if (!still) closeDetail();
+    return;
+  }
+
+  // lien profond : #A06 ouvre directement la fiche du stand
+  const want = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
+  if (want){
+    const hit = items.find(i => i.code.toLowerCase() === want);
+    if (hit) setTimeout(() => select(hit.id, true), 80);
+  }
+}
+
+boot(DEMO, "Démo");
+if (isConnected()) loadFromKlipso(false);
+addEventListener("resize", () => { if (bounds) applyView(); });
+</script>
