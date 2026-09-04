@@ -1,9 +1,12 @@
 {
-  // Déploiement Cloudflare : un Worker qui ne sert que des fichiers statiques.
-  // `web/` contient des pages autonomes, il n'y a rien à compiler.
+  // Déploiement Cloudflare : les pages de `web/` sont servies telles quelles,
+  // et un court script relaie les lectures du plan en les mettant en cache
+  // au plus près du visiteur (voir src/index.js).
   "name": "plan-interactif",
+  "main": "./src/index.mjs",
   "compatibility_date": "2026-09-01",
   "assets": {
-    "directory": "./web"
+    "directory": "./web",
+    "binding": "ASSETS"
   }
 }

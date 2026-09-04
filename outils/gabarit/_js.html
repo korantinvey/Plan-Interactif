@@ -115,7 +115,7 @@ function monteHabillage(){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "cal");
     g.dataset.cle = f.cle;
-    g.innerHTML = f.svg;
+    g.innerHTML = f.svg || "";
     c.appendChild(g);
   });
 }
@@ -157,6 +157,7 @@ function changePlan(i){
   state.plan = i;
   ferme();
   montePlan(); fit(); liste();
+  chargeFond(i);
 }
 
 /* ============================================================

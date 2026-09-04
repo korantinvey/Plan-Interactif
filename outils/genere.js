@@ -1,7 +1,10 @@
 const fs = require("fs");
 const D = __dirname;
 const W = "C:/projets/Plan Interactif/web/";
-const API = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
+/* Les pages passent par le Worker, qui relaie et met en cache (src/index.js).
+   Adresse relative : même origine que la page, donc aucun contrôle d'origine
+   croisée, et un déplacement de domaine ne demande rien. */
+const API = "/api/plan";
 
 /**
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
@@ -58,5 +61,7 @@ for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
-    "· admin " + (s.indexOf("ecranAcces") > 0 ? "authentifié" : "retiré"));
+    // c'est la présence du module d'accès qui compte, pas une simple mention :
+    // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
+    "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"));
 }

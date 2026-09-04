@@ -110,9 +110,9 @@ button{cursor:pointer;background:none;border:none}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
-#fond .cal{color:var(--plan-line)}
-#fond .cal path,#fond .cal polyline,#fond .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
-#fond .cal text{fill:currentColor;font-family:"Instrument Sans",sans-serif}
+#couches .cal{color:var(--plan-line)}
+#couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
+#couches .cal text{fill:currentColor;font-family:"Instrument Sans",sans-serif}
 
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.22;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
@@ -359,6 +359,12 @@ button{cursor:pointer;background:none;border:none}
   .detail-hd{padding:16px 16px 13px}
   .detail-bd{padding:14px 16px 18px}
 }
+
+/* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
+   apparition brutale sous le curseur. */
+#couches .cal{animation:parait .25s ease-out}
+@keyframes parait{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
 </style>
 
 <div class="app">
@@ -591,7 +597,7 @@ function monteHabillage(){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "cal");
     g.dataset.cle = f.cle;
-    g.innerHTML = f.svg;
+    g.innerHTML = f.svg || "";
     c.appendChild(g);
   });
 }
@@ -633,6 +639,7 @@ function changePlan(i){
   state.plan = i;
   ferme();
   montePlan(); fit(); liste();
+  chargeFond(i);
 }
 
 /* ============================================================
@@ -1998,6 +2005,8 @@ function demarre(d){
   montePlan();
   fit();
   liste();
+  // le plan est manipulable : le fond peut arriver derrière
+  chargeFond(state.plan);
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
@@ -2018,20 +2027,62 @@ function annonce(txt, erreur){
  * administration la session n'existe qu'une fois l'identité vérifiée, et
  * c'est elle qui donne accès aux événements encore en brouillon.
  */
+/**
+ * En-têtes de l'appel. En administration on présente sa session : c'est elle
+ * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque
+ * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
+ */
+function entetesApi(){
+  const e = {};
+  if (document.documentElement.dataset.role !== "admin") return e;
+  try {
+    const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
+                || window.PLAN_CONFIG || null;
+    const ses = JSON.parse(localStorage.getItem("console-session") || "null");
+    if (cfg?.anonKey && ses?.access_token){
+      e["apikey"] = cfg.anonKey;
+      e["Authorization"] = "Bearer " + ses.access_token;
+    }
+  } catch (err) {}
+  return e;
+}
+
+/**
+ * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
+ * décoratif. On le charge après coup, une seule fois par pavillon, et on
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte
+ * l'horodatage de la dernière synchronisation : le navigateur le garde
+ * indéfiniment et ne le redemande qu'après une mise à jour du plan.
+ */
+const _fonds = new Map();
+function chargeFond(i){
+  const p = DATA?.plans?.[i];
+  if (!p || !API) return Promise.resolve();
+  if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
+  if (_fonds.has(p.id)) return _fonds.get(p.id);
+
+  const q = API + "?slug=" + encodeURIComponent(SLUG) +
+            "&fond=" + encodeURIComponent(p.id) +
+            "&v=" + encodeURIComponent(DATA.genereLe || "0");
+  const promesse = fetch(q, { headers: entetesApi() })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+    .then(d => {
+      const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
+      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
+      // le pavillon a pu changer pendant le chargement
+      if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
+    })
+    .catch(e => {
+      _fonds.delete(p.id);          // une panne réseau ne doit pas être définitive
+      console.warn("Fond de plan indisponible :", e.message);
+    });
+  _fonds.set(p.id, promesse);
+  return promesse;
+}
+
 function charge(){
   annonce("Chargement du plan…");
-  const entetes = {};
-  if (document.documentElement.dataset.role === "admin"){
-    try {
-      const cfg = JSON.parse(localStorage.getItem("console-config") || "null")
-                  || window.PLAN_CONFIG || null;
-      const ses = JSON.parse(localStorage.getItem("console-session") || "null");
-      if (cfg?.anonKey && ses?.access_token){
-        entetes["apikey"] = cfg.anonKey;
-        entetes["Authorization"] = "Bearer " + ses.access_token;
-      }
-    } catch (e) {}
-  }
+  const entetes = entetesApi();
   return fetch(API + "?slug=" + encodeURIComponent(SLUG), { headers: entetes, cache: "no-store" })
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que

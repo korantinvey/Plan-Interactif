@@ -105,9 +105,9 @@ button{cursor:pointer;background:none;border:none}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
-#fond .cal{color:var(--plan-line)}
-#fond .cal path,#fond .cal polyline,#fond .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
-#fond .cal text{fill:currentColor;font-family:"Instrument Sans",sans-serif}
+#couches .cal{color:var(--plan-line)}
+#couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
+#couches .cal text{fill:currentColor;font-family:"Instrument Sans",sans-serif}
 
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.22;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
@@ -354,6 +354,12 @@ button{cursor:pointer;background:none;border:none}
   .detail-hd{padding:16px 16px 13px}
   .detail-bd{padding:14px 16px 18px}
 }
+
+/* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
+   apparition brutale sous le curseur. */
+#couches .cal{animation:parait .25s ease-out}
+@keyframes parait{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
 </style>
 
 <div class="app">

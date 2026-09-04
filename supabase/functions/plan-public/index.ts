@@ -1,10 +1,16 @@
 /**
  * API publique du plan.
  *
- *   GET /plan-public?slug=smcl-2026
+ *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
+ *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
+ *
+ * Le fond de plan pèse cinquante fois les stands : il part dans un second
+ * appel, pour que le plan s'affiche et devienne manipulable sans l'attendre.
+ * Ce fond ne change qu'à la synchronisation, dont l'horodatage sert de clé de
+ * version : le navigateur ne le retélécharge jamais deux fois.
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
@@ -63,6 +69,9 @@ Deno.serve(async (req) => {
   // brouillons : elle ne doit jamais atterrir dans un cache partagé.
   const identifie = Boolean(req.headers.get("Authorization"));
 
+  // Un fond porte sa version dans l'adresse : il peut être gardé indéfiniment.
+  const versionne = Boolean(new URL(req.url).searchParams.get("v"));
+
   const repond = (corps: unknown, code = 200, cache = 60) =>
     new Response(JSON.stringify(corps), {
       status: code,
@@ -73,6 +82,10 @@ Deno.serve(async (req) => {
         // cache, avec un délai de grâce large en cas d'indisponibilité
         "Cache-Control": code !== 200
           ? "no-store"
+          // le contenu versionné est immuable, mais reste privé à l'exploitant
+          // quand il vient d'un brouillon
+          : versionne
+          ? `${identifie ? "private" : "public"}, max-age=31536000, immutable`
           : identifie
           ? "private, no-store"
           : `public, max-age=${cache}, stale-while-revalidate=600`,
@@ -110,6 +123,30 @@ Deno.serve(async (req) => {
       }, 404);
     }
 
+    // Second appel : uniquement le dessin d'un pavillon.
+    const fond = new URL(req.url).searchParams.get("fond");
+    if (fond) {
+      const { data: pl } = await sb
+        .from("plan")
+        .select("id")
+        .eq("evenement_id", evt.id)
+        .eq("id_klipso", fond)
+        .maybeSingle();
+      if (!pl) return repond({ erreur: "Pavillon introuvable." }, 404);
+
+      const { data: cal } = await sb
+        .from("calque")
+        .select("cle, svg, ordre_klipso")
+        .eq("plan_id", pl.id)
+        .not("svg", "is", null)
+        .order("ordre_klipso", { ascending: true });
+
+      return repond({
+        plan: fond,
+        calques: (cal ?? []).map((c) => ({ cle: c.cle, svg: c.svg })),
+      });
+    }
+
     const { data: plans } = await sb
       .from("plan")
       .select("id, id_klipso, libelle, hall, emprise")
@@ -125,7 +162,10 @@ Deno.serve(async (req) => {
 
     const ids = plans.map((p) => p.id);
     const [calques, apparences, dessins, instantanes] = await Promise.all([
-      sb.from("calque").select("plan_id, id_klipso, cle, libelle, ordre_klipso, svg").in("plan_id", ids),
+      // pas de colonne svg ici : c'est elle qui pèse, et le second appel la sert.
+      // On filtre quand même dessus : un calque sans dessin n'a rien à lister.
+      sb.from("calque").select("plan_id, id_klipso, cle, libelle, ordre_klipso")
+        .in("plan_id", ids).not("svg", "is", null),
       sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
       sb.from("calque_dessin").select("plan_id, id, nom, couleur, rempli, visible, rang, formes")
         .in("plan_id", ids).order("rang", { ascending: true }),
@@ -155,7 +195,6 @@ Deno.serve(async (req) => {
           hall: p.hall,
           emprise: p.emprise ?? charge.emprise ?? null,
           fond: (parCalque[p.id] ?? [])
-            .filter((c) => c.svg)
             .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
             .map((c) => ({
               // l'identifiant Klipso est la clé stable : les libellés changent
@@ -163,7 +202,6 @@ Deno.serve(async (req) => {
               cle: c.cle,
               nom: c.libelle,
               ordre: c.ordre_klipso,
-              svg: c.svg,
             })),
           stands: charge.stands ?? [],
           zones: charge.zones ?? [],
