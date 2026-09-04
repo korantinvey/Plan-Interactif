@@ -50,6 +50,9 @@ body{margin:0;background:var(--ground);color:var(--ink);
   font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
+/* Un display: flex ou grid l'emporte sinon sur la règle du navigateur, et
+   l'élément reste visible alors qu'on le croit masqué. */
+[hidden]{display:none!important}
 button{cursor:pointer;background:none;border:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
