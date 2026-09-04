@@ -76,11 +76,15 @@ export class Eventmaker {
   }
 
   /**
-   * Numéro de stand d'une fiche, sous sa forme normalisée. Trois emplacements
-   * possibles selon la configuration du salon ; le premier renseigné gagne.
+   * Numéro de stand d'une fiche, sous sa forme normalisée.
+   *
+   * Un seul champ fait foi : « NUM stand ». Deux autres lui ressemblent —
+   * booth_number_ezymob, alimenté pour le site public, et stand_number, natif
+   * d'Eventmaker mais vide ici — et s'en servir en repli reviendrait à faire
+   * entrer sur le plan des fiches que l'exploitant n'y a pas mises.
    */
-  private static stand(g: Record<string, any>, m: Record<string, string>): string {
-    return cleStand(m.num_stand || m.booth_number_ezymob || g.stand_number);
+  private static stand(_g: Record<string, any>, m: Record<string, string>): string {
+    return cleStand(m.num_stand);
   }
 
   /**
