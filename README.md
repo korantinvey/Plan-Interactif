@@ -80,6 +80,29 @@ les appels.
 La référence du projet est la partie variable de l'URL :
 `https://<référence>.supabase.co`.
 
+## Reprendre le projet depuis un autre appareil
+
+Deux modes de Claude Code se ressemblent et ne se valent pas ici.
+
+Le **contrôle à distance** pilote une session qui tourne *sur votre
+ordinateur* : le téléphone n'est qu'une télécommande. Dès que le poste dort ou
+se déconnecte, la session tombe, et l'écran affiche « La session de contrôle à
+distance est hors ligne ». Rien n'est perdu, mais rien ne continue non plus.
+
+Les **sessions cloud** (claude.ai/code) tournent dans un conteneur distant,
+sans lien avec vos machines : on ouvre le dépôt depuis n'importe quel appareil,
+et le travail se poursuit. C'est le mode à utiliser pour reprendre en mobilité.
+
+Le conteneur part d'un clone nu. `.claude/hooks/session-start.sh` l'équipe au
+démarrage — `npm install`, puis `npm run construire` — de sorte que la chaîne
+de fabrication est opérationnelle dès la première commande. Le hook ne
+s'exécute qu'à distance ; sur un poste, il sort immédiatement.
+
+Ce qui ne voyage pas, et n'a pas à voyager : le fichier `.env` et les sessions
+des CLI. Une session cloud peut construire les pages, les vérifier et les
+valider ; pour `npx supabase db push` ou `npm run fonctions`, il faut se
+connecter au préalable, ce qui suppose un navigateur.
+
 ## Fabriquer les pages
 
 Les pages de `web/` sont assemblées à partir des modules de `outils/gabarit/`,
@@ -109,6 +132,7 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 | Pages | `outils/gabarit/` → `web/` | `npm run construire`, puis validées |
 | Worker et cache | `src/index.mjs`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
 | Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | `npm run construire` |
+| Données de démonstration | `outils/plans.json` → `web/plan-smcl.html` | `npm run construire` |
 
 Les migrations sont numérotées et rejouables : `db push` n'applique que celles
 qui manquent. Les fonctions, elles, se redéploient entièrement à chaque fois.

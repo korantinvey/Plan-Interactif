@@ -5,6 +5,11 @@ outils/brut/
 outils/svg/
 outils/*.json
 !outils/package.json
+# Source des données figées de web/plan-smcl.html. Sans elle, `npm run
+# construire` échoue sur un clone neuf, et elle ne se régénère qu'avec une clé
+# Klipso. Les mêmes données sont déjà publiées dans la page : rien de plus
+# n'est exposé, et la construction redevient reproductible partout.
+!outils/plans.json
 supabase/.temp/
 
 outils/chk.js
