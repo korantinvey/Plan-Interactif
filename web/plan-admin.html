@@ -278,9 +278,11 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
-/* `display:flex` ci-dessous l'emporte sur la règle du navigateur qui masque un
-   élément portant « hidden » : sans cette ligne, l'attribut ne masque rien. */
-.zoombar[hidden]{display:none}
+/* Ces deux-là déclarent « display:flex », qui l'emporte sur la règle du
+   navigateur masquant un élément porteur de « hidden » : sans ces lignes,
+   l'attribut ne masque rien. Le piège s'est déjà refermé une fois sur la barre
+   de zoom, et il vaut pour tout ce qui se cache par attribut dans cette page. */
+.zoombar[hidden],.scalebar[hidden]{display:none}
 .zoombar{position:absolute;left:14px;bottom:14px;display:flex;flex-direction:column;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .zoombar button{width:34px;height:34px;display:grid;place-items:center;color:var(--ink-2)}
@@ -1699,25 +1701,34 @@ function appliqueApparence(){
     racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
                             conf(k).visible === false));
   appliqueCouleursData();
-  appliqueZoom();
+  appliqueCommandes();
 }
 
 /**
- * Les boutons de zoom, montrés ou non.
+ * Les commandes posées sur le plan, montrées ou non.
  *
- * Le pincement les rend superflus sur un écran tactile, mais il demande deux
- * doigts : dans une allée de salon, sac à la main, on n'en a souvent qu'un.
- * L'arbitrage dépend du public et du terrain, donc il revient à l'exploitant.
- * Montrés par défaut : un réglage absent ne doit rien retirer à un salon déjà
+ * Le pincement rend les boutons de zoom superflus sur un écran tactile, mais
+ * il demande deux doigts : dans une allée de salon, sac à la main, on n'en a
+ * souvent qu'un. L'échelle, elle, sert à qui mesure une distance et encombre
+ * qui ne la lit pas. Ni l'un ni l'autre ne se tranche par une règle générale :
+ * cela dépend du public et du terrain, donc cela revient à l'exploitant.
+ *
+ * Montrées par défaut : un réglage absent ne doit rien retirer à un salon déjà
  * en place.
  */
-function appliqueZoom(){
-  const montre = conf("_zoom").visible !== false;
-  const z = document.querySelector(".zoombar");
-  if (z) z.hidden = !montre;
-  /* L'échelle s'écartait de la marge pour laisser passer les boutons. Sans
-     eux, ce décalage n'a plus d'objet et laisse un vide. */
-  racine.classList.toggle("sans-zoom", !montre);
+const COMMANDES = [
+  { cle: "_zoom",    sel: ".zoombar",  libelle: "Afficher les icônes de zoom" },
+  { cle: "_echelle", sel: ".scalebar", libelle: "Afficher l'échelle" },
+];
+
+function appliqueCommandes(){
+  COMMANDES.forEach(c => {
+    const n = document.querySelector(c.sel);
+    if (n) n.hidden = conf(c.cle).visible === false;
+  });
+  /* L'échelle s'écartait de la marge pour laisser passer les boutons de zoom.
+     Sans eux, ce décalage n'a plus d'objet et laisse un vide. */
+  racine.classList.toggle("sans-zoom", conf("_zoom").visible === false);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
@@ -2932,15 +2943,19 @@ function construitPanneau(){
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
   const reg = document.createElement("div");
   reg.className = "reglages";
-  reg.innerHTML = '<span class="eyebrow">Affichage</span>' +
-    '<label><input type="checkbox"><span></span></label>';
-  reg.querySelector("label span").textContent = "Afficher les icônes de zoom";
-  const cz = reg.querySelector('input[type="checkbox"]');
-  cz.checked = conf("_zoom").visible !== false;
-  cz.onchange = e => {
-    conf("_zoom").visible = e.target.checked;
-    enregistreConf(); appliqueZoom();
-  };
+  reg.innerHTML = '<span class="eyebrow">Affichage</span>';
+  COMMANDES.forEach(cmd => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = cmd.libelle;
+    const c = l.querySelector("input");
+    c.checked = conf(cmd.cle).visible !== false;
+    c.onchange = e => {
+      conf(cmd.cle).visible = e.target.checked;
+      enregistreConf(); appliqueCommandes();
+    };
+    reg.appendChild(l);
+  });
   hote.appendChild(reg);
 }
 

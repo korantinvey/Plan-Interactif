@@ -273,9 +273,11 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
-/* `display:flex` ci-dessous l'emporte sur la règle du navigateur qui masque un
-   élément portant « hidden » : sans cette ligne, l'attribut ne masque rien. */
-.zoombar[hidden]{display:none}
+/* Ces deux-là déclarent « display:flex », qui l'emporte sur la règle du
+   navigateur masquant un élément porteur de « hidden » : sans ces lignes,
+   l'attribut ne masque rien. Le piège s'est déjà refermé une fois sur la barre
+   de zoom, et il vaut pour tout ce qui se cache par attribut dans cette page. */
+.zoombar[hidden],.scalebar[hidden]{display:none}
 .zoombar{position:absolute;left:14px;bottom:14px;display:flex;flex-direction:column;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
 .zoombar button{width:34px;height:34px;display:grid;place-items:center;color:var(--ink-2)}

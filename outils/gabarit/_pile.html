@@ -168,15 +168,19 @@ function construitPanneau(){
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
   const reg = document.createElement("div");
   reg.className = "reglages";
-  reg.innerHTML = '<span class="eyebrow">Affichage</span>' +
-    '<label><input type="checkbox"><span></span></label>';
-  reg.querySelector("label span").textContent = "Afficher les icônes de zoom";
-  const cz = reg.querySelector('input[type="checkbox"]');
-  cz.checked = conf("_zoom").visible !== false;
-  cz.onchange = e => {
-    conf("_zoom").visible = e.target.checked;
-    enregistreConf(); appliqueZoom();
-  };
+  reg.innerHTML = '<span class="eyebrow">Affichage</span>';
+  COMMANDES.forEach(cmd => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = cmd.libelle;
+    const c = l.querySelector("input");
+    c.checked = conf(cmd.cle).visible !== false;
+    c.onchange = e => {
+      conf(cmd.cle).visible = e.target.checked;
+      enregistreConf(); appliqueCommandes();
+    };
+    reg.appendChild(l);
+  });
   hote.appendChild(reg);
 }
 

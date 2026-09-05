@@ -75,25 +75,34 @@ function appliqueApparence(){
     racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
                             conf(k).visible === false));
   appliqueCouleursData();
-  appliqueZoom();
+  appliqueCommandes();
 }
 
 /**
- * Les boutons de zoom, montrés ou non.
+ * Les commandes posées sur le plan, montrées ou non.
  *
- * Le pincement les rend superflus sur un écran tactile, mais il demande deux
- * doigts : dans une allée de salon, sac à la main, on n'en a souvent qu'un.
- * L'arbitrage dépend du public et du terrain, donc il revient à l'exploitant.
- * Montrés par défaut : un réglage absent ne doit rien retirer à un salon déjà
+ * Le pincement rend les boutons de zoom superflus sur un écran tactile, mais
+ * il demande deux doigts : dans une allée de salon, sac à la main, on n'en a
+ * souvent qu'un. L'échelle, elle, sert à qui mesure une distance et encombre
+ * qui ne la lit pas. Ni l'un ni l'autre ne se tranche par une règle générale :
+ * cela dépend du public et du terrain, donc cela revient à l'exploitant.
+ *
+ * Montrées par défaut : un réglage absent ne doit rien retirer à un salon déjà
  * en place.
  */
-function appliqueZoom(){
-  const montre = conf("_zoom").visible !== false;
-  const z = document.querySelector(".zoombar");
-  if (z) z.hidden = !montre;
-  /* L'échelle s'écartait de la marge pour laisser passer les boutons. Sans
-     eux, ce décalage n'a plus d'objet et laisse un vide. */
-  racine.classList.toggle("sans-zoom", !montre);
+const COMMANDES = [
+  { cle: "_zoom",    sel: ".zoombar",  libelle: "Afficher les icônes de zoom" },
+  { cle: "_echelle", sel: ".scalebar", libelle: "Afficher l'échelle" },
+];
+
+function appliqueCommandes(){
+  COMMANDES.forEach(c => {
+    const n = document.querySelector(c.sel);
+    if (n) n.hidden = conf(c.cle).visible === false;
+  });
+  /* L'échelle s'écartait de la marge pour laisser passer les boutons de zoom.
+     Sans eux, ce décalage n'a plus d'objet et laisse un vide. */
+  racine.classList.toggle("sans-zoom", conf("_zoom").visible === false);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
