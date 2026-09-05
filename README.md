@@ -131,13 +131,20 @@ n'a pas le droit d'écrire.
 
 ### Les deux secrets à créer
 
-Le workflow Supabase reste inerte tant que ces deux secrets manquent. Dans
-**Settings → Secrets and variables → Actions** du dépôt :
+Sans eux, le workflow Supabase s'exécute et **échoue** sur l'authentification —
+bruyamment, et c'est voulu : un échec silencieux laisserait croire qu'une
+migration est passée. Ils se posent dans **Settings → Secrets and variables →
+Actions** du dépôt :
 
 | secret | où le trouver |
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens, « Generate new token » |
 | `SUPABASE_DB_PASSWORD` | le mot de passe de la base, noté à la création du projet |
+
+**Le jeton d'accès expire le 1er septembre 2027.** Ce jour-là le déploiement
+repassera au rouge sur une erreur d'authentification, sans autre explication :
+il faudra en générer un nouveau et remplacer le secret. La panne paraîtra
+mystérieuse à qui ne l'a pas lu ici.
 
 La référence du projet n'est pas un secret — c'est le sous-domaine de l'API.
 Elle est inscrite dans le workflow, et une variable de dépôt
