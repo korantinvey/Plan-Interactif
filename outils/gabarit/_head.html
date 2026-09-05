@@ -465,7 +465,20 @@ button.expo:hover{background:var(--line)}
 .parcours.open{transform:none}
 .parcours .detail-hd h2{margin:0 0 4px}
 .pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* Emporter le parcours passe avant le vider : c'est le geste qu'on cherche,
+   l'autre est celui qu'on regrette. Il prend donc la forme d'un bouton, quand
+   le vidage reste un lien. */
+.pPied .pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px;
+  font-weight:500;color:var(--ink);background:var(--surface)}
+.pPied .pdf:hover{border-color:var(--accent);color:var(--accent)}
+.pPied .pdf svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+/* « display:inline-flex » l'emporterait sur « hidden » : le bouton resterait
+   visible sur un parcours vide, où il n'a rien à emporter. */
+.pPied .pdf[hidden]{display:none}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:#C2372B}
 .pGroupe{display:flex;flex-direction:column;gap:7px}
@@ -851,7 +864,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="badge" id="pResume"></span>
       </div>
       <div class="pCorps" id="pCorps"></div>
-      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+      <div class="pPied">
+        <button class="pdf" id="pdfParcours" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          Emporter en PDF</button>
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
     </section>
   </main>
 </div>

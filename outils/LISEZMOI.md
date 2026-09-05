@@ -14,7 +14,10 @@ Chaîne de fabrication des pages, et scripts d'exploration de l'API.
 | `_dessin.html` | calques de dessin, outils de tracé, historique |
 | `_edition.html` | sélection, déplacement, poignées |
 | `_pile.html` | panneau : une seule pile pour tous les calques |
+| `_pousse.html` | publication de la configuration vers le service |
 | `_modales.html` | fenêtres de confirmation et d'ordre |
+| `_parcours.html` | parcours de visite : signets, tiroir, stockage local |
+| `_pdf.html` | le parcours emporté : rédaction d'un PDF sans bibliothèque |
 | `_admin2.html` | démarrage : données figées ou appel à l'API |
 
 ```bash

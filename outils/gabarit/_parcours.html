@@ -182,7 +182,10 @@ function remplitParcours(){
     ? [stands.length ? pluriel(stands.length, "exposant") : "",
        confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
     : "rien pour l'instant";
+  /* Un parcours vide n'a rien à vider, ni rien à emporter : les deux boutons
+     du pied s'effacent ensemble. */
   $("videParcours").hidden = !(stands.length + confs.length);
+  $("pdfParcours").hidden = !(stands.length + confs.length);
 
   if (!stands.length && !confs.length){
     const v = document.createElement("p");

@@ -465,7 +465,20 @@ button.expo:hover{background:var(--line)}
 .parcours.open{transform:none}
 .parcours .detail-hd h2{margin:0 0 4px}
 .pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* Emporter le parcours passe avant le vider : c'est le geste qu'on cherche,
+   l'autre est celui qu'on regrette. Il prend donc la forme d'un bouton, quand
+   le vidage reste un lien. */
+.pPied .pdf{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px;
+  font-weight:500;color:var(--ink);background:var(--surface)}
+.pPied .pdf:hover{border-color:var(--accent);color:var(--accent)}
+.pPied .pdf svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+/* « display:inline-flex » l'emporterait sur « hidden » : le bouton resterait
+   visible sur un parcours vide, où il n'a rien à emporter. */
+.pPied .pdf[hidden]{display:none}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:#C2372B}
 .pGroupe{display:flex;flex-direction:column;gap:7px}
@@ -851,7 +864,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="badge" id="pResume"></span>
       </div>
       <div class="pCorps" id="pCorps"></div>
-      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+      <div class="pPied">
+        <button class="pdf" id="pdfParcours" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          Emporter en PDF</button>
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
     </section>
   </main>
 </div>
@@ -3756,7 +3774,10 @@ function remplitParcours(){
     ? [stands.length ? pluriel(stands.length, "exposant") : "",
        confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
     : "rien pour l'instant";
+  /* Un parcours vide n'a rien à vider, ni rien à emporter : les deux boutons
+     du pied s'effacent ensemble. */
   $("videParcours").hidden = !(stands.length + confs.length);
+  $("pdfParcours").hidden = !(stands.length + confs.length);
 
   if (!stands.length && !confs.length){
     const v = document.createElement("p");
@@ -3834,6 +3855,535 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
 addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
 });
+
+/* ============================================================
+   11 ter. Le parcours emporté : un PDF
+   ============================================================ */
+/**
+ * Le parcours vit dans le navigateur de celui qui l'a fait, et nulle part
+ * ailleurs. C'est ce qui le rend simple — aucun compte à créer — et fragile :
+ * il ne se transmet pas, ne s'imprime pas, et disparaît avec l'historique du
+ * téléphone. Un fichier règle les trois d'un coup. Il s'envoie à un collègue,
+ * se glisse dans une poche, et s'ouvre dans un hall où le réseau est saturé.
+ *
+ * Le PDF s'écrit ici, à la main. Aucune bibliothèque n'est chargée : la page
+ * de démonstration est publiée telle quelle, sans rien pouvoir appeler
+ * d'extérieur, et les autres sont servies en fichiers figés. Ce n'est pas un
+ * renoncement — un PDF 1.4 n'est qu'une suite d'objets numérotés suivie de la
+ * table de leurs positions, et les quatorze polices de base, Helvetica
+ * comprise, n'ont pas à être embarquées.
+ */
+
+/* La feuille s'imprime : elle garde l'encre sombre sur papier blanc, quel que
+   soit le thème de l'écran. Ce sont les teintes du plan en thème clair. */
+const PDF_ENCRE  = [.08, .09, .10];   // --ink
+const PDF_GRIS   = [.49, .51, .52];   // --ink-3
+const PDF_ACCENT = [.18, .29, .82];   // --accent
+const PDF_TRAIT  = [.82, .84, .80];   // --line
+const PDF_DOUX   = [.86, .88, .98];   // --accent-soft
+const PDF_PAPIER = [1, 1, 1];
+const PDF_FOND   = [.95, .95, .93];   // les zones, en fond de plan
+
+/* Arial fut dessinée aux mesures d'Helvetica, et les substituts installés sur
+   les systèmes libres le sont aussi : mesurer dans le navigateur revient à
+   mesurer dans la police du PDF, à un cheveu près. Cela évite d'embarquer la
+   table des largeurs des deux fontes. */
+const PDF_POLICE   = ["400", "Helvetica, Arial, sans-serif"];
+const PDF_POLICE_G = ["700", "Helvetica, Arial, sans-serif"];
+
+/* ------------------------------------------------------------
+   Le rédacteur de PDF
+   ------------------------------------------------------------ */
+function nouveauPdf(){
+  const pages = [];
+  let p = null;                      // la page où l'on écrit
+
+  const n2 = v => String(Math.round(v * 100) / 100);
+  const rvb = c => n2(c[0]) + " " + n2(c[1]) + " " + n2(c[2]);
+  const ec = s => { p.flux += s + "\n"; };
+
+  /* Les polices de base s'écrivent en WinAnsi — le Latin-1 de Windows. Il
+     couvre le français ; l'apostrophe courbe, les guillemets typographiques et
+     les tirets cadratins vivent dans la plage 128-159, que ce tableau
+     rattrape. Le reste devient un point d'interrogation, qui se voit, plutôt
+     qu'un caractère faux, qui ne se voit pas. */
+  const WINANSI = { "€": 128, "‚": 130, "ƒ": 131, "„": 132, "…": 133, "†": 134,
+    "‡": 135, "ˆ": 136, "‰": 137, "Š": 138, "‹": 139, "Œ": 140, "Ž": 142,
+    "‘": 145, "’": 146, "“": 147, "”": 148, "•": 149, "–": 150, "—": 151,
+    "˜": 152, "™": 153, "š": 154, "›": 155, "œ": 156, "ž": 158, "Ÿ": 159 };
+
+  /* Le dictionnaire d'information ne se lit pas en WinAnsi mais en
+     PDFDocEncoding, où les mêmes octets nomment d'autres signes : « — » y
+     devient « Š ». On y écrit donc en UTF-16, forme que la norme prévoit et
+     que tout lecteur comprend — en hexadécimal, qui n'a rien à échapper. */
+  function chaineUtf16(t){
+    let s = "<FEFF";
+    for (const c of String(t)){
+      const u = c.charCodeAt(0);
+      s += u.toString(16).toUpperCase().padStart(4, "0");
+    }
+    return s + ">";
+  }
+
+  function chaine(t){
+    let s = "(";
+    for (const c of String(t)){
+      const u = c.codePointAt(0);
+      let b = u < 256 ? u : (WINANSI[c] || 63);
+      if (b < 32) b = 32;
+      // la parenthèse fermante d'un nom d'exposant terminerait la chaîne
+      if (b === 40 || b === 41 || b === 92) s += "\\";
+      s += String.fromCharCode(b);
+    }
+    return s + ")";
+  }
+
+  function mesure(t, taille, gras, ecart){
+    const s = String(t == null ? "" : t);
+    return largeur(s, gras ? PDF_POLICE_G : PDF_POLICE) * taille +
+           (ecart || 0) * Math.max(0, s.length - 1);
+  }
+
+  function texte(t, x, y, o){
+    o = o || {};
+    const s = String(t == null ? "" : t).replace(/\s+/g, " ").trim();
+    if (!s) return;
+    const taille = o.taille || 10, gras = !!o.gras, ecart = o.ecart || 0;
+    const l = mesure(s, taille, gras, ecart);
+    const ax = o.align === "centre" ? x - l / 2 : o.align === "droite" ? x - l : x;
+    ec("BT " + rvb(o.couleur || PDF_ENCRE) + " rg /" + (gras ? "F2" : "F1") + " " +
+       n2(taille) + " Tf " + n2(ecart) + " Tc 1 0 0 1 " + n2(ax) + " " + n2(y) +
+       " Tm " + chaine(s) + " Tj ET");
+  }
+
+  /** Le texte réparti sur la largeur donnée, et rien qui déborde. */
+  function coupe(t, large, taille, gras){
+    const mots = String(t == null ? "" : t).replace(/\s+/g, " ").trim().split(" ");
+    const out = [];
+    let l = "";
+    for (let m of mots){
+      /* Une adresse web, un nom accolé : plus large que la colonne, aucune
+         espace où couper. On tranche au caractère plutôt que de déborder. */
+      while (mesure(m, taille, gras) > large && m.length > 1){
+        let i = 1;
+        while (i < m.length && mesure(m.slice(0, i + 1), taille, gras) <= large) i++;
+        if (l){ out.push(l); l = ""; }
+        out.push(m.slice(0, i));
+        m = m.slice(i);
+      }
+      const essai = l ? l + " " + m : m;
+      if (!l || mesure(essai, taille, gras) <= large) l = essai;
+      else { out.push(l); l = m; }
+    }
+    if (l) out.push(l);
+    return out.length ? out : [""];
+  }
+
+  const rect = (x, y, w, h, couleur) =>
+    ec("q " + rvb(couleur) + " rg " + n2(x) + " " + n2(y) + " " + n2(w) + " " +
+       n2(h) + " re f Q");
+
+  const ligne = (x1, y1, x2, y2, couleur, ep) =>
+    ec("q " + rvb(couleur) + " RG " + n2(ep || .6) + " w " + n2(x1) + " " + n2(y1) +
+       " m " + n2(x2) + " " + n2(y2) + " l S Q");
+
+  /** Un disque, en quatre courbes — le PDF ne connaît pas le cercle. */
+  function disque(x, y, r, couleur){
+    const k = r * .5523;
+    ec("q " + rvb(couleur) + " rg " +
+      n2(x - r) + " " + n2(y) + " m " +
+      n2(x - r) + " " + n2(y + k) + " " + n2(x - k) + " " + n2(y + r) + " " + n2(x) + " " + n2(y + r) + " c " +
+      n2(x + k) + " " + n2(y + r) + " " + n2(x + r) + " " + n2(y + k) + " " + n2(x + r) + " " + n2(y) + " c " +
+      n2(x + r) + " " + n2(y - k) + " " + n2(x + k) + " " + n2(y - r) + " " + n2(x) + " " + n2(y - r) + " c " +
+      n2(x - k) + " " + n2(y - r) + " " + n2(x - r) + " " + n2(y - k) + " " + n2(x - r) + " " + n2(y) + " c f Q");
+  }
+
+  /**
+   * Un tracé du plan, reporté sur la feuille.
+   *
+   * Les formes viennent de la même chaîne que le SVG — « M x y L x y … Z » —
+   * et n'emploient que des segments droits : les reprendre est une traduction,
+   * pas un rendu. Le remplissage suit la règle pair-impair, comme le SVG, pour
+   * que le trou d'un anneau reste un trou.
+   */
+  function trace(d, vers, o){
+    const anneaux = anneauxDeTrace(d);
+    if (!anneaux.length) return;
+    let s = "q ";
+    if (o.fond) s += rvb(o.fond) + " rg ";
+    if (o.trait) s += rvb(o.trait) + " RG " + n2(o.ep || .4) + " w ";
+    for (const a of anneaux){
+      a.forEach((pt, i) => {
+        const q = vers(pt);
+        s += n2(q[0]) + " " + n2(q[1]) + (i ? " l " : " m ");
+      });
+      s += "h ";
+    }
+    ec(s + (o.fond && o.trait ? "B*" : o.fond ? "f*" : "S") + " Q");
+  }
+
+  /** Le fichier, prêt à être enregistré. */
+  function sortie(titre){
+    /* Numérotation fixée d'avance : le catalogue doit citer les pages, et
+       chaque page son flux, avant que l'un ou l'autre ne soit écrit. */
+    const CAT = 1, ARBRE = 2, F1 = 3, F2 = 4, INFO = 5;
+    const idPage = i => INFO + 1 + i * 2, idFlux = i => INFO + 2 + i * 2;
+    const corps = [];
+    corps[CAT] = "<< /Type /Catalog /Pages " + ARBRE + " 0 R >>";
+    corps[ARBRE] = "<< /Type /Pages /Count " + pages.length + " /Kids [" +
+      pages.map((_, i) => idPage(i) + " 0 R").join(" ") + "] >>";
+    corps[F1] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
+    corps[F2] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+    const d = new Date();
+    const d2 = v => String(v).padStart(2, "0");
+    corps[INFO] = "<< /Title " + chaineUtf16(titre) + " /Producer " + chaineUtf16("Plan interactif") +
+      " /CreationDate (D:" + d.getFullYear() + d2(d.getMonth() + 1) + d2(d.getDate()) +
+      d2(d.getHours()) + d2(d.getMinutes()) + d2(d.getSeconds()) + ")>>";
+    pages.forEach((pg, i) => {
+      corps[idPage(i)] = "<< /Type /Page /Parent " + ARBRE + " 0 R /MediaBox [0 0 " +
+        n2(pg.l) + " " + n2(pg.h) + "] /Resources << /Font << /F1 " + F1 + " 0 R /F2 " +
+        F2 + " 0 R >> >> /Contents " + idFlux(i) + " 0 R >>";
+      corps[idFlux(i)] = "<< /Length " + pg.flux.length + " >>\nstream\n" + pg.flux + "endstream";
+    });
+
+    /* Le fichier se compose en chaîne d'octets — un caractère par octet — puis
+       se convertit d'un bloc : la table des positions se compte en octets
+       depuis le début, et il faut donc écrire avant de savoir où l'on est. */
+    let out = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
+    const pos = [];
+    for (let i = 1; i < corps.length; i++){
+      pos[i] = out.length;
+      out += i + " 0 obj\n" + corps[i] + "\nendobj\n";
+    }
+    const table = out.length;
+    out += "xref\n0 " + corps.length + "\n0000000000 65535 f \n";
+    for (let i = 1; i < corps.length; i++){
+      out += String(pos[i]).padStart(10, "0") + " 00000 n \n";
+    }
+    out += "trailer\n<< /Size " + corps.length + " /Root " + CAT + " 0 R /Info " +
+      INFO + " 0 R >>\nstartxref\n" + table + "\n%%EOF\n";
+
+    const octets = new Uint8Array(out.length);
+    for (let i = 0; i < out.length; i++) octets[i] = out.charCodeAt(i) & 255;
+    return octets;
+  }
+
+  return {
+    page(paysage){
+      p = { l: paysage ? 841.89 : 595.28, h: paysage ? 595.28 : 841.89, flux: "" };
+      pages.push(p);
+    },
+    vise(i){ p = pages[i]; },
+    get nb(){ return pages.length; },
+    get l(){ return p.l; },
+    get h(){ return p.h; },
+    mesure: mesure, texte: texte, coupe: coupe,
+    rect: rect, ligne: ligne, disque: disque, trace: trace, sortie: sortie,
+  };
+}
+
+/** « M x y L x y … Z » vers une liste d'anneaux de points. */
+function anneauxDeTrace(d){
+  const out = [];
+  let a = null;
+  const re = /([ML])\s*(-?[\d.]+)[\s,]+(-?[\d.]+)|(Z)/gi;
+  let m;
+  while ((m = re.exec(String(d || "")))){
+    if (m[4]){ if (a){ out.push(a); a = null; } continue; }
+    const pt = [parseFloat(m[2]), parseFloat(m[3])];
+    if (!isFinite(pt[0]) || !isFinite(pt[1])) continue;
+    if (m[1].toUpperCase() === "M"){ if (a) out.push(a); a = [pt]; }
+    else if (a) a.push(pt);
+  }
+  if (a) out.push(a);
+  return out.filter(r => r.length > 2);
+}
+
+/* ------------------------------------------------------------
+   La feuille : ce qu'on a retenu, dans l'ordre où on le vivra
+   ------------------------------------------------------------ */
+const PDF_MARGE = 46;
+
+/** L'emprise d'un pavillon, recalculée si les données ne la portent pas. */
+function empriseDePlan(pl){
+  const e = pl.emprise;
+  if (e && isFinite(e.x0) && e.x1 > e.x0 && e.y1 > e.y0) return e;
+  const tous = [...(pl.stands || []), ...(pl.zones || [])].filter(o => o.c && o.bb);
+  if (!tous.length) return { x0: 0, y0: 0, x1: 100, y1: 100 };
+  const xs = tous.flatMap(o => [o.c[0] - o.bb[0] / 2, o.c[0] + o.bb[0] / 2]);
+  const ys = tous.flatMap(o => [o.c[1] - o.bb[1] / 2, o.c[1] + o.bb[1] / 2]);
+  return { x0: Math.min(...xs) - 12, y0: Math.min(...ys) - 12,
+           x1: Math.max(...xs) + 12, y1: Math.max(...ys) + 12 };
+}
+
+function exportePdfParcours(){
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
+  if (!stands.length && !confs.length) return;
+
+  const doc = nouveauPdf();
+  const M = PDF_MARGE;
+  const nomSalon = (DATA && DATA.evenement) || "Plan du salon";
+  let y = 0;
+
+  const nouvelle = () => { doc.page(false); y = doc.h - M; };
+  /* Réserver la place avant d'écrire : un rang coupé entre son titre et son
+     détail se lit deux fois moins bien qu'un rang reporté à la page suivante. */
+  const place = h => { if (y - h < M + 26) nouvelle(); };
+
+  /* ---- les exposants, rangés par pavillon ----
+     On les visite bâtiment par bâtiment, et non dans l'ordre où on les a
+     retenus. Le numéro suit cet ordre de lecture : c'est lui qu'on retrouve
+     sur le plan, quelques pages plus loin. */
+  const pavillons = [];
+  stands.forEach(o => {
+    let g = pavillons.find(x => x.p === o.p);
+    if (!g) pavillons.push(g = { p: o.p, stands: [] });
+    g.stands.push(o);
+  });
+  pavillons.sort((a, b) => a.p - b.p);
+  const numeros = new Map();
+  let rang = 0;
+  pavillons.forEach(g => g.stands.forEach(o => numeros.set(o.id, ++rang)));
+
+  /* Une conférence n'a pas de forme propre : sur le plan, c'est la zone qui
+     l'abrite qu'il faut rejoindre à l'heure dite. */
+  const zonesConf = new Set();
+  confs.forEach(c => { if (c.zone && parId.has(String(c.zone))) zonesConf.add(String(c.zone)); });
+
+  /* ------------------------------ en-tête ------------------------------ */
+  nouvelle();
+  doc.texte("MON PARCOURS DE VISITE", M, y - 9,
+    { taille: 8.5, gras: true, couleur: PDF_ACCENT, ecart: 1.4 });
+  y -= 32;
+  doc.texte(nomSalon, M, y, { taille: 21, gras: true });
+  y -= 15;
+  const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+  const auj = new Date();
+  doc.texte([stands.length ? pluriel(stands.length, "exposant") : "",
+             confs.length ? pluriel(confs.length, "conférence") : "",
+             "établi le " + jourLong({ an: auj.getFullYear(), mois: auj.getMonth() + 1,
+                                       jour: auj.getDate() })].filter(Boolean).join(" · "),
+    M, y, { taille: 9.5, couleur: PDF_GRIS });
+  y -= 13;
+  doc.ligne(M, y, doc.l - M, y, PDF_TRAIT, 1);
+  y -= 10;
+
+  function titreSection(t){
+    place(52);
+    y -= 12;
+    doc.texte(t.toUpperCase(), M, y, { taille: 9, gras: true, couleur: PDF_ACCENT, ecart: 1.2 });
+    y -= 7;
+    doc.ligne(M, y, doc.l - M, y, PDF_TRAIT, .7);
+    y -= 15;
+  }
+
+  function sousTitre(t){
+    place(34);
+    doc.texte(t, M, y - 9, { taille: 10.5, gras: true });
+    y -= 20;
+  }
+
+  /**
+   * Un rang : un titre, un détail dessous, et à gauche de quoi le retrouver —
+   * le numéro qui le situe sur le plan pour un exposant, un filet de la
+   * couleur du thème pour une conférence, comme dans le tiroir.
+   */
+  function rangPdf(titre, detail, o){
+    o = o || {};
+    const x = M + (o.numero ? 24 : 12);
+    const large = doc.l - M - x;
+    const lt = doc.coupe(titre, large, 11, true);
+    const ld = detail ? doc.coupe(detail, large, 9) : [];
+    const h = 8 + lt.length * 13.5 + ld.length * 11 + 6;
+    place(h);
+
+    const haut = y;
+    if (o.numero){
+      doc.disque(M + 8, haut - 10, 7.5, PDF_ACCENT);
+      doc.texte(String(o.numero), M + 8, haut - 12.5,
+        { taille: 8, gras: true, couleur: PDF_PAPIER, align: "centre" });
+    } else {
+      doc.rect(M, haut - h + 8, 2.2, h - 12, o.couleur || PDF_TRAIT);
+    }
+    let ty = haut - 10;
+    lt.forEach(t => { doc.texte(t, x, ty, { taille: 11, gras: true }); ty -= 13.5; });
+    ld.forEach(t => { doc.texte(t, x, ty - 1, { taille: 9, couleur: PDF_GRIS }); ty -= 11; });
+    y -= h;
+  }
+
+  /* --------------------------- conférences --------------------------- */
+  if (confs.length){
+    titreSection("Conférences");
+    let jour = null;
+    confs.forEach(c => {
+      const d = instantConf(c);
+      const f = momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+      if (d && d.cle !== jour){
+        jour = d.cle;
+        sousTitre(jourLong(d));
+      }
+      const ou = c.zone && parId.has(String(c.zone))
+        ? DATA.plans[parId.get(String(c.zone)).p].libelle : "";
+      rangPdf(c.nom, [
+        d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "",
+        c.salle, ou, c.type,
+      ].filter(Boolean).join(" · "), { couleur: c.couleur ? teintePdf(c.couleur) : null });
+    });
+  }
+
+  /* ---------------------------- exposants ---------------------------- */
+  if (stands.length){
+    titreSection("Exposants");
+    pavillons.forEach(g => {
+      const pl = DATA.plans[g.p];
+      if (DATA.plans.length > 1) sousTitre(pl.libelle);
+      g.stands.forEach(o => {
+        const code = montre("stand", "code") && o.code ? o.code : "";
+        const titre = o.nom || o.plan || ("Stand " + code).trim() || "Stand";
+        rangPdf(titre, [
+          code ? "Stand " + code : "",
+          DATA.plans.length > 1 ? "" : pl.libelle,
+          // de quoi reprendre contact une fois le salon terminé
+          montre("stand", "site") && o.site
+            ? String(o.site).replace(/^https?:\/\//i, "").replace(/\/$/, "") : "",
+        ].filter(Boolean).join(" · "), { numero: numeros.get(o.id) });
+      });
+    });
+  }
+
+  /* ------------------------------ les plans ------------------------------ */
+  const aPlan = [];
+  pavillons.forEach(g => { if (aPlan.indexOf(g.p) < 0) aPlan.push(g.p); });
+  zonesConf.forEach(id => {
+    const z = parId.get(id);
+    if (z && aPlan.indexOf(z.p) < 0) aPlan.push(z.p);
+  });
+  aPlan.sort((a, b) => a - b).forEach(i => pagePlan(i));
+
+  /**
+   * Le plan d'un pavillon, réduit à ce qui situe : les emplacements, les zones,
+   * et par-dessus ce qu'on a retenu.
+   *
+   * L'habillage — poteaux, lettres d'allée, fil jaune — reste à l'écran. Ce
+   * sont des SVG produits par Klipso, que reporter demanderait un moteur de
+   * rendu complet ; sur une feuille de la taille d'une main, ils ne feraient
+   * de toute façon qu'un gris uniforme.
+   */
+  function pagePlan(i){
+    const pl = DATA.plans[i];
+    const miens = (pavillons.find(g => g.p === i) || { stands: [] }).stands;
+    const miennes = (pl.zones || []).filter(z => zonesConf.has(z.id));
+    doc.page(true);
+    const m = 38;
+
+    doc.texte(pl.libelle, m, doc.h - m - 12, { taille: 14, gras: true });
+    doc.texte([miens.length ? pluriel(miens.length, "exposant") + " retenu" +
+                 (miens.length > 1 ? "s" : "") : "",
+               miennes.length ? pluriel(miennes.length, "zone") + " de conférence" : ""]
+              .filter(Boolean).join(" · "),
+      m, doc.h - m - 25, { taille: 9, couleur: PDF_GRIS });
+    doc.texte(nomSalon, doc.l - m, doc.h - m - 12,
+      { taille: 9, couleur: PDF_GRIS, align: "droite" });
+
+    const bas = 62, haut = doc.h - m - 40;
+    const large = doc.l - 2 * m, hauteur = haut - bas;
+    const e = empriseDePlan(pl);
+    const s = Math.min(large / (e.x1 - e.x0), hauteur / (e.y1 - e.y0));
+    /* Le repère du plan descend — c'est celui du SVG — quand celui du PDF
+       monte : la hauteur se retranche au lieu de s'ajouter. */
+    const ox = m + (large - (e.x1 - e.x0) * s) / 2;
+    const oy = haut - (hauteur - (e.y1 - e.y0) * s) / 2;
+    const vers = pt => [ox + (pt[0] - e.x0) * s, oy - (pt[1] - e.y0) * s];
+
+    (pl.zones || []).forEach(z => doc.trace(z.d, vers, { fond: PDF_FOND }));
+    (pl.stands || []).forEach(o =>
+      doc.trace(o.d, vers, { fond: PDF_PAPIER, trait: PDF_TRAIT, ep: .35 }));
+    miennes.forEach(z => doc.trace(z.d, vers, { fond: PDF_DOUX, trait: PDF_ACCENT, ep: 1 }));
+    miens.forEach(o => doc.trace(o.d, vers, { fond: PDF_DOUX, trait: PDF_ACCENT, ep: 1 }));
+
+    miennes.forEach(z => {
+      const p = vers(z.lc || z.c);
+      if (z.nom) doc.texte(z.nom, p[0], p[1], { taille: 7.5, gras: true,
+        couleur: PDF_ACCENT, align: "centre" });
+    });
+    /* La pastille se pose au centre du stand, quitte à le couvrir : à cette
+       échelle un emplacement fait quelques millimètres, et c'est le repère
+       qu'on cherche des yeux, pas la forme. */
+    miens.forEach(o => {
+      // le même ancrage que le libellé sur le plan : sur un stand en L, le
+      // centre de la boîte englobante tombe dans l'allée
+      const p = vers(o.lc || o.c);
+      doc.disque(p[0], p[1], 7, PDF_ACCENT);
+      doc.texte(String(numeros.get(o.id)), p[0], p[1] - 2.5,
+        { taille: 8, gras: true, couleur: PDF_PAPIER, align: "centre" });
+    });
+
+    /* Une page sans exposant retenu n'a pas de numéro à expliquer : la légende
+       ne parle que de ce qui est effectivement dessiné. */
+    doc.texte([
+      miens.length ? "Les numéros renvoient à la liste des exposants." : "",
+      miennes.length ? "Les zones colorées accueillent les conférences retenues." : "",
+      "Fond de plan simplifié : seuls les emplacements et les zones sont repris.",
+    ].filter(Boolean).join(" "), m, bas - 16, { taille: 8, couleur: PDF_GRIS });
+  }
+
+  /* ------------------------------- pieds ------------------------------- */
+  for (let i = 0; i < doc.nb; i++){
+    doc.vise(i);
+    doc.ligne(M, 36, doc.l - M, 36, PDF_TRAIT, .6);
+    doc.texte(nomSalon + " · Parcours de visite", M, 25, { taille: 8, couleur: PDF_GRIS });
+    doc.texte((i + 1) + " / " + doc.nb, doc.l - M, 25,
+      { taille: 8, couleur: PDF_GRIS, align: "droite" });
+  }
+
+  enregistreFichier(doc.sortie(nomSalon + " — parcours de visite"),
+    "parcours-" + limace(nomSalon) + ".pdf");
+}
+
+/** Une couleur CSS vers un triplet PDF ; le thème passe, le papier reste. */
+function teintePdf(v){
+  const t = String(v || "").trim();
+  const h = /^#?([0-9a-f]{6})$/i.exec(t) || /^#?([0-9a-f]{3})$/i.exec(t);
+  if (!h) return null;
+  const c = h[1].length === 3 ? h[1].replace(/./g, x => x + x) : h[1];
+  return [0, 2, 4].map(i => parseInt(c.slice(i, i + 2), 16) / 255);
+}
+
+/** Un nom de fichier qu'aucun système ne refusera. */
+const limace = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "salon";
+
+function enregistreFichier(octets, nom){
+  const url = URL.createObjectURL(new Blob([octets], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nom;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // le navigateur lit l'adresse après le clic : la révoquer tout de suite
+  // laisserait un fichier vide sur les navigateurs les plus lents
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+/* Le bouton vit dans le pied du tiroir : on emporte une liste qu'on vient de
+   relire, pas une liste qu'on n'a pas ouverte. */
+$("pdfParcours").onclick = () => {
+  try {
+    exportePdfParcours();
+  } catch (e) {
+    /* L'échec ne doit pas rester muet : sans message, le visiteur appuie une
+       seconde fois et attend un fichier qui ne viendra pas. */
+    ouvreModale("Export impossible", corps => {
+      const p = document.createElement("p");
+      p.textContent = "Le fichier n'a pas pu être créé sur cet appareil. " +
+        "Votre parcours, lui, est intact : il reste dans cette liste.";
+      corps.appendChild(p);
+    }, [{ libelle: "Fermer" }]);
+  }
+};
 /* ============================================================
    12. Démarrage
    ============================================================ */

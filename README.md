@@ -47,6 +47,16 @@ réglages, il faut publier la configuration pour que le changement parvienne aux
 visiteurs. Le retrait ne détruit rien — les listes déjà constituées sur les
 téléphones réapparaissent si le réglage se rouvre.
 
+Le pied du tiroir propose de l'**emporter en PDF** : une feuille A4 qui liste
+les conférences, jour par jour et dans l'ordre des heures, puis les exposants
+regroupés par pavillon et numérotés — les mêmes numéros que ceux posés sur le
+plan de chaque pavillon, joint à la suite. Le fichier s'écrit dans le
+navigateur, sans bibliothèque ni appel réseau : la page de démonstration,
+publiée telle quelle, doit pouvoir le produire aussi. Le fond de plan de Klipso
+— poteaux, lettres d'allée — n'y est pas repris : seuls les emplacements et les
+zones le sont, ce qui suffit à situer et n'aurait de toute façon rien donné de
+lisible à cette échelle.
+
 Cette liste **ne quitte jamais l'appareil** : elle vit dans le stockage local du
 navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contient
 que des identifiants. Rien n'est envoyé au serveur, aucun compte n'est demandé,
