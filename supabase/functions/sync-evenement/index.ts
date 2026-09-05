@@ -374,6 +374,7 @@ Deno.serve(async (req) => {
 
         const stands = [];
         let apparies = 0;
+        const parDossier = new Map<string, string>();
         for (const s of bruts) {
           const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
           const anneaux = formes.flatMap((f: any) => versAnneaux(f?.Shape) ?? []);
@@ -390,6 +391,14 @@ Deno.serve(async (req) => {
           const em = expoEm && code ? expoEm.get(cleStand(code)) : undefined;
           const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
           if (expoEm && em) apparies++;
+
+          /* Le dossier est ce qui identifie un exposant des deux côtés : Klipso
+             le porte sur le stand, Eventmaker le recopie dans « id_dossier ».
+             C'est par lui que les conférences retrouvent leur stand — le numéro
+             ne s'y prête pas, saisi à la main et parfois composé de deux
+             emplacements que le plan numérote séparément. */
+          const dossier = String(s.IdDossierExpAff ?? dos?.Id ?? "");
+          if (dossier) parDossier.set(dossier, "s" + String(s.Id).slice(0, 8));
 
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
@@ -480,21 +489,34 @@ Deno.serve(async (req) => {
             // un choix de l'exploitant n'est jamais écrasé
             if (!fiche.manuel && fiche.auto) fiche.zone = fiche.auto;
 
-            /* Une conférence dont la salle n'est rattachée à aucune zone
-               n'appartient à aucun pavillon : on la remonte dans tous, sans
-               zone, pour qu'elle existe avant d'être située — l'exploitant la
-               rattachera depuis la console, et la page, qui range par zone,
-               l'ignore d'ici là. Celle qui tient à une zone d'un autre
-               pavillon, elle, y est déjà : la reprendre ici la dupliquerait. */
+            /* Une conférence ne tient pas à un pavillon : elle tient à une
+               zone d'organisation et à un exposant, qui peuvent être sur deux
+               pavillons différents. Elle entre donc dans la charge de celui qui
+               porte sa zone, et dans celle de celui qui porte le stand de son
+               exposant — au besoin les deux, où elle s'affichera dans le
+               programme de la zone ici, sur la fiche de l'exposant là.
+
+               Sans zone ni exposant, elle n'a d'attache nulle part : on la
+               remonte partout pour qu'elle existe avant d'être située, la
+               console la rattachera. La page, qui range par zone et par stand,
+               ne l'affiche d'ici là nulle part. */
+            /* On ne garde d'un exposant que le stand qu'il occupe ici : sur un
+               autre pavillon, la même conférence citera l'autre stand. */
+            const cites = exposantsConf.get(c.id) ?? [];
+            const expos = cites
+              .map((e) => ({ stand: parDossier.get(e.dossier), nom: e.nom }))
+              .filter((e): e is { stand: string; nom: string | null } => Boolean(e.stand));
             const sienne = fiche.zone && anneauxZone.has(fiche.zone);
-            if (sienne || !fiche.zone) {
+            // sans zone et sans exposant nulle part, elle n'a d'attache
+            // qu'ici : on la remonte pour qu'elle existe, la console la situera
+            if (sienne || expos.length || (!fiche.zone && !cites.length)) {
               conferences.push({
                 id: c.id, nom: c.nom, texte: c.texte,
                 debut: c.debut, fin: c.fin,
                 debutLocal: c.debutLocal, finLocal: c.finLocal,
                 salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
                 zone: sienne ? fiche.zone : null,
-                exposants: exposantsConf.get(c.id) ?? [],
+                exposants: expos,
               });
             }
           }

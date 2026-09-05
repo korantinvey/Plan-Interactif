@@ -60,12 +60,23 @@ d'une enseigne exposante, si l'on veut aller au-delà des 70.
 `_partage/eventmaker.ts` porte la méthode `exposantsParConference()`, appelée
 par `sync-evenement` quand le domaine « conférences » d'un événement est réglé
 sur Eventmaker. Chaque conférence de la charge gagne un champ `exposants`, liste
-de `{ stand, nom }` — vide quand le salon ne renseigne pas le rôle.
+de `{ stand, nom }` où `stand` est l'identifiant d'un stand du plan — vide quand
+le salon ne renseigne pas le rôle.
 
-Le stand y est déjà normalisé par la règle du plan (`cleStand`), donc prêt à
-être apparié aux stands de la charge. Rien à migrer : la charge est du jsonb, et
-`plan-public` la transmet telle quelle. Sur Franchise Expo Paris 2026, la
-méthode rend 70 rattachements en cinq secondes, joints sans un orphelin.
+**L'appariement se fait sur le dossier, jamais sur le numéro de stand.** Klipso
+porte `IdDossierExpAff` sur chaque stand, Eventmaker le recopie dans le champ
+`id_dossier` de la fiche : c'est la même valeur, un GUID, des deux côtés. Le
+numéro de stand ne s'y prête pas — saisi à la main, il se compose parfois de
+deux emplacements (« E58 - F59 ») que le plan numérote séparément. Sur Franchise
+Expo Paris 2026, `id_dossier` couvre 574 fiches d'exposants contre 566 pour
+`num_stand`, et les 101 citations d'exposants dans le programme portent toutes
+un dossier au format attendu.
+
+La résolution dossier → stand se fait dans la synchronisation, où les deux côtés
+sont connus : la charge publique ne porte donc que des identifiants de stand du
+plan, et aucun identifiant Eventmaker. Rien à migrer non plus — elle est en
+jsonb, et `plan-public` la transmet telle quelle. La méthode rend 70
+rattachements en cinq secondes, joints sans un orphelin.
 
 Un échec du graphe est journalisé et ignoré : un salon sans rôle « Exposants »
 est le cas courant, et une synchronisation par ailleurs bonne n'a pas à échouer

@@ -80,9 +80,17 @@ const ou = (...v: unknown[]): string | null => {
 export const cleStand = (v: unknown): string =>
   String(v ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-/** Un exposant tel qu'une conférence le désigne : le stand, et l'enseigne. */
+/**
+ * Un exposant tel qu'une conférence le désigne.
+ *
+ * L'appariement se fait sur le dossier, pas sur le numéro de stand : Klipso
+ * porte l'identifiant du dossier sur le stand, Eventmaker le recopie dans
+ * `id_dossier`, et c'est la même valeur des deux côtés. Le numéro de stand,
+ * lui, est saisi à la main et se compose parfois de deux emplacements
+ * (« E58 - F59 ») qu'aucun stand du plan ne porte tels quels.
+ */
 export interface ExposantConfEm {
-  stand: string;
+  dossier: string;
   nom: string | null;
 }
 
@@ -288,7 +296,7 @@ export class Eventmaker {
    * portent un numéro de stand, et donc le seul qui se pose sur le plan. Les
    * deux autres nomment des conférenciers, qui n'ont pas de stand à eux.
    *
-   * Le stand n'est pas dans le graphe : l'exposant y vient avec l'identifiant
+   * Le dossier n'est pas dans le graphe : l'exposant y vient avec l'identifiant
    * de sa fiche d'invité, qu'on relit en REST. Une fiche par exposant cité,
    * soit une cinquantaine sur un salon comme Franchise Expo — et rien du tout
    * sur un salon qui laisse le rôle vide, ce qui est fréquent.
@@ -325,16 +333,17 @@ export class Eventmaker {
     if (!citesParSession.size) return new Map();
 
     /* Une fiche par exposant cité, quel que soit le nombre de sessions qu'il
-       tient. On ne filtre pas sur l'inscription : ce qu'on publie ici est un
-       numéro de stand, déjà public, et non la personne qui porte le badge. */
+       tient. On ne filtre pas sur l'inscription : ce qu'on publie ici désigne
+       une société déjà présente au catalogue, pas la personne qui porte le
+       badge. */
     const ids = [...new Set([...citesParSession.values()].flatMap((m) => [...m.keys()]))];
-    const stands = new Map(await enParallele(ids, DE_FRONT, async (gid) => {
+    const dossiers = new Map(await enParallele(ids, DE_FRONT, async (gid) => {
       try {
         const g = await this.json<Record<string, any>>(
           `/events/${id}/guests/${gid}.json`,
           { guest_metadata: "true" },
         );
-        return [gid, Eventmaker.stand(g, champs(g.guest_metadata))] as [string, string];
+        return [gid, String(champs(g.guest_metadata).id_dossier ?? "")] as [string, string];
       } catch (_) {
         return [gid, ""] as [string, string];
       }
@@ -344,9 +353,9 @@ export class Eventmaker {
     for (const [session, cites] of citesParSession) {
       const l: ExposantConfEm[] = [];
       for (const [gid, nom] of cites) {
-        const stand = stands.get(gid);
-        // deux badges d'une même enseigne citent le même stand : une fois suffit
-        if (stand && !l.some((x) => x.stand === stand)) l.push({ stand, nom: ou(nom) });
+        const dossier = dossiers.get(gid);
+        // deux badges d'une même enseigne citent le même dossier : une fois suffit
+        if (dossier && !l.some((x) => x.dossier === dossier)) l.push({ dossier, nom: ou(nom) });
       }
       if (l.length) out.set(session, l);
     }

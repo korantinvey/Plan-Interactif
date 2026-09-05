@@ -718,8 +718,19 @@ function indexe(d){
       if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
       p.parZone.get(c.zone).push(c);
     });
-    p.parZone.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || ""))));
+    /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
+       être ailleurs que sa salle — et qui reste son seul point d'accroche quand
+       la salle n'est rattachée à aucune zone. */
+    p.parStand = new Map();
+    p.conferences.forEach(c => {
+      (c.exposants || []).forEach(e => {
+        if (!e || !e.stand) return;
+        if (!p.parStand.has(e.stand)) p.parStand.set(e.stand, []);
+        p.parStand.get(e.stand).push(c);
+      });
+    });
+    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
+      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
     p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
     p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
   });
@@ -1172,10 +1183,12 @@ function momentLocal(v, fuseau){
   }
 }
 
-function programme(o){
-  const l = (P().parZone && P().parZone.get(o.id)) || [];
+/** Le programme d'une zone, ou celui d'un exposant : la même liste, rendue. */
+function programme(l, titre){
+  l = l || [];
   if (!l.length) return "";
-  let out = '<div class="field"><span class="eyebrow">Programme</span><div class="prog">';
+  let out = '<div class="field"><span class="eyebrow">' + esc(titre || "Programme") +
+    '</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
     const fz = DATA.fuseau;
@@ -1277,7 +1290,8 @@ function ouvre(o, rect){
   const titre = o.nom || o.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
-  $("dCode").textContent = DATA.plans[o.p].libelle +
+  const pl = DATA.plans[o.p] || P();
+  $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
   const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
                           '</span><span class="v">' + v + '</span></div>' : "";
@@ -1287,7 +1301,11 @@ function ouvre(o, rect){
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
     // ni la surface, ni les angles ouverts, ni l'état de commercialisation
     // n'apprennent quoi que ce soit au visiteur
-    (zone ? ok("conferences", programme(o)) : "") +
+    // sur une zone, le programme qu'elle accueille ; sur un stand, les
+    // conférences que son exposant tient, où qu'elles se tiennent
+    ok("conferences", zone
+      ? programme(P().parZone && P().parZone.get(o.id))
+      : programme(pl.parStand && pl.parStand.get(o.id), "Conférences")) +
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
     ok("ville", f("Ville", o.ville ? esc(o.ville) : "")) +
