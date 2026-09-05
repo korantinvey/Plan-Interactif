@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /* Sonde Eventmaker : par où une conférence tient-elle à un exposant ?
  *
- * L'API Eventmaker ne publie qu'une poignée de ressources dans sa
- * documentation, et le lien qui nous intéresse — la session animée par tel
- * exposant — n'y figure pas. Il pourrait pourtant exister : sous la forme d'un
- * champ, d'un paramètre, d'un chemin voisin, d'un rôle du programme, d'une
- * inscription, d'un champ personnalisé, ou à défaut d'une mention en clair dans
- * l'intitulé. Ce script cherche les sept, dans cet ordre.
+ * Il tient par le graphe, et par lui seul.
  *
- * Sur les cent événements du compte, aucun ne le porte : `eventmaker.md`, à
- * côté, dit ce que la sonde a établi et ce qu'il reste à faire. La relancer sur
- * un nouveau salon dit si l'organisateur, lui, a saisi de quoi le tenir.
+ * L'API REST ne le dit nulle part : ni la session, ni ses paramètres, ni les
+ * chemins voisins, ni les inscriptions, ni un champ personnalisé. Les sections
+ * 1 à 7 ferment ces portes une à une — elles restent là parce qu'un lecteur
+ * pressé les rouvrirait sinon. La 8 répond : /api/graphql, celui qui alimente
+ * le programme du site public, range sous chaque session ses intervenants, ses
+ * animateurs et ses exposants. L'exposant y vient avec l'identifiant de sa
+ * fiche d'invité, qui porte le numéro de stand : la chaîne va jusqu'au plan.
+ *
+ * `eventmaker.md`, à côté, consigne les mesures et ce qu'elles engagent.
  *
  *   EVENTMAKER_TOKEN=... node outils/sonde-eventmaker.js <idEvenement>
  *
@@ -94,6 +95,32 @@ async function toutesPages(chemin, params = {}) {
     out.push(...r.corps);
     if (r.corps.length < PAR_PAGE) return out;
   }
+}
+
+/* Le graphe public : ni jeton ni en-tête, l'identifiant de l'événement suffit.
+   `publicViewer` est ce que voit un visiteur du site du salon ; `viewer`, qu'on
+   n'emprunte pas, est sa version connectée. */
+const ROLES = ["speakers", "moderators", "exhibitors"];
+const REQUETE_PROGRAMME = `query Programme($eventId: ID!, $id: ID!, $cursor: String) {
+  publicViewer(eventId: $eventId) {
+    program(id: $id) {
+      sessions(after: $cursor) {
+        edges { node { id displayName location startDate
+          ${ROLES.map((r) => `${r} { id name companyName position }`).join("\n          ")}
+        } }
+        pageInfo { endCursor hasNextPage }
+      }
+    }
+  }
+}`;
+
+async function graphql(requete, variables) {
+  const r = await fetch(`${BASE.replace("/api/v1", "")}/api/graphql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: requete, variables }),
+  });
+  try { return JSON.parse(await r.text()); } catch { return { errors: [{ message: `HTTP ${r.status}` }] }; }
 }
 
 async function enParallele(items, n, fn) {
@@ -404,6 +431,78 @@ function garde(nom, donnees) {
     console.log(`  · ${String(t.session).slice(0, 46).padEnd(48)} ${[...t.exposants, ...t.stands].join(" | ").slice(0, 70)}`);
   }
   garde("recoupement.json", { exposants, trouves });
+
+  /* --- 8. la route qui répond ------------------------------------------ */
+  titre("8. Le programme en GraphQL, qui rend ce que REST tait");
+
+  /* Le site public d'un salon affiche les exposants d'une session ; son
+     programme ne passe pas par REST mais par /api/graphql, où chaque session
+     porte ses `speakers`, ses `moderators` et ses `exhibitors`. La requête est
+     publique — aucun jeton — et l'hôte est indifférent : app.eventmaker.io
+     répond comme le domaine du salon.
+
+     Un exposant y vient avec l'identifiant de sa fiche d'invité ; le numéro de
+     stand, lui, n'est pas dans le graphe et se relit en REST. C'est la chaîne
+     complète : session → exhibitors[].id → fiche → NUM stand → plan. */
+  const programmes = await toutesPages(`/events/${ID}/programs.json`);
+  const parPersonne = new Map();
+  /* Un salon range souvent ses sessions dans plusieurs programmes — un complet,
+     des thématiques qui y puisent. On dédoublonne, sinon on compte deux fois. */
+  const rattachees = new Map();
+  for (const p of programmes) {
+    const sess = [];
+    for (let curseur = null; ;) {
+      const r = await graphql(REQUETE_PROGRAMME, { eventId: ID, id: p._id, cursor: curseur });
+      const bloc = r?.data?.publicViewer?.program?.sessions;
+      if (!bloc) { console.log(`  ${p.name} : ${JSON.stringify(r?.errors?.[0]?.message ?? r).slice(0, 90)}`); break; }
+      sess.push(...bloc.edges.map((e) => e.node));
+      if (!bloc.pageInfo.hasNextPage) break;
+      curseur = bloc.pageInfo.endCursor;
+    }
+    if (!sess.length) continue;
+    const combien = (k) => sess.filter((s) => s[k]?.length).length;
+    console.log(`  ${String(p.name).padEnd(24)} ${String(sess.length).padStart(4)} sessions —`
+      + ` ${combien("speakers")} avec intervenants, ${combien("moderators")} avec animateurs,`
+      + ` ${combien("exhibitors")} avec exposants`);
+    for (const s of sess) {
+      for (const r of ROLES) for (const g of s[r] ?? []) parPersonne.set(g.id, { ...g, role: r });
+      if (s.exhibitors?.length) rattachees.set(s.id, s);
+    }
+    garde(`programme-${p._id}.json`, sess);
+  }
+
+  /* Le rôle « exposant » vaut-il un stand ? C'est toute la question, et elle se
+     tranche en relisant les fiches citées. */
+  const cites = [...parPersonne.values()];
+  const fiches = new Map(await enParallele(cites, DE_FRONT, async (g) => {
+    const r = await lire(`/events/${ID}/guests/${g.id}.json`, { guest_metadata: "true" });
+    return [g.id, r.ok ? champs(r.corps.guest_metadata) : null];
+  }));
+  const parRole = new Map();
+  for (const g of cites) {
+    const m = fiches.get(g.id);
+    const e = parRole.get(g.role) ?? { n: 0, resolus: 0, stand: 0 };
+    e.n++; if (m) e.resolus++; if (m?.num_stand) e.stand++;
+    parRole.set(g.role, e);
+  }
+  console.log("");
+  for (const [r, e] of parRole) {
+    console.log(`  ${r.padEnd(12)} ${String(e.n).padStart(4)} personnes citées,`
+      + ` ${e.resolus} fiches retrouvées, ${e.stand} avec un numéro de stand`);
+  }
+
+  const auStand = [...rattachees.values()]
+    .map((s) => ({ s, stands: [...new Set(s.exhibitors.map((g) => fiches.get(g.id)?.num_stand).filter(Boolean))] }))
+    .filter((x) => x.stands.length);
+  console.log(`\n${auStand.length} sessions rattachées à un stand, sans recoupement ni approximation`);
+  for (const { s, stands } of auStand.slice(0, 20)) {
+    console.log(`  · ${String(s.displayName).slice(0, 44).padEnd(46)} `
+      + `${s.exhibitors.map((g) => g.companyName).join(", ").slice(0, 30).padEnd(32)} → ${stands.join(" / ")}`);
+  }
+  garde("rattachements.json", auStand.map(({ s, stands }) => ({
+    session: s.id, intitule: s.displayName, salle: s.location, stands,
+    exposants: s.exhibitors, intervenants: s.speakers, animateurs: s.moderators,
+  })));
 
   console.log(`\n\nCharges brutes : ${path.relative(process.cwd(), SORTIE)}/`);
 })().catch((e) => { console.error(e); process.exit(1); });

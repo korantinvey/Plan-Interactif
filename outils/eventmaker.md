@@ -1,92 +1,96 @@
 # Eventmaker : lier une conférence à un exposant
 
 Le plan sait placer un exposant sur un stand et afficher un programme ; il ne
-sait pas dire *« cette conférence est animée par l'enseigne du stand W110 »*.
-La question était de savoir si l'API Eventmaker le dit. `sonde-eventmaker.js`
-est allée le demander, sur Franchise Expo Paris 2026 — 178 sessions, 613
-exposants, 8 333 fiches d'invités — puis sur les cent événements du compte.
+savait pas dire *« cette conférence est tenue par l'enseigne du stand F48 »*.
+Il le sait maintenant, et exactement : **le lien existe, dans l'API GraphQL du
+programme public**, pas dans l'API REST.
 
-**Elle ne le dit pas.** Voici par où on est passé, pour que personne n'y
-retourne sans raison.
+La chaîne, en deux appels :
 
-## Ce que l'API rend d'une session
+```
+POST https://app.eventmaker.io/api/graphql          (public, sans jeton)
+  publicViewer(eventId:).program(id:).sessions → exhibitors[].id
+GET  /api/v1/events/{id}/guests/{exhibitorId}.json?guest_metadata=true
+  → NUM stand → le stand du plan
+```
 
-Une session est un point d'accès (`/accesspoints.json`) qui porte un
-`session_type_id`. Ses quatre-vingt-dix champs décrivent la salle, l'horaire,
-le direct, la billetterie, la jauge — **aucun ne nomme un invité, une société
-ou un stand**. La fiche détaillée d'une session ne rend rien de plus que la
-ligne de liste.
+Sur Franchise Expo Paris 2026 : **70 sessions sur 178 rattachées à un stand**,
+sans recoupement ni approximation, et les 55 personnes citées comme exposants
+portent toutes un numéro de stand — 55 sur 55. La sonde le refait sur commande
+(section 8) ; les rattachements atterrissent dans `brut/eventmaker/`.
 
-Dix paramètres censés l'ouvrir ont été essayés : `guest_metadata`,
-`accesspoint_metadata`, `metadata`, `traits`, `extended`, `full`,
-`with_speakers` rendent 200 et la même charge, au champ près ; `include=…`
-rend 500.
+## Le graphe, dans le détail
 
-## Le produit sait, l'API tait
+L'adresse est `/api/graphql` — sur `app.eventmaker.io` comme sur le domaine du
+salon, indifféremment. Elle est **publique** : ni jeton, ni en-tête ; c'est ce
+que lit le programme du site public, où l'on voit bien les exposants sous
+chaque session. `publicViewer(eventId:)` est la vue du visiteur ; `viewer`, sa
+version connectée, dont nous n'avons pas besoin.
 
-`/programs.json` range sous chaque session trois rôles — **Intervenants,
-Animateur, Exposants** — avec, pour chacun, l'affichage du nom de société. La
-relation existe donc bien dans Eventmaker.
+Chaque session y porte trois rôles :
 
-Aucune adresse ne la rend. `/programs/:id.json` répond 200 ; `/sessions`,
-`/speakers`, `/exhibitors`, `/accesspoints` et `/guests` sous le programme
-répondent tous 404, comme `/events/:id/{sessions,speakers,session_speakers,
-custom_fields,registrations,bookings,attendances,workshops}`, comme
-`/accesspoints/:id/{speakers,guests,exhibitors,registrations,roles}`, comme
-`/guests/:id/{accesspoints,sessions,registrations}`, comme
-`/{access_privileges,guest_accesspoints,accesspoint_guests,roles,
-session_roles,website_pages}`.
+| rôle | ce qu'il vaut, sur FEP 2026 |
+|---|---|
+| `speakers` | 141 sessions ; 285 personnes, **aucun stand** (ce sont des conférenciers) |
+| `moderators` | 93 sessions ; 45 personnes, aucun stand |
+| `exhibitors` | 70 sessions ; **55 personnes, 55 numéros de stand** |
 
-Ce qui existe à côté : `/session_types`, `/session_rooms`, `/guest_fields`
-(251 définitions, aucune ne parle de conférence), `/labels`, `/thematics`,
-`/exhibitors` — dont la fiche ne porte que nom et courriel, la fiche riche
-étant sur l'invité correspondant.
+Le type `ProgramExhibitor` ne rend que `id`, `name`, `nameSortValue`,
+`companyName`, `position`, `illustrationUrl` : le stand n'est pas dans le
+graphe et se relit en REST par l'identifiant, qui est bien celui d'une fiche
+d'invité (55 sur 55 résolues). L'introspection du schéma est fermée — les noms
+de champs se devinent par les messages d'erreur, qui sont bavards.
 
-## La fausse piste : `access_privileges`
+Un salon range souvent ses sessions dans plusieurs programmes : un complet, des
+thématiques qui y puisent. Il faut dédoublonner par identifiant de session,
+sinon on compte deux fois.
 
-Une fiche d'invité porte ses inscriptions de session, intitulé et salle
-compris. C'est le seul rattachement invité ↔ session que l'API rende, et il
-ressemble à une piste jusqu'à ce qu'on le compte.
+Le mécanisme est le même partout, son remplissage non : Open Source Experience
+2026 range ses 59 sessions en huit programmes, toutes avec intervenants, **pas
+une avec exposants**. Le rôle « Exposants » n'est renseigné que si l'organisateur
+l'a fait — un plan qui compte dessus doit donc le vérifier salon par salon, ce
+que la section 8 rend en une ligne.
 
-Il ne porte **aucun rôle**. Sur l'échantillon, les catégories les mieux
-servies sont « Étudiant », « Newsletter » et « Etudiants - Groupe » : ce sont
-des places réservées, pas des interventions. À pleine échelle, sur les 8 333
-fiches des catégories exposants et conférenciers de Franchise Expo Paris
-2026 : 566 portent un numéro de stand, 512 sont inscrites à au moins une
-session, **13 les deux**. Les 148 sessions ainsi « touchées » sur 178 le sont
-par des porteurs de badge exposant venus écouter.
+`companyName` porte l'enseigne sur les trois rôles, y compris les conférenciers
+sans stand — de quoi rattacher au jugé une session dont l'intervenant vient
+d'une enseigne exposante, si l'on veut aller au-delà des 70.
 
-Le sens inverse n'existe pas non plus : `accesspoint[]`, `accesspoint_id`,
-`session_id` sur `/guests.json` ne sont pas refusés, ils sont **ignorés** — la
-liste complète revient, l'air d'avoir été filtrée.
+## Ce que l'API REST ne dit pas, et pourquoi on a cherché ailleurs
 
-## Aucun organisateur ne l'a saisi
+La documentation ne connaît que six ressources — events, guests,
+guest-categories, check-in points, check-ins, signatures — plus l'API Leads.
+Ni session, ni programme, ni intervenant. Les sessions et les programmes
+existent pourtant sous `/accesspoints` et `/programs` : ils sont simplement
+hors documentation, et les sections 1 à 7 de la sonde en font le tour.
 
-Reste le champ personnalisé de session (`traits`), que l'API rend tel quel sur
-chaque session : rien n'empêche un organisateur d'y loger un numéro de stand.
-Les cent événements du compte ont été balayés, soit près de 2 500 sessions.
-Les `traits` rencontrés sont des thématiques, des traductions, des langues,
-des parcours, un numéro de conférence. **Pas un ne nomme un exposant ni un
-stand.**
+- **La session ne nomme personne.** Ses quatre-vingt-dix champs décrivent
+  salle, horaire, direct, jauge. La fiche détaillée n'ajoute rien.
+- **Aucun paramètre ne l'ouvre.** `guest_metadata`, `extended`, `full`,
+  `with_speakers` rendent la même charge ; `include=…` rend 500. Sur
+  `/guests`, seuls `uid`, `search` et `category[]` existent : `accesspoint_id`
+  et consorts ne sont pas refusés, ils sont **ignorés**, et la liste complète
+  revient l'air d'avoir été filtrée.
+- **Les chemins voisins n'existent pas.** Une vingtaine essayés, tous 404, y
+  compris `/programs/:id/{sessions,speakers,exhibitors,guests}`. Pas de v2, pas
+  de `/graphql` à la racine — le graphe est sous `/api/graphql`.
+- **`access_privileges` est une fausse piste.** Une fiche porte ses
+  inscriptions de session, sans aucun rôle : les catégories les mieux servies
+  sont « Étudiant » et « Newsletter ». Sur les 8 333 fiches des catégories
+  exposants et conférenciers, 566 portent un stand, 512 sont inscrites à une
+  session, **13 les deux**. C'est de l'assistance, pas de l'animation.
+- **Aucun organisateur ne l'a saisi à la main.** Les cent événements du compte,
+  près de 2 500 sessions : pas un champ personnalisé de session ne nomme un
+  exposant ni un stand. La piste « demander un champ à l'organisateur » n'a
+  plus lieu d'être — le graphe donne mieux, et sans rien demander.
 
-## Ce qui reste, donc
-
-1. **Demander le champ.** Un champ personnalisé de session portant le numéro
-   de stand — ou l'enseigne exacte — se lit dans `traits` sans un appel de
-   plus. C'est la seule voie exacte, et elle ne coûte qu'une consigne à
-   l'organisateur.
-2. **Recouper le texte, en sachant ce qu'on paie.** Sur Franchise Expo Paris
-   2026, 72 sessions sur 178 nomment un exposant dans leur intitulé ou leur
-   description (section 7). Le repérage confronte chaque numéro qu'il croit
-   voir à la liste réelle des stands, sans quoi « en 2026 » et « à 17 h »
-   passeraient pour tels. Reste qu'une enseigne citée n'anime pas forcément :
-   « Opportunité Franchise : SO.BIO en direct ! » tient, « Boulangerie : vers
-   une premiumisation » n'est qu'un BOULANGER pris dans un mot. À réserver à
-   une suggestion, jamais à un rattachement ferme.
-
-## Un piège, au passage
+## Deux pièges
 
 `/exhibitors.json` **ignore `page` et `per_page`** : il rend ses 613 fiches à
 chaque appel. Une boucle de pagination qui n'attend qu'une page courte y tourne
 sans fin. `toutesPages()` s'arrête donc aussi quand une page rend ce que la
 précédente rendait déjà.
+
+Le recoupement textuel (section 7) reste dans la sonde à titre de comparaison —
+72 sessions nommant un exposant, contre 70 rattachées exactement — mais il n'a
+plus d'usage : une enseigne citée n'anime pas forcément, et « Boulangerie :
+vers une premiumisation » n'est qu'un BOULANGER pris dans un mot.
