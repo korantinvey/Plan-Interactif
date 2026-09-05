@@ -12,4 +12,9 @@ outils/*.json
 !outils/plans.json
 supabase/.temp/
 
+# Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont
+# déjà épinglées dans les imports des fonctions : le versionner n'ajouterait
+# qu'un fichier à faire vivre.
+deno.lock
+
 outils/chk.js

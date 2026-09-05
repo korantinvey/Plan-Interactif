@@ -176,6 +176,21 @@ npm run essai        # sert web/ sur http://localhost:4180
 poussée ; lancer `verifie` localement reste plus rapide que d'attendre le
 retour de l'intégration, et évite un commit de reconstruction en plus du vôtre.
 
+## Vérifier les fonctions
+
+Les fonctions de `supabase/functions/` tournent sur Deno, pas sur Node : elles
+importent leurs dépendances par une adresse, et s'appuient sur `Deno.serve` et
+`Deno.env`. Elles sont écrites en TypeScript, et Supabase les type au moment du
+déploiement — c'est-à-dire après une poussée sur `main`, c'est-à-dire trop tard.
+
+```bash
+npm run typage       # deno check sur les fonctions et leurs modules partagés
+```
+
+Deno est récupéré à la volée, il n'y a rien à installer. Le workflow Supabase
+lance cette vérification avant d'appliquer les migrations : une fonction qui ne
+type pas ne doit pas laisser le schéma en avance sur le code qui le lit.
+
 ## Tout remettre en place ailleurs
 
 Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre suffit

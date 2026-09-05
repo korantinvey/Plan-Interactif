@@ -41,6 +41,12 @@ jobs:
 
       - run: npm ci
 
+      # Avant tout le reste : une fonction qui ne type pas échouera de toute
+      # façon à l'empaquetage, mais après que les migrations sont passées — et
+      # le schéma serait alors en avance sur le code qui le lit.
+      - name: Vérifier le typage des fonctions
+        run: npm run typage
+
       # Les migrations sont numérotées et rejouables : seules les absentes de la
       # table d'historique distante sont appliquées.
       - name: Appliquer les migrations
