@@ -38,23 +38,12 @@ node optim.js                          # allège les SVG
 node build-all.js                      # → plans.json
 ```
 
-`sonde-eventmaker.js` cherche, lui, par où une conférence Eventmaker tient à un
-exposant. Les sept premières sections ferment les portes de l'API REST ; la
-huitième suit celle qui s'ouvre, le graphe du programme public, et rend les
-sessions rattachées à un stand.
-
-```bash
-EVENTMAKER_TOKEN=... node sonde-eventmaker.js <idEvenement>   # → brut/eventmaker/
-```
-
-Le jeton se lit aussi dans `.env`. Le rapport part à l'écran, les charges
-brutes dans `brut/eventmaker/`, pour une relecture au calme.
-
-`eventmaker.md` dit ce qu'elle a établi : le lien ne passe pas par l'API REST
-mais par `/api/graphql`, celui du programme public, qui range sous chaque
-session ses intervenants, ses animateurs et ses exposants — l'exposant avec
-l'identifiant de sa fiche, donc avec son stand. Sur Franchise Expo Paris 2026,
-70 sessions sur 178 s'y rattachent exactement.
+`eventmaker.md` dit par où une conférence Eventmaker tient à un exposant : pas
+par l'API REST, où rien ne les relie, mais par `/api/graphql`, celui du
+programme public, qui range sous chaque session ses intervenants, ses animateurs
+et ses exposants. L'appariement se fait ensuite sur l'identifiant de dossier,
+que Klipso porte sur le stand et qu'Eventmaker recopie sur la fiche. C'est là
+qu'il faut aller avant de rouvrir la question.
 
 ## Serveur local
 
