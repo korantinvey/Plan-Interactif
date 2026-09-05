@@ -38,6 +38,18 @@ node optim.js                          # allège les SVG
 node build-all.js                      # → plans.json
 ```
 
+`sonde-eventmaker.js` cherche, lui, par où une conférence Eventmaker tient à un
+exposant : champs de la session, paramètres qui l'ouvriraient, chemins que la
+documentation ne cite pas, champs personnalisés des fiches d'invités, et à
+défaut de lien, le nom de l'exposant dans l'intitulé.
+
+```bash
+EVENTMAKER_TOKEN=... node sonde-eventmaker.js <idEvenement>   # → brut/eventmaker/
+```
+
+Le jeton se lit aussi dans `.env`. Le rapport part à l'écran, les charges
+brutes dans `brut/eventmaker/`, pour une relecture au calme.
+
 ## Serveur local
 
 ```bash
