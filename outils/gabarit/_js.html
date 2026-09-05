@@ -660,14 +660,18 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts">' +
-      // une zone organisateur ne se retient pas elle-même : ce sont ses
-      // conférences qu'on ajoute, chacune à son heure
-      (zone ? "" : boutonParcours("stand", o.id)) +
-      '<button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
-  brancheParcours($("dBody"));
+  /* Le signet du parcours vit en haut, à côté de la croix : retenir un
+     exposant porte sur la fiche entière. Une zone organisateur ne se retient
+     pas elle-même — ce sont ses conférences qu'on ajoute, chacune à son heure. */
+  const sig = $("dMarque");
+  sig.hidden = zone;
+  if (zone) { delete sig.dataset.mg; delete sig.dataset.mi; }
+  else { sig.dataset.mg = "stand"; sig.dataset.mi = o.id; }
+  // un seul branchement pour le signet de tête et ceux du programme
+  brancheParcours($("detail"));
   $("dGo").onclick = () => centre(o);
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");

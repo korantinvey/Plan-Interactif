@@ -34,11 +34,18 @@ Points établis pendant l'étude de l'API, à ne pas redécouvrir :
 
 ## Le parcours de visite
 
-Le visiteur retient des exposants — depuis leur fiche — et des conférences —
-depuis le programme d'une zone organisateur, ou depuis la fiche de la
-conférence. Un bouton de la barre du haut ouvre la liste, portant le nombre de
-choses retenues ; ce qui y figure porte un liseré sur le plan, une zone entrant
-par les conférences qu'elle abrite.
+Le visiteur retient des exposants — par le signet en tête de leur fiche — et des
+conférences — par celui posé à côté de chaque ligne du programme d'une zone
+organisateur, ou depuis la fiche de la conférence. Un bouton de la barre du haut
+ouvre la liste, portant le nombre de choses retenues ; ce qui y figure porte un
+liseré sur le plan, une zone entrant par les conférences qu'elle abrite.
+
+La fonction se retire depuis « Réglages du plan », en administration, avec les
+icônes de zoom et l'échelle : décocher « Proposer le parcours de visite » fait
+disparaître d'un coup le bouton, les signets et le liseré. Comme les autres
+réglages, il faut publier la configuration pour que le changement parvienne aux
+visiteurs. Le retrait ne détruit rien — les listes déjà constituées sur les
+téléphones réapparaissent si le réglage se rouvre.
 
 Cette liste **ne quitte jamais l'appareil** : elle vit dans le stockage local du
 navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contient

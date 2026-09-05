@@ -151,7 +151,8 @@ button{cursor:pointer;background:none;border:none}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */
-.stand.enparcours path,.zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
+html:not(.sans-parcours) .stand.enparcours path,
+html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 .stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
 .stand,.zone{cursor:pointer}
@@ -453,6 +454,21 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
+   entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
+.hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
+.hdActs .close{position:static;top:auto;right:auto}
+.hdActs .marque{width:28px;height:28px}
+.hdActs .marque[hidden]{display:none}
+
+/* L'exploitant peut retirer le parcours : il disparaît alors partout à la
+   fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
+   resterait des signets sans destination. Ce que le visiteur avait retenu
+   n'est pas effacé pour autant : le réglage peut se rouvrir. */
+html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
+/* « .iconbtn » déclare « display:grid » : sans cette règle, « hidden » n'y
+   masquerait rien — le même piège que la barre de zoom et l'échelle. */
+.iconbtn[hidden]{display:none}
 
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
@@ -763,7 +779,10 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
     <div class="voile" id="voile"></div>
     <section class="detail" id="detail" aria-live="polite">
       <div class="detail-hd">
-        <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
+        <div class="hdActs">
+          <button class="marque" id="dMarque" hidden></button>
+          <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
+        </div>
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>

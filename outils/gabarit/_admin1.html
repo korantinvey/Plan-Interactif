@@ -87,22 +87,38 @@ function appliqueApparence(){
  * qui ne la lit pas. Ni l'un ni l'autre ne se tranche par une règle générale :
  * cela dépend du public et du terrain, donc cela revient à l'exploitant.
  *
+ * Le parcours de visite se range ici pour la même raison : il vaut pour un
+ * salon qu'on parcourt une journée durant, moins pour une exposition d'une
+ * heure. Le retirer ne touche pas aux listes déjà constituées sur les
+ * téléphones — il masque ce qui y mène, et le réglage peut se rouvrir.
+ *
  * Montrées par défaut : un réglage absent ne doit rien retirer à un salon déjà
  * en place.
+ *
+ * « classe » marque celles dont le retrait déborde de leur propre coin : elle
+ * est posée sur la racine, d'où la feuille de style tire le reste.
  */
 const COMMANDES = [
-  { cle: "_zoom",    sel: ".zoombar",  libelle: "Afficher les icônes de zoom" },
-  { cle: "_echelle", sel: ".scalebar", libelle: "Afficher l'échelle" },
+  { cle: "_zoom",     sel: ".zoombar",     libelle: "Afficher les icônes de zoom",
+    /* L'échelle s'écartait de la marge pour laisser passer les boutons de
+       zoom. Sans eux, ce décalage n'a plus d'objet et laisse un vide. */
+    classe: "sans-zoom" },
+  { cle: "_echelle",  sel: ".scalebar",    libelle: "Afficher l'échelle" },
+  { cle: "_parcours", sel: "#btnParcours", libelle: "Proposer le parcours de visite",
+    // les signets des fiches et du programme suivent le bouton de la barre
+    classe: "sans-parcours" },
 ];
 
 function appliqueCommandes(){
   COMMANDES.forEach(c => {
+    const retire = conf(c.cle).visible === false;
     const n = document.querySelector(c.sel);
-    if (n) n.hidden = conf(c.cle).visible === false;
+    if (n) n.hidden = retire;
+    if (c.classe) racine.classList.toggle(c.classe, retire);
   });
-  /* L'échelle s'écartait de la marge pour laisser passer les boutons de zoom.
-     Sans eux, ce décalage n'a plus d'objet et laisse un vide. */
-  racine.classList.toggle("sans-zoom", conf("_zoom").visible === false);
+  // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
+  // bouton pour se refermer
+  if (conf("_parcours").visible === false) fermeParcours();
 }
 
 /**
