@@ -51,7 +51,14 @@ button{cursor:pointer;background:none;border:none}
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 
-.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;min-height:560px}
+/* `100vh` vaut, sur un navigateur mobile, la hauteur barre d'outils masquée :
+   le bas de la page tombe sous l'écran, et tout ce qui s'y ancre — cartouche
+   des points d'intérêt, boutons de zoom, échelle — descend avec lui. Le tiroir,
+   lui, est `position:fixed` et se cale sur le bas réellement visible. Les deux
+   se manquaient de la hauteur exacte de la barre du navigateur, si bien que le
+   cartouche recouvrait la recherche et que le bouton « ajuster » passait
+   dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
+.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px}
 .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;height:60px;
   background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;white-space:nowrap}
