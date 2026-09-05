@@ -925,6 +925,10 @@ function visible(o){
   const q = state.q.trim().toLowerCase();
   if (state.filtre && o.kind !== state.filtre) return false;
   if (!q) return true;
+  /* On ne cherche qu'un exposant : les zones organisateur — restauration,
+     accueil, animations — encombreraient les résultats sans qu'on les ait
+     demandées. Elles restent listées tant qu'aucun mot-clé n'est saisi. */
+  if (o.kind !== "stand") return false;
   return ((o.nom || "") + " " + (o.code || "") + " " + (o.plan || "")).toLowerCase().includes(q);
 }
 
