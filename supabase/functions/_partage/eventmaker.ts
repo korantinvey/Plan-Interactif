@@ -173,8 +173,19 @@ export class Eventmaker {
     return cleStand(m.num_stand);
   }
 
+  /** L'identifiant du dossier Klipso, recopié par Eventmaker sur la fiche. */
+  private static dossier(m: Record<string, string>): string {
+    return String(m.id_dossier ?? "").trim();
+  }
+
+  /* Une fiche désigne un exposant si elle porte l'un ou l'autre : les deux
+     manquent rarement ensemble, mais ni l'un ni l'autre n'est toujours là. */
+  private static exposant(m: Record<string, string>): boolean {
+    return Boolean(Eventmaker.stand({}, m) || Eventmaker.dossier(m));
+  }
+
   /**
-   * Catégories dont les fiches portent des numéros de stand.
+   * Catégories dont les fiches désignent des exposants.
    *
    * L'API ne sait pas filtrer sur un champ personnalisé — ni sur sa valeur, ni
    * sur sa présence — et ne sait pas non plus ne renvoyer qu'une partie des
@@ -193,10 +204,16 @@ export class Eventmaker {
    * d'un événement dont on n'a encore aucun plan.
    *
    * Les catégories ne portent pas les mêmes noms d'un salon à l'autre, et rien
-   * ne dit qu'elles contiennent « exposant » dans leur intitulé : c'est la
-   * présence d'un numéro de stand qui décide, pas le libellé.
+   * ne dit qu'elles contiennent « exposant » dans leur intitulé : c'est ce que
+   * portent leurs fiches qui décide, pas le libellé — un numéro de stand, ou un
+   * identifiant de dossier.
+   *
+   * Une limite à connaître : la première voie cherche des numéros de stand, et
+   * ne peut donc pas révéler une catégorie qui n'en porterait aucun tout en
+   * ayant des dossiers. Le second recours, lui, la voit. Sinon l'exploitant la
+   * désigne une fois depuis la console, et elle est mémorisée.
    */
-  async categoriesAvecStand(
+  async categoriesExposants(
     id: string,
     connues: string[] = [],
     codes: string[] = [],
@@ -217,7 +234,7 @@ export class Eventmaker {
           `/events/${id}/guests.json`,
           { per_page: ECHANTILLON, page: 1, guest_metadata: "true", search: code },
         );
-        return l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata)))
+        return l.filter((g) => Eventmaker.exposant(champs(g.guest_metadata)))
           .map((g) => String(g.guest_category_id));
       });
       appels += echantillon.length;
@@ -238,7 +255,7 @@ export class Eventmaker {
         `/events/${id}/guests.json`,
         { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
       );
-      return { c, avec: l.filter((g) => Eventmaker.stand(g, champs(g.guest_metadata))).length };
+      return { c, avec: l.filter((g) => Eventmaker.exposant(champs(g.guest_metadata))).length };
     });
     appels += aSonder.length;
     sondes.filter((s) => s.avec).forEach((s) => trouvees.add(s.c._id));
@@ -363,13 +380,20 @@ export class Eventmaker {
   }
 
   /**
-   * Exposants indexés par numéro de stand.
+   * Exposants, indexés deux fois : par dossier, et par numéro de stand.
    *
-   * Deux règles, et rien d'autre : la fiche porte un numéro de stand, et son
-   * inscription est effective. Le reste n'est que le moyen d'y arriver sans
-   * télécharger le salon entier.
+   * Le dossier est la bonne clé — Klipso le porte sur le stand, Eventmaker le
+   * recopie —, mais aucune des deux ne couvre tout : sur Franchise Expo, une
+   * catégorie d'exposants n'a que des dossiers, une autre que des numéros. On
+   * rend donc les deux index, à charge pour l'appelant d'essayer le dossier
+   * d'abord.
+   *
+   * Deux règles pour retenir une fiche, et rien d'autre : elle désigne un
+   * exposant, et son inscription est effective. Le reste n'est que le moyen d'y
+   * arriver sans télécharger le salon entier.
    */
   async exposants(id: string, connues: string[] = [], codes: string[] = []): Promise<{
+    parDossier: Map<string, ExposantEm>;
     parStand: Map<string, ExposantEm>;
     categories: string[];
     categoriesIds: string[];
@@ -379,8 +403,9 @@ export class Eventmaker {
     retenus: number;
     ecartesNonInscrits: number;
   }> {
+    const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
-    const { retenues: cats, appels, voie } = await this.categoriesAvecStand(id, connues, codes);
+    const { retenues: cats, appels, voie } = await this.categoriesExposants(id, connues, codes);
     let lus = 0, ecartesNonInscrits = 0;
 
     // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
@@ -402,12 +427,13 @@ export class Eventmaker {
       lus++;
       const m = champs(g.guest_metadata);
       const stand = Eventmaker.stand(g, m);
-      if (!stand) continue;
+      const dossier = Eventmaker.dossier(m);
+      if (!stand && !dossier) continue;
       if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
       // premier arrivé, premier servi : un stand partagé garde l'enseigne
       // rencontrée d'abord plutôt qu'une des suivantes, prise au hasard
-      if (parStand.has(stand)) continue;
-      parStand.set(stand, {
+      if ((stand && parStand.has(stand)) || (dossier && parDossier.has(dossier))) continue;
+      const fiche: ExposantEm = {
         stand,
         nom: ou(m.enseigne, g.company_name),
         raison: ou(m.company_name_2),
@@ -424,16 +450,19 @@ export class Eventmaker {
         instagram: ou(m.instagram_societe),
         nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
         exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
-      });
+      };
+      if (stand) parStand.set(stand, fiche);
+      if (dossier) parDossier.set(dossier, fiche);
     }
     return {
+      parDossier,
       parStand,
       categories: cats.map((c) => c.name),
       categoriesIds: cats.map((c) => c._id),
       appels,
       voie,
       lus,
-      retenus: parStand.size,
+      retenus: new Set([...parStand.values(), ...parDossier.values()]).size,
       ecartesNonInscrits,
     };
   }

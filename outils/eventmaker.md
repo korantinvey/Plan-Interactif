@@ -72,6 +72,13 @@ Expo Paris 2026, `id_dossier` couvre 574 fiches d'exposants contre 566 pour
 `num_stand`, et les 101 citations d'exposants dans le programme portent toutes
 un dossier au format attendu.
 
+L'appariement des exposants eux-mêmes suit la même règle depuis : `exposants()`
+rend deux index, par dossier et par numéro, et la synchronisation essaie le
+dossier d'abord. Aucune des deux clés ne couvre seule — sur Franchise Expo Paris
+2026, dix fiches n'ont qu'un dossier, deux n'ont qu'un numéro — et la catégorie
+« Enseignes - Franchise Invest », qui n'a que des dossiers, n'était jusque-là
+retenue par rien.
+
 La résolution dossier → stand se fait dans la synchronisation, où les deux côtés
 sont connus : la charge publique ne porte donc que des identifiants de stand du
 plan, et aucun identifiant Eventmaker. Rien à migrer non plus — elle est en

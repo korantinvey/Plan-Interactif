@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
        de stand nous intéresse, les autres non. Les catégories d'invités
        diffèrent d'un salon à l'autre, elles sont donc détectées et non
        configurées. */
-    let expoEm: Map<string, ExposantEm> | null = null;
+    let expoEm: { parDossier: Map<string, ExposantEm>; parStand: Map<string, ExposantEm> } | null = null;
     let resumeEm: Record<string, unknown> | null = null;
     const srcStands = fournisseur(evt, "stands");
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
           .map((st) => String(st.code ?? "")).filter(Boolean);
 
         const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
-        expoEm = r.parStand;
+        expoEm = { parDossier: r.parDossier, parStand: r.parStand };
         resumeEm = {
           categories: r.categories,
           voie: r.voie,
@@ -385,20 +385,24 @@ Deno.serve(async (req) => {
           const exclu = dos?.x_ExcluListeexposants === true;
           const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
 
+          /* Le dossier identifie un exposant des deux côtés : Klipso le porte
+             sur le stand, Eventmaker le recopie dans « id_dossier ». C'est par
+             lui qu'on apparie, et par lui que les conférences retrouvent leur
+             stand. Le numéro ne s'y prête qu'en second : saisi à la main, il se
+             compose parfois de deux emplacements — « E58 - F59 » — que le plan
+             numérote séparément, et il manque à des fiches qui ont un dossier.
+             L'inverse existe aussi, d'où le repli plutôt qu'un choix. */
+          const dossier = String(s.IdDossierExpAff ?? dos?.Id ?? "");
+          if (dossier) parDossier.set(dossier, "s" + String(s.Id).slice(0, 8));
+
           // La source choisie fait foi : si elle ne connaît pas ce stand, il
           // reste vide plutôt que de retomber sur l'autre, ce qui donnerait un
           // plan à moitié dans chaque référentiel.
-          const em = expoEm && code ? expoEm.get(cleStand(code)) : undefined;
+          const em = !expoEm ? undefined
+            : (dossier ? expoEm.parDossier.get(dossier) : undefined) ??
+              (code ? expoEm.parStand.get(cleStand(code)) : undefined);
           const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
           if (expoEm && em) apparies++;
-
-          /* Le dossier est ce qui identifie un exposant des deux côtés : Klipso
-             le porte sur le stand, Eventmaker le recopie dans « id_dossier ».
-             C'est par lui que les conférences retrouvent leur stand — le numéro
-             ne s'y prête pas, saisi à la main et parfois composé de deux
-             emplacements que le plan numérote séparément. */
-          const dossier = String(s.IdDossierExpAff ?? dos?.Id ?? "");
-          if (dossier) parDossier.set(dossier, "s" + String(s.Id).slice(0, 8));
 
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
