@@ -480,13 +480,20 @@ Deno.serve(async (req) => {
             // un choix de l'exploitant n'est jamais écrasé
             if (!fiche.manuel && fiche.auto) fiche.zone = fiche.auto;
 
-            if (fiche.zone && anneauxZone.has(fiche.zone)) {
+            /* Une conférence dont la salle n'est rattachée à aucune zone
+               n'appartient à aucun pavillon : on la remonte dans tous, sans
+               zone, pour qu'elle existe avant d'être située — l'exploitant la
+               rattachera depuis la console, et la page, qui range par zone,
+               l'ignore d'ici là. Celle qui tient à une zone d'un autre
+               pavillon, elle, y est déjà : la reprendre ici la dupliquerait. */
+            const sienne = fiche.zone && anneauxZone.has(fiche.zone);
+            if (sienne || !fiche.zone) {
               conferences.push({
                 id: c.id, nom: c.nom, texte: c.texte,
                 debut: c.debut, fin: c.fin,
                 debutLocal: c.debutLocal, finLocal: c.finLocal,
                 salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
-                zone: fiche.zone,
+                zone: sienne ? fiche.zone : null,
                 exposants: exposantsConf.get(c.id) ?? [],
               });
             }
