@@ -162,6 +162,22 @@ function construitPanneau(){
   plus.textContent = "+ Nouveau calque de dessin";
   plus.onclick = creeCalque;
   hote.appendChild(plus);
+
+  /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
+     sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
+     publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
+  const reg = document.createElement("div");
+  reg.className = "reglages";
+  reg.innerHTML = '<span class="eyebrow">Affichage</span>' +
+    '<label><input type="checkbox"><span></span></label>';
+  reg.querySelector("label span").textContent = "Afficher les icônes de zoom";
+  const cz = reg.querySelector('input[type="checkbox"]');
+  cz.checked = conf("_zoom").visible !== false;
+  cz.onchange = e => {
+    conf("_zoom").visible = e.target.checked;
+    enregistreConf(); appliqueZoom();
+  };
+  hote.appendChild(reg);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */

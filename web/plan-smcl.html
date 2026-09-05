@@ -395,6 +395,11 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
 .calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}
 .calq label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Un réglage qui ne porte sur aucun calque se range à part, sous la pile :
+   aligné dedans, on le prendrait pour une couche du plan. */
+.reglages{margin-top:11px;padding-top:9px;border-top:1px solid var(--line)}
+.reglages label{display:flex;align-items:center;gap:8px;font-size:13px;
+  cursor:pointer;margin-top:7px}
 .cc{width:24px;height:18px;padding:0;border:1px solid var(--line-strong);border-radius:3px;
   background:none;cursor:pointer;flex:none}
 .cc::-webkit-color-swatch-wrapper{padding:1px}
@@ -1682,6 +1687,21 @@ function appliqueApparence(){
     racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
                             conf(k).visible === false));
   appliqueCouleursData();
+  appliqueZoom();
+}
+
+/**
+ * Les boutons de zoom, montrés ou non.
+ *
+ * Le pincement les rend superflus sur un écran tactile, mais il demande deux
+ * doigts : dans une allée de salon, sac à la main, on n'en a souvent qu'un.
+ * L'arbitrage dépend du public et du terrain, donc il revient à l'exploitant.
+ * Montrés par défaut : un réglage absent ne doit rien retirer à un salon déjà
+ * en place.
+ */
+function appliqueZoom(){
+  const z = document.querySelector(".zoombar");
+  if (z) z.hidden = conf("_zoom").visible === false;
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
@@ -2873,6 +2893,22 @@ function construitPanneau(){
   plus.textContent = "+ Nouveau calque de dessin";
   plus.onclick = creeCalque;
   hote.appendChild(plus);
+
+  /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
+     sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
+     publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
+  const reg = document.createElement("div");
+  reg.className = "reglages";
+  reg.innerHTML = '<span class="eyebrow">Affichage</span>' +
+    '<label><input type="checkbox"><span></span></label>';
+  reg.querySelector("label span").textContent = "Afficher les icônes de zoom";
+  const cz = reg.querySelector('input[type="checkbox"]');
+  cz.checked = conf("_zoom").visible !== false;
+  cz.onchange = e => {
+    conf("_zoom").visible = e.target.checked;
+    enregistreConf(); appliqueZoom();
+  };
+  hote.appendChild(reg);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */

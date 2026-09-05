@@ -75,6 +75,21 @@ function appliqueApparence(){
     racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
                             conf(k).visible === false));
   appliqueCouleursData();
+  appliqueZoom();
+}
+
+/**
+ * Les boutons de zoom, montrés ou non.
+ *
+ * Le pincement les rend superflus sur un écran tactile, mais il demande deux
+ * doigts : dans une allée de salon, sac à la main, on n'en a souvent qu'un.
+ * L'arbitrage dépend du public et du terrain, donc il revient à l'exploitant.
+ * Montrés par défaut : un réglage absent ne doit rien retirer à un salon déjà
+ * en place.
+ */
+function appliqueZoom(){
+  const z = document.querySelector(".zoombar");
+  if (z) z.hidden = conf("_zoom").visible === false;
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
