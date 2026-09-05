@@ -284,7 +284,9 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 .poi{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:12;
   display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
   padding:7px 9px;background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--radius);box-shadow:var(--shadow)}
+  /* le rayon commun vaut 3 px : des angles presque vifs autour de pastilles
+     entièrement rondes, et posés sur un tiroir aux coins adoucis */
+  border-radius:12px;box-shadow:var(--shadow)}
 .poi[hidden]{display:none}
 .poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);

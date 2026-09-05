@@ -293,7 +293,9 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 .poi{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:12;
   display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
   padding:7px 9px;background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--radius);box-shadow:var(--shadow)}
+  /* le rayon commun vaut 3 px : des angles presque vifs autour de pastilles
+     entièrement rondes, et posés sur un tiroir aux coins adoucis */
+  border-radius:12px;box-shadow:var(--shadow)}
 .poi[hidden]{display:none}
 .poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
@@ -993,11 +995,43 @@ function poseVue(){
   appliqueVue(); echelle(); libelles();
 }
 
+/**
+ * Hauteur, en pixels, de ce que le tiroir ou la fiche cachent en bas du plan.
+ *
+ * Le cadre du plan occupe tout l'écran sur mobile, mais on n'en voit pas tout :
+ * cadrer sur le cadre entier pousse une partie du plan sous le tiroir. Toute
+ * mise en vue passe donc par cette mesure — l'ajustement comme le centrage sur
+ * un stand, y compris celui déclenché par le cartouche des points d'intérêt.
+ *
+ * On raisonne sur les hauteurs au repos, jamais sur la position d'un élément en
+ * cours de glissement : `offsetHeight` ignore la transformation, et la fiche
+ * qui s'ouvre replie le tiroir sous elle.
+ */
+function masque(){
+  if (!ETROIT()) return 0;
+  const r = svg.getBoundingClientRect();
+  const fiche = $("detail"), tiroir = $("side");
+  const ficheOuverte = !!fiche && fiche.classList.contains("open");
+  let bas = ficheOuverte ? fiche.offsetHeight : 0;
+  if (tiroir){
+    bas = Math.max(bas, ficheOuverte
+      ? parseFloat(getComputedStyle(document.documentElement)
+          .getPropertyValue("--replie")) || 164
+      : r.bottom - tiroir.getBoundingClientRect().top);
+  }
+  // au-delà, il ne resterait plus assez de plan pour que le cadrage ait un sens
+  return Math.max(0, Math.min(r.height * .6, bas));
+}
+
 function fit(){
   const r = svg.getBoundingClientRect();
+  const cache = masque();
+  const hUtile = Math.max(60, r.height - cache);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
-  const k = Math.max(w / (r.width || 1), h / (r.height || 1));
-  view = { x: emp.x0 + w / 2 - (k * r.width) / 2, y: emp.y0 + h / 2 - (k * r.height) / 2,
+  const k = Math.max(w / (r.width || 1), h / hUtile);
+  view = { x: emp.x0 + w / 2 - (k * r.width) / 2,
+           // le plan se centre dans la bande visible, pas dans le cadre entier
+           y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * cache) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
@@ -1050,16 +1084,22 @@ function select(id, recentrer){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;
   const n = noeud(id); if (n) n.classList.add("sel");
-  if (recentrer) centre(o);
+  if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null);
+  /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
+     décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
+     sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
+     car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
+  if (recentrer && ETROIT()) centre(o);
 }
 function centre(o){
   const w = Math.min(view.w, 55), h = w * (view.h / view.w);
-  /* Sur mobile la fiche occupe le bas de l'écran : centrer au milieu du
-     document reviendrait à placer le stand derrière elle. On remonte donc la
-     cible au milieu de ce qui reste visible. */
-  const decale = ETROIT() ? h * .26 : 0;
+  /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
+     fiche. On la remonte au milieu de ce qui reste visible — d'après la
+     hauteur réellement masquée, et non une proportion supposée. */
+  const r = svg.getBoundingClientRect();
+  const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
   view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2 + decale, w: w, h: h };
   poseVue();
 }
