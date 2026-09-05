@@ -92,9 +92,6 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
-.filters{display:flex;gap:5px;margin-top:10px}
-.chip{font-size:11.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2)}
-.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -105,7 +102,6 @@ button{cursor:pointer;background:none;border:none}
 .row .code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;padding:3px 0;
   text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
 .row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
-.row.z .code{border-style:dashed;border-color:var(--zone);color:var(--zone)}
 .row.l .code{opacity:.5}
 /* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
    texte : sans cela il s'étire à la taille du nom, et l'ellipse annoncée plus
@@ -781,13 +777,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
   <aside class="side" id="side">
     <button class="poignee" id="poignee" aria-expanded="false" aria-controls="list"
-      aria-label="Afficher la liste des stands et zones"></button>
+      aria-label="Afficher la liste des stands"></button>
     <div class="search">
       <div class="search-field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Exposant, stand, zone…" autocomplete="off">
+        <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
-      <div class="filters" id="filters"></div>
     </div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
