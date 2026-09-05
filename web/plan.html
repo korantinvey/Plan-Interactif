@@ -364,12 +364,33 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
    elles s'effacent, et leurs champs se suivent comme s'ils étaient seuls. */
 .cInfos,.cConf{display:contents}
+/* Deux onglets quand la fiche est trop étroite pour tout montrer d'un coup :
+   ce qu'est l'exposant, puis ce qu'il anime. Ils ne paraissent que s'il y a
+   les deux, et s'effacent dès que la fiche s'élargit — deux colonnes disent
+   alors la même chose sans faire choisir. */
+.onglets{display:flex;gap:4px;padding:10px 18px 0}
+.onglets[hidden]{display:none}
+.ong{flex:1;padding:7px 10px;border-radius:var(--radius);border:1px solid transparent;
+  font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.ong:hover{color:var(--ink)}
+.ong[aria-selected="true"]{background:var(--surface-2);border-color:var(--line);color:var(--ink)}
+.ong .n{margin-left:6px;font-size:11px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace}
+@media (max-width:1099.98px){
+  /* le trait de l'en-tête passerait juste au-dessus des onglets */
+  .detail.deux .detail-hd{border-bottom:none}
+  .detail.deux[data-onglet="prog"] .cInfos{display:none}
+  .detail.deux:not([data-onglet="prog"]) .cConf{display:none}
+  /* l'onglet nomme déjà le programme, le libellé du champ ferait doublon */
+  .detail.deux[data-onglet="prog"] .cConf > .field > .eyebrow{display:none}
+}
 /* Un exposant qui tient cinq conférences repoussait son adresse et ses
    contacts loin sous la ligne de flottaison. Quand il en tient, la fiche
    s'élargit et les met en regard : l'exposant à gauche, son programme à
    droite. Elle n'y consent qu'au-delà de 1100 px — plus étroite, elle
-   mangerait le plan qu'elle sert. */
+   mangerait le plan qu'elle sert, et les onglets prennent le relais. */
 @media (min-width:1100px){
+  .onglets{display:none}
   .detail.deux{width:min(640px,56vw)}
   .detail.deux .detail-bd{display:grid;align-content:start;
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px 20px}
@@ -848,6 +869,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
         <span class="badge" id="dCode"></span>
+      </div>
+      <div class="onglets" id="dOnglets" role="tablist" hidden>
+        <button type="button" class="ong" id="dOngInfo" role="tab"
+          aria-controls="dPaneInfos" aria-selected="true">Détail</button>
+        <button type="button" class="ong" id="dOngProg" role="tab"
+          aria-controls="dPaneConf" aria-selected="false">Programme<span class="n" id="dOngNb"></span></button>
       </div>
       <div class="detail-bd" id="dBody"></div>
     </section>
@@ -1572,9 +1599,10 @@ function ouvre(o, rect){
                           '</span><span class="v">' + v + '</span></div>' : "";
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
+  const sien = (!zone && pl.parStand && pl.parStand.get(o.id)) || [];
   const confs = ok("conferences", zone
     ? programme(P().parZone && P().parZone.get(o.id))
-    : programme(pl.parStand && pl.parStand.get(o.id), "Conférences"));
+    : programme(sien, "Conférences"));
   // ni la surface, ni les angles ouverts, ni l'état de commercialisation
   // n'apprennent quoi que ce soit au visiteur
   const infos =
@@ -1603,14 +1631,21 @@ function ouvre(o, rect){
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
      dire d'autre que son programme : il reste en tête. */
-  const bloc2 = (cls, h) => '<div class="' + cls + '">' + h + '</div>';
-  /* Sur grand écran, un exposant qui tient des conférences les fait lire en
-     regard de sa fiche plutôt qu'à sa suite. Il y faut les deux : un stand
-     sans conférence n'a pas de colonne à remplir, une zone pas de fiche. */
-  $("detail").classList.toggle("deux", !zone && !!confs && !!infos);
+  const bloc2 = (cls, id, h) =>
+    '<div class="' + cls + '" id="' + id + '" role="tabpanel">' + h + '</div>';
+  /* Ce qu'est l'exposant et ce qu'il anime se partagent la fiche dès qu'il y
+     a les deux — un stand sans conférence n'a rien à mettre en face, une zone
+     n'a pas de fiche. La largeur décide ensuite de la forme : deux colonnes
+     au large, deux onglets à l'étroit. */
+  const partage = !zone && !!confs && !!infos;
+  $("detail").classList.toggle("deux", partage);
+  $("dOnglets").hidden = !partage;
+  $("dOngNb").textContent = partage && sien.length ? sien.length : "";
+  // une fiche s'ouvre sur le détail : c'est ce qu'on est venu y lire
+  onglet("detail");
   $("dBody").innerHTML = (zone
-      ? bloc2("cConf", confs) + bloc2("cInfos", infos)
-      : bloc2("cInfos", infos) + bloc2("cConf", confs)) +
+      ? bloc2("cConf", "dPaneConf", confs) + bloc2("cInfos", "dPaneInfos", infos)
+      : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
@@ -1641,6 +1676,15 @@ function ferme(){
   state.sel = null; liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
+/* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
+   entière, et la bascule ne relit rien. */
+function onglet(n){
+  $("detail").dataset.onglet = n;
+  $("dOngInfo").setAttribute("aria-selected", String(n !== "prog"));
+  $("dOngProg").setAttribute("aria-selected", String(n === "prog"));
+}
+$("dOngInfo").onclick = () => onglet("detail");
+$("dOngProg").onclick = () => onglet("prog");
 $("closeDetail").onclick = ferme;
 $("voile").onclick = ferme;
 
