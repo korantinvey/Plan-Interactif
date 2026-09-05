@@ -40,8 +40,9 @@ node build-all.js                      # → plans.json
 
 `sonde-eventmaker.js` cherche, lui, par où une conférence Eventmaker tient à un
 exposant : champs de la session, paramètres qui l'ouvriraient, chemins que la
-documentation ne cite pas, champs personnalisés des fiches d'invités, et à
-défaut de lien, le nom de l'exposant dans l'intitulé.
+documentation ne cite pas, rôles du programme, inscriptions de session, champs
+personnalisés des fiches d'invités, et à défaut de lien, le nom de l'exposant
+dans l'intitulé.
 
 ```bash
 EVENTMAKER_TOKEN=... node sonde-eventmaker.js <idEvenement>   # → brut/eventmaker/
@@ -49,6 +50,11 @@ EVENTMAKER_TOKEN=... node sonde-eventmaker.js <idEvenement>   # → brut/eventma
 
 Le jeton se lit aussi dans `.env`. Le rapport part à l'écran, les charges
 brutes dans `brut/eventmaker/`, pour une relecture au calme.
+
+`eventmaker.md` dit ce qu'elle a établi : l'API ne rend ce lien nulle part, et
+aucun des cent événements du compte ne le porte. À lire avant de reprendre la
+question — et à relancer sur un nouveau salon, dont l'organisateur aura
+peut-être saisi de quoi le tenir.
 
 ## Serveur local
 

@@ -3,10 +3,14 @@
  *
  * L'API Eventmaker ne publie qu'une poignée de ressources dans sa
  * documentation, et le lien qui nous intéresse — la session animée par tel
- * exposant — n'y figure pas. Il est pourtant probable qu'il existe : sous la
- * forme d'un champ, d'un chemin voisin, d'un champ personnalisé de session, ou
- * à défaut d'une mention en clair dans l'intitulé. Ce script cherche les
- * quatre, dans cet ordre, et rend compte de ce qu'il trouve.
+ * exposant — n'y figure pas. Il pourrait pourtant exister : sous la forme d'un
+ * champ, d'un paramètre, d'un chemin voisin, d'un rôle du programme, d'une
+ * inscription, d'un champ personnalisé, ou à défaut d'une mention en clair dans
+ * l'intitulé. Ce script cherche les sept, dans cet ordre.
+ *
+ * Sur les cent événements du compte, aucun ne le porte : `eventmaker.md`, à
+ * côté, dit ce que la sonde a établi et ce qu'il reste à faire. La relancer sur
+ * un nouveau salon dit si l'organisateur, lui, a saisi de quoi le tenir.
  *
  *   EVENTMAKER_TOKEN=... node outils/sonde-eventmaker.js <idEvenement>
  *
@@ -74,11 +78,19 @@ async function lire(chemin, params = {}) {
   return { statut: r.status, ok: r.ok, corps, texte };
 }
 
+/* Toutes les collections ne paginent pas. /exhibitors rend ses six cent treize
+   fiches quelle que soit la page demandée : une boucle qui n'attend qu'une page
+   courte tourne alors sans fin. On s'arrête aussi quand une page rend ce que la
+   précédente rendait déjà. */
 async function toutesPages(chemin, params = {}) {
   const out = [];
+  let precedente = null;
   for (let page = 1; ; page++) {
     const r = await lire(chemin, { ...params, per_page: PAR_PAGE, page });
     if (!r.ok || !Array.isArray(r.corps)) return out;
+    const signature = r.corps.map((x) => x?._id).join(",");
+    if (signature === precedente) return out;
+    precedente = signature;
     out.push(...r.corps);
     if (r.corps.length < PAR_PAGE) return out;
   }
@@ -270,8 +282,69 @@ function garde(nom, donnees) {
   }
   garde("chemins.json", essais);
 
-  /* --- 4. les fiches d'invités ----------------------------------------- */
-  titre("4. Ce que les fiches d'invités savent des conférences");
+  /* --- 4. le programme, qui sait ce que l'API tait ---------------------- */
+  titre("4. Le programme, qui affiche les exposants d'une session");
+
+  /* Le programme public range trois rôles sous chaque session — intervenants,
+     animateurs, exposants — et sait afficher la société de chacun. La relation
+     existe donc dans le produit. Reste à savoir si une adresse la rend. */
+  const progs = await toutesPages(`/events/${ID}/programs.json`);
+  const roles = [["speakers", "intervenants"], ["moderators", "animateurs"], ["exhibitors", "exposants"]];
+  for (const p of progs) {
+    console.log(`  ${String(p.name).padEnd(24)} `
+      + roles.map(([k, f]) => `${f} ${p[`${k}_information_displayed`] ? "affichés" : "masqués"}`
+        + ` « ${p[`${k}_label`] ?? ""} »`).join(", "));
+  }
+  const p0 = progs[0];
+  if (p0) {
+    console.log("");
+    for (const c of ["", "/sessions", "/speakers", "/exhibitors", "/accesspoints", "/guests"]) {
+      const r = await lire(`/events/${ID}/programs/${p0._id}${c}.json`, { per_page: 3, page: 1 });
+      console.log(`  /programs/:id${c}.json`.padEnd(38) + ` ${r.statut}`);
+    }
+  }
+
+  /* --- 5. les inscriptions de session ---------------------------------- */
+  titre("5. Les inscriptions de session : assister n'est pas animer");
+
+  /* Une fiche d'invité porte ses « access_privileges » : une entrée par session
+     à laquelle elle est inscrite, avec l'intitulé et la salle. C'est le seul
+     rattachement invité ↔ session que l'API rende — mais il ne porte aucun
+     rôle, et un visiteur qui réserve sa place en reçoit un comme l'intervenant
+     qui parle. Compter par catégorie suffit à le montrer. */
+  const idsSession = new Set(sessions.map((s) => s._id));
+  const inscriptions = [];
+  for (const s of sondes) {
+    for (const g of s.fiches) {
+      for (const a of g.access_privileges ?? []) {
+        if (a.type === "session" && idsSession.has(a.accesspoint_id)) inscriptions.push({ cat: s.cat.name, g, a });
+      }
+    }
+  }
+  const echantillon = sondes.reduce((n, s) => n + s.fiches.length, 0);
+  console.log(`${inscriptions.length} inscriptions de session sur ${echantillon} fiches échantillonnées :`);
+  const parCat = new Map();
+  for (const i of inscriptions) parCat.set(i.cat, (parCat.get(i.cat) ?? 0) + 1);
+  for (const [c, n] of [...parCat].sort((a, b) => b[1] - a[1])) console.log(`  ${c.padEnd(40)} ${n}`);
+  const desDeux = inscriptions.filter((i) => champs(i.g.guest_metadata).num_stand).length;
+  console.log(`\n${desDeux} de ces inscriptions viennent d'une fiche qui porte un numéro de stand`);
+
+  /* Et le sens inverse n'existe pas : les paramètres qui filtreraient les
+     invités par session ne sont pas refusés, ils sont ignorés — la liste
+     complète revient, comme si le filtre avait mordu. */
+  const cible = inscriptions[0]?.a.accesspoint_id;
+  if (cible) {
+    console.log("\nfiltrer les invités par session :");
+    for (const f of [{ "accesspoint[]": cible }, { accesspoint_id: cible }, { session_id: cible }]) {
+      const r = await lire(`/events/${ID}/guests.json`, { ...f, per_page: 100, page: 1 });
+      const l = Array.isArray(r.corps) ? r.corps : [];
+      const bons = l.filter((g) => (g.access_privileges ?? []).some((a) => a.accesspoint_id === cible)).length;
+      console.log(`  ${Object.keys(f)[0].padEnd(20)} ${r.statut}  ${l.length} invités rendus, ${bons} inscrits à la session`);
+    }
+  }
+
+  /* --- 6. les fiches d'invités ----------------------------------------- */
+  titre("6. Ce que les fiches d'invités savent des conférences");
 
   /* Un intervenant est un invité comme un autre : il a sa catégorie, et
      peut-être un champ qui nomme sa société ou son stand. Symétriquement, la
@@ -292,8 +365,8 @@ function garde(nom, donnees) {
   }
   garde("echantillon-invites.json", sondes.map((s) => ({ categorie: s.cat, fiches: s.fiches })));
 
-  /* --- 5. le recoupement, à défaut de lien ------------------------------ */
-  titre("5. À défaut d'un lien : le nom de l'exposant dans la session");
+  /* --- 7. le recoupement, à défaut de lien ------------------------------ */
+  titre("7. À défaut d'un lien : le nom de l'exposant dans la session");
 
   const exposants = [];
   for (const cat of catsExpo) {
@@ -310,13 +383,18 @@ function garde(nom, donnees) {
   /* Une enseigne courte — « AXA », « OVH » — se retrouve par hasard dans
      n'importe quel intitulé : on ne recoupe qu'au-delà de cinq caractères. */
   const cherchables = exposants.filter((e) => e.cle.length >= 6);
+  /* « en 2026 », « à 17 h », « de 30 ans » ont la forme d'un numéro de stand et
+     n'en sont pas. On ne retient que ceux que la liste des exposants porte
+     vraiment — sans quoi la section rend surtout du bruit. */
+  const standsConnus = new Set(exposants.map((e) => e.stand));
   const trouves = [];
   for (const s of sessions) {
     const texte = normalise([s.display_name, s.name,
       String(s.description?.html ?? "").replace(/<[^>]+>/g, " "),
       ...Object.values(s.traits ?? {}).map(String)].join(" "));
     const expo = cherchables.filter((e) => texte.includes(e.cle));
-    const stands = [...new Set((texte.match(/\b[A-Z]{1,2} ?\d{2,4}\b/g) ?? []))];
+    const stands = [...new Set((texte.match(/\b[A-Z]{1,2} ?\d{2,4}\b/g) ?? []))]
+      .filter((n) => standsConnus.has(cleStand(n)));
     if (expo.length || stands.length) {
       trouves.push({ session: s.display_name || s.name, exposants: expo.map((e) => `${e.nom} (${e.stand})`), stands });
     }
