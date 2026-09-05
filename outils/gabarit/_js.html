@@ -278,7 +278,7 @@ function liste(){
       '" aria-current="' + (state.sel === o.id) + '">' +
       '<span class="code">' + esc(o.code || (o.kind === "zone" ? "ZOD" : "—")) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
-        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span><br>' +
+        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
@@ -750,6 +750,103 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
   };
   $("filters").appendChild(b);
 });
+
+/* ============================================================
+   Le tiroir de la liste — écrans étroits
+
+   Côte à côte, plan et liste ne tiennent pas sur un téléphone. La liste se
+   replie donc en tiroir : seules la recherche et le compteur dépassent, le
+   reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
+   referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
+   ============================================================ */
+(function tiroirListe(){
+  const tiroir = $("side"), prise = $("poignee");
+  if (!tiroir || !prise) return;
+  const etroit = () => matchMedia("(max-width:900px)").matches;
+
+  /* La hauteur repliée ne peut pas être une constante : elle dépend de la
+     police servie, du retour à la ligne des puces, de la longueur du nom de
+     pavillon dans le compteur. On la mesure, et on la redonne au CSS, qui s'en
+     sert aussi pour poser les commandes du plan au-dessus du tiroir. */
+  function mesure(){
+    if (!etroit()) return;
+    const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
+    const h = prise.offsetHeight + part(".search") + part(".count");
+    if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
+  }
+
+  const hisse  = () => { tiroir.classList.add("ouvert");    prise.setAttribute("aria-expanded", "true"); };
+  const replie = () => { tiroir.classList.remove("ouvert"); prise.setAttribute("aria-expanded", "false"); };
+  const bascule = () => tiroir.classList.contains("ouvert") ? replie() : hisse();
+
+  /* --- le glissement ------------------------------------------------------
+     La course utile va du tiroir replié au tiroir ouvert. On borne le
+     déplacement à cette course, sinon la prise suit le doigt hors de l'écran. */
+  const replieePx = () =>
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 150;
+
+  let depart = null, aGlisse = false;
+
+  prise.addEventListener("pointerdown", e => {
+    if (!etroit()) return;
+    depart = { y: e.clientY, ouvert: tiroir.classList.contains("ouvert") };
+    aGlisse = false;
+    tiroir.classList.add("glisse");
+    prise.setPointerCapture(e.pointerId);
+  });
+
+  prise.addEventListener("pointermove", e => {
+    if (!depart) return;
+    const course = tiroir.offsetHeight - replieePx();
+    const dy = e.clientY - depart.y;
+    if (Math.abs(dy) > 6) aGlisse = true;
+    const pose = depart.ouvert
+      ? Math.min(course, Math.max(0, dy))              // ouvert : on ne peut que descendre
+      : course + Math.min(0, Math.max(-course, dy));   // replié : on ne peut que monter
+    tiroir.style.transform = "translateY(" + pose + "px)";
+  });
+
+  function relache(e){
+    if (!depart) return;
+    const course = tiroir.offsetHeight - replieePx();
+    const dy = e.clientY - depart.y;
+    tiroir.classList.remove("glisse");
+    tiroir.style.transform = "";
+    if (aGlisse){
+      // franchir le quart de la course emporte la décision ; en deçà on revient
+      const franchi = Math.abs(dy) > Math.min(90, course * .25);
+      if (franchi) (dy < 0 ? hisse : replie)();
+      else (depart.ouvert ? hisse : replie)();
+    }
+    depart = null;
+  }
+  prise.addEventListener("pointerup", relache);
+  prise.addEventListener("pointercancel", relache);
+
+  /* Une pression bascule. Le clic sert aussi le clavier — la poignée est un
+     bouton — mais il suit tout glissement : on l'ignore dans ce cas. */
+  prise.addEventListener("click", () => {
+    if (aGlisse){ aGlisse = false; return; }
+    bascule();
+  });
+
+  /* Chercher, c'est vouloir la liste ; choisir, c'est vouloir le plan. */
+  $("q").addEventListener("focus", () => { if (etroit()) hisse(); });
+  $("list").addEventListener("click", () => { if (etroit()) replie(); });
+  addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
+
+  /* Au retour vers un grand écran, la liste reprend sa colonne : ni classe
+     d'ouverture ni transformation résiduelle, qui s'y appliqueraient encore. */
+  addEventListener("resize", () => {
+    if (!etroit()){ tiroir.style.transform = ""; replie(); }
+    else mesure();
+  });
+
+  mesure();
+  // les polices arrivent après le premier calcul et changent la hauteur mesurée
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
+  addEventListener("load", mesure);
+})();
 
 /* thème */
 const CLE_THEME = "plan-theme";
