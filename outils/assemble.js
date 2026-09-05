@@ -1,6 +1,6 @@
 const fs = require("fs");
 const D = __dirname;
-const bouts = ["_head.html", "_js.html", "_admin1.html", "_dessin.html", "_edition.html", "_pile.html", "_pousse.html", "_modales.html", "_admin2.html"];
+const bouts = ["_head.html", "_js.html", "_admin1.html", "_dessin.html", "_edition.html", "_pile.html", "_pousse.html", "_modales.html", "_parcours.html", "_admin2.html"];
 let tpl = "";
 for (const b of bouts){
   let t = fs.readFileSync(D + "/gabarit/" + b, "utf8");

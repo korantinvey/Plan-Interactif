@@ -75,6 +75,82 @@ function appliqueApparence(){
     racine.classList.toggle(k === "labStand" ? "sans-lab-stand" : "sans-lab-zone",
                             conf(k).visible === false));
   appliqueCouleursData();
+  appliqueCommandes();
+}
+
+/**
+ * Les commandes posées sur le plan, montrées ou non.
+ *
+ * Le pincement rend les boutons de zoom superflus sur un écran tactile, mais
+ * il demande deux doigts : dans une allée de salon, sac à la main, on n'en a
+ * souvent qu'un. L'échelle, elle, sert à qui mesure une distance et encombre
+ * qui ne la lit pas. Ni l'un ni l'autre ne se tranche par une règle générale :
+ * cela dépend du public et du terrain, donc cela revient à l'exploitant.
+ *
+ * Le parcours de visite se range ici pour la même raison : il vaut pour un
+ * salon qu'on parcourt une journée durant, moins pour une exposition d'une
+ * heure. Le retirer ne touche pas aux listes déjà constituées sur les
+ * téléphones — il masque ce qui y mène, et le réglage peut se rouvrir.
+ *
+ * Montrées par défaut : un réglage absent ne doit rien retirer à un salon déjà
+ * en place.
+ *
+ * « classe » marque celles dont le retrait déborde de leur propre coin : elle
+ * est posée sur la racine, d'où la feuille de style tire le reste.
+ */
+const COMMANDES = [
+  { cle: "_zoom",     sel: ".zoombar",     libelle: "Afficher les icônes de zoom",
+    /* L'échelle s'écartait de la marge pour laisser passer les boutons de
+       zoom. Sans eux, ce décalage n'a plus d'objet et laisse un vide. */
+    classe: "sans-zoom" },
+  { cle: "_echelle",  sel: ".scalebar",    libelle: "Afficher l'échelle" },
+  { cle: "_parcours", sel: "#btnParcours", libelle: "Proposer le parcours de visite",
+    // les signets des fiches et du programme suivent le bouton de la barre
+    classe: "sans-parcours" },
+];
+
+function appliqueCommandes(){
+  COMMANDES.forEach(c => {
+    const retire = conf(c.cle).visible === false;
+    const n = document.querySelector(c.sel);
+    if (n) n.hidden = retire;
+    if (c.classe) racine.classList.toggle(c.classe, retire);
+  });
+  // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
+  // bouton pour se refermer
+  if (conf("_parcours").visible === false) fermeParcours();
+}
+
+/**
+ * Réglages généraux du plan.
+ *
+ * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
+ * déjà longue, et se lisaient comme une couche de plus. Une fenêtre à part les
+ * range, et laisse la place à celles qui viendront.
+ */
+function ouvreReglages(){
+  ouvreModale("Réglages du plan", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ce que les visiteurs voient sur le plan. " +
+      "Publiez la configuration pour que le changement leur parvienne.";
+    corps.appendChild(p);
+
+    const bloc = document.createElement("div");
+    bloc.className = "reglages";
+    COMMANDES.forEach(cmd => {
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = cmd.libelle;
+      const c = l.querySelector("input");
+      c.checked = conf(cmd.cle).visible !== false;
+      c.onchange = e => {
+        conf(cmd.cle).visible = e.target.checked;
+        enregistreConf(); appliqueCommandes();
+      };
+      bloc.appendChild(l);
+    });
+    corps.appendChild(bloc);
+  }, [{ libelle: "Fermer" }]);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
@@ -111,7 +187,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  const b = $("btnLayers"); if (b) b.remove();
+  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -136,6 +212,8 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
+  const r = $("btnReglages");
+  if (r){ r.hidden = false; r.onclick = ouvreReglages; }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste

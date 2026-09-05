@@ -19,7 +19,7 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
 const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
-let DATA = null, TOUS = [], parId = new Map();
+let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map();
 const state = { q: "", filtre: null, sel: null, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
@@ -74,6 +74,12 @@ function indexe(d){
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
+     visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
+     que là où l'on se trouve. L'index des conférences est donc global, comme
+     celui des stands. */
+  CONFS = new Map();
+  DATA.plans.forEach(p => p.conferences.forEach(c => CONFS.set(String(c.id), c)));
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -84,6 +90,7 @@ function indexe(d){
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+  chargeParcours();
 }
 
 /* ============================================================
@@ -174,6 +181,7 @@ function montePlan(){
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
+  marqueParcours();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -525,12 +533,15 @@ function programme(l, titre){
       out += '<div class="jour">' + esc(JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]) + '</div>';
     }
     const heure = d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "";
-    out += '<button type="button" class="conf" data-conf="' + esc(c.id) + '"' +
+    /* Le signet se pose à côté de la vignette et non dedans : un bouton n'en
+       contient pas un autre, et l'appui doit choisir entre lire et retenir. */
+    out += '<div class="confRang">' +
+      '<button type="button" class="conf" data-conf="' + esc(c.id) + '"' +
       (c.couleur ? ' style="--tc:' + esc(c.couleur) + '"' : "") + '>' +
       (heure ? '<span class="h">' + esc(heure) + '</span>' : "") +
       '<span class="t">' + esc(c.nom) + '</span>' +
       (c.type ? '<span class="ty">' + esc(c.type) + '</span>' : "") +
-      '</button>';
+      '</button>' + signetParcours("conf", c.id) + '</div>';
   }
   return out + '</div></div>';
 }
@@ -548,7 +559,9 @@ function jourLong(d){
  * description comprise, tient ici.
  */
 function ficheConf(id){
-  const c = (P().conferences || []).find(x => String(x.id) === String(id));
+  // l'index est global : une conférence retenue peut se tenir dans un autre
+  // pavillon que celui qu'on regarde
+  const c = CONFS.get(String(id));
   if (!c) return;
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
@@ -577,6 +590,21 @@ function ficheConf(id){
     bloc("Où", c.salle);
     bloc("Thématique", c.theme);
     bloc("Présentation", c.texte, "large");
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    acts.innerHTML = boutonParcours("conf", c.id);
+    /* « Où » nomme la salle ; encore faut-il la trouver. La zone qui l'abrite
+       est le seul point du plan que la conférence désigne — et elle peut se
+       tenir dans un autre pavillon que celui qu'on regarde. */
+    if (c.zone && parId.has(String(c.zone))){
+      const b = document.createElement("button");
+      b.className = "btn";
+      b.textContent = "Situer sur le plan";
+      b.onclick = () => { fermeModale(); select(String(c.zone), true); };
+      acts.appendChild(b);
+    }
+    corps.appendChild(acts);
+    brancheParcours(corps);
   }, [{ libelle: "Fermer", genre: "primaire" }]);
 }
 
@@ -606,6 +634,8 @@ function ecarteClicFantome(){
 }
 
 function ouvre(o, rect){
+  // la fiche et le parcours se partagent la même bande, à droite comme en bas
+  fermeParcours();
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
@@ -651,6 +681,15 @@ function ouvre(o, rect){
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
+  /* Le signet du parcours vit en haut, à côté de la croix : retenir un
+     exposant porte sur la fiche entière. Une zone organisateur ne se retient
+     pas elle-même — ce sont ses conférences qu'on ajoute, chacune à son heure. */
+  const sig = $("dMarque");
+  sig.hidden = zone;
+  if (zone) { delete sig.dataset.mg; delete sig.dataset.mi; }
+  else { sig.dataset.mg = "stand"; sig.dataset.mi = o.id; }
+  // un seul branchement pour le signet de tête et ceux du programme
+  brancheParcours($("detail"));
   $("dGo").onclick = () => centre(o);
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
@@ -925,12 +964,13 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
   $("list").addEventListener("click", () => { if (etroit()) replie(); });
 
   /* La fiche occupe le bas de l'écran quand elle s'ouvre — depuis la liste
-     comme depuis le plan. Le tiroir se retire sous elle plutôt que de lutter
-     pour la même place. */
-  const fiche = $("detail");
-  if (fiche) new MutationObserver(() => {
-    if (etroit() && fiche.classList.contains("open")) replie();
-  }).observe(fiche, { attributes: true, attributeFilter: ["class"] });
+     comme depuis le plan ; le parcours prend la même bande. Le tiroir se
+     retire sous eux plutôt que de lutter pour la même place. */
+  const bandes = [$("detail"), $("parcours")].filter(Boolean);
+  const guette = new MutationObserver(() => {
+    if (etroit() && bandes.some(n => n.classList.contains("open"))) replie();
+  });
+  bandes.forEach(n => guette.observe(n, { attributes: true, attributeFilter: ["class"] }));
   addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
 
   /* Au retour vers un grand écran, la liste reprend sa colonne : ni classe

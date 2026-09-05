@@ -1,0 +1,262 @@
+
+/* ============================================================
+   11 bis. Parcours de visite
+   ============================================================ */
+/**
+ * Un visiteur arrive avec trois heures et deux cents exposants devant lui. Il
+ * repère de quoi remplir sa journée depuis chez lui, puis vient relire sa
+ * liste sur place, entre deux allées.
+ *
+ * Cette liste vit dans son navigateur, et nulle part ailleurs : le plan n'a
+ * pas de comptes, et demander une inscription pour retenir trois stands ferait
+ * fuir tout le monde. Elle est rangée par événement — un même téléphone peut
+ * ouvrir plusieurs salons — et ne retient que des identifiants : les libellés
+ * sont relus dans les données à chaque affichage, si bien qu'un exposant
+ * renommé entre deux visites s'affiche sous son nouveau nom.
+ */
+let PARCOURS = { stands: [], confs: [] };
+
+/* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
+   pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
+const cleParcours = () =>
+  "plan-parcours:" + (SLUG || (DATA && DATA.evenement) || "");
+
+const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
+const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
+
+function chargeParcours(){
+  try {
+    const b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {};
+    PARCOURS = {
+      stands: Array.isArray(b.stands) ? b.stands.map(String) : [],
+      confs:  Array.isArray(b.confs)  ? b.confs.map(String)  : [],
+    };
+  } catch (e) {
+    PARCOURS = { stands: [], confs: [] };   // stockage refusé ou contenu illisible
+  }
+  /* Un stand démonté ou une conférence annulée entre deux visites laisserait
+     un rang mort, qu'on ne saurait ni ouvrir ni comprendre. On ne garde que ce
+     que les données connaissent encore. */
+  PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
+  PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
+  rafraichitParcours();
+}
+
+function enregistreParcours(){
+  // navigation privée, stockage plein : la visite continue sans le parcours
+  try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+}
+
+function basculeParcours(genre, id){
+  const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
+  // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
+  if (i < 0) l.push(k); else l.splice(i, 1);
+  enregistreParcours();
+  rafraichitParcours();
+}
+
+/* ------------------------------------------------------------
+   La marque, partout la même
+   ------------------------------------------------------------ */
+const SIGNET = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>';
+
+/** Le signet nu, tel qu'il se pose à côté d'une conférence du programme. */
+function signetParcours(genre, id){
+  return '<button type="button" class="marque" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '"></button>';
+}
+
+/** Le même geste, en toutes lettres : sur une fiche, la place ne manque pas. */
+function boutonParcours(genre, id){
+  return '<button type="button" class="btn parc" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '">' + SIGNET + '<span class="l"></span></button>';
+}
+
+function rafraichitMarque(el){
+  const dedans = dansParcours(el.dataset.mg, el.dataset.mi);
+  el.setAttribute("aria-pressed", dedans);
+  const dit = dedans ? "Retirer de mon parcours" : "Ajouter à mon parcours";
+  el.title = dit;
+  el.setAttribute("aria-label", dit);
+  const l = el.querySelector(".l");
+  if (l) l.textContent = dedans ? "Dans mon parcours" : "Ajouter à mon parcours";
+  if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
+}
+
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. */
+function brancheParcours(hote){
+  hote.querySelectorAll("[data-mg]").forEach(el => {
+    rafraichitMarque(el);
+    el.onclick = ev => {
+      ev.stopPropagation();
+      basculeParcours(el.dataset.mg, el.dataset.mi);
+    };
+  });
+}
+
+/* ------------------------------------------------------------
+   Ce que le parcours change à l'écran
+   ------------------------------------------------------------ */
+/** Le liseré sur le plan. Une zone y entre par les conférences qu'elle abrite :
+ *  c'est là qu'il faudra se rendre à l'heure dite, la conférence n'ayant pas
+ *  de forme propre. */
+function marqueParcours(){
+  if (!DATA) return;
+  const zones = new Set();
+  PARCOURS.confs.forEach(id => {
+    const c = CONFS.get(id);
+    if (c && c.zone) zones.add(String(c.zone));
+  });
+  document.querySelectorAll("#stands g, #zones g").forEach(g => {
+    const id = g.dataset.id;
+    g.classList.toggle("enparcours",
+      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id));
+  });
+}
+
+function rafraichitParcours(){
+  const n = PARCOURS.stands.length + PARCOURS.confs.length;
+  const c = $("nParcours");
+  if (c){ c.textContent = n; c.hidden = n === 0; }
+  marqueParcours();
+  /* Une même conférence se voit à deux endroits — le programme de sa zone et
+     sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
+     affichées doivent dire la même chose, d'où qu'on ait touché. */
+  document.querySelectorAll("[data-mg]").forEach(rafraichitMarque);
+  if ($("parcours").classList.contains("open")) remplitParcours();
+}
+
+/* ------------------------------------------------------------
+   Le tiroir
+   ------------------------------------------------------------ */
+/** De quoi ranger deux conférences dans l'ordre où on les vivra. */
+function instantConf(c){
+  const fz = DATA.fuseau;
+  return momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
+}
+const cleTemps = c => {
+  const d = instantConf(c);
+  // sans heure lisible, la conférence se range en fin de liste plutôt que de
+  // s'intercaler n'importe où
+  return d ? d.cle + d.h + d.min : "999999999999";
+};
+const jourCourt = d => d
+  ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
+  : "";
+
+function rangParcours(hote, r){
+  const d = document.createElement("div");
+  d.className = "pRang";
+  d.innerHTML = '<button type="button" class="pOuvre">' +
+    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
+              : '<span class="pt"></span><span class="ps"></span>') +
+    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
+    'aria-label="Retirer du parcours">&times;</button>';
+  d.querySelector(".pt").textContent = r.titre;
+  d.querySelector(".ps").textContent = r.detail || "";
+  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
+  d.querySelector(".pOuvre").onclick = r.ouvre;
+  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
+  hote.appendChild(d);
+}
+
+function groupeParcours(hote, titre){
+  const g = document.createElement("div");
+  g.className = "pGroupe";
+  g.innerHTML = '<span class="eyebrow"></span>';
+  g.querySelector(".eyebrow").textContent = titre;
+  hote.appendChild(g);
+  return g;
+}
+
+function remplitParcours(){
+  const hote = $("pCorps");
+  hote.innerHTML = "";
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
+
+  const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+  $("pResume").textContent = stands.length + confs.length
+    ? [stands.length ? pluriel(stands.length, "exposant") : "",
+       confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
+    : "rien pour l'instant";
+  $("videParcours").hidden = !(stands.length + confs.length);
+
+  if (!stands.length && !confs.length){
+    const v = document.createElement("p");
+    v.className = "pVide";
+    v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
+      "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
+      "appareil et vous y retrouverez tout à votre prochaine visite.";
+    hote.appendChild(v);
+    return;
+  }
+
+  /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
+     le reste de la journée se range. */
+  if (confs.length){
+    const g = groupeParcours(hote, "Conférences");
+    let jour = null;
+    confs.forEach(c => {
+      const d = instantConf(c);
+      const f = momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+      if (d && d.cle !== jour){
+        jour = d.cle;
+        const t = document.createElement("div");
+        t.className = "jour";
+        t.textContent = jourCourt(d);
+        g.appendChild(t);
+      }
+      rangParcours(g, {
+        genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+        titre: c.nom,
+        detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
+                (c.salle ? " · " + c.salle : ""),
+        ouvre: () => ficheConf(c.id),
+      });
+    });
+  }
+
+  if (stands.length){
+    const g = groupeParcours(hote, "Exposants");
+    stands.forEach(o => rangParcours(g, {
+      genre: "stand", id: o.id, dessus: false,
+      titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+      detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+      // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
+      // et le tiroir se retire, puisqu'ils occupent la même bande
+      ouvre: () => select(o.id, true),
+    }));
+  }
+}
+
+function ouvreParcours(){
+  // la fiche occupe la même bande : elle cède la place plutôt que de s'y superposer
+  if ($("detail").classList.contains("open")) ferme();
+  remplitParcours();
+  $("parcours").classList.add("open");
+  $("btnParcours").setAttribute("aria-pressed", "true");
+}
+function fermeParcours(){
+  const t = $("parcours");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnParcours").setAttribute("aria-pressed", "false");
+}
+
+$("btnParcours").onclick = () =>
+  $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
+$("closeParcours").onclick = fermeParcours;
+$("videParcours").onclick = () => confirme("Vider le parcours",
+  "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
+  "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
+  "Vider",
+  () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
+
+/* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
+   le tiroir, pas avec lui. */
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
+});
