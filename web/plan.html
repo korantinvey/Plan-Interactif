@@ -19,7 +19,7 @@ window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
   --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC;
   --line:#D2D5CB; --line-strong:#B4B9AC;
   --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
-  --accent:#2F49D1; --accent-soft:#DCE1FA;
+  --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
@@ -31,7 +31,7 @@ window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
     --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
     --line:#2A3034; --line-strong:#3B4348;
     --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55;
+    --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
     --zone:#F0B429; --zone-soft:#3A2F12;
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
     --plan-line:#3E474C; --plan-ink:#5A6469;
@@ -42,7 +42,7 @@ window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
   --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
   --line:#2A3034; --line-strong:#3B4348;
   --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-  --accent:#7A8CFF; --accent-soft:#232C55;
+  --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
   --zone:#F0B429; --zone-soft:#3A2F12;
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
   --plan-line:#3E474C; --plan-ink:#5A6469;
@@ -379,11 +379,15 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .ong{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;
   padding:9px 12px;border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2)}
 .ong:hover{color:var(--ink)}
-.ong[aria-selected="true"]{background:var(--surface);color:var(--ink);
-  box-shadow:0 1px 2px rgba(20,24,26,.12)}
+.ong[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);
+  box-shadow:0 2px 10px -4px var(--accent)}
+/* La pastille est pleine, pas teintée : c'est elle qui doit attraper l'œil
+   depuis l'onglet qu'on ne regarde pas. Sur l'onglet actif, où elle se
+   poserait sur son propre aplat, elle s'inverse. */
 .ong .n{min-width:19px;padding:1px 6px;border-radius:999px;
-  background:var(--accent-soft);color:var(--accent);
+  background:var(--accent);color:var(--accent-ink);
   font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;text-align:center}
+.ong[aria-selected="true"] .n{background:var(--accent-ink);color:var(--accent)}
 @media (max-width:1099.98px){
   /* le trait de l'en-tête passerait juste au-dessus des onglets */
   .detail.deux .detail-hd{border-bottom:none}
