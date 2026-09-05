@@ -385,6 +385,19 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   font-family:"IBM Plex Mono",monospace}
 .prog .t{font-size:13px;line-height:1.35;color:var(--ink)}
 .prog .ty{font-size:11px;color:var(--ink-3)}
+/* Les exposants qui tiennent une conférence. Le nom d'abord, son emplacement
+   au bout : c'est un rang qu'on lit, puis qu'on suit jusqu'à la fiche. */
+.expos{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.expo{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  width:100%;padding:7px 9px;text-align:left;background:var(--surface-2);
+  border-radius:var(--radius);transition:background .15s}
+button.expo:hover{background:var(--line)}
+.expo .n{font-size:13px;line-height:1.35;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.expo .c{flex:none;font-size:11px;color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace}
+/* Un stand hors du plan se lit, mais ne mène nulle part : rien ne doit le
+   faire passer pour un bouton. */
+.expo.statique{background:none;padding:0}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}

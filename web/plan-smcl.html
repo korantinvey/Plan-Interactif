@@ -390,6 +390,19 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   font-family:"IBM Plex Mono",monospace}
 .prog .t{font-size:13px;line-height:1.35;color:var(--ink)}
 .prog .ty{font-size:11px;color:var(--ink-3)}
+/* Les exposants qui tiennent une conférence. Le nom d'abord, son emplacement
+   au bout : c'est un rang qu'on lit, puis qu'on suit jusqu'à la fiche. */
+.expos{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.expo{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  width:100%;padding:7px 9px;text-align:left;background:var(--surface-2);
+  border-radius:var(--radius);transition:background .15s}
+button.expo:hover{background:var(--line)}
+.expo .n{font-size:13px;line-height:1.35;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.expo .c{flex:none;font-size:11px;color:var(--ink-2);
+  font-family:"IBM Plex Mono",monospace}
+/* Un stand hors du plan se lit, mais ne mène nulle part : rien ne doit le
+   faire passer pour un bouton. */
+.expo.statique{background:none;padding:0}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
@@ -852,7 +865,7 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
 const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
-let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map();
+let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
 const state = { q: "", filtre: null, sel: null, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
@@ -913,6 +926,19 @@ function indexe(d){
      celui des stands. */
   CONFS = new Map();
   DATA.plans.forEach(p => p.conferences.forEach(c => CONFS.set(String(c.id), c)));
+  /* Une même conférence est remontée dans chaque pavillon qui la porte, et
+     chacun n'y cite que les exposants qu'il héberge : leur liste complète se
+     recompose ici, sinon la fiche n'afficherait que ceux du dernier pavillon
+     lu. */
+  EXPOSANTS = new Map();
+  DATA.plans.forEach(p => p.conferences.forEach(c => {
+    const k = String(c.id);
+    if (!EXPOSANTS.has(k)) EXPOSANTS.set(k, []);
+    const l = EXPOSANTS.get(k);
+    (c.exposants || []).forEach(e => {
+      if (e && e.stand && !l.some(x => x.stand === e.stand)) l.push(e);
+    });
+  }));
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -1421,6 +1447,42 @@ function ficheConf(id){
       ? jourLong(d) + " · " + d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "")
       : "");
     bloc("Où", c.salle);
+    /* Qui la tient, et où le trouver : le numéro de stand situe l'exposant et
+       sa fiche s'ouvre d'un appui — c'est souvent pour lui qu'on lisait le
+       programme. Ils peuvent être plusieurs, y compris depuis deux pavillons,
+       d'où la liste plutôt qu'une ligne. */
+    const tenue = (EXPOSANTS.get(String(id)) || [])
+      .map(e => ({ e: e, o: parId.get(e.stand) }))
+      .filter(x => x.o || x.e.nom);
+    if (tenue.length){
+      const w = document.createElement("div");
+      w.className = "field";
+      w.innerHTML = '<span class="eyebrow"></span><div class="expos"></div>';
+      w.querySelector(".eyebrow").textContent = "Organisée par";
+      const hote = w.querySelector(".expos");
+      tenue.forEach(x => {
+        const o = x.o;
+        const code = o && montre("stand", "code") && o.code ? o.code : "";
+        // le pavillon n'apprend rien tant que c'est celui qu'on regarde
+        const ou = [o && o.p !== state.plan ? DATA.plans[o.p].libelle : "", code]
+          .filter(Boolean).join(" · ");
+        // un stand absent du plan — filtré, ou d'un pavillon non publié — se
+        // lit quand même, il ne se clique pas
+        const el = document.createElement(o ? "button" : "div");
+        el.className = "expo" + (o ? "" : " statique");
+        if (o) el.type = "button";
+        el.innerHTML = '<span class="n"></span><span class="c"></span>';
+        el.querySelector(".n").textContent =
+          (o && (o.nom || o.plan)) || x.e.nom || ("Stand " + code).trim();
+        el.querySelector(".c").textContent = ou;
+        /* La fiche de l'exposant prend la place de celle de la conférence, et
+           le plan se recentre sur son stand — au besoin en changeant de
+           pavillon, ce dont `select` se charge. */
+        if (o) el.onclick = () => { fermeModale(); select(o.id, true); };
+        hote.appendChild(el);
+      });
+      corps.appendChild(w);
+    }
     bloc("Thématique", c.theme);
     bloc("Présentation", c.texte, "large");
     const acts = document.createElement("div");
