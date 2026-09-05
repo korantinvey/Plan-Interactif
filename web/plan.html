@@ -290,7 +290,12 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 .zoombar svg{width:14px;height:14px}
 /* Cartouche des points d'intérêt, au bas du plan. Il ne paraît que s'il y a
    des repères, et se retire de l'échelle pour ne pas la masquer. */
-.poi{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:12;
+/* Centré par des marges automatiques, et non par « left:50% » : un élément
+   absolu ancré au milieu ne peut s'étendre que vers la droite, si bien que sa
+   largeur était plafonnée à la moitié de l'écran. Le cartouche passait à la
+   ligne pour deux pixels manquants, et le « max-width » annoncé plus bas ne
+   servait à rien. Ancré des deux côtés, il dispose enfin de toute la largeur. */
+.poi{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;bottom:16px;z-index:12;
   display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
   padding:7px 9px;background:var(--surface);border:1px solid var(--line);
   /* le rayon commun vaut 3 px : des angles presque vifs autour de pastilles
