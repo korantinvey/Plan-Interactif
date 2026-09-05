@@ -1,0 +1,61 @@
+# Applique le schéma et redéploie les fonctions à chaque poussée sur `main`.
+# C'était la dernière étape qui exigeait un poste équipé : le CLI connecté, le
+# mot de passe de la base sous la main. Elle vit désormais dans le dépôt, et le
+# projet se pilote depuis n'importe quel appareil.
+#
+# Les secrets des fonctions (KLIPSO_API_KEY, EVENTMAKER_TOKEN, ORIGINES_AUTORISEES)
+# ne sont pas touchés ici : ils sont posés une fois pour toutes côté Supabase,
+# par « npx supabase secrets set », et n'ont donc pas à transiter par GitHub.
+name: Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase.yml'
+  workflow_dispatch:
+
+# Deux déploiements simultanés joueraient les migrations en concurrence sur la
+# même base. On attend le précédent plutôt que de l'interrompre : une migration
+# coupée en deux laisserait le schéma dans un état indéterminé.
+concurrency:
+  group: supabase
+  cancel-in-progress: false
+
+jobs:
+  deployer:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # La référence du projet est publique — c'est le sous-domaine de l'API.
+      # Une variable de dépôt permet d'en changer sans toucher au workflow.
+      REFERENCE: ${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Les migrations sont numérotées et rejouables : seules les absentes de la
+      # table d'historique distante sont appliquées.
+      - name: Appliquer les migrations
+        run: >-
+          npx --no-install supabase db push
+          --project-ref "$REFERENCE"
+          --password "$MOT_DE_PASSE"
+          --yes
+        env:
+          MOT_DE_PASSE: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # `--use-api` fait empaqueter les fonctions par Supabase : pas de Docker à
+      # démarrer sur le coureur, et un déploiement plus court.
+      - name: Déployer les fonctions
+        run: >-
+          npx --no-install supabase functions deploy
+          --project-ref "$REFERENCE"
+          --use-api

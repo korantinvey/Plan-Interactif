@@ -23,8 +23,10 @@ npm run construire   # reconstruit web/
 npm run verifie      # reconstruit, et sort en erreur si web/ était en retard
 ```
 
-`npm run verifie` est le contrôle à passer avant chaque validation touchant
-`outils/gabarit/`. Les pages reconstruites font partie du commit.
+Les pages reconstruites font partie du commit. Le workflow `Pages` rattrape
+l'oubli — il reconstruit et valide sur la branche poussée — mais ne comptez pas
+dessus : il ajoute alors un commit par-dessus le vôtre, que vous devrez tirer
+avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 
 ## Ne jamais modifier directement
 
@@ -49,6 +51,17 @@ versionner n'expose rien de plus.
 | `supabase/migrations/` | schéma de la base — numérotées, rejouables |
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
+| `.github/workflows/` | reconstruction des pages, déploiement Supabase |
+
+## Déploiement
+
+Rien ne se déploie à la main. Une poussée sur `main` applique les migrations et
+redéploie les fonctions (`supabase.yml`) ; Cloudflare suit le dépôt de son côté
+pour `web/` et le Worker. Toute poussée, sur n'importe quelle branche,
+reconstruit les pages (`pages.yml`).
+
+Conséquence à garder en tête : **une migration poussée sur `main` part en
+production**. Les migrations sont numérotées et rejouables, jamais réécrites.
 
 ## Secrets
 

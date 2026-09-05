@@ -48,7 +48,11 @@ Attention au **plan gratuit** : le projet se met en pause après une semaine san
 activité. C'est sans conséquence en développement, rédhibitoire pour un salon en
 cours. Prévoyez le passage au plan payant avant l'ouverture.
 
-## Déployer
+## Déployer à la main, la première fois
+
+Le déploiement courant est automatique — voir « Ce qui se fait tout seul ». Ce
+qui suit sert à l'installation initiale, ou à reprendre la main quand il le
+faut : poser les secrets, relier un projet neuf.
 
 Le CLI est installé comme dépendance de développement du projet — l'installation
 globale par npm n'est pas prise en charge par Supabase, et `npx supabase@latest`
@@ -99,9 +103,53 @@ de fabrication est opérationnelle dès la première commande. Le hook ne
 s'exécute qu'à distance ; sur un poste, il sort immédiatement.
 
 Ce qui ne voyage pas, et n'a pas à voyager : le fichier `.env` et les sessions
-des CLI. Une session cloud peut construire les pages, les vérifier et les
-valider ; pour `npx supabase db push` ou `npm run fonctions`, il faut se
-connecter au préalable, ce qui suppose un navigateur.
+des CLI. C'est sans conséquence, parce que plus rien n'en dépend au quotidien —
+voir la section suivante.
+
+## Ce qui se fait tout seul
+
+Une poussée suffit. Trois chaînes s'enclenchent, chacune sur ce qui la
+concerne :
+
+| ce que vous poussez | ce qui se passe | qui s'en charge |
+|---|---|---|
+| `outils/gabarit/` | les pages de `web/` sont reconstruites et validées | `.github/workflows/pages.yml` |
+| `web/`, `src/` | le site et le Worker sont redéployés | Cloudflare, par son intégration Git |
+| `supabase/` | migrations appliquées, fonctions redéployées | `.github/workflows/supabase.yml` |
+
+La reconstruction des pages mérite un mot. `web/` est versionné parce que
+Cloudflare sert sans étape de construction, ce qui laissait la place à un oubli
+coûteux : un module modifié, une reconstruction sautée, et les visiteurs
+recevaient l'ancienne page. Le workflow reconstruit désormais lui-même et
+valide le résultat sur la branche poussée. Une retouche du gabarit faite depuis
+un téléphone suffit donc, et le commit produit réveille à son tour Cloudflare.
+
+Il pousse avec le jeton de l'action, qui ne redéclenche aucun workflow : la
+reconstruction ne peut pas s'appeler en boucle. Sur une pull request, il se
+borne à signaler l'écart — la branche peut venir d'une bifurcation, où l'action
+n'a pas le droit d'écrire.
+
+### Les deux secrets à créer
+
+Le workflow Supabase reste inerte tant que ces deux secrets manquent. Dans
+**Settings → Secrets and variables → Actions** du dépôt :
+
+| secret | où le trouver |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | supabase.com/dashboard/account/tokens, « Generate new token » |
+| `SUPABASE_DB_PASSWORD` | le mot de passe de la base, noté à la création du projet |
+
+La référence du projet n'est pas un secret — c'est le sous-domaine de l'API.
+Elle est inscrite dans le workflow, et une variable de dépôt
+`SUPABASE_PROJECT_REF` la remplace si le projet change.
+
+Les secrets des fonctions — `KLIPSO_API_KEY`, `EVENTMAKER_TOKEN`,
+`ORIGINES_AUTORISEES` — restent posés côté Supabase par `npx supabase secrets
+set`. Ils n'ont pas à transiter par GitHub, et le déploiement ne les touche
+pas.
+
+`workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
+l'onglet **Actions**, sans rien pousser.
 
 ## Fabriquer les pages
 
@@ -117,7 +165,9 @@ npm run essai        # sert web/ sur http://localhost:4180
 ```
 
 `npm run verifie` sort en erreur si les pages versionnées ne correspondaient pas
-à leurs sources. À passer avant chaque validation qui touche à `outils/gabarit/`.
+à leurs sources. Le workflow Pages fait ce travail à votre place sur toute
+poussée ; lancer `verifie` localement reste plus rapide que d'attendre le
+retour de l'intégration, et évite un commit de reconstruction en plus du vôtre.
 
 ## Tout remettre en place ailleurs
 
@@ -126,13 +176,15 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 
 | Élément | Où il vit | Comment il s'applique |
 |---|---|---|
-| Schéma de la base | `supabase/migrations/` | `npm run bd` |
-| Fonctions serveur | `supabase/functions/` | `npm run fonctions` |
-| Secrets | nulle part — c'est voulu | `npx supabase secrets set …` |
-| Pages | `outils/gabarit/` → `web/` | `npm run construire`, puis validées |
+| Schéma de la base | `supabase/migrations/` | poussée sur `main` (ou `npm run bd`) |
+| Fonctions serveur | `supabase/functions/` | poussée sur `main` (ou `npm run fonctions`) |
+| Secrets Supabase | nulle part — c'est voulu | `npx supabase secrets set …` |
+| Secrets GitHub | nulle part — c'est voulu | Settings → Secrets and variables → Actions |
+| Pages | `outils/gabarit/` → `web/` | reconstruites à la poussée |
 | Worker et cache | `src/index.mjs`, `wrangler.jsonc` | déployé à chaque poussée sur `main` |
-| Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | `npm run construire` |
-| Données de démonstration | `outils/plans.json` → `web/plan-smcl.html` | `npm run construire` |
+| Configuration livrée | `outils/gabarit/_config.js` → `web/config.js` | reconstruite à la poussée |
+| Données de démonstration | `outils/plans.json` → `web/plan-smcl.html` | reconstruites à la poussée |
+| Automatisation | `.github/workflows/` | appliquée dès la fusion dans `main` |
 
 Les migrations sont numérotées et rejouables : `db push` n'applique que celles
 qui manquent. Les fonctions, elles, se redéploient entièrement à chaque fois.

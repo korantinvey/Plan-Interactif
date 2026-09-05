@@ -1,0 +1,74 @@
+# Les pages de `web/` sont fabriquées depuis `outils/gabarit/` puis versionnées,
+# car Cloudflare les sert sans étape de construction. Le risque tenait à l'oubli :
+# un module modifié, une reconstruction sautée, et les visiteurs recevaient
+# l'ancienne page. Ce workflow retire l'oubli de l'équation.
+#
+# Sur une poussée, il reconstruit et valide lui-même le résultat : une retouche
+# du gabarit faite depuis un téléphone ou une session distante suffit, la page
+# suit. Le commit qui en résulte réveille à son tour le déploiement Cloudflare.
+#
+# La poussée est faite avec le jeton de l'action, qui ne redéclenche aucun
+# workflow : la reconstruction ne peut donc pas s'appeler en boucle.
+#
+# Sur une pull request, il se contente de signaler l'écart — la branche peut
+# venir d'une bifurcation, où l'action n'a pas le droit d'écrire.
+name: Pages
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Reconstruire les pages
+        run: npm run construire
+
+      # `assemble.js` extrait le script du gabarit dans outils/chk.js : une
+      # erreur de syntaxe y devient visible avant d'atteindre un navigateur.
+      - name: Contrôler la syntaxe du gabarit
+        run: node --check outils/chk.js
+
+      - name: Valider la reconstruction
+        if: github.event_name == 'push'
+        run: |
+          if [ -z "$(git status --porcelain web)" ]; then
+            echo 'Pages déjà à jour.'
+            exit 0
+          fi
+          echo 'Pages reconstruites :'
+          git status --porcelain web
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add web
+          git commit -m 'Reconstruit les pages depuis le gabarit'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Signaler un retard des pages
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -n "$(git status --porcelain web)" ]; then
+            echo 'Les pages versionnées sont en retard sur outils/gabarit/ :'
+            git status --porcelain web
+            echo
+            echo 'Lancez « npm run construire » et validez le résultat.'
+            exit 1
+          fi
+          echo 'Pages à jour : web/ correspond bien à outils/gabarit/.'
