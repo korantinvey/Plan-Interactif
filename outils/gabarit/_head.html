@@ -636,8 +636,30 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   }
   .detail.open{transform:translateY(0);pointer-events:auto}
   .detail-hd{padding:16px 16px 13px}
+  .detail-hd h2{font-size:17px;margin:6px 0 5px}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
+     champs qui tiennent en un mot — niveaux, ville, pays, téléphone, réseaux —
+     se rangent deux par deux au lieu d'empiler autant de lignes qu'il faut
+     faire défiler une à une ; l'adresse, le site et le programme gardent la
+     largeur entière. */
+  .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:11px 14px;align-content:start}
+  .detail-bd > *{grid-column:1/-1;min-width:0}
+  .detail-bd > .field.court{grid-column:auto}
+  /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
+     sa colonne au lieu de revenir à la ligne. */
+  .field .v{font-size:13.5px;overflow-wrap:anywhere}
+  /* Le libellé du jour se colle en haut du corps, dont la marge vaut ici
+     quatorze pixels et non seize. */
+  .prog{gap:6px}
+  .prog .jour{top:-14px;padding-top:14px}
+  /* Une vignette tenait trois lignes pour deux informations utiles : l'heure
+     et le type partagent la première, le titre prend la seconde. */
+  .prog .conf{flex-flow:row wrap;align-items:baseline;column-gap:8px;padding:6px 8px}
+  .prog .conf .ty{order:1}
+  .prog .conf .t{order:2;flex:0 0 100%}
 
   /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
      un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on

@@ -636,8 +636,30 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   }
   .detail.open{transform:translateY(0);pointer-events:auto}
   .detail-hd{padding:16px 16px 13px}
+  .detail-hd h2{font-size:17px;margin:6px 0 5px}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
+     champs qui tiennent en un mot — niveaux, ville, pays, téléphone, réseaux —
+     se rangent deux par deux au lieu d'empiler autant de lignes qu'il faut
+     faire défiler une à une ; l'adresse, le site et le programme gardent la
+     largeur entière. */
+  .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:11px 14px;align-content:start}
+  .detail-bd > *{grid-column:1/-1;min-width:0}
+  .detail-bd > .field.court{grid-column:auto}
+  /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
+     sa colonne au lieu de revenir à la ligne. */
+  .field .v{font-size:13.5px;overflow-wrap:anywhere}
+  /* Le libellé du jour se colle en haut du corps, dont la marge vaut ici
+     quatorze pixels et non seize. */
+  .prog{gap:6px}
+  .prog .jour{top:-14px;padding-top:14px}
+  /* Une vignette tenait trois lignes pour deux informations utiles : l'heure
+     et le type partagent la première, le titre prend la seconde. */
+  .prog .conf{flex-flow:row wrap;align-items:baseline;column-gap:8px;padding:6px 8px}
+  .prog .conf .ty{order:1}
+  .prog .conf .t{order:2;flex:0 0 100%}
 
   /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
      un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
@@ -1454,27 +1476,32 @@ function ouvre(o, rect){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
-  const f = (l, v) => v ? '<div class="field"><span class="eyebrow">' + l +
+  /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
+     ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
+     lignes. */
+  const f = (l, v, cls) => v ? '<div class="field' + (cls ? " " + cls : "") +
+                          '"><span class="eyebrow">' + l +
                           '</span><span class="v">' + v + '</span></div>' : "";
-  const url = o.site ? String(o.site).replace(/\\/g, "").replace(/^(?!https?:)/, "https://") : "";
-  $("dBody").innerHTML =
+  // sur une zone, le programme qu'elle accueille ; sur un stand, les
+  // conférences que son exposant tient, où qu'elles se tiennent
+  const confs = ok("conferences", zone
+    ? programme(P().parZone && P().parZone.get(o.id))
+    : programme(pl.parStand && pl.parStand.get(o.id), "Conférences"));
+  // ni la surface, ni les angles ouverts, ni l'état de commercialisation
+  // n'apprennent quoi que ce soit au visiteur
+  const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
-    // ni la surface, ni les angles ouverts, ni l'état de commercialisation
-    // n'apprennent quoi que ce soit au visiteur
-    // sur une zone, le programme qu'elle accueille ; sur un stand, les
-    // conférences que son exposant tient, où qu'elles se tiennent
-    ok("conferences", zone
-      ? programme(P().parZone && P().parZone.get(o.id))
-      : programme(pl.parStand && pl.parStand.get(o.id), "Conférences")) +
-    ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
-    ok("ville", f("Ville", o.ville ? esc(o.ville) : "")) +
-    ok("pays", f("Pays", o.pays ? esc(o.pays) : "")) +
+    /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
+       par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
+    ok("ville", f("Ville", o.ville ? esc(o.ville) : "", "court")) +
+    ok("pays", f("Pays", o.pays ? esc(o.pays) : "", "court")) +
+    ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court")) +
     // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
     ok("telephone", f("Téléphone", o.tel
       ? '<a href="tel:' + esc(String(o.tel).replace(/[^+\d]/g, "")) + '">' + esc(o.tel) + '</a>'
-      : "")) +
+      : "", "court")) +
     ok("site", f("Site web", lien(o.site))) +
     ok("facebook", f("Facebook", lien(o.fb))) +
     ok("linkedin", f("LinkedIn", lien(o.li))) +
@@ -1483,7 +1510,12 @@ function ouvre(o, rect){
     ok("nomenclature", o.nomencl && o.nomencl.length
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-      : "") +
+      : "");
+  /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
+     anime — ses conférences peuvent être nombreuses, et repoussaient
+     l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
+     dire d'autre que son programme : il reste en tête. */
+  $("dBody").innerHTML = (zone ? confs + infos : infos + confs) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
