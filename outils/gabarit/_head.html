@@ -519,7 +519,12 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
      bas comme elles l'étaient, il les recouvrait. */
   .zoombar{bottom:calc(var(--replie,150px) + 14px)}
-  .scalebar{bottom:calc(var(--replie,150px) + 18px)}
+  /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
+     large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
+     de repères : l'échelle reprend alors sa place. */
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px)}
+  /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
+  .sans-zoom .scalebar{left:14px}
   .poi{bottom:calc(var(--replie,150px) + 12px)}
   .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px}
 

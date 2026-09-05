@@ -88,8 +88,12 @@ function appliqueApparence(){
  * en place.
  */
 function appliqueZoom(){
+  const montre = conf("_zoom").visible !== false;
   const z = document.querySelector(".zoombar");
-  if (z) z.hidden = conf("_zoom").visible === false;
+  if (z) z.hidden = !montre;
+  /* L'échelle s'écartait de la marge pour laisser passer les boutons. Sans
+     eux, ce décalage n'a plus d'objet et laisse un vide. */
+  racine.classList.toggle("sans-zoom", !montre);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas

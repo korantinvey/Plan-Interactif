@@ -287,7 +287,7 @@ function cartouchePoi(){
     }
   }
   z.hidden = parNom.size === 0;
-  if (z.hidden){ poiChoisi = null; eclairePoi(); return; }
+  if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
   [...parNom.entries()]
@@ -318,6 +318,23 @@ function cartouchePoi(){
       z.appendChild(b);
     });
   eclairePoi();
+  mesureCartouche();
+}
+
+/**
+ * Hauteur du cartouche, donnée au CSS.
+ *
+ * Sur un écran étroit le cartouche est assez large pour recouvrir l'échelle,
+ * qui vit dans le même coin bas. Le commentaire de la feuille de style
+ * affirmait qu'il « se retire de l'échelle » : c'était vrai sur un grand
+ * écran, où il n'atteignait pas la marge gauche. À 412 pixels il la traverse.
+ * L'échelle se pose donc au-dessus de lui, d'après sa hauteur réelle — nulle
+ * quand il est absent, auquel cas rien ne bouge.
+ */
+function mesureCartouche(){
+  const z = $("poi");
+  const h = z && !z.hidden ? z.offsetHeight + 8 : 0;
+  document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
 /** Met en avant les repères du type choisi. */

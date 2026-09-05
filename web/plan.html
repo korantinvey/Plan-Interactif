@@ -528,7 +528,12 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
      bas comme elles l'étaient, il les recouvrait. */
   .zoombar{bottom:calc(var(--replie,150px) + 14px)}
-  .scalebar{bottom:calc(var(--replie,150px) + 18px)}
+  /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
+     large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
+     de repères : l'échelle reprend alors sa place. */
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px)}
+  /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
+  .sans-zoom .scalebar{left:14px}
   .poi{bottom:calc(var(--replie,150px) + 12px)}
   .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px}
 
@@ -1711,8 +1716,12 @@ function appliqueApparence(){
  * en place.
  */
 function appliqueZoom(){
+  const montre = conf("_zoom").visible !== false;
   const z = document.querySelector(".zoombar");
-  if (z) z.hidden = conf("_zoom").visible === false;
+  if (z) z.hidden = !montre;
+  /* L'échelle s'écartait de la marge pour laisser passer les boutons. Sans
+     eux, ce décalage n'a plus d'objet et laisse un vide. */
+  racine.classList.toggle("sans-zoom", !montre);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
@@ -2162,7 +2171,7 @@ function cartouchePoi(){
     }
   }
   z.hidden = parNom.size === 0;
-  if (z.hidden){ poiChoisi = null; eclairePoi(); return; }
+  if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
   [...parNom.entries()]
@@ -2193,6 +2202,23 @@ function cartouchePoi(){
       z.appendChild(b);
     });
   eclairePoi();
+  mesureCartouche();
+}
+
+/**
+ * Hauteur du cartouche, donnée au CSS.
+ *
+ * Sur un écran étroit le cartouche est assez large pour recouvrir l'échelle,
+ * qui vit dans le même coin bas. Le commentaire de la feuille de style
+ * affirmait qu'il « se retire de l'échelle » : c'était vrai sur un grand
+ * écran, où il n'atteignait pas la marge gauche. À 412 pixels il la traverse.
+ * L'échelle se pose donc au-dessus de lui, d'après sa hauteur réelle — nulle
+ * quand il est absent, auquel cas rien ne bouge.
+ */
+function mesureCartouche(){
+  const z = $("poi");
+  const h = z && !z.hidden ? z.offsetHeight + 8 : 0;
+  document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
 /** Met en avant les repères du type choisi. */
