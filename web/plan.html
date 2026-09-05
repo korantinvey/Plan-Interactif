@@ -360,6 +360,23 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
+/* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
+   sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
+   elles s'effacent, et leurs champs se suivent comme s'ils étaient seuls. */
+.cInfos,.cConf{display:contents}
+/* Un exposant qui tient cinq conférences repoussait son adresse et ses
+   contacts loin sous la ligne de flottaison. Quand il en tient, la fiche
+   s'élargit et les met en regard : l'exposant à gauche, son programme à
+   droite. Elle n'y consent qu'au-delà de 1100 px — plus étroite, elle
+   mangerait le plan qu'elle sert. */
+@media (min-width:1100px){
+  .detail.deux{width:min(640px,56vw)}
+  .detail.deux .detail-bd{display:grid;align-content:start;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px 20px}
+  .detail.deux .cInfos{grid-column:1;display:flex;flex-direction:column;gap:15px}
+  .detail.deux .cConf{grid-column:2;display:flex;flex-direction:column}
+  .detail.deux .acts{grid-column:1/-1}
+}
 .field{display:flex;flex-direction:column;gap:3px}
 .field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
@@ -668,8 +685,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      largeur entière. */
   .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
     gap:11px 14px;align-content:start}
-  .detail-bd > *{grid-column:1/-1;min-width:0}
-  .detail-bd > .field.court{grid-column:auto}
+  .detail-bd .field,.detail-bd .acts{grid-column:1/-1;min-width:0}
+  .detail-bd .field.court{grid-column:auto}
   /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
      sa colonne au lieu de revenir à la ligne. */
   .field .v{font-size:13.5px;overflow-wrap:anywhere}
@@ -1586,7 +1603,14 @@ function ouvre(o, rect){
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
      dire d'autre que son programme : il reste en tête. */
-  $("dBody").innerHTML = (zone ? confs + infos : infos + confs) +
+  const bloc2 = (cls, h) => '<div class="' + cls + '">' + h + '</div>';
+  /* Sur grand écran, un exposant qui tient des conférences les fait lire en
+     regard de sa fiche plutôt qu'à sa suite. Il y faut les deux : un stand
+     sans conférence n'a pas de colonne à remplir, une zone pas de fiche. */
+  $("detail").classList.toggle("deux", !zone && !!confs && !!infos);
+  $("dBody").innerHTML = (zone
+      ? bloc2("cConf", confs) + bloc2("cInfos", infos)
+      : bloc2("cInfos", infos) + bloc2("cConf", confs)) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
