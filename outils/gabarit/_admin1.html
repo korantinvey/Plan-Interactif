@@ -105,6 +105,38 @@ function appliqueCommandes(){
   racine.classList.toggle("sans-zoom", conf("_zoom").visible === false);
 }
 
+/**
+ * Réglages généraux du plan.
+ *
+ * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
+ * déjà longue, et se lisaient comme une couche de plus. Une fenêtre à part les
+ * range, et laisse la place à celles qui viendront.
+ */
+function ouvreReglages(){
+  ouvreModale("Réglages du plan", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ce que les visiteurs voient sur le plan. " +
+      "Publiez la configuration pour que le changement leur parvienne.";
+    corps.appendChild(p);
+
+    const bloc = document.createElement("div");
+    bloc.className = "reglages";
+    COMMANDES.forEach(cmd => {
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = cmd.libelle;
+      const c = l.querySelector("input");
+      c.checked = conf(cmd.cle).visible !== false;
+      c.onchange = e => {
+        conf(cmd.cle).visible = e.target.checked;
+        enregistreConf(); appliqueCommandes();
+      };
+      bloc.appendChild(l);
+    });
+    corps.appendChild(bloc);
+  }, [{ libelle: "Fermer" }]);
+}
+
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
  *  remontés vers la base. */
 const enregistreConf = () => {
@@ -139,7 +171,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  const b = $("btnLayers"); if (b) b.remove();
+  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -164,6 +196,8 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
+  const r = $("btnReglages");
+  if (r){ r.hidden = false; r.onclick = ouvreReglages; }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste

@@ -166,22 +166,9 @@ function construitPanneau(){
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
-  const reg = document.createElement("div");
-  reg.className = "reglages";
-  reg.innerHTML = '<span class="eyebrow">Affichage</span>';
-  COMMANDES.forEach(cmd => {
-    const l = document.createElement("label");
-    l.innerHTML = '<input type="checkbox"><span></span>';
-    l.querySelector("span").textContent = cmd.libelle;
-    const c = l.querySelector("input");
-    c.checked = conf(cmd.cle).visible !== false;
-    c.onchange = e => {
-      conf(cmd.cle).visible = e.target.checked;
-      enregistreConf(); appliqueCommandes();
-    };
-    reg.appendChild(l);
-  });
-  hote.appendChild(reg);
+  /* Les réglages généraux vivent dans leur propre fenêtre, ouverte par
+     l'engrenage : ici ils allongeaient une pile déjà longue et se lisaient
+     comme une couche de plus. */
 }
 
 /* ligne secondaire : visibilité et couleur seulement */
