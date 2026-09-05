@@ -471,16 +471,21 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
      bande figée de 216 px dont la recherche et le compteur mangeaient la plus
      grande part : il restait 71 px de liste — une ligne et demie pour cinq
      cents résultats. */
+  /* Trois crans plutôt que deux. Le cran du milieu est celui qui sert le
+     plus : on lit la liste sans perdre le plan de vue, et c'est là qu'on
+     répond à « qu'y a-t-il près de l'entrée ». Tout ou rien obligeait à
+     choisir entre les deux. */
   .side{
     position:fixed;left:0;right:0;bottom:0;z-index:12;
-    height:78vh;height:78dvh;
+    height:82vh;height:82dvh;
     border-right:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
-    transform:translateY(calc(100% - var(--replie,150px)));
+    transform:translateY(calc(100% - var(--replie,164px)));
     transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
-  .side.ouvert{transform:translateY(0)}
+  .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
+  .side[data-cran="plein"]{transform:translateY(0)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
@@ -496,19 +501,27 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   .poi{bottom:calc(var(--replie,150px) + 12px)}
   .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px}
 
-  /* le détail devient une fenêtre modale centrée */
-  .voile{display:block}
-  .voile.on{opacity:1;pointer-events:auto}
+  /* La fiche devient un tiroir elle aussi. En fenêtre centrée sur voile, elle
+     masquait le plan au moment précis où l'on venait d'y désigner un stand :
+     on perdait de vue ce qu'on regardait. Posée en bas, elle laisse le plan
+     visible et manipulable derrière — c'est pour cela qu'il n'y a plus de
+     voile, qui interceptait aussi les gestes. */
+  .voile{display:none}
   .detail{
-    position:fixed;inset:0;margin:auto;
-    width:min(430px,calc(100% - 28px));height:fit-content;max-height:74vh;
-    border:1px solid var(--line);border-radius:12px;overflow:hidden;
-    box-shadow:0 30px 70px -22px rgba(0,0,0,.6);
-    transform:scale(.96);opacity:0;pointer-events:none;z-index:15;
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:56dvh;
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
+    z-index:13;
+    transform:translateY(100%);opacity:1;pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
-  .detail.open{transform:none;opacity:1;pointer-events:auto}
+  .detail.open{transform:translateY(0);pointer-events:auto}
   .detail-hd{padding:16px 16px 13px}
-  .detail-bd{padding:14px 16px 18px}
+  /* seul le corps défile : le nom et le code restent sous les yeux */
+  .detail-bd{padding:14px 16px 18px;overflow-y:auto}
 }
 
 /* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une

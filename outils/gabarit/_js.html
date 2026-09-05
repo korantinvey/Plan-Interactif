@@ -351,10 +351,15 @@ function echelle(){
    ============================================================ */
 const REDUIT = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let anim = null;
+/** Écran étroit : la liste et la fiche sont des tiroirs, pas des panneaux. */
+const ETROIT = () => matchMedia("(max-width:900px)").matches;
+
 function anime(rect, sens){
   const p = $("detail");
   if (anim){ anim.cancel(); anim = null; }
-  if (REDUIT || !rect){ if (sens < 0) p.classList.remove("open"); return; }
+  /* Sur mobile la fiche glisse depuis le bas : une mise à l'échelle depuis la
+     forme cliquée se battrait avec ce glissement. La transition CSS suffit. */
+  if (REDUIT || !rect || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }
   const b = p.getBoundingClientRect();
   p.style.transformOrigin = (rect.left + rect.width / 2 - b.left) + "px " +
                             (rect.top + rect.height / 2 - b.top) + "px";
@@ -383,7 +388,11 @@ function select(id, recentrer){
 }
 function centre(o){
   const w = Math.min(view.w, 55), h = w * (view.h / view.w);
-  view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2, w: w, h: h };
+  /* Sur mobile la fiche occupe le bas de l'écran : centrer au milieu du
+     document reviendrait à placer le stand derrière elle. On remonte donc la
+     cible au milieu de ce qui reste visible. */
+  const decale = ETROIT() ? h * .26 : 0;
+  view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2 + decale, w: w, h: h };
   poseVue();
 }
 /**
@@ -762,7 +771,7 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
   if (!tiroir || !prise) return;
-  const etroit = () => matchMedia("(max-width:900px)").matches;
+  const etroit = ETROIT;
 
   /* La hauteur repliée ne peut pas être une constante : elle dépend de la
      police servie, du retour à la ligne des puces, de la longueur du nom de
@@ -775,48 +784,67 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
-  const hisse  = () => { tiroir.classList.add("ouvert");    prise.setAttribute("aria-expanded", "true"); };
-  const replie = () => { tiroir.classList.remove("ouvert"); prise.setAttribute("aria-expanded", "false"); };
-  const bascule = () => tiroir.classList.contains("ouvert") ? replie() : hisse();
+  /* Trois crans, du plus bas au plus haut. Le milieu est le cran utile : la
+     liste se lit sans que le plan disparaisse. */
+  const CRANS = ["replie", "demi", "plein"];
+  const cran = () => tiroir.dataset.cran || "replie";
+  function pose(nom){
+    tiroir.dataset.cran = nom;
+    prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
+  }
+  const replie = () => pose("replie");
+  /* Une pression fait le tour des crans : on les atteint tous sans rien
+     connaître du glissement, et on revient au plan par la même touche. */
+  const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
+
+  const replieePx = () =>
+    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 164;
+
+  /* Hauteur visible du tiroir à un cran donné, en pixels. Le milieu suit la
+     règle du CSS — 46 % de la hauteur d'écran. */
+  function hauteur(nom){
+    if (nom === "plein") return tiroir.offsetHeight;
+    if (nom === "demi")  return Math.round(innerHeight * .46);
+    return replieePx();
+  }
 
   /* --- le glissement ------------------------------------------------------
-     La course utile va du tiroir replié au tiroir ouvert. On borne le
-     déplacement à cette course, sinon la prise suit le doigt hors de l'écran. */
-  const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 150;
-
+     Le doigt mène le tiroir entre le cran le plus bas et le plus haut, puis on
+     s'accroche au cran le plus proche de l'endroit où il a lâché. Un seuil de
+     distance ne suffirait plus : avec trois crans, c'est la position d'arrivée
+     qui décide, pas la longueur du geste. */
   let depart = null, aGlisse = false;
 
   prise.addEventListener("pointerdown", e => {
     if (!etroit()) return;
-    depart = { y: e.clientY, ouvert: tiroir.classList.contains("ouvert") };
+    depart = { y: e.clientY, vu: hauteur(cran()) };
     aGlisse = false;
     tiroir.classList.add("glisse");
     prise.setPointerCapture(e.pointerId);
   });
 
+  /** Hauteur visible pendant le geste, bornée aux deux crans extrêmes. */
+  const suit = e =>
+    Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
-    const course = tiroir.offsetHeight - replieePx();
-    const dy = e.clientY - depart.y;
-    if (Math.abs(dy) > 6) aGlisse = true;
-    const pose = depart.ouvert
-      ? Math.min(course, Math.max(0, dy))              // ouvert : on ne peut que descendre
-      : course + Math.min(0, Math.max(-course, dy));   // replié : on ne peut que monter
-    tiroir.style.transform = "translateY(" + pose + "px)";
+    if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
   });
 
   function relache(e){
     if (!depart) return;
-    const course = tiroir.offsetHeight - replieePx();
-    const dy = e.clientY - depart.y;
+    const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
     if (aGlisse){
-      // franchir le quart de la course emporte la décision ; en deçà on revient
-      const franchi = Math.abs(dy) > Math.min(90, course * .25);
-      if (franchi) (dy < 0 ? hisse : replie)();
-      else (depart.ouvert ? hisse : replie)();
+      let choix = CRANS[0], ecart = Infinity;
+      for (const c of CRANS){
+        const d = Math.abs(hauteur(c) - vu);
+        if (d < ecart){ ecart = d; choix = c; }
+      }
+      pose(choix);
     }
     depart = null;
   }
@@ -830,9 +858,19 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
     bascule();
   });
 
-  /* Chercher, c'est vouloir la liste ; choisir, c'est vouloir le plan. */
-  $("q").addEventListener("focus", () => { if (etroit()) hisse(); });
+  /* Chercher, c'est vouloir la liste ; choisir, c'est vouloir le plan. Au cran
+     plein pour la recherche : le clavier va manger le bas de l'écran, autant
+     que la liste occupe tout ce qui reste. */
+  $("q").addEventListener("focus", () => { if (etroit()) pose("plein"); });
   $("list").addEventListener("click", () => { if (etroit()) replie(); });
+
+  /* La fiche occupe le bas de l'écran quand elle s'ouvre — depuis la liste
+     comme depuis le plan. Le tiroir se retire sous elle plutôt que de lutter
+     pour la même place. */
+  const fiche = $("detail");
+  if (fiche) new MutationObserver(() => {
+    if (etroit() && fiche.classList.contains("open")) replie();
+  }).observe(fiche, { attributes: true, attributeFilter: ["class"] });
   addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
 
   /* Au retour vers un grand écran, la liste reprend sa colonne : ni classe
