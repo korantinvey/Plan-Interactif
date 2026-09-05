@@ -13,9 +13,10 @@ fi
 
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
-# `install` plutôt que `ci` : l'état du conteneur est mis en cache après le
-# hook, et `install` sait repartir d'un node_modules déjà présent.
-npm install --no-audit --no-fund
+# `ci` plutôt qu'`install` : `install` réécrit package-lock.json dès que la
+# version de npm du conteneur diffère de celle qui l'a produit — l'arbre se
+# retrouvait sali à chaque ouverture de session. `ci` s'en tient au fichier.
+npm ci --no-audit --no-fund
 
 # La chaîne de fabrication doit être opérationnelle, pas seulement installée.
 npm run construire >/dev/null
