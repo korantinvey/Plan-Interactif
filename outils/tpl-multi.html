@@ -74,7 +74,7 @@ button{cursor:pointer;background:none;border:none}
 .row .hall{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
   padding:1px 5px;border-radius:3px;background:var(--surface-2);color:var(--ink-3);margin-left:6px;vertical-align:1px}
 .tools{display:flex;gap:6px}
-.iconbtn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
+.iconbtn{position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -148,6 +148,10 @@ button{cursor:pointer;background:none;border:none}
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
+/* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
+   continu dans la couleur d'accent, plus discret que la sélection pour ne pas
+   se confondre avec elle. Une zone y entre par ses conférences. */
+.stand.enparcours path,.zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 .stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
 .stand,.zone{cursor:pointer}
@@ -384,6 +388,72 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
 
+/* ------------------------------------------------------------
+   Parcours de visite
+
+   Le visiteur retient des exposants et des conférences en circulant, puis
+   relit sa liste sur place. La marque est la même partout — un signet creux
+   tant que la chose n'y est pas, plein dès qu'elle y entre — pour qu'on la
+   reconnaisse aussi bien dans le programme d'une zone que sur une fiche.
+   ------------------------------------------------------------ */
+.marque{flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);display:grid;place-items:center;background:var(--surface)}
+.marque svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.marque:hover{border-color:var(--line-strong);color:var(--ink)}
+.marque[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.marque[aria-pressed="true"] svg{fill:currentColor}
+.btn.parc{display:inline-flex;align-items:center;gap:7px}
+.btn.parc svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.btn.parc[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.btn.parc[aria-pressed="true"] svg{fill:currentColor}
+/* Dans une fenêtre modale, les champs n'ont pas l'écartement que leur donne le
+   corps de la fiche : le bouton se collerait au dernier paragraphe. */
+.mcorps .acts{margin-top:13px}
+/* La vignette d'une conférence garde toute la largeur qu'elle peut : le
+   signet se pose à côté, hors du bouton — un bouton n'en contient pas un autre. */
+.confRang{display:flex;align-items:center;gap:6px}
+.confRang .conf{flex:1;min-width:0}
+
+/* Le nombre porté par le bouton de la barre : sans lui, rien ne dirait qu'un
+   parcours a été commencé lors d'une visite précédente. */
+.compteur{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:600;
+  font-family:"IBM Plex Mono",monospace;display:grid;place-items:center;line-height:1;
+  border:1.5px solid var(--surface)}
+.compteur[hidden]{display:none}
+
+/* Le tiroir occupe la place de la fiche — à droite sur grand écran, en bas sur
+   téléphone : c'est le même geste, regarder une liste à côté du plan. Les deux
+   ne s'ouvrent jamais ensemble, ils se disputeraient la même bande. */
+.parcours{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;
+  z-index:4;box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.parcours.open{transform:none}
+.parcours .detail-hd h2{margin:0 0 4px}
+.pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
+.pPied .vider:hover{color:#C2372B}
+.pGroupe{display:flex;flex-direction:column;gap:7px}
+/* Le jour sépare les conférences comme il le fait dans le programme d'une
+   zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
+.pGroupe .jour{margin:5px 0 1px;padding-bottom:5px;font-size:13.5px;font-weight:600;
+  color:var(--ink);border-bottom:1px solid var(--line-strong)}
+.pRang{display:flex;align-items:center;gap:6px}
+.pRang .pOuvre{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--line-strong));transition:background .15s}
+.pRang .pOuvre:hover{background:var(--line)}
+.pRang .pt{font-size:13px;line-height:1.35;color:var(--ink)}
+.pRang .ps{font-size:11.5px;color:var(--ink-3)}
+.pRang .pOte{width:28px;height:28px;flex:none;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);font-size:15px;line-height:1}
+.pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
+.pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
   max-height:min(74vh,600px);overflow-y:auto}
@@ -552,6 +622,22 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   .detail-hd{padding:16px 16px 13px}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
+
+  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
+     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
+     lit — sans masquer le plan pour autant. */
+  .parcours{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:68dvh;
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    z-index:13;
+    transform:translateY(100%);pointer-events:none;
+  }
+  .parcours.open{transform:translateY(0);pointer-events:auto}
+  .pCorps{padding:14px 16px}
+  .pPied{padding:10px 16px 18px}
 }
 
 /* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
@@ -574,6 +660,11 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
       <div><b id="nZones">—</b>zones</div>
     </div>
     <div class="tools">
+      <button class="iconbtn" id="btnParcours" aria-pressed="false"
+        title="Mon parcours de visite" aria-label="Mon parcours de visite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
+        <span class="compteur" id="nParcours" hidden>0</span>
+      </button>
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
@@ -680,6 +771,17 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
       </div>
       <div class="detail-bd" id="dBody"></div>
     </section>
+
+    <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <div class="detail-hd">
+        <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
+        <span class="eyebrow">Mon parcours</span>
+        <h2>Parcours de visite</h2>
+        <span class="badge" id="pResume"></span>
+      </div>
+      <div class="pCorps" id="pCorps"></div>
+      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+    </section>
   </main>
 </div>
 
@@ -704,7 +806,7 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
 const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
-let DATA = null, TOUS = [], parId = new Map();
+let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map();
 const state = { q: "", filtre: null, sel: null, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
@@ -748,6 +850,12 @@ function indexe(d){
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
+     visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
+     que là où l'on se trouve. L'index des conférences est donc global, comme
+     celui des stands. */
+  CONFS = new Map();
+  DATA.plans.forEach(p => p.conferences.forEach(c => CONFS.set(String(c.id), c)));
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -758,6 +866,7 @@ function indexe(d){
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+  chargeParcours();
 }
 
 /* ============================================================
@@ -848,6 +957,7 @@ function montePlan(){
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
+  marqueParcours();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -1197,12 +1307,15 @@ function programme(o){
       out += '<div class="jour">' + esc(JOURS[dt.getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]) + '</div>';
     }
     const heure = d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "";
-    out += '<button type="button" class="conf" data-conf="' + esc(c.id) + '"' +
+    /* Le signet se pose à côté de la vignette et non dedans : un bouton n'en
+       contient pas un autre, et l'appui doit choisir entre lire et retenir. */
+    out += '<div class="confRang">' +
+      '<button type="button" class="conf" data-conf="' + esc(c.id) + '"' +
       (c.couleur ? ' style="--tc:' + esc(c.couleur) + '"' : "") + '>' +
       (heure ? '<span class="h">' + esc(heure) + '</span>' : "") +
       '<span class="t">' + esc(c.nom) + '</span>' +
       (c.type ? '<span class="ty">' + esc(c.type) + '</span>' : "") +
-      '</button>';
+      '</button>' + signetParcours("conf", c.id) + '</div>';
   }
   return out + '</div></div>';
 }
@@ -1220,7 +1333,9 @@ function jourLong(d){
  * description comprise, tient ici.
  */
 function ficheConf(id){
-  const c = (P().conferences || []).find(x => String(x.id) === String(id));
+  // l'index est global : une conférence retenue peut se tenir dans un autre
+  // pavillon que celui qu'on regarde
+  const c = CONFS.get(String(id));
   if (!c) return;
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
@@ -1249,6 +1364,21 @@ function ficheConf(id){
     bloc("Où", c.salle);
     bloc("Thématique", c.theme);
     bloc("Présentation", c.texte, "large");
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    acts.innerHTML = boutonParcours("conf", c.id);
+    /* « Où » nomme la salle ; encore faut-il la trouver. La zone qui l'abrite
+       est le seul point du plan que la conférence désigne — et elle peut se
+       tenir dans un autre pavillon que celui qu'on regarde. */
+    if (c.zone && parId.has(String(c.zone))){
+      const b = document.createElement("button");
+      b.className = "btn";
+      b.textContent = "Situer sur le plan";
+      b.onclick = () => { fermeModale(); select(String(c.zone), true); };
+      acts.appendChild(b);
+    }
+    corps.appendChild(acts);
+    brancheParcours(corps);
   }, [{ libelle: "Fermer", genre: "primaire" }]);
 }
 
@@ -1278,6 +1408,8 @@ function ecarteClicFantome(){
 }
 
 function ouvre(o, rect){
+  // la fiche et le parcours se partagent la même bande, à droite comme en bas
+  fermeParcours();
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
@@ -1315,9 +1447,14 @@ function ouvre(o, rect){
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts">' +
+      // une zone organisateur ne se retient pas elle-même : ce sont ses
+      // conférences qu'on ajoute, chacune à son heure
+      (zone ? "" : boutonParcours("stand", o.id)) +
+      '<button class="btn" id="dGo">Centrer sur le plan</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
+  brancheParcours($("dBody"));
   $("dGo").onclick = () => centre(o);
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
@@ -1592,12 +1729,13 @@ $("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre
   $("list").addEventListener("click", () => { if (etroit()) replie(); });
 
   /* La fiche occupe le bas de l'écran quand elle s'ouvre — depuis la liste
-     comme depuis le plan. Le tiroir se retire sous elle plutôt que de lutter
-     pour la même place. */
-  const fiche = $("detail");
-  if (fiche) new MutationObserver(() => {
-    if (etroit() && fiche.classList.contains("open")) replie();
-  }).observe(fiche, { attributes: true, attributeFilter: ["class"] });
+     comme depuis le plan ; le parcours prend la même bande. Le tiroir se
+     retire sous eux plutôt que de lutter pour la même place. */
+  const bandes = [$("detail"), $("parcours")].filter(Boolean);
+  const guette = new MutationObserver(() => {
+    if (etroit() && bandes.some(n => n.classList.contains("open"))) replie();
+  });
+  bandes.forEach(n => guette.observe(n, { attributes: true, attributeFilter: ["class"] }));
   addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
 
   /* Au retour vers un grand écran, la liste reprend sa colonne : ni classe
@@ -3259,6 +3397,268 @@ function ouvreOrdre(){
     remplitOrdre(ul);
   }, [{ libelle: "Terminé" }]);
 }
+
+/* ============================================================
+   11 bis. Parcours de visite
+   ============================================================ */
+/**
+ * Un visiteur arrive avec trois heures et deux cents exposants devant lui. Il
+ * repère de quoi remplir sa journée depuis chez lui, puis vient relire sa
+ * liste sur place, entre deux allées.
+ *
+ * Cette liste vit dans son navigateur, et nulle part ailleurs : le plan n'a
+ * pas de comptes, et demander une inscription pour retenir trois stands ferait
+ * fuir tout le monde. Elle est rangée par événement — un même téléphone peut
+ * ouvrir plusieurs salons — et ne retient que des identifiants : les libellés
+ * sont relus dans les données à chaque affichage, si bien qu'un exposant
+ * renommé entre deux visites s'affiche sous son nouveau nom.
+ */
+let PARCOURS = { stands: [], confs: [] };
+
+/* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
+   pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
+const cleParcours = () =>
+  "plan-parcours:" + (SLUG || (DATA && DATA.evenement) || "");
+
+const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
+const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
+
+function chargeParcours(){
+  try {
+    const b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {};
+    PARCOURS = {
+      stands: Array.isArray(b.stands) ? b.stands.map(String) : [],
+      confs:  Array.isArray(b.confs)  ? b.confs.map(String)  : [],
+    };
+  } catch (e) {
+    PARCOURS = { stands: [], confs: [] };   // stockage refusé ou contenu illisible
+  }
+  /* Un stand démonté ou une conférence annulée entre deux visites laisserait
+     un rang mort, qu'on ne saurait ni ouvrir ni comprendre. On ne garde que ce
+     que les données connaissent encore. */
+  PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
+  PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
+  rafraichitParcours();
+}
+
+function enregistreParcours(){
+  // navigation privée, stockage plein : la visite continue sans le parcours
+  try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+}
+
+function basculeParcours(genre, id){
+  const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
+  // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
+  if (i < 0) l.push(k); else l.splice(i, 1);
+  enregistreParcours();
+  rafraichitParcours();
+}
+
+/* ------------------------------------------------------------
+   La marque, partout la même
+   ------------------------------------------------------------ */
+const SIGNET = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>';
+
+/** Le signet nu, tel qu'il se pose à côté d'une conférence du programme. */
+function signetParcours(genre, id){
+  return '<button type="button" class="marque" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '"></button>';
+}
+
+/** Le même geste, en toutes lettres : sur une fiche, la place ne manque pas. */
+function boutonParcours(genre, id){
+  return '<button type="button" class="btn parc" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '">' + SIGNET + '<span class="l"></span></button>';
+}
+
+function rafraichitMarque(el){
+  const dedans = dansParcours(el.dataset.mg, el.dataset.mi);
+  el.setAttribute("aria-pressed", dedans);
+  const dit = dedans ? "Retirer de mon parcours" : "Ajouter à mon parcours";
+  el.title = dit;
+  el.setAttribute("aria-label", dit);
+  const l = el.querySelector(".l");
+  if (l) l.textContent = dedans ? "Dans mon parcours" : "Ajouter à mon parcours";
+  if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
+}
+
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. */
+function brancheParcours(hote){
+  hote.querySelectorAll("[data-mg]").forEach(el => {
+    rafraichitMarque(el);
+    el.onclick = ev => {
+      ev.stopPropagation();
+      basculeParcours(el.dataset.mg, el.dataset.mi);
+    };
+  });
+}
+
+/* ------------------------------------------------------------
+   Ce que le parcours change à l'écran
+   ------------------------------------------------------------ */
+/** Le liseré sur le plan. Une zone y entre par les conférences qu'elle abrite :
+ *  c'est là qu'il faudra se rendre à l'heure dite, la conférence n'ayant pas
+ *  de forme propre. */
+function marqueParcours(){
+  if (!DATA) return;
+  const zones = new Set();
+  PARCOURS.confs.forEach(id => {
+    const c = CONFS.get(id);
+    if (c && c.zone) zones.add(String(c.zone));
+  });
+  document.querySelectorAll("#stands g, #zones g").forEach(g => {
+    const id = g.dataset.id;
+    g.classList.toggle("enparcours",
+      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id));
+  });
+}
+
+function rafraichitParcours(){
+  const n = PARCOURS.stands.length + PARCOURS.confs.length;
+  const c = $("nParcours");
+  if (c){ c.textContent = n; c.hidden = n === 0; }
+  marqueParcours();
+  /* Une même conférence se voit à deux endroits — le programme de sa zone et
+     sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
+     affichées doivent dire la même chose, d'où qu'on ait touché. */
+  document.querySelectorAll("[data-mg]").forEach(rafraichitMarque);
+  if ($("parcours").classList.contains("open")) remplitParcours();
+}
+
+/* ------------------------------------------------------------
+   Le tiroir
+   ------------------------------------------------------------ */
+/** De quoi ranger deux conférences dans l'ordre où on les vivra. */
+function instantConf(c){
+  const fz = DATA.fuseau;
+  return momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
+}
+const cleTemps = c => {
+  const d = instantConf(c);
+  // sans heure lisible, la conférence se range en fin de liste plutôt que de
+  // s'intercaler n'importe où
+  return d ? d.cle + d.h + d.min : "999999999999";
+};
+const jourCourt = d => d
+  ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
+  : "";
+
+function rangParcours(hote, r){
+  const d = document.createElement("div");
+  d.className = "pRang";
+  d.innerHTML = '<button type="button" class="pOuvre">' +
+    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
+              : '<span class="pt"></span><span class="ps"></span>') +
+    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
+    'aria-label="Retirer du parcours">&times;</button>';
+  d.querySelector(".pt").textContent = r.titre;
+  d.querySelector(".ps").textContent = r.detail || "";
+  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
+  d.querySelector(".pOuvre").onclick = r.ouvre;
+  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
+  hote.appendChild(d);
+}
+
+function groupeParcours(hote, titre){
+  const g = document.createElement("div");
+  g.className = "pGroupe";
+  g.innerHTML = '<span class="eyebrow"></span>';
+  g.querySelector(".eyebrow").textContent = titre;
+  hote.appendChild(g);
+  return g;
+}
+
+function remplitParcours(){
+  const hote = $("pCorps");
+  hote.innerHTML = "";
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
+
+  const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+  $("pResume").textContent = stands.length + confs.length
+    ? [stands.length ? pluriel(stands.length, "exposant") : "",
+       confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
+    : "rien pour l'instant";
+  $("videParcours").hidden = !(stands.length + confs.length);
+
+  if (!stands.length && !confs.length){
+    const v = document.createElement("p");
+    v.className = "pVide";
+    v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
+      "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
+      "appareil et vous y retrouverez tout à votre prochaine visite.";
+    hote.appendChild(v);
+    return;
+  }
+
+  /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
+     le reste de la journée se range. */
+  if (confs.length){
+    const g = groupeParcours(hote, "Conférences");
+    let jour = null;
+    confs.forEach(c => {
+      const d = instantConf(c);
+      const f = momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+      if (d && d.cle !== jour){
+        jour = d.cle;
+        const t = document.createElement("div");
+        t.className = "jour";
+        t.textContent = jourCourt(d);
+        g.appendChild(t);
+      }
+      rangParcours(g, {
+        genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+        titre: c.nom,
+        detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
+                (c.salle ? " · " + c.salle : ""),
+        ouvre: () => ficheConf(c.id),
+      });
+    });
+  }
+
+  if (stands.length){
+    const g = groupeParcours(hote, "Exposants");
+    stands.forEach(o => rangParcours(g, {
+      genre: "stand", id: o.id, dessus: false,
+      titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+      detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+      // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
+      // et le tiroir se retire, puisqu'ils occupent la même bande
+      ouvre: () => select(o.id, true),
+    }));
+  }
+}
+
+function ouvreParcours(){
+  // la fiche occupe la même bande : elle cède la place plutôt que de s'y superposer
+  if ($("detail").classList.contains("open")) ferme();
+  remplitParcours();
+  $("parcours").classList.add("open");
+  $("btnParcours").setAttribute("aria-pressed", "true");
+}
+function fermeParcours(){
+  const t = $("parcours");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnParcours").setAttribute("aria-pressed", "false");
+}
+
+$("btnParcours").onclick = () =>
+  $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
+$("closeParcours").onclick = fermeParcours;
+$("videParcours").onclick = () => confirme("Vider le parcours",
+  "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
+  "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
+  "Vider",
+  () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
+
+/* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
+   le tiroir, pas avec lui. */
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
+});
 /* ============================================================
    12. Démarrage
    ============================================================ */

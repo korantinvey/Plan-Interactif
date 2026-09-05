@@ -74,7 +74,7 @@ button{cursor:pointer;background:none;border:none}
 .row .hall{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
   padding:1px 5px;border-radius:3px;background:var(--surface-2);color:var(--ink-3);margin-left:6px;vertical-align:1px}
 .tools{display:flex;gap:6px}
-.iconbtn{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
+.iconbtn{position:relative;width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -148,6 +148,10 @@ button{cursor:pointer;background:none;border:none}
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
+/* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
+   continu dans la couleur d'accent, plus discret que la sélection pour ne pas
+   se confondre avec elle. Une zone y entre par ses conférences. */
+.stand.enparcours path,.zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 .stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
 .stand,.zone{cursor:pointer}
@@ -384,6 +388,72 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
 
+/* ------------------------------------------------------------
+   Parcours de visite
+
+   Le visiteur retient des exposants et des conférences en circulant, puis
+   relit sa liste sur place. La marque est la même partout — un signet creux
+   tant que la chose n'y est pas, plein dès qu'elle y entre — pour qu'on la
+   reconnaisse aussi bien dans le programme d'une zone que sur une fiche.
+   ------------------------------------------------------------ */
+.marque{flex:none;width:30px;height:30px;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);display:grid;place-items:center;background:var(--surface)}
+.marque svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.marque:hover{border-color:var(--line-strong);color:var(--ink)}
+.marque[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.marque[aria-pressed="true"] svg{fill:currentColor}
+.btn.parc{display:inline-flex;align-items:center;gap:7px}
+.btn.parc svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linejoin:round;stroke-linecap:round}
+.btn.parc[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.btn.parc[aria-pressed="true"] svg{fill:currentColor}
+/* Dans une fenêtre modale, les champs n'ont pas l'écartement que leur donne le
+   corps de la fiche : le bouton se collerait au dernier paragraphe. */
+.mcorps .acts{margin-top:13px}
+/* La vignette d'une conférence garde toute la largeur qu'elle peut : le
+   signet se pose à côté, hors du bouton — un bouton n'en contient pas un autre. */
+.confRang{display:flex;align-items:center;gap:6px}
+.confRang .conf{flex:1;min-width:0}
+
+/* Le nombre porté par le bouton de la barre : sans lui, rien ne dirait qu'un
+   parcours a été commencé lors d'une visite précédente. */
+.compteur{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:600;
+  font-family:"IBM Plex Mono",monospace;display:grid;place-items:center;line-height:1;
+  border:1.5px solid var(--surface)}
+.compteur[hidden]{display:none}
+
+/* Le tiroir occupe la place de la fiche — à droite sur grand écran, en bas sur
+   téléphone : c'est le même geste, regarder une liste à côté du plan. Les deux
+   ne s'ouvrent jamais ensemble, ils se disputeraient la même bande. */
+.parcours{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;
+  z-index:4;box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.parcours.open{transform:none}
+.parcours .detail-hd h2{margin:0 0 4px}
+.pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
+.pPied .vider:hover{color:#C2372B}
+.pGroupe{display:flex;flex-direction:column;gap:7px}
+/* Le jour sépare les conférences comme il le fait dans le programme d'une
+   zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
+.pGroupe .jour{margin:5px 0 1px;padding-bottom:5px;font-size:13.5px;font-weight:600;
+  color:var(--ink);border-bottom:1px solid var(--line-strong)}
+.pRang{display:flex;align-items:center;gap:6px}
+.pRang .pOuvre{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--line-strong));transition:background .15s}
+.pRang .pOuvre:hover{background:var(--line)}
+.pRang .pt{font-size:13px;line-height:1.35;color:var(--ink)}
+.pRang .ps{font-size:11.5px;color:var(--ink-3)}
+.pRang .pOte{width:28px;height:28px;flex:none;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3);font-size:15px;line-height:1}
+.pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
+.pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
   max-height:min(74vh,600px);overflow-y:auto}
@@ -552,6 +622,22 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   .detail-hd{padding:16px 16px 13px}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
+
+  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
+     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
+     lit — sans masquer le plan pour autant. */
+  .parcours{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:68dvh;
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    z-index:13;
+    transform:translateY(100%);pointer-events:none;
+  }
+  .parcours.open{transform:translateY(0);pointer-events:auto}
+  .pCorps{padding:14px 16px}
+  .pPied{padding:10px 16px 18px}
 }
 
 /* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
@@ -574,6 +660,11 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
       <div><b id="nZones">—</b>zones</div>
     </div>
     <div class="tools">
+      <button class="iconbtn" id="btnParcours" aria-pressed="false"
+        title="Mon parcours de visite" aria-label="Mon parcours de visite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
+        <span class="compteur" id="nParcours" hidden>0</span>
+      </button>
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
       </button>
@@ -679,6 +770,17 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
         <span class="badge" id="dCode"></span>
       </div>
       <div class="detail-bd" id="dBody"></div>
+    </section>
+
+    <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <div class="detail-hd">
+        <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
+        <span class="eyebrow">Mon parcours</span>
+        <h2>Parcours de visite</h2>
+        <span class="badge" id="pResume"></span>
+      </div>
+      <div class="pCorps" id="pCorps"></div>
+      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
     </section>
   </main>
 </div>

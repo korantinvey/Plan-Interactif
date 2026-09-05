@@ -32,6 +32,22 @@ Points établis pendant l'étude de l'API, à ne pas redécouvrir :
 - Le jeton GAIA vit **15 minutes**. On le garde 13. Cela n'a aucun rapport avec
   la fréquence de rafraîchissement du plan, qui se règle par événement.
 
+## Le parcours de visite
+
+Le visiteur retient des exposants — depuis leur fiche — et des conférences —
+depuis le programme d'une zone organisateur, ou depuis la fiche de la
+conférence. Un bouton de la barre du haut ouvre la liste, portant le nombre de
+choses retenues ; ce qui y figure porte un liseré sur le plan, une zone entrant
+par les conférences qu'elle abrite.
+
+Cette liste **ne quitte jamais l'appareil** : elle vit dans le stockage local du
+navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contient
+que des identifiants. Rien n'est envoyé au serveur, aucun compte n'est demandé,
+et un exposant renommé entre deux visites s'affiche sous son nouveau nom — les
+libellés sont relus dans les données à chaque affichage. Ce que le plan ne
+connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
+un rang mort.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.
