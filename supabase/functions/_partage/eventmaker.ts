@@ -19,6 +19,12 @@ export interface ConfigEm {
 const BASE = "https://app.eventmaker.io/api/v1";
 const PAR_PAGE = 500;
 
+/* Le programme du site public ne passe pas par REST, où rien ne relie une
+   session à un exposant, mais par ce graphe — non documenté, et public : ni
+   jeton ni en-tête, l'identifiant de l'événement suffit. `outils/eventmaker.md`
+   raconte par où on y est arrivé. */
+const GRAPHE = "https://app.eventmaker.io/api/graphql";
+
 /* Sonder chaque catégorie coûte un appel : trente-deux sur un salon comme
    Franchise Expo. Vingt-cinq fiches suffisent à savoir si l'une d'elles porte
    des numéros de stand — la catégorie des exposants en est pleine, les autres
@@ -73,6 +79,42 @@ const ou = (...v: unknown[]): string | null => {
  */
 export const cleStand = (v: unknown): string =>
   String(v ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+/** Un exposant tel qu'une conférence le désigne : le stand, et l'enseigne. */
+export interface ExposantConfEm {
+  stand: string;
+  nom: string | null;
+}
+
+/* On ne demande au graphe que les exposants : les intervenants et les
+   animateurs y sont aussi, mais sans stand, donc sans place sur le plan. */
+const REQUETE_PROGRAMME = `query Programme($eventId: ID!, $id: ID!, $cursor: String) {
+  publicViewer(eventId: $eventId) {
+    program(id: $id) {
+      sessions(after: $cursor) {
+        edges { node { id exhibitors { id name companyName } } }
+        pageInfo { endCursor hasNextPage }
+      }
+    }
+  }
+}`;
+
+/** Un appel au graphe qui ne jette pas : une erreur GraphQL est une réponse. */
+async function grapheJson(
+  requete: string,
+  variables: Record<string, unknown>,
+): Promise<any> {
+  const r = await fetch(GRAPHE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: requete, variables }),
+  });
+  try {
+    return JSON.parse(await r.text());
+  } catch (_) {
+    return { errors: [{ message: `Eventmaker /api/graphql : ${r.status}` }] };
+  }
+}
 
 export class Eventmaker {
   constructor(private cfg: ConfigEm) {}
@@ -236,6 +278,79 @@ export class Eventmaker {
     }
     // l'ordre chronologique est celui dans lequel on les affichera
     return out.sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
+  }
+
+  /**
+   * Les exposants qui tiennent une conférence, par identifiant de session.
+   *
+   * Le graphe range sous chaque session trois rôles — intervenants, animateurs,
+   * exposants. Seul le troisième nous intéresse : c'est le seul dont les fiches
+   * portent un numéro de stand, et donc le seul qui se pose sur le plan. Les
+   * deux autres nomment des conférenciers, qui n'ont pas de stand à eux.
+   *
+   * Le stand n'est pas dans le graphe : l'exposant y vient avec l'identifiant
+   * de sa fiche d'invité, qu'on relit en REST. Une fiche par exposant cité,
+   * soit une cinquantaine sur un salon comme Franchise Expo — et rien du tout
+   * sur un salon qui laisse le rôle vide, ce qui est fréquent.
+   */
+  async exposantsParConference(id: string): Promise<Map<string, ExposantConfEm[]>> {
+    const programmes = await this.json<Record<string, any>[]>(
+      `/events/${id}/programs.json`,
+      { per_page: PAR_PAGE, page: 1 },
+    );
+
+    /* Un salon range souvent ses sessions dans plusieurs programmes — un
+       complet, des thématiques qui y puisent : on dédoublonne par session. */
+    const citesParSession = new Map<string, Map<string, string | null>>();
+    for (const p of programmes) {
+      for (let curseur: string | null = null;;) {
+        const r = await grapheJson(REQUETE_PROGRAMME, {
+          eventId: id,
+          id: String(p._id),
+          cursor: curseur,
+        });
+        const bloc = r?.data?.publicViewer?.program?.sessions;
+        // un programme peut être vide, ou refusé : ce n'est pas une panne
+        if (!bloc) break;
+        for (const { node } of bloc.edges ?? []) {
+          if (!node?.exhibitors?.length) continue;
+          const cites = citesParSession.get(String(node.id)) ?? new Map();
+          for (const g of node.exhibitors) cites.set(String(g.id), g.companyName ?? g.name ?? null);
+          citesParSession.set(String(node.id), cites);
+        }
+        if (!bloc.pageInfo?.hasNextPage) break;
+        curseur = bloc.pageInfo.endCursor;
+      }
+    }
+    if (!citesParSession.size) return new Map();
+
+    /* Une fiche par exposant cité, quel que soit le nombre de sessions qu'il
+       tient. On ne filtre pas sur l'inscription : ce qu'on publie ici est un
+       numéro de stand, déjà public, et non la personne qui porte le badge. */
+    const ids = [...new Set([...citesParSession.values()].flatMap((m) => [...m.keys()]))];
+    const stands = new Map(await enParallele(ids, DE_FRONT, async (gid) => {
+      try {
+        const g = await this.json<Record<string, any>>(
+          `/events/${id}/guests/${gid}.json`,
+          { guest_metadata: "true" },
+        );
+        return [gid, Eventmaker.stand(g, champs(g.guest_metadata))] as [string, string];
+      } catch (_) {
+        return [gid, ""] as [string, string];
+      }
+    }));
+
+    const out = new Map<string, ExposantConfEm[]>();
+    for (const [session, cites] of citesParSession) {
+      const l: ExposantConfEm[] = [];
+      for (const [gid, nom] of cites) {
+        const stand = stands.get(gid);
+        // deux badges d'une même enseigne citent le même stand : une fois suffit
+        if (stand && !l.some((x) => x.stand === stand)) l.push({ stand, nom: ou(nom) });
+      }
+      if (l.length) out.set(session, l);
+    }
+    return out;
   }
 
   /**

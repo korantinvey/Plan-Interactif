@@ -14,7 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { Gaia, egal } from "../_partage/gaia.ts";
 import {
   Eventmaker, cleStand, codeSalle,
-  type ExposantEm, type ConferenceEm,
+  type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -248,6 +248,7 @@ Deno.serve(async (req) => {
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
          une fois, on les rattachera pavillon par pavillon. */
       let confEm: ConferenceEm[] | null = null;
+      let exposantsConf = new Map<string, ExposantConfEm[]>();
       let fuseau: string | null = null;
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
@@ -259,7 +260,17 @@ Deno.serve(async (req) => {
           const detail = await em.evenement(idEm);
           if (detail?.timezone) fuseau = String(detail.timezone);
         } catch (_) { /* le fuseau est un confort, pas une condition */ }
-        etape("conferences", "encours", confEm.length + " conférences lues");
+        /* Quels exposants tiennent quelle conférence : le graphe le dit, REST
+           non. Un salon sur deux laisse le rôle vide — l'absence de
+           rattachement n'est donc pas une anomalie, et ne doit pas faire
+           échouer une synchronisation par ailleurs bonne. */
+        try {
+          exposantsConf = await em.exposantsParConference(idEm);
+        } catch (e) {
+          console.error("rattachement des exposants aux conférences :", e);
+        }
+        etape("conferences", "encours", confEm.length + " conférences lues"
+          + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
       }
 
       etape("plan", "encours");
@@ -476,6 +487,7 @@ Deno.serve(async (req) => {
                 debutLocal: c.debutLocal, finLocal: c.finLocal,
                 salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
                 zone: fiche.zone,
+                exposants: exposantsConf.get(c.id) ?? [],
               });
             }
           }

@@ -55,6 +55,22 @@ que la section 8 rend en une ligne.
 sans stand — de quoi rattacher au jugé une session dont l'intervenant vient
 d'une enseigne exposante, si l'on veut aller au-delà des 70.
 
+## Ce que la synchronisation en fait
+
+`_partage/eventmaker.ts` porte la méthode `exposantsParConference()`, appelée
+par `sync-evenement` quand le domaine « conférences » d'un événement est réglé
+sur Eventmaker. Chaque conférence de la charge gagne un champ `exposants`, liste
+de `{ stand, nom }` — vide quand le salon ne renseigne pas le rôle.
+
+Le stand y est déjà normalisé par la règle du plan (`cleStand`), donc prêt à
+être apparié aux stands de la charge. Rien à migrer : la charge est du jsonb, et
+`plan-public` la transmet telle quelle. Sur Franchise Expo Paris 2026, la
+méthode rend 70 rattachements en cinq secondes, joints sans un orphelin.
+
+Un échec du graphe est journalisé et ignoré : un salon sans rôle « Exposants »
+est le cas courant, et une synchronisation par ailleurs bonne n'a pas à échouer
+là-dessus.
+
 ## Ce que l'API REST ne dit pas, et pourquoi on a cherché ailleurs
 
 La documentation ne connaît que six ressources — events, guests,
