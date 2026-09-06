@@ -294,79 +294,6 @@ export class Eventmaker {
   }
 
   /**
-   * Les champs qu'une fiche d'exposant porte réellement sur ce salon.
-   *
-   * Le point de départ du réglage : on ne peut pas proposer une correspondance
-   * sans savoir ce qu'il y a en face. L'API ne publie pas la liste des champs
-   * personnalisés d'un événement — elle ne les rend qu'attachés à une fiche —
-   * donc on lit quelques fiches d'exposant et on relève ce qu'elles portent.
-   *
-   * Un champ vide sur toutes les fiches lues n'apparaît pas : c'est voulu.
-   * Proposer un champ qu'aucune fiche ne renseigne ferait perdre du temps à
-   * l'exploitant, et l'échantillon est pris parmi les exposants eux-mêmes.
-   */
-  async champsExposants(
-    id: string,
-    connues: string[] = [],
-    codes: string[] = [],
-  ): Promise<{
-    champs: { cle: string; libelle: string; groupe: string; exemple: string }[];
-    categories: string[];
-    lus: number;
-  }> {
-    const { retenues } = await this.categoriesExposants(id, connues, codes);
-    if (!retenues.length) return { champs: [], categories: [], lus: 0 };
-
-    const paquets = await enParallele(retenues, DE_FRONT, (cat) =>
-      this.json<Record<string, any>[]>(
-        `/events/${id}/guests.json`,
-        { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": cat._id },
-      ));
-
-    /* Premier exemple rencontré, pas le dernier : les fiches sont lues dans
-       l'ordre de l'API, et l'exploitant reconnaîtra plus vite une valeur du
-       début de liste qu'une prise au hasard. */
-    const vus = new Map<
-      string,
-      { cle: string; libelle: string; groupe: string; exemple: string }
-    >();
-    const note = (cle: string, libelle: string, groupe: string, valeur: unknown) => {
-      const ex = String(valeur ?? "").trim();
-      if (!ex || vus.has(cle)) return;
-      vus.set(cle, {
-        cle, libelle, groupe,
-        exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
-      });
-    };
-
-    let lus = 0;
-    for (const g of paquets.flat()) {
-      lus++;
-      for (const [k, v] of Object.entries(g)) {
-        // ni les objets imbriqués, ni les clés techniques : rien de tout cela
-        // ne s'affiche sur une fiche détail
-        if (v && typeof v === "object") continue;
-        if (/^_|(^|_)id$|_at$/.test(k)) continue;
-        note("invite:" + k, k, GROUPES[1], v);
-      }
-      for (const [k, v] of Object.entries(champs(g.guest_metadata))) {
-        note(k, k, GROUPES[0], v);
-      }
-    }
-
-    /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
-       nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
-       natifs de la fiche d'invité, eux, sont les mêmes partout. */
-    return {
-      champs: [...vus.values()].sort((a, b) =>
-        GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
-        a.cle.localeCompare(b.cle, "fr")),
-      categories: retenues.map((c) => c.name),
-      lus,
-    };
-  }
-
-  /**
    * Conférences de l'événement.
    *
    * Une session se distingue d'une entrée ou d'un badge par son type : les
@@ -501,11 +428,13 @@ export class Eventmaker {
     lus: number;
     retenus: number;
     ecartesNonInscrits: number;
+    champs: { cle: string; libelle: string; groupe: string; exemple: string }[];
   }> {
     const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
     const { retenues: cats, appels, voie } = await this.categoriesExposants(id, connues, codes);
     let lus = 0, ecartesNonInscrits = 0;
+    const releve = new Releve();
 
     // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
     // les pages restent séquentielles — on ne sait pas combien il y en a
@@ -525,6 +454,10 @@ export class Eventmaker {
     for (const g of paquets.flat()) {
       lus++;
       const m = champs(g.guest_metadata);
+      // relevé avant tout tri : une fiche écartée porte les mêmes champs qu'une
+      // fiche retenue, et c'est la liste des champs qu'on veut, pas celle des
+      // exposants
+      releve.ajoute(g, m);
       const stand = this.stand(g, m);
       const dossier = this.dossier(g, m);
       if (!stand && !dossier) continue;
@@ -564,7 +497,32 @@ export class Eventmaker {
       lus,
       retenus: new Set([...parStand.values(), ...parDossier.values()]).size,
       ecartesNonInscrits,
+      champs: lus ? releve.liste() : await this.champsAuHasard(id, releve),
     };
+  }
+
+  /**
+   * Les champs de quelques fiches, prises sans distinction de catégorie.
+   *
+   * Le repli du repli. Reconnaître un exposant demande de savoir quel champ
+   * porte son numéro de stand ; si ce champ est mal désigné, aucune catégorie
+   * n'est retenue, aucune fiche n'est lue — et l'exploitant se retrouve devant
+   * une correspondance qu'il ne peut pas corriger, faute de liste. On lit donc
+   * quelques fiches au hasard, juste pour savoir ce qu'une fiche porte ici.
+   */
+  private async champsAuHasard(id: string, releve: Releve) {
+    try {
+      const cats = (await this.categories(id)).slice(0, DE_FRONT);
+      const paquets = await enParallele(cats, DE_FRONT, (c) =>
+        this.json<Record<string, any>[]>(
+          `/events/${id}/guests.json`,
+          { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
+        ));
+      for (const g of paquets.flat()) releve.ajoute(g, champs(g.guest_metadata));
+    } catch (e) {
+      console.error("relevé des champs sans catégorie d'exposants :", e);
+    }
+    return releve.liste();
   }
 }
 
@@ -600,6 +558,56 @@ function texteSeul(html: unknown): string | null {
     .replace(/\s+/g, " ")
     .trim();
   return t || null;
+}
+
+/**
+ * Le relevé des champs qu'une fiche porte.
+ *
+ * L'API ne publie pas la liste des champs personnalisés d'un événement — elle
+ * ne les rend qu'attachés à une fiche. On les relève donc en lisant les fiches
+ * qu'on lit de toute façon, avec un exemple de valeur : c'est lui qui fait
+ * reconnaître un champ dont le nom ne dit rien.
+ *
+ * Premier exemple rencontré, pas le dernier : les fiches viennent dans l'ordre
+ * de l'API, et une valeur du début de liste se retrouve plus vite. Un champ
+ * vide sur toutes les fiches lues n'apparaît pas — le proposer ferait perdre
+ * du temps.
+ */
+class Releve {
+  private vus = new Map<
+    string,
+    { cle: string; libelle: string; groupe: string; exemple: string }
+  >();
+
+  /** Une fiche de plus. */
+  ajoute(g: Record<string, any>, m: Record<string, string>): void {
+    for (const [k, v] of Object.entries(g)) {
+      // ni les objets imbriqués, ni les clés techniques : rien de tout cela
+      // ne s'affiche sur une fiche détail
+      if (v && typeof v === "object") continue;
+      if (/^_|(^|_)id$|_at$/.test(k)) continue;
+      this.note("invite:" + k, k, GROUPES[1], v);
+    }
+    for (const [k, v] of Object.entries(m)) this.note(k, k, GROUPES[0], v);
+  }
+
+  private note(cle: string, libelle: string, groupe: string, valeur: unknown): void {
+    const ex = String(valeur ?? "").trim();
+    if (!ex || this.vus.has(cle)) return;
+    this.vus.set(cle, {
+      cle, libelle, groupe,
+      exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
+    });
+  }
+
+  /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
+     nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
+     natifs de la fiche d'invité, eux, sont les mêmes partout. */
+  liste() {
+    return [...this.vus.values()].sort((a, b) =>
+      GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
+      a.cle.localeCompare(b.cle, "fr"));
+  }
 }
 
 /** Les champs personnalisés arrivent en liste de { name, value }. */
