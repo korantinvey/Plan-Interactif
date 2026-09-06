@@ -32,6 +32,47 @@ Points établis pendant l'étude de l'API, à ne pas redécouvrir :
 - Le jeton GAIA vit **15 minutes**. On le garde 13. Cela n'a aucun rapport avec
   la fréquence de rafraîchissement du plan, qui se règle par événement.
 
+## Quand les champs ne s'appellent pas pareil
+
+Un salon ne nomme pas ses champs comme le voisin. Klipso porte l'enseigne d'un
+exposant dans une propriété personnalisée — `x_Catalogue_RaisonSociale` sur l'un,
+autre chose sur l'autre, le préfixe `x_` disant justement qu'elle appartient au
+dossier. Eventmaker, lui, laisse l'organisateur nommer les champs de ses fiches :
+`num_stand`, `enseigne`, `rubriques2` ici, rien de tel ailleurs.
+
+Ces noms ont d'abord été écrits dans la synchronisation. Un salon qui nommait
+autrement produisait des fiches vides — au mieux ; au pire, un numéro de stand
+introuvable et pas un exposant sur le plan — et la correction demandait un
+déploiement. La console porte donc une fenêtre **Correspondance des champs**,
+dans les réglages de l'événement.
+
+Elle procède en deux temps :
+
+1. **Détecter les champs** interroge la source. Côté Klipso, le schéma déclare
+   ce qui existe et un échantillon de fiches dit ce qui est rempli ; côté
+   Eventmaker, où l'API ne publie aucune liste de champs, quelques fiches
+   d'exposant sont lues et l'on relève ce qu'elles portent. Le résultat est
+   retenu à côté de l'événement : rouvrir la fenêtre ne redemande rien.
+2. **Associer** chaque cible de la fiche détail — enseigne, raison sociale, site
+   web, coordonnées, nomenclature — au champ d'origine qui la porte. Un exemple
+   de valeur accompagne chaque champ, seul moyen commode de distinguer
+   `x_Catalogue_RaisonSociale` de `x_Catalogue_Enseigne`.
+
+Deux cibles ne s'affichent pas mais décident de tout : le **numéro de stand** et
+l'**identifiant de dossier**, par lesquels une fiche Eventmaker retrouve son
+emplacement sur le plan. Mal réglées, aucun exposant n'apparaît — c'est le
+premier endroit où regarder.
+
+Une cible laissée « par défaut » garde le champ qu'utilisait la synchronisation :
+un salon déjà en service ne change pas de comportement, et une cible ajoutée
+plus tard ne le fait pas non plus. « Aucun » est un réglage à part entière — la
+cible reste vide. Le réglage s'applique à la synchronisation suivante.
+
+Un effet de bord utile côté Klipso : adresse, ville, pays, téléphone et réseaux
+sociaux n'y étaient pas repris faute de savoir où les prendre. Ils sont
+désormais des cibles comme les autres — sans défaut, parce que rien ne les porte
+d'office, mais réglables dès que le salon a les champs correspondants.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des

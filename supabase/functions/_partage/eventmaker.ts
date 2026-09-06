@@ -12,8 +12,19 @@
  *     le nom et le courriel, mais sur l'invité correspondant, dont les champs
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
+import { DEFAUTS, lit, ou } from "./champs.ts";
+
 export interface ConfigEm {
   jeton: string;
+  /**
+   * Champ d'origine retenu pour chaque cible, résolu par l'appelant depuis la
+   * correspondance de l'événement. Absent, chaque cible garde son défaut.
+   *
+   * Ce n'est pas un raffinement : les champs personnalisés d'une fiche
+   * Eventmaker sont nommés par l'organisateur, et « num_stand » n'a aucune
+   * raison de s'appeler pareil sur le salon d'à côté.
+   */
+  champs?: Record<string, string[]>;
 }
 
 const BASE = "https://app.eventmaker.io/api/v1";
@@ -65,12 +76,6 @@ export interface ExposantEm {
   nomencl: string[];
   exclu: boolean;
 }
-
-/** Rien plutôt qu'une chaîne vide : le rendu masque les champs absents. */
-const ou = (...v: unknown[]): string | null => {
-  for (const x of v) { const s = String(x ?? "").trim(); if (s) return s; }
-  return null;
-};
 
 /**
  * Le numéro de stand est la clé de rattachement au plan. Klipso le compose de
@@ -162,26 +167,42 @@ export class Eventmaker {
   }
 
   /**
+   * Lit une cible sur une fiche, d'après la correspondance réglée pour
+   * l'événement. Les champs personnalisés arrivent aplatis dans `m`, les champs
+   * natifs de l'invité restent sur `g` et se désignent « invite: ».
+   */
+  private valeur(
+    g: Record<string, any>,
+    m: Record<string, string>,
+    cible: string,
+    multiple = false,
+  ): unknown {
+    const liste = this.cfg.champs?.[cible] ?? DEFAUTS.eventmaker[cible] ?? [];
+    return lit(liste, { "": m, invite: g }, multiple);
+  }
+
+  /**
    * Numéro de stand d'une fiche, sous sa forme normalisée.
    *
-   * Un seul champ fait foi : « NUM stand ». Deux autres lui ressemblent —
-   * booth_number_ezymob, alimenté pour le site public, et stand_number, natif
-   * d'Eventmaker mais vide ici — et s'en servir en repli reviendrait à faire
-   * entrer sur le plan des fiches que l'exploitant n'y a pas mises.
+   * Un seul champ fait foi, celui que désigne la correspondance — « NUM stand »
+   * par défaut. D'autres lui ressemblent : booth_number_ezymob, alimenté pour
+   * le site public, et stand_number, natif d'Eventmaker mais vide ici. Ajouter
+   * un repli reviendrait à faire entrer sur le plan des fiches que l'exploitant
+   * n'y a pas mises ; c'est à lui de désigner le bon champ.
    */
-  private static stand(_g: Record<string, any>, m: Record<string, string>): string {
-    return cleStand(m.num_stand);
+  private stand(g: Record<string, any>, m: Record<string, string>): string {
+    return cleStand(this.valeur(g, m, "stand"));
   }
 
   /** L'identifiant du dossier Klipso, recopié par Eventmaker sur la fiche. */
-  private static dossier(m: Record<string, string>): string {
-    return String(m.id_dossier ?? "").trim();
+  private dossier(g: Record<string, any>, m: Record<string, string>): string {
+    return String(this.valeur(g, m, "dossier") ?? "").trim();
   }
 
   /* Une fiche désigne un exposant si elle porte l'un ou l'autre : les deux
      manquent rarement ensemble, mais ni l'un ni l'autre n'est toujours là. */
-  private static exposant(m: Record<string, string>): boolean {
-    return Boolean(Eventmaker.stand({}, m) || Eventmaker.dossier(m));
+  private exposant(g: Record<string, any>, m: Record<string, string>): boolean {
+    return Boolean(this.stand(g, m) || this.dossier(g, m));
   }
 
   /**
@@ -234,7 +255,7 @@ export class Eventmaker {
           `/events/${id}/guests.json`,
           { per_page: ECHANTILLON, page: 1, guest_metadata: "true", search: code },
         );
-        return l.filter((g) => Eventmaker.exposant(champs(g.guest_metadata)))
+        return l.filter((g) => this.exposant(g, champs(g.guest_metadata)))
           .map((g) => String(g.guest_category_id));
       });
       appels += echantillon.length;
@@ -255,7 +276,7 @@ export class Eventmaker {
         `/events/${id}/guests.json`,
         { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
       );
-      return { c, avec: l.filter((g) => Eventmaker.exposant(champs(g.guest_metadata))).length };
+      return { c, avec: l.filter((g) => this.exposant(g, champs(g.guest_metadata))).length };
     });
     appels += aSonder.length;
     sondes.filter((s) => s.avec).forEach((s) => trouvees.add(s.c._id));
@@ -264,6 +285,74 @@ export class Eventmaker {
       retenues: [...trouvees].map((c) => parId.get(c)!),
       appels,
       voie: "sondage des catégories",
+    };
+  }
+
+  /**
+   * Les champs qu'une fiche d'exposant porte réellement sur ce salon.
+   *
+   * Le point de départ du réglage : on ne peut pas proposer une correspondance
+   * sans savoir ce qu'il y a en face. L'API ne publie pas la liste des champs
+   * personnalisés d'un événement — elle ne les rend qu'attachés à une fiche —
+   * donc on lit quelques fiches d'exposant et on relève ce qu'elles portent.
+   *
+   * Un champ vide sur toutes les fiches lues n'apparaît pas : c'est voulu.
+   * Proposer un champ qu'aucune fiche ne renseigne ferait perdre du temps à
+   * l'exploitant, et l'échantillon est pris parmi les exposants eux-mêmes.
+   */
+  async champsExposants(
+    id: string,
+    connues: string[] = [],
+    codes: string[] = [],
+  ): Promise<{
+    champs: { cle: string; libelle: string; groupe: string; exemple: string }[];
+    categories: string[];
+    lus: number;
+  }> {
+    const { retenues } = await this.categoriesExposants(id, connues, codes);
+    if (!retenues.length) return { champs: [], categories: [], lus: 0 };
+
+    const paquets = await enParallele(retenues, DE_FRONT, (cat) =>
+      this.json<Record<string, any>[]>(
+        `/events/${id}/guests.json`,
+        { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": cat._id },
+      ));
+
+    /* Premier exemple rencontré, pas le dernier : les fiches sont lues dans
+       l'ordre de l'API, et l'exploitant reconnaîtra plus vite une valeur du
+       début de liste qu'une prise au hasard. */
+    const vus = new Map<
+      string,
+      { cle: string; libelle: string; groupe: string; exemple: string }
+    >();
+    const note = (cle: string, libelle: string, groupe: string, valeur: unknown) => {
+      const ex = String(valeur ?? "").trim();
+      if (!ex || vus.has(cle)) return;
+      vus.set(cle, {
+        cle, libelle, groupe,
+        exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
+      });
+    };
+
+    let lus = 0;
+    for (const g of paquets.flat()) {
+      lus++;
+      for (const [k, v] of Object.entries(g)) {
+        // ni les objets imbriqués, ni les clés techniques : rien de tout cela
+        // ne s'affiche sur une fiche détail
+        if (v && typeof v === "object") continue;
+        if (/^_|(^|_)id$|_at$/.test(k)) continue;
+        note("invite:" + k, k, "Fiche invité", v);
+      }
+      for (const [k, v] of Object.entries(champs(g.guest_metadata))) {
+        note(k, k, "Champ personnalisé", v);
+      }
+    }
+
+    return {
+      champs: [...vus.values()].sort((a, b) => a.cle.localeCompare(b.cle, "fr")),
+      categories: retenues.map((c) => c.name),
+      lus,
     };
   }
 
@@ -360,7 +449,7 @@ export class Eventmaker {
           `/events/${id}/guests/${gid}.json`,
           { guest_metadata: "true" },
         );
-        return [gid, String(champs(g.guest_metadata).id_dossier ?? "")] as [string, string];
+        return [gid, this.dossier(g, champs(g.guest_metadata))] as [string, string];
       } catch (_) {
         return [gid, ""] as [string, string];
       }
@@ -426,30 +515,31 @@ export class Eventmaker {
     for (const g of paquets.flat()) {
       lus++;
       const m = champs(g.guest_metadata);
-      const stand = Eventmaker.stand(g, m);
-      const dossier = Eventmaker.dossier(m);
+      const stand = this.stand(g, m);
+      const dossier = this.dossier(g, m);
       if (!stand && !dossier) continue;
       if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
       // premier arrivé, premier servi : un stand partagé garde l'enseigne
       // rencontrée d'abord plutôt qu'une des suivantes, prise au hasard
       if ((stand && parStand.has(stand)) || (dossier && parDossier.has(dossier))) continue;
+      const v = (cible: string) => ou(this.valeur(g, m, cible));
       const fiche: ExposantEm = {
         stand,
-        nom: ou(m.enseigne, g.company_name),
-        raison: ou(m.company_name_2),
-        site: ou(m.company_website),
+        nom: v("nom"),
+        raison: v("raison"),
+        site: v("site"),
         // le code postal n'a pas de champ à lui sur la fiche : il tient sur
         // la même ligne que la voie, comme sur une enveloppe
-        adresse: ou([ou(g.address, m.address_2), ou(g.postal_code)]
-          .filter(Boolean).join(", ")),
-        ville: ou(m.locality, g.city),
-        pays: ou(g.country_name),
-        tel: ou(m.company_phone, g.phone_number),
-        facebook: ou(m.company_facebook),
-        linkedin: ou(m.company_linkedin),
-        instagram: ou(m.instagram_societe),
-        nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
-        exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
+        adresse: ou([v("adresse"), v("codePostal")].filter(Boolean).join(", ")),
+        ville: v("ville"),
+        pays: v("pays"),
+        tel: v("telephone"),
+        facebook: v("facebook"),
+        linkedin: v("linkedin"),
+        instagram: v("instagram"),
+        nomencl: (this.valeur(g, m, "nomenclature", true) as unknown[])
+          .map((x) => String(x).trim()).filter(Boolean),
+        exclu: String(this.valeur(g, m, "exclu") ?? "").toLowerCase() === "true",
       };
       if (stand) parStand.set(stand, fiche);
       if (dossier) parDossier.set(dossier, fiche);

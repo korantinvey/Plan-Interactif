@@ -1,10 +1,13 @@
 /**
  * Synchronisation d'un événement depuis Klipso.
  *
- * Deux usages :
+ * Trois usages :
  *   { action: "plans", instance, eventId }  → liste les pavillons, sans rien
  *                                             écrire. Sert à la console avant
  *                                             qu'un événement soit enregistré.
+ *   { action: "champs", evenementId }       → les champs d'exposant que porte
+ *                                             la source, pour régler la
+ *                                             correspondance depuis la console.
  *   { evenementId }                         → synchronisation complète.
  *
  * La clé Klipso vient des secrets de la fonction. Elle ne transite ni par la
@@ -16,6 +19,9 @@ import {
   Eventmaker, cleStand, codeSalle,
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
+import {
+  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou,
+} from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
@@ -80,6 +86,85 @@ const DEFAUT: Record<string, string> = {
 const fournisseur = (evt: Record<string, any>, domaine: string) =>
   String((evt.sources ?? {})[domaine]?.fournisseur || DEFAUT[domaine] || "klipso");
 
+/* Vingt-cinq fiches suffisent à savoir quels champs un salon renseigne
+   réellement : au-delà on relit les mêmes. */
+const ECHANTILLON = 25;
+
+/** Une valeur qu'on peut montrer en exemple : ni objet, ni vide. */
+const exemple = (v: unknown): string | null => {
+  if (v === null || v === undefined || typeof v === "object") return null;
+  const t = String(v).trim();
+  return t ? (t.length > 60 ? t.slice(0, 57) + "…" : t) : null;
+};
+
+/**
+ * Les champs d'exposant que porte un événement Klipso.
+ *
+ * Deux sources, et il faut les deux : le schéma déclare tout ce qui existe et
+ * en donne le libellé français, mais ne dit pas ce qui est rempli ; un
+ * échantillon de fiches dit ce qui est rempli, mais n'a pas de libellé. On les
+ * réunit, et l'exemple de valeur tranche mieux qu'un nom de propriété —
+ * « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne se distinguent
+ * que par ce qu'elles contiennent.
+ */
+async function champsKlipso(g: Gaia) {
+  const groupes: [string, string, string][] = [
+    // l'entité du dossier ne porte pas le même nom d'une instance à l'autre :
+    // on demande les deux et on garde ce qui répond
+    ["DossierExpAff", "", "Dossier exposant"],
+    ["DossierExp", "", "Dossier exposant"],
+    ["Stand", "stand:", "Emplacement"],
+  ];
+  const vus = new Map<string, Record<string, unknown>>();
+  for (const [entite, prefixe, groupe] of groupes) {
+    let props: { cle: string; libelle: string }[] = [];
+    try { props = await g.proprietes(entite); } catch (_) { /* schéma muet */ }
+    for (const p of props) {
+      const cle = prefixe + p.cle;
+      if (vus.has(cle)) continue;
+      vus.set(cle, { cle, libelle: p.libelle, groupe, exemple: null });
+    }
+  }
+
+  /* Ce que les fiches portent vraiment. L'échec n'est pas bloquant : sans
+     exemples la liste reste utilisable, seulement moins parlante. */
+  try {
+    const { data } = await g.entite({
+      Stand: {
+        fields: ["_AllFields"],
+        entities: { RefDossierExpAff: { fields: ["_AllFields"] } },
+        start: 1,
+        take: ECHANTILLON,
+        order: [{ fieldPath: "Id", direction: "asc" }],
+      },
+    });
+    for (const brut of data as Record<string, any>[]) {
+      const paires: [string, unknown][] = [
+        ...Object.entries(brut.RefDossierExpAff ?? {}),
+        ...Object.entries(brut).map(([k, v]) => ["stand:" + k, v] as [string, unknown]),
+      ];
+      for (const [cle, v] of paires) {
+        const ex = exemple(v);
+        if (!ex) continue;
+        const e = vus.get(cle);
+        if (e) { if (!e.exemple) e.exemple = ex; continue; }
+        vus.set(cle, {
+          cle,
+          libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
+          groupe: cle.startsWith("stand:") ? "Emplacement" : "Dossier exposant",
+          exemple: ex,
+        });
+      }
+    }
+  } catch (_) { /* l'échantillon manque, le schéma suffit */ }
+
+  /* Un champ renseigné passe devant : c'est celui qu'on cherche. Le reste
+     suit, par ordre alphabétique, pour rester trouvable. */
+  return [...vus.values()].sort((a, b) =>
+    Number(Boolean(b.exemple)) - Number(Boolean(a.exemple)) ||
+    String(a.cle).localeCompare(String(b.cle), "fr"));
+}
+
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -127,6 +212,85 @@ Deno.serve(async (req) => {
       .from("evenement").select("*").eq("id", corps.evenementId).single();
     if (e1 || !evt) return repond({ erreur: "Événement introuvable." }, 404);
 
+    /* Le champ d'origine retenu pour chaque cible de la fiche. Résolu une fois
+       pour toutes : la boucle des stands le consulte des milliers de fois, et
+       le client Eventmaker le reçoit à la construction — jusqu'à la détection
+       des champs, qui doit reconnaître une fiche d'exposant pour trouver la
+       catégorie qui les porte.
+
+       Deux jeux, parce qu'il y a deux lectures : celle de Klipso vaut même
+       quand les exposants viennent d'ailleurs — c'est de lui que vient le nom
+       posé sur le plan, et il reste le seul recours pour un emplacement que
+       l'autre source ne connaît pas. */
+    const srcStands = fournisseur(evt, "stands");
+    const cibleK = (c: string) => champsCible(evt.correspondances, "klipso", c);
+    const champsEm = Object.fromEntries(
+      (CIBLES.eventmaker ?? []).map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
+
+    /* ------------- champs d'exposant offerts par la source -------------
+
+       Le point de départ du réglage de correspondance : la console ne peut pas
+       proposer d'associer quoi que ce soit sans savoir ce qu'il y a en face.
+       Ce qui est trouvé est retenu à côté de l'événement — rouvrir la fenêtre
+       ne redemande pas au fournisseur, qui met plusieurs secondes à répondre. */
+    if (corps.action === "champs") {
+      const src = fournisseur(evt, "stands");
+      const cadre = {
+        fournisseur: src,
+        cibles: CIBLES[src] ?? [],
+        defauts: DEFAUTS[src] ?? {},
+      };
+
+      let detectes: Record<string, unknown>[] = [];
+      let info: string | null = null;
+      if (src === "klipso") {
+        detectes = await champsKlipso(gaia(evt.instance, evt.event_id ?? undefined));
+      } else if (src === "eventmaker") {
+        if (!String((evt.cles ?? {}).eventmaker ?? "")) {
+          return repond({ erreur: "Identifiant de l'événement Eventmaker manquant." }, 400);
+        }
+        if (!Deno.env.get("EVENTMAKER_TOKEN")) {
+          return repond({ erreur: "Jeton Eventmaker absent des secrets." }, 500);
+        }
+        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
+        /* Mêmes économies qu'à la synchronisation : les catégories déjà
+           reconnues et les numéros du plan évitent de tout resonder. */
+        const { data: pl } = await db.from("plan").select("id").eq("evenement_id", evt.id);
+        const { data: inst } = await db.from("instantane").select("charge")
+          .in("plan_id", (pl ?? []).map((p) => p.id));
+        const codes = (inst ?? [])
+          .flatMap((i) => ((i.charge as any)?.stands ?? []) as Record<string, unknown>[])
+          .map((st) => String(st.code ?? "")).filter(Boolean);
+        const r = await em.champsExposants(
+          String((evt.cles ?? {}).eventmaker),
+          (evt.sources?.stands?.categories ?? []) as string[],
+          codes,
+        );
+        detectes = r.champs;
+        info = r.lus
+          ? r.lus + " fiches lues dans " + r.categories.join(", ")
+          : "Aucune catégorie d'exposants trouvée : la correspondance du " +
+            "numéro de stand ou du dossier est peut-être à revoir.";
+      } else {
+        return repond({
+          erreur: "Aucune source d'exposants : choisissez-en une dans « Provenance des données ».",
+        }, 400);
+      }
+
+      /* Les cibles et leurs défauts descendent avec les champs détectés et sont
+         retenus avec eux : la console nomme ainsi le champ par défaut de chaque
+         ligne sans tenir une seconde copie de cette liste, qui divergerait. */
+      const corr = { ...(evt.correspondances ?? {}) };
+      corr[src] = {
+        ...(corr[src] ?? {}),
+        detectes,
+        defauts: cadre.defauts,
+        detecteLe: new Date().toISOString(),
+      };
+      await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
+      return repond({ ...cadre, detectes, info, correspondances: corr });
+    }
+
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
     // mais rien ne les lit encore.
@@ -146,7 +310,6 @@ Deno.serve(async (req) => {
        configurées. */
     let expoEm: { parDossier: Map<string, ExposantEm>; parStand: Map<string, ExposantEm> } | null = null;
     let resumeEm: Record<string, unknown> | null = null;
-    const srcStands = fournisseur(evt, "stands");
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
     // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
     if (srcStands === "eventmaker") {
@@ -206,7 +369,7 @@ Deno.serve(async (req) => {
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
+        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -253,7 +416,7 @@ Deno.serve(async (req) => {
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")! });
+        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         try {
@@ -285,11 +448,18 @@ Deno.serve(async (req) => {
       let libNomencl: Record<string, string> = {};
       let errNomencl: string | null = null;
       let cheminNomencl: string | null = null;
-      try {
-        cheminNomencl = await g.cheminCodification("DossierExp", "x_Nomenclature");
-        libNomencl = await g.codification(cheminNomencl);
-      } catch (e) {
-        errNomencl = e instanceof Error ? e.message : String(e);
+      /* Le champ de nomenclature est celui que désigne la correspondance :
+         c'est lui qui porte les codes, donc lui dont il faut la codification. */
+      const champNomencl = srcStands === "klipso"
+        ? decoupe(cibleK("nomenclature")[0] ?? "").nom
+        : "";
+      if (champNomencl) {
+        try {
+          cheminNomencl = await g.cheminCodification("DossierExp", champNomencl);
+          libNomencl = await g.codification(cheminNomencl);
+        } catch (e) {
+          errNomencl = e instanceof Error ? e.message : String(e);
+        }
       }
 
       /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
@@ -351,23 +521,32 @@ Deno.serve(async (req) => {
           }, { onConflict: "plan_id,id_klipso" });
         }
 
-        /* --- stands --- */
+        /* --- stands ---
+
+           Ce qu'on demande à Klipso dépend du réglage : les champs qui portent
+           l'enseigne ou le site web s'appellent autrement d'un salon à l'autre,
+           et demander un champ inexistant fait échouer l'appel entier. La liste
+           se compose donc de ce dont la géométrie a besoin, plus ce que la
+           correspondance désigne. */
+        const champsStand = new Set([
+          "Id", "IdPlan", "IdIlot", "IdDossierExpAff", "NomSurPlan", "Enseigne",
+          "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
+          "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
+          "StandFictif", "x_CouleurPlan",
+        ]);
+        const champsDossier = new Set(["Id", "AvancementImplantation", "Categorie"]);
+        for (const c of CIBLES.klipso) {
+          for (const nom of champsCible(evt.correspondances, "klipso", c.cle)) {
+            const { origine, nom: n } = decoupe(nom);
+            (origine === "stand" ? champsStand : champsDossier).add(n);
+          }
+        }
+
         const bruts = await g.tout<Record<string, any>>("Stand", {
-          fields: [
-            "Id", "IdPlan", "IdIlot", "IdDossierExpAff", "NomSurPlan", "Enseigne",
-            "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
-            "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
-            "StandFictif", "x_CouleurPlan",
-          ],
+          fields: [...champsStand],
           entities: {
             SetStandShapeStand: { fields: ["Shape", "IdCalque", "SurfaceBrute"] },
-            RefDossierExpAff: {
-              fields: [
-                "Id", "AvancementImplantation", "x_ExcluListeexposants",
-                "x_Catalogue_RaisonSociale", "x_Nomenclature",
-                "x_Catalogue_SiteWeb", "Categorie",
-              ],
-            },
+            RefDossierExpAff: { fields: [...champsDossier] },
           },
           filter: egal("IdPlan", plan.Id),
         });
@@ -380,9 +559,14 @@ Deno.serve(async (req) => {
           const anneaux = formes.flatMap((f: any) => versAnneaux(f?.Shape) ?? []);
           if (!anneaux.length) continue;
           const dos = s.RefDossierExpAff;
+          /* Ce que Klipso porte pour cette fiche, lu par la correspondance : le
+             dossier exposant d'un côté, l'emplacement de l'autre. */
+          const origines = { "": dos ?? {}, stand: s };
+          const val = (c: string) => ou(lit(cibleK(c), origines));
           // engagement contractuel : un exposant qui refuse le catalogue ne sort
           // pas, quelle que soit la source
-          const exclu = dos?.x_ExcluListeexposants === true;
+          const brutExclu = lit(cibleK("exclu"), origines);
+          const exclu = brutExclu === true || String(brutExclu).toLowerCase() === "true";
           const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
 
           /* Le dossier identifie un exposant des deux côtés : Klipso le porte
@@ -404,23 +588,34 @@ Deno.serve(async (req) => {
           const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
           if (expoEm && em) apparies++;
 
-          stands.push({
-            id: "s" + String(s.Id).slice(0, 8),
-            code,
-            plan: (expoEm ? em?.raison : null) ?? s.NomSurPlan ?? null,
-            nom: !ok ? null : expoEm ? em!.nom : dos.x_Catalogue_RaisonSociale,
-            site: !ok ? null : expoEm ? nettoieUrl(em!.site) : nettoieUrl(dos.x_Catalogue_SiteWeb),
-            nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
-                                         : nomenclature(dos.x_Nomenclature),
-            // Coordonnées et réseaux : Eventmaker les porte, Klipso ne les
-            // expose pas dans ce qu'on lui demande. Absents, ils ne
-            // s'affichent simplement pas.
-            ...(ok && em
+          /* Coordonnées et réseaux. Eventmaker les porte nativement ; Klipso
+             ne les rend que si l'exploitant a désigné les champs qui les
+             portent — sur bien des salons ils n'existent pas, et les cibles
+             restent alors vides. Une valeur absente ne descend pas du tout :
+             la page masque ce qu'elle ne reçoit pas, et l'instantané est
+             servi tel quel au public. */
+          const contacts = !ok ? {} : expoEm
+            ? (em
               ? {
                 adr: em.adresse, ville: em.ville, pays: em.pays, tel: em.tel,
                 fb: em.facebook, li: em.linkedin, ig: em.instagram,
               }
-              : {}),
+              : {})
+            : {
+              adr: ou([val("adresse"), val("codePostal")].filter(Boolean).join(", ")),
+              ville: val("ville"), pays: val("pays"), tel: val("telephone"),
+              fb: val("facebook"), li: val("linkedin"), ig: val("instagram"),
+            };
+
+          stands.push({
+            id: "s" + String(s.Id).slice(0, 8),
+            code,
+            plan: (expoEm ? em?.raison : null) ?? val("raison"),
+            nom: !ok ? null : expoEm ? em!.nom : val("nom"),
+            site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
+            nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
+                                         : nomenclature(lit(cibleK("nomenclature"), origines, true)),
+            ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
             niveaux: s.NbNiveau,

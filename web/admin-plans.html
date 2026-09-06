@@ -127,27 +127,41 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .bloc > .eyebrow{display:block;margin-bottom:12px}
 .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
 .source-inerte{opacity:.62}
-/* Tableau des salles : une ligne par salle, son état lisible d'un coup d'œil.
-   La barre de gauche dit d'où vient le rattachement. */
-table.salles{width:100%;border-collapse:collapse;font-size:12.5px}
-table.salles th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
+/* Tableaux de réglage — les salles, la correspondance des champs : une ligne
+   par entrée, une liste déroulante à droite, l'état lisible d'un coup d'œil.
+   La barre de gauche dit d'où vient ce qui est retenu. */
+table.salles,table.champs{width:100%;border-collapse:collapse;font-size:12.5px}
+table.salles th,table.champs th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
   text-transform:uppercase;color:var(--ink-3);padding:0 8px 8px;border-bottom:1px solid var(--line)}
-table.salles td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-table.salles tr[data-etat="manque"] td:first-child{box-shadow:inset 2px 0 var(--rouge)}
-table.salles tr[data-etat="manuel"] td:first-child{box-shadow:inset 2px 0 var(--accent)}
-table.salles tr[data-etat="auto"] td:first-child{box-shadow:inset 2px 0 var(--vert)}
-table.salles td.n{color:var(--ink);max-width:230px}
-table.salles td.c{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);white-space:nowrap}
-table.salles select{width:100%;padding:5px 7px;background:var(--surface-2);
+table.salles td,table.champs td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.salles tr[data-etat="manque"] td:first-child,
+table.champs tr[data-etat="manque"] td:first-child{box-shadow:inset 2px 0 var(--rouge)}
+table.salles tr[data-etat="manuel"] td:first-child,
+table.champs tr[data-etat="manuel"] td:first-child{box-shadow:inset 2px 0 var(--accent)}
+table.salles tr[data-etat="auto"] td:first-child,
+table.champs tr[data-etat="auto"] td:first-child{box-shadow:inset 2px 0 var(--vert)}
+table.salles td.n,table.champs td.n{color:var(--ink);max-width:230px}
+table.salles td.c,table.champs td.c{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);white-space:nowrap}
+table.salles select,table.champs select{width:100%;padding:5px 7px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
 .etat-salle[data-genre="manque"]{color:var(--rouge)}
 .etat-salle[data-genre="manuel"]{color:var(--accent)}
+/* L'exemple de valeur tranche mieux qu'un nom de propriété :
+   « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne se distinguent
+   que par ce qu'elles contiennent. */
+.exemple{display:block;margin-top:4px;font-size:11px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+/* La barre de détection : le bouton, puis ce qu'il a trouvé. */
+.detection{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.detection span{font-size:11.5px;color:var(--ink-3);line-height:1.45;flex:1;min-width:160px}
 @media (max-width:620px){
-  table.salles thead{display:none}
-  table.salles tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
-  table.salles td{display:block;border:none;padding:2px 0}
-  table.salles tr[data-etat] td:first-child{box-shadow:none}
+  table.salles thead,table.champs thead{display:none}
+  table.salles tr,table.champs tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
+  table.salles td,table.champs td{display:block;border:none;padding:2px 0}
+  table.salles tr[data-etat] td:first-child,
+  table.champs tr[data-etat] td:first-child{box-shadow:none}
 }
 .reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
   border-top:1px solid var(--line)}
@@ -778,6 +792,8 @@ function dessineFiche() {
   const br = bloc("Réglages");
   br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
+  br.appendChild(ligneReglage("Correspondance des champs",
+    () => resumeCorrespondance(e), ouvreCorrespondance));
   br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
   br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
   f.appendChild(br);
@@ -1300,6 +1316,241 @@ function ouvreFiche(apres) {
       "la fiche ne désigne plus rien.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/* ============================================================
+   Correspondance des champs d'exposant
+   Les champs d'origine ne portent pas le même nom d'un salon à l'autre :
+   « x_Catalogue_RaisonSociale » ici, autre chose ailleurs, et côté Eventmaker
+   ce sont des champs de fiche nommés par l'organisateur. Écrits dans la
+   synchronisation, ils condamnaient un salon nommé autrement à un déploiement.
+   Cette fenêtre les associe à ce que la fiche détail montre.
+
+   Les libellés vivent ici, les défauts viennent du serveur avec les champs
+   détectés : deux listes de défauts finiraient par diverger, et c'est celle de
+   la synchronisation qui fait foi.
+   ============================================================ */
+const CIBLES_AFFICHEES = [
+  ["nom",          "Enseigne",           "Le titre de la fiche."],
+  ["raison",       "Raison sociale",     "Affichée seulement si elle diffère de l'enseigne."],
+  ["site",         "Site web"],
+  ["adresse",      "Adresse"],
+  ["codePostal",   "Code postal",        "Rejoint l'adresse sur la même ligne."],
+  ["ville",        "Ville"],
+  ["pays",         "Pays"],
+  ["telephone",    "Téléphone"],
+  ["facebook",     "Facebook"],
+  ["linkedin",     "LinkedIn"],
+  ["instagram",    "Instagram"],
+  ["nomenclature", "Nomenclature",       "Les rubriques du catalogue."],
+  ["exclu",        "Exclu de la liste",  "Vrai retire l'exposant du plan public."],
+];
+
+/* Klipso n'a ni numéro de stand ni dossier à régler : le premier se compose de
+   l'allée et du numéro portés par l'emplacement, le second est une clé du
+   modèle. Ni l'un ni l'autre n'est un champ personnalisé. */
+const CIBLES_EXPOSANT = {
+  klipso: CIBLES_AFFICHEES,
+  eventmaker: [
+    ["stand",   "Numéro de stand",
+     "Sert à poser la fiche sur le plan. Mal réglé, aucun exposant n'apparaît."],
+    ["dossier", "Identifiant de dossier",
+     "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr."],
+    ...CIBLES_AFFICHEES,
+  ],
+};
+
+/* Deux valeurs qui ne sont pas des noms de champ : « rien de réglé », qui
+   laisse jouer le défaut, et « ne rien lire », qui est un choix. La seconde
+   s'enregistre en chaîne vide ; l'absence, elle, veut dire la première. */
+const DEFAUT_CHAMP = "defaut";
+const AUCUN_CHAMP = "aucun";
+
+/** Le bloc de correspondance d'un fournisseur, jamais nul. */
+const correspondance = (e, src) => (e.correspondances || {})[src] || {};
+
+/** Le champ retenu pour une cible, tel que la liste déroulante le montre. */
+function champRetenu(champs, cle) {
+  const regle = champs[cle];
+  if (regle === undefined || regle === null) return DEFAUT_CHAMP;
+  const l = [].concat(regle).filter(Boolean);
+  return l.length ? String(l[0]) : AUCUN_CHAMP;
+}
+
+function resumeCorrespondance(e) {
+  const src = source(e, "stands");
+  if (src === "aucun") return "Aucune source d'exposants";
+  const bloc = correspondance(e, src);
+  const champs = bloc.champs || {};
+  const regles = (CIBLES_EXPOSANT[src] || [])
+    .filter(([c]) => champRetenu(champs, c) !== DEFAUT_CHAMP).length;
+  return (FOURNISSEURS[src] || src) + " — " +
+    (regles ? regles + " champ" + (regles > 1 ? "s" : "") + " associé" +
+      (regles > 1 ? "s" : "") : "champs par défaut") +
+    (bloc.detecteLe ? "" : " · jamais détecté");
+}
+
+/**
+ * Fenêtre de correspondance.
+ *
+ * Une ligne par cible de la fiche, une liste déroulante des champs que la
+ * source porte réellement. Cette liste ne s'invente pas : elle vient d'une
+ * lecture de l'API, gardée d'une fois sur l'autre parce qu'elle met plusieurs
+ * secondes à revenir.
+ */
+function ouvreCorrespondance(apres) {
+  const e = courant();
+  const src = source(e, "stands");
+  // le réglage en cours d'édition, recopié : on n'écrit qu'à l'enregistrement
+  const champs = { ...(correspondance(e, src).champs || {}) };
+
+  if (src === "aucun") {
+    ouvreModale("Correspondance des champs", (corps) => {
+      const p = document.createElement("p");
+      p.textContent = "Aucune source d'exposants. Choisissez-en une dans " +
+        "« Provenance des données » avant de régler la correspondance.";
+      corps.appendChild(p);
+    }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+    return;
+  }
+
+  ouvreModale("Correspondance des champs", (corps) => {
+    const barre = document.createElement("div");
+    barre.className = "detection";
+    barre.innerHTML = '<button class="btn petit">Détecter les champs</button><span></span>';
+    corps.appendChild(barre);
+    const dit = barre.querySelector("span");
+
+    const zone = document.createElement("div");
+    corps.appendChild(zone);
+
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = "« Par défaut » garde le champ qu'utilisait la " +
+      "synchronisation ; « Aucun » laisse la cible vide, ce qui est un réglage " +
+      "à part entière. La correspondance prend effet à la synchronisation " +
+      "suivante.";
+    corps.appendChild(note);
+
+    /* Une détection jamais faite n'empêche pas de régler : les champs déjà
+       associés restent proposés, sans quoi ouvrir la fenêtre suffirait à
+       effacer le réglage en place. */
+    const dessine = () => {
+      const bloc = correspondance(e, src);
+      const detectes = bloc.detectes || [];
+      const defauts = bloc.defauts || null;
+      dit.textContent = bloc.detecteLe
+        ? detectes.length + " champs lus le " +
+          new Date(bloc.detecteLe).toLocaleString("fr-FR",
+            { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+        : "Aucune détection : la liste des champs vient de " +
+          (FOURNISSEURS[src] || src) + " et met quelques secondes à revenir.";
+
+      zone.innerHTML = "";
+      const t = document.createElement("table");
+      t.className = "champs";
+      t.innerHTML = "<thead><tr><th>Sur la fiche</th><th>Champ d'origine</th></tr></thead>";
+      const tb = document.createElement("tbody");
+
+      (CIBLES_EXPOSANT[src] || []).forEach(([cle, libelle, aide]) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = '<td class="n"><span class="lib"></span>' +
+                       '<span class="etat-salle"></span></td><td></td>';
+        tr.querySelector(".lib").textContent = libelle;
+        if (aide) tr.querySelector(".etat-salle").textContent = aide;
+
+        const choisi = champRetenu(champs, cle);
+        const parDefaut = ([].concat((defauts || {})[cle] || []))[0] || null;
+
+        /* Les champs se rangent par origine — le dossier exposant, la fiche
+           d'invité, l'emplacement — sans quoi deux cents entrées se lisent
+           comme une seule. */
+        const sel = document.createElement("select");
+        const opt = (v, txt, dans) => {
+          const o = document.createElement("option");
+          o.value = v;
+          o.textContent = txt;
+          (dans || sel).appendChild(o);
+        };
+        opt(DEFAUT_CHAMP, parDefaut ? "Par défaut — " + parDefaut
+          : defauts ? "Par défaut — aucun champ" : "Par défaut");
+        opt(AUCUN_CHAMP, "Aucun — laisser vide");
+        const groupes = {};
+        detectes.forEach((d) => {
+          const g = d.groupe || "Champs";
+          if (!groupes[g]) {
+            groupes[g] = document.createElement("optgroup");
+            groupes[g].label = g;
+            sel.appendChild(groupes[g]);
+          }
+          opt(d.cle, d.libelle || d.cle, groupes[g]);
+        });
+        /* Un champ réglé que la détection ne connaît pas reste proposé : mieux
+           vaut le montrer signalé que le remplacer en silence — il peut n'être
+           renseigné sur aucune des fiches lues, et rester le bon. */
+        if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP &&
+            !detectes.some((d) => d.cle === choisi)) {
+          opt(choisi, choisi + " (absent des champs détectés)");
+        }
+        sel.value = choisi;
+        tr.lastElementChild.appendChild(sel);
+
+        const ex = document.createElement("span");
+        ex.className = "exemple";
+        tr.lastElementChild.appendChild(ex);
+
+        const dis = () => {
+          const d = detectes.find((x) => x.cle === sel.value);
+          ex.textContent = d && d.exemple ? "ex. " + d.exemple : "";
+          tr.dataset.etat = sel.value === DEFAUT_CHAMP ? "auto"
+            : sel.value === AUCUN_CHAMP ? "manque" : "manuel";
+        };
+        dis();
+        sel.onchange = () => {
+          if (sel.value === DEFAUT_CHAMP) delete champs[cle];
+          else if (sel.value === AUCUN_CHAMP) champs[cle] = "";
+          else champs[cle] = sel.value;
+          dis();
+        };
+        tb.appendChild(tr);
+      });
+
+      t.appendChild(tb);
+      zone.appendChild(t);
+    };
+    dessine();
+
+    barre.querySelector("button").onclick = async (ev) => {
+      ev.target.disabled = true;
+      dit.textContent = "Lecture des champs chez " + (FOURNISSEURS[src] || src) + "…";
+      try {
+        const r = await fonction("sync-evenement", { action: "champs", evenementId: e.id });
+        // la fonction a retenu ce qu'elle a lu : on reprend son enregistrement
+        e.correspondances = r.correspondances || e.correspondances;
+        dessine();
+        if (r.info) dit.textContent += " · " + r.info;
+      } catch (err) {
+        dit.textContent = err.message;
+      } finally {
+        ev.target.disabled = false;
+      }
+    };
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Enregistrer", genre: "primaire", action: () => {
+      const avant = e.correspondances;
+      const corr = { ...(e.correspondances || {}) };
+      corr[src] = { ...(corr[src] || {}), champs };
+      /* Retenu tout de suite : le résumé de la ligne de réglage se rafraîchit
+         à la fermeture, qui n'attend pas la réponse du serveur. L'échec le
+         remet comme il était. */
+      e.correspondances = corr;
+      majEvenement(e.id, { correspondances: corr })
+        .then(() => signale("Correspondance enregistrée. Elle s'appliquera " +
+          "à la prochaine synchronisation."))
+        .catch((err) => { e.correspondances = avant; signale(err.message, true); });
+    } },
+  ], apres);
 }
 
 const bloc = (titre) => {

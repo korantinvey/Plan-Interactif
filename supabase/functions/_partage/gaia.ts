@@ -91,6 +91,45 @@ export class Gaia {
     }
   }
 
+  /** Le schéma déclaré par le serveur, lu une fois pour toutes. */
+  private async metadonnees(): Promise<Record<string, any>> {
+    if (this.meta) return this.meta;
+    const r = await fetch(`${this.base}/metadata/get?local=fr`, {
+      headers: await this.entetes(),
+    });
+    const j = await r.json();
+    if (!j.isValid) {
+      throw new Error(j.error?.[0]?.message ?? "Métadonnées refusées par GAIA.");
+    }
+    this.meta = j.data ?? {};
+    return this.meta!;
+  }
+
+  /**
+   * Les propriétés d'une entité, telles que le serveur les déclare.
+   *
+   * Sert à proposer les champs d'origine dans la console : ceux qui portent la
+   * raison sociale ou le site web d'un exposant sont personnalisés — préfixés
+   * « x_ » — et diffèrent d'un salon à l'autre. Les deviner serait fragile ;
+   * le schéma les nomme.
+   */
+  async proprietes(entite: string): Promise<
+    { cle: string; libelle: string; type: string | null }[]
+  > {
+    const meta = await this.metadonnees();
+    const props = meta?.[entite]?.properties ?? {};
+    return Object.entries(props).map(([cle, p]) => {
+      const d = p as Record<string, any>;
+      const lib = d?.label?.fr ?? d?.label?.en ??
+        (d?.label && typeof d.label === "object" ? Object.values(d.label)[0] : d?.label);
+      return {
+        cle,
+        libelle: typeof lib === "string" && lib ? lib : cle,
+        type: d?.type ?? d?.dataType ?? null,
+      };
+    }).sort((a, b) => a.cle.localeCompare(b.cle, "fr"));
+  }
+
   /**
    * Chemin de la codification d'une propriété, tel que le déclarent les
    * métadonnées — « Global.Pays » pour un pays, par exemple.
@@ -100,17 +139,8 @@ export class Gaia {
    * Deviner ce chemin serait fragile ; le serveur le donne.
    */
   async cheminCodification(entite: string, propriete: string): Promise<string> {
-    if (!this.meta) {
-      const r = await fetch(`${this.base}/metadata/get?local=fr`, {
-        headers: await this.entetes(),
-      });
-      const j = await r.json();
-      if (!j.isValid) {
-        throw new Error(j.error?.[0]?.message ?? "Métadonnées refusées par GAIA.");
-      }
-      this.meta = j.data ?? {};
-    }
-    const p = this.meta?.[entite]?.properties?.[propriete];
+    const meta = await this.metadonnees();
+    const p = meta?.[entite]?.properties?.[propriete];
     // à défaut de déclaration, la codification porte le nom de la propriété
     return p?.codificationPath || `${entite}.${propriete}`;
   }
