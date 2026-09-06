@@ -268,6 +268,8 @@ function dessineFiche() {
     b3.appendChild(p);
   } else {
     const t = document.createElement("table");
+    // nommé pour qu'un écran étroit le fasse défiler seul, sans emporter la fiche
+    t.className = "pavillons";
     t.innerHTML = "<thead><tr><th>Publier</th><th>Pavillon</th><th>Hall</th>" +
       "<th>Emplacements</th><th>Zones</th></tr></thead><tbody></tbody>";
     const tb = t.querySelector("tbody");
