@@ -164,9 +164,6 @@ table.champs td.montre label.case{display:inline-block;gap:0}
 table.champs td.montre label.case span:empty{display:none}
 table.champs td.montre label.case input{margin:0;vertical-align:middle}
 table.champs td.montre .etat-salle{margin:0}
-/* Un champ que la fiche ne montre plus garde son champ d'origine, grisé : on
-   le retrouve tel quel en recochant. */
-table.champs tr.source-inerte select{pointer-events:none}
 .etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
 .etat-salle[data-genre="manque"]{color:var(--rouge)}
 .etat-salle[data-genre="manuel"]{color:var(--accent)}
