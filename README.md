@@ -537,6 +537,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | `/plan?plan=<slug>` | le plan des visiteurs | libre |
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
+| `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |
 
 La page publique ne contient aucune commande d'administration : elles sont
 retirées du document au chargement. La page d'administration exige une session
