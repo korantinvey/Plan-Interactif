@@ -1115,7 +1115,10 @@ const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
-const state = { q: "", sel: null, plan: 0 };
+/* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
+   rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
+   par objet, c'est la même chose en mille fois moins. */
+const state = { q: "", qn: "", sel: null, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1152,7 +1155,13 @@ function indexe(d){
     [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
       String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
     p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
-    p.stands.forEach(s => { s.kind = "stand"; s.p = i; });
+    /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
+       toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
+       reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
+    p.stands.forEach(s => {
+      s.kind = "stand"; s.p = i;
+      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "")).toLowerCase();
+    });
   });
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
@@ -1218,6 +1227,11 @@ function largeur(txt, police){
   }
   return v;
 }
+/* Comparer deux noms selon les règles du français demande un comparateur.
+   `localeCompare` avec des options en rebâtit un à chaque appel : sur les
+   milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
+const COLLATION = new Intl.Collator("fr", { numeric: true });
+
 const P_NOM = ["600", '"Instrument Sans", sans-serif'];
 const P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
@@ -1381,10 +1395,9 @@ function libelles(){
    leur fiche et leur programme.
    ============================================================ */
 function visible(o){
-  const q = state.q.trim().toLowerCase();
-  if (!q) return true;
+  if (!state.qn) return true;
   if (o.kind !== "stand") return false;
-  return ((o.nom || "") + " " + (o.code || "") + " " + (o.plan || "")).toLowerCase().includes(q);
+  return (o.rech || "").includes(state.qn);
 }
 
 function appliqueFiltre(){
@@ -1397,12 +1410,12 @@ function appliqueFiltre(){
 
 function liste(){
   const box = $("list");
-  const q = state.q.trim();
+  const q = state.qn;
   const portee = q ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
-    String(a.nom || a.code || "").localeCompare(String(b.nom || b.code || ""), "fr", { numeric: true }));
+    COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
     (q ? " · tous pavillons" : " · " + P().libelle);
@@ -1594,13 +1607,6 @@ function montre(type, cle){
 }
 
 /**
- * Une adresse en lien cliquable, affichée sans son protocole.
- *
- * Les champs de réseaux sociaux sont saisis à la main : tantôt une adresse
- * complète, tantôt un simple nom de compte. On complète ce qui manque plutôt
- * que d'afficher un lien mort.
- */
-/**
  * Le programme d'une zone, en vignettes chronologiques.
  *
  * L'heure vient d'Eventmaker sous sa forme locale — « 03/14/2026 10:30 » — ce
@@ -1772,6 +1778,13 @@ function ficheConf(id, canal){
   }, [{ libelle: "Fermer", genre: "primaire" }]);
 }
 
+/**
+ * Une adresse en lien cliquable, affichée sans son protocole.
+ *
+ * Les champs de réseaux sociaux sont saisis à la main : tantôt une adresse
+ * complète, tantôt un simple nom de compte. On complète ce qui manque plutôt
+ * que d'afficher un lien mort.
+ */
 function lien(v){
   let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
   if (!u) return "";
@@ -2066,10 +2079,11 @@ $("zFit").onclick = fit;
 let _rechAttente = null, _rechDerniere = "";
 $("q").addEventListener("input", e => {
   state.q = e.target.value;
+  state.qn = state.q.trim().toLowerCase();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
-    const q = state.q.trim().toLowerCase();
+    const q = state.qn;
     if (q.length < 2 || q === _rechDerniere) return;
     _rechDerniere = q;
     mesure("recherche");
@@ -4903,7 +4917,7 @@ function candidats(q){
     if (r >= 0) notes.push({ r: r, o: o });
   }
   notes.sort((a, b) => a.r - b.r || a.o.p - b.o.p ||
-    String(a.o.nom || a.o.code || "").localeCompare(String(b.o.nom || b.o.code || ""), "fr", { numeric: true }));
+    COLLATION.compare(String(a.o.nom || a.o.code || ""), String(b.o.nom || b.o.code || "")));
   return out.concat(notes.slice(0, 12).map(x => pointObjet(x.o))).slice(0, 14);
 }
 
@@ -5646,11 +5660,6 @@ function annonce(txt, erreur){
   if (erreur) $("titre").classList.remove("attente");
 }
 
-/**
- * Charge le plan. Les en-têtes sont lus à l'appel, pas au démarrage : en
- * administration la session n'existe qu'une fois l'identité vérifiée, et
- * c'est elle qui donne accès aux événements encore en brouillon.
- */
 /**
  * En-têtes de l'appel. En administration on présente sa session : c'est elle
  * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque

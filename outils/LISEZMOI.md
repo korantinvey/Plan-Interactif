@@ -14,19 +14,41 @@ Chaîne de fabrication des pages, et scripts d'exploration de l'API.
 | `_dessin.html` | calques de dessin, outils de tracé, historique |
 | `_edition.html` | sélection, déplacement, poignées |
 | `_pile.html` | panneau : une seule pile pour tous les calques |
+| `_pousse.html` | publication de l'habillage vers la base |
 | `_modales.html` | fenêtres de confirmation et d'ordre |
 | `_parcours.html` | parcours de visite : signets, tiroir, liseré |
 | `_itineraire.html` | itinéraire : grille de marche, A\*, tiroir, mode PMR |
+| `_mesure.html` | comptage des gestes, envoyé par paquets |
 | `_admin2.html` | démarrage : données figées ou appel à l'API |
 
+Trois modules restent hors de cet assemblage, parce qu'ils ne servent pas la
+même page : `_auth-plan.html` est l'écran d'accès greffé sur la seule page
+d'administration, `_index.html` la redirection de la racine, et `_config.js`
+la configuration copiée telle quelle. La console et le rapport ont leur propre
+socle — `_console-base.html`, entouré de `_console-head.html` et
+`_console-js.html` d'un côté, `_rapport-head.html` et `_rapport-js.html` de
+l'autre — et partagent `_console.css`.
+
 ```bash
-node assemble.js   # gabarit/ → tpl-multi.html, avec contrôle de syntaxe
-node genere.js     # tpl-multi.html → web/plan.html et web/plan-smcl.html
+node assemble.js   # gabarit/ → tpl-multi.html, et chk.js pour node --check
+node genere.js     # tpl-multi.html + gabarit/ → web/
 ```
 
-`web/plan.html` interroge l'API. `web/plan-smcl.html` embarque les données :
-c'est la version de démonstration, publiable en artefact — une page publiée ne
-peut appeler aucune API externe, sa politique de sécurité l'interdit.
+`genere.js` écrit six pages et deux fichiers annexes :
+
+| page | ce qu'elle est |
+|---|---|
+| `web/plan.html` | le plan public, servi par l'API |
+| `web/plan-admin.html` | le même, derrière l'écran d'accès |
+| `web/plan-smcl.html` | démonstration à données figées |
+| `web/index.html` | la racine, qui redirige |
+| `web/admin-plans.html` | la console des événements |
+| `web/rapport.html` | le rapport d'usage |
+| `web/config.js` · `web/console.css` | copiés depuis `gabarit/` |
+
+`web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
+version publiable en artefact — une page publiée ne peut appeler aucune API
+externe, sa politique de sécurité l'interdit.
 
 ## Exploration
 
@@ -50,12 +72,17 @@ qu'il faut aller avant de rouvrir la question.
 ## Serveur local
 
 ```bash
-node serve.js
+node serve.js      # http://localhost:4180
 ```
 
-| route | page |
+Il sert `web/` tel quel — c'est tout l'intérêt : on essaie exactement ce qui
+sera déployé. Une adresse sans extension prend `.html`, `/` mène à l'accueil,
+et `/api/plan` relaie vers la fonction Supabase comme le fait le Worker.
+
+| adresse | page |
 |---|---|
-| `/` `/smcl` | plan à données figées |
-| `/api` | plan servi par l'API |
-| `/admin` | console des événements |
-| `/msmcl` | le plan dans une iframe de 390 px, pour le mobile |
+| `/` | l'accueil, qui redirige vers la console |
+| `/plan` | le plan public |
+| `/plan-smcl` | le plan à données figées |
+| `/plan-admin` | le plan avec son écran d'accès |
+| `/admin-plans` · `/rapport` | la console, le rapport |

@@ -239,7 +239,8 @@ function ecranConnexion(message) {
  */
 function deconnecte(message) {
   SESSION = null;
-  localStorage.removeItem(CLE_SESSION);
+  // un stockage refusé ne doit pas priver l'exploitant de l'écran de connexion
+  try { localStorage.removeItem(CLE_SESSION); } catch (e) {}
   if (typeof videEcran === "function") videEcran();
   ecranConnexion(message);
 }

@@ -690,7 +690,7 @@ function candidats(q){
     if (r >= 0) notes.push({ r: r, o: o });
   }
   notes.sort((a, b) => a.r - b.r || a.o.p - b.o.p ||
-    String(a.o.nom || a.o.code || "").localeCompare(String(b.o.nom || b.o.code || ""), "fr", { numeric: true }));
+    COLLATION.compare(String(a.o.nom || a.o.code || ""), String(b.o.nom || b.o.code || "")));
   return out.concat(notes.slice(0, 12).map(x => pointObjet(x.o))).slice(0, 14);
 }
 

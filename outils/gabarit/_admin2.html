@@ -30,11 +30,6 @@ function annonce(txt, erreur){
 }
 
 /**
- * Charge le plan. Les en-têtes sont lus à l'appel, pas au démarrage : en
- * administration la session n'existe qu'une fois l'identité vérifiée, et
- * c'est elle qui donne accès aux événements encore en brouillon.
- */
-/**
  * En-têtes de l'appel. En administration on présente sa session : c'est elle
  * qui donne accès aux événements encore en brouillon. Ils sont lus à chaque
  * appel, pas au démarrage : la session n'existe qu'une fois l'identité vérifiée.
