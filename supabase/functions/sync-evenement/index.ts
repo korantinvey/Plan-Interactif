@@ -419,9 +419,13 @@ Deno.serve(async (req) => {
               ? {
                 adr: em.adresse, ville: em.ville, pays: em.pays, tel: em.tel,
                 fb: em.facebook, li: em.linkedin, ig: em.instagram,
-                // le seul champ traduit : l'anglais manque à une fiche sur
-                // quatre, et la fiche s'en passe alors sans le dire
-                desc: em.description, descEn: em.descriptionEn,
+                /* Le seul champ traduit, indexé par langue. La fiche n'en
+                   montre qu'une — celle que le visiteur lit — et se tait
+                   quand elle manque : l'anglais couvre trois exposants sur
+                   quatre. */
+                ...(Object.keys(em.descriptions).length
+                  ? { desc: em.descriptions }
+                  : {}),
               }
               : {}),
             m2: s.SurfaceBrute,

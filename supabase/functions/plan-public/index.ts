@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones")
+      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, langues")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -188,6 +188,10 @@ Deno.serve(async (req) => {
       genereLe: evt.derniere_sync,
       // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
       fiche: evt.fiche ?? {},
+      /* Les langues offertes, dans l'ordre d'affichage. Le français ouvre
+         toujours la liste, y compris pour un événement antérieur à la colonne :
+         la page y retombe pour tout libellé sans traduction. */
+      langues: evt.langues ?? ["fr"],
       // sans lui, une heure ISO se lirait dans le fuseau du visiteur
       fuseau: evt.fuseau ?? null,
       // l'administration en a besoin pour savoir ce qui a déjà été renommé

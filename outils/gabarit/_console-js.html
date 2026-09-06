@@ -495,6 +495,7 @@ function dessineFiche() {
   const br = bloc("Réglages");
   br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
+  br.appendChild(ligneReglage("Langues du plan", () => resumeLangues(e), ouvreLangues));
   br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
   br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
   f.appendChild(br);
@@ -685,6 +686,79 @@ function ligneSource(dom, libelle, offerts, aide) {
     catch (err) { signale(err.message, true); }
   };
   return l;
+}
+
+/* ============================================================
+   Langues du plan
+   Un salon parle d'abord la langue de son pays ; certains en offrent une
+   seconde à leurs visiteurs étrangers. Ce que la source porte ne décide de
+   rien : Eventmaker rend les descriptifs traduits qu'on lui a donnés sans dire
+   lesquels publier, et un salon peut avoir de l'anglais en base sans vouloir
+   l'offrir. C'est donc un réglage, à côté du contenu de la fiche.
+   ============================================================ */
+const LANGUES = [
+  ["fr", "Français", "Langue de rédaction du plan : toujours offerte."],
+  ["en", "English",
+   "Les libellés du plan et le descriptif anglais de l'exposant, là où il existe."],
+];
+
+/* Le français ne se décoche pas : les libellés sans traduction y retombent, et
+   un plan sans langue de repli n'aurait rien à afficher. */
+const LANGUE_SOCLE = "fr";
+
+/** Les langues d'un événement, le socle garanti en tête. */
+function languesDe(e) {
+  const l = Array.isArray(e.langues) ? e.langues.filter((c) =>
+    LANGUES.some((x) => x[0] === c)) : [];
+  return [LANGUE_SOCLE].concat(l.filter((c) => c !== LANGUE_SOCLE));
+}
+
+function resumeLangues(e) {
+  const l = languesDe(e);
+  return l.length < 2
+    ? "Français seul"
+    : l.map((c) => (LANGUES.find((x) => x[0] === c) || [c, c])[1]).join(" · ");
+}
+
+function ouvreLangues(apres) {
+  const e = courant();
+  let choix = languesDe(e);
+  ouvreModale("Langues du plan", (corps) => {
+    const pan = document.createElement("div");
+    pan.className = "colonne-cases";
+    LANGUES.forEach(([code, nom, aide]) => {
+      const l = document.createElement("label");
+      l.className = "case";
+      l.innerHTML = '<input type="checkbox"><span></span><span class="aide"></span>';
+      l.querySelector("span").textContent = nom;
+      l.querySelector(".aide").textContent = aide;
+      const i = l.querySelector("input");
+      i.checked = choix.indexOf(code) >= 0;
+      i.disabled = code === LANGUE_SOCLE;
+      i.onchange = () => {
+        choix = i.checked
+          ? choix.concat([code])
+          : choix.filter((c) => c !== code);
+        // l'ordre des cases est celui de l'affichage : on le rétablit
+        choix = LANGUES.map((x) => x[0]).filter((c) => choix.indexOf(c) >= 0);
+      };
+      pan.appendChild(l);
+    });
+    corps.appendChild(pan);
+    const note = document.createElement("p");
+    note.className = "aide";
+    note.textContent = "Une seule langue cochée, et le visiteur ne voit aucun " +
+      "sélecteur. À partir de deux, le plan bascule d'un appui, et la fiche " +
+      "d'un exposant ne montre que le descriptif de la langue lue.";
+    corps.appendChild(note);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Enregistrer", genre: "primaire", action: () => {
+      majEvenement(e.id, { langues: choix })
+        .then(() => { e.langues = choix; signale("Langues enregistrées."); })
+        .catch((err) => signale(err.message, true));
+    } },
+  ], apres);
 }
 
 /* ============================================================

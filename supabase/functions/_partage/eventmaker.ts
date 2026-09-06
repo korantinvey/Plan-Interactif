@@ -63,11 +63,11 @@ export interface ExposantEm {
   linkedin: string | null;
   instagram: string | null;
   nomencl: string[];
-  /* Ce que l'exposant dit de son activité, en français et en anglais. C'est le
-     seul champ de la fiche qui soit rédigé pour être lu — et le seul qui existe
-     traduit : le reste, adresse et réseaux, ne se traduit pas. */
-  description: string | null;
-  descriptionEn: string | null;
+  /* Ce que l'exposant dit de son activité, par code de langue. C'est le seul
+     champ de la fiche qui soit rédigé pour être lu — et le seul qui existe
+     traduit : le reste, adresse et réseaux, ne se traduit pas. Une langue sans
+     descriptif n'a pas de clé, plutôt qu'une clé vide. */
+  descriptions: Record<string, string>;
   exclu: boolean;
 }
 
@@ -84,6 +84,21 @@ const ou = (...v: unknown[]): string | null => {
    n'en est pas une. */
 const MINI_DESCRIPTIF = 8;
 
+/* Où lire le descriptif, par langue et par ordre de préférence.
+ *
+ * Quatre champs disent deux textes : « description » est celui du formulaire,
+ * « description_ezymob » sa copie pour l'application mobile. Les valeurs sont
+ * identiques partout où les deux existent — 507 sur 507 en français, 416 sur
+ * 416 en anglais sur Franchise Expo Paris 2026 — mais la copie est présente sur
+ * toutes les fiches là où l'original manque à une trentaine : on la lit
+ * d'abord.
+ *
+ * Une langue de plus est une ligne de plus, le jour où un salon en portera. */
+const CHAMPS_DESCRIPTION: Record<string, string[]> = {
+  fr: ["description_ezymob", "description"],
+  en: ["description_ezymob_en", "description_en"],
+};
+
 /**
  * Un descriptif d'activité, gardé tel qu'il a été écrit — ses alinéas font
  * partie du propos —, mais débarrassé des retours chariot de Windows et des
@@ -92,6 +107,18 @@ const MINI_DESCRIPTIF = 8;
 const descriptif = (v: unknown): string | null => {
   const t = String(v ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   return t.length >= MINI_DESCRIPTIF ? t : null;
+};
+
+/** Les descriptifs d'une fiche, par langue. Une langue muette n'a pas de clé. */
+const descriptions = (m: Record<string, string>): Record<string, string> => {
+  const out: Record<string, string> = {};
+  for (const [langue, champs] of Object.entries(CHAMPS_DESCRIPTION)) {
+    for (const c of champs) {
+      const t = descriptif(m[c]);
+      if (t) { out[langue] = t; break; }
+    }
+  }
+  return out;
 };
 
 /**
@@ -471,14 +498,7 @@ export class Eventmaker {
         linkedin: ou(m.company_linkedin),
         instagram: ou(m.instagram_societe),
         nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
-        /* Quatre champs disent la même chose : « description » est celui du
-           formulaire, « description_ezymob » sa copie pour l'application
-           mobile. Les valeurs sont identiques partout où les deux existent —
-           507 sur 507 en français, 416 sur 416 en anglais sur Franchise Expo
-           Paris 2026 —, mais la copie est présente sur toutes les fiches là où
-           l'original manque à une trentaine : on la lit d'abord. */
-        description: descriptif(m.description_ezymob ?? m.description),
-        descriptionEn: descriptif(m.description_ezymob_en ?? m.description_en),
+        descriptions: descriptions(m),
         exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
       };
       if (stand) parStand.set(stand, fiche);

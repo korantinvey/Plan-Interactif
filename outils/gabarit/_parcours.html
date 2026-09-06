@@ -76,11 +76,11 @@ function boutonParcours(genre, id){
 function rafraichitMarque(el){
   const dedans = dansParcours(el.dataset.mg, el.dataset.mi);
   el.setAttribute("aria-pressed", dedans);
-  const dit = dedans ? "Retirer de mon parcours" : "Ajouter à mon parcours";
+  const dit = trad(dedans ? "Retirer de mon parcours" : "Ajouter à mon parcours");
   el.title = dit;
   el.setAttribute("aria-label", dit);
   const l = el.querySelector(".l");
-  if (l) l.textContent = dedans ? "Dans mon parcours" : "Ajouter à mon parcours";
+  if (l) l.textContent = trad(dedans ? "Dans mon parcours" : "Ajouter à mon parcours");
   if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
 }
 
@@ -141,9 +141,6 @@ const cleTemps = c => {
   // s'intercaler n'importe où
   return d ? d.cle + d.h + d.min : "999999999999";
 };
-const jourCourt = d => d
-  ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
-  : "";
 
 function rangParcours(hote, r){
   const d = document.createElement("div");
@@ -151,8 +148,10 @@ function rangParcours(hote, r){
   d.innerHTML = '<button type="button" class="pOuvre">' +
     (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
               : '<span class="pt"></span><span class="ps"></span>') +
-    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
-    'aria-label="Retirer du parcours">&times;</button>';
+    '</button><button type="button" class="pOte">&times;</button>';
+  const ote = d.querySelector(".pOte");
+  ote.title = trad("Retirer du parcours");
+  ote.setAttribute("aria-label", trad("Retirer du parcours"));
   d.querySelector(".pt").textContent = r.titre;
   d.querySelector(".ps").textContent = r.detail || "";
   if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
@@ -177,19 +176,19 @@ function remplitParcours(){
   const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
     .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
 
-  const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
   $("pResume").textContent = stands.length + confs.length
-    ? [stands.length ? pluriel(stands.length, "exposant") : "",
-       confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
-    : "rien pour l'instant";
+    ? [stands.length ? compte(stands.length, "{n} exposant", "{n} exposants") : "",
+       confs.length ? compte(confs.length, "{n} conférence", "{n} conférences") : ""]
+      .filter(Boolean).join(" · ")
+    : trad("rien pour l'instant");
   $("videParcours").hidden = !(stands.length + confs.length);
 
   if (!stands.length && !confs.length){
     const v = document.createElement("p");
     v.className = "pVide";
-    v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
+    v.textContent = trad("Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
       "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
-      "appareil et vous y retrouverez tout à votre prochaine visite.";
+      "appareil et vous y retrouverez tout à votre prochaine visite.");
     hote.appendChild(v);
     return;
   }
@@ -197,7 +196,7 @@ function remplitParcours(){
   /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
      le reste de la journée se range. */
   if (confs.length){
-    const g = groupeParcours(hote, "Conférences");
+    const g = groupeParcours(hote, trad("Conférences"));
     let jour = null;
     confs.forEach(c => {
       const d = instantConf(c);
@@ -206,24 +205,23 @@ function remplitParcours(){
         jour = d.cle;
         const t = document.createElement("div");
         t.className = "jour";
-        t.textContent = jourCourt(d);
+        t.textContent = jourEcrit(d);
         g.appendChild(t);
       }
       rangParcours(g, {
         genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
         titre: c.nom,
-        detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
-                (c.salle ? " · " + c.salle : ""),
+        detail: heureEcrite(d, f) + (c.salle ? " · " + c.salle : ""),
         ouvre: () => ficheConf(c.id),
       });
     });
   }
 
   if (stands.length){
-    const g = groupeParcours(hote, "Exposants");
+    const g = groupeParcours(hote, trad("Exposants"));
     stands.forEach(o => rangParcours(g, {
       genre: "stand", id: o.id, dessus: false,
-      titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+      titre: libelleStand(o),
       detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
       // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
       // et le tiroir se retire, puisqu'ils occupent la même bande
@@ -249,10 +247,10 @@ function fermeParcours(){
 $("btnParcours").onclick = () =>
   $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
 $("closeParcours").onclick = fermeParcours;
-$("videParcours").onclick = () => confirme("Vider le parcours",
-  "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
-  "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
-  "Vider",
+$("videParcours").onclick = () => confirme(trad("Vider le parcours"),
+  trad("Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
+    "enregistrés que sur cet appareil : rien ne permettra de les retrouver."),
+  trad("Vider"),
   () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur

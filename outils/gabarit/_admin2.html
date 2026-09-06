@@ -24,7 +24,7 @@ function annonce(txt, erreur){
   l.innerHTML = '<div class="empty"></div>';
   l.querySelector(".empty").textContent = txt;
   if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
-  $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+  $("countTxt").textContent = trad(erreur ? "Indisponible" : "Chargement…");
 }
 
 /**

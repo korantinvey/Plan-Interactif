@@ -55,6 +55,34 @@ libellés sont relus dans les données à chaque affichage. Ce que le plan ne
 connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
 un rang mort.
 
+## Les langues du plan
+
+Le plan est rédigé en français. Un salon qui reçoit des visiteurs étrangers peut
+en offrir d'autres : la liste se règle par événement, en administration, sous
+« Langues du plan ». Le français ne se décoche pas — c'est la langue de repli de
+tout libellé sans traduction — et tant qu'il est seul, le visiteur ne voit aucun
+sélecteur. Seul l'anglais est traduit aujourd'hui ; en ajouter une autre tient
+en un dictionnaire de plus dans `outils/gabarit/_js.html`, où la clé de chaque
+entrée est la phrase française elle-même.
+
+À partir de deux langues, un sélecteur paraît dans la barre du haut. Le choix se
+retient sur l'appareil et s'inscrit dans l'adresse (`?lang=en`), qui passe devant
+tout le reste : c'est ce lien qu'on partage pour envoyer quelqu'un directement
+sur la version anglaise. À la première visite, sans adresse ni mémoire, c'est la
+langue du navigateur qui décide, et le français sinon.
+
+**La fiche d'un exposant ne montre que le descriptif de la langue lue.**
+L'exposant a rédigé chaque version ; celle qui manque manque vraiment, et servir
+le français à qui lit l'anglais reviendrait à lui donner un texte qu'il n'a pas
+demandé — la fiche se passe alors du bloc « Activité », comme pour un exposant
+qui n'aurait rien écrit. Sur Franchise Expo Paris 2026, le français couvre 88 %
+des exposants retenus, l'anglais 72 %.
+
+Ce qui reste en français quelle que soit la langue : les données du salon — nom
+d'un exposant, libellé d'un pavillon, titre d'une conférence, nomenclature —
+puisque c'est ainsi qu'elles sont saisies. La console d'administration aussi :
+elle s'adresse à l'exploitant, pas au visiteur.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.
