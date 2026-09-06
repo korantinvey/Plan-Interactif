@@ -4158,6 +4158,28 @@ const DEGAGEMENT_PMR = .70;
 const ALLURE = 1.1;        // m/s
 const ALLURE_PMR = .8;
 
+/**
+ * Ce que coûte un virage, en cases.
+ *
+ * Entre deux points d'une allée, une grille offre des milliers de chemins de
+ * même longueur : tout escalier de marches horizontales et verticales vaut la
+ * diagonale qu'il approche. Sans prix du virage, A* en choisit un au hasard,
+ * et le trajet traverse l'allée en biais au lieu de la suivre. À quatre cases
+ * — deux mètres — un crochet ne se justifie plus que s'il fait gagner
+ * davantage, et les tronçons redeviennent de longues lignes droites.
+ */
+const TOURNANT = 4;
+
+/**
+ * De quoi préférer le milieu de l'allée à ses bords.
+ *
+ * La pénalité s'éteint à deux mètres du mur le plus proche : au-delà — dans
+ * une aire dégagée, une entrée, un carrefour — aucun « milieu » n'a de sens,
+ * et vouloir le tenir ferait faire des détours pour rien.
+ */
+const PORTEE_CENTRE = 4;   // cases
+const POIDS_CENTRE = .5;   // au ras du mur, une case coûte une demie de plus
+
 /* ------------------------------------------------------------
    L'enveloppe du hall
    ------------------------------------------------------------ */
@@ -4321,9 +4343,49 @@ function grille(p, pmr){
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
   const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur };
+  g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   GRILLES.set(cle, g);
   return g;
+}
+
+/**
+ * À combien de cases chaque case est-elle du mur le plus proche ?
+ *
+ * C'est ce qui permet de tenir le milieu d'une allée plutôt que d'en raser un
+ * bord. Deux balayages suffisent — un descendant, un remontant, chacun ne
+ * regardant que les voisins déjà vus : la distance se propage de proche en
+ * proche. On la plafonne bas, seuls les premiers mètres nous intéressent.
+ */
+function distanceAuMur(g){
+  const n = g.w * g.h, PLAFOND = 30;
+  const d = new Uint8Array(n);
+  const D = Math.SQRT2;
+  const met = (i, v) => { d[i] = v > PLAFOND ? PLAFOND : Math.round(v); };
+  const lu = new Float32Array(n);
+  for (let i = 0; i < n; i++) lu[i] = g.mur[i] ? 0 : 1e6;
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++){
+    const i = y * g.w + x;
+    if (lu[i] === 0) continue;
+    let m = lu[i];
+    if (x > 0) m = Math.min(m, lu[i - 1] + 1);
+    if (y > 0) m = Math.min(m, lu[i - g.w] + 1);
+    if (x > 0 && y > 0) m = Math.min(m, lu[i - g.w - 1] + D);
+    if (x < g.w - 1 && y > 0) m = Math.min(m, lu[i - g.w + 1] + D);
+    lu[i] = m;
+  }
+  for (let y = g.h - 1; y >= 0; y--) for (let x = g.w - 1; x >= 0; x--){
+    const i = y * g.w + x;
+    if (lu[i] === 0) continue;
+    let m = lu[i];
+    if (x < g.w - 1) m = Math.min(m, lu[i + 1] + 1);
+    if (y < g.h - 1) m = Math.min(m, lu[i + g.w] + 1);
+    if (x < g.w - 1 && y < g.h - 1) m = Math.min(m, lu[i + g.w + 1] + D);
+    if (x > 0 && y < g.h - 1) m = Math.min(m, lu[i + g.w - 1] + D);
+    lu[i] = m;
+    met(i, m);
+  }
+  return d;
 }
 
 /**
@@ -4350,13 +4412,13 @@ function nappePrincipale(g){
     while (tete < fin){
       const i = file[tete++];
       const cx = i % g.w, cy = (i - cx) / g.w;
-      for (let k = 0; k < 8; k++){
+      // quatre voisins, comme le trajet : deux cases en diagonale ne
+      // communiquent pas plus ici qu'on ne passe entre deux angles de stand
+      for (let k = 0; k < 4; k++){
         const nx = cx + VX[k], ny = cy + VY[k];
         if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
         const j = ny * g.w + nx;
         if (g.mur[j] || marque[j] >= 0) continue;
-        // même règle que le trajet : on ne coupe pas un angle
-        if (VX[k] && VY[k] && (g.mur[i + VX[k]] || g.mur[i + VY[k] * g.w])) continue;
         marque[j] = id;
         file[fin++] = j;
       }
@@ -4464,89 +4526,110 @@ Tas.prototype.tire = function (){
   return tete;
 };
 
-const RACINE2 = Math.SQRT2;
-const VX = [1, -1, 0, 0, 1, 1, -1, -1];
-const VY = [0, 0, 1, -1, 1, -1, 1, -1];
+/* Les quatre directions, dans cet ordre : est, ouest, sud, nord. */
+const VX = [1, -1, 0, 0];
+const VY = [0, 0, 1, -1];
 
-/** Le plus court chemin de case à case, ou null s'il n'en existe aucun. */
+/**
+ * Les tableaux de travail de la recherche, alloués une fois pour toutes.
+ *
+ * Un état n'est pas une case mais une case abordée dans une direction : il y
+ * en a donc quatre fois plus, et les réallouer à chaque trajet coûterait plus
+ * que la recherche. Un compteur de tour évite de les remettre à zéro : un état
+ * dont le tampon n'est pas celui du tour n'a jamais été visité.
+ */
+let TRAVAIL = null;
+function travail(taille){
+  if (!TRAVAIL || TRAVAIL.cout.length < taille){
+    TRAVAIL = { cout: new Float32Array(taille), pere: new Int32Array(taille),
+                etat: new Int32Array(taille), tour: 0 };
+  }
+  return TRAVAIL;
+}
+
+/**
+ * Le plus court chemin de case à case, ou null s'il n'en existe aucun.
+ *
+ * Quatre voisins, jamais huit : une diagonale de grille n'a pas d'équivalent
+ * dans une allée, et c'est elle qui faisait traverser les allées en biais.
+ * Reste que mille escaliers valent la même longueur — d'où le prix du virage,
+ * qui tranche en faveur des longues lignes droites, et le prix du bord, qui
+ * tient le trait au milieu du passage. L'état porte donc la direction d'où
+ * l'on vient, sans quoi un virage ne se verrait pas.
+ */
 function cherche(g, depart, arrivee){
   if (depart === arrivee) return [depart];
-  const n = g.w * g.h;
-  const cout = new Float32Array(n).fill(Infinity);
-  const pere = new Int32Array(n).fill(-1);
-  const clos = new Uint8Array(n);
+  const m = travail(g.w * g.h * 4);
+  const tour = ++m.tour;
   const ax = arrivee % g.w, ay = (arrivee - ax) / g.w;
-  /* Distance à vol d'oiseau sur une grille à huit voisins : elle ne surestime
-     jamais le trajet réel, condition pour que A* rende bien le plus court. */
+  // Manhattan : sur quatre voisins et au pas d'une case, elle ne surestime
+  // jamais le trajet — condition pour qu'A* rende bien le plus court
   const reste = (i) => {
     const x = i % g.w, y = (i - x) / g.w;
-    const dx = Math.abs(x - ax), dy = Math.abs(y - ay);
-    return dx + dy + (RACINE2 - 2) * Math.min(dx, dy);
+    return Math.abs(x - ax) + Math.abs(y - ay);
+  };
+  const bord = (i) => {
+    const l = g.marge[i];
+    return l >= PORTEE_CENTRE ? 0 : POIDS_CENTRE * (PORTEE_CENTRE - l) / PORTEE_CENTRE;
   };
 
-  cout[depart] = 0;
   const tas = new Tas();
-  tas.pousse(reste(depart), depart);
-  let atteint = false;
+  /* Les quatre directions de départ coûtent zéro : le premier pas ne paie
+     aucun virage, on n'arrivait de nulle part. */
+  for (let d = 0; d < 4; d++){
+    const s = depart * 4 + d;
+    m.etat[s] = tour; m.cout[s] = 0; m.pere[s] = -1;
+    tas.pousse(reste(depart), s);
+  }
 
+  let dernier = -1;
   while (tas.f.length){
-    const i = tas.tire();
-    if (i === arrivee){ atteint = true; break; }
-    if (clos[i]) continue;
-    clos[i] = 1;
+    const s = tas.tire();
+    if (m.etat[s] === -tour) continue;      // déjà close
+    const i = (s / 4) | 0, d = s & 3;
+    if (i === arrivee){ dernier = s; break; }
+    m.etat[s] = -tour;
     const cx = i % g.w, cy = (i - cx) / g.w;
-    for (let k = 0; k < 8; k++){
-      const dx = VX[k], dy = VY[k];
-      const nx = cx + dx, ny = cy + dy;
+    for (let k = 0; k < 4; k++){
+      const nx = cx + VX[k], ny = cy + VY[k];
       if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
       const j = ny * g.w + nx;
-      if (g.mur[j] || clos[j]) continue;
-      // couper un angle en diagonale, c'est traverser la cloison
-      if (dx && dy && (g.mur[i + dx] || g.mur[i + dy * g.w])) continue;
-      const c = cout[i] + (dx && dy ? RACINE2 : 1);
-      if (c < cout[j]){ cout[j] = c; pere[j] = i; tas.pousse(c + reste(j), j); }
+      if (g.mur[j]) continue;
+      const s2 = j * 4 + k;
+      if (m.etat[s2] === -tour) continue;
+      const c = m.cout[s] + 1 + bord(j) + (k === d ? 0 : TOURNANT);
+      if (m.etat[s2] !== tour || c < m.cout[s2]){
+        m.etat[s2] = tour; m.cout[s2] = c; m.pere[s2] = s;
+        tas.pousse(c + reste(j), s2);
+      }
     }
   }
-  if (!atteint) return null;
+  if (dernier < 0) return null;
   const suite = [];
-  for (let i = arrivee; i >= 0; i = pere[i]) suite.push(i);
+  for (let s = dernier; s >= 0; s = m.pere[s]) suite.push((s / 4) | 0);
   return suite.reverse();
 }
 
 /* ------------------------------------------------------------
-   Du chemin en escalier au trait qu'on suit
+   Du chemin en cases au trait qu'on suit
    ------------------------------------------------------------ */
-/** Deux points se voient-ils sans traverser un mur ? */
-function seVoient(g, a, b){
-  const n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / (PAS_GRILLE * .25));
-  for (let k = 1; k < n; k++){
-    const t = k / n;
-    const i = caseDe(g, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t);
-    if (i < 0 || g.mur[i]) return false;
-  }
-  return true;
-}
-
 /**
- * Le chemin tendu.
+ * Le chemin, réduit à ses tournants.
  *
- * A* rend une suite de cases : une marche d'escalier à chaque diagonale, et
- * autant de sommets que de demi-mètres. Personne ne marche ainsi. On tend le
- * fil — tant que le point suivant reste en vue depuis le dernier sommet
- * retenu, on l'absorbe — et il ne reste que les vrais tournants.
+ * Les cases alignées se fondent en un segment, et rien d'autre n'est touché :
+ * pas de fil tendu entre deux angles. C'était la version précédente, et c'est
+ * elle qui produisait les diagonales — un fil tendu coupe les coins par
+ * définition, y compris au milieu d'une allée qu'il fallait suivre droit.
  */
-function tend(g, suite){
-  const pts = suite.map(i => centreCase(g, i));
-  if (pts.length < 3) return pts;
-  const out = [pts[0]];
-  let i = 0;
-  while (i < pts.length - 1){
-    let j = i + 1;
-    while (j + 1 < pts.length && seVoient(g, pts[i], pts[j + 1])) j++;
-    out.push(pts[j]);
-    i = j;
+function reduit(g, suite){
+  const pts = [];
+  for (let k = 0; k < suite.length; k++){
+    const i = suite[k];
+    // une case dont les deux voisines sont symétriques n'est pas un tournant
+    if (k > 0 && k < suite.length - 1 && suite[k - 1] + suite[k + 1] === 2 * i) continue;
+    pts.push(centreCase(g, i));
   }
-  return out;
+  return pts;
 }
 
 const longueur = (pts) => pts.reduce((s, q, i) =>
@@ -4562,6 +4645,34 @@ function nettoie(pts){
   return out;
 }
 
+/* Au-delà, l'amorce n'est plus un pas hors du stand mais un trajet en soi :
+   la relier d'un trait reste alors plus lisible que de la couder. */
+const AMORCE_MAX = 20;   // mètres
+
+/**
+ * L'amorce : du stand à l'allée.
+ *
+ * Le trajet part du centre du stand désigné — c'est lui qu'on montre — et
+ * rejoint l'allée. Relier les deux d'un trait donnait une oblique, seul trait
+ * de travers d'un tracé par ailleurs d'équerre. On la coude donc : on sort du
+ * stand parallèlement à l'allée, puis on la rejoint perpendiculairement, ce
+ * qui est aussi la manière dont on y entre pour de vrai.
+ *
+ * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
+ */
+function amorce(pts, ancre){
+  if (pts.length < 2) return [];
+  const a = pts[0], b = pts[1];
+  const vertical = Math.abs(b[0] - a[0]) < .01;
+  const horizontal = Math.abs(b[1] - a[1]) < .01;
+  if (vertical === horizontal) return [];        // ni l'un ni l'autre, ou un point
+  const coude = vertical ? [ancre[0], a[1]] : [a[0], ancre[1]];
+  const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
+  const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
+  if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
+  return [coude];
+}
+
 /**
  * Un tronçon dans un pavillon, de point à point.
  *
@@ -4574,7 +4685,10 @@ function troncon(p, pmr, depart, arrivee){
   if (a < 0 || b < 0) return null;
   const suite = cherche(g, a, b);
   if (!suite) return null;
-  const pts = nettoie([depart.slice()].concat(tend(g, suite), [arrivee.slice()]));
+  const chemin = reduit(g, suite);
+  const pts = nettoie([depart.slice()]
+    .concat(amorce(chemin, depart), chemin,
+            amorce(chemin.slice().reverse(), arrivee), [arrivee.slice()]));
   return { genre: "marche", p: p.i, pts: pts, m: longueur(pts) };
 }
 

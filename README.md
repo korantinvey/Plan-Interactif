@@ -79,9 +79,27 @@ Le chemin se calcule sans qu'aucune allée soit décrite nulle part. Les donnée
 ne donnent que les emplacements ; l'allée, c'est ce qui reste entre eux. Le
 pavillon est donc pavé de cases d'un demi-mètre, on y noircit les stands et les
 zones — épaissis de la moitié du passage nécessaire, pour ne pas raser les
-cloisons — et un A\* cherche la suite de cases blanches la plus courte. Le
-chemin obtenu, en marches d'escalier, est ensuite tendu : ne restent que les
-vrais tournants.
+cloisons — et un A\* cherche la suite de cases blanches la plus courte.
+
+Trois réglages font la différence entre un chemin juste et un chemin qu'on suit
+des yeux, et ils tiennent tous à la même observation : entre deux points d'une
+allée, une grille offre des milliers de trajets de même longueur.
+
+- **Quatre voisins, jamais huit.** Une diagonale de grille n'a pas d'équivalent
+  dans une allée.
+- **Un virage coûte quatre cases.** Sans ce prix, A* choisit au hasard parmi
+  les escaliers équivalents et le trait traverse l'allée en biais. À deux
+  mètres, un crochet ne se justifie plus que s'il fait gagner davantage : les
+  tronçons redeviennent de longues lignes droites.
+- **Longer un bord coûte une demi-case.** La pénalité s'éteint à deux mètres du
+  mur le plus proche — au-delà, dans une aire dégagée, aucun « milieu » n'a de
+  sens — et tient le trait au centre du passage partout ailleurs.
+
+Le chemin obtenu se réduit ensuite à ses tournants, et rien d'autre : pas de
+fil tendu entre deux angles, qui les couperait par définition. L'amorce, du
+centre du stand à l'allée, est coudée pour la même raison. Sur les trois
+pavillons, cinq cents segments d'essai : aucun de travers, et un mètre
+quatre-vingts de dégagement en moyenne de part et d'autre du trait.
 
 Deux choix méritent d'être connus avant de les remettre en cause :
 
