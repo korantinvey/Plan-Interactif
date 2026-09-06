@@ -1091,6 +1091,14 @@ async function synchronise(e) {
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
+    /* Combien de stands ont trouvé leur fiche chez le fournisseur d'exposants.
+       C'est le chiffre qui dit si l'appariement tient : il ne paraît que quand
+       les exposants viennent d'ailleurs que du plan, seul cas où il existe.
+       « Apparié » n'est pas « nommé » — une fiche trouvée mais exclue du
+       catalogue laisse le stand sans nom, et compte quand même ici. */
+    const app = pav.some((p) => p.apparies !== undefined)
+      ? ", " + pav.reduce((a, p) => a + (p.apparies || 0), 0) + " appariés"
+      : "";
     // sans libellés, la nomenclature s'affiche en codes : le dire tout de
     // suite plutôt que de laisser découvrir des « FEP26_NOM10201 » sur le plan
     const n = j.nomenclature || {};
@@ -1098,7 +1106,7 @@ async function synchronise(e) {
       ? " Nomenclature en codes : " + n.erreur
       : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
     signale(pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
-      total + " emplacements." + suite, !!n.erreur);
+      total + " emplacements" + app + "." + suite, !!n.erreur);
     await charge();
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
