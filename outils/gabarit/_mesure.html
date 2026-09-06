@@ -1,0 +1,124 @@
+
+/* ============================================================
+   13. Mesure d'utilisation
+
+   L'organisateur paie le plan et ne sait pas s'il sert. Ce module compte les
+   gestes — une visite, une recherche, une fiche ouverte et par quel chemin —
+   et les pousse par paquets vers la fonction `mesure`. Le rapport se lit
+   depuis la console, sur sa page dédiée.
+
+   Trois choses qu'il ne fait pas, et c'est ce qui permet de le laisser tourner
+   sans bandeau de consentement : il ne pose pas de cookie, il n'envoie ni
+   adresse ni agent utilisateur — le serveur ne les enregistre pas davantage —
+   et le jeton de visiteur est tiré au hasard par le navigateur, propre à cet
+   événement. Il ne suit personne d'un salon à l'autre, encore moins ailleurs.
+
+   Il se tait complètement dans deux cas : la page à données figées, qui n'a
+   aucune API à appeler, et la page d'administration, où ce qu'on mesurerait
+   serait l'exploitant en train de préparer son salon.
+   ============================================================ */
+const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
+const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
+  document.documentElement.dataset.role !== "admin");
+
+/** Un jeton de quelques caractères, tiré du générateur du navigateur. */
+function jetonMesure(){
+  const t = new Uint8Array(9);
+  (crypto && crypto.getRandomValues ? crypto : { getRandomValues: a => {
+    for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+  } }).getRandomValues(t);
+  return Array.from(t, o => o.toString(36).padStart(2, "0")).join("");
+}
+
+/**
+ * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
+ *
+ * En navigation privée, ou stockage plein, `localStorage` lève. On ne renonce
+ * pas à mesurer pour autant : le visiteur comptera pour un de plus, ce qui
+ * vaut mieux que de ne pas le compter du tout.
+ */
+function jetonRetenu(cle, ou){
+  try {
+    const v = ou.getItem(cle);
+    if (v) return v;
+    const n = jetonMesure();
+    ou.setItem(cle, n);
+    return n;
+  } catch (e) {
+    return jetonMesure();
+  }
+}
+
+/* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
+   ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
+   identifiant hors d'ici. Celui de session ne survit pas à l'onglet : c'est
+   lui qui fait la différence entre « une visite » et « un visiteur ». */
+const MESURE_VISITEUR = MESURE_ACTIVE
+  ? jetonRetenu("plan-visiteur:" + SLUG, localStorage) : "";
+const MESURE_SESSION = MESURE_ACTIVE
+  ? jetonRetenu("plan-session:" + SLUG, sessionStorage) : "";
+
+/* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
+   quand le paquet est plein, quand la main s'arrête, ou quand la page part. */
+const MESURE_PAQUET = 20;
+const MESURE_DELAI = 4000;
+let _gestes = [], _envoiDiffere = null;
+
+function envoieMesures(dernier){
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = null;
+  if (!_gestes.length) return;
+  const charge = JSON.stringify({
+    slug: SLUG, visiteur: MESURE_VISITEUR, session: MESURE_SESSION,
+    gestes: _gestes.splice(0, _gestes.length),
+  });
+  /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
+     se perdrait, et avec lui les derniers gestes — souvent les plus parlants.
+     `sendBeacon` est fait pour cela, il survit à la fermeture de l'onglet. */
+  try {
+    if (dernier && navigator.sendBeacon &&
+        navigator.sendBeacon(MESURE_API, charge)) return;
+  } catch (e) {}
+  fetch(MESURE_API, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: charge, keepalive: true,
+    // la mesure ne doit jamais gêner la visite : une panne se tait
+  }).catch(() => {});
+}
+
+/**
+ * Retenir un geste.
+ *
+ *   mesure("fiche_stand", "plan")   une fiche d'exposant, ouverte du plan
+ *   mesure("recherche")             une recherche menée à son terme
+ *
+ * Le vocabulaire est celui de la table ; le serveur écarte ce qu'il ne
+ * connaît pas plutôt que de l'enregistrer sous un nom approximatif.
+ */
+function mesure(genre, canal){
+  if (!MESURE_ACTIVE) return;
+  _gestes.push(canal ? { genre: genre, canal: canal } : { genre: genre });
+  if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
+}
+
+if (MESURE_ACTIVE){
+  /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
+     fait une seconde ; naviguer dedans pendant deux heures, une seule. */
+  const CLE_VUE = "plan-visite:" + SLUG;
+  let dejaVue = false;
+  try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
+  if (!dejaVue){
+    try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
+    mesure("visite");
+  }
+
+  /* `pagehide` est le seul événement sur lequel on puisse compter partout :
+     sur mobile, une page mise en arrière-plan n'est jamais « déchargée », elle
+     est gelée puis jetée sans prévenir. */
+  addEventListener("pagehide", () => envoieMesures(true));
+  addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") envoieMesures(true);
+  });
+}

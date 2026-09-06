@@ -1,0 +1,27 @@
+<title>Rapport d'utilisation</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<script src="config.js"></script>
+
+<link rel="stylesheet" href="console.css">
+
+<div class="page">
+  <header class="topbar">
+    <h1>Utilisation</h1>
+    <select id="choixEvt" aria-label="Événement"></select>
+    <span class="periode">
+      <select id="choixPeriode" aria-label="Période"></select>
+    </span>
+    <span class="statut" id="statut" role="status" aria-live="polite"></span>
+    <div class="droite">
+      <a class="btn petit" id="lienConsole" href="admin-plans">Console</a>
+      <button class="btn petit" id="btnRecharger">Actualiser</button>
+      <button class="btn petit" id="btnTheme" aria-label="Thème">◐</button>
+    </div>
+  </header>
+
+  <main class="fiche" id="rapport"></main>
+</div>

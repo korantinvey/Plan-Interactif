@@ -12,6 +12,7 @@ depuis `outils/gabarit/`, puis **versionnées**, car Cloudflare les sert sans
 
 ```
 outils/gabarit/*.html → outils/tpl-multi.html → web/*.html
+outils/gabarit/_console.css                   → web/console.css
 ```
 
 Le piège tient en une phrase : modifier un module de `outils/gabarit/` sans
@@ -30,7 +31,8 @@ avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 
 ## Ne jamais modifier directement
 
-- `web/*.html` — sortie de la construction ; éditez `outils/gabarit/`.
+- `web/*.html`, `web/console.css`, `web/config.js` — sortie de la
+  construction ; éditez `outils/gabarit/`.
 - `outils/tpl-multi.html` — intermédiaire, régénéré par `assemble.js`.
 
 ## Données figées

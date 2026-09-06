@@ -15,7 +15,7 @@ function demarre(d){
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
-    if (cible) setTimeout(() => select(cible.id, true), 80);
+    if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
 }
 

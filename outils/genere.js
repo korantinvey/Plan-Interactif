@@ -66,19 +66,31 @@ fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
           .replace("/*__PORTE_ADMIN__*/", "retireAdmin();")));
 
-/* --- configuration livrée avec les pages --- */
+/* --- configuration et feuille de style livrées avec les pages --- */
 fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
+// la console et le rapport la partagent : elle ne peut plus vivre dans l'une
+fs.copyFileSync(D + "/gabarit/_console.css", W + "console.css");
 
 /* --- page d'accueil : la racine ne doit pas répondre 404 --- */
 fs.writeFileSync(W + "index.html",
   page(fs.readFileSync(D + "/gabarit/_index.html", "utf8")));
 
-/* --- la console --- */
-fs.writeFileSync(W + "admin-plans.html", page(
-  fs.readFileSync(D + "/gabarit/_console-head.html", "utf8") +
-  fs.readFileSync(D + "/gabarit/_console-js.html", "utf8")));
+/* --- la console et le rapport ---
+   Ils partagent leur socle : accès au projet, fenêtres, connexion, thème.
+   Chacun n'écrit ensuite que ce qui lui est propre. */
+const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
+const assemble = (tete, corps) =>
+  fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle +
+  fs.readFileSync(D + "/gabarit/" + corps, "utf8");
 
-for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html", "admin-plans.html"]) {
+fs.writeFileSync(W + "admin-plans.html",
+  page(assemble("_console-head.html", "_console-js.html")));
+
+fs.writeFileSync(W + "rapport.html",
+  page(assemble("_rapport-head.html", "_rapport-js.html")));
+
+for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
+                 "admin-plans.html", "rapport.html"]) {
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),

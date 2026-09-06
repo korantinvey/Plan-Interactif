@@ -322,7 +322,10 @@ function liste(){
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
-  box.querySelectorAll(".row").forEach(b => b.onclick = () => select(b.dataset.id, true));
+  /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
+     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon. */
+  box.querySelectorAll(".row").forEach(b => b.onclick =
+    () => select(b.dataset.id, true, q ? "recherche" : "liste"));
 }
 
 /* ============================================================
@@ -451,7 +454,12 @@ function anime(rect, sens){
 }
 const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
 
-function select(id, recentrer){
+/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
+   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
+   dessinée — c'est ce qui les sépare. */
+const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+
+function select(id, recentrer, canal){
   const o = parId.get(id);
   if (!o) return;
   if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
@@ -462,7 +470,7 @@ function select(id, recentrer){
   const n = noeud(id); if (n) n.classList.add("sel");
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null);
+  ouvre(o, n ? n.getBoundingClientRect() : null, canal);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
      sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
@@ -581,11 +589,12 @@ function jourLong(d){
  * — l'heure et le titre — parce qu'il en aligne parfois vingt ; le reste,
  * description comprise, tient ici.
  */
-function ficheConf(id){
+function ficheConf(id, canal){
   // l'index est global : une conférence retenue peut se tenir dans un autre
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
+  mesure("fiche_conf", canal);
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -642,7 +651,7 @@ function ficheConf(id){
         /* La fiche de l'exposant prend la place de celle de la conférence, et
            le plan se recentre sur son stand — au besoin en changeant de
            pavillon, ce dont `select` se charge. */
-        if (o) el.onclick = () => { fermeModale(); select(o.id, true); };
+        if (o) el.onclick = () => { fermeModale(); select(o.id, true, "conference"); };
         hote.appendChild(el);
       });
       corps.appendChild(w);
@@ -692,7 +701,7 @@ function ecarteClicFantome(){
   degel = setTimeout(() => zones.forEach(z => { z.style.pointerEvents = ""; }), 450);
 }
 
-function ouvre(o, rect){
+function ouvre(o, rect, canal){
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
   fermeParcours(); fermeItineraire();
@@ -765,8 +774,11 @@ function ouvre(o, rect){
       : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
+  /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
+     de la fiche de l'exposant qui la tient : ce n'est pas le même chemin. */
+  const canalConf = zone ? "salle" : "exposant";
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
-    b.onclick = () => ficheConf(b.dataset.conf));
+    b.onclick = () => ficheConf(b.dataset.conf, canalConf));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un
      exposant porte sur la fiche entière. Une zone organisateur ne se retient
      pas elle-même — ce sont ses conférences qu'on ajoute, chacune à son heure. */
@@ -789,6 +801,8 @@ function ouvre(o, rect){
   $("voile").classList.add("on");
   ecarteClicFantome();
   anime(rect, 1);
+  // une zone organisateur n'est pas un exposant : elle ne compte pas ici
+  if (!zone) mesure("fiche_stand", canal);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
@@ -903,7 +917,7 @@ svg.addEventListener("pointerup", e => {
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false);
+    select(d.cible.dataset.id, false, canalPlan(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -924,7 +938,7 @@ svg.addEventListener("keydown", e => {
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false);
+    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
   }
 });
 document.addEventListener("keydown", e => {
@@ -950,7 +964,21 @@ document.addEventListener("keydown", e => {
 $("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
 $("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
 $("zFit").onclick = fit;
-$("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre(); });
+/* Une recherche n'est pas une frappe. On attend que la main s'arrête, et on
+   ne compte pas deux fois le même mot-clé — retirer une lettre puis la
+   remettre reste la même recherche. */
+let _rechAttente = null, _rechDerniere = "";
+$("q").addEventListener("input", e => {
+  state.q = e.target.value;
+  appliqueFiltre();
+  clearTimeout(_rechAttente);
+  _rechAttente = setTimeout(() => {
+    const q = state.q.trim().toLowerCase();
+    if (q.length < 2 || q === _rechDerniere) return;
+    _rechDerniere = q;
+    mesure("recherche");
+  }, 900);
+});
 
 /* ============================================================
    Le tiroir de la liste — écrans étroits

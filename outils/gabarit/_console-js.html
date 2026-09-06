@@ -1,21 +1,3 @@
-<script>
-/* ============================================================
-   Console des plans — accès aux données
-   Tout passe par l'API REST de Supabase. La clé publique et l'adresse du
-   projet sont demandées au premier lancement puis conservées sur le poste :
-   elles n'ont pas à vivre dans le dépôt, et changent selon l'environnement.
-   ============================================================ */
-const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g,
-  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
-const CLE_CFG = "console-config";
-const CLE_SESSION = "console-session";
-
-let CFG = null, SESSION = null;
-try { CFG = JSON.parse(localStorage.getItem(CLE_CFG) || "null"); } catch (e) {}
-try { SESSION = JSON.parse(localStorage.getItem(CLE_SESSION) || "null"); } catch (e) {}
-if (window.PLAN_CONFIG && !CFG) CFG = window.PLAN_CONFIG;
 
 const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
                  [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
@@ -23,34 +5,6 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
 
 let EVTS = [], selection = null, PLANS = {};
 
-/* ------------------------------------------------------------------
-   Appels
-   ------------------------------------------------------------------ */
-function entetes(json) {
-  const h = { "apikey": CFG.anonKey };
-  if (SESSION?.access_token) h["Authorization"] = "Bearer " + SESSION.access_token;
-  if (json) h["Content-Type"] = "application/json";
-  return h;
-}
-
-async function rest(chemin, options = {}) {
-  const r = await fetch(CFG.url + "/rest/v1/" + chemin, {
-    ...options,
-    headers: { ...entetes(!!options.body), ...(options.headers || {}) },
-  });
-  if (r.status === 401 || r.status === 403) {
-    deconnecte("Session expirée, reconnectez-vous.");
-    throw new Error("Non autorisé.");
-  }
-  const txt = await r.text();
-  let corps = null;
-  try { corps = txt ? JSON.parse(txt) : null; } catch (e) { corps = { message: txt }; }
-  if (!r.ok) {
-    const d = [corps?.message, corps?.details, corps?.hint].filter(Boolean).join(" — ");
-    throw new Error(d || "Erreur " + r.status + " sur " + chemin);
-  }
-  return corps;
-}
 
 /**
  * Appel d'une fonction qui rend compte au fil de l'eau.
@@ -133,191 +87,7 @@ async function fonction(nom, corps) {
   return j;
 }
 
-/* ------------------------------------------------------------------
-   Fenêtres
-   ------------------------------------------------------------------ */
-// Une fenêtre de réglage doit rafraîchir son résumé en se fermant, et elle se
-// ferme de quatre façons : le bouton, la croix, l'arrière-plan, la touche
-// Échap. D'où un rappel porté par la fermeture plutôt que par le bouton.
-let apresModale = null;
 
-function ouvreModale(titre, remplit, boutons, apres) {
-  apresModale = apres || null;
-  $("mTitre").textContent = titre;
-  $("mCorps").innerHTML = "";
-  remplit($("mCorps"));
-  $("mPied").innerHTML = "";
-  boutons.forEach((b) => {
-    const el = document.createElement("button");
-    el.className = "btn" + (b.genre ? " " + b.genre : "");
-    el.textContent = b.libelle;
-    el.onclick = () => { if (b.action && b.action() === false) return; fermeModale(); };
-    $("mPied").appendChild(el);
-  });
-  $("modale").classList.add("open");
-}
-const fermeModale = () => {
-  $("modale").classList.remove("open");
-  const f = apresModale;
-  apresModale = null;
-  if (f) f();
-};
-$("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
-
-function demande(titre, libelle, valeur, suite) {
-  let champ;
-  ouvreModale(titre, (corps) => {
-    const l = document.createElement("label");
-    l.innerHTML = "<span></span><input>";
-    l.querySelector("span").textContent = libelle;
-    champ = l.querySelector("input");
-    champ.value = valeur || "";
-    corps.appendChild(l);
-    setTimeout(() => { champ.focus(); champ.select(); }, 30);
-    champ.onkeydown = (ev) => {
-      if (ev.key === "Enter") {
-        ev.preventDefault();
-        const v = champ.value.trim();
-        if (v) { fermeModale(); suite(v); }
-      }
-    };
-  }, [{ libelle: "Annuler" },
-      { libelle: "Valider", genre: "primaire",
-        action: () => { const v = champ.value.trim(); if (!v) return false; suite(v); } }]);
-}
-
-function confirme(titre, message, libelleOui, action) {
-  ouvreModale(titre, (corps) => {
-    const p = document.createElement("p");
-    p.textContent = message;
-    corps.appendChild(p);
-  }, [{ libelle: "Annuler" }, { libelle: libelleOui, genre: "danger", action }]);
-}
-
-/* ------------------------------------------------------------------
-   Configuration et connexion
-   ------------------------------------------------------------------ */
-function ecranConfig() {
-  let url, cle;
-  ouvreModale("Connexion au projet", (corps) => {
-    const p = document.createElement("p");
-    p.innerHTML = "L'adresse de l'<strong>API</strong> du projet, en " +
-      "<code>.supabase.co</code> — pas celle du tableau de bord. La clé publique " +
-      "est faite pour circuler côté navigateur : c'est son rôle. Ne mettez jamais " +
-      "ici la clé de service.";
-    const l1 = document.createElement("label");
-    l1.innerHTML = "<span>Adresse du projet</span><input placeholder='https://xxxx.supabase.co'>";
-    const l2 = document.createElement("label");
-    l2.innerHTML = "<span>Clé publique (anon)</span><input placeholder='eyJhbGciOi…'>";
-    corps.append(p, l1, l2);
-    url = l1.querySelector("input");
-    cle = l2.querySelector("input");
-    url.value = CFG?.url || "";
-    cle.value = CFG?.anonKey || "";
-    p.hidden = !!(CFG?.url && CFG?.anonKey);
-    setTimeout(() => url.focus(), 30);
-  }, [{ libelle: "Valider", genre: "primaire", action: () => {
-    const u = url.value.trim().replace(/\/+$/, ""), k = cle.value.trim();
-    if (!u || !k) return false;
-    CFG = { url: u, anonKey: k };
-    localStorage.setItem(CLE_CFG, JSON.stringify(CFG));
-    ecranConnexion();
-  } }]);
-}
-
-/**
- * L'adresse du tableau de bord et celle de l'API se ressemblent assez pour
- * qu'on les confonde. On accepte les deux formes et on retient la bonne.
- *   tableau de bord : https://supabase.com/dashboard/project/<ref>
- *   API             : https://<ref>.supabase.co
- * Écrit sans expression régulière : la lecture y gagne, et le fichier ne
- * dépend d'aucun échappement.
- */
-function normaliseUrl(saisie) {
-  let u = String(saisie || "").trim();
-  while (u.length && u[u.length - 1] === "/") u = u.slice(0, -1);
-  if (!u) return "";
-
-  const marque = "supabase.com/dashboard/project/";
-  const i = u.toLowerCase().indexOf(marque);
-  if (i >= 0) {
-    const ref = u.slice(i + marque.length).split("/")[0].split("?")[0];
-    if (ref) return "https://" + ref + ".supabase.co";
-  }
-
-  // la seule référence du projet, sans point ni protocole
-  if (u.indexOf(".") < 0 && u.indexOf(":") < 0) return "https://" + u + ".supabase.co";
-
-  if (u.slice(0, 4).toLowerCase() !== "http") u = "https://" + u;
-  return u;
-}
-
-function ecranConnexion(message) {
-  let mail, mdp, msg;
-  ouvreModale("Connexion", (corps) => {
-    const l1 = document.createElement("label");
-    l1.innerHTML = "<span>Adresse e-mail</span><input type='email' autocomplete='username'>";
-    const l2 = document.createElement("label");
-    l2.innerHTML = "<span>Mot de passe</span><input type='password' autocomplete='current-password'>";
-    msg = document.createElement("p");
-    msg.style.color = "var(--rouge)";
-    if (message) msg.textContent = message;
-    corps.append(l1, l2, msg);
-    mail = l1.querySelector("input");
-    mdp = l2.querySelector("input");
-    setTimeout(() => mail.focus(), 30);
-    mdp.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); tente(); } };
-    const info = document.createElement("p");
-    info.className = "aide";
-    info.style.marginTop = "-4px";
-    info.textContent = "Projet : " + (CFG?.url || "non configuré");
-    corps.appendChild(info);
-  }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
-      { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
-
-  async function tente() {
-    msg.textContent = "Connexion…";
-    msg.style.color = "var(--ink-3)";
-    try {
-      const url = CFG.url;
-      const r = await fetch(url + "/auth/v1/token?grant_type=password", {
-        method: "POST",
-        headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: mail.value.trim(), password: mdp.value }),
-      });
-      // Une réponse vide ne doit pas ressortir en « Unexpected end of JSON
-      // input » : on lit le texte, puis on tente de l'interpréter.
-      const txt = await r.text();
-      let j = {};
-      try { j = txt ? JSON.parse(txt) : {}; } catch (e) { j = { msg: txt.slice(0, 120) }; }
-      if (!r.ok) {
-        throw new Error((j.error_description || j.msg || "Identifiants refusés.") +
-          " (HTTP " + r.status + ")");
-      }
-      if (!j.access_token) {
-        throw new Error("Réponse inattendue de " + url + " — HTTP " + r.status +
-          (txt ? "" : ", corps vide") + ". Vérifiez l'adresse du projet.");
-      }
-      SESSION = j;
-      localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION));
-      fermeModale();
-      demarre();
-    } catch (e) {
-      msg.style.color = "var(--rouge)";
-      msg.textContent = e.message;
-    }
-  }
-}
-
-function deconnecte(message) {
-  SESSION = null;
-  localStorage.removeItem(CLE_SESSION);
-  EVTS = []; selection = null;
-  dessine();
-  ecranConnexion(message);
-}
 
 /* ------------------------------------------------------------------
    Données
@@ -401,21 +171,6 @@ function champ(cle, libelle, aide, attrs) {
   return l;
 }
 
-/* Le message va dans la barre du haut, qui existe toujours, et en écho dans
-   la fiche quand elle est ouverte. Une erreur avalée est pire qu'une erreur. */
-let effaceur;
-function signale(txt, erreur) {
-  const s = $("statut");
-  if (s) {
-    s.className = "statut " + (erreur ? "err" : "ok");
-    s.textContent = txt;
-    clearTimeout(effaceur);
-    if (!erreur) effaceur = setTimeout(() => { s.textContent = ""; s.className = "statut"; }, 6000);
-  }
-  const m = $("msgSync");
-  if (m) { m.className = erreur ? "err" : "ok"; m.textContent = txt; }
-  if (erreur) console.error("[console]", txt);
-}
 
 function dessineFiche() {
   const e = courant();
@@ -434,6 +189,7 @@ function dessineFiche() {
     '<div class="droite">' +
     '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
     '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
+    '<a class="btn petit" id="lienRapport">Utilisation</a>' +
     '<button class="btn petit" id="btnSources">Sources de données</button>' +
     '<button class="btn petit" id="btnEtat"></button>' +
     '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
@@ -1339,19 +1095,6 @@ function ouvreCorrespondance(apres) {
   ], apres);
 }
 
-const bloc = (titre) => {
-  const d = document.createElement("div");
-  d.className = "bloc";
-  const t = document.createElement("span");
-  t.className = "eyebrow";
-  t.textContent = titre;
-  d.appendChild(t);
-  return d;
-};
-const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
-
-/** Adresse de base des pages, déduite de celle de la console. */
-const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
 
 function majLiens(e) {
   const q = "?plan=" + encodeURIComponent(e.slug || "");
@@ -1370,6 +1113,13 @@ function majLiens(e) {
     adm.href = BASE_PAGES + "plan-admin" + q;
     adm.title = "Ouvrir le plan avec les calques et les outils de dessin" +
       (e.etat !== "publie" ? " — accessible même en brouillon" : "");
+  }
+  // le rapport reste dans l'onglet : c'est une autre page de la console, pas
+  // une sortie vers le plan
+  const rap = $("lienRapport");
+  if (rap) {
+    rap.href = BASE_PAGES + "rapport" + q;
+    rap.title = "Visites, recherches et fiches ouvertes";
   }
 }
 
@@ -1506,19 +1256,16 @@ $("btnExport").onclick = (ev) => {
 $("btnImport").onclick = () => ecranConfig();
 $("btnImport").textContent = "Projet";
 
-const CLE_THEME = "console-theme";
-try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
-};
 
 /* ------------------------------------------------------------------
    Rendu et démarrage
    ------------------------------------------------------------------ */
+/** Fin de session : la console n'a plus d'événements à montrer. */
+function videEcran() {
+  EVTS = []; selection = null;
+  dessine();
+}
+
 function dessine() {
   const n = EVTS.length;
   const p = EVTS.filter((e) => e.etat === "publie").length;

@@ -8,7 +8,7 @@
     "typage": "npx --yes deno@2 check supabase/functions/*/index.ts supabase/functions/_partage/*.ts",
     "essai": "node outils/serve.js",
     "bd": "supabase db push",
-    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public",
+    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure",
     "sup": "supabase"
   },
   "type": "commonjs",
