@@ -5519,12 +5519,19 @@ function jetonMesure(){
 /**
  * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
  *
- * En navigation privée, ou stockage plein, `localStorage` lève. On ne renonce
- * pas à mesurer pour autant : le visiteur comptera pour un de plus, ce qui
- * vaut mieux que de ne pas le compter du tout.
+ * En navigation privée, ou stockage plein, l'écriture lève. On ne renonce pas
+ * à mesurer pour autant : le visiteur comptera pour un de plus, ce qui vaut
+ * mieux que de ne pas le compter du tout.
+ *
+ * Le casier est nommé plutôt que passé : quand le navigateur refuse le
+ * stockage de site — cookies bloqués — c'est la simple lecture de
+ * `localStorage` qui lève, et l'évaluer à l'appel plaçait cette lecture hors
+ * du `try`. L'exception remontait alors au corps de la page, dans le script
+ * qui porte tout le plan : plus rien ne s'affichait, pour une mesure.
  */
-function jetonRetenu(cle, ou){
+function jetonRetenu(cle, casier){
   try {
+    const ou = window[casier];
     const v = ou.getItem(cle);
     if (v) return v;
     const n = jetonMesure();
@@ -5540,9 +5547,9 @@ function jetonRetenu(cle, ou){
    identifiant hors d'ici. Celui de session ne survit pas à l'onglet : c'est
    lui qui fait la différence entre « une visite » et « un visiteur ». */
 const MESURE_VISITEUR = MESURE_ACTIVE
-  ? jetonRetenu("plan-visiteur:" + SLUG, localStorage) : "";
+  ? jetonRetenu("plan-visiteur:" + SLUG, "localStorage") : "";
 const MESURE_SESSION = MESURE_ACTIVE
-  ? jetonRetenu("plan-session:" + SLUG, sessionStorage) : "";
+  ? jetonRetenu("plan-session:" + SLUG, "sessionStorage") : "";
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
    quand le paquet est plein, quand la main s'arrête, ou quand la page part. */
