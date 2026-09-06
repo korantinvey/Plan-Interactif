@@ -1083,6 +1083,42 @@ const decode = (v) => v === DEFAUT_CHAMP ? undefined
 /** Le bloc de correspondance d'un fournisseur, jamais nul. */
 const correspondance = (e, src) => (e.correspondances || {})[src] || {};
 
+/**
+ * L'intitulé d'un champ dans la liste déroulante.
+ *
+ * Trois choses, dans cet ordre : le nom technique, parce que c'est lui qu'on
+ * retrouvera dans l'API ; son libellé quand le schéma en donne un de
+ * différent ; et une valeur telle qu'elle a été lue. C'est cette dernière qui
+ * fait choisir — « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne
+ * se distinguent que par ce qu'elles contiennent, et les champs personnalisés
+ * d'un salon portent des noms que personne ne reconnaît de mémoire.
+ */
+// le préfixe dit l'origine, que le groupe annonce déjà
+const sansPrefixe = (cle) => String(cle).replace(/^[a-z]+:/, "");
+const courte = (v) => {
+  const t = String(v || "").trim();
+  return t.length > 34 ? t.slice(0, 32) + "…" : t;
+};
+
+function intitule(d) {
+  const technique = sansPrefixe(d.cle);
+  const lib = d.libelle && d.libelle !== technique ? technique + " — " + d.libelle : technique;
+  return lib + "  ·  " + (d.exemple ? courte(d.exemple) : "(vide sur les fiches lues)");
+}
+
+/**
+ * L'intitulé d'une cible qui lit plusieurs champs à la suite — « address »,
+ * puis « address_2 » quand le premier est vide. L'exemple est celui du premier
+ * champ qui en porte un : c'est la valeur que la fiche montrera le plus
+ * souvent.
+ */
+function intituleSuite(v, detectes) {
+  const parts = v.split("|");
+  const d = parts.map((c) => detectes.find((x) => x.cle === c)).find((x) => x && x.exemple);
+  return parts.map(sansPrefixe).join(", puis ") +
+    (d ? "  ·  " + courte(d.exemple) : "");
+}
+
 function resumeCorrespondance(e) {
   const src = source(e, "stands");
   if (src === "aucun") return "Aucune source d'exposants";
@@ -1209,7 +1245,7 @@ function ouvreCorrespondance(apres) {
         [choisi, propose1].forEach((v) => {
           if (!v || v.indexOf("|") < 0 || suites[v]) return;
           suites[v] = true;
-          opt(v, v.split("|").join(", puis "));
+          opt(v, intituleSuite(v, detectes));
         });
         const groupes = {};
         detectes.forEach((d) => {
@@ -1219,7 +1255,7 @@ function ouvreCorrespondance(apres) {
             groupes[g].label = g;
             sel.appendChild(groupes[g]);
           }
-          opt(d.cle, d.libelle || d.cle, groupes[g]);
+          opt(d.cle, intitule(d), groupes[g]);
         });
         /* Un champ réglé que la détection ne connaît pas reste proposé : mieux
            vaut le montrer signalé que le remplacer en silence — il peut n'être
@@ -1231,25 +1267,27 @@ function ouvreCorrespondance(apres) {
         sel.value = choisi;
         tr.lastElementChild.appendChild(sel);
 
-        const ex = document.createElement("span");
-        ex.className = "exemple";
-        tr.lastElementChild.appendChild(ex);
         const etat = document.createElement("span");
         etat.className = "etat-salle";
         tr.lastElementChild.appendChild(etat);
 
+        /* Une cible vide n'appelle pas toujours au secours. Certaines n'ont
+           aucun champ d'origine d'office — Klipso ne porte ni adresse ni
+           réseaux sociaux — et rester vides est leur état normal ; seules
+           celles dont le champ habituel a disparu méritent le rouge. */
+        const sansDefaut = defauts !== null && !([].concat(defauts[cle] || [])).length;
         const dis = () => {
           const v = sel.value;
-          const d = detectes.find((x) => x.cle === v);
-          ex.textContent = d && d.exemple ? "ex. " + d.exemple : "";
           const vide = v === AUCUN_CHAMP;
-          const genre = v === DEFAUT_CHAMP ? "auto"
-            : propose1 !== null && v === propose1 ? (vide ? "manque" : "auto")
-            : vide ? "manque" : "manuel";
-          etat.textContent = v === DEFAUT_CHAMP ? "champ par défaut"
-            : propose1 !== null && v === propose1
-              ? (vide ? "aucun champ trouvé : à désigner" : "proposé par la détection")
-              : vide ? "laissé vide" : "choisi à la main";
+          const propose = propose1 !== null && v === propose1;
+          const genre = vide
+            ? (sansDefaut ? "libre" : propose ? "manque" : "libre")
+            : v === DEFAUT_CHAMP || propose ? "auto" : "manuel";
+          etat.textContent = vide
+            ? (sansDefaut ? "sans champ d'origine connu"
+              : propose ? "champ habituel introuvable : à désigner" : "laissé vide")
+            : v === DEFAUT_CHAMP ? "champ par défaut"
+            : propose ? "proposé par la détection" : "choisi à la main";
           etat.dataset.genre = genre;
           tr.dataset.etat = genre;
         };
