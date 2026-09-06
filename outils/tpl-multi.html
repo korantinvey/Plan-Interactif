@@ -2412,6 +2412,12 @@ function activeAdmin(){
     appliqueApparence(); construitPanneau();
   };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
+  /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
+     données figées démarre sans rien attendre. Le panneau des calques n'a
+     alors pas été construit — montePlan() n'en bâtit qu'en administration —
+     et les dessins ne sont pas cliquables. C'est à cela que sert ce drapeau,
+     qui jusqu'ici ne servait à rien. */
+  if (MONTE){ dessineDessins(); construitPanneau(); }
 }
 
 
