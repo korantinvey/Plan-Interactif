@@ -1,13 +1,10 @@
 /**
  * Synchronisation d'un événement depuis Klipso.
  *
- * Trois usages :
+ * Deux usages :
  *   { action: "plans", instance, eventId }  → liste les pavillons, sans rien
  *                                             écrire. Sert à la console avant
  *                                             qu'un événement soit enregistré.
- *   { action: "champs", evenementId }       → les champs d'exposant que porte
- *                                             la source, pour régler la
- *                                             correspondance depuis la console.
  *   { evenementId }                         → synchronisation complète.
  *
  * La clé Klipso vient des secrets de la fonction. Elle ne transite ni par la
@@ -256,91 +253,6 @@ Deno.serve(async (req) => {
     const champsEm = Object.fromEntries(
       (CIBLES.eventmaker ?? []).map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
 
-    /* ------------- champs d'exposant offerts par la source -------------
-
-       Le point de départ du réglage de correspondance : la console ne peut pas
-       proposer d'associer quoi que ce soit sans savoir ce qu'il y a en face.
-       Ce qui est trouvé est retenu à côté de l'événement — rouvrir la fenêtre
-       ne redemande pas au fournisseur, qui met plusieurs secondes à répondre. */
-    if (corps.action === "champs") {
-      const src = fournisseur(evt, "stands");
-      const cadre = {
-        fournisseur: src,
-        cibles: CIBLES[src] ?? [],
-        defauts: DEFAUTS[src] ?? {},
-      };
-
-      let detectes: Record<string, unknown>[] = [];
-      let info: string | null = null;
-      if (src === "klipso") {
-        detectes = await champsKlipso(gaia(evt.instance, evt.event_id ?? undefined));
-      } else if (src === "eventmaker") {
-        if (!String((evt.cles ?? {}).eventmaker ?? "")) {
-          return repond({ erreur: "Identifiant de l'événement Eventmaker manquant." }, 400);
-        }
-        if (!Deno.env.get("EVENTMAKER_TOKEN")) {
-          return repond({ erreur: "Jeton Eventmaker absent des secrets." }, 500);
-        }
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
-        /* Mêmes économies qu'à la synchronisation : les catégories déjà
-           reconnues et les numéros du plan évitent de tout resonder. */
-        const { data: pl } = await db.from("plan").select("id").eq("evenement_id", evt.id);
-        const { data: inst } = await db.from("instantane").select("charge")
-          .in("plan_id", (pl ?? []).map((p) => p.id));
-        const codes = (inst ?? [])
-          .flatMap((i) => ((i.charge as any)?.stands ?? []) as Record<string, unknown>[])
-          .map((st) => String(st.code ?? "")).filter(Boolean);
-        const r = await em.champsExposants(
-          String((evt.cles ?? {}).eventmaker),
-          (evt.sources?.stands?.categories ?? []) as string[],
-          codes,
-        );
-        detectes = r.champs;
-        info = r.lus
-          ? r.lus + " fiches lues dans " + r.categories.join(", ")
-          : "Aucune catégorie d'exposants trouvée : la correspondance du " +
-            "numéro de stand ou du dossier est peut-être à revoir.";
-      } else {
-        return repond({
-          erreur: "Aucune source d'exposants : choisissez-en une dans « Provenance des données ».",
-        }, 400);
-      }
-
-      /* L'affectation proposée : le champ par défaut de chaque cible, gardé
-         s'il figure vraiment parmi les champs détectés.
-
-         Beaucoup de champs sont les mêmes partout — les champs natifs d'une
-         fiche d'invité Eventmaker, les propriétés standard d'un dossier
-         Klipso — et n'ont aucune raison d'être associés à la main salon après
-         salon. Ceux qui diffèrent sont les champs personnalisés, et c'est
-         précisément eux que la détection retrouve ou non.
-
-         Une cible dont le champ par défaut manque reste vide plutôt que de
-         désigner un champ inexistant : mieux vaut une fiche sans site web
-         qu'une synchronisation qui échoue, et l'exploitant voit tout de suite
-         ce qui lui reste à désigner. */
-      const connus = new Set(detectes.map((d) => String(d.cle)));
-      const propose: Record<string, string[]> = {};
-      for (const c of cadre.cibles) {
-        propose[c.cle] = (cadre.defauts[c.cle] ?? []).filter((n) => connus.has(n));
-      }
-
-      /* Les cibles, leurs défauts et la proposition descendent avec les champs
-         détectés et sont retenus avec eux : la console nomme ainsi le champ de
-         chaque ligne sans tenir une seconde copie de ces listes, qui
-         divergerait. */
-      const corr = { ...(evt.correspondances ?? {}) };
-      corr[src] = {
-        ...(corr[src] ?? {}),
-        detectes,
-        defauts: cadre.defauts,
-        propose,
-        detecteLe: new Date().toISOString(),
-      };
-      await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
-      return repond({ ...cadre, detectes, propose, info, correspondances: corr });
-    }
-
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
     // mais rien ne les lit encore.
@@ -360,6 +272,11 @@ Deno.serve(async (req) => {
        configurées. */
     let expoEm: { parDossier: Map<string, ExposantEm>; parStand: Map<string, ExposantEm> } | null = null;
     let resumeEm: Record<string, unknown> | null = null;
+    /* Les champs que la source porte, relevés au passage. C'est la matière de
+       la correspondance : sans eux la console n'aurait rien à proposer, et il
+       serait absurde d'aller les redemander alors qu'on vient de lire les
+       fiches où ils se trouvent. */
+    let detectes: Record<string, unknown>[] = [];
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
     // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
     if (srcStands === "eventmaker") {
@@ -437,6 +354,7 @@ Deno.serve(async (req) => {
 
         const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
         expoEm = { parDossier: r.parDossier, parStand: r.parStand };
+        detectes = r.champs;
         resumeEm = {
           categories: r.categories,
           voie: r.voie,
@@ -484,6 +402,20 @@ Deno.serve(async (req) => {
         }
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
+      }
+
+      /* Klipso ne relève rien en lisant les stands : on ne lui demande que les
+         champs de la correspondance, pas les autres. Le schéma et un
+         échantillon de fiches disent ce qu'il y a d'autre — deux appels, à
+         côté des dizaines que coûte un pavillon. L'échec n'est pas bloquant :
+         la correspondance en place continue de fonctionner, seule la liste
+         proposée à l'exploitant manquera. */
+      if (srcStands === "klipso") {
+        try {
+          detectes = await champsKlipso(g);
+        } catch (e) {
+          console.error("relevé des champs d'exposant :", e);
+        }
       }
 
       etape("plan", "encours");
@@ -797,7 +729,8 @@ Deno.serve(async (req) => {
 
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
-        resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés");
+        resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
+        (detectes.length ? ", " + detectes.length + " champs relevés" : ""));
       if (confEm) {
         await db.from("evenement")
           .update({ salles: sallesConf, fuseau }).eq("id", evt.id);
@@ -814,6 +747,34 @@ Deno.serve(async (req) => {
         const src = fournisseur(evt, cle);
         etape(cle, "ignoree",
           src === "aucun" ? "non synchronisé" : src + " — pas encore repris");
+      }
+
+      /* Le relevé des champs, rangé à côté de l'événement.
+
+         L'écriture est ciblée et relit d'abord : la correspondance choisie par
+         l'exploitant vit dans la même colonne, et une synchronisation lancée
+         pendant qu'il la règle ne doit pas l'effacer. Ce qu'on pose ici, c'est
+         ce qu'on a vu — jamais ce qu'il a décidé.
+
+         La proposition se calcule ici plutôt que dans la console : c'est la
+         synchronisation qui sait quel champ elle lirait à défaut de réglage, et
+         deux listes de défauts finiraient par diverger. */
+      if (detectes.length) {
+        const connus = new Set(detectes.map((d) => String(d.cle)));
+        const defauts = DEFAUTS[srcStands] ?? {};
+        const propose: Record<string, string[]> = {};
+        for (const c of CIBLES[srcStands] ?? []) {
+          propose[c.cle] = (defauts[c.cle] ?? []).filter((n) => connus.has(n));
+        }
+        const { data: frais } = await db.from("evenement")
+          .select("correspondances").eq("id", evt.id).single();
+        const corr = { ...((frais?.correspondances ?? {}) as Record<string, any>) };
+        corr[srcStands] = {
+          ...(corr[srcStands] ?? {}),
+          detectes, defauts, propose,
+          detecteLe: new Date().toISOString(),
+        };
+        await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
       }
 
       // une synchronisation partielle ne fait pas foi comme date de référence

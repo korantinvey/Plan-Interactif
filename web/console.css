@@ -152,8 +152,21 @@ table.salles select,table.champs select{width:100%;padding:5px 7px;background:va
 /* Chaque champ s'y annonce avec un exemple de sa valeur : c'est long, et c'est
    ce qui fait choisir. La colonne prend donc toute la largeur restante, et le
    nom de la cible se contente de la sienne. */
-table.champs td.n{width:34%}
+table.champs td.n{width:32%}
 table.champs select{font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+/* La case décide de l'affichage, la liste d'où vient la valeur : deux
+   décisions de la même ligne. La colonne se réduit à la case — la mise en
+   grille du libellé, inutile ici, l'écraserait. La classe ne peut pas
+   s'appeler « coche » : celle des pavillons est une boîte flexible, et son
+   display l'emporterait sur celui d'une cellule de tableau. */
+table.champs td.montre{width:64px;text-align:center}
+table.champs td.montre label.case{display:inline-block;gap:0}
+table.champs td.montre label.case span:empty{display:none}
+table.champs td.montre label.case input{margin:0;vertical-align:middle}
+table.champs td.montre .etat-salle{margin:0}
+/* Un champ que la fiche ne montre plus garde son champ d'origine, grisé : on
+   le retrouve tel quel en recochant. */
+table.champs tr.source-inerte select{pointer-events:none}
 .etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
 .etat-salle[data-genre="manque"]{color:var(--rouge)}
 .etat-salle[data-genre="manuel"]{color:var(--accent)}
@@ -161,24 +174,22 @@ table.champs select{font-family:"IBM Plex Mono",monospace;font-size:11.5px}
    d'office chez ce fournisseur. Ni barre, ni couleur : elle n'appelle pas au
    secours, elle attend un champ si le salon en a un. */
 .etat-salle[data-genre="libre"]{color:var(--ink-3)}
-/* « libre » : la cible est vide et c'est son état normal — rien ne la porte
-   d'office. Ni barre, ni couleur : elle n'appelle pas au secours. */
-.etat-salle[data-genre="libre"]{color:var(--ink-3)}
 /* Le rôle de la cible, sous son libellé : « mal réglé, aucun exposant
    n'apparaît » se lit là où l'on s'apprête à choisir, pas dans une note de bas
    de fenêtre. */
 table.champs td.n .lib{display:block}
 table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   color:var(--ink-3);line-height:1.4;white-space:normal}
-/* La barre de détection : le bouton, puis ce qu'il a trouvé. */
-.detection{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.detection span{font-size:11.5px;color:var(--ink-3);line-height:1.45;flex:1;min-width:160px}
 @media (max-width:620px){
   table.salles thead,table.champs thead{display:none}
   table.salles tr,table.champs tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
   table.salles td,table.champs td{display:block;border:none;padding:2px 0}
   table.salles tr[data-etat] td:first-child,
   table.champs tr[data-etat] td:first-child{box-shadow:none}
+  /* Les colonnes empilées ne sont plus des colonnes : leur largeur de tableau
+     y étrangle le texte, et « Numéro de stand » se coupait en deux. */
+  table.champs td.n,table.champs td.montre{width:auto;max-width:none;text-align:left}
+  table.champs td.montre{padding-bottom:4px}
 }
 .reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
   border-top:1px solid var(--line)}
@@ -262,7 +273,7 @@ tr.eteint td{opacity:.45}
 /* La correspondance des champs aligne un libellé, une liste déroulante et un
    exemple de valeur : 440 px les écrasent tous les trois. La fenêtre s'élargit
    quand elle porte ce tableau, et elle seule. */
-.mfen:has(table.champs){width:min(720px,100%)}
+.mfen:has(table.champs){width:min(780px,100%)}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}

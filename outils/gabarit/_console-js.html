@@ -251,8 +251,6 @@ function dessineFiche() {
   const br = bloc("Réglages");
   br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
-  br.appendChild(ligneReglage("Correspondance des champs",
-    () => resumeCorrespondance(e), ouvreCorrespondance));
   br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
   br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
   f.appendChild(br);
@@ -449,31 +447,80 @@ function ligneSource(dom, libelle, offerts, aide) {
 
 /* ============================================================
    Contenu de la fiche détail
-   Ce qu'une fiche montre est une décision d'exploitant : l'état de
-   commercialisation d'un stand, par exemple, n'a pas à sortir sur le site du
-   salon. Le réglage vit donc à côté de l'événement, et non dans le navigateur
-   de celui qui l'a fait — sinon le visiteur n'en verrait rien.
+   Deux décisions par ligne, et elles vont ensemble : ce que la fiche montre —
+   l'état de commercialisation d'un stand n'a rien à faire sur le site du
+   salon — et le champ d'origine qui l'alimente, dont le nom change d'un salon
+   à l'autre. Les régler dans deux fenêtres séparées revenait à faire deux fois
+   le tour de la même liste.
+
+   Le réglage vit à côté de l'événement, et non dans le navigateur de celui qui
+   l'a fait — sinon le visiteur n'en verrait rien.
    ============================================================ */
-const CHAMPS_FICHE = {
+
+/**
+ * Une ligne de la fiche.
+ *
+ *   cle     nomme le réglage d'affichage. Absente, la ligne ne se masque pas.
+ *   cible   nomme le champ d'origine à associer. Absente, rien n'est à régler :
+ *           la valeur vient du plan, pas d'une fiche d'exposant.
+ *   fixe    dit d'où vient la valeur quand il n'y a pas de champ à choisir.
+ */
+const LIGNES_FICHE = {
   stand: [
-    ["raison",      "Raison sociale",      "Quand elle diffère de l'enseigne."],
-    ["code",        "Numéro de stand",     "Affiché à côté du pavillon."],
-    ["niveaux",     "Niveaux",             "Seulement au-delà d'un niveau."],
-    ["adresse",     "Adresse"],
-    ["ville",       "Ville"],
-    ["pays",        "Pays"],
-    ["telephone",   "Téléphone société"],
-    ["site",        "Site web"],
-    ["facebook",    "Facebook"],
-    ["linkedin",    "LinkedIn"],
-    ["instagram",   "Instagram"],
-    ["nomenclature", "Nomenclature"],
-    ["conferences", "Conférences",
-     "Les conférences tenues par l'exposant, où qu'elles se tiennent."],
+    { cible: "nom", libelle: "Enseigne",
+      aide: "Le titre de la fiche : toujours affiché." },
+    { cle: "raison", cible: "raison", libelle: "Raison sociale",
+      aide: "Quand elle diffère de l'enseigne." },
+    { cle: "code", libelle: "Numéro de stand", fixe: "allée et numéro du plan",
+      aide: "Affiché à côté du pavillon." },
+    { cle: "niveaux", libelle: "Niveaux", fixe: "nombre de niveaux du plan",
+      aide: "Seulement au-delà d'un niveau." },
+    { cle: "adresse", cible: "adresse", libelle: "Adresse" },
+    { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
+      aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
+    { cle: "ville", cible: "ville", libelle: "Ville" },
+    { cle: "pays", cible: "pays", libelle: "Pays" },
+    { cle: "telephone", cible: "telephone", libelle: "Téléphone société" },
+    { cle: "site", cible: "site", libelle: "Site web" },
+    { cle: "facebook", cible: "facebook", libelle: "Facebook" },
+    { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
+    { cle: "instagram", cible: "instagram", libelle: "Instagram" },
+    { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
+      aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
+    { cle: "conferences", libelle: "Conférences", fixe: "programme du salon",
+      aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
   ],
   zone: [
-    ["conferences", "Conférences",
-     "Le programme tenu dans la zone, par ordre chronologique."],
+    { cle: "conferences", libelle: "Conférences",
+      aide: "Le programme tenu dans la zone, par ordre chronologique." },
+  ],
+};
+
+/**
+ * Ce qui ne paraît jamais sur la fiche, mais décide de ce qu'elle contient.
+ *
+ * Les deux premières lignes sont les plus lourdes de conséquences de toute la
+ * fenêtre : c'est par elles qu'une fiche Eventmaker retrouve son emplacement
+ * sur le plan. Mal réglées, aucun exposant n'apparaît. Klipso n'a ni l'une ni
+ * l'autre à régler — le numéro se compose de l'allée et du numéro portés par
+ * l'emplacement, le dossier est une clé du modèle.
+ */
+const LIGNES_RATTACHEMENT = {
+  klipso: [
+    { cible: "exclu", libelle: "Exclu de la liste",
+      aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
+  ],
+  eventmaker: [
+    /* « Numéro de stand » figure déjà plus haut, mais ce n'est pas le même :
+       celui-là est affiché et vient du plan, celui-ci est lu sur la fiche de
+       l'exposant pour l'y rattacher. Le libellé doit dire lequel des deux. */
+    { cible: "stand", libelle: "Numéro de stand de l'exposant",
+      aide: "Le numéro tel que sa fiche le porte, comparé à celui du plan, " +
+        "mise en forme ignorée. Mal réglé, aucun exposant n'apparaît." },
+    { cible: "dossier", libelle: "Identifiant de dossier",
+      aide: "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr." },
+    { cible: "exclu", libelle: "Exclu de la liste",
+      aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
   ],
 };
 
@@ -511,21 +558,39 @@ function resumeSalles(e) {
 }
 
 function resumeFiche(e) {
-  // « Surface » figure des deux côtés : sans le type devant, on ne saurait pas
-  // laquelle est masquée.
   const parts = [];
+  // « Conférences » figure des deux côtés : sans le type devant, on ne saurait
+  // pas laquelle est masquée.
   [["stand", "Stand"], ["zone", "Zone"]].forEach(([type, court]) => {
     const r = (e.fiche && e.fiche[type]) || {};
-    const caches = CHAMPS_FICHE[type]
-      .filter(([cle]) => r[cle] === false).map(([, lib]) => lib);
+    const caches = LIGNES_FICHE[type]
+      .filter((l) => l.cle && r[l.cle] === false).map((l) => l.libelle);
     if (caches.length) parts.push(court + " : " + caches.join(", "));
   });
-  return parts.length ? "Masqué — " + parts.join(" · ") : "Tout affiché";
+
+  /* La correspondance tient dans le même réglage : la dire ici évite d'ouvrir
+     la fenêtre pour savoir si elle a été touchée. */
+  const src = source(e, "stands");
+  const bloc = correspondance(e, src);
+  const associes = Object.keys(bloc.champs || {}).length;
+  const mots = [parts.length ? "Masqué — " + parts.join(" · ") : "Tout affiché"];
+  if (src !== "aucun") {
+    mots.push(associes
+      ? associes + " champ" + (associes > 1 ? "s" : "") + " associé" +
+        (associes > 1 ? "s" : "") + " à la main"
+      : bloc.detecteLe ? "champs d'origine proposés" : "champs d'origine non relevés");
+  }
+  return mots.join(" · ");
 }
 
-/** Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
- *  tard ne doit pas le faire disparaître des salons déjà réglés. */
-function caseFiche(type, cle, libelle, aide) {
+/**
+ * Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
+ * tard ne doit pas le faire disparaître des salons déjà réglés.
+ *
+ * `apres` sert aux lignes où la case commande autre chose qu'elle-même — le
+ * champ d'origine se grise quand le champ ne paraît plus.
+ */
+function caseFiche(type, cle, libelle, aide, apres) {
   const e = courant();
   const regle = (e.fiche && e.fiche[type]) || {};
   const l = document.createElement("label");
@@ -536,11 +601,18 @@ function caseFiche(type, cle, libelle, aide) {
   if (aide) l.querySelector(".aide").textContent = aide;
   const i = l.querySelector("input");
   i.checked = regle[cle] !== false;
+  if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
+  if (apres) apres(i.checked);
   i.onchange = async () => {
     e.fiche = { ...(e.fiche || {}) };
     e.fiche[type] = { ...(e.fiche[type] || {}), [cle]: i.checked };
+    if (apres) apres(i.checked);
     try { await majEvenement(e.id, { fiche: e.fiche }); }
-    catch (err) { signale(err.message, true); i.checked = !i.checked; }
+    catch (err) {
+      signale(err.message, true);
+      i.checked = !i.checked;
+      if (apres) apres(i.checked);
+    }
   };
   return l;
 }
@@ -736,10 +808,25 @@ async function ouvreSalles(apres) {
   ], apres);
 }
 
+/**
+ * Fenêtre de la fiche détail : ce qu'elle montre, et ce qui l'alimente.
+ *
+ * Deux onglets, parce que les deux types n'ont presque rien en commun : un
+ * stand tire son contenu d'une fiche d'exposant, une zone organisateur n'a que
+ * son programme. Côte à côte, les deux listes se lisaient comme une seule.
+ *
+ * Côté stand, la case et la liste déroulante vont ensemble sur la même ligne :
+ * décider qu'un champ paraît et décider d'où il vient sont la même question,
+ * posée deux fois si on les sépare. Décocher n'efface pas le champ associé —
+ * on le retrouve tel quel en recochant.
+ */
 function ouvreFiche(apres) {
+  const e = courant();
+  const src = source(e, "stands");
+  const bloc = correspondance(e, src);
+  const mappable = src !== "aucun";
+
   ouvreModale("Fiche détail", (corps) => {
-    // Deux types, deux listes qui n'ont presque rien en commun : côte à côte
-    // elles se lisaient comme une seule. Des onglets les séparent.
     const barre = document.createElement("div");
     barre.className = "onglets";
     const boutons = [], panneaux = [];
@@ -753,73 +840,135 @@ function ouvreFiche(apres) {
       boutons.push(b);
 
       const pan = document.createElement("div");
-      pan.className = "colonne-cases";
       pan.hidden = i > 0;
-      const inertes = FICHE_INERTE[type] || [];
-      CHAMPS_FICHE[type].forEach(([cle, lib, aide]) => {
-        const c = caseFiche(type, cle, lib, aide);
-        if (inertes.indexOf(cle) >= 0) c.classList.add("source-inerte");
-        pan.appendChild(c);
-      });
       panneaux.push(pan);
+      /* Une zone n'a pas de fiche d'exposant derrière elle : rien à associer,
+         donc pas de tableau — la liste de cases suffit, et c'est celle que la
+         fenêtre montrait déjà. */
+      if (type === "zone" || !mappable) {
+        pan.className = "colonne-cases";
+        const inertes = FICHE_INERTE[type] || [];
+        LIGNES_FICHE[type].filter((l) => l.cle).forEach((l) => {
+          const c = caseFiche(type, l.cle, l.libelle, l.aide);
+          if (inertes.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
+          pan.appendChild(c);
+        });
+        if (type === "stand" && !mappable) {
+          const p = document.createElement("p");
+          p.className = "aide";
+          p.textContent = "Aucune source d'exposants : il n'y a pas de champ " +
+            "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
+          pan.appendChild(p);
+        }
+        return;
+      }
 
-      b.onclick = () => {
-        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
-        panneaux.forEach((x, j) => { x.hidden = j !== i; });
-      };
+      pan.appendChild(tableauChamps(LIGNES_FICHE.stand, type, src, true));
+      const t2 = document.createElement("span");
+      t2.className = "eyebrow";
+      t2.style.display = "block";
+      t2.style.margin = "18px 0 8px";
+      t2.textContent = "Ce qui ne s'affiche pas";
+      pan.appendChild(t2);
+      pan.appendChild(tableauChamps(LIGNES_RATTACHEMENT[src] || [], type, src, false));
     });
 
     corps.appendChild(barre);
     panneaux.forEach((x) => corps.appendChild(x));
+
     const note = document.createElement("p");
     note.className = "aide";
-    note.textContent = "Le nom et le pavillon sont toujours affichés : sans eux " +
-      "la fiche ne désigne plus rien.";
+    note.textContent = mappable
+      ? (bloc.detecteLe
+        ? "Les champs proposés viennent du relevé de la dernière " +
+          "synchronisation, le " + new Date(bloc.detecteLe).toLocaleString("fr-FR",
+            { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) +
+          ". Un champ choisi à la main n'est plus jamais reproposé, et le " +
+          "réglage prend effet à la synchronisation suivante."
+        : "Les champs d'origine se relèvent à la synchronisation : lancez-en " +
+          "une pour qu'ils soient proposés ici.")
+      : "Le nom et le pavillon sont toujours affichés : sans eux la fiche ne " +
+        "désigne plus rien.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 
-/* ============================================================
-   Correspondance des champs d'exposant
-   Les champs d'origine ne portent pas le même nom d'un salon à l'autre :
+/**
+ * Le tableau d'un groupe de lignes.
+ *
+ * `avecCases` distingue ce que la fiche montre — une case décide de son
+ * affichage — de ce qui ne s'affiche jamais mais décide du reste : le numéro
+ * de stand par lequel une fiche retrouve son emplacement, l'exclusion du
+ * catalogue. Les seconds n'ont rien à cocher.
+ */
+function tableauChamps(lignes, type, src, avecCases) {
+  const t = document.createElement("table");
+  t.className = "champs";
+  t.innerHTML = "<thead><tr>" + (avecCases ? "<th>Afficher</th>" : "") +
+    "<th>Sur la fiche</th><th>Champ d'origine</th></tr></thead>";
+  const tb = document.createElement("tbody");
+
+  lignes.forEach((l) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = (avecCases ? '<td class="montre"></td>' : "") +
+      '<td class="n"><span class="lib"></span><span class="aide"></span></td>' +
+      "<td></td>";
+    tr.querySelector(".lib").textContent = l.libelle;
+    if (l.aide) tr.querySelector(".aide").textContent = l.aide;
+
+    /* Le champ d'origine d'abord : c'est lui que la case va griser, il doit
+       donc exister avant elle. */
+    const cellule = tr.lastElementChild;
+    let choix = null;
+    if (l.cible) {
+      choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; });
+      cellule.appendChild(choix.hote);
+    } else {
+      const fixe = document.createElement("span");
+      fixe.className = "etat-salle";
+      fixe.dataset.genre = "libre";
+      fixe.textContent = l.fixe || "sans champ à régler";
+      cellule.appendChild(fixe);
+    }
+
+    if (avecCases) {
+      const c = tr.querySelector(".montre");
+      if (!l.cle) {
+        // rien à décider ici : la case mentirait en laissant croire au choix
+        const tj = document.createElement("span");
+        tj.className = "etat-salle";
+        tj.dataset.genre = "libre";
+        tj.textContent = l.montre || "toujours";
+        c.appendChild(tj);
+      } else {
+        const boite = caseFiche(type, l.cle, "", null, (montre) => {
+          /* Décocher n'efface pas le champ associé : on le grise, et il
+             revient tel quel en recochant. */
+          tr.classList.toggle("source-inerte", !montre);
+          if (choix) choix.sel.disabled = !montre;
+        });
+        c.appendChild(boite);
+      }
+    }
+    tb.appendChild(tr);
+  });
+
+  t.appendChild(tb);
+  return t;
+}
+
+/* ------------------------------------------------------------------
+   Correspondance des champs d'origine
+
+   Les champs d'exposant ne portent pas le même nom d'un salon à l'autre :
    « x_Catalogue_RaisonSociale » ici, autre chose ailleurs, et côté Eventmaker
    ce sont des champs de fiche nommés par l'organisateur. Écrits dans la
    synchronisation, ils condamnaient un salon nommé autrement à un déploiement.
-   Cette fenêtre les associe à ce que la fiche détail montre.
 
-   Les libellés vivent ici, les défauts viennent du serveur avec les champs
-   détectés : deux listes de défauts finiraient par diverger, et c'est celle de
-   la synchronisation qui fait foi.
-   ============================================================ */
-const CIBLES_AFFICHEES = [
-  ["nom",          "Enseigne",           "Le titre de la fiche."],
-  ["raison",       "Raison sociale",     "Affichée seulement si elle diffère de l'enseigne."],
-  ["site",         "Site web"],
-  ["adresse",      "Adresse"],
-  ["codePostal",   "Code postal",        "Rejoint l'adresse sur la même ligne."],
-  ["ville",        "Ville"],
-  ["pays",         "Pays"],
-  ["telephone",    "Téléphone"],
-  ["facebook",     "Facebook"],
-  ["linkedin",     "LinkedIn"],
-  ["instagram",    "Instagram"],
-  ["nomenclature", "Nomenclature",       "Les rubriques du catalogue."],
-  ["exclu",        "Exclu de la liste",  "Vrai retire l'exposant du plan public."],
-];
-
-/* Klipso n'a ni numéro de stand ni dossier à régler : le premier se compose de
-   l'allée et du numéro portés par l'emplacement, le second est une clé du
-   modèle. Ni l'un ni l'autre n'est un champ personnalisé. */
-const CIBLES_EXPOSANT = {
-  klipso: CIBLES_AFFICHEES,
-  eventmaker: [
-    ["stand",   "Numéro de stand",
-     "Sert à poser la fiche sur le plan. Mal réglé, aucun exposant n'apparaît."],
-    ["dossier", "Identifiant de dossier",
-     "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr."],
-    ...CIBLES_AFFICHEES,
-  ],
-};
+   La liste des champs disponibles vient de la synchronisation, qui les relève
+   en lisant les fiches — il n'y a rien à demander de plus, et rien à détecter
+   à part.
+   ------------------------------------------------------------------ */
 
 /* Deux valeurs qui ne sont pas des noms de champ : « rien de réglé », qui
    laisse jouer le champ par défaut, et « ne rien lire », qui est un choix.
@@ -841,6 +990,13 @@ const decode = (v) => v === DEFAUT_CHAMP ? undefined
 /** Le bloc de correspondance d'un fournisseur, jamais nul. */
 const correspondance = (e, src) => (e.correspondances || {})[src] || {};
 
+// le préfixe dit l'origine, que le groupe annonce déjà
+const sansPrefixe = (cle) => String(cle).replace(/^[a-z]+:/, "");
+const courte = (v) => {
+  const t = String(v || "").trim();
+  return t.length > 34 ? t.slice(0, 32) + "…" : t;
+};
+
 /**
  * L'intitulé d'un champ dans la liste déroulante.
  *
@@ -851,13 +1007,6 @@ const correspondance = (e, src) => (e.correspondances || {})[src] || {};
  * se distinguent que par ce qu'elles contiennent, et les champs personnalisés
  * d'un salon portent des noms que personne ne reconnaît de mémoire.
  */
-// le préfixe dit l'origine, que le groupe annonce déjà
-const sansPrefixe = (cle) => String(cle).replace(/^[a-z]+:/, "");
-const courte = (v) => {
-  const t = String(v || "").trim();
-  return t.length > 34 ? t.slice(0, 32) + "…" : t;
-};
-
 function intitule(d) {
   const technique = sansPrefixe(d.cle);
   const lib = d.libelle && d.libelle !== technique ? technique + " — " + d.libelle : technique;
@@ -873,228 +1022,118 @@ function intitule(d) {
 function intituleSuite(v, detectes) {
   const parts = v.split("|");
   const d = parts.map((c) => detectes.find((x) => x.cle === c)).find((x) => x && x.exemple);
-  return parts.map(sansPrefixe).join(", puis ") +
-    (d ? "  ·  " + courte(d.exemple) : "");
-}
-
-function resumeCorrespondance(e) {
-  const src = source(e, "stands");
-  if (src === "aucun") return "Aucune source d'exposants";
-  const bloc = correspondance(e, src);
-  const regles = (CIBLES_EXPOSANT[src] || [])
-    .filter(([c]) => (bloc.champs || {})[c] !== undefined).length;
-  return (FOURNISSEURS[src] || src) + " — " +
-    (regles ? regles + " champ" + (regles > 1 ? "s" : "") + " associé" +
-      (regles > 1 ? "s" : "") : "champs par défaut") +
-    (bloc.detecteLe ? "" : " · jamais détecté");
+  return parts.map(sansPrefixe).join(", puis ") + (d ? "  ·  " + courte(d.exemple) : "");
 }
 
 /**
- * Fenêtre de correspondance.
+ * La liste déroulante des champs d'origine d'une cible, et ce qu'elle vaut.
  *
- * Une ligne par cible de la fiche, une liste déroulante des champs que la
- * source porte réellement. Cette liste ne s'invente pas : elle vient d'une
- * lecture de l'API, gardée d'une fois sur l'autre parce qu'elle met plusieurs
- * secondes à revenir.
- *
- * La détection ne se contente pas de lister : elle propose une affectation, en
- * reprenant le champ que la synchronisation utilisait déjà quand il figure
- * parmi les champs trouvés. La plupart des cibles se règlent ainsi toutes
- * seules — les champs standard sont les mêmes partout — et il ne reste à
- * désigner que les personnalisés, ceux qui diffèrent d'un salon à l'autre.
+ * Le réglage s'enregistre à chaque changement, comme les cases de la même
+ * fenêtre : une fenêtre où la moitié des gestes se valide et l'autre pas
+ * serait un piège.
  */
-function ouvreCorrespondance(apres) {
+function champOrigine(src, cible, apres) {
   const e = courant();
-  const src = source(e, "stands");
+  const bloc = correspondance(e, src);
+  const detectes = bloc.detectes || [];
+  const defauts = bloc.defauts || null;
+  const propose = bloc.propose || null;
+  const regle = (bloc.champs || {})[cible];
 
-  if (src === "aucun") {
-    ouvreModale("Correspondance des champs", (corps) => {
-      const p = document.createElement("p");
-      p.textContent = "Aucune source d'exposants. Choisissez-en une dans " +
-        "« Provenance des données » avant de régler la correspondance.";
-      corps.appendChild(p);
-    }, [{ libelle: "Terminé", genre: "primaire" }], apres);
-    return;
-  }
+  /* Rien de réglé et une proposition sous la main : c'est elle qu'on montre.
+     Elle ne s'enregistre pas pour autant — elle décrit ce que la
+     synchronisation ferait de toute façon, et l'enregistrer ne changerait
+     rien qu'en apparence. */
+  const propose1 = propose ? encode(propose[cible] || []) : null;
+  const choisi = regle !== undefined ? encode(regle)
+    : propose1 !== null ? propose1 : DEFAUT_CHAMP;
+  const parDefaut = defauts ? ([].concat(defauts[cible] || []))[0] : null;
+  // « proposé » et « choisi à la main » ne se distinguent que par là : le
+  // relever une fois pour toutes le figerait au premier état affiché
+  let reglee = regle !== undefined;
 
-  // le réglage en cours d'édition, recopié : on n'écrit qu'à l'enregistrement
-  const champs = { ...(correspondance(e, src).champs || {}) };
-
-  /* La proposition ne remplace jamais un choix déjà enregistré : une cible
-     réglée à la main le reste, y compris après une nouvelle détection. */
-  const applique = () => {
-    const propose = correspondance(e, src).propose || {};
-    Object.keys(propose).forEach((cle) => {
-      if (!(cle in champs)) {
-        const l = propose[cle] || [];
-        champs[cle] = l.length === 1 ? l[0] : l;
-      }
-    });
+  const hote = document.createElement("div");
+  const sel = document.createElement("select");
+  const opt = (v, txt, dans) => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = txt;
+    (dans || sel).appendChild(o);
   };
-  applique();
+  opt(DEFAUT_CHAMP, parDefaut ? "Par défaut — " + parDefaut
+    : defauts ? "Par défaut — aucun champ" : "Par défaut");
+  opt(AUCUN_CHAMP, "Aucun — laisser vide");
+  // une cible qui lit plusieurs champs à la suite ne se dit pas dans une liste
+  // de champs uniques : elle a son entrée à elle
+  const suites = {};
+  [choisi, propose1].forEach((v) => {
+    if (!v || v.indexOf("|") < 0 || suites[v]) return;
+    suites[v] = true;
+    opt(v, intituleSuite(v, detectes));
+  });
+  /* Les champs se rangent par origine — personnalisés d'abord, ce sont eux qui
+     diffèrent d'un salon à l'autre — sans quoi deux cents entrées se lisent
+     comme une seule. */
+  const groupes = {};
+  detectes.forEach((d) => {
+    const g = d.groupe || "Champs";
+    if (!groupes[g]) {
+      groupes[g] = document.createElement("optgroup");
+      groupes[g].label = g;
+      sel.appendChild(groupes[g]);
+    }
+    opt(d.cle, intitule(d), groupes[g]);
+  });
+  /* Un champ réglé que le dernier relevé ne connaît pas reste proposé : mieux
+     vaut le montrer signalé que le remplacer en silence — il peut n'être
+     renseigné sur aucune des fiches lues, et rester le bon. */
+  if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP && !suites[choisi] &&
+      !detectes.some((d) => d.cle === choisi)) {
+    opt(choisi, choisi + " (absent du dernier relevé)");
+  }
+  sel.value = choisi;
+  hote.appendChild(sel);
 
-  ouvreModale("Correspondance des champs", (corps) => {
-    const barre = document.createElement("div");
-    barre.className = "detection";
-    barre.innerHTML = '<button class="btn petit">Détecter les champs</button><span></span>';
-    corps.appendChild(barre);
-    const dit = barre.querySelector("span");
+  const etat = document.createElement("span");
+  etat.className = "etat-salle";
+  hote.appendChild(etat);
 
-    const zone = document.createElement("div");
-    corps.appendChild(zone);
+  /* Une cible vide n'appelle pas toujours au secours. Certaines n'ont aucun
+     champ d'origine d'office — Klipso ne porte ni adresse ni réseaux sociaux —
+     et rester vides est leur état normal ; seules celles dont le champ habituel
+     a disparu méritent le rouge. */
+  const sansDefaut = defauts !== null && !([].concat(defauts[cible] || [])).length;
+  const dis = () => {
+    const v = sel.value;
+    const vide = v === AUCUN_CHAMP;
+    const suggere = propose1 !== null && v === propose1 && !reglee;
+    const genre = vide ? (sansDefaut || !propose1 ? "libre" : "manque")
+      : v === DEFAUT_CHAMP || suggere ? "auto" : "manuel";
+    etat.textContent = vide
+      ? (sansDefaut ? "sans champ d'origine connu"
+        : propose1 ? "champ habituel introuvable : à désigner" : "laissé vide")
+      : v === DEFAUT_CHAMP ? "champ par défaut"
+      : suggere ? "proposé d'après le dernier relevé" : "choisi à la main";
+    etat.dataset.genre = genre;
+    if (apres) apres(genre);
+  };
+  dis();
 
-    const note = document.createElement("p");
-    note.className = "aide";
-    note.textContent = "La détection propose une affectation d'après les champs " +
-      "trouvés ; il ne reste qu'à corriger ce qui diffère. Une cible dont le " +
-      "champ habituel manque reste vide, et se désigne à la main. La " +
-      "correspondance prend effet à la synchronisation suivante.";
-    corps.appendChild(note);
-
-    /* Une détection jamais faite n'empêche pas de régler : les champs déjà
-       associés restent proposés, sans quoi ouvrir la fenêtre suffirait à
-       effacer le réglage en place. */
-    const dessine = () => {
-      const bloc = correspondance(e, src);
-      const detectes = bloc.detectes || [];
-      const defauts = bloc.defauts || null;
-      const propose = bloc.propose || null;
-      dit.textContent = bloc.detecteLe
-        ? detectes.length + " champs lus le " +
-          new Date(bloc.detecteLe).toLocaleString("fr-FR",
-            { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
-        : "Aucune détection : la liste des champs vient de " +
-          (FOURNISSEURS[src] || src) + " et met quelques secondes à revenir.";
-
-      zone.innerHTML = "";
-      const t = document.createElement("table");
-      t.className = "champs";
-      t.innerHTML = "<thead><tr><th>Sur la fiche</th><th>Champ d'origine</th></tr></thead>";
-      const tb = document.createElement("tbody");
-
-      (CIBLES_EXPOSANT[src] || []).forEach(([cle, libelle, aide]) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = '<td class="n"><span class="lib"></span>' +
-                       '<span class="aide"></span></td><td></td>';
-        tr.querySelector(".lib").textContent = libelle;
-        if (aide) tr.querySelector(".aide").textContent = aide;
-
-        const choisi = encode(champs[cle]);
-        const propose1 = propose ? encode(propose[cle] || []) : null;
-        const parDefaut = defauts ? ([].concat(defauts[cle] || []))[0] : null;
-
-        /* Les champs se rangent par origine — personnalisés d'abord, ce sont
-           eux qui diffèrent d'un salon à l'autre — sans quoi deux cents
-           entrées se lisent comme une seule. */
-        const sel = document.createElement("select");
-        const opt = (v, txt, dans) => {
-          const o = document.createElement("option");
-          o.value = v;
-          o.textContent = txt;
-          (dans || sel).appendChild(o);
-          return o;
-        };
-        opt(DEFAUT_CHAMP, parDefaut ? "Par défaut — " + parDefaut
-          : defauts ? "Par défaut — aucun champ" : "Par défaut");
-        opt(AUCUN_CHAMP, "Aucun — laisser vide");
-        // une cible qui lit plusieurs champs à la suite ne se dit pas dans une
-        // liste de champs uniques : elle a son entrée à elle
-        const suites = {};
-        [choisi, propose1].forEach((v) => {
-          if (!v || v.indexOf("|") < 0 || suites[v]) return;
-          suites[v] = true;
-          opt(v, intituleSuite(v, detectes));
-        });
-        const groupes = {};
-        detectes.forEach((d) => {
-          const g = d.groupe || "Champs";
-          if (!groupes[g]) {
-            groupes[g] = document.createElement("optgroup");
-            groupes[g].label = g;
-            sel.appendChild(groupes[g]);
-          }
-          opt(d.cle, intitule(d), groupes[g]);
-        });
-        /* Un champ réglé que la détection ne connaît pas reste proposé : mieux
-           vaut le montrer signalé que le remplacer en silence — il peut n'être
-           renseigné sur aucune des fiches lues, et rester le bon. */
-        if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP && !suites[choisi] &&
-            !detectes.some((d) => d.cle === choisi)) {
-          opt(choisi, choisi + " (absent des champs détectés)");
-        }
-        sel.value = choisi;
-        tr.lastElementChild.appendChild(sel);
-
-        const etat = document.createElement("span");
-        etat.className = "etat-salle";
-        tr.lastElementChild.appendChild(etat);
-
-        /* Une cible vide n'appelle pas toujours au secours. Certaines n'ont
-           aucun champ d'origine d'office — Klipso ne porte ni adresse ni
-           réseaux sociaux — et rester vides est leur état normal ; seules
-           celles dont le champ habituel a disparu méritent le rouge. */
-        const sansDefaut = defauts !== null && !([].concat(defauts[cle] || [])).length;
-        const dis = () => {
-          const v = sel.value;
-          const vide = v === AUCUN_CHAMP;
-          const propose = propose1 !== null && v === propose1;
-          const genre = vide
-            ? (sansDefaut ? "libre" : propose ? "manque" : "libre")
-            : v === DEFAUT_CHAMP || propose ? "auto" : "manuel";
-          etat.textContent = vide
-            ? (sansDefaut ? "sans champ d'origine connu"
-              : propose ? "champ habituel introuvable : à désigner" : "laissé vide")
-            : v === DEFAUT_CHAMP ? "champ par défaut"
-            : propose ? "proposé par la détection" : "choisi à la main";
-          etat.dataset.genre = genre;
-          tr.dataset.etat = genre;
-        };
-        dis();
-        sel.onchange = () => {
-          const v = decode(sel.value);
-          if (v === undefined) delete champs[cle]; else champs[cle] = v;
-          dis();
-        };
-        tb.appendChild(tr);
-      });
-
-      t.appendChild(tb);
-      zone.appendChild(t);
-    };
-    dessine();
-
-    barre.querySelector("button").onclick = async (ev) => {
-      ev.target.disabled = true;
-      dit.textContent = "Lecture des champs chez " + (FOURNISSEURS[src] || src) + "…";
-      try {
-        const r = await fonction("sync-evenement", { action: "champs", evenementId: e.id });
-        // la fonction a retenu ce qu'elle a lu : on reprend son enregistrement
-        e.correspondances = r.correspondances || e.correspondances;
-        applique();
-        dessine();
-        if (r.info) dit.textContent += " · " + r.info;
-      } catch (err) {
-        dit.textContent = err.message;
-      } finally {
-        ev.target.disabled = false;
-      }
-    };
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Enregistrer", genre: "primaire", action: () => {
-      const avant = e.correspondances;
-      const corr = { ...(e.correspondances || {}) };
-      corr[src] = { ...(corr[src] || {}), champs };
-      /* Retenu tout de suite : le résumé de la ligne de réglage se rafraîchit
-         à la fermeture, qui n'attend pas la réponse du serveur. L'échec le
-         remet comme il était. */
-      e.correspondances = corr;
-      majEvenement(e.id, { correspondances: corr })
-        .then(() => signale("Correspondance enregistrée. Elle s'appliquera " +
-          "à la prochaine synchronisation."))
-        .catch((err) => { e.correspondances = avant; signale(err.message, true); });
-    } },
-  ], apres);
+  sel.onchange = async () => {
+    const e2 = courant();
+    const avant = e2.correspondances;
+    const corr = { ...(e2.correspondances || {}) };
+    const champs = { ...((corr[src] || {}).champs || {}) };
+    const v = decode(sel.value);
+    reglee = v !== undefined;
+    if (v === undefined) delete champs[cible]; else champs[cible] = v;
+    corr[src] = { ...(corr[src] || {}), champs };
+    e2.correspondances = corr;
+    dis();
+    try { await majEvenement(e2.id, { correspondances: corr }); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  };
+  return { hote, sel, dis };
 }
 
 
