@@ -810,6 +810,7 @@ const LIGNES_FICHE = {
       aide: "Seulement au-delà d'un niveau." },
     { cle: "adresse", cible: "adresse", libelle: "Adresse" },
     { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
+      suit: "adresse",
       aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
     { cle: "ville", cible: "ville", libelle: "Ville" },
     { cle: "pays", cible: "pays", libelle: "Pays" },
@@ -1241,6 +1242,12 @@ function tableauChamps(lignes, type, src, avecCases) {
     "<th>Sur la fiche</th><th>Champ d'origine</th></tr></thead>";
   const tb = document.createElement("tbody");
 
+  /* Une ligne peut n'avoir pas de case à elle et suivre celle d'une autre :
+     le code postal tient sur la ligne de l'adresse, et disparaît avec elle.
+     Elles s'inscrivent ici, et la case du chef de file les entraîne. */
+  const suiveurs = {};
+  const affiche = (cle) => !(((courant().fiche || {})[type] || {})[cle] === false);
+
   lignes.forEach((l) => {
     const tr = document.createElement("tr");
     tr.innerHTML = (avecCases ? '<td class="montre"></td>' : "") +
@@ -1249,8 +1256,8 @@ function tableauChamps(lignes, type, src, avecCases) {
     tr.querySelector(".lib").textContent = l.libelle;
     if (l.aide) tr.querySelector(".aide").textContent = l.aide;
 
-    /* Le champ d'origine d'abord : c'est lui que la case va griser, il doit
-       donc exister avant elle. */
+    /* Le champ d'origine d'abord : c'est lui que la case va montrer ou
+       cacher, il doit donc exister avant elle. */
     const cellule = tr.lastElementChild;
     let choix = null;
     if (l.cible) {
@@ -1264,6 +1271,19 @@ function tableauChamps(lignes, type, src, avecCases) {
       cellule.appendChild(fixe);
     }
 
+    /* Un champ que la fiche ne montre pas n'a pas de source à choisir : la
+       liste disparaît plutôt que de rester là, grisée, à occuper une ligne
+       pour rien. Le réglage, lui, n'est pas effacé — il revient tel quel en
+       recochant. */
+    const bascule = (montre) => {
+      tr.classList.toggle("source-inerte", !montre);
+      if (!choix) return;
+      choix.hote.hidden = !montre;
+      // la barre de couleur dit d'où vient un champ : sans champ, elle ne dit
+      // plus rien
+      if (montre) choix.dis(); else delete tr.dataset.etat;
+    };
+
     if (avecCases) {
       const c = tr.querySelector(".montre");
       if (!l.cle) {
@@ -1273,14 +1293,15 @@ function tableauChamps(lignes, type, src, avecCases) {
         tj.dataset.genre = "libre";
         tj.textContent = l.montre || "toujours";
         c.appendChild(tj);
+        if (l.suit) {
+          (suiveurs[l.suit] = suiveurs[l.suit] || []).push(bascule);
+          bascule(affiche(l.suit));
+        }
       } else {
-        const boite = caseFiche(type, l.cle, "", null, (montre) => {
-          /* Décocher n'efface pas le champ associé : on le grise, et il
-             revient tel quel en recochant. */
-          tr.classList.toggle("source-inerte", !montre);
-          if (choix) choix.sel.disabled = !montre;
-        });
-        c.appendChild(boite);
+        c.appendChild(caseFiche(type, l.cle, "", null, (montre) => {
+          bascule(montre);
+          (suiveurs[l.cle] || []).forEach((f) => f(montre));
+        }));
       }
     }
     tb.appendChild(tr);
