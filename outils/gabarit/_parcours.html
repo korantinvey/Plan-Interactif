@@ -53,6 +53,9 @@ function basculeParcours(genre, id){
   if (i < 0) l.push(k); else l.splice(i, 1);
   enregistreParcours();
   rafraichitParcours();
+  /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
+     visiteur en train de composer sa journée. */
+  mesure("parcours");
 }
 
 /* ------------------------------------------------------------
@@ -214,7 +217,7 @@ function remplitParcours(){
         titre: c.nom,
         detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
                 (c.salle ? " · " + c.salle : ""),
-        ouvre: () => ficheConf(c.id),
+        ouvre: () => ficheConf(c.id, "parcours"),
       });
     });
   }
@@ -227,7 +230,7 @@ function remplitParcours(){
       detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
       // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
       // et le tiroir se retire, puisqu'ils occupent la même bande
-      ouvre: () => select(o.id, true),
+      ouvre: () => select(o.id, true, "parcours"),
     }));
   }
 }

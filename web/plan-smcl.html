@@ -67,6 +67,7 @@ button{cursor:pointer;background:none;border:none}
 .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;height:60px;
   background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;white-space:nowrap}
+.brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
 @media (max-width:1150px){.stats{display:none}}
@@ -890,7 +891,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <h1 id="titre">SMCL 2026</h1>
+      <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
+           celui d'un salon annoncerait le mauvais pendant tout le
+           chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
+           pas le vrai, réserve la place sans rien affirmer. -->
+      <h1 id="titre" class="attente">Plan du salon</h1>
       <span class="sub" id="sub"></span>
     </div>
     <nav class="halls" id="halls" aria-label="Pavillons"></nav>
@@ -1186,6 +1191,7 @@ function indexe(d){
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
+  $("titre").classList.remove("attente");   // ce n'est plus un intitulé d'attente
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
@@ -1412,7 +1418,10 @@ function liste(){
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
-  box.querySelectorAll(".row").forEach(b => b.onclick = () => select(b.dataset.id, true));
+  /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
+     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon. */
+  box.querySelectorAll(".row").forEach(b => b.onclick =
+    () => select(b.dataset.id, true, q ? "recherche" : "liste"));
 }
 
 /* ============================================================
@@ -1541,7 +1550,12 @@ function anime(rect, sens){
 }
 const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
 
-function select(id, recentrer){
+/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
+   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
+   dessinée — c'est ce qui les sépare. */
+const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+
+function select(id, recentrer, canal){
   const o = parId.get(id);
   if (!o) return;
   if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
@@ -1552,7 +1566,7 @@ function select(id, recentrer){
   const n = noeud(id); if (n) n.classList.add("sel");
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null);
+  ouvre(o, n ? n.getBoundingClientRect() : null, canal);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
      sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
@@ -1671,11 +1685,12 @@ function jourLong(d){
  * — l'heure et le titre — parce qu'il en aligne parfois vingt ; le reste,
  * description comprise, tient ici.
  */
-function ficheConf(id){
+function ficheConf(id, canal){
   // l'index est global : une conférence retenue peut se tenir dans un autre
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
+  mesure("fiche_conf", canal);
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -1732,7 +1747,7 @@ function ficheConf(id){
         /* La fiche de l'exposant prend la place de celle de la conférence, et
            le plan se recentre sur son stand — au besoin en changeant de
            pavillon, ce dont `select` se charge. */
-        if (o) el.onclick = () => { fermeModale(); select(o.id, true); };
+        if (o) el.onclick = () => { fermeModale(); select(o.id, true, "conference"); };
         hote.appendChild(el);
       });
       corps.appendChild(w);
@@ -1782,7 +1797,7 @@ function ecarteClicFantome(){
   degel = setTimeout(() => zones.forEach(z => { z.style.pointerEvents = ""; }), 450);
 }
 
-function ouvre(o, rect){
+function ouvre(o, rect, canal){
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
   fermeParcours(); fermeItineraire();
@@ -1855,8 +1870,11 @@ function ouvre(o, rect){
       : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
+  /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
+     de la fiche de l'exposant qui la tient : ce n'est pas le même chemin. */
+  const canalConf = zone ? "salle" : "exposant";
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
-    b.onclick = () => ficheConf(b.dataset.conf));
+    b.onclick = () => ficheConf(b.dataset.conf, canalConf));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un
      exposant porte sur la fiche entière. Une zone organisateur ne se retient
      pas elle-même — ce sont ses conférences qu'on ajoute, chacune à son heure. */
@@ -1879,6 +1897,8 @@ function ouvre(o, rect){
   $("voile").classList.add("on");
   ecarteClicFantome();
   anime(rect, 1);
+  // une zone organisateur n'est pas un exposant : elle ne compte pas ici
+  if (!zone) mesure("fiche_stand", canal);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
@@ -1993,7 +2013,7 @@ svg.addEventListener("pointerup", e => {
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false);
+    select(d.cible.dataset.id, false, canalPlan(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -2014,7 +2034,7 @@ svg.addEventListener("keydown", e => {
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false);
+    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
   }
 });
 document.addEventListener("keydown", e => {
@@ -2040,7 +2060,21 @@ document.addEventListener("keydown", e => {
 $("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
 $("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
 $("zFit").onclick = fit;
-$("q").addEventListener("input", e => { state.q = e.target.value; appliqueFiltre(); });
+/* Une recherche n'est pas une frappe. On attend que la main s'arrête, et on
+   ne compte pas deux fois le même mot-clé — retirer une lettre puis la
+   remettre reste la même recherche. */
+let _rechAttente = null, _rechDerniere = "";
+$("q").addEventListener("input", e => {
+  state.q = e.target.value;
+  appliqueFiltre();
+  clearTimeout(_rechAttente);
+  _rechAttente = setTimeout(() => {
+    const q = state.q.trim().toLowerCase();
+    if (q.length < 2 || q === _rechDerniere) return;
+    _rechDerniere = q;
+    mesure("recherche");
+  }, 900);
+});
 
 /* ============================================================
    Le tiroir de la liste — écrans étroits
@@ -3965,6 +3999,9 @@ function basculeParcours(genre, id){
   if (i < 0) l.push(k); else l.splice(i, 1);
   enregistreParcours();
   rafraichitParcours();
+  /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
+     visiteur en train de composer sa journée. */
+  mesure("parcours");
 }
 
 /* ------------------------------------------------------------
@@ -4126,7 +4163,7 @@ function remplitParcours(){
         titre: c.nom,
         detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
                 (c.salle ? " · " + c.salle : ""),
-        ouvre: () => ficheConf(c.id),
+        ouvre: () => ficheConf(c.id, "parcours"),
       });
     });
   }
@@ -4139,7 +4176,7 @@ function remplitParcours(){
       detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
       // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
       // et le tiroir se retire, puisqu'ils occupent la même bande
-      ouvre: () => select(o.id, true),
+      ouvre: () => select(o.id, true, "parcours"),
     }));
   }
 }
@@ -5163,7 +5200,7 @@ function effaceItineraire(){
  * enchaîner dans la foulée du clic figerait le bouton sans rien dire ; on
  * affiche d'abord, on calcule ensuite.
  */
-let attente = null;
+let attente = null, _dernierTrajet = "";
 function relance(){
   clearTimeout(attente);
   if (!ITI.a || !ITI.b){
@@ -5173,6 +5210,11 @@ function relance(){
     return;
   }
   montreResultat("calcul");
+  /* Un calcul, ce sont deux points et une option d'accessibilité. Corriger une
+     lettre du champ d'arrivée relance le même trajet : il ne compte qu'une
+     fois. */
+  const empreinte = ITI.a.cle + ">" + ITI.b.cle + (ITI.pmr ? " pmr" : "");
+  if (empreinte !== _dernierTrajet){ _dernierTrajet = empreinte; mesure("itineraire"); }
   attente = setTimeout(() => {
     attente = null;
     try {
@@ -5442,6 +5484,130 @@ addEventListener("keydown", e => {
   if (visee){ e.stopPropagation(); finVisee(); return; }
   if ($("iSugg").hidden) fermeItineraire();
 });
+
+/* ============================================================
+   13. Mesure d'utilisation
+
+   L'organisateur paie le plan et ne sait pas s'il sert. Ce module compte les
+   gestes — une visite, une recherche, une fiche ouverte et par quel chemin —
+   et les pousse par paquets vers la fonction `mesure`. Le rapport se lit
+   depuis la console, sur sa page dédiée.
+
+   Trois choses qu'il ne fait pas, et c'est ce qui permet de le laisser tourner
+   sans bandeau de consentement : il ne pose pas de cookie, il n'envoie ni
+   adresse ni agent utilisateur — le serveur ne les enregistre pas davantage —
+   et le jeton de visiteur est tiré au hasard par le navigateur, propre à cet
+   événement. Il ne suit personne d'un salon à l'autre, encore moins ailleurs.
+
+   Il se tait complètement dans deux cas : la page à données figées, qui n'a
+   aucune API à appeler, et la page d'administration, où ce qu'on mesurerait
+   serait l'exploitant en train de préparer son salon.
+   ============================================================ */
+const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
+const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
+  document.documentElement.dataset.role !== "admin");
+
+/** Un jeton de quelques caractères, tiré du générateur du navigateur. */
+function jetonMesure(){
+  const t = new Uint8Array(9);
+  (crypto && crypto.getRandomValues ? crypto : { getRandomValues: a => {
+    for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+  } }).getRandomValues(t);
+  return Array.from(t, o => o.toString(36).padStart(2, "0")).join("");
+}
+
+/**
+ * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
+ *
+ * En navigation privée, ou stockage plein, `localStorage` lève. On ne renonce
+ * pas à mesurer pour autant : le visiteur comptera pour un de plus, ce qui
+ * vaut mieux que de ne pas le compter du tout.
+ */
+function jetonRetenu(cle, ou){
+  try {
+    const v = ou.getItem(cle);
+    if (v) return v;
+    const n = jetonMesure();
+    ou.setItem(cle, n);
+    return n;
+  } catch (e) {
+    return jetonMesure();
+  }
+}
+
+/* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
+   ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
+   identifiant hors d'ici. Celui de session ne survit pas à l'onglet : c'est
+   lui qui fait la différence entre « une visite » et « un visiteur ». */
+const MESURE_VISITEUR = MESURE_ACTIVE
+  ? jetonRetenu("plan-visiteur:" + SLUG, localStorage) : "";
+const MESURE_SESSION = MESURE_ACTIVE
+  ? jetonRetenu("plan-session:" + SLUG, sessionStorage) : "";
+
+/* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
+   quand le paquet est plein, quand la main s'arrête, ou quand la page part. */
+const MESURE_PAQUET = 20;
+const MESURE_DELAI = 4000;
+let _gestes = [], _envoiDiffere = null;
+
+function envoieMesures(dernier){
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = null;
+  if (!_gestes.length) return;
+  const charge = JSON.stringify({
+    slug: SLUG, visiteur: MESURE_VISITEUR, session: MESURE_SESSION,
+    gestes: _gestes.splice(0, _gestes.length),
+  });
+  /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
+     se perdrait, et avec lui les derniers gestes — souvent les plus parlants.
+     `sendBeacon` est fait pour cela, il survit à la fermeture de l'onglet. */
+  try {
+    if (dernier && navigator.sendBeacon &&
+        navigator.sendBeacon(MESURE_API, charge)) return;
+  } catch (e) {}
+  fetch(MESURE_API, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: charge, keepalive: true,
+    // la mesure ne doit jamais gêner la visite : une panne se tait
+  }).catch(() => {});
+}
+
+/**
+ * Retenir un geste.
+ *
+ *   mesure("fiche_stand", "plan")   une fiche d'exposant, ouverte du plan
+ *   mesure("recherche")             une recherche menée à son terme
+ *
+ * Le vocabulaire est celui de la table ; le serveur écarte ce qu'il ne
+ * connaît pas plutôt que de l'enregistrer sous un nom approximatif.
+ */
+function mesure(genre, canal){
+  if (!MESURE_ACTIVE) return;
+  _gestes.push(canal ? { genre: genre, canal: canal } : { genre: genre });
+  if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
+}
+
+if (MESURE_ACTIVE){
+  /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
+     fait une seconde ; naviguer dedans pendant deux heures, une seule. */
+  const CLE_VUE = "plan-visite:" + SLUG;
+  let dejaVue = false;
+  try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
+  if (!dejaVue){
+    try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
+    mesure("visite");
+  }
+
+  /* `pagehide` est le seul événement sur lequel on puisse compter partout :
+     sur mobile, une page mise en arrière-plan n'est jamais « déchargée », elle
+     est gelée puis jetée sans prévenir. */
+  addEventListener("pagehide", () => envoieMesures(true));
+  addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") envoieMesures(true);
+  });
+}
 /* ============================================================
    12. Démarrage
    ============================================================ */
@@ -5459,7 +5625,7 @@ function demarre(d){
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
-    if (cible) setTimeout(() => select(cible.id, true), 80);
+    if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
 }
 
@@ -5469,6 +5635,8 @@ function annonce(txt, erreur){
   l.querySelector(".empty").textContent = txt;
   if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
   $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+  // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
+  if (erreur) $("titre").classList.remove("attente");
 }
 
 /**

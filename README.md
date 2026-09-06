@@ -234,6 +234,62 @@ s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcou
 de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
 et le bouton des fiches suit celui de la barre.
 
+## Le rapport d'utilisation
+
+Le plan était une boîte noire : on savait combien d'exposants il portait, jamais
+s'il servait. La page `rapport` répond à la question que pose l'organisateur —
+combien sont venus, ce qu'ils ont cherché, quelles fiches ils ont ouvertes, et
+**par quel chemin**. On y arrive depuis la console, par le bouton
+« Utilisation » de la fiche d'un événement, ou directement :
+`…/rapport?plan=<slug>`. La connexion est celle de la console, la même session.
+
+Ce qu'elle montre, pour la période choisie — sept, trente, quatre-vingt-dix
+jours, ou depuis le début :
+
+- **Visites** et **visiteurs uniques**. Une visite est une ouverture du plan :
+  revenir le lendemain en fait une seconde, naviguer deux heures d'affilée n'en
+  fait qu'une. Un visiteur est un navigateur, compté une fois sur la période.
+- **Recherches** : les mots-clés menés à leur terme, doublons écartés — retirer
+  une lettre puis la remettre reste la même recherche.
+- **Itinéraires calculés** et **programmes de visite** composés.
+- **Fiches exposants ouvertes**, en tout puis par canal : par la recherche, par
+  un clic sur le plan, par un clic sur un logo posé dessus, par le nom cité dans
+  une conférence, par la liste du pavillon, par le programme de visite, ou par un
+  lien direct.
+- **Fiches conférences ouvertes**, de même : depuis le programme d'une salle,
+  depuis la fiche de l'exposant qui la tient, ou depuis le programme de visite.
+- Les **visites jour par jour**, dans le fuseau du salon.
+
+Le détail par canal est ce qui se lit le plus vite : aucun clic sur un logo dit
+qu'aucun logo n'a été posé ; une recherche qui domine dit que le plan sert de
+répertoire plus que de plan.
+
+### Ce qui est enregistré, et ce qui ne l'est pas
+
+Une ligne par geste, dans la table `mesure` : l'événement, le geste, le canal,
+deux jetons, un horodatage. **Rien d'autre** — ni adresse IP, ni agent
+utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au hasard par
+le navigateur et rangé chez lui sous une clé propre à l'événement
+(`plan-visiteur:<slug>`) : il ne suit personne d'un salon à l'autre, encore moins
+d'un site à l'autre. Le jeton de session ne survit pas à l'onglet — c'est lui qui
+fait la différence entre « une visite » et « un visiteur ».
+
+La page ne mesure rien dans deux cas : la version à données figées
+(`plan-smcl.html`), qui n'appelle aucune API, et la page d'administration, où
+l'on mesurerait l'exploitant en train de préparer son salon. Un événement en
+brouillon n'est pas mesuré non plus : la fonction refuse ce qui n'est pas publié.
+
+Les gestes partent **par paquets** — vingt, ou quatre secondes d'inactivité, ou
+le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet. Une
+panne réseau se tait : la mesure ne doit jamais gêner la visite.
+
+L'écriture passe par la fonction `mesure`, jamais par la table : une table
+ouverte en écriture au public serait un formulaire de spam. Le vocabulaire y est
+clos — un genre inconnu est écarté, pas enregistré sous un nom approximatif — et
+la contrainte de la table le redit. La lecture passe par
+`rapport_utilisation()`, qui agrège tout en un appel : rapatrier les gestes pour
+les compter dans le navigateur reviendrait à télécharger un salon entier.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.
@@ -477,6 +533,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | `/plan?plan=<slug>` | le plan des visiteurs | libre |
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
+| `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |
 
 La page publique ne contient aucune commande d'administration : elles sont
 retirées du document au chargement. La page d'administration exige une session

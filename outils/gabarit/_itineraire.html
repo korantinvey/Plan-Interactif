@@ -987,7 +987,7 @@ function effaceItineraire(){
  * enchaîner dans la foulée du clic figerait le bouton sans rien dire ; on
  * affiche d'abord, on calcule ensuite.
  */
-let attente = null;
+let attente = null, _dernierTrajet = "";
 function relance(){
   clearTimeout(attente);
   if (!ITI.a || !ITI.b){
@@ -997,6 +997,11 @@ function relance(){
     return;
   }
   montreResultat("calcul");
+  /* Un calcul, ce sont deux points et une option d'accessibilité. Corriger une
+     lettre du champ d'arrivée relance le même trajet : il ne compte qu'une
+     fois. */
+  const empreinte = ITI.a.cle + ">" + ITI.b.cle + (ITI.pmr ? " pmr" : "");
+  if (empreinte !== _dernierTrajet){ _dernierTrajet = empreinte; mesure("itineraire"); }
   attente = setTimeout(() => {
     attente = null;
     try {

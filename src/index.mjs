@@ -1,5 +1,6 @@
 /**
- * Worker Cloudflare : sert les pages, et relaie les lectures du plan.
+ * Worker Cloudflare : sert les pages, relaie les lectures du plan et les
+ * mesures d'utilisation.
  *
  * Sans relais, chaque visiteur paie l'aller-retour jusqu'à la fonction
  * Supabase — environ deux cents millisecondes rien que pour la mettre en
@@ -17,9 +18,18 @@
  *   — seuls les paramètres attendus sont relayés, pour que ce chemin ne
  *     devienne pas un proxy ouvert ;
  *   — sans stockage KV attaché, tout continue de fonctionner, sans cache.
+ *
+ * Le même chemin sert aux mesures d'utilisation, en sens inverse : la page
+ * pousse ses gestes, le Worker les passe à la fonction, sans rien garder.
  */
-const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
+const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
+const AMONT = BASE + "plan-public";
+const MESURE = BASE + "mesure";
 const PARAMS = ["slug", "fond", "v"];
+
+/* Un paquet de mesures pèse quelques centaines d'octets. Au-delà, ce n'est
+   plus une visite qu'on décrit : on refuse sans même relayer. */
+const MESURE_MAX = 4096;
 
 /* Le plan sans son fond peut changer à chaque synchronisation : dix minutes de
    retard au plus, ce qui reste sous le rythme de synchronisation le plus vif.
@@ -33,9 +43,32 @@ const meta = (r) => ({
   cc: r.headers.get("Cache-Control") || "no-store",
 });
 
+/** Relais des mesures : un aller simple, sans identité et sans cache. */
+async function mesure(requete) {
+  if (requete.method !== "POST") {
+    return new Response("Méthode non permise", { status: 405 });
+  }
+  const corps = await requete.text();
+  if (corps.length > MESURE_MAX) return new Response(null, { status: 413 });
+  const reponse = await fetch(MESURE, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: corps,
+  });
+  return new Response(reponse.body, {
+    status: reponse.status,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+}
+
 export default {
   async fetch(requete, env, ctx) {
     const url = new URL(requete.url);
+    /* Les mesures d'utilisation prennent le même chemin que le plan : même
+       origine que la page, donc aucun contrôle d'origine croisée à passer, et
+       rien à configurer si le domaine change. Elles ne sont ni lues ni mises
+       en cache — elles ne font que passer. */
+    if (url.pathname === "/api/mesure") return mesure(requete);
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
     if (requete.method !== "GET" && requete.method !== "HEAD") {
       return new Response("Méthode non permise", { status: 405 });

@@ -10,275 +10,7 @@
 
 <script src="config.js"></script>
 
-<style>
-:root{
-  --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC; --surface-3:#E4E6DE;
-  --line:#D2D5CB; --line-strong:#B4B9AC;
-  --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
-  --accent:#2F49D1; --accent-soft:#DCE1FA;
-  --vert:#17876B; --vert-soft:#D8EDE6;
-  --ambre:#C98A06; --ambre-soft:#F7EAC6;
-  --rouge:#C2372B; --rouge-soft:#F6DDDA;
-  --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
-  --radius:4px;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427; --surface-3:#272D31;
-    --line:#2A3034; --line-strong:#3B4348;
-    --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55;
-    --vert:#3FBF9B; --vert-soft:#12332B;
-    --ambre:#F0B429; --ambre-soft:#3A2F12;
-    --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-  }
-}
-:root[data-theme="dark"]{
-  --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427; --surface-3:#272D31;
-  --line:#2A3034; --line-strong:#3B4348;
-  --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-  --accent:#7A8CFF; --accent-soft:#232C55;
-  --vert:#3FBF9B; --vert-soft:#12332B;
-  --ambre:#F0B429; --ambre-soft:#3A2F12;
-  --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-}
-
-*{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
-  -webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-/* Un display: flex ou grid l'emporte sinon sur la règle du navigateur, et
-   l'élément reste visible alors qu'on le croit masqué. */
-[hidden]{display:none!important}
-button{cursor:pointer;background:none;border:none}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-.eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
-
-.app{display:grid;grid-template-columns:300px 1fr;grid-template-rows:auto 1fr;
-  height:100vh;min-height:600px}
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 18px;height:58px;
-  background:var(--surface);border-bottom:1px solid var(--line);z-index:5}
-.topbar h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px;margin:0;
-  letter-spacing:-.02em;white-space:nowrap}
-.topbar .sous{font-size:12px;color:var(--ink-3);white-space:nowrap}
-.statut{margin-left:auto;font-size:12.5px;color:var(--ink-3);max-width:46%;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.statut.err{color:var(--rouge)}
-.statut.ok{color:var(--vert)}
-.topbar .droite{margin-left:12px;display:flex;gap:7px;align-items:center}
-
-.btn{padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:500;
-  border:1px solid var(--line);white-space:nowrap}
-.btn:hover{border-color:var(--line-strong)}
-.btn.primaire{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.primaire:hover{filter:brightness(1.08)}
-.btn.danger{color:var(--rouge);border-color:var(--line)}
-.btn.danger:hover{background:var(--rouge-soft);border-color:var(--rouge)}
-.btn.petit{padding:5px 10px;font-size:12.5px}
-.btn[disabled]{opacity:.5;cursor:default}
-a.btn{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
-a.btn.inactif{opacity:.45;pointer-events:none}
-.lien{font-size:12.5px;color:var(--ink-3);text-decoration:underline}
-.lien:hover{color:var(--ink)}
-
-/* ---------- colonne des événements ---------- */
-.rail{background:var(--surface);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0}
-.rail header{padding:13px 16px 11px;border-bottom:1px solid var(--line);
-  display:flex;align-items:center;justify-content:space-between;gap:8px}
-.railActs{display:flex;align-items:center;gap:6px}
-.icone{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
-  border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
-.icone:hover{border-color:var(--line-strong);color:var(--ink)}
-.icone svg{width:14px;height:14px}
-.icone[disabled]{opacity:.5;cursor:default}
-@keyframes tourne{to{transform:rotate(360deg)}}
-.icone.occupe svg{animation:tourne .9s linear infinite}
-@media (prefers-reduced-motion:reduce){.icone.occupe svg{animation:none}}
-.rail .liste{overflow-y:auto;flex:1;min-height:0}
-.evt{display:block;width:100%;text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
-.evt:hover{background:var(--surface-2)}
-.evt[aria-current="true"]{background:var(--accent-soft)}
-.evt .nom{font-weight:600;font-size:14px;line-height:1.25;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.evt .meta{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11.5px;color:var(--ink-3)}
-.vide{padding:36px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
-
-.etat{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
-  padding:2px 7px;border-radius:999px;letter-spacing:.02em;
-  background:var(--surface-3);color:var(--ink-2)}
-.etat.publie{background:var(--vert-soft);color:var(--vert)}
-.etat.brouillon{background:var(--ambre-soft);color:var(--ambre)}
-.etat::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
-
-/* ---------- panneau de droite ---------- */
-.fiche{overflow-y:auto;padding:22px 26px 60px}
-.fiche .entete{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
-.fiche h2{font-family:"Archivo",sans-serif;font-size:21px;letter-spacing:-.02em;margin:2px 0 5px}
-.fiche .entete .droite{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-
-.bloc{background:var(--surface);border:1px solid var(--line);border-radius:6px;
-  padding:16px 18px;margin-bottom:14px}
-.bloc > .eyebrow{display:block;margin-bottom:12px}
-.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
-.source-inerte{opacity:.62}
-/* Tableaux de réglage — les salles, la correspondance des champs : une ligne
-   par entrée, une liste déroulante à droite, l'état lisible d'un coup d'œil.
-   La barre de gauche dit d'où vient ce qui est retenu. */
-table.salles,table.champs{width:100%;border-collapse:collapse;font-size:12.5px}
-table.salles th,table.champs th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
-  text-transform:uppercase;color:var(--ink-3);padding:0 8px 8px;border-bottom:1px solid var(--line)}
-table.salles td,table.champs td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-table.salles tr[data-etat="manque"] td:first-child,
-table.champs tr[data-etat="manque"] td:first-child{box-shadow:inset 2px 0 var(--rouge)}
-table.salles tr[data-etat="manuel"] td:first-child,
-table.champs tr[data-etat="manuel"] td:first-child{box-shadow:inset 2px 0 var(--accent)}
-table.salles tr[data-etat="auto"] td:first-child,
-table.champs tr[data-etat="auto"] td:first-child{box-shadow:inset 2px 0 var(--vert)}
-table.salles td.n,table.champs td.n{color:var(--ink);max-width:230px}
-table.salles td.c,table.champs td.c{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);white-space:nowrap}
-table.salles select,table.champs select{width:100%;padding:5px 7px;background:var(--surface-2);
-  border:1px solid var(--line);border-radius:var(--radius)}
-/* Chaque champ s'y annonce avec un exemple de sa valeur : c'est long, et c'est
-   ce qui fait choisir. La colonne prend donc toute la largeur restante, et le
-   nom de la cible se contente de la sienne. */
-table.champs td.n{width:32%}
-table.champs select{font-family:"IBM Plex Mono",monospace;font-size:11.5px}
-/* La case décide de l'affichage, la liste d'où vient la valeur : deux
-   décisions de la même ligne. La colonne se réduit à la case — la mise en
-   grille du libellé, inutile ici, l'écraserait. */
-table.champs td.montre{width:64px;text-align:center}
-table.champs td.montre label.case{display:inline-block;gap:0}
-table.champs td.montre label.case span:empty{display:none}
-table.champs td.montre label.case input{margin:0;vertical-align:middle}
-table.champs td.montre .etat-salle{margin:0}
-/* Un champ que la fiche ne montre plus garde son champ d'origine, grisé : on
-   le retrouve tel quel en recochant. */
-table.champs tr.source-inerte select{pointer-events:none}
-.etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
-.etat-salle[data-genre="manque"]{color:var(--rouge)}
-.etat-salle[data-genre="manuel"]{color:var(--accent)}
-/* « libre » : la cible est vide et c'est son état normal — rien ne la porte
-   d'office chez ce fournisseur. Ni barre, ni couleur : elle n'appelle pas au
-   secours, elle attend un champ si le salon en a un. */
-.etat-salle[data-genre="libre"]{color:var(--ink-3)}
-/* Le rôle de la cible, sous son libellé : « mal réglé, aucun exposant
-   n'apparaît » se lit là où l'on s'apprête à choisir, pas dans une note de bas
-   de fenêtre. */
-table.champs td.n .lib{display:block}
-table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
-  color:var(--ink-3);line-height:1.4;white-space:normal}
-@media (max-width:620px){
-  table.salles thead,table.champs thead{display:none}
-  table.salles tr,table.champs tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
-  table.salles td,table.champs td{display:block;border:none;padding:2px 0}
-  table.salles tr[data-etat] td:first-child,
-  table.champs tr[data-etat] td:first-child{box-shadow:none}
-}
-.reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
-  border-top:1px solid var(--line)}
-.reglage-ligne:first-of-type{border-top:none;padding-top:2px}
-.reglage-ligne .rt{font-size:13px;color:var(--ink);flex:0 0 auto}
-.reglage-ligne .rv{flex:1;min-width:0;font-size:12px;color:var(--ink-3);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (max-width:520px){
-  .reglage-ligne{flex-wrap:wrap}
-  .reglage-ligne .rv{flex:1 0 100%;order:3;white-space:normal}
-}
-.mcorps > p.aide{margin:14px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
-.onglets{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
-.onglets button{padding:7px 12px;background:none;border:none;border-bottom:2px solid transparent;
-  margin-bottom:-1px;font-size:12.5px;color:var(--ink-3);cursor:pointer}
-.onglets button:hover{color:var(--ink)}
-.onglets button[aria-pressed="true"]{color:var(--accent);border-bottom-color:var(--accent)}
-.colonne-cases{display:flex;flex-direction:column;gap:9px;min-width:0}
-.colonne-cases > .eyebrow{margin-bottom:2px}
-label.case{display:grid;grid-template-columns:auto 1fr;align-items:center;
-  gap:4px 8px;color:var(--ink);cursor:pointer}
-label.case input{width:15px;height:15px;padding:0;accent-color:var(--accent);cursor:pointer}
-label.case .aide{grid-column:2}
-.bloc > p.aide{margin:12px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
-label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2);min-width:0}
-label input,label select,label textarea{padding:8px 10px;background:var(--surface-2);
-  border:1px solid var(--line);border-radius:var(--radius);width:100%}
-label input:focus,label select:focus,label textarea:focus{border-color:var(--accent);
-  background:var(--surface);outline:none}
-label .aide{font-size:11px;color:var(--ink-3);line-height:1.45}
-label .aide.alerte{color:var(--rouge)}
-/* le champ reste modifiable : on saisit souvent l'identifiant avant de
-   basculer la source, et un champ en retrait ne doit pas être un champ mort */
-.source-inerte input,.source-inerte select{opacity:1}
-label.large{grid-column:1/-1}
-textarea{resize:vertical;min-height:72px;font-family:"IBM Plex Mono",monospace;font-size:11.5px}
-
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ink-3);padding:0 10px 7px;font-family:"Archivo",sans-serif}
-td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
-td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2)}
-tr.eteint td{opacity:.45}
-.coche{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
-
-.astuce{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin:0}
-.astuce code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
-  background:var(--surface-2);padding:1px 5px;border-radius:3px}
-/* Barre d'avancement : une colonne par étape, sa jauge au-dessus. La couleur
-   distingue ce qui est fait, ce qui tourne, et ce qui n'est pas repris. */
-.avance{display:flex;gap:10px;margin-top:14px}
-.pas{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-.pas .jauge{height:3px;border-radius:2px;background:var(--line);transition:background .25s}
-.pas .lib{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pas .det{font-size:11px;color:var(--ink-3);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pas[data-etat="encours"] .jauge{background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
-.pas[data-etat="encours"] .lib{color:var(--accent)}
-.pas[data-etat="fait"] .jauge{background:var(--vert,#3F7D58)}
-.pas[data-etat="fait"] .lib{color:var(--ink)}
-.pas[data-etat="ignoree"]{opacity:.5}
-.pas[data-etat="echec"] .jauge{background:var(--rouge)}
-.pas[data-etat="echec"] .lib,.pas[data-etat="echec"] .det{color:var(--rouge)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.pas .jauge{animation:none}}
-@media (max-width:560px){.avance{flex-wrap:wrap}.pas{flex:1 1 45%}}
-.etat-ligne{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-3);
-  margin-top:10px;flex-wrap:wrap}
-.etat-ligne .err{color:var(--rouge)}
-.etat-ligne .ok{color:var(--vert)}
-
-.integration{display:flex;gap:8px;align-items:flex-start}
-.integration textarea{flex:1;min-height:60px}
-
-/* ---------- fenêtres ---------- */
-.modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
-  place-items:center;padding:20px}
-.modale.open{display:grid}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
-  box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(440px,100%);max-height:84vh;
-  display:flex;flex-direction:column;overflow:hidden}
-/* La correspondance des champs aligne un libellé, une liste déroulante et un
-   exemple de valeur : 440 px les écrasent tous les trois. La fenêtre s'élargit
-   quand elle porte ce tableau, et elle seule. */
-.mfen:has(table.champs){width:min(780px,100%)}
-.mfen header{display:flex;align-items:center;justify-content:space-between;
-  padding:15px 18px 12px;border-bottom:1px solid var(--line)}
-.mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
-.mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 5px}
-.mcorps{padding:15px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px}
-.mcorps p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
-.mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
-  border-top:1px solid var(--line)}
-
-@media (max-width:900px){
-  .app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}
-  .rail{border-right:none;border-bottom:1px solid var(--line);max-height:190px}
-  .fiche{padding:16px}
-  .topbar .sous{display:none}
-}
-</style>
+<link rel="stylesheet" href="console.css">
 
 <div class="app">
   <header class="topbar">
@@ -318,7 +50,7 @@ tr.eteint td{opacity:.45}
 
 <script>
 /* ============================================================
-   Console des plans — accès aux données
+   Socle commun de la console et du rapport — accès au projet
    Tout passe par l'API REST de Supabase. La clé publique et l'adresse du
    projet sont demandées au premier lancement puis conservées sur le poste :
    elles n'ont pas à vivre dans le dépôt, et changent selon l'environnement.
@@ -334,12 +66,6 @@ let CFG = null, SESSION = null;
 try { CFG = JSON.parse(localStorage.getItem(CLE_CFG) || "null"); } catch (e) {}
 try { SESSION = JSON.parse(localStorage.getItem(CLE_SESSION) || "null"); } catch (e) {}
 if (window.PLAN_CONFIG && !CFG) CFG = window.PLAN_CONFIG;
-
-const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
-                 [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
-                 [1440, "Une fois par jour"]];
-
-let EVTS = [], selection = null, PLANS = {};
 
 /* ------------------------------------------------------------------
    Appels
@@ -368,87 +94,6 @@ async function rest(chemin, options = {}) {
     throw new Error(d || "Erreur " + r.status + " sur " + chemin);
   }
   return corps;
-}
-
-/**
- * Appel d'une fonction qui rend compte au fil de l'eau.
- *
- * La réponse est un flux de lignes JSON plutôt qu'un objet unique : une
- * synchronisation dure trop longtemps pour qu'un message figé dise où l'on en
- * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
- * la dernière — celle qui porte le résultat.
- */
-async function fluxFonction(nom, corps, surLigne) {
-  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
-    method: "POST",
-    headers: entetes(true),
-    body: JSON.stringify(corps),
-  });
-  // un refus arrive avant le flux, sous forme d'objet unique
-  if (!r.ok || !r.body) {
-    const j = await r.json().catch(() => ({}));
-    throw new Error(j.erreur || "Erreur " + r.status);
-  }
-
-  const lecteur = r.body.getReader();
-  const dec = new TextDecoder();
-  const FIN = String.fromCharCode(10);
-  let reste = "", dernier = null;
-  for (;;) {
-    const { done, value } = await lecteur.read();
-    if (done) break;
-    reste += dec.decode(value, { stream: true });
-    let i;
-    while ((i = reste.indexOf(FIN)) >= 0) {
-      const ligne = reste.slice(0, i).trim();
-      reste = reste.slice(i + 1);
-      if (!ligne) continue;
-      let o;
-      try { o = JSON.parse(ligne); } catch (e) { continue; }
-      if (o.erreur) throw new Error(o.erreur);
-      surLigne(o);
-      if (o.ok) dernier = o;
-    }
-  }
-  return dernier;
-}
-
-/**
- * Barre d'avancement à étapes. Les étapes sont annoncées par le serveur, non
- * devinées ici : lui seul sait ce qu'il va réellement faire.
- */
-function barreAvancement(hote, etapes) {
-  hote.innerHTML = "";
-  const b = document.createElement("div");
-  b.className = "avance";
-  etapes.forEach((e) => {
-    const d = document.createElement("div");
-    d.className = "pas";
-    d.dataset.cle = e.cle;
-    d.dataset.etat = "attente";
-    d.innerHTML = '<span class="jauge"></span><span class="lib"></span><span class="det"></span>';
-    d.querySelector(".lib").textContent = e.libelle;
-    if (e.source && e.source !== "klipso") d.querySelector(".det").textContent = e.source;
-    b.appendChild(d);
-  });
-  hote.appendChild(b);
-  return (cle, etat, info) => {
-    const d = b.querySelector('.pas[data-cle="' + CSS.escape(cle) + '"]');
-    if (!d) return;
-    d.dataset.etat = etat;
-    if (info !== undefined) d.querySelector(".det").textContent = info;
-  };
-}
-
-async function fonction(nom, corps) {
-  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
-    method: "POST",
-    headers: entetes(true),
-    body: JSON.stringify(corps),
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.erreur || "Erreur " + r.status);
-  return j;
 }
 
 /* ------------------------------------------------------------------
@@ -629,13 +274,153 @@ function ecranConnexion(message) {
   }
 }
 
+/**
+ * Fin de session. Ce qu'il faut effacer à l'écran dépend de la page : la
+ * console vide sa liste d'événements, le rapport ses chiffres. Chacune le dit
+ * en définissant `videEcran`.
+ */
 function deconnecte(message) {
   SESSION = null;
   localStorage.removeItem(CLE_SESSION);
-  EVTS = []; selection = null;
-  dessine();
+  if (typeof videEcran === "function") videEcran();
   ecranConnexion(message);
 }
+
+/* Le message va dans la barre du haut, qui existe toujours, et en écho dans
+   la fiche quand elle est ouverte. Une erreur avalée est pire qu'une erreur. */
+let effaceur;
+function signale(txt, erreur) {
+  const s = $("statut");
+  if (s) {
+    s.className = "statut " + (erreur ? "err" : "ok");
+    s.textContent = txt;
+    clearTimeout(effaceur);
+    if (!erreur) effaceur = setTimeout(() => { s.textContent = ""; s.className = "statut"; }, 6000);
+  }
+  const m = $("msgSync");
+  if (m) { m.className = erreur ? "err" : "ok"; m.textContent = txt; }
+  if (erreur) console.error("[console]", txt);
+}
+
+/* ------------------------------------------------------------------
+   Briques d'affichage
+   ------------------------------------------------------------------ */
+const bloc = (titre) => {
+  const d = document.createElement("div");
+  d.className = "bloc";
+  const t = document.createElement("span");
+  t.className = "eyebrow";
+  t.textContent = titre;
+  d.appendChild(t);
+  return d;
+};
+const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
+
+/** Adresse de base des pages, déduite de celle de la console. */
+const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+/* ------------------------------------------------------------------
+   Thème
+   ------------------------------------------------------------------ */
+const CLE_THEME = "console-theme";
+try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+$("btnTheme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = sombre ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+};
+
+const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
+                 [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
+                 [1440, "Une fois par jour"]];
+
+let EVTS = [], selection = null, PLANS = {};
+
+
+/**
+ * Appel d'une fonction qui rend compte au fil de l'eau.
+ *
+ * La réponse est un flux de lignes JSON plutôt qu'un objet unique : une
+ * synchronisation dure trop longtemps pour qu'un message figé dise où l'on en
+ * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
+ * la dernière — celle qui porte le résultat.
+ */
+async function fluxFonction(nom, corps, surLigne) {
+  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
+    method: "POST",
+    headers: entetes(true),
+    body: JSON.stringify(corps),
+  });
+  // un refus arrive avant le flux, sous forme d'objet unique
+  if (!r.ok || !r.body) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error(j.erreur || "Erreur " + r.status);
+  }
+
+  const lecteur = r.body.getReader();
+  const dec = new TextDecoder();
+  const FIN = String.fromCharCode(10);
+  let reste = "", dernier = null;
+  for (;;) {
+    const { done, value } = await lecteur.read();
+    if (done) break;
+    reste += dec.decode(value, { stream: true });
+    let i;
+    while ((i = reste.indexOf(FIN)) >= 0) {
+      const ligne = reste.slice(0, i).trim();
+      reste = reste.slice(i + 1);
+      if (!ligne) continue;
+      let o;
+      try { o = JSON.parse(ligne); } catch (e) { continue; }
+      if (o.erreur) throw new Error(o.erreur);
+      surLigne(o);
+      if (o.ok) dernier = o;
+    }
+  }
+  return dernier;
+}
+
+/**
+ * Barre d'avancement à étapes. Les étapes sont annoncées par le serveur, non
+ * devinées ici : lui seul sait ce qu'il va réellement faire.
+ */
+function barreAvancement(hote, etapes) {
+  hote.innerHTML = "";
+  const b = document.createElement("div");
+  b.className = "avance";
+  etapes.forEach((e) => {
+    const d = document.createElement("div");
+    d.className = "pas";
+    d.dataset.cle = e.cle;
+    d.dataset.etat = "attente";
+    d.innerHTML = '<span class="jauge"></span><span class="lib"></span><span class="det"></span>';
+    d.querySelector(".lib").textContent = e.libelle;
+    if (e.source && e.source !== "klipso") d.querySelector(".det").textContent = e.source;
+    b.appendChild(d);
+  });
+  hote.appendChild(b);
+  return (cle, etat, info) => {
+    const d = b.querySelector('.pas[data-cle="' + CSS.escape(cle) + '"]');
+    if (!d) return;
+    d.dataset.etat = etat;
+    if (info !== undefined) d.querySelector(".det").textContent = info;
+  };
+}
+
+async function fonction(nom, corps) {
+  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
+    method: "POST",
+    headers: entetes(true),
+    body: JSON.stringify(corps),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erreur || "Erreur " + r.status);
+  return j;
+}
+
+
 
 /* ------------------------------------------------------------------
    Données
@@ -719,21 +504,6 @@ function champ(cle, libelle, aide, attrs) {
   return l;
 }
 
-/* Le message va dans la barre du haut, qui existe toujours, et en écho dans
-   la fiche quand elle est ouverte. Une erreur avalée est pire qu'une erreur. */
-let effaceur;
-function signale(txt, erreur) {
-  const s = $("statut");
-  if (s) {
-    s.className = "statut " + (erreur ? "err" : "ok");
-    s.textContent = txt;
-    clearTimeout(effaceur);
-    if (!erreur) effaceur = setTimeout(() => { s.textContent = ""; s.className = "statut"; }, 6000);
-  }
-  const m = $("msgSync");
-  if (m) { m.className = erreur ? "err" : "ok"; m.textContent = txt; }
-  if (erreur) console.error("[console]", txt);
-}
 
 function dessineFiche() {
   const e = courant();
@@ -752,6 +522,7 @@ function dessineFiche() {
     '<div class="droite">' +
     '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
     '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
+    '<a class="btn petit" id="lienRapport">Utilisation</a>' +
     '<button class="btn petit" id="btnSources">Sources de données</button>' +
     '<button class="btn petit" id="btnEtat"></button>' +
     '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
@@ -828,6 +599,8 @@ function dessineFiche() {
     b3.appendChild(p);
   } else {
     const t = document.createElement("table");
+    // nommé pour qu'un écran étroit le fasse défiler seul, sans emporter la fiche
+    t.className = "pavillons";
     t.innerHTML = "<thead><tr><th>Publier</th><th>Pavillon</th><th>Hall</th>" +
       "<th>Emplacements</th><th>Zones</th></tr></thead><tbody></tbody>";
     const tb = t.querySelector("tbody");
@@ -1692,19 +1465,6 @@ function champOrigine(src, cible, apres) {
   return { hote, sel, dis };
 }
 
-const bloc = (titre) => {
-  const d = document.createElement("div");
-  d.className = "bloc";
-  const t = document.createElement("span");
-  t.className = "eyebrow";
-  t.textContent = titre;
-  d.appendChild(t);
-  return d;
-};
-const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
-
-/** Adresse de base des pages, déduite de celle de la console. */
-const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
 
 function majLiens(e) {
   const q = "?plan=" + encodeURIComponent(e.slug || "");
@@ -1723,6 +1483,13 @@ function majLiens(e) {
     adm.href = BASE_PAGES + "plan-admin" + q;
     adm.title = "Ouvrir le plan avec les calques et les outils de dessin" +
       (e.etat !== "publie" ? " — accessible même en brouillon" : "");
+  }
+  // le rapport reste dans l'onglet : c'est une autre page de la console, pas
+  // une sortie vers le plan
+  const rap = $("lienRapport");
+  if (rap) {
+    rap.href = BASE_PAGES + "rapport" + q;
+    rap.title = "Visites, recherches et fiches ouvertes";
   }
 }
 
@@ -1859,19 +1626,16 @@ $("btnExport").onclick = (ev) => {
 $("btnImport").onclick = () => ecranConfig();
 $("btnImport").textContent = "Projet";
 
-const CLE_THEME = "console-theme";
-try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
-};
 
 /* ------------------------------------------------------------------
    Rendu et démarrage
    ------------------------------------------------------------------ */
+/** Fin de session : la console n'a plus d'événements à montrer. */
+function videEcran() {
+  EVTS = []; selection = null;
+  dessine();
+}
+
 function dessine() {
   const n = EVTS.length;
   const p = EVTS.filter((e) => e.etat === "publie").length;

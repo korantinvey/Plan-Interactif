@@ -62,6 +62,7 @@ button{cursor:pointer;background:none;border:none}
 .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;height:60px;
   background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;white-space:nowrap}
+.brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
 @media (max-width:1150px){.stats{display:none}}
@@ -885,7 +886,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 <div class="app">
   <header class="topbar">
     <div class="brand">
-      <h1 id="titre">SMCL 2026</h1>
+      <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
+           celui d'un salon annoncerait le mauvais pendant tout le
+           chargement d'un autre. Un intitulé neutre, grisé tant qu'il n'est
+           pas le vrai, réserve la place sans rien affirmer. -->
+      <h1 id="titre" class="attente">Plan du salon</h1>
       <span class="sub" id="sub"></span>
     </div>
     <nav class="halls" id="halls" aria-label="Pavillons"></nav>

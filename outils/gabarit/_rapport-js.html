@@ -1,0 +1,310 @@
+
+/* ============================================================
+   Rapport d'utilisation
+
+   Un salon se juge sur ce qu'il a servi. La console dit ce que le plan
+   contient ; cette page dit ce qu'on en a fait — combien sont venus, ce
+   qu'ils ont cherché, quelles fiches ils ont ouvertes et par quel chemin.
+
+   Tout le calcul est fait par la base, en un appel : rapatrier les gestes
+   pour les compter ici reviendrait à télécharger un salon entier.
+   ============================================================ */
+const CLE_EVT = "rapport-evenement";
+
+let EVTS = [], selection = null, RAPPORT = null, periode = "30";
+
+/* Les périodes proposées. La valeur est un nombre de jours, ou « tout » : on
+   ne demande pas à un organisateur de saisir deux dates pour lire son salon. */
+const PERIODES = [
+  ["7", "7 derniers jours"],
+  ["30", "30 derniers jours"],
+  ["90", "90 derniers jours"],
+  ["tout", "Depuis le début"],
+];
+
+/* Par quel chemin une fiche s'est ouverte. L'ordre est celui de la lecture,
+   et la liste reste affichée en entier même à zéro : « aucun clic sur un
+   logo » se lit alors comme un renseignement — aucun logo n'a été posé — et
+   non comme un canal oublié. */
+const CANAUX_STAND = [
+  ["recherche", "Recherche"],
+  ["plan", "Clic sur le plan"],
+  ["image", "Clic sur un logo ou une image"],
+  ["conference", "Nom cité par une conférence"],
+  ["liste", "Liste du pavillon"],
+  ["parcours", "Programme de visite"],
+  ["lien", "Lien direct"],
+];
+const CANAUX_CONF = [
+  ["salle", "Programme d'une salle"],
+  ["exposant", "Fiche d'un exposant"],
+  ["parcours", "Programme de visite"],
+];
+const AUTRE = ["autre", "Autre"];
+
+const nb = (n) => Number(n || 0).toLocaleString("fr-FR");
+const courant = () => EVTS.find((e) => e.id === selection);
+
+/* ------------------------------------------------------------------
+   Données
+   ------------------------------------------------------------------ */
+async function chargeEvenements() {
+  EVTS = await rest("evenement?select=id,nom,slug,etat&order=nom.asc");
+  const voulu = new URLSearchParams(location.search).get("plan");
+  let garde = null;
+  try { garde = localStorage.getItem(CLE_EVT); } catch (e) {}
+  selection = (voulu && EVTS.find((e) => e.slug === voulu)?.id) ||
+    (EVTS.some((e) => e.id === garde) ? garde : null) || EVTS[0]?.id || null;
+}
+
+/** Le début de la période, à minuit : un rapport se lit en jours entiers. */
+function debutPeriode() {
+  if (periode === "tout") return null;
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - (Number(periode) - 1));
+  return d.toISOString();
+}
+
+async function chargeRapport() {
+  if (!selection) { RAPPORT = null; return; }
+  RAPPORT = await rest("rpc/rapport_utilisation", {
+    method: "POST",
+    body: JSON.stringify({ p_evenement: selection, p_debut: debutPeriode(), p_fin: null }),
+  });
+}
+
+/* ------------------------------------------------------------------
+   Rendu
+   ------------------------------------------------------------------ */
+function chiffre(hote, valeur, libelle, sous, fort) {
+  const d = document.createElement("div");
+  d.className = "chiffre" + (fort ? " fort" : "");
+  d.innerHTML = '<span class="n"></span><span class="l"></span>' +
+    (sous ? '<span class="s"></span>' : "");
+  d.querySelector(".n").textContent = nb(valeur);
+  d.querySelector(".l").textContent = libelle;
+  if (sous) d.querySelector(".s").textContent = sous;
+  hote.appendChild(d);
+  return d;
+}
+
+/**
+ * Une barre par canal, mise à l'échelle du plus fort.
+ *
+ * Rapporter la longueur au total plutôt qu'au maximum écraserait tout dès
+ * qu'un canal domine — et il en domine toujours un. Le pourcentage, lui, se
+ * lit bien sur le total : c'est la part qu'on cite.
+ */
+function barres(hote, canaux, total, connus) {
+  const lignes = connus.map(([cle, lib]) => [cle, lib, canaux[cle] || 0]);
+  // un canal inconnu de cette page — ajouté depuis, ou hors vocabulaire —
+  // vaut mieux affiché sous son nom brut que passé sous silence
+  Object.keys(canaux).forEach((cle) => {
+    if (!connus.some((c) => c[0] === cle)) {
+      lignes.push([cle, cle === AUTRE[0] ? AUTRE[1] : cle, canaux[cle]]);
+    }
+  });
+  const max = Math.max(1, ...lignes.map((l) => l[2]));
+  const box = document.createElement("div");
+  box.className = "barres";
+  lignes.forEach(([cle, lib, n]) => {
+    const d = document.createElement("div");
+    d.className = "barre";
+    d.innerHTML = '<span class="l"></span><span class="j"><span></span></span>' +
+      '<span class="v"></span>';
+    d.querySelector(".l").textContent = lib;
+    d.querySelector(".j > span").style.width = (n / max * 100).toFixed(1) + "%";
+    d.querySelector(".v").innerHTML = esc(nb(n)) +
+      (total ? '<span class="pc">' + Math.round(n / total * 100) + " %</span>" : "");
+    box.appendChild(d);
+  });
+  hote.appendChild(box);
+}
+
+/** Les jours, en bâtons. Un salon dure trois jours : le pic se voit d'un œil. */
+function jours(hote, liste) {
+  if (!liste.length) return;
+  const max = Math.max(1, ...liste.map((j) => j.visites));
+  const box = document.createElement("div");
+  box.className = "jours";
+  liste.forEach((j) => {
+    const d = document.createElement("div");
+    d.className = "jour-bat";
+    d.innerHTML = '<span class="b"></span><span class="d"></span>';
+    d.querySelector(".b").style.height = Math.max(2, j.visites / max * 100) + "%";
+    // « 14/03 » suffit : l'année est celle de la période demandée
+    const [an, mois, jour] = String(j.j).split("-");
+    d.querySelector(".d").textContent = jour + "/" + mois;
+    d.title = jour + "/" + mois + "/" + an + " · " + nb(j.visites) + " visite" +
+      (j.visites > 1 ? "s" : "") + ", " + nb(j.visiteurs) + " visiteur" +
+      (j.visiteurs > 1 ? "s" : "");
+    box.appendChild(d);
+  });
+  hote.appendChild(box);
+}
+
+function dessineRapport() {
+  const f = $("rapport");
+  f.innerHTML = "";
+  if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour lire le rapport.</div>'; return; }
+  if (!EVTS.length) {
+    f.innerHTML = '<div class="vide">Aucun événement.<br>Créez-en un depuis la console.</div>';
+    return;
+  }
+  const e = courant();
+  const r = RAPPORT;
+  if (!e || !r) { f.innerHTML = '<div class="vide">Chargement…</div>'; return; }
+
+  const entete = document.createElement("div");
+  entete.className = "entete";
+  entete.innerHTML = '<div><span class="eyebrow">Utilisation</span><h2></h2>' +
+    '<span class="etat ' + e.etat + '">' +
+    (e.etat === "publie" ? "Publié" : "Brouillon") + '</span></div>' +
+    '<div class="droite"><a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Voir le plan</a></div>';
+  entete.querySelector("h2").textContent = e.nom;
+  f.appendChild(entete);
+  $("lienPublic").href = BASE_PAGES + "plan?plan=" + encodeURIComponent(e.slug || "");
+
+  /* Rien à montrer se dit de deux façons, et ce n'est pas la même nouvelle :
+     la mesure n'a jamais rien reçu, ou la période choisie est vide. */
+  if (!r.depuis) {
+    const v = document.createElement("div");
+    v.className = "vide";
+    v.innerHTML = "Aucune mesure pour cet événement.<br>" +
+      (e.etat === "publie"
+        ? "Les visites sont comptées dès la première ouverture du plan public."
+        : "L'événement est en brouillon : son plan n'est pas encore servi aux visiteurs.");
+    f.appendChild(v);
+    return;
+  }
+
+  const b1 = bloc("Fréquentation");
+  const g1 = document.createElement("div");
+  g1.className = "chiffres";
+  chiffre(g1, r.visites, "Visites",
+    "Une ouverture du plan. Revenir plus tard en fait une seconde.", true);
+  chiffre(g1, r.visiteurs, "Visiteurs uniques",
+    "Navigateurs distincts sur la période.", true);
+  chiffre(g1, r.recherches, "Recherches", "Mots-clés saisis, doublons écartés.");
+  chiffre(g1, r.itineraires, "Itinéraires calculés", "Trajets distincts demandés.");
+  chiffre(g1, r.parcours, "Programmes de visite",
+    nb(r.parcours_gestes) + " ajout" + (r.parcours_gestes > 1 ? "s" : "") +
+    " ou retrait" + (r.parcours_gestes > 1 ? "s" : "") + " au total.");
+  b1.appendChild(g1);
+  f.appendChild(b1);
+
+  const b2 = bloc("Fiches exposants ouvertes");
+  const g2 = document.createElement("div");
+  g2.className = "chiffres seul";
+  chiffre(g2, r.stands.total, "Ouvertures", "Toutes provenances confondues.", true);
+  b2.appendChild(g2);
+  const t2 = document.createElement("p");
+  t2.className = "eyebrow";
+  t2.style.margin = "16px 0 10px";
+  t2.textContent = "Par canal";
+  b2.appendChild(t2);
+  barres(b2, r.stands.canaux || {}, r.stands.total, CANAUX_STAND);
+  f.appendChild(b2);
+
+  const b3 = bloc("Fiches conférences ouvertes");
+  const g3 = document.createElement("div");
+  g3.className = "chiffres seul";
+  chiffre(g3, r.conferences.total, "Ouvertures", "Toutes provenances confondues.", true);
+  b3.appendChild(g3);
+  const t3 = document.createElement("p");
+  t3.className = "eyebrow";
+  t3.style.margin = "16px 0 10px";
+  t3.textContent = "Par canal";
+  b3.appendChild(t3);
+  barres(b3, r.conferences.canaux || {}, r.conferences.total, CANAUX_CONF);
+  const a3 = document.createElement("p");
+  a3.className = "astuce";
+  a3.style.marginTop = "12px";
+  a3.textContent = "Une conférence s'ouvre depuis le programme de la salle qui " +
+    "l'accueille, depuis la fiche de l'exposant qui la tient, ou depuis le " +
+    "programme de visite. Elle n'a ni recherche ni forme propre sur le plan.";
+  b3.appendChild(a3);
+  f.appendChild(b3);
+
+  const b4 = bloc("Jour par jour");
+  jours(b4, r.jours || []);
+  const a4 = document.createElement("p");
+  a4.className = "astuce";
+  a4.style.marginTop = "10px";
+  /* La date d'ouverture se lit dans le fuseau du salon, comme les bâtons :
+     les deux dans le fuseau du lecteur ne se recouperaient pas. */
+  a4.textContent = "Visites par jour, dans le fuseau du salon (" + (r.fuseau || "UTC") +
+    "). Mesure ouverte depuis le " +
+    new Date(r.depuis).toLocaleDateString("fr-FR",
+      { dateStyle: "long", timeZone: r.fuseau || "UTC" }) + ".";
+  b4.appendChild(a4);
+  f.appendChild(b4);
+}
+
+function dessineBarre() {
+  const s = $("choixEvt");
+  s.innerHTML = EVTS.map((e) =>
+    '<option value="' + esc(e.id) + '"' + (e.id === selection ? " selected" : "") +
+    '>' + esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  s.hidden = !EVTS.length;
+  const p = $("choixPeriode");
+  if (!p.options.length) {
+    p.innerHTML = PERIODES.map((x) =>
+      '<option value="' + x[0] + '">' + x[1] + '</option>').join("");
+  }
+  p.value = periode;
+}
+
+/* ------------------------------------------------------------------
+   Chargement et démarrage
+   ------------------------------------------------------------------ */
+let _occupe = false;
+async function rafraichit() {
+  if (_occupe) return;
+  _occupe = true;
+  $("btnRecharger").disabled = true;
+  try {
+    await chargeRapport();
+    signale("");
+  } catch (e) {
+    RAPPORT = null;
+    signale(e.message, true);
+  } finally {
+    _occupe = false;
+    $("btnRecharger").disabled = false;
+    dessineBarre();
+    dessineRapport();
+  }
+}
+
+/** Fin de session : la console vide sa liste, le rapport vide ses chiffres. */
+function videEcran() {
+  EVTS = []; RAPPORT = null; selection = null;
+  dessineBarre();
+  dessineRapport();
+}
+
+$("choixEvt").onchange = (e) => {
+  selection = e.target.value;
+  try { localStorage.setItem(CLE_EVT, selection); } catch (err) {}
+  rafraichit();
+};
+$("choixPeriode").onchange = (e) => { periode = e.target.value; rafraichit(); };
+$("btnRecharger").onclick = () => rafraichit();
+
+async function demarre() {
+  try {
+    await chargeEvenements();
+    dessineBarre();
+    await rafraichit();
+  } catch (e) {
+    $("rapport").innerHTML = '<div class="vide"></div>';
+    $("rapport").querySelector(".vide").textContent = "Chargement impossible : " + e.message;
+  }
+}
+
+if (!CFG) ecranConfig();
+else if (!SESSION) ecranConnexion();
+else demarre();
+</script>
