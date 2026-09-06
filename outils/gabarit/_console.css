@@ -186,6 +186,10 @@ table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   table.salles td,table.champs td{display:block;border:none;padding:2px 0}
   table.salles tr[data-etat] td:first-child,
   table.champs tr[data-etat] td:first-child{box-shadow:none}
+  /* Les colonnes empilées ne sont plus des colonnes : leur largeur de tableau
+     y étrangle le texte, et « Numéro de stand » se coupait en deux. */
+  table.champs td.n,table.champs td.montre{width:auto;max-width:none;text-align:left}
+  table.champs td.montre{padding-bottom:4px}
 }
 .reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
   border-top:1px solid var(--line)}

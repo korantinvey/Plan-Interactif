@@ -844,8 +844,12 @@ const LIGNES_RATTACHEMENT = {
       aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
   ],
   eventmaker: [
-    { cible: "stand", libelle: "Numéro de stand",
-      aide: "Comparé au numéro du plan, mise en forme ignorée. Mal réglé, aucun exposant n'apparaît." },
+    /* « Numéro de stand » figure déjà plus haut, mais ce n'est pas le même :
+       celui-là est affiché et vient du plan, celui-ci est lu sur la fiche de
+       l'exposant pour l'y rattacher. Le libellé doit dire lequel des deux. */
+    { cible: "stand", libelle: "Numéro de stand de l'exposant",
+      aide: "Le numéro tel que sa fiche le porte, comparé à celui du plan, " +
+        "mise en forme ignorée. Mal réglé, aucun exposant n'apparaît." },
     { cible: "dossier", libelle: "Identifiant de dossier",
       aide: "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr." },
     { cible: "exclu", libelle: "Exclu de la liste",
