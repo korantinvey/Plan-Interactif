@@ -400,6 +400,27 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .field{display:flex;flex-direction:column;gap:3px}
 .field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
+/* L'activité est le seul texte de la fiche qui soit rédigé : des alinéas, une
+   médiane de huit cents caractères, parfois cinq mille. On garde ses retours à
+   la ligne, et on la replie à sept — déployée, elle chassait l'adresse et les
+   contacts hors de l'écran, ce que les deux colonnes avaient justement corrigé
+   pour les conférences. */
+.field .desc{white-space:pre-line}
+.field .desc[data-plie="1"]{display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:7;overflow:hidden}
+.plus{align-self:flex-start;margin-top:1px;padding:0;
+  color:var(--accent);font-size:12.5px;font-weight:600}
+.plus[hidden]{display:none}
+/* Le libellé porte la bascule de langue : c'est le seul endroit de la page qui
+   existe en deux versions, et un sélecteur de langue en tête de fiche
+   promettrait de traduire tout le reste. */
+.field.activite > .eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.langs{display:inline-flex;gap:3px;letter-spacing:normal}
+.lang{padding:2px 7px;border-radius:999px;border:1px solid var(--line);
+  color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600}
+.lang:hover{color:var(--ink);border-color:var(--line-strong)}
+.lang[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Une valeur multiple s'écrit en lignes. Les pastilles convenaient à des codes
    de trois caractères ; les libellés sont des phrases. */
 .field .v .ligne{display:block}

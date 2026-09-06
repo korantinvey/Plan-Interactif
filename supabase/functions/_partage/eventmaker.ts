@@ -63,6 +63,11 @@ export interface ExposantEm {
   linkedin: string | null;
   instagram: string | null;
   nomencl: string[];
+  /* Ce que l'exposant dit de son activité, en français et en anglais. C'est le
+     seul champ de la fiche qui soit rédigé pour être lu — et le seul qui existe
+     traduit : le reste, adresse et réseaux, ne se traduit pas. */
+  description: string | null;
+  descriptionEn: string | null;
   exclu: boolean;
 }
 
@@ -70,6 +75,23 @@ export interface ExposantEm {
 const ou = (...v: unknown[]): string | null => {
   for (const x of v) { const s = String(x ?? "").trim(); if (s) return s; }
   return null;
+};
+
+/* Un formulaire obligatoire se remplit de n'importe quoi : quatre fiches de
+   Franchise Expo Paris 2026 donnent « 0 » ou « idem » pour tout descriptif
+   anglais. Le plus court des vrais en fait vingt-sept — le seuil tombe dans un
+   vide, et écarter ces quatre-là vaut mieux que proposer une traduction qui
+   n'en est pas une. */
+const MINI_DESCRIPTIF = 8;
+
+/**
+ * Un descriptif d'activité, gardé tel qu'il a été écrit — ses alinéas font
+ * partie du propos —, mais débarrassé des retours chariot de Windows et des
+ * lignes vides en rafale, que la fiche rendrait à l'identique.
+ */
+const descriptif = (v: unknown): string | null => {
+  const t = String(v ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return t.length >= MINI_DESCRIPTIF ? t : null;
 };
 
 /**
@@ -449,6 +471,14 @@ export class Eventmaker {
         linkedin: ou(m.company_linkedin),
         instagram: ou(m.instagram_societe),
         nomencl: [m.rubriques2, m.rubriques].filter(Boolean) as string[],
+        /* Quatre champs disent la même chose : « description » est celui du
+           formulaire, « description_ezymob » sa copie pour l'application
+           mobile. Les valeurs sont identiques partout où les deux existent —
+           507 sur 507 en français, 416 sur 416 en anglais sur Franchise Expo
+           Paris 2026 —, mais la copie est présente sur toutes les fiches là où
+           l'original manque à une trentaine : on la lit d'abord. */
+        description: descriptif(m.description_ezymob ?? m.description),
+        descriptionEn: descriptif(m.description_ezymob_en ?? m.description_en),
         exclu: String(m.exclu_liste_exposant ?? "").toLowerCase() === "true",
       };
       if (stand) parStand.set(stand, fiche);

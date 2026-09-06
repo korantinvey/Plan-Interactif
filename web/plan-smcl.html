@@ -405,6 +405,27 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .field{display:flex;flex-direction:column;gap:3px}
 .field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
+/* L'activité est le seul texte de la fiche qui soit rédigé : des alinéas, une
+   médiane de huit cents caractères, parfois cinq mille. On garde ses retours à
+   la ligne, et on la replie à sept — déployée, elle chassait l'adresse et les
+   contacts hors de l'écran, ce que les deux colonnes avaient justement corrigé
+   pour les conférences. */
+.field .desc{white-space:pre-line}
+.field .desc[data-plie="1"]{display:-webkit-box;-webkit-box-orient:vertical;
+  -webkit-line-clamp:7;overflow:hidden}
+.plus{align-self:flex-start;margin-top:1px;padding:0;
+  color:var(--accent);font-size:12.5px;font-weight:600}
+.plus[hidden]{display:none}
+/* Le libellé porte la bascule de langue : c'est le seul endroit de la page qui
+   existe en deux versions, et un sélecteur de langue en tête de fiche
+   promettrait de traduire tout le reste. */
+.field.activite > .eyebrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.langs{display:inline-flex;gap:3px;letter-spacing:normal}
+.lang{padding:2px 7px;border-radius:999px;border:1px solid var(--line);
+  color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600}
+.lang:hover{color:var(--ink);border-color:var(--line-strong)}
+.lang[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Une valeur multiple s'écrit en lignes. Les pastilles convenaient à des codes
    de trois caractères ; les libellés sont des phrases. */
 .field .v .ligne{display:block}
@@ -918,7 +939,10 @@ const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
-const state = { q: "", sel: null, plan: 0 };
+/* `langue` ne concerne que le descriptif d'activité, seul contenu traduit :
+   on la retient d'une fiche à l'autre, sinon il faudrait la redemander à
+   chaque stand ouvert. */
+const state = { q: "", sel: null, plan: 0, langue: "fr" };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1563,6 +1587,66 @@ function lien(v){
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
 }
 
+/**
+ * Ce que l'exposant dit de son activité, dans la langue disponible.
+ *
+ * L'anglais manque à une fiche sur quatre : la bascule ne paraît que là où il
+ * y a les deux, et une fiche qui n'a que le français s'affiche sans rien
+ * promettre. Le texte part replié — c'est le plus long de la fiche, et ce qui
+ * le suit compte autant.
+ */
+function activite(o){
+  const dispo = ["fr", "en"].filter(l => l === "fr" ? o.desc : o.descEn);
+  if (!dispo.length) return "";
+  const l = dispo.indexOf(state.langue) >= 0 ? state.langue : dispo[0];
+  const bascule = dispo.length < 2 ? "" :
+    '<span class="langs">' + dispo.map(c =>
+      '<button type="button" class="lang" data-lang="' + c + '" aria-pressed="' +
+      (c === l) + '" aria-label="' + (c === "fr" ? "Français" : "English") + '">' +
+      c.toUpperCase() + '</button>').join("") + '</span>';
+  return '<div class="field activite"><span class="eyebrow">Activité' + bascule +
+    '</span><div class="v desc" data-plie="1"></div>' +
+    '<button type="button" class="plus" hidden></button></div>';
+}
+
+/**
+ * Le pli et la bascule, une fois le texte posé.
+ *
+ * Le repli ne se décide pas au nombre de caractères mais à la hauteur rendue :
+ * la fiche fait trois cent quarante pixels de large, ou six cent quarante en
+ * deux colonnes, et le même texte y tient sur un nombre de lignes différent.
+ */
+function brancheActivite(o){
+  const bloc = $("dBody").querySelector(".desc");
+  if (!bloc) return;
+  const plus = bloc.parentNode.querySelector(".plus");
+  const pose = () => {
+    // qui a déployé le français veut lire l'anglais en entier, pas le rouvrir
+    const deplie = bloc.dataset.plie === "0";
+    bloc.textContent = (state.langue === "en" && o.descEn) ? o.descEn : o.desc || o.descEn;
+    /* La mesure se prend replié : déployé, le bloc fait exactement la hauteur
+       de son contenu et ne déborde jamais — on conclurait qu'il tient. Un pixel
+       de marge, parce que les hauteurs rendues ne tombent pas rondes. */
+    bloc.dataset.plie = "1";
+    const deborde = bloc.scrollHeight > bloc.clientHeight + 1;
+    plus.hidden = !deborde;
+    bloc.dataset.plie = deplie && deborde ? "0" : "1";
+    plus.textContent = bloc.dataset.plie === "0" ? "Replier" : "Lire la suite";
+  };
+  plus.onclick = () => {
+    const plie = bloc.dataset.plie === "1";
+    bloc.dataset.plie = plie ? "0" : "1";
+    plus.textContent = plie ? "Replier" : "Lire la suite";
+  };
+  $("dBody").querySelectorAll(".lang").forEach(b => b.onclick = () => {
+    state.langue = b.dataset.lang;
+    $("dBody").querySelectorAll(".lang").forEach(x =>
+      x.setAttribute("aria-pressed", String(x === b)));
+    pose();
+  });
+  pose();
+}
+
 /* Un appui tactile produit, quelque trois cents millisecondes plus tard, un
    clic de compatibilité aux mêmes coordonnées. La fiche venant d'apparaître
    sous le doigt, ce clic fantôme la refermait aussitôt — d'où l'impression
@@ -1610,6 +1694,10 @@ function ouvre(o, rect){
   // ni la surface, ni les angles ouverts, ni l'état de commercialisation
   // n'apprennent quoi que ce soit au visiteur
   const infos =
+    /* Ce que fait l'exposant passe avant où il est : c'est la question qu'on se
+       pose devant un nom d'enseigne inconnu, et la seule à laquelle l'adresse
+       ne répond pas. */
+    ok("activite", zone ? "" : activite(o)) +
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
@@ -1651,6 +1739,7 @@ function ouvre(o, rect){
       ? bloc2("cConf", "dPaneConf", confs) + bloc2("cInfos", "dPaneInfos", infos)
       : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+  brancheActivite(o);
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un

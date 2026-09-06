@@ -89,6 +89,30 @@ Un échec du graphe est journalisé et ignoré : un salon sans rôle « Exposant
 est le cas courant, et une synchronisation par ailleurs bonne n'a pas à échouer
 là-dessus.
 
+## Le descriptif d'activité, en français et en anglais
+
+La fiche d'invité porte ce que l'exposant dit de son activité, et sa traduction.
+Quatre champs pour deux textes : `description` et `description_en` sont ceux du
+formulaire, `description_ezymob` et `description_ezymob_en` leur copie pour
+l'application mobile. Les valeurs sont identiques partout où les deux existent —
+507 sur 507 en français, 416 sur 416 en anglais — mais la copie est présente sur
+**toutes** les fiches là où l'original manque à une trentaine : c'est elle qu'on
+lit, l'autre en repli.
+
+Sur les 576 fiches que la synchronisation retient de Franchise Expo Paris 2026 —
+stand ou dossier, inscription effective — **507 portent un descriptif français
+(88 %) et 416 un anglais (72 %)**. Du texte brut, jamais de HTML : des alinéas,
+une médiane de 843 caractères, un maximum de 4 927. L'édition 2027 porte les
+mêmes champs, ce qui n'est pas une surprise mais méritait d'être vérifié.
+
+Deux réserves, qui ne se rattrapent pas côté plan : trois fiches ont recopié le
+français dans le champ anglais, quatre autres l'ont rempli de « 0 » ou « idem »
+pour passer le formulaire. Les secondes sont écartées à la lecture — le plus
+court des vrais descriptifs anglais fait vingt-sept caractères, le seuil tombe
+dans un vide.
+
+`description_gb` traîne sur deux fiches : un vestige, que rien ne lit.
+
 ## Ce que l'API REST ne dit pas, et pourquoi on a cherché ailleurs
 
 La documentation ne connaît que six ressources — events, guests,

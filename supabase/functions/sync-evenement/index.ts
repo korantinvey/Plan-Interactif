@@ -419,6 +419,9 @@ Deno.serve(async (req) => {
               ? {
                 adr: em.adresse, ville: em.ville, pays: em.pays, tel: em.tel,
                 fb: em.facebook, li: em.linkedin, ig: em.instagram,
+                // le seul champ traduit : l'anglais manque à une fiche sur
+                // quatre, et la fiche s'en passe alors sans le dire
+                desc: em.description, descEn: em.descriptionEn,
               }
               : {}),
             m2: s.SurfaceBrute,
