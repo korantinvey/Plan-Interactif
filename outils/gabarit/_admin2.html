@@ -25,6 +25,8 @@ function annonce(txt, erreur){
   l.querySelector(".empty").textContent = txt;
   if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
   $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
+  // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
+  if (erreur) $("titre").classList.remove("attente");
 }
 
 /**

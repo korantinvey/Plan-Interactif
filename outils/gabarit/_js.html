@@ -96,6 +96,7 @@ function indexe(d){
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
+  $("titre").classList.remove("attente");   // ce n'est plus un intitulé d'attente
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
