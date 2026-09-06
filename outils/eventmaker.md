@@ -16,8 +16,7 @@ GET  /api/v1/events/{id}/guests/{exhibitorId}.json?guest_metadata=true
 
 Sur Franchise Expo Paris 2026 : **70 sessions sur 178 rattachées à un stand**,
 sans recoupement ni approximation, et les 55 personnes citées comme exposants
-portent toutes un numéro de stand — 55 sur 55. La sonde le refait sur commande
-(section 8) ; les rattachements atterrissent dans `brut/eventmaker/`.
+portent toutes un numéro de stand — 55 sur 55.
 
 ## Le graphe, dans le détail
 
@@ -49,7 +48,7 @@ Le mécanisme est le même partout, son remplissage non : Open Source Experience
 2026 range ses 59 sessions en huit programmes, toutes avec intervenants, **pas
 une avec exposants**. Le rôle « Exposants » n'est renseigné que si l'organisateur
 l'a fait — un plan qui compte dessus doit donc le vérifier salon par salon, ce
-que la section 8 rend en une ligne.
+qu'un appel au graphe suffit à établir.
 
 `companyName` porte l'enseigne sur les trois rôles, y compris les conférenciers
 sans stand — de quoi rattacher au jugé une session dont l'intervenant vient
@@ -95,7 +94,7 @@ La documentation ne connaît que six ressources — events, guests,
 guest-categories, check-in points, check-ins, signatures — plus l'API Leads.
 Ni session, ni programme, ni intervenant. Les sessions et les programmes
 existent pourtant sous `/accesspoints` et `/programs` : ils sont simplement
-hors documentation, et les sections 1 à 7 de la sonde en font le tour.
+hors documentation. Voici ce qu'ils rendent, et ce qu'ils taisent.
 
 - **La session ne nomme personne.** Ses quatre-vingt-dix champs décrivent
   salle, horaire, direct, jauge. La fiche détaillée n'ajoute rien.
@@ -124,7 +123,9 @@ chaque appel. Une boucle de pagination qui n'attend qu'une page courte y tourne
 sans fin. `toutesPages()` s'arrête donc aussi quand une page rend ce que la
 précédente rendait déjà.
 
-Le recoupement textuel (section 7) reste dans la sonde à titre de comparaison —
-72 sessions nommant un exposant, contre 70 rattachées exactement — mais il n'a
-plus d'usage : une enseigne citée n'anime pas forcément, et « Boulangerie :
-vers une premiumisation » n'est qu'un BOULANGER pris dans un mot.
+Chercher le nom d'un exposant dans l'intitulé d'une session **ne remplace pas le
+graphe**, et c'est mesuré : 72 sessions nomment un exposant, contre 70 rattachées
+exactement. Les chiffres se ressemblent, les listes non — une enseigne citée
+n'anime pas forcément, « Boulangerie : vers une premiumisation » n'est qu'un
+BOULANGER pris dans un mot, et « en 2026 » a la forme d'un numéro de stand sans
+en être un.
