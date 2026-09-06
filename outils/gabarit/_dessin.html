@@ -13,6 +13,11 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
+  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours. On attend la fin du
+     geste — dessiner en refait une à chaque image serait insoutenable. */
+  oublieGrilles();
+  rafraichitApercu();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
@@ -76,7 +81,9 @@ function dessineDessins(){
   c.querySelectorAll(".dcal").forEach(g => g.remove());
   for (const cal of mesCalques()){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const role = roleIti(cal);
     g.setAttribute("class", "dcal" + (cal.rempli ? " plein" : "") +
+                            (role ? " role " + role : "") +
                             (cal.id === calqueActif && ADMIN ? " editable" : ""));
     g.dataset.dcal = cal.id;
     g.style.color = cal.couleur || "var(--accent)";
@@ -582,6 +589,8 @@ function activeCalque(id){
   const c = trouveCalque(calqueActif);
   { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
   if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  montreRoleIti(c);
+  rafraichitApercu();
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
   document.querySelectorAll("#pile .calq").forEach(d => {
@@ -592,6 +601,53 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le rôle du calque dans les itinéraires
+   ------------------------------------------------------------ */
+/** Ce que le rôle change, en une phrase — sans quoi on le règle au hasard. */
+const AIDE_ROLE = {
+  "": "Ce calque n'entre pas dans le calcul des trajets.",
+  obstacle: "Ce qui est dessiné ici barre le passage à tout le monde : " +
+    "entourez les sanitaires, les locaux, les réserves. C'est le plus court chemin — " +
+    "quelques rectangles au lieu de toutes les allées.",
+  pmr: "Ce qui est dessiné ici n'est contourné qu'en itinéraire accessible : " +
+    "pentes, emmarchements, estrades.",
+  circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
+    "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
+    "au bord est retiré tout seul.",
+};
+
+function montreRoleIti(c){
+  const sel = $("roleIti");
+  if (!sel) return;
+  // la liste se remplit au premier passage : les rôles vivent dans un module
+  // assemblé après celui-ci
+  if (!sel.options.length)
+    sel.innerHTML = ROLES_ITI.map(r =>
+      '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
+  const r = c ? roleIti(c) : "";
+  sel.value = r;
+  $("roleAide").textContent = AIDE_ROLE[r] || "";
+}
+
+$("roleIti").onchange = e => {
+  const c = trouveCalque(calqueActif);
+  if (!c) return;
+  const v = e.target.value;
+  const cle = cleRoleIti(c.id);
+  if (v) conf(cle).role = v; else delete CONF[cle];
+  enregistreConf();
+  oublieGrilles();
+  montreRoleIti(c);
+  dessineDessins();
+  construitPanneau();
+  rafraichitApercu();
+  // le trajet affiché doit obéir sur-le-champ : c'est le seul retour visible
+  relance();
+};
+
+$("voirNappe").onchange = e => { voirNappe = e.target.checked; rafraichitApercu(); };
 
 function creeCalque(){
   demandeNom("Nouveau calque", "Calque " + (mesCalques().length + 1), nom => {

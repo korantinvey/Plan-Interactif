@@ -192,6 +192,16 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 .dcal .forme{cursor:pointer}
 .dcal.editable .forme.pick{cursor:move}
 @keyframes halo{0%{opacity:.15}35%{opacity:1}100%{opacity:1}}
+/* Une forme déclarée infranchissable pour les PMR ne change rien pour le
+   visiteur — c'est le trajet qui en tient compte, pas le dessin. L'exploitant,
+   lui, doit la reconnaître pendant qu'il édite, sans quoi il la coche deux
+   fois ou l'oublie. */
+/* Un calque qui porte un rôle ne change rien pour le visiteur — c'est le
+   trajet qui en tient compte, pas le dessin. L'exploitant, lui, doit le
+   reconnaître pendant qu'il édite, sans quoi il le règle deux fois. */
+html.mode-edition .dcal.role path{stroke-dasharray:5 3}
+html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
+  fill-opacity:.12}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -247,6 +257,20 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
 .elemChamp[hidden]{display:none}
+/* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
+   puisque c'est en dessinant qu'on le décide. */
+.outilsRole{display:flex;flex-direction:column;gap:3px}
+.outilsRole select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.outilsRole select:focus{border-color:var(--accent);outline:none}
+.outilsRole i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.outilsRole i:empty{display:none}
+.outilsVoir{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
+  cursor:pointer}
+.outils .outilsVoir input{width:14px;height:14px;flex:none;padding:0;accent-color:var(--accent)}
+#nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
+.calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
 .elem input{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
@@ -525,6 +549,104 @@ button.expo:hover{background:var(--line)}
 .hdActs .marque{width:28px;height:28px}
 .hdActs .marque[hidden]{display:none}
 
+/* ------------------------------------------------------------
+   Itinéraire : le tiroir, et le trait sur le plan
+   ------------------------------------------------------------ */
+/* Troisième occupant de la même bande que la fiche et le parcours — à droite
+   au large, en bas sur téléphone. Les trois ne s'ouvrent jamais ensemble. */
+.itineraire{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
+  border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;
+  z-index:4;box-shadow:-16px 0 40px -26px rgba(10,14,18,.55);
+  transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.itineraire.open{transform:none}
+.itineraire .detail-hd h2{margin:0 0 4px}
+.iCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+/* Le champ de départ, l'inversion, le champ d'arrivée : trois lignes d'une
+   même grille, la flèche à cheval sur les deux champs qu'elle échange. */
+.iChamps{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:end}
+/* Le champ porte sa liste : elle se déroule sous lui, et non sous les deux.
+   Posée en dessous du bloc, elle paraissait appartenir à l'arrivée alors qu'on
+   tapait le départ. */
+.iChamp{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.iChamp input{width:100%;padding:8px 36px 8px 9px;font-size:13.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.iChamp input:focus{border-color:var(--accent);outline:none}
+/* Le viseur vit au bord du champ qu'il remplit : c'est la même action que la
+   saisie, dite autrement. */
+.iVise{position:absolute;right:3px;bottom:3px;width:28px;height:28px;display:grid;
+  place-items:center;border-radius:var(--radius);color:var(--ink-3)}
+.iVise:hover{color:var(--ink);background:var(--line)}
+.iVise[aria-pressed="true"]{color:#fff;background:var(--accent)}
+.iVise svg{width:15px;height:15px}
+.iEchange{grid-column:2;grid-row:1/3;align-self:center;width:34px;height:34px;
+  display:grid;place-items:center;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-3)}
+.iEchange:hover{border-color:var(--line-strong);color:var(--ink)}
+.iEchange svg{width:15px;height:15px}
+/* La liste sert les deux champs à tour de rôle : elle se déplace dans celui
+   qu'on remplit plutôt que d'exister en double. */
+.iSugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:6;
+  display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto;
+  border:1px solid var(--line-strong);border-radius:var(--radius);padding:4px;
+  background:var(--surface);box-shadow:var(--shadow)}
+.iSugg[hidden]{display:none}
+.iSug{display:flex;flex-direction:column;gap:1px;text-align:left;padding:6px 8px;
+  border-radius:var(--radius);width:100%}
+.iSug:hover,.iSug.vis{background:var(--line)}
+.iSug .n{font-size:13px;color:var(--ink);line-height:1.3}
+.iSug .s{font-size:11.5px;color:var(--ink-3)}
+/* Un repère n'est pas un exposant : le liseré le dit sans un mot de plus. */
+.iSug.rep{border-left:2px solid var(--accent)}
+.iRien{margin:0;padding:6px 8px;font-size:12.5px;color:var(--ink-3)}
+.iPmr{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink-3);
+  line-height:1.45;cursor:pointer}
+.iPmr input{width:16px;height:16px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.iPmr b{display:block;font-size:13.5px;font-weight:600;color:var(--ink)}
+.iResultat{display:flex;flex-direction:column;gap:12px}
+.iBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.iBilan span{font-size:12.5px;color:var(--ink-2)}
+.iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
+.iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:#C2372B}
+.iEtapes{display:flex;flex-direction:column;gap:7px}
+.iEtape{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:var(--surface-2);
+  border-radius:var(--radius);border-left:2px solid var(--accent)}
+.iEtape.transfert{border-left-style:dashed;border-left-color:var(--line-strong)}
+.iEtape .t{font-size:13px;color:var(--ink)}
+.iEtape .s{font-size:11.5px;color:var(--ink-3)}
+
+/* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
+   la souris, le bandeau le dit à tout le monde. */
+.viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:7px 12px 7px 14px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.viseur[hidden]{display:none}
+.viseur button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+html.vise-plan #plan{cursor:crosshair}
+
+/* Le tracé. Son épaisseur est donnée en pixels et ne suit pas le zoom : un
+   trait qui grossit avec le plan finit par masquer les stands qu'il longe,
+   et disparaît quand on recule pour voir le trajet entier. */
+#itin{pointer-events:none}
+#itin path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+#itin .iHalo{stroke:var(--surface);stroke-width:8;opacity:.9}
+#itin .iTrait{stroke:var(--accent);stroke-width:3.5}
+/* Des pointillés qui défilent : ils disent le sens du trajet, ce qu'un trait
+   plein ne fait pas, et sans ajouter de flèches qui se chevaucheraient dans
+   les virages. */
+#itin .iSens{stroke:var(--accent-ink);stroke-width:1.6;stroke-dasharray:1 11;opacity:.85;
+  animation:defile 1.1s linear infinite}
+@keyframes defile{to{stroke-dashoffset:-12}}
+@media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
+#itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
+  vector-effect:non-scaling-stroke}
+#itin .iBout.fin{fill:var(--surface);stroke:var(--accent)}
+/* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
+   disparaître partout, y compris le bouton posé sur les fiches. */
+html.sans-itineraire .btn.itin{display:none}
+
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
    resterait des signets sans destination. Ce que le visiteur avait retenu
@@ -741,6 +863,21 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .parcours.open{transform:translateY(0);pointer-events:auto}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
+
+  /* L'itinéraire suit les deux autres, en un peu plus haut : deux champs, un
+     clavier qui monte, et le résultat qui doit rester lisible au-dessus. */
+  .itineraire{
+    position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
+    max-height:76dvh;
+    border-left:none;border-top:1px solid var(--line);
+    border-radius:14px 14px 0 0;
+    box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
+    z-index:13;
+    transform:translateY(100%);pointer-events:none;
+  }
+  .itineraire.open{transform:translateY(0);pointer-events:auto}
+  .iCorps{padding:14px 16px}
+  .iSugg{max-height:160px}
 }
 
 /* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
@@ -763,6 +900,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div><b id="nZones">—</b>zones</div>
     </div>
     <div class="tools">
+      <button class="iconbtn" id="btnItineraire" aria-pressed="false"
+        title="Calculer un itinéraire" aria-label="Calculer un itinéraire">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h6a4 4 0 0 0 4-4V7"/></svg>
+      </button>
       <button class="iconbtn" id="btnParcours" aria-pressed="false"
         title="Mon parcours de visite" aria-label="Mon parcours de visite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
@@ -809,6 +950,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
     <div class="poi" id="poi" hidden></div>
+    <div class="viseur" id="viseur" hidden>
+      <span id="viseurTxt"></span>
+      <button type="button" id="viseurStop">Annuler</button>
+    </div>
 
     <div class="outils" id="outils">
       <div class="outilsTete">
@@ -818,6 +963,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button id="fermeOutils" title="Fermer — Échap" aria-label="Fermer la barre de dessin">&times;</button>
         </span>
       </div>
+      <label class="outilsRole"><span class="eyebrow">Rôle dans les itinéraires</span>
+        <select id="roleIti"></select><i id="roleAide"></i></label>
+      <label class="outilsVoir"><input type="checkbox" id="voirNappe">
+        <span>Voir ce qui est praticable</span></label>
       <div class="outilsBtns">
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
@@ -892,6 +1041,49 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </div>
       <div class="pCorps" id="pCorps"></div>
       <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+    </section>
+
+    <section class="itineraire" id="itineraire" aria-label="Itinéraire">
+      <div class="detail-hd">
+        <button class="close" id="closeItineraire" aria-label="Fermer">&times;</button>
+        <span class="eyebrow">Se rendre</span>
+        <h2>Itinéraire</h2>
+        <span class="badge" id="iResume">à définir</span>
+      </div>
+      <div class="iCorps">
+        <div class="iChamps">
+          <div class="iChamp">
+            <label class="eyebrow" for="iDepart">Départ</label>
+            <input id="iDepart" type="text" autocomplete="off" role="combobox"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
+              placeholder="Entrée, stand, zone…">
+            <button class="iVise" id="iViseA" type="button" aria-pressed="false"
+              title="Choisir le départ sur le plan" aria-label="Choisir le départ sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+            <div class="iSugg" id="iSugg" role="listbox" hidden></div>
+          </div>
+          <button class="iEchange" id="iEchange" title="Inverser le départ et l'arrivée"
+            aria-label="Inverser le départ et l'arrivée">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg>
+          </button>
+          <div class="iChamp">
+            <label class="eyebrow" for="iArrivee">Arrivée</label>
+            <input id="iArrivee" type="text" autocomplete="off" role="combobox"
+              aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
+              placeholder="Nom ou numéro de stand">
+            <button class="iVise" id="iViseB" type="button" aria-pressed="false"
+              title="Choisir l'arrivée sur le plan" aria-label="Choisir l'arrivée sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+          </div>
+        </div>
+        <label class="iPmr"><input type="checkbox" id="iPmr">
+          <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
+          les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
+        <div class="iResultat" id="iResultat"></div>
+      </div>
+      <div class="pPied"><button class="vider" id="videItineraire">Effacer l'itinéraire</button></div>
     </section>
   </main>
 </div>
@@ -1093,6 +1285,10 @@ function montePlan(){
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
   marqueParcours();
+  // le trajet vit hors des calques : il survit au montage, mais son tronçon
+  // n'est pas celui du pavillon qu'on vient d'ouvrir
+  dessineItineraire();
+  rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -1225,6 +1421,8 @@ function liste(){
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
+  // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
+  if (typeof rafraichitBouts === "function") rafraichitBouts();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -1277,6 +1475,10 @@ function masque(){
   const fiche = $("detail"), tiroir = $("side");
   const ficheOuverte = !!fiche && fiche.classList.contains("open");
   let bas = ficheOuverte ? fiche.offsetHeight : 0;
+  /* L'itinéraire occupe la même bande, et c'est en l'ouvrant qu'on demande à
+     cadrer sur le trajet : l'oublier ici reviendrait à le tracer sous lui. */
+  const iti = $("itineraire");
+  if (iti && iti.classList.contains("open")) bas = Math.max(bas, iti.offsetHeight);
   if (tiroir){
     bas = Math.max(bas, ficheOuverte
       ? parseFloat(getComputedStyle(document.documentElement)
@@ -1581,8 +1783,9 @@ function ecarteClicFantome(){
 }
 
 function ouvre(o, rect){
-  // la fiche et le parcours se partagent la même bande, à droite comme en bas
-  fermeParcours();
+  // la fiche, le parcours et l'itinéraire se partagent la même bande, à
+  // droite comme en bas
+  fermeParcours(); fermeItineraire();
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
@@ -1650,7 +1853,8 @@ function ouvre(o, rect){
   $("dBody").innerHTML = (zone
       ? bloc2("cConf", "dPaneConf", confs) + bloc2("cInfos", "dPaneInfos", infos)
       : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    '<button class="btn itin" id="dItin">Itinéraire</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un
@@ -1663,6 +1867,8 @@ function ouvre(o, rect){
   // un seul branchement pour le signet de tête et ceux du programme
   brancheParcours($("detail"));
   $("dGo").onclick = () => centre(o);
+  // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
+  $("dItin").onclick = () => versItineraire(o);
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
   if (cr){
@@ -1783,7 +1989,12 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
-  if (d.cible) select(d.cible.dataset.id, false); else ferme();
+  /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
+     point qu'on désigne, pas un exposant qu'on veut lire. */
+  if (d.cible){
+    if (viseItineraire(d.cible.dataset.id)) return;
+    select(d.cible.dataset.id, false);
+  } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
@@ -1800,7 +2011,11 @@ svg.addEventListener("wheel", e => {
 }, { passive: false });
 svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id]");
-  if (g && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); select(g.dataset.id, false); }
+  if (g && (e.key === "Enter" || e.key === " ")){
+    e.preventDefault();
+    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false);
+  }
 });
 document.addEventListener("keydown", e => {
   const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
@@ -2073,6 +2288,13 @@ const COMMANDES = [
   { cle: "_parcours", sel: "#btnParcours", libelle: "Proposer le parcours de visite",
     // les signets des fiches et du programme suivent le bouton de la barre
     classe: "sans-parcours" },
+  /* L'itinéraire se calcule sur ce que les données disent du hall : les
+     emplacements, et les obstacles que l'exploitant a bien voulu dessiner.
+     Sur un plan resté nu, le trajet reste juste mais n'évite que les stands —
+     à lui de juger si cela suffit à son salon. */
+  { cle: "_itineraire", sel: "#btnItineraire", libelle: "Proposer le calcul d'itinéraire",
+    // le bouton « Itinéraire » des fiches suit celui de la barre
+    classe: "sans-itineraire" },
 ];
 
 function appliqueCommandes(){
@@ -2085,6 +2307,7 @@ function appliqueCommandes(){
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
   if (conf("_parcours").visible === false) fermeParcours();
+  if (conf("_itineraire").visible === false) fermeItineraire();
 }
 
 /**
@@ -2194,6 +2417,12 @@ function activeAdmin(){
     appliqueApparence(); construitPanneau();
   };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
+  /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
+     données figées démarre sans rien attendre. Le panneau des calques n'a
+     alors pas été construit — montePlan() n'en bâtit qu'en administration —
+     et les dessins ne sont pas cliquables. C'est à cela que sert ce drapeau,
+     qui jusqu'ici ne servait à rien. */
+  if (MONTE){ dessineDessins(); construitPanneau(); }
 }
 
 
@@ -2294,6 +2523,11 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
+  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours. On attend la fin du
+     geste — dessiner en refait une à chaque image serait insoutenable. */
+  oublieGrilles();
+  rafraichitApercu();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
@@ -2357,7 +2591,9 @@ function dessineDessins(){
   c.querySelectorAll(".dcal").forEach(g => g.remove());
   for (const cal of mesCalques()){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const role = roleIti(cal);
     g.setAttribute("class", "dcal" + (cal.rempli ? " plein" : "") +
+                            (role ? " role " + role : "") +
                             (cal.id === calqueActif && ADMIN ? " editable" : ""));
     g.dataset.dcal = cal.id;
     g.style.color = cal.couleur || "var(--accent)";
@@ -2863,6 +3099,8 @@ function activeCalque(id){
   const c = trouveCalque(calqueActif);
   { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
   if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  montreRoleIti(c);
+  rafraichitApercu();
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
   document.querySelectorAll("#pile .calq").forEach(d => {
@@ -2873,6 +3111,53 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le rôle du calque dans les itinéraires
+   ------------------------------------------------------------ */
+/** Ce que le rôle change, en une phrase — sans quoi on le règle au hasard. */
+const AIDE_ROLE = {
+  "": "Ce calque n'entre pas dans le calcul des trajets.",
+  obstacle: "Ce qui est dessiné ici barre le passage à tout le monde : " +
+    "entourez les sanitaires, les locaux, les réserves. C'est le plus court chemin — " +
+    "quelques rectangles au lieu de toutes les allées.",
+  pmr: "Ce qui est dessiné ici n'est contourné qu'en itinéraire accessible : " +
+    "pentes, emmarchements, estrades.",
+  circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
+    "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
+    "au bord est retiré tout seul.",
+};
+
+function montreRoleIti(c){
+  const sel = $("roleIti");
+  if (!sel) return;
+  // la liste se remplit au premier passage : les rôles vivent dans un module
+  // assemblé après celui-ci
+  if (!sel.options.length)
+    sel.innerHTML = ROLES_ITI.map(r =>
+      '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
+  const r = c ? roleIti(c) : "";
+  sel.value = r;
+  $("roleAide").textContent = AIDE_ROLE[r] || "";
+}
+
+$("roleIti").onchange = e => {
+  const c = trouveCalque(calqueActif);
+  if (!c) return;
+  const v = e.target.value;
+  const cle = cleRoleIti(c.id);
+  if (v) conf(cle).role = v; else delete CONF[cle];
+  enregistreConf();
+  oublieGrilles();
+  montreRoleIti(c);
+  dessineDessins();
+  construitPanneau();
+  rafraichitApercu();
+  // le trajet affiché doit obéir sur-le-champ : c'est le seul retour visible
+  relance();
+};
+
+$("voirNappe").onchange = e => { voirNappe = e.target.checked; rafraichitApercu(); };
 
 function creeCalque(){
   demandeNom("Nouveau calque", "Calque " + (mesCalques().length + 1), nom => {
@@ -3250,6 +3535,15 @@ function construitPanneau(){
 
     const nom = d.querySelector("label span");
     nom.textContent = x.nom;
+
+    /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
+       rappeler ici évite de le chercher, ou de l'oublier. */
+    if (x.t === "dessin" && roleIti(x.ref)){
+      const b = document.createElement("i");
+      b.className = "rle";
+      b.textContent = nomRoleIti(roleIti(x.ref));
+      nom.after(b);
+    }
 
     /* visibilité */
     d.querySelector('input[type="checkbox"]').onchange = ev => {
@@ -3851,8 +4145,10 @@ function remplitParcours(){
 }
 
 function ouvreParcours(){
-  // la fiche occupe la même bande : elle cède la place plutôt que de s'y superposer
+  // la fiche et l'itinéraire occupent la même bande : ils cèdent la place
+  // plutôt que de s'y superposer
   if ($("detail").classList.contains("open")) ferme();
+  fermeItineraire();
   remplitParcours();
   $("parcours").classList.add("open");
   $("btnParcours").setAttribute("aria-pressed", "true");
@@ -3877,6 +4173,1274 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
    le tiroir, pas avec lui. */
 addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
+});
+/* ============================================================
+   11 ter. Itinéraire — d'un point du salon à un autre
+   ============================================================ */
+/**
+ * Un visiteur cherche le G77 ; il est devant le E10 et n'a aucune idée du
+ * chemin. Son téléphone ne l'aidera pas : sous une charpente métallique le
+ * GPS ne situe rien, et poser des balises dans les allées demanderait un
+ * budget et une pose que personne n'a. On ne lui demande donc pas où il est —
+ * il désigne son départ comme il désigne son arrivée, dans la même liste que
+ * la recherche.
+ *
+ * Reste à trouver le chemin. Les données ne décrivent aucune allée : elles ne
+ * donnent que des emplacements. L'allée, c'est ce qui reste — le vide entre
+ * les stands. On la calcule donc en creux : le hall est pavé de cases d'un
+ * demi-mètre, on noircit ce que les stands occupent, et on cherche la suite
+ * de cases blanches la plus courte entre deux points.
+ *
+ * Ce détour par la grille a un mérite qui vaut à lui seul le calcul : le mode
+ * PMR y devient presque gratuit. Un escalier, une pente, un passage trop
+ * étroit se noircissent comme un stand, et la même recherche rend un autre
+ * chemin — ou dit franchement qu'il n'y en a pas.
+ */
+
+/* Un demi-mètre par case : plus fin, la grille d'un pavillon dépasse le
+   million de cases pour un tracé qui ne change plus ; plus grossier, une
+   allée de deux mètres se referme. */
+const PAS_GRILLE = .5;
+
+/* Ce qu'on écarte des stands. Le chemin est calculé pour un point sans
+   épaisseur : on épaissit donc les obstacles de la moitié du passage
+   nécessaire. Quatre-vingt-dix centimètres pour un marcheur ; un mètre
+   quarante en mode accessible, la largeur qu'exige un fauteuil roulant pour
+   circuler et se croiser. Un couloir plus étroit disparaît de la grille, et
+   le trajet passe ailleurs — c'est l'essentiel de ce que « PMR » change. */
+const DEGAGEMENT = .45;
+const DEGAGEMENT_PMR = .70;
+
+/* Allure de salon, arrêts non compris : on marche moins vite entre deux
+   allées pleines que sur un trottoir. */
+const ALLURE = 1.1;        // m/s
+const ALLURE_PMR = .8;
+
+/**
+ * Ce que coûte un virage, en cases.
+ *
+ * Entre deux points d'une allée, une grille offre des milliers de chemins de
+ * même longueur : tout escalier de marches horizontales et verticales vaut la
+ * diagonale qu'il approche. Sans prix du virage, A* en choisit un au hasard,
+ * et le trajet traverse l'allée en biais au lieu de la suivre. À quatre cases
+ * — deux mètres — un crochet ne se justifie plus que s'il fait gagner
+ * davantage, et les tronçons redeviennent de longues lignes droites.
+ */
+const TOURNANT = 4;
+
+/**
+ * De quoi préférer le milieu de l'allée à ses bords.
+ *
+ * La pénalité s'éteint à deux mètres du mur le plus proche : au-delà — dans
+ * une aire dégagée, une entrée, un carrefour — aucun « milieu » n'a de sens,
+ * et vouloir le tenir ferait faire des détours pour rien.
+ */
+const PORTEE_CENTRE = 4;   // cases
+const POIDS_CENTRE = .5;   // au ras du mur, une case coûte une demie de plus
+
+/* ------------------------------------------------------------
+   L'enveloppe du hall
+   ------------------------------------------------------------ */
+/**
+ * L'emprise d'un pavillon est une boîte : elle déborde d'une douzaine de
+ * mètres autour des stands, et rien n'y empêcherait un trajet de contourner
+ * le hall par l'extérieur — derrière les stands de périphérie, là où il n'y a
+ * que le mur. On borne donc la marche à l'enveloppe convexe des emplacements
+ * eux-mêmes : les stands du pourtour en dessinent le bord, et on ne passe
+ * plus derrière eux.
+ *
+ * Le fond de plan porterait les vrais murs, mais mêlés aux cotes, aux
+ * hachures et au mobilier : les lire découperait le hall en morceaux au lieu
+ * de le fermer.
+ */
+function sommets(o){
+  const n = String(o.d).match(/-?\d*\.?\d+/g) || [];
+  const l = [];
+  for (let i = 0; i + 1 < n.length; i += 2) l.push([+n[i], +n[i + 1]]);
+  return l;
+}
+
+/** Enveloppe convexe, parcours monotone d'Andrew. */
+const ENVELOPPES = new Map();
+function enveloppe(p){
+  const garde = ENVELOPPES.get(p.id);
+  if (garde) return garde;
+  const pts = [];
+  for (const o of p.stands) pts.push(...sommets(o));
+  for (const o of p.zones) pts.push(...sommets(o));
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cote = (suite) => {
+    const r = [];
+    for (const q of suite){
+      while (r.length > 1){
+        const a = r[r.length - 2], b = r[r.length - 1];
+        if ((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]) > 0) break;
+        r.pop();
+      }
+      r.push(q);
+    }
+    r.pop();
+    return r;
+  };
+  let bord = pts.length < 3 ? [] : cote(pts).concat(cote(pts.slice().reverse()));
+  /* Un pavillon sans emplacement — cela existe, le temps d'une première
+     synchronisation — n'a pas d'enveloppe : on retombe sur son emprise, à
+     défaut de mieux. */
+  if (bord.length < 3){
+    const e = p.emprise;
+    bord = [[e.x0, e.y0], [e.x1, e.y0], [e.x1, e.y1], [e.x0, e.y1]];
+  }
+  const t = new Path2D();
+  bord.forEach((q, i) => i ? t.lineTo(q[0], q[1]) : t.moveTo(q[0], q[1]));
+  t.closePath();
+  ENVELOPPES.set(p.id, t);
+  return t;
+}
+
+/* ------------------------------------------------------------
+   La grille de marche
+   ------------------------------------------------------------ */
+/* Une grille par pavillon et par mode : elle ne dépend que des emplacements
+   et des obstacles dessinés, qui ne bougent qu'en administration. */
+const GRILLES = new Map();
+function oublieGrilles(){ GRILLES.clear(); }
+
+/** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
+const calquesDe = (p) => (typeof DESSINS === "object" && DESSINS[p.id]) || [];
+
+/** Les repères posés sur les calques montrés d'un pavillon.
+ *  Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
+ *  voit, et contourner un obstacle invisible passerait pour un bogue. */
+function reperesDe(p){
+  const l = [];
+  for (const c of calquesDe(p)){
+    if (c.visible === false) continue;
+    for (const f of c.formes || []) if (f.t === "repere" && f.txt) l.push(f);
+  }
+  return l;
+}
+
+/* ------------------------------------------------------------
+   Ce que l'exploitant déclare : où l'on marche, ce qui barre
+   ------------------------------------------------------------ */
+/**
+ * Un bloc sanitaire, un local technique, une estrade : rien de cela n'est un
+ * stand, et rien n'en ressort des données. Cela vit dans le fond de plan, que
+ * le calcul ignore — d'où des trajets qui traversaient les WC.
+ *
+ * On a d'abord voulu lire ce fond. Il est bien rangé en sous-calques nommés —
+ * « 5-SANITAIRES », « INFOPRO_SURFACE_POTEAUX » — mais ces noms sont ceux du
+ * bureau d'études qui a produit le DWG, et ils changent d'un salon à l'autre :
+ * ce qui marche pour trois pavillons ne s'industrialise pas. Le dessin est un
+ * export de traits, où murs, cotes et hachures se ressemblent ; deviner y
+ * revient à parier.
+ *
+ * On demande donc, plutôt que de deviner. Un calque de dessin reçoit un rôle,
+ * et tout ce qu'on y trace le porte :
+ *
+ *   obstacle     ce qui est dessiné barre le passage à tout le monde
+ *   pmr          il ne le barre qu'en itinéraire accessible
+ *   circulation  ce qui est dessiné dit où l'on peut marcher ; tout le reste
+ *                du pavillon devient infranchissable
+ *
+ * Les deux bouts par lesquels on peut prendre le problème, donc. Barrer est
+ * presque toujours le plus court — un bloc sanitaire fait un rectangle, une
+ * allée en fait cinquante — et c'est ce que la liste propose en premier. La
+ * circulation reste là pour le hall dont le vide n'est, dans l'ensemble, pas
+ * praticable ; elle coûte alors une après-midi de tracé, et il faut le savoir
+ * avant de s'y mettre.
+ *
+ * Le rôle vit dans CONF, comme l'ordre de la pile : les colonnes de
+ * `calque_dessin` sont fixées, celles des réglages ne le sont pas — et les
+ * réglages partent aux visiteurs à la publication, ce qui est exactement ce
+ * qu'on veut.
+ */
+const ROLES_ITI = [
+  { v: "", nom: "Aucun" },
+  { v: "obstacle", nom: "Infranchissable" },
+  { v: "pmr", nom: "Infranchissable en fauteuil" },
+  { v: "circulation", nom: "Où l'on peut marcher" },
+];
+const cleRoleIti = (id) => "_iti:" + id;
+const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
+const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
+
+/**
+ * Les formes d'un pavillon portant un rôle donné.
+ *
+ * Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
+ * voit à l'écran, et contourner un obstacle invisible passerait pour un bogue.
+ * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
+ * délimiter une circulation.
+ */
+function formesRole(p, role){
+  const l = [];
+  for (const c of calquesDe(p)){
+    if (c.visible === false || roleIti(c) !== role) continue;
+    for (const f of c.formes || []){
+      if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
+      else if (f.t === "ligne" && role !== "circulation")
+        l.push({ d: cheminForme(f), trait: true });
+    }
+  }
+  return l;
+}
+
+/**
+ * Ce qui barre la route à un fauteuil, et à lui seul./**
+ * Ce qui barre la route à un fauteuil, et à lui seul.
+ *
+ * Deux sources, parce qu'un salon en a deux. Les escaliers et les escalators
+ * sont déjà signalés par un repère, et leur pastille est posée dessus : on
+ * reprend son emprise telle qu'elle est dessinée — ce qu'on voit est ce qui
+ * est évité. Les pentes, les emmarchements, les estrades n'ont pas de
+ * pictogramme et n'en auront pas : l'exploitant les entoure d'un rectangle ou
+ * d'un polygone, et coche « obstacle pour les PMR » sur la forme.
+ */
+function obstaclesPmr(p){
+  const l = formesRole(p, "pmr");
+  /* Les escaliers et les escalators sont déjà signalés par un repère, posé sur
+     eux : leur pastille dit où ils sont, on la reprend telle quelle. Ce qu'on
+     voit est ce qui est évité, sans rien redessiner. */
+  for (const c of calquesDe(p)){
+    if (c.visible === false) continue;
+    for (const f of c.formes || []){
+      if (f.t !== "repere") continue;
+      const pic = f.picto || pictoDe(f.txt);
+      if (pic !== "escalier" && pic !== "escalator") continue;
+      const cote = (f.taille || 2) * 2.4;
+      const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+      l.push({ d: "M" + x + " " + y + "h" + cote + "v" + cote + "h" + (-cote) + "Z" });
+    }
+  }
+  return l;
+}
+
+/**
+ * Le hall en noir et blanc.
+ *
+ * Le canevas fait le gros du travail : il sait remplir un contour et
+ * l'épaissir d'un trait, ce qui donne l'écart au mur sans une ligne de
+ * géométrie. On peint donc tout en mur, on creuse l'enveloppe, on y replante
+ * les stands, et on relit les pixels.
+ */
+function grille(p, pmr){
+  const cle = p.id + (pmr ? "|pmr" : "");
+  const garde = GRILLES.get(cle);
+  if (garde) return garde;
+
+  const e = p.emprise;
+  const w = Math.ceil((e.x1 - e.x0) / PAS_GRILLE) + 2;
+  const h = Math.ceil((e.y1 - e.y0) / PAS_GRILLE) + 2;
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  // une case pour un demi-mètre, décalée d'une case pour garder une marge
+  ctx.setTransform(1 / PAS_GRILLE, 0, 0, 1 / PAS_GRILLE, 1 - e.x0 / PAS_GRILLE, 1 - e.y0 / PAS_GRILLE);
+  ctx.lineJoin = ctx.lineCap = "round";
+  ctx.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+  ctx.fillStyle = ctx.strokeStyle = "#000";
+
+  const barre = (d, trait) => {
+    const t = new Path2D(d);
+    if (!trait) ctx.fill(t);
+    ctx.stroke(t);
+  };
+
+  ctx.fillRect(e.x0 - 2, e.y0 - 2, e.x1 - e.x0 + 4, e.y1 - e.y0 + 4);
+  /* On creuse ce qui est praticable. Si l'exploitant a dessiné la circulation,
+     c'est elle qui fait foi, et rien d'autre du pavillon n'est ouvert. Sinon
+     on retombe sur l'enveloppe des emplacements, qui vaut mieux que rien mais
+     ignore tout ce que le fond de plan est seul à savoir. */
+  const circulation = formesRole(p, "circulation").map(o => new Path2D(o.d));
+  const ouvert = circulation.length ? circulation : [enveloppe(p)];
+  ctx.globalCompositeOperation = "destination-out";
+  ouvert.forEach(t => ctx.fill(t));
+  ctx.globalCompositeOperation = "source-over";
+  // le bord d'une circulation est un mur comme un autre : on s'en écarte
+  ouvert.forEach(t => ctx.stroke(t));
+  for (const o of p.stands) barre(o.d);
+  for (const o of p.zones) barre(o.d);
+  formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
+  if (pmr) obstaclesPmr(p).forEach(o => barre(o.d, o.trait));
+
+  const px = ctx.getImageData(0, 0, w, h).data;
+  const mur = new Uint8Array(w * h);
+  // le lissage du canevas laisse des bords à demi peints : au-delà de la
+  // moitié, la case est du côté du mur
+  for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+
+  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur };
+  g.marge = distanceAuMur(g);
+  g.nappe = nappePrincipale(g);
+  GRILLES.set(cle, g);
+  return g;
+}
+
+/**
+ * À combien de cases chaque case est-elle du mur le plus proche ?
+ *
+ * C'est ce qui permet de tenir le milieu d'une allée plutôt que d'en raser un
+ * bord. Deux balayages suffisent — un descendant, un remontant, chacun ne
+ * regardant que les voisins déjà vus : la distance se propage de proche en
+ * proche. On la plafonne bas, seuls les premiers mètres nous intéressent.
+ */
+function distanceAuMur(g){
+  const n = g.w * g.h, PLAFOND = 30;
+  const d = new Uint8Array(n);
+  const D = Math.SQRT2;
+  const met = (i, v) => { d[i] = v > PLAFOND ? PLAFOND : Math.round(v); };
+  const lu = new Float32Array(n);
+  for (let i = 0; i < n; i++) lu[i] = g.mur[i] ? 0 : 1e6;
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++){
+    const i = y * g.w + x;
+    if (lu[i] === 0) continue;
+    let m = lu[i];
+    if (x > 0) m = Math.min(m, lu[i - 1] + 1);
+    if (y > 0) m = Math.min(m, lu[i - g.w] + 1);
+    if (x > 0 && y > 0) m = Math.min(m, lu[i - g.w - 1] + D);
+    if (x < g.w - 1 && y > 0) m = Math.min(m, lu[i - g.w + 1] + D);
+    lu[i] = m;
+  }
+  for (let y = g.h - 1; y >= 0; y--) for (let x = g.w - 1; x >= 0; x--){
+    const i = y * g.w + x;
+    if (lu[i] === 0) continue;
+    let m = lu[i];
+    if (x < g.w - 1) m = Math.min(m, lu[i + 1] + 1);
+    if (y < g.h - 1) m = Math.min(m, lu[i + g.w] + 1);
+    if (x < g.w - 1 && y < g.h - 1) m = Math.min(m, lu[i + g.w + 1] + D);
+    if (x > 0 && y < g.h - 1) m = Math.min(m, lu[i + g.w - 1] + D);
+    lu[i] = m;
+    met(i, m);
+  }
+  return d;
+}
+
+/**
+ * La nappe où l'on marche vraiment.
+ *
+ * Le vide d'un hall n'est pas d'un seul tenant : quatre stands mitoyens
+ * laissent entre eux des poches fermées de deux ou trois cases, et une cour
+ * intérieure peut n'avoir aucune issue. S'accrocher à l'une d'elles rendait
+ * une vingtaine d'emplacements du pavillon 7.2 injoignables, alors que leur
+ * allée était à quatre mètres. On repère donc une fois pour toutes la plus
+ * grande nappe — les allées du hall — et c'est à elle que les points
+ * s'accrochent.
+ */
+function nappePrincipale(g){
+  const n = g.w * g.h;
+  const marque = new Int32Array(n).fill(-1);
+  const file = new Int32Array(n);
+  const tailles = [];
+  for (let d = 0; d < n; d++){
+    if (g.mur[d] || marque[d] >= 0) continue;
+    const id = tailles.length;
+    let fin = 0, tete = 0;
+    file[fin++] = d; marque[d] = id;
+    while (tete < fin){
+      const i = file[tete++];
+      const cx = i % g.w, cy = (i - cx) / g.w;
+      // quatre voisins, comme le trajet : deux cases en diagonale ne
+      // communiquent pas plus ici qu'on ne passe entre deux angles de stand
+      for (let k = 0; k < 4; k++){
+        const nx = cx + VX[k], ny = cy + VY[k];
+        if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+        const j = ny * g.w + nx;
+        if (g.mur[j] || marque[j] >= 0) continue;
+        marque[j] = id;
+        file[fin++] = j;
+      }
+    }
+    tailles.push(fin);
+  }
+  let gagnante = -1, mieux = 0;
+  tailles.forEach((t, i) => { if (t > mieux){ mieux = t; gagnante = i; } });
+  const nappe = new Uint8Array(n);
+  for (let i = 0; i < n; i++) if (marque[i] === gagnante) nappe[i] = 1;
+  return nappe;
+}
+
+function caseDe(g, x, y){
+  const cx = Math.floor((x - g.x0) / PAS_GRILLE), cy = Math.floor((y - g.y0) / PAS_GRILLE);
+  if (cx < 0 || cy < 0 || cx >= g.w || cy >= g.h) return -1;
+  return cy * g.w + cx;
+}
+function centreCase(g, i){
+  const cx = i % g.w, cy = (i - cx) / g.w;
+  return [g.x0 + (cx + .5) * PAS_GRILLE, g.y0 + (cy + .5) * PAS_GRILLE];
+}
+
+/* Jusqu'où l'on accepte de chercher l'allée d'un point : douze mètres, la
+   profondeur d'un très grand stand. Au-delà, on ne s'écarte plus — un point
+   qu'aucune allée n'atteint doit rester injoignable, sinon le mode accessible
+   tracerait des trajets vers des stands qu'il vient précisément d'exclure. */
+const PORTEE_ACCROCHE = 24;
+
+/**
+ * La case de la nappe principale la plus proche d'un point.
+ *
+ * Le centre d'un stand tombe dans le mur — c'est bien lui qu'on désigne, mais
+ * c'est l'allée devant lui qu'on emprunte. On s'écarte donc en anneaux, murs
+ * compris, jusqu'à toucher les allées : la façade la plus accessible est
+ * atteinte la première, sans qu'on ait eu à la chercher.
+ */
+function accroche(g, xy){
+  let d = caseDe(g, xy[0], xy[1]);
+  if (d < 0){
+    const cx = Math.min(g.w - 1, Math.max(0, Math.floor((xy[0] - g.x0) / PAS_GRILLE)));
+    const cy = Math.min(g.h - 1, Math.max(0, Math.floor((xy[1] - g.y0) / PAS_GRILLE)));
+    d = cy * g.w + cx;
+  }
+  if (g.nappe[d]) return d;
+
+  const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
+  const vu = new Uint8Array(g.w * g.h);
+  const file = [d];
+  vu[d] = 1;
+  let repli = -1;
+  for (let k = 0; k < file.length; k++){
+    const i = file[k], cx = i % g.w, cy = (i - cx) / g.w;
+    // en huit voisins, le rang de l'anneau se lit sur les coordonnées
+    if (Math.max(Math.abs(cx - dx0), Math.abs(cy - dy0)) > PORTEE_ACCROCHE) break;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (vu[j]) continue;
+      vu[j] = 1;
+      if (g.nappe[j]) return j;
+      // une poche fermée ne mène nulle part : on la traverse sans s'y arrêter
+      if (repli < 0 && !g.mur[j]) repli = j;
+      file.push(j);
+    }
+  }
+  return repli;
+}
+
+/* ------------------------------------------------------------
+   A*
+   ------------------------------------------------------------ */
+/* Un tas binaire sur deux tableaux parallèles. C'est le seul endroit où un A*
+   écrit naïvement s'effondre : chercher le minimum d'une liste à chaque tour
+   coûte plus que tout le reste du calcul réuni. */
+function Tas(){ this.f = []; this.i = []; }
+Tas.prototype.pousse = function (f, i){
+  const F = this.f, I = this.i;
+  let k = F.length;
+  F.push(f); I.push(i);
+  while (k > 0){
+    const p = (k - 1) >> 1;
+    if (F[p] <= F[k]) break;
+    const a = F[p]; F[p] = F[k]; F[k] = a;
+    const b = I[p]; I[p] = I[k]; I[k] = b;
+    k = p;
+  }
+};
+Tas.prototype.tire = function (){
+  const F = this.f, I = this.i;
+  const tete = I[0], n = F.length - 1;
+  F[0] = F[n]; I[0] = I[n]; F.pop(); I.pop();
+  let k = 0;
+  for (;;){
+    const g = 2 * k + 1, d = g + 1;
+    let m = k;
+    if (g < F.length && F[g] < F[m]) m = g;
+    if (d < F.length && F[d] < F[m]) m = d;
+    if (m === k) break;
+    const a = F[m]; F[m] = F[k]; F[k] = a;
+    const b = I[m]; I[m] = I[k]; I[k] = b;
+    k = m;
+  }
+  return tete;
+};
+
+/* Les quatre directions, dans cet ordre : est, ouest, sud, nord. */
+const VX = [1, -1, 0, 0];
+const VY = [0, 0, 1, -1];
+
+/**
+ * Les tableaux de travail de la recherche, alloués une fois pour toutes.
+ *
+ * Un état n'est pas une case mais une case abordée dans une direction : il y
+ * en a donc quatre fois plus, et les réallouer à chaque trajet coûterait plus
+ * que la recherche. Un compteur de tour évite de les remettre à zéro : un état
+ * dont le tampon n'est pas celui du tour n'a jamais été visité.
+ */
+let TRAVAIL = null;
+function travail(taille){
+  if (!TRAVAIL || TRAVAIL.cout.length < taille){
+    TRAVAIL = { cout: new Float32Array(taille), pere: new Int32Array(taille),
+                etat: new Int32Array(taille), tour: 0 };
+  }
+  return TRAVAIL;
+}
+
+/**
+ * Le plus court chemin de case à case, ou null s'il n'en existe aucun.
+ *
+ * Quatre voisins, jamais huit : une diagonale de grille n'a pas d'équivalent
+ * dans une allée, et c'est elle qui faisait traverser les allées en biais.
+ * Reste que mille escaliers valent la même longueur — d'où le prix du virage,
+ * qui tranche en faveur des longues lignes droites, et le prix du bord, qui
+ * tient le trait au milieu du passage. L'état porte donc la direction d'où
+ * l'on vient, sans quoi un virage ne se verrait pas.
+ */
+function cherche(g, depart, arrivee){
+  if (depart === arrivee) return [depart];
+  const m = travail(g.w * g.h * 4);
+  const tour = ++m.tour;
+  const ax = arrivee % g.w, ay = (arrivee - ax) / g.w;
+  // Manhattan : sur quatre voisins et au pas d'une case, elle ne surestime
+  // jamais le trajet — condition pour qu'A* rende bien le plus court
+  const reste = (i) => {
+    const x = i % g.w, y = (i - x) / g.w;
+    return Math.abs(x - ax) + Math.abs(y - ay);
+  };
+  const bord = (i) => {
+    const l = g.marge[i];
+    return l >= PORTEE_CENTRE ? 0 : POIDS_CENTRE * (PORTEE_CENTRE - l) / PORTEE_CENTRE;
+  };
+
+  const tas = new Tas();
+  /* Les quatre directions de départ coûtent zéro : le premier pas ne paie
+     aucun virage, on n'arrivait de nulle part. */
+  for (let d = 0; d < 4; d++){
+    const s = depart * 4 + d;
+    m.etat[s] = tour; m.cout[s] = 0; m.pere[s] = -1;
+    tas.pousse(reste(depart), s);
+  }
+
+  let dernier = -1;
+  while (tas.f.length){
+    const s = tas.tire();
+    if (m.etat[s] === -tour) continue;      // déjà close
+    const i = (s / 4) | 0, d = s & 3;
+    if (i === arrivee){ dernier = s; break; }
+    m.etat[s] = -tour;
+    const cx = i % g.w, cy = (i - cx) / g.w;
+    for (let k = 0; k < 4; k++){
+      const nx = cx + VX[k], ny = cy + VY[k];
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (g.mur[j]) continue;
+      const s2 = j * 4 + k;
+      if (m.etat[s2] === -tour) continue;
+      const c = m.cout[s] + 1 + bord(j) + (k === d ? 0 : TOURNANT);
+      if (m.etat[s2] !== tour || c < m.cout[s2]){
+        m.etat[s2] = tour; m.cout[s2] = c; m.pere[s2] = s;
+        tas.pousse(c + reste(j), s2);
+      }
+    }
+  }
+  if (dernier < 0) return null;
+  const suite = [];
+  for (let s = dernier; s >= 0; s = m.pere[s]) suite.push((s / 4) | 0);
+  return suite.reverse();
+}
+
+/* ------------------------------------------------------------
+   Du chemin en cases au trait qu'on suit
+   ------------------------------------------------------------ */
+/**
+ * Le chemin, réduit à ses tournants.
+ *
+ * Les cases alignées se fondent en un segment, et rien d'autre n'est touché :
+ * pas de fil tendu entre deux angles. C'était la version précédente, et c'est
+ * elle qui produisait les diagonales — un fil tendu coupe les coins par
+ * définition, y compris au milieu d'une allée qu'il fallait suivre droit.
+ */
+function reduit(g, suite){
+  const pts = [];
+  for (let k = 0; k < suite.length; k++){
+    const i = suite[k];
+    // une case dont les deux voisines sont symétriques n'est pas un tournant
+    if (k > 0 && k < suite.length - 1 && suite[k - 1] + suite[k + 1] === 2 * i) continue;
+    pts.push(centreCase(g, i));
+  }
+  return pts;
+}
+
+const longueur = (pts) => pts.reduce((s, q, i) =>
+  i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0, 0);
+
+/** Deux sommets à cinq centimètres l'un de l'autre ne sont qu'un. */
+function nettoie(pts){
+  const out = [];
+  for (const q of pts){
+    const p = out[out.length - 1];
+    if (!p || Math.hypot(q[0] - p[0], q[1] - p[1]) > .05) out.push(q);
+  }
+  return out;
+}
+
+/* Au-delà, l'amorce n'est plus un pas hors du stand mais un trajet en soi :
+   la relier d'un trait reste alors plus lisible que de la couder. */
+const AMORCE_MAX = 20;   // mètres
+
+/**
+ * L'amorce : du stand à l'allée.
+ *
+ * Le trajet part du centre du stand désigné — c'est lui qu'on montre — et
+ * rejoint l'allée. Relier les deux d'un trait donnait une oblique, seul trait
+ * de travers d'un tracé par ailleurs d'équerre. On la coude donc : on sort du
+ * stand parallèlement à l'allée, puis on la rejoint perpendiculairement, ce
+ * qui est aussi la manière dont on y entre pour de vrai.
+ *
+ * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
+ */
+function amorce(pts, ancre){
+  if (pts.length < 2) return [];
+  const a = pts[0], b = pts[1];
+  const vertical = Math.abs(b[0] - a[0]) < .01;
+  const horizontal = Math.abs(b[1] - a[1]) < .01;
+  if (vertical === horizontal) return [];        // ni l'un ni l'autre, ou un point
+  const coude = vertical ? [ancre[0], a[1]] : [a[0], ancre[1]];
+  const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
+  const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
+  if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
+  return [coude];
+}
+
+/**
+ * Un tronçon dans un pavillon, de point à point.
+ *
+ * Les vrais points sont raccrochés aux extrémités : le trait doit partir du
+ * stand, pas de l'allée devant lui, sinon il paraît commencer à côté.
+ */
+function troncon(p, pmr, depart, arrivee){
+  const g = grille(p, pmr);
+  const a = accroche(g, depart), b = accroche(g, arrivee);
+  if (a < 0 || b < 0) return null;
+  const suite = cherche(g, a, b);
+  if (!suite) return null;
+  const chemin = reduit(g, suite);
+  const pts = nettoie([depart.slice()]
+    .concat(amorce(chemin, depart), chemin,
+            amorce(chemin.slice().reverse(), arrivee), [arrivee.slice()]));
+  return { genre: "marche", p: p.i, pts: pts, m: longueur(pts) };
+}
+
+/* ------------------------------------------------------------
+   Les points qu'on peut désigner
+   ------------------------------------------------------------ */
+/**
+ * Un stand, une zone ou un repère : trois choses différentes sur le plan, un
+ * seul genre de point ici — un pavillon et une position.
+ *
+ * Les repères comptent autant que les stands, et c'est voulu : sans
+ * géolocalisation, le départ le plus probable d'un visiteur qui arrive, c'est
+ * l'entrée du hall.
+ */
+function pointObjet(o){
+  const pl = DATA.plans[o.p];
+  return { cle: "o:" + o.id, id: o.id, genre: "objet", p: o.p,
+           xy: (o.lc || o.c).slice(),
+           nom: o.nom || o.plan || (o.kind === "zone" ? "Zone" : "Stand " + (o.code || "")).trim(),
+           detail: pl.libelle + (o.code ? " · " + o.code : "") };
+}
+function pointRepere(f, p){
+  return { cle: "r:" + f.id, id: f.id, genre: "repere", p: p.i,
+           xy: f.pts[0].slice(), nom: f.txt, detail: p.libelle + " · repère" };
+}
+
+/** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
+ *  stands en vrac n'aideraient personne, une entrée si. */
+function candidats(q){
+  const v = q.trim().toLowerCase();
+  const out = [];
+  DATA.plans.forEach(p => reperesDe(p).forEach(f => {
+    if (!v || String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
+  }));
+  if (!v) return out.slice(0, 12);
+
+  const notes = [];
+  for (const o of TOUS){
+    if (o.kind === "zone" && !o.nom) continue;
+    const code = String(o.code || "").toLowerCase();
+    const nom = String(o.nom || o.plan || "").toLowerCase();
+    let r = -1;
+    if (code === v) r = 0;
+    else if (code.indexOf(v) === 0) r = 1;
+    else if (nom.indexOf(v) === 0) r = 2;
+    else if (nom.indexOf(v) >= 0) r = 3;
+    if (r >= 0) notes.push({ r: r, o: o });
+  }
+  notes.sort((a, b) => a.r - b.r || a.o.p - b.o.p ||
+    String(a.o.nom || a.o.code || "").localeCompare(String(b.o.nom || b.o.code || ""), "fr", { numeric: true }));
+  return out.concat(notes.slice(0, 12).map(x => pointObjet(x.o))).slice(0, 14);
+}
+
+/** Ce que désigne une saisie laissée telle quelle, si c'est sans ambiguïté. */
+function pointSaisi(txt){
+  const l = candidats(txt);
+  const v = txt.trim().toLowerCase();
+  return l.find(x => x.nom.toLowerCase() === v) || (l.length === 1 ? l[0] : null);
+}
+
+/* ------------------------------------------------------------
+   Le trajet complet
+   ------------------------------------------------------------ */
+let ITI = { a: null, b: null, pmr: false };
+let ROUTE = null;
+
+const CLE_PMR = "plan-itineraire-pmr";
+try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
+
+/** Les portes d'un pavillon : ce par quoi on y entre et on en sort. */
+function portesDe(p){
+  return reperesDe(p).filter(f => {
+    const pic = f.picto || pictoDe(f.txt);
+    return pic === "entree" || pic === "sortie";
+  });
+}
+
+/** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
+function versPorte(p, pmr, xy, entrant){
+  const portes = portesDe(p);
+  if (!portes.length) return null;
+  /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
+     peut être derrière une rangée de stands. On ne calcule cependant pas
+     douze trajets pour rien — les quatre plus proches suffisent à trancher. */
+  const proches = portes
+    .map(f => ({ f: f, d: Math.hypot(f.pts[0][0] - xy[0], f.pts[0][1] - xy[1]) }))
+    .sort((a, b) => a.d - b.d).slice(0, 4);
+  let mieux = null;
+  for (const q of proches){
+    const t = entrant ? troncon(p, pmr, q.f.pts[0], xy) : troncon(p, pmr, xy, q.f.pts[0]);
+    if (t && (!mieux || t.m < mieux.m)) mieux = t;
+  }
+  return mieux;
+}
+
+/**
+ * Le trajet, tronçon par tronçon.
+ *
+ * Dans un même pavillon il n'y en a qu'un. D'un pavillon à l'autre, les
+ * données ne disent rien de ce qui les relie — ni passerelle, ni allée
+ * extérieure, ni distance. On ne l'invente pas : le trajet se coupe à la
+ * porte, et le visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés
+ * qui, eux, sont exacts.
+ */
+function calculeRoute(){
+  const a = ITI.a, b = ITI.b, pmr = ITI.pmr;
+  if (!a || !b) return null;
+  if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
+
+  if (a.p === b.p){
+    const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy);
+    return t ? { pmr: pmr, etapes: [t], m: t.m }
+             : { pmr: pmr, etapes: [], m: 0, sansChemin: true };
+  }
+
+  const pa = DATA.plans[a.p], pb = DATA.plans[b.p];
+  const t1 = versPorte(pa, pmr, a.xy, false);
+  const t2 = versPorte(pb, pmr, b.xy, true);
+  const etapes = [];
+  const avertis = [];
+  if (t1) etapes.push(t1);
+  else avertis.push("La sortie du " + pa.libelle + " n'est pas repérée sur le plan : " +
+                    "cette partie du trajet n'est pas tracée.");
+  etapes.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
+  if (t2) etapes.push(t2);
+  else avertis.push("L'entrée du " + pb.libelle + " n'est pas repérée sur le plan : " +
+                    "cette partie du trajet n'est pas tracée.");
+  /* Sans repère d'entrée ni de sortie, il ne reste que « changez de pavillon » :
+     mieux vaut le dire que d'annoncer un trajet de zéro mètre. */
+  return { pmr: pmr, etapes: etapes, avertis: avertis, coupe: true,
+           partiel: !t1 || !t2, aucunTrace: !t1 && !t2,
+           m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/* ------------------------------------------------------------
+   Voir ce qui est praticable
+   ------------------------------------------------------------ */
+/**
+ * Dessiner la circulation sans la voir revient à parier.
+ *
+ * L'exploitant trace une allée, puis une autre, et ne saura qu'elles ne se
+ * touchent pas qu'en essayant un trajet qui échoue — sans savoir où. Cette
+ * teinte est la grille elle-même, telle que le calcul la voit : ce qui n'est
+ * pas coloré n'est pas praticable, et une allée dessinée qui reste blanche est
+ * une allée trop étroite ou détachée du reste.
+ *
+ * Réservée à l'administration : c'est un outil de mise au point, pas une
+ * couche de plan.
+ */
+let voirNappe = false;
+
+function couleurNappe(){
+  const h = String(jeton("--accent")).trim();
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [47, 73, 209];
+}
+
+function rafraichitApercu(){
+  const vieux = $("nappe");
+  if (!voirNappe || !ADMIN || !DATA){ if (vieux) vieux.remove(); return; }
+  const p = P();
+  const g = grille(p, ITI.pmr);
+  const cv = document.createElement("canvas");
+  cv.width = g.w; cv.height = g.h;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(g.w, g.h);
+  const d = img.data, c = couleurNappe();
+  for (let i = 0; i < g.nappe.length; i++){
+    if (!g.nappe[i]) continue;
+    const k = i * 4;
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 150;
+  }
+  ctx.putImageData(img, 0, 0);
+
+  const el = vieux || document.createElementNS("http://www.w3.org/2000/svg", "image");
+  el.id = "nappe";
+  el.setAttribute("x", g.x0);
+  el.setAttribute("y", g.y0);
+  el.setAttribute("width", g.w * PAS_GRILLE);
+  el.setAttribute("height", g.h * PAS_GRILLE);
+  el.setAttribute("preserveAspectRatio", "none");
+  el.setAttribute("href", cv.toDataURL());
+  if (!vieux) svg.insertBefore(el, svg.querySelector("#itin, #apercu, #poignees"));
+}
+
+/* ------------------------------------------------------------
+   Le tracé sur le plan
+   ------------------------------------------------------------ */
+const marchesIci = () => (ROUTE ? ROUTE.etapes : [])
+  .filter(e => e.genre === "marche" && e.p === state.plan);
+
+/** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
+ *  exprimé en mètres d'après le zoom du moment. */
+function rayonBout(){
+  const r = svg.getBoundingClientRect();
+  return Math.max(.4, view.w / (r.width || 1) * 6);
+}
+
+function dessineItineraire(){
+  let g = $("itin");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "itin";
+    // au-dessus des calques, sous les poignées d'édition et l'aperçu de tracé
+    svg.insertBefore(g, svg.querySelector("#apercu, #poignees"));
+  }
+  const marches = marchesIci();
+  if (!marches.length){ g.innerHTML = ""; return; }
+
+  const r = rayonBout();
+  let out = "";
+  marches.forEach(e => {
+    const d = "M" + e.pts.map(q => q[0].toFixed(2) + " " + q[1].toFixed(2)).join("L");
+    out += '<path class="iHalo" d="' + d + '"/><path class="iTrait" d="' + d +
+           '"/><path class="iSens" d="' + d + '"/>';
+  });
+  const pd = marches[0].pts[0];
+  const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
+  out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
+         '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+  g.innerHTML = out;
+}
+
+/** Le zoom change : seules les pastilles ont besoin d'être reprises, le trait
+ *  garde son épaisseur à l'écran par la feuille de style. */
+function rafraichitBouts(){
+  const g = $("itin");
+  if (!g || !g.firstChild || !view) return;
+  const r = rayonBout().toFixed(2);
+  g.querySelectorAll(".iBout").forEach(c => c.setAttribute("r", r));
+}
+
+/** Cadre la vue sur le tracé du pavillon affiché. */
+function cadreItineraire(){
+  const marches = marchesIci();
+  if (!marches.length || !view) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  marches.forEach(e => e.pts.forEach(q => {
+    x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
+    y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
+  }));
+  const r = svg.getBoundingClientRect();
+  const cache = masque();
+  const hUtile = Math.max(60, r.height - cache);
+  const marge = 8;
+  const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
+  const k = Math.max(w / (r.width || 1), h / hUtile);
+  view = { x: (x0 + x1) / 2 - (k * r.width) / 2,
+           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           w: k * r.width, h: k * r.height };
+  poseVue();
+}
+
+/* ------------------------------------------------------------
+   Le tiroir
+   ------------------------------------------------------------ */
+const champIti = (r) => r === "a" ? $("iDepart") : $("iArrivee");
+let champSugg = null;   // le champ auquel appartiennent les suggestions
+let survolSugg = -1;    // la suggestion mise en avant au clavier
+
+function ecritDistance(m){
+  return m < 950 ? Math.round(m / 5) * 5 + " m"
+                 : (m / 1000).toFixed(1).replace(".", ",") + " km";
+}
+function ecritDuree(m, pmr){
+  const min = Math.max(1, Math.round(m / ((pmr ? ALLURE_PMR : ALLURE) * 60)));
+  return "≈ " + min + " min";
+}
+
+function fermeSugg(){
+  champSugg = null; survolSugg = -1;
+  const z = $("iSugg");
+  z.hidden = true; z.innerHTML = "";
+  [$("iDepart"), $("iArrivee")].forEach(c => c.setAttribute("aria-expanded", "false"));
+}
+
+function montreSugg(r){
+  champSugg = r;
+  survolSugg = -1;
+  const z = $("iSugg");
+  // une seule liste, déplacée dans le champ qu'on remplit
+  const hote = champIti(r).parentNode;
+  if (z.parentNode !== hote) hote.appendChild(z);
+  const l = candidats(champIti(r).value);
+  if (!l.length){
+    z.innerHTML = '<p class="iRien"></p>';
+    z.querySelector(".iRien").textContent = champIti(r).value.trim()
+      ? "Aucun stand, zone ni repère ne porte ce nom."
+      : "Tapez le nom ou le numéro d'un stand.";
+  } else {
+    z.innerHTML = "";
+    l.forEach((pt, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "iSug" + (pt.genre === "repere" ? " rep" : "");
+      b.setAttribute("role", "option");
+      b.dataset.i = i;
+      b.innerHTML = '<span class="n"></span><span class="s"></span>';
+      b.querySelector(".n").textContent = pt.nom;
+      b.querySelector(".s").textContent = pt.detail;
+      b.onclick = () => choisitPoint(r, pt);
+      z.appendChild(b);
+    });
+  }
+  z.hidden = false;
+  champIti(r).setAttribute("aria-expanded", "true");
+}
+
+function choisitPoint(r, pt){
+  ITI[r] = pt;
+  champIti(r).value = pt.nom;
+  fermeSugg();
+  relance();
+}
+
+/** Une saisie abandonnée sans choix : on tranche pour elle si c'est possible,
+ *  on oublie le point sinon — mieux vaut un champ vide qu'un trajet faux. */
+function valideSaisie(r){
+  const v = champIti(r).value.trim();
+  if (!v){ if (ITI[r]){ ITI[r] = null; relance(); } return; }
+  if (ITI[r] && ITI[r].nom === v) return;
+  const pt = pointSaisi(v);
+  ITI[r] = pt;
+  if (pt) champIti(r).value = pt.nom;
+  relance();
+}
+
+function effaceItineraire(){
+  ITI.a = ITI.b = null;
+  ROUTE = null;
+  visee = null;
+  bandeauVisee();
+  $("iDepart").value = $("iArrivee").value = "";
+  fermeSugg();
+  dessineItineraire();
+  montreResultat();
+}
+
+/**
+ * Le calcul passe par un temps mort volontaire.
+ *
+ * Pavage du hall, A* et lissage tiennent en quelques dizaines de
+ * millisecondes sur un poste, davantage sur un téléphone de salon. Les
+ * enchaîner dans la foulée du clic figerait le bouton sans rien dire ; on
+ * affiche d'abord, on calcule ensuite.
+ */
+let attente = null;
+function relance(){
+  clearTimeout(attente);
+  if (!ITI.a || !ITI.b){
+    ROUTE = null;
+    dessineItineraire();
+    montreResultat();
+    return;
+  }
+  montreResultat("calcul");
+  attente = setTimeout(() => {
+    attente = null;
+    try {
+      ROUTE = calculeRoute();
+    } catch (e){
+      console.warn("Itinéraire :", e);
+      ROUTE = { pmr: ITI.pmr, etapes: [], m: 0, panne: true };
+    }
+    /* Le trajet commence dans le pavillon du départ : c'est celui qu'il faut
+       montrer, même si l'on regardait ailleurs en le demandant. */
+    const premier = ROUTE.etapes.find(e => e.genre === "marche");
+    if (premier && premier.p !== state.plan) changePlan(premier.p);
+    dessineItineraire();
+    montreResultat();
+    if (premier) cadreItineraire();
+  }, 30);
+}
+
+function montreResultat(etat){
+  const z = $("iResultat"), badge = $("iResume");
+  z.innerHTML = "";
+  const dit = (cls, txt) => {
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = txt;
+    z.appendChild(p);
+    return p;
+  };
+
+  if (etat === "calcul"){ badge.textContent = "calcul…"; dit("iNote", "Recherche du chemin…"); return; }
+  if (!ITI.a || !ITI.b){
+    badge.textContent = "à définir";
+    dit("iNote", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+                 "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
+                 "devant lequel vous êtes.");
+    return;
+  }
+  if (!ROUTE) return;
+
+  if (ROUTE.memePoint){ badge.textContent = "—"; dit("iNote", "Vous y êtes déjà."); return; }
+  if (ROUTE.panne){ badge.textContent = "—"; dit("iAlerte", "Le calcul n'a pas abouti sur cet appareil."); return; }
+  if (ROUTE.sansChemin){
+    badge.textContent = "—";
+    dit("iAlerte", ROUTE.pmr
+      ? "Aucun chemin accessible ne relie ces deux points : les passages disponibles " +
+        "sont trop étroits, ou coupés par un escalier. Décochez l'option pour voir le " +
+        "trajet ordinaire."
+      : "Aucun chemin ne relie ces deux points sur ce plan.");
+    return;
+  }
+
+  if (ROUTE.aucunTrace){
+    badge.textContent = "non tracé";
+  } else {
+    /* Ce qui sépare deux pavillons ne figure sur aucun plan — ni passerelle, ni
+       allée extérieure : la distance annoncée est celle des tronçons tracés, et
+       elle le dit. */
+    badge.textContent = (ROUTE.coupe ? "≥ " : "") +
+      ecritDistance(ROUTE.m) + " · " + ecritDuree(ROUTE.m, ROUTE.pmr);
+    const bilan = document.createElement("div");
+    bilan.className = "iBilan";
+    bilan.innerHTML = '<b></b><span></span>';
+    bilan.querySelector("b").textContent = (ROUTE.coupe ? "au moins " : "") + ecritDistance(ROUTE.m);
+    bilan.querySelector("span").textContent = ecritDuree(ROUTE.m, ROUTE.pmr) +
+      (ROUTE.pmr ? " · itinéraire accessible" : " de marche") +
+      (ROUTE.coupe ? " · hors trajet entre pavillons" : "");
+    z.appendChild(bilan);
+  }
+
+  if (ROUTE.coupe){
+    const l = document.createElement("div");
+    l.className = "iEtapes";
+    ROUTE.etapes.forEach(e => {
+      const d = document.createElement("div");
+      d.className = "iEtape" + (e.genre === "transfert" ? " transfert" : "");
+      d.innerHTML = '<span class="t"></span><span class="s"></span>';
+      if (e.genre === "transfert"){
+        d.querySelector(".t").textContent = "Changement de pavillon";
+        d.querySelector(".s").textContent = "Sortez du " + e.de + ", rejoignez le " + e.vers + ".";
+      } else {
+        d.querySelector(".t").textContent = DATA.plans[e.p].libelle;
+        d.querySelector(".s").textContent = ecritDistance(e.m) + " dans le pavillon" +
+          (e.p === state.plan ? " · tracé à l'écran" : "");
+      }
+      l.appendChild(d);
+    });
+    z.appendChild(l);
+    (ROUTE.avertis || []).forEach(t => dit("iAlerte", t));
+  }
+
+  // rien de tracé dans ce pavillon : il n'y a rien à cadrer
+  if (marchesIci().length){
+    const acts = document.createElement("div");
+    acts.className = "acts";
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.textContent = "Cadrer sur le trajet";
+    b.onclick = cadreItineraire;
+    acts.appendChild(b);
+    z.appendChild(acts);
+  }
+}
+
+/* ------------------------------------------------------------
+   Désigner un point sur le plan
+   ------------------------------------------------------------ */
+/**
+ * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
+ * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
+ * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
+ * le champ au lieu d'ouvrir une fiche.
+ *
+ * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
+ * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
+ * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
+ * quoi on ne saurait plus ce qu'on est en train de choisir.
+ */
+let visee = null;
+
+function bandeauVisee(){
+  const b = $("viseur");
+  if (b){
+    b.hidden = !visee;
+    if (visee) $("viseurTxt").textContent =
+      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+  }
+  racine.classList.toggle("vise-plan", !!visee);
+  $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
+  $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
+}
+
+function armeVisee(r){
+  visee = visee === r ? null : r;
+  fermeSugg();
+  if (visee && ETROIT()) fermeItineraire();
+  bandeauVisee();
+}
+
+/** Fin de la visée, quelle qu'en soit la raison. */
+function finVisee(){
+  if (!visee) return;
+  const rouvre = ETROIT();
+  visee = null;
+  bandeauVisee();
+  if (rouvre) ouvreItineraire();
+}
+
+/**
+ * Un clic sur le plan pendant une visée. Rend « vrai » s'il a servi à choisir,
+ * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
+ */
+function viseItineraire(id){
+  if (!visee) return false;
+  const o = parId.get(id);
+  if (!o) return false;
+  const r = visee;
+  ITI[r] = pointObjet(o);
+  champIti(r).value = ITI[r].nom;
+  /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
+     enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
+  const autre = r === "a" ? "b" : "a";
+  if (!ITI[autre]){ visee = autre; bandeauVisee(); relance(); return true; }
+  finVisee();
+  relance();
+  return true;
+}
+
+$("iViseA").onclick = () => armeVisee("a");
+$("iViseB").onclick = () => armeVisee("b");
+$("viseurStop").onclick = finVisee;
+
+/* ------------------------------------------------------------
+   Ouverture, fermeture, branchements
+   ------------------------------------------------------------ */
+function ouvreItineraire(){
+  // fiche, parcours et itinéraire se partagent la même bande
+  if ($("detail").classList.contains("open")) ferme();
+  fermeParcours();
+  /* Rouvrir le tiroir, c'est renoncer à viser : sur un téléphone il recouvre
+     le plan qu'on visait. On ne passe pas par finVisee(), qui rouvrirait ce
+     tiroir déjà en train de s'ouvrir. */
+  visee = null;
+  bandeauVisee();
+  $("itineraire").classList.add("open");
+  $("btnItineraire").setAttribute("aria-pressed", "true");
+  montreResultat();
+}
+function fermeItineraire(){
+  const t = $("itineraire");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnItineraire").setAttribute("aria-pressed", "false");
+  fermeSugg();
+}
+
+/** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
+ *  dire — c'est lui qu'on met sous le curseur. */
+function versItineraire(o){
+  ITI.b = pointObjet(o);
+  $("iArrivee").value = ITI.b.nom;
+  if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
+  ouvreItineraire();
+  if (ITI.a) relance();
+  else { montreResultat(); $("iDepart").focus(); }
+}
+
+["a", "b"].forEach(r => {
+  const c = champIti(r);
+  c.addEventListener("input", () => montreSugg(r));
+  // revenir au clavier, c'est renoncer au doigt
+  c.addEventListener("focus", () => { visee = null; bandeauVisee(); montreSugg(r); });
+  c.addEventListener("blur", () => { if (champSugg === r) fermeSugg(); valideSaisie(r); });
+  c.addEventListener("keydown", e => {
+    const z = $("iSugg");
+    const opts = z.hidden ? [] : [...z.querySelectorAll(".iSug")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp"){
+      if (!opts.length) return;
+      e.preventDefault();
+      survolSugg = (survolSugg + (e.key === "ArrowDown" ? 1 : opts.length - 1) + opts.length) % opts.length;
+      opts.forEach((o, i) => o.classList.toggle("vis", i === survolSugg));
+      opts[survolSugg].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter"){
+      e.preventDefault();
+      if (opts[survolSugg]) opts[survolSugg].click();
+      else { fermeSugg(); valideSaisie(r); }
+    } else if (e.key === "Escape" && !z.hidden){
+      e.stopPropagation();
+      fermeSugg();
+    }
+  });
+});
+/* Le clic sur une suggestion arrive après le « blur » du champ : sans cela, la
+   liste se referme sous le doigt et le clic tombe dans le vide. */
+$("iSugg").addEventListener("pointerdown", e => e.preventDefault());
+
+$("iEchange").onclick = () => {
+  const a = ITI.a;
+  ITI.a = ITI.b; ITI.b = a;
+  $("iDepart").value = ITI.a ? ITI.a.nom : "";
+  $("iArrivee").value = ITI.b ? ITI.b.nom : "";
+  relance();
+};
+
+$("iPmr").checked = ITI.pmr;
+$("iPmr").onchange = e => {
+  ITI.pmr = e.target.checked;
+  // celui qui en a besoin en a besoin à chaque visite
+  try { localStorage.setItem(CLE_PMR, ITI.pmr ? "1" : "0"); } catch (err) {}
+  relance();
+};
+
+/* Tout le calcul repose sur le canevas : c'est lui qui remplit les contours et
+   les épaissit. Sur un navigateur qui ignore Path2D, mieux vaut retirer la
+   fonction que d'ouvrir un tiroir qui ne répondrait jamais. */
+if (typeof Path2D === "undefined"){
+  $("btnItineraire").hidden = true;
+  racine.classList.add("sans-itineraire");
+}
+
+$("btnItineraire").onclick = () =>
+  $("itineraire").classList.contains("open") ? fermeItineraire() : ouvreItineraire();
+$("closeItineraire").onclick = fermeItineraire;
+$("videItineraire").onclick = effaceItineraire;
+
+addEventListener("keydown", e => {
+  if (e.key !== "Escape" || $("modale").classList.contains("open")) return;
+  if (visee){ e.stopPropagation(); finVisee(); return; }
+  if ($("iSugg").hidden) fermeItineraire();
 });
 /* ============================================================
    12. Démarrage

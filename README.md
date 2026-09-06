@@ -109,6 +109,135 @@ libellés sont relus dans les données à chaque affichage. Ce que le plan ne
 connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
 un rang mort.
 
+## L'itinéraire d'un stand à l'autre
+
+Un bouton de la barre du haut, et un bouton « Itinéraire » sur chaque fiche,
+ouvrent un tiroir à deux champs : d'où l'on part, où l'on va. **Il n'y a pas de
+géolocalisation** — sous une charpente métallique le GPS ne situe rien, et
+baliser les allées demanderait une pose que personne ne finance. Le visiteur
+désigne donc son départ comme son arrivée, parmi les stands, les zones et les
+repères posés par l'exploitant ; c'est pour cela que les repères comptent
+autant que les stands dans la liste : « Entrée » est le départ le plus probable
+de quelqu'un qui arrive.
+
+Deux manières de désigner un point, parce qu'on ne sait pas toujours le nom de
+ce qu'on voit. La saisie propose ses résultats en dérouleur, sous le champ
+qu'on remplit. Le viseur, au bord de chaque champ, donne le geste inverse : le
+clic suivant sur le plan remplit le champ au lieu d'ouvrir une fiche, et tant
+que l'autre champ est vide il enchaîne — deux touchers suffisent pour un
+trajet. Sur un téléphone le tiroir couvre les deux tiers de l'écran : il
+s'efface le temps de la visée, un bandeau rappelant ce qu'on choisit, et
+revient dès qu'elle aboutit.
+
+Le chemin se calcule sans qu'aucune allée soit décrite nulle part. Les données
+ne donnent que les emplacements ; l'allée, c'est ce qui reste entre eux. Le
+pavillon est donc pavé de cases d'un demi-mètre, on y noircit les stands et les
+zones — épaissis de la moitié du passage nécessaire, pour ne pas raser les
+cloisons — et un A\* cherche la suite de cases blanches la plus courte.
+
+Trois réglages font la différence entre un chemin juste et un chemin qu'on suit
+des yeux, et ils tiennent tous à la même observation : entre deux points d'une
+allée, une grille offre des milliers de trajets de même longueur.
+
+- **Quatre voisins, jamais huit.** Une diagonale de grille n'a pas d'équivalent
+  dans une allée.
+- **Un virage coûte quatre cases.** Sans ce prix, A* choisit au hasard parmi
+  les escaliers équivalents et le trait traverse l'allée en biais. À deux
+  mètres, un crochet ne se justifie plus que s'il fait gagner davantage : les
+  tronçons redeviennent de longues lignes droites.
+- **Longer un bord coûte une demi-case.** La pénalité s'éteint à deux mètres du
+  mur le plus proche — au-delà, dans une aire dégagée, aucun « milieu » n'a de
+  sens — et tient le trait au centre du passage partout ailleurs.
+
+Le chemin obtenu se réduit ensuite à ses tournants, et rien d'autre : pas de
+fil tendu entre deux angles, qui les couperait par définition. L'amorce, du
+centre du stand à l'allée, est coudée pour la même raison. Sur les trois
+pavillons, cinq cents segments d'essai : aucun de travers, et un mètre
+quatre-vingts de dégagement en moyenne de part et d'autre du trait.
+
+Deux choix méritent d'être connus avant de les remettre en cause :
+
+- **On ne passe pas derrière les stands de périphérie.** L'emprise d'un
+  pavillon est une boîte qui déborde d'une douzaine de mètres autour des
+  emplacements ; rien n'y empêcherait un trajet de contourner le hall par
+  l'extérieur. À défaut de mieux, la marche est bornée à l'enveloppe convexe
+  des emplacements, dont les stands du pourtour dessinent le bord.
+- **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
+  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à une
+  sortie repérée, puis celui d'une entrée repérée jusqu'à l'arrivée — et le
+  visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés qui, eux, sont
+  exacts. La distance annoncée est celle des tronçons, et l'affichage le dit
+  (« au moins 165 m »). Sans repère « Entrée » ou « Sortie » sur le plan, cette
+  partie n'est pas tracée, et le tiroir l'explique plutôt que d'inventer.
+
+### Ce qui n'est pas praticable
+
+L'enveloppe des emplacements est un pis-aller : elle ignore tout ce que le fond
+de plan est seul à savoir. Un bloc sanitaire, un local technique, une réserve
+n'est ni un stand ni une zone — il n'existe que dans le dessin — et un trajet le
+traverse comme s'il n'était pas là.
+
+On a d'abord voulu lire ce dessin. Il est bien rangé en sous-calques nommés —
+`5-SANITAIRES`, `INFOPRO_SURFACE_POTEAUX` — et les mesurer un à un montre qu'on
+pourrait en barrer certains sans rien casser. Mais ces noms sont ceux du bureau
+d'études qui a produit le DWG, ils changent d'un salon à l'autre, et le fond est
+un export de traits où murs, cotes et hachures se ressemblent : ce qui marche
+pour trois pavillons ne s'industrialise pas. **Cette piste est abandonnée, et
+c'est un choix, pas un oubli.**
+
+On demande donc, plutôt que de deviner. Un calque de dessin reçoit un **rôle
+dans les itinéraires**, réglé dans la barre de dessin, et tout ce qu'on y trace
+le porte :
+
+| rôle | effet |
+|---|---|
+| *Aucun* | le calque est décoratif, comme avant |
+| *Infranchissable* | ce qui est dessiné barre le passage à tout le monde |
+| *Infranchissable en fauteuil* | il n'est contourné qu'en itinéraire accessible |
+| *Où l'on peut marcher* | les trajets ne sortent plus de ce qui est dessiné ici |
+
+Les deux bouts par lesquels on peut prendre le problème. **Barrer est presque
+toujours le plus court** — un bloc sanitaire fait un rectangle, une allée en
+fait cinquante — et c'est ce que la liste propose en premier. Le dernier rôle
+reste là pour le hall dont le vide n'est, dans l'ensemble, pas praticable : dès
+qu'un pavillon porte une circulation dessinée, elle remplace l'enveloppe et ce
+qui n'est pas dessiné cesse de l'être. Cela coûte une après-midi de tracé, et il
+vaut mieux le savoir avant de s'y mettre. Dans les deux cas, tracez les surfaces
+telles qu'elles sont : le dégagement au bord est retiré tout seul.
+
+Une case **« Voir ce qui est praticable »**, dans la même barre, teinte la
+grille telle que le calcul la voit. Sans elle on dessine à l'aveugle : deux
+allées qui ne se touchent pas d'un demi-mètre ne se remarquent qu'au premier
+trajet qui échoue, et sans dire où. Elle n'existe qu'en administration.
+
+Le rôle vit dans les réglages, à côté de l'ordre des calques, et part aux
+visiteurs à la publication : les colonnes de `calque_dessin` sont fixées, celles
+des réglages ne le sont pas, et rien de tout cela ne demande de migration.
+
+### Le mode accessible
+
+Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
+
+1. **Le passage minimal double** — un mètre quarante au lieu de quatre-vingt-dix
+   centimètres, la largeur qu'exige un fauteuil roulant. Une allée plus étroite
+   disparaît simplement de la grille, et le trajet passe ailleurs.
+2. **Les obstacles s'ajoutent.** Les repères « Escalier » et « Escalator » sont
+   noircis sur l'emprise même de leur pastille — ce qu'on voit est ce qui est
+   évité, sans rien redessiner. Les pentes, les emmarchements et les estrades
+   n'ont pas de pictogramme et n'en auront pas : ils se tracent sur un calque
+   dont le rôle est *Infranchissable en fauteuil*. Ce calque reste invisible au
+   visiteur — c'est le trajet qui en tient compte, pas le dessin — et se
+   reconnaît à son trait pointillé pendant l'édition.
+
+Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
+de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
+réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalier.
+
+Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
+s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
+de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
+et le bouton des fiches suit celui de la barre.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.

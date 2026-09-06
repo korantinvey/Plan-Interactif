@@ -15,6 +15,8 @@ Chaîne de fabrication des pages, et scripts d'exploration de l'API.
 | `_edition.html` | sélection, déplacement, poignées |
 | `_pile.html` | panneau : une seule pile pour tous les calques |
 | `_modales.html` | fenêtres de confirmation et d'ordre |
+| `_parcours.html` | parcours de visite : signets, tiroir, liseré |
+| `_itineraire.html` | itinéraire : grille de marche, A\*, tiroir, mode PMR |
 | `_admin2.html` | démarrage : données figées ou appel à l'API |
 
 ```bash

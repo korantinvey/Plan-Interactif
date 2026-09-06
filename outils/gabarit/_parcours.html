@@ -233,8 +233,10 @@ function remplitParcours(){
 }
 
 function ouvreParcours(){
-  // la fiche occupe la même bande : elle cède la place plutôt que de s'y superposer
+  // la fiche et l'itinéraire occupent la même bande : ils cèdent la place
+  // plutôt que de s'y superposer
   if ($("detail").classList.contains("open")) ferme();
+  fermeItineraire();
   remplitParcours();
   $("parcours").classList.add("open");
   $("btnParcours").setAttribute("aria-pressed", "true");
