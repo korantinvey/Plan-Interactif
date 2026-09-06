@@ -549,19 +549,31 @@ button.expo:hover{background:var(--line)}
 /* Le champ de départ, l'inversion, le champ d'arrivée : trois lignes d'une
    même grille, la flèche à cheval sur les deux champs qu'elle échange. */
 .iChamps{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:end}
-.iChamp{display:flex;flex-direction:column;gap:3px;min-width:0}
-.iChamp input{width:100%;padding:8px 9px;font-size:13.5px;background:var(--surface-2);
+/* Le champ porte sa liste : elle se déroule sous lui, et non sous les deux.
+   Posée en dessous du bloc, elle paraissait appartenir à l'arrivée alors qu'on
+   tapait le départ. */
+.iChamp{position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.iChamp input{width:100%;padding:8px 36px 8px 9px;font-size:13.5px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
 .iChamp input:focus{border-color:var(--accent);outline:none}
+/* Le viseur vit au bord du champ qu'il remplit : c'est la même action que la
+   saisie, dite autrement. */
+.iVise{position:absolute;right:3px;bottom:3px;width:28px;height:28px;display:grid;
+  place-items:center;border-radius:var(--radius);color:var(--ink-3)}
+.iVise:hover{color:var(--ink);background:var(--line)}
+.iVise[aria-pressed="true"]{color:#fff;background:var(--accent)}
+.iVise svg{width:15px;height:15px}
 .iEchange{grid-column:2;grid-row:1/3;align-self:center;width:34px;height:34px;
   display:grid;place-items:center;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-3)}
 .iEchange:hover{border-color:var(--line-strong);color:var(--ink)}
 .iEchange svg{width:15px;height:15px}
-/* La liste sert les deux champs à tour de rôle : sur un téléphone, un menu
-   flottant sous le doigt se fait recouvrir par le clavier. */
-.iSugg{display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto;
-  border:1px solid var(--line);border-radius:var(--radius);padding:4px;background:var(--surface-2)}
+/* La liste sert les deux champs à tour de rôle : elle se déplace dans celui
+   qu'on remplit plutôt que d'exister en double. */
+.iSugg{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:6;
+  display:flex;flex-direction:column;gap:2px;max-height:210px;overflow-y:auto;
+  border:1px solid var(--line-strong);border-radius:var(--radius);padding:4px;
+  background:var(--surface);box-shadow:var(--shadow)}
 .iSugg[hidden]{display:none}
 .iSug{display:flex;flex-direction:column;gap:1px;text-align:left;padding:6px 8px;
   border-radius:var(--radius);width:100%}
@@ -588,6 +600,16 @@ button.expo:hover{background:var(--line)}
 .iEtape.transfert{border-left-style:dashed;border-left-color:var(--line-strong)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
+
+/* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
+   la souris, le bandeau le dit à tout le monde. */
+.viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:7px 12px 7px 14px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.viseur[hidden]{display:none}
+.viseur button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+html.vise-plan #plan{cursor:crosshair}
 
 /* Le tracé. Son épaisseur est donnée en pixels et ne suit pas le zoom : un
    trait qui grossit avec le plan finit par masquer les stands qu'il longe,
@@ -840,7 +862,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   }
   .itineraire.open{transform:translateY(0);pointer-events:auto}
   .iCorps{padding:14px 16px}
-  .iSugg{max-height:170px}
+  .iSugg{max-height:160px}
 }
 
 /* Le fond de plan arrive après les stands : un fondu vaut mieux qu'une
@@ -913,6 +935,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
     <div class="poi" id="poi" hidden></div>
+    <div class="viseur" id="viseur" hidden>
+      <span id="viseurTxt"></span>
+      <button type="button" id="viseurStop">Annuler</button>
+    </div>
 
     <div class="outils" id="outils">
       <div class="outilsTete">
@@ -1009,20 +1035,32 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </div>
       <div class="iCorps">
         <div class="iChamps">
-          <label class="iChamp"><span class="eyebrow">Départ</span>
+          <div class="iChamp">
+            <label class="eyebrow" for="iDepart">Départ</label>
             <input id="iDepart" type="text" autocomplete="off" role="combobox"
               aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
-              placeholder="Entrée, stand, zone…"></label>
+              placeholder="Entrée, stand, zone…">
+            <button class="iVise" id="iViseA" type="button" aria-pressed="false"
+              title="Choisir le départ sur le plan" aria-label="Choisir le départ sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+            <div class="iSugg" id="iSugg" role="listbox" hidden></div>
+          </div>
           <button class="iEchange" id="iEchange" title="Inverser le départ et l'arrivée"
             aria-label="Inverser le départ et l'arrivée">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></svg>
           </button>
-          <label class="iChamp"><span class="eyebrow">Arrivée</span>
+          <div class="iChamp">
+            <label class="eyebrow" for="iArrivee">Arrivée</label>
             <input id="iArrivee" type="text" autocomplete="off" role="combobox"
               aria-autocomplete="list" aria-expanded="false" aria-controls="iSugg"
-              placeholder="Nom ou numéro de stand"></label>
+              placeholder="Nom ou numéro de stand">
+            <button class="iVise" id="iViseB" type="button" aria-pressed="false"
+              title="Choisir l'arrivée sur le plan" aria-label="Choisir l'arrivée sur le plan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M12 1.5v3.5M12 19v3.5M1.5 12H5M19 12h3.5"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="iSugg" id="iSugg" role="listbox" hidden></div>
         <label class="iPmr"><input type="checkbox" id="iPmr">
           <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
           les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
@@ -1933,7 +1971,12 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
-  if (d.cible) select(d.cible.dataset.id, false); else ferme();
+  /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
+     point qu'on désigne, pas un exposant qu'on veut lire. */
+  if (d.cible){
+    if (viseItineraire(d.cible.dataset.id)) return;
+    select(d.cible.dataset.id, false);
+  } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
@@ -1950,7 +1993,11 @@ svg.addEventListener("wheel", e => {
 }, { passive: false });
 svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id]");
-  if (g && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); select(g.dataset.id, false); }
+  if (g && (e.key === "Enter" || e.key === " ")){
+    e.preventDefault();
+    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false);
+  }
 });
 document.addEventListener("keydown", e => {
   const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
@@ -4753,6 +4800,9 @@ function montreSugg(r){
   champSugg = r;
   survolSugg = -1;
   const z = $("iSugg");
+  // une seule liste, déplacée dans le champ qu'on remplit
+  const hote = champIti(r).parentNode;
+  if (z.parentNode !== hote) hote.appendChild(z);
   const l = candidats(champIti(r).value);
   if (!l.length){
     z.innerHTML = '<p class="iRien"></p>';
@@ -4800,6 +4850,8 @@ function valideSaisie(r){
 function effaceItineraire(){
   ITI.a = ITI.b = null;
   ROUTE = null;
+  visee = null;
+  bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
   dessineItineraire();
@@ -4928,12 +4980,85 @@ function montreResultat(etat){
 }
 
 /* ------------------------------------------------------------
+   Désigner un point sur le plan
+   ------------------------------------------------------------ */
+/**
+ * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
+ * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
+ * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
+ * le champ au lieu d'ouvrir une fiche.
+ *
+ * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
+ * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
+ * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
+ * quoi on ne saurait plus ce qu'on est en train de choisir.
+ */
+let visee = null;
+
+function bandeauVisee(){
+  const b = $("viseur");
+  if (b){
+    b.hidden = !visee;
+    if (visee) $("viseurTxt").textContent =
+      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+  }
+  racine.classList.toggle("vise-plan", !!visee);
+  $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
+  $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
+}
+
+function armeVisee(r){
+  visee = visee === r ? null : r;
+  fermeSugg();
+  if (visee && ETROIT()) fermeItineraire();
+  bandeauVisee();
+}
+
+/** Fin de la visée, quelle qu'en soit la raison. */
+function finVisee(){
+  if (!visee) return;
+  const rouvre = ETROIT();
+  visee = null;
+  bandeauVisee();
+  if (rouvre) ouvreItineraire();
+}
+
+/**
+ * Un clic sur le plan pendant une visée. Rend « vrai » s'il a servi à choisir,
+ * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
+ */
+function viseItineraire(id){
+  if (!visee) return false;
+  const o = parId.get(id);
+  if (!o) return false;
+  const r = visee;
+  ITI[r] = pointObjet(o);
+  champIti(r).value = ITI[r].nom;
+  /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
+     enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
+  const autre = r === "a" ? "b" : "a";
+  if (!ITI[autre]){ visee = autre; bandeauVisee(); relance(); return true; }
+  finVisee();
+  relance();
+  return true;
+}
+
+$("iViseA").onclick = () => armeVisee("a");
+$("iViseB").onclick = () => armeVisee("b");
+$("viseurStop").onclick = finVisee;
+
+/* ------------------------------------------------------------
    Ouverture, fermeture, branchements
    ------------------------------------------------------------ */
 function ouvreItineraire(){
   // fiche, parcours et itinéraire se partagent la même bande
   if ($("detail").classList.contains("open")) ferme();
   fermeParcours();
+  /* Rouvrir le tiroir, c'est renoncer à viser : sur un téléphone il recouvre
+     le plan qu'on visait. On ne passe pas par finVisee(), qui rouvrirait ce
+     tiroir déjà en train de s'ouvrir. */
+  visee = null;
+  bandeauVisee();
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
@@ -4960,7 +5085,8 @@ function versItineraire(o){
 ["a", "b"].forEach(r => {
   const c = champIti(r);
   c.addEventListener("input", () => montreSugg(r));
-  c.addEventListener("focus", () => montreSugg(r));
+  // revenir au clavier, c'est renoncer au doigt
+  c.addEventListener("focus", () => { visee = null; bandeauVisee(); montreSugg(r); });
   c.addEventListener("blur", () => { if (champSugg === r) fermeSugg(); valideSaisie(r); });
   c.addEventListener("keydown", e => {
     const z = $("iSugg");
@@ -5015,8 +5141,9 @@ $("closeItineraire").onclick = fermeItineraire;
 $("videItineraire").onclick = effaceItineraire;
 
 addEventListener("keydown", e => {
-  if (e.key === "Escape" && $("iSugg").hidden &&
-      !$("modale").classList.contains("open")) fermeItineraire();
+  if (e.key !== "Escape" || $("modale").classList.contains("open")) return;
+  if (visee){ e.stopPropagation(); finVisee(); return; }
+  if ($("iSugg").hidden) fermeItineraire();
 });
 /* ============================================================
    12. Démarrage

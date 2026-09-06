@@ -898,7 +898,12 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
-  if (d.cible) select(d.cible.dataset.id, false); else ferme();
+  /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
+     point qu'on désigne, pas un exposant qu'on veut lire. */
+  if (d.cible){
+    if (viseItineraire(d.cible.dataset.id)) return;
+    select(d.cible.dataset.id, false);
+  } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
@@ -915,7 +920,11 @@ svg.addEventListener("wheel", e => {
 }, { passive: false });
 svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id]");
-  if (g && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); select(g.dataset.id, false); }
+  if (g && (e.key === "Enter" || e.key === " ")){
+    e.preventDefault();
+    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false);
+  }
 });
 document.addEventListener("keydown", e => {
   const saisie = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);

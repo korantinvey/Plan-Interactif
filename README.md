@@ -66,6 +66,15 @@ repères posés par l'exploitant ; c'est pour cela que les repères comptent
 autant que les stands dans la liste : « Entrée » est le départ le plus probable
 de quelqu'un qui arrive.
 
+Deux manières de désigner un point, parce qu'on ne sait pas toujours le nom de
+ce qu'on voit. La saisie propose ses résultats en dérouleur, sous le champ
+qu'on remplit. Le viseur, au bord de chaque champ, donne le geste inverse : le
+clic suivant sur le plan remplit le champ au lieu d'ouvrir une fiche, et tant
+que l'autre champ est vide il enchaîne — deux touchers suffisent pour un
+trajet. Sur un téléphone le tiroir couvre les deux tiers de l'écran : il
+s'efface le temps de la visée, un bandeau rappelant ce qu'on choisit, et
+revient dès qu'elle aboutit.
+
 Le chemin se calcule sans qu'aucune allée soit décrite nulle part. Les données
 ne donnent que les emplacements ; l'allée, c'est ce qui reste entre eux. Le
 pavillon est donc pavé de cases d'un demi-mètre, on y noircit les stands et les

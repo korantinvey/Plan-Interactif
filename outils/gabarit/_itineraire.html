@@ -686,6 +686,9 @@ function montreSugg(r){
   champSugg = r;
   survolSugg = -1;
   const z = $("iSugg");
+  // une seule liste, déplacée dans le champ qu'on remplit
+  const hote = champIti(r).parentNode;
+  if (z.parentNode !== hote) hote.appendChild(z);
   const l = candidats(champIti(r).value);
   if (!l.length){
     z.innerHTML = '<p class="iRien"></p>';
@@ -733,6 +736,8 @@ function valideSaisie(r){
 function effaceItineraire(){
   ITI.a = ITI.b = null;
   ROUTE = null;
+  visee = null;
+  bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
   dessineItineraire();
@@ -861,12 +866,85 @@ function montreResultat(etat){
 }
 
 /* ------------------------------------------------------------
+   Désigner un point sur le plan
+   ------------------------------------------------------------ */
+/**
+ * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
+ * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
+ * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
+ * le champ au lieu d'ouvrir une fiche.
+ *
+ * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
+ * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
+ * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
+ * quoi on ne saurait plus ce qu'on est en train de choisir.
+ */
+let visee = null;
+
+function bandeauVisee(){
+  const b = $("viseur");
+  if (b){
+    b.hidden = !visee;
+    if (visee) $("viseurTxt").textContent =
+      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+  }
+  racine.classList.toggle("vise-plan", !!visee);
+  $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
+  $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
+}
+
+function armeVisee(r){
+  visee = visee === r ? null : r;
+  fermeSugg();
+  if (visee && ETROIT()) fermeItineraire();
+  bandeauVisee();
+}
+
+/** Fin de la visée, quelle qu'en soit la raison. */
+function finVisee(){
+  if (!visee) return;
+  const rouvre = ETROIT();
+  visee = null;
+  bandeauVisee();
+  if (rouvre) ouvreItineraire();
+}
+
+/**
+ * Un clic sur le plan pendant une visée. Rend « vrai » s'il a servi à choisir,
+ * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
+ */
+function viseItineraire(id){
+  if (!visee) return false;
+  const o = parId.get(id);
+  if (!o) return false;
+  const r = visee;
+  ITI[r] = pointObjet(o);
+  champIti(r).value = ITI[r].nom;
+  /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
+     enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
+  const autre = r === "a" ? "b" : "a";
+  if (!ITI[autre]){ visee = autre; bandeauVisee(); relance(); return true; }
+  finVisee();
+  relance();
+  return true;
+}
+
+$("iViseA").onclick = () => armeVisee("a");
+$("iViseB").onclick = () => armeVisee("b");
+$("viseurStop").onclick = finVisee;
+
+/* ------------------------------------------------------------
    Ouverture, fermeture, branchements
    ------------------------------------------------------------ */
 function ouvreItineraire(){
   // fiche, parcours et itinéraire se partagent la même bande
   if ($("detail").classList.contains("open")) ferme();
   fermeParcours();
+  /* Rouvrir le tiroir, c'est renoncer à viser : sur un téléphone il recouvre
+     le plan qu'on visait. On ne passe pas par finVisee(), qui rouvrirait ce
+     tiroir déjà en train de s'ouvrir. */
+  visee = null;
+  bandeauVisee();
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
@@ -893,7 +971,8 @@ function versItineraire(o){
 ["a", "b"].forEach(r => {
   const c = champIti(r);
   c.addEventListener("input", () => montreSugg(r));
-  c.addEventListener("focus", () => montreSugg(r));
+  // revenir au clavier, c'est renoncer au doigt
+  c.addEventListener("focus", () => { visee = null; bandeauVisee(); montreSugg(r); });
   c.addEventListener("blur", () => { if (champSugg === r) fermeSugg(); valideSaisie(r); });
   c.addEventListener("keydown", e => {
     const z = $("iSugg");
@@ -948,6 +1027,7 @@ $("closeItineraire").onclick = fermeItineraire;
 $("videItineraire").onclick = effaceItineraire;
 
 addEventListener("keydown", e => {
-  if (e.key === "Escape" && $("iSugg").hidden &&
-      !$("modale").classList.contains("open")) fermeItineraire();
+  if (e.key !== "Escape" || $("modale").classList.contains("open")) return;
+  if (visee){ e.stopPropagation(); finVisee(); return; }
+  if ($("iSugg").hidden) fermeItineraire();
 });
