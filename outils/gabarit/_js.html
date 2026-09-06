@@ -195,6 +195,9 @@ function montePlan(){
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
   appliqueApparence();
   marqueParcours();
+  // le trajet vit hors des calques : il survit au montage, mais son tronçon
+  // n'est pas celui du pavillon qu'on vient d'ouvrir
+  dessineItineraire();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -327,6 +330,8 @@ function liste(){
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
+  // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
+  if (typeof rafraichitBouts === "function") rafraichitBouts();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -379,6 +384,10 @@ function masque(){
   const fiche = $("detail"), tiroir = $("side");
   const ficheOuverte = !!fiche && fiche.classList.contains("open");
   let bas = ficheOuverte ? fiche.offsetHeight : 0;
+  /* L'itinéraire occupe la même bande, et c'est en l'ouvrant qu'on demande à
+     cadrer sur le trajet : l'oublier ici reviendrait à le tracer sous lui. */
+  const iti = $("itineraire");
+  if (iti && iti.classList.contains("open")) bas = Math.max(bas, iti.offsetHeight);
   if (tiroir){
     bas = Math.max(bas, ficheOuverte
       ? parseFloat(getComputedStyle(document.documentElement)
@@ -683,8 +692,9 @@ function ecarteClicFantome(){
 }
 
 function ouvre(o, rect){
-  // la fiche et le parcours se partagent la même bande, à droite comme en bas
-  fermeParcours();
+  // la fiche, le parcours et l'itinéraire se partagent la même bande, à
+  // droite comme en bas
+  fermeParcours(); fermeItineraire();
   const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
@@ -752,7 +762,8 @@ function ouvre(o, rect){
   $("dBody").innerHTML = (zone
       ? bloc2("cConf", "dPaneConf", confs) + bloc2("cInfos", "dPaneInfos", infos)
       : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
-    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button></div>';
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    '<button class="btn itin" id="dItin">Itinéraire</button></div>';
   $("dBody").querySelectorAll("[data-conf]").forEach(b =>
     b.onclick = () => ficheConf(b.dataset.conf));
   /* Le signet du parcours vit en haut, à côté de la croix : retenir un
@@ -765,6 +776,8 @@ function ouvre(o, rect){
   // un seul branchement pour le signet de tête et ceux du programme
   brancheParcours($("detail"));
   $("dGo").onclick = () => centre(o);
+  // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
+  $("dItin").onclick = () => versItineraire(o);
   // le crayon vit dans l'en-tête, à côté du nom, et non parmi les actions
   const cr = $("dRen");
   if (cr){

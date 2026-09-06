@@ -55,6 +55,67 @@ libellés sont relus dans les données à chaque affichage. Ce que le plan ne
 connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
 un rang mort.
 
+## L'itinéraire d'un stand à l'autre
+
+Un bouton de la barre du haut, et un bouton « Itinéraire » sur chaque fiche,
+ouvrent un tiroir à deux champs : d'où l'on part, où l'on va. **Il n'y a pas de
+géolocalisation** — sous une charpente métallique le GPS ne situe rien, et
+baliser les allées demanderait une pose que personne ne finance. Le visiteur
+désigne donc son départ comme son arrivée, parmi les stands, les zones et les
+repères posés par l'exploitant ; c'est pour cela que les repères comptent
+autant que les stands dans la liste : « Entrée » est le départ le plus probable
+de quelqu'un qui arrive.
+
+Le chemin se calcule sans qu'aucune allée soit décrite nulle part. Les données
+ne donnent que les emplacements ; l'allée, c'est ce qui reste entre eux. Le
+pavillon est donc pavé de cases d'un demi-mètre, on y noircit les stands et les
+zones — épaissis de la moitié du passage nécessaire, pour ne pas raser les
+cloisons — et un A\* cherche la suite de cases blanches la plus courte. Le
+chemin obtenu, en marches d'escalier, est ensuite tendu : ne restent que les
+vrais tournants.
+
+Deux choix méritent d'être connus avant de les remettre en cause :
+
+- **On ne passe pas derrière les stands de périphérie.** L'emprise d'un
+  pavillon est une boîte qui déborde d'une douzaine de mètres autour des
+  emplacements ; rien n'y empêcherait un trajet de contourner le hall par
+  l'extérieur. La marche est donc bornée à l'enveloppe convexe des
+  emplacements, dont les stands du pourtour dessinent le bord. Le fond de plan
+  porterait les vrais murs, mais mêlés aux cotes, aux hachures et au mobilier :
+  les lire découperait le hall au lieu de le fermer.
+- **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
+  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à une
+  sortie repérée, puis celui d'une entrée repérée jusqu'à l'arrivée — et le
+  visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés qui, eux, sont
+  exacts. La distance annoncée est celle des tronçons, et l'affichage le dit
+  (« au moins 165 m »). Sans repère « Entrée » ou « Sortie » sur le plan, cette
+  partie n'est pas tracée, et le tiroir l'explique plutôt que d'inventer.
+
+### Le mode accessible
+
+Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
+
+1. **Le passage minimal double** — un mètre quarante au lieu de quatre-vingt-dix
+   centimètres, la largeur qu'exige un fauteuil roulant. Une allée plus étroite
+   disparaît simplement de la grille, et le trajet passe ailleurs.
+2. **Les obstacles s'ajoutent.** Les repères « Escalier » et « Escalator » sont
+   noircis sur l'emprise même de leur pastille — ce qu'on voit est ce qui est
+   évité. Les pentes, les emmarchements et les estrades n'ont pas de
+   pictogramme et n'en auront pas : l'exploitant les entoure d'un rectangle,
+   d'un polygone ou d'une ligne sur un calque de dessin, et coche **« Obstacle
+   pour les PMR »** dans le panneau de la forme. La forme cochée se reconnaît à
+   son trait pointillé pendant l'édition, et reste invisible au visiteur — c'est
+   le trajet qui en tient compte, pas le dessin.
+
+Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
+de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
+réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalier.
+
+Un calque masqué ne compte pas, ni ses repères ni ses obstacles : le trajet doit
+s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
+de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
+et le bouton des fiches suit celui de la barre.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.

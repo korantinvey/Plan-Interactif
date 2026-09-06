@@ -107,6 +107,13 @@ const COMMANDES = [
   { cle: "_parcours", sel: "#btnParcours", libelle: "Proposer le parcours de visite",
     // les signets des fiches et du programme suivent le bouton de la barre
     classe: "sans-parcours" },
+  /* L'itinéraire se calcule sur ce que les données disent du hall : les
+     emplacements, et les obstacles que l'exploitant a bien voulu dessiner.
+     Sur un plan resté nu, le trajet reste juste mais n'évite que les stands —
+     à lui de juger si cela suffit à son salon. */
+  { cle: "_itineraire", sel: "#btnItineraire", libelle: "Proposer le calcul d'itinéraire",
+    // le bouton « Itinéraire » des fiches suit celui de la barre
+    classe: "sans-itineraire" },
 ];
 
 function appliqueCommandes(){
@@ -119,6 +126,7 @@ function appliqueCommandes(){
   // un tiroir ouvert sur une fonction qu'on vient de retirer n'aurait plus de
   // bouton pour se refermer
   if (conf("_parcours").visible === false) fermeParcours();
+  if (conf("_itineraire").visible === false) fermeItineraire();
 }
 
 /**

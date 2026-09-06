@@ -13,6 +13,9 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
+  /* Les repères et les obstacles dessinés entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours. */
+  oublieGrilles();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
@@ -97,7 +100,8 @@ function dessineDessins(){
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
-      : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
+      : '<g class="forme' + (f.id === formeSel ? " pick" : "") +
+        (f.pmr ? " bloque" : "") + '" data-f="' + f.id +
         '"><path d="' + cheminForme(f) + '"/></g>').join("");
     c.appendChild(g);
   }
@@ -574,6 +578,7 @@ $("elemTaille").oninput = appliqueTexte;
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
 $("elemStand").onblur = appliqueLiaison;
+$("elemPmr").onchange = appliqueBlocagePmr;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;

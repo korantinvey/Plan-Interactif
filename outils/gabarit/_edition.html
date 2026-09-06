@@ -91,6 +91,17 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* Une forme peut marquer ce qu'un fauteuil ne franchit pas : une pente, un
+     emmarchement, une estrade. Rien ne les distingue dans les données Klipso
+     et aucun pictogramme ne les désigne — c'est donc à l'exploitant de les
+     entourer, et l'itinéraire accessible les contourne. */
+  const barrable = f.t === "rect" || f.t === "poly" || f.t === "ligne";
+  const bp = $("elemPmrBloc");
+  if (bp){
+    bp.hidden = !barrable;
+    if (barrable) $("elemPmr").checked = !!f.pmr;
+  }
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -138,6 +149,17 @@ function appliqueLiaison(){
   memorise();
   if (s){ cible.f.stand = s.id; ch.value = etiquetteStand(s); }
   else { delete cible.f.stand; ch.value = ""; }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+function appliqueBlocagePmr(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible) return;
+  memorise();
+  // on retire la clé plutôt que d'écrire « false » : les dessins partent au
+  // service à chaque publication, et une forme ordinaire n'a rien à en dire
+  if ($("elemPmr").checked) cible.f.pmr = true;
+  else delete cible.f.pmr;
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
