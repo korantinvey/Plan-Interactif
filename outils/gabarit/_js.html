@@ -198,6 +198,7 @@ function montePlan(){
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
   // n'est pas celui du pavillon qu'on vient d'ouvrir
   dessineItineraire();
+  rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();

@@ -86,6 +86,15 @@ function construitPanneau(){
     const nom = d.querySelector("label span");
     nom.textContent = x.nom;
 
+    /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
+       rappeler ici évite de le chercher, ou de l'oublier. */
+    if (x.t === "dessin" && roleIti(x.ref)){
+      const b = document.createElement("i");
+      b.className = "rle";
+      b.textContent = nomRoleIti(roleIti(x.ref));
+      nom.after(b);
+    }
+
     /* visibilité */
     d.querySelector('input[type="checkbox"]').onchange = ev => {
       const on = ev.target.checked;

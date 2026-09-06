@@ -196,7 +196,12 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
    visiteur — c'est le trajet qui en tient compte, pas le dessin. L'exploitant,
    lui, doit la reconnaître pendant qu'il édite, sans quoi il la coche deux
    fois ou l'oublie. */
-html.mode-edition .dcal .forme.bloque path{stroke-dasharray:4 3}
+/* Un calque qui porte un rôle ne change rien pour le visiteur — c'est le
+   trajet qui en tient compte, pas le dessin. L'exploitant, lui, doit le
+   reconnaître pendant qu'il édite, sans quoi il le règle deux fois. */
+html.mode-edition .dcal.role path{stroke-dasharray:5 3}
+html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
+  fill-opacity:.12}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -252,10 +257,20 @@ html.mode-edition .dcal .forme.bloque path{stroke-dasharray:4 3}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
 .elemChamp[hidden]{display:none}
-.elemCoche{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
-  cursor:pointer;line-height:1.35}
-.elem .elemCoche input{width:14px;height:14px;flex:none;accent-color:var(--accent);padding:0}
-.elemCoche[hidden]{display:none}
+/* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
+   puisque c'est en dessinant qu'on le décide. */
+.outilsRole{display:flex;flex-direction:column;gap:3px}
+.outilsRole select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.outilsRole select:focus{border-color:var(--accent);outline:none}
+.outilsRole i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.outilsRole i:empty{display:none}
+.outilsVoir{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
+  cursor:pointer}
+.outils .outilsVoir input{width:14px;height:14px;flex:none;padding:0;accent-color:var(--accent)}
+#nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
+.calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
 .elem input{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
@@ -948,6 +963,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button id="fermeOutils" title="Fermer — Échap" aria-label="Fermer la barre de dessin">&times;</button>
         </span>
       </div>
+      <label class="outilsRole"><span class="eyebrow">Rôle dans les itinéraires</span>
+        <select id="roleIti"></select><i id="roleAide"></i></label>
+      <label class="outilsVoir"><input type="checkbox" id="voirNappe">
+        <span>Voir ce qui est praticable</span></label>
       <div class="outilsBtns">
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
@@ -972,8 +991,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
-        <label class="elemCoche" id="elemPmrBloc" hidden>
-          <input type="checkbox" id="elemPmr"><span>Obstacle pour les PMR</span></label>
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
@@ -1271,6 +1288,7 @@ function montePlan(){
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
   // n'est pas celui du pavillon qu'on vient d'ouvrir
   dessineItineraire();
+  rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
   onglets();
@@ -2499,9 +2517,11 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
-  /* Les repères et les obstacles dessinés entrent dans le calcul d'itinéraire :
-     la grille de marche qui les ignore n'a plus cours. */
+  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours. On attend la fin du
+     geste — dessiner en refait une à chaque image serait insoutenable. */
   oublieGrilles();
+  rafraichitApercu();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
@@ -2565,7 +2585,9 @@ function dessineDessins(){
   c.querySelectorAll(".dcal").forEach(g => g.remove());
   for (const cal of mesCalques()){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const role = roleIti(cal);
     g.setAttribute("class", "dcal" + (cal.rempli ? " plein" : "") +
+                            (role ? " role " + role : "") +
                             (cal.id === calqueActif && ADMIN ? " editable" : ""));
     g.dataset.dcal = cal.id;
     g.style.color = cal.couleur || "var(--accent)";
@@ -2586,8 +2608,7 @@ function dessineDessins(){
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
-      : '<g class="forme' + (f.id === formeSel ? " pick" : "") +
-        (f.pmr ? " bloque" : "") + '" data-f="' + f.id +
+      : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
         '"><path d="' + cheminForme(f) + '"/></g>').join("");
     c.appendChild(g);
   }
@@ -3064,7 +3085,6 @@ $("elemTaille").oninput = appliqueTexte;
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
 $("elemStand").onblur = appliqueLiaison;
-$("elemPmr").onchange = appliqueBlocagePmr;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
@@ -3073,6 +3093,8 @@ function activeCalque(id){
   const c = trouveCalque(calqueActif);
   { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
   if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  montreRoleIti(c);
+  rafraichitApercu();
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
   document.querySelectorAll("#pile .calq").forEach(d => {
@@ -3083,6 +3105,53 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le rôle du calque dans les itinéraires
+   ------------------------------------------------------------ */
+/** Ce que le rôle change, en une phrase — sans quoi on le règle au hasard. */
+const AIDE_ROLE = {
+  "": "Ce calque n'entre pas dans le calcul des trajets.",
+  obstacle: "Ce qui est dessiné ici barre le passage à tout le monde : " +
+    "entourez les sanitaires, les locaux, les réserves. C'est le plus court chemin — " +
+    "quelques rectangles au lieu de toutes les allées.",
+  pmr: "Ce qui est dessiné ici n'est contourné qu'en itinéraire accessible : " +
+    "pentes, emmarchements, estrades.",
+  circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
+    "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
+    "au bord est retiré tout seul.",
+};
+
+function montreRoleIti(c){
+  const sel = $("roleIti");
+  if (!sel) return;
+  // la liste se remplit au premier passage : les rôles vivent dans un module
+  // assemblé après celui-ci
+  if (!sel.options.length)
+    sel.innerHTML = ROLES_ITI.map(r =>
+      '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
+  const r = c ? roleIti(c) : "";
+  sel.value = r;
+  $("roleAide").textContent = AIDE_ROLE[r] || "";
+}
+
+$("roleIti").onchange = e => {
+  const c = trouveCalque(calqueActif);
+  if (!c) return;
+  const v = e.target.value;
+  const cle = cleRoleIti(c.id);
+  if (v) conf(cle).role = v; else delete CONF[cle];
+  enregistreConf();
+  oublieGrilles();
+  montreRoleIti(c);
+  dessineDessins();
+  construitPanneau();
+  rafraichitApercu();
+  // le trajet affiché doit obéir sur-le-champ : c'est le seul retour visible
+  relance();
+};
+
+$("voirNappe").onchange = e => { voirNappe = e.target.checked; rafraichitApercu(); };
 
 function creeCalque(){
   demandeNom("Nouveau calque", "Calque " + (mesCalques().length + 1), nom => {
@@ -3220,17 +3289,6 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
-  /* Une forme peut marquer ce qu'un fauteuil ne franchit pas : une pente, un
-     emmarchement, une estrade. Rien ne les distingue dans les données Klipso
-     et aucun pictogramme ne les désigne — c'est donc à l'exploitant de les
-     entourer, et l'itinéraire accessible les contourne. */
-  const barrable = f.t === "rect" || f.t === "poly" || f.t === "ligne";
-  const bp = $("elemPmrBloc");
-  if (bp){
-    bp.hidden = !barrable;
-    if (barrable) $("elemPmr").checked = !!f.pmr;
-  }
-
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -3278,17 +3336,6 @@ function appliqueLiaison(){
   memorise();
   if (s){ cible.f.stand = s.id; ch.value = etiquetteStand(s); }
   else { delete cible.f.stand; ch.value = ""; }
-  enregistreDessins(); dessineDessins(); dessinePoignees();
-}
-
-function appliqueBlocagePmr(){
-  const cible = formeSel && formeParId(formeSel);
-  if (!cible) return;
-  memorise();
-  // on retire la clé plutôt que d'écrire « false » : les dessins partent au
-  // service à chaque publication, et une forme ordinaire n'a rien à en dire
-  if ($("elemPmr").checked) cible.f.pmr = true;
-  else delete cible.f.pmr;
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
@@ -3482,6 +3529,15 @@ function construitPanneau(){
 
     const nom = d.querySelector("label span");
     nom.textContent = x.nom;
+
+    /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
+       rappeler ici évite de le chercher, ou de l'oublier. */
+    if (x.t === "dessin" && roleIti(x.ref)){
+      const b = document.createElement("i");
+      b.className = "rle";
+      b.textContent = nomRoleIti(roleIti(x.ref));
+      nom.after(b);
+    }
 
     /* visibilité */
     d.querySelector('input[type="checkbox"]').onchange = ev => {
@@ -4258,7 +4314,74 @@ function reperesDe(p){
   return l;
 }
 
+/* ------------------------------------------------------------
+   Ce que l'exploitant déclare : où l'on marche, ce qui barre
+   ------------------------------------------------------------ */
 /**
+ * Un bloc sanitaire, un local technique, une estrade : rien de cela n'est un
+ * stand, et rien n'en ressort des données. Cela vit dans le fond de plan, que
+ * le calcul ignore — d'où des trajets qui traversaient les WC.
+ *
+ * On a d'abord voulu lire ce fond. Il est bien rangé en sous-calques nommés —
+ * « 5-SANITAIRES », « INFOPRO_SURFACE_POTEAUX » — mais ces noms sont ceux du
+ * bureau d'études qui a produit le DWG, et ils changent d'un salon à l'autre :
+ * ce qui marche pour trois pavillons ne s'industrialise pas. Le dessin est un
+ * export de traits, où murs, cotes et hachures se ressemblent ; deviner y
+ * revient à parier.
+ *
+ * On demande donc, plutôt que de deviner. Un calque de dessin reçoit un rôle,
+ * et tout ce qu'on y trace le porte :
+ *
+ *   obstacle     ce qui est dessiné barre le passage à tout le monde
+ *   pmr          il ne le barre qu'en itinéraire accessible
+ *   circulation  ce qui est dessiné dit où l'on peut marcher ; tout le reste
+ *                du pavillon devient infranchissable
+ *
+ * Les deux bouts par lesquels on peut prendre le problème, donc. Barrer est
+ * presque toujours le plus court — un bloc sanitaire fait un rectangle, une
+ * allée en fait cinquante — et c'est ce que la liste propose en premier. La
+ * circulation reste là pour le hall dont le vide n'est, dans l'ensemble, pas
+ * praticable ; elle coûte alors une après-midi de tracé, et il faut le savoir
+ * avant de s'y mettre.
+ *
+ * Le rôle vit dans CONF, comme l'ordre de la pile : les colonnes de
+ * `calque_dessin` sont fixées, celles des réglages ne le sont pas — et les
+ * réglages partent aux visiteurs à la publication, ce qui est exactement ce
+ * qu'on veut.
+ */
+const ROLES_ITI = [
+  { v: "", nom: "Aucun" },
+  { v: "obstacle", nom: "Infranchissable" },
+  { v: "pmr", nom: "Infranchissable en fauteuil" },
+  { v: "circulation", nom: "Où l'on peut marcher" },
+];
+const cleRoleIti = (id) => "_iti:" + id;
+const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
+const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
+
+/**
+ * Les formes d'un pavillon portant un rôle donné.
+ *
+ * Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
+ * voit à l'écran, et contourner un obstacle invisible passerait pour un bogue.
+ * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
+ * délimiter une circulation.
+ */
+function formesRole(p, role){
+  const l = [];
+  for (const c of calquesDe(p)){
+    if (c.visible === false || roleIti(c) !== role) continue;
+    for (const f of c.formes || []){
+      if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
+      else if (f.t === "ligne" && role !== "circulation")
+        l.push({ d: cheminForme(f), trait: true });
+    }
+  }
+  return l;
+}
+
+/**
+ * Ce qui barre la route à un fauteuil, et à lui seul./**
  * Ce qui barre la route à un fauteuil, et à lui seul.
  *
  * Deux sources, parce qu'un salon en a deux. Les escaliers et les escalators
@@ -4269,17 +4392,13 @@ function reperesDe(p){
  * d'un polygone, et coche « obstacle pour les PMR » sur la forme.
  */
 function obstaclesPmr(p){
-  const l = [];
+  const l = formesRole(p, "pmr");
+  /* Les escaliers et les escalators sont déjà signalés par un repère, posé sur
+     eux : leur pastille dit où ils sont, on la reprend telle quelle. Ce qu'on
+     voit est ce qui est évité, sans rien redessiner. */
   for (const c of calquesDe(p)){
     if (c.visible === false) continue;
     for (const f of c.formes || []){
-      if (f.pmr && (f.t === "rect" || f.t === "poly" || f.t === "ligne")){
-        /* Une ligne barre par son trait : la remplir reviendrait à refermer
-           ses extrémités, et un tracé en zigzag condamnerait tout le quartier
-           au lieu de la marche qu'il souligne. */
-        l.push({ d: cheminForme(f), trait: f.t === "ligne" });
-        continue;
-      }
       if (f.t !== "repere") continue;
       const pic = f.picto || pictoDe(f.txt);
       if (pic !== "escalier" && pic !== "escalator") continue;
@@ -4323,13 +4442,20 @@ function grille(p, pmr){
   };
 
   ctx.fillRect(e.x0 - 2, e.y0 - 2, e.x1 - e.x0 + 4, e.y1 - e.y0 + 4);
-  const env = enveloppe(p);
+  /* On creuse ce qui est praticable. Si l'exploitant a dessiné la circulation,
+     c'est elle qui fait foi, et rien d'autre du pavillon n'est ouvert. Sinon
+     on retombe sur l'enveloppe des emplacements, qui vaut mieux que rien mais
+     ignore tout ce que le fond de plan est seul à savoir. */
+  const circulation = formesRole(p, "circulation").map(o => new Path2D(o.d));
+  const ouvert = circulation.length ? circulation : [enveloppe(p)];
   ctx.globalCompositeOperation = "destination-out";
-  ctx.fill(env);
+  ouvert.forEach(t => ctx.fill(t));
   ctx.globalCompositeOperation = "source-over";
-  ctx.stroke(env);                       // on ne longe pas non plus le bord
+  // le bord d'une circulation est un mur comme un autre : on s'en écarte
+  ouvert.forEach(t => ctx.stroke(t));
   for (const o of p.stands) barre(o.d);
   for (const o of p.zones) barre(o.d);
+  formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
   if (pmr) obstaclesPmr(p).forEach(o => barre(o.d, o.trait));
 
   const px = ctx.getImageData(0, 0, w, h).data;
@@ -4817,6 +4943,57 @@ function calculeRoute(){
   return { pmr: pmr, etapes: etapes, avertis: avertis, coupe: true,
            partiel: !t1 || !t2, aucunTrace: !t1 && !t2,
            m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/* ------------------------------------------------------------
+   Voir ce qui est praticable
+   ------------------------------------------------------------ */
+/**
+ * Dessiner la circulation sans la voir revient à parier.
+ *
+ * L'exploitant trace une allée, puis une autre, et ne saura qu'elles ne se
+ * touchent pas qu'en essayant un trajet qui échoue — sans savoir où. Cette
+ * teinte est la grille elle-même, telle que le calcul la voit : ce qui n'est
+ * pas coloré n'est pas praticable, et une allée dessinée qui reste blanche est
+ * une allée trop étroite ou détachée du reste.
+ *
+ * Réservée à l'administration : c'est un outil de mise au point, pas une
+ * couche de plan.
+ */
+let voirNappe = false;
+
+function couleurNappe(){
+  const h = String(jeton("--accent")).trim();
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [47, 73, 209];
+}
+
+function rafraichitApercu(){
+  const vieux = $("nappe");
+  if (!voirNappe || !ADMIN || !DATA){ if (vieux) vieux.remove(); return; }
+  const p = P();
+  const g = grille(p, ITI.pmr);
+  const cv = document.createElement("canvas");
+  cv.width = g.w; cv.height = g.h;
+  const ctx = cv.getContext("2d");
+  const img = ctx.createImageData(g.w, g.h);
+  const d = img.data, c = couleurNappe();
+  for (let i = 0; i < g.nappe.length; i++){
+    if (!g.nappe[i]) continue;
+    const k = i * 4;
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 150;
+  }
+  ctx.putImageData(img, 0, 0);
+
+  const el = vieux || document.createElementNS("http://www.w3.org/2000/svg", "image");
+  el.id = "nappe";
+  el.setAttribute("x", g.x0);
+  el.setAttribute("y", g.y0);
+  el.setAttribute("width", g.w * PAS_GRILLE);
+  el.setAttribute("height", g.h * PAS_GRILLE);
+  el.setAttribute("preserveAspectRatio", "none");
+  el.setAttribute("href", cv.toDataURL());
+  if (!vieux) svg.insertBefore(el, svg.querySelector("#itin, #apercu, #poignees"));
 }
 
 /* ------------------------------------------------------------

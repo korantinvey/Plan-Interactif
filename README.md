@@ -106,10 +106,8 @@ Deux choix méritent d'être connus avant de les remettre en cause :
 - **On ne passe pas derrière les stands de périphérie.** L'emprise d'un
   pavillon est une boîte qui déborde d'une douzaine de mètres autour des
   emplacements ; rien n'y empêcherait un trajet de contourner le hall par
-  l'extérieur. La marche est donc bornée à l'enveloppe convexe des
-  emplacements, dont les stands du pourtour dessinent le bord. Le fond de plan
-  porterait les vrais murs, mais mêlés aux cotes, aux hachures et au mobilier :
-  les lire découperait le hall au lieu de le fermer.
+  l'extérieur. À défaut de mieux, la marche est bornée à l'enveloppe convexe
+  des emplacements, dont les stands du pourtour dessinent le bord.
 - **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
   l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à une
   sortie repérée, puis celui d'une entrée repérée jusqu'à l'arrivée — et le
@@ -117,6 +115,50 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   exacts. La distance annoncée est celle des tronçons, et l'affichage le dit
   (« au moins 165 m »). Sans repère « Entrée » ou « Sortie » sur le plan, cette
   partie n'est pas tracée, et le tiroir l'explique plutôt que d'inventer.
+
+### Ce qui n'est pas praticable
+
+L'enveloppe des emplacements est un pis-aller : elle ignore tout ce que le fond
+de plan est seul à savoir. Un bloc sanitaire, un local technique, une réserve
+n'est ni un stand ni une zone — il n'existe que dans le dessin — et un trajet le
+traverse comme s'il n'était pas là.
+
+On a d'abord voulu lire ce dessin. Il est bien rangé en sous-calques nommés —
+`5-SANITAIRES`, `INFOPRO_SURFACE_POTEAUX` — et les mesurer un à un montre qu'on
+pourrait en barrer certains sans rien casser. Mais ces noms sont ceux du bureau
+d'études qui a produit le DWG, ils changent d'un salon à l'autre, et le fond est
+un export de traits où murs, cotes et hachures se ressemblent : ce qui marche
+pour trois pavillons ne s'industrialise pas. **Cette piste est abandonnée, et
+c'est un choix, pas un oubli.**
+
+On demande donc, plutôt que de deviner. Un calque de dessin reçoit un **rôle
+dans les itinéraires**, réglé dans la barre de dessin, et tout ce qu'on y trace
+le porte :
+
+| rôle | effet |
+|---|---|
+| *Aucun* | le calque est décoratif, comme avant |
+| *Infranchissable* | ce qui est dessiné barre le passage à tout le monde |
+| *Infranchissable en fauteuil* | il n'est contourné qu'en itinéraire accessible |
+| *Où l'on peut marcher* | les trajets ne sortent plus de ce qui est dessiné ici |
+
+Les deux bouts par lesquels on peut prendre le problème. **Barrer est presque
+toujours le plus court** — un bloc sanitaire fait un rectangle, une allée en
+fait cinquante — et c'est ce que la liste propose en premier. Le dernier rôle
+reste là pour le hall dont le vide n'est, dans l'ensemble, pas praticable : dès
+qu'un pavillon porte une circulation dessinée, elle remplace l'enveloppe et ce
+qui n'est pas dessiné cesse de l'être. Cela coûte une après-midi de tracé, et il
+vaut mieux le savoir avant de s'y mettre. Dans les deux cas, tracez les surfaces
+telles qu'elles sont : le dégagement au bord est retiré tout seul.
+
+Une case **« Voir ce qui est praticable »**, dans la même barre, teinte la
+grille telle que le calcul la voit. Sans elle on dessine à l'aveugle : deux
+allées qui ne se touchent pas d'un demi-mètre ne se remarquent qu'au premier
+trajet qui échoue, et sans dire où. Elle n'existe qu'en administration.
+
+Le rôle vit dans les réglages, à côté de l'ordre des calques, et part aux
+visiteurs à la publication : les colonnes de `calque_dessin` sont fixées, celles
+des réglages ne le sont pas, et rien de tout cela ne demande de migration.
 
 ### Le mode accessible
 
@@ -127,18 +169,17 @@ Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
    disparaît simplement de la grille, et le trajet passe ailleurs.
 2. **Les obstacles s'ajoutent.** Les repères « Escalier » et « Escalator » sont
    noircis sur l'emprise même de leur pastille — ce qu'on voit est ce qui est
-   évité. Les pentes, les emmarchements et les estrades n'ont pas de
-   pictogramme et n'en auront pas : l'exploitant les entoure d'un rectangle,
-   d'un polygone ou d'une ligne sur un calque de dessin, et coche **« Obstacle
-   pour les PMR »** dans le panneau de la forme. La forme cochée se reconnaît à
-   son trait pointillé pendant l'édition, et reste invisible au visiteur — c'est
-   le trajet qui en tient compte, pas le dessin.
+   évité, sans rien redessiner. Les pentes, les emmarchements et les estrades
+   n'ont pas de pictogramme et n'en auront pas : ils se tracent sur un calque
+   dont le rôle est *Infranchissable en fauteuil*. Ce calque reste invisible au
+   visiteur — c'est le trajet qui en tient compte, pas le dessin — et se
+   reconnaît à son trait pointillé pendant l'édition.
 
 Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
 de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
 réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalier.
 
-Un calque masqué ne compte pas, ni ses repères ni ses obstacles : le trajet doit
+Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
 s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
 de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
 et le bouton des fiches suit celui de la barre.

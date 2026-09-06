@@ -191,7 +191,12 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
    visiteur — c'est le trajet qui en tient compte, pas le dessin. L'exploitant,
    lui, doit la reconnaître pendant qu'il édite, sans quoi il la coche deux
    fois ou l'oublie. */
-html.mode-edition .dcal .forme.bloque path{stroke-dasharray:4 3}
+/* Un calque qui porte un rôle ne change rien pour le visiteur — c'est le
+   trajet qui en tient compte, pas le dessin. L'exploitant, lui, doit le
+   reconnaître pendant qu'il édite, sans quoi il le règle deux fois. */
+html.mode-edition .dcal.role path{stroke-dasharray:5 3}
+html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
+  fill-opacity:.12}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -247,10 +252,20 @@ html.mode-edition .dcal .forme.bloque path{stroke-dasharray:4 3}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
 .elemChamp[hidden]{display:none}
-.elemCoche{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
-  cursor:pointer;line-height:1.35}
-.elem .elemCoche input{width:14px;height:14px;flex:none;accent-color:var(--accent);padding:0}
-.elemCoche[hidden]{display:none}
+/* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
+   puisque c'est en dessinant qu'on le décide. */
+.outilsRole{display:flex;flex-direction:column;gap:3px}
+.outilsRole select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.outilsRole select:focus{border-color:var(--accent);outline:none}
+.outilsRole i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.outilsRole i:empty{display:none}
+.outilsVoir{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
+  cursor:pointer}
+.outils .outilsVoir input{width:14px;height:14px;flex:none;padding:0;accent-color:var(--accent)}
+#nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
+.calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
 .elem input{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
@@ -943,6 +958,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button id="fermeOutils" title="Fermer — Échap" aria-label="Fermer la barre de dessin">&times;</button>
         </span>
       </div>
+      <label class="outilsRole"><span class="eyebrow">Rôle dans les itinéraires</span>
+        <select id="roleIti"></select><i id="roleAide"></i></label>
+      <label class="outilsVoir"><input type="checkbox" id="voirNappe">
+        <span>Voir ce qui est praticable</span></label>
       <div class="outilsBtns">
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
@@ -967,8 +986,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
-        <label class="elemCoche" id="elemPmrBloc" hidden>
-          <input type="checkbox" id="elemPmr"><span>Obstacle pour les PMR</span></label>
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
