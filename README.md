@@ -53,20 +53,33 @@ Elle procède en deux temps :
    Eventmaker, où l'API ne publie aucune liste de champs, quelques fiches
    d'exposant sont lues et l'on relève ce qu'elles portent. Le résultat est
    retenu à côté de l'événement : rouvrir la fenêtre ne redemande rien.
-2. **Associer** chaque cible de la fiche détail — enseigne, raison sociale, site
-   web, coordonnées, nomenclature — au champ d'origine qui la porte. Un exemple
-   de valeur accompagne chaque champ, seul moyen commode de distinguer
+2. **Corriger l'affectation proposée.** Tout n'est pas à faire à la main : une
+   bonne part des champs est standard — les champs natifs d'une fiche d'invité
+   Eventmaker, les propriétés non préfixées d'un dossier Klipso — et porte
+   partout le même nom. La détection reprend donc, pour chaque cible, le champ
+   que la synchronisation utilisait déjà, et le retient s'il figure parmi ceux
+   qu'elle vient de trouver. Il ne reste à désigner que les champs
+   personnalisés, ceux qui diffèrent d'un salon à l'autre. Un exemple de valeur
+   accompagne chaque champ, seul moyen commode de distinguer
    `x_Catalogue_RaisonSociale` de `x_Catalogue_Enseigne`.
+
+La liste sépare d'ailleurs les deux : les champs personnalisés viennent en tête,
+les standard suivent. Chaque ligne dit ensuite d'où vient ce qu'elle porte —
+proposé par la détection, choisi à la main, ou vide faute d'avoir trouvé le
+champ habituel. Une cible réglée à la main n'est jamais reprise par une
+détection ultérieure.
 
 Deux cibles ne s'affichent pas mais décident de tout : le **numéro de stand** et
 l'**identifiant de dossier**, par lesquels une fiche Eventmaker retrouve son
 emplacement sur le plan. Mal réglées, aucun exposant n'apparaît — c'est le
 premier endroit où regarder.
 
-Une cible laissée « par défaut » garde le champ qu'utilisait la synchronisation :
-un salon déjà en service ne change pas de comportement, et une cible ajoutée
-plus tard ne le fait pas non plus. « Aucun » est un réglage à part entière — la
-cible reste vide. Le réglage s'applique à la synchronisation suivante.
+Une cible dont le champ habituel n'a pas été trouvé **reste vide** plutôt que de
+désigner un champ inexistant : mieux vaut une fiche sans site web qu'une
+synchronisation qui échoue, et l'exploitant voit d'un coup d'œil ce qui lui
+reste à faire. Tant qu'aucune détection n'a eu lieu, une cible garde le champ
+qu'utilisait la synchronisation — un salon déjà en service ne change donc pas de
+comportement. Le réglage s'applique à la synchronisation suivante.
 
 Un effet de bord utile côté Klipso : adresse, ville, pays, téléphone et réseaux
 sociaux n'y étaient pas repris faute de savoir où les prendre. Ils sont

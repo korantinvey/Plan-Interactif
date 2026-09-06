@@ -97,6 +97,39 @@ const exemple = (v: unknown): string | null => {
   return t ? (t.length > 60 ? t.slice(0, 57) + "…" : t) : null;
 };
 
+/* Les champs standard sont les mêmes d'un salon à l'autre ; ce sont les
+   personnalisés qui diffèrent, et Klipso les préfixe « x_ » précisément pour
+   le dire. Séparer les deux dans la liste, c'est montrer d'emblée où se joue
+   le réglage. */
+const GROUPES_KLIPSO = [
+  "Dossier exposant · champ personnalisé",
+  "Dossier exposant · champ standard",
+  "Emplacement · champ personnalisé",
+  "Emplacement · champ standard",
+];
+const groupeKlipso = (cle: string): string => {
+  const stand = cle.startsWith("stand:");
+  const perso = /(^|:)x_/.test(cle);
+  return (stand ? "Emplacement" : "Dossier exposant") +
+    (perso ? " · champ personnalisé" : " · champ standard");
+};
+
+/**
+ * Range les champs détectés : par groupe d'abord — les personnalisés en tête,
+ * ce sont eux qu'on vient régler — puis les renseignés avant les vides, et
+ * l'ordre alphabétique pour finir, qui les rend trouvables.
+ */
+function range(liste: Record<string, unknown>[], ordre: string[]) {
+  const rang = (g: unknown) => {
+    const i = ordre.indexOf(String(g));
+    return i < 0 ? ordre.length : i;
+  };
+  return liste.sort((a, b) =>
+    rang(a.groupe) - rang(b.groupe) ||
+    Number(Boolean(b.exemple)) - Number(Boolean(a.exemple)) ||
+    String(a.cle).localeCompare(String(b.cle), "fr"));
+}
+
 /**
  * Les champs d'exposant que porte un événement Klipso.
  *
@@ -108,21 +141,21 @@ const exemple = (v: unknown): string | null => {
  * que par ce qu'elles contiennent.
  */
 async function champsKlipso(g: Gaia) {
-  const groupes: [string, string, string][] = [
+  const groupes: [string, string][] = [
     // l'entité du dossier ne porte pas le même nom d'une instance à l'autre :
     // on demande les deux et on garde ce qui répond
-    ["DossierExpAff", "", "Dossier exposant"],
-    ["DossierExp", "", "Dossier exposant"],
-    ["Stand", "stand:", "Emplacement"],
+    ["DossierExpAff", ""],
+    ["DossierExp", ""],
+    ["Stand", "stand:"],
   ];
   const vus = new Map<string, Record<string, unknown>>();
-  for (const [entite, prefixe, groupe] of groupes) {
+  for (const [entite, prefixe] of groupes) {
     let props: { cle: string; libelle: string }[] = [];
     try { props = await g.proprietes(entite); } catch (_) { /* schéma muet */ }
     for (const p of props) {
       const cle = prefixe + p.cle;
       if (vus.has(cle)) continue;
-      vus.set(cle, { cle, libelle: p.libelle, groupe, exemple: null });
+      vus.set(cle, { cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null });
     }
   }
 
@@ -151,18 +184,14 @@ async function champsKlipso(g: Gaia) {
         vus.set(cle, {
           cle,
           libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
-          groupe: cle.startsWith("stand:") ? "Emplacement" : "Dossier exposant",
+          groupe: groupeKlipso(cle),
           exemple: ex,
         });
       }
     }
   } catch (_) { /* l'échantillon manque, le schéma suffit */ }
 
-  /* Un champ renseigné passe devant : c'est celui qu'on cherche. Le reste
-     suit, par ordre alphabétique, pour rester trouvable. */
-  return [...vus.values()].sort((a, b) =>
-    Number(Boolean(b.exemple)) - Number(Boolean(a.exemple)) ||
-    String(a.cle).localeCompare(String(b.cle), "fr"));
+  return range([...vus.values()], GROUPES_KLIPSO);
 }
 
 Deno.serve(async (req) => {
@@ -277,18 +306,39 @@ Deno.serve(async (req) => {
         }, 400);
       }
 
-      /* Les cibles et leurs défauts descendent avec les champs détectés et sont
-         retenus avec eux : la console nomme ainsi le champ par défaut de chaque
-         ligne sans tenir une seconde copie de cette liste, qui divergerait. */
+      /* L'affectation proposée : le champ par défaut de chaque cible, gardé
+         s'il figure vraiment parmi les champs détectés.
+
+         Beaucoup de champs sont les mêmes partout — les champs natifs d'une
+         fiche d'invité Eventmaker, les propriétés standard d'un dossier
+         Klipso — et n'ont aucune raison d'être associés à la main salon après
+         salon. Ceux qui diffèrent sont les champs personnalisés, et c'est
+         précisément eux que la détection retrouve ou non.
+
+         Une cible dont le champ par défaut manque reste vide plutôt que de
+         désigner un champ inexistant : mieux vaut une fiche sans site web
+         qu'une synchronisation qui échoue, et l'exploitant voit tout de suite
+         ce qui lui reste à désigner. */
+      const connus = new Set(detectes.map((d) => String(d.cle)));
+      const propose: Record<string, string[]> = {};
+      for (const c of cadre.cibles) {
+        propose[c.cle] = (cadre.defauts[c.cle] ?? []).filter((n) => connus.has(n));
+      }
+
+      /* Les cibles, leurs défauts et la proposition descendent avec les champs
+         détectés et sont retenus avec eux : la console nomme ainsi le champ de
+         chaque ligne sans tenir une seconde copie de ces listes, qui
+         divergerait. */
       const corr = { ...(evt.correspondances ?? {}) };
       corr[src] = {
         ...(corr[src] ?? {}),
         detectes,
         defauts: cadre.defauts,
+        propose,
         detecteLe: new Date().toISOString(),
       };
       await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
-      return repond({ ...cadre, detectes, info, correspondances: corr });
+      return repond({ ...cadre, detectes, propose, info, correspondances: corr });
     }
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands

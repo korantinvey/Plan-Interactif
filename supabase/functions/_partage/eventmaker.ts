@@ -50,6 +50,11 @@ const SONDES = 12;
    Six de front tiennent l'API sans la brusquer et divisent le temps d'autant. */
 const DE_FRONT = 6;
 
+/* Deux origines sur une fiche : les champs personnalisés, nommés par
+   l'organisateur et donc propres au salon, et les champs natifs de l'invité,
+   identiques partout. L'ordre les sépare dans la liste de la console. */
+const GROUPES = ["Champ personnalisé", "Fiche invité · champ standard"];
+
 /* « Inscrit » dans l'interface Eventmaker. Une fiche en attente, refusée ou
    désinscrite ne doit pas paraître sur le plan public. */
 const INSCRIT = "registered";
@@ -342,15 +347,20 @@ export class Eventmaker {
         // ne s'affiche sur une fiche détail
         if (v && typeof v === "object") continue;
         if (/^_|(^|_)id$|_at$/.test(k)) continue;
-        note("invite:" + k, k, "Fiche invité", v);
+        note("invite:" + k, k, GROUPES[1], v);
       }
       for (const [k, v] of Object.entries(champs(g.guest_metadata))) {
-        note(k, k, "Champ personnalisé", v);
+        note(k, k, GROUPES[0], v);
       }
     }
 
+    /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
+       nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
+       natifs de la fiche d'invité, eux, sont les mêmes partout. */
     return {
-      champs: [...vus.values()].sort((a, b) => a.cle.localeCompare(b.cle, "fr")),
+      champs: [...vus.values()].sort((a, b) =>
+        GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
+        a.cle.localeCompare(b.cle, "fr")),
       categories: retenues.map((c) => c.name),
       lus,
     };

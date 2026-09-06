@@ -142,6 +142,12 @@ table.salles select,table.champs select{width:100%;padding:5px 7px;background:va
 .etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
 .etat-salle[data-genre="manque"]{color:var(--rouge)}
 .etat-salle[data-genre="manuel"]{color:var(--accent)}
+/* Le rôle de la cible, sous son libellé : « mal réglé, aucun exposant
+   n'apparaît » se lit là où l'on s'apprête à choisir, pas dans une note de bas
+   de fenêtre. */
+table.champs td.n .lib{display:block}
+table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
+  color:var(--ink-3);line-height:1.4;white-space:normal}
 /* L'exemple de valeur tranche mieux qu'un nom de propriété :
    « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne se distinguent
    que par ce qu'elles contiennent. */

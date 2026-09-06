@@ -1064,29 +1064,31 @@ const CIBLES_EXPOSANT = {
 };
 
 /* Deux valeurs qui ne sont pas des noms de champ : « rien de réglé », qui
-   laisse jouer le défaut, et « ne rien lire », qui est un choix. La seconde
-   s'enregistre en chaîne vide ; l'absence, elle, veut dire la première. */
-const DEFAUT_CHAMP = "defaut";
-const AUCUN_CHAMP = "aucun";
+   laisse jouer le champ par défaut, et « ne rien lire », qui est un choix.
+   La seconde s'enregistre en chaîne vide ; l'absence, elle, veut dire la
+   première. Le « = » de tête les met hors d'atteinte d'un nom de champ. */
+const DEFAUT_CHAMP = "=defaut";
+const AUCUN_CHAMP = "=aucun";
+
+/* Une cible peut lire plusieurs champs — le premier renseigné l'emporte, sauf
+   la nomenclature où ils se cumulent. La liste déroulante n'a qu'une valeur
+   par ligne : on la compose en les joignant, aucun nom de champ ne portant de
+   barre verticale. */
+const encode = (v) => v === undefined || v === null ? DEFAUT_CHAMP
+  : ([].concat(v).filter(Boolean).join("|") || AUCUN_CHAMP);
+const decode = (v) => v === DEFAUT_CHAMP ? undefined
+  : v === AUCUN_CHAMP ? ""
+  : v.indexOf("|") >= 0 ? v.split("|") : v;
 
 /** Le bloc de correspondance d'un fournisseur, jamais nul. */
 const correspondance = (e, src) => (e.correspondances || {})[src] || {};
-
-/** Le champ retenu pour une cible, tel que la liste déroulante le montre. */
-function champRetenu(champs, cle) {
-  const regle = champs[cle];
-  if (regle === undefined || regle === null) return DEFAUT_CHAMP;
-  const l = [].concat(regle).filter(Boolean);
-  return l.length ? String(l[0]) : AUCUN_CHAMP;
-}
 
 function resumeCorrespondance(e) {
   const src = source(e, "stands");
   if (src === "aucun") return "Aucune source d'exposants";
   const bloc = correspondance(e, src);
-  const champs = bloc.champs || {};
   const regles = (CIBLES_EXPOSANT[src] || [])
-    .filter(([c]) => champRetenu(champs, c) !== DEFAUT_CHAMP).length;
+    .filter(([c]) => (bloc.champs || {})[c] !== undefined).length;
   return (FOURNISSEURS[src] || src) + " — " +
     (regles ? regles + " champ" + (regles > 1 ? "s" : "") + " associé" +
       (regles > 1 ? "s" : "") : "champs par défaut") +
@@ -1100,12 +1102,16 @@ function resumeCorrespondance(e) {
  * source porte réellement. Cette liste ne s'invente pas : elle vient d'une
  * lecture de l'API, gardée d'une fois sur l'autre parce qu'elle met plusieurs
  * secondes à revenir.
+ *
+ * La détection ne se contente pas de lister : elle propose une affectation, en
+ * reprenant le champ que la synchronisation utilisait déjà quand il figure
+ * parmi les champs trouvés. La plupart des cibles se règlent ainsi toutes
+ * seules — les champs standard sont les mêmes partout — et il ne reste à
+ * désigner que les personnalisés, ceux qui diffèrent d'un salon à l'autre.
  */
 function ouvreCorrespondance(apres) {
   const e = courant();
   const src = source(e, "stands");
-  // le réglage en cours d'édition, recopié : on n'écrit qu'à l'enregistrement
-  const champs = { ...(correspondance(e, src).champs || {}) };
 
   if (src === "aucun") {
     ouvreModale("Correspondance des champs", (corps) => {
@@ -1116,6 +1122,22 @@ function ouvreCorrespondance(apres) {
     }, [{ libelle: "Terminé", genre: "primaire" }], apres);
     return;
   }
+
+  // le réglage en cours d'édition, recopié : on n'écrit qu'à l'enregistrement
+  const champs = { ...(correspondance(e, src).champs || {}) };
+
+  /* La proposition ne remplace jamais un choix déjà enregistré : une cible
+     réglée à la main le reste, y compris après une nouvelle détection. */
+  const applique = () => {
+    const propose = correspondance(e, src).propose || {};
+    Object.keys(propose).forEach((cle) => {
+      if (!(cle in champs)) {
+        const l = propose[cle] || [];
+        champs[cle] = l.length === 1 ? l[0] : l;
+      }
+    });
+  };
+  applique();
 
   ouvreModale("Correspondance des champs", (corps) => {
     const barre = document.createElement("div");
@@ -1129,10 +1151,10 @@ function ouvreCorrespondance(apres) {
 
     const note = document.createElement("p");
     note.className = "aide";
-    note.textContent = "« Par défaut » garde le champ qu'utilisait la " +
-      "synchronisation ; « Aucun » laisse la cible vide, ce qui est un réglage " +
-      "à part entière. La correspondance prend effet à la synchronisation " +
-      "suivante.";
+    note.textContent = "La détection propose une affectation d'après les champs " +
+      "trouvés ; il ne reste qu'à corriger ce qui diffère. Une cible dont le " +
+      "champ habituel manque reste vide, et se désigne à la main. La " +
+      "correspondance prend effet à la synchronisation suivante.";
     corps.appendChild(note);
 
     /* Une détection jamais faite n'empêche pas de régler : les champs déjà
@@ -1142,6 +1164,7 @@ function ouvreCorrespondance(apres) {
       const bloc = correspondance(e, src);
       const detectes = bloc.detectes || [];
       const defauts = bloc.defauts || null;
+      const propose = bloc.propose || null;
       dit.textContent = bloc.detecteLe
         ? detectes.length + " champs lus le " +
           new Date(bloc.detecteLe).toLocaleString("fr-FR",
@@ -1158,26 +1181,36 @@ function ouvreCorrespondance(apres) {
       (CIBLES_EXPOSANT[src] || []).forEach(([cle, libelle, aide]) => {
         const tr = document.createElement("tr");
         tr.innerHTML = '<td class="n"><span class="lib"></span>' +
-                       '<span class="etat-salle"></span></td><td></td>';
+                       '<span class="aide"></span></td><td></td>';
         tr.querySelector(".lib").textContent = libelle;
-        if (aide) tr.querySelector(".etat-salle").textContent = aide;
+        if (aide) tr.querySelector(".aide").textContent = aide;
 
-        const choisi = champRetenu(champs, cle);
-        const parDefaut = ([].concat((defauts || {})[cle] || []))[0] || null;
+        const choisi = encode(champs[cle]);
+        const propose1 = propose ? encode(propose[cle] || []) : null;
+        const parDefaut = defauts ? ([].concat(defauts[cle] || []))[0] : null;
 
-        /* Les champs se rangent par origine — le dossier exposant, la fiche
-           d'invité, l'emplacement — sans quoi deux cents entrées se lisent
-           comme une seule. */
+        /* Les champs se rangent par origine — personnalisés d'abord, ce sont
+           eux qui diffèrent d'un salon à l'autre — sans quoi deux cents
+           entrées se lisent comme une seule. */
         const sel = document.createElement("select");
         const opt = (v, txt, dans) => {
           const o = document.createElement("option");
           o.value = v;
           o.textContent = txt;
           (dans || sel).appendChild(o);
+          return o;
         };
         opt(DEFAUT_CHAMP, parDefaut ? "Par défaut — " + parDefaut
           : defauts ? "Par défaut — aucun champ" : "Par défaut");
         opt(AUCUN_CHAMP, "Aucun — laisser vide");
+        // une cible qui lit plusieurs champs à la suite ne se dit pas dans une
+        // liste de champs uniques : elle a son entrée à elle
+        const suites = {};
+        [choisi, propose1].forEach((v) => {
+          if (!v || v.indexOf("|") < 0 || suites[v]) return;
+          suites[v] = true;
+          opt(v, v.split("|").join(", puis "));
+        });
         const groupes = {};
         detectes.forEach((d) => {
           const g = d.groupe || "Champs";
@@ -1191,7 +1224,7 @@ function ouvreCorrespondance(apres) {
         /* Un champ réglé que la détection ne connaît pas reste proposé : mieux
            vaut le montrer signalé que le remplacer en silence — il peut n'être
            renseigné sur aucune des fiches lues, et rester le bon. */
-        if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP &&
+        if (choisi !== DEFAUT_CHAMP && choisi !== AUCUN_CHAMP && !suites[choisi] &&
             !detectes.some((d) => d.cle === choisi)) {
           opt(choisi, choisi + " (absent des champs détectés)");
         }
@@ -1201,18 +1234,29 @@ function ouvreCorrespondance(apres) {
         const ex = document.createElement("span");
         ex.className = "exemple";
         tr.lastElementChild.appendChild(ex);
+        const etat = document.createElement("span");
+        etat.className = "etat-salle";
+        tr.lastElementChild.appendChild(etat);
 
         const dis = () => {
-          const d = detectes.find((x) => x.cle === sel.value);
+          const v = sel.value;
+          const d = detectes.find((x) => x.cle === v);
           ex.textContent = d && d.exemple ? "ex. " + d.exemple : "";
-          tr.dataset.etat = sel.value === DEFAUT_CHAMP ? "auto"
-            : sel.value === AUCUN_CHAMP ? "manque" : "manuel";
+          const vide = v === AUCUN_CHAMP;
+          const genre = v === DEFAUT_CHAMP ? "auto"
+            : propose1 !== null && v === propose1 ? (vide ? "manque" : "auto")
+            : vide ? "manque" : "manuel";
+          etat.textContent = v === DEFAUT_CHAMP ? "champ par défaut"
+            : propose1 !== null && v === propose1
+              ? (vide ? "aucun champ trouvé : à désigner" : "proposé par la détection")
+              : vide ? "laissé vide" : "choisi à la main";
+          etat.dataset.genre = genre;
+          tr.dataset.etat = genre;
         };
         dis();
         sel.onchange = () => {
-          if (sel.value === DEFAUT_CHAMP) delete champs[cle];
-          else if (sel.value === AUCUN_CHAMP) champs[cle] = "";
-          else champs[cle] = sel.value;
+          const v = decode(sel.value);
+          if (v === undefined) delete champs[cle]; else champs[cle] = v;
           dis();
         };
         tb.appendChild(tr);
@@ -1230,6 +1274,7 @@ function ouvreCorrespondance(apres) {
         const r = await fonction("sync-evenement", { action: "champs", evenementId: e.id });
         // la fonction a retenu ce qu'elle a lu : on reprend son enregistrement
         e.correspondances = r.correspondances || e.correspondances;
+        applique();
         dessine();
         if (r.info) dit.textContent += " · " + r.info;
       } catch (err) {
