@@ -827,7 +827,7 @@ const LIGNES_FICHE = {
     { cle: "instagram", cible: "instagram", libelle: "Instagram" },
     { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
       aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
-    { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant",
+    { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant", ouiNon: true,
       aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
         "salons qui distinguent leurs nouveaux venus." },
     /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
@@ -876,7 +876,7 @@ const CADRES_FICHE = [
  */
 const LIGNES_RATTACHEMENT = {
   klipso: [
-    { cible: "exclu", libelle: "Exclu de la liste",
+    { cible: "exclu", libelle: "Exclu de la liste", ouiNon: true,
       aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
   ],
   eventmaker: [
@@ -888,7 +888,7 @@ const LIGNES_RATTACHEMENT = {
         "mise en forme ignorée. Mal réglé, aucun exposant n'apparaît." },
     { cible: "dossier", libelle: "Identifiant de dossier",
       aide: "Le dossier Klipso recopié sur la fiche : le rattachement le plus sûr." },
-    { cible: "exclu", libelle: "Exclu de la liste",
+    { cible: "exclu", libelle: "Exclu de la liste", ouiNon: true,
       aide: "Une valeur vraie retire l'exposant du plan public, quel que soit le reste." },
   ],
 };
@@ -1348,7 +1348,8 @@ function tableauChamps(lignes, type, src, avecCases) {
     const cellule = tr.lastElementChild;
     let choix = null;
     if (l.cible) {
-      choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; });
+      choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
+        l.ouiNon);
       cellule.appendChild(choix.hote);
     } else {
       const fixe = document.createElement("span");
@@ -1476,7 +1477,7 @@ function intituleSuite(v, detectes) {
  * fenêtre : une fenêtre où la moitié des gestes se valide et l'autre pas
  * serait un piège.
  */
-function champOrigine(src, cible, apres) {
+function champOrigine(src, cible, apres, ouiNon) {
   const e = courant();
   const bloc = correspondance(e, src);
   const detectes = bloc.detectes || [];
@@ -1563,20 +1564,87 @@ function champOrigine(src, cible, apres) {
   };
   dis();
 
-  sel.onchange = async () => {
+  /* Le champ retenu et les valeurs qui le font compter vivent dans le même
+     bloc : c'est un seul réglage en deux temps, et il s'enregistre d'un coup. */
+  const enregistre = async (part) => {
     const e2 = courant();
     const avant = e2.correspondances;
     const corr = { ...(e2.correspondances || {}) };
-    const champs = { ...((corr[src] || {}).champs || {}) };
-    const v = decode(sel.value);
-    reglee = v !== undefined;
-    if (v === undefined) delete champs[cible]; else champs[cible] = v;
-    corr[src] = { ...(corr[src] || {}), champs };
+    corr[src] = { ...(corr[src] || {}), ...part };
     e2.correspondances = corr;
-    dis();
     try { await majEvenement(e2.id, { correspondances: corr }); }
     catch (err) { e2.correspondances = avant; signale(err.message, true); }
   };
+
+  sel.onchange = () => {
+    const champs = { ...(correspondance(courant(), src).champs || {}) };
+    const v = decode(sel.value);
+    reglee = v !== undefined;
+    if (v === undefined) delete champs[cible]; else champs[cible] = v;
+    /* Les valeurs retenues appartenaient au champ précédent : les garder
+       désignerait des valeurs que le nouveau ne porte pas. */
+    const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+    delete valeurs[cible];
+    enregistre({ champs, valeurs });
+    dis();
+    majValeurs();
+  };
+
+  /* ---- les valeurs qui valent oui ----
+
+     Un champ à choix ne répond pas par oui ou non : « anciennete » vaut
+     « Nouveau Client », « Client N-1 » ou « Retour », et c'est à l'exploitant
+     de dire lesquelles comptent — un salon signalera les retours, un autre
+     non. Les valeurs proposées sont celles que la synchronisation a vues sur
+     ce champ ; un champ de texte libre n'en a pas, et retombe alors sur le
+     oui/non usuel. */
+  const zoneValeurs = document.createElement("div");
+  zoneValeurs.className = "valeurs";
+  if (ouiNon) hote.appendChild(zoneValeurs);
+
+  function majValeurs() {
+    if (!ouiNon) return;
+    zoneValeurs.innerHTML = "";
+    const d = detectes.find((x) => x.cle === sel.value);
+    const offertes = (d && d.valeurs) || [];
+    // rien à choisir : ni champ, ni liste de valeurs connues
+    if (!offertes.length) { zoneValeurs.hidden = true; return; }
+    zoneValeurs.hidden = false;
+
+    const retenues = ((correspondance(courant(), src).valeurs || {})[cible] || [])
+      .map(String);
+    const dit = document.createElement("span");
+    dit.className = "mini";
+    zoneValeurs.appendChild(dit);
+    const rappel = () => {
+      dit.textContent = retenues.length
+        ? "vaut oui quand la valeur est :"
+        : "aucune valeur retenue : rien ne sera signalé";
+      dit.dataset.genre = retenues.length ? "" : "manque";
+    };
+    rappel();
+
+    offertes.forEach((v) => {
+      const l = document.createElement("label");
+      l.className = "puce";
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = v;
+      const i = l.querySelector("input");
+      i.checked = retenues.indexOf(v) >= 0;
+      i.onchange = () => {
+        const k = retenues.indexOf(v);
+        if (i.checked && k < 0) retenues.push(v);
+        if (!i.checked && k >= 0) retenues.splice(k, 1);
+        const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+        if (retenues.length) valeurs[cible] = [...retenues]; else delete valeurs[cible];
+        enregistre({ valeurs });
+        rappel();
+      };
+      zoneValeurs.appendChild(l);
+    });
+  }
+  majValeurs();
+
   return { hote, sel, dis };
 }
 

@@ -182,6 +182,21 @@ table.champs td.montre label.case{display:inline-block;gap:0}
 table.champs td.montre label.case span:empty{display:none}
 table.champs td.montre label.case input{margin:0;vertical-align:middle}
 table.champs td.montre .etat-salle{margin:0}
+/* Les valeurs qui font compter un champ à choix. « anciennete » vaut
+   « Nouveau Client », « Client N-1 » ou « Retour » : aucune n'est un oui, et
+   c'est à l'exploitant de dire lesquelles comptent — un salon signalera les
+   retours, un autre non. */
+.valeurs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px}
+.valeurs .mini{font-size:11px;color:var(--ink-3);flex:0 0 auto}
+.valeurs .mini[data-genre="manque"]{color:var(--rouge)}
+label.puce{display:inline-flex;flex-direction:row;align-items:center;gap:5px;
+  padding:3px 9px 3px 7px;border:1px solid var(--line);border-radius:999px;
+  font-size:11.5px;color:var(--ink-2);cursor:pointer;background:var(--surface-2)}
+label.puce:hover{border-color:var(--line-strong)}
+label.puce input{width:13px;height:13px;margin:0;padding:0;
+  accent-color:var(--accent);cursor:pointer}
+label.puce:has(input:checked){background:var(--accent-soft);border-color:var(--accent);
+  color:var(--accent);font-weight:600}
 .etat-salle{display:block;margin-top:4px;font-size:11px;color:var(--ink-3)}
 .etat-salle[data-genre="manque"]{color:var(--rouge)}
 .etat-salle[data-genre="manuel"]{color:var(--accent)}

@@ -85,13 +85,26 @@ fiche mais y pose une pastille, à côté du pavillon et du numéro de stand. Le
 champ qui la déclenche n'existe que sur les salons qui distinguent leurs
 nouveaux venus — ailleurs la cible reste vide et rien ne paraît.
 
-La valeur se lit comme un oui/non, et **c'est l'accord qui s'énumère** : valent
-oui `oui`, `o`, `1`, `x`, `vrai`, `true`, `on` et leurs majuscules ; tout le
-reste, y compris ce qu'on ne sait pas lire, vaut non. La règle inverse — prendre
-pour un oui tout ce qui n'est pas un non reconnu — a été essayée et retirée : un
-champ portant une date d'adhésion, un tiret ou un « à confirmer » devenait un
-oui, et la fiche affirmait quelque chose de faux. Une valeur qu'on ne sait pas
-lire ne doit rien déclencher. « Exclu de la liste » suit la même règle.
+Deux façons de dire oui, parce que les sources n'en offrent qu'une chacune.
+
+Sur un **champ oui/non**, c'est l'accord qui s'énumère : valent oui `oui`, `o`,
+`1`, `x`, `vrai`, `true`, `on` et leurs majuscules ; tout le reste, y compris ce
+qu'on ne sait pas lire, vaut non. La règle inverse — prendre pour un oui tout ce
+qui n'est pas un non reconnu — a été essayée et retirée : un champ portant une
+date d'adhésion ou un tiret devenait un oui, et la fiche affirmait quelque chose
+de faux.
+
+Sur un **champ à choix**, aucune valeur n'est un oui, et c'est pourtant l'une
+d'elles qui désigne les nouveaux venus. Franchise Expo 2026 range ainsi ses
+577 exposants sur `anciennete` : 363 « Client N-1 », 176 « Nouveau Client »,
+35 « Retour ». La ligne offre donc, sous le champ, les valeurs que la
+synchronisation a vues ; on coche celles qui comptent. Plusieurs peuvent
+compter à la fois — un salon tiendra « Retour » pour un retour à signaler, un
+autre non. Aucune cochée, rien n'est signalé, et la ligne le dit.
+
+Un champ qui porte plus de huit valeurs distinctes est du texte libre : sa liste
+n'est pas proposée, et il retombe sur le oui/non. « Exclu de la liste » se règle
+exactement de la même façon.
 
 Trois lignes ne s'affichent jamais mais décident du reste, sous « Ce qui ne
 s'affiche pas » : le **numéro de stand** et l'**identifiant de dossier**, par

@@ -17,7 +17,7 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, vrai,
+  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, valeursOui, vrai,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -87,6 +87,10 @@ const fournisseur = (evt: Record<string, any>, domaine: string) =>
    réellement : au-delà on relit les mêmes. */
 const ECHANTILLON = 25;
 
+/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
+   mais du texte libre : en proposer la liste n'aiderait personne. */
+const VALEURS_MAX = 8;
+
 /** Une valeur qu'on peut montrer en exemple : ni objet, ni vide. */
 const exemple = (v: unknown): string | null => {
   if (v === null || v === undefined || typeof v === "object") return null;
@@ -152,7 +156,10 @@ async function champsKlipso(g: Gaia) {
     for (const p of props) {
       const cle = prefixe + p.cle;
       if (vus.has(cle)) continue;
-      vus.set(cle, { cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null });
+      vus.set(cle, {
+        cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null,
+        valeurs: [] as string[],
+      });
     }
   }
 
@@ -176,18 +183,28 @@ async function champsKlipso(g: Gaia) {
       for (const [cle, v] of paires) {
         const ex = exemple(v);
         if (!ex) continue;
-        const e = vus.get(cle);
-        if (e) { if (!e.exemple) e.exemple = ex; continue; }
-        vus.set(cle, {
+        const e = vus.get(cle) ?? {
           cle,
           libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
           groupe: groupeKlipso(cle),
-          exemple: ex,
-        });
+          exemple: null as string | null,
+          valeurs: [] as string[],
+        };
+        if (!e.exemple) e.exemple = ex;
+        /* Les valeurs distinctes disent si le champ est une liste de choix.
+           C'est parmi elles que l'exploitant désignera celles qui déclenchent
+           « Nouvel exposant » ou « Exclu de la liste ». */
+        const l = e.valeurs as string[];
+        if (l.length <= VALEURS_MAX && !l.includes(ex)) l.push(ex);
+        vus.set(cle, e);
       }
     }
   } catch (_) { /* l'échantillon manque, le schéma suffit */ }
 
+  // au-delà du seuil, le champ est du texte libre : sa liste n'aiderait pas
+  for (const d of vus.values()) {
+    if ((d.valeurs as string[]).length > VALEURS_MAX) d.valeurs = [];
+  }
   return range([...vus.values()], GROUPES_KLIPSO);
 }
 
@@ -250,8 +267,13 @@ Deno.serve(async (req) => {
        l'autre source ne connaît pas. */
     const srcStands = fournisseur(evt, "stands");
     const cibleK = (c: string) => champsCible(evt.correspondances, "klipso", c);
+    const valeurK = (c: string) => valeursOui(evt.correspondances, "klipso", c);
     const champsEm = Object.fromEntries(
       (CIBLES.eventmaker ?? []).map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
+    /* Un champ à choix ne répond pas par oui ou non : l'exploitant désigne
+       celles de ses valeurs qui déclenchent. */
+    const valeursEm = Object.fromEntries(
+      (CIBLES.eventmaker ?? []).map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
@@ -336,7 +358,8 @@ Deno.serve(async (req) => {
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
+        const em = new Eventmaker({
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -384,7 +407,8 @@ Deno.serve(async (req) => {
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
+        const em = new Eventmaker({
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         try {
@@ -547,7 +571,7 @@ Deno.serve(async (req) => {
           const val = (c: string) => ou(lit(cibleK(c), origines));
           // engagement contractuel : un exposant qui refuse le catalogue ne sort
           // pas, quelle que soit la source
-          const exclu = vrai(lit(cibleK("exclu"), origines));
+          const exclu = vrai(lit(cibleK("exclu"), origines), valeurK("exclu"));
           const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
 
           /* Le dossier identifie un exposant des deux côtés : Klipso le porte
@@ -601,7 +625,8 @@ Deno.serve(async (req) => {
                nouveaux venus : ailleurs la cible reste vide, et la clé ne
                descend pas — l'instantané est servi au public, il n'a pas à
                porter des « false » par centaines. */
-            ...((ok && (expoEm ? em!.neuf : vrai(lit(cibleK("nouveau"), origines))))
+            ...((ok && (expoEm ? em!.neuf
+              : vrai(lit(cibleK("nouveau"), origines), valeurK("nouveau"))))
               ? { neuf: true } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             m2: s.SurfaceBrute,

@@ -25,6 +25,11 @@ export interface ConfigEm {
    * raison de s'appeler pareil sur le salon d'à côté.
    */
   champs?: Record<string, string[]>;
+  /**
+   * Les valeurs qui valent oui, par cible, quand le champ retenu est une liste
+   * de choix plutôt qu'un oui/non. Sans elles, c'est l'accord usuel qui décide.
+   */
+  valeurs?: Record<string, string[]>;
 }
 
 const BASE = "https://app.eventmaker.io/api/v1";
@@ -54,6 +59,10 @@ const DE_FRONT = 6;
    l'organisateur et donc propres au salon, et les champs natifs de l'invité,
    identiques partout. L'ordre les sépare dans la liste de la console. */
 const GROUPES = ["Champ personnalisé", "Fiche invité · champ standard"];
+
+/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
+   mais du texte libre : en proposer la liste n'aiderait personne. */
+const VALEURS_MAX = 8;
 
 /* « Inscrit » dans l'interface Eventmaker. Une fiche en attente, refusée ou
    désinscrite ne doit pas paraître sur le plan public. */
@@ -430,7 +439,8 @@ export class Eventmaker {
     lus: number;
     retenus: number;
     ecartesNonInscrits: number;
-    champs: { cle: string; libelle: string; groupe: string; exemple: string }[];
+    champs: { cle: string; libelle: string; groupe: string; exemple: string;
+               valeurs: string[] }[];
   }> {
     const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
@@ -484,8 +494,8 @@ export class Eventmaker {
         instagram: v("instagram"),
         nomencl: (this.valeur(g, m, "nomenclature", true) as unknown[])
           .map((x) => String(x).trim()).filter(Boolean),
-        neuf: vrai(this.valeur(g, m, "nouveau")),
-        exclu: vrai(this.valeur(g, m, "exclu")),
+        neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
+        exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
       };
       if (stand) parStand.set(stand, fiche);
       if (dossier) parDossier.set(dossier, fiche);
@@ -579,7 +589,7 @@ function texteSeul(html: unknown): string | null {
 class Releve {
   private vus = new Map<
     string,
-    { cle: string; libelle: string; groupe: string; exemple: string }
+    { cle: string; libelle: string; groupe: string; exemple: string; valeurs: string[] }
   >();
 
   /** Une fiche de plus. */
@@ -596,17 +606,32 @@ class Releve {
 
   private note(cle: string, libelle: string, groupe: string, valeur: unknown): void {
     const ex = String(valeur ?? "").trim();
-    if (!ex || this.vus.has(cle)) return;
-    this.vus.set(cle, {
+    if (!ex) return;
+    const d = this.vus.get(cle) ?? {
       cle, libelle, groupe,
       exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
-    });
+      valeurs: [] as string[],
+    };
+    /* Les valeurs distinctes, et pas seulement la première : c'est à elles
+       qu'on reconnaît un champ à choix — « Nouveau Client », « Client N-1 »,
+       « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
+       déclenchent. Au-delà de VALEURS_MAX, le champ est du texte libre : la
+       liste ne servirait plus à rien, et pèserait. */
+    if (d.valeurs.length <= VALEURS_MAX && !d.valeurs.includes(ex) && ex.length <= 60) {
+      d.valeurs.push(ex);
+    }
+    this.vus.set(cle, d);
   }
 
   /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
      nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
      natifs de la fiche d'invité, eux, sont les mêmes partout. */
   liste() {
+    /* Un champ qui a dépassé le seuil est du texte libre : on lâche sa liste
+       plutôt que d'en proposer un échantillon arbitraire. */
+    for (const d of this.vus.values()) {
+      if (d.valeurs.length > VALEURS_MAX) d.valeurs = [];
+    }
     return [...this.vus.values()].sort((a, b) =>
       GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
       a.cle.localeCompare(b.cle, "fr"));
