@@ -47,6 +47,15 @@ déploiement. Elle se règle désormais depuis la console, dans la fenêtre **Fi
 détail**, où chaque ligne porte les deux décisions qui la concernent : la case
 qui décide qu'un champ paraît, et la liste qui dit d'où sa valeur vient.
 
+Une fiche assemble deux choses qui n'ont ni la même nature ni la même
+provenance, et la fenêtre les sépare en deux cadres dont l'en-tête nomme le
+fournisseur : **Le stand**, l'emplacement tel que le plan le décrit, toujours
+Klipso ; et **L'exposant**, la société qui l'occupe, qui peut venir d'ailleurs.
+C'est la question qu'on se pose devant une ligne mal réglée — ce champ, je le
+cherche chez qui ? Une seule ligne échappe aux deux, les conférences, et le dit
+dans sa propre colonne : elles viennent du programme, dont la source se règle à
+part.
+
 **La liste des champs disponibles se relève à la synchronisation**, qui lit de
 toute façon les fiches où ils se trouvent. Rien à détecter à part, aucun bouton :
 côté Eventmaker le relevé ne coûte pas un appel de plus, côté Klipso il en coûte
