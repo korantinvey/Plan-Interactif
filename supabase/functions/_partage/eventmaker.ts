@@ -12,7 +12,7 @@
  *     le nom et le courriel, mais sur l'invité correspondant, dont les champs
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
-import { DEFAUTS, lit, ou } from "./champs.ts";
+import { DEFAUTS, lit, ou, vrai } from "./champs.ts";
 
 export interface ConfigEm {
   jeton: string;
@@ -79,6 +79,8 @@ export interface ExposantEm {
   linkedin: string | null;
   instagram: string | null;
   nomencl: string[];
+  // une pastille sur la fiche, quand le salon distingue ses nouveaux venus
+  neuf: boolean;
   exclu: boolean;
 }
 
@@ -482,7 +484,8 @@ export class Eventmaker {
         instagram: v("instagram"),
         nomencl: (this.valeur(g, m, "nomenclature", true) as unknown[])
           .map((x) => String(x).trim()).filter(Boolean),
-        exclu: String(this.valeur(g, m, "exclu") ?? "").toLowerCase() === "true",
+        neuf: vrai(this.valeur(g, m, "nouveau")),
+        exclu: vrai(this.valeur(g, m, "exclu")),
       };
       if (stand) parStand.set(stand, fiche);
       if (dossier) parDossier.set(dossier, fiche);

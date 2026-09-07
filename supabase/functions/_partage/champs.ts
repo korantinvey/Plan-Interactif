@@ -48,6 +48,8 @@ const AFFICHAGE: Cible[] = [
   { cle: "instagram", libelle: "Instagram" },
   { cle: "nomenclature", libelle: "Nomenclature", multiple: true,
     aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
+  { cle: "nouveau", libelle: "Nouvel exposant",
+    aide: "Une valeur vraie pose une pastille « Nouvel exposant » sur la fiche." },
   { cle: "exclu", libelle: "Exclu de la liste",
     aide: "Vrai retire l'exposant du plan public, quel que soit le reste." },
 ];
@@ -128,6 +130,23 @@ export function decoupe(champ: string): { origine: string; nom: string } {
     ? { origine: "", nom: champ }
     : { origine: champ.slice(0, i), nom: champ.slice(i + 1) };
 }
+
+/* Ce qui vaut « non » dans un champ oui/non. Ces champs sont remplis à la
+   main, et rien n'impose leur forme : Klipso rend un vrai booléen, Eventmaker
+   une chaîne, et l'organisateur y met ce qu'il veut. On énumère donc le refus,
+   plus court et plus sûr que l'accord — un champ rempli d'autre chose que
+   « non » dit bien quelque chose. */
+const REFUS = new Set(["", "false", "0", "non", "no", "n", "faux"]);
+
+/**
+ * Un champ oui/non est-il vrai ?
+ *
+ * Un champ absent ou vide est faux : c'est l'état de la grande majorité des
+ * fiches, et il ne doit rien déclencher.
+ */
+export const vrai = (v: unknown): boolean =>
+  v === true ||
+  (v !== null && v !== undefined && !REFUS.has(String(v).trim().toLowerCase()));
 
 /** Rien plutôt qu'une chaîne vide : le rendu masque les champs absents. */
 export const ou = (...v: unknown[]): string | null => {

@@ -376,6 +376,13 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   text-wrap:balance;padding-right:26px}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+/* Un nouvel exposant se signale à côté de son emplacement. La pastille reprend
+   l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
+   une alerte, et une teinte de plus ferait un troisième langage sur le plan
+   après celui des zones. Le texte est de la fonte du corps — un numéro de stand
+   se lit en mono, une mention se lit comme une phrase. */
+.badge.neuf{background:var(--accent-soft);color:var(--accent);font-family:inherit;
+  font-weight:600;margin-left:6px}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
 /* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
@@ -1026,7 +1033,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -1826,6 +1833,11 @@ function ouvre(o, rect, canal){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
+     l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
+     que l'exploitant la laisse voir. Une zone organisateur n'est jamais
+     nouvelle : elle n'est pas un exposant. */
+  $("dNeuf").hidden = zone || !o.neuf || !montre("stand", "nouveau");
   /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
      ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
      lignes. */

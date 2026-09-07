@@ -731,6 +731,11 @@ function ouvre(o, rect, canal){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
+     l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
+     que l'exploitant la laisse voir. Une zone organisateur n'est jamais
+     nouvelle : elle n'est pas un exposant. */
+  $("dNeuf").hidden = zone || !o.neuf || !montre("stand", "nouveau");
   /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
      ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
      lignes. */

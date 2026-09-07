@@ -17,7 +17,7 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou,
+  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, vrai,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -547,8 +547,7 @@ Deno.serve(async (req) => {
           const val = (c: string) => ou(lit(cibleK(c), origines));
           // engagement contractuel : un exposant qui refuse le catalogue ne sort
           // pas, quelle que soit la source
-          const brutExclu = lit(cibleK("exclu"), origines);
-          const exclu = brutExclu === true || String(brutExclu).toLowerCase() === "true";
+          const exclu = vrai(lit(cibleK("exclu"), origines));
           const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
 
           /* Le dossier identifie un exposant des deux côtés : Klipso le porte
@@ -597,6 +596,13 @@ Deno.serve(async (req) => {
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(lit(cibleK("nomenclature"), origines, true)),
+            /* Un nouvel exposant porte une pastille sur sa fiche. Le champ qui
+               le dit n'existe que sur les salons qui distinguent leurs
+               nouveaux venus : ailleurs la cible reste vide, et la clé ne
+               descend pas — l'instantané est servi au public, il n'a pas à
+               porter des « false » par centaines. */
+            ...((ok && (expoEm ? em!.neuf : vrai(lit(cibleK("nouveau"), origines))))
+              ? { neuf: true } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,

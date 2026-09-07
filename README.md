@@ -71,6 +71,14 @@ n'expose ni adresse ni réseaux sociaux, mais ils deviennent réglables dès que
 salon a les champs correspondants. Un champ choisi à la main n'est plus jamais
 reproposé, et décocher l'affichage ne l'efface pas.
 
+Une cible sort du lot : **« Nouvel exposant »**. Elle n'apporte aucun texte à la
+fiche mais y pose une pastille, à côté du pavillon et du numéro de stand. Le
+champ qui la déclenche n'existe que sur les salons qui distinguent leurs
+nouveaux venus — ailleurs la cible reste vide et rien ne paraît. La valeur se
+lit comme un oui/non : tout ce qui n'est ni vide, ni « non », ni « false », ni
+« 0 » vaut oui, parce que ces champs sont remplis à la main et que personne ne
+s'accorde sur la forme du oui.
+
 Trois lignes ne s'affichent jamais mais décident du reste, sous « Ce qui ne
 s'affiche pas » : le **numéro de stand** et l'**identifiant de dossier**, par
 lesquels une fiche Eventmaker retrouve son emplacement sur le plan — mal réglés,
