@@ -79,6 +79,7 @@ export interface ExposantEm {
   linkedin: string | null;
   instagram: string | null;
   nomencl: string[];
+  themes: string[];
   // une pastille sur la fiche, quand le salon distingue ses nouveaux venus
   neuf: boolean;
   exclu: boolean;
@@ -482,8 +483,8 @@ export class Eventmaker {
         facebook: v("facebook"),
         linkedin: v("linkedin"),
         instagram: v("instagram"),
-        nomencl: (this.valeur(g, m, "nomenclature", true) as unknown[])
-          .map((x) => String(x).trim()).filter(Boolean),
+        nomencl: separe(this.valeur(g, m, "nomenclature", true) as unknown[]),
+        themes: separe(this.valeur(g, m, "thematiques", true) as unknown[]),
         neuf: vrai(this.valeur(g, m, "nouveau")),
         exclu: vrai(this.valeur(g, m, "exclu")),
       };
@@ -623,6 +624,22 @@ function champs(meta: unknown): Record<string, string> {
     if (typeof n === "string" && typeof v === "string" && v.trim()) out[n] = v.trim();
   }
   return out;
+}
+
+/**
+ * Les valeurs d'une cible multiple, une par entrée.
+ *
+ * Un champ personnalisé à choix multiple ne descend pas en liste : Eventmaker
+ * joint ses valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 ».
+ * Sans le défaire, la fiche afficherait la ligne entière comme une seule
+ * rubrique. Aucune valeur de catalogue ne porte de point-virgule, la séparation
+ * ne coupe donc rien qui tienne ensemble.
+ */
+function separe(valeurs: unknown[]): string[] {
+  return valeurs
+    .flatMap((v) => String(v).split(";"))
+    .map((x) => x.trim())
+    .filter(Boolean);
 }
 
 /** Une conférence telle que le plan en a besoin. */

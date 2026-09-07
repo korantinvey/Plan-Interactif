@@ -116,6 +116,42 @@ hors documentation. Voici ce qu'ils rendent, et ce qu'ils taisent.
   exposant ni un stand. La piste « demander un champ à l'organisateur » n'a
   plus lieu d'être — le graphe donne mieux, et sans rien demander.
 
+## Les thématiques d'un exposant
+
+Elles n'ont pas de champ à elles : comme la nomenclature, ce sont des champs
+personnalisés que l'organisateur nomme, et il en nomme rarement deux pareil.
+Relevé sur trois salons du compte :
+
+| salon | ce qui range ses exposants |
+|---|---|
+| Franchise Expo Paris 2026 | `rubriques2`, `rubriques`, `categories` |
+| SIDO & Lyon Cyber Expo | `nomenclatures`, `domaines_d_application`, `champs_d_intervention`, `mots_cles` |
+| Open Source Experience 2026 | `champs_d_intervention`, `expertises` |
+
+La cible `thematiques` de la correspondance est donc réglable comme les autres,
+avec `thematiques` puis `thematique` pour défaut — un nom qu'on rencontre, pas
+un nom qui s'impose. À l'exploitant de désigner le sien depuis la console ; la
+liste des champs relevés lui montre un exemple de valeur pour chacun, et c'est
+lui qui décide, car les noms ne suffisent pas : `champs_d_intervention` et
+`domaines_d_application` ne se distinguent que par ce qu'ils contiennent.
+
+Cet exemple sert aussi à éviter un piège. Un salon qui reprend la codification
+Klipso ne descend que des codes — `OSXPDEV26C12`, `SIDO26_NOM101` — quand un
+autre descend des libellés lisibles, « Solutions transverses ». Rien ne les
+résout de ce côté : la codification se lit chez Klipso, avec le nom du champ
+Klipso, que la fiche Eventmaker ne porte pas. Le champ à désigner est donc celui
+dont l'exemple se lit.
+
+**Un champ à choix multiple ne descend pas en liste.** Eventmaker joint ses
+valeurs par un point-virgule — `SIDO26_NOM101;SIDO26_NOM102;SIDO26_NOM204` — là
+où Klipso rend un tableau. Sans les séparer, la fiche afficherait la ligne
+entière comme une seule rubrique ; c'est ce que faisait la nomenclature sur les
+salons qui la tiennent ainsi.
+
+Le graphe ne sert à rien ici : `publicViewer` ne porte que le programme, et ni
+`exhibitors` ni `themes` n'existent à sa racine. Tout se lit en REST, sur la
+fiche d'invité, avec les champs qu'on lisait déjà.
+
 ## Deux pièges
 
 `/exhibitors.json` **ignore `page` et `per_page`** : il rend ses 613 fiches à

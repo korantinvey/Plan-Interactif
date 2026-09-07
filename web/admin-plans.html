@@ -798,6 +798,7 @@ function ligneSource(dom, libelle, offerts, aide) {
  *   cible   nomme le champ d'origine à associer. Absente, rien n'est à régler :
  *           la valeur vient du plan, pas d'une fiche d'exposant.
  *   fixe    dit d'où vient la valeur quand il n'y a pas de champ à choisir.
+ *   source  restreint la ligne à un fournisseur. Absente, elle vaut pour tous.
  */
 const LIGNES_FICHE = {
   stand: [
@@ -822,6 +823,14 @@ const LIGNES_FICHE = {
     { cle: "instagram", cible: "instagram", libelle: "Instagram" },
     { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
       aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
+    /* Klipso n'a pas de thématiques : ses rubriques passent par la
+       nomenclature, et proposer une ligne que rien n'alimenterait ferait
+       chercher un champ qui n'existe pas. */
+    { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
+      source: "eventmaker",
+      aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
+        "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
+        "à l'exemple, certains salons n'y portent que des codes." },
     { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant",
       aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
         "salons qui distinguent leurs nouveaux venus." },
@@ -1164,6 +1173,11 @@ function ouvreFiche(apres) {
   const bloc = correspondance(e, src);
   const mappable = src !== "aucun";
 
+  /* Une ligne réservée à un autre fournisseur n'a rien à faire ici : le champ
+     qu'elle propose n'existe pas de ce côté, et la case masquerait un champ
+     que la fiche n'affiche de toute façon pas. */
+  const lignes = (type) => LIGNES_FICHE[type].filter((l) => !l.source || l.source === src);
+
   ouvreModale("Fiche détail", (corps) => {
     const barre = document.createElement("div");
     barre.className = "onglets";
@@ -1186,7 +1200,7 @@ function ouvreFiche(apres) {
       if (type === "zone" || !mappable) {
         pan.className = "colonne-cases";
         const inertes = FICHE_INERTE[type] || [];
-        LIGNES_FICHE[type].filter((l) => l.cle).forEach((l) => {
+        lignes(type).filter((l) => l.cle).forEach((l) => {
           const c = caseFiche(type, l.cle, l.libelle, l.aide);
           if (inertes.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
           pan.appendChild(c);
@@ -1201,7 +1215,7 @@ function ouvreFiche(apres) {
         return;
       }
 
-      pan.appendChild(tableauChamps(LIGNES_FICHE.stand, type, src, true));
+      pan.appendChild(tableauChamps(lignes("stand"), type, src, true));
       const t2 = document.createElement("span");
       t2.className = "eyebrow";
       t2.style.display = "block";

@@ -596,6 +596,10 @@ Deno.serve(async (req) => {
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(lit(cibleK("nomenclature"), origines, true)),
+            /* Les thématiques n'existent que côté Eventmaker, et seulement sur
+               les salons qui en tiennent : ailleurs la clé ne descend pas
+               plutôt que de porter des listes vides par centaines. */
+            ...((ok && expoEm && em!.themes.length) ? { themes: em!.themes } : {}),
             /* Un nouvel exposant porte une pastille sur sa fiche. Le champ qui
                le dit n'existe que sur les salons qui distinguent leurs
                nouveaux venus : ailleurs la cible reste vide, et la clé ne
