@@ -129,8 +129,10 @@ Relevé sur trois salons du compte :
 | Open Source Experience 2026 | `champs_d_intervention`, `expertises` |
 
 La cible `thematiques` de la correspondance est donc réglable comme les autres,
-avec `thematiques` puis `thematique` pour défaut — un nom qu'on rencontre, pas
-un nom qui s'impose. À l'exploitant de désigner le sien depuis la console ; la
+mais c'est la seule cible d'affichage **sans champ par défaut** : un défaut
+deviné signalerait en rouge « champ habituel introuvable » sur tous les salons
+qui n'en tiennent pas, c'est-à-dire la plupart. À l'exploitant de désigner le
+sien depuis la console — *Fiche détail*, onglet *Stand* ; la
 liste des champs relevés lui montre un exemple de valeur pour chacun, et c'est
 lui qui décide, car les noms ne suffisent pas : `champs_d_intervention` et
 `domaines_d_application` ne se distinguent que par ce qu'ils contiennent.

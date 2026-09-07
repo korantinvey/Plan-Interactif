@@ -65,6 +65,12 @@ const AFFICHAGE: Cible[] = [
  * Klipso n'en a pas l'équivalent : ses rubriques passent par la nomenclature
  * et sa codification, et rien d'autre n'y range les exposants. Une cible qu'il
  * ne saurait pas alimenter n'a rien à faire dans sa liste.
+ *
+ * Elle est la seule cible d'affichage sans champ par défaut, et c'est voulu :
+ * aucun nom ne revient d'un salon à l'autre — `categories` ici, `expertises`
+ * là. Un défaut deviné signalerait en rouge « champ habituel introuvable » sur
+ * tous les salons qui n'en tiennent pas, c'est-à-dire la plupart ; rester vide
+ * est ici l'état normal, et c'est à l'exploitant de désigner le sien.
  */
 const THEMATIQUES: Cible = {
   cle: "thematiques", libelle: "Thématiques", multiple: true,
@@ -120,7 +126,8 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
     linkedin: ["company_linkedin"],
     instagram: ["instagram_societe"],
     nomenclature: ["rubriques2", "rubriques"],
-    thematiques: ["thematiques", "thematique"],
+    // aucun nom ne revient d'un salon à l'autre : à désigner depuis la console
+    thematiques: [],
     exclu: ["exclu_liste_exposant"],
   },
 };
