@@ -132,6 +132,24 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .bloc > .eyebrow{display:block;margin-bottom:12px}
 .grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
 .source-inerte{opacity:.62}
+/* Un cadre de la fiche détail : ce dont il parle, et de qui cela vient.
+   L'en-tête porte le fournisseur en pastille — c'est la question qu'on se pose
+   devant une ligne mal réglée, « ce champ, je le cherche chez qui ? » — et le
+   cadre lui-même sépare l'emplacement, que Klipso porte toujours, de la
+   société qui l'occupe, qui peut venir d'ailleurs. */
+.cadre{border:1px solid var(--line);border-radius:6px;padding:12px 14px 6px}
+.cadre + .cadre{margin-top:14px}
+.cadre-hd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px}
+.cadre-hd .eyebrow{flex:0 0 auto}
+.prov{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+/* Un domaine que rien ne reprend ne se signale pas en couleur : il n'y a rien
+   à aller chercher chez personne. */
+.prov[data-src="aucun"]{background:var(--surface-3);color:var(--ink-3)}
+.cadre > p.aide{margin:0 0 11px;font-size:11.5px;color:var(--ink-3);line-height:1.5}
+/* Le rattachement est une part du cadre de l'exposant, pas un cadre à lui. */
+.eyebrow.sous-titre{display:block;margin:16px 0 7px}
+
 /* Tableaux de réglage — les salles, la correspondance des champs : une ligne
    par entrée, une liste déroulante à droite, l'état lisible d'un coup d'œil.
    La barre de gauche dit d'où vient ce qui est retenu. */

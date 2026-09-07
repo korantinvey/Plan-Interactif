@@ -801,14 +801,19 @@ function ligneSource(dom, libelle, offerts, aide) {
  */
 const LIGNES_FICHE = {
   stand: [
+    /* --- ce que le plan porte --- */
+    { groupe: "stand", cle: "code", libelle: "Numéro de stand",
+      fixe: "allée et numéro de l'emplacement",
+      aide: "Affiché à côté du pavillon." },
+    { groupe: "stand", cle: "niveaux", libelle: "Niveaux",
+      fixe: "nombre de niveaux de l'emplacement",
+      aide: "Seulement au-delà d'un niveau." },
+
+    /* --- ce que la fiche de la société porte --- */
     { cible: "nom", libelle: "Enseigne",
       aide: "Le titre de la fiche : toujours affiché." },
     { cle: "raison", cible: "raison", libelle: "Raison sociale",
       aide: "Quand elle diffère de l'enseigne." },
-    { cle: "code", libelle: "Numéro de stand", fixe: "allée et numéro du plan",
-      aide: "Affiché à côté du pavillon." },
-    { cle: "niveaux", libelle: "Niveaux", fixe: "nombre de niveaux du plan",
-      aide: "Seulement au-delà d'un niveau." },
     { cle: "adresse", cible: "adresse", libelle: "Adresse" },
     { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
       suit: "adresse",
@@ -825,14 +830,40 @@ const LIGNES_FICHE = {
     { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant",
       aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
         "salons qui distinguent leurs nouveaux venus." },
-    { cle: "conferences", libelle: "Conférences", fixe: "programme du salon",
+    /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
+       d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
+    { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
       aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
   ],
   zone: [
-    { cle: "conferences", libelle: "Conférences",
+    { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
       aide: "Le programme tenu dans la zone, par ordre chronologique." },
   ],
 };
+
+/** D'où vient le programme, dit dans la colonne d'origine. */
+function origineConferences(e) {
+  const src = source(e, "conferences");
+  return src === "aucun" ? "programme non synchronisé"
+    : "programme · " + (FOURNISSEURS[src] || src);
+}
+
+/**
+ * Les deux cadres de l'onglet Stand.
+ *
+ * Une fiche d'exposant assemble deux choses qui n'ont ni la même nature ni la
+ * même provenance : l'emplacement, que Klipso porte parce que c'est lui qui
+ * porte le plan, et la société qui l'occupe, qui peut venir d'ailleurs. Mêlées
+ * dans une seule liste, on ne savait plus laquelle des deux sources une ligne
+ * interrogeait.
+ */
+const CADRES_FICHE = [
+  { cle: "stand", titre: "Le stand", domaine: "plan",
+    aide: "L'emplacement tel que le plan le décrit. Rien ne s'y règle : ces " +
+      "valeurs ne sont pas des champs de fiche." },
+  { cle: "exposant", titre: "L'exposant", domaine: "stands",
+    aide: "La société rattachée à l'emplacement, et ce que sa fiche porte." },
+];
 
 /**
  * Ce qui ne paraît jamais sur la fiche, mais décide de ce qu'elle contient.
@@ -1147,16 +1178,40 @@ async function ouvreSalles(apres) {
 }
 
 /**
+ * Un cadre de la fenêtre : ce dont il parle, et de qui cela vient.
+ *
+ * L'en-tête nomme le fournisseur plutôt que de le laisser deviner : c'est la
+ * question qu'on se pose devant une ligne mal réglée — « ce champ, je le
+ * cherche chez qui ? »
+ */
+function cadreFiche(def, contenus) {
+  const e = courant();
+  const src = source(e, def.domaine);
+  const d = document.createElement("div");
+  d.className = "cadre";
+  d.innerHTML = '<div class="cadre-hd"><span class="eyebrow"></span>' +
+                '<span class="prov"></span></div>' +
+                '<p class="aide"></p>';
+  d.querySelector(".eyebrow").textContent = def.titre;
+  const prov = d.querySelector(".prov");
+  prov.textContent = FOURNISSEURS[src] || src;
+  prov.dataset.src = src;
+  if (def.aide) d.querySelector(".aide").textContent = def.aide;
+  else d.querySelector(".aide").remove();
+  contenus.filter(Boolean).forEach((c) => d.appendChild(c));
+  return d;
+}
+
+/**
  * Fenêtre de la fiche détail : ce qu'elle montre, et ce qui l'alimente.
  *
  * Deux onglets, parce que les deux types n'ont presque rien en commun : un
  * stand tire son contenu d'une fiche d'exposant, une zone organisateur n'a que
  * son programme. Côte à côte, les deux listes se lisaient comme une seule.
  *
- * Côté stand, la case et la liste déroulante vont ensemble sur la même ligne :
- * décider qu'un champ paraît et décider d'où il vient sont la même question,
- * posée deux fois si on les sépare. Décocher n'efface pas le champ associé —
- * on le retrouve tel quel en recochant.
+ * Sur la ligne, la case et la liste déroulante vont ensemble : décider qu'un
+ * champ paraît et décider d'où il vient sont la même question, posée deux fois
+ * si on les sépare. Décocher retire la liste sans effacer le réglage.
  */
 function ouvreFiche(apres) {
   const e = courant();
@@ -1180,18 +1235,33 @@ function ouvreFiche(apres) {
       const pan = document.createElement("div");
       pan.hidden = i > 0;
       panneaux.push(pan);
+      /* La bascule se pose avant tout le reste : les deux onglets ne se
+         remplissent pas de la même façon, et l'un d'eux s'arrête plus tôt. */
+      b.onclick = () => {
+        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+        panneaux.forEach((x, j) => { x.hidden = j !== i; });
+      };
+
       /* Une zone n'a pas de fiche d'exposant derrière elle : rien à associer,
          donc pas de tableau — la liste de cases suffit, et c'est celle que la
          fenêtre montrait déjà. */
       if (type === "zone" || !mappable) {
-        pan.className = "colonne-cases";
+        const cases = document.createElement("div");
+        cases.className = "colonne-cases";
         const inertes = FICHE_INERTE[type] || [];
         LIGNES_FICHE[type].filter((l) => l.cle).forEach((l) => {
           const c = caseFiche(type, l.cle, l.libelle, l.aide);
           if (inertes.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
-          pan.appendChild(c);
+          cases.appendChild(c);
         });
-        if (type === "stand" && !mappable) {
+        if (type === "zone") {
+          pan.appendChild(cadreFiche(
+            { titre: "La zone organisateur", domaine: "conferences",
+              aide: "Une zone n'a pas de fiche d'exposant : son programme est " +
+                "tout ce qu'elle montre." },
+            [cases]));
+        } else {
+          pan.appendChild(cases);
           const p = document.createElement("p");
           p.className = "aide";
           p.textContent = "Aucune source d'exposants : il n'y a pas de champ " +
@@ -1201,14 +1271,20 @@ function ouvreFiche(apres) {
         return;
       }
 
-      pan.appendChild(tableauChamps(LIGNES_FICHE.stand, type, src, true));
-      const t2 = document.createElement("span");
-      t2.className = "eyebrow";
-      t2.style.display = "block";
-      t2.style.margin = "18px 0 8px";
-      t2.textContent = "Ce qui ne s'affiche pas";
-      pan.appendChild(t2);
-      pan.appendChild(tableauChamps(LIGNES_RATTACHEMENT[src] || [], type, src, false));
+      CADRES_FICHE.forEach((def) => {
+        const lignes = LIGNES_FICHE.stand.filter((l) => (l.groupe || "exposant") === def.cle);
+        /* Le rattachement rejoint le cadre de l'exposant : ces champs sont lus
+           sur sa fiche comme les autres, ils n'en sortent simplement rien
+           d'affichable. */
+        const rattachement = def.cle !== "exposant" ? null
+          : (LIGNES_RATTACHEMENT[src] || []);
+        pan.appendChild(cadreFiche(def, [
+          tableauChamps(lignes, type, src, true),
+          rattachement && rattachement.length ? sousTitre("Ce qui ne s'affiche pas") : null,
+          rattachement && rattachement.length
+            ? tableauChamps(rattachement, type, src, false) : null,
+        ]));
+      });
     });
 
     corps.appendChild(barre);
@@ -1230,6 +1306,13 @@ function ouvreFiche(apres) {
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
+
+const sousTitre = (txt) => {
+  const s = document.createElement("span");
+  s.className = "eyebrow sous-titre";
+  s.textContent = txt;
+  return s;
+};
 
 /**
  * Le tableau d'un groupe de lignes.
@@ -1271,7 +1354,10 @@ function tableauChamps(lignes, type, src, avecCases) {
       const fixe = document.createElement("span");
       fixe.className = "etat-salle";
       fixe.dataset.genre = "libre";
-      fixe.textContent = l.fixe || "sans champ à régler";
+      // le programme change de fournisseur d'un salon à l'autre : sa mention
+      // se calcule, elle ne s'écrit pas
+      fixe.textContent = (typeof l.fixe === "function" ? l.fixe(courant()) : l.fixe) ||
+        "sans champ à régler";
       cellule.appendChild(fixe);
     }
 
