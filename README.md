@@ -83,10 +83,15 @@ reproposé, et décocher l'affichage ne l'efface pas.
 Une cible sort du lot : **« Nouvel exposant »**. Elle n'apporte aucun texte à la
 fiche mais y pose une pastille, à côté du pavillon et du numéro de stand. Le
 champ qui la déclenche n'existe que sur les salons qui distinguent leurs
-nouveaux venus — ailleurs la cible reste vide et rien ne paraît. La valeur se
-lit comme un oui/non : tout ce qui n'est ni vide, ni « non », ni « false », ni
-« 0 » vaut oui, parce que ces champs sont remplis à la main et que personne ne
-s'accorde sur la forme du oui.
+nouveaux venus — ailleurs la cible reste vide et rien ne paraît.
+
+La valeur se lit comme un oui/non, et **c'est l'accord qui s'énumère** : valent
+oui `oui`, `o`, `1`, `x`, `vrai`, `true`, `on` et leurs majuscules ; tout le
+reste, y compris ce qu'on ne sait pas lire, vaut non. La règle inverse — prendre
+pour un oui tout ce qui n'est pas un non reconnu — a été essayée et retirée : un
+champ portant une date d'adhésion, un tiret ou un « à confirmer » devenait un
+oui, et la fiche affirmait quelque chose de faux. Une valeur qu'on ne sait pas
+lire ne doit rien déclencher. « Exclu de la liste » suit la même règle.
 
 Trois lignes ne s'affichent jamais mais décident du reste, sous « Ce qui ne
 s'affiche pas » : le **numéro de stand** et l'**identifiant de dossier**, par

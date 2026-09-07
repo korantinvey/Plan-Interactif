@@ -49,9 +49,11 @@ const AFFICHAGE: Cible[] = [
   { cle: "nomenclature", libelle: "Nomenclature", multiple: true,
     aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
   { cle: "nouveau", libelle: "Nouvel exposant",
-    aide: "Une valeur vraie pose une pastille « Nouvel exposant » sur la fiche." },
+    aide: "Pose une pastille sur la fiche. Valent oui : oui, o, 1, x, vrai, " +
+      "true, on. Toute autre valeur ne pose rien." },
   { cle: "exclu", libelle: "Exclu de la liste",
-    aide: "Vrai retire l'exposant du plan public, quel que soit le reste." },
+    aide: "Retire l'exposant du plan public, quel que soit le reste. Valent " +
+      "oui : oui, o, 1, x, vrai, true, on." },
 ];
 
 /**
@@ -131,22 +133,29 @@ export function decoupe(champ: string): { origine: string; nom: string } {
     : { origine: champ.slice(0, i), nom: champ.slice(i + 1) };
 }
 
-/* Ce qui vaut « non » dans un champ oui/non. Ces champs sont remplis à la
-   main, et rien n'impose leur forme : Klipso rend un vrai booléen, Eventmaker
-   une chaîne, et l'organisateur y met ce qu'il veut. On énumère donc le refus,
-   plus court et plus sûr que l'accord — un champ rempli d'autre chose que
-   « non » dit bien quelque chose. */
-const REFUS = new Set(["", "false", "0", "non", "no", "n", "faux"]);
+/* Ce qui vaut « oui » dans un champ oui/non. Ces champs sont remplis à la main
+   et rien n'impose leur forme : Klipso rend un vrai booléen, Eventmaker une
+   chaîne, l'organisateur y met ce qu'il veut.
+
+   L'accord s'énumère, pas le refus. Prendre pour un oui tout ce qui n'est pas
+   un non reconnu paraissait plus sûr — c'est l'inverse : un champ qui porte une
+   date, un code, un « à confirmer » ou n'importe quoi d'inattendu devient alors
+   un oui, et la fiche affirme quelque chose de faux. Une valeur qu'on ne sait
+   pas lire ne doit rien déclencher. */
+const ACCORDS = new Set([
+  "true", "1", "oui", "o", "yes", "y", "vrai", "x", "on", "✓", "✔",
+]);
 
 /**
  * Un champ oui/non est-il vrai ?
  *
- * Un champ absent ou vide est faux : c'est l'état de la grande majorité des
- * fiches, et il ne doit rien déclencher.
+ * Un champ absent, vide, ou rempli d'une valeur qu'on ne reconnaît pas est
+ * faux : c'est l'état de la grande majorité des fiches, et il ne doit rien
+ * déclencher.
  */
 export const vrai = (v: unknown): boolean =>
-  v === true ||
-  (v !== null && v !== undefined && !REFUS.has(String(v).trim().toLowerCase()));
+  v === true || (typeof v !== "object" && v !== undefined &&
+    ACCORDS.has(String(v).trim().toLowerCase()));
 
 /** Rien plutôt qu'une chaîne vide : le rendu masque les champs absents. */
 export const ou = (...v: unknown[]): string | null => {
