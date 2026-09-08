@@ -569,9 +569,23 @@ button.expo:hover{background:var(--line)}
 .parcours.open{transform:none}
 .parcours .detail-hd h2{margin:0 0 4px}
 .pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.pPied[hidden]{display:none}
+.pPied .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 12px;font-size:13px}
+.pPied .btn svg{width:15px;height:15px;flex:none}
+/* Organiser sa journée n'est pas une action de rangement comme les autres :
+   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
+.pPied .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.pPied .jOrg:hover{border-color:var(--accent)}
+.pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
+  color:var(--ink-3);cursor:default}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:#C2372B}
+/* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
+   menace sur la liste qu'on retrouve. */
+.pPied .vider.retour:hover{color:var(--ink)}
 .pGroupe{display:flex;flex-direction:column;gap:7px}
 /* Le jour sépare les conférences comme il le fait dans le programme d'une
    zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
@@ -588,6 +602,58 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* ------------------------------------------------------------
+   La journée organisée
+
+   Le même tiroir, une autre vue : la liste qu'on a composée devient un
+   déroulé d'heures. Les deux ne s'affichent jamais ensemble — c'est la même
+   journée, lue avant puis après le calcul.
+   ------------------------------------------------------------ */
+.jBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.jBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.jBilan span{font-size:12.5px;color:var(--ink-2)}
+.jFil{display:flex;flex-direction:column;gap:3px}
+.jRang{display:flex;gap:9px;align-items:flex-start}
+/* L'heure tient une colonne à elle : alignée à droite, les minutes se lisent
+   les unes sous les autres et la journée se parcourt d'un regard. */
+.jH{flex:none;width:38px;padding-top:9px;text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+/* Ce qui relie deux arrêts — la marche, l'attente, le changement de pavillon
+   — n'est pas un arrêt : le trait pointillé le dit sans un mot de plus. */
+.jRang.lien .jH{padding-top:1px}
+.jL{flex:1;min-width:0;margin-left:8px;padding:1px 0 5px 14px;
+  border-left:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--ink-3);line-height:1.5}
+.jArret{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--accent));transition:background .15s}
+.jArret:hover{background:var(--line)}
+/* Le rang de l'arrêt, le même que la pastille posée sur le plan : c'est par
+   lui qu'on passe de la liste au trait, et du trait à la liste. */
+.jN{flex:none;width:20px;height:20px;border-radius:999px;background:var(--accent);
+  color:#fff;font-size:10.5px;font-weight:600;font-family:"IBM Plex Mono",monospace;
+  display:grid;place-items:center;line-height:1}
+.jArret.conf .jN{background:var(--surface);color:var(--accent);
+  box-shadow:inset 0 0 0 1.5px var(--accent)}
+.jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jT{font-size:13px;line-height:1.35;color:var(--ink)}
+.jS{font-size:11.5px;color:var(--ink-3)}
+.jD{flex:none;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+/* Ce qui n'a pas trouvé sa place dans la journée : on le montre plutôt que de
+   le laisser disparaître sans un mot. */
+.jReste{display:flex;flex-direction:column;gap:7px}
+.jReste .pRang .pOuvre{opacity:.72}
+
+/* Les trois questions posées avant le calcul. Elles tiennent dans la fenêtre
+   modale, où rien d'autre ne se règle par un champ. */
+.jForm{display:flex;flex-direction:column;gap:12px;margin-top:13px}
+.jForm label{display:flex;flex-direction:column;gap:4px}
+.jForm select,.jForm input{width:100%;padding:8px 9px;font-size:13.5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink)}
+.jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
 .hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
@@ -689,9 +755,17 @@ html.vise-plan #plan{cursor:crosshair}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
   vector-effect:non-scaling-stroke}
 #itin .iBout.fin{fill:var(--surface);stroke:var(--accent)}
+/* La pastille d'une conférence se distingue de celle d'un stand : l'heure y
+   est imposée, et c'est autour d'elle que le reste de la journée s'est rangé. */
+#itin .iBout.conf{fill:var(--surface);stroke-width:3.5}
+#itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
+  font-family:"IBM Plex Mono",monospace;font-weight:600}
+#itin .iNum.conf{fill:var(--accent)}
 /* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
-   disparaître partout, y compris le bouton posé sur les fiches. */
-html.sans-itineraire .btn.itin{display:none}
+   disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
+   journée, c'est calculer un itinéraire : sans le moteur, le bouton du
+   parcours n'aurait rien à quoi s'adresser. */
+html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -718,6 +792,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .calq label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Réglages généraux, dans leur fenêtre : une case à cocher par ligne, avec de
    quoi viser au doigt sans effleurer la voisine. */
+/* Un réglage qui se chiffre, sous ceux qui se cochent : même famille, autre
+   geste. L'unité est écrite à côté du champ plutôt que dans son libellé, où
+   elle se lirait comme faisant partie de la question. */
+.reglage-nb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:5px}
+.reglage-nb label{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink)}
+.reglage-nb .l{flex:1;min-width:0}
+.reglage-nb input{width:74px;padding:6px 8px;font-size:13.5px;text-align:right;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink);font-family:"IBM Plex Mono",monospace}
+.reglage-nb input:focus{border-color:var(--accent);outline:none}
+.reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
+.reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
@@ -1088,12 +1175,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
-        <span class="eyebrow">Mon parcours</span>
-        <h2>Parcours de visite</h2>
+        <span class="eyebrow" id="pEyebrow">Mon parcours</span>
+        <h2 id="pTitre">Parcours de visite</h2>
         <span class="badge" id="pResume"></span>
       </div>
       <div class="pCorps" id="pCorps"></div>
-      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+      <div class="pCorps" id="jCorps" hidden></div>
+      <div class="pPied" id="pPied">
+        <button class="btn jOrg" id="btnJournee" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+          Organiser ma journée</button>
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
+      <div class="pPied" id="jPied" hidden>
+        <button class="btn" id="jRefaire" type="button">Changer l'heure d'arrivée</button>
+        <button class="vider retour" id="jRetour">Revenir à ma liste</button>
+      </div>
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">

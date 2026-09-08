@@ -134,6 +134,9 @@ réglages, il faut publier la configuration pour que le changement parvienne aux
 visiteurs. Le retrait ne détruit rien — les listes déjà constituées sur les
 téléphones réapparaissent si le réglage se rouvre.
 
+Le pied du tiroir porte **« Organiser ma journée »**, qui met cette liste en
+heures : c'est l'objet de la section suivante.
+
 Cette liste **ne quitte jamais l'appareil** : elle vit dans le stockage local du
 navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contient
 que des identifiants. Rien n'est envoyé au serveur, aucun compte n'est demandé,
@@ -270,6 +273,59 @@ Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
 s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
 de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
 et le bouton des fiches suit celui de la barre.
+
+## Organiser sa journée
+
+Une liste de douze stands et de deux conférences ne dit ni par où commencer, ni
+si la journée y suffira. Le bouton **« Organiser ma journée »**, au pied du
+parcours, pose une question — à quelle heure arrivez-vous — et range le reste :
+les conférences retenues sont des rendez-vous qu'on ne déplace pas, les stands
+se glissent entre elles, et l'ordre retenu est celui qui fait le moins de
+chemin. Le tiroir bascule alors de la liste au déroulé : une heure par arrêt,
+la distance et la durée de chaque marche entre eux, et le trajet complet tracé
+sur le plan, chaque pastille portant le rang de l'arrêt.
+
+Trois questions au plus, et deux ne se posent que si elles ont lieu d'être : le
+jour, quand le salon en compte plusieurs ; le point d'entrée, quand l'exploitant
+a posé des repères — « Peu importe » reste offert, la journée commence alors au
+premier stand. L'option « Itinéraire accessible » du tiroir voisin vaut ici
+aussi : elle change les allures autant que les chemins.
+
+Le calcul est celui d'un voyageur de commerce avec des rendez-vous. L'ordre
+exact demanderait d'essayer toutes les permutations — vingt stands en font deux
+milliards de milliards — on construit donc au plus juste, en insérant à chaque
+tour le stand qui coûte le moins de mètres là où il tient dans le temps
+disponible, puis on reprend l'ensemble par deux mouvements : retourner un
+morceau de créneau, déplacer un arrêt ailleurs. Les distances entre arrêts ne
+viennent pas d'un A\* par paire — vingt arrêts en font quatre cents — mais d'un
+balayage en largeur par arrêt, qui donne d'un coup la longueur d'allée vers
+tous les autres ; le trait montré, lui, reste celui du calcul d'itinéraire.
+
+Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
+avant l'arrivée, une autre retenue un autre jour, une salle rattachée à aucune
+zone du plan, un rendez-vous qu'on n'atteindrait qu'en retard. Rien n'est retiré
+du parcours au passage — le visiteur décide de ce qu'il sacrifie.
+
+Entre deux pavillons, la journée hérite de la franchise de l'itinéraire : rien
+dans les données ne décrit ce qui les relie, le trajet n'est pas tracé, et la
+distance annoncée devient « au moins ». Ordonner demande pourtant un prix,
+sans quoi l'algorithme ferait l'aller-retour entre deux halls comme il change
+d'allée : un forfait dissuasif suffit à regrouper les visites pavillon par
+pavillon, et il ne compte jamais dans les mètres annoncés.
+
+### Le temps de visite par stand
+
+Combien de temps passe-t-on devant un exposant ? Cela ne se devine pas depuis le
+plan — un salon grand public tourne vite, un salon d'affaires beaucoup moins —
+et c'est pourtant ce qui décide combien de stands tiennent entre deux
+conférences. Le réglage vit donc en administration, dans « Réglages du plan »
+sous les cases à cocher : **Temps de visite par stand**, en minutes, vingt par
+défaut. Comme les autres réglages, il faut publier la configuration pour qu'il
+parvienne aux visiteurs.
+
+Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
+disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
+moteur.
 
 ## Le rapport d'utilisation
 

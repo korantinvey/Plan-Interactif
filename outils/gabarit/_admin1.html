@@ -137,6 +137,26 @@ function appliqueCommandes(){
 }
 
 /**
+ * Combien de temps on passe sur un stand.
+ *
+ * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
+ * visites tiennent entre deux conférences quand le visiteur demande qu'on
+ * organise sa journée. Le mettre trop bas remplit un programme intenable ;
+ * trop haut, il laisse des stands de côté sans raison.
+ *
+ * Vingt minutes est ce qu'on observe sur un salon professionnel — le temps
+ * d'une poignée de main, d'une démonstration et d'une carte de visite. Un
+ * salon grand public tourne plus vite, un salon d'affaires beaucoup moins :
+ * cela ne se devine pas depuis le plan, d'où le réglage.
+ */
+const VISITE_DEFAUT = 20;      // minutes
+const VISITE_MIN = 5, VISITE_MAX = 120;
+function minutesVisite(){
+  const v = Math.round(+(CONF["_visite"] || {}).minutes);
+  return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
+}
+
+/**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
@@ -165,6 +185,27 @@ function ouvreReglages(){
       bloc.appendChild(l);
     });
     corps.appendChild(bloc);
+
+    const duree = document.createElement("div");
+    duree.className = "reglage-nb";
+    duree.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+      '<span class="u">min</span></label><span class="aide"></span>';
+    duree.querySelector(".l").textContent = "Temps de visite par stand";
+    duree.querySelector(".aide").textContent =
+      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+      "qui décide combien de stands tiennent entre deux conférences.";
+    const n = duree.querySelector("input");
+    n.value = minutesVisite();
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+       on le quitte. */
+    n.oninput = e => {
+      const v = Math.round(+e.target.value);
+      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+    };
+    n.onblur = () => { n.value = minutesVisite(); };
+    corps.appendChild(duree);
   }, [{ libelle: "Fermer" }]);
 }
 

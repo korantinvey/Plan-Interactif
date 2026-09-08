@@ -122,6 +122,14 @@ function rafraichitParcours(){
   const n = PARCOURS.stands.length + PARCOURS.confs.length;
   const c = $("nParcours");
   if (c){ c.textContent = n; c.hidden = n === 0; }
+  /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
+     plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
+     liste servira. */
+  const org = $("btnJournee");
+  if (org) org.disabled = n === 0;
+  /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
+     pas dans le dos du visiteur, on le lui dit. */
+  perimeJournee();
   marqueParcours();
   /* Une même conférence se voit à deux endroits — le programme de sa zone et
      sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
@@ -241,6 +249,9 @@ function ouvreParcours(){
   if ($("detail").classList.contains("open")) ferme();
   fermeItineraire();
   remplitParcours();
+  /* Le tiroir se rouvre sur ce qu'on y regardait : consulter une fiche depuis
+     la journée organisée ne doit pas la faire disparaître. */
+  appliqueVueParcours();
   $("parcours").classList.add("open");
   $("btnParcours").setAttribute("aria-pressed", "true");
 }
@@ -258,7 +269,19 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
   "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
   "Vider",
-  () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
+  () => {
+    PARCOURS = { stands: [], confs: [] };
+    /* La journée n'était que cette liste, mise en heures : elle s'en va avec
+       elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
+       qui ne doit rien au parcours. */
+    if (JOURNEE && TRACE === JOURNEE.dessin){
+      TRACE = null;
+      dessineItineraire();
+    }
+    JOURNEE = null; vueJournee = false;
+    enregistreParcours();
+    appliqueVueParcours();
+  });
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
    le tiroir, pas avec lui. */

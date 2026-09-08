@@ -574,9 +574,23 @@ button.expo:hover{background:var(--line)}
 .parcours.open{transform:none}
 .parcours .detail-hd h2{margin:0 0 4px}
 .pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.pPied[hidden]{display:none}
+.pPied .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 12px;font-size:13px}
+.pPied .btn svg{width:15px;height:15px;flex:none}
+/* Organiser sa journée n'est pas une action de rangement comme les autres :
+   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
+.pPied .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.pPied .jOrg:hover{border-color:var(--accent)}
+.pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
+  color:var(--ink-3);cursor:default}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:#C2372B}
+/* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
+   menace sur la liste qu'on retrouve. */
+.pPied .vider.retour:hover{color:var(--ink)}
 .pGroupe{display:flex;flex-direction:column;gap:7px}
 /* Le jour sépare les conférences comme il le fait dans le programme d'une
    zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
@@ -593,6 +607,58 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* ------------------------------------------------------------
+   La journée organisée
+
+   Le même tiroir, une autre vue : la liste qu'on a composée devient un
+   déroulé d'heures. Les deux ne s'affichent jamais ensemble — c'est la même
+   journée, lue avant puis après le calcul.
+   ------------------------------------------------------------ */
+.jBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.jBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.jBilan span{font-size:12.5px;color:var(--ink-2)}
+.jFil{display:flex;flex-direction:column;gap:3px}
+.jRang{display:flex;gap:9px;align-items:flex-start}
+/* L'heure tient une colonne à elle : alignée à droite, les minutes se lisent
+   les unes sous les autres et la journée se parcourt d'un regard. */
+.jH{flex:none;width:38px;padding-top:9px;text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+/* Ce qui relie deux arrêts — la marche, l'attente, le changement de pavillon
+   — n'est pas un arrêt : le trait pointillé le dit sans un mot de plus. */
+.jRang.lien .jH{padding-top:1px}
+.jL{flex:1;min-width:0;margin-left:8px;padding:1px 0 5px 14px;
+  border-left:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--ink-3);line-height:1.5}
+.jArret{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--accent));transition:background .15s}
+.jArret:hover{background:var(--line)}
+/* Le rang de l'arrêt, le même que la pastille posée sur le plan : c'est par
+   lui qu'on passe de la liste au trait, et du trait à la liste. */
+.jN{flex:none;width:20px;height:20px;border-radius:999px;background:var(--accent);
+  color:#fff;font-size:10.5px;font-weight:600;font-family:"IBM Plex Mono",monospace;
+  display:grid;place-items:center;line-height:1}
+.jArret.conf .jN{background:var(--surface);color:var(--accent);
+  box-shadow:inset 0 0 0 1.5px var(--accent)}
+.jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jT{font-size:13px;line-height:1.35;color:var(--ink)}
+.jS{font-size:11.5px;color:var(--ink-3)}
+.jD{flex:none;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+/* Ce qui n'a pas trouvé sa place dans la journée : on le montre plutôt que de
+   le laisser disparaître sans un mot. */
+.jReste{display:flex;flex-direction:column;gap:7px}
+.jReste .pRang .pOuvre{opacity:.72}
+
+/* Les trois questions posées avant le calcul. Elles tiennent dans la fenêtre
+   modale, où rien d'autre ne se règle par un champ. */
+.jForm{display:flex;flex-direction:column;gap:12px;margin-top:13px}
+.jForm label{display:flex;flex-direction:column;gap:4px}
+.jForm select,.jForm input{width:100%;padding:8px 9px;font-size:13.5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink)}
+.jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
 .hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
@@ -694,9 +760,17 @@ html.vise-plan #plan{cursor:crosshair}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
   vector-effect:non-scaling-stroke}
 #itin .iBout.fin{fill:var(--surface);stroke:var(--accent)}
+/* La pastille d'une conférence se distingue de celle d'un stand : l'heure y
+   est imposée, et c'est autour d'elle que le reste de la journée s'est rangé. */
+#itin .iBout.conf{fill:var(--surface);stroke-width:3.5}
+#itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
+  font-family:"IBM Plex Mono",monospace;font-weight:600}
+#itin .iNum.conf{fill:var(--accent)}
 /* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
-   disparaître partout, y compris le bouton posé sur les fiches. */
-html.sans-itineraire .btn.itin{display:none}
+   disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
+   journée, c'est calculer un itinéraire : sans le moteur, le bouton du
+   parcours n'aurait rien à quoi s'adresser. */
+html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -723,6 +797,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .calq label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Réglages généraux, dans leur fenêtre : une case à cocher par ligne, avec de
    quoi viser au doigt sans effleurer la voisine. */
+/* Un réglage qui se chiffre, sous ceux qui se cochent : même famille, autre
+   geste. L'unité est écrite à côté du champ plutôt que dans son libellé, où
+   elle se lirait comme faisant partie de la question. */
+.reglage-nb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:5px}
+.reglage-nb label{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink)}
+.reglage-nb .l{flex:1;min-width:0}
+.reglage-nb input{width:74px;padding:6px 8px;font-size:13.5px;text-align:right;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink);font-family:"IBM Plex Mono",monospace}
+.reglage-nb input:focus{border-color:var(--accent);outline:none}
+.reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
+.reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
@@ -1093,12 +1180,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
-        <span class="eyebrow">Mon parcours</span>
-        <h2>Parcours de visite</h2>
+        <span class="eyebrow" id="pEyebrow">Mon parcours</span>
+        <h2 id="pTitre">Parcours de visite</h2>
         <span class="badge" id="pResume"></span>
       </div>
       <div class="pCorps" id="pCorps"></div>
-      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+      <div class="pCorps" id="jCorps" hidden></div>
+      <div class="pPied" id="pPied">
+        <button class="btn jOrg" id="btnJournee" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+          Organiser ma journée</button>
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
+      <div class="pPied" id="jPied" hidden>
+        <button class="btn" id="jRefaire" type="button">Changer l'heure d'arrivée</button>
+        <button class="vider retour" id="jRetour">Revenir à ma liste</button>
+      </div>
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">
@@ -2609,6 +2706,26 @@ function appliqueCommandes(){
 }
 
 /**
+ * Combien de temps on passe sur un stand.
+ *
+ * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
+ * visites tiennent entre deux conférences quand le visiteur demande qu'on
+ * organise sa journée. Le mettre trop bas remplit un programme intenable ;
+ * trop haut, il laisse des stands de côté sans raison.
+ *
+ * Vingt minutes est ce qu'on observe sur un salon professionnel — le temps
+ * d'une poignée de main, d'une démonstration et d'une carte de visite. Un
+ * salon grand public tourne plus vite, un salon d'affaires beaucoup moins :
+ * cela ne se devine pas depuis le plan, d'où le réglage.
+ */
+const VISITE_DEFAUT = 20;      // minutes
+const VISITE_MIN = 5, VISITE_MAX = 120;
+function minutesVisite(){
+  const v = Math.round(+(CONF["_visite"] || {}).minutes);
+  return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
+}
+
+/**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
@@ -2637,6 +2754,27 @@ function ouvreReglages(){
       bloc.appendChild(l);
     });
     corps.appendChild(bloc);
+
+    const duree = document.createElement("div");
+    duree.className = "reglage-nb";
+    duree.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+      '<span class="u">min</span></label><span class="aide"></span>';
+    duree.querySelector(".l").textContent = "Temps de visite par stand";
+    duree.querySelector(".aide").textContent =
+      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+      "qui décide combien de stands tiennent entre deux conférences.";
+    const n = duree.querySelector("input");
+    n.value = minutesVisite();
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+       on le quitte. */
+    n.oninput = e => {
+      const v = Math.round(+e.target.value);
+      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+    };
+    n.onblur = () => { n.value = minutesVisite(); };
+    corps.appendChild(duree);
   }, [{ libelle: "Fermer" }]);
 }
 
@@ -4379,6 +4517,14 @@ function rafraichitParcours(){
   const n = PARCOURS.stands.length + PARCOURS.confs.length;
   const c = $("nParcours");
   if (c){ c.textContent = n; c.hidden = n === 0; }
+  /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
+     plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
+     liste servira. */
+  const org = $("btnJournee");
+  if (org) org.disabled = n === 0;
+  /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
+     pas dans le dos du visiteur, on le lui dit. */
+  perimeJournee();
   marqueParcours();
   /* Une même conférence se voit à deux endroits — le programme de sa zone et
      sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
@@ -4498,6 +4644,9 @@ function ouvreParcours(){
   if ($("detail").classList.contains("open")) ferme();
   fermeItineraire();
   remplitParcours();
+  /* Le tiroir se rouvre sur ce qu'on y regardait : consulter une fiche depuis
+     la journée organisée ne doit pas la faire disparaître. */
+  appliqueVueParcours();
   $("parcours").classList.add("open");
   $("btnParcours").setAttribute("aria-pressed", "true");
 }
@@ -4515,7 +4664,19 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
   "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
   "Vider",
-  () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
+  () => {
+    PARCOURS = { stands: [], confs: [] };
+    /* La journée n'était que cette liste, mise en heures : elle s'en va avec
+       elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
+       qui ne doit rien au parcours. */
+    if (JOURNEE && TRACE === JOURNEE.dessin){
+      TRACE = null;
+      dessineItineraire();
+    }
+    JOURNEE = null; vueJournee = false;
+    enregistreParcours();
+    appliqueVueParcours();
+  });
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
    le tiroir, pas avec lui. */
@@ -5086,6 +5247,41 @@ function cherche(g, depart, arrivee){
   return suite.reverse();
 }
 
+/**
+ * Les distances d'une case à toutes les autres, en cases.
+ *
+ * Organiser une journée ne demande pas un trajet mais une matrice : vingt
+ * arrêts en font quatre cents paires, et autant d'A* prendraient plusieurs
+ * secondes sur un téléphone de salon. Un balayage en largeur depuis un seul
+ * arrêt les donne toutes d'un coup — un pavillon entier coûte moins qu'un A*
+ * isolé — au prix d'une longueur sans prix du virage ni du bord : c'est la
+ * longueur du couloir, ce qui suffit à comparer deux ordres de visite. Le
+ * tracé montré au visiteur, lui, reste celui de `troncon`.
+ *
+ * Rend -1 pour les cases hors de la nappe, ou qu'aucune allée ne relie.
+ */
+function distancesDepuis(g, depart){
+  const n = g.w * g.h;
+  const d = new Int32Array(n).fill(-1);
+  if (depart < 0 || !g.nappe[depart]) return d;
+  const file = new Int32Array(n);
+  let tete = 0, queue = 0;
+  file[queue++] = depart;
+  d[depart] = 0;
+  while (tete < queue){
+    const i = file[tete++], cx = i % g.w, cy = (i - cx) / g.w;
+    for (let v = 0; v < 4; v++){
+      const nx = cx + VX[v], ny = cy + VY[v];
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (d[j] >= 0 || !g.nappe[j]) continue;
+      d[j] = d[i] + 1;
+      file[queue++] = j;
+    }
+  }
+  return d;
+}
+
 /* ------------------------------------------------------------
    Du chemin en cases au trait qu'on suit
    ------------------------------------------------------------ */
@@ -5353,7 +5549,17 @@ function rafraichitApercu(){
 /* ------------------------------------------------------------
    Le tracé sur le plan
    ------------------------------------------------------------ */
-const marchesIci = () => (ROUTE ? ROUTE.etapes : [])
+/**
+ * Ce que le plan montre en ce moment.
+ *
+ * Deux calculs y prétendent — l'itinéraire d'un point à un autre, et la
+ * journée organisée depuis le parcours — et ils empruntent le même trait :
+ * deux tracés superposés ne se liraient plus. Le dernier calculé prend donc
+ * la place, et l'autre disparaît du plan sans être oublié pour autant.
+ */
+let TRACE = null;
+
+const marchesIci = () => (TRACE ? TRACE.etapes : [])
   .filter(e => e.genre === "marche" && e.p === state.plan);
 
 /** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
@@ -5381,10 +5587,27 @@ function dessineItineraire(){
     out += '<path class="iHalo" d="' + d + '"/><path class="iTrait" d="' + d +
            '"/><path class="iSens" d="' + d + '"/>';
   });
-  const pd = marches[0].pts[0];
-  const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
-  out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
-         '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+  /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
+     chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
+     d'un point à un autre n'a que deux bouts, et un chiffre y serait du
+     bruit — il garde ses deux pastilles nues. */
+  const arrets = (TRACE.arrets || []).filter(a => a.p === state.plan);
+  if (arrets.length){
+    const rr = (r * 1.5).toFixed(2);
+    arrets.forEach(a => {
+      /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
+         donner un rang décalerait tous les autres d'une unité. */
+      out += '<circle class="iBout' + (a.conf ? " conf" : "") + '" cx="' + a.xy[0] +
+             '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
+      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + '" x="' + a.xy[0] +
+             '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
+    });
+  } else {
+    const pd = marches[0].pts[0];
+    const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
+    out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
+           '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+  }
   g.innerHTML = out;
 }
 
@@ -5393,8 +5616,15 @@ function dessineItineraire(){
 function rafraichitBouts(){
   const g = $("itin");
   if (!g || !g.firstChild || !view) return;
-  const r = rayonBout().toFixed(2);
-  g.querySelectorAll(".iBout").forEach(c => c.setAttribute("r", r));
+  const r = rayonBout();
+  /* Les pastilles d'une journée portent un chiffre et sont donc plus larges ;
+     celle du départ, qui n'en porte pas, garde la taille ordinaire. */
+  const numerotees = !!g.querySelector(".iNum");
+  const rr = (numerotees ? r * 1.5 : r).toFixed(2);
+  const arrets = (TRACE && TRACE.arrets || []).filter(a => a.p === state.plan);
+  g.querySelectorAll(".iBout").forEach((c, i) =>
+    c.setAttribute("r", numerotees && arrets[i] && !arrets[i].n ? r.toFixed(2) : rr));
+  g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
 }
 
 /** Cadre la vue sur le tracé du pavillon affiché. */
@@ -5494,7 +5724,7 @@ function valideSaisie(r){
 
 function effaceItineraire(){
   ITI.a = ITI.b = null;
-  ROUTE = null;
+  ROUTE = TRACE = null;
   visee = null;
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
@@ -5515,7 +5745,7 @@ let attente = null, _dernierTrajet = "";
 function relance(){
   clearTimeout(attente);
   if (!ITI.a || !ITI.b){
-    ROUTE = null;
+    ROUTE = TRACE = null;
     dessineItineraire();
     montreResultat();
     return;
@@ -5534,6 +5764,8 @@ function relance(){
       console.warn("Itinéraire :", e);
       ROUTE = { pmr: ITI.pmr, etapes: [], m: 0, panne: true };
     }
+    // demander un itinéraire, c'est renoncer à voir la journée sur le plan
+    TRACE = ROUTE;
     /* Le trajet commence dans le pavillon du départ : c'est celui qu'il faut
        montrer, même si l'on regardait ailleurs en le demandant. */
     const premier = ROUTE.etapes.find(e => e.genre === "marche");
@@ -5709,6 +5941,10 @@ function ouvreItineraire(){
      tiroir déjà en train de s'ouvrir. */
   visee = null;
   bandeauVisee();
+  /* La journée organisée a pu prendre le trait entre-temps : le tiroir le
+     reprend en s'ouvrant, sinon son bilan parlerait d'un trajet et le plan en
+     montrerait un autre. */
+  if (ROUTE && TRACE !== ROUTE){ TRACE = ROUTE; dessineItineraire(); }
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
@@ -5795,6 +6031,743 @@ addEventListener("keydown", e => {
   if (visee){ e.stopPropagation(); finVisee(); return; }
   if ($("iSugg").hidden) fermeItineraire();
 });
+/* ============================================================
+   11 ter. Organiser sa journée
+   ============================================================ */
+/**
+ * Le parcours dit ce qu'on veut voir. Il ne dit ni dans quel ordre, ni si la
+ * journée y suffit — et c'est pourtant là que tout se joue : douze stands
+ * retenus au hasard des allées, deux conférences à heure fixe, et un visiteur
+ * qui repart en ayant traversé quatre fois le même hall sans voir la moitié
+ * de sa liste.
+ *
+ * On lui demande donc une seule chose — à quelle heure il arrive — et on
+ * range le reste : les conférences sont des rendez-vous qu'on ne déplace pas,
+ * les stands se glissent entre elles, et l'ordre retenu est celui qui fait le
+ * moins de chemin. Le temps passé sur un stand ne se devine pas depuis le
+ * plan ; c'est l'exploitant qui le fixe, salon par salon.
+ *
+ * Ce qu'on rend n'est pas une promesse : une conversation s'éternise, une
+ * conférence commence en retard, et l'heure de seize heures ne vaudra plus
+ * rien à quatorze. C'est un ordre de visite, avec des heures qui disent ce
+ * qui tient et ce qui ne tient pas.
+ */
+
+/**
+ * Ce que coûte un changement de pavillon.
+ *
+ * Les données ne disent rien de ce qui relie deux halls — ni passerelle, ni
+ * allée extérieure, ni distance — et l'itinéraire s'y coupe franchement
+ * plutôt que d'inventer un tracé. Ordonner une journée demande pourtant un
+ * prix : sans lui, l'algorithme ferait l'aller-retour entre deux pavillons
+ * comme il change d'allée, et rendrait un programme absurde.
+ *
+ * Ce forfait n'est donc pas une mesure, c'est une dissuasion : plus cher que
+ * n'importe quel détour à l'intérieur d'un seul hall, ce qui suffit à
+ * regrouper les visites pavillon par pavillon. Il ne compte jamais dans la
+ * distance annoncée — celle-ci ne porte que ce qui est tracé, et le dit.
+ */
+const TRANSFERT_M = 300;     // pour ordonner, jamais pour annoncer
+const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
+
+/* L'heure d'arrivée d'une visite à l'autre : celui qui vient deux jours de
+   suite vient rarement à deux heures différentes. */
+const CLE_ARRIVEE = "plan-journee-arrivee";
+
+let JOURNEE = null;      // la dernière journée calculée
+let vueJournee = false;  // le tiroir montre-t-il la journée ou la liste ?
+
+/* ------------------------------------------------------------
+   Les heures
+   ------------------------------------------------------------ */
+const minutesDe = (d) => d ? (+d.h) * 60 + (+d.min) : null;
+const finInstant = (c) => momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+
+function ecritHeure(m){
+  // une journée qui déborde sur la nuit repasse par zéro plutôt que d'écrire 26h
+  const t = ((Math.round(m) % 1440) + 1440) % 1440;
+  return String(Math.floor(t / 60)).padStart(2, "0") + "h" + String(t % 60).padStart(2, "0");
+}
+function ecritMinutes(m){
+  const t = Math.max(1, Math.round(m));
+  if (t < 60) return t + " min";
+  const h = Math.floor(t / 60), r = t % 60;
+  return h + " h" + (r ? " " + r + " min" : "");
+}
+
+/** Les jours où le salon a un programme, dans l'ordre. */
+function joursSalon(){
+  const vus = new Map();
+  CONFS.forEach(c => {
+    const d = instantConf(c);
+    if (d && !vus.has(d.cle)) vus.set(d.cle, { cle: d.cle, nom: jourCourt(d) });
+  });
+  return [...vus.values()].sort((a, b) => a.cle.localeCompare(b.cle));
+}
+
+/** Le jour sur lequel la fenêtre s'ouvre : celui de la première conférence
+ *  retenue, à défaut le premier du salon. */
+function jourPropose(){
+  const d = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(instantConf).filter(Boolean)
+    .sort((a, b) => a.cle.localeCompare(b.cle))[0];
+  if (d) return d.cle;
+  const j = joursSalon();
+  return j.length ? j[0].cle : "";
+}
+
+/* ------------------------------------------------------------
+   Les points de la journée
+   ------------------------------------------------------------ */
+/** Là où se tient une conférence : sa zone, qui est un objet du plan. Une
+ *  conférence qui n'en a pas garde son heure et sa place dans la journée —
+ *  on ne sait simplement pas y mener. */
+function pointConf(c){
+  const z = c.zone && parId.get(String(c.zone));
+  return z ? pointObjet(z) : null;
+}
+
+/** Les départs qu'on propose : les repères du salon, les entrées en tête —
+ *  c'est par là qu'on arrive, et c'est le seul endroit dont un visiteur sans
+ *  géolocalisation est sûr. */
+function departsProposes(){
+  const l = [];
+  DATA.plans.forEach(p => reperesDe(p).forEach(f => {
+    const pic = f.picto || pictoDe(f.txt);
+    l.push({ pt: pointRepere(f, p), entree: pic === "entree" ? 1 : 0 });
+  }));
+  l.sort((a, b) => b.entree - a.entree);
+  return l.slice(0, 20);
+}
+
+/**
+ * De chaque arrêt à tous les autres.
+ *
+ * Un balayage en largeur par arrêt, et non un A* par paire : vingt arrêts
+ * font quatre cents paires, et le hall entier coûte moins cher à balayer
+ * qu'un seul chemin à chercher. La longueur obtenue est celle des allées,
+ * sans prix du virage ni du bord — de quoi comparer deux ordres de visite,
+ * ce qu'on lui demande. Le tracé montré au visiteur reste celui de `troncon`.
+ */
+function matriceJournee(pts, pmr){
+  const n = pts.length;
+  const D = [];
+  for (let i = 0; i < n; i++) D.push(new Float64Array(n));
+  /* Un arrêt qu'aucune allée n'atteint — un stand enclavé, un repère posé
+     dans un mur — ne doit pas sortir de la journée pour autant : on retombe
+     sur la distance à vol d'oiseau, majorée du détour qu'une allée impose. */
+  const volDoiseau = (a, b) => Math.hypot(a.xy[0] - b.xy[0], a.xy[1] - b.xy[1]) * 1.3;
+
+  const parPlan = new Map();
+  pts.forEach((pt, i) => {
+    if (!pt) return;
+    if (!parPlan.has(pt.p)) parPlan.set(pt.p, []);
+    parPlan.get(pt.p).push(i);
+  });
+
+  /* Ce qui sépare un arrêt de la porte la plus proche de son pavillon : c'est
+     par là que passe tout trajet vers un autre hall. */
+  const auxPortes = new Float64Array(n);
+
+  parPlan.forEach((idx, ip) => {
+    const p = DATA.plans[ip];
+    const g = grille(p, pmr);
+    const cases = idx.map(i => accroche(g, pts[i].xy));
+    const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
+      .filter(c => c >= 0 && g.nappe[c]);
+    idx.forEach((i, k) => {
+      const d = distancesDepuis(g, cases[k]);
+      idx.forEach((j, l) => {
+        if (j === i) return;
+        const c = cases[l];
+        D[i][j] = (c >= 0 && d[c] >= 0) ? d[c] * PAS_GRILLE : volDoiseau(pts[i], pts[j]);
+      });
+      let mieux = -1;
+      portes.forEach(c => { if (d[c] >= 0 && (mieux < 0 || d[c] < mieux)) mieux = d[c]; });
+      auxPortes[i] = mieux >= 0 ? mieux * PAS_GRILLE : 0;
+    });
+  });
+
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
+    if (i === j || !pts[i] || !pts[j] || pts[i].p === pts[j].p) continue;
+    D[i][j] = auxPortes[i] + TRANSFERT_M + auxPortes[j];
+  }
+  return D;
+}
+
+/* ------------------------------------------------------------
+   L'ordre de visite
+   ------------------------------------------------------------ */
+/**
+ * Ranger les stands entre les conférences.
+ *
+ * Le problème est celui du voyageur de commerce, avec des rendez-vous en
+ * plus : l'ordre exact demanderait d'essayer toutes les permutations, et
+ * vingt stands en font deux milliards de milliards. On construit donc au plus
+ * juste — à chaque tour, le stand dont l'insertion coûte le moins de mètres,
+ * là où elle tient dans le temps disponible — puis on reprend l'ensemble par
+ * deux mouvements qui rattrapent l'essentiel : retourner un morceau de
+ * créneau, et déplacer un arrêt ailleurs.
+ *
+ * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
+ * liste courte et vraie qu'un programme intenable.
+ */
+function rangeJournee(creneaux, restants, dist, tempsCreneau){
+  const distanceCreneau = (c) => {
+    let m = 0, prec = c.de;
+    for (const s of c.stands){ m += dist(prec, s); prec = s; }
+    return m + dist(prec, c.vers);
+  };
+  const tient = (c) => c.tMax === null || c.t0 + tempsCreneau(c, distanceCreneau(c)) <= c.tMax;
+
+  while (restants.length){
+    let choix = null;
+    for (const s of restants){
+      for (const c of creneaux){
+        for (let k = 0; k <= c.stands.length; k++){
+          const avant = k === 0 ? c.de : c.stands[k - 1];
+          const apres = k === c.stands.length ? c.vers : c.stands[k];
+          const cout = dist(avant, s) + dist(s, apres) - dist(avant, apres);
+          if (choix && cout >= choix.cout) continue;
+          c.stands.splice(k, 0, s);
+          const ok = tient(c);
+          c.stands.splice(k, 1);
+          if (ok) choix = { cout: cout, c: c, k: k, s: s };
+        }
+      }
+    }
+    if (!choix) break;
+    choix.c.stands.splice(choix.k, 0, choix.s);
+    restants.splice(restants.indexOf(choix.s), 1);
+  }
+
+  /* Les deux reprises. Chaque mouvement se juge sur ses seules arêtes — la
+     longueur entière du créneau n'a pas à être refaite — et n'est retenu que
+     s'il fait gagner du chemin sans faire perdre un rendez-vous. */
+  const bord = (c, k) => k === 0 ? c.de : c.stands[k - 1];
+  const suite = (c, k) => k >= c.stands.length ? c.vers : c.stands[k];
+
+  for (let tour = 0; tour < 30; tour++){
+    let gagne = false;
+
+    for (const c of creneaux){
+      for (let i = 0; i < c.stands.length; i++){
+        for (let j = i + 1; j < c.stands.length; j++){
+          const a = bord(c, i), b = suite(c, j + 1);
+          const gain = dist(a, c.stands[i]) + dist(c.stands[j], b) -
+                       dist(a, c.stands[j]) - dist(c.stands[i], b);
+          if (gain <= 1e-9) continue;
+          const copie = c.stands.slice();
+          const morceau = c.stands.slice(i, j + 1).reverse();
+          c.stands.splice(i, j - i + 1, ...morceau);
+          if (tient(c)) gagne = true; else c.stands = copie;
+        }
+      }
+    }
+
+    for (const c of creneaux){
+      for (let i = 0; i < c.stands.length; i++){
+        const s = c.stands[i];
+        const retrait = dist(bord(c, i), s) + dist(s, suite(c, i + 1)) -
+                        dist(bord(c, i), suite(c, i + 1));
+        c.stands.splice(i, 1);
+        let mieux = null;
+        for (const d of creneaux){
+          for (let k = 0; k <= d.stands.length; k++){
+            const pose = dist(bord(d, k), s) + dist(s, suite(d, k)) -
+                         dist(bord(d, k), suite(d, k));
+            if (pose >= retrait - 1e-9 || (mieux && pose >= mieux.pose)) continue;
+            d.stands.splice(k, 0, s);
+            const ok = tient(d);
+            d.stands.splice(k, 1);
+            if (ok) mieux = { pose: pose, d: d, k: k };
+          }
+        }
+        if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
+        else c.stands.splice(i, 0, s);
+      }
+    }
+
+    if (!gagne) break;
+  }
+}
+
+/* ------------------------------------------------------------
+   La journée, calculée
+   ------------------------------------------------------------ */
+/**
+ * Ce que le visiteur a demandé : une heure d'arrivée, un jour, un point de
+ * départ. Ce qu'on lui rend : un déroulé, un tracé, et la liste franche de ce
+ * qui n'a pas trouvé sa place.
+ */
+function calculeJournee(choix){
+  const pmr = ITI.pmr;
+  const tv = minutesVisite();
+  const allure = pmr ? ALLURE_PMR : ALLURE;
+  const enMinutes = (m) => m / (allure * 60);
+
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const horsJour = [], passees = [], sansLieu = [];
+
+  const retenues = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ c: c, d: instantConf(c), f: finInstant(c) }))
+    .sort((a, b) => (minutesDe(a.d) || 0) - (minutesDe(b.d) || 0));
+
+  const rdv = [];
+  retenues.forEach(x => {
+    if (!x.d || (choix.jour && x.d.cle !== choix.jour)){ horsJour.push(x.c); return; }
+    const t0 = minutesDe(x.d);
+    /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
+       on ne la fait pas manquer, on la dit manquée. */
+    if (t0 < choix.arrivee){ passees.push(x.c); return; }
+    const pt = pointConf(x.c);
+    if (!pt) sansLieu.push(x.c);
+    /* Sans heure de fin, on compte une heure : enchaîner aussitôt ferait un
+       programme faux, et attendre la journée entière un programme vide. */
+    const t1 = x.f ? Math.max(t0 + 5, minutesDe(x.f)) : t0 + 60;
+    rdv.push({ c: x.c, pt: pt, t0: t0, t1: t1 });
+  });
+
+  /* Les points, dans un seul tableau : le départ, les stands, les salles.
+     C'est leur rang qui sert d'identité partout ensuite. */
+  const PTS = [];
+  const iDepart = choix.depart ? PTS.push(choix.depart) - 1 : -1;
+  const iStands = stands.map(o => PTS.push(pointObjet(o)) - 1);
+  rdv.forEach(r => { r.i = PTS.push(r.pt) - 1; });
+
+  const D = matriceJournee(PTS, pmr);
+  /* Un bout de trajet dont on ignore un des deux bouts ne coûte rien : le
+     départ « peu importe » et une salle non située ne sont pas des détours,
+     ce sont des trous. */
+  const dist = (a, b) => (a < 0 || b < 0 || !PTS[a] || !PTS[b]) ? 0 : D[a][b];
+  const tempsCreneau = (c, m) => enMinutes(m) + c.stands.length * tv;
+
+  /* Les intervalles entre rendez-vous, c'est là qu'on range les stands. Une
+     conférence dont la salle n'est située nulle part borne l'heure sans borner
+     le lieu : on ne sait pas s'en approcher, et on repart d'où l'on était. */
+  const creneaux = [];
+  let de = iDepart, t0 = choix.arrivee;
+  rdv.forEach(r => {
+    creneaux.push({ de: de, t0: t0, vers: r.pt ? r.i : -1, tMax: r.t0, stands: [] });
+    if (r.pt) de = r.i;
+    t0 = r.t1;
+  });
+  creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
+
+  const restants = iStands.slice();
+  rangeJournee(creneaux, restants, dist, tempsCreneau);
+
+  /* L'ordre est arrêté : on le déroule en heures et en tronçons. Les mètres
+     annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
+     le visiteur suivra. */
+  const etapes = [], arrets = [], trace = [], retards = [];
+  let t = choix.arrivee, m = 0, coupe = false, rang = 0;
+
+  const rejoint = (a, b) => {
+    if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
+    const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
+    if (pa === pb){
+      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy);
+      const l = tr ? tr.m : dist(a, b);
+      if (tr) trace.push(tr);
+      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
+      t += enMinutes(l);
+      m += l;
+      return;
+    }
+    coupe = true;
+    const sortie = versPorte(pa, pmr, PTS[a].xy, false);
+    const entree = versPorte(pb, pmr, PTS[b].xy, true);
+    if (sortie){ trace.push(sortie); m += sortie.m; }
+    trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
+    if (entree){ trace.push(entree); m += entree.m; }
+    const min = enMinutes((sortie ? sortie.m : 0) + (entree ? entree.m : 0)) + TRANSFERT_MIN;
+    etapes.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle, min: min });
+    t += min;
+  };
+
+  const pose = (i, conf) => {
+    rang++;
+    if (PTS[i]) arrets.push({ p: PTS[i].p, xy: PTS[i].xy, n: String(rang), conf: !!conf });
+    return rang;
+  };
+
+  if (iDepart >= 0){
+    arrets.push({ p: PTS[iDepart].p, xy: PTS[iDepart].xy, n: "", depart: true });
+    etapes.push({ genre: "depart", nom: choix.depart.nom, detail: choix.depart.detail, t: t });
+  }
+
+  let ou = iDepart;
+  creneaux.forEach((c, k) => {
+    c.stands.forEach(s => {
+      rejoint(ou, s);
+      const n = pose(s, false);
+      etapes.push({ genre: "stand", n: n, o: parId.get(PTS[s].id), pt: PTS[s], t0: t, t1: t + tv });
+      t += tv;
+      ou = s;
+    });
+    const r = rdv[k];
+    if (!r) return;
+    rejoint(ou, r.i);
+    if (t > r.t0 + 1) retards.push({ c: r.c, min: t - r.t0 });
+    else if (t < r.t0) etapes.push({ genre: "attente", min: r.t0 - t });
+    t = Math.max(t, r.t0);
+    const n = pose(r.i, true);
+    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1 });
+    t = r.t1;
+    /* Une conférence dont la salle n'est rattachée à aucune zone ne dit pas
+       où l'on se trouve après elle : on repart du dernier endroit connu,
+       sans quoi le trajet suivant — un changement de pavillon, souvent —
+       disparaîtrait du déroulé sans un mot. */
+    if (r.pt) ou = r.i;
+  });
+
+  return {
+    jour: choix.jour, jourNom: choix.jourNom, arrivee: choix.arrivee, fin: t,
+    pmr: pmr, tv: tv, etapes: etapes, arrets: arrets, trace: trace, m: m, coupe: coupe,
+    nArrets: rang,
+    restants: restants.map(i => parId.get(PTS[i].id)).filter(Boolean),
+    horsJour: horsJour, passees: passees, sansLieu: sansLieu, retards: retards,
+  };
+}
+
+/* ------------------------------------------------------------
+   Ce que la journée montre
+   ------------------------------------------------------------ */
+function rangJournee(hote, heure, dedans, classe){
+  const d = document.createElement("div");
+  d.className = "jRang" + (classe ? " " + classe : "");
+  const h = document.createElement("span");
+  h.className = "jH";
+  h.textContent = heure || "";
+  d.appendChild(h);
+  d.appendChild(dedans);
+  hote.appendChild(d);
+  return d;
+}
+
+function lienJournee(hote, texte){
+  const s = document.createElement("span");
+  s.className = "jL";
+  s.textContent = texte;
+  rangJournee(hote, "", s, "lien");
+}
+
+function arretJournee(hote, e){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "jArret" + (e.genre === "conf" ? " conf" : "");
+  b.innerHTML = '<span class="jN"></span><span class="jTxt"><span class="jT"></span>' +
+                '<span class="jS"></span></span><span class="jD"></span>';
+  b.querySelector(".jN").textContent = e.n;
+  b.querySelector(".jD").textContent = ecritMinutes(e.t1 - e.t0);
+  if (e.genre === "conf"){
+    if (e.c.couleur) b.style.setProperty("--tc", e.c.couleur);
+    b.querySelector(".jT").textContent = e.c.nom;
+    b.querySelector(".jS").textContent = [e.c.salle, e.pt ? e.pt.detail : ""]
+      .filter(Boolean).join(" · ") || "Salle non située sur le plan";
+    b.onclick = () => ficheConf(e.c.id, "parcours");
+  } else {
+    b.querySelector(".jT").textContent = e.pt.nom;
+    b.querySelector(".jS").textContent = e.pt.detail;
+    b.onclick = () => { if (e.o) select(e.o.id, true, "parcours"); };
+  }
+  rangJournee(hote, ecritHeure(e.t0), b);
+}
+
+function remplitJournee(){
+  const hote = $("jCorps");
+  hote.innerHTML = "";
+  const j = JOURNEE;
+  if (!j) return;
+
+  /* Les notes et les alertes sont celles de l'itinéraire, classes comprises :
+     c'est la même voix qui parle du même calcul, à deux endroits du tiroir. */
+  const dit = (cls, txt) => {
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = txt;
+    hote.appendChild(p);
+    return p;
+  };
+
+  if (j.perime) dit("iAlerte", "Votre parcours a changé depuis ce calcul : " +
+    "reprenez-le pour que la journée en tienne compte.");
+
+  const bilan = document.createElement("div");
+  bilan.className = "jBilan";
+  bilan.innerHTML = '<b></b><span></span>';
+  bilan.querySelector("b").textContent = ecritHeure(j.arrivee) + " – " + ecritHeure(j.fin);
+  bilan.querySelector("span").textContent =
+    [j.nArrets + (j.nArrets > 1 ? " arrêts" : " arrêt"),
+     (j.coupe ? "au moins " : "") + ecritDistance(j.m) + " de marche",
+     j.pmr ? "itinéraire accessible" : ""].filter(Boolean).join(" · ");
+  hote.appendChild(bilan);
+
+  const fil = document.createElement("div");
+  fil.className = "jFil";
+  hote.appendChild(fil);
+
+  j.etapes.forEach(e => {
+    if (e.genre === "depart"){
+      const s = document.createElement("span");
+      s.className = "jL";
+      s.textContent = "Départ : " + e.nom;
+      rangJournee(fil, ecritHeure(e.t), s, "lien");
+    } else if (e.genre === "marche"){
+      lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
+        (e.trace ? "" : " (non tracé)"));
+    } else if (e.genre === "transfert"){
+      lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
+        ", ce trajet n'est pas sur le plan");
+    } else if (e.genre === "attente"){
+      lienJournee(fil, ecritMinutes(e.min) + " sur place avant le début");
+    } else {
+      arretJournee(fil, e);
+    }
+  });
+
+  /* Ce qui n'entre pas dans la journée se dit, et se dit précisément : un
+     rang laissé de côté sans un mot passerait pour un oubli du calcul. Ces
+     listes empruntent leurs rangs au parcours — même vignette, même croix :
+     ce sont les mêmes choses, vues d'ailleurs. */
+  const groupe = (titre, liste, rendu) => {
+    if (!liste.length) return;
+    const g = document.createElement("div");
+    g.className = "pGroupe jReste";
+    g.innerHTML = '<span class="eyebrow"></span>';
+    g.querySelector(".eyebrow").textContent = titre;
+    liste.forEach(x => rangParcours(g, rendu(x)));
+    hote.appendChild(g);
+  };
+
+  /* Un rendez-vous qu'on n'atteint pas ne se raye pas tout seul : le visiteur
+     décidera ce qu'il sacrifie, pas nous. */
+  j.retards.forEach(r => dit("iAlerte", "« " + r.c.nom + " » : au mieux, vous y " +
+    "arriveriez " + ecritMinutes(r.min) + " après le début — le trajet n'y suffit " +
+    "pas. Arrivez plus tôt, ou retirez ce qui la précède."));
+
+  /* En l'état cette liste reste vide : la journée n'a pas d'heure de fin, si
+     bien qu'un stand refusé entre deux conférences finit toujours par tenir
+     après la dernière. C'est le garde-fou de la contrainte horaire — le jour
+     où l'on demandera aussi à quelle heure le visiteur repart, c'est ici
+     qu'il lira ce qui n'y tient pas, plutôt que de recompter ses stands. */
+  groupe("Restés de côté", j.restants, o => ({
+    genre: "stand", id: o.id, dessus: false,
+    titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+    detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+    ouvre: () => select(o.id, true, "parcours"),
+  }));
+
+  groupe("Un autre jour", j.horsJour, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  groupe("Déjà commencées à votre arrivée", j.passees, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  if (j.sansLieu.length) dit("iNote", j.sansLieu.length > 1
+    ? "Certaines conférences retenues ne sont rattachées à aucune zone du plan : " +
+      "elles gardent leur heure, mais le trajet ne peut pas y mener."
+    : "« " + j.sansLieu[0].nom + " » n'est rattachée à aucune zone du plan : elle " +
+      "garde son heure, mais le trajet ne peut pas y mener.");
+
+  dit("iNote", "Comptez " + ecritMinutes(j.tv) + " par stand. Les heures sont " +
+    "indicatives : elles supposent qu'on ne s'attarde pas, et ne tiennent compte " +
+    "ni des files ni des pauses.");
+}
+
+/* ------------------------------------------------------------
+   Les deux vues du tiroir
+   ------------------------------------------------------------ */
+/** Le tiroir montre la liste ou la journée, jamais les deux : c'est la même
+ *  journée, lue avant puis après le calcul. */
+function appliqueVueParcours(){
+  const sur = vueJournee && !!JOURNEE;
+  $("pCorps").hidden = sur;
+  $("pPied").hidden = sur;
+  $("jCorps").hidden = !sur;
+  $("jPied").hidden = !sur;
+  $("pEyebrow").textContent = sur ? "Ma journée" : "Mon parcours";
+  $("pTitre").textContent = sur ? (JOURNEE.jourNom || "Journée organisée") : "Parcours de visite";
+  if (sur){
+    $("pResume").textContent = ecritHeure(JOURNEE.arrivee) + " – " + ecritHeure(JOURNEE.fin);
+    remplitJournee();
+    traceJournee();
+  } else {
+    rafraichitParcours();
+  }
+}
+
+/**
+ * La journée reprend le trait du plan.
+ *
+ * L'itinéraire d'un point à un autre y prétend aussi, et le visiteur passe de
+ * l'un à l'autre : chacun se redonne le trait en revenant, plutôt que de
+ * laisser à l'écran le tracé de son voisin. L'objet dessiné est retenu tel
+ * quel — c'est à lui qu'on reconnaît, ailleurs, que le trait est celui de la
+ * journée et non d'un trajet demandé à côté.
+ */
+function traceJournee(){
+  if (!JOURNEE) return;
+  JOURNEE.dessin = JOURNEE.dessin || { etapes: JOURNEE.trace, arrets: JOURNEE.arrets };
+  if (TRACE === JOURNEE.dessin) return;
+  TRACE = JOURNEE.dessin;
+  dessineItineraire();
+}
+
+function montreJournee(){
+  vueJournee = true;
+  appliqueVueParcours();
+  /* La journée commence dans le pavillon du premier arrêt : c'est celui qu'il
+     faut montrer, même si l'on regardait ailleurs en la demandant. */
+  const premier = JOURNEE.trace.find(e => e.genre === "marche");
+  if (premier && premier.p !== state.plan) changePlan(premier.p);
+  traceJournee();
+  if (premier) cadreItineraire();
+}
+
+/** Le parcours a changé : la journée calculée ne lui correspond plus. On ne
+ *  la refait pas dans le dos du visiteur — on le lui dit. */
+function perimeJournee(){
+  if (!JOURNEE || JOURNEE.perime) return;
+  JOURNEE.perime = true;
+  if (vueJournee) remplitJournee();
+}
+
+/* ------------------------------------------------------------
+   La question posée avant le calcul
+   ------------------------------------------------------------ */
+function ouvreOrganisation(){
+  const jours = joursSalon();
+  const propose = jourPropose();
+  let arrivee = "09:00";
+  try { arrivee = localStorage.getItem(CLE_ARRIVEE) || arrivee; } catch (e) {}
+  const departs = departsProposes();
+
+  let champHeure = null, champJour = null, champDepart = null;
+
+  ouvreModale("Organiser ma journée", corps => {
+    const p = document.createElement("p");
+    p.textContent = "On place d'abord les conférences que vous avez retenues — " +
+      "elles ne se déplacent pas — puis on glisse les stands entre elles, dans " +
+      "l'ordre qui fait le moins de chemin.";
+    corps.appendChild(p);
+
+    const form = document.createElement("div");
+    form.className = "jForm";
+
+    const bloc = (libelle, champ) => {
+      const l = document.createElement("label");
+      const e = document.createElement("span");
+      e.className = "eyebrow";
+      e.textContent = libelle;
+      l.appendChild(e);
+      l.appendChild(champ);
+      form.appendChild(l);
+      return champ;
+    };
+
+    champHeure = document.createElement("input");
+    champHeure.type = "time";
+    champHeure.value = arrivee;
+    bloc("Heure d'arrivée", champHeure);
+
+    if (jours.length > 1){
+      champJour = document.createElement("select");
+      jours.forEach(j => {
+        const o = document.createElement("option");
+        o.value = j.cle;
+        o.textContent = j.nom;
+        if (j.cle === propose) o.selected = true;
+        champJour.appendChild(o);
+      });
+      bloc("Jour de visite", champJour);
+    }
+
+    if (departs.length){
+      champDepart = document.createElement("select");
+      const vide = document.createElement("option");
+      vide.value = "";
+      vide.textContent = "Peu importe";
+      champDepart.appendChild(vide);
+      departs.forEach((d, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = d.pt.nom + " — " + d.pt.detail;
+        if (i === 0 && d.entree) o.selected = true;
+        champDepart.appendChild(o);
+      });
+      bloc("Par où vous entrez", champDepart);
+    }
+
+    corps.appendChild(form);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Organiser", action: () => {
+      const v = /^(\d{1,2}):(\d{2})$/.exec(champHeure.value || "");
+      // une heure illisible vaut mieux corrigée que refusée : le champ natif
+      // ne rend rien sur les navigateurs qui l'ignorent
+      const min = v ? Math.min(1439, +v[1] * 60 + +v[2]) : 9 * 60;
+      try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
+      const cle = champJour ? champJour.value : (jours.length ? jours[0].cle : "");
+      const j = jours.find(x => x.cle === cle);
+      const id = champDepart ? champDepart.value : "";
+      lanceJournee({
+        arrivee: min, jour: cle, jourNom: j ? j.nom : "",
+        depart: id === "" ? null : departs[+id].pt,
+      });
+    } },
+  ]);
+}
+
+/**
+ * Le calcul passe par un temps mort volontaire, comme celui de l'itinéraire :
+ * une matrice, une insertion et une vingtaine de tronçons tiennent en une
+ * fraction de seconde sur un poste, davantage sur un téléphone de salon. On
+ * annonce d'abord, on calcule ensuite.
+ */
+function lanceJournee(choix){
+  vueJournee = true;
+  JOURNEE = null;
+  $("pCorps").hidden = $("pPied").hidden = true;
+  $("jCorps").hidden = $("jPied").hidden = false;
+  $("pEyebrow").textContent = "Ma journée";
+  $("pTitre").textContent = choix.jourNom || "Journée organisée";
+  $("pResume").textContent = "calcul…";
+  $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
+  /* Organiser une journée, c'est calculer une vingtaine d'itinéraires : cela
+     se compte avec eux, faute d'un genre à soi en base. */
+  mesure("itineraire");
+  setTimeout(() => {
+    try {
+      JOURNEE = calculeJournee(choix);
+    } catch (e){
+      console.warn("Journée :", e);
+      $("pResume").textContent = "—";
+      $("jCorps").innerHTML = '<p class="iAlerte"></p>';
+      $("jCorps").querySelector(".iAlerte").textContent =
+        "Le calcul de la journée n'a pas abouti sur cet appareil. " +
+        "Votre parcours, lui, est intact.";
+      return;
+    }
+    montreJournee();
+  }, 30);
+}
+
+/* ------------------------------------------------------------
+   Branchements
+   ------------------------------------------------------------ */
+$("btnJournee").onclick = ouvreOrganisation;
+$("jRefaire").onclick = ouvreOrganisation;
+$("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
 
 /* ============================================================
    13. Mesure d'utilisation
