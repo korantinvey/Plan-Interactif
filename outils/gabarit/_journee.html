@@ -199,17 +199,33 @@ function matriceJournee(pts, pmr){
  * se payait au plus court. Le visiteur se retrouvait avec deux heures
  * trente-neuf à patienter devant une salle, et six stands à voir ensuite.
  *
- * On compte donc le temps mort comme on compte la marche : une minute passée
- * à attendre coûte ce qu'on aurait parcouru en marchant une minute. Remplir
- * un creux devient alors franchement rentable — vingt minutes de visite
- * effacent vingt minutes d'attente, ce qu'aucun détour raisonnable ne compense
- * — et quand il n'y a plus de creux à combler, le coût redevient la seule
- * distance et l'ordre se resserre comme avant.
+ * Compter le temps mort comme la marche — une minute d'attente valant une
+ * minute de marche — rapprochait du but sans y être : dans un créneau qui a
+ * du mou, les minutes de marche se retranchent exactement aux minutes
+ * d'attente, et la distance s'annule. Le coût d'une insertion valait alors
+ * « moins une visite », quel que soit le détour : tous les candidats faisaient
+ * match nul et c'est le premier rencontré qui l'emportait. Les creux se
+ * remplissaient, mais l'ordre à l'intérieur ne devait plus rien au chemin.
+ *
+ * On sépare donc les deux questions, parce que ce sont deux questions :
+ *
+ *   Ce qui pèse d'abord, c'est ce qui tombe après le dernier rendez-vous. Un
+ *   créneau borné dure ce qu'il dure ; tout ce qu'on n'y met pas s'ajoute à
+ *   la fin de la journée et rallonge l'attente d'autant. Un stand posé dans
+ *   le créneau ouvert coûte donc le temps de sa visite, converti en mètres.
+ *
+ *   Ce qui départage ensuite, c'est la distance, et elle seule — un créneau
+ *   borné ne coûte plus que ses mètres, l'attente n'y étant que ce qui reste.
+ *
+ * Le forfait n'est pas infranchissable, et c'est voulu : traverser deux
+ * pavillons pour combler vingt minutes de creux n'a rien d'un progrès. Il
+ * vaut ce que vaut la visite qu'on déplace, et un détour plus cher qu'elle
+ * l'emporte.
  *
  * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
  * liste courte et vraie qu'un programme intenable.
  */
-function rangeJournee(creneaux, restants, dist, tempsCreneau, poidsAttente){
+function rangeJournee(creneaux, restants, dist, tempsCreneau, penaliteTardive){
   const distanceCreneau = (c) => {
     let m = 0, prec = c.de;
     for (const s of c.stands){ m += dist(prec, s); prec = s; }
@@ -217,19 +233,19 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau, poidsAttente){
   };
 
   /**
-   * Ce qu'un créneau coûte, marche et attente confondues, en mètres.
+   * Ce qu'un créneau coûte, en mètres.
    *
-   * Le dernier créneau n'a pas de fin : on n'y attend pas, il ne coûte que
-   * ses mètres. Les autres butent sur une conférence, et ce qu'ils ne
-   * remplissent pas se passe à patienter. Un créneau qui déborde vaut
-   * l'infini plutôt qu'un refus à part : un rendez-vous manqué n'est pas un
-   * arrangement cher, c'en est un impossible.
+   * Le dernier n'a pas de fin : ce qu'on y met retarde la journée d'autant,
+   * et chaque stand y porte le forfait. Les autres butent sur une conférence
+   * et ne coûtent que leur chemin — ce qu'ils ne remplissent pas se passe à
+   * patienter, ce dont le forfait rend déjà compte de l'autre côté. Un
+   * créneau qui déborde vaut l'infini plutôt qu'un refus à part : un
+   * rendez-vous manqué n'est pas un arrangement cher, c'en est un impossible.
    */
   const coutCreneau = (c) => {
     const m = distanceCreneau(c);
-    if (c.tMax === null) return m;
-    const creux = c.tMax - c.t0 - tempsCreneau(c, m);
-    return creux < 0 ? Infinity : m + poidsAttente * creux;
+    if (c.tMax === null) return m + penaliteTardive * c.stands.length;
+    return c.t0 + tempsCreneau(c, m) > c.tMax ? Infinity : m;
   };
 
   while (restants.length){
@@ -359,11 +375,12 @@ function calculeJournee(choix){
   });
   creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
 
-  /* Ce qu'une minute d'attente coûte, en mètres : ce qu'on aurait parcouru en
-     marchant pendant ce temps. Le visiteur n'est pas venu pour patienter, et
-     un creux devant une salle ne vaut pas mieux qu'un détour de même durée. */
+  /* Ce que coûte un stand renvoyé après le dernier rendez-vous : sa visite
+     entière, comptée en mètres au pas de marche. C'est exactement ce qu'elle
+     ajoute à la fin de la journée — et ce qu'un creux plus tôt aurait absorbé
+     sans rien coûter. */
   const restants = iStands.slice();
-  rangeJournee(creneaux, restants, dist, tempsCreneau, allure * 60);
+  rangeJournee(creneaux, restants, dist, tempsCreneau, allure * 60 * tv);
 
   /* L'ordre est arrêté : on le déroule en heures et en tronçons. Les mètres
      annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
@@ -434,6 +451,11 @@ function calculeJournee(choix){
     jour: choix.jour, jourNom: choix.jourNom, arrivee: choix.arrivee, fin: t,
     pmr: pmr, tv: tv, etapes: etapes, arrets: arrets, trace: trace, m: m, coupe: coupe,
     nArrets: rang,
+    /* De quoi expliquer un creux plutôt que de le laisser sans réponse : ce
+       qu'on attend en tout, et ce qui reste programmé après le dernier
+       rendez-vous — les deux ensemble disent si l'attente était évitable. */
+    attente: etapes.reduce((a, e) => a + (e.genre === "attente" ? e.min : 0), 0),
+    tardifs: creneaux[creneaux.length - 1].stands.length,
     restants: restants.map(i => parId.get(PTS[i].id)).filter(Boolean),
     horsJour: horsJour, passees: passees, sansLieu: sansLieu, retards: retards,
   };
@@ -586,6 +608,17 @@ function remplitJournee(){
       "elles gardent leur heure, mais le trajet ne peut pas y mener."
     : "« " + j.sansLieu[0].nom + " » n'est rattachée à aucune zone du plan : elle " +
       "garde son heure, mais le trajet ne peut pas y mener.");
+
+  /* Une demi-heure à patienter se remarque, et sans un mot elle passe pour une
+     étourderie du calcul. On dit donc d'où elle vient — il n'y avait plus rien
+     à voir, ou l'avancer coûtait plus de marche qu'elle ne fait gagner — et ce
+     qui la comblerait. */
+  if (j.attente >= 30) dit("iNote", "Il reste " + ecritMinutes(j.attente) +
+    " d'attente dans cette journée. " + (j.tardifs
+      ? "Avancer ce qui suit la dernière conférence demanderait un détour plus " +
+        "long que le temps gagné."
+      : "Votre parcours ne contient plus rien à visiter d'ici là : ajoutez des " +
+        "exposants pour la combler."));
 
   dit("iNote", "Comptez " + ecritMinutes(j.tv) + " par stand. Les heures sont " +
     "indicatives : elles supposent qu'on ne s'attarde pas, et ne tiennent compte " +

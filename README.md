@@ -309,16 +309,39 @@ font quatre cents — mais d'un balayage en largeur par arrêt, qui donne d'un
 coup la longueur d'allée vers tous les autres ; le trait montré, lui, reste
 celui du calcul d'itinéraire.
 
-**Ce que « coûter » veut dire compte autant que l'algorithme.** Ne compter que
-les mètres produit un programme absurde : un créneau qui bute sur une
-conférence dure ce qu'il dure, qu'on le remplisse ou non, si bien qu'y glisser
-un stand ne coûtait pas moins qu'ailleurs — et tout s'entassait après la
+**Ce que « coûter » veut dire compte autant que l'algorithme**, et deux
+formulations s'y cassent les dents avant la bonne.
+
+Ne compter que les mètres produit un programme absurde : un créneau qui bute
+sur une conférence dure ce qu'il dure, qu'on le remplisse ou non, si bien qu'y
+glisser un stand ne coûte pas moins qu'ailleurs — tout s'entasse après la
 dernière conférence, laissant deux heures trente-neuf à patienter devant une
-salle. Le temps mort se compte donc comme la marche : **une minute d'attente
-coûte ce qu'on aurait parcouru en marchant une minute**. Remplir un creux
-devient franchement rentable — vingt minutes de visite effacent vingt minutes
-d'attente, ce qu'aucun détour raisonnable ne compense — et quand il n'y a plus
-de creux, le coût redevient la seule distance.
+salle.
+
+Compter une minute d'attente comme une minute de marche remplit bien les creux,
+mais dégénère : dans un créneau qui a du mou, les minutes de marche se
+retranchent *exactement* aux minutes d'attente, et la distance s'annule —
+l'insertion vaut « moins une visite » quel que soit le détour, tous les
+candidats font match nul, et c'est le premier rencontré qui l'emporte. Les
+trajets doublaient de longueur sans que rien ne le signale.
+
+Ce sont donc **deux questions séparées, traitées séparément** :
+
+- **Ce qui tombe après le dernier rendez-vous pèse d'abord.** Un créneau borné
+  dure ce qu'il dure ; ce qu'on n'y met pas s'ajoute à la fin de la journée. Un
+  stand posé dans le créneau ouvert coûte le temps de sa visite, converti en
+  mètres au pas de marche. Le forfait n'est pas infranchissable, et c'est
+  voulu : traverser deux pavillons pour combler vingt minutes de creux n'a rien
+  d'un progrès.
+- **La distance départage ensuite**, et elle seule : un créneau borné ne coûte
+  que ses mètres, l'attente n'y étant que ce qui reste.
+
+Sur une journée de douze stands et deux conférences, la formulation dégénérée
+rendait 1 477 m ; celle-ci en rend 631, pour la même heure de fin.
+
+Quand un creux subsiste malgré tout, le tiroir dit d'où il vient — il n'y avait
+plus rien à voir d'ici là, ou l'avancer coûtait plus de marche qu'il ne fait
+gagner — plutôt que de le laisser passer pour une étourderie du calcul.
 
 Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
 avant l'arrivée, une autre retenue un autre jour, une salle rattachée à aucune
