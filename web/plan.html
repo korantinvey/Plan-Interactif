@@ -790,11 +790,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   max-height:min(74vh,600px);overflow-y:auto}
 .panel.open{display:block}
 .panel .eyebrow{display:block;margin-bottom:8px}
+/* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
+   d'administration au bas du panneau. Le libellé n'a pas de case à cocher
+   devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
+.apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
-/* Une ligne sans case à cocher perdrait l'alignement de son libellé sur celui
-   des lignes voisines : on lui rend la place que la case occupait. */
-.calq.sous.seule label{padding-left:21px;cursor:default}
 .calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
 .calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
 .calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}
@@ -4081,16 +4083,6 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
-    /* La couleur d'un stand sélectionné se règle sous la couche Stands : c'est
-       l'autre couleur du même objet. Elle vaut aussi pour une zone — le plan
-       n'a qu'une manière de dire « voici ce que vous avez touché » — d'où le
-       libellé, qui parle d'élément et non de stand.
-       Ni visibilité ni aplat ici : une sélection qu'on ne voit pas laisserait
-       le visiteur sans réponse à son propre geste. */
-    if (x.k === "data:stands")
-      rangSous(hote, "selection", "Élément sélectionné",
-               () => jeton("--accent-soft"), appliqueCouleursData, true);
-
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -4104,6 +4096,8 @@ function construitPanneau(){
   plus.onclick = creeCalque;
   hote.appendChild(plus);
 
+  sectionSelection(hote);
+
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
@@ -4112,27 +4106,55 @@ function construitPanneau(){
      comme une couche de plus. */
 }
 
-/* ligne secondaire : visibilité et couleur seulement.
-   « couleurSeule » retire les deux commandes qui n'auraient rien à commander —
-   la ligne se réduit alors à son nuancier. */
-function rangSous(hote, cle, libelle, defaut, applique, couleurSeule){
+/* ============================================================
+   Élément sélectionné
+   La couleur que prend un stand — ou une zone — au moment où on le touche.
+   Ce n'est pas un calque : rien ne s'y dessine, rien ne s'y masque, et le
+   rang n'y veut rien dire. Rangée dans la pile, la ligne se lisait pourtant
+   comme une couche de plus, entre celles qu'on empile vraiment. Un trait l'en
+   sépare, un titre la nomme.
+
+   Une seule couleur à régler, l'aplat : le liseré qui le borde s'en déduit,
+   et « appliqueCouleursData » s'en charge.
+   ============================================================ */
+function sectionSelection(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart";
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.textContent = "Élément sélectionné";
+  bloc.appendChild(titre);
+
+  const c = conf("selection");
+  const d = document.createElement("div");
+  d.className = "calq";
+  d.innerHTML = '<label><span></span></label>' +
+                '<span class="opts"><input type="color" class="cc"></span>';
+  // le titre de la section dit déjà de quoi il s'agit
+  d.querySelector("label span").textContent = "Couleur";
+  const cc = d.querySelector(".cc");
+  cc.value = c.couleur || jeton("--accent-soft");
+  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
+  bloc.appendChild(d);
+  hote.appendChild(bloc);
+}
+
+/* ligne secondaire : visibilité et couleur seulement */
+function rangSous(hote, cle, libelle, defaut, applique){
   const c = conf(cle);
   const d = document.createElement("div");
-  d.className = "calq sous" + (couleurSeule ? " seule" : "");
-  d.innerHTML = '<label>' +
-    (couleurSeule ? "" : '<input type="checkbox"' + (c.visible === false ? "" : " checked") + '>') +
-    '<span></span></label><span class="opts">' +
-    (couleurSeule ? "" :
-      '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox"' + (c.visible === false ? "" : " checked") +
+    '><span></span></label><span class="opts">' +
+    '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>' +
     '<input type="color" class="cc"></span>';
   d.querySelector("label span").textContent = libelle;
-  const cc = d.querySelector(".cc");
-  cc.value = c.couleur || defaut();
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
-  if (couleurSeule){ hote.appendChild(d); return; }
   d.querySelector('input[type="checkbox"]').onchange = e => {
     c.visible = e.target.checked; enregistreConf(); applique();
   };
+  const cc = d.querySelector(".cc");
+  cc.value = c.couleur || defaut();
+  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
   const fb = d.querySelector(".fillbtn");
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);

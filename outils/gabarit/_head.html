@@ -781,11 +781,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   max-height:min(74vh,600px);overflow-y:auto}
 .panel.open{display:block}
 .panel .eyebrow{display:block;margin-bottom:8px}
+/* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
+   d'administration au bas du panneau. Le libellé n'a pas de case à cocher
+   devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
+.apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
-/* Une ligne sans case à cocher perdrait l'alignement de son libellé sur celui
-   des lignes voisines : on lui rend la place que la case occupait. */
-.calq.sous.seule label{padding-left:21px;cursor:default}
 .calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
 .calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
 .calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}
