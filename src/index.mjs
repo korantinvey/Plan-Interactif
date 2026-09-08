@@ -37,11 +37,49 @@ const MESURE_MAX = 4096;
 const TTL_PLAN = 600;
 const TTL_FOND = 2592000;
 
+/* Une entrée périmée n'est pas jetée : elle est servie telle quelle pendant
+   qu'on la rafraîchit derrière. Sans cela l'expiration vide le cache au moment
+   même où la charge est la plus forte — l'ouverture du salon — et toutes les
+   visites arrivées dans cette seconde repartent ensemble jusqu'à la base, dont
+   chacune rejoue les sept requêtes. La garde couvre du même coup une panne en
+   amont : mieux vaut un plan d'hier qu'une page vide. */
+const GARDE = 86400;
+
 /** Ce que l'on garde à côté de la valeur : de quoi reconstituer la réponse. */
-const meta = (r) => ({
+const meta = (r, frais) => ({
   ct: r.headers.get("Content-Type") || "application/json",
   cc: r.headers.get("Cache-Control") || "no-store",
+  // au-delà, l'entrée est encore bonne à servir mais demande à être refaite ;
+  // le fond, immuable, n'a pas de date de péremption du tout
+  frais,
 });
+
+/* Les rafraîchissements en vol dans cet isolat. Sans cette retenue, les
+   requêtes qui trouvent la même entrée périmée en lanceraient chacune un. */
+const _enVol = new Set();
+
+/** On ne garde que ce que la fonction a déclaré public. */
+const gardable = (cache, r) =>
+  Boolean(cache) && r.ok &&
+  (r.headers.get("Cache-Control") || "").includes("public");
+
+/** Range la réponse. */
+const range = (cache, cle, reponse, corps, fond) =>
+  cache.put(cle, corps, {
+    expirationTtl: fond ? TTL_FOND : GARDE,
+    metadata: meta(reponse, fond ? null : Date.now() + TTL_PLAN * 1000),
+  }).catch(() => {});   // un cache en panne ne doit pas casser une visite
+
+/** Refait une entrée périmée, sans faire attendre la visite qui l'a trouvée. */
+function rafraichit(cache, cle, adresse, entetes) {
+  if (_enVol.has(cle)) return Promise.resolve();
+  _enVol.add(cle);
+  return fetch(adresse, { headers: entetes })
+    .then((r) => (gardable(cache, r) ? range(cache, cle, r, r.body, false) : null))
+    // l'amont muet laisse l'entrée périmée en place : elle resservira
+    .catch(() => {})
+    .finally(() => _enVol.delete(cle));
+}
 
 /** Relais des mesures : un aller simple, sans identité et sans cache. */
 async function mesure(requete) {
@@ -91,39 +129,39 @@ export default {
     // la clé ne retient que les paramètres attendus : deux adresses qui ne
     // diffèrent que par un paramètre parasite partagent la même entrée
     const cle = "v1" + amont.search;
-
-    if (cache) {
-      const garde = await cache.getWithMetadata(cle, { type: "stream" });
-      if (garde && garde.value) {
-        return new Response(garde.value, {
-          headers: {
-            "Content-Type": garde.metadata?.ct || "application/json",
-            "Cache-Control": garde.metadata?.cc || "public, max-age=60",
-            "X-Cache": "hit",
-          },
-        });
-      }
-    }
+    const fond = Boolean(amont.searchParams.get("fond"));
 
     const entetes = new Headers();
     if (jeton) entetes.set("Authorization", jeton);
     const apikey = requete.headers.get("apikey");
     if (apikey) entetes.set("apikey", apikey);
 
+    if (cache) {
+      const garde = await cache.getWithMetadata(cle, { type: "stream" });
+      if (garde && garde.value) {
+        const perime = Boolean(garde.metadata?.frais) &&
+                       Date.now() > garde.metadata.frais;
+        if (perime) {
+          ctx.waitUntil(rafraichit(cache, cle, amont.toString(), entetes));
+        }
+        return new Response(garde.value, {
+          headers: {
+            "Content-Type": garde.metadata?.ct || "application/json",
+            "Cache-Control": garde.metadata?.cc || "public, max-age=60",
+            "X-Cache": perime ? "stale" : "hit",
+          },
+        });
+      }
+    }
+
     const reponse = await fetch(amont.toString(), { headers: entetes });
     const sortie = new Response(reponse.body, reponse);
     sortie.headers.set("X-Cache", jeton ? "bypass" : cache ? "miss" : "absent");
-
-    // on ne garde que ce que la fonction a déclaré public
-    if (cache && reponse.ok &&
-        (reponse.headers.get("Cache-Control") || "").includes("public")) {
-      const copie = sortie.clone();
-      ctx.waitUntil(
-        cache.put(cle, copie.body, {
-          expirationTtl: amont.searchParams.get("fond") ? TTL_FOND : TTL_PLAN,
-          metadata: meta(reponse),
-        }).catch(() => {}),   // un cache en panne ne doit pas casser une visite
-      );
+    /* Le corps n'est cloné que si l'entrée part vraiment au cache : un clone
+       qu'on ne lit pas oblige le runtime à tamponner toute la réponse, et un
+       fond de plan pèse deux mégaoctets. */
+    if (gardable(cache, reponse)) {
+      ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, fond));
     }
     return sortie;
   },

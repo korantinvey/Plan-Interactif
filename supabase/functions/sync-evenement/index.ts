@@ -63,6 +63,21 @@ const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
 // Annotations techniques posées sur le plan : ce ne sont pas des noms de zone.
 const TECHNIQUE = /\bkW\b|Hauteur \d|Coffret|Mur inclinable/i;
 
+/**
+ * Une empreinte courte du fond de plan.
+ *
+ * Elle sert de version dans l'adresse du fond, à la place de l'heure de
+ * synchronisation : celle-ci changeait à chaque passage, et faisait
+ * retélécharger six cent soixante kilo-octets de dessin inchangé à tous les
+ * visiteurs. Six octets suffisent — une collision entre deux versions d'un même
+ * pavillon montrerait un fond périmé, jamais un fond faux.
+ */
+async function condense(v: string): Promise<string> {
+  const bin = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+  return Array.from(new Uint8Array(bin).slice(0, 6),
+    (o) => o.toString(16).padStart(2, "0")).join("");
+}
+
 const client = () =>
   createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -519,6 +534,9 @@ Deno.serve(async (req) => {
         // salles de conférence. Le calque qui les porte ne s'appelle pas pareil
         // d'un salon à l'autre, on ne peut donc pas le nommer.
         const tousTextes: { x: number; y: number; txt: string }[] = [];
+        /* Ce qui compose le fond, dans l'ordre où l'API le rendra : c'est de
+           cela, et de rien d'autre, que l'empreinte doit dépendre. */
+        const fond: string[] = [];
         for (const c of calques) {
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
@@ -526,6 +544,7 @@ Deno.serve(async (req) => {
           tousTextes.push(...lus);
           if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
           const { svg } = allege(brut);
+          fond.push(c.Libelle, svg ?? "");
           await db.from("calque").upsert({
             plan_id: planId,
             id_klipso: c.Id,
@@ -795,6 +814,7 @@ Deno.serve(async (req) => {
           emprise: emp,
           nb_stands: stands.length,
           nb_zones: zones.length,
+          empreinte: await condense(fond.join("\u0000")),
           modifie_le: new Date().toISOString(),
         }).eq("id", planId);
 
@@ -803,6 +823,33 @@ Deno.serve(async (req) => {
           charge: { stands, zones, conferences, emprise: emp },
           genere_le: new Date().toISOString(),
         }, { onConflict: "plan_id" });
+
+        /* Ce qu'une mesure pourra désigner. Les compteurs ne retiennent qu'un
+           identifiant : c'est ici que se conserve de quoi l'afficher — le
+           numéro d'emplacement et l'enseigne — et c'est cette liste qui ferme
+           leur vocabulaire, une cible absente étant écartée à l'écriture.
+
+           Les zones n'y figurent pas : une zone organisateur n'est pas un
+           exposant, et la page ne la compte pas non plus. */
+        const cibles = [
+          ...stands.map((s) => ({
+            evenement_id: evt.id, genre: "fiche_stand", id: s.id,
+            code: s.code ?? null, nom: s.nom ?? s.plan ?? null,
+            modifie_le: new Date().toISOString(),
+          })),
+          ...conferences.map((c) => ({
+            evenement_id: evt.id, genre: "fiche_conf", id: String(c.id),
+            code: null, nom: (c.nom as string) ?? null,
+            modifie_le: new Date().toISOString(),
+          })),
+        ];
+        /* Une même conférence peut être remontée par deux pavillons — elle y
+           cite des exposants de chacun. Deux lignes de même clé dans un seul
+           envoi font échouer l'upsert entier : on ne garde que la première. */
+        const uniques = [...new Map(cibles.map((c) => [c.genre + c.id, c])).values()];
+        if (uniques.length) {
+          await db.from("cible").upsert(uniques, { onConflict: "evenement_id,genre,id" });
+        }
 
         resume.push({
           pavillon: plan.Libelle,
