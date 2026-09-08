@@ -639,6 +639,10 @@ button.expo:hover{background:var(--line)}
   display:grid;place-items:center;line-height:1}
 .jArret.conf .jN{background:var(--surface);color:var(--accent);
   box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* Un rendez-vous qu'on n'atteint pas garde sa place et son heure, mais cesse
+   de se donner pour acquis : c'est au visiteur d'arbitrer. */
+.jArret.tard{border-left-color:#C2372B}
+.jArret.tard .jS{color:#C2372B}
 .jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .jT{font-size:13px;line-height:1.35;color:var(--ink)}
 .jS{font-size:11.5px;color:var(--ink-3)}

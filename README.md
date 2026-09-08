@@ -344,9 +344,19 @@ plus rien à voir d'ici là, ou l'avancer coûtait plus de marche qu'il ne fait
 gagner — plutôt que de le laisser passer pour une étourderie du calcul.
 
 Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
-avant l'arrivée, une autre retenue un autre jour, une salle rattachée à aucune
-zone du plan, un rendez-vous qu'on n'atteindrait qu'en retard. Rien n'est retiré
-du parcours au passage — le visiteur décide de ce qu'il sacrifie.
+avant l'arrivée, une autre retenue un autre jour, une qui se tient pendant une
+autre déjà retenue, une salle rattachée à aucune zone du plan, un rendez-vous
+qu'on n'atteindrait qu'en retard. Rien n'est retiré du parcours au passage — le
+visiteur décide de ce qu'il sacrifie.
+
+Deux conférences qui se recouvrent ne s'enchaînent pas : on garde celle qui
+commence la première et l'autre se range à part, faute de pouvoir assister aux
+deux. Les programmer à la suite ferait une journée qui remonte le temps — le
+défaut existait, et la suite de l'après-midi se retrouvait planifiée dans le
+passé. **L'horloge du visiteur n'avance jamais à reculons** : une conférence
+garde les heures du programme, mais si on ne peut y être qu'après le début, la
+ligne le dit — « vous y seriez à 12h02 » — et la suite part de l'heure qu'il
+est vraiment.
 
 Entre deux pavillons, la journée hérite de la franchise de l'itinéraire : rien
 dans les données ne décrit ce qui les relie, le trajet n'est pas tracé, et la

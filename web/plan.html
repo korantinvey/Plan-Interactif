@@ -648,6 +648,10 @@ button.expo:hover{background:var(--line)}
   display:grid;place-items:center;line-height:1}
 .jArret.conf .jN{background:var(--surface);color:var(--accent);
   box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* Un rendez-vous qu'on n'atteint pas garde sa place et son heure, mais cesse
+   de se donner pour acquis : c'est au visiteur d'arbitrer. */
+.jArret.tard{border-left-color:#C2372B}
+.jArret.tard .jS{color:#C2372B}
 .jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .jT{font-size:13px;line-height:1.35;color:var(--ink)}
 .jS{font-size:11.5px;color:var(--ink-3)}
@@ -6408,25 +6412,33 @@ function calculeJournee(choix){
   const enMinutes = (m) => m / (allure * 60);
 
   const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
-  const horsJour = [], passees = [], sansLieu = [];
+  const horsJour = [], passees = [], sansLieu = [], chevauchent = [];
 
   const retenues = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
     .map(c => ({ c: c, d: instantConf(c), f: finInstant(c) }))
     .sort((a, b) => (minutesDe(a.d) || 0) - (minutesDe(b.d) || 0));
 
   const rdv = [];
+  let finPrec = -Infinity;
   retenues.forEach(x => {
     if (!x.d || (choix.jour && x.d.cle !== choix.jour)){ horsJour.push(x.c); return; }
     const t0 = minutesDe(x.d);
     /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
        on ne la fait pas manquer, on la dit manquée. */
     if (t0 < choix.arrivee){ passees.push(x.c); return; }
+    /* Deux conférences qui se recouvrent ne se suivent pas : on ne peut pas
+       assister aux deux, et les enchaîner ferait une journée qui remonte le
+       temps. On garde celle qui commence la première — retenue plus tôt dans
+       la liste, elle est aussi celle qu'on peut encore attraper — et on dit
+       l'autre plutôt que de la programmer pour rien. */
+    if (t0 < finPrec){ chevauchent.push(x.c); return; }
     const pt = pointConf(x.c);
     if (!pt) sansLieu.push(x.c);
     /* Sans heure de fin, on compte une heure : enchaîner aussitôt ferait un
        programme faux, et attendre la journée entière un programme vide. */
     const t1 = x.f ? Math.max(t0 + 5, minutesDe(x.f)) : t0 + 60;
     rdv.push({ c: x.c, pt: pt, t0: t0, t1: t1 });
+    finPrec = t1;
   });
 
   /* Les points, dans un seul tableau : le départ, les stands, les salles.
@@ -6514,12 +6526,21 @@ function calculeJournee(choix){
     const r = rdv[k];
     if (!r) return;
     rejoint(ou, r.i);
-    if (t > r.t0 + 1) retards.push({ c: r.c, min: t - r.t0 });
-    else if (t < r.t0) etapes.push({ genre: "attente", min: r.t0 - t });
-    t = Math.max(t, r.t0);
+    const arrive = t;                       // l'heure qu'il serait vraiment
+    if (arrive > r.t0 + 1) retards.push({ c: r.c, min: arrive - r.t0 });
+    else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive });
     const n = pose(r.i, true);
-    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1 });
-    t = r.t1;
+    /* Le retard voyage avec la conférence : la ligne garde l'heure du
+       programme — c'est elle qui est affichée partout ailleurs — et dit à
+       côté celle où l'on y serait vraiment. Une alerte en bas de tiroir se
+       lit trop tard pour la ligne qu'elle concerne. */
+    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1,
+                  retard: Math.max(0, arrive - r.t0) });
+    /* La conférence garde ses heures — ce sont celles du programme — mais
+       l'horloge du visiteur, elle, ne remonte pas : arriver après la fin
+       d'une séance n'est pas y assister, et la suite de la journée part de
+       l'heure qu'il est, non de celle qu'on aurait aimé. */
+    t = Math.max(arrive, r.t1);
     /* Une conférence dont la salle n'est rattachée à aucune zone ne dit pas
        où l'on se trouve après elle : on repart du dernier endroit connu,
        sans quoi le trajet suivant — un changement de pavillon, souvent —
@@ -6538,6 +6559,7 @@ function calculeJournee(choix){
     tardifs: creneaux[creneaux.length - 1].stands.length,
     restants: restants.map(i => parId.get(PTS[i].id)).filter(Boolean),
     horsJour: horsJour, passees: passees, sansLieu: sansLieu, retards: retards,
+    chevauchent: chevauchent,
   };
 }
 
@@ -6574,8 +6596,11 @@ function arretJournee(hote, e){
   if (e.genre === "conf"){
     if (e.c.couleur) b.style.setProperty("--tc", e.c.couleur);
     b.querySelector(".jT").textContent = e.c.nom;
-    b.querySelector(".jS").textContent = [e.c.salle, e.pt ? e.pt.detail : ""]
-      .filter(Boolean).join(" · ") || "Salle non située sur le plan";
+    b.querySelector(".jS").textContent =
+      ([e.c.salle, e.pt ? e.pt.detail : ""].filter(Boolean).join(" · ") ||
+       "Salle non située sur le plan") +
+      (e.retard > 1 ? " · vous y seriez à " + ecritHeure(e.t0 + e.retard) : "");
+    if (e.retard > 1) b.classList.add("tard");
     b.onclick = () => ficheConf(e.c.id, "parcours");
   } else {
     b.querySelector(".jT").textContent = e.pt.nom;
@@ -6672,6 +6697,14 @@ function remplitJournee(){
   groupe("Un autre jour", j.horsJour, c => ({
     genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
     titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  groupe("En même temps qu'une autre", j.chevauchent, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
     ouvre: () => ficheConf(c.id, "parcours"),
   }));
 
