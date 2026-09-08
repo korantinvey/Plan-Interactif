@@ -175,9 +175,14 @@ sociétés sur cent six paraissaient. On part donc du numéro que porte la fiche
 titulaire, et le code du plan ne sert que de repli, quand c'est par lui qu'on
 l'a trouvé.
 
+**La page ne dit pas qui loue et qui est hébergé.** Cela relève du contrat
+entre l'organisateur et ses exposants ; un visiteur cherche une enseigne, pas sa
+place dans un bail. La fenêtre de choix ne liste donc que des noms, celui du
+titulaire en tête — ce qui le dit assez pour qui veut le savoir.
+
 **La recherche les voit pour eux-mêmes.** Chaque société hébergée a son rang
-dans les résultats — « Burger King · Co-exposant · T150 » — et l'ouvrir mène
-droit à sa fiche. Un clic sur la forme du stand, lui, demande d'abord qui l'on
+dans les résultats — « Burger King · T150 » — et l'ouvrir mène droit à sa
+fiche. Un clic sur la forme du stand, lui, demande d'abord qui l'on
 vient voir : on y a désigné un emplacement, pas un nom. Le plan garde le stand
 allumé quand on cherche un hébergé, tout en portant le nom de son titulaire :
 c'est le seul endroit où une enseigne répond pour une autre, et il le faut bien,

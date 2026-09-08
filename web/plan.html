@@ -413,16 +413,14 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   border:1px solid var(--line-strong)}
 .badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
 /* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
-   société, le titulaire en tête et signalé comme tel : sur les stands les plus
-   peuplés il y en a une douzaine, et rien ne les distinguerait sans cela. */
+   société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
+   leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
 .expos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
 .expos button{display:flex;width:100%;align-items:baseline;gap:9px;text-align:left;
   padding:9px 11px;border:1px solid transparent;border-radius:5px;
   background:var(--surface-2);font-size:13.5px;color:var(--ink)}
 .expos button:hover{border-color:var(--line-strong)}
 .expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.expos .role{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;
-  letter-spacing:.05em;flex:none}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
 /* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
@@ -1545,9 +1543,9 @@ function liste(){
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
     /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
-       autre. Dire son rôle à la place vaut mieux que lui prêter les mètres
-       carrés de son hôte. */
-    const sous = heberge ? "Co-exposant"
+       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
+       de stand et son nom la désignent, cela suffit. */
+    const sous = heberge ? ""
       : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
@@ -1953,15 +1951,18 @@ function ecarteClicFantome(){
 const nomSociete = (x) => x.nom || x.plan || "Sans nom";
 
 /**
- * Les sociétés d'un stand, titulaire en tête.
+ * Les sociétés d'un stand, celle qui le loue en tête.
  *
- * Le titulaire est le stand lui-même : c'est son dossier qui l'a désigné à la
+ * Elle est le stand lui-même : c'est son dossier qui l'a désignée à la
  * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
  * dans « coex », dans l'ordre où la source les a rendues.
+ *
+ * Le rang les distingue, la liste ne le dit pas : qui loue et qui est hébergé
+ * relève du contrat entre l'organisateur et ses exposants. Un visiteur cherche
+ * une enseigne, pas sa place dans un bail.
  */
 function societes(o){
-  return [{ soc: o, i: -1, role: "Titulaire" }].concat(
-    (o.coex || []).map((x, i) => ({ soc: x, i: i, role: "Co-exposant" })));
+  return [{ soc: o, i: -1 }].concat((o.coex || []).map((x, i) => ({ soc: x, i: i })));
 }
 
 /**
@@ -1984,10 +1985,7 @@ function choisitExposant(o, rect, canal){
       const n = document.createElement("span");
       n.className = "nom";
       n.textContent = nomSociete(x.soc);
-      const r = document.createElement("span");
-      r.className = "role";
-      r.textContent = x.role;
-      b.appendChild(n); b.appendChild(r);
+      b.appendChild(n);
       b.onclick = () => {
         fermeModale();
         // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
