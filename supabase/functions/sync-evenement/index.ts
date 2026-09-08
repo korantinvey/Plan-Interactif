@@ -568,7 +568,8 @@ Deno.serve(async (req) => {
         });
 
         const stands = [];
-        let apparies = 0, heberges = 0;
+        let apparies = 0;
+        const heberges = new Set<ExposantEm>();
         const parDossier = new Map<string, string>();
         for (const s of bruts) {
           const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
@@ -617,11 +618,27 @@ Deno.serve(async (req) => {
 
              Un stand sans titulaire retenu n'héberge personne non plus : une
              enseigne qui refuse le catalogue emporte son stand entier, et une
-             liste dont la tête serait vide ne se lirait pas. */
-          const coex = !expoEm || !ok || !code ? [] : (
-            expoEm.tousParStand.get(cleStand(code)) ?? []
-          ).filter((x) => x !== em && !x.exclu).map(hebergee);
-          heberges += coex.length;
+             liste dont la tête serait vide ne se lirait pas.
+
+             Le numéro qu'on interroge est celui que porte la fiche du
+             titulaire, et non le code du plan. Les deux se ressemblent sans se
+             confondre : Klipso numérote « T44 » et « U43 » séparément là où
+             Eventmaker saisit « T44 - U43 » pour l'ensemble, et c'est cette
+             écriture-là que les hébergés recopient. Chercher sous le code du
+             plan ne trouvait donc rien sur les stands à deux emplacements —
+             les plus grands, ceux qui hébergent le plus. Le titulaire, lui,
+             était trouvé par son dossier : le stand paraissait normal, sans
+             personne. Le code du plan ne sert que de repli, quand c'est par
+             lui que le titulaire a été trouvé. */
+          const numero = (em && em.stand) || (code ? cleStand(code) : "");
+          const voisins = !expoEm || !ok || !numero ? []
+            : (expoEm.tousParStand.get(numero) ?? []).filter((x) =>
+              x !== em && !x.exclu
+            );
+          /* Deux emplacements réunis font deux stands du plan, qui listent les
+             mêmes sociétés : on compte les sociétés, pas les listes. */
+          voisins.forEach((x) => heberges.add(x));
+          const coex = voisins.map(hebergee);
 
           /* Coordonnées et réseaux. Eventmaker les porte nativement ; Klipso
              ne les rend que si l'exploitant a désigné les champs qui les
@@ -792,7 +809,7 @@ Deno.serve(async (req) => {
           stands: stands.length,
           exposants: stands.filter((s) => s.nom).length,
           ...(expoEm ? { apparies } : {}),
-          ...(heberges ? { coexposants: heberges } : {}),
+          ...(heberges.size ? { coexposants: heberges.size } : {}),
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });

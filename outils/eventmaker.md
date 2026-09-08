@@ -163,6 +163,18 @@ les 7 086 fiches de FEP 2026 : **460 stands sur 460 au nom du bon titulaire**, e
 l'appel des 119 sont seuls sur leur numéro — des pavillons collectifs, où ils
 sont titulaires de plein droit.
 
+**Le numéro interrogé est celui du titulaire, pas celui du plan.** Les deux se
+ressemblent sans se confondre : Klipso numérote « T44 » et « U43 » séparément là
+où Eventmaker saisit « T44 - U43 » pour l'ensemble, et c'est cette écriture-là
+que les hébergés recopient. **31 des 47 stands partagés de FEP 2026 portent un
+numéro composé** — dont les plus grands, celui d'Hippopotamus et ses dix
+enseignes, celui de Carrefour et ses cinq. Chercher les hébergés sous le code du
+plan n'y trouvait rien, et comme le titulaire, lui, était bien retrouvé par son
+dossier, le stand paraissait normal : simplement sans personne. Trente-six
+sociétés sur cent six paraissaient. On part donc du numéro que porte la fiche du
+titulaire, et le code du plan ne sert que de repli, quand c'est par lui qu'on
+l'a trouvé.
+
 **La recherche les voit pour eux-mêmes.** Chaque société hébergée a son rang
 dans les résultats — « Burger King · Co-exposant · T150 » — et l'ouvrir mène
 droit à sa fiche. Un clic sur la forme du stand, lui, demande d'abord qui l'on
