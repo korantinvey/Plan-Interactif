@@ -343,6 +343,24 @@ Quand un creux subsiste malgré tout, le tiroir dit d'où il vient — il n'y av
 plus rien à voir d'ici là, ou l'avancer coûtait plus de marche qu'il ne fait
 gagner — plutôt que de le laisser passer pour une étourderie du calcul.
 
+Il faut savoir ce qu'un creux qui reste veut dire, parce qu'il ressemble à un
+défaut sans en être un. L'attente totale d'une journée vaut
+
+```
+Σ(intervalles entre rendez-vous) − Σ(marche) − temps de visite × (stands casés dedans)
+```
+
+— elle ne dépend donc **que du nombre** de stands casés entre les conférences,
+pas du créneau où chacun tombe. Déplacer un stand vers un créneau qui bâille y
+comble le trou et en creuse un identique ailleurs. Ce qui reste à optimiser,
+une fois les créneaux pleins, c'est la marche, et c'est ce que le calcul fait.
+
+Un creux garde pourtant une propriété utile quand il précède le **premier**
+rendez-vous : celui-là ne tient qu'à l'heure qu'on a dite en arrivant, et le
+visiteur peut s'en débarrasser seul. La ligne le lui dit — « en arrivant à
+10h38, vous ne perdriez rien » — ce qui est exact par construction : le créneau
+raccourcit d'autant, et son contenu y tient toujours.
+
 Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
 avant l'arrivée, une autre retenue un autre jour, une qui se tient pendant une
 autre déjà retenue, une salle rattachée à aucune zone du plan, un rendez-vous

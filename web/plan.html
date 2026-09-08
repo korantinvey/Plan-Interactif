@@ -6528,7 +6528,13 @@ function calculeJournee(choix){
     rejoint(ou, r.i);
     const arrive = t;                       // l'heure qu'il serait vraiment
     if (arrive > r.t0 + 1) retards.push({ c: r.c, min: arrive - r.t0 });
-    else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive });
+    /* Un creux avant le premier rendez-vous n'est pas de même nature que les
+       autres : ceux du milieu de journée sont pris entre deux choses fixes,
+       celui-là ne tient qu'à l'heure qu'on a dite en arrivant. Le visiteur
+       peut donc s'en débarrasser tout seul, et c'est la seule chose utile à
+       lui dire — le total, lui, ne changera pas d'un pouce. */
+    else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive,
+                                          premier: k === 0 });
     const n = pose(r.i, true);
     /* Le retard voyage avec la conférence : la ligne garde l'heure du
        programme — c'est elle qui est affichée partout ailleurs — et dit à
@@ -6656,7 +6662,10 @@ function remplitJournee(){
       lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
         ", ce trajet n'est pas sur le plan");
     } else if (e.genre === "attente"){
-      lienJournee(fil, ecritMinutes(e.min) + " sur place avant le début");
+      lienJournee(fil, ecritMinutes(e.min) + " sur place avant le début" +
+        (e.premier && e.min >= 15
+          ? " — en arrivant à " + ecritHeure(j.arrivee + e.min) + ", vous ne perdriez rien"
+          : ""));
     } else {
       arretJournee(fil, e);
     }
