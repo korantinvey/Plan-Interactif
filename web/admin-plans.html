@@ -1113,8 +1113,20 @@ async function ouvreSalles(apres) {
     if (pl.length) {
       const inst = await rest("instantane?select=charge&plan_id=in.(" +
         pl.map((x) => x.id).join(",") + ")");
+      /* Les noms saisis à la main vivent sur l'événement, pas dans
+         l'instantané : ils s'appliquent à la lecture — c'est ce que fait
+         plan-public pour le visiteur. Sans cela, une zone fraîchement
+         baptisée depuis le plan se proposerait encore « Zone sans nom »,
+         et le rattachement se choisirait à l'aveugle. On relit la colonne
+         plutôt que de se fier à la liste chargée au démarrage : le
+         renommage a pu survenir depuis, depuis un autre poste. */
+      let noms = e.zones || {};
+      try {
+        const frais = await rest("evenement?select=zones&id=eq." + e.id);
+        if (frais.length) { noms = frais[0].zones || {}; e.zones = noms; }
+      } catch (err) { /* la liste chargée fera l'affaire */ }
       zones = inst.flatMap((i) => (i.charge?.zones || [])
-        .map((z) => ({ id: z.id, nom: z.nom, m2: z.m2 })));
+        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom, m2: z.m2 })));
     }
   } catch (err) { signale(err.message, true); }
   const parZone = Object.fromEntries(zones.map((z) => [z.id, z]));
