@@ -1343,10 +1343,15 @@ function indexe(d){
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
      téléphone n'a rien dans son stockage local. Le poste ne sert plus que de
-     cache, et de refuge si un enregistrement a échoué. */
+     cache, et de refuge si un enregistrement a échoué — celui de ce salon-ci,
+     que la clé de rangement désigne maintenant. */
+  ouvreConf(d);
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
-    if (a.reglages && Object.keys(a.reglages).length) Object.assign(CONF, a.reglages);
+    // un enregistrement d'avant le cloisonnement porte les calques d'autres
+    // salons : ils ne désignent rien ici, et fausseraient la publication
+    if (a.reglages && Object.keys(a.reglages).length)
+      Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     if (Array.isArray(p.dessins) && p.dessins.length){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
@@ -2586,10 +2591,56 @@ $("btnTheme").onclick = () => {
    Les réglages vivent dans CONF, partagés par les trois pavillons :
    changer la couleur du bâtiment une fois vaut pour tous.
    ============================================================ */
-const CLE_CONF = "plan-conf";
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
 let CONF = JSON.parse(JSON.stringify(DEFAUTS));
-try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+
+/* Un rangement par salon, et non plus un seul pour tous.
+   Les calques sortent tous du même bureau d'études : « Batiment », « RIA »,
+   « Caniveaux » et leurs sous-calques portent les mêmes noms d'un salon à
+   l'autre. Rangés sous ce seul nom, les réglages suivaient l'exploitant :
+   masquer une gaine chez l'un la masquait chez le suivant, sans que rien ne
+   l'annonce dans son panneau — et la publication emportait le mélange en
+   base. Le salon ouvert nomme donc sa clé. */
+const cleConf = d => "plan-conf:" +
+  ((d && d.slug) || SLUG || (d && d.evenement) || "sans-salon");
+let CLE_CONF = cleConf(null);
+
+/** Ouvre les réglages du salon qu'on vient de charger. */
+function ouvreConf(d){
+  CLE_CONF = cleConf(d);
+  CONF = JSON.parse(JSON.stringify(DEFAUTS));
+  try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+  /* L'ancien rangement commun ne peut que rejouer le mélange, et la base fait
+     foi de toute façon : on le retire plutôt que de le laisser traîner. */
+  try { localStorage.removeItem("plan-conf"); } catch (e) {}
+}
+
+/**
+ * Les réglages qui parlent du salon ouvert : ceux de ses calques et de leurs
+ * sous-calques, plus les réglages généraux — commandes, couches de données,
+ * étiquettes. Tout le reste vient d'un salon voisin ouvert sur le même poste,
+ * et ne désigne rien ici.
+ *
+ * Le filtre s'applique aux deux bouts : ce qu'on lit de la base, et ce qu'on y
+ * renvoie. Un enregistrement déjà mélangé se nettoie donc à la publication
+ * suivante, sans qu'il faille y toucher à la main.
+ */
+function reglagesDuSalon(source){
+  const calques = new Set((DATA?.plans || []).flatMap(p => (p.fond || []).map(c => c.cle)));
+  const sortie = {};
+  Object.keys(source || {}).forEach(k => {
+    if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
+    const general = k[0] === "_" || k.indexOf("data:") === 0 ||
+                    k === "labStand" || k === "labZone";
+    /* « calque/sous-calque », mais l'un comme l'autre peut porter une barre
+       oblique : on retient la clé dès qu'une de ses têtes nomme un calque. */
+    const dUnCalque = calques.has(k) ||
+      k.split("/").some((_, i, t) => i && calques.has(t.slice(0, i).join("/")));
+    if (general || dUnCalque) sortie[k] = source[k];
+  });
+  return sortie;
+}
+
 const conf = c => (CONF[c] = CONF[c] || {});
 const jeton = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888888";
 const sousCle = (cle, id) => cle + "/" + id;
@@ -4232,11 +4283,11 @@ async function base(acces, chemin, options = {}){
   return txt ? JSON.parse(txt) : null;
 }
 
-/** Les réglages d'apparence, sans les ordres de pile qui sont par pavillon. */
+/** Les réglages d'apparence de ce salon : sans les ordres de pile, qui sont
+ *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
+ *  son enregistrement — c'est par là qu'ils s'y installaient. */
 function reglagesSeuls(){
-  const out = {};
-  Object.keys(CONF).forEach(k => { if (k.indexOf("_pile:") !== 0) out[k] = CONF[k]; });
-  return out;
+  return reglagesDuSalon(CONF);
 }
 
 async function pousseConfiguration(bouton){
