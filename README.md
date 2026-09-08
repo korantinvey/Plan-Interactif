@@ -103,8 +103,10 @@ compter à la fois — un salon tiendra « Retour » pour un retour à signaler,
 autre non. Aucune cochée, rien n'est signalé, et la ligne le dit.
 
 Un champ qui porte plus de huit valeurs distinctes est du texte libre : sa liste
-n'est pas proposée, et il retombe sur le oui/non. « Exclu de la liste » se règle
-exactement de la même façon.
+n'est pas proposée. Un salon synchronisé avant que le relevé ne garde les
+valeurs distinctes n'en a pas non plus. Dans les deux cas la ligne le dit, et
+laisse saisir la valeur à la main plutôt que de faire attendre le prochain
+passage. « Exclu de la liste » se règle exactement de la même façon.
 
 Trois lignes ne s'affichent jamais mais décident du reste, sous « Ce qui ne
 s'affiche pas » : le **numéro de stand** et l'**identifiant de dossier**, par

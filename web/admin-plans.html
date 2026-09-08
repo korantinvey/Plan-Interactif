@@ -1619,26 +1619,39 @@ function champOrigine(src, cible, apres, ouiNon) {
   function majValeurs() {
     if (!ouiNon) return;
     zoneValeurs.innerHTML = "";
-    const d = detectes.find((x) => x.cle === sel.value);
-    const offertes = (d && d.valeurs) || [];
-    // rien à choisir : ni champ, ni liste de valeurs connues
-    if (!offertes.length) { zoneValeurs.hidden = true; return; }
+    // sans champ désigné, il n'y a pas de valeur à qualifier
+    if (sel.value === DEFAUT_CHAMP || sel.value === AUCUN_CHAMP) {
+      zoneValeurs.hidden = true;
+      return;
+    }
     zoneValeurs.hidden = false;
 
     const retenues = ((correspondance(courant(), src).valeurs || {})[cible] || [])
       .map(String);
+    const d = detectes.find((x) => x.cle === sel.value);
+    const relevees = (d && d.valeurs) || [];
+    /* Les valeurs déjà retenues restent proposées même si le relevé ne les
+       connaît pas : saisies à la main, ou relevées avant que la
+       synchronisation ne garde les valeurs distinctes. Les effacer d'un
+       affichage reviendrait à les effacer tout court. */
+    const offertes = [...relevees];
+    retenues.forEach((v) => { if (offertes.indexOf(v) < 0) offertes.push(v); });
+
     const dit = document.createElement("span");
     dit.className = "mini";
     zoneValeurs.appendChild(dit);
     const rappel = () => {
       dit.textContent = retenues.length
         ? "vaut oui quand la valeur est :"
-        : "aucune valeur retenue : rien ne sera signalé";
+        : offertes.length
+          ? "aucune valeur retenue : rien ne sera signalé"
+          : "valeurs inconnues : la prochaine synchronisation les relèvera, " +
+            "ou saisissez-en une ici";
       dit.dataset.genre = retenues.length ? "" : "manque";
     };
     rappel();
 
-    offertes.forEach((v) => {
+    const puce = (v) => {
       const l = document.createElement("label");
       l.className = "puce";
       l.innerHTML = '<input type="checkbox"><span></span>';
@@ -1655,7 +1668,39 @@ function champOrigine(src, cible, apres, ouiNon) {
         rappel();
       };
       zoneValeurs.appendChild(l);
-    });
+      return l;
+    };
+    offertes.forEach(puce);
+
+    /* De quoi désigner une valeur que le relevé ignore. Il n'en a pas toujours
+       une liste : un salon synchronisé avant que la synchronisation ne les
+       garde n'en a aucune, et un champ de texte libre non plus. Attendre le
+       prochain passage pour régler la fiche serait une attente de trop. */
+    const ajout = document.createElement("input");
+    ajout.type = "text";
+    ajout.className = "ajout-valeur";
+    ajout.placeholder = "autre valeur…";
+    ajout.spellcheck = false;
+    ajout.onkeydown = (ev) => {
+      if (ev.key !== "Enter") return;
+      ev.preventDefault();
+      const v = ajout.value.trim();
+      if (!v || retenues.indexOf(v) >= 0 || offertes.indexOf(v) >= 0) {
+        ajout.value = "";
+        return;
+      }
+      retenues.push(v);
+      offertes.push(v);
+      const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
+      valeurs[cible] = [...retenues];
+      enregistre({ valeurs });
+      ajout.value = "";
+      const l = puce(v);
+      l.querySelector("input").checked = true;
+      zoneValeurs.appendChild(ajout);
+      rappel();
+    };
+    zoneValeurs.appendChild(ajout);
   }
   majValeurs();
 
