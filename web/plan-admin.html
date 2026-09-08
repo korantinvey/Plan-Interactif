@@ -1415,13 +1415,19 @@ function libelles(){
   for (const s of p.stands){
     const sel = s.id === state.sel;
     if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
-    if (!s.code && !s.nom) continue;
+    /* Un stand porte le nom de son titulaire : c'est lui qui le loue. Mais
+       tant qu'on lit la fiche d'une société hébergée, c'est son nom que la
+       forme doit porter — sinon on cherche « Netto », on ouvre sa fiche, et le
+       seul stand allumé de tout le plan en nomme un autre. */
+    const regardee = sel && state.selSoc >= 0 && (s.coex || [])[state.selSoc];
+    const titre = (regardee && regardee.nom) || s.nom;
+    if (!s.code && !titre) continue;
     const ps = place(s), as = ancre(s);
     const w = ps[0], h = ps[1];
 
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+    const nom = titre ? habille(titre, w * .9, h * .62, 2.4, P_NOM) : null;
     const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+    const maxCode = titre ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
     const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
     const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
     if (!codeLisible && !nomLisible) continue;
@@ -1938,8 +1944,9 @@ function choisitExposant(o, rect, canal){
       b.appendChild(n); b.appendChild(r);
       b.onclick = () => {
         fermeModale();
-        // la liste marque la société ouverte, d'où qu'on l'ait choisie
-        state.selSoc = x.i; liste();
+        // la liste marque la société ouverte et la forme la nomme, d'où
+        // qu'on l'ait choisie
+        state.selSoc = x.i; liste(); libelles();
         ouvre(o, rect, canal, x.i);
       };
       li.appendChild(b);

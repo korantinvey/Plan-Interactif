@@ -172,6 +172,11 @@ c'est le seul endroit où une enseigne répond pour une autre, et il le faut bie
 c'est là qu'on va. Hors recherche, la liste reste le sommaire des emplacements
 du pavillon, pour que son compte soit celui qu'annonce l'en-tête.
 
+Le stand allumé porte alors le nom de la société qu'on regarde, et non celui
+de son titulaire : c'est le seul stand nommé du plan à ce moment-là, et le voir
+appeler « Hippopotamus » quand la fiche dit « Burger King » ne se comprenait
+pas. Il reprend le nom de son titulaire dès qu'on referme.
+
 **Le programme reste au titulaire.** Le graphe rattache une conférence par le
 dossier de qui la tient, et le dossier d'un co-exposant ne correspond à aucun
 stand : la synchronisation ne sait pas lui attribuer de conférence, et la fiche
