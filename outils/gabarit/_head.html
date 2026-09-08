@@ -124,7 +124,13 @@ button{cursor:pointer;background:none;border:none}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 .stage{position:relative;overflow:hidden;background:var(--ground)}
-.stage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
+   imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
+   — la pastille se voyait, son glyphe partait hors du cadre, et le repère
+   n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
+   de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
+   donc que la règle ne le touche pas. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -169,7 +175,7 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
 
 /* le contour de focus par défaut dessine un gros rectangle noir autour du
    groupe SVG : on le remplace par un renforcement du tracé du stand */
-.stage svg{-webkit-tap-highlight-color:transparent}
+.stage > svg{-webkit-tap-highlight-color:transparent}
 .stand:focus,.zone:focus{outline:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -272,9 +278,6 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 #repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-/* même raison : le pictogramme posé sur le plan tient ses dimensions de ses
-   attributs, que « .stage svg » écraserait */
-.dcal svg.glyphe{width:auto;height:auto}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
 .elemTete{display:flex;align-items:center;justify-content:space-between}

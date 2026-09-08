@@ -230,7 +230,7 @@ function obstaclesPmr(p){
     if (c.visible === false) continue;
     for (const f of c.formes || []){
       if (f.t !== "repere") continue;
-      const pic = f.picto || pictoDe(f.txt);
+      const pic = pictoForme(f);
       if (pic !== "escalier" && pic !== "escalator") continue;
       const cote = (f.taille || 2) * 2.4;
       const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
@@ -745,12 +745,10 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort. */
+/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
+ *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
 function portesDe(p){
-  return reperesDe(p).filter(f => {
-    const pic = f.picto || pictoDe(f.txt);
-    return pic === "entree" || pic === "sortie";
-  });
+  return reperesDe(p).filter(f => pictoForme(f) === "entree");
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */

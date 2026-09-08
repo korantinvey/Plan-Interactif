@@ -199,12 +199,16 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   l'extérieur. À défaut de mieux, la marche est bornée à l'enveloppe convexe
   des emplacements, dont les stands du pourtour dessinent le bord.
 - **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
-  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à une
-  sortie repérée, puis celui d'une entrée repérée jusqu'à l'arrivée — et le
-  visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés qui, eux, sont
-  exacts. La distance annoncée est celle des tronçons, et l'affichage le dit
-  (« au moins 165 m »). Sans repère « Entrée » ou « Sortie » sur le plan, cette
-  partie n'est pas tracée, et le tiroir l'explique plutôt que d'inventer.
+  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à la
+  porte la plus proche, puis celui d'une porte du pavillon suivant jusqu'à
+  l'arrivée — et le visiteur lit « rejoignez le pavillon 7.2 » entre deux
+  tracés qui, eux, sont exacts. La distance annoncée est celle des tronçons, et
+  l'affichage le dit (« au moins 165 m »). Sans repère « Entrée/Sortie » sur le
+  plan, cette partie n'est pas tracée, et le tiroir l'explique plutôt que
+  d'inventer. Entrée et sortie ne font qu'un repère : on entre et on sort par
+  la même porte, et le trajet l'emprunte dans les deux sens. Les plans posés
+  avant cette fusion n'ont rien à reprendre — l'ancien pictogramme « Sortie »
+  se range sous le nouveau.
 
 ### Ce qui n'est pas praticable
 
@@ -287,19 +291,34 @@ sur le plan, chaque pastille portant le rang de l'arrêt.
 
 Trois questions au plus, et deux ne se posent que si elles ont lieu d'être : le
 jour, quand le salon en compte plusieurs ; le point d'entrée, quand l'exploitant
-a posé des repères — « Peu importe » reste offert, la journée commence alors au
-premier stand. L'option « Itinéraire accessible » du tiroir voisin vaut ici
-aussi : elle change les allures autant que les chemins.
+a posé des repères de porte — « Peu importe » reste offert, la journée commence
+alors au premier stand. La liste des départs ne montre que les portes : un
+escalier ou des sanitaires ne sont pas des endroits par lesquels on commence sa
+journée, et les proposer repoussait les entrées hors de l'écran. Un hall qui a
+plusieurs portes du même nom les voit numérotées, faute de mieux — les renommer
+« Entrée Nord » reste le vrai remède. L'option « Itinéraire accessible » du
+tiroir voisin vaut ici aussi : elle change les allures autant que les chemins.
 
 Le calcul est celui d'un voyageur de commerce avec des rendez-vous. L'ordre
 exact demanderait d'essayer toutes les permutations — vingt stands en font deux
 milliards de milliards — on construit donc au plus juste, en insérant à chaque
-tour le stand qui coûte le moins de mètres là où il tient dans le temps
-disponible, puis on reprend l'ensemble par deux mouvements : retourner un
-morceau de créneau, déplacer un arrêt ailleurs. Les distances entre arrêts ne
-viennent pas d'un A\* par paire — vingt arrêts en font quatre cents — mais d'un
-balayage en largeur par arrêt, qui donne d'un coup la longueur d'allée vers
-tous les autres ; le trait montré, lui, reste celui du calcul d'itinéraire.
+tour le stand qui coûte le moins là où il tient, puis on reprend l'ensemble par
+deux mouvements : retourner un morceau de créneau, déplacer un arrêt ailleurs.
+Les distances entre arrêts ne viennent pas d'un A\* par paire — vingt arrêts en
+font quatre cents — mais d'un balayage en largeur par arrêt, qui donne d'un
+coup la longueur d'allée vers tous les autres ; le trait montré, lui, reste
+celui du calcul d'itinéraire.
+
+**Ce que « coûter » veut dire compte autant que l'algorithme.** Ne compter que
+les mètres produit un programme absurde : un créneau qui bute sur une
+conférence dure ce qu'il dure, qu'on le remplisse ou non, si bien qu'y glisser
+un stand ne coûtait pas moins qu'ailleurs — et tout s'entassait après la
+dernière conférence, laissant deux heures trente-neuf à patienter devant une
+salle. Le temps mort se compte donc comme la marche : **une minute d'attente
+coûte ce qu'on aurait parcouru en marchant une minute**. Remplir un creux
+devient franchement rentable — vingt minutes de visite effacent vingt minutes
+d'attente, ce qu'aucun détour raisonnable ne compense — et quand il n'y a plus
+de creux, le coût redevient la seule distance.
 
 Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
 avant l'arrivée, une autre retenue un autre jour, une salle rattachée à aucune

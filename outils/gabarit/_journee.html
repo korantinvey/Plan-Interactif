@@ -94,16 +94,31 @@ function pointConf(c){
   return z ? pointObjet(z) : null;
 }
 
-/** Les départs qu'on propose : les repères du salon, les entrées en tête —
- *  c'est par là qu'on arrive, et c'est le seul endroit dont un visiteur sans
- *  géolocalisation est sûr. */
+/**
+ * Les départs qu'on propose : les portes, et rien d'autre.
+ *
+ * La liste offrait tous les repères du salon, entrées en tête. On y lisait
+ * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
+ * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
+ * sur un téléphone. La question posée est « par où vous entrez » : seules les
+ * portes y répondent.
+ *
+ * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
+ * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
+ * — reste le vrai remède, et il appartient à l'exploitant.
+ */
 function departsProposes(){
   const l = [];
-  DATA.plans.forEach(p => reperesDe(p).forEach(f => {
-    const pic = f.picto || pictoDe(f.txt);
-    l.push({ pt: pointRepere(f, p), entree: pic === "entree" ? 1 : 0 });
-  }));
-  l.sort((a, b) => b.entree - a.entree);
+  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  const vus = new Map();
+  l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
+  const rang = new Map();
+  l.forEach(pt => {
+    if (vus.get(pt.nom) < 2) return;
+    const n = (rang.get(pt.nom) || 0) + 1;
+    rang.set(pt.nom, n);
+    pt.nom = pt.nom + " " + n;
+  });
   return l.slice(0, 20);
 }
 
@@ -171,35 +186,64 @@ function matriceJournee(pts, pmr){
  * Le problème est celui du voyageur de commerce, avec des rendez-vous en
  * plus : l'ordre exact demanderait d'essayer toutes les permutations, et
  * vingt stands en font deux milliards de milliards. On construit donc au plus
- * juste — à chaque tour, le stand dont l'insertion coûte le moins de mètres,
- * là où elle tient dans le temps disponible — puis on reprend l'ensemble par
- * deux mouvements qui rattrapent l'essentiel : retourner un morceau de
- * créneau, et déplacer un arrêt ailleurs.
+ * juste — à chaque tour, le stand dont l'insertion coûte le moins, là où elle
+ * tient — puis on reprend l'ensemble par deux mouvements qui rattrapent
+ * l'essentiel : retourner un morceau de créneau, et déplacer un arrêt
+ * ailleurs.
+ *
+ * Reste à dire ce que « coûter » veut dire, et c'est là que la première
+ * version se trompait. Elle ne comptait que les mètres. Or un créneau qui se
+ * termine sur une conférence dure ce qu'il dure, qu'on le remplisse ou non :
+ * y glisser un stand ne coûtait donc rien de plus qu'ailleurs en distance, et
+ * le calcul les entassait après la dernière conférence, où chaque insertion
+ * se payait au plus court. Le visiteur se retrouvait avec deux heures
+ * trente-neuf à patienter devant une salle, et six stands à voir ensuite.
+ *
+ * On compte donc le temps mort comme on compte la marche : une minute passée
+ * à attendre coûte ce qu'on aurait parcouru en marchant une minute. Remplir
+ * un creux devient alors franchement rentable — vingt minutes de visite
+ * effacent vingt minutes d'attente, ce qu'aucun détour raisonnable ne compense
+ * — et quand il n'y a plus de creux à combler, le coût redevient la seule
+ * distance et l'ordre se resserre comme avant.
  *
  * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
  * liste courte et vraie qu'un programme intenable.
  */
-function rangeJournee(creneaux, restants, dist, tempsCreneau){
+function rangeJournee(creneaux, restants, dist, tempsCreneau, poidsAttente){
   const distanceCreneau = (c) => {
     let m = 0, prec = c.de;
     for (const s of c.stands){ m += dist(prec, s); prec = s; }
     return m + dist(prec, c.vers);
   };
-  const tient = (c) => c.tMax === null || c.t0 + tempsCreneau(c, distanceCreneau(c)) <= c.tMax;
+
+  /**
+   * Ce qu'un créneau coûte, marche et attente confondues, en mètres.
+   *
+   * Le dernier créneau n'a pas de fin : on n'y attend pas, il ne coûte que
+   * ses mètres. Les autres butent sur une conférence, et ce qu'ils ne
+   * remplissent pas se passe à patienter. Un créneau qui déborde vaut
+   * l'infini plutôt qu'un refus à part : un rendez-vous manqué n'est pas un
+   * arrangement cher, c'en est un impossible.
+   */
+  const coutCreneau = (c) => {
+    const m = distanceCreneau(c);
+    if (c.tMax === null) return m;
+    const creux = c.tMax - c.t0 - tempsCreneau(c, m);
+    return creux < 0 ? Infinity : m + poidsAttente * creux;
+  };
 
   while (restants.length){
     let choix = null;
-    for (const s of restants){
-      for (const c of creneaux){
+    for (const c of creneaux){
+      const base = coutCreneau(c);
+      // un créneau déjà intenable ne se répare pas en le chargeant davantage
+      if (!isFinite(base)) continue;
+      for (const s of restants){
         for (let k = 0; k <= c.stands.length; k++){
-          const avant = k === 0 ? c.de : c.stands[k - 1];
-          const apres = k === c.stands.length ? c.vers : c.stands[k];
-          const cout = dist(avant, s) + dist(s, apres) - dist(avant, apres);
-          if (choix && cout >= choix.cout) continue;
           c.stands.splice(k, 0, s);
-          const ok = tient(c);
+          const cout = coutCreneau(c) - base;
           c.stands.splice(k, 1);
-          if (ok) choix = { cout: cout, c: c, k: k, s: s };
+          if (isFinite(cout) && (!choix || cout < choix.cout)) choix = { cout: cout, c: c, k: k, s: s };
         }
       }
     }
@@ -208,26 +252,19 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau){
     restants.splice(restants.indexOf(choix.s), 1);
   }
 
-  /* Les deux reprises. Chaque mouvement se juge sur ses seules arêtes — la
-     longueur entière du créneau n'a pas à être refaite — et n'est retenu que
-     s'il fait gagner du chemin sans faire perdre un rendez-vous. */
-  const bord = (c, k) => k === 0 ? c.de : c.stands[k - 1];
-  const suite = (c, k) => k >= c.stands.length ? c.vers : c.stands[k];
-
+  /* Les deux reprises. Chacune se juge sur le coût entier des créneaux
+     touchés, et non sur les seules arêtes déplacées : c'est l'attente qui
+     l'impose, elle ne se lit pas sur une arête. */
   for (let tour = 0; tour < 30; tour++){
     let gagne = false;
 
     for (const c of creneaux){
-      for (let i = 0; i < c.stands.length; i++){
+      for (let i = 0; i < c.stands.length - 1; i++){
         for (let j = i + 1; j < c.stands.length; j++){
-          const a = bord(c, i), b = suite(c, j + 1);
-          const gain = dist(a, c.stands[i]) + dist(c.stands[j], b) -
-                       dist(a, c.stands[j]) - dist(c.stands[i], b);
-          if (gain <= 1e-9) continue;
+          const avant = coutCreneau(c);
           const copie = c.stands.slice();
-          const morceau = c.stands.slice(i, j + 1).reverse();
-          c.stands.splice(i, j - i + 1, ...morceau);
-          if (tient(c)) gagne = true; else c.stands = copie;
+          c.stands.splice(i, j - i + 1, ...c.stands.slice(i, j + 1).reverse());
+          if (coutCreneau(c) < avant - 1e-9) gagne = true; else c.stands = copie;
         }
       }
     }
@@ -235,19 +272,20 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau){
     for (const c of creneaux){
       for (let i = 0; i < c.stands.length; i++){
         const s = c.stands[i];
-        const retrait = dist(bord(c, i), s) + dist(s, suite(c, i + 1)) -
-                        dist(bord(c, i), suite(c, i + 1));
+        /* Un déplacement ne touche que deux créneaux — celui qu'on quitte et
+           celui qu'on rejoint : les autres n'ont pas à être recomptés. */
+        const avantC = coutCreneau(c);
         c.stands.splice(i, 1);
+        const apresC = coutCreneau(c);
         let mieux = null;
         for (const d of creneaux){
+          const avant = d === c ? avantC : avantC + coutCreneau(d);
           for (let k = 0; k <= d.stands.length; k++){
-            const pose = dist(bord(d, k), s) + dist(s, suite(d, k)) -
-                         dist(bord(d, k), suite(d, k));
-            if (pose >= retrait - 1e-9 || (mieux && pose >= mieux.pose)) continue;
             d.stands.splice(k, 0, s);
-            const ok = tient(d);
+            const t = d === c ? coutCreneau(d) : coutCreneau(d) + apresC;
             d.stands.splice(k, 1);
-            if (ok) mieux = { pose: pose, d: d, k: k };
+            if (t < avant - 1e-9 && (!mieux || t - avant < mieux.gain))
+              mieux = { gain: t - avant, d: d, k: k };
           }
         }
         if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
@@ -321,8 +359,11 @@ function calculeJournee(choix){
   });
   creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
 
+  /* Ce qu'une minute d'attente coûte, en mètres : ce qu'on aurait parcouru en
+     marchant pendant ce temps. Le visiteur n'est pas venu pour patienter, et
+     un creux devant une salle ne vaut pas mieux qu'un détour de même durée. */
   const restants = iStands.slice();
-  rangeJournee(creneaux, restants, dist, tempsCreneau);
+  rangeJournee(creneaux, restants, dist, tempsCreneau, allure * 60);
 
   /* L'ordre est arrêté : on le déroule en heures et en tronçons. Les mètres
      annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
@@ -665,11 +706,13 @@ function ouvreOrganisation(){
       vide.value = "";
       vide.textContent = "Peu importe";
       champDepart.appendChild(vide);
-      departs.forEach((d, i) => {
+      departs.forEach((pt, i) => {
         const o = document.createElement("option");
         o.value = String(i);
-        o.textContent = d.pt.nom + " — " + d.pt.detail;
-        if (i === 0 && d.entree) o.selected = true;
+        // le pavillon en second, et seulement s'il y en a plusieurs : sur un
+        // salon d'un seul hall, il répétait son nom à chaque ligne
+        o.textContent = pt.nom + (DATA.plans.length > 1 ? " — " + pt.detail : "");
+        if (i === 0) o.selected = true;
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
@@ -689,7 +732,7 @@ function ouvreOrganisation(){
       const id = champDepart ? champDepart.value : "";
       lanceJournee({
         arrivee: min, jour: cle, jourNom: j ? j.nom : "",
-        depart: id === "" ? null : departs[+id].pt,
+        depart: id === "" ? null : departs[+id],
       });
     } },
   ]);

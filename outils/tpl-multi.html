@@ -124,7 +124,13 @@ button{cursor:pointer;background:none;border:none}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 .stage{position:relative;overflow:hidden;background:var(--ground)}
-.stage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
+   imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
+   — la pastille se voyait, son glyphe partait hors du cadre, et le repère
+   n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
+   de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
+   donc que la règle ne le touche pas. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -169,7 +175,7 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
 
 /* le contour de focus par défaut dessine un gros rectangle noir autour du
    groupe SVG : on le remplace par un renforcement du tracé du stand */
-.stage svg{-webkit-tap-highlight-color:transparent}
+.stage > svg{-webkit-tap-highlight-color:transparent}
 .stand:focus,.zone:focus{outline:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -272,9 +278,6 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 #repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-/* même raison : le pictogramme posé sur le plan tient ses dimensions de ses
-   attributs, que « .stage svg » écraserait */
-.dcal svg.glyphe{width:auto;height:auto}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
@@ -3131,8 +3134,10 @@ function ajouteForme(f){
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
-  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
-  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
+  /* Une porte de hall n'est ni une entrée ni une sortie : c'est les deux,
+     et le visiteur qui la cherche cherche par où passer. Le battant de
+     Material reçoit donc une double flèche à la place de la sienne. */
+  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
   accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
   info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
   restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
@@ -3158,8 +3163,10 @@ const PICTO_MOTS = {
   "entree": "entree",
   "accès": "entree",
   "acces": "entree",
-  "sortie": "sortie",
-  "issue": "sortie",
+  "sortie": "entree",
+  "issue": "entree",
+  "entrée/sortie": "entree",
+  "entree/sortie": "entree",
   "accueil": "accueil",
   "réception": "accueil",
   "reception": "accueil",
@@ -3199,11 +3206,27 @@ const PICTO_MOTS = {
 /** Le pictogramme correspondant à un libellé, s'il en existe un. */
 const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || null;
 
+/**
+ * Le pictogramme d'un repère, quel que soit son âge.
+ *
+ * « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en
+ * font plus qu'un, parce qu'une porte de hall est les deux à la fois — on y
+ * entre le matin et on en sort le soir, et le trajet l'emprunte dans les deux
+ * sens. Les repères déjà posés sous l'ancien nom se rangent sous le nouveau :
+ * rien à reprendre sur les plans en service, et un dessin publié avant ce
+ * jour continue de s'afficher comme il le faisait.
+ */
+const PICTO_ALIAS = { sortie: "entree" };
+function pictoForme(f){
+  const p = f.picto || pictoDe(f.txt);
+  return PICTO_ALIAS[p] || p;
+}
+
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
 
-const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
+const REPERES = ["WC", "Entrée/Sortie", "Accueil", "Information",
                  "Restauration", "Café", "Vestiaire", "Ascenseur", "Escalier",
                  "Escalator", "Secours", "PMR", "Parking", "Distributeur",
                  "Salle de réunion"];
@@ -3224,7 +3247,7 @@ function traceRepere(f){
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[f.picto || pictoDe(f.txt)];
+  const g = PICTOS[pictoForme(f)];
   if (g){
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
     const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
@@ -3264,7 +3287,7 @@ function cartouchePoi(){
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
       const cle = f.txt.trim();
-      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: f.picto || pictoDe(cle) });
+      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: pictoForme(f) });
       parNom.get(cle).n++;
     }
   }
@@ -4932,7 +4955,7 @@ function obstaclesPmr(p){
     if (c.visible === false) continue;
     for (const f of c.formes || []){
       if (f.t !== "repere") continue;
-      const pic = f.picto || pictoDe(f.txt);
+      const pic = pictoForme(f);
       if (pic !== "escalier" && pic !== "escalator") continue;
       const cote = (f.taille || 2) * 2.4;
       const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
@@ -5447,12 +5470,10 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort. */
+/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
+ *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
 function portesDe(p){
-  return reperesDe(p).filter(f => {
-    const pic = f.picto || pictoDe(f.txt);
-    return pic === "entree" || pic === "sortie";
-  });
+  return reperesDe(p).filter(f => pictoForme(f) === "entree");
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
@@ -6144,16 +6165,31 @@ function pointConf(c){
   return z ? pointObjet(z) : null;
 }
 
-/** Les départs qu'on propose : les repères du salon, les entrées en tête —
- *  c'est par là qu'on arrive, et c'est le seul endroit dont un visiteur sans
- *  géolocalisation est sûr. */
+/**
+ * Les départs qu'on propose : les portes, et rien d'autre.
+ *
+ * La liste offrait tous les repères du salon, entrées en tête. On y lisait
+ * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
+ * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
+ * sur un téléphone. La question posée est « par où vous entrez » : seules les
+ * portes y répondent.
+ *
+ * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
+ * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
+ * — reste le vrai remède, et il appartient à l'exploitant.
+ */
 function departsProposes(){
   const l = [];
-  DATA.plans.forEach(p => reperesDe(p).forEach(f => {
-    const pic = f.picto || pictoDe(f.txt);
-    l.push({ pt: pointRepere(f, p), entree: pic === "entree" ? 1 : 0 });
-  }));
-  l.sort((a, b) => b.entree - a.entree);
+  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  const vus = new Map();
+  l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
+  const rang = new Map();
+  l.forEach(pt => {
+    if (vus.get(pt.nom) < 2) return;
+    const n = (rang.get(pt.nom) || 0) + 1;
+    rang.set(pt.nom, n);
+    pt.nom = pt.nom + " " + n;
+  });
   return l.slice(0, 20);
 }
 
@@ -6221,35 +6257,64 @@ function matriceJournee(pts, pmr){
  * Le problème est celui du voyageur de commerce, avec des rendez-vous en
  * plus : l'ordre exact demanderait d'essayer toutes les permutations, et
  * vingt stands en font deux milliards de milliards. On construit donc au plus
- * juste — à chaque tour, le stand dont l'insertion coûte le moins de mètres,
- * là où elle tient dans le temps disponible — puis on reprend l'ensemble par
- * deux mouvements qui rattrapent l'essentiel : retourner un morceau de
- * créneau, et déplacer un arrêt ailleurs.
+ * juste — à chaque tour, le stand dont l'insertion coûte le moins, là où elle
+ * tient — puis on reprend l'ensemble par deux mouvements qui rattrapent
+ * l'essentiel : retourner un morceau de créneau, et déplacer un arrêt
+ * ailleurs.
+ *
+ * Reste à dire ce que « coûter » veut dire, et c'est là que la première
+ * version se trompait. Elle ne comptait que les mètres. Or un créneau qui se
+ * termine sur une conférence dure ce qu'il dure, qu'on le remplisse ou non :
+ * y glisser un stand ne coûtait donc rien de plus qu'ailleurs en distance, et
+ * le calcul les entassait après la dernière conférence, où chaque insertion
+ * se payait au plus court. Le visiteur se retrouvait avec deux heures
+ * trente-neuf à patienter devant une salle, et six stands à voir ensuite.
+ *
+ * On compte donc le temps mort comme on compte la marche : une minute passée
+ * à attendre coûte ce qu'on aurait parcouru en marchant une minute. Remplir
+ * un creux devient alors franchement rentable — vingt minutes de visite
+ * effacent vingt minutes d'attente, ce qu'aucun détour raisonnable ne compense
+ * — et quand il n'y a plus de creux à combler, le coût redevient la seule
+ * distance et l'ordre se resserre comme avant.
  *
  * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
  * liste courte et vraie qu'un programme intenable.
  */
-function rangeJournee(creneaux, restants, dist, tempsCreneau){
+function rangeJournee(creneaux, restants, dist, tempsCreneau, poidsAttente){
   const distanceCreneau = (c) => {
     let m = 0, prec = c.de;
     for (const s of c.stands){ m += dist(prec, s); prec = s; }
     return m + dist(prec, c.vers);
   };
-  const tient = (c) => c.tMax === null || c.t0 + tempsCreneau(c, distanceCreneau(c)) <= c.tMax;
+
+  /**
+   * Ce qu'un créneau coûte, marche et attente confondues, en mètres.
+   *
+   * Le dernier créneau n'a pas de fin : on n'y attend pas, il ne coûte que
+   * ses mètres. Les autres butent sur une conférence, et ce qu'ils ne
+   * remplissent pas se passe à patienter. Un créneau qui déborde vaut
+   * l'infini plutôt qu'un refus à part : un rendez-vous manqué n'est pas un
+   * arrangement cher, c'en est un impossible.
+   */
+  const coutCreneau = (c) => {
+    const m = distanceCreneau(c);
+    if (c.tMax === null) return m;
+    const creux = c.tMax - c.t0 - tempsCreneau(c, m);
+    return creux < 0 ? Infinity : m + poidsAttente * creux;
+  };
 
   while (restants.length){
     let choix = null;
-    for (const s of restants){
-      for (const c of creneaux){
+    for (const c of creneaux){
+      const base = coutCreneau(c);
+      // un créneau déjà intenable ne se répare pas en le chargeant davantage
+      if (!isFinite(base)) continue;
+      for (const s of restants){
         for (let k = 0; k <= c.stands.length; k++){
-          const avant = k === 0 ? c.de : c.stands[k - 1];
-          const apres = k === c.stands.length ? c.vers : c.stands[k];
-          const cout = dist(avant, s) + dist(s, apres) - dist(avant, apres);
-          if (choix && cout >= choix.cout) continue;
           c.stands.splice(k, 0, s);
-          const ok = tient(c);
+          const cout = coutCreneau(c) - base;
           c.stands.splice(k, 1);
-          if (ok) choix = { cout: cout, c: c, k: k, s: s };
+          if (isFinite(cout) && (!choix || cout < choix.cout)) choix = { cout: cout, c: c, k: k, s: s };
         }
       }
     }
@@ -6258,26 +6323,19 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau){
     restants.splice(restants.indexOf(choix.s), 1);
   }
 
-  /* Les deux reprises. Chaque mouvement se juge sur ses seules arêtes — la
-     longueur entière du créneau n'a pas à être refaite — et n'est retenu que
-     s'il fait gagner du chemin sans faire perdre un rendez-vous. */
-  const bord = (c, k) => k === 0 ? c.de : c.stands[k - 1];
-  const suite = (c, k) => k >= c.stands.length ? c.vers : c.stands[k];
-
+  /* Les deux reprises. Chacune se juge sur le coût entier des créneaux
+     touchés, et non sur les seules arêtes déplacées : c'est l'attente qui
+     l'impose, elle ne se lit pas sur une arête. */
   for (let tour = 0; tour < 30; tour++){
     let gagne = false;
 
     for (const c of creneaux){
-      for (let i = 0; i < c.stands.length; i++){
+      for (let i = 0; i < c.stands.length - 1; i++){
         for (let j = i + 1; j < c.stands.length; j++){
-          const a = bord(c, i), b = suite(c, j + 1);
-          const gain = dist(a, c.stands[i]) + dist(c.stands[j], b) -
-                       dist(a, c.stands[j]) - dist(c.stands[i], b);
-          if (gain <= 1e-9) continue;
+          const avant = coutCreneau(c);
           const copie = c.stands.slice();
-          const morceau = c.stands.slice(i, j + 1).reverse();
-          c.stands.splice(i, j - i + 1, ...morceau);
-          if (tient(c)) gagne = true; else c.stands = copie;
+          c.stands.splice(i, j - i + 1, ...c.stands.slice(i, j + 1).reverse());
+          if (coutCreneau(c) < avant - 1e-9) gagne = true; else c.stands = copie;
         }
       }
     }
@@ -6285,19 +6343,20 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau){
     for (const c of creneaux){
       for (let i = 0; i < c.stands.length; i++){
         const s = c.stands[i];
-        const retrait = dist(bord(c, i), s) + dist(s, suite(c, i + 1)) -
-                        dist(bord(c, i), suite(c, i + 1));
+        /* Un déplacement ne touche que deux créneaux — celui qu'on quitte et
+           celui qu'on rejoint : les autres n'ont pas à être recomptés. */
+        const avantC = coutCreneau(c);
         c.stands.splice(i, 1);
+        const apresC = coutCreneau(c);
         let mieux = null;
         for (const d of creneaux){
+          const avant = d === c ? avantC : avantC + coutCreneau(d);
           for (let k = 0; k <= d.stands.length; k++){
-            const pose = dist(bord(d, k), s) + dist(s, suite(d, k)) -
-                         dist(bord(d, k), suite(d, k));
-            if (pose >= retrait - 1e-9 || (mieux && pose >= mieux.pose)) continue;
             d.stands.splice(k, 0, s);
-            const ok = tient(d);
+            const t = d === c ? coutCreneau(d) : coutCreneau(d) + apresC;
             d.stands.splice(k, 1);
-            if (ok) mieux = { pose: pose, d: d, k: k };
+            if (t < avant - 1e-9 && (!mieux || t - avant < mieux.gain))
+              mieux = { gain: t - avant, d: d, k: k };
           }
         }
         if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
@@ -6371,8 +6430,11 @@ function calculeJournee(choix){
   });
   creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
 
+  /* Ce qu'une minute d'attente coûte, en mètres : ce qu'on aurait parcouru en
+     marchant pendant ce temps. Le visiteur n'est pas venu pour patienter, et
+     un creux devant une salle ne vaut pas mieux qu'un détour de même durée. */
   const restants = iStands.slice();
-  rangeJournee(creneaux, restants, dist, tempsCreneau);
+  rangeJournee(creneaux, restants, dist, tempsCreneau, allure * 60);
 
   /* L'ordre est arrêté : on le déroule en heures et en tronçons. Les mètres
      annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
@@ -6715,11 +6777,13 @@ function ouvreOrganisation(){
       vide.value = "";
       vide.textContent = "Peu importe";
       champDepart.appendChild(vide);
-      departs.forEach((d, i) => {
+      departs.forEach((pt, i) => {
         const o = document.createElement("option");
         o.value = String(i);
-        o.textContent = d.pt.nom + " — " + d.pt.detail;
-        if (i === 0 && d.entree) o.selected = true;
+        // le pavillon en second, et seulement s'il y en a plusieurs : sur un
+        // salon d'un seul hall, il répétait son nom à chaque ligne
+        o.textContent = pt.nom + (DATA.plans.length > 1 ? " — " + pt.detail : "");
+        if (i === 0) o.selected = true;
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
@@ -6739,7 +6803,7 @@ function ouvreOrganisation(){
       const id = champDepart ? champDepart.value : "";
       lanceJournee({
         arrivee: min, jour: cle, jourNom: j ? j.nom : "",
-        depart: id === "" ? null : departs[+id].pt,
+        depart: id === "" ? null : departs[+id],
       });
     } },
   ]);
