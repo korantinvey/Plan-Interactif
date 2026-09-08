@@ -174,7 +174,19 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
 #labels text.sel{fill:var(--accent);font-weight:700}
-.sans-lab-stand #labels text:not(.zn){display:none}
+/* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
+   la page, comme la pastille des nouveaux venus sur la fiche : c'est une
+   distinction, pas une alerte, et le plan a déjà le langage des zones. */
+#labels .coexPast{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;
+  vector-effect:non-scaling-stroke;pointer-events:none}
+/* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
+   fondait dans le fond. Elle prend alors celui de la page, et son trait la
+   tient. */
+#labels .coexPast.sel{fill:var(--surface)}
+#labels text.coexN{fill:var(--accent);font-weight:700}
+/* Le réglage qui masque les libellés de stand emporte la pastille : elle en
+   fait partie, et la laisser flotter seule ne se comprendrait pas. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
 .sans-lab-zone #labels text.zn{display:none}
 
 /* --- calques de dessin --- */
@@ -1316,6 +1328,40 @@ function lignesSvg(lignes, f, x, yCentre, cls){
     '" font-size="' + f.toFixed(2) + '">' + esc(t) + '</text>').join("");
 }
 
+/**
+ * La ligne du numéro de stand, et le compte des sociétés qu'il héberge.
+ *
+ * Un stand partagé garde le nom de son titulaire — c'est le sien, c'est lui
+ * qui loue l'emplacement — et une pastille dit combien d'autres l'y
+ * accompagnent : « +2 » sous « Airbnb » en annonce deux de plus, que la fiche
+ * nomme. Le nombre est celui des hébergés, pas le total : c'est ce que « + »
+ * veut dire partout ailleurs.
+ *
+ * Le couple reste centré sur l'ancre, la pastille poussant le numéro vers la
+ * gauche : déborder à droite mènerait sur la cloison du voisin. Faute de
+ * place, le numéro reste seul — une pastille hors du stand désignerait
+ * quelqu'un d'autre.
+ */
+function ligneCode(s, xc, yBase, f, wMax, cls){
+  const texte = (x, c, txt) =>
+    '<text class="' + c + '" x="' + x.toFixed(2) + '" y="' + yBase.toFixed(2) +
+    '" font-size="' + f.toFixed(2) + '">' + esc(txt) + '</text>';
+  const n = (s.coex || []).length;
+  const wCode = largeur(s.code, P_CODE) * f;
+  const compte = "+" + n;
+  const marge = f * .34, ecart = f * .42;
+  const wPast = largeur(compte, P_CODE) * f + marge * 2;
+  if (!n || wCode + ecart + wPast > wMax) return texte(xc, cls, s.code);
+  const g = xc - (wCode + ecart + wPast) / 2;
+  const xp = g + wCode + ecart, hp = f * 1.16;
+  return texte(g + wCode / 2, cls, s.code) +
+    '<rect class="coexPast' + (cls ? " " + cls : "") + '" x="' + xp.toFixed(2) +
+    '" y="' + (yBase - f * .84).toFixed(2) +
+    '" width="' + wPast.toFixed(2) + '" height="' + hp.toFixed(2) +
+    '" rx="' + (hp / 2).toFixed(2) + '"/>' +
+    texte(xp + wPast / 2, "coexN", compte);
+}
+
 /* ============================================================
    3. Rendu du pavillon courant
    ============================================================ */
@@ -1410,19 +1456,16 @@ function libelles(){
   for (const s of p.stands){
     const sel = s.id === state.sel;
     if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
-    /* Un stand porte le nom de son titulaire : c'est lui qui le loue. Mais
-       tant qu'on lit la fiche d'une société hébergée, c'est son nom que la
-       forme doit porter — sinon on cherche « Netto », on ouvre sa fiche, et le
-       seul stand allumé de tout le plan en nomme un autre. */
-    const regardee = sel && state.selSoc >= 0 && (s.coex || [])[state.selSoc];
-    const titre = (regardee && regardee.nom) || s.nom;
-    if (!s.code && !titre) continue;
+    /* Le stand garde le nom de son titulaire, quelle que soit la fiche
+       ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
+       peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
+    if (!s.code && !s.nom) continue;
     const ps = place(s), as = ancre(s);
     const w = ps[0], h = ps[1];
 
-    const nom = titre ? habille(titre, w * .9, h * .62, 2.4, P_NOM) : null;
+    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
     const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = titre ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
     const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
     const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
     if (!codeLisible && !nomLisible) continue;
@@ -1433,8 +1476,7 @@ function libelles(){
     let y = as[1] - (hNom + hCode) / 2;
     if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
     if (codeLisible)
-      out += '<text class="' + c.trim() + '" x="' + as[0] + '" y="' + (y + fc * .92).toFixed(2) +
-             '" font-size="' + fc.toFixed(2) + '">' + esc(s.code) + '</text>';
+      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
   }
   l.innerHTML = out;
 }
@@ -1939,9 +1981,9 @@ function choisitExposant(o, rect, canal){
       b.appendChild(n); b.appendChild(r);
       b.onclick = () => {
         fermeModale();
-        // la liste marque la société ouverte et la forme la nomme, d'où
-        // qu'on l'ait choisie
-        state.selSoc = x.i; liste(); libelles();
+        // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
+        // plan, lui, ne bouge pas — il nomme le titulaire quoi qu'on lise
+        state.selSoc = x.i; liste();
         ouvre(o, rect, canal, x.i);
       };
       li.appendChild(b);

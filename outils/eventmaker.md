@@ -172,10 +172,13 @@ c'est le seul endroit où une enseigne répond pour une autre, et il le faut bie
 c'est là qu'on va. Hors recherche, la liste reste le sommaire des emplacements
 du pavillon, pour que son compte soit celui qu'annonce l'en-tête.
 
-Le stand allumé porte alors le nom de la société qu'on regarde, et non celui
-de son titulaire : c'est le seul stand nommé du plan à ce moment-là, et le voir
-appeler « Hippopotamus » quand la fiche dit « Burger King » ne se comprenait
-pas. Il reprend le nom de son titulaire dès qu'on referme.
+Sur le plan, le stand garde en toutes circonstances le nom de son titulaire —
+c'est lui qui loue l'emplacement, et c'est ce nom-là qui est peint sur la
+cloison — et porte à côté de son numéro une pastille « +2 » qui dit combien
+d'enseignes l'accompagnent. Le nombre est celui des hébergés, pas le total :
+c'est ce que « + » veut dire partout ailleurs. La pastille pousse le numéro vers
+la gauche pour que le couple reste centré, et s'efface quand la largeur du stand
+ne la porte pas — une pastille débordant sur la cloison désignerait le voisin.
 
 **Le programme reste au titulaire.** Le graphe rattache une conférence par le
 dossier de qui la tient, et le dossier d'un co-exposant ne correspond à aucun

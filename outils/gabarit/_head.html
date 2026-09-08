@@ -174,7 +174,19 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
 #labels text.sel{fill:var(--accent);font-weight:700}
-.sans-lab-stand #labels text:not(.zn){display:none}
+/* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
+   la page, comme la pastille des nouveaux venus sur la fiche : c'est une
+   distinction, pas une alerte, et le plan a déjà le langage des zones. */
+#labels .coexPast{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;
+  vector-effect:non-scaling-stroke;pointer-events:none}
+/* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
+   fondait dans le fond. Elle prend alors celui de la page, et son trait la
+   tient. */
+#labels .coexPast.sel{fill:var(--surface)}
+#labels text.coexN{fill:var(--accent);font-weight:700}
+/* Le réglage qui masque les libellés de stand emporte la pastille : elle en
+   fait partie, et la laisser flotter seule ne se comprendrait pas. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
 .sans-lab-zone #labels text.zn{display:none}
 
 /* --- calques de dessin --- */
