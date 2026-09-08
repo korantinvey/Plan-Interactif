@@ -163,6 +163,15 @@ les 7 086 fiches de FEP 2026 : **460 stands sur 460 au nom du bon titulaire**, e
 l'appel des 119 sont seuls sur leur numéro — des pavillons collectifs, où ils
 sont titulaires de plein droit.
 
+**La recherche les voit pour eux-mêmes.** Chaque société hébergée a son rang
+dans les résultats — « Burger King · Co-exposant · T150 » — et l'ouvrir mène
+droit à sa fiche. Un clic sur la forme du stand, lui, demande d'abord qui l'on
+vient voir : on y a désigné un emplacement, pas un nom. Le plan garde le stand
+allumé quand on cherche un hébergé, tout en portant le nom de son titulaire :
+c'est le seul endroit où une enseigne répond pour une autre, et il le faut bien,
+c'est là qu'on va. Hors recherche, la liste reste le sommaire des emplacements
+du pavillon, pour que son compte soit celui qu'annonce l'en-tête.
+
 **Le programme reste au titulaire.** Le graphe rattache une conférence par le
 dossier de qui la tient, et le dossier d'un co-exposant ne correspond à aucun
 stand : la synchronisation ne sait pas lui attribuer de conférence, et la fiche

@@ -47,6 +47,13 @@ body{margin:0;background:var(--ground);color:var(--ink);
 button,input,textarea{font:inherit;color:inherit}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
+/* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
+   nôtre l'emporte sur la feuille du navigateur, et l'élément reste peint. La
+   pastille « Nouvel exposant » paraissait ainsi sur toutes les fiches, la
+   condition qui la pilote n'ayant jamais eu le dernier mot. On tranche ici
+   plutôt qu'un sélecteur à la fois, comme il avait fallu le faire pour les
+   onglets. */
+[hidden]{display:none !important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}

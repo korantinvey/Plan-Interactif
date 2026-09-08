@@ -20,10 +20,19 @@ const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
+/* Les sociétés hébergées sur le stand d'un autre. Elles n'ont ni forme ni
+   identifiant — c'est le stand de leur hôte qu'on va voir — et ne peuvent donc
+   pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
+   recherche seule consulte. */
+let HEBERGES = [];
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
-   par objet, c'est la même chose en mille fois moins. */
-const state = { q: "", qn: "", sel: null, plan: 0 };
+   par objet, c'est la même chose en mille fois moins.
+
+   `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
+   titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
+   courants tous les rangs d'un même stand. */
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0 };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -66,6 +75,11 @@ function indexe(d){
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "")).toLowerCase();
+      /* Les enseignes que le stand héberge, à part : le plan doit rester
+         allumé quand on en cherche une, mais la liste ne doit pas répondre
+         « Hippopotamus » à qui a tapé « Burger King ». */
+      s.rechH = (s.coex || [])
+        .map(x => (x.nom || "") + " " + (x.plan || "")).join(" ").toLowerCase();
     });
   });
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
@@ -83,6 +97,15 @@ function indexe(d){
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
+     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
+     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+  HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
+    (s.coex || []).map((x, k) => ({
+      kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
+      nom: x.nom, plan: x.plan,
+      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "")).toLowerCase(),
+    }))));
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
      que là où l'on se trouve. L'index des conférences est donc global, comme
@@ -111,7 +134,8 @@ function indexe(d){
     ? "Administration — " : "") + nom;
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
-  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
+  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
+    HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
 }
@@ -255,7 +279,7 @@ function libelles(){
 
   for (const z of p.zones){
     const sel = z.id === state.sel;
-    if (!z.nom || (!sel && (!visible(z) || !dansVue(z)))) continue;
+    if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
     const pz = place(z), az = ancre(z);
     const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
@@ -264,7 +288,7 @@ function libelles(){
 
   for (const s of p.stands){
     const sel = s.id === state.sel;
-    if (!sel && (!visible(s) || !dansVue(s))) continue;
+    if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
     if (!s.code && !s.nom) continue;
     const ps = place(s), as = ancre(s);
     const w = ps[0], h = ps[1];
@@ -299,16 +323,28 @@ function libelles(){
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
    leur fiche et leur programme.
    ============================================================ */
+/** Ce que la liste retient : une société répond pour elle-même, jamais pour son voisin. */
 function visible(o){
   if (!state.qn) return true;
-  if (o.kind !== "stand") return false;
+  if (o.kind === "zone") return false;
   return (o.rech || "").includes(state.qn);
+}
+
+/**
+ * Ce que le plan garde allumé.
+ *
+ * Plus large que la liste, et il le faut : chercher un co-exposant doit
+ * éclairer le stand où l'on va le trouver, alors que ce stand porte le nom
+ * d'un autre. C'est le seul endroit où une enseigne répond pour son hôte.
+ */
+function visibleSurPlan(o){
+  return visible(o) || (!!state.qn && (o.rechH || "").includes(state.qn));
 }
 
 function appliqueFiltre(){
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visible(o));
+    g.classList.toggle("dim", !!o && !visibleSurPlan(o));
   });
   libelles(); liste();
 }
@@ -316,7 +352,10 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  const portee = q ? TOUS : P().stands;
+  /* Les sociétés hébergées ne rejoignent la liste que sur recherche. Hors
+     recherche, elle est le sommaire des emplacements du pavillon — et son
+     compte, celui qu'annonce l'en-tête. */
+  const portee = q ? TOUS.concat(HEBERGES) : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
@@ -326,20 +365,30 @@ function liste(){
     (q ? " · tous pavillons" : " · " + P().libelle);
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
-    const sous = o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    const heberge = o.kind === "coex";
+    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
+       autre. Dire son rôle à la place vaut mieux que lui prêter les mètres
+       carrés de son hôte. */
+    const sous = heberge ? "Co-exposant"
+      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
-    return '<button class="row" data-id="' + o.id +
-      '" aria-current="' + (state.sel === o.id) + '">' +
+    const rang = heberge ? o.i : -1;
+    return '<button class="row" data-id="' + o.id + '" data-soc="' + rang +
+      '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
-     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon. */
+     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
+
+     Un rang part avec l'identifiant, et la fiche s'ouvre droit sur la société
+     du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
+     serait une question dont on a déjà la réponse. */
   box.querySelectorAll(".row").forEach(b => b.onclick =
-    () => select(b.dataset.id, true, q ? "recherche" : "liste"));
+    () => select(b.dataset.id, true, q ? "recherche" : "liste", Number(b.dataset.soc)));
 }
 
 /* ============================================================
@@ -473,7 +522,13 @@ const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
    dessinée — c'est ce qui les sépare. */
 const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
 
-function select(id, recentrer, canal){
+/**
+ * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
+ * fiche demandera laquelle : c'est le cas d'un clic sur le plan, où l'on a
+ * désigné une forme et non un nom. La liste, elle, le passe — elle vient de
+ * nommer celle qu'on a choisie.
+ */
+function select(id, recentrer, canal, iSoc){
   const o = parId.get(id);
   if (!o) return;
   if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
@@ -481,10 +536,11 @@ function select(id, recentrer, canal){
   }
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;
+  state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal);
+  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
      sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
@@ -754,7 +810,12 @@ function choisitExposant(o, rect, canal){
       r.className = "role";
       r.textContent = x.role;
       b.appendChild(n); b.appendChild(r);
-      b.onclick = () => { fermeModale(); ouvre(o, rect, canal, x.i); };
+      b.onclick = () => {
+        fermeModale();
+        // la liste marque la société ouverte, d'où qu'on l'ait choisie
+        state.selSoc = x.i; liste();
+        ouvre(o, rect, canal, x.i);
+      };
       li.appendChild(b);
       ul.appendChild(li);
     });
@@ -910,7 +971,8 @@ function ouvre(o, rect, canal, iSoc){
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
-  state.sel = null; liste(); libelles(); $("voile").classList.remove("on");
+  state.sel = null; state.selSoc = -1;
+  liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
 /* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
