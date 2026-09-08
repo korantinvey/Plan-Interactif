@@ -57,6 +57,31 @@ const AFFICHAGE: Cible[] = [
 ];
 
 /**
+ * Les thématiques, propres à Eventmaker.
+ *
+ * Elles ne sont pas la nomenclature : celle-ci range l'exposant dans le
+ * catalogue, celles-là disent ce qu'il vient y faire — « Devenir
+ * master-franchisé », « Solutions transverses ». Aucun salon ne les nomme
+ * pareil, et beaucoup n'en ont pas du tout.
+ *
+ * Klipso n'en a pas l'équivalent : ses rubriques passent par la nomenclature
+ * et sa codification, et rien d'autre n'y range les exposants. Une cible qu'il
+ * ne saurait pas alimenter n'a rien à faire dans sa liste.
+ *
+ * Elle est la seule cible d'affichage sans champ par défaut, et c'est voulu :
+ * aucun nom ne revient d'un salon à l'autre — `categories` ici, `expertises`
+ * là. Un défaut deviné signalerait en rouge « champ habituel introuvable » sur
+ * tous les salons qui n'en tiennent pas, c'est-à-dire la plupart ; rester vide
+ * est ici l'état normal, et c'est à l'exploitant de désigner le sien.
+ */
+const THEMATIQUES: Cible = {
+  cle: "thematiques", libelle: "Thématiques", multiple: true,
+  aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon le " +
+    "range. Plusieurs champs se cumulent, et un champ à valeurs multiples se " +
+    "sépare tout seul.",
+};
+
+/**
  * Les cibles offertes par fournisseur.
  *
  * Klipso n'a ni numéro de stand ni dossier à régler : le premier se compose de
@@ -65,7 +90,7 @@ const AFFICHAGE: Cible[] = [
  */
 export const CIBLES: Record<string, Cible[]> = {
   klipso: AFFICHAGE,
-  eventmaker: [...RATTACHEMENT, ...AFFICHAGE],
+  eventmaker: [...RATTACHEMENT, ...AFFICHAGE, THEMATIQUES],
 };
 
 /**
@@ -103,6 +128,8 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
     linkedin: ["company_linkedin"],
     instagram: ["instagram_societe"],
     nomenclature: ["rubriques2", "rubriques"],
+    // aucun nom ne revient d'un salon à l'autre : à désigner depuis la console
+    thematiques: [],
     exclu: ["exclu_liste_exposant"],
   },
 };

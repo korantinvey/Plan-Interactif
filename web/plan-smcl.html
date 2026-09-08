@@ -1873,6 +1873,13 @@ function ouvre(o, rect, canal){
     ok("nomenclature", o.nomencl && o.nomencl.length
       ? f("Nomenclature", o.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
+      : "") +
+    /* Les thématiques disent ce que l'exposant vient faire là, quand la
+       nomenclature dit ce qu'il vend : elles se suivent, et un salon qui n'en
+       tient pas ne reçoit pas la clé du tout. */
+    ok("thematiques", o.themes && o.themes.length
+      ? f("Thématiques", o.themes
+          .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
