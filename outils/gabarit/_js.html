@@ -226,7 +226,9 @@ function ligneCode(s, xc, yBase, f, wMax, cls){
     '" y="' + (yBase - f * .84).toFixed(2) +
     '" width="' + wPast.toFixed(2) + '" height="' + hp.toFixed(2) +
     '" rx="' + (hp / 2).toFixed(2) + '"/>' +
-    texte(xp + wPast / 2, "coexN", compte);
+    /* Le nombre porte lui aussi la marque de la sélection : c'est elle qui
+       décide de sa couleur, comme pour le numéro du stand. */
+    texte(xp + wPast / 2, "coexN" + cls, compte);
 }
 
 /* ============================================================

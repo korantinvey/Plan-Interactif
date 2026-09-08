@@ -158,7 +158,12 @@ button{cursor:pointer;background:none;border:none}
 html:not(.sans-parcours) .stand.enparcours path,
 html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
-.stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
+/* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
+   qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
+   et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
+   par-dessus. Sans réglage, l'accent d'origine. */
+.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
@@ -173,7 +178,9 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
   font-family:"IBM Plex Mono",monospace;font-weight:500}
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
-#labels text.sel{fill:var(--accent);font-weight:700}
+/* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
+#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
 /* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
    la page, comme la pastille des nouveaux venus sur la fiche : c'est une
    distinction, pas une alerte, et le plan a déjà le langage des zones. */
@@ -181,9 +188,11 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
   vector-effect:non-scaling-stroke;pointer-events:none}
 /* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
    fondait dans le fond. Elle prend alors celui de la page, et son trait la
-   tient. */
-#labels .coexPast.sel{fill:var(--surface)}
+   tient. Ce trait et le nombre suivent la sélection : sur un salon qui a
+   choisi sa couleur, l'accent d'origine détonnerait au milieu du stand. */
+#labels .coexPast.sel{fill:var(--surface);stroke:var(--c-sel-trait,var(--accent))}
 #labels text.coexN{fill:var(--accent);font-weight:700}
+#labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Le réglage qui masque les libellés de stand emporte la pastille : elle en
    fait partie, et la laisser flotter seule ne se comprendrait pas. */
 .sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
@@ -700,6 +709,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .panel .eyebrow{display:block;margin-bottom:8px}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
+/* Une ligne sans case à cocher perdrait l'alignement de son libellé sur celui
+   des lignes voisines : on lui rend la place que la case occupait. */
+.calq.sous.seule label{padding-left:21px;cursor:default}
 .calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
 .calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
 .calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}

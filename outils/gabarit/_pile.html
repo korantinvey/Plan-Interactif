@@ -159,6 +159,16 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
+    /* La couleur d'un stand sélectionné se règle sous la couche Stands : c'est
+       l'autre couleur du même objet. Elle vaut aussi pour une zone — le plan
+       n'a qu'une manière de dire « voici ce que vous avez touché » — d'où le
+       libellé, qui parle d'élément et non de stand.
+       Ni visibilité ni aplat ici : une sélection qu'on ne voit pas laisserait
+       le visiteur sans réponse à son propre geste. */
+    if (x.k === "data:stands")
+      rangSous(hote, "selection", "Élément sélectionné",
+               () => jeton("--accent-soft"), appliqueCouleursData, true);
+
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -180,22 +190,27 @@ function construitPanneau(){
      comme une couche de plus. */
 }
 
-/* ligne secondaire : visibilité et couleur seulement */
-function rangSous(hote, cle, libelle, defaut, applique){
+/* ligne secondaire : visibilité et couleur seulement.
+   « couleurSeule » retire les deux commandes qui n'auraient rien à commander —
+   la ligne se réduit alors à son nuancier. */
+function rangSous(hote, cle, libelle, defaut, applique, couleurSeule){
   const c = conf(cle);
   const d = document.createElement("div");
-  d.className = "calq sous";
-  d.innerHTML = '<label><input type="checkbox"' + (c.visible === false ? "" : " checked") +
-    '><span></span></label><span class="opts">' +
-    '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>' +
+  d.className = "calq sous" + (couleurSeule ? " seule" : "");
+  d.innerHTML = '<label>' +
+    (couleurSeule ? "" : '<input type="checkbox"' + (c.visible === false ? "" : " checked") + '>') +
+    '<span></span></label><span class="opts">' +
+    (couleurSeule ? "" :
+      '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
     '<input type="color" class="cc"></span>';
   d.querySelector("label span").textContent = libelle;
-  d.querySelector('input[type="checkbox"]').onchange = e => {
-    c.visible = e.target.checked; enregistreConf(); applique();
-  };
   const cc = d.querySelector(".cc");
   cc.value = c.couleur || defaut();
   cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
+  if (couleurSeule){ hote.appendChild(d); return; }
+  d.querySelector('input[type="checkbox"]').onchange = e => {
+    c.visible = e.target.checked; enregistreConf(); applique();
+  };
   const fb = d.querySelector(".fillbtn");
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);

@@ -163,7 +163,12 @@ button{cursor:pointer;background:none;border:none}
 html:not(.sans-parcours) .stand.enparcours path,
 html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
-.stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
+/* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
+   qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
+   et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
+   par-dessus. Sans réglage, l'accent d'origine. */
+.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
@@ -178,7 +183,9 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
   font-family:"IBM Plex Mono",monospace;font-weight:500}
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
-#labels text.sel{fill:var(--accent);font-weight:700}
+/* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
+#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
 /* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
    la page, comme la pastille des nouveaux venus sur la fiche : c'est une
    distinction, pas une alerte, et le plan a déjà le langage des zones. */
@@ -186,9 +193,11 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
   vector-effect:non-scaling-stroke;pointer-events:none}
 /* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
    fondait dans le fond. Elle prend alors celui de la page, et son trait la
-   tient. */
-#labels .coexPast.sel{fill:var(--surface)}
+   tient. Ce trait et le nombre suivent la sélection : sur un salon qui a
+   choisi sa couleur, l'accent d'origine détonnerait au milieu du stand. */
+#labels .coexPast.sel{fill:var(--surface);stroke:var(--c-sel-trait,var(--accent))}
 #labels text.coexN{fill:var(--accent);font-weight:700}
+#labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Le réglage qui masque les libellés de stand emporte la pastille : elle en
    fait partie, et la laisser flotter seule ne se comprendrait pas. */
 .sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
@@ -705,6 +714,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .panel .eyebrow{display:block;margin-bottom:8px}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
+/* Une ligne sans case à cocher perdrait l'alignement de son libellé sur celui
+   des lignes voisines : on lui rend la place que la case occupait. */
+.calq.sous.seule label{padding-left:21px;cursor:default}
 .calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
 .calq{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:2px 0}
 .calq label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;min-width:0}
@@ -1362,7 +1374,9 @@ function ligneCode(s, xc, yBase, f, wMax, cls){
     '" y="' + (yBase - f * .84).toFixed(2) +
     '" width="' + wPast.toFixed(2) + '" height="' + hp.toFixed(2) +
     '" rx="' + (hp / 2).toFixed(2) + '"/>' +
-    texte(xp + wPast / 2, "coexN", compte);
+    /* Le nombre porte lui aussi la marque de la sélection : c'est elle qui
+       décide de sa couleur, comme pour le numéro du stand. */
+    texte(xp + wPast / 2, "coexN" + cls, compte);
 }
 
 /* ============================================================
@@ -2509,6 +2523,13 @@ function appliqueCouleursData(){
   const general = conf("data:labels").couleur;
   pose(conf("labStand").couleur || general, "--c-lab-stand");
   pose(conf("labZone").couleur || general, "--c-lab-zone");
+  /* Un stand sélectionné prend deux couleurs — l'aplat et son liseré — et
+     l'exploitant n'en règle qu'une : celle qu'il voit. Le liseré s'en déduit,
+     sans quoi il faudrait accorder deux nuanciers à la main pour que le second
+     reste visible sur le premier. */
+  const sel = conf("selection").couleur;
+  pose(sel, "--c-sel");
+  pose(sel && ecarte(sel), "--c-sel-trait");
 }
 
 function styleData(cle){
@@ -2632,6 +2653,38 @@ const rgbHex = (s) => {
   if (!m || m.length < 3) return null;
   return "#" + m.slice(0, 3)
     .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+};
+
+const hexa = (v) => "#" + v.map(c => c.toString(16).padStart(2, "0")).join("");
+
+/** Luminance relative d'un triplet, au sens du calcul de contraste : 0 pour le
+ *  noir, 1 pour le blanc, en passant par la courbe de l'œil. */
+const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) => {
+  const s = v[i] / 255;
+  return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
+}, 0);
+
+/**
+ * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
+ * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
+ * reste lisible dessus, quel que soit le ton choisi.
+ *
+ * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
+ * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
+ * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
+ */
+const ecarte = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
+  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
+     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
+     trois pour un ne se lit pas en petit. */
+  const vers = (but) => v.map(c => Math.round(c + (but - c) * 0.7));
+  const base = luminance(v) + 0.05;
+  const contraste = (w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
+  const sombre = vers(0), clair = vers(255);
+  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
 
 /** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */
@@ -3886,6 +3939,16 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
+    /* La couleur d'un stand sélectionné se règle sous la couche Stands : c'est
+       l'autre couleur du même objet. Elle vaut aussi pour une zone — le plan
+       n'a qu'une manière de dire « voici ce que vous avez touché » — d'où le
+       libellé, qui parle d'élément et non de stand.
+       Ni visibilité ni aplat ici : une sélection qu'on ne voit pas laisserait
+       le visiteur sans réponse à son propre geste. */
+    if (x.k === "data:stands")
+      rangSous(hote, "selection", "Élément sélectionné",
+               () => jeton("--accent-soft"), appliqueCouleursData, true);
+
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -3907,22 +3970,27 @@ function construitPanneau(){
      comme une couche de plus. */
 }
 
-/* ligne secondaire : visibilité et couleur seulement */
-function rangSous(hote, cle, libelle, defaut, applique){
+/* ligne secondaire : visibilité et couleur seulement.
+   « couleurSeule » retire les deux commandes qui n'auraient rien à commander —
+   la ligne se réduit alors à son nuancier. */
+function rangSous(hote, cle, libelle, defaut, applique, couleurSeule){
   const c = conf(cle);
   const d = document.createElement("div");
-  d.className = "calq sous";
-  d.innerHTML = '<label><input type="checkbox"' + (c.visible === false ? "" : " checked") +
-    '><span></span></label><span class="opts">' +
-    '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>' +
+  d.className = "calq sous" + (couleurSeule ? " seule" : "");
+  d.innerHTML = '<label>' +
+    (couleurSeule ? "" : '<input type="checkbox"' + (c.visible === false ? "" : " checked") + '>') +
+    '<span></span></label><span class="opts">' +
+    (couleurSeule ? "" :
+      '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
     '<input type="color" class="cc"></span>';
   d.querySelector("label span").textContent = libelle;
-  d.querySelector('input[type="checkbox"]').onchange = e => {
-    c.visible = e.target.checked; enregistreConf(); applique();
-  };
   const cc = d.querySelector(".cc");
   cc.value = c.couleur || defaut();
   cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
+  if (couleurSeule){ hote.appendChild(d); return; }
+  d.querySelector('input[type="checkbox"]').onchange = e => {
+    c.visible = e.target.checked; enregistreConf(); applique();
+  };
   const fb = d.querySelector(".fillbtn");
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);

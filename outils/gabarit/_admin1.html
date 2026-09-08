@@ -51,6 +51,13 @@ function appliqueCouleursData(){
   const general = conf("data:labels").couleur;
   pose(conf("labStand").couleur || general, "--c-lab-stand");
   pose(conf("labZone").couleur || general, "--c-lab-zone");
+  /* Un stand sélectionné prend deux couleurs — l'aplat et son liseré — et
+     l'exploitant n'en règle qu'une : celle qu'il voit. Le liseré s'en déduit,
+     sans quoi il faudrait accorder deux nuanciers à la main pour que le second
+     reste visible sur le premier. */
+  const sel = conf("selection").couleur;
+  pose(sel, "--c-sel");
+  pose(sel && ecarte(sel), "--c-sel-trait");
 }
 
 function styleData(cle){
@@ -174,6 +181,38 @@ const rgbHex = (s) => {
   if (!m || m.length < 3) return null;
   return "#" + m.slice(0, 3)
     .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+};
+
+const hexa = (v) => "#" + v.map(c => c.toString(16).padStart(2, "0")).join("");
+
+/** Luminance relative d'un triplet, au sens du calcul de contraste : 0 pour le
+ *  noir, 1 pour le blanc, en passant par la courbe de l'œil. */
+const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) => {
+  const s = v[i] / 255;
+  return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
+}, 0);
+
+/**
+ * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
+ * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
+ * reste lisible dessus, quel que soit le ton choisi.
+ *
+ * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
+ * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
+ * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
+ */
+const ecarte = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
+  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
+     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
+     trois pour un ne se lit pas en petit. */
+  const vers = (but) => v.map(c => Math.round(c + (but - c) * 0.7));
+  const base = luminance(v) + 0.05;
+  const contraste = (w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
+  const sombre = vers(0), clair = vers(255);
+  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
 
 /** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */
