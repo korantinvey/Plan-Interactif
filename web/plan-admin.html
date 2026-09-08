@@ -383,6 +383,23 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
    se lit en mono, une mention se lit comme une phrase. */
 .badge.neuf{background:var(--accent-soft);color:var(--accent);font-family:inherit;
   font-weight:600;margin-left:6px}
+/* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
+   un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
+   plusieurs — et le clic n'est que la suite logique. */
+.badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
+  border:1px solid var(--line-strong)}
+.badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
+   société, le titulaire en tête et signalé comme tel : sur les stands les plus
+   peuplés il y en a une douzaine, et rien ne les distinguerait sans cela. */
+.expos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.expos button{display:flex;width:100%;align-items:baseline;gap:9px;text-align:left;
+  padding:9px 11px;border:1px solid transparent;border-radius:5px;
+  background:var(--surface-2);font-size:13.5px;color:var(--ink)}
+.expos button:hover{border-color:var(--line-strong)}
+.expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.expos .role{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;
+  letter-spacing:.05em;flex:none}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
 /* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
@@ -1033,7 +1050,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -1811,33 +1828,105 @@ let degel = null;
 
 function ecarteClicFantome(){
   if (!dernierAppuiTactile) return;
-  const zones = [$("detail"), $("voile")].filter(Boolean);
+  const zones = [$("detail"), $("voile"), $("modale")].filter(Boolean);
   zones.forEach(z => { z.style.pointerEvents = "none"; });
   clearTimeout(degel);
   degel = setTimeout(() => zones.forEach(z => { z.style.pointerEvents = ""; }), 450);
 }
 
-function ouvre(o, rect, canal){
+/** Le nom sous lequel une société se présente sur un stand. */
+const nomSociete = (x) => x.nom || x.plan || "Sans nom";
+
+/**
+ * Les sociétés d'un stand, titulaire en tête.
+ *
+ * Le titulaire est le stand lui-même : c'est son dossier qui l'a désigné à la
+ * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
+ * dans « coex », dans l'ordre où la source les a rendues.
+ */
+function societes(o){
+  return [{ soc: o, i: -1, role: "Titulaire" }].concat(
+    (o.coex || []).map((x, i) => ({ soc: x, i: i, role: "Co-exposant" })));
+}
+
+/**
+ * Le choix, quand plusieurs sociétés se partagent un stand.
+ *
+ * Ouvrir d'office la fiche du titulaire donnerait le stand à lui seul,
+ * alors qu'un stand de restauration en héberge jusqu'à onze. On demande donc
+ * qui l'on vient voir, plutôt que de le supposer.
+ */
+function choisitExposant(o, rect, canal){
+  const tous = societes(o);
+  ouvreModale(("Stand " + (o.code || "")).trim(), corps => {
+    const p = document.createElement("p");
+    p.textContent = tous.length + " sociétés occupent ce stand.";
+    const ul = document.createElement("ul");
+    ul.className = "expos";
+    tous.forEach(x => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const n = document.createElement("span");
+      n.className = "nom";
+      n.textContent = nomSociete(x.soc);
+      const r = document.createElement("span");
+      r.className = "role";
+      r.textContent = x.role;
+      b.appendChild(n); b.appendChild(r);
+      b.onclick = () => { fermeModale(); ouvre(o, rect, canal, x.i); };
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    corps.appendChild(p); corps.appendChild(ul);
+  }, [{ libelle: "Fermer" }]);
+  ecarteClicFantome();
+}
+
+/**
+ * La fiche d'un stand ou d'une zone.
+ *
+ * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
+ * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
+ * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
+ */
+function ouvre(o, rect, canal, iSoc){
+  const zone = o.kind === "zone";
+  const heberges = (!zone && o.coex) || [];
+  if (heberges.length && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
+     c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
+     de « titulaire » dans tout ce qui suit. */
+  const iS = iSoc === undefined ? -1 : iSoc;
+  /* La société affichée. Le titulaire porte ses champs à plat sur le stand :
+     c'est le stand lui-même qui fait office de fiche. */
+  const soc = iS >= 0 ? heberges[iS] : o;
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
   fermeParcours(); fermeItineraire();
-  const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
   // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
   $("dKind").textContent = zone ? "" : "Stand";
   $("dKind").hidden = zone;
-  const titre = o.nom || o.plan ||
+  const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
+     compare souvent deux enseignes voisines. */
+  const part = $("dPartage");
+  part.hidden = !heberges.length;
+  if (heberges.length){
+    part.textContent = (heberges.length + 1) + " exposants ici";
+    part.onclick = () => choisitExposant(o, null, canal);
+  }
   /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
      que l'exploitant la laisse voir. Une zone organisateur n'est jamais
      nouvelle : elle n'est pas un exposant. */
-  $("dNeuf").hidden = zone || !o.neuf || !montre("stand", "nouveau");
+  $("dNeuf").hidden = zone || !soc.neuf || !montre("stand", "nouveau");
   /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
      ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
      lignes. */
@@ -1846,7 +1935,10 @@ function ouvre(o, rect, canal){
                           '</span><span class="v">' + v + '</span></div>' : "";
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
-  const sien = (!zone && pl.parStand && pl.parStand.get(o.id)) || [];
+  /* Le programme est rattaché au stand par le dossier de son titulaire : la
+     source ne dit pas quelle conférence revient à une société hébergée, et la
+     lui prêter serait une invention. */
+  const sien = (!zone && iS < 0 && pl.parStand && pl.parStand.get(o.id)) || [];
   const confs = ok("conferences", zone
     ? programme(P().parZone && P().parZone.get(o.id))
     : programme(sien, "Conférences"));
@@ -1854,31 +1946,33 @@ function ouvre(o, rect, canal){
   // n'apprennent quoi que ce soit au visiteur
   const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
-    ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
-    ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
+    ok("raison", !zone && soc.plan && soc.plan !== titre ? f("Raison sociale", esc(soc.plan)) : "") +
+    ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : "")) +
     /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
        par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
-    ok("ville", f("Ville", o.ville ? esc(o.ville) : "", "court")) +
-    ok("pays", f("Pays", o.pays ? esc(o.pays) : "", "court")) +
+    ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court")) +
+    ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court")) +
+    /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
+       stand, quelle que soit la société qu'on y regarde. */
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court")) +
     // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-    ok("telephone", f("Téléphone", o.tel
-      ? '<a href="tel:' + esc(String(o.tel).replace(/[^+\d]/g, "")) + '">' + esc(o.tel) + '</a>'
+    ok("telephone", f("Téléphone", soc.tel
+      ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
       : "", "court")) +
-    ok("site", f("Site web", lien(o.site))) +
-    ok("facebook", f("Facebook", lien(o.fb))) +
-    ok("linkedin", f("LinkedIn", lien(o.li))) +
-    ok("instagram", f("Instagram", lien(o.ig))) +
+    ok("site", f("Site web", lien(soc.site))) +
+    ok("facebook", f("Facebook", lien(soc.fb))) +
+    ok("linkedin", f("LinkedIn", lien(soc.li))) +
+    ok("instagram", f("Instagram", lien(soc.ig))) +
     // le libellé est résolu à la synchronisation : la page l'affiche tel quel
-    ok("nomenclature", o.nomencl && o.nomencl.length
-      ? f("Nomenclature", o.nomencl
+    ok("nomenclature", soc.nomencl && soc.nomencl.length
+      ? f("Nomenclature", soc.nomencl
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
     /* Les thématiques disent ce que l'exposant vient faire là, quand la
        nomenclature dit ce qu'il vend : elles se suivent, et un salon qui n'en
        tient pas ne reçoit pas la clé du tout. */
-    ok("thematiques", o.themes && o.themes.length
-      ? f("Thématiques", o.themes
+    ok("thematiques", soc.themes && soc.themes.length
+      ? f("Thématiques", soc.themes
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il

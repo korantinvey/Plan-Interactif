@@ -270,7 +270,13 @@ Deno.serve(async (req) => {
        de stand nous intéresse, les autres non. Les catégories d'invités
        diffèrent d'un salon à l'autre, elles sont donc détectées et non
        configurées. */
-    let expoEm: { parDossier: Map<string, ExposantEm>; parStand: Map<string, ExposantEm> } | null = null;
+    let expoEm:
+      | {
+        parDossier: Map<string, ExposantEm>;
+        parStand: Map<string, ExposantEm>;
+        tousParStand: Map<string, ExposantEm[]>;
+      }
+      | null = null;
     let resumeEm: Record<string, unknown> | null = null;
     /* Les champs que la source porte, relevés au passage. C'est la matière de
        la correspondance : sans eux la console n'aurait rien à proposer, et il
@@ -353,7 +359,11 @@ Deno.serve(async (req) => {
           .map((st) => String(st.code ?? "")).filter(Boolean);
 
         const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
-        expoEm = { parDossier: r.parDossier, parStand: r.parStand };
+        expoEm = {
+          parDossier: r.parDossier,
+          parStand: r.parStand,
+          tousParStand: r.tousParStand,
+        };
         detectes = r.champs;
         resumeEm = {
           categories: r.categories,
@@ -534,7 +544,7 @@ Deno.serve(async (req) => {
         });
 
         const stands = [];
-        let apparies = 0;
+        let apparies = 0, heberges = 0;
         const parDossier = new Map<string, string>();
         for (const s of bruts) {
           const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
@@ -568,6 +578,26 @@ Deno.serve(async (req) => {
               (code ? expoEm.parStand.get(cleStand(code)) : undefined);
           const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
           if (expoEm && em) apparies++;
+
+          /* --- les co-exposants ---
+
+             Ce schéma-ci et pas un autre : le plan vient de Klipso, les
+             sociétés d'Eventmaker. Le stand Klipso ne porte qu'un dossier,
+             celui de son titulaire ; les sociétés qu'il héberge se rattachent
+             donc par le numéro, seul repère qu'elles partagent avec lui.
+
+             Le titulaire est celui que le dossier a désigné. Faute de dossier
+             des deux côtés — c'est le cas de salons entiers — c'est la
+             première fiche du numéro qui tient ce rôle : personne n'est perdu
+             pour autant, la fiche les liste tous.
+
+             Un stand sans titulaire retenu n'héberge personne non plus : une
+             enseigne qui refuse le catalogue emporte son stand entier, et une
+             liste dont la tête serait vide ne se lirait pas. */
+          const coex = !expoEm || !ok || !code ? [] : (
+            expoEm.tousParStand.get(cleStand(code)) ?? []
+          ).filter((x) => x !== em && !x.exclu).map(hebergee);
+          heberges += coex.length;
 
           /* Coordonnées et réseaux. Eventmaker les porte nativement ; Klipso
              ne les rend que si l'exploitant a désigné les champs qui les
@@ -607,6 +637,11 @@ Deno.serve(async (req) => {
                porter des « false » par centaines. */
             ...((ok && (expoEm ? em!.neuf : vrai(lit(cibleK("nouveau"), origines))))
               ? { neuf: true } : {}),
+            /* Les sociétés hébergées, dans l'ordre où Eventmaker les rend. La
+               clé ne descend pas quand il n'y en a pas : la grande majorité
+               des stands n'hébergent personne, et l'instantané part au
+               public. */
+            ...(coex.length ? { coex } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
@@ -732,6 +767,7 @@ Deno.serve(async (req) => {
           stands: stands.length,
           exposants: stands.filter((s) => s.nom).length,
           ...(expoEm ? { apparies } : {}),
+          ...(heberges ? { coexposants: heberges } : {}),
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
@@ -836,6 +872,28 @@ Deno.serve(async (req) => {
     return repond({ erreur: message }, 500);
   }
 });
+
+/**
+ * Une société hébergée, telle que la fiche du stand la portera.
+ *
+ * Mêmes clés que le stand lui-même : c'est la même fiche qui l'affiche, et
+ * dédoubler le rendu pour deux jeux de noms n'aurait servi qu'à les faire
+ * diverger. Ni géométrie ni numéro — elle occupe le stand de son hôte — et
+ * rien qui soit vide, l'instantané étant servi tel quel au public.
+ */
+function hebergee(x: ExposantEm): Record<string, unknown> {
+  const o: Record<string, unknown> = { nom: x.nom };
+  const champs: [string, unknown][] = [
+    ["plan", x.raison], ["site", nettoieUrl(x.site)], ["adr", x.adresse], ["ville", x.ville],
+    ["pays", x.pays], ["tel", x.tel], ["fb", x.facebook],
+    ["li", x.linkedin], ["ig", x.instagram],
+  ];
+  for (const [k, v] of champs) if (v) o[k] = v;
+  if (x.nomencl.length) o.nomencl = x.nomencl;
+  if (x.themes.length) o.themes = x.themes;
+  if (x.neuf) o.neuf = true;
+  return o;
+}
 
 /** Les adresses saisies à la main contiennent parfois des slashes échappés. */
 function nettoieUrl(u: unknown): string | null {

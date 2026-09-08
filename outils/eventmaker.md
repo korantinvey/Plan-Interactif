@@ -116,6 +116,61 @@ hors documentation. Voici ce qu'ils rendent, et ce qu'ils taisent.
   exposant ni un stand. La piste « demander un champ à l'organisateur » n'a
   plus lieu d'être — le graphe donne mieux, et sans rien demander.
 
+## Les co-exposants
+
+Un stand n'héberge pas toujours une seule enseigne. Sur Franchise Expo Paris
+2026, **47 stands en portent plusieurs**, jusqu'à douze — Hippopotamus avec
+Burger King, Léon, Volfoni, Pitaya et six autres. Le plan n'en montrait qu'une,
+et pas toujours la bonne : la première rencontrée.
+
+Le champ qui les désigne existe, mais pas sous le même nom d'un salon à
+l'autre — c'est un champ personnalisé de plus :
+
+| salon | champ | valeurs |
+|---|---|---|
+| Franchise Expo Paris 2026 / 2027 | `nature` | `DIR` 400 · **`COEX` 119** · `ECH` 50 |
+| SIDO & Lyon Cyber Expo 2026 | `categorie_de_l_exposant` | `Exposant simple` 184 · **`Co-Exposant` 156** · `Echange/Presse/Média` 19 |
+| Open Source Experience 2026 | `categorie_de_l_exposant` | `Exposant simple` 32, aucun co-exposant |
+
+**La synchronisation ne le lit pourtant pas, et n'en a pas besoin.** Elle le
+déduit de la structure, qui est plus sûre qu'un libellé :
+
+```
+dossier  → le titulaire du stand   (Klipso le porte sur le stand, Eventmaker le recopie)
+numéro   → ses co-exposants        (tout ce qui se réclame du stand sans en tenir le dossier)
+```
+
+Rien d'autre ne les relie. J'ai cherché un lien explicite : `cc_commanditaire_uid`
+en avait l'air, il est sur les badges des personnes et désigne leur propre
+société — **0 fiche société sur 576** le porte. Et chaque co-exposant a **son
+propre dossier** : 574 dossiers pour 576 fiches, aucun partagé. Le dossier ne
+rapproche donc jamais un hébergé de son hôte ; le numéro de stand, si.
+
+Le champ de rattachement est réglable — cible `coexposant`, défaut `num_stand`,
+c'est-à-dire le numéro lui-même. Un salon qui tiendrait le stand hôte dans un
+champ à lui le désigne depuis la console ; « Aucun » retire les co-exposants du
+plan.
+
+Deux conséquences à connaître.
+
+**Les deux index de `exposants()` renoncent séparément.** Ils renonçaient
+ensemble, et c'était un piège : un co-exposant rencontré avant son hôte prenait
+le numéro, l'hôte était alors écarté *des deux* index, son dossier ne désignait
+plus personne, et le stand se retrouvait au nom de l'hébergé. Un dossier
+n'appartenant qu'à une société, il a toujours sa place dans le sien. Rejoué sur
+les 7 086 fiches de FEP 2026 : **460 stands sur 460 au nom du bon titulaire**, et
+**106 co-exposants publiés** là où aucun ne survivait. Les treize qui manquent à
+l'appel des 119 sont seuls sur leur numéro — des pavillons collectifs, où ils
+sont titulaires de plein droit.
+
+**Le programme reste au titulaire.** Le graphe rattache une conférence par le
+dossier de qui la tient, et le dossier d'un co-exposant ne correspond à aucun
+stand : la synchronisation ne sait pas lui attribuer de conférence, et la fiche
+n'en invente pas.
+
+Ce raisonnement vaut pour **un plan Klipso et des exposants Eventmaker**, et
+pour cette combinaison seule : c'est elle qui met le dossier des deux côtés.
+
 ## Les thématiques d'un exposant
 
 Elles n'ont pas de champ à elles : comme la nomenclature, ce sont des champs

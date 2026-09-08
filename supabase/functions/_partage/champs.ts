@@ -30,6 +30,10 @@ const RATTACHEMENT: Cible[] = [
     aide: "Sert à poser la fiche sur le plan. Comparé au numéro Klipso, mise en forme ignorée." },
   { cle: "dossier", libelle: "Identifiant de dossier",
     aide: "Le dossier Klipso recopié sur la fiche. C'est le rattachement le plus sûr." },
+  { cle: "coexposant", libelle: "Rattachement des co-exposants",
+    aide: "Le champ où un co-exposant porte le stand de son hôte — le numéro de " +
+      "stand, sauf si le salon en tient un à part. « Aucun » retire les " +
+      "co-exposants du plan." },
 ];
 
 const AFFICHAGE: Cible[] = [
@@ -114,6 +118,12 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
   eventmaker: {
     stand: ["num_stand"],
     dossier: ["id_dossier"],
+    /* Un stand n'a qu'un dossier côté Klipso, celui de son titulaire : les
+       sociétés qu'il héberge n'ont donc aucun moyen de s'y rattacher par là.
+       Ce qu'elles portent, c'est le numéro du stand de leur hôte — c'est le
+       même champ que « stand », et c'est bien le défaut. Un salon qui tient
+       le stand hôte dans un champ à lui le désigne ici. */
+    coexposant: ["num_stand"],
     nom: ["enseigne", "invite:company_name"],
     raison: ["company_name_2"],
     site: ["company_website"],

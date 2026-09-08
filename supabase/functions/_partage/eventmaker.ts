@@ -68,6 +68,9 @@ const INSCRIT = "registered";
  */
 export interface ExposantEm {
   stand: string;
+  /* Le dossier de la société, et non celui du stand : un co-exposant a le sien,
+     distinct de celui du titulaire avec qui il partage pourtant le numéro. */
+  dossier: string;
   nom: string | null;
   raison: string | null;
   site: string | null;
@@ -424,6 +427,7 @@ export class Eventmaker {
   async exposants(id: string, connues: string[] = [], codes: string[] = []): Promise<{
     parDossier: Map<string, ExposantEm>;
     parStand: Map<string, ExposantEm>;
+    tousParStand: Map<string, ExposantEm[]>;
     categories: string[];
     categoriesIds: string[];
     appels: number;
@@ -435,6 +439,10 @@ export class Eventmaker {
   }> {
     const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
+    /* Toutes les fiches qui se réclament d'un même stand, celles du titulaire
+       et de ses hébergés mêlées : c'est la synchronisation qui les départage,
+       elle seule sachant quel dossier le stand porte côté Klipso. */
+    const tousParStand = new Map<string, ExposantEm[]>();
     const { retenues: cats, appels, voie } = await this.categoriesExposants(id, connues, codes);
     let lus = 0, ecartesNonInscrits = 0;
     const releve = new Releve();
@@ -465,12 +473,10 @@ export class Eventmaker {
       const dossier = this.dossier(g, m);
       if (!stand && !dossier) continue;
       if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
-      // premier arrivé, premier servi : un stand partagé garde l'enseigne
-      // rencontrée d'abord plutôt qu'une des suivantes, prise au hasard
-      if ((stand && parStand.has(stand)) || (dossier && parDossier.has(dossier))) continue;
       const v = (cible: string) => ou(this.valeur(g, m, cible));
       const fiche: ExposantEm = {
         stand,
+        dossier,
         nom: v("nom"),
         raison: v("raison"),
         site: v("site"),
@@ -488,12 +494,28 @@ export class Eventmaker {
         neuf: vrai(this.valeur(g, m, "nouveau")),
         exclu: vrai(this.valeur(g, m, "exclu")),
       };
-      if (stand) parStand.set(stand, fiche);
-      if (dossier) parDossier.set(dossier, fiche);
+      /* Le stand de l'hôte, tel que la fiche le porte. Par défaut c'est son
+         propre numéro : sur un stand partagé, toutes les fiches tombent donc
+         dans le même seau, titulaire compris. */
+      const hote = cleStand(this.valeur(g, m, "coexposant"));
+      if (hote) {
+        const l = tousParStand.get(hote);
+        if (l) l.push(fiche);
+        else tousParStand.set(hote, [fiche]);
+      }
+      /* Premier arrivé, premier servi — mais index par index, et c'est tout
+         le sujet. Les faire renoncer ensemble revenait à retirer le titulaire
+         de l'index des dossiers dès qu'un de ses hébergés avait pris son
+         numéro avant lui : son dossier ne désignait plus personne, et le stand
+         se retrouvait au nom d'un co-exposant. Un dossier n'appartient qu'à
+         une société, il a toujours sa place ici. */
+      if (dossier && !parDossier.has(dossier)) parDossier.set(dossier, fiche);
+      if (stand && !parStand.has(stand)) parStand.set(stand, fiche);
     }
     return {
       parDossier,
       parStand,
+      tousParStand,
       categories: cats.map((c) => c.name),
       categoriesIds: cats.map((c) => c._id),
       appels,
