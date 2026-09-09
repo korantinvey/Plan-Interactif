@@ -101,7 +101,7 @@ Fonctions :
 
 - l.343 · Page de rapport
 
-### `_dessin.html` — 714 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 757 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -110,25 +110,26 @@ Fonctions :
 `mesCalques` 14 · `enregistreDessins` 15 · `instantane` 37 · `memorise` 38 · `restaure` 43
 `annule` 52 · `refais` 63 · `trouveCalque` 65 · `nouvelId` 66 · `cheminForme` 69
 `dessineDessins` 79 · `versPlan` 116 · `apercu` 122 · `ajouteForme` 133 · `pictoDe` 229
-`pictoForme` 242 · `traceRepere` 264 · `cartouchePoi` 303 · `mesureCartouche` 361
-`eclairePoi` 368 · `signale` 379 · `calquePourImage` 393 · `poseImage` 406
-`importeImage` 419 · `dessinPointerDown` 467 · `dessinPointerMove` 503
-`dessinPointerUp` 519 · `termineTrace` 539 · `aide` 546 · `choisitOutil` 563
-`activeCalque` 605 · `montreRoleIti` 641 · `creeCalque` 672 · `demandeNom` 685
-`renommeCalque` 704
+`nomTypeRepere` 267 · `pictoForme` 278 · `traceRepere` 295 · `cartouchePoi` 344
+`mesureCartouche` 402 · `eclairePoi` 409 · `signale` 420 · `calquePourImage` 434
+`poseImage` 447 · `importeImage` 460 · `dessinPointerDown` 508 · `dessinPointerMove` 548
+`dessinPointerUp` 564 · `termineTrace` 584 · `aide` 591 · `choisitOutil` 608
+`activeCalque` 648 · `montreRoleIti` 684 · `creeCalque` 715 · `demandeNom` 728
+`renommeCalque` 747
 
-### `_edition.html` — 246 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 277 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
 Fonctions :
 
 `formeParId` 11 · `boite` 19 · `curseurPoignee` 27 · `poignees` 32 · `dessinePoignees` 41
-`choisitForme` 64 · `majElement` 75 · `etiquetteStand` 109 · `remplitListeStands` 114
-`standSaisi` 123 · `appliqueLiaison` 133 · `appliqueTexte` 144 · `supprimeForme` 153
-`editionPointerDown` 163 · `editionPointerMove` 208 · `editionPointerUp` 239
+`choisitForme` 64 · `majElement` 75 · `etiquetteStand` 126 · `remplitListeStands` 131
+`standSaisi` 140 · `appliqueLiaison` 150 · `appliqueTexte` 161 · `appliquePicto` 172
+`supprimeForme` 184 · `editionPointerDown` 194 · `editionPointerMove` 239
+`editionPointerUp` 270
 
-### `_head.html` — 1249 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1255 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -137,13 +138,13 @@ Fonctions :
 `#poignee` · `#q` · `#countTxt` · `#list` · `#stage` · `#plan` · `#couches` · `#zones`
 `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi`
 `#viseur` · `#viseurTxt` · `#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils`
-`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#texteADessiner`
-`#repereChoix` · `#repereTexte` · `#fichierImage` · `#choisirImage` · `#vignette`
-`#elemSel` · `#elemType` · `#elemSupprimer` · `#elemTexte` · `#elemTailleBloc`
-`#elemTaille` · `#elemStand` · `#listeStands` · `#outilsAide` · `#annuleDernier` · `#modale`
-`#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail`
-`#dMarque` · `#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf`
-`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
+`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#texteADessiner` · `#repereType`
+`#repereTexte` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
+`#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemTailleBloc` · `#elemTaille`
+`#elemStand` · `#listeStands` · `#outilsAide` · `#annuleDernier` · `#modale` · `#mTitre`
+`#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
+`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dPartage`
+`#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
 `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
 `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
@@ -175,7 +176,7 @@ Fonctions :
 `armeVisee` 1205 · `finVisee` 1213 · `viseItineraire` 1225 · `ouvreItineraire` 1248
 `fermeItineraire` 1265 · `versItineraire` 1275
 
-### `_journee.html` — 851 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 861 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
@@ -185,7 +186,7 @@ Fonctions :
 `jourPropose` 77 · `pointConf` 92 · `departsProposes` 110 · `matriceJournee` 134
 `rangeJournee` 228 · `calculeJournee` 324 · `rangJournee` 491 · `lienJournee` 503
 `arretJournee` 510 · `remplitJournee` 535 · `appliqueVueParcours` 671 · `traceJournee` 697
-`montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 818
+`montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 828
 
 ### `_js.html` — 1325 l. → plan-admin.html, plan-smcl.html, plan.html
 
