@@ -1945,7 +1945,7 @@ function ficheConf(id, canal){
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
-  mesure("fiche_conf", canal);
+  mesure("fiche_conf", canal, String(id));
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -2255,7 +2255,7 @@ function ouvre(o, rect, canal, iSoc){
   ecarteClicFantome();
   anime(rect, 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
-  if (!zone) mesure("fiche_stand", canal);
+  if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
@@ -6995,17 +6995,22 @@ function jetonRetenu(cle, casier){
 
 /* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
    ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
-   identifiant hors d'ici. Celui de session ne survit pas à l'onglet : c'est
-   lui qui fait la différence entre « une visite » et « un visiteur ». */
+   identifiant hors d'ici. Ce qui distinguait deux venues du même navigateur
+   ne se transmet plus : le serveur ne le lisait pas, et une visite se compte
+   déjà par le geste qui porte ce nom. */
 const MESURE_VISITEUR = MESURE_ACTIVE
   ? jetonRetenu("plan-visiteur:" + SLUG, "localStorage") : "";
-const MESURE_SESSION = MESURE_ACTIVE
-  ? jetonRetenu("plan-session:" + SLUG, "sessionStorage") : "";
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
-   quand le paquet est plein, quand la main s'arrête, ou quand la page part. */
+   quand le paquet est plein, quand la main s'arrête, ou quand la page part.
+
+   Trente secondes et non quatre : à quatre, chaque fiche ouverte au fil d'une
+   visite partait dans son propre paquet, et un visiteur produisait une
+   quinzaine de requêtes — de loin le premier poste d'appels du système, devant
+   le plan lui-même. Rien ne se perd pour autant, le départ de la page vidant
+   ce qui reste. */
 const MESURE_PAQUET = 20;
-const MESURE_DELAI = 4000;
+const MESURE_DELAI = 30000;
 let _gestes = [], _envoiDiffere = null;
 
 function envoieMesures(dernier){
@@ -7013,7 +7018,7 @@ function envoieMesures(dernier){
   _envoiDiffere = null;
   if (!_gestes.length) return;
   const charge = JSON.stringify({
-    slug: SLUG, visiteur: MESURE_VISITEUR, session: MESURE_SESSION,
+    slug: SLUG, visiteur: MESURE_VISITEUR,
     gestes: _gestes.splice(0, _gestes.length),
   });
   /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
@@ -7031,17 +7036,21 @@ function envoieMesures(dernier){
 }
 
 /**
- * Retenir un geste.
+ * Retenir un geste, et ce qu'il désignait s'il désignait quelque chose.
  *
- *   mesure("fiche_stand", "plan")   une fiche d'exposant, ouverte du plan
- *   mesure("recherche")             une recherche menée à son terme
+ *   mesure("fiche_stand", "plan", o.id)   une fiche d'exposant, ouverte du plan
+ *   mesure("recherche")                   une recherche menée à son terme
  *
- * Le vocabulaire est celui de la table ; le serveur écarte ce qu'il ne
- * connaît pas plutôt que de l'enregistrer sous un nom approximatif.
+ * Le vocabulaire est celui des compteurs ; le serveur écarte ce qu'il ne
+ * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
+ * cible que l'événement ne porte pas est écartée de même.
  */
-function mesure(genre, canal){
+function mesure(genre, canal, cible){
   if (!MESURE_ACTIVE) return;
-  _gestes.push(canal ? { genre: genre, canal: canal } : { genre: genre });
+  const g = { genre: genre };
+  if (canal) g.canal = canal;
+  if (cible) g.cible = cible;
+  _gestes.push(g);
   if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
   clearTimeout(_envoiDiffere);
   _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
@@ -7131,9 +7140,13 @@ function chargeFond(i){
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
   if (_fonds.has(p.id)) return _fonds.get(p.id);
 
+  /* L'empreinte du fond fait la version : elle ne bouge que si le dessin
+     bouge, là où l'heure de synchronisation bougeait à chaque passage et
+     faisait retélécharger le même dessin. Un pavillon pas encore
+     resynchronisé n'en a pas, et retombe sur l'horodatage. */
   const q = API + "?slug=" + encodeURIComponent(SLUG) +
             "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(DATA.genereLe || "0");
+            "&v=" + encodeURIComponent(p.empreinte || DATA.genereLe || "0");
   const promesse = fetch(q, { headers: entetesApi() })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {

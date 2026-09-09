@@ -9,8 +9,10 @@
  *
  * Le fond de plan pèse cinquante fois les stands : il part dans un second
  * appel, pour que le plan s'affiche et devienne manipulable sans l'attendre.
- * Ce fond ne change qu'à la synchronisation, dont l'horodatage sert de clé de
- * version : le navigateur ne le retélécharge jamais deux fois.
+ * Sa version est l'empreinte de son propre contenu, et non l'heure de la
+ * dernière synchronisation : celle-ci changeait à chaque passage, et un salon
+ * resynchronise pour rafraîchir ses exposants bien plus souvent que sa
+ * géométrie. Le navigateur ne retélécharge donc un fond que s'il a changé.
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
@@ -149,7 +151,7 @@ Deno.serve(async (req) => {
 
     const { data: plans } = await sb
       .from("plan")
-      .select("id, id_klipso, libelle, hall, emprise")
+      .select("id, id_klipso, libelle, hall, emprise, empreinte")
       .eq("evenement_id", evt.id)
       .order("libelle", { ascending: true });
     if (!plans?.length) {
@@ -200,6 +202,9 @@ Deno.serve(async (req) => {
           libelle: p.libelle,
           hall: p.hall,
           emprise: p.emprise ?? charge.emprise ?? null,
+          // tant qu'un pavillon n'a pas été resynchronisé, il n'en a pas :
+          // la page retombe alors sur l'horodatage, comme avant
+          empreinte: p.empreinte ?? null,
           fond: (parCalque[p.id] ?? [])
             .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
             .map((c) => ({

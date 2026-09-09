@@ -431,31 +431,75 @@ Le détail par canal est ce qui se lit le plus vite : aucun clic sur un logo dit
 qu'aucun logo n'a été posé ; une recherche qui domine dit que le plan sert de
 répertoire plus que de plan.
 
+### Des compteurs, et non un journal
+
+Rien ne garde le détail des gestes. Un geste **incrémente un compteur**, et c'est
+tout ce qu'il en reste.
+
+La raison tient au volume. Une ligne par geste — ce qui se faisait au début —
+suit la fréquentation : cinq mille visiteurs sur quatre jours écrivent un
+demi-million de lignes, cent trente mégaoctets index compris, que rien n'efface
+jamais. Un compteur, lui, grossit avec le produit de ses dimensions, non avec le
+trafic : le nombre de stands est un plafond fixe, que cinq cents ou cinquante
+mille personnes viennent. Le même salon tient en quelques milliers de lignes, et
+n'en écrit pas une de plus si la fréquentation double.
+
+Trois tables, parce que les trois questions n'ont pas la même forme.
+
+| | |
+|---|---|
+| `compteur` | la fréquentation, à l'heure, sans objet |
+| `compteur_cible` | l'audience d'un stand ou d'une conférence, au jour |
+| `visiteur_jour` | un jeton vu tel jour — le seul décompte qui ne soit pas une somme |
+
+Croiser l'objet et l'heure reconstruirait le problème qu'on fuit : 931 stands ×
+9 canaux × 48 heures font quatre cent mille lignes possibles. D'où deux
+granularités, et non une.
+
+`visiteur_jour` existe parce que « combien de visiteurs » est un cardinal, pas
+une somme : il faut avoir vu les jetons. Mais il ne faut pas avoir gardé les
+gestes — une ligne par (visiteur, jour) au lieu de vingt-sept par visiteur, et le
+décompte reste exact.
+
+Ce qu'on y perd : croiser deux genres sur un même visiteur, « ceux qui calculent
+un itinéraire ouvrent-ils plus de fiches ». Aucun chiffre du rapport ne posait
+cette question. Ce qu'on y gagne : savoir **quel** stand a été consulté, ce que
+le journal ne disait pas — il ne retenait que le genre du geste, jamais son objet.
+
 ### Ce qui est enregistré, et ce qui ne l'est pas
 
-Une ligne par geste, dans la table `mesure` : l'événement, le geste, le canal,
-deux jetons, un horodatage. **Rien d'autre** — ni adresse IP, ni agent
-utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au hasard par
-le navigateur et rangé chez lui sous une clé propre à l'événement
+Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure.
+`visiteur_jour` porte un jeton et une date. **Rien d'autre** — ni adresse IP, ni
+agent utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au
+hasard par le navigateur et rangé chez lui sous une clé propre à l'événement
 (`plan-visiteur:<slug>`) : il ne suit personne d'un salon à l'autre, encore moins
-d'un site à l'autre. Le jeton de session ne survit pas à l'onglet — c'est lui qui
-fait la différence entre « une visite » et « un visiteur ».
+d'un site à l'autre. Les chiffres par stand sont des agrégats où aucun jeton ne
+figure.
 
 La page ne mesure rien dans deux cas : la version à données figées
 (`plan-smcl.html`), qui n'appelle aucune API, et la page d'administration, où
 l'on mesurerait l'exploitant en train de préparer son salon. Un événement en
 brouillon n'est pas mesuré non plus : la fonction refuse ce qui n'est pas publié.
 
-Les gestes partent **par paquets** — vingt, ou quatre secondes d'inactivité, ou
-le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet. Une
-panne réseau se tait : la mesure ne doit jamais gêner la visite.
+Les gestes partent **par paquets** — vingt, ou trente secondes d'inactivité, ou
+le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet.
+Trente secondes et non quatre : à quatre, chaque fiche ouverte partait dans son
+propre paquet, et la mesure devenait le premier poste d'appels du système, devant
+le plan lui-même. Une panne réseau se tait : la mesure ne doit jamais gêner la
+visite.
 
-L'écriture passe par la fonction `mesure`, jamais par la table : une table
-ouverte en écriture au public serait un formulaire de spam. Le vocabulaire y est
-clos — un genre inconnu est écarté, pas enregistré sous un nom approximatif — et
-la contrainte de la table le redit. La lecture passe par
-`rapport_utilisation()`, qui agrège tout en un appel : rapatrier les gestes pour
-les compter dans le navigateur reviendrait à télécharger un salon entier.
+L'écriture passe par la fonction `mesure`, jamais par les tables : une table
+ouverte en écriture au public serait un formulaire de spam — et cette fois le
+spam resterait, puisque plus rien ne se purge. Elle appelle
+`enregistre_mesures()`, qui résout l'événement, filtre le vocabulaire et
+incrémente les trois compteurs en une seule transaction. Le vocabulaire est clos
+— un genre inconnu est écarté, pas enregistré sous un nom approximatif — et une
+cible que l'événement ne porte pas l'est aussi : la table `cible`, écrite par la
+synchronisation, dit ce qui existe et donne les libellés que le rapport affiche.
+Un canal inconnu, en revanche, n'emporte pas son geste : la fiche a bien été
+ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
+
+La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
 
 ## Créer le projet Supabase
 

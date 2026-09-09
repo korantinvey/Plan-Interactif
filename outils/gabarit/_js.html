@@ -695,7 +695,7 @@ function ficheConf(id, canal){
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
-  mesure("fiche_conf", canal);
+  mesure("fiche_conf", canal, String(id));
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -1005,7 +1005,7 @@ function ouvre(o, rect, canal, iSoc){
   ecarteClicFantome();
   anime(rect, 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
-  if (!zone) mesure("fiche_stand", canal);
+  if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
