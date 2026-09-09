@@ -105,6 +105,11 @@ function indexe(d){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
+     ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
+     ne décrit plus rien. */
+  oublieGrilles();
+  oublieLiaisons();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));

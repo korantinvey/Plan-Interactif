@@ -108,6 +108,8 @@ function majElement(){
     }
   }
 
+  majLiens(f.t === "repere" ? f : null);
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -120,6 +122,97 @@ function majElement(){
       ch.value = s ? etiquetteStand(s) : "";
     }
   }
+}
+
+/* ------------------------------------------------------------
+   Ce qu'un passage rejoint
+   ------------------------------------------------------------ */
+/**
+ * Les passages qu'un repère peut rejoindre.
+ *
+ * Ceux des autres plans, et eux seuls : relier deux escaliers du même hall ne
+ * décrirait rien qu'une allée ne dise déjà, et deux portes d'un même pavillon
+ * feraient un raccourci que personne ne peut emprunter. Ce qui reste est
+ * exactement ce dont on a besoin — le palier à l'étage, la porte d'en face.
+ */
+function candidatsLiaison(f){
+  const an = annuaireLiaisons();
+  const deja = an.vers.get(f.id) || new Set();
+  const ici = P().id;
+  const out = [];
+  an.par.forEach((o, id) => {
+    if (id === f.id || deja.has(id) || o.p.id === ici) return;
+    out.push(o);
+  });
+  return out.sort((a, b) => a.p.i - b.p.i ||
+    COLLATION.compare(nomLiaison(a.f), nomLiaison(b.f)));
+}
+
+/**
+ * Poser ou retirer une liaison, des deux côtés à la fois.
+ *
+ * Un passage n'a pas de sens : on descend l'escalier qu'on a monté. Il
+ * s'écrit donc sur les deux repères, et le second vit dans un autre plan —
+ * hors de l'historique d'annulation, qui ne connaît que le plan ouvert. Le
+ * calcul lit de toute façon l'union des deux écritures : une annulation qui
+ * ne défait qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
+ */
+function changeLien(idAutre, ajoute){
+  const cible = formeSel && formeParId(formeSel);
+  const autre = annuaireLiaisons().par.get(idAutre);
+  if (!cible || !autre || !typeLiaison(cible.f)) return;
+  memorise();
+  const pose = (f, id) => {
+    const l = new Set(f.liens || []);
+    if (ajoute) l.add(id); else l.delete(id);
+    if (l.size) f.liens = [...l]; else delete f.liens;
+  };
+  pose(cible.f, idAutre);
+  pose(autre.f, cible.f.id);
+  enregistreDessins();
+  majElement();
+}
+
+/**
+ * Le panneau des liaisons du repère choisi.
+ *
+ * Il n'apparaît que pour ce qui est un passage — une porte, un escalier, un
+ * escalator, un ascenseur. Sur un WC il n'aurait rien à relier, et proposer
+ * de le faire inviterait à des trajets qui traversent les murs.
+ */
+function majLiens(f){
+  const z = $("elemLiens");
+  if (!z) return;
+  const t = f && typeLiaison(f);
+  z.hidden = !t;
+  if (!t) return;
+
+  const liste = $("elemLiensListe");
+  liste.innerHTML = "";
+  const liens = liensDe(f);
+  liens.forEach(o => {
+    const d = document.createElement("div");
+    d.className = "lien";
+    d.innerHTML = '<span></span><button class="btnSup" title="Retirer ce passage">&times;</button>';
+    d.querySelector("span").textContent = o.p.libelle + " · " + nomLiaison(o.f) +
+      (o.visible ? "" : " (calque masqué)");
+    d.querySelector("button").onclick = () => changeLien(o.f.id, false);
+    liste.appendChild(d);
+  });
+
+  const sel = $("elemLienAjout");
+  const dispo = candidatsLiaison(f);
+  sel.innerHTML = '<option value="">' +
+    (dispo.length ? "Relier à…" : "Aucun autre passage sur les autres plans") + "</option>" +
+    dispo.map(o => '<option value="' + esc(o.f.id) + '">' + esc(o.p.libelle) + " · " +
+      esc(nomLiaison(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
+  sel.disabled = !dispo.length;
+
+  $("elemLienAide").textContent = liens.length
+    ? "Un trajet qui arrive ici continue de l'autre côté."
+    : "Reliez ce " + t.nom + " à son jumeau sur l'autre plan — l'escalier au palier " +
+      "qu'il dessert, la porte à celle d'en face — et les itinéraires enchaîneront " +
+      "les deux plans au lieu de s'arrêter là.";
 }
 
 /** « G55 — SMC2 », ou le seul des deux qui existe. */
@@ -174,11 +267,17 @@ function appliquePicto(){
   if (!cible || cible.f.t !== "repere") return;
   memorise();
   cible.f.picto = $("elemPicto").value;
+  /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
+     ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
+     ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
   enregistreDessins();
   /* Le pavage des allées tient compte des escaliers et des escalators : en
      désigner un, ou cesser de le faire, change les trajets accessibles. */
   oublieGrilles();
-  dessineDessins(); dessinePoignees();
+  /* Devenir un escalier, ou cesser de l'être, ouvre ou ferme le panneau des
+     passages : le panneau se relit donc, comme après tout changement de ce
+     qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
 }
 
 function supprimeForme(){

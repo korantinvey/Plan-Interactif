@@ -35,6 +35,7 @@
  * distance annoncée — celle-ci ne porte que ce qui est tracé, et le dit.
  */
 const TRANSFERT_M = 300;     // pour ordonner, jamais pour annoncer
+const LIAISON_M = 60;        // quand un passage déclaré joint les deux plans
 const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
 
 /* L'heure d'arrivée d'une visite à l'autre : celui qui vient deux jours de
@@ -147,15 +148,17 @@ function matriceJournee(pts, pmr){
     parPlan.get(pt.p).push(i);
   });
 
-  /* Ce qui sépare un arrêt de la porte la plus proche de son pavillon : c'est
-     par là que passe tout trajet vers un autre hall. */
+  /* Ce qui sépare un arrêt de la sortie la plus proche de son plan : c'est
+     par là que passe tout trajet vers un autre — la porte du hall, ou
+     l'escalier qui monte à l'étage. */
   const auxPortes = new Float64Array(n);
+  const relies = plansRelies(pmr);
 
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
     const cases = idx.map(i => accroche(g, pts[i].xy));
-    const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
+    const portes = sortiesDe(p, pmr).map(f => accroche(g, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
       const d = distancesDepuis(g, cases[k]);
@@ -172,7 +175,12 @@ function matriceJournee(pts, pmr){
 
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (i === j || !pts[i] || !pts[j] || pts[i].p === pts[j].p) continue;
-    D[i][j] = auxPortes[i] + TRANSFERT_M + auxPortes[j];
+    /* Deux plans qu'un passage joint ne sont pas deux pavillons éloignés : le
+       premier étage se rejoint par son escalier, et l'ordre de visite doit
+       pouvoir y monter puis redescendre sans que le calcul le lui compte
+       comme une traversée du salon. */
+    const forfait = relies.has(pts[i].p + "|" + pts[j].p) ? LIAISON_M : TRANSFERT_M;
+    D[i][j] = auxPortes[i] + forfait + auxPortes[j];
   }
   return D;
 }
@@ -396,27 +404,46 @@ function calculeJournee(choix){
   const etapes = [], arrets = [], trace = [], retards = [];
   let t = choix.arrivee, m = 0, coupe = false, rang = 0;
 
+  /**
+   * D'un arrêt au suivant.
+   *
+   * C'est le même calcul que le trajet d'un point à un autre, et pour la même
+   * raison : un escalier déclaré fait continuer la journée à l'étage au lieu
+   * de la couper au bord du plan. Un trajet en plusieurs morceaux donne
+   * plusieurs lignes dans le déroulé — on marche, on prend l'escalier, on
+   * marche encore — car c'est bien ce que le visiteur fera.
+   */
   const rejoint = (a, b) => {
     if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
-    const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
-    if (pa === pb){
-      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy);
-      const l = tr ? tr.m : dist(a, b);
-      if (tr) trace.push(tr);
-      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
+    const r = routeEntre(PTS[a], PTS[b], pmr);
+    if (r.coupe) coupe = true;
+    for (const e of r.etapes){
+      trace.push(e);
+      if (e.genre === "marche"){
+        etapes.push({ genre: "marche", m: e.m, min: enMinutes(e.m), trace: true });
+        t += enMinutes(e.m);
+        m += e.m;
+      } else if (e.genre === "liaison"){
+        const min = (TYPES_LIAISON[e.type] || {}).min || TRANSFERT_MIN;
+        etapes.push(Object.assign({ min: min }, e));
+        t += min;
+      } else {
+        etapes.push({ genre: "transfert", de: e.de, vers: e.vers, min: TRANSFERT_MIN });
+        t += TRANSFERT_MIN;
+      }
+    }
+    /* Rien de tracé alors que les deux arrêts partagent leur plan : un stand
+       enclavé, une allée introuvable. La matrice, elle, a une distance — celle
+       qui a servi à ranger la journée — et l'annoncer vaut mieux que de
+       laisser croire à un pas de porte. Entre deux plans elle porterait le
+       forfait de dissuasion, qui n'a jamais sa place dans les mètres
+       annoncés : on n'ajoute alors rien. */
+    if (PTS[a].p === PTS[b].p && !r.etapes.some(e => e.genre === "marche")){
+      const l = dist(a, b);
+      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: false });
       t += enMinutes(l);
       m += l;
-      return;
     }
-    coupe = true;
-    const sortie = versPorte(pa, pmr, PTS[a].xy, false);
-    const entree = versPorte(pb, pmr, PTS[b].xy, true);
-    if (sortie){ trace.push(sortie); m += sortie.m; }
-    trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
-    if (entree){ trace.push(entree); m += entree.m; }
-    const min = enMinutes((sortie ? sortie.m : 0) + (entree ? entree.m : 0)) + TRANSFERT_MIN;
-    etapes.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle, min: min });
-    t += min;
   };
 
   const pose = (i, conf) => {
@@ -574,6 +601,8 @@ function remplitJournee(){
     } else if (e.genre === "marche"){
       lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
         (e.trace ? "" : " (non tracé)"));
+    } else if (e.genre === "liaison"){
+      lienJournee(fil, phraseLiaison(e).s + " Comptez " + ecritMinutes(e.min) + ".");
     } else if (e.genre === "transfert"){
       lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
         ", ce trajet n'est pas sur le plan");
