@@ -205,10 +205,10 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   tracés qui, eux, sont exacts. La distance annoncée est celle des tronçons, et
   l'affichage le dit (« au moins 165 m »). Sans repère « Entrée/Sortie » sur le
   plan, cette partie n'est pas tracée, et le tiroir l'explique plutôt que
-  d'inventer. Entrée et sortie ne font qu'un repère : on entre et on sort par
-  la même porte, et le trajet l'emprunte dans les deux sens. Les plans posés
-  avant cette fusion n'ont rien à reprendre — l'ancien pictogramme « Sortie »
-  se range sous le nouveau.
+  d'inventer. Entrée et sortie ne font qu'un type de repère : on entre et on
+  sort par la même porte, et le trajet l'emprunte dans les deux sens. Les plans
+  posés avant cette fusion n'ont rien à reprendre — l'ancien pictogramme
+  « Sortie » se range sous le nouveau.
 
 ### Ce qui n'est pas praticable
 
@@ -254,6 +254,33 @@ Le rôle vit dans les réglages, à côté de l'ordre des calques, et part aux
 visiteurs à la publication : les colonnes de `calque_dessin` sont fixées, celles
 des réglages ne le sont pas, et rien de tout cela ne demande de migration.
 
+### Ce qu'un repère est, et ce qu'il s'appelle
+
+Un repère porte deux choses distinctes, et les confondre coûtait cher.
+
+Son **type** se choisit dans une liste — Entrée/Sortie, WC, Escalier, Accueil,
+Restauration, Ascenseur… — et c'est lui qui porte les propriétés : le
+pictogramme affiché, la qualité de porte par où un trajet passe d'un pavillon à
+l'autre, et l'obstacle qu'un escalier ou un escalator oppose au mode
+accessible. Son **libellé** s'écrit librement et ne sert qu'à distinguer un
+exemplaire d'un autre.
+
+Le type était auparavant deviné depuis le libellé, sur correspondance exacte :
+« Entrée » était une porte, « Entrée Nord » n'en était plus une — ni pour le
+dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui nommait
+ses portes perdait ce qui les rendait utiles, et deux escaliers ne pouvaient
+pas être nommés sans cesser tous deux d'être des escaliers.
+
+Sur le plan, le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose
+que lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien. Le
+type se change après coup depuis le panneau de la forme choisie — une porte mal
+typée ne se voit qu'en essayant un trajet, et il serait absurde de la
+redessiner pour cela.
+
+Les repères posés avant cette séparation n'ont que leur libellé : il continue
+d'être interprété pour eux, et leur plan s'affiche comme il le faisait. Le type
+s'écrit dès qu'on y touche.
+
 ### Le mode accessible
 
 Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
@@ -291,12 +318,10 @@ sur le plan, chaque pastille portant le rang de l'arrêt.
 
 Trois questions au plus, et deux ne se posent que si elles ont lieu d'être : le
 jour, quand le salon en compte plusieurs ; le point d'entrée, quand l'exploitant
-a posé des repères de porte — « Peu importe » reste offert, la journée commence
-alors au premier stand. Un plan sans aucune porte marquée ne pose pas la
-question et le dit, plutôt que de laisser son absence passer pour un oubli.
-**Le repère « Entrée/Sortie » se reconnaît à son pictogramme, donc à son
-libellé exact** : « Entrée principale » n'en est pas un, et le trajet entre
-pavillons l'ignore aussi. La liste des départs ne montre que les portes : un
+a posé des repères de type *Entrée/Sortie* — « Peu importe » reste offert, la
+journée commence alors au premier stand. Un plan sans aucune porte marquée ne
+pose pas la question et le dit, plutôt que de laisser son absence passer pour
+un oubli. La liste des départs ne montre que les portes : un
 escalier ou des sanitaires ne sont pas des endroits par lesquels on commence sa
 journée, et les proposer repoussait les entrées hors de l'écran. Un hall qui a
 plusieurs portes du même nom les voit numérotées, faute de mieux — les renommer

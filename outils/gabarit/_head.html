@@ -273,13 +273,17 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .elem[hidden]{display:none}
 /* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
    accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
-#repereChoix,#repereTexte{display:none}
-.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
-#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+#repereType,#repereTexte{display:none}
+.outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
+#repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+#elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
+   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
+.dcal .repere .repLab{text-anchor:start}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -1127,14 +1131,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
-      <select id="repereChoix"></select>
-      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
+      <select id="repereType" title="Ce que le repère est"></select>
+      <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
       <div class="elem" id="elemSel" hidden>
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
+        <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>

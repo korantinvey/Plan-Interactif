@@ -278,13 +278,17 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .elem[hidden]{display:none}
 /* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
    accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
-#repereChoix,#repereTexte{display:none}
-.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
-#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+#repereType,#repereTexte{display:none}
+.outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
+#repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+#elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
+   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
+.dcal .repere .repLab{text-anchor:start}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -1132,14 +1136,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
-      <select id="repereChoix"></select>
-      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
+      <select id="repereType" title="Ce que le repère est"></select>
+      <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
       <div class="elem" id="elemSel" hidden>
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
+        <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
@@ -3213,33 +3218,64 @@ const PICTO_MOTS = {
   "reunion": "reunion",
 };
 
-/** Le pictogramme correspondant à un libellé, s'il en existe un. */
+/** Le pictogramme que suggère un libellé, s'il en existe un. */
 const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || null;
 
 /**
- * Le pictogramme d'un repère, quel que soit son âge.
+ * Ce qu'un repère est, et ce qu'il s'appelle.
  *
- * « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en
- * font plus qu'un, parce qu'une porte de hall est les deux à la fois — on y
- * entre le matin et on en sort le soir, et le trajet l'emprunte dans les deux
- * sens. Les repères déjà posés sous l'ancien nom se rangent sous le nouveau :
- * rien à reprendre sur les plans en service, et un dessin publié avant ce
- * jour continue de s'afficher comme il le faisait.
+ * Les deux se confondaient : le pictogramme était deviné depuis le libellé, si
+ * bien qu'un repère nommé « Entrée Nord » n'était plus une entrée — ni pour le
+ * dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui
+ * nomme ses portes perdait donc ce qui les rendait utiles, et il n'y avait pas
+ * moyen de nommer deux escaliers sans les déclasser tous les deux.
+ *
+ * Le type et le libellé sont donc deux choses. Le type porte les propriétés —
+ * le pictogramme, l'obstacle en fauteuil, la qualité de porte par où passe un
+ * trajet entre pavillons — et se choisit dans une liste. Le libellé ne sert
+ * qu'à distinguer un exemplaire d'un autre, et s'écrit librement.
+ *
+ * Un repère posé avant cette séparation n'a que son libellé : on continue de
+ * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
+ * s'écrit dès qu'on y touche.
  */
+const TYPES_REPERE = [
+  { v: "",             nom: "Sans pictogramme" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "wc",           nom: "WC" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "info",         nom: "Information" },
+  { v: "restauration", nom: "Restauration" },
+  { v: "cafe",         nom: "Café" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "secours",      nom: "Secours" },
+  { v: "pmr",          nom: "Accessibilité" },
+  { v: "parking",      nom: "Parking" },
+  { v: "distributeur", nom: "Distributeur" },
+  { v: "reunion",      nom: "Salle de réunion" },
+];
+const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+
+/* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
+   plus qu'un, une porte de hall étant les deux à la fois. */
 const PICTO_ALIAS = { sortie: "entree" };
+
+/**
+ * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
+ * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
+ * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
+ */
 function pictoForme(f){
-  const p = f.picto || pictoDe(f.txt);
+  const p = f.picto === undefined ? pictoDe(f.txt) : f.picto;
   return PICTO_ALIAS[p] || p;
 }
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
-
-const REPERES = ["WC", "Entrée/Sortie", "Accueil", "Information",
-                 "Restauration", "Café", "Vestiaire", "Ascenseur", "Escalier",
-                 "Escalator", "Secours", "PMR", "Parking", "Distributeur",
-                 "Salle de réunion"];
 
 /**
  * Un repère : une pastille dans la couleur du calque, son libellé dedans.
@@ -3260,13 +3296,23 @@ function traceRepere(f){
   const g = PICTOS[pictoForme(f)];
   if (g){
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+    /* Le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose que
+       lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien.
+       Un libellé qui n'est que le mot du type resterait une redite, et deux
+       pastilles voisines s'élargiraient pour rien. */
+    const dit = String(f.txt || "").trim();
+    const l = dit && !PICTO_MOTS[dit.toLowerCase()] ? largeur(dit, P_NOM) * t : 0;
+    const w = cote + (l ? l + t * .8 : 0);
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (l ? '<text class="repLab" x="' + (x + cote).toFixed(2) + '" y="' +
+           (f.pts[0][1] + t * .35).toFixed(2) + '" font-size="' + t.toFixed(2) + '">' +
+           esc(dit) + '</text>' : "") + '</g>';
   }
 
   const l = largeur(f.txt || "", P_NOM) * t;
@@ -3469,10 +3515,14 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "repere"){
-    const txt = $("repereTexte").value.trim();
+    const type = $("repereType").value;
+    /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
+       cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
+       rien à poser. */
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
-    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: TAILLE_REPERE });
+    ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
@@ -3572,19 +3622,17 @@ $("renommeOutils").onclick = () => {
   const c = trouveCalque(calqueActif);
   if (c) renommeCalque(c);
 };
-/* La liste ne fait que remplir le champ : un libellé libre reste possible. */
-$("repereChoix").innerHTML = '<option value="">Libellés courants…</option>' +
-  REPERES.map(r => '<option>' + esc(r) + '</option>').join("");
-$("repereChoix").onchange = e => {
-  if (!e.target.value) return;
-  $("repereTexte").value = e.target.value;
-  e.target.value = "";
-  $("repereTexte").focus();
-};
+/* Le type décide de ce que le repère est ; le libellé, de ce qu'il s'appelle.
+   Poser un WC ne demande donc rien d'autre que de choisir « WC » — le libellé
+   ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
+$("repereType").innerHTML =
+  TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+$("repereType").onchange = () => $("repereTexte").focus();
 
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+$("elemPicto").onchange = appliquePicto;
 // on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
@@ -3793,6 +3841,23 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* Le type d'un repère se change après coup : une porte mal typée ne se voit
+     qu'en essayant un trajet, et il serait absurde de la redessiner pour
+     cela. Un repère d'avant la séparation du type et du libellé n'en porte
+     pas : la liste s'ouvre sur celui que son libellé laisse deviner, et le
+     choix s'écrit dès qu'on y touche. */
+  const cp = $("elemPicto");
+  if (cp){
+    const estRepere = f.t === "repere";
+    cp.hidden = !estRepere;
+    if (estRepere){
+      if (!cp.options.length)
+        cp.innerHTML = TYPES_REPERE
+          .map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+      cp.value = pictoForme(f) || "";
+    }
+  }
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -3850,6 +3915,20 @@ function appliqueTexte(){
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
+ *  vaut pour l'itinéraire — une porte, un escalier à contourner en fauteuil. */
+function appliquePicto(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "repere") return;
+  memorise();
+  cible.f.picto = $("elemPicto").value;
+  enregistreDessins();
+  /* Le pavage des allées tient compte des escaliers et des escalators : en
+     désigner un, ou cesser de le faire, change les trajets accessibles. */
+  oublieGrilles();
+  dessineDessins(); dessinePoignees();
 }
 
 function supprimeForme(){
