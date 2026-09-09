@@ -5,7 +5,9 @@
  * dépôt paraît juste, et les visiteurs reçoivent l'ancienne page.
  *
  * Ce script reconstruit puis demande à git si quelque chose a bougé. Si oui,
- * c'est que les pages versionnées étaient en retard sur leurs sources.
+ * c'est que les pages versionnées étaient en retard sur leurs sources. La même
+ * vérification vaut pour `CARTE.md`, l'index des sources : un index en retard
+ * envoie chercher au mauvais endroit, ce qui est pire que pas d'index.
  *
  *   node outils/verifie.js
  */
@@ -21,6 +23,7 @@ const lance = (script) =>
 try {
   lance("assemble.js");
   lance("genere.js");
+  lance("carte.js");
 } catch (e) {
   console.error("La construction a échoué :\n" + (e.stdout || e.message).toString());
   process.exit(1);
@@ -28,14 +31,15 @@ try {
 
 let bouge = "";
 try {
-  bouge = execFileSync("git", ["status", "--porcelain", "web"], { cwd: racine }).toString().trim();
+  bouge = execFileSync("git", ["status", "--porcelain", "web", "CARTE.md"], { cwd: racine })
+    .toString().trim();
 } catch (e) {
   console.log("Construction faite. (git indisponible : comparaison impossible)");
   process.exit(0);
 }
 
 if (!bouge) {
-  console.log("Pages à jour : `web/` correspond bien à `outils/gabarit/`.");
+  console.log("Pages à jour : `web/` et `CARTE.md` correspondent bien à `outils/gabarit/`.");
   process.exit(0);
 }
 
