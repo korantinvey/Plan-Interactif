@@ -14,9 +14,11 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
-     la grille de marche qui les ignore n'a plus cours. On attend la fin du
-     geste — dessiner en refait une à chaque image serait insoutenable. */
+     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
+     passages non plus. On attend la fin du geste — dessiner en referait une à
+     chaque image, ce qui serait insoutenable. */
   oublieGrilles();
+  oublieLiaisons();
   rafraichitApercu();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
@@ -640,6 +642,13 @@ $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
 $("elemPicto").onchange = appliquePicto;
+/* La liste des passages revient à « Relier à… » dès que le choix est fait :
+   c'est une action, pas un réglage — on en pose plusieurs à la suite. */
+$("elemLienAjout").onchange = (e) => {
+  const id = e.target.value;
+  e.target.value = "";
+  if (id) changeLien(id, true);
+};
 // on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;

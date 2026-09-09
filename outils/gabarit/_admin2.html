@@ -52,9 +52,9 @@ function entetesApi(){
 /**
  * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
  * décoratif. On le charge après coup, une seule fois par pavillon, et on
- * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte
- * l'horodatage de la dernière synchronisation : le navigateur le garde
- * indéfiniment et ne le redemande qu'après une mise à jour du plan.
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
+ * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
+ * le redemande que lorsque le dessin servi n'est plus le même.
  */
 const _fonds = new Map();
 function chargeFond(i){
@@ -63,13 +63,16 @@ function chargeFond(i){
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
   if (_fonds.has(p.id)) return _fonds.get(p.id);
 
-  /* L'empreinte du fond fait la version : elle ne bouge que si le dessin
-     bouge, là où l'heure de synchronisation bougeait à chaque passage et
-     faisait retélécharger le même dessin. Un pavillon pas encore
-     resynchronisé n'en a pas, et retombe sur l'horodatage. */
+  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
+     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
+     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
+     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
+     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
+     version antérieure du service n'en porte pas : on retombe alors sur
+     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
   const q = API + "?slug=" + encodeURIComponent(SLUG) +
             "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(p.empreinte || DATA.genereLe || "0");
+            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
   const promesse = fetch(q, { headers: entetesApi() })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {

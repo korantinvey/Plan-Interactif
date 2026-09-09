@@ -13,6 +13,10 @@
   --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
+  /* Un secteur n'a qu'une teinte : la saturation et la clarté viennent du
+     thème, sans quoi le libellé du stand — écrit à l'encre du texte —
+     deviendrait illisible sur l'un des deux. */
+  --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
@@ -25,6 +29,7 @@
     --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
     --zone:#F0B429; --zone-soft:#3A2F12;
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+    --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
   }
@@ -36,6 +41,7 @@
   --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
   --zone:#F0B429; --zone-soft:#3A2F12;
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+  --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
 }
@@ -100,6 +106,27 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Les secteurs : une bande qui sert de légende et de filtre. Dans sa colonne
+   elle se replie sur plusieurs lignes — une légende ne se lit que d'un coup
+   d'œil, et un secteur caché hors du cadre ne se devine pas. */
+.secteurs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.secteurs::-webkit-scrollbar{display:none}
+.secteurs .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.secteurs .chip:hover{border-color:var(--line-strong)}
+.secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink)}
+/* La pastille montre la couleur du stand, la choisie comme l'automatique. Un
+   liseré la borde : une couleur pâle, choisie pour un aplat, disparaîtrait
+   sinon sur le fond clair du tiroir. */
+.secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+  border:1px solid var(--line-strong);
+  background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
+/* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
+   trouve pas : le filtre reste, le repère de couleur s'efface. */
+.sans-secteurs .secteurs .chip i{display:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -158,6 +185,10 @@ button{cursor:pointer;background:none;border:none}
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
+/* La teinte du secteur est posée sur le groupe par la page. La règle vient
+   avant le survol et la sélection, à spécificité égale, pour leur laisser la
+   main : un stand qu'on désigne doit se voir plus que son secteur. */
+.stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */
@@ -284,6 +315,27 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 /* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
    de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
 .dcal .repere .repLab{text-anchor:start}
+/* Ce qu'un passage rejoint sur un autre plan : un escalier son palier à
+   l'étage, une porte celle du hall d'en face. La liste se lit d'un coup
+   d'œil, chaque ligne se retire d'une croix. */
+.elemLiens{display:flex;flex-direction:column;gap:5px}
+.elemLiens[hidden]{display:none}
+.elemLiens select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.elemLiens select:focus{border-color:var(--accent);outline:none}
+.elemLiens i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.elemLiens i:empty{display:none}
+.lienListe{display:flex;flex-direction:column;gap:4px}
+.lienListe:empty{display:none}
+.lienListe .lien{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);
+  padding:4px 4px 4px 7px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--accent)}
+.lienListe .lien span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le temps du passage : un champ étroit, son unité collée, et l'invite qui
+   montre le temps ordinaire du type — vide ne veut pas dire zéro. */
+.elem .lienListe .lien input{width:44px;flex:none;padding:2px 4px;font-size:11.5px;
+  text-align:right;background:var(--surface);border:1px solid var(--line)}
+.lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -737,6 +789,11 @@ button.expo:hover{background:var(--line)}
 .iEtape{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:var(--surface-2);
   border-radius:var(--radius);border-left:2px solid var(--accent)}
 .iEtape.transfert{border-left-style:dashed;border-left-color:var(--line-strong)}
+/* Une étape qui se déroule dans un pavillon qu'on ne regarde pas s'y rend
+   d'un clic : c'est un bouton, mais il garde l'aspect des autres étapes —
+   c'est la même liste, et seul le survol le distingue. */
+.iEtape.ailleurs{width:100%;text-align:left}
+.iEtape.ailleurs:hover{background:var(--accent-soft)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
 
@@ -936,6 +993,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
+  /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
+     ligne qui défile, et ce qu'elle montre déborde par le côté. */
+  .secteurs{flex-wrap:nowrap;overflow-x:auto}
+
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
@@ -1084,6 +1145,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
     </div>
+    <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
   </aside>
@@ -1141,6 +1203,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
+        <div class="elemLiens" id="elemLiens" hidden>
+          <span class="eyebrow">Passages vers d'autres plans</span>
+          <div class="lienListe" id="elemLiensListe"></div>
+          <select id="elemLienAjout"></select>
+          <i id="elemLienAide"></i>
+        </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
@@ -1287,7 +1355,7 @@ let HEBERGES = [];
    `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
-const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0 };
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set() };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1329,7 +1397,8 @@ function indexe(d){
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
-      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "")).toLowerCase();
+      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
+                " " + (s.sect || "")).toLowerCase();
       /* Les enseignes que le stand héberge, à part : le plan doit rester
          allumé quand on en cherche une, mais la liste ne doit pas répondre
          « Hippopotamus » à qui a tapé « Burger King ». */
@@ -1337,18 +1406,33 @@ function indexe(d){
         .map(x => (x.nom || "") + " " + (x.plan || "")).join(" ").toLowerCase();
     });
   });
+  /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
+     des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
+     dans la configuration, parlent bien de lui. */
+  indexeSecteurs();
+
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
      téléphone n'a rien dans son stockage local. Le poste ne sert plus que de
-     cache, et de refuge si un enregistrement a échoué. */
+     cache, et de refuge si un enregistrement a échoué — celui de ce salon-ci,
+     que la clé de rangement désigne maintenant. */
+  ouvreConf(d);
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
-    if (a.reglages && Object.keys(a.reglages).length) Object.assign(CONF, a.reglages);
+    // un enregistrement d'avant le cloisonnement porte les calques d'autres
+    // salons : ils ne désignent rien ici, et fausseraient la publication
+    if (a.reglages && Object.keys(a.reglages).length)
+      Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     if (Array.isArray(p.dessins) && p.dessins.length){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
+     ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
+     ne décrit plus rien. */
+  oublieGrilles();
+  oublieLiaisons();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
@@ -1358,8 +1442,9 @@ function indexe(d){
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => ({
       kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-      nom: x.nom, plan: x.plan,
-      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "")).toLowerCase(),
+      sect: s.sect, nom: x.nom, plan: x.plan,
+      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
+             " " + (s.sect || "")).toLowerCase(),
     }))));
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -1606,8 +1691,8 @@ function libelles(){
 }
 
 /* ============================================================
-   5. Recherche — sans mot-clé on reste sur le pavillon affiché,
-      dès qu'on cherche on balaie les trois
+   5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+      pavillon affiché, dès qu'on filtre on balaie les trois
 
    On ne cherche qu'un exposant. Les zones organisateur — restauration,
    accueil, animations — ne se retiennent pas par leur nom : on les repère
@@ -1616,11 +1701,137 @@ function libelles(){
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
    leur fiche et leur programme.
    ============================================================ */
-/** Ce que la liste retient : une société répond pour elle-même, jamais pour son voisin. */
+/* Les secteurs, et la teinte de chacun.
+
+   Les teintes tournent sur une roue plutôt que de se tirer d'une palette
+   nommée : un salon découpe en cinq secteurs, un autre en dix-huit, et une
+   palette finie redonnerait deux fois la même couleur sans qu'on l'ait voulu.
+   L'ordre est celui des noms, jamais celui des stands : le même secteur garde
+   sa couleur d'un pavillon à l'autre, et d'une synchronisation à la suivante. */
+const TEINTES = [212, 28, 145, 340, 262, 42, 190, 8, 100, 310, 172, 62];
+let SECTEURS = new Map();
+
+function indexeSecteurs(){
+  const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(s => s.sect)))]
+    .filter(Boolean).sort(COLLATION.compare);
+  SECTEURS = new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]]));
+}
+
+/**
+ * Les secteurs se montrent-ils ?
+ *
+ * Un salon qui ne sectorise pas n'a rien à montrer ; ailleurs c'est un réglage,
+ * car un plan déjà réglé au blanc ou à la couleur maison de l'exploitant ne
+ * doit pas se retrouver bariolé sans qu'il l'ait demandé.
+ */
+const secteursMontres = () => SECTEURS.size > 0 && conf("_secteurs").visible !== false;
+
+/* La configuration voyage par la base et finit dans un attribut de style : on
+   n'accepte d'elle que la forme hexadécimale, celle que rend le sélecteur. */
+const couleurConf = v => /^#[0-9A-Fa-f]{3,8}$/.test(String(v || "")) ? String(v) : null;
+
+/** Une teinte du cercle chromatique en hexadécimal, pour un sélecteur de
+ *  couleur — qui ne connaît que cette notation. */
+function hslHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => Math.round(255 *
+    (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return "#" + [f(0), f(8), f(4)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * La couleur d'un secteur, telle que le plan la montre.
+ *
+ * Celle que l'exploitant a choisie s'il l'a fait ; sinon la teinte automatique,
+ * résolue dans le thème courant — c'est bien la couleur qu'on voit à l'écran
+ * que le sélecteur doit présenter, et non celle d'un thème qu'on ne regarde
+ * pas.
+ */
+function couleurSecteur(nom){
+  return couleurConf(conf("secteur:" + nom).couleur) ||
+    hslHex(SECTEURS.get(nom) || 0,
+           parseFloat(jeton("--sect-s")) || 58, parseFloat(jeton("--sect-l")) || 87);
+}
+
+/* La bande des secteurs : légende du plan à gauche, filtre de la liste à
+   droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
+   ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
+   dire. */
+function chipsSecteurs(){
+  const b = $("secteurs");
+  b.hidden = !secteursMontres();
+  if (b.hidden) return;
+  b.innerHTML = [...SECTEURS].map(([nom, h]) => {
+    const c = couleurConf(conf("secteur:" + nom).couleur);
+    return '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
+      state.secteurs.has(nom) + '" style="--sect-h:' + h + (c ? ";--sect-c:" + c : "") +
+      '"><i></i>' + esc(nom) + '</button>';
+  }).join("");
+  b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
+    const n = x.dataset.s;
+    if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
+    x.setAttribute("aria-pressed", state.secteurs.has(n));
+    appliqueFiltre();
+  });
+}
+
+/**
+ * La teinte du secteur, posée sur le groupe du stand plutôt que sur son tracé :
+ * la feuille de style la lit de là, et garde la main sur le survol et la
+ * sélection, qui doivent l'emporter sur elle.
+ */
+function coloreSecteurs(){
+  const on = secteursMontres();
+  racine.classList.toggle("sans-secteurs", !on);
+  document.querySelectorAll("#stands g").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    const nom = on && o ? o.sect : null;
+    const h = nom ? SECTEURS.get(nom) : undefined;
+    if (h === undefined){
+      g.removeAttribute("data-sect");
+      g.style.removeProperty("--sect-h");
+      g.style.removeProperty("--sect-c");
+    } else {
+      g.setAttribute("data-sect", "");
+      g.style.setProperty("--sect-h", h);
+      /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
+         vaut pour les deux thèmes, comme celle des autres couches, et ne se
+         laisse donc pas ternir par la clarté du thème courant. */
+      const c = couleurConf(conf("secteur:" + nom).couleur);
+      if (c) g.style.setProperty("--sect-c", c);
+      else g.style.removeProperty("--sect-c");
+    }
+  });
+}
+
+/** La légende, les couleurs et le filtre suivent le même réglage : retirés du
+ *  plan, ils ne doivent pas laisser derrière eux un filtre invisible qui
+ *  continuerait de retrancher des stands de la liste. */
+function appliqueSecteurs(){
+  if (!secteursMontres()) state.secteurs.clear();
+  chipsSecteurs();
+  coloreSecteurs();
+  // la bande fait partie de ce qui dépasse du tiroir replié : sa hauteur
+  // change, et les commandes du plan se posent dessus
+  mesureTiroir();
+}
+
+/**
+ * Ce que la liste retient : une société répond pour elle-même, jamais pour son
+ * voisin. Un secteur retenu porte, comme un mot-clé, sur tout le salon — un
+ * exposant du secteur cherché peut être dans un autre pavillon que celui qu'on
+ * regarde — et les deux se cumulent : le mot-clé cherche dans les secteurs
+ * retenus, et non à côté d'eux.
+ */
+const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+
 function visible(o){
-  if (!state.qn) return true;
+  if (!state.qn && !state.secteurs.size) return true;
   if (o.kind === "zone") return false;
-  return (o.rech || "").includes(state.qn);
+  return dansSecteurs(o) && (!state.qn || (o.rech || "").includes(state.qn));
 }
 
 /**
@@ -1631,7 +1842,8 @@ function visible(o){
  * d'un autre. C'est le seul endroit où une enseigne répond pour son hôte.
  */
 function visibleSurPlan(o){
-  return visible(o) || (!!state.qn && (o.rechH || "").includes(state.qn));
+  return visible(o) ||
+    (!!state.qn && dansSecteurs(o) && (o.rechH || "").includes(state.qn));
 }
 
 function appliqueFiltre(){
@@ -1645,17 +1857,20 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  /* Les sociétés hébergées ne rejoignent la liste que sur recherche. Hors
-     recherche, elle est le sommaire des emplacements du pavillon — et son
-     compte, celui qu'annonce l'en-tête. */
-  const portee = q ? TOUS.concat(HEBERGES) : P().stands;
+  // un secteur retenu déborde le pavillon affiché, comme un mot-clé
+  const tout = Boolean(q) || state.secteurs.size > 0;
+  /* Les sociétés hébergées ne rejoignent la liste que sur recherche : on les y
+     trouve par leur nom, et un filtre n'est pas un nom. Hors recherche, la
+     liste est le sommaire des emplacements — et son compte, celui qu'annonce
+     l'en-tête. */
+  const portee = q ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (q ? " · tous pavillons" : " · " + P().libelle);
+    (tout ? " · tous pavillons" : " · " + P().libelle);
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
@@ -2183,6 +2398,10 @@ function ouvre(o, rect, canal, iSoc){
   const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && soc.plan && soc.plan !== titre ? f("Raison sociale", esc(soc.plan)) : "") +
+    /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
+       quelle que soit la société qu'on y regarde. Son libellé est résolu à la
+       synchronisation, la page l'affiche tel quel. */
+    ok("secteur", f("Secteur", o.sect ? esc(o.sect) : "")) +
     ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : "")) +
     /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
        par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
@@ -2448,6 +2667,10 @@ $("q").addEventListener("input", e => {
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La mesure du tiroir appartient à ce module, mais la bande des secteurs
+   paraît et disparaît ailleurs : on lui laisse de quoi la redemander. */
+let mesureTiroir = () => {};
+
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
   if (!tiroir || !prise) return;
@@ -2460,7 +2683,7 @@ $("q").addEventListener("input", e => {
   function mesure(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
-    const h = prise.offsetHeight + part(".search") + part(".count");
+    const h = prise.offsetHeight + part(".search") + part(".secteurs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
@@ -2561,6 +2784,7 @@ $("q").addEventListener("input", e => {
     else mesure();
   });
 
+  mesureTiroir = mesure;
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
@@ -2583,10 +2807,60 @@ $("btnTheme").onclick = () => {
    Les réglages vivent dans CONF, partagés par les trois pavillons :
    changer la couleur du bâtiment une fois vaut pour tous.
    ============================================================ */
-const CLE_CONF = "plan-conf";
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
 let CONF = JSON.parse(JSON.stringify(DEFAUTS));
-try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+
+/* Un rangement par salon, et non plus un seul pour tous.
+   Les calques sortent tous du même bureau d'études : « Batiment », « RIA »,
+   « Caniveaux » et leurs sous-calques portent les mêmes noms d'un salon à
+   l'autre. Rangés sous ce seul nom, les réglages suivaient l'exploitant :
+   masquer une gaine chez l'un la masquait chez le suivant, sans que rien ne
+   l'annonce dans son panneau — et la publication emportait le mélange en
+   base. Le salon ouvert nomme donc sa clé. */
+const cleConf = d => "plan-conf:" +
+  ((d && d.slug) || SLUG || (d && d.evenement) || "sans-salon");
+let CLE_CONF = cleConf(null);
+
+/** Ouvre les réglages du salon qu'on vient de charger. */
+function ouvreConf(d){
+  CLE_CONF = cleConf(d);
+  CONF = JSON.parse(JSON.stringify(DEFAUTS));
+  try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+  /* L'ancien rangement commun ne peut que rejouer le mélange, et la base fait
+     foi de toute façon : on le retire plutôt que de le laisser traîner. */
+  try { localStorage.removeItem("plan-conf"); } catch (e) {}
+}
+
+/**
+ * Les réglages qui parlent du salon ouvert : ceux de ses calques et de leurs
+ * sous-calques, plus les réglages généraux — commandes, couches de données,
+ * étiquettes. Tout le reste vient d'un salon voisin ouvert sur le même poste,
+ * et ne désigne rien ici.
+ *
+ * Le filtre s'applique aux deux bouts : ce qu'on lit de la base, et ce qu'on y
+ * renvoie. Un enregistrement déjà mélangé se nettoie donc à la publication
+ * suivante, sans qu'il faille y toucher à la main.
+ */
+function reglagesDuSalon(source){
+  const calques = new Set((DATA?.plans || []).flatMap(p => (p.fond || []).map(c => c.cle)));
+  const sortie = {};
+  Object.keys(source || {}).forEach(k => {
+    if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
+    const general = k[0] === "_" || k.indexOf("data:") === 0 ||
+                    k === "labStand" || k === "labZone" || k === "selection";
+    /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
+       comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
+       ici, et n'a rien à faire dans ce qu'on publie. */
+    const dUnSecteur = k.indexOf("secteur:") === 0 && SECTEURS.has(k.slice(8));
+    /* « calque/sous-calque », mais l'un comme l'autre peut porter une barre
+       oblique : on retient la clé dès qu'une de ses têtes nomme un calque. */
+    const dUnCalque = calques.has(k) ||
+      k.split("/").some((_, i, t) => i && calques.has(t.slice(0, i).join("/")));
+    if (general || dUnCalque || dUnSecteur) sortie[k] = source[k];
+  });
+  return sortie;
+}
+
 const conf = c => (CONF[c] = CONF[c] || {});
 const jeton = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888888";
 const sousCle = (cle, id) => cle + "/" + id;
@@ -2662,6 +2936,7 @@ function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
+  appliqueSecteurs();
 }
 
 /**
@@ -2763,6 +3038,26 @@ function ouvreReglages(){
       };
       bloc.appendChild(l);
     });
+
+    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+       retirent une commande du plan, celui-ci change ce que le plan donne à
+       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+       promettrait des couleurs qu'aucune donnée ne porte. */
+    if (SECTEURS.size){
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+      const c = l.querySelector("input");
+      c.checked = conf("_secteurs").visible !== false;
+      c.onchange = e => {
+        conf("_secteurs").visible = e.target.checked;
+        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+        // les couleurs des secteurs vivent dans la pile : elles suivent
+        if (ADMIN) construitPanneau();
+      };
+      bloc.appendChild(l);
+    }
+
     corps.appendChild(bloc);
 
     const duree = document.createElement("div");
@@ -3002,9 +3297,11 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
 const enregistreDessins = () => {
   /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
-     la grille de marche qui les ignore n'a plus cours. On attend la fin du
-     geste — dessiner en refait une à chaque image serait insoutenable. */
+     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
+     passages non plus. On attend la fin du geste — dessiner en referait une à
+     chaque image, ce qui serait insoutenable. */
   oublieGrilles();
+  oublieLiaisons();
   rafraichitApercu();
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
@@ -3628,6 +3925,13 @@ $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
 $("elemPicto").onchange = appliquePicto;
+/* La liste des passages revient à « Relier à… » dès que le choix est fait :
+   c'est une action, pas un réglage — on en pose plusieurs à la suite. */
+$("elemLienAjout").onchange = (e) => {
+  const id = e.target.value;
+  e.target.value = "";
+  if (id) changeLien(id, true);
+};
 // on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
@@ -3853,6 +4157,8 @@ function majElement(){
     }
   }
 
+  majLiens(f.t === "repere" ? f : null);
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -3865,6 +4171,131 @@ function majElement(){
       ch.value = s ? etiquetteStand(s) : "";
     }
   }
+}
+
+/* ------------------------------------------------------------
+   Ce qu'un passage rejoint
+   ------------------------------------------------------------ */
+/**
+ * Les passages qu'un repère peut rejoindre.
+ *
+ * Ceux des autres plans, et eux seuls : relier deux escaliers du même hall ne
+ * décrirait rien qu'une allée ne dise déjà, et deux portes d'un même pavillon
+ * feraient un raccourci que personne ne peut emprunter. Ce qui reste est
+ * exactement ce dont on a besoin — le palier à l'étage, la porte d'en face.
+ *
+ * Un repère en relie autant qu'il en dessert : la liste reste ouverte tant
+ * qu'il demeure des passages à joindre, parce qu'un escalier de
+ * rez-de-chaussée monte au premier comme au second.
+ */
+function candidatsLiaison(f){
+  const an = annuaireLiaisons();
+  const deja = an.vers.get(f.id) || new Map();
+  const ici = P().id;
+  const out = [];
+  an.par.forEach((o, id) => {
+    if (id === f.id || deja.has(id) || o.p.id === ici) return;
+    out.push(o);
+  });
+  return out.sort((a, b) => a.p.i - b.p.i ||
+    COLLATION.compare(nomLiaison(a.f), nomLiaison(b.f)));
+}
+
+/**
+ * Écrire une liaison sur les deux repères qu'elle joint.
+ *
+ * Un passage n'a pas de sens : on descend l'escalier qu'on a monté. Il
+ * s'écrit donc des deux côtés, et le second vit dans un autre plan — hors de
+ * l'historique d'annulation, qui ne connaît que le plan ouvert. Le calcul lit
+ * de toute façon l'union des deux écritures : une annulation qui ne défait
+ * qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
+ */
+function ecritDesDeuxCotes(idAutre, change){
+  const cible = formeSel && formeParId(formeSel);
+  const autre = annuaireLiaisons().par.get(idAutre);
+  if (!cible || !autre || !typeLiaison(cible.f)) return;
+  memorise();
+  ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
+  ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
+  enregistreDessins();
+  majElement();
+}
+
+/** Poser ou retirer un passage. */
+function changeLien(idAutre, ajoute){
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const reste = l.filter(x => x.id !== id);
+    if (ajoute) reste.push({ id: id, min: null });
+    return reste;
+  });
+}
+
+/**
+ * Fixer le temps d'un passage, ou le rendre à celui de son type.
+ *
+ * Il se règle par couple, et non par repère : le même escalier met une minute
+ * au premier étage et davantage au second, et c'est bien deux passages
+ * distincts qu'on a déclarés. Le champ vide n'est pas zéro — c'est « le temps
+ * ordinaire de ce type de passage », celui qu'affiche son invite.
+ */
+function changeDureeLien(idAutre, txt){
+  const brut = String(txt == null ? "" : txt).trim();
+  const v = brut === "" ? null : Math.max(0, Math.min(120, Math.round(+brut) || 0));
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const x = l.find(y => y.id === id);
+    if (x) x.min = v; else l.push({ id: id, min: v });
+    return l;
+  });
+}
+
+/**
+ * Le panneau des passages du repère choisi.
+ *
+ * Il n'apparaît que pour ce qui est un passage — une porte, un escalier, un
+ * escalator, un ascenseur. Sur un WC il n'aurait rien à relier, et proposer
+ * de le faire inviterait à des trajets qui traversent les murs.
+ */
+function majLiens(f){
+  const z = $("elemLiens");
+  if (!z) return;
+  const t = f && typeLiaison(f);
+  z.hidden = !t;
+  if (!t) return;
+
+  const liste = $("elemLiensListe");
+  liste.innerHTML = "";
+  const liens = liensDe(f);
+  liens.forEach(x => {
+    const d = document.createElement("div");
+    d.className = "lien";
+    d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
+      'step="1" title="Temps de passage, en minutes"><b>min</b>' +
+      '<button class="btnSup" title="Retirer ce passage">&times;</button>';
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomLiaison(x.o.f) +
+      (x.o.visible ? "" : " (calque masqué)");
+    const ch = d.querySelector(".lienMin");
+    ch.value = x.min == null ? "" : x.min;
+    ch.placeholder = t.min;
+    ch.onchange = () => changeDureeLien(x.o.f.id, ch.value);
+    d.querySelector("button").onclick = () => changeLien(x.o.f.id, false);
+    liste.appendChild(d);
+  });
+
+  const sel = $("elemLienAjout");
+  const dispo = candidatsLiaison(f);
+  sel.innerHTML = '<option value="">' +
+    (dispo.length ? "Relier à…" : "Aucun autre passage sur les autres plans") + "</option>" +
+    dispo.map(o => '<option value="' + esc(o.f.id) + '">' + esc(o.p.libelle) + " · " +
+      esc(nomLiaison(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
+  sel.disabled = !dispo.length;
+
+  $("elemLienAide").textContent = liens.length
+    ? "Un trajet qui arrive ici continue de l'autre côté. Le temps de chaque " +
+      "passage s'ajoute à celui de la marche ; laissé vide, il vaut " +
+      ecritMinutes(t.min) + "."
+    : "Reliez ce " + t.nom + " à ce qu'il dessert sur les autres plans — un escalier " +
+      "monte souvent à deux étages, et chacun est un passage — et les itinéraires " +
+      "enchaîneront les plans au lieu de s'arrêter là.";
 }
 
 /** « G55 — SMC2 », ou le seul des deux qui existe. */
@@ -3919,11 +4350,17 @@ function appliquePicto(){
   if (!cible || cible.f.t !== "repere") return;
   memorise();
   cible.f.picto = $("elemPicto").value;
+  /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
+     ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
+     ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
   enregistreDessins();
   /* Le pavage des allées tient compte des escaliers et des escalators : en
      désigner un, ou cesser de le faire, change les trajets accessibles. */
   oublieGrilles();
-  dessineDessins(); dessinePoignees();
+  /* Devenir un escalier, ou cesser de l'être, ouvre ou ferme le panneau des
+     passages : le panneau se relit donc, comme après tout changement de ce
+     qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
 }
 
 function supprimeForme(){
@@ -4181,6 +4618,12 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
+    /* Les couleurs des secteurs se règlent sous la couche Stands : c'est elle
+       qu'elles repeignent, et il n'y a pas de couche par secteur. Elles ne
+       paraissent que si le salon sectorise et que le plan les montre — sans
+       quoi ce serait une couleur qui ne peint rien. */
+    if (x.k === "data:stands" && secteursMontres())
+      SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -4224,17 +4667,44 @@ function sectionSelection(hote){
   bloc.appendChild(titre);
 
   const c = conf("selection");
+  // le titre de la section dit déjà de quoi il s'agit
+  bloc.appendChild(ligneCouleur("Couleur", c.couleur || jeton("--accent-soft"),
+    (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  hote.appendChild(bloc);
+}
+
+/* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
+   ni rang. C'est le cas de tout ce qui n'est pas un calque — la sélection, un
+   secteur — et qui n'a donc rien à masquer ni à empiler. */
+function ligneCouleur(libelle, valeur, applique){
   const d = document.createElement("div");
   d.className = "calq";
   d.innerHTML = '<label><span></span></label>' +
                 '<span class="opts"><input type="color" class="cc"></span>';
-  // le titre de la section dit déjà de quoi il s'agit
-  d.querySelector("label span").textContent = "Couleur";
+  d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
-  cc.value = c.couleur || jeton("--accent-soft");
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
-  bloc.appendChild(d);
-  hote.appendChild(bloc);
+  cc.value = valeur;
+  cc.oninput = (e) => applique(e.target.value);
+  return d;
+}
+
+/**
+ * La couleur d'un secteur.
+ *
+ * Le sélecteur part de ce que le plan montre — la couleur choisie, ou la teinte
+ * automatique résolue dans le thème courant — de sorte qu'on retouche ce qu'on
+ * voit plutôt que de partir du noir. Elle vaut ensuite pour les deux thèmes,
+ * comme celle des autres couches.
+ */
+function rangSecteur(hote, nom){
+  const c = conf("secteur:" + nom);
+  const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
+    c.couleur = v;
+    enregistreConf();
+    appliqueSecteurs();
+  });
+  d.classList.add("sous");
+  hote.appendChild(d);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */
@@ -4303,11 +4773,11 @@ async function base(acces, chemin, options = {}){
   return txt ? JSON.parse(txt) : null;
 }
 
-/** Les réglages d'apparence, sans les ordres de pile qui sont par pavillon. */
+/** Les réglages d'apparence de ce salon : sans les ordres de pile, qui sont
+ *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
+ *  son enregistrement — c'est par là qu'ils s'y installaient. */
 function reglagesSeuls(){
-  const out = {};
-  Object.keys(CONF).forEach(k => { if (k.indexOf("_pile:") !== 0) out[k] = CONF[k]; });
-  return out;
+  return reglagesDuSalon(CONF);
 }
 
 async function pousseConfiguration(bouton){
@@ -4942,7 +5412,9 @@ function enveloppe(p){
 /* Une grille par pavillon et par mode : elle ne dépend que des emplacements
    et des obstacles dessinés, qui ne bougent qu'en administration. */
 const GRILLES = new Map();
-function oublieGrilles(){ GRILLES.clear(); oublieFaces(); }
+/* Les distances de marche et les façades s'en déduisent : ce qui périme l'une
+   périme les autres. */
+function oublieGrilles(){ GRILLES.clear(); BALAYAGES.clear(); oublieFaces(); }
 
 /** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
 const calquesDe = (p) => (typeof DESSINS === "object" && DESSINS[p.id]) || [];
@@ -5823,25 +6295,367 @@ function versPorte(p, pmr, xy, entrant, chez){
   return mieux;
 }
 
+/* ------------------------------------------------------------
+   Les liaisons — ce qui relie un plan à un autre
+   ------------------------------------------------------------ */
 /**
- * Le trajet, tronçon par tronçon.
+ * Un salon ne tient pas dans un plan.
  *
- * Dans un même pavillon il n'y en a qu'un. D'un pavillon à l'autre, les
- * données ne disent rien de ce qui les relie — ni passerelle, ni allée
- * extérieure, ni distance. On ne l'invente pas : le trajet se coupe à la
- * porte, et le visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés
- * qui, eux, sont exacts.
+ * Un hall a deux niveaux, et le premier étage est un plan à part ; deux halls
+ * voisins communiquent par une porte, et chacun est un plan. Dans les deux
+ * cas le calcul s'arrêtait au bord : le trajet se coupait, et le visiteur
+ * lisait « rejoignez le pavillon 7.2 » sans savoir par où. C'était honnête —
+ * les données ne disent rien de ce qui relie deux plans — mais cela laissait
+ * le visiteur seul à l'endroit précis où il hésite.
+ *
+ * Ce que les données ne disent pas, l'exploitant le sait : cet escalier-ci
+ * monte à celui-là, cette porte-ci donne sur celle-là. Il le déclare donc,
+ * d'un repère à l'autre, et le calcul enchaîne alors les plans comme il
+ * enchaîne les allées — on marche jusqu'à l'escalier, on le prend, on repart
+ * de son jumeau à l'étage.
+ *
+ * Seuls les repères qui sont un passage peuvent en porter une : une porte, un
+ * escalier, un escalator, un ascenseur. Un WC ne relie rien, et pouvoir le
+ * relier ne ferait qu'ouvrir la porte aux erreurs de saisie.
  */
-function calculeRoute(){
-  const a = ITI.a, b = ITI.b, pmr = ITI.pmr;
-  if (!a || !b) return null;
-  if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
+const TYPES_LIAISON = {
+  /* Le coût est en mètres, l'unité de la recherche : ce que l'on accepte de
+     marcher en plus pour éviter ce passage. Une porte ne se paie presque
+     rien ; un ascenseur s'attend, et deux étages à pied lui restent parfois
+     préférables. La durée, elle, s'ajoute à celle de la marche. */
+  entree:    { nom: "porte",     art: "la porte",     accessible: true,  cout: 15, min: 1 },
+  escalier:  { nom: "escalier",  art: "l'escalier",   accessible: false, cout: 30, min: 1 },
+  escalator: { nom: "escalator", art: "l'escalator",  accessible: false, cout: 25, min: 1 },
+  /* Le seul passage vertical qu'un fauteuil emprunte : sans lui, un étage
+     relié par ses seuls escaliers est simplement hors d'atteinte. */
+  ascenseur: { nom: "ascenseur", art: "l'ascenseur",  accessible: true,  cout: 45, min: 2 },
+};
 
+/** Ce qu'un repère vaut comme passage, ou rien s'il n'en est pas un. */
+const typeLiaison = (f) =>
+  f && f.t === "repere" ? TYPES_LIAISON[pictoForme(f)] || null : null;
+
+/** Le nom sous lequel un passage se cherche des yeux, à défaut de libellé. */
+const nomLiaison = (f) => String(f.txt || "").trim() ||
+  nomTypeRepere(pictoForme(f));
+
+/**
+ * L'annuaire des passages : chacun d'eux, et ceux qu'il rejoint.
+ *
+ * Une liaison s'écrit des deux côtés — on la pose d'un repère, elle apparaît
+ * sur l'autre — mais on lit l'union plutôt que l'intersection : une seule des
+ * deux écritures suffit à la déclarer. Un dessin repris d'un salon précédent,
+ * un côté effacé par mégarde, et le passage existe toujours dans le hall :
+ * le refuser au visiteur au nom d'une écriture manquante serait le punir d'un
+ * détail qu'il ne voit pas.
+ *
+ * Les repères des calques masqués figurent dans l'annuaire — l'administration
+ * doit pouvoir nommer ce qu'elle relie — mais pas dans le calcul, qui s'en
+ * tient à ce que le visiteur voit.
+ */
+let LIAISONS = null;
+function oublieLiaisons(){ LIAISONS = null; }
+
+/**
+ * Ce qu'un repère déclare rejoindre, tel qu'on le relit.
+ *
+ * Un repère en relie autant qu'il en dessert : l'escalier du rez-de-chaussée
+ * monte au premier et au second, et ce sont deux passages, chacun avec son
+ * temps. La liaison s'est d'abord écrite comme un simple identifiant ; elle
+ * porte maintenant sa durée, et les deux formes se lisent — un plan
+ * enregistré avant n'a rien à reprendre et retombe sur le temps ordinaire de
+ * son type.
+ */
+function lienEcrits(f){
+  return ((f && f.liens) || []).map(l => typeof l === "string"
+    ? { id: l, min: null }
+    : { id: l && l.id, min: l && l.min == null ? null : +l.min })
+    .filter(l => l.id);
+}
+
+/* On réécrit la forme courte quand aucune durée n'est fixée : un plan qui ne
+   s'en sert pas garde un enregistrement inchangé. */
+function ecritLiens(f, l){
+  if (!l.length) delete f.liens;
+  else f.liens = l.map(x => x.min == null ? x.id : { id: x.id, min: x.min });
+}
+
+function annuaireLiaisons(){
+  if (LIAISONS) return LIAISONS;
+  const par = new Map();      // id du repère → { f, p, visible }
+  for (const p of (DATA && DATA.plans) || []){
+    for (const c of calquesDe(p)){
+      for (const f of c.formes || []){
+        if (typeLiaison(f)) par.set(f.id, { f: f, p: p, visible: c.visible !== false });
+      }
+    }
+  }
+  // id → (id rejoint → temps déclaré, ou rien), dans les deux sens
+  const vers = new Map();
+  const relie = (a, b, min) => {
+    if (a === b || !par.has(a) || !par.has(b)) return;
+    if (!vers.has(a)) vers.set(a, new Map());
+    const m = vers.get(a);
+    /* Les deux côtés portent la même durée, écrite d'un seul geste. S'ils
+       divergent — une annulation qui n'a défait qu'un côté — on garde la plus
+       longue : un passage annoncé trop court se paie sur place. */
+    const vu = m.get(b);
+    m.set(b, min == null ? (vu == null ? null : vu)
+                         : (vu == null ? min : Math.max(vu, min)));
+  };
+  par.forEach((o, id) => lienEcrits(o.f).forEach(l => {
+    relie(id, l.id, l.min); relie(l.id, id, l.min);
+  }));
+  LIAISONS = { par: par, vers: vers };
+  return LIAISONS;
+}
+
+/** Ce qu'un repère rejoint, du point de vue de l'administration : les deux
+ *  sens confondus, calques masqués compris, chacun avec son temps déclaré. */
+function liensDe(f){
+  const an = annuaireLiaisons();
+  const out = [];
+  (an.vers.get(f.id) || new Map()).forEach((min, id) => {
+    const o = an.par.get(id);
+    if (o) out.push({ o: o, min: min });
+  });
+  return out;
+}
+
+/**
+ * Ce que coûte un passage dans la recherche, en mètres.
+ *
+ * Le forfait de son type, augmenté de ce que le temps déclaré ajoute au temps
+ * ordinaire, converti en mètres au pas de marche. Un ascenseur déclaré à cinq
+ * minutes devient donc aussi cher qu'un long détour, et le trajet préfère
+ * l'escalier — ce qui est exactement ce qu'on veut dire en le déclarant. Le
+ * prix reste positif : un passage annoncé instantané ne doit pas devenir un
+ * raccourci qu'on emprunte pour rien.
+ */
+function coutLiaison(t, min, pmr){
+  const sup = (min == null ? 0 : min - t.min) * (pmr ? ALLURE_PMR : ALLURE) * 60;
+  return Math.max(5, t.cout + sup);
+}
+
+/** Un passage praticable : montré au visiteur, relié à un autre, et permis
+ *  dans ce mode — un escalier n'en est pas un pour un fauteuil. */
+function passagePraticable(an, id, pmr){
+  const o = an.par.get(id);
+  if (!o || !o.visible || !an.vers.has(id)) return null;
+  const t = typeLiaison(o.f);
+  return pmr && !t.accessible ? null : o;
+}
+
+/** Les passages praticables d'un plan. */
+function passagesDe(p, pmr){
+  const an = annuaireLiaisons(), l = [];
+  an.par.forEach((o, id) => {
+    if (o.p.i === p.i && passagePraticable(an, id, pmr)) l.push(o.f);
+  });
+  return l;
+}
+
+/** Par où l'on quitte un plan : ses portes, et les passages déclarés — un
+ *  étage se quitte par son escalier, et non par la porte du hall d'en bas. */
+function sortiesDe(p, pmr){
+  const l = portesDe(p);
+  for (const f of passagesDe(p, pmr)) if (l.indexOf(f) < 0) l.push(f);
+  return l;
+}
+
+/** Les couples de plans qu'un passage joint directement, pour qui n'a besoin
+ *  que de savoir s'ils le sont. */
+function plansRelies(pmr){
+  const an = annuaireLiaisons(), out = new Set();
+  an.vers.forEach((suite, id) => {
+    const o = passagePraticable(an, id, pmr);
+    if (!o) return;
+    suite.forEach((min, idv) => {
+      const v = passagePraticable(an, idv, pmr);
+      if (v) out.add(o.p.i + "|" + v.p.i);
+    });
+  });
+  return out;
+}
+
+/* ------------------------------------------------------------
+   Le chemin qui passe d'un plan à l'autre
+   ------------------------------------------------------------ */
+/**
+ * La distance de marche depuis un point vers tout le reste du pavillon.
+ *
+ * Un balayage en largeur, comme pour la journée : chercher un A* par couple
+ * de passages coûterait davantage pour un chiffre qu'on ne fait que comparer.
+ * Le tracé montré au visiteur, lui, reste celui de `troncon`.
+ */
+const BALAYAGES = new Map();
+function balayage(p, pmr, xy){
+  const cle = p.id + (pmr ? "|pmr" : "") + "|" + xy[0].toFixed(2) + "," + xy[1].toFixed(2);
+  const garde = BALAYAGES.get(cle);
+  if (garde) return garde;
+  const g = grille(p, pmr);
+  const c = accroche(g, xy);
+  const b = { g: g, d: c >= 0 ? distancesDepuis(g, c) : null };
+  BALAYAGES.set(cle, b);
+  return b;
+}
+
+/** Rend -1 quand aucune allée ne mène au point demandé. */
+function distanceDepuis(bal, xy){
+  if (!bal.d) return -1;
+  const c = accroche(bal.g, xy);
+  if (c < 0) return -1;
+  return bal.d[c] >= 0 ? bal.d[c] * PAS_GRILLE : -1;
+}
+
+/* Ce qu'on s'autorise de balayages pour un trajet. Chacun parcourt un
+   pavillon entier case par case — quelques dizaines de millisecondes, plus
+   sur un téléphone. Une vingtaine couvre tout salon réel ; la borne n'est là
+   que pour l'exploitant qui relierait tout à tout, et le trajet reste alors
+   le meilleur de ceux qu'on a eu le temps d'examiner. */
+const LIMITE_BALAYAGES = 20;
+
+/**
+ * Le chemin le plus court d'un point à un autre, passages compris.
+ *
+ * Dijkstra sur un graphe minuscule : les deux bouts du trajet et les passages
+ * praticables. Une arête de marche coûte les mètres d'allée qui séparent deux
+ * points d'un même plan ; une arête de passage coûte le forfait de son type.
+ * Les distances de marche ne se calculent qu'au moment où un nœud est retenu,
+ * et jamais deux fois : un salon dont les plans ne se relient pas ne fait
+ * donc qu'un balayage avant de rendre les armes.
+ *
+ * Rend la suite des sauts, ou rien si les liaisons déclarées ne mènent pas de
+ * l'un à l'autre.
+ */
+function cheminLiaisons(a, b, pmr){
+  const an = annuaireLiaisons();
+  if (!an.vers.size) return null;
+
+  const noeuds = [{ ip: a.p, xy: a.xy.slice() }, { ip: b.p, xy: b.xy.slice() }];
+  const rang = new Map();
+  /* Un escalier ne relie rien pour un fauteuil : le mode accessible retire le
+     passage du graphe plutôt que de le pénaliser, faute de quoi il finirait
+     par le proposer là où il n'y a rien d'autre. */
+  an.par.forEach((o, id) => {
+    if (!passagePraticable(an, id, pmr)) return;
+    rang.set(id, noeuds.length);
+    noeuds.push({ ip: o.p.i, xy: o.f.pts[0].slice(), id: id, f: o.f, t: typeLiaison(o.f) });
+  });
+  if (noeuds.length < 4) return null;   // il faut au moins les deux bouts d'un passage
+
+  const n = noeuds.length;
+  const D = new Float64Array(n).fill(Infinity);
+  const vient = new Array(n).fill(null);
+  const vu = new Uint8Array(n);
+  D[0] = 0;
+  let balayages = 0;
+
+  for (;;){
+    let u = -1;
+    for (let i = 0; i < n; i++) if (!vu[i] && D[i] < Infinity && (u < 0 || D[i] < D[u])) u = i;
+    if (u < 0 || u === 1) break;        // plus rien à ouvrir, ou l'arrivée est arrêtée
+    vu[u] = 1;
+
+    /* Emprunter le passage : son prix est celui du passage, et non d'un
+       chemin — on ne marche pas dans un escalier, on le monte. */
+    const suite = noeuds[u].id ? an.vers.get(noeuds[u].id) : null;
+    if (suite) suite.forEach((dit, idv) => {
+      const v = rang.get(idv);
+      /* Un passage joint deux plans. Deux repères du même plan reliés l'un à
+         l'autre — ce que l'administration ne propose pas, mais qu'une reprise
+         de données peut porter — feraient un raccourci que personne ne peut
+         emprunter : on l'ignore plutôt que de tracer un trajet impossible. */
+      if (v === undefined || vu[v] || noeuds[v].ip === noeuds[u].ip) return;
+      /* Le temps du passage est celui fixé pour ce couple-ci, et à défaut
+         celui de son type : le même escalier met une minute au premier étage
+         et davantage au second. */
+      const min = dit == null ? noeuds[u].t.min : dit;
+      const d = D[u] + coutLiaison(noeuds[u].t, dit, pmr);
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison", min: min }; }
+    });
+
+    /* Marcher dans le plan où l'on se trouve. */
+    const p = DATA.plans[noeuds[u].ip];
+    if (!p || balayages >= LIMITE_BALAYAGES) continue;
+    balayages++;
+    const bal = balayage(p, pmr, noeuds[u].xy);
+    for (let v = 0; v < n; v++){
+      if (v === u || vu[v] || noeuds[v].ip !== noeuds[u].ip) continue;
+      const m = distanceDepuis(bal, noeuds[v].xy);
+      if (m < 0) continue;
+      const d = D[u] + m;
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "marche" }; }
+    }
+  }
+
+  if (!isFinite(D[1])) return null;
+  const sauts = [];
+  for (let i = 1; i !== 0; ){
+    const e = vient[i];
+    if (!e) return null;
+    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre, min: e.min });
+    i = e.de;
+  }
+  return sauts;
+}
+
+/**
+ * Le trajet que décrit une suite de sauts : les allées qu'on marche, les
+ * passages qu'on emprunte.
+ *
+ * Un tronçon qui ne se trace pas ne fait pas échouer le trajet : la suite est
+ * juste, et mieux vaut un plan où un morceau manque qu'un « aucun chemin »
+ * qui serait faux.
+ */
+function routeParLiaisons(sauts, pmr){
+  const etapes = [], avertis = [];
+  let minutes = 0, liaisons = 0;
+  for (const s of sauts){
+    if (s.genre === "liaison"){
+      liaisons++;
+      minutes += s.min;
+      etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
+                    min: s.min, nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
+                    de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
+      continue;
+    }
+    /* Deux points confondus — le départ posé sur l'escalier lui-même : il n'y
+       a pas d'allée entre eux, et une étape de zéro mètre n'apprend rien. */
+    if (Math.hypot(s.b.xy[0] - s.a.xy[0], s.b.xy[1] - s.a.xy[1]) < .5) continue;
+    const p = DATA.plans[s.a.ip];
+    const t = troncon(p, pmr, s.a.xy, s.b.xy);
+    if (t) etapes.push(t);
+    else avertis.push("Le chemin dans le " + p.libelle + " n'a pas pu être tracé : " +
+                      "cette partie du trajet manque à l'écran.");
+  }
+  return { etapes: etapes, avertis: avertis, liaisons: liaisons, minutes: minutes,
+           partiel: !!avertis.length,
+           m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/**
+ * Le trajet d'un point à un autre, quel que soit le nombre de plans traversés.
+ *
+ * Trois cas, dans cet ordre. Le même plan, et c'est un tronçon. Des plans que
+ * des passages relient, et c'est la suite de sauts. Des plans que rien ne
+ * relie — aucune liaison déclarée, ou aucune praticable en fauteuil — et l'on
+ * retombe sur ce qu'on savait faire avant : sortir par la porte la plus
+ * proche, dire « rejoignez le pavillon 7.2 », reprendre à l'entrée de
+ * l'autre. Le trajet est alors coupé, et il le dit.
+ */
+function routeEntre(a, b, pmr){
   if (a.p === b.p){
     const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy, a.obj, b.obj);
-    return t ? { pmr: pmr, etapes: [t], m: t.m }
-             : { pmr: pmr, etapes: [], m: 0, sansChemin: true };
+    if (t) return { etapes: [t], m: t.m };
   }
+
+  /* Un plan peut aussi se rejoindre lui-même par un autre — deux moitiés d'un
+     hall que seule une passerelle relie : la recherche par liaisons a donc
+     lieu même quand le départ et l'arrivée partagent leur plan. */
+  const sauts = cheminLiaisons(a, b, pmr);
+  if (sauts) return routeParLiaisons(sauts, pmr);
+  if (a.p === b.p) return { etapes: [], m: 0, sansChemin: true };
 
   const pa = DATA.plans[a.p], pb = DATA.plans[b.p];
   const t1 = versPorte(pa, pmr, a.xy, false, a.obj);
@@ -5857,9 +6671,25 @@ function calculeRoute(){
                     "cette partie du trajet n'est pas tracée.");
   /* Sans repère d'entrée ni de sortie, il ne reste que « changez de pavillon » :
      mieux vaut le dire que d'annoncer un trajet de zéro mètre. */
-  return { pmr: pmr, etapes: etapes, avertis: avertis, coupe: true,
+  return { etapes: etapes, avertis: avertis, coupe: true,
            partiel: !t1 || !t2, aucunTrace: !t1 && !t2,
            m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/**
+ * Le trajet demandé dans le tiroir.
+ *
+ * Dans un même pavillon il n'y a qu'un tronçon. D'un plan à l'autre, tout
+ * dépend de ce que l'exploitant a relié : les passages déclarés enchaînent
+ * les plans sans rupture, leur absence laisse le trajet coupé à la porte.
+ */
+function calculeRoute(){
+  const a = ITI.a, b = ITI.b, pmr = ITI.pmr;
+  if (!a || !b) return null;
+  if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
+  const r = routeEntre(a, b, pmr);
+  r.pmr = pmr;
+  return r;
 }
 
 /* ------------------------------------------------------------
@@ -6026,8 +6856,12 @@ function ecritDistance(m){
   return m < 950 ? Math.round(m / 5) * 5 + " m"
                  : (m / 1000).toFixed(1).replace(".", ",") + " km";
 }
-function ecritDuree(m, pmr){
-  const min = Math.max(1, Math.round(m / ((pmr ? ALLURE_PMR : ALLURE) * 60)));
+/* Les minutes d'un passage s'ajoutent à celles de la marche : monter un
+   étage prend le temps de le monter, attendre un ascenseur celui de
+   l'attendre, et un trajet qui les tairait promettrait ce qu'il ne tient
+   pas. */
+function ecritDuree(m, pmr, passages){
+  const min = Math.max(1, Math.round(m / ((pmr ? ALLURE_PMR : ALLURE) * 60)) + (passages || 0));
   return "≈ " + min + " min";
 }
 
@@ -6143,6 +6977,29 @@ function relance(){
   }, 30);
 }
 
+/**
+ * Ce qu'une étape de passage dit au visiteur.
+ *
+ * Une porte se franchit d'un pavillon à l'autre et se nomme des deux côtés :
+ * savoir par où l'on sort ne suffit pas, il faut savoir par où l'on entre. Un
+ * escalier porte le plus souvent le même nom en haut et en bas — le répéter
+ * ferait douter qu'on soit au bon endroit, on ne le redit donc que lorsqu'il
+ * change.
+ */
+function phraseLiaison(e){
+  const t = TYPES_LIAISON[e.type] || TYPES_LIAISON.entree;
+  /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
+     trajet dont les mètres ne rendent pas compte. */
+  const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
+  if (e.type === "entree")
+    return { t: "Changement de pavillon",
+             s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
+                e.vers + " par « " + e.nomVers + " »." + duree };
+  return { t: t.nom[0].toUpperCase() + t.nom.slice(1) + " · " + e.nom,
+           s: "Prenez " + t.art + " « " + e.nom + " » : vous arrivez dans le " + e.vers +
+              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." + duree };
+}
+
 function montreResultat(etat){
   const z = $("iResultat"), badge = $("iResume");
   z.innerHTML = "";
@@ -6179,35 +7036,65 @@ function montreResultat(etat){
   if (ROUTE.aucunTrace){
     badge.textContent = "non tracé";
   } else {
-    /* Ce qui sépare deux pavillons ne figure sur aucun plan — ni passerelle, ni
-       allée extérieure : la distance annoncée est celle des tronçons tracés, et
-       elle le dit. */
-    badge.textContent = (ROUTE.coupe ? "≥ " : "") +
-      ecritDistance(ROUTE.m) + " · " + ecritDuree(ROUTE.m, ROUTE.pmr);
+    /* Ce qui sépare deux pavillons que rien ne relie ne figure sur aucun plan
+       — ni passerelle, ni allée extérieure : la distance annoncée est alors
+       celle des seuls tronçons tracés, et elle le dit. Un trajet qui emprunte
+       des passages déclarés, lui, est complet d'un bout à l'autre ; il ne lui
+       manque que les mètres de l'escalier, comptés en minutes. */
+    badge.textContent = (ROUTE.coupe ? "≥ " : "") + ecritDistance(ROUTE.m) +
+      " · " + ecritDuree(ROUTE.m, ROUTE.pmr, ROUTE.minutes);
     const bilan = document.createElement("div");
     bilan.className = "iBilan";
     bilan.innerHTML = '<b></b><span></span>';
     bilan.querySelector("b").textContent = (ROUTE.coupe ? "au moins " : "") + ecritDistance(ROUTE.m);
-    bilan.querySelector("span").textContent = ecritDuree(ROUTE.m, ROUTE.pmr) +
+    bilan.querySelector("span").textContent =
+      ecritDuree(ROUTE.m, ROUTE.pmr, ROUTE.minutes) +
       (ROUTE.pmr ? " · itinéraire accessible" : " de marche") +
-      (ROUTE.coupe ? " · hors trajet entre pavillons" : "");
+      (ROUTE.coupe ? " · hors trajet entre pavillons"
+                   : ROUTE.liaisons ? " · " + ROUTE.liaisons + " passage" +
+                                      (ROUTE.liaisons > 1 ? "s" : "")
+                   : "");
     z.appendChild(bilan);
   }
 
-  if (ROUTE.coupe){
+  /* Un trajet en plusieurs morceaux se lit comme une suite : où l'on marche,
+     par où l'on passe. Un tronçon unique n'a rien à énumérer — le trait sur le
+     plan le dit mieux qu'une ligne de texte. */
+  if (ROUTE.etapes.length > 1){
     const l = document.createElement("div");
     l.className = "iEtapes";
     ROUTE.etapes.forEach(e => {
-      const d = document.createElement("div");
-      d.className = "iEtape" + (e.genre === "transfert" ? " transfert" : "");
+      const passage = e.genre === "transfert" || e.genre === "liaison";
+      /* Le trajet traverse des plans qu'on ne regarde pas : chaque étape de
+         marche ouvre le sien. Sans cela, le visiteur lit « 80 m dans le
+         pavillon 7.2 » et n'a aucun moyen de voir lesquels. */
+      const ailleurs = e.genre === "marche" && e.p !== state.plan;
+      const d = document.createElement(ailleurs ? "button" : "div");
+      if (ailleurs){
+        d.type = "button";
+        d.onclick = () => {
+          changePlan(e.p);
+          dessineItineraire();
+          cadreItineraire();
+          montreResultat();
+        };
+      }
+      d.className = "iEtape" + (passage ? " transfert" : "") + (ailleurs ? " ailleurs" : "");
       d.innerHTML = '<span class="t"></span><span class="s"></span>';
+      const dit2 = (t, s) => {
+        d.querySelector(".t").textContent = t;
+        d.querySelector(".s").textContent = s;
+      };
       if (e.genre === "transfert"){
-        d.querySelector(".t").textContent = "Changement de pavillon";
-        d.querySelector(".s").textContent = "Sortez du " + e.de + ", rejoignez le " + e.vers + ".";
+        dit2("Changement de pavillon",
+             "Sortez du " + e.de + ", rejoignez le " + e.vers + ".");
+      } else if (e.genre === "liaison"){
+        const p = phraseLiaison(e);
+        dit2(p.t, p.s);
       } else {
-        d.querySelector(".t").textContent = DATA.plans[e.p].libelle;
-        d.querySelector(".s").textContent = ecritDistance(e.m) + " dans le pavillon" +
-          (e.p === state.plan ? " · tracé à l'écran" : "");
+        dit2(DATA.plans[e.p].libelle,
+             ecritDistance(e.m) + " dans le pavillon" +
+             (e.p === state.plan ? " · tracé à l'écran" : " · voir"));
       }
       l.appendChild(d);
     });
@@ -6435,6 +7322,7 @@ addEventListener("keydown", e => {
  * distance annoncée — celle-ci ne porte que ce qui est tracé, et le dit.
  */
 const TRANSFERT_M = 300;     // pour ordonner, jamais pour annoncer
+const LIAISON_M = 60;        // quand un passage déclaré joint les deux plans
 const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
 
 /* L'heure d'arrivée d'une visite à l'autre : celui qui vient deux jours de
@@ -6547,15 +7435,18 @@ function matriceJournee(pts, pmr){
     parPlan.get(pt.p).push(i);
   });
 
-  /* Ce qui sépare un arrêt de la porte la plus proche de son pavillon : c'est
-     par là que passe tout trajet vers un autre hall. */
+  /* Ce qui sépare un arrêt de la sortie la plus proche de son plan : c'est
+     par là que passe tout trajet vers un autre — la porte du hall, ou
+     l'escalier qui monte à l'étage. */
   const auxPortes = new Float64Array(n);
+  const relies = plansRelies(pmr);
 
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
+    // l'emprise de l'arrêt : on n'accroche pas une allée à travers un voisin
     const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
-    const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
+    const portes = sortiesDe(p, pmr).map(f => accroche(g, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
       const d = distancesDepuis(g, cases[k]);
@@ -6572,7 +7463,12 @@ function matriceJournee(pts, pmr){
 
   for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
     if (i === j || !pts[i] || !pts[j] || pts[i].p === pts[j].p) continue;
-    D[i][j] = auxPortes[i] + TRANSFERT_M + auxPortes[j];
+    /* Deux plans qu'un passage joint ne sont pas deux pavillons éloignés : le
+       premier étage se rejoint par son escalier, et l'ordre de visite doit
+       pouvoir y monter puis redescendre sans que le calcul le lui compte
+       comme une traversée du salon. */
+    const forfait = relies.has(pts[i].p + "|" + pts[j].p) ? LIAISON_M : TRANSFERT_M;
+    D[i][j] = auxPortes[i] + forfait + auxPortes[j];
   }
   return D;
 }
@@ -6796,27 +7692,48 @@ function calculeJournee(choix){
   const etapes = [], arrets = [], trace = [], retards = [];
   let t = choix.arrivee, m = 0, coupe = false, rang = 0;
 
+  /**
+   * D'un arrêt au suivant.
+   *
+   * C'est le même calcul que le trajet d'un point à un autre, et pour la même
+   * raison : un escalier déclaré fait continuer la journée à l'étage au lieu
+   * de la couper au bord du plan. Un trajet en plusieurs morceaux donne
+   * plusieurs lignes dans le déroulé — on marche, on prend l'escalier, on
+   * marche encore — car c'est bien ce que le visiteur fera.
+   */
   const rejoint = (a, b) => {
     if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
-    const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
-    if (pa === pb){
-      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy, PTS[a].obj, PTS[b].obj);
-      const l = tr ? tr.m : dist(a, b);
-      if (tr) trace.push(tr);
-      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
+    const r = routeEntre(PTS[a], PTS[b], pmr);
+    if (r.coupe) coupe = true;
+    for (const e of r.etapes){
+      trace.push(e);
+      if (e.genre === "marche"){
+        etapes.push({ genre: "marche", m: e.m, min: enMinutes(e.m), trace: true });
+        t += enMinutes(e.m);
+        m += e.m;
+      } else if (e.genre === "liaison"){
+        /* Le temps du passage est celui que l'exploitant a fixé pour ce
+           couple-là : la journée le réserve dans l'horaire, comme elle
+           réserve le temps de marche. */
+        etapes.push(e);
+        t += e.min || 0;
+      } else {
+        etapes.push({ genre: "transfert", de: e.de, vers: e.vers, min: TRANSFERT_MIN });
+        t += TRANSFERT_MIN;
+      }
+    }
+    /* Rien de tracé alors que les deux arrêts partagent leur plan : un stand
+       enclavé, une allée introuvable. La matrice, elle, a une distance — celle
+       qui a servi à ranger la journée — et l'annoncer vaut mieux que de
+       laisser croire à un pas de porte. Entre deux plans elle porterait le
+       forfait de dissuasion, qui n'a jamais sa place dans les mètres
+       annoncés : on n'ajoute alors rien. */
+    if (PTS[a].p === PTS[b].p && !r.etapes.some(e => e.genre === "marche")){
+      const l = dist(a, b);
+      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: false });
       t += enMinutes(l);
       m += l;
-      return;
     }
-    coupe = true;
-    const sortie = versPorte(pa, pmr, PTS[a].xy, false, PTS[a].obj);
-    const entree = versPorte(pb, pmr, PTS[b].xy, true, PTS[b].obj);
-    if (sortie){ trace.push(sortie); m += sortie.m; }
-    trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
-    if (entree){ trace.push(entree); m += entree.m; }
-    const min = enMinutes((sortie ? sortie.m : 0) + (entree ? entree.m : 0)) + TRANSFERT_MIN;
-    etapes.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle, min: min });
-    t += min;
   };
 
   const pose = (i, conf) => {
@@ -6974,6 +7891,8 @@ function remplitJournee(){
     } else if (e.genre === "marche"){
       lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
         (e.trace ? "" : " (non tracé)"));
+    } else if (e.genre === "liaison"){
+      lienJournee(fil, phraseLiaison(e).s);
     } else if (e.genre === "transfert"){
       lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
         ", ce trajet n'est pas sur le plan");
@@ -7453,9 +8372,9 @@ function entetesApi(){
 /**
  * Le fond d'un pavillon : cinquante fois le poids des stands, et purement
  * décoratif. On le charge après coup, une seule fois par pavillon, et on
- * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte
- * l'horodatage de la dernière synchronisation : le navigateur le garde
- * indéfiniment et ne le redemande qu'après une mise à jour du plan.
+ * l'injecte s'il concerne encore celui qu'on regarde. Son adresse porte une
+ * empreinte de ce qu'il contient : le navigateur le garde indéfiniment, et ne
+ * le redemande que lorsque le dessin servi n'est plus le même.
  */
 const _fonds = new Map();
 function chargeFond(i){
@@ -7464,13 +8383,16 @@ function chargeFond(i){
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
   if (_fonds.has(p.id)) return _fonds.get(p.id);
 
-  /* L'empreinte du fond fait la version : elle ne bouge que si le dessin
-     bouge, là où l'heure de synchronisation bougeait à chaque passage et
-     faisait retélécharger le même dessin. Un pavillon pas encore
-     resynchronisé n'en a pas, et retombe sur l'horodatage. */
+  /* La version vient du service, qui la calcule sur ce qu'il servira vraiment :
+     l'empreinte des dessins, sa façon de les découper, et — pour un visiteur,
+     seul à recevoir un fond découpé — ce que l'apparence en montre. Tant
+     qu'elle ne bouge pas, il n'y a rien à retélécharger ; dès qu'elle bouge,
+     le navigateur ne peut pas resservir l'ancien. Un salon servi par une
+     version antérieure du service n'en porte pas : on retombe alors sur
+     l'horodatage de synchronisation, qui était la règle jusqu'ici. */
   const q = API + "?slug=" + encodeURIComponent(SLUG) +
             "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(p.empreinte || DATA.genereLe || "0");
+            "&v=" + encodeURIComponent(p.versionFond || DATA.genereLe || "0");
   const promesse = fetch(q, { headers: entetesApi() })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {

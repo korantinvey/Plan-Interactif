@@ -4,10 +4,60 @@
    Les réglages vivent dans CONF, partagés par les trois pavillons :
    changer la couleur du bâtiment une fois vaut pour tous.
    ============================================================ */
-const CLE_CONF = "plan-conf";
 const DEFAUTS = { "INFOPRO_FIL_JAUNE": { rempli: true } };
 let CONF = JSON.parse(JSON.stringify(DEFAUTS));
-try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+
+/* Un rangement par salon, et non plus un seul pour tous.
+   Les calques sortent tous du même bureau d'études : « Batiment », « RIA »,
+   « Caniveaux » et leurs sous-calques portent les mêmes noms d'un salon à
+   l'autre. Rangés sous ce seul nom, les réglages suivaient l'exploitant :
+   masquer une gaine chez l'un la masquait chez le suivant, sans que rien ne
+   l'annonce dans son panneau — et la publication emportait le mélange en
+   base. Le salon ouvert nomme donc sa clé. */
+const cleConf = d => "plan-conf:" +
+  ((d && d.slug) || SLUG || (d && d.evenement) || "sans-salon");
+let CLE_CONF = cleConf(null);
+
+/** Ouvre les réglages du salon qu'on vient de charger. */
+function ouvreConf(d){
+  CLE_CONF = cleConf(d);
+  CONF = JSON.parse(JSON.stringify(DEFAUTS));
+  try { Object.assign(CONF, JSON.parse(localStorage.getItem(CLE_CONF) || "{}")); } catch (e) {}
+  /* L'ancien rangement commun ne peut que rejouer le mélange, et la base fait
+     foi de toute façon : on le retire plutôt que de le laisser traîner. */
+  try { localStorage.removeItem("plan-conf"); } catch (e) {}
+}
+
+/**
+ * Les réglages qui parlent du salon ouvert : ceux de ses calques et de leurs
+ * sous-calques, plus les réglages généraux — commandes, couches de données,
+ * étiquettes. Tout le reste vient d'un salon voisin ouvert sur le même poste,
+ * et ne désigne rien ici.
+ *
+ * Le filtre s'applique aux deux bouts : ce qu'on lit de la base, et ce qu'on y
+ * renvoie. Un enregistrement déjà mélangé se nettoie donc à la publication
+ * suivante, sans qu'il faille y toucher à la main.
+ */
+function reglagesDuSalon(source){
+  const calques = new Set((DATA?.plans || []).flatMap(p => (p.fond || []).map(c => c.cle)));
+  const sortie = {};
+  Object.keys(source || {}).forEach(k => {
+    if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
+    const general = k[0] === "_" || k.indexOf("data:") === 0 ||
+                    k === "labStand" || k === "labZone" || k === "selection";
+    /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
+       comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
+       ici, et n'a rien à faire dans ce qu'on publie. */
+    const dUnSecteur = k.indexOf("secteur:") === 0 && SECTEURS.has(k.slice(8));
+    /* « calque/sous-calque », mais l'un comme l'autre peut porter une barre
+       oblique : on retient la clé dès qu'une de ses têtes nomme un calque. */
+    const dUnCalque = calques.has(k) ||
+      k.split("/").some((_, i, t) => i && calques.has(t.slice(0, i).join("/")));
+    if (general || dUnCalque || dUnSecteur) sortie[k] = source[k];
+  });
+  return sortie;
+}
+
 const conf = c => (CONF[c] = CONF[c] || {});
 const jeton = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888888";
 const sousCle = (cle, id) => cle + "/" + id;
@@ -83,6 +133,7 @@ function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
+  appliqueSecteurs();
 }
 
 /**
@@ -184,6 +235,26 @@ function ouvreReglages(){
       };
       bloc.appendChild(l);
     });
+
+    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+       retirent une commande du plan, celui-ci change ce que le plan donne à
+       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+       promettrait des couleurs qu'aucune donnée ne porte. */
+    if (SECTEURS.size){
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+      const c = l.querySelector("input");
+      c.checked = conf("_secteurs").visible !== false;
+      c.onchange = e => {
+        conf("_secteurs").visible = e.target.checked;
+        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+        // les couleurs des secteurs vivent dans la pile : elles suivent
+        if (ADMIN) construitPanneau();
+      };
+      bloc.appendChild(l);
+    }
+
     corps.appendChild(bloc);
 
     const duree = document.createElement("div");

@@ -36,11 +36,11 @@ async function base(acces, chemin, options = {}){
   return txt ? JSON.parse(txt) : null;
 }
 
-/** Les réglages d'apparence, sans les ordres de pile qui sont par pavillon. */
+/** Les réglages d'apparence de ce salon : sans les ordres de pile, qui sont
+ *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
+ *  son enregistrement — c'est par là qu'ils s'y installaient. */
 function reglagesSeuls(){
-  const out = {};
-  Object.keys(CONF).forEach(k => { if (k.indexOf("_pile:") !== 0) out[k] = CONF[k]; });
-  return out;
+  return reglagesDuSalon(CONF);
 }
 
 async function pousseConfiguration(bouton){

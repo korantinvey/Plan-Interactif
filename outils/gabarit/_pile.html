@@ -159,6 +159,12 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
+    /* Les couleurs des secteurs se règlent sous la couche Stands : c'est elle
+       qu'elles repeignent, et il n'y a pas de couche par secteur. Elles ne
+       paraissent que si le salon sectorise et que le plan les montre — sans
+       quoi ce serait une couleur qui ne peint rien. */
+    if (x.k === "data:stands" && secteursMontres())
+      SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -202,17 +208,44 @@ function sectionSelection(hote){
   bloc.appendChild(titre);
 
   const c = conf("selection");
+  // le titre de la section dit déjà de quoi il s'agit
+  bloc.appendChild(ligneCouleur("Couleur", c.couleur || jeton("--accent-soft"),
+    (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  hote.appendChild(bloc);
+}
+
+/* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
+   ni rang. C'est le cas de tout ce qui n'est pas un calque — la sélection, un
+   secteur — et qui n'a donc rien à masquer ni à empiler. */
+function ligneCouleur(libelle, valeur, applique){
   const d = document.createElement("div");
   d.className = "calq";
   d.innerHTML = '<label><span></span></label>' +
                 '<span class="opts"><input type="color" class="cc"></span>';
-  // le titre de la section dit déjà de quoi il s'agit
-  d.querySelector("label span").textContent = "Couleur";
+  d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
-  cc.value = c.couleur || jeton("--accent-soft");
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
-  bloc.appendChild(d);
-  hote.appendChild(bloc);
+  cc.value = valeur;
+  cc.oninput = (e) => applique(e.target.value);
+  return d;
+}
+
+/**
+ * La couleur d'un secteur.
+ *
+ * Le sélecteur part de ce que le plan montre — la couleur choisie, ou la teinte
+ * automatique résolue dans le thème courant — de sorte qu'on retouche ce qu'on
+ * voit plutôt que de partir du noir. Elle vaut ensuite pour les deux thèmes,
+ * comme celle des autres couches.
+ */
+function rangSecteur(hote, nom){
+  const c = conf("secteur:" + nom);
+  const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
+    c.couleur = v;
+    enregistreConf();
+    appliqueSecteurs();
+  });
+  d.classList.add("sous");
+  hote.appendChild(d);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */
