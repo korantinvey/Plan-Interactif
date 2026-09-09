@@ -118,8 +118,12 @@ button{cursor:pointer;background:none;border:none}
 .secteurs .chip:hover{border-color:var(--line-strong)}
 .secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
   border-color:var(--accent);color:var(--ink)}
+/* La pastille montre la couleur du stand, la choisie comme l'automatique. Un
+   liseré la borde : une couleur pâle, choisie pour un aplat, disparaîtrait
+   sinon sur le fond clair du tiroir. */
 .secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
-  background:hsl(var(--sect-h) 60% var(--sect-dot-l))}
+  border:1px solid var(--line-strong);
+  background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
 /* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
    trouve pas : le filtre reste, le repère de couleur s'efface. */
 .sans-secteurs .secteurs .chip i{display:none}
@@ -184,7 +188,7 @@ button{cursor:pointer;background:none;border:none}
 /* La teinte du secteur est posée sur le groupe par la page. La règle vient
    avant le survol et la sélection, à spécificité égale, pour leur laisser la
    main : un stand qu'on désigne doit se voir plus que son secteur. */
-.stand[data-sect] path{fill:hsl(var(--sect-h) var(--sect-s) var(--sect-l))}
+.stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */

@@ -118,8 +118,12 @@ button{cursor:pointer;background:none;border:none}
 .secteurs .chip:hover{border-color:var(--line-strong)}
 .secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
   border-color:var(--accent);color:var(--ink)}
+/* La pastille montre la couleur du stand, la choisie comme l'automatique. Un
+   liseré la borde : une couleur pâle, choisie pour un aplat, disparaîtrait
+   sinon sur le fond clair du tiroir. */
 .secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
-  background:hsl(var(--sect-h) 60% var(--sect-dot-l))}
+  border:1px solid var(--line-strong);
+  background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
 /* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
    trouve pas : le filtre reste, le repère de couleur s'efface. */
 .sans-secteurs .secteurs .chip i{display:none}
@@ -184,7 +188,7 @@ button{cursor:pointer;background:none;border:none}
 /* La teinte du secteur est posée sur le groupe par la page. La règle vient
    avant le survol et la sélection, à spécificité égale, pour leur laisser la
    main : un stand qu'on désigne doit se voir plus que son secteur. */
-.stand[data-sect] path{fill:hsl(var(--sect-h) var(--sect-s) var(--sect-l))}
+.stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */
@@ -1677,6 +1681,36 @@ function indexeSecteurs(){
  */
 const secteursMontres = () => SECTEURS.size > 0 && conf("_secteurs").visible !== false;
 
+/* La configuration voyage par la base et finit dans un attribut de style : on
+   n'accepte d'elle que la forme hexadécimale, celle que rend le sélecteur. */
+const couleurConf = v => /^#[0-9A-Fa-f]{3,8}$/.test(String(v || "")) ? String(v) : null;
+
+/** Une teinte du cercle chromatique en hexadécimal, pour un sélecteur de
+ *  couleur — qui ne connaît que cette notation. */
+function hslHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => Math.round(255 *
+    (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return "#" + [f(0), f(8), f(4)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * La couleur d'un secteur, telle que le plan la montre.
+ *
+ * Celle que l'exploitant a choisie s'il l'a fait ; sinon la teinte automatique,
+ * résolue dans le thème courant — c'est bien la couleur qu'on voit à l'écran
+ * que le sélecteur doit présenter, et non celle d'un thème qu'on ne regarde
+ * pas.
+ */
+function couleurSecteur(nom){
+  return couleurConf(conf("secteur:" + nom).couleur) ||
+    hslHex(SECTEURS.get(nom) || 0,
+           parseFloat(jeton("--sect-s")) || 58, parseFloat(jeton("--sect-l")) || 87);
+}
+
 /* La bande des secteurs : légende du plan à gauche, filtre de la liste à
    droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
    ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
@@ -1685,10 +1719,12 @@ function chipsSecteurs(){
   const b = $("secteurs");
   b.hidden = !secteursMontres();
   if (b.hidden) return;
-  b.innerHTML = [...SECTEURS].map(([nom, h]) =>
-    '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
-    state.secteurs.has(nom) + '" style="--sect-h:' + h + '"><i></i>' +
-    esc(nom) + '</button>').join("");
+  b.innerHTML = [...SECTEURS].map(([nom, h]) => {
+    const c = couleurConf(conf("secteur:" + nom).couleur);
+    return '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
+      state.secteurs.has(nom) + '" style="--sect-h:' + h + (c ? ";--sect-c:" + c : "") +
+      '"><i></i>' + esc(nom) + '</button>';
+  }).join("");
   b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
     const n = x.dataset.s;
     if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
@@ -1707,13 +1743,21 @@ function coloreSecteurs(){
   racine.classList.toggle("sans-secteurs", !on);
   document.querySelectorAll("#stands g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    const h = on && o ? SECTEURS.get(o.sect) : undefined;
+    const nom = on && o ? o.sect : null;
+    const h = nom ? SECTEURS.get(nom) : undefined;
     if (h === undefined){
       g.removeAttribute("data-sect");
       g.style.removeProperty("--sect-h");
+      g.style.removeProperty("--sect-c");
     } else {
       g.setAttribute("data-sect", "");
       g.style.setProperty("--sect-h", h);
+      /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
+         vaut pour les deux thèmes, comme celle des autres couches, et ne se
+         laisse donc pas ternir par la clarté du thème courant. */
+      const c = couleurConf(conf("secteur:" + nom).couleur);
+      if (c) g.style.setProperty("--sect-c", c);
+      else g.style.removeProperty("--sect-c");
     }
   });
 }
@@ -2913,6 +2957,8 @@ function ouvreReglages(){
       c.onchange = e => {
         conf("_secteurs").visible = e.target.checked;
         enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+        // les couleurs des secteurs vivent dans la pile : elles suivent
+        if (ADMIN) construitPanneau();
       };
       bloc.appendChild(l);
     }
@@ -4335,6 +4381,12 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
+    /* Les couleurs des secteurs se règlent sous la couche Stands : c'est elle
+       qu'elles repeignent, et il n'y a pas de couche par secteur. Elles ne
+       paraissent que si le salon sectorise et que le plan les montre — sans
+       quoi ce serait une couleur qui ne peint rien. */
+    if (x.k === "data:stands" && secteursMontres())
+      SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
@@ -4378,17 +4430,44 @@ function sectionSelection(hote){
   bloc.appendChild(titre);
 
   const c = conf("selection");
+  // le titre de la section dit déjà de quoi il s'agit
+  bloc.appendChild(ligneCouleur("Couleur", c.couleur || jeton("--accent-soft"),
+    (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  hote.appendChild(bloc);
+}
+
+/* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
+   ni rang. C'est le cas de tout ce qui n'est pas un calque — la sélection, un
+   secteur — et qui n'a donc rien à masquer ni à empiler. */
+function ligneCouleur(libelle, valeur, applique){
   const d = document.createElement("div");
   d.className = "calq";
   d.innerHTML = '<label><span></span></label>' +
                 '<span class="opts"><input type="color" class="cc"></span>';
-  // le titre de la section dit déjà de quoi il s'agit
-  d.querySelector("label span").textContent = "Couleur";
+  d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
-  cc.value = c.couleur || jeton("--accent-soft");
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
-  bloc.appendChild(d);
-  hote.appendChild(bloc);
+  cc.value = valeur;
+  cc.oninput = (e) => applique(e.target.value);
+  return d;
+}
+
+/**
+ * La couleur d'un secteur.
+ *
+ * Le sélecteur part de ce que le plan montre — la couleur choisie, ou la teinte
+ * automatique résolue dans le thème courant — de sorte qu'on retouche ce qu'on
+ * voit plutôt que de partir du noir. Elle vaut ensuite pour les deux thèmes,
+ * comme celle des autres couches.
+ */
+function rangSecteur(hote, nom){
+  const c = conf("secteur:" + nom);
+  const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
+    c.couleur = v;
+    enregistreConf();
+    appliqueSecteurs();
+  });
+  d.classList.add("sous");
+  hote.appendChild(d);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */

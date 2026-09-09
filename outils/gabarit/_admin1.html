@@ -199,6 +199,8 @@ function ouvreReglages(){
       c.onchange = e => {
         conf("_secteurs").visible = e.target.checked;
         enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+        // les couleurs des secteurs vivent dans la pile : elles suivent
+        if (ADMIN) construitPanneau();
       };
       bloc.appendChild(l);
     }

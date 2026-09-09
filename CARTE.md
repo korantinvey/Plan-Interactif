@@ -11,19 +11,19 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 428 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 430 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.283 · 10. Mode administration
-- l.347 · Renommer une zone organisateur
+- l.285 · 10. Mode administration
+- l.349 · Renommer une zone organisateur
 
 Fonctions :
 
 `conf` 11 · `jeton` 12 · `sousCle` 13 · `styleFond` 15 · `sousCalques` 36
 `styleDataGroupe` 45 · `appliqueCouleursData` 47 · `styleData` 63 · `appliqueApparence` 69
-`appliqueCommandes` 127 · `minutesVisite` 155 · `ouvreReglages` 167 · `enregistreConf` 233
-`rgbHex` 239 · `hexa` 246 · `luminance` 250 · `ecarte` 264 · `joli` 279 · `retireAdmin` 296
-`activeAdmin` 309 · `renommeZone` 357 · `enregistreNomZone` 381
+`appliqueCommandes` 127 · `minutesVisite` 155 · `ouvreReglages` 167 · `enregistreConf` 235
+`rgbHex` 241 · `hexa` 248 · `luminance` 252 · `ecarte` 266 · `joli` 281 · `retireAdmin` 298
+`activeAdmin` 311 · `renommeZone` 359 · `enregistreNomZone` 383
 
 Éléments :
 
@@ -129,7 +129,7 @@ Fonctions :
 `supprimeForme` 184 · `editionPointerDown` 194 · `editionPointerMove` 239
 `editionPointerUp` 270
 
-### `_head.html` — 1287 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1291 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -188,32 +188,32 @@ Fonctions :
 `arretJournee` 510 · `remplitJournee` 535 · `appliqueVueParcours` 671 · `traceJournee` 697
 `montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 828
 
-### `_js.html` — 1428 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 1468 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.39 · 1. Index global — la recherche porte sur tous les pavillons
 - l.147 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.238 · 3. Rendu du pavillon courant
 - l.301 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.357 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
-- l.526 · 6. Vue
-- l.625 · 7. Sélection et fiche
-- l.1127 · 8. Interactions du plan
-- l.1286 · Le tiroir de la liste — écrans étroits
+- l.566 · 6. Vue
+- l.665 · 7. Sélection et fiche
+- l.1167 · 8. Interactions du plan
+- l.1326 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
 `$` 12 · `esc` 14 · `P` 36 · `indexe` 42 · `largeur` 152 · `decoupe` 171 · `habille` 184
 `lignesSvg` 195 · `ligneCode` 216 · `monteHabillage` 244 · `montePlan` 261 · `onglets` 286
 `changePlan` 293 · `ancre` 309 · `place` 310 · `libelles` 312 · `indexeSecteurs` 378
-`secteursMontres` 391 · `chipsSecteurs` 397 · `coloreSecteurs` 418 · `appliqueSecteurs` 437
-`dansSecteurs` 453 · `visible` 455 · `visibleSurPlan` 468 · `appliqueFiltre` 473
-`liste` 481 · `appliqueVue` 529 · `rafraichitVue` 550 · `poseVue` 562 · `masque` 580
-`fit` 600 · `zoom` 612 · `echelle` 617 · `ETROIT` 631 · `anime` 633 · `noeud` 650
-`canalPlan` 655 · `select` 663 · `centre` 682 · `montre` 697 · `momentLocal` 723
-`programme` 746 · `jourLong` 776 · `ficheConf` 787 · `lien` 881 · `ecarteClicFantome` 898
-`nomSociete` 907 · `societes` 920 · `choisitExposant` 931 · `ouvre` 967 · `ferme` 1108
-`onglet` 1117 · `milieu` 1147 · `commencePince` 1153 · `suitPince` 1167
-`mesureTiroir` 1296
+`secteursMontres` 391 · `couleurConf` 395 · `hslHex` 399 · `couleurSecteur` 417
+`chipsSecteurs` 427 · `coloreSecteurs` 450 · `appliqueSecteurs` 477 · `dansSecteurs` 493
+`visible` 495 · `visibleSurPlan` 508 · `appliqueFiltre` 513 · `liste` 521
+`appliqueVue` 569 · `rafraichitVue` 590 · `poseVue` 602 · `masque` 620 · `fit` 640
+`zoom` 652 · `echelle` 657 · `ETROIT` 671 · `anime` 673 · `noeud` 690 · `canalPlan` 695
+`select` 703 · `centre` 722 · `montre` 737 · `momentLocal` 763 · `programme` 786
+`jourLong` 816 · `ficheConf` 827 · `lien` 921 · `ecarteClicFantome` 938 · `nomSociete` 947
+`societes` 960 · `choisitExposant` 971 · `ouvre` 1007 · `ferme` 1148 · `onglet` 1157
+`milieu` 1187 · `commencePince` 1193 · `suitPince` 1207 · `mesureTiroir` 1336
 
 Éléments :
 
@@ -249,16 +249,17 @@ Fonctions :
 `rangParcours` 159 · `groupeParcours` 175 · `remplitParcours` 184 · `ouvreParcours` 246
 `fermeParcours` 258
 
-### `_pile.html` — 245 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 278 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.185 · Élément sélectionné
+- l.191 · Élément sélectionné
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 196 · `rangSous` 219 · `defautCouleur` 241
+`construitPanneau` 60 · `sectionSelection` 202 · `ligneCouleur` 220 · `rangSecteur` 240
+`rangSous` 252 · `defautCouleur` 274
 
 ### `_pousse.html` — 117 l. → plan-admin.html, plan-smcl.html, plan.html
 

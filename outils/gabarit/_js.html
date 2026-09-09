@@ -390,6 +390,36 @@ function indexeSecteurs(){
  */
 const secteursMontres = () => SECTEURS.size > 0 && conf("_secteurs").visible !== false;
 
+/* La configuration voyage par la base et finit dans un attribut de style : on
+   n'accepte d'elle que la forme hexadécimale, celle que rend le sélecteur. */
+const couleurConf = v => /^#[0-9A-Fa-f]{3,8}$/.test(String(v || "")) ? String(v) : null;
+
+/** Une teinte du cercle chromatique en hexadécimal, pour un sélecteur de
+ *  couleur — qui ne connaît que cette notation. */
+function hslHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => Math.round(255 *
+    (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
+  return "#" + [f(0), f(8), f(4)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * La couleur d'un secteur, telle que le plan la montre.
+ *
+ * Celle que l'exploitant a choisie s'il l'a fait ; sinon la teinte automatique,
+ * résolue dans le thème courant — c'est bien la couleur qu'on voit à l'écran
+ * que le sélecteur doit présenter, et non celle d'un thème qu'on ne regarde
+ * pas.
+ */
+function couleurSecteur(nom){
+  return couleurConf(conf("secteur:" + nom).couleur) ||
+    hslHex(SECTEURS.get(nom) || 0,
+           parseFloat(jeton("--sect-s")) || 58, parseFloat(jeton("--sect-l")) || 87);
+}
+
 /* La bande des secteurs : légende du plan à gauche, filtre de la liste à
    droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
    ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
@@ -398,10 +428,12 @@ function chipsSecteurs(){
   const b = $("secteurs");
   b.hidden = !secteursMontres();
   if (b.hidden) return;
-  b.innerHTML = [...SECTEURS].map(([nom, h]) =>
-    '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
-    state.secteurs.has(nom) + '" style="--sect-h:' + h + '"><i></i>' +
-    esc(nom) + '</button>').join("");
+  b.innerHTML = [...SECTEURS].map(([nom, h]) => {
+    const c = couleurConf(conf("secteur:" + nom).couleur);
+    return '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
+      state.secteurs.has(nom) + '" style="--sect-h:' + h + (c ? ";--sect-c:" + c : "") +
+      '"><i></i>' + esc(nom) + '</button>';
+  }).join("");
   b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
     const n = x.dataset.s;
     if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
@@ -420,13 +452,21 @@ function coloreSecteurs(){
   racine.classList.toggle("sans-secteurs", !on);
   document.querySelectorAll("#stands g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    const h = on && o ? SECTEURS.get(o.sect) : undefined;
+    const nom = on && o ? o.sect : null;
+    const h = nom ? SECTEURS.get(nom) : undefined;
     if (h === undefined){
       g.removeAttribute("data-sect");
       g.style.removeProperty("--sect-h");
+      g.style.removeProperty("--sect-c");
     } else {
       g.setAttribute("data-sect", "");
       g.style.setProperty("--sect-h", h);
+      /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
+         vaut pour les deux thèmes, comme celle des autres couches, et ne se
+         laisse donc pas ternir par la clarté du thème courant. */
+      const c = couleurConf(conf("secteur:" + nom).couleur);
+      if (c) g.style.setProperty("--sect-c", c);
+      else g.style.removeProperty("--sect-c");
     }
   });
 }
