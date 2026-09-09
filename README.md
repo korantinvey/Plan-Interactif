@@ -292,7 +292,11 @@ sur le plan, chaque pastille portant le rang de l'arrêt.
 Trois questions au plus, et deux ne se posent que si elles ont lieu d'être : le
 jour, quand le salon en compte plusieurs ; le point d'entrée, quand l'exploitant
 a posé des repères de porte — « Peu importe » reste offert, la journée commence
-alors au premier stand. La liste des départs ne montre que les portes : un
+alors au premier stand. Un plan sans aucune porte marquée ne pose pas la
+question et le dit, plutôt que de laisser son absence passer pour un oubli.
+**Le repère « Entrée/Sortie » se reconnaît à son pictogramme, donc à son
+libellé exact** : « Entrée principale » n'en est pas un, et le trajet entre
+pavillons l'ignore aussi. La liste des départs ne montre que les portes : un
 escalier ou des sanitaires ne sont pas des endroits par lesquels on commence sa
 journée, et les proposer repoussait les entrées hors de l'écran. Un hall qui a
 plusieurs portes du même nom les voit numérotées, faute de mieux — les renommer

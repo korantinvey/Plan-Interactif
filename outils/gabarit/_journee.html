@@ -787,6 +787,16 @@ function ouvreOrganisation(){
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
+    } else {
+      /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
+         absence se remarquerait plus que sa réponse. On dit d'où l'on partira
+         plutôt que de laisser croire à un oubli — et l'exploitant qui lit son
+         propre plan y reconnaît ce qu'il lui reste à poser. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "Aucune entrée n'est repérée sur ce plan : la journée " +
+        "commencera au premier exposant de votre liste.";
+      form.appendChild(n);
     }
 
     corps.appendChild(form);
