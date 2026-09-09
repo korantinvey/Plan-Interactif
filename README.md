@@ -277,10 +277,23 @@ dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui nommai
 ses portes perdait ce qui les rendait utiles, et deux escaliers ne pouvaient
 pas être nommés sans cesser tous deux d'être des escaliers.
 
-Sur le plan, le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose
-que lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien. Le
-type se change après coup depuis le panneau de la forme choisie — une porte mal
-typée ne se voit qu'en essayant un trajet, et il serait absurde de la
+**Sur le plan, la pastille ne porte que le pictogramme.** Le libellé s'écrivait
+à côté dès qu'il disait autre chose que lui — « Entrée Nord » a besoin de son
+nord — mais un nom écrit à la taille du plan ne se lit qu'en zoomant, et la
+pastille s'allongeait de tout ce texte en travers de l'allée qu'elle désigne.
+Le pictogramme répond à la question qu'on se pose de loin : ce que c'est. Le
+nom se demande de près, et **le clic ouvre une fiche** qui le donne, avec ce
+que le repère dessert quand c'est un passage — un escalier qui monte à deux
+étages le dit là. Deux boutons y suivent, comme sur la fiche d'un exposant :
+centrer sur le plan, et prendre ce repère pour arrivée d'un itinéraire. Le
+cartouche des points d'intérêt, en bas du plan, continue de les nommer tous et
+met en avant ceux qui portent le même nom.
+
+Un repère sans pictogramme — un libellé libre, « Point presse » — garde sa
+pastille de texte : c'est tout ce qu'il a à montrer.
+
+Le type se change après coup depuis le panneau de la forme choisie — une porte
+mal typée ne se voit qu'en essayant un trajet, et il serait absurde de la
 redessiner pour cela.
 
 Les repères posés avant cette séparation n'ont que leur libellé : il continue

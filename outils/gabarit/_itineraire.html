@@ -700,8 +700,10 @@ function pointObjet(o){
            detail: pl.libelle + (o.code ? " · " + o.code : "") };
 }
 function pointRepere(f, p){
+  const type = pictoForme(f);
   return { cle: "r:" + f.id, id: f.id, genre: "repere", p: p.i,
-           xy: f.pts[0].slice(), nom: f.txt, detail: p.libelle + " · repère" };
+           xy: f.pts[0].slice(), nom: nomRepere(f),
+           detail: p.libelle + " · " + (type ? nomTypeRepere(type).toLowerCase() : "repère") };
 }
 
 /** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
@@ -811,8 +813,10 @@ const TYPES_LIAISON = {
 const typeLiaison = (f) =>
   f && f.t === "repere" ? TYPES_LIAISON[pictoForme(f)] || null : null;
 
-/** Le nom sous lequel un passage se cherche des yeux, à défaut de libellé. */
-const nomLiaison = (f) => String(f.txt || "").trim() ||
+/** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
+ *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
+ *  « WC », et non rien. */
+const nomRepere = (f) => String(f.txt || "").trim() ||
   nomTypeRepere(pictoForme(f));
 
 /**
@@ -1092,7 +1096,7 @@ function routeParLiaisons(sauts, pmr){
       liaisons++;
       minutes += s.min;
       etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
-                    min: s.min, nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
+                    min: s.min, nom: nomRepere(s.a.f), nomVers: nomRepere(s.b.f),
                     de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
       continue;
     }
@@ -1640,11 +1644,21 @@ function finVisee(){
  * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
  */
 function viseItineraire(id){
-  if (!visee) return false;
   const o = parId.get(id);
-  if (!o) return false;
+  return o ? visePoint(pointObjet(o)) : false;
+}
+
+/** Viser un repère : le geste est le même, le point vient d'ailleurs. */
+function visePoi(id){
+  if (!visee) return false;
+  const cible = formeParId(id);
+  return cible && cible.f.t === "repere" ? visePoint(pointRepere(cible.f, P())) : false;
+}
+
+function visePoint(pt){
+  if (!visee) return false;
   const r = visee;
-  ITI[r] = pointObjet(o);
+  ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
   /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
      enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
@@ -1689,8 +1703,11 @@ function fermeItineraire(){
 
 /** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
  *  dire — c'est lui qu'on met sous le curseur. */
-function versItineraire(o){
-  ITI.b = pointObjet(o);
+const versItineraire = (o) => versItineraireDe(pointObjet(o));
+
+/** Le même geste depuis un repère, qui n'est pas un objet du plan. */
+function versItineraireDe(pt){
+  ITI.b = pt;
   $("iArrivee").value = ITI.b.nom;
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();

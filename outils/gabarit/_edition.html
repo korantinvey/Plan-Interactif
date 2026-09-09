@@ -149,7 +149,7 @@ function candidatsLiaison(f){
     out.push(o);
   });
   return out.sort((a, b) => a.p.i - b.p.i ||
-    COLLATION.compare(nomLiaison(a.f), nomLiaison(b.f)));
+    COLLATION.compare(nomRepere(a.f), nomRepere(b.f)));
 }
 
 /**
@@ -222,7 +222,7 @@ function majLiens(f){
     d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
       'step="1" title="Temps de passage, en minutes"><b>min</b>' +
       '<button class="btnSup" title="Retirer ce passage">&times;</button>';
-    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomLiaison(x.o.f) +
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomRepere(x.o.f) +
       (x.o.visible ? "" : " (calque masqué)");
     const ch = d.querySelector(".lienMin");
     ch.value = x.min == null ? "" : x.min;
@@ -237,7 +237,7 @@ function majLiens(f){
   sel.innerHTML = '<option value="">' +
     (dispo.length ? "Relier à…" : "Aucun autre passage sur les autres plans") + "</option>" +
     dispo.map(o => '<option value="' + esc(o.f.id) + '">' + esc(o.p.libelle) + " · " +
-      esc(nomLiaison(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
+      esc(nomRepere(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
   sel.disabled = !dispo.length;
 
   $("elemLienAide").textContent = liens.length

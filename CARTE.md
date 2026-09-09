@@ -102,7 +102,7 @@ Fonctions :
 
 - l.343 · Page de rapport
 
-### `_dessin.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 843 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -111,12 +111,16 @@ Fonctions :
 `mesCalques` 14 · `enregistreDessins` 15 · `instantane` 39 · `memorise` 40 · `restaure` 45
 `annule` 54 · `refais` 65 · `trouveCalque` 67 · `nouvelId` 68 · `cheminForme` 71
 `dessineDessins` 81 · `versPlan` 118 · `apercu` 124 · `ajouteForme` 135 · `pictoDe` 231
-`nomTypeRepere` 269 · `pictoForme` 280 · `traceRepere` 297 · `cartouchePoi` 346
-`mesureCartouche` 404 · `eclairePoi` 411 · `signale` 422 · `calquePourImage` 436
-`poseImage` 449 · `importeImage` 462 · `dessinPointerDown` 510 · `dessinPointerMove` 550
-`dessinPointerUp` 566 · `termineTrace` 586 · `aide` 593 · `choisitOutil` 610
-`activeCalque` 657 · `montreRoleIti` 693 · `creeCalque` 724 · `demandeNom` 737
-`renommeCalque` 756
+`nomTypeRepere` 269 · `pictoForme` 280 · `traceRepere` 297 · `cartouchePoi` 357
+`ouvrePoi` 418 · `mesureCartouche` 481 · `eclairePoi` 488 · `signale` 499
+`calquePourImage` 513 · `poseImage` 526 · `importeImage` 539 · `dessinPointerDown` 587
+`dessinPointerMove` 627 · `dessinPointerUp` 643 · `termineTrace` 663 · `aide` 670
+`choisitOutil` 687 · `activeCalque` 734 · `montreRoleIti` 770 · `creeCalque` 801
+`demandeNom` 814 · `renommeCalque` 833
+
+Éléments :
+
+`#dPaneInfos` · `#dGo` · `#dItin`
 
 ### `_edition.html` — 410 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -131,7 +135,7 @@ Fonctions :
 `appliquePicto` 299 · `supprimeForme` 317 · `editionPointerDown` 327
 `editionPointerMove` 372 · `editionPointerUp` 403
 
-### `_head.html` — 1323 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1332 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -159,7 +163,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 1763 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 1780 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -170,19 +174,19 @@ Fonctions :
 `grille` 253 · `distanceAuMur` 314 · `nappePrincipale` 356 · `caseDe` 389 · `centreCase` 394
 `accroche` 413 · `Tas` 452 · `travail` 496 · `cherche` 514 · `distancesDepuis` 580
 `reduit` 613 · `longueur` 624 · `nettoie` 628 · `amorce` 652 · `troncon` 671
-`pointObjet` 695 · `pointRepere` 702 · `candidats` 709 · `pointSaisi` 735 · `portesDe` 752
-`versPorte` 757 · `typeLiaison` 811 · `nomLiaison` 815 · `oublieLiaisons` 833
-`lienEcrits` 845 · `ecritLiens` 854 · `annuaireLiaisons` 859 · `liensDe` 891
-`coutLiaison` 911 · `passagePraticable` 918 · `passagesDe` 926 · `sortiesDe` 936
-`plansRelies` 944 · `balayage` 968 · `distanceDepuis` 980 · `cheminLiaisons` 1007
-`routeParLiaisons` 1087 · `routeEntre` 1123 · `calculeRoute` 1162 · `couleurNappe` 1188
-`rafraichitApercu` 1194 · `marchesIci` 1235 · `rayonBout` 1240 · `dessineItineraire` 1245
-`rafraichitBouts` 1289 · `cadreItineraire` 1304 · `champIti` 1327 · `ecritDistance` 1331
-`ecritDuree` 1339 · `fermeSugg` 1344 · `montreSugg` 1351 · `choisitPoint` 1383
-`valideSaisie` 1392 · `effaceItineraire` 1402 · `relance` 1422 · `phraseLiaison` 1465
-`montreResultat` 1479 · `bandeauVisee` 1610 · `armeVisee` 1622 · `finVisee` 1630
-`viseItineraire` 1642 · `ouvreItineraire` 1665 · `fermeItineraire` 1682
-`versItineraire` 1692
+`pointObjet` 695 · `pointRepere` 702 · `candidats` 711 · `pointSaisi` 737 · `portesDe` 754
+`versPorte` 759 · `typeLiaison` 813 · `nomRepere` 819 · `oublieLiaisons` 837
+`lienEcrits` 849 · `ecritLiens` 858 · `annuaireLiaisons` 863 · `liensDe` 895
+`coutLiaison` 915 · `passagePraticable` 922 · `passagesDe` 930 · `sortiesDe` 940
+`plansRelies` 948 · `balayage` 972 · `distanceDepuis` 984 · `cheminLiaisons` 1011
+`routeParLiaisons` 1091 · `routeEntre` 1127 · `calculeRoute` 1166 · `couleurNappe` 1192
+`rafraichitApercu` 1198 · `marchesIci` 1239 · `rayonBout` 1244 · `dessineItineraire` 1249
+`rafraichitBouts` 1293 · `cadreItineraire` 1308 · `champIti` 1331 · `ecritDistance` 1335
+`ecritDuree` 1343 · `fermeSugg` 1348 · `montreSugg` 1355 · `choisitPoint` 1387
+`valideSaisie` 1396 · `effaceItineraire` 1406 · `relance` 1426 · `phraseLiaison` 1469
+`montreResultat` 1483 · `bandeauVisee` 1614 · `armeVisee` 1626 · `finVisee` 1634
+`viseItineraire` 1646 · `visePoi` 1652 · `visePoint` 1658 · `ouvreItineraire` 1679
+`fermeItineraire` 1696 · `versItineraire` 1706 · `versItineraireDe` 1709
 
 ### `_journee.html` — 892 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -196,7 +200,7 @@ Fonctions :
 `arretJournee` 539 · `remplitJournee` 564 · `appliqueVueParcours` 702 · `traceJournee` 728
 `montreJournee` 736 · `perimeJournee` 749 · `ouvreOrganisation` 758 · `lanceJournee` 859
 
-### `_js.html` — 1481 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 1496 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.39 · 1. Index global — la recherche porte sur tous les pavillons
 - l.160 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -205,8 +209,8 @@ Fonctions :
 - l.370 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
 - l.579 · 6. Vue
 - l.678 · 7. Sélection et fiche
-- l.1180 · 8. Interactions du plan
-- l.1339 · Le tiroir de la liste — écrans étroits
+- l.1184 · 8. Interactions du plan
+- l.1354 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -218,10 +222,11 @@ Fonctions :
 `visible` 508 · `visibleSurPlan` 521 · `appliqueFiltre` 526 · `liste` 534
 `appliqueVue` 582 · `rafraichitVue` 603 · `poseVue` 615 · `masque` 633 · `fit` 653
 `zoom` 665 · `echelle` 670 · `ETROIT` 684 · `anime` 686 · `noeud` 703 · `canalPlan` 708
-`select` 716 · `centre` 735 · `montre` 750 · `momentLocal` 776 · `programme` 799
-`jourLong` 829 · `ficheConf` 840 · `lien` 934 · `ecarteClicFantome` 951 · `nomSociete` 960
-`societes` 973 · `choisitExposant` 984 · `ouvre` 1020 · `ferme` 1161 · `onglet` 1170
-`milieu` 1200 · `commencePince` 1206 · `suitPince` 1220 · `mesureTiroir` 1349
+`select` 716 · `centre` 735 · `centrePoint` 739 · `montre` 754 · `momentLocal` 780
+`programme` 803 · `jourLong` 833 · `ficheConf` 844 · `lien` 938 · `ecarteClicFantome` 955
+`nomSociete` 964 · `societes` 977 · `choisitExposant` 988 · `ouvre` 1024 · `ferme` 1165
+`onglet` 1174 · `milieu` 1204 · `commencePince` 1210 · `suitPince` 1224
+`mesureTiroir` 1364
 
 Éléments :
 

@@ -312,9 +312,18 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
-/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
-   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
-.dcal .repere .repLab{text-anchor:start}
+/* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
+   son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
+   n'y répond pas. */
+.dcal .repere{pointer-events:auto;cursor:pointer}
+.dcal .repere *{pointer-events:all}
+/* Le repère ouvert se marque comme le fait le cartouche : un liseré clair
+   autour de la pastille. Le contour du navigateur, lui, est retiré — il
+   dessine un carré noir autour d'un groupe SVG, à côté de la forme qu'il
+   entoure — et remplacé au clavier par le même liseré, en encre. */
+.dcal .repere.sel > rect{stroke:var(--surface);stroke-width:.6;paint-order:stroke}
+.dcal .repere:focus{outline:none}
+.dcal .repere:focus-visible > rect{stroke:var(--ink);stroke-width:.5;paint-order:stroke}
 /* Ce qu'un passage rejoint sur un autre plan : un escalier son palier à
    l'étage, une porte celle du hall d'en face. La liste se lit d'un coup
    d'œil, chaque ligne se retire d'une croix. */
@@ -2055,14 +2064,18 @@ function select(id, recentrer, canal, iSoc){
      car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
   if (recentrer && ETROIT()) centre(o);
 }
-function centre(o){
+const centre = (o) => centrePoint(o.c);
+
+/* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
+   qu'un point. C'est tout ce qu'il faut pour cadrer. */
+function centrePoint(xy){
   const w = Math.min(view.w, 55), h = w * (view.h / view.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la remonte au milieu de ce qui reste visible — d'après la
      hauteur réellement masquée, et non une proportion supposée. */
   const r = svg.getBoundingClientRect();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2 + decale, w: w, h: h };
+  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
   poseVue();
 }
 /**
@@ -2566,7 +2579,7 @@ svg.addEventListener("pointerdown", e => {
   if (doigts.size > 2) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-           cible: e.target.closest("[data-id]") };
+           cible: e.target.closest("[data-id],[data-poi]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
@@ -2594,6 +2607,13 @@ svg.addEventListener("pointerup", e => {
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
+    /* Un repère n'est pas un objet du plan : il n'a pas de fiche d'exposant,
+       mais il a un nom, et c'est ce qu'on vient lui demander. */
+    if (!d.cible.dataset.id){
+      if (visePoi(d.cible.dataset.poi)) return;
+      ouvrePoi(d.cible.dataset.poi, d.cible.getBoundingClientRect());
+      return;
+    }
     if (viseItineraire(d.cible.dataset.id)) return;
     select(d.cible.dataset.id, false, canalPlan(d.cible));
   } else { ferme(); finVisee(); }
@@ -2612,10 +2632,14 @@ svg.addEventListener("wheel", e => {
        view.y + (e.clientY - r.top) / r.height * view.h);
 }, { passive: false });
 svg.addEventListener("keydown", e => {
-  const g = e.target.closest("[data-id]");
+  const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    if (!g.dataset.id){
+      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
+      return;
+    }
     if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
   }
 });
@@ -3579,42 +3603,53 @@ const TAILLE_REPERE = 4;
  */
 function traceRepere(f){
   const t = f.taille || 2;
+  /* Le repère répond au clic comme un stand : le plan ne montre plus que le
+     pictogramme, et c'est la fiche qui dit son nom. Le rôle et le libellé
+     partent avec lui, pour qui lit le plan au clavier ou à la synthèse
+     vocale. */
+  const dit = String(f.txt || "").trim();
+  const type = pictoForme(f);
+  const nom = dit || (type ? nomTypeRepere(type) : "Repère");
   const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
-               '" data-f="' + f.id + '">';
+               '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
+               '" tabindex="0" role="button" aria-label="' +
+               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '">';
 
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[pictoForme(f)];
+  const g = PICTOS[type];
   if (g){
+    /* La pastille ne porte que le pictogramme.
+     *
+     * Le libellé s'écrivait à côté dès qu'il disait autre chose que lui —
+     * « Entrée Nord » avait besoin de son nord. Mais un nom écrit à la taille
+     * du plan ne se lit qu'en zoomant, et la pastille s'allongeait de tout ce
+     * texte en travers de l'allée qu'elle désigne. Le pictogramme dit ce que
+     * c'est, ce qui est la question qu'on se pose de loin ; le nom se demande
+     * de près, et c'est la fiche qui le donne. Le cartouche des points
+     * d'intérêt, lui, continue de les nommer tous.
+     */
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    /* Le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose que
-       lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien.
-       Un libellé qui n'est que le mot du type resterait une redite, et deux
-       pastilles voisines s'élargiraient pour rien. */
-    const dit = String(f.txt || "").trim();
-    const l = dit && !PICTO_MOTS[dit.toLowerCase()] ? largeur(dit, P_NOM) * t : 0;
-    const w = cote + (l ? l + t * .8 : 0);
-    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
+    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
-      (l ? '<text class="repLab" x="' + (x + cote).toFixed(2) + '" y="' +
-           (f.pts[0][1] + t * .35).toFixed(2) + '" font-size="' + t.toFixed(2) + '">' +
-           esc(dit) + '</text>' : "") + '</g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
   }
 
-  const l = largeur(f.txt || "", P_NOM) * t;
+  /* Sans pictogramme, le libellé est tout ce que le repère a à montrer : le
+     retirer laisserait une pastille muette. */
+  const l = largeur(nom, P_NOM) * t;
   const w = l + t * 1.1, ht = t * 1.65;
   const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
   return tete +
     '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
     '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
     '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
-    '" font-size="' + t.toFixed(2) + '">' + esc(f.txt || "") + '</text></g>';
+    '" font-size="' + t.toFixed(2) + '">' + esc(nom) + '</text></g>';
 }
 
 /**
@@ -3672,6 +3707,72 @@ function cartouchePoi(){
     });
   eclairePoi();
   mesureCartouche();
+}
+
+/**
+ * La fiche d'un repère.
+ *
+ * Le plan ne montre plus que le pictogramme ; le nom n'est pas perdu pour
+ * autant, il est ce que le clic donne — comme une forme de stand donne la
+ * fiche de son exposant. On y lit ce que le repère est, comment il s'appelle,
+ * et, quand c'est un passage, ce qu'il dessert : un escalier qui monte à deux
+ * étages le dit ici, et nulle part ailleurs.
+ *
+ * La fiche est celle des stands, remplie autrement : elle partage la même
+ * bande que le parcours et l'itinéraire, et deux fiches ouvertes en même
+ * temps ne se liraient pas.
+ */
+function ouvrePoi(id, rect){
+  const cible = formeParId(id);
+  if (!cible || cible.f.t !== "repere") return;
+  const f = cible.f, p = P();
+  fermeParcours(); fermeItineraire();
+
+  document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  const noeudPoi = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  if (noeudPoi) noeudPoi.classList.add("sel");
+
+  const type = pictoForme(f);
+  const dit = String(f.txt || "").trim();
+  $("dKind").hidden = false;
+  $("dKind").textContent = type ? nomTypeRepere(type) : "Repère";
+  $("dName").textContent = dit || (type ? nomTypeRepere(type) : "Repère");
+  $("dCode").textContent = p.libelle;
+  $("dNeuf").hidden = true;
+  $("dPartage").hidden = true;
+  /* Un repère ne se retient pas dans un parcours : on ne visite pas un
+     escalier, on le prend. */
+  const sig = $("dMarque");
+  sig.hidden = true;
+  delete sig.dataset.mg; delete sig.dataset.mi;
+  if ($("dRen")) $("dRen").hidden = true;
+  $("dOnglets").hidden = true;
+  $("detail").classList.remove("deux");
+  onglet("detail");
+
+  /* Ce qu'un passage dessert, avec le temps qu'il demande : c'est ce qui
+     distingue deux escaliers voisins, et ce qu'un visiteur cherche à savoir
+     avant de s'y engager. */
+  const liens = typeLiaison(f) ? liensDe(f) : [];
+  const dessert = liens.length
+    ? '<div class="field"><span class="eyebrow">Mène à</span><span class="v">' +
+      liens.map(x => '<span class="ligne">' +
+        esc(x.o.p.libelle + " · " + nomRepere(x.o.f)) + " — " +
+        esc(ecritMinutes(x.min == null ? typeLiaison(f).min : x.min)) +
+        '</span>').join("") + "</span></div>"
+    : "";
+
+  $("dBody").innerHTML = '<div class="cInfos" id="dPaneInfos">' + dessert + "</div>" +
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    '<button class="btn itin" id="dItin">Itinéraire</button></div>';
+  $("dGo").onclick = () => centrePoint(f.pts[0]);
+  // « j'y vais » : l'arrivée est ce repère, le départ reste à dire
+  $("dItin").onclick = () => versItineraireDe(pointRepere(f, p));
+
+  $("detail").classList.add("open");
+  $("voile").classList.add("on");
+  ecarteClicFantome();
+  anime(rect, 1);
 }
 
 /**
@@ -4198,7 +4299,7 @@ function candidatsLiaison(f){
     out.push(o);
   });
   return out.sort((a, b) => a.p.i - b.p.i ||
-    COLLATION.compare(nomLiaison(a.f), nomLiaison(b.f)));
+    COLLATION.compare(nomRepere(a.f), nomRepere(b.f)));
 }
 
 /**
@@ -4271,7 +4372,7 @@ function majLiens(f){
     d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
       'step="1" title="Temps de passage, en minutes"><b>min</b>' +
       '<button class="btnSup" title="Retirer ce passage">&times;</button>';
-    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomLiaison(x.o.f) +
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomRepere(x.o.f) +
       (x.o.visible ? "" : " (calque masqué)");
     const ch = d.querySelector(".lienMin");
     ch.value = x.min == null ? "" : x.min;
@@ -4286,7 +4387,7 @@ function majLiens(f){
   sel.innerHTML = '<option value="">' +
     (dispo.length ? "Relier à…" : "Aucun autre passage sur les autres plans") + "</option>" +
     dispo.map(o => '<option value="' + esc(o.f.id) + '">' + esc(o.p.libelle) + " · " +
-      esc(nomLiaison(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
+      esc(nomRepere(o.f)) + " (" + esc(nomTypeRepere(pictoForme(o.f))) + ")</option>").join("");
   sel.disabled = !dispo.length;
 
   $("elemLienAide").textContent = liens.length
@@ -5979,8 +6080,10 @@ function pointObjet(o){
            detail: pl.libelle + (o.code ? " · " + o.code : "") };
 }
 function pointRepere(f, p){
+  const type = pictoForme(f);
   return { cle: "r:" + f.id, id: f.id, genre: "repere", p: p.i,
-           xy: f.pts[0].slice(), nom: f.txt, detail: p.libelle + " · repère" };
+           xy: f.pts[0].slice(), nom: nomRepere(f),
+           detail: p.libelle + " · " + (type ? nomTypeRepere(type).toLowerCase() : "repère") };
 }
 
 /** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
@@ -6090,8 +6193,10 @@ const TYPES_LIAISON = {
 const typeLiaison = (f) =>
   f && f.t === "repere" ? TYPES_LIAISON[pictoForme(f)] || null : null;
 
-/** Le nom sous lequel un passage se cherche des yeux, à défaut de libellé. */
-const nomLiaison = (f) => String(f.txt || "").trim() ||
+/** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
+ *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
+ *  « WC », et non rien. */
+const nomRepere = (f) => String(f.txt || "").trim() ||
   nomTypeRepere(pictoForme(f));
 
 /**
@@ -6371,7 +6476,7 @@ function routeParLiaisons(sauts, pmr){
       liaisons++;
       minutes += s.min;
       etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
-                    min: s.min, nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
+                    min: s.min, nom: nomRepere(s.a.f), nomVers: nomRepere(s.b.f),
                     de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
       continue;
     }
@@ -6919,11 +7024,21 @@ function finVisee(){
  * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
  */
 function viseItineraire(id){
-  if (!visee) return false;
   const o = parId.get(id);
-  if (!o) return false;
+  return o ? visePoint(pointObjet(o)) : false;
+}
+
+/** Viser un repère : le geste est le même, le point vient d'ailleurs. */
+function visePoi(id){
+  if (!visee) return false;
+  const cible = formeParId(id);
+  return cible && cible.f.t === "repere" ? visePoint(pointRepere(cible.f, P())) : false;
+}
+
+function visePoint(pt){
+  if (!visee) return false;
   const r = visee;
-  ITI[r] = pointObjet(o);
+  ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
   /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
      enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
@@ -6968,8 +7083,11 @@ function fermeItineraire(){
 
 /** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
  *  dire — c'est lui qu'on met sous le curseur. */
-function versItineraire(o){
-  ITI.b = pointObjet(o);
+const versItineraire = (o) => versItineraireDe(pointObjet(o));
+
+/** Le même geste depuis un repère, qui n'est pas un objet du plan. */
+function versItineraireDe(pt){
+  ITI.b = pt;
   $("iArrivee").value = ITI.b.nom;
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();

@@ -312,9 +312,18 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
-/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
-   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
-.dcal .repere .repLab{text-anchor:start}
+/* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
+   son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
+   n'y répond pas. */
+.dcal .repere{pointer-events:auto;cursor:pointer}
+.dcal .repere *{pointer-events:all}
+/* Le repère ouvert se marque comme le fait le cartouche : un liseré clair
+   autour de la pastille. Le contour du navigateur, lui, est retiré — il
+   dessine un carré noir autour d'un groupe SVG, à côté de la forme qu'il
+   entoure — et remplacé au clavier par le même liseré, en encre. */
+.dcal .repere.sel > rect{stroke:var(--surface);stroke-width:.6;paint-order:stroke}
+.dcal .repere:focus{outline:none}
+.dcal .repere:focus-visible > rect{stroke:var(--ink);stroke-width:.5;paint-order:stroke}
 /* Ce qu'un passage rejoint sur un autre plan : un escalier son palier à
    l'étage, une porte celle du hall d'en face. La liste se lit d'un coup
    d'œil, chaque ligne se retire d'une croix. */

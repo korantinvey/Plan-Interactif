@@ -732,14 +732,18 @@ function select(id, recentrer, canal, iSoc){
      car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
   if (recentrer && ETROIT()) centre(o);
 }
-function centre(o){
+const centre = (o) => centrePoint(o.c);
+
+/* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
+   qu'un point. C'est tout ce qu'il faut pour cadrer. */
+function centrePoint(xy){
   const w = Math.min(view.w, 55), h = w * (view.h / view.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la remonte au milieu de ce qui reste visible — d'après la
      hauteur réellement masquée, et non une proportion supposée. */
   const r = svg.getBoundingClientRect();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: o.c[0] - w / 2, y: o.c[1] - h / 2 + decale, w: w, h: h };
+  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
   poseVue();
 }
 /**
@@ -1243,7 +1247,7 @@ svg.addEventListener("pointerdown", e => {
   if (doigts.size > 2) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-           cible: e.target.closest("[data-id]") };
+           cible: e.target.closest("[data-id],[data-poi]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
@@ -1271,6 +1275,13 @@ svg.addEventListener("pointerup", e => {
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
+    /* Un repère n'est pas un objet du plan : il n'a pas de fiche d'exposant,
+       mais il a un nom, et c'est ce qu'on vient lui demander. */
+    if (!d.cible.dataset.id){
+      if (visePoi(d.cible.dataset.poi)) return;
+      ouvrePoi(d.cible.dataset.poi, d.cible.getBoundingClientRect());
+      return;
+    }
     if (viseItineraire(d.cible.dataset.id)) return;
     select(d.cible.dataset.id, false, canalPlan(d.cible));
   } else { ferme(); finVisee(); }
@@ -1289,10 +1300,14 @@ svg.addEventListener("wheel", e => {
        view.y + (e.clientY - r.top) / r.height * view.h);
 }, { passive: false });
 svg.addEventListener("keydown", e => {
-  const g = e.target.closest("[data-id]");
+  const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    if (!g.dataset.id){
+      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
+      return;
+    }
     if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
   }
 });
