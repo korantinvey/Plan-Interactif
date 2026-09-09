@@ -89,10 +89,30 @@ reproposé, et décocher l'affichage ne l'efface pas.
 Une cible sort du lot : **« Nouvel exposant »**. Elle n'apporte aucun texte à la
 fiche mais y pose une pastille, à côté du pavillon et du numéro de stand. Le
 champ qui la déclenche n'existe que sur les salons qui distinguent leurs
-nouveaux venus — ailleurs la cible reste vide et rien ne paraît. La valeur se
-lit comme un oui/non : tout ce qui n'est ni vide, ni « non », ni « false », ni
-« 0 » vaut oui, parce que ces champs sont remplis à la main et que personne ne
-s'accorde sur la forme du oui.
+nouveaux venus — ailleurs la cible reste vide et rien ne paraît.
+
+Deux façons de dire oui, parce que les sources n'en offrent qu'une chacune.
+
+Sur un **champ oui/non**, c'est l'accord qui s'énumère : valent oui `oui`, `o`,
+`1`, `x`, `vrai`, `true`, `on` et leurs majuscules ; tout le reste, y compris ce
+qu'on ne sait pas lire, vaut non. La règle inverse — prendre pour un oui tout ce
+qui n'est pas un non reconnu — a été essayée et retirée : un champ portant une
+date d'adhésion ou un tiret devenait un oui, et la fiche affirmait quelque chose
+de faux.
+
+Sur un **champ à choix**, aucune valeur n'est un oui, et c'est pourtant l'une
+d'elles qui désigne les nouveaux venus. Franchise Expo 2026 range ainsi ses
+577 exposants sur `anciennete` : 363 « Client N-1 », 176 « Nouveau Client »,
+35 « Retour ». La ligne offre donc, sous le champ, les valeurs que la
+synchronisation a vues ; on coche celles qui comptent. Plusieurs peuvent
+compter à la fois — un salon tiendra « Retour » pour un retour à signaler, un
+autre non. Aucune cochée, rien n'est signalé, et la ligne le dit.
+
+Un champ qui porte plus de huit valeurs distinctes est du texte libre : sa liste
+n'est pas proposée. Un salon synchronisé avant que le relevé ne garde les
+valeurs distinctes n'en a pas non plus. Dans les deux cas la ligne le dit, et
+laisse saisir la valeur à la main plutôt que de faire attendre le prochain
+passage. « Exclu de la liste » se règle exactement de la même façon.
 
 Trois lignes ne s'affichent jamais mais décident du reste, sous « Ce qui ne
 s'affiche pas » : le **numéro de stand** et l'**identifiant de dossier**, par
@@ -119,6 +139,9 @@ disparaître d'un coup le bouton, les signets et le liseré. Comme les autres
 réglages, il faut publier la configuration pour que le changement parvienne aux
 visiteurs. Le retrait ne détruit rien — les listes déjà constituées sur les
 téléphones réapparaissent si le réglage se rouvre.
+
+Le pied du tiroir porte **« Organiser ma journée »**, qui met cette liste en
+heures : c'est l'objet de la section suivante.
 
 Cette liste **ne quitte jamais l'appareil** : elle vit dans le stockage local du
 navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contient
@@ -182,12 +205,16 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   l'extérieur. À défaut de mieux, la marche est bornée à l'enveloppe convexe
   des emplacements, dont les stands du pourtour dessinent le bord.
 - **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
-  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à une
-  sortie repérée, puis celui d'une entrée repérée jusqu'à l'arrivée — et le
-  visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés qui, eux, sont
-  exacts. La distance annoncée est celle des tronçons, et l'affichage le dit
-  (« au moins 165 m »). Sans repère « Entrée » ou « Sortie » sur le plan, cette
-  partie n'est pas tracée, et le tiroir l'explique plutôt que d'inventer.
+  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à la
+  porte la plus proche, puis celui d'une porte du pavillon suivant jusqu'à
+  l'arrivée — et le visiteur lit « rejoignez le pavillon 7.2 » entre deux
+  tracés qui, eux, sont exacts. La distance annoncée est celle des tronçons, et
+  l'affichage le dit (« au moins 165 m »). Sans repère « Entrée/Sortie » sur le
+  plan, cette partie n'est pas tracée, et le tiroir l'explique plutôt que
+  d'inventer. Entrée et sortie ne font qu'un type de repère : on entre et on
+  sort par la même porte, et le trajet l'emprunte dans les deux sens. Les plans
+  posés avant cette fusion n'ont rien à reprendre — l'ancien pictogramme
+  « Sortie » se range sous le nouveau.
 
 ### Ce qui n'est pas praticable
 
@@ -233,6 +260,33 @@ Le rôle vit dans les réglages, à côté de l'ordre des calques, et part aux
 visiteurs à la publication : les colonnes de `calque_dessin` sont fixées, celles
 des réglages ne le sont pas, et rien de tout cela ne demande de migration.
 
+### Ce qu'un repère est, et ce qu'il s'appelle
+
+Un repère porte deux choses distinctes, et les confondre coûtait cher.
+
+Son **type** se choisit dans une liste — Entrée/Sortie, WC, Escalier, Accueil,
+Restauration, Ascenseur… — et c'est lui qui porte les propriétés : le
+pictogramme affiché, la qualité de porte par où un trajet passe d'un pavillon à
+l'autre, et l'obstacle qu'un escalier ou un escalator oppose au mode
+accessible. Son **libellé** s'écrit librement et ne sert qu'à distinguer un
+exemplaire d'un autre.
+
+Le type était auparavant deviné depuis le libellé, sur correspondance exacte :
+« Entrée » était une porte, « Entrée Nord » n'en était plus une — ni pour le
+dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui nommait
+ses portes perdait ce qui les rendait utiles, et deux escaliers ne pouvaient
+pas être nommés sans cesser tous deux d'être des escaliers.
+
+Sur le plan, le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose
+que lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien. Le
+type se change après coup depuis le panneau de la forme choisie — une porte mal
+typée ne se voit qu'en essayant un trajet, et il serait absurde de la
+redessiner pour cela.
+
+Les repères posés avant cette séparation n'ont que leur libellé : il continue
+d'être interprété pour eux, et leur plan s'affiche comme il le faisait. Le type
+s'écrit dès qu'on y touche.
+
 ### Le mode accessible
 
 Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
@@ -256,6 +310,127 @@ Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
 s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
 de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
 et le bouton des fiches suit celui de la barre.
+
+## Organiser sa journée
+
+Une liste de douze stands et de deux conférences ne dit ni par où commencer, ni
+si la journée y suffira. Le bouton **« Organiser ma journée »**, au pied du
+parcours, pose une question — à quelle heure arrivez-vous — et range le reste :
+les conférences retenues sont des rendez-vous qu'on ne déplace pas, les stands
+se glissent entre elles, et l'ordre retenu est celui qui fait le moins de
+chemin. Le tiroir bascule alors de la liste au déroulé : une heure par arrêt,
+la distance et la durée de chaque marche entre eux, et le trajet complet tracé
+sur le plan, chaque pastille portant le rang de l'arrêt.
+
+Trois questions au plus, et deux ne se posent que si elles ont lieu d'être : le
+jour, quand le salon en compte plusieurs ; le point d'entrée, quand l'exploitant
+a posé des repères de type *Entrée/Sortie* — « Peu importe » reste offert, la
+journée commence alors au premier stand. Un plan sans aucune porte marquée ne
+pose pas la question et le dit, plutôt que de laisser son absence passer pour
+un oubli. La liste des départs ne montre que les portes : un
+escalier ou des sanitaires ne sont pas des endroits par lesquels on commence sa
+journée, et les proposer repoussait les entrées hors de l'écran. Un hall qui a
+plusieurs portes du même nom les voit numérotées, faute de mieux — les renommer
+« Entrée Nord » reste le vrai remède. L'option « Itinéraire accessible » du
+tiroir voisin vaut ici aussi : elle change les allures autant que les chemins.
+
+Le calcul est celui d'un voyageur de commerce avec des rendez-vous. L'ordre
+exact demanderait d'essayer toutes les permutations — vingt stands en font deux
+milliards de milliards — on construit donc au plus juste, en insérant à chaque
+tour le stand qui coûte le moins là où il tient, puis on reprend l'ensemble par
+deux mouvements : retourner un morceau de créneau, déplacer un arrêt ailleurs.
+Les distances entre arrêts ne viennent pas d'un A\* par paire — vingt arrêts en
+font quatre cents — mais d'un balayage en largeur par arrêt, qui donne d'un
+coup la longueur d'allée vers tous les autres ; le trait montré, lui, reste
+celui du calcul d'itinéraire.
+
+**Ce que « coûter » veut dire compte autant que l'algorithme**, et deux
+formulations s'y cassent les dents avant la bonne.
+
+Ne compter que les mètres produit un programme absurde : un créneau qui bute
+sur une conférence dure ce qu'il dure, qu'on le remplisse ou non, si bien qu'y
+glisser un stand ne coûte pas moins qu'ailleurs — tout s'entasse après la
+dernière conférence, laissant deux heures trente-neuf à patienter devant une
+salle.
+
+Compter une minute d'attente comme une minute de marche remplit bien les creux,
+mais dégénère : dans un créneau qui a du mou, les minutes de marche se
+retranchent *exactement* aux minutes d'attente, et la distance s'annule —
+l'insertion vaut « moins une visite » quel que soit le détour, tous les
+candidats font match nul, et c'est le premier rencontré qui l'emporte. Les
+trajets doublaient de longueur sans que rien ne le signale.
+
+Ce sont donc **deux questions séparées, traitées séparément** :
+
+- **Ce qui tombe après le dernier rendez-vous pèse d'abord.** Un créneau borné
+  dure ce qu'il dure ; ce qu'on n'y met pas s'ajoute à la fin de la journée. Un
+  stand posé dans le créneau ouvert coûte le temps de sa visite, converti en
+  mètres au pas de marche. Le forfait n'est pas infranchissable, et c'est
+  voulu : traverser deux pavillons pour combler vingt minutes de creux n'a rien
+  d'un progrès.
+- **La distance départage ensuite**, et elle seule : un créneau borné ne coûte
+  que ses mètres, l'attente n'y étant que ce qui reste.
+
+Sur une journée de douze stands et deux conférences, la formulation dégénérée
+rendait 1 477 m ; celle-ci en rend 631, pour la même heure de fin.
+
+Quand un creux subsiste malgré tout, le tiroir dit d'où il vient — il n'y avait
+plus rien à voir d'ici là, ou l'avancer coûtait plus de marche qu'il ne fait
+gagner — plutôt que de le laisser passer pour une étourderie du calcul.
+
+Il faut savoir ce qu'un creux qui reste veut dire, parce qu'il ressemble à un
+défaut sans en être un. L'attente totale d'une journée vaut
+
+```
+Σ(intervalles entre rendez-vous) − Σ(marche) − temps de visite × (stands casés dedans)
+```
+
+— elle ne dépend donc **que du nombre** de stands casés entre les conférences,
+pas du créneau où chacun tombe. Déplacer un stand vers un créneau qui bâille y
+comble le trou et en creuse un identique ailleurs. Ce qui reste à optimiser,
+une fois les créneaux pleins, c'est la marche, et c'est ce que le calcul fait.
+
+Un creux garde pourtant une propriété utile quand il précède le **premier**
+rendez-vous : celui-là ne tient qu'à l'heure qu'on a dite en arrivant, et le
+visiteur peut s'en débarrasser seul. La ligne le lui dit — « en arrivant à
+10h38, vous ne perdriez rien » — ce qui est exact par construction : le créneau
+raccourcit d'autant, et son contenu y tient toujours.
+
+Ce que la journée ne peut pas tenir, elle le dit : une conférence commencée
+avant l'arrivée, une autre retenue un autre jour, une qui se tient pendant une
+autre déjà retenue, une salle rattachée à aucune zone du plan, un rendez-vous
+qu'on n'atteindrait qu'en retard. Rien n'est retiré du parcours au passage — le
+visiteur décide de ce qu'il sacrifie.
+
+Deux conférences qui se recouvrent ne s'enchaînent pas : on garde celle qui
+commence la première et l'autre se range à part, faute de pouvoir assister aux
+deux. Les programmer à la suite ferait une journée qui remonte le temps — le
+défaut existait, et la suite de l'après-midi se retrouvait planifiée dans le
+passé. **L'horloge du visiteur n'avance jamais à reculons** : une conférence
+garde les heures du programme, mais si on ne peut y être qu'après le début, la
+ligne le dit — « vous y seriez à 12h02 » — et la suite part de l'heure qu'il
+est vraiment.
+
+Entre deux pavillons, la journée hérite de la franchise de l'itinéraire : rien
+dans les données ne décrit ce qui les relie, le trajet n'est pas tracé, et la
+distance annoncée devient « au moins ». Ordonner demande pourtant un prix,
+sans quoi l'algorithme ferait l'aller-retour entre deux halls comme il change
+d'allée : un forfait dissuasif suffit à regrouper les visites pavillon par
+pavillon, et il ne compte jamais dans les mètres annoncés.
+
+### Le temps de visite par stand
+
+Combien de temps passe-t-on devant un exposant ? Cela ne se devine pas depuis le
+plan — un salon grand public tourne vite, un salon d'affaires beaucoup moins —
+et c'est pourtant ce qui décide combien de stands tiennent entre deux
+conférences. Le réglage vit donc en administration, dans « Réglages du plan »
+sous les cases à cocher : **Temps de visite par stand**, en minutes, vingt par
+défaut. Comme les autres réglages, il faut publier la configuration pour qu'il
+parvienne aux visiteurs.
+
+Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
+disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
+moteur.
 
 ## Le rapport d'utilisation
 
@@ -287,31 +462,75 @@ Le détail par canal est ce qui se lit le plus vite : aucun clic sur un logo dit
 qu'aucun logo n'a été posé ; une recherche qui domine dit que le plan sert de
 répertoire plus que de plan.
 
+### Des compteurs, et non un journal
+
+Rien ne garde le détail des gestes. Un geste **incrémente un compteur**, et c'est
+tout ce qu'il en reste.
+
+La raison tient au volume. Une ligne par geste — ce qui se faisait au début —
+suit la fréquentation : cinq mille visiteurs sur quatre jours écrivent un
+demi-million de lignes, cent trente mégaoctets index compris, que rien n'efface
+jamais. Un compteur, lui, grossit avec le produit de ses dimensions, non avec le
+trafic : le nombre de stands est un plafond fixe, que cinq cents ou cinquante
+mille personnes viennent. Le même salon tient en quelques milliers de lignes, et
+n'en écrit pas une de plus si la fréquentation double.
+
+Trois tables, parce que les trois questions n'ont pas la même forme.
+
+| | |
+|---|---|
+| `compteur` | la fréquentation, à l'heure, sans objet |
+| `compteur_cible` | l'audience d'un stand ou d'une conférence, au jour |
+| `visiteur_jour` | un jeton vu tel jour — le seul décompte qui ne soit pas une somme |
+
+Croiser l'objet et l'heure reconstruirait le problème qu'on fuit : 931 stands ×
+9 canaux × 48 heures font quatre cent mille lignes possibles. D'où deux
+granularités, et non une.
+
+`visiteur_jour` existe parce que « combien de visiteurs » est un cardinal, pas
+une somme : il faut avoir vu les jetons. Mais il ne faut pas avoir gardé les
+gestes — une ligne par (visiteur, jour) au lieu de vingt-sept par visiteur, et le
+décompte reste exact.
+
+Ce qu'on y perd : croiser deux genres sur un même visiteur, « ceux qui calculent
+un itinéraire ouvrent-ils plus de fiches ». Aucun chiffre du rapport ne posait
+cette question. Ce qu'on y gagne : savoir **quel** stand a été consulté, ce que
+le journal ne disait pas — il ne retenait que le genre du geste, jamais son objet.
+
 ### Ce qui est enregistré, et ce qui ne l'est pas
 
-Une ligne par geste, dans la table `mesure` : l'événement, le geste, le canal,
-deux jetons, un horodatage. **Rien d'autre** — ni adresse IP, ni agent
-utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au hasard par
-le navigateur et rangé chez lui sous une clé propre à l'événement
+Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure.
+`visiteur_jour` porte un jeton et une date. **Rien d'autre** — ni adresse IP, ni
+agent utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au
+hasard par le navigateur et rangé chez lui sous une clé propre à l'événement
 (`plan-visiteur:<slug>`) : il ne suit personne d'un salon à l'autre, encore moins
-d'un site à l'autre. Le jeton de session ne survit pas à l'onglet — c'est lui qui
-fait la différence entre « une visite » et « un visiteur ».
+d'un site à l'autre. Les chiffres par stand sont des agrégats où aucun jeton ne
+figure.
 
 La page ne mesure rien dans deux cas : la version à données figées
 (`plan-smcl.html`), qui n'appelle aucune API, et la page d'administration, où
 l'on mesurerait l'exploitant en train de préparer son salon. Un événement en
 brouillon n'est pas mesuré non plus : la fonction refuse ce qui n'est pas publié.
 
-Les gestes partent **par paquets** — vingt, ou quatre secondes d'inactivité, ou
-le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet. Une
-panne réseau se tait : la mesure ne doit jamais gêner la visite.
+Les gestes partent **par paquets** — vingt, ou trente secondes d'inactivité, ou
+le départ de la page via `sendBeacon`, qui survit à la fermeture de l'onglet.
+Trente secondes et non quatre : à quatre, chaque fiche ouverte partait dans son
+propre paquet, et la mesure devenait le premier poste d'appels du système, devant
+le plan lui-même. Une panne réseau se tait : la mesure ne doit jamais gêner la
+visite.
 
-L'écriture passe par la fonction `mesure`, jamais par la table : une table
-ouverte en écriture au public serait un formulaire de spam. Le vocabulaire y est
-clos — un genre inconnu est écarté, pas enregistré sous un nom approximatif — et
-la contrainte de la table le redit. La lecture passe par
-`rapport_utilisation()`, qui agrège tout en un appel : rapatrier les gestes pour
-les compter dans le navigateur reviendrait à télécharger un salon entier.
+L'écriture passe par la fonction `mesure`, jamais par les tables : une table
+ouverte en écriture au public serait un formulaire de spam — et cette fois le
+spam resterait, puisque plus rien ne se purge. Elle appelle
+`enregistre_mesures()`, qui résout l'événement, filtre le vocabulaire et
+incrémente les trois compteurs en une seule transaction. Le vocabulaire est clos
+— un genre inconnu est écarté, pas enregistré sous un nom approximatif — et une
+cible que l'événement ne porte pas l'est aussi : la table `cible`, écrite par la
+synchronisation, dit ce qui existe et donne les libellés que le rapport affiche.
+Un canal inconnu, en revanche, n'emporte pas son geste : la fiche a bien été
+ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
+
+La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
 
 ## Créer le projet Supabase
 

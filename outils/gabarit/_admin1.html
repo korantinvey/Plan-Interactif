@@ -51,6 +51,13 @@ function appliqueCouleursData(){
   const general = conf("data:labels").couleur;
   pose(conf("labStand").couleur || general, "--c-lab-stand");
   pose(conf("labZone").couleur || general, "--c-lab-zone");
+  /* Un stand sélectionné prend deux couleurs — l'aplat et son liseré — et
+     l'exploitant n'en règle qu'une : celle qu'il voit. Le liseré s'en déduit,
+     sans quoi il faudrait accorder deux nuanciers à la main pour que le second
+     reste visible sur le premier. */
+  const sel = conf("selection").couleur;
+  pose(sel, "--c-sel");
+  pose(sel && ecarte(sel), "--c-sel-trait");
 }
 
 function styleData(cle){
@@ -131,6 +138,26 @@ function appliqueCommandes(){
 }
 
 /**
+ * Combien de temps on passe sur un stand.
+ *
+ * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
+ * visites tiennent entre deux conférences quand le visiteur demande qu'on
+ * organise sa journée. Le mettre trop bas remplit un programme intenable ;
+ * trop haut, il laisse des stands de côté sans raison.
+ *
+ * Vingt minutes est ce qu'on observe sur un salon professionnel — le temps
+ * d'une poignée de main, d'une démonstration et d'une carte de visite. Un
+ * salon grand public tourne plus vite, un salon d'affaires beaucoup moins :
+ * cela ne se devine pas depuis le plan, d'où le réglage.
+ */
+const VISITE_DEFAUT = 20;      // minutes
+const VISITE_MIN = 5, VISITE_MAX = 120;
+function minutesVisite(){
+  const v = Math.round(+(CONF["_visite"] || {}).minutes);
+  return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
+}
+
+/**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
@@ -177,6 +204,27 @@ function ouvreReglages(){
     }
 
     corps.appendChild(bloc);
+
+    const duree = document.createElement("div");
+    duree.className = "reglage-nb";
+    duree.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+      '<span class="u">min</span></label><span class="aide"></span>';
+    duree.querySelector(".l").textContent = "Temps de visite par stand";
+    duree.querySelector(".aide").textContent =
+      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+      "qui décide combien de stands tiennent entre deux conférences.";
+    const n = duree.querySelector("input");
+    n.value = minutesVisite();
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+       on le quitte. */
+    n.oninput = e => {
+      const v = Math.round(+e.target.value);
+      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+    };
+    n.onblur = () => { n.value = minutesVisite(); };
+    corps.appendChild(duree);
   }, [{ libelle: "Fermer" }]);
 }
 
@@ -193,6 +241,38 @@ const rgbHex = (s) => {
   if (!m || m.length < 3) return null;
   return "#" + m.slice(0, 3)
     .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+};
+
+const hexa = (v) => "#" + v.map(c => c.toString(16).padStart(2, "0")).join("");
+
+/** Luminance relative d'un triplet, au sens du calcul de contraste : 0 pour le
+ *  noir, 1 pour le blanc, en passant par la courbe de l'œil. */
+const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) => {
+  const s = v[i] / 255;
+  return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
+}, 0);
+
+/**
+ * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
+ * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
+ * reste lisible dessus, quel que soit le ton choisi.
+ *
+ * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
+ * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
+ * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
+ */
+const ecarte = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
+  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
+     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
+     trois pour un ne se lit pas en petit. */
+  const vers = (but) => v.map(c => Math.round(c + (but - c) * 0.7));
+  const base = luminance(v) + 0.05;
+  const contraste = (w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
+  const sombre = vers(0), clair = vers(255);
+  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
 
 /** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */

@@ -58,6 +58,13 @@ body{margin:0;background:var(--ground);color:var(--ink);
 button,input,textarea{font:inherit;color:inherit}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
+/* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
+   nôtre l'emporte sur la feuille du navigateur, et l'élément reste peint. La
+   pastille « Nouvel exposant » paraissait ainsi sur toutes les fiches, la
+   condition qui la pilote n'ayant jamais eu le dernier mot. On tranche ici
+   plutôt qu'un sélecteur à la fois, comme il avait fallu le faire pour les
+   onglets. */
+[hidden]{display:none !important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
@@ -145,7 +152,13 @@ button{cursor:pointer;background:none;border:none}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 .stage{position:relative;overflow:hidden;background:var(--ground)}
-.stage svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
+   imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
+   — la pastille se voyait, son glyphe partait hors du cadre, et le repère
+   n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
+   de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
+   donc que la règle ne le touche pas. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -183,13 +196,18 @@ button{cursor:pointer;background:none;border:none}
 html:not(.sans-parcours) .stand.enparcours path,
 html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
-.stand.sel path,.zone.sel path{fill:var(--accent-soft);stroke:var(--accent);stroke-width:3}
+/* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
+   qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
+   et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
+   par-dessus. Sans réglage, l'accent d'origine. */
+.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 
 /* le contour de focus par défaut dessine un gros rectangle noir autour du
    groupe SVG : on le remplace par un renforcement du tracé du stand */
-.stage svg{-webkit-tap-highlight-color:transparent}
+.stage > svg{-webkit-tap-highlight-color:transparent}
 .stand:focus,.zone:focus{outline:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -198,8 +216,24 @@ html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width
   font-family:"IBM Plex Mono",monospace;font-weight:500}
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
-#labels text.sel{fill:var(--accent);font-weight:700}
-.sans-lab-stand #labels text:not(.zn){display:none}
+/* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
+#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+/* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
+   la page, comme la pastille des nouveaux venus sur la fiche : c'est une
+   distinction, pas une alerte, et le plan a déjà le langage des zones. */
+#labels .coexPast{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1;
+  vector-effect:non-scaling-stroke;pointer-events:none}
+/* Un stand sélectionné se remplit de cette même teinte douce : la pastille y
+   fondait dans le fond. Elle prend alors celui de la page, et son trait la
+   tient. Ce trait et le nombre suivent la sélection : sur un salon qui a
+   choisi sa couleur, l'accent d'origine détonnerait au milieu du stand. */
+#labels .coexPast.sel{fill:var(--surface);stroke:var(--c-sel-trait,var(--accent))}
+#labels text.coexN{fill:var(--accent);font-weight:700}
+#labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
+/* Le réglage qui masque les libellés de stand emporte la pastille : elle en
+   fait partie, et la laisser flotter seule ne se comprendrait pas. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
 .sans-lab-zone #labels text.zn{display:none}
 
 /* --- calques de dessin --- */
@@ -271,16 +305,17 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .elem[hidden]{display:none}
 /* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
    accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
-#repereChoix,#repereTexte{display:none}
-.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
-#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+#repereType,#repereTexte{display:none}
+.outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
+#repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+#elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-/* même raison : le pictogramme posé sur le plan tient ses dimensions de ses
-   attributs, que « .stage svg » écraserait */
-.dcal svg.glyphe{width:auto;height:auto}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
+   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
+.dcal .repere .repLab{text-anchor:start}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -410,6 +445,21 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
    se lit en mono, une mention se lit comme une phrase. */
 .badge.neuf{background:var(--accent-soft);color:var(--accent);font-family:inherit;
   font-weight:600;margin-left:6px}
+/* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
+   un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
+   plusieurs — et le clic n'est que la suite logique. */
+.badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
+  border:1px solid var(--line-strong)}
+.badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
+   société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
+   leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
+.expos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.expos button{display:flex;width:100%;align-items:baseline;gap:9px;text-align:left;
+  padding:9px 11px;border:1px solid transparent;border-radius:5px;
+  background:var(--surface-2);font-size:13.5px;color:var(--ink)}
+.expos button:hover{border-color:var(--line-strong)}
+.expos .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .detail-bd{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:15px}
 /* Les deux moitiés de la fiche — ce qu'est l'exposant, ce qu'il anime — ne
    sont des blocs que là où elles se rangent côte à côte. Partout ailleurs
@@ -558,9 +608,23 @@ button.expo:hover{background:var(--line)}
 .parcours.open{transform:none}
 .parcours .detail-hd h2{margin:0 0 4px}
 .pCorps{padding:16px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:18px}
-.pPied{padding:10px 18px 14px;border-top:1px solid var(--line)}
+.pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.pPied[hidden]{display:none}
+.pPied .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:9px 12px;font-size:13px}
+.pPied .btn svg{width:15px;height:15px;flex:none}
+/* Organiser sa journée n'est pas une action de rangement comme les autres :
+   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
+.pPied .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.pPied .jOrg:hover{border-color:var(--accent)}
+.pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
+  color:var(--ink-3);cursor:default}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:#C2372B}
+/* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
+   menace sur la liste qu'on retrouve. */
+.pPied .vider.retour:hover{color:var(--ink)}
 .pGroupe{display:flex;flex-direction:column;gap:7px}
 /* Le jour sépare les conférences comme il le fait dans le programme d'une
    zone : sans lui, « 10h30 » ne dit pas de quelle matinée il parle. */
@@ -577,6 +641,63 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* ------------------------------------------------------------
+   La journée organisée
+
+   Le même tiroir, une autre vue : la liste qu'on a composée devient un
+   déroulé d'heures. Les deux ne s'affichent jamais ensemble — c'est la même
+   journée, lue avant puis après le calcul.
+   ------------------------------------------------------------ */
+.jBilan{display:flex;flex-direction:column;gap:2px;padding:11px 12px;
+  background:var(--accent-soft);border-radius:var(--radius)}
+.jBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
+.jBilan span{font-size:12.5px;color:var(--ink-2)}
+.jFil{display:flex;flex-direction:column;gap:3px}
+.jRang{display:flex;gap:9px;align-items:flex-start}
+/* L'heure tient une colonne à elle : alignée à droite, les minutes se lisent
+   les unes sous les autres et la journée se parcourt d'un regard. */
+.jH{flex:none;width:38px;padding-top:9px;text-align:right;
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+/* Ce qui relie deux arrêts — la marche, l'attente, le changement de pavillon
+   — n'est pas un arrêt : le trait pointillé le dit sans un mot de plus. */
+.jRang.lien .jH{padding-top:1px}
+.jL{flex:1;min-width:0;margin-left:8px;padding:1px 0 5px 14px;
+  border-left:1px dashed var(--line-strong);
+  font-size:11.5px;color:var(--ink-3);line-height:1.5}
+.jArret{flex:1;min-width:0;display:flex;align-items:center;gap:9px;text-align:left;
+  padding:8px 10px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--tc,var(--accent));transition:background .15s}
+.jArret:hover{background:var(--line)}
+/* Le rang de l'arrêt, le même que la pastille posée sur le plan : c'est par
+   lui qu'on passe de la liste au trait, et du trait à la liste. */
+.jN{flex:none;width:20px;height:20px;border-radius:999px;background:var(--accent);
+  color:#fff;font-size:10.5px;font-weight:600;font-family:"IBM Plex Mono",monospace;
+  display:grid;place-items:center;line-height:1}
+.jArret.conf .jN{background:var(--surface);color:var(--accent);
+  box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* Un rendez-vous qu'on n'atteint pas garde sa place et son heure, mais cesse
+   de se donner pour acquis : c'est au visiteur d'arbitrer. */
+.jArret.tard{border-left-color:#C2372B}
+.jArret.tard .jS{color:#C2372B}
+.jTxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jT{font-size:13px;line-height:1.35;color:var(--ink)}
+.jS{font-size:11.5px;color:var(--ink-3)}
+.jD{flex:none;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+/* Ce qui n'a pas trouvé sa place dans la journée : on le montre plutôt que de
+   le laisser disparaître sans un mot. */
+.jReste{display:flex;flex-direction:column;gap:7px}
+.jReste .pRang .pOuvre{opacity:.72}
+
+/* Les trois questions posées avant le calcul. Elles tiennent dans la fenêtre
+   modale, où rien d'autre ne se règle par un champ. */
+.jForm{display:flex;flex-direction:column;gap:12px;margin-top:13px}
+.jForm label{display:flex;flex-direction:column;gap:4px}
+.jForm select,.jForm input{width:100%;padding:8px 9px;font-size:13.5px;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink)}
+.jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+.jSansPorte{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
 .hdActs{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px}
@@ -678,9 +799,17 @@ html.vise-plan #plan{cursor:crosshair}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
   vector-effect:non-scaling-stroke}
 #itin .iBout.fin{fill:var(--surface);stroke:var(--accent)}
+/* La pastille d'une conférence se distingue de celle d'un stand : l'heure y
+   est imposée, et c'est autour d'elle que le reste de la journée s'est rangé. */
+#itin .iBout.conf{fill:var(--surface);stroke-width:3.5}
+#itin .iNum{fill:var(--surface);text-anchor:middle;dominant-baseline:central;
+  font-family:"IBM Plex Mono",monospace;font-weight:600}
+#itin .iNum.conf{fill:var(--accent)}
 /* Comme le parcours et les icônes de zoom : ce que l'exploitant retire doit
-   disparaître partout, y compris le bouton posé sur les fiches. */
-html.sans-itineraire .btn.itin{display:none}
+   disparaître partout, y compris le bouton posé sur les fiches. Organiser sa
+   journée, c'est calculer un itinéraire : sans le moteur, le bouton du
+   parcours n'aurait rien à quoi s'adresser. */
+html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -696,6 +825,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   max-height:min(74vh,600px);overflow-y:auto}
 .panel.open{display:block}
 .panel .eyebrow{display:block;margin-bottom:8px}
+/* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
+   d'administration au bas du panneau. Le libellé n'a pas de case à cocher
+   devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
+.apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
 .calq.sous .cc,.calq.sous .fillbtn{transform:scale(.88)}
@@ -704,6 +838,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .calq label span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Réglages généraux, dans leur fenêtre : une case à cocher par ligne, avec de
    quoi viser au doigt sans effleurer la voisine. */
+/* Un réglage qui se chiffre, sous ceux qui se cochent : même famille, autre
+   geste. L'unité est écrite à côté du champ plutôt que dans son libellé, où
+   elle se lirait comme faisant partie de la question. */
+.reglage-nb{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:5px}
+.reglage-nb label{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink)}
+.reglage-nb .l{flex:1;min-width:0}
+.reglage-nb input{width:74px;padding:6px 8px;font-size:13.5px;text-align:right;
+  background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink);font-family:"IBM Plex Mono",monospace}
+.reglage-nb input:focus{border-color:var(--accent);outline:none}
+.reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
+.reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
@@ -1021,14 +1168,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
-      <select id="repereChoix"></select>
-      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
+      <select id="repereType" title="Ce que le repère est"></select>
+      <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
       <div class="elem" id="elemSel" hidden>
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
+        <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
@@ -1065,7 +1213,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -1079,12 +1227,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
-        <span class="eyebrow">Mon parcours</span>
-        <h2>Parcours de visite</h2>
+        <span class="eyebrow" id="pEyebrow">Mon parcours</span>
+        <h2 id="pTitre">Parcours de visite</h2>
         <span class="badge" id="pResume"></span>
       </div>
       <div class="pCorps" id="pCorps"></div>
-      <div class="pPied"><button class="vider" id="videParcours">Vider le parcours</button></div>
+      <div class="pCorps" id="jCorps" hidden></div>
+      <div class="pPied" id="pPied">
+        <button class="btn jOrg" id="btnJournee" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+          Organiser ma journée</button>
+        <button class="vider" id="videParcours">Vider le parcours</button>
+      </div>
+      <div class="pPied" id="jPied" hidden>
+        <button class="btn" id="jRefaire" type="button">Changer l'heure d'arrivée</button>
+        <button class="vider retour" id="jRetour">Revenir à ma liste</button>
+      </div>
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">
@@ -1154,10 +1312,19 @@ const API = document.currentScript?.dataset.api || "";
 const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
+/* Les sociétés hébergées sur le stand d'un autre. Elles n'ont ni forme ni
+   identifiant — c'est le stand de leur hôte qu'on va voir — et ne peuvent donc
+   pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
+   recherche seule consulte. */
+let HEBERGES = [];
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
-   par objet, c'est la même chose en mille fois moins. */
-const state = { q: "", qn: "", sel: null, plan: 0, secteurs: new Set() };
+   par objet, c'est la même chose en mille fois moins.
+
+   `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
+   titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
+   courants tous les rangs d'un même stand. */
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set() };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1201,6 +1368,11 @@ function indexe(d){
       s.kind = "stand"; s.p = i;
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "")).toLowerCase();
+      /* Les enseignes que le stand héberge, à part : le plan doit rester
+         allumé quand on en cherche une, mais la liste ne doit pas répondre
+         « Hippopotamus » à qui a tapé « Burger King ». */
+      s.rechH = (s.coex || [])
+        .map(x => (x.nom || "") + " " + (x.plan || "")).join(" ").toLowerCase();
     });
   });
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
@@ -1218,6 +1390,16 @@ function indexe(d){
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
+  /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
+     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
+     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+  HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
+    (s.coex || []).map((x, k) => ({
+      kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
+      sect: s.sect, nom: x.nom, plan: x.plan,
+      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
+             " " + (s.sect || "")).toLowerCase(),
+    }))));
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
      que là où l'on se trouve. L'index des conférences est donc global, comme
@@ -1248,7 +1430,8 @@ function indexe(d){
     ? "Administration — " : "") + nom;
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
-  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length;
+  $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
+    HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
 }
@@ -1306,6 +1489,42 @@ function lignesSvg(lignes, f, x, yCentre, cls){
   return lignes.map((t, i) =>
     '<text class="' + cls + '" x="' + x + '" y="' + (dep + i * f * 1.18).toFixed(2) +
     '" font-size="' + f.toFixed(2) + '">' + esc(t) + '</text>').join("");
+}
+
+/**
+ * La ligne du numéro de stand, et le compte des sociétés qu'il héberge.
+ *
+ * Un stand partagé garde le nom de son titulaire — c'est le sien, c'est lui
+ * qui loue l'emplacement — et une pastille dit combien d'autres l'y
+ * accompagnent : « +2 » sous « Airbnb » en annonce deux de plus, que la fiche
+ * nomme. Le nombre est celui des hébergés, pas le total : c'est ce que « + »
+ * veut dire partout ailleurs.
+ *
+ * Le couple reste centré sur l'ancre, la pastille poussant le numéro vers la
+ * gauche : déborder à droite mènerait sur la cloison du voisin. Faute de
+ * place, le numéro reste seul — une pastille hors du stand désignerait
+ * quelqu'un d'autre.
+ */
+function ligneCode(s, xc, yBase, f, wMax, cls){
+  const texte = (x, c, txt) =>
+    '<text class="' + c + '" x="' + x.toFixed(2) + '" y="' + yBase.toFixed(2) +
+    '" font-size="' + f.toFixed(2) + '">' + esc(txt) + '</text>';
+  const n = (s.coex || []).length;
+  const wCode = largeur(s.code, P_CODE) * f;
+  const compte = "+" + n;
+  const marge = f * .34, ecart = f * .42;
+  const wPast = largeur(compte, P_CODE) * f + marge * 2;
+  if (!n || wCode + ecart + wPast > wMax) return texte(xc, cls, s.code);
+  const g = xc - (wCode + ecart + wPast) / 2;
+  const xp = g + wCode + ecart, hp = f * 1.16;
+  return texte(g + wCode / 2, cls, s.code) +
+    '<rect class="coexPast' + (cls ? " " + cls : "") + '" x="' + xp.toFixed(2) +
+    '" y="' + (yBase - f * .84).toFixed(2) +
+    '" width="' + wPast.toFixed(2) + '" height="' + hp.toFixed(2) +
+    '" rx="' + (hp / 2).toFixed(2) + '"/>' +
+    /* Le nombre porte lui aussi la marque de la sélection : c'est elle qui
+       décide de sa couleur, comme pour le numéro du stand. */
+    texte(xp + wPast / 2, "coexN" + cls, compte);
 }
 
 /* ============================================================
@@ -1392,7 +1611,7 @@ function libelles(){
 
   for (const z of p.zones){
     const sel = z.id === state.sel;
-    if (!z.nom || (!sel && (!visible(z) || !dansVue(z)))) continue;
+    if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
     const pz = place(z), az = ancre(z);
     const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
@@ -1401,7 +1620,10 @@ function libelles(){
 
   for (const s of p.stands){
     const sel = s.id === state.sel;
-    if (!sel && (!visible(s) || !dansVue(s))) continue;
+    if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
+    /* Le stand garde le nom de son titulaire, quelle que soit la fiche
+       ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
+       peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
     const ps = place(s), as = ancre(s);
     const w = ps[0], h = ps[1];
@@ -1419,8 +1641,7 @@ function libelles(){
     let y = as[1] - (hNom + hCode) / 2;
     if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
     if (codeLisible)
-      out += '<text class="' + c.trim() + '" x="' + as[0] + '" y="' + (y + fc * .92).toFixed(2) +
-             '" font-size="' + fc.toFixed(2) + '">' + esc(s.code) + '</text>';
+      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
   }
   l.innerHTML = out;
 }
@@ -1514,21 +1735,37 @@ function appliqueSecteurs(){
   mesureTiroir();
 }
 
-/* Un secteur retenu porte, comme un mot-clé, sur tout le salon : un exposant
-   du secteur cherché peut être dans un autre pavillon que celui qu'on
-   regarde. Les deux se cumulent — le mot-clé cherche dans les secteurs
-   retenus, et non à côté d'eux. */
+/**
+ * Ce que la liste retient : une société répond pour elle-même, jamais pour son
+ * voisin. Un secteur retenu porte, comme un mot-clé, sur tout le salon — un
+ * exposant du secteur cherché peut être dans un autre pavillon que celui qu'on
+ * regarde — et les deux se cumulent : le mot-clé cherche dans les secteurs
+ * retenus, et non à côté d'eux.
+ */
+const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+
 function visible(o){
   if (!state.qn && !state.secteurs.size) return true;
-  if (o.kind !== "stand") return false;
-  if (state.secteurs.size && !state.secteurs.has(o.sect)) return false;
-  return !state.qn || (o.rech || "").includes(state.qn);
+  if (o.kind === "zone") return false;
+  return dansSecteurs(o) && (!state.qn || (o.rech || "").includes(state.qn));
+}
+
+/**
+ * Ce que le plan garde allumé.
+ *
+ * Plus large que la liste, et il le faut : chercher un co-exposant doit
+ * éclairer le stand où l'on va le trouver, alors que ce stand porte le nom
+ * d'un autre. C'est le seul endroit où une enseigne répond pour son hôte.
+ */
+function visibleSurPlan(o){
+  return visible(o) ||
+    (!!state.qn && dansSecteurs(o) && (o.rechH || "").includes(state.qn));
 }
 
 function appliqueFiltre(){
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
-    g.classList.toggle("dim", !!o && !visible(o));
+    g.classList.toggle("dim", !!o && !visibleSurPlan(o));
   });
   libelles(); liste();
 }
@@ -1536,8 +1773,13 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
+  // un secteur retenu déborde le pavillon affiché, comme un mot-clé
   const tout = Boolean(q) || state.secteurs.size > 0;
-  const portee = tout ? TOUS : P().stands;
+  /* Les sociétés hébergées ne rejoignent la liste que sur recherche : on les y
+     trouve par leur nom, et un filtre n'est pas un nom. Hors recherche, la
+     liste est le sommaire des emplacements — et son compte, celui qu'annonce
+     l'en-tête. */
+  const portee = q ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
@@ -1547,20 +1789,30 @@ function liste(){
     (tout ? " · tous pavillons" : " · " + P().libelle);
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
-    const sous = o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    const heberge = o.kind === "coex";
+    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
+       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
+       de stand et son nom la désignent, cela suffit. */
+    const sous = heberge ? ""
+      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
-    return '<button class="row" data-id="' + o.id +
-      '" aria-current="' + (state.sel === o.id) + '">' +
+    const rang = heberge ? o.i : -1;
+    return '<button class="row" data-id="' + o.id + '" data-soc="' + rang +
+      '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
       '<span class="s">' + sous + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
-     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon. */
+     recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
+
+     Un rang part avec l'identifiant, et la fiche s'ouvre droit sur la société
+     du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
+     serait une question dont on a déjà la réponse. */
   box.querySelectorAll(".row").forEach(b => b.onclick =
-    () => select(b.dataset.id, true, q ? "recherche" : "liste"));
+    () => select(b.dataset.id, true, q ? "recherche" : "liste", Number(b.dataset.soc)));
 }
 
 /* ============================================================
@@ -1694,7 +1946,13 @@ const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
    dessinée — c'est ce qui les sépare. */
 const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
 
-function select(id, recentrer, canal){
+/**
+ * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
+ * fiche demandera laquelle : c'est le cas d'un clic sur le plan, où l'on a
+ * désigné une forme et non un nom. La liste, elle, le passe — elle vient de
+ * nommer celle qu'on a choisie.
+ */
+function select(id, recentrer, canal, iSoc){
   const o = parId.get(id);
   if (!o) return;
   if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
@@ -1702,10 +1960,11 @@ function select(id, recentrer, canal){
   }
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;
+  state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal);
+  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
      sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
@@ -1822,7 +2081,7 @@ function ficheConf(id, canal){
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
-  mesure("fiche_conf", canal);
+  mesure("fiche_conf", canal, String(id));
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -1930,33 +2189,111 @@ let degel = null;
 
 function ecarteClicFantome(){
   if (!dernierAppuiTactile) return;
-  const zones = [$("detail"), $("voile")].filter(Boolean);
+  const zones = [$("detail"), $("voile"), $("modale")].filter(Boolean);
   zones.forEach(z => { z.style.pointerEvents = "none"; });
   clearTimeout(degel);
   degel = setTimeout(() => zones.forEach(z => { z.style.pointerEvents = ""; }), 450);
 }
 
-function ouvre(o, rect, canal){
+/** Le nom sous lequel une société se présente sur un stand. */
+const nomSociete = (x) => x.nom || x.plan || "Sans nom";
+
+/**
+ * Les sociétés d'un stand, celle qui le loue en tête.
+ *
+ * Elle est le stand lui-même : c'est son dossier qui l'a désignée à la
+ * synchronisation, et ses champs sont posés à plat sur lui. Les autres vivent
+ * dans « coex », dans l'ordre où la source les a rendues.
+ *
+ * Le rang les distingue, la liste ne le dit pas : qui loue et qui est hébergé
+ * relève du contrat entre l'organisateur et ses exposants. Un visiteur cherche
+ * une enseigne, pas sa place dans un bail.
+ */
+function societes(o){
+  return [{ soc: o, i: -1 }].concat((o.coex || []).map((x, i) => ({ soc: x, i: i })));
+}
+
+/**
+ * Le choix, quand plusieurs sociétés se partagent un stand.
+ *
+ * Ouvrir d'office la fiche du titulaire donnerait le stand à lui seul,
+ * alors qu'un stand de restauration en héberge jusqu'à onze. On demande donc
+ * qui l'on vient voir, plutôt que de le supposer.
+ */
+function choisitExposant(o, rect, canal){
+  const tous = societes(o);
+  ouvreModale(("Stand " + (o.code || "")).trim(), corps => {
+    const p = document.createElement("p");
+    p.textContent = tous.length + " sociétés occupent ce stand.";
+    const ul = document.createElement("ul");
+    ul.className = "expos";
+    tous.forEach(x => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      const n = document.createElement("span");
+      n.className = "nom";
+      n.textContent = nomSociete(x.soc);
+      b.appendChild(n);
+      b.onclick = () => {
+        fermeModale();
+        // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
+        // plan, lui, ne bouge pas — il nomme le titulaire quoi qu'on lise
+        state.selSoc = x.i; liste();
+        ouvre(o, rect, canal, x.i);
+      };
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
+    corps.appendChild(p); corps.appendChild(ul);
+  }, [{ libelle: "Fermer" }]);
+  ecarteClicFantome();
+}
+
+/**
+ * La fiche d'un stand ou d'une zone.
+ *
+ * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
+ * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
+ * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
+ */
+function ouvre(o, rect, canal, iSoc){
+  const zone = o.kind === "zone";
+  const heberges = (!zone && o.coex) || [];
+  if (heberges.length && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
+     c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
+     de « titulaire » dans tout ce qui suit. */
+  const iS = iSoc === undefined ? -1 : iSoc;
+  /* La société affichée. Le titulaire porte ses champs à plat sur le stand :
+     c'est le stand lui-même qui fait office de fiche. */
+  const soc = iS >= 0 ? heberges[iS] : o;
   // la fiche, le parcours et l'itinéraire se partagent la même bande, à
   // droite comme en bas
   fermeParcours(); fermeItineraire();
-  const zone = o.kind === "zone";
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
   // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
   $("dKind").textContent = zone ? "" : "Stand";
   $("dKind").hidden = zone;
-  const titre = o.nom || o.plan ||
+  const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
+     compare souvent deux enseignes voisines. */
+  const part = $("dPartage");
+  part.hidden = !heberges.length;
+  if (heberges.length){
+    part.textContent = (heberges.length + 1) + " exposants ici";
+    part.onclick = () => choisitExposant(o, null, canal);
+  }
   /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
      que l'exploitant la laisse voir. Une zone organisateur n'est jamais
      nouvelle : elle n'est pas un exposant. */
-  $("dNeuf").hidden = zone || !o.neuf || !montre("stand", "nouveau");
+  $("dNeuf").hidden = zone || !soc.neuf || !montre("stand", "nouveau");
   /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
      ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
      lignes. */
@@ -1965,7 +2302,10 @@ function ouvre(o, rect, canal){
                           '</span><span class="v">' + v + '</span></div>' : "";
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
-  const sien = (!zone && pl.parStand && pl.parStand.get(o.id)) || [];
+  /* Le programme est rattaché au stand par le dossier de son titulaire : la
+     source ne dit pas quelle conférence revient à une société hébergée, et la
+     lui prêter serait une invention. */
+  const sien = (!zone && iS < 0 && pl.parStand && pl.parStand.get(o.id)) || [];
   const confs = ok("conferences", zone
     ? programme(P().parZone && P().parZone.get(o.id))
     : programme(sien, "Conférences"));
@@ -1973,26 +2313,37 @@ function ouvre(o, rect, canal){
   // n'apprennent quoi que ce soit au visiteur
   const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
-    ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
-    // le libellé est résolu à la synchronisation : la page l'affiche tel quel
+    ok("raison", !zone && soc.plan && soc.plan !== titre ? f("Raison sociale", esc(soc.plan)) : "") +
+    /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
+       quelle que soit la société qu'on y regarde. Son libellé est résolu à la
+       synchronisation, la page l'affiche tel quel. */
     ok("secteur", f("Secteur", o.sect ? esc(o.sect) : "")) +
-    ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
+    ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : "")) +
     /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
        par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
-    ok("ville", f("Ville", o.ville ? esc(o.ville) : "", "court")) +
-    ok("pays", f("Pays", o.pays ? esc(o.pays) : "", "court")) +
+    ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court")) +
+    ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court")) +
+    /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
+       stand, quelle que soit la société qu'on y regarde. */
     ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court")) +
     // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-    ok("telephone", f("Téléphone", o.tel
-      ? '<a href="tel:' + esc(String(o.tel).replace(/[^+\d]/g, "")) + '">' + esc(o.tel) + '</a>'
+    ok("telephone", f("Téléphone", soc.tel
+      ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
       : "", "court")) +
-    ok("site", f("Site web", lien(o.site))) +
-    ok("facebook", f("Facebook", lien(o.fb))) +
-    ok("linkedin", f("LinkedIn", lien(o.li))) +
-    ok("instagram", f("Instagram", lien(o.ig))) +
+    ok("site", f("Site web", lien(soc.site))) +
+    ok("facebook", f("Facebook", lien(soc.fb))) +
+    ok("linkedin", f("LinkedIn", lien(soc.li))) +
+    ok("instagram", f("Instagram", lien(soc.ig))) +
     // le libellé est résolu à la synchronisation : la page l'affiche tel quel
-    ok("nomenclature", o.nomencl && o.nomencl.length
-      ? f("Nomenclature", o.nomencl
+    ok("nomenclature", soc.nomencl && soc.nomencl.length
+      ? f("Nomenclature", soc.nomencl
+          .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
+      : "") +
+    /* Les thématiques disent ce que l'exposant vient faire là, quand la
+       nomenclature dit ce qu'il vend : elles se suivent, et un salon qui n'en
+       tient pas ne reçoit pas la clé du tout. */
+    ok("thematiques", soc.themes && soc.themes.length
+      ? f("Thématiques", soc.themes
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
@@ -2044,12 +2395,13 @@ function ouvre(o, rect, canal){
   ecarteClicFantome();
   anime(rect, 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
-  if (!zone) mesure("fiche_stand", canal);
+  if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
-  state.sel = null; liste(); libelles(); $("voile").classList.remove("on");
+  state.sel = null; state.selSoc = -1;
+  liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
 /* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
@@ -2418,6 +2770,13 @@ function appliqueCouleursData(){
   const general = conf("data:labels").couleur;
   pose(conf("labStand").couleur || general, "--c-lab-stand");
   pose(conf("labZone").couleur || general, "--c-lab-zone");
+  /* Un stand sélectionné prend deux couleurs — l'aplat et son liseré — et
+     l'exploitant n'en règle qu'une : celle qu'il voit. Le liseré s'en déduit,
+     sans quoi il faudrait accorder deux nuanciers à la main pour que le second
+     reste visible sur le premier. */
+  const sel = conf("selection").couleur;
+  pose(sel, "--c-sel");
+  pose(sel && ecarte(sel), "--c-sel-trait");
 }
 
 function styleData(cle){
@@ -2498,6 +2857,26 @@ function appliqueCommandes(){
 }
 
 /**
+ * Combien de temps on passe sur un stand.
+ *
+ * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
+ * visites tiennent entre deux conférences quand le visiteur demande qu'on
+ * organise sa journée. Le mettre trop bas remplit un programme intenable ;
+ * trop haut, il laisse des stands de côté sans raison.
+ *
+ * Vingt minutes est ce qu'on observe sur un salon professionnel — le temps
+ * d'une poignée de main, d'une démonstration et d'une carte de visite. Un
+ * salon grand public tourne plus vite, un salon d'affaires beaucoup moins :
+ * cela ne se devine pas depuis le plan, d'où le réglage.
+ */
+const VISITE_DEFAUT = 20;      // minutes
+const VISITE_MIN = 5, VISITE_MAX = 120;
+function minutesVisite(){
+  const v = Math.round(+(CONF["_visite"] || {}).minutes);
+  return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
+}
+
+/**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
@@ -2544,6 +2923,27 @@ function ouvreReglages(){
     }
 
     corps.appendChild(bloc);
+
+    const duree = document.createElement("div");
+    duree.className = "reglage-nb";
+    duree.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+      '<span class="u">min</span></label><span class="aide"></span>';
+    duree.querySelector(".l").textContent = "Temps de visite par stand";
+    duree.querySelector(".aide").textContent =
+      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+      "qui décide combien de stands tiennent entre deux conférences.";
+    const n = duree.querySelector("input");
+    n.value = minutesVisite();
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+       on le quitte. */
+    n.oninput = e => {
+      const v = Math.round(+e.target.value);
+      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+    };
+    n.onblur = () => { n.value = minutesVisite(); };
+    corps.appendChild(duree);
   }, [{ libelle: "Fermer" }]);
 }
 
@@ -2560,6 +2960,38 @@ const rgbHex = (s) => {
   if (!m || m.length < 3) return null;
   return "#" + m.slice(0, 3)
     .map((n) => Math.max(0, Math.min(255, +n)).toString(16).padStart(2, "0")).join("");
+};
+
+const hexa = (v) => "#" + v.map(c => c.toString(16).padStart(2, "0")).join("");
+
+/** Luminance relative d'un triplet, au sens du calcul de contraste : 0 pour le
+ *  noir, 1 pour le blanc, en passant par la courbe de l'œil. */
+const luminance = (v) => [0.2126, 0.7152, 0.0722].reduce((a, poids, i) => {
+  const s = v[i] / 255;
+  return a + poids * (s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4));
+}, 0);
+
+/**
+ * Écarte une couleur vers le noir ou vers le blanc, du côté où le contraste
+ * gagne le plus. Le liseré d'une sélection se déduit ainsi de son aplat et
+ * reste lisible dessus, quel que soit le ton choisi.
+ *
+ * Le sens ne se devine pas à la clarté seule : un bleu franc et un orange sont
+ * tous deux à mi-hauteur, et pourtant l'un gagne à s'éclaircir quand l'autre
+ * gagne à s'assombrir. On calcule les deux et on garde le meilleur.
+ */
+const ecarte = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return hex;
+  const n = parseInt(m[1], 16), v = [n >> 16 & 255, n >> 8 & 255, n & 255];
+  /* 0,7 plutôt qu'une demi-teinte : le liseré borde l'aplat, mais le numéro du
+     stand s'écrit dessus dans la même couleur, et un rapport de contraste de
+     trois pour un ne se lit pas en petit. */
+  const vers = (but) => v.map(c => Math.round(c + (but - c) * 0.7));
+  const base = luminance(v) + 0.05;
+  const contraste = (w) => { const a = luminance(w) + 0.05; return a > base ? a / base : base / a; };
+  const sombre = vers(0), clair = vers(255);
+  return hexa(contraste(sombre) >= contraste(clair) ? sombre : clair);
 };
 
 /** Nom lisible d'un sous-calque : « 4-PORTE-SECU » devient « Porte secu ». */
@@ -2871,8 +3303,10 @@ function ajouteForme(f){
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
-  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
-  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
+  /* Une porte de hall n'est ni une entrée ni une sortie : c'est les deux,
+     et le visiteur qui la cherche cherche par où passer. Le battant de
+     Material reçoit donc une double flèche à la place de la sienne. */
+  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
   accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
   info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
   restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
@@ -2898,8 +3332,10 @@ const PICTO_MOTS = {
   "entree": "entree",
   "accès": "entree",
   "acces": "entree",
-  "sortie": "sortie",
-  "issue": "sortie",
+  "sortie": "entree",
+  "issue": "entree",
+  "entrée/sortie": "entree",
+  "entree/sortie": "entree",
   "accueil": "accueil",
   "réception": "accueil",
   "reception": "accueil",
@@ -2936,17 +3372,64 @@ const PICTO_MOTS = {
   "reunion": "reunion",
 };
 
-/** Le pictogramme correspondant à un libellé, s'il en existe un. */
+/** Le pictogramme que suggère un libellé, s'il en existe un. */
 const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || null;
+
+/**
+ * Ce qu'un repère est, et ce qu'il s'appelle.
+ *
+ * Les deux se confondaient : le pictogramme était deviné depuis le libellé, si
+ * bien qu'un repère nommé « Entrée Nord » n'était plus une entrée — ni pour le
+ * dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui
+ * nomme ses portes perdait donc ce qui les rendait utiles, et il n'y avait pas
+ * moyen de nommer deux escaliers sans les déclasser tous les deux.
+ *
+ * Le type et le libellé sont donc deux choses. Le type porte les propriétés —
+ * le pictogramme, l'obstacle en fauteuil, la qualité de porte par où passe un
+ * trajet entre pavillons — et se choisit dans une liste. Le libellé ne sert
+ * qu'à distinguer un exemplaire d'un autre, et s'écrit librement.
+ *
+ * Un repère posé avant cette séparation n'a que son libellé : on continue de
+ * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
+ * s'écrit dès qu'on y touche.
+ */
+const TYPES_REPERE = [
+  { v: "",             nom: "Sans pictogramme" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "wc",           nom: "WC" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "info",         nom: "Information" },
+  { v: "restauration", nom: "Restauration" },
+  { v: "cafe",         nom: "Café" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "secours",      nom: "Secours" },
+  { v: "pmr",          nom: "Accessibilité" },
+  { v: "parking",      nom: "Parking" },
+  { v: "distributeur", nom: "Distributeur" },
+  { v: "reunion",      nom: "Salle de réunion" },
+];
+const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+
+/* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
+   plus qu'un, une porte de hall étant les deux à la fois. */
+const PICTO_ALIAS = { sortie: "entree" };
+
+/**
+ * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
+ * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
+ * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
+ */
+function pictoForme(f){
+  const p = f.picto === undefined ? pictoDe(f.txt) : f.picto;
+  return PICTO_ALIAS[p] || p;
+}
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
-
-const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
-                 "Restauration", "Café", "Vestiaire", "Ascenseur", "Escalier",
-                 "Escalator", "Secours", "PMR", "Parking", "Distributeur",
-                 "Salle de réunion"];
 
 /**
  * Un repère : une pastille dans la couleur du calque, son libellé dedans.
@@ -2964,16 +3447,26 @@ function traceRepere(f){
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[f.picto || pictoDe(f.txt)];
+  const g = PICTOS[pictoForme(f)];
   if (g){
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+    /* Le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose que
+       lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien.
+       Un libellé qui n'est que le mot du type resterait une redite, et deux
+       pastilles voisines s'élargiraient pour rien. */
+    const dit = String(f.txt || "").trim();
+    const l = dit && !PICTO_MOTS[dit.toLowerCase()] ? largeur(dit, P_NOM) * t : 0;
+    const w = cote + (l ? l + t * .8 : 0);
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (l ? '<text class="repLab" x="' + (x + cote).toFixed(2) + '" y="' +
+           (f.pts[0][1] + t * .35).toFixed(2) + '" font-size="' + t.toFixed(2) + '">' +
+           esc(dit) + '</text>' : "") + '</g>';
   }
 
   const l = largeur(f.txt || "", P_NOM) * t;
@@ -3004,7 +3497,7 @@ function cartouchePoi(){
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
       const cle = f.txt.trim();
-      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: f.picto || pictoDe(cle) });
+      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: pictoForme(f) });
       parNom.get(cle).n++;
     }
   }
@@ -3176,10 +3669,14 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "repere"){
-    const txt = $("repereTexte").value.trim();
+    const type = $("repereType").value;
+    /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
+       cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
+       rien à poser. */
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
-    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: TAILLE_REPERE });
+    ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
@@ -3279,19 +3776,17 @@ $("renommeOutils").onclick = () => {
   const c = trouveCalque(calqueActif);
   if (c) renommeCalque(c);
 };
-/* La liste ne fait que remplir le champ : un libellé libre reste possible. */
-$("repereChoix").innerHTML = '<option value="">Libellés courants…</option>' +
-  REPERES.map(r => '<option>' + esc(r) + '</option>').join("");
-$("repereChoix").onchange = e => {
-  if (!e.target.value) return;
-  $("repereTexte").value = e.target.value;
-  e.target.value = "";
-  $("repereTexte").focus();
-};
+/* Le type décide de ce que le repère est ; le libellé, de ce qu'il s'appelle.
+   Poser un WC ne demande donc rien d'autre que de choisir « WC » — le libellé
+   ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
+$("repereType").innerHTML =
+  TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+$("repereType").onchange = () => $("repereTexte").focus();
 
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+$("elemPicto").onchange = appliquePicto;
 // on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
@@ -3500,6 +3995,23 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* Le type d'un repère se change après coup : une porte mal typée ne se voit
+     qu'en essayant un trajet, et il serait absurde de la redessiner pour
+     cela. Un repère d'avant la séparation du type et du libellé n'en porte
+     pas : la liste s'ouvre sur celui que son libellé laisse deviner, et le
+     choix s'écrit dès qu'on y touche. */
+  const cp = $("elemPicto");
+  if (cp){
+    const estRepere = f.t === "repere";
+    cp.hidden = !estRepere;
+    if (estRepere){
+      if (!cp.options.length)
+        cp.innerHTML = TYPES_REPERE
+          .map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+      cp.value = pictoForme(f) || "";
+    }
+  }
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -3557,6 +4069,20 @@ function appliqueTexte(){
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
+ *  vaut pour l'itinéraire — une porte, un escalier à contourner en fauteuil. */
+function appliquePicto(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "repere") return;
+  memorise();
+  cible.f.picto = $("elemPicto").value;
+  enregistreDessins();
+  /* Le pavage des allées tient compte des escaliers et des escalators : en
+     désigner un, ou cesser de le faire, change les trajets accessibles. */
+  oublieGrilles();
+  dessineDessins(); dessinePoignees();
 }
 
 function supprimeForme(){
@@ -3827,12 +4353,47 @@ function construitPanneau(){
   plus.onclick = creeCalque;
   hote.appendChild(plus);
 
+  sectionSelection(hote);
+
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
   /* Les réglages généraux vivent dans leur propre fenêtre, ouverte par
      l'engrenage : ici ils allongeaient une pile déjà longue et se lisaient
      comme une couche de plus. */
+}
+
+/* ============================================================
+   Élément sélectionné
+   La couleur que prend un stand — ou une zone — au moment où on le touche.
+   Ce n'est pas un calque : rien ne s'y dessine, rien ne s'y masque, et le
+   rang n'y veut rien dire. Rangée dans la pile, la ligne se lisait pourtant
+   comme une couche de plus, entre celles qu'on empile vraiment. Un trait l'en
+   sépare, un titre la nomme.
+
+   Une seule couleur à régler, l'aplat : le liseré qui le borde s'en déduit,
+   et « appliqueCouleursData » s'en charge.
+   ============================================================ */
+function sectionSelection(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart";
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.textContent = "Élément sélectionné";
+  bloc.appendChild(titre);
+
+  const c = conf("selection");
+  const d = document.createElement("div");
+  d.className = "calq";
+  d.innerHTML = '<label><span></span></label>' +
+                '<span class="opts"><input type="color" class="cc"></span>';
+  // le titre de la section dit déjà de quoi il s'agit
+  d.querySelector("label span").textContent = "Couleur";
+  const cc = d.querySelector(".cc");
+  cc.value = c.couleur || jeton("--accent-soft");
+  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
+  bloc.appendChild(d);
+  hote.appendChild(bloc);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */
@@ -4239,6 +4800,14 @@ function rafraichitParcours(){
   const n = PARCOURS.stands.length + PARCOURS.confs.length;
   const c = $("nParcours");
   if (c){ c.textContent = n; c.hidden = n === 0; }
+  /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
+     plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
+     liste servira. */
+  const org = $("btnJournee");
+  if (org) org.disabled = n === 0;
+  /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
+     pas dans le dos du visiteur, on le lui dit. */
+  perimeJournee();
   marqueParcours();
   /* Une même conférence se voit à deux endroits — le programme de sa zone et
      sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
@@ -4358,6 +4927,9 @@ function ouvreParcours(){
   if ($("detail").classList.contains("open")) ferme();
   fermeItineraire();
   remplitParcours();
+  /* Le tiroir se rouvre sur ce qu'on y regardait : consulter une fiche depuis
+     la journée organisée ne doit pas la faire disparaître. */
+  appliqueVueParcours();
   $("parcours").classList.add("open");
   $("btnParcours").setAttribute("aria-pressed", "true");
 }
@@ -4375,7 +4947,19 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
   "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
   "Vider",
-  () => { PARCOURS = { stands: [], confs: [] }; enregistreParcours(); rafraichitParcours(); });
+  () => {
+    PARCOURS = { stands: [], confs: [] };
+    /* La journée n'était que cette liste, mise en heures : elle s'en va avec
+       elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
+       qui ne doit rien au parcours. */
+    if (JOURNEE && TRACE === JOURNEE.dessin){
+      TRACE = null;
+      dessineItineraire();
+    }
+    JOURNEE = null; vueJournee = false;
+    enregistreParcours();
+    appliqueVueParcours();
+  });
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
    le tiroir, pas avec lui. */
@@ -4614,7 +5198,7 @@ function obstaclesPmr(p){
     if (c.visible === false) continue;
     for (const f of c.formes || []){
       if (f.t !== "repere") continue;
-      const pic = f.picto || pictoDe(f.txt);
+      const pic = pictoForme(f);
       if (pic !== "escalier" && pic !== "escalator") continue;
       const cote = (f.taille || 2) * 2.4;
       const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
@@ -4946,6 +5530,41 @@ function cherche(g, depart, arrivee){
   return suite.reverse();
 }
 
+/**
+ * Les distances d'une case à toutes les autres, en cases.
+ *
+ * Organiser une journée ne demande pas un trajet mais une matrice : vingt
+ * arrêts en font quatre cents paires, et autant d'A* prendraient plusieurs
+ * secondes sur un téléphone de salon. Un balayage en largeur depuis un seul
+ * arrêt les donne toutes d'un coup — un pavillon entier coûte moins qu'un A*
+ * isolé — au prix d'une longueur sans prix du virage ni du bord : c'est la
+ * longueur du couloir, ce qui suffit à comparer deux ordres de visite. Le
+ * tracé montré au visiteur, lui, reste celui de `troncon`.
+ *
+ * Rend -1 pour les cases hors de la nappe, ou qu'aucune allée ne relie.
+ */
+function distancesDepuis(g, depart){
+  const n = g.w * g.h;
+  const d = new Int32Array(n).fill(-1);
+  if (depart < 0 || !g.nappe[depart]) return d;
+  const file = new Int32Array(n);
+  let tete = 0, queue = 0;
+  file[queue++] = depart;
+  d[depart] = 0;
+  while (tete < queue){
+    const i = file[tete++], cx = i % g.w, cy = (i - cx) / g.w;
+    for (let v = 0; v < 4; v++){
+      const nx = cx + VX[v], ny = cy + VY[v];
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (d[j] >= 0 || !g.nappe[j]) continue;
+      d[j] = d[i] + 1;
+      file[queue++] = j;
+    }
+  }
+  return d;
+}
+
 /* ------------------------------------------------------------
    Du chemin en cases au trait qu'on suit
    ------------------------------------------------------------ */
@@ -5094,12 +5713,10 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort. */
+/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
+ *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
 function portesDe(p){
-  return reperesDe(p).filter(f => {
-    const pic = f.picto || pictoDe(f.txt);
-    return pic === "entree" || pic === "sortie";
-  });
+  return reperesDe(p).filter(f => pictoForme(f) === "entree");
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
@@ -5213,7 +5830,17 @@ function rafraichitApercu(){
 /* ------------------------------------------------------------
    Le tracé sur le plan
    ------------------------------------------------------------ */
-const marchesIci = () => (ROUTE ? ROUTE.etapes : [])
+/**
+ * Ce que le plan montre en ce moment.
+ *
+ * Deux calculs y prétendent — l'itinéraire d'un point à un autre, et la
+ * journée organisée depuis le parcours — et ils empruntent le même trait :
+ * deux tracés superposés ne se liraient plus. Le dernier calculé prend donc
+ * la place, et l'autre disparaît du plan sans être oublié pour autant.
+ */
+let TRACE = null;
+
+const marchesIci = () => (TRACE ? TRACE.etapes : [])
   .filter(e => e.genre === "marche" && e.p === state.plan);
 
 /** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
@@ -5241,10 +5868,27 @@ function dessineItineraire(){
     out += '<path class="iHalo" d="' + d + '"/><path class="iTrait" d="' + d +
            '"/><path class="iSens" d="' + d + '"/>';
   });
-  const pd = marches[0].pts[0];
-  const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
-  out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
-         '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+  /* Une journée repasse par les mêmes allées et se recoupe : sans le rang de
+     chaque arrêt, le trait ne dit plus dans quel sens on le suit. Un trajet
+     d'un point à un autre n'a que deux bouts, et un chiffre y serait du
+     bruit — il garde ses deux pastilles nues. */
+  const arrets = (TRACE.arrets || []).filter(a => a.p === state.plan);
+  if (arrets.length){
+    const rr = (r * 1.5).toFixed(2);
+    arrets.forEach(a => {
+      /* Le point de départ n'est pas un arrêt : on n'y visite rien, et lui
+         donner un rang décalerait tous les autres d'une unité. */
+      out += '<circle class="iBout' + (a.conf ? " conf" : "") + '" cx="' + a.xy[0] +
+             '" cy="' + a.xy[1] + '" r="' + (a.n ? rr : r.toFixed(2)) + '"/>';
+      if (a.n) out += '<text class="iNum' + (a.conf ? " conf" : "") + '" x="' + a.xy[0] +
+             '" y="' + a.xy[1] + '" font-size="' + (r * 1.6).toFixed(2) + '">' + a.n + '</text>';
+    });
+  } else {
+    const pd = marches[0].pts[0];
+    const pa = marches[marches.length - 1].pts[marches[marches.length - 1].pts.length - 1];
+    out += '<circle class="iBout" cx="' + pd[0] + '" cy="' + pd[1] + '" r="' + r.toFixed(2) + '"/>' +
+           '<circle class="iBout fin" cx="' + pa[0] + '" cy="' + pa[1] + '" r="' + r.toFixed(2) + '"/>';
+  }
   g.innerHTML = out;
 }
 
@@ -5253,8 +5897,15 @@ function dessineItineraire(){
 function rafraichitBouts(){
   const g = $("itin");
   if (!g || !g.firstChild || !view) return;
-  const r = rayonBout().toFixed(2);
-  g.querySelectorAll(".iBout").forEach(c => c.setAttribute("r", r));
+  const r = rayonBout();
+  /* Les pastilles d'une journée portent un chiffre et sont donc plus larges ;
+     celle du départ, qui n'en porte pas, garde la taille ordinaire. */
+  const numerotees = !!g.querySelector(".iNum");
+  const rr = (numerotees ? r * 1.5 : r).toFixed(2);
+  const arrets = (TRACE && TRACE.arrets || []).filter(a => a.p === state.plan);
+  g.querySelectorAll(".iBout").forEach((c, i) =>
+    c.setAttribute("r", numerotees && arrets[i] && !arrets[i].n ? r.toFixed(2) : rr));
+  g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
 }
 
 /** Cadre la vue sur le tracé du pavillon affiché. */
@@ -5354,7 +6005,7 @@ function valideSaisie(r){
 
 function effaceItineraire(){
   ITI.a = ITI.b = null;
-  ROUTE = null;
+  ROUTE = TRACE = null;
   visee = null;
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
@@ -5375,7 +6026,7 @@ let attente = null, _dernierTrajet = "";
 function relance(){
   clearTimeout(attente);
   if (!ITI.a || !ITI.b){
-    ROUTE = null;
+    ROUTE = TRACE = null;
     dessineItineraire();
     montreResultat();
     return;
@@ -5394,6 +6045,8 @@ function relance(){
       console.warn("Itinéraire :", e);
       ROUTE = { pmr: ITI.pmr, etapes: [], m: 0, panne: true };
     }
+    // demander un itinéraire, c'est renoncer à voir la journée sur le plan
+    TRACE = ROUTE;
     /* Le trajet commence dans le pavillon du départ : c'est celui qu'il faut
        montrer, même si l'on regardait ailleurs en le demandant. */
     const premier = ROUTE.etapes.find(e => e.genre === "marche");
@@ -5569,6 +6222,10 @@ function ouvreItineraire(){
      tiroir déjà en train de s'ouvrir. */
   visee = null;
   bandeauVisee();
+  /* La journée organisée a pu prendre le trait entre-temps : le tiroir le
+     reprend en s'ouvrant, sinon son bilan parlerait d'un trajet et le plan en
+     montrerait un autre. */
+  if (ROUTE && TRACE !== ROUTE){ TRACE = ROUTE; dessineItineraire(); }
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
@@ -5655,6 +6312,867 @@ addEventListener("keydown", e => {
   if (visee){ e.stopPropagation(); finVisee(); return; }
   if ($("iSugg").hidden) fermeItineraire();
 });
+/* ============================================================
+   11 ter. Organiser sa journée
+   ============================================================ */
+/**
+ * Le parcours dit ce qu'on veut voir. Il ne dit ni dans quel ordre, ni si la
+ * journée y suffit — et c'est pourtant là que tout se joue : douze stands
+ * retenus au hasard des allées, deux conférences à heure fixe, et un visiteur
+ * qui repart en ayant traversé quatre fois le même hall sans voir la moitié
+ * de sa liste.
+ *
+ * On lui demande donc une seule chose — à quelle heure il arrive — et on
+ * range le reste : les conférences sont des rendez-vous qu'on ne déplace pas,
+ * les stands se glissent entre elles, et l'ordre retenu est celui qui fait le
+ * moins de chemin. Le temps passé sur un stand ne se devine pas depuis le
+ * plan ; c'est l'exploitant qui le fixe, salon par salon.
+ *
+ * Ce qu'on rend n'est pas une promesse : une conversation s'éternise, une
+ * conférence commence en retard, et l'heure de seize heures ne vaudra plus
+ * rien à quatorze. C'est un ordre de visite, avec des heures qui disent ce
+ * qui tient et ce qui ne tient pas.
+ */
+
+/**
+ * Ce que coûte un changement de pavillon.
+ *
+ * Les données ne disent rien de ce qui relie deux halls — ni passerelle, ni
+ * allée extérieure, ni distance — et l'itinéraire s'y coupe franchement
+ * plutôt que d'inventer un tracé. Ordonner une journée demande pourtant un
+ * prix : sans lui, l'algorithme ferait l'aller-retour entre deux pavillons
+ * comme il change d'allée, et rendrait un programme absurde.
+ *
+ * Ce forfait n'est donc pas une mesure, c'est une dissuasion : plus cher que
+ * n'importe quel détour à l'intérieur d'un seul hall, ce qui suffit à
+ * regrouper les visites pavillon par pavillon. Il ne compte jamais dans la
+ * distance annoncée — celle-ci ne porte que ce qui est tracé, et le dit.
+ */
+const TRANSFERT_M = 300;     // pour ordonner, jamais pour annoncer
+const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
+
+/* L'heure d'arrivée d'une visite à l'autre : celui qui vient deux jours de
+   suite vient rarement à deux heures différentes. */
+const CLE_ARRIVEE = "plan-journee-arrivee";
+
+let JOURNEE = null;      // la dernière journée calculée
+let vueJournee = false;  // le tiroir montre-t-il la journée ou la liste ?
+
+/* ------------------------------------------------------------
+   Les heures
+   ------------------------------------------------------------ */
+const minutesDe = (d) => d ? (+d.h) * 60 + (+d.min) : null;
+const finInstant = (c) => momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+
+function ecritHeure(m){
+  // une journée qui déborde sur la nuit repasse par zéro plutôt que d'écrire 26h
+  const t = ((Math.round(m) % 1440) + 1440) % 1440;
+  return String(Math.floor(t / 60)).padStart(2, "0") + "h" + String(t % 60).padStart(2, "0");
+}
+function ecritMinutes(m){
+  const t = Math.max(1, Math.round(m));
+  if (t < 60) return t + " min";
+  const h = Math.floor(t / 60), r = t % 60;
+  return h + " h" + (r ? " " + r + " min" : "");
+}
+
+/** Les jours où le salon a un programme, dans l'ordre. */
+function joursSalon(){
+  const vus = new Map();
+  CONFS.forEach(c => {
+    const d = instantConf(c);
+    if (d && !vus.has(d.cle)) vus.set(d.cle, { cle: d.cle, nom: jourCourt(d) });
+  });
+  return [...vus.values()].sort((a, b) => a.cle.localeCompare(b.cle));
+}
+
+/** Le jour sur lequel la fenêtre s'ouvre : celui de la première conférence
+ *  retenue, à défaut le premier du salon. */
+function jourPropose(){
+  const d = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(instantConf).filter(Boolean)
+    .sort((a, b) => a.cle.localeCompare(b.cle))[0];
+  if (d) return d.cle;
+  const j = joursSalon();
+  return j.length ? j[0].cle : "";
+}
+
+/* ------------------------------------------------------------
+   Les points de la journée
+   ------------------------------------------------------------ */
+/** Là où se tient une conférence : sa zone, qui est un objet du plan. Une
+ *  conférence qui n'en a pas garde son heure et sa place dans la journée —
+ *  on ne sait simplement pas y mener. */
+function pointConf(c){
+  const z = c.zone && parId.get(String(c.zone));
+  return z ? pointObjet(z) : null;
+}
+
+/**
+ * Les départs qu'on propose : les portes, et rien d'autre.
+ *
+ * La liste offrait tous les repères du salon, entrées en tête. On y lisait
+ * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
+ * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
+ * sur un téléphone. La question posée est « par où vous entrez » : seules les
+ * portes y répondent.
+ *
+ * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
+ * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
+ * — reste le vrai remède, et il appartient à l'exploitant.
+ */
+function departsProposes(){
+  const l = [];
+  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  const vus = new Map();
+  l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
+  const rang = new Map();
+  l.forEach(pt => {
+    if (vus.get(pt.nom) < 2) return;
+    const n = (rang.get(pt.nom) || 0) + 1;
+    rang.set(pt.nom, n);
+    pt.nom = pt.nom + " " + n;
+  });
+  return l.slice(0, 20);
+}
+
+/**
+ * De chaque arrêt à tous les autres.
+ *
+ * Un balayage en largeur par arrêt, et non un A* par paire : vingt arrêts
+ * font quatre cents paires, et le hall entier coûte moins cher à balayer
+ * qu'un seul chemin à chercher. La longueur obtenue est celle des allées,
+ * sans prix du virage ni du bord — de quoi comparer deux ordres de visite,
+ * ce qu'on lui demande. Le tracé montré au visiteur reste celui de `troncon`.
+ */
+function matriceJournee(pts, pmr){
+  const n = pts.length;
+  const D = [];
+  for (let i = 0; i < n; i++) D.push(new Float64Array(n));
+  /* Un arrêt qu'aucune allée n'atteint — un stand enclavé, un repère posé
+     dans un mur — ne doit pas sortir de la journée pour autant : on retombe
+     sur la distance à vol d'oiseau, majorée du détour qu'une allée impose. */
+  const volDoiseau = (a, b) => Math.hypot(a.xy[0] - b.xy[0], a.xy[1] - b.xy[1]) * 1.3;
+
+  const parPlan = new Map();
+  pts.forEach((pt, i) => {
+    if (!pt) return;
+    if (!parPlan.has(pt.p)) parPlan.set(pt.p, []);
+    parPlan.get(pt.p).push(i);
+  });
+
+  /* Ce qui sépare un arrêt de la porte la plus proche de son pavillon : c'est
+     par là que passe tout trajet vers un autre hall. */
+  const auxPortes = new Float64Array(n);
+
+  parPlan.forEach((idx, ip) => {
+    const p = DATA.plans[ip];
+    const g = grille(p, pmr);
+    const cases = idx.map(i => accroche(g, pts[i].xy));
+    const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
+      .filter(c => c >= 0 && g.nappe[c]);
+    idx.forEach((i, k) => {
+      const d = distancesDepuis(g, cases[k]);
+      idx.forEach((j, l) => {
+        if (j === i) return;
+        const c = cases[l];
+        D[i][j] = (c >= 0 && d[c] >= 0) ? d[c] * PAS_GRILLE : volDoiseau(pts[i], pts[j]);
+      });
+      let mieux = -1;
+      portes.forEach(c => { if (d[c] >= 0 && (mieux < 0 || d[c] < mieux)) mieux = d[c]; });
+      auxPortes[i] = mieux >= 0 ? mieux * PAS_GRILLE : 0;
+    });
+  });
+
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
+    if (i === j || !pts[i] || !pts[j] || pts[i].p === pts[j].p) continue;
+    D[i][j] = auxPortes[i] + TRANSFERT_M + auxPortes[j];
+  }
+  return D;
+}
+
+/* ------------------------------------------------------------
+   L'ordre de visite
+   ------------------------------------------------------------ */
+/**
+ * Ranger les stands entre les conférences.
+ *
+ * Le problème est celui du voyageur de commerce, avec des rendez-vous en
+ * plus : l'ordre exact demanderait d'essayer toutes les permutations, et
+ * vingt stands en font deux milliards de milliards. On construit donc au plus
+ * juste — à chaque tour, le stand dont l'insertion coûte le moins, là où elle
+ * tient — puis on reprend l'ensemble par deux mouvements qui rattrapent
+ * l'essentiel : retourner un morceau de créneau, et déplacer un arrêt
+ * ailleurs.
+ *
+ * Reste à dire ce que « coûter » veut dire, et c'est là que la première
+ * version se trompait. Elle ne comptait que les mètres. Or un créneau qui se
+ * termine sur une conférence dure ce qu'il dure, qu'on le remplisse ou non :
+ * y glisser un stand ne coûtait donc rien de plus qu'ailleurs en distance, et
+ * le calcul les entassait après la dernière conférence, où chaque insertion
+ * se payait au plus court. Le visiteur se retrouvait avec deux heures
+ * trente-neuf à patienter devant une salle, et six stands à voir ensuite.
+ *
+ * Compter le temps mort comme la marche — une minute d'attente valant une
+ * minute de marche — rapprochait du but sans y être : dans un créneau qui a
+ * du mou, les minutes de marche se retranchent exactement aux minutes
+ * d'attente, et la distance s'annule. Le coût d'une insertion valait alors
+ * « moins une visite », quel que soit le détour : tous les candidats faisaient
+ * match nul et c'est le premier rencontré qui l'emportait. Les creux se
+ * remplissaient, mais l'ordre à l'intérieur ne devait plus rien au chemin.
+ *
+ * On sépare donc les deux questions, parce que ce sont deux questions :
+ *
+ *   Ce qui pèse d'abord, c'est ce qui tombe après le dernier rendez-vous. Un
+ *   créneau borné dure ce qu'il dure ; tout ce qu'on n'y met pas s'ajoute à
+ *   la fin de la journée et rallonge l'attente d'autant. Un stand posé dans
+ *   le créneau ouvert coûte donc le temps de sa visite, converti en mètres.
+ *
+ *   Ce qui départage ensuite, c'est la distance, et elle seule — un créneau
+ *   borné ne coûte plus que ses mètres, l'attente n'y étant que ce qui reste.
+ *
+ * Le forfait n'est pas infranchissable, et c'est voulu : traverser deux
+ * pavillons pour combler vingt minutes de creux n'a rien d'un progrès. Il
+ * vaut ce que vaut la visite qu'on déplace, et un détour plus cher qu'elle
+ * l'emporte.
+ *
+ * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
+ * liste courte et vraie qu'un programme intenable.
+ */
+function rangeJournee(creneaux, restants, dist, tempsCreneau, penaliteTardive){
+  const distanceCreneau = (c) => {
+    let m = 0, prec = c.de;
+    for (const s of c.stands){ m += dist(prec, s); prec = s; }
+    return m + dist(prec, c.vers);
+  };
+
+  /**
+   * Ce qu'un créneau coûte, en mètres.
+   *
+   * Le dernier n'a pas de fin : ce qu'on y met retarde la journée d'autant,
+   * et chaque stand y porte le forfait. Les autres butent sur une conférence
+   * et ne coûtent que leur chemin — ce qu'ils ne remplissent pas se passe à
+   * patienter, ce dont le forfait rend déjà compte de l'autre côté. Un
+   * créneau qui déborde vaut l'infini plutôt qu'un refus à part : un
+   * rendez-vous manqué n'est pas un arrangement cher, c'en est un impossible.
+   */
+  const coutCreneau = (c) => {
+    const m = distanceCreneau(c);
+    if (c.tMax === null) return m + penaliteTardive * c.stands.length;
+    return c.t0 + tempsCreneau(c, m) > c.tMax ? Infinity : m;
+  };
+
+  while (restants.length){
+    let choix = null;
+    for (const c of creneaux){
+      const base = coutCreneau(c);
+      // un créneau déjà intenable ne se répare pas en le chargeant davantage
+      if (!isFinite(base)) continue;
+      for (const s of restants){
+        for (let k = 0; k <= c.stands.length; k++){
+          c.stands.splice(k, 0, s);
+          const cout = coutCreneau(c) - base;
+          c.stands.splice(k, 1);
+          if (isFinite(cout) && (!choix || cout < choix.cout)) choix = { cout: cout, c: c, k: k, s: s };
+        }
+      }
+    }
+    if (!choix) break;
+    choix.c.stands.splice(choix.k, 0, choix.s);
+    restants.splice(restants.indexOf(choix.s), 1);
+  }
+
+  /* Les deux reprises. Chacune se juge sur le coût entier des créneaux
+     touchés, et non sur les seules arêtes déplacées : c'est l'attente qui
+     l'impose, elle ne se lit pas sur une arête. */
+  for (let tour = 0; tour < 30; tour++){
+    let gagne = false;
+
+    for (const c of creneaux){
+      for (let i = 0; i < c.stands.length - 1; i++){
+        for (let j = i + 1; j < c.stands.length; j++){
+          const avant = coutCreneau(c);
+          const copie = c.stands.slice();
+          c.stands.splice(i, j - i + 1, ...c.stands.slice(i, j + 1).reverse());
+          if (coutCreneau(c) < avant - 1e-9) gagne = true; else c.stands = copie;
+        }
+      }
+    }
+
+    for (const c of creneaux){
+      for (let i = 0; i < c.stands.length; i++){
+        const s = c.stands[i];
+        /* Un déplacement ne touche que deux créneaux — celui qu'on quitte et
+           celui qu'on rejoint : les autres n'ont pas à être recomptés. */
+        const avantC = coutCreneau(c);
+        c.stands.splice(i, 1);
+        const apresC = coutCreneau(c);
+        let mieux = null;
+        for (const d of creneaux){
+          const avant = d === c ? avantC : avantC + coutCreneau(d);
+          for (let k = 0; k <= d.stands.length; k++){
+            d.stands.splice(k, 0, s);
+            const t = d === c ? coutCreneau(d) : coutCreneau(d) + apresC;
+            d.stands.splice(k, 1);
+            if (t < avant - 1e-9 && (!mieux || t - avant < mieux.gain))
+              mieux = { gain: t - avant, d: d, k: k };
+          }
+        }
+        if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
+        else c.stands.splice(i, 0, s);
+      }
+    }
+
+    if (!gagne) break;
+  }
+}
+
+/* ------------------------------------------------------------
+   La journée, calculée
+   ------------------------------------------------------------ */
+/**
+ * Ce que le visiteur a demandé : une heure d'arrivée, un jour, un point de
+ * départ. Ce qu'on lui rend : un déroulé, un tracé, et la liste franche de ce
+ * qui n'a pas trouvé sa place.
+ */
+function calculeJournee(choix){
+  const pmr = ITI.pmr;
+  const tv = minutesVisite();
+  const allure = pmr ? ALLURE_PMR : ALLURE;
+  const enMinutes = (m) => m / (allure * 60);
+
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const horsJour = [], passees = [], sansLieu = [], chevauchent = [];
+
+  const retenues = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ c: c, d: instantConf(c), f: finInstant(c) }))
+    .sort((a, b) => (minutesDe(a.d) || 0) - (minutesDe(b.d) || 0));
+
+  const rdv = [];
+  let finPrec = -Infinity;
+  retenues.forEach(x => {
+    if (!x.d || (choix.jour && x.d.cle !== choix.jour)){ horsJour.push(x.c); return; }
+    const t0 = minutesDe(x.d);
+    /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
+       on ne la fait pas manquer, on la dit manquée. */
+    if (t0 < choix.arrivee){ passees.push(x.c); return; }
+    /* Deux conférences qui se recouvrent ne se suivent pas : on ne peut pas
+       assister aux deux, et les enchaîner ferait une journée qui remonte le
+       temps. On garde celle qui commence la première — retenue plus tôt dans
+       la liste, elle est aussi celle qu'on peut encore attraper — et on dit
+       l'autre plutôt que de la programmer pour rien. */
+    if (t0 < finPrec){ chevauchent.push(x.c); return; }
+    const pt = pointConf(x.c);
+    if (!pt) sansLieu.push(x.c);
+    /* Sans heure de fin, on compte une heure : enchaîner aussitôt ferait un
+       programme faux, et attendre la journée entière un programme vide. */
+    const t1 = x.f ? Math.max(t0 + 5, minutesDe(x.f)) : t0 + 60;
+    rdv.push({ c: x.c, pt: pt, t0: t0, t1: t1 });
+    finPrec = t1;
+  });
+
+  /* Les points, dans un seul tableau : le départ, les stands, les salles.
+     C'est leur rang qui sert d'identité partout ensuite. */
+  const PTS = [];
+  const iDepart = choix.depart ? PTS.push(choix.depart) - 1 : -1;
+  const iStands = stands.map(o => PTS.push(pointObjet(o)) - 1);
+  rdv.forEach(r => { r.i = PTS.push(r.pt) - 1; });
+
+  const D = matriceJournee(PTS, pmr);
+  /* Un bout de trajet dont on ignore un des deux bouts ne coûte rien : le
+     départ « peu importe » et une salle non située ne sont pas des détours,
+     ce sont des trous. */
+  const dist = (a, b) => (a < 0 || b < 0 || !PTS[a] || !PTS[b]) ? 0 : D[a][b];
+  const tempsCreneau = (c, m) => enMinutes(m) + c.stands.length * tv;
+
+  /* Les intervalles entre rendez-vous, c'est là qu'on range les stands. Une
+     conférence dont la salle n'est située nulle part borne l'heure sans borner
+     le lieu : on ne sait pas s'en approcher, et on repart d'où l'on était. */
+  const creneaux = [];
+  let de = iDepart, t0 = choix.arrivee;
+  rdv.forEach(r => {
+    creneaux.push({ de: de, t0: t0, vers: r.pt ? r.i : -1, tMax: r.t0, stands: [] });
+    if (r.pt) de = r.i;
+    t0 = r.t1;
+  });
+  creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
+
+  /* Ce que coûte un stand renvoyé après le dernier rendez-vous : sa visite
+     entière, comptée en mètres au pas de marche. C'est exactement ce qu'elle
+     ajoute à la fin de la journée — et ce qu'un creux plus tôt aurait absorbé
+     sans rien coûter. */
+  const restants = iStands.slice();
+  rangeJournee(creneaux, restants, dist, tempsCreneau, allure * 60 * tv);
+
+  /* L'ordre est arrêté : on le déroule en heures et en tronçons. Les mètres
+     annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
+     le visiteur suivra. */
+  const etapes = [], arrets = [], trace = [], retards = [];
+  let t = choix.arrivee, m = 0, coupe = false, rang = 0;
+
+  const rejoint = (a, b) => {
+    if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
+    const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
+    if (pa === pb){
+      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy);
+      const l = tr ? tr.m : dist(a, b);
+      if (tr) trace.push(tr);
+      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
+      t += enMinutes(l);
+      m += l;
+      return;
+    }
+    coupe = true;
+    const sortie = versPorte(pa, pmr, PTS[a].xy, false);
+    const entree = versPorte(pb, pmr, PTS[b].xy, true);
+    if (sortie){ trace.push(sortie); m += sortie.m; }
+    trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
+    if (entree){ trace.push(entree); m += entree.m; }
+    const min = enMinutes((sortie ? sortie.m : 0) + (entree ? entree.m : 0)) + TRANSFERT_MIN;
+    etapes.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle, min: min });
+    t += min;
+  };
+
+  const pose = (i, conf) => {
+    rang++;
+    if (PTS[i]) arrets.push({ p: PTS[i].p, xy: PTS[i].xy, n: String(rang), conf: !!conf });
+    return rang;
+  };
+
+  if (iDepart >= 0){
+    arrets.push({ p: PTS[iDepart].p, xy: PTS[iDepart].xy, n: "", depart: true });
+    etapes.push({ genre: "depart", nom: choix.depart.nom, detail: choix.depart.detail, t: t });
+  }
+
+  let ou = iDepart;
+  creneaux.forEach((c, k) => {
+    c.stands.forEach(s => {
+      rejoint(ou, s);
+      const n = pose(s, false);
+      etapes.push({ genre: "stand", n: n, o: parId.get(PTS[s].id), pt: PTS[s], t0: t, t1: t + tv });
+      t += tv;
+      ou = s;
+    });
+    const r = rdv[k];
+    if (!r) return;
+    rejoint(ou, r.i);
+    const arrive = t;                       // l'heure qu'il serait vraiment
+    if (arrive > r.t0 + 1) retards.push({ c: r.c, min: arrive - r.t0 });
+    /* Un creux avant le premier rendez-vous n'est pas de même nature que les
+       autres : ceux du milieu de journée sont pris entre deux choses fixes,
+       celui-là ne tient qu'à l'heure qu'on a dite en arrivant. Le visiteur
+       peut donc s'en débarrasser tout seul, et c'est la seule chose utile à
+       lui dire — le total, lui, ne changera pas d'un pouce. */
+    else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive,
+                                          premier: k === 0 });
+    const n = pose(r.i, true);
+    /* Le retard voyage avec la conférence : la ligne garde l'heure du
+       programme — c'est elle qui est affichée partout ailleurs — et dit à
+       côté celle où l'on y serait vraiment. Une alerte en bas de tiroir se
+       lit trop tard pour la ligne qu'elle concerne. */
+    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1,
+                  retard: Math.max(0, arrive - r.t0) });
+    /* La conférence garde ses heures — ce sont celles du programme — mais
+       l'horloge du visiteur, elle, ne remonte pas : arriver après la fin
+       d'une séance n'est pas y assister, et la suite de la journée part de
+       l'heure qu'il est, non de celle qu'on aurait aimé. */
+    t = Math.max(arrive, r.t1);
+    /* Une conférence dont la salle n'est rattachée à aucune zone ne dit pas
+       où l'on se trouve après elle : on repart du dernier endroit connu,
+       sans quoi le trajet suivant — un changement de pavillon, souvent —
+       disparaîtrait du déroulé sans un mot. */
+    if (r.pt) ou = r.i;
+  });
+
+  return {
+    jour: choix.jour, jourNom: choix.jourNom, arrivee: choix.arrivee, fin: t,
+    pmr: pmr, tv: tv, etapes: etapes, arrets: arrets, trace: trace, m: m, coupe: coupe,
+    nArrets: rang,
+    /* De quoi expliquer un creux plutôt que de le laisser sans réponse : ce
+       qu'on attend en tout, et ce qui reste programmé après le dernier
+       rendez-vous — les deux ensemble disent si l'attente était évitable. */
+    attente: etapes.reduce((a, e) => a + (e.genre === "attente" ? e.min : 0), 0),
+    tardifs: creneaux[creneaux.length - 1].stands.length,
+    restants: restants.map(i => parId.get(PTS[i].id)).filter(Boolean),
+    horsJour: horsJour, passees: passees, sansLieu: sansLieu, retards: retards,
+    chevauchent: chevauchent,
+  };
+}
+
+/* ------------------------------------------------------------
+   Ce que la journée montre
+   ------------------------------------------------------------ */
+function rangJournee(hote, heure, dedans, classe){
+  const d = document.createElement("div");
+  d.className = "jRang" + (classe ? " " + classe : "");
+  const h = document.createElement("span");
+  h.className = "jH";
+  h.textContent = heure || "";
+  d.appendChild(h);
+  d.appendChild(dedans);
+  hote.appendChild(d);
+  return d;
+}
+
+function lienJournee(hote, texte){
+  const s = document.createElement("span");
+  s.className = "jL";
+  s.textContent = texte;
+  rangJournee(hote, "", s, "lien");
+}
+
+function arretJournee(hote, e){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "jArret" + (e.genre === "conf" ? " conf" : "");
+  b.innerHTML = '<span class="jN"></span><span class="jTxt"><span class="jT"></span>' +
+                '<span class="jS"></span></span><span class="jD"></span>';
+  b.querySelector(".jN").textContent = e.n;
+  b.querySelector(".jD").textContent = ecritMinutes(e.t1 - e.t0);
+  if (e.genre === "conf"){
+    if (e.c.couleur) b.style.setProperty("--tc", e.c.couleur);
+    b.querySelector(".jT").textContent = e.c.nom;
+    b.querySelector(".jS").textContent =
+      ([e.c.salle, e.pt ? e.pt.detail : ""].filter(Boolean).join(" · ") ||
+       "Salle non située sur le plan") +
+      (e.retard > 1 ? " · vous y seriez à " + ecritHeure(e.t0 + e.retard) : "");
+    if (e.retard > 1) b.classList.add("tard");
+    b.onclick = () => ficheConf(e.c.id, "parcours");
+  } else {
+    b.querySelector(".jT").textContent = e.pt.nom;
+    b.querySelector(".jS").textContent = e.pt.detail;
+    b.onclick = () => { if (e.o) select(e.o.id, true, "parcours"); };
+  }
+  rangJournee(hote, ecritHeure(e.t0), b);
+}
+
+function remplitJournee(){
+  const hote = $("jCorps");
+  hote.innerHTML = "";
+  const j = JOURNEE;
+  if (!j) return;
+
+  /* Les notes et les alertes sont celles de l'itinéraire, classes comprises :
+     c'est la même voix qui parle du même calcul, à deux endroits du tiroir. */
+  const dit = (cls, txt) => {
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = txt;
+    hote.appendChild(p);
+    return p;
+  };
+
+  if (j.perime) dit("iAlerte", "Votre parcours a changé depuis ce calcul : " +
+    "reprenez-le pour que la journée en tienne compte.");
+
+  const bilan = document.createElement("div");
+  bilan.className = "jBilan";
+  bilan.innerHTML = '<b></b><span></span>';
+  bilan.querySelector("b").textContent = ecritHeure(j.arrivee) + " – " + ecritHeure(j.fin);
+  bilan.querySelector("span").textContent =
+    [j.nArrets + (j.nArrets > 1 ? " arrêts" : " arrêt"),
+     (j.coupe ? "au moins " : "") + ecritDistance(j.m) + " de marche",
+     j.pmr ? "itinéraire accessible" : ""].filter(Boolean).join(" · ");
+  hote.appendChild(bilan);
+
+  const fil = document.createElement("div");
+  fil.className = "jFil";
+  hote.appendChild(fil);
+
+  j.etapes.forEach(e => {
+    if (e.genre === "depart"){
+      const s = document.createElement("span");
+      s.className = "jL";
+      s.textContent = "Départ : " + e.nom;
+      rangJournee(fil, ecritHeure(e.t), s, "lien");
+    } else if (e.genre === "marche"){
+      lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
+        (e.trace ? "" : " (non tracé)"));
+    } else if (e.genre === "transfert"){
+      lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
+        ", ce trajet n'est pas sur le plan");
+    } else if (e.genre === "attente"){
+      lienJournee(fil, ecritMinutes(e.min) + " sur place avant le début" +
+        (e.premier && e.min >= 15
+          ? " — en arrivant à " + ecritHeure(j.arrivee + e.min) + ", vous ne perdriez rien"
+          : ""));
+    } else {
+      arretJournee(fil, e);
+    }
+  });
+
+  /* Ce qui n'entre pas dans la journée se dit, et se dit précisément : un
+     rang laissé de côté sans un mot passerait pour un oubli du calcul. Ces
+     listes empruntent leurs rangs au parcours — même vignette, même croix :
+     ce sont les mêmes choses, vues d'ailleurs. */
+  const groupe = (titre, liste, rendu) => {
+    if (!liste.length) return;
+    const g = document.createElement("div");
+    g.className = "pGroupe jReste";
+    g.innerHTML = '<span class="eyebrow"></span>';
+    g.querySelector(".eyebrow").textContent = titre;
+    liste.forEach(x => rangParcours(g, rendu(x)));
+    hote.appendChild(g);
+  };
+
+  /* Un rendez-vous qu'on n'atteint pas ne se raye pas tout seul : le visiteur
+     décidera ce qu'il sacrifie, pas nous. */
+  j.retards.forEach(r => dit("iAlerte", "« " + r.c.nom + " » : au mieux, vous y " +
+    "arriveriez " + ecritMinutes(r.min) + " après le début — le trajet n'y suffit " +
+    "pas. Arrivez plus tôt, ou retirez ce qui la précède."));
+
+  /* En l'état cette liste reste vide : la journée n'a pas d'heure de fin, si
+     bien qu'un stand refusé entre deux conférences finit toujours par tenir
+     après la dernière. C'est le garde-fou de la contrainte horaire — le jour
+     où l'on demandera aussi à quelle heure le visiteur repart, c'est ici
+     qu'il lira ce qui n'y tient pas, plutôt que de recompter ses stands. */
+  groupe("Restés de côté", j.restants, o => ({
+    genre: "stand", id: o.id, dessus: false,
+    titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+    detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+    ouvre: () => select(o.id, true, "parcours"),
+  }));
+
+  groupe("Un autre jour", j.horsJour, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  groupe("En même temps qu'une autre", j.chevauchent, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  groupe("Déjà commencées à votre arrivée", j.passees, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  if (j.sansLieu.length) dit("iNote", j.sansLieu.length > 1
+    ? "Certaines conférences retenues ne sont rattachées à aucune zone du plan : " +
+      "elles gardent leur heure, mais le trajet ne peut pas y mener."
+    : "« " + j.sansLieu[0].nom + " » n'est rattachée à aucune zone du plan : elle " +
+      "garde son heure, mais le trajet ne peut pas y mener.");
+
+  /* Une demi-heure à patienter se remarque, et sans un mot elle passe pour une
+     étourderie du calcul. On dit donc d'où elle vient — il n'y avait plus rien
+     à voir, ou l'avancer coûtait plus de marche qu'elle ne fait gagner — et ce
+     qui la comblerait. */
+  if (j.attente >= 30) dit("iNote", "Il reste " + ecritMinutes(j.attente) +
+    " d'attente dans cette journée. " + (j.tardifs
+      ? "Avancer ce qui suit la dernière conférence demanderait un détour plus " +
+        "long que le temps gagné."
+      : "Votre parcours ne contient plus rien à visiter d'ici là : ajoutez des " +
+        "exposants pour la combler."));
+
+  dit("iNote", "Comptez " + ecritMinutes(j.tv) + " par stand. Les heures sont " +
+    "indicatives : elles supposent qu'on ne s'attarde pas, et ne tiennent compte " +
+    "ni des files ni des pauses.");
+}
+
+/* ------------------------------------------------------------
+   Les deux vues du tiroir
+   ------------------------------------------------------------ */
+/** Le tiroir montre la liste ou la journée, jamais les deux : c'est la même
+ *  journée, lue avant puis après le calcul. */
+function appliqueVueParcours(){
+  const sur = vueJournee && !!JOURNEE;
+  $("pCorps").hidden = sur;
+  $("pPied").hidden = sur;
+  $("jCorps").hidden = !sur;
+  $("jPied").hidden = !sur;
+  $("pEyebrow").textContent = sur ? "Ma journée" : "Mon parcours";
+  $("pTitre").textContent = sur ? (JOURNEE.jourNom || "Journée organisée") : "Parcours de visite";
+  if (sur){
+    $("pResume").textContent = ecritHeure(JOURNEE.arrivee) + " – " + ecritHeure(JOURNEE.fin);
+    remplitJournee();
+    traceJournee();
+  } else {
+    rafraichitParcours();
+  }
+}
+
+/**
+ * La journée reprend le trait du plan.
+ *
+ * L'itinéraire d'un point à un autre y prétend aussi, et le visiteur passe de
+ * l'un à l'autre : chacun se redonne le trait en revenant, plutôt que de
+ * laisser à l'écran le tracé de son voisin. L'objet dessiné est retenu tel
+ * quel — c'est à lui qu'on reconnaît, ailleurs, que le trait est celui de la
+ * journée et non d'un trajet demandé à côté.
+ */
+function traceJournee(){
+  if (!JOURNEE) return;
+  JOURNEE.dessin = JOURNEE.dessin || { etapes: JOURNEE.trace, arrets: JOURNEE.arrets };
+  if (TRACE === JOURNEE.dessin) return;
+  TRACE = JOURNEE.dessin;
+  dessineItineraire();
+}
+
+function montreJournee(){
+  vueJournee = true;
+  appliqueVueParcours();
+  /* La journée commence dans le pavillon du premier arrêt : c'est celui qu'il
+     faut montrer, même si l'on regardait ailleurs en la demandant. */
+  const premier = JOURNEE.trace.find(e => e.genre === "marche");
+  if (premier && premier.p !== state.plan) changePlan(premier.p);
+  traceJournee();
+  if (premier) cadreItineraire();
+}
+
+/** Le parcours a changé : la journée calculée ne lui correspond plus. On ne
+ *  la refait pas dans le dos du visiteur — on le lui dit. */
+function perimeJournee(){
+  if (!JOURNEE || JOURNEE.perime) return;
+  JOURNEE.perime = true;
+  if (vueJournee) remplitJournee();
+}
+
+/* ------------------------------------------------------------
+   La question posée avant le calcul
+   ------------------------------------------------------------ */
+function ouvreOrganisation(){
+  const jours = joursSalon();
+  const propose = jourPropose();
+  let arrivee = "09:00";
+  try { arrivee = localStorage.getItem(CLE_ARRIVEE) || arrivee; } catch (e) {}
+  const departs = departsProposes();
+
+  let champHeure = null, champJour = null, champDepart = null;
+
+  ouvreModale("Organiser ma journée", corps => {
+    const p = document.createElement("p");
+    p.textContent = "On place d'abord les conférences que vous avez retenues — " +
+      "elles ne se déplacent pas — puis on glisse les stands entre elles, dans " +
+      "l'ordre qui fait le moins de chemin.";
+    corps.appendChild(p);
+
+    const form = document.createElement("div");
+    form.className = "jForm";
+
+    const bloc = (libelle, champ) => {
+      const l = document.createElement("label");
+      const e = document.createElement("span");
+      e.className = "eyebrow";
+      e.textContent = libelle;
+      l.appendChild(e);
+      l.appendChild(champ);
+      form.appendChild(l);
+      return champ;
+    };
+
+    champHeure = document.createElement("input");
+    champHeure.type = "time";
+    champHeure.value = arrivee;
+    bloc("Heure d'arrivée", champHeure);
+
+    if (jours.length > 1){
+      champJour = document.createElement("select");
+      jours.forEach(j => {
+        const o = document.createElement("option");
+        o.value = j.cle;
+        o.textContent = j.nom;
+        if (j.cle === propose) o.selected = true;
+        champJour.appendChild(o);
+      });
+      bloc("Jour de visite", champJour);
+    }
+
+    if (departs.length){
+      champDepart = document.createElement("select");
+      const vide = document.createElement("option");
+      vide.value = "";
+      vide.textContent = "Peu importe";
+      champDepart.appendChild(vide);
+      departs.forEach((pt, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        // le pavillon en second, et seulement s'il y en a plusieurs : sur un
+        // salon d'un seul hall, il répétait son nom à chaque ligne
+        o.textContent = pt.nom + (DATA.plans.length > 1 ? " — " + pt.detail : "");
+        if (i === 0) o.selected = true;
+        champDepart.appendChild(o);
+      });
+      bloc("Par où vous entrez", champDepart);
+    } else {
+      /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
+         absence se remarquerait plus que sa réponse. On dit d'où l'on partira
+         plutôt que de laisser croire à un oubli — et l'exploitant qui lit son
+         propre plan y reconnaît ce qu'il lui reste à poser. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "Aucune entrée n'est repérée sur ce plan : la journée " +
+        "commencera au premier exposant de votre liste.";
+      form.appendChild(n);
+    }
+
+    corps.appendChild(form);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Organiser", action: () => {
+      const v = /^(\d{1,2}):(\d{2})$/.exec(champHeure.value || "");
+      // une heure illisible vaut mieux corrigée que refusée : le champ natif
+      // ne rend rien sur les navigateurs qui l'ignorent
+      const min = v ? Math.min(1439, +v[1] * 60 + +v[2]) : 9 * 60;
+      try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
+      const cle = champJour ? champJour.value : (jours.length ? jours[0].cle : "");
+      const j = jours.find(x => x.cle === cle);
+      const id = champDepart ? champDepart.value : "";
+      lanceJournee({
+        arrivee: min, jour: cle, jourNom: j ? j.nom : "",
+        depart: id === "" ? null : departs[+id],
+      });
+    } },
+  ]);
+}
+
+/**
+ * Le calcul passe par un temps mort volontaire, comme celui de l'itinéraire :
+ * une matrice, une insertion et une vingtaine de tronçons tiennent en une
+ * fraction de seconde sur un poste, davantage sur un téléphone de salon. On
+ * annonce d'abord, on calcule ensuite.
+ */
+function lanceJournee(choix){
+  vueJournee = true;
+  JOURNEE = null;
+  $("pCorps").hidden = $("pPied").hidden = true;
+  $("jCorps").hidden = $("jPied").hidden = false;
+  $("pEyebrow").textContent = "Ma journée";
+  $("pTitre").textContent = choix.jourNom || "Journée organisée";
+  $("pResume").textContent = "calcul…";
+  $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
+  /* Organiser une journée, c'est calculer une vingtaine d'itinéraires : cela
+     se compte avec eux, faute d'un genre à soi en base. */
+  mesure("itineraire");
+  setTimeout(() => {
+    try {
+      JOURNEE = calculeJournee(choix);
+    } catch (e){
+      console.warn("Journée :", e);
+      $("pResume").textContent = "—";
+      $("jCorps").innerHTML = '<p class="iAlerte"></p>';
+      $("jCorps").querySelector(".iAlerte").textContent =
+        "Le calcul de la journée n'a pas abouti sur cet appareil. " +
+        "Votre parcours, lui, est intact.";
+      return;
+    }
+    montreJournee();
+  }, 30);
+}
+
+/* ------------------------------------------------------------
+   Branchements
+   ------------------------------------------------------------ */
+$("btnJournee").onclick = ouvreOrganisation;
+$("jRefaire").onclick = ouvreOrganisation;
+$("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
 
 /* ============================================================
    13. Mesure d'utilisation
@@ -5715,17 +7233,22 @@ function jetonRetenu(cle, casier){
 
 /* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
    ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
-   identifiant hors d'ici. Celui de session ne survit pas à l'onglet : c'est
-   lui qui fait la différence entre « une visite » et « un visiteur ». */
+   identifiant hors d'ici. Ce qui distinguait deux venues du même navigateur
+   ne se transmet plus : le serveur ne le lisait pas, et une visite se compte
+   déjà par le geste qui porte ce nom. */
 const MESURE_VISITEUR = MESURE_ACTIVE
   ? jetonRetenu("plan-visiteur:" + SLUG, "localStorage") : "";
-const MESURE_SESSION = MESURE_ACTIVE
-  ? jetonRetenu("plan-session:" + SLUG, "sessionStorage") : "";
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
-   quand le paquet est plein, quand la main s'arrête, ou quand la page part. */
+   quand le paquet est plein, quand la main s'arrête, ou quand la page part.
+
+   Trente secondes et non quatre : à quatre, chaque fiche ouverte au fil d'une
+   visite partait dans son propre paquet, et un visiteur produisait une
+   quinzaine de requêtes — de loin le premier poste d'appels du système, devant
+   le plan lui-même. Rien ne se perd pour autant, le départ de la page vidant
+   ce qui reste. */
 const MESURE_PAQUET = 20;
-const MESURE_DELAI = 4000;
+const MESURE_DELAI = 30000;
 let _gestes = [], _envoiDiffere = null;
 
 function envoieMesures(dernier){
@@ -5733,7 +7256,7 @@ function envoieMesures(dernier){
   _envoiDiffere = null;
   if (!_gestes.length) return;
   const charge = JSON.stringify({
-    slug: SLUG, visiteur: MESURE_VISITEUR, session: MESURE_SESSION,
+    slug: SLUG, visiteur: MESURE_VISITEUR,
     gestes: _gestes.splice(0, _gestes.length),
   });
   /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
@@ -5751,17 +7274,21 @@ function envoieMesures(dernier){
 }
 
 /**
- * Retenir un geste.
+ * Retenir un geste, et ce qu'il désignait s'il désignait quelque chose.
  *
- *   mesure("fiche_stand", "plan")   une fiche d'exposant, ouverte du plan
- *   mesure("recherche")             une recherche menée à son terme
+ *   mesure("fiche_stand", "plan", o.id)   une fiche d'exposant, ouverte du plan
+ *   mesure("recherche")                   une recherche menée à son terme
  *
- * Le vocabulaire est celui de la table ; le serveur écarte ce qu'il ne
- * connaît pas plutôt que de l'enregistrer sous un nom approximatif.
+ * Le vocabulaire est celui des compteurs ; le serveur écarte ce qu'il ne
+ * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
+ * cible que l'événement ne porte pas est écartée de même.
  */
-function mesure(genre, canal){
+function mesure(genre, canal, cible){
   if (!MESURE_ACTIVE) return;
-  _gestes.push(canal ? { genre: genre, canal: canal } : { genre: genre });
+  const g = { genre: genre };
+  if (canal) g.canal = canal;
+  if (cible) g.cible = cible;
+  _gestes.push(g);
   if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
   clearTimeout(_envoiDiffere);
   _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
@@ -5851,9 +7378,13 @@ function chargeFond(i){
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
   if (_fonds.has(p.id)) return _fonds.get(p.id);
 
+  /* L'empreinte du fond fait la version : elle ne bouge que si le dessin
+     bouge, là où l'heure de synchronisation bougeait à chaque passage et
+     faisait retélécharger le même dessin. Un pavillon pas encore
+     resynchronisé n'en a pas, et retombe sur l'horodatage. */
   const q = API + "?slug=" + encodeURIComponent(SLUG) +
             "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(DATA.genereLe || "0");
+            "&v=" + encodeURIComponent(p.empreinte || DATA.genereLe || "0");
   const promesse = fetch(q, { headers: entetesApi() })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {

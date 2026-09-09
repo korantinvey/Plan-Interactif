@@ -172,12 +172,47 @@ function construitPanneau(){
   plus.onclick = creeCalque;
   hote.appendChild(plus);
 
+  sectionSelection(hote);
+
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
      publication : c'est bien l'exploitant qui décide de ce qu'ils voient. */
   /* Les réglages généraux vivent dans leur propre fenêtre, ouverte par
      l'engrenage : ici ils allongeaient une pile déjà longue et se lisaient
      comme une couche de plus. */
+}
+
+/* ============================================================
+   Élément sélectionné
+   La couleur que prend un stand — ou une zone — au moment où on le touche.
+   Ce n'est pas un calque : rien ne s'y dessine, rien ne s'y masque, et le
+   rang n'y veut rien dire. Rangée dans la pile, la ligne se lisait pourtant
+   comme une couche de plus, entre celles qu'on empile vraiment. Un trait l'en
+   sépare, un titre la nomme.
+
+   Une seule couleur à régler, l'aplat : le liseré qui le borde s'en déduit,
+   et « appliqueCouleursData » s'en charge.
+   ============================================================ */
+function sectionSelection(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart";
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.textContent = "Élément sélectionné";
+  bloc.appendChild(titre);
+
+  const c = conf("selection");
+  const d = document.createElement("div");
+  d.className = "calq";
+  d.innerHTML = '<label><span></span></label>' +
+                '<span class="opts"><input type="color" class="cc"></span>';
+  // le titre de la section dit déjà de quoi il s'agit
+  d.querySelector("label span").textContent = "Couleur";
+  const cc = d.querySelector(".cc");
+  cc.value = c.couleur || jeton("--accent-soft");
+  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); appliqueCouleursData(); };
+  bloc.appendChild(d);
+  hote.appendChild(bloc);
 }
 
 /* ligne secondaire : visibilité et couleur seulement */

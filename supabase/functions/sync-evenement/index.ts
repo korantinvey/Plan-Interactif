@@ -17,7 +17,7 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, vrai,
+  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, valeursOui, vrai,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -69,6 +69,21 @@ const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
 // Annotations techniques posées sur le plan : ce ne sont pas des noms de zone.
 const TECHNIQUE = /\bkW\b|Hauteur \d|Coffret|Mur inclinable/i;
 
+/**
+ * Une empreinte courte du fond de plan.
+ *
+ * Elle sert de version dans l'adresse du fond, à la place de l'heure de
+ * synchronisation : celle-ci changeait à chaque passage, et faisait
+ * retélécharger six cent soixante kilo-octets de dessin inchangé à tous les
+ * visiteurs. Six octets suffisent — une collision entre deux versions d'un même
+ * pavillon montrerait un fond périmé, jamais un fond faux.
+ */
+async function condense(v: string): Promise<string> {
+  const bin = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+  return Array.from(new Uint8Array(bin).slice(0, 6),
+    (o) => o.toString(16).padStart(2, "0")).join("");
+}
+
 const client = () =>
   createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -118,6 +133,10 @@ const fournisseur = (evt: Record<string, any>, domaine: string) =>
 /* Vingt-cinq fiches suffisent à savoir quels champs un salon renseigne
    réellement : au-delà on relit les mêmes. */
 const ECHANTILLON = 25;
+
+/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
+   mais du texte libre : en proposer la liste n'aiderait personne. */
+const VALEURS_MAX = 8;
 
 /** Une valeur qu'on peut montrer en exemple : ni objet, ni vide. */
 const exemple = (v: unknown): string | null => {
@@ -184,7 +203,10 @@ async function champsKlipso(g: Gaia) {
     for (const p of props) {
       const cle = prefixe + p.cle;
       if (vus.has(cle)) continue;
-      vus.set(cle, { cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null });
+      vus.set(cle, {
+        cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null,
+        valeurs: [] as string[],
+      });
     }
   }
 
@@ -208,18 +230,28 @@ async function champsKlipso(g: Gaia) {
       for (const [cle, v] of paires) {
         const ex = exemple(v);
         if (!ex) continue;
-        const e = vus.get(cle);
-        if (e) { if (!e.exemple) e.exemple = ex; continue; }
-        vus.set(cle, {
+        const e = vus.get(cle) ?? {
           cle,
           libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
           groupe: groupeKlipso(cle),
-          exemple: ex,
-        });
+          exemple: null as string | null,
+          valeurs: [] as string[],
+        };
+        if (!e.exemple) e.exemple = ex;
+        /* Les valeurs distinctes disent si le champ est une liste de choix.
+           C'est parmi elles que l'exploitant désignera celles qui déclenchent
+           « Nouvel exposant » ou « Exclu de la liste ». */
+        const l = e.valeurs as string[];
+        if (l.length <= VALEURS_MAX && !l.includes(ex)) l.push(ex);
+        vus.set(cle, e);
       }
     }
   } catch (_) { /* l'échantillon manque, le schéma suffit */ }
 
+  // au-delà du seuil, le champ est du texte libre : sa liste n'aiderait pas
+  for (const d of vus.values()) {
+    if ((d.valeurs as string[]).length > VALEURS_MAX) d.valeurs = [];
+  }
   return range([...vus.values()], GROUPES_KLIPSO);
 }
 
@@ -282,8 +314,13 @@ Deno.serve(async (req) => {
        l'autre source ne connaît pas. */
     const srcStands = fournisseur(evt, "stands");
     const cibleK = (c: string) => champsCible(evt.correspondances, "klipso", c);
+    const valeurK = (c: string) => valeursOui(evt.correspondances, "klipso", c);
     const champsEm = Object.fromEntries(
       (CIBLES.eventmaker ?? []).map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
+    /* Un champ à choix ne répond pas par oui ou non : l'exploitant désigne
+       celles de ses valeurs qui déclenchent. */
+    const valeursEm = Object.fromEntries(
+      (CIBLES.eventmaker ?? []).map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
@@ -302,7 +339,13 @@ Deno.serve(async (req) => {
        de stand nous intéresse, les autres non. Les catégories d'invités
        diffèrent d'un salon à l'autre, elles sont donc détectées et non
        configurées. */
-    let expoEm: { parDossier: Map<string, ExposantEm>; parStand: Map<string, ExposantEm> } | null = null;
+    let expoEm:
+      | {
+        parDossier: Map<string, ExposantEm>;
+        parStand: Map<string, ExposantEm>;
+        tousParStand: Map<string, ExposantEm[]>;
+      }
+      | null = null;
     let resumeEm: Record<string, unknown> | null = null;
     /* Les champs que la source porte, relevés au passage. C'est la matière de
        la correspondance : sans eux la console n'aurait rien à proposer, et il
@@ -368,7 +411,8 @@ Deno.serve(async (req) => {
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
+        const em = new Eventmaker({
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -385,7 +429,11 @@ Deno.serve(async (req) => {
           .map((st) => String(st.code ?? "")).filter(Boolean);
 
         const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
-        expoEm = { parDossier: r.parDossier, parStand: r.parStand };
+        expoEm = {
+          parDossier: r.parDossier,
+          parStand: r.parStand,
+          tousParStand: r.tousParStand,
+        };
         detectes = r.champs;
         resumeEm = {
           categories: r.categories,
@@ -416,7 +464,8 @@ Deno.serve(async (req) => {
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
-        const em = new Eventmaker({ jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm });
+        const em = new Eventmaker({
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         try {
@@ -513,6 +562,9 @@ Deno.serve(async (req) => {
         // salles de conférence. Le calque qui les porte ne s'appelle pas pareil
         // d'un salon à l'autre, on ne peut donc pas le nommer.
         const tousTextes: { x: number; y: number; txt: string }[] = [];
+        /* Ce qui compose le fond, dans l'ordre où l'API le rendra : c'est de
+           cela, et de rien d'autre, que l'empreinte doit dépendre. */
+        const fond: string[] = [];
         for (const c of calques) {
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
@@ -520,6 +572,7 @@ Deno.serve(async (req) => {
           tousTextes.push(...lus);
           if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
           const { svg } = allege(brut);
+          fond.push(c.Libelle, svg ?? "");
           await db.from("calque").upsert({
             plan_id: planId,
             id_klipso: c.Id,
@@ -563,6 +616,7 @@ Deno.serve(async (req) => {
 
         const stands = [];
         let apparies = 0;
+        const heberges = new Set<ExposantEm>();
         const parDossier = new Map<string, string>();
         for (const s of bruts) {
           const formes = s.SetStandShapeStand ? [].concat(s.SetStandShapeStand) : [];
@@ -575,7 +629,7 @@ Deno.serve(async (req) => {
           const val = (c: string) => ou(lit(cibleK(c), origines));
           // engagement contractuel : un exposant qui refuse le catalogue ne sort
           // pas, quelle que soit la source
-          const exclu = vrai(lit(cibleK("exclu"), origines));
+          const exclu = vrai(lit(cibleK("exclu"), origines), valeurK("exclu"));
           const code = [s.Allee, s.NoStand].filter(Boolean).join("") || null;
 
           /* Le dossier identifie un exposant des deux côtés : Klipso le porte
@@ -596,6 +650,42 @@ Deno.serve(async (req) => {
               (code ? expoEm.parStand.get(cleStand(code)) : undefined);
           const ok = expoEm ? Boolean(em) && !em!.exclu : Boolean(dos) && !exclu;
           if (expoEm && em) apparies++;
+
+          /* --- les co-exposants ---
+
+             Ce schéma-ci et pas un autre : le plan vient de Klipso, les
+             sociétés d'Eventmaker. Le stand Klipso ne porte qu'un dossier,
+             celui de son titulaire ; les sociétés qu'il héberge se rattachent
+             donc par le numéro, seul repère qu'elles partagent avec lui.
+
+             Le titulaire est celui que le dossier a désigné. Faute de dossier
+             des deux côtés — c'est le cas de salons entiers — c'est la
+             première fiche du numéro qui tient ce rôle : personne n'est perdu
+             pour autant, la fiche les liste tous.
+
+             Un stand sans titulaire retenu n'héberge personne non plus : une
+             enseigne qui refuse le catalogue emporte son stand entier, et une
+             liste dont la tête serait vide ne se lirait pas.
+
+             Le numéro qu'on interroge est celui que porte la fiche du
+             titulaire, et non le code du plan. Les deux se ressemblent sans se
+             confondre : Klipso numérote « T44 » et « U43 » séparément là où
+             Eventmaker saisit « T44 - U43 » pour l'ensemble, et c'est cette
+             écriture-là que les hébergés recopient. Chercher sous le code du
+             plan ne trouvait donc rien sur les stands à deux emplacements —
+             les plus grands, ceux qui hébergent le plus. Le titulaire, lui,
+             était trouvé par son dossier : le stand paraissait normal, sans
+             personne. Le code du plan ne sert que de repli, quand c'est par
+             lui que le titulaire a été trouvé. */
+          const numero = (em && em.stand) || (code ? cleStand(code) : "");
+          const voisins = !expoEm || !ok || !numero ? []
+            : (expoEm.tousParStand.get(numero) ?? []).filter((x) =>
+              x !== em && !x.exclu
+            );
+          /* Deux emplacements réunis font deux stands du plan, qui listent les
+             mêmes sociétés : on compte les sociétés, pas les listes. */
+          voisins.forEach((x) => heberges.add(x));
+          const coex = voisins.map(hebergee);
 
           /* Coordonnées et réseaux. Eventmaker les porte nativement ; Klipso
              ne les rend que si l'exploitant a désigné les champs qui les
@@ -630,13 +720,23 @@ Deno.serve(async (req) => {
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(lit(cibleK("nomenclature"), origines, true)),
+            /* Les thématiques n'existent que côté Eventmaker, et seulement sur
+               les salons qui en tiennent : ailleurs la clé ne descend pas
+               plutôt que de porter des listes vides par centaines. */
+            ...((ok && expoEm && em!.themes.length) ? { themes: em!.themes } : {}),
             /* Un nouvel exposant porte une pastille sur sa fiche. Le champ qui
                le dit n'existe que sur les salons qui distinguent leurs
                nouveaux venus : ailleurs la cible reste vide, et la clé ne
                descend pas — l'instantané est servi au public, il n'a pas à
                porter des « false » par centaines. */
-            ...((ok && (expoEm ? em!.neuf : vrai(lit(cibleK("nouveau"), origines))))
+            ...((ok && (expoEm ? em!.neuf
+              : vrai(lit(cibleK("nouveau"), origines), valeurK("nouveau"))))
               ? { neuf: true } : {}),
+            /* Les sociétés hébergées, dans l'ordre où Eventmaker les rend. La
+               clé ne descend pas quand il n'y en a pas : la grande majorité
+               des stands n'hébergent personne, et l'instantané part au
+               public. */
+            ...(coex.length ? { coex } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             /* La clé ne descend pas quand le salon ne sectorise pas :
                l'instantané est servi au public, il n'a pas à porter des
@@ -752,6 +852,7 @@ Deno.serve(async (req) => {
           emprise: emp,
           nb_stands: stands.length,
           nb_zones: zones.length,
+          empreinte: await condense(fond.join("\u0000")),
           modifie_le: new Date().toISOString(),
         }).eq("id", planId);
 
@@ -761,11 +862,39 @@ Deno.serve(async (req) => {
           genere_le: new Date().toISOString(),
         }, { onConflict: "plan_id" });
 
+        /* Ce qu'une mesure pourra désigner. Les compteurs ne retiennent qu'un
+           identifiant : c'est ici que se conserve de quoi l'afficher — le
+           numéro d'emplacement et l'enseigne — et c'est cette liste qui ferme
+           leur vocabulaire, une cible absente étant écartée à l'écriture.
+
+           Les zones n'y figurent pas : une zone organisateur n'est pas un
+           exposant, et la page ne la compte pas non plus. */
+        const cibles = [
+          ...stands.map((s) => ({
+            evenement_id: evt.id, genre: "fiche_stand", id: s.id,
+            code: s.code ?? null, nom: s.nom ?? s.plan ?? null,
+            modifie_le: new Date().toISOString(),
+          })),
+          ...conferences.map((c) => ({
+            evenement_id: evt.id, genre: "fiche_conf", id: String(c.id),
+            code: null, nom: (c.nom as string) ?? null,
+            modifie_le: new Date().toISOString(),
+          })),
+        ];
+        /* Une même conférence peut être remontée par deux pavillons — elle y
+           cite des exposants de chacun. Deux lignes de même clé dans un seul
+           envoi font échouer l'upsert entier : on ne garde que la première. */
+        const uniques = [...new Map(cibles.map((c) => [c.genre + c.id, c])).values()];
+        if (uniques.length) {
+          await db.from("cible").upsert(uniques, { onConflict: "evenement_id,genre,id" });
+        }
+
         resume.push({
           pavillon: plan.Libelle,
           stands: stands.length,
           exposants: stands.filter((s) => s.nom).length,
           ...(expoEm ? { apparies } : {}),
+          ...(heberges.size ? { coexposants: heberges.size } : {}),
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
@@ -875,6 +1004,28 @@ Deno.serve(async (req) => {
     return repond({ erreur: message }, 500);
   }
 });
+
+/**
+ * Une société hébergée, telle que la fiche du stand la portera.
+ *
+ * Mêmes clés que le stand lui-même : c'est la même fiche qui l'affiche, et
+ * dédoubler le rendu pour deux jeux de noms n'aurait servi qu'à les faire
+ * diverger. Ni géométrie ni numéro — elle occupe le stand de son hôte — et
+ * rien qui soit vide, l'instantané étant servi tel quel au public.
+ */
+function hebergee(x: ExposantEm): Record<string, unknown> {
+  const o: Record<string, unknown> = { nom: x.nom };
+  const champs: [string, unknown][] = [
+    ["plan", x.raison], ["site", nettoieUrl(x.site)], ["adr", x.adresse], ["ville", x.ville],
+    ["pays", x.pays], ["tel", x.tel], ["fb", x.facebook],
+    ["li", x.linkedin], ["ig", x.instagram],
+  ];
+  for (const [k, v] of champs) if (v) o[k] = v;
+  if (x.nomencl.length) o.nomencl = x.nomencl;
+  if (x.themes.length) o.themes = x.themes;
+  if (x.neuf) o.neuf = true;
+  return o;
+}
 
 /** Les adresses saisies à la main contiennent parfois des slashes échappés. */
 function nettoieUrl(u: unknown): string | null {

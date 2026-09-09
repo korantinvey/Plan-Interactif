@@ -30,6 +30,10 @@ const RATTACHEMENT: Cible[] = [
     aide: "Sert à poser la fiche sur le plan. Comparé au numéro Klipso, mise en forme ignorée." },
   { cle: "dossier", libelle: "Identifiant de dossier",
     aide: "Le dossier Klipso recopié sur la fiche. C'est le rattachement le plus sûr." },
+  { cle: "coexposant", libelle: "Rattachement des co-exposants",
+    aide: "Le champ où un co-exposant porte le stand de son hôte — le numéro de " +
+      "stand, sauf si le salon en tient un à part. « Aucun » retire les " +
+      "co-exposants du plan." },
 ];
 
 const AFFICHAGE: Cible[] = [
@@ -49,10 +53,37 @@ const AFFICHAGE: Cible[] = [
   { cle: "nomenclature", libelle: "Nomenclature", multiple: true,
     aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
   { cle: "nouveau", libelle: "Nouvel exposant",
-    aide: "Une valeur vraie pose une pastille « Nouvel exposant » sur la fiche." },
+    aide: "Pose une pastille sur la fiche. Valent oui : oui, o, 1, x, vrai, " +
+      "true, on. Toute autre valeur ne pose rien." },
   { cle: "exclu", libelle: "Exclu de la liste",
-    aide: "Vrai retire l'exposant du plan public, quel que soit le reste." },
+    aide: "Retire l'exposant du plan public, quel que soit le reste. Valent " +
+      "oui : oui, o, 1, x, vrai, true, on." },
 ];
+
+/**
+ * Les thématiques, propres à Eventmaker.
+ *
+ * Elles ne sont pas la nomenclature : celle-ci range l'exposant dans le
+ * catalogue, celles-là disent ce qu'il vient y faire — « Devenir
+ * master-franchisé », « Solutions transverses ». Aucun salon ne les nomme
+ * pareil, et beaucoup n'en ont pas du tout.
+ *
+ * Klipso n'en a pas l'équivalent : ses rubriques passent par la nomenclature
+ * et sa codification, et rien d'autre n'y range les exposants. Une cible qu'il
+ * ne saurait pas alimenter n'a rien à faire dans sa liste.
+ *
+ * Elle est la seule cible d'affichage sans champ par défaut, et c'est voulu :
+ * aucun nom ne revient d'un salon à l'autre — `categories` ici, `expertises`
+ * là. Un défaut deviné signalerait en rouge « champ habituel introuvable » sur
+ * tous les salons qui n'en tiennent pas, c'est-à-dire la plupart ; rester vide
+ * est ici l'état normal, et c'est à l'exploitant de désigner le sien.
+ */
+const THEMATIQUES: Cible = {
+  cle: "thematiques", libelle: "Thématiques", multiple: true,
+  aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon le " +
+    "range. Plusieurs champs se cumulent, et un champ à valeurs multiples se " +
+    "sépare tout seul.",
+};
 
 /**
  * Les cibles offertes par fournisseur.
@@ -63,7 +94,7 @@ const AFFICHAGE: Cible[] = [
  */
 export const CIBLES: Record<string, Cible[]> = {
   klipso: AFFICHAGE,
-  eventmaker: [...RATTACHEMENT, ...AFFICHAGE],
+  eventmaker: [...RATTACHEMENT, ...AFFICHAGE, THEMATIQUES],
 };
 
 /**
@@ -89,6 +120,12 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
   eventmaker: {
     stand: ["num_stand"],
     dossier: ["id_dossier"],
+    /* Un stand n'a qu'un dossier côté Klipso, celui de son titulaire : les
+       sociétés qu'il héberge n'ont donc aucun moyen de s'y rattacher par là.
+       Ce qu'elles portent, c'est le numéro du stand de leur hôte — c'est le
+       même champ que « stand », et c'est bien le défaut. Un salon qui tient
+       le stand hôte dans un champ à lui le désigne ici. */
+    coexposant: ["num_stand"],
     nom: ["enseigne", "invite:company_name"],
     raison: ["company_name_2"],
     site: ["company_website"],
@@ -101,6 +138,8 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
     linkedin: ["company_linkedin"],
     instagram: ["instagram_societe"],
     nomenclature: ["rubriques2", "rubriques"],
+    // aucun nom ne revient d'un salon à l'autre : à désigner depuis la console
+    thematiques: [],
     exclu: ["exclu_liste_exposant"],
   },
 };
@@ -131,22 +170,67 @@ export function decoupe(champ: string): { origine: string; nom: string } {
     : { origine: champ.slice(0, i), nom: champ.slice(i + 1) };
 }
 
-/* Ce qui vaut « non » dans un champ oui/non. Ces champs sont remplis à la
-   main, et rien n'impose leur forme : Klipso rend un vrai booléen, Eventmaker
-   une chaîne, et l'organisateur y met ce qu'il veut. On énumère donc le refus,
-   plus court et plus sûr que l'accord — un champ rempli d'autre chose que
-   « non » dit bien quelque chose. */
-const REFUS = new Set(["", "false", "0", "non", "no", "n", "faux"]);
+/* Ce qui vaut « oui » dans un champ oui/non. Ces champs sont remplis à la main
+   et rien n'impose leur forme : Klipso rend un vrai booléen, Eventmaker une
+   chaîne, l'organisateur y met ce qu'il veut.
+
+   L'accord s'énumère, pas le refus. Prendre pour un oui tout ce qui n'est pas
+   un non reconnu paraissait plus sûr — c'est l'inverse : un champ qui porte une
+   date, un code, un « à confirmer » ou n'importe quoi d'inattendu devient alors
+   un oui, et la fiche affirme quelque chose de faux. Une valeur qu'on ne sait
+   pas lire ne doit rien déclencher. */
+const ACCORDS = new Set([
+  "true", "1", "oui", "o", "yes", "y", "vrai", "x", "on", "✓", "✔",
+]);
+
+/** Deux valeurs se comparent sans égard à la casse ni aux accents : « Nouveau
+ *  Client » et « nouveau client » désignent la même chose. */
+const aplani = (v: unknown): string =>
+  String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 /**
- * Un champ oui/non est-il vrai ?
+ * Un champ déclenche-t-il la cible ?
  *
- * Un champ absent ou vide est faux : c'est l'état de la grande majorité des
- * fiches, et il ne doit rien déclencher.
+ * Deux façons de le dire, parce que les sources n'en offrent qu'une chacune :
+ *
+ *   — sans valeur attendue, le champ est un oui/non et c'est l'accord qui
+ *     s'énumère ci-dessus ;
+ *   — avec des valeurs attendues, le champ est une liste de choix, et seules
+ *     ces valeurs-là déclenchent. Franchise Expo range ainsi ses exposants
+ *     entre « Nouveau Client », « Client N-1 » et « Retour » : aucune des
+ *     trois n'est un oui, et pourtant l'une désigne bien les nouveaux venus.
+ *     Plusieurs peuvent compter à la fois — un salon tiendra « Retour » pour
+ *     un retour à signaler, un autre non — d'où une liste et non une valeur.
+ *
+ * Un champ absent, vide, ou rempli d'une valeur qu'on ne reconnaît pas est
+ * faux : c'est l'état de la grande majorité des fiches, et il ne doit rien
+ * déclencher.
  */
-export const vrai = (v: unknown): boolean =>
-  v === true ||
-  (v !== null && v !== undefined && !REFUS.has(String(v).trim().toLowerCase()));
+export const vrai = (v: unknown, attendues?: string[] | null): boolean => {
+  if (v === null || v === undefined || typeof v === "object") return false;
+  const t = aplani(v);
+  if (attendues && attendues.length) {
+    return t !== "" && attendues.some((a) => aplani(a) === t);
+  }
+  return v === true || ACCORDS.has(t);
+};
+
+/**
+ * Les valeurs qui déclenchent une cible, quand l'exploitant en a désigné.
+ *
+ * Elles vivent à côté du champ retenu, dans le même bloc : c'est le même
+ * réglage en deux temps — quel champ lire, puis, s'il ne répond pas par oui ou
+ * non, lesquelles de ses valeurs comptent.
+ */
+export function valeursOui(
+  correspondances: unknown,
+  fournisseur: string,
+  cible: string,
+): string[] {
+  const v = (correspondances as Record<string, any>)?.[fournisseur]?.valeurs?.[cible];
+  return ([] as unknown[]).concat(v ?? [])
+    .map((x) => String(x ?? "").trim()).filter(Boolean);
+}
 
 /** Rien plutôt qu'une chaîne vide : le rendu masque les champs absents. */
 export const ou = (...v: unknown[]): string | null => {

@@ -156,8 +156,10 @@ function ajouteForme(f){
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
-  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
-  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
+  /* Une porte de hall n'est ni une entrée ni une sortie : c'est les deux,
+     et le visiteur qui la cherche cherche par où passer. Le battant de
+     Material reçoit donc une double flèche à la place de la sienne. */
+  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
   accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
   info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
   restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
@@ -183,8 +185,10 @@ const PICTO_MOTS = {
   "entree": "entree",
   "accès": "entree",
   "acces": "entree",
-  "sortie": "sortie",
-  "issue": "sortie",
+  "sortie": "entree",
+  "issue": "entree",
+  "entrée/sortie": "entree",
+  "entree/sortie": "entree",
   "accueil": "accueil",
   "réception": "accueil",
   "reception": "accueil",
@@ -221,17 +225,64 @@ const PICTO_MOTS = {
   "reunion": "reunion",
 };
 
-/** Le pictogramme correspondant à un libellé, s'il en existe un. */
+/** Le pictogramme que suggère un libellé, s'il en existe un. */
 const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || null;
+
+/**
+ * Ce qu'un repère est, et ce qu'il s'appelle.
+ *
+ * Les deux se confondaient : le pictogramme était deviné depuis le libellé, si
+ * bien qu'un repère nommé « Entrée Nord » n'était plus une entrée — ni pour le
+ * dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui
+ * nomme ses portes perdait donc ce qui les rendait utiles, et il n'y avait pas
+ * moyen de nommer deux escaliers sans les déclasser tous les deux.
+ *
+ * Le type et le libellé sont donc deux choses. Le type porte les propriétés —
+ * le pictogramme, l'obstacle en fauteuil, la qualité de porte par où passe un
+ * trajet entre pavillons — et se choisit dans une liste. Le libellé ne sert
+ * qu'à distinguer un exemplaire d'un autre, et s'écrit librement.
+ *
+ * Un repère posé avant cette séparation n'a que son libellé : on continue de
+ * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
+ * s'écrit dès qu'on y touche.
+ */
+const TYPES_REPERE = [
+  { v: "",             nom: "Sans pictogramme" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "wc",           nom: "WC" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "info",         nom: "Information" },
+  { v: "restauration", nom: "Restauration" },
+  { v: "cafe",         nom: "Café" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "secours",      nom: "Secours" },
+  { v: "pmr",          nom: "Accessibilité" },
+  { v: "parking",      nom: "Parking" },
+  { v: "distributeur", nom: "Distributeur" },
+  { v: "reunion",      nom: "Salle de réunion" },
+];
+const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+
+/* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
+   plus qu'un, une porte de hall étant les deux à la fois. */
+const PICTO_ALIAS = { sortie: "entree" };
+
+/**
+ * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
+ * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
+ * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
+ */
+function pictoForme(f){
+  const p = f.picto === undefined ? pictoDe(f.txt) : f.picto;
+  return PICTO_ALIAS[p] || p;
+}
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
-
-const REPERES = ["WC", "Entrée", "Sortie", "Accueil", "Information",
-                 "Restauration", "Café", "Vestiaire", "Ascenseur", "Escalier",
-                 "Escalator", "Secours", "PMR", "Parking", "Distributeur",
-                 "Salle de réunion"];
 
 /**
  * Un repère : une pastille dans la couleur du calque, son libellé dedans.
@@ -249,16 +300,26 @@ function traceRepere(f){
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[f.picto || pictoDe(f.txt)];
+  const g = PICTOS[pictoForme(f)];
   if (g){
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+    /* Le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose que
+       lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien.
+       Un libellé qui n'est que le mot du type resterait une redite, et deux
+       pastilles voisines s'élargiraient pour rien. */
+    const dit = String(f.txt || "").trim();
+    const l = dit && !PICTO_MOTS[dit.toLowerCase()] ? largeur(dit, P_NOM) * t : 0;
+    const w = cote + (l ? l + t * .8 : 0);
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (l ? '<text class="repLab" x="' + (x + cote).toFixed(2) + '" y="' +
+           (f.pts[0][1] + t * .35).toFixed(2) + '" font-size="' + t.toFixed(2) + '">' +
+           esc(dit) + '</text>' : "") + '</g>';
   }
 
   const l = largeur(f.txt || "", P_NOM) * t;
@@ -289,7 +350,7 @@ function cartouchePoi(){
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
       const cle = f.txt.trim();
-      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: f.picto || pictoDe(cle) });
+      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: pictoForme(f) });
       parNom.get(cle).n++;
     }
   }
@@ -461,10 +522,14 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "repere"){
-    const txt = $("repereTexte").value.trim();
+    const type = $("repereType").value;
+    /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
+       cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
+       rien à poser. */
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
-    ajouteForme({ t: "repere", pts: [p], txt: txt, taille: TAILLE_REPERE });
+    ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
@@ -564,19 +629,17 @@ $("renommeOutils").onclick = () => {
   const c = trouveCalque(calqueActif);
   if (c) renommeCalque(c);
 };
-/* La liste ne fait que remplir le champ : un libellé libre reste possible. */
-$("repereChoix").innerHTML = '<option value="">Libellés courants…</option>' +
-  REPERES.map(r => '<option>' + esc(r) + '</option>').join("");
-$("repereChoix").onchange = e => {
-  if (!e.target.value) return;
-  $("repereTexte").value = e.target.value;
-  e.target.value = "";
-  $("repereTexte").focus();
-};
+/* Le type décide de ce que le repère est ; le libellé, de ce qu'il s'appelle.
+   Poser un WC ne demande donc rien d'autre que de choisir « WC » — le libellé
+   ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
+$("repereType").innerHTML =
+  TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+$("repereType").onchange = () => $("repereTexte").focus();
 
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+$("elemPicto").onchange = appliquePicto;
 // on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
