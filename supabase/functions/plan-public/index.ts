@@ -2,22 +2,26 @@
  * API publique du plan.
  *
  *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
- *   GET /plan-public?slug=…&fond=<idPlan>&v=…&a=…   le fond d'un pavillon
+ *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
  *
  * Le fond de plan pèse cinquante fois les stands : il part dans un second
  * appel, pour que le plan s'affiche et devienne manipulable sans l'attendre.
- * Ce fond ne change qu'à la synchronisation, dont l'horodatage sert de clé de
- * version : le navigateur ne le retélécharge jamais deux fois.
+ * Son adresse porte une version — `v=` — que le premier appel a donnée, et
+ * sous laquelle il est déclaré immuable : le navigateur ne le retélécharge
+ * jamais tant qu'elle tient, et ne peut pas resservir l'ancien dès qu'elle
+ * change. Cette version est une empreinte de ce qui sera servi, non une date :
+ * le dessin de chaque calque, la façon dont cette fonction le découpe, et ce
+ * que l'apparence en montre. Une synchronisation qui ne change rien ne fait
+ * donc plus rien retélécharger ; une retouche faite hors synchronisation, si.
  *
- * Et il ne part qu'amputé de ce que l'exploitant a masqué : le visiteur n'a
- * aucun moyen de rallumer un calque, il n'a donc rien à faire de son dessin.
- * L'exploitant authentifié, lui, reçoit le fond entier — c'est à partir de là
- * qu'il choisit. La page joint alors l'empreinte de l'apparence (`a=`) à
- * l'adresse, sans quoi un fond déclaré immuable resterait figé sur le
- * découpage d'avant.
+ * Et le fond ne part qu'amputé de ce que l'exploitant a masqué : le visiteur
+ * n'a aucun moyen de rallumer un calque, il n'a donc rien à faire de son
+ * dessin. L'exploitant authentifié, lui, reçoit le fond entier — c'est à
+ * partir de là qu'il choisit, et sa version ne tient pas compte de l'apparence
+ * pour qu'essayer un réglage ne lui coûte pas un téléchargement.
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
@@ -68,6 +72,44 @@ const db = (req: Request) => {
     },
   );
 };
+
+/* La façon dont cette fonction découpe le fond fait partie de ce qui décide du
+   retéléchargement : deux versions de ce code ne rendent pas le même dessin des
+   mêmes données. On incrémente ce numéro quand la découpe change, et tous les
+   fonds repartent — c'est le seul geste qui les force tous. */
+const FORMAT_FOND = "1";
+
+/** FNV-1a. On ne cherche pas à résister à une collision voulue, seulement à
+ *  distinguer deux états d'un même pavillon. */
+function empreinte(t: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < t.length; i++) {
+    h ^= t.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+
+/**
+ * La version du fond d'un pavillon, que la page joindra à son adresse. Elle
+ * tient à tout ce qui peut en changer les octets : le dessin — dont la base
+ * tient l'empreinte —, la découpe de cette fonction, et ce que l'apparence
+ * montre.
+ *
+ * Ce dernier terme ne vaut que pour un visiteur, seul à recevoir un fond
+ * découpé : l'exploitant reçoit toujours le fond entier, et n'a donc pas à le
+ * retélécharger chaque fois qu'il essaie un réglage.
+ */
+function versionFond(
+  calques: { cle: string; empreinte?: string | null; ordre_klipso?: number | null }[],
+  reglages: Record<string, unknown> | null,
+): string {
+  const morceaux = [...calques]
+    .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
+    .map((c) => c.cle + ":" + (c.empreinte ?? ""));
+  if (reglages) morceaux.push(JSON.stringify(reglages));
+  return FORMAT_FOND + "-" + empreinte(morceaux.join("|"));
+}
 
 /**
  * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
@@ -211,7 +253,10 @@ Deno.serve(async (req) => {
     const [calques, apparences, dessins, instantanes] = await Promise.all([
       // pas de colonne svg ici : c'est elle qui pèse, et le second appel la sert.
       // On filtre quand même dessus : un calque sans dessin n'a rien à lister.
-      sb.from("calque").select("plan_id, id_klipso, cle, libelle, ordre_klipso")
+      // L'empreinte, elle, tient en trente-deux octets et dit ce que pèse le
+      // dessin sans le lire : c'est d'elle que sort la version du fond.
+      sb.from("calque")
+        .select("plan_id, id_klipso, cle, libelle, ordre_klipso, empreinte")
         .in("plan_id", ids).not("svg", "is", null),
       sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
       sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
@@ -247,6 +292,12 @@ Deno.serve(async (req) => {
           libelle: p.libelle,
           hall: p.hall,
           emprise: p.emprise ?? charge.emprise ?? null,
+          // ce que la page joindra à l'adresse du fond : tant qu'elle ne bouge
+          // pas, le navigateur ne redemande rien
+          versionFond: versionFond(
+            parCalque[p.id] ?? [],
+            identifie ? null : (parApparence[p.id]?.reglages ?? {}),
+          ),
           fond: (parCalque[p.id] ?? [])
             .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
             .map((c) => ({

@@ -25,11 +25,7 @@
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
-/* « a » porte l'empreinte de l'apparence : le fond servi au visiteur ne
-   contient que les calques montrés, il change donc quand l'exploitant en
-   masque un. Sans ce paramètre dans la clé, le cache resservirait le
-   découpage d'avant pendant un mois. */
-const PARAMS = ["slug", "fond", "v", "a"];
+const PARAMS = ["slug", "fond", "v"];
 
 /* Un paquet de mesures pèse quelques centaines d'octets. Au-delà, ce n'est
    plus une visite qu'on décrit : on refuse sans même relayer. */
