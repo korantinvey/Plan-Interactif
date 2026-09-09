@@ -199,10 +199,18 @@ button{cursor:pointer;background:none;border:none}
    main : un stand qu'on désigne doit se voir plus que son secteur. */
 .stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
-   continu dans la couleur d'accent, plus discret que la sélection pour ne pas
-   se confondre avec elle. Une zone y entre par ses conférences. */
-html:not(.sans-parcours) .stand.enparcours path,
-html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
+   continu, plus discret que la sélection pour ne pas se confondre avec elle.
+   Une zone y entre par ses conférences.
+
+   Il se trace dans « #marques », un calque à part posé au-dessus des couches,
+   et non sur le stand lui-même : une cloison mitoyenne appartient aux deux
+   stands qu'elle sépare, et le second tracé y effaçait le liseré du premier.
+   Le calque ne reçoit aucun clic — c'est le stand qu'on désigne, pas sa
+   marque. */
+#marques{pointer-events:none}
+#marques path{fill:none;stroke:var(--c-parc,var(--accent));stroke-width:2;
+  stroke-dasharray:none;vector-effect:non-scaling-stroke}
+html.sans-parcours #marques{display:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
@@ -2819,7 +2827,8 @@ function reglagesDuSalon(source){
   Object.keys(source || {}).forEach(k => {
     if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
     const general = k[0] === "_" || k.indexOf("data:") === 0 ||
-                    k === "labStand" || k === "labZone" || k === "selection";
+                    k === "labStand" || k === "labZone" || k === "selection" ||
+                    k === "parcours";
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
@@ -2867,7 +2876,11 @@ const racine = document.documentElement;
 
 /* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
    l'affichage du groupe, leur couleur sur une variable CSS. */
-function styleDataGroupe(nom, on){ $(nom).style.display = on ? "" : "none"; }
+function styleDataGroupe(nom, on){
+  $(nom).style.display = on ? "" : "none";
+  // le liseré du parcours est tracé hors des couches : il ne suit pas tout seul
+  if (nom === "stands" || nom === "zones") marqueParcours();
+}
 
 function appliqueCouleursData(){
   const pose = (v, n) => v ? racine.style.setProperty(n, v) : racine.style.removeProperty(n);
@@ -2883,6 +2896,11 @@ function appliqueCouleursData(){
   const sel = conf("selection").couleur;
   pose(sel, "--c-sel");
   pose(sel && ecarte(sel), "--c-sel-trait");
+  /* Le parcours n'a qu'un liseré, sans aplat : il double le contour d'un stand
+     qui garde par ailleurs sa teinte. Une seule couleur suffit donc, et elle
+     se règle à part de la sélection — les deux marques se croisent sur le même
+     plan, et se confondraient si l'exploitant ne pouvait les écarter. */
+  pose(conf("parcours").couleur, "--c-parc");
 }
 
 function styleData(cle){
@@ -3007,6 +3025,8 @@ function ouvreReglages(){
       c.onchange = e => {
         conf(cmd.cle).visible = e.target.checked;
         enregistreConf(); appliqueCommandes();
+        // la couleur du parcours vit dans la pile : elle suit le réglage
+        if (ADMIN) construitPanneau();
       };
       bloc.appendChild(l);
     });
@@ -4478,28 +4498,38 @@ function construitPanneau(){
 }
 
 /* ============================================================
-   Élément sélectionné
-   La couleur que prend un stand — ou une zone — au moment où on le touche.
-   Ce n'est pas un calque : rien ne s'y dessine, rien ne s'y masque, et le
-   rang n'y veut rien dire. Rangée dans la pile, la ligne se lisait pourtant
-   comme une couche de plus, entre celles qu'on empile vraiment. Un trait l'en
-   sépare, un titre la nomme.
+   Repères
+   Ce que le plan pose sur un stand sans que les données le disent : la
+   couleur qu'il prend au moment où on le touche, et le liseré de ce qu'un
+   visiteur a retenu. Ce ne sont pas des calques : rien ne s'y dessine, rien
+   ne s'y masque, et le rang n'y veut rien dire. Rangées dans la pile, les
+   lignes se lisaient pourtant comme des couches de plus, entre celles qu'on
+   empile vraiment. Un trait les en sépare, un titre les nomme.
 
-   Une seule couleur à régler, l'aplat : le liseré qui le borde s'en déduit,
-   et « appliqueCouleursData » s'en charge.
+   La sélection n'a qu'une couleur à régler, l'aplat : le liseré qui le borde
+   s'en déduit, et « appliqueCouleursData » s'en charge. Le parcours n'a que
+   son liseré, et il se règle à part — les deux marques se croisent sur le
+   même plan, souvent sur le même stand, et l'accent d'origine les confond.
    ============================================================ */
 function sectionSelection(hote){
   const bloc = document.createElement("div");
   bloc.className = "apart";
   const titre = document.createElement("span");
   titre.className = "eyebrow";
-  titre.textContent = "Élément sélectionné";
+  titre.textContent = "Repères";
   bloc.appendChild(titre);
 
   const c = conf("selection");
-  // le titre de la section dit déjà de quoi il s'agit
-  bloc.appendChild(ligneCouleur("Couleur", c.couleur || jeton("--accent-soft"),
+  bloc.appendChild(ligneCouleur("Élément sélectionné", c.couleur || jeton("--accent-soft"),
     (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+
+  /* Le parcours retiré, sa couleur ne règle plus rien : la ligne s'efface avec
+     lui, et revient si l'exploitant le rouvre. */
+  if (conf("_parcours").visible !== false){
+    const p = conf("parcours");
+    bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
+      (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  }
   hote.appendChild(bloc);
 }
 
@@ -4920,9 +4950,31 @@ function brancheParcours(hote){
 /* ------------------------------------------------------------
    Ce que le parcours change à l'écran
    ------------------------------------------------------------ */
-/** Le liseré sur le plan. Une zone y entre par les conférences qu'elle abrite :
- *  c'est là qu'il faudra se rendre à l'heure dite, la conférence n'ayant pas
- *  de forme propre. */
+/**
+ * Le liseré sur le plan.
+ *
+ * Il ne se peint pas sur le stand retenu mais sur un calque à part, posé
+ * au-dessus des couches. Porté par le stand lui-même, il disparaissait le long
+ * des cloisons mitoyennes : deux stands voisins partagent le même segment, et
+ * celui que le plan trace en second y repassait son propre contour par-dessus
+ * le liseré du premier. Un stand retenu au milieu d'un îlot n'était alors
+ * cerné que sur ses côtés libres. Recopier le tracé plus haut règle la
+ * question sans toucher à l'ordre des couches, que l'exploitant règle.
+ *
+ * Une zone y entre par les conférences qu'elle abrite : c'est là qu'il faudra
+ * se rendre à l'heure dite, la conférence n'ayant pas de forme propre.
+ */
+function calqueMarques(){
+  let g = $("marques");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "marques";
+    // au-dessus des couches, sous le trajet et les poignées d'édition
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  return g;
+}
+
 function marqueParcours(){
   if (!DATA) return;
   const zones = new Set();
@@ -4930,11 +4982,21 @@ function marqueParcours(){
     const c = CONFS.get(id);
     if (c && c.zone) zones.add(String(c.zone));
   });
+  /* Le liseré vit hors des couches : rien ne le masquerait avec elles. Une
+     couche de données retirée par l'exploitant doit pourtant emporter les
+     marques de ce qu'elle portait, sans quoi le plan garderait des contours
+     sans stands. */
+  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
+  const vu = { stands: montree("stands"), zones: montree("zones") };
+  let out = "";
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const id = g.dataset.id;
-    g.classList.toggle("enparcours",
-      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id));
+    const dedans = PARCOURS.stands.indexOf(id) >= 0 || zones.has(id);
+    g.classList.toggle("enparcours", dedans);
+    const p = dedans && vu[g.parentNode.id] && g.querySelector("path");
+    if (p) out += '<path d="' + p.getAttribute("d") + '"/>';
   });
+  calqueMarques().innerHTML = out;
 }
 
 function rafraichitParcours(){

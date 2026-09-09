@@ -11,20 +11,20 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 480 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 492 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.335 · 10. Mode administration
-- l.399 · Renommer une zone organisateur
+- l.347 · 10. Mode administration
+- l.411 · Renommer une zone organisateur
 
 Fonctions :
 
-`cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 61 · `jeton` 62 · `sousCle` 63
-`styleFond` 65 · `sousCalques` 86 · `styleDataGroupe` 95 · `appliqueCouleursData` 97
-`styleData` 113 · `appliqueApparence` 119 · `appliqueCommandes` 177 · `minutesVisite` 205
-`ouvreReglages` 217 · `enregistreConf` 285 · `rgbHex` 291 · `hexa` 298 · `luminance` 302
-`ecarte` 316 · `joli` 331 · `retireAdmin` 348 · `activeAdmin` 361 · `renommeZone` 409
-`enregistreNomZone` 433
+`cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 62 · `jeton` 63 · `sousCle` 64
+`styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
+`styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 187 · `minutesVisite` 215
+`ouvreReglages` 227 · `enregistreConf` 297 · `rgbHex` 303 · `hexa` 310 · `luminance` 314
+`ecarte` 328 · `joli` 343 · `retireAdmin` 360 · `activeAdmin` 373 · `renommeZone` 421
+`enregistreNomZone` 445
 
 Éléments :
 
@@ -130,7 +130,7 @@ Fonctions :
 `supprimeForme` 184 · `editionPointerDown` 194 · `editionPointerMove` 239
 `editionPointerUp` 270
 
-### `_head.html` — 1291 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1299 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -237,7 +237,7 @@ Fonctions :
 `ouvreModale` 5 · `fermeModale` 19 · `confirme` 26 · `deplaceVers` 44 · `versExtremite` 56
 `remplitOrdre` 64 · `ouvreOrdre` 126
 
-### `_parcours.html` — 290 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 322 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -245,22 +245,22 @@ Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
 `enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 68 · `boutonParcours` 74
-`rafraichitMarque` 79 · `brancheParcours` 91 · `marqueParcours` 107
-`rafraichitParcours` 121 · `instantConf` 145 · `cleTemps` 149 · `jourCourt` 155
-`rangParcours` 159 · `groupeParcours` 175 · `remplitParcours` 184 · `ouvreParcours` 246
-`fermeParcours` 258
+`rafraichitMarque` 79 · `brancheParcours` 91 · `calqueMarques` 118 · `marqueParcours` 129
+`rafraichitParcours` 153 · `instantConf` 177 · `cleTemps` 181 · `jourCourt` 187
+`rangParcours` 191 · `groupeParcours` 207 · `remplitParcours` 216 · `ouvreParcours` 278
+`fermeParcours` 290
 
-### `_pile.html` — 278 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 288 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.191 · Élément sélectionné
+- l.191 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 202 · `ligneCouleur` 220 · `rangSecteur` 240
-`rangSous` 252 · `defautCouleur` 274
+`construitPanneau` 60 · `sectionSelection` 205 · `ligneCouleur` 230 · `rangSecteur` 250
+`rangSous` 262 · `defautCouleur` 284
 
 ### `_pousse.html` — 117 l. → plan-admin.html, plan-smcl.html, plan.html
 

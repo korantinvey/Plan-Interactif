@@ -101,9 +101,31 @@ function brancheParcours(hote){
 /* ------------------------------------------------------------
    Ce que le parcours change à l'écran
    ------------------------------------------------------------ */
-/** Le liseré sur le plan. Une zone y entre par les conférences qu'elle abrite :
- *  c'est là qu'il faudra se rendre à l'heure dite, la conférence n'ayant pas
- *  de forme propre. */
+/**
+ * Le liseré sur le plan.
+ *
+ * Il ne se peint pas sur le stand retenu mais sur un calque à part, posé
+ * au-dessus des couches. Porté par le stand lui-même, il disparaissait le long
+ * des cloisons mitoyennes : deux stands voisins partagent le même segment, et
+ * celui que le plan trace en second y repassait son propre contour par-dessus
+ * le liseré du premier. Un stand retenu au milieu d'un îlot n'était alors
+ * cerné que sur ses côtés libres. Recopier le tracé plus haut règle la
+ * question sans toucher à l'ordre des couches, que l'exploitant règle.
+ *
+ * Une zone y entre par les conférences qu'elle abrite : c'est là qu'il faudra
+ * se rendre à l'heure dite, la conférence n'ayant pas de forme propre.
+ */
+function calqueMarques(){
+  let g = $("marques");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "marques";
+    // au-dessus des couches, sous le trajet et les poignées d'édition
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  return g;
+}
+
 function marqueParcours(){
   if (!DATA) return;
   const zones = new Set();
@@ -111,11 +133,21 @@ function marqueParcours(){
     const c = CONFS.get(id);
     if (c && c.zone) zones.add(String(c.zone));
   });
+  /* Le liseré vit hors des couches : rien ne le masquerait avec elles. Une
+     couche de données retirée par l'exploitant doit pourtant emporter les
+     marques de ce qu'elle portait, sans quoi le plan garderait des contours
+     sans stands. */
+  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
+  const vu = { stands: montree("stands"), zones: montree("zones") };
+  let out = "";
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const id = g.dataset.id;
-    g.classList.toggle("enparcours",
-      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id));
+    const dedans = PARCOURS.stands.indexOf(id) >= 0 || zones.has(id);
+    g.classList.toggle("enparcours", dedans);
+    const p = dedans && vu[g.parentNode.id] && g.querySelector("path");
+    if (p) out += '<path d="' + p.getAttribute("d") + '"/>';
   });
+  calqueMarques().innerHTML = out;
 }
 
 function rafraichitParcours(){

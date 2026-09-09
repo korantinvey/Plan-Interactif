@@ -190,10 +190,18 @@ button{cursor:pointer;background:none;border:none}
    main : un stand qu'on désigne doit se voir plus que son secteur. */
 .stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
-   continu dans la couleur d'accent, plus discret que la sélection pour ne pas
-   se confondre avec elle. Une zone y entre par ses conférences. */
-html:not(.sans-parcours) .stand.enparcours path,
-html:not(.sans-parcours) .zone.enparcours path{stroke:var(--accent);stroke-width:2;stroke-dasharray:none}
+   continu, plus discret que la sélection pour ne pas se confondre avec elle.
+   Une zone y entre par ses conférences.
+
+   Il se trace dans « #marques », un calque à part posé au-dessus des couches,
+   et non sur le stand lui-même : une cloison mitoyenne appartient aux deux
+   stands qu'elle sépare, et le second tracé y effaçait le liseré du premier.
+   Le calque ne reçoit aucun clic — c'est le stand qu'on désigne, pas sa
+   marque. */
+#marques{pointer-events:none}
+#marques path{fill:none;stroke:var(--c-parc,var(--accent));stroke-width:2;
+  stroke-dasharray:none;vector-effect:non-scaling-stroke}
+html.sans-parcours #marques{display:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —

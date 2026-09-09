@@ -189,28 +189,38 @@ function construitPanneau(){
 }
 
 /* ============================================================
-   Élément sélectionné
-   La couleur que prend un stand — ou une zone — au moment où on le touche.
-   Ce n'est pas un calque : rien ne s'y dessine, rien ne s'y masque, et le
-   rang n'y veut rien dire. Rangée dans la pile, la ligne se lisait pourtant
-   comme une couche de plus, entre celles qu'on empile vraiment. Un trait l'en
-   sépare, un titre la nomme.
+   Repères
+   Ce que le plan pose sur un stand sans que les données le disent : la
+   couleur qu'il prend au moment où on le touche, et le liseré de ce qu'un
+   visiteur a retenu. Ce ne sont pas des calques : rien ne s'y dessine, rien
+   ne s'y masque, et le rang n'y veut rien dire. Rangées dans la pile, les
+   lignes se lisaient pourtant comme des couches de plus, entre celles qu'on
+   empile vraiment. Un trait les en sépare, un titre les nomme.
 
-   Une seule couleur à régler, l'aplat : le liseré qui le borde s'en déduit,
-   et « appliqueCouleursData » s'en charge.
+   La sélection n'a qu'une couleur à régler, l'aplat : le liseré qui le borde
+   s'en déduit, et « appliqueCouleursData » s'en charge. Le parcours n'a que
+   son liseré, et il se règle à part — les deux marques se croisent sur le
+   même plan, souvent sur le même stand, et l'accent d'origine les confond.
    ============================================================ */
 function sectionSelection(hote){
   const bloc = document.createElement("div");
   bloc.className = "apart";
   const titre = document.createElement("span");
   titre.className = "eyebrow";
-  titre.textContent = "Élément sélectionné";
+  titre.textContent = "Repères";
   bloc.appendChild(titre);
 
   const c = conf("selection");
-  // le titre de la section dit déjà de quoi il s'agit
-  bloc.appendChild(ligneCouleur("Couleur", c.couleur || jeton("--accent-soft"),
+  bloc.appendChild(ligneCouleur("Élément sélectionné", c.couleur || jeton("--accent-soft"),
     (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+
+  /* Le parcours retiré, sa couleur ne règle plus rien : la ligne s'efface avec
+     lui, et revient si l'exploitant le rouvre. */
+  if (conf("_parcours").visible !== false){
+    const p = conf("parcours");
+    bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
+      (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  }
   hote.appendChild(bloc);
 }
 

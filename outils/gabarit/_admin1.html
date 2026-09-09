@@ -44,7 +44,8 @@ function reglagesDuSalon(source){
   Object.keys(source || {}).forEach(k => {
     if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
     const general = k[0] === "_" || k.indexOf("data:") === 0 ||
-                    k === "labStand" || k === "labZone" || k === "selection";
+                    k === "labStand" || k === "labZone" || k === "selection" ||
+                    k === "parcours";
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
@@ -92,7 +93,11 @@ const racine = document.documentElement;
 
 /* Les couches de données n'ont pas de SVG propre : leur visibilité joue sur
    l'affichage du groupe, leur couleur sur une variable CSS. */
-function styleDataGroupe(nom, on){ $(nom).style.display = on ? "" : "none"; }
+function styleDataGroupe(nom, on){
+  $(nom).style.display = on ? "" : "none";
+  // le liseré du parcours est tracé hors des couches : il ne suit pas tout seul
+  if (nom === "stands" || nom === "zones") marqueParcours();
+}
 
 function appliqueCouleursData(){
   const pose = (v, n) => v ? racine.style.setProperty(n, v) : racine.style.removeProperty(n);
@@ -108,6 +113,11 @@ function appliqueCouleursData(){
   const sel = conf("selection").couleur;
   pose(sel, "--c-sel");
   pose(sel && ecarte(sel), "--c-sel-trait");
+  /* Le parcours n'a qu'un liseré, sans aplat : il double le contour d'un stand
+     qui garde par ailleurs sa teinte. Une seule couleur suffit donc, et elle
+     se règle à part de la sélection — les deux marques se croisent sur le même
+     plan, et se confondraient si l'exploitant ne pouvait les écarter. */
+  pose(conf("parcours").couleur, "--c-parc");
 }
 
 function styleData(cle){
@@ -232,6 +242,8 @@ function ouvreReglages(){
       c.onchange = e => {
         conf(cmd.cle).visible = e.target.checked;
         enregistreConf(); appliqueCommandes();
+        // la couleur du parcours vit dans la pile : elle suit le réglage
+        if (ADMIN) construitPanneau();
       };
       bloc.appendChild(l);
     });
