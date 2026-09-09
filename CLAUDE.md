@@ -90,6 +90,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | ordre des calques, pile | `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
+| rendez-vous du visiteur, connexion Eventmaker | `_rdv.html`, `supabase/functions/rdv/` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
@@ -98,6 +99,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
 | accès administrateur d'un plan | `_auth-plan.html` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
+| graphe Eventmaker, dossiers, rendez-vous | `_partage/eventmaker.ts`, notes dans `outils/eventmaker.md` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 
 ## Déploiement

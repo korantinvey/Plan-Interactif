@@ -25,6 +25,7 @@
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
+const RDV = BASE + "rdv";
 const PARAMS = ["slug", "fond", "v"];
 
 /* Un paquet de mesures pèse quelques centaines d'octets. Au-delà, ce n'est
@@ -99,6 +100,39 @@ async function mesure(requete) {
   });
 }
 
+/**
+ * Les rendez-vous d'un visiteur, et la connexion qui les ouvre.
+ *
+ * Rien n'est gardé ici, et rien ne le sera : ce qui passe appartient à une
+ * personne. Le relais existe pour une autre raison — l'adresse de retour que
+ * l'application Eventmaker a déclarée est celle du plan, pas celle du projet
+ * Supabase, que le navigateur ne voit jamais. C'est donc ce chemin-ci qui doit
+ * répondre, biscuit compris.
+ *
+ * Les redirections ne sont pas suivies mais rendues : c'est au navigateur du
+ * visiteur d'aller chez Eventmaker, pas au Worker — lui n'y est personne.
+ */
+async function rdv(requete, url) {
+  if (requete.method !== "GET" && requete.method !== "OPTIONS") {
+    return new Response("Méthode non permise", { status: 405 });
+  }
+  const amont = new URL(RDV + url.pathname.slice("/api/rdv".length) + url.search);
+
+  const entetes = new Headers();
+  for (const n of ["X-Jeton-Eventmaker", "Cookie", "Origin"]) {
+    const v = requete.headers.get(n);
+    if (v) entetes.set(n, v);
+  }
+
+  const reponse = await fetch(amont.toString(), {
+    headers: entetes,
+    redirect: "manual",
+  });
+  const sortie = new Response(reponse.body, reponse);
+  sortie.headers.set("Cache-Control", "no-store, private");
+  return sortie;
+}
+
 export default {
   async fetch(requete, env, ctx) {
     const url = new URL(requete.url);
@@ -107,6 +141,9 @@ export default {
        rien à configurer si le domaine change. Elles ne sont ni lues ni mises
        en cache — elles ne font que passer. */
     if (url.pathname === "/api/mesure") return mesure(requete);
+    if (url.pathname === "/api/rdv" || url.pathname.startsWith("/api/rdv/")) {
+      return rdv(requete, url);
+    }
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
     if (requete.method !== "GET" && requete.method !== "HEAD") {
       return new Response("Méthode non permise", { status: 405 });

@@ -14,14 +14,16 @@
  * sont relus dans les données à chaque affichage, si bien qu'un exposant
  * renommé entre deux visites s'affiche sous son nouveau nom.
  */
-let PARCOURS = { stands: [], confs: [] };
+let PARCOURS = { stands: [], confs: [], rdv: [], rdvOtes: [] };
 
 /* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
    pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
 const cleParcours = () =>
   "plan-parcours:" + (SLUG || (DATA && DATA.evenement) || "");
 
-const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
+const casierParcours = genre =>
+  genre === "conf" ? PARCOURS.confs :
+  genre === "rdv" ? PARCOURS.rdv : PARCOURS.stands;
 const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
 
 function chargeParcours(){
@@ -30,9 +32,15 @@ function chargeParcours(){
     PARCOURS = {
       stands: Array.isArray(b.stands) ? b.stands.map(String) : [],
       confs:  Array.isArray(b.confs)  ? b.confs.map(String)  : [],
+      /* Les rendez-vous eux-mêmes ne sont pas relus d'ici : ils viennent
+         d'Eventmaker à chaque chargement, et une liste d'hier vaudrait moins
+         que pas de liste. Seul survit ce que le visiteur en a écarté — un
+         choix, celui-là, et qui n'a d'autre trace que celle-ci. */
+      rdv: [],
+      rdvOtes: Array.isArray(b.rdvOtes) ? b.rdvOtes.map(String) : [],
     };
   } catch (e) {
-    PARCOURS = { stands: [], confs: [] };   // stockage refusé ou contenu illisible
+    PARCOURS = { stands: [], confs: [], rdv: [], rdvOtes: [] };   // stockage refusé ou contenu illisible
   }
   /* Un stand démonté ou une conférence annulée entre deux visites laisserait
      un rang mort, qu'on ne saurait ni ouvrir ni comprendre. On ne garde que ce
@@ -51,6 +59,15 @@ function basculeParcours(genre, id){
   const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
   // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
   if (i < 0) l.push(k); else l.splice(i, 1);
+  /* Un rendez-vous ne s'ajoute ni ne se retire vraiment — il est pris ailleurs
+     et le restera. Ce que le visiteur exprime en le retirant, c'est qu'il n'y
+     ira pas ; c'est donc ce refus qu'on retient, et lui seul, pour que le
+     chargement suivant ne le lui remette pas d'office. */
+  if (genre === "rdv"){
+    const otes = PARCOURS.rdvOtes, j = otes.indexOf(k);
+    if (i < 0){ if (j >= 0) otes.splice(j, 1); }
+    else if (j < 0) otes.push(k);
+  }
   enregistreParcours();
   rafraichitParcours();
   /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
@@ -111,15 +128,23 @@ function marqueParcours(){
     const c = CONFS.get(id);
     if (c && c.zone) zones.add(String(c.zone));
   });
+  /* Un rendez-vous se tient sur le stand de l'exposant : c'est ce stand-là qui
+     s'allume, comme un stand retenu à la main. Rien ne les distingue sur le
+     plan, et rien ne devrait — le visiteur ira aux deux. */
+  const surRdv = new Set();
+  PARCOURS.rdv.forEach(id => {
+    const r = RDV.get(id);
+    if (r) r.stands.forEach(s => surRdv.add(String(s)));
+  });
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const id = g.dataset.id;
     g.classList.toggle("enparcours",
-      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id));
+      PARCOURS.stands.indexOf(id) >= 0 || zones.has(id) || surRdv.has(id));
   });
 }
 
 function rafraichitParcours(){
-  const n = PARCOURS.stands.length + PARCOURS.confs.length;
+  const n = PARCOURS.stands.length + PARCOURS.confs.length + PARCOURS.rdv.length;
   const c = $("nParcours");
   if (c){ c.textContent = n; c.hidden = n === 0; }
   /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
@@ -188,14 +213,25 @@ function remplitParcours(){
   const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
     .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
 
+  const nRdv = rdvRetenus().length;
+
   const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
-  $("pResume").textContent = stands.length + confs.length
-    ? [stands.length ? pluriel(stands.length, "exposant") : "",
+  $("pResume").textContent = stands.length + confs.length + nRdv
+    ? [nRdv ? nRdv + " rendez-vous" : "",
+       stands.length ? pluriel(stands.length, "exposant") : "",
        confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
     : "rien pour l'instant";
+  /* Vider n'efface que ce que le visiteur a composé. Les rendez-vous ne lui
+     appartiennent pas de la même façon — ils ont été pris avec quelqu'un — et
+     le bouton ne les propose donc pas, sans quoi « vider » voudrait dire deux
+     choses à la fois. */
   $("videParcours").hidden = !(stands.length + confs.length);
 
-  if (!stands.length && !confs.length){
+  /* Les rendez-vous en tête : ce sont des engagements, et le seul bloc qui
+     paraisse même vide — c'est lui qui dit que la chose existe. */
+  sectionRdv(hote);
+
+  if (!stands.length && !confs.length && !nRdv){
     const v = document.createElement("p");
     v.className = "pVide";
     v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
@@ -205,8 +241,8 @@ function remplitParcours(){
     return;
   }
 
-  /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
-     le reste de la journée se range. */
+  /* Les conférences ensuite : elles ont une heure, et c'est autour d'elles et
+     des rendez-vous que le reste de la journée se range. */
   if (confs.length){
     const g = groupeParcours(hote, "Conférences");
     let jour = null;
@@ -270,7 +306,10 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
   "Vider",
   () => {
-    PARCOURS = { stands: [], confs: [] };
+    /* Les rendez-vous survivent : ils n'ont pas été composés ici, et les
+       perdre demanderait de se reconnecter pour rien. Ce que le bouton
+       annonce, c'est ce qu'il fait — les exposants et les conférences. */
+    PARCOURS = { stands: [], confs: [], rdv: PARCOURS.rdv, rdvOtes: PARCOURS.rdvOtes };
     /* La journée n'était que cette liste, mise en heures : elle s'en va avec
        elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
        qui ne doit rien au parcours. */

@@ -256,3 +256,97 @@ exactement. Les chiffres se ressemblent, les listes non — une enseigne citée
 n'anime pas forcément, « Boulangerie : vers une premiumisation » n'est qu'un
 BOULANGER pris dans un mot, et « en 2026 » a la forme d'un numéro de stand sans
 en être un.
+
+# Les rendez-vous d'un visiteur
+
+Le plan sait maintenant reprendre les rendez-vous qu'un visiteur a pris avec des
+exposants depuis l'application du salon, et en faire des points fixes de sa
+journée. Ce qui suit dit ce qui a été **établi**, ce qui a été **supposé**, et
+comment vérifier le second.
+
+## Où ils vivent
+
+Dans le même graphe que le programme, mais sous `viewer` — la vue connectée —
+et non `publicViewer`. L'introspection y est fermée comme ailleurs ; les champs
+se sont relevés par les messages d'erreur, qui nomment le type et proposent le
+nom voisin.
+
+```graphql
+viewer {                       # type ViewerGuest — pas d'argument, le jeton dit qui
+  meetings {                   # type Meeting
+    id
+    startDate                  # ISO, avec décalage — pas d'équivalent « heure locale »
+    endDate
+    status
+    location { name }          # type MeetingLocation — « Table 12 », un libellé, pas une zone
+    exhibitors { id name companyName }        # type ProgramExhibitor
+    participantResponses { guestId … }        # type MeetingParticipantResponse
+  }
+}
+```
+
+**Le point qui fait tout tenir : `Meeting.exhibitors` est du type
+`ProgramExhibitor`**, exactement celui que portent les sessions du programme. Le
+rattachement au plan emprunte donc la chaîne déjà éprouvée, sans rien inventer :
+
+```
+fiche d'invité (id du graphe) → REST /guests/:id → id_dossier → stand du plan
+```
+
+`_partage/eventmaker.ts` porte `rendezVous(jetonVisiteur, idEvenement)`, et la
+lecture des dossiers est désormais partagée avec `exposantsParConference()` sous
+`dossiersDeFiches()` — c'était deux fois le même code.
+
+## Ce qui manquait pour les situer
+
+La résolution dossier → stand n'existait que **pendant** la synchronisation,
+qui tient les deux côtés à la fois. Les conférences s'en accommodaient : elles y
+sont résolues une fois pour toutes, et la charge publique ne porte plus que des
+stands. Un rendez-vous, lui, se lit à la demande — il appartient à quelqu'un, il
+change entre deux synchronisations.
+
+La correspondance est donc conservée : `evenement.dossiers`, écrite par la
+synchronisation, lue par la fonction `rdv`. Elle **ne descend pas** dans la
+charge publique — ce sont des identifiants de dossiers commerciaux, que personne
+n'a à recevoir pour regarder un plan. La synchronisation d'un seul pavillon la
+complète au lieu de la remplacer, sans quoi les autres perdraient la leur.
+
+## Deux jetons, à ne pas confondre
+
+| jeton | d'où il vient | ce qu'il ouvre |
+|---|---|---|
+| celui du visiteur | l'application du salon, ou l'écran de connexion | `viewer` — ses rendez-vous, et rien d'autre |
+| celui de l'organisateur | les secrets de la fonction | les fiches d'invités en REST, pour en tirer les dossiers |
+
+Le premier ne transite qu'en en-tête `X-Jeton-Eventmaker`, jamais par
+`Authorization` — cette place est prise par la passerelle Supabase, et y glisser
+un jeton Eventmaker ferait refuser l'appel avant qu'il n'arrive. Il n'est ni
+écrit, ni journalisé, ni mis en cache, à aucun étage.
+
+Le second ne quitte pas le serveur, et c'est la raison d'être de la fonction :
+sans elle, la page pourrait interroger le graphe elle-même — il est joignable
+depuis un navigateur — mais ne saurait traduire une fiche Eventmaker en stand.
+
+## Ce qui reste à vérifier sur un salon réel
+
+**`viewer` refuse tout net sans identité** — `{"errors":[{"message":
+"Unauthorized access"}]}` — et c'est le seul fait établi de ce côté. Ce qui n'a
+**pas** pu l'être, faute d'un compte de test : qu'un jeton obtenu par
+l'application OAuth documentée suffise à l'ouvrir. Eventmaker pourrait n'y
+accepter qu'une session faite sur son propre site, ou exiger un périmètre que le
+seul `public` disponible ne couvre pas.
+
+C'est le seul vrai risque de la fonctionnalité, et il se lève en une commande,
+avec un jeton de visiteur d'essai sur un salon qui a des rendez-vous :
+
+```bash
+curl -s https://app.eventmaker.io/api/graphql \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <jeton du visiteur>' \
+  -d '{"query":"{ viewer { meetings { id startDate status exhibitors { id companyName } } } }"}'
+```
+
+Une liste en retour, et tout le reste tient. Un `Unauthorized access`, et il
+faudra demander à Eventmaker par quel chemin le graphe connecté s'ouvre — le
+reste du montage, lui, ne changerait pas : seule la façon d'obtenir le jeton
+serait à revoir, et elle est isolée dans un seul module de chaque côté.

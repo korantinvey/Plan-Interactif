@@ -640,6 +640,14 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:#C2372B;color:#C2372B}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* Le bouton de la section des rendez-vous : pleine largeur, comme celui du
+   pied du tiroir. C'est une invitation, pas une commande de plus au milieu
+   d'une liste, et une demi-largeur la ferait passer pour telle. */
+.pRdvBtn{width:100%;margin-top:2px}
+/* Se déconnecter n'est pas ce qu'on vient faire : le bouton existe, sans
+   disputer la place à celui qui compte. */
+.pRdvBtn.discret{border-color:transparent;color:var(--ink-3);font-size:11.5px}
+.pRdvBtn.discret:hover{border-color:var(--line)}
 /* ------------------------------------------------------------
    La journée organisée
 
@@ -674,6 +682,9 @@ button.expo:hover{background:var(--line)}
   display:grid;place-items:center;line-height:1}
 .jArret.conf .jN{background:var(--surface);color:var(--accent);
   box-shadow:inset 0 0 0 1.5px var(--accent)}
+/* Un rendez-vous n'est pas une conférence : on y est attendu. Le trait plein
+   le dit sans un mot de plus, là où la conférence garde son anneau creux. */
+.jArret.rdv .jN{background:var(--accent);color:#fff;box-shadow:none}
 /* Un rendez-vous qu'on n'atteint pas garde sa place et son heure, mais cesse
    de se donner pour acquis : c'est au visiteur d'arbitrer. */
 .jArret.tard{border-left-color:#C2372B}

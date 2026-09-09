@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones")
+      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, cles")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -264,6 +264,12 @@ Deno.serve(async (req) => {
       fiche: evt.fiche ?? {},
       // sans lui, une heure ISO se lirait dans le fuseau du visiteur
       fuseau: evt.fuseau ?? null,
+      /* Ce salon sait-il rendre à un visiteur les rendez-vous qu'il a pris ?
+         La page a besoin de le savoir avant toute connexion : proposer « vos
+         rendez-vous » sur un salon qui n'est pas relié à Eventmaker ouvrirait
+         une porte qui ne mène nulle part. Ce qu'on publie ici est un oui ou un
+         non — l'identifiant de l'événement, lui, reste au serveur. */
+      rdv: Boolean(String((evt.cles ?? {}).eventmaker ?? "")),
       // l'administration en a besoin pour savoir ce qui a déjà été renommé
       nomsZones: evt.zones ?? {},
       plans: plans.map((p) => {

@@ -1,0 +1,365 @@
+/* ============================================================
+   11 quater. Rendez-vous pris dans l'application du salon
+   ============================================================ */
+/**
+ * Un visiteur qui a réservé trois rendez-vous depuis l'application du salon a
+ * déjà l'ossature de sa journée. Le plan l'ignorait : il lui demandait de la
+ * recomposer à la main, en cherchant chaque enseigne une par une.
+ *
+ * Les rendez-vous ne se composent donc pas ici — on ne fait que les recevoir.
+ * C'est ce qui les sépare du parcours, où tout est choisi, et ce qui justifie
+ * qu'ils aient leur propre liste plutôt que d'être mêlés aux conférences : le
+ * visiteur doit voir d'où ils viennent, et pouvoir les rafraîchir sans que
+ * cela touche à ce qu'il a retenu lui-même.
+ *
+ * Il faut pour cela savoir qui il est, et c'est là que tout se joue : une page
+ * web logée dans une application ne sait rien de qui est connecté à cette
+ * application — les deux compartiments sont étanches, et c'est heureux. Son
+ * identité doit donc lui être passée. Deux façons, dans cet ordre :
+ *
+ *   — l'application la passe elle-même, par `window.planRendezVous(…)` ou par
+ *     le fragment de l'adresse qu'elle ouvre. Rien à l'écran, le visiteur ne
+ *     voit qu'une liste qui était déjà là. C'est la bonne façon, et la seule
+ *     qui soit vraiment transparente ;
+ *   — à défaut, le plan va la demander lui-même. Le visiteur passe par un
+ *     écran de connexion, une fois. C'est le repli, et il n'existe que parce
+ *     que le même plan s'ouvre aussi par un lien ou un code à photographier,
+ *     là où aucune application n'est là pour passer quoi que ce soit.
+ *
+ * Les deux aboutissent au même endroit — un jeton entre les mains de la page —
+ * et tout ce qui suit leur est commun.
+ *
+ * Ce jeton ne sort pas de l'onglet et ne lui survit pas : `sessionStorage`, et
+ * non `localStorage`. Un parcours oublié se recompose, une identité laissée
+ * sur un téléphone prêté se rattrape moins bien. Il n'est jamais envoyé
+ * ailleurs qu'à la fonction « rdv », qui seule sait traduire une fiche
+ * Eventmaker en stand du plan.
+ */
+let RDV = new Map();
+
+/* Où en est la connexion. La liste seule ne suffirait pas à le dire : vide
+   parce qu'on ne sait pas qui vous êtes et vide parce que vous n'avez aucun
+   rendez-vous ne se disent pas de la même façon. */
+let etatRdv = "absent";   // absent · chargement · pret · erreur · expire · refus
+let messageRdv = "";
+
+/* Le plan passe par le Worker, qui relaie : les rendez-vous prennent le même
+   chemin que le plan lui-même, à un segment près. Sans API — la page à données
+   figées — il n'y a personne à qui demander, et la section n'existe pas. */
+const API_RDV = API ? API.replace(/\/[^/]*$/, "/rdv") : "";
+
+/* L'identité vit le temps de l'onglet, et pas au-delà. La clé porte le salon :
+   un même téléphone peut en ouvrir deux, et deux salons ne partagent pas leurs
+   visiteurs. */
+const cleJetonRdv = () => "plan-rdv-jeton:" + (SLUG || "");
+
+/**
+ * Ce salon propose-t-il la chose ?
+ *
+ * Un salon dont les données ne viennent pas d'Eventmaker n'a pas de
+ * rendez-vous à rendre, et lui offrir de se connecter ouvrirait une porte sur
+ * rien. C'est le service qui tranche — il est seul à savoir à quoi l'événement
+ * est relié — et la page ne fait que le lire.
+ *
+ * Un jeton déjà entre nos mains l'emporte : si l'application en a passé un,
+ * c'est qu'elle sait quelque chose que la charge ne dit pas encore.
+ */
+const offreRdv = () => Boolean(API_RDV && DATA && (DATA.rdv || jetonRdv()));
+
+/** Le jeton s'il est encore bon. Un jeton périmé est un jeton absent. */
+function jetonRdv(){
+  try {
+    const b = JSON.parse(sessionStorage.getItem(cleJetonRdv()) || "null");
+    if (!b || !b.jeton) return "";
+    /* Une marge d'une minute : un jeton qui expire pendant l'appel reviendrait
+       en erreur, et le visiteur ne saurait pas pourquoi. */
+    if (b.jusqua && Date.now() > b.jusqua - 60000) return "";
+    return String(b.jeton);
+  } catch (e) {
+    return "";        // navigation privée, stockage refusé : on fera sans
+  }
+}
+
+function poseJetonRdv(jeton, jusqua){
+  try {
+    if (jeton) sessionStorage.setItem(cleJetonRdv(),
+      JSON.stringify({ jeton: String(jeton), jusqua: Number(jusqua) || 0 }));
+    else sessionStorage.removeItem(cleJetonRdv());
+  } catch (e) {}
+}
+
+/**
+ * Ce que l'application du salon appelle pour nous dire qui regarde.
+ *
+ * C'est la façon transparente, et elle tient en une ligne côté application :
+ * une fois la page chargée, elle exécute `planRendezVous("<jeton>")` dans la
+ * vue web. Le second argument, facultatif, est l'instant d'expiration en
+ * millisecondes — sans lui on considère le jeton bon tant qu'il n'est pas
+ * refusé, ce que l'appel suivant apprendra de toute façon.
+ *
+ * Elle est exposée sur `window` parce qu'une application ne peut appeler que
+ * cela : le reste de la page lui est fermé.
+ */
+window.planRendezVous = function(jeton, jusqua){
+  if (!jeton) return;
+  poseJetonRdv(jeton, jusqua);
+  chargeRdv();
+};
+
+/**
+ * L'identité passée par l'adresse, dans son fragment.
+ *
+ * Deux arrivées s'y confondent volontairement : l'application qui ouvre le
+ * plan sur « …#rdv=<jeton> » — la seule voie possible quand la page est dans
+ * un cadre et non dans une vue web —, et le retour de notre propre écran de
+ * connexion, qui repasse par là. Un fragment ne quitte pas le navigateur : le
+ * jeton n'atterrit donc dans aucun journal de serveur.
+ *
+ * Il est effacé de la barre d'adresse aussitôt lu. Ce n'est pas de la pudeur :
+ * une adresse partagée ou remise en signet emporterait sinon l'identité de
+ * celui qui l'a copiée.
+ */
+function litFragmentRdv(){
+  const brut = (location.hash || "").slice(1);
+  if (brut.indexOf("rdv=") < 0) return false;
+  const p = new URLSearchParams(brut);
+  const v = p.get("rdv");
+  history.replaceState(null, "", location.pathname + location.search);
+  if (!v) return false;
+  if (v === "refus"){ etatRdv = "refus"; return false; }
+  poseJetonRdv(v, p.get("jusqua"));
+  return true;
+}
+
+/**
+ * Aller demander l'identité à Eventmaker — le repli.
+ *
+ * Le tour entier se fait côté serveur : la page ne fait que quitter les lieux,
+ * et y revient avec son jeton dans le fragment. Le secret de l'application
+ * n'apparaît jamais ici, et ne le pourrait pas.
+ */
+function connecteRdv(){
+  if (!API_RDV) return;
+  /* Aller chercher ses rendez-vous, c'est composer son parcours : cela se
+     compte avec lui, faute d'un genre à soi dans le vocabulaire des mesures —
+     qui est fermé en base, et qu'un seul geste ne justifie pas d'ouvrir. */
+  mesure("parcours");
+  location.href = API_RDV + "/amorce?slug=" + encodeURIComponent(SLUG) +
+    "&retour=" + encodeURIComponent(location.origin + location.pathname + location.search);
+}
+
+/** Se retirer : le jeton s'efface, les rendez-vous avec lui. */
+function deconnecteRdv(){
+  poseJetonRdv("");
+  RDV = new Map();
+  PARCOURS.rdv = [];
+  etatRdv = "absent";
+  enregistreParcours();
+  rafraichitParcours();
+}
+
+/**
+ * Les rendez-vous du visiteur, s'il y a une identité pour les demander.
+ *
+ * Rien n'est gardé d'un chargement à l'autre : un rendez-vous se prend et
+ * s'annule pendant le salon, et une liste d'hier serait pire que pas de liste.
+ * C'est aussi pourquoi le parcours n'en retient que les identifiants — comme
+ * pour les stands et les conférences, les libellés sont relus à chaque fois.
+ */
+function chargeRdv(){
+  if (!API_RDV || !DATA) return Promise.resolve();
+  const jeton = jetonRdv();
+  if (!jeton){ etatRdv = etatRdv === "refus" ? "refus" : "absent"; rafraichitParcours(); return Promise.resolve(); }
+
+  etatRdv = "chargement";
+  rafraichitParcours();
+  return fetch(API_RDV + "?slug=" + encodeURIComponent(SLUG), {
+    headers: { "X-Jeton-Eventmaker": jeton },
+    cache: "no-store",
+  })
+    .then(r => {
+      /* Une identité refusée n'est pas une panne : elle se dit autrement, et
+         la seule chose à en faire est de la refaire. */
+      if (r.status === 401){
+        poseJetonRdv("");
+        const e = new Error("expire");
+        e.expire = true;
+        throw e;
+      }
+      return r.ok ? r.json()
+                  : r.json().then(j => Promise.reject(new Error(j.erreur || ("HTTP " + r.status))));
+    })
+    .then(d => {
+      RDV = new Map();
+      (d.rdv || []).forEach(r => {
+        /* Un rendez-vous refusé ou annulé n'en est plus un : il resterait sur
+           le plan comme une promesse qui n'a pas lieu. Un statut inconnu, lui,
+           passe — le vocabulaire d'Eventmaker n'est pas de notre ressort, et
+           taire un rendez-vous par excès de prudence serait pire. */
+        if (/declin|refus|cancel|annul|reject/i.test(String(r.statut || ""))) return;
+        RDV.set(String(r.id), {
+          id: String(r.id),
+          debut: r.debut || null,
+          fin: r.fin || null,
+          lieu: r.lieu || null,
+          avec: Array.isArray(r.avec) ? r.avec : [],
+          /* Le service rend des identifiants de stand ; la page ne garde que
+             ceux qu'elle connaît encore. Un stand démonté depuis la dernière
+             synchronisation ne doit pas devenir une étape qu'on ne sait ni
+             ouvrir ni situer. */
+          stands: (Array.isArray(r.stands) ? r.stands : []).map(String).filter(id => parId.has(id)),
+        });
+      });
+      etatRdv = "pret";
+      /* Tout est retenu d'office : ce sont des engagements pris, pas des
+         envies. Le visiteur peut en retirer un — il sait mieux que nous s'il
+         compte s'y rendre —, et ce retrait tient tant que le rendez-vous ne
+         disparaît pas de la liste. */
+      const connus = new Set(PARCOURS.rdvOtes || []);
+      PARCOURS.rdv = [...RDV.keys()].filter(id => !connus.has(id));
+      PARCOURS.rdvOtes = (PARCOURS.rdvOtes || []).filter(id => RDV.has(id));
+      enregistreParcours();
+      rafraichitParcours();
+    })
+    .catch(e => {
+      RDV = new Map();
+      PARCOURS.rdv = [];
+      etatRdv = e.expire ? "expire" : "erreur";
+      messageRdv = e.expire ? "" : e.message;
+      rafraichitParcours();
+    });
+}
+
+/* ------------------------------------------------------------
+   Ce que le tiroir en montre
+   ------------------------------------------------------------ */
+/** L'heure d'un rendez-vous, dans le fuseau du salon. */
+const instantRdv = (r) => momentLocal(r.debut, DATA.fuseau);
+const finRdv = (r) => momentLocal(r.fin, DATA.fuseau);
+
+/** Les rendez-vous retenus, dans l'ordre où on les vivra. */
+function rdvRetenus(){
+  return (PARCOURS.rdv || []).map(id => RDV.get(id)).filter(Boolean)
+    .sort((a, b) => cleTempsRdv(a).localeCompare(cleTempsRdv(b)));
+}
+const cleTempsRdv = (r) => {
+  const d = instantRdv(r);
+  return d ? d.cle + d.h + d.min : "999999999999";
+};
+
+/** De quoi le nommer : l'enseigne d'en face, à défaut le lieu. */
+const titreRdv = (r) =>
+  r.avec.length ? r.avec.join(", ") : (r.lieu || "Rendez-vous");
+
+/** Où il mène sur le plan, s'il mène quelque part. */
+const standRdv = (r) => (r.stands && r.stands.length ? r.stands[0] : null);
+
+/**
+ * La section des rendez-vous dans le tiroir du parcours.
+ *
+ * Elle paraît même vide, dès lors que le salon sait en servir : c'est elle qui
+ * dit au visiteur que la chose existe, et sans elle il n'aurait aucune raison
+ * de se connecter. Elle ne paraît pas du tout sur un salon qui n'est pas relié
+ * à Eventmaker — on ne propose pas une porte qui ne mène nulle part.
+ */
+function sectionRdv(hote){
+  if (!offreRdv()) return;
+
+  const g = groupeParcours(hote, "Rendez-vous");
+
+  const dit = (txt, bouton) => {
+    const p = document.createElement("p");
+    p.className = "pVide";
+    p.textContent = txt;
+    g.appendChild(p);
+    if (!bouton) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn pRdvBtn";
+    b.textContent = bouton.txt;
+    b.onclick = bouton.fait;
+    g.appendChild(b);
+  };
+
+  if (etatRdv === "chargement"){ dit("Recherche de vos rendez-vous…"); return; }
+  if (etatRdv === "absent" || etatRdv === "refus" || etatRdv === "expire"){
+    dit(etatRdv === "expire"
+        ? "Votre connexion a expiré. Reconnectez-vous pour retrouver vos rendez-vous."
+        : "Connectez-vous pour retrouver ici les rendez-vous pris avec les exposants, " +
+          "et les inclure dans votre journée.",
+        { txt: "Retrouver mes rendez-vous", fait: connecteRdv });
+    return;
+  }
+  if (etatRdv === "erreur"){
+    dit("Vos rendez-vous n'ont pas pu être lus" + (messageRdv ? " : " + messageRdv : "."),
+        { txt: "Réessayer", fait: chargeRdv });
+    return;
+  }
+
+  /* Se retirer, une fois connecté. Un téléphone se prête, et le visiteur
+     suivant n'a pas à hériter des rendez-vous du précédent — le jeton meurt
+     déjà avec l'onglet, mais l'onglet, lui, peut rester ouvert longtemps. */
+  const pied = () => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn pRdvBtn discret";
+    b.textContent = "Ce n'est pas moi — me déconnecter";
+    b.onclick = deconnecteRdv;
+    g.appendChild(b);
+  };
+
+  const l = rdvRetenus();
+  if (!l.length && !(PARCOURS.rdvOtes || []).length){
+    dit("Aucun rendez-vous pour ce salon.", { txt: "Actualiser", fait: chargeRdv });
+    pied();
+    return;
+  }
+
+  let jour = null;
+  l.forEach(r => {
+    const d = instantRdv(r), f = finRdv(r);
+    if (d && d.cle !== jour){
+      jour = d.cle;
+      const t = document.createElement("div");
+      t.className = "jour";
+      t.textContent = jourCourt(d);
+      g.appendChild(t);
+    }
+    const s = standRdv(r);
+    const o = s && parId.get(s);
+    rangParcours(g, {
+      genre: "rdv", id: r.id, dessus: true,
+      titre: titreRdv(r),
+      detail: [
+        d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "",
+        r.lieu || (o ? DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "") : ""),
+      ].filter(Boolean).join(" · "),
+      /* Un rendez-vous sans stand garde sa place et son heure — c'est un
+         rendez-vous quand même — mais n'a nulle part où mener. */
+      ouvre: () => { if (s) select(s, true, "parcours"); },
+    });
+  });
+
+  /* Ce qu'on a retiré reste rattrapable : un rendez-vous écarté par mégarde
+     ne se retrouve nulle part ailleurs, l'application ne le rendra pas deux
+     fois. */
+  const otes = (PARCOURS.rdvOtes || []).filter(id => RDV.has(id));
+  if (otes.length){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn pRdvBtn";
+    b.textContent = otes.length > 1
+      ? "Remettre les " + otes.length + " rendez-vous écartés"
+      : "Remettre le rendez-vous écarté";
+    b.onclick = () => {
+      PARCOURS.rdvOtes = [];
+      PARCOURS.rdv = [...RDV.keys()];
+      enregistreParcours();
+      rafraichitParcours();
+    };
+    g.appendChild(b);
+  }
+
+  pied();
+}
+

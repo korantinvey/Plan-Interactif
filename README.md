@@ -151,6 +151,86 @@ libellés sont relus dans les données à chaque affichage. Ce que le plan ne
 connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
 un rang mort.
 
+## Les rendez-vous pris dans l'application du salon
+
+Certains salons embarquent ce plan dans leur application mobile, où le visiteur
+s'est déjà connecté et où il a peut-être **pris rendez-vous avec des
+exposants**. Il a donc, ailleurs, l'ossature de sa journée — et le plan lui
+demandait jusqu'ici de la recomposer à la main.
+
+Il les reprend désormais. Ils forment une **troisième liste** dans le tiroir du
+parcours, à part des exposants et des conférences : le visiteur ne les compose
+pas, il les reçoit. Chacun allume le stand de son interlocuteur sur le plan, et
+devient un **point fixe de la journée organisée**, au même titre qu'une
+conférence — une heure qu'on ne déplace pas, autour de laquelle les stands se
+glissent. Il peut en écarter un, s'il sait qu'il n'ira pas ; le retrait est
+retenu, et rattrapable d'un bouton.
+
+### Savoir qui regarde
+
+Une page web logée dans une application ne sait **rien** de qui est connecté à
+cette application : les deux compartiments sont étanches, et c'est heureux.
+L'identité doit donc lui être passée. Deux façons, dans cet ordre :
+
+**L'application la passe elle-même** — c'est la bonne, et la seule vraiment
+transparente : le visiteur ne voit qu'une liste qui était déjà là. Une ligne
+suffit côté application, une fois la page chargée :
+
+```js
+planRendezVous("<jeton Eventmaker du visiteur>", <expiration en ms, facultatif>)
+```
+
+Quand le plan est dans un cadre plutôt que dans une vue web, où cet appel n'est
+pas possible, l'application ouvre l'adresse avec le jeton dans son **fragment** :
+`…/plan.html?plan=<slug>#rdv=<jeton>`. Un fragment ne quitte pas le navigateur ;
+la page l'efface de la barre d'adresse aussitôt lu.
+
+**À défaut, le plan va la demander lui-même.** Le bouton « Retrouver mes
+rendez-vous » emmène le visiteur sur l'écran de connexion Eventmaker et le
+ramène connecté. C'est le repli, et il existe parce que le même plan s'ouvre
+aussi par un lien ou un code à photographier, là où aucune application n'est
+présente pour passer quoi que ce soit. Il n'est pas transparent : si
+l'application a connecté le visiteur dans son propre compartiment, la page web
+n'est pas reconnue et l'écran de connexion paraît — une fois.
+
+Les deux aboutissent au même endroit, et tout ce qui suit leur est commun.
+
+### Ce qui va où
+
+Le jeton du visiteur vit dans `sessionStorage`, **le temps de l'onglet et pas
+au-delà** : un parcours oublié se recompose, une identité laissée sur un
+téléphone prêté se rattrape moins bien. Un bouton discret permet de s'en
+retirer. Il n'est envoyé qu'à la fonction `rdv`, jamais écrit ni journalisé.
+
+Les rendez-vous eux-mêmes ne sont **jamais mis en cache**, nulle part : ils
+appartiennent à une personne, se prennent et s'annulent pendant le salon, et
+une liste d'hier vaudrait moins que pas de liste. Le parcours n'en retient que
+ce que le visiteur en a écarté.
+
+### Ce qu'il faut poser pour que cela fonctionne
+
+Rien de tout cela ne s'allume seul. Le bloc n'apparaît que sur un salon dont
+les exposants viennent d'Eventmaker, et il faut en plus :
+
+1. **Inscrire le plan comme application OAuth chez Eventmaker.** On y déclare un
+   nom et une adresse de retour, on reçoit un identifiant et un secret. L'adresse
+   de retour est celle du plan, `https://<domaine>/api/rdv/retour`, au caractère
+   près.
+2. **Poser les secrets côté Supabase** (voir le tableau plus bas) :
+   `EVENTMAKER_OAUTH_ID`, `EVENTMAKER_OAUTH_SECRET` et `RDV_ADRESSE`.
+3. **Resynchroniser le salon une fois.** La correspondance entre les dossiers
+   d'exposants et les stands du plan est écrite par la synchronisation ; sans
+   elle, les rendez-vous s'affichent avec leur heure mais ne mènent nulle part.
+
+Le repli par écran de connexion est le seul à demander les trois. La façon
+transparente — l'application passe le jeton — ne demande que le troisième point.
+
+> **Un point reste à vérifier sur le terrain.** Les rendez-vous vivent dans la
+> partie connectée du graphe Eventmaker, qui refuse tout net sans identité. Que
+> le jeton délivré par ce chemin-là suffise à l'ouvrir n'a pas pu être établi
+> sans compte de test : c'est à confirmer sur un salon réel avant de compter
+> dessus. `outils/eventmaker.md` dit ce qui a été établi, et comment.
+
 ## L'itinéraire d'un stand à l'autre
 
 Un bouton de la barre du haut, et un bouton « Itinéraire » sur chaque fiche,
@@ -654,6 +734,17 @@ Les secrets des fonctions — `KLIPSO_API_KEY`, `EVENTMAKER_TOKEN`,
 `ORIGINES_AUTORISEES` — restent posés côté Supabase par `npx supabase secrets
 set`. Ils n'ont pas à transiter par GitHub, et le déploiement ne les touche
 pas.
+
+S'y ajoutent, pour les rendez-vous, trois secrets **facultatifs** : sans eux
+tout le reste fonctionne, et seul le repli par écran de connexion est
+indisponible.
+
+| secret | ce qu'il vaut |
+|---|---|
+| `EVENTMAKER_OAUTH_ID` | l'identifiant de l'application inscrite chez Eventmaker |
+| `EVENTMAKER_OAUTH_SECRET` | son secret, qui ne doit jamais atteindre une page |
+| `RDV_ADRESSE` | l'adresse publique de la fonction, `https://<domaine>/api/rdv` — celle qu'Eventmaker rappellera, et qui doit être déclarée à l'inscription |
+| `EVENTMAKER_SSO` | le domaine de connexion, si le salon en héberge un à lui ; sinon `https://app.eventmaker.io` sert pour tous |
 
 `workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
 l'onglet **Actions**, sans rien pousser.

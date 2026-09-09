@@ -12,6 +12,12 @@ function demarre(d){
   liste();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
+  /* L'identité passée par l'application, ou rapportée de l'écran de connexion,
+     est dans le fragment : on la relève avant de lire ce dernier comme un
+     numéro de stand, sinon « #rdv=… » passerait pour un emplacement.
+     Les rendez-vous, eux, arrivent quand ils arrivent — le plan est déjà là. */
+  litFragmentRdv();
+  chargeRdv();
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);

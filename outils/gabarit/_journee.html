@@ -62,6 +62,65 @@ function ecritMinutes(m){
   return h + " h" + (r ? " " + r + " min" : "");
 }
 
+/* ------------------------------------------------------------
+   Les points fixes : conférences retenues et rendez-vous pris
+   ------------------------------------------------------------ */
+/**
+ * Ce que la journée ne déplace pas.
+ *
+ * Une conférence commence à l'heure dite ; un rendez-vous pris avec un
+ * exposant aussi, et il engage en plus quelqu'un d'en face. Ni l'un ni l'autre
+ * ne se négocie : ce sont les points fixes autour desquels les stands se
+ * glissent, et le calcul n'a aucune raison de les distinguer.
+ *
+ * Il ne les distingue donc pas. Tout ce qui suit — l'heure, le lieu, la façon
+ * de l'ouvrir, ce qu'on en dit quand il ne tient pas — passe par ces quelques
+ * fonctions, et le reste du calcul ne sait plus de quel genre il s'agit. Seul
+ * l'affichage le rappelle, parce que le visiteur, lui, fait la différence.
+ */
+const pointsFixes = () => [
+  ...PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ genre: "conf", c: c })),
+  ...rdvRetenus().map(r => ({ genre: "rdv", r: r })),
+];
+
+const instantFixe = (x) => x.genre === "rdv" ? instantRdv(x.r) : instantConf(x.c);
+const finFixe = (x) => x.genre === "rdv" ? finRdv(x.r) : finInstant(x.c);
+const idFixe = (x) => x.genre === "rdv" ? x.r.id : x.c.id;
+const nomFixe = (x) => x.genre === "rdv" ? titreRdv(x.r) : x.c.nom;
+const couleurFixe = (x) => x.genre === "rdv" ? null : x.c.couleur;
+
+/** Le stand ou la zone où il se tient, s'il en a un sur le plan. */
+function pointFixe(x){
+  if (x.genre !== "rdv") return pointConf(x.c);
+  const s = standRdv(x.r), o = s && parId.get(s);
+  return o ? pointObjet(o) : null;
+}
+
+/** Ce qu'on écrit sous son nom : la salle, ou l'endroit du rendez-vous. */
+function lieuFixe(x){
+  if (x.genre !== "rdv") return x.c.salle || "";
+  const s = standRdv(x.r), o = s && parId.get(s);
+  return x.r.lieu || (o ? DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "") : "");
+}
+
+/** Ce qu'ouvre un appui dessus : la fiche de la conférence, le stand de l'autre. */
+const ouvreFixe = (x) => x.genre === "rdv"
+  ? () => { const s = standRdv(x.r); if (s) select(s, true, "parcours"); }
+  : () => ficheConf(x.c.id, "parcours");
+
+/** Son rang dans une liste du tiroir, avec le détail qu'on veut y lire. */
+const rangFixe = (x, detail) => ({
+  genre: x.genre, id: idFixe(x), couleur: couleurFixe(x), dessus: true,
+  titre: nomFixe(x), detail: detail, ouvre: ouvreFixe(x),
+});
+
+/** L'heure seule, telle que les listes de laissés-pour-compte la montrent. */
+const heureFixe = (x) => {
+  const d = instantFixe(x);
+  return [d ? d.h + "h" + d.min : "", lieuFixe(x)].filter(Boolean).join(" · ");
+};
+
 /** Les jours où le salon a un programme, dans l'ordre. */
 function joursSalon(){
   const vus = new Map();
@@ -72,11 +131,10 @@ function joursSalon(){
   return [...vus.values()].sort((a, b) => a.cle.localeCompare(b.cle));
 }
 
-/** Le jour sur lequel la fenêtre s'ouvre : celui de la première conférence
- *  retenue, à défaut le premier du salon. */
+/** Le jour sur lequel la fenêtre s'ouvre : celui du premier point fixe retenu
+ *  — conférence ou rendez-vous —, à défaut le premier du salon. */
 function jourPropose(){
-  const d = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
-    .map(instantConf).filter(Boolean)
+  const d = pointsFixes().map(instantFixe).filter(Boolean)
     .sort((a, b) => a.cle.localeCompare(b.cle))[0];
   if (d) return d.cle;
   const j = joursSalon();
@@ -330,30 +388,36 @@ function calculeJournee(choix){
   const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
   const horsJour = [], passees = [], sansLieu = [], chevauchent = [];
 
-  const retenues = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
-    .map(c => ({ c: c, d: instantConf(c), f: finInstant(c) }))
+  /* Conférences retenues et rendez-vous pris, dans un seul ordre : ce sont
+     les mêmes heures immuables, et les mêler ici est la seule façon qu'un
+     stand ne se glisse pas entre deux choses qui se recouvrent. */
+  const retenues = pointsFixes()
+    .map(x => ({ ...x, d: instantFixe(x), f: finFixe(x) }))
     .sort((a, b) => (minutesDe(a.d) || 0) - (minutesDe(b.d) || 0));
 
-  const rdv = [];
+  const fixes = [];
   let finPrec = -Infinity;
   retenues.forEach(x => {
-    if (!x.d || (choix.jour && x.d.cle !== choix.jour)){ horsJour.push(x.c); return; }
+    if (!x.d || (choix.jour && x.d.cle !== choix.jour)){ horsJour.push(x); return; }
     const t0 = minutesDe(x.d);
-    /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
-       on ne la fait pas manquer, on la dit manquée. */
-    if (t0 < choix.arrivee){ passees.push(x.c); return; }
-    /* Deux conférences qui se recouvrent ne se suivent pas : on ne peut pas
-       assister aux deux, et les enchaîner ferait une journée qui remonte le
+    /* Ce qui a commencé avant l'arrivée ne se rattrape pas : on ne le fait
+       pas manquer, on le dit manqué. */
+    if (t0 < choix.arrivee){ passees.push(x); return; }
+    /* Deux choses qui se recouvrent ne s'enchaînent pas : on ne peut pas être
+       aux deux, et les mettre à la suite ferait une journée qui remonte le
        temps. On garde celle qui commence la première — retenue plus tôt dans
        la liste, elle est aussi celle qu'on peut encore attraper — et on dit
-       l'autre plutôt que de la programmer pour rien. */
-    if (t0 < finPrec){ chevauchent.push(x.c); return; }
-    const pt = pointConf(x.c);
-    if (!pt) sansLieu.push(x.c);
+       l'autre plutôt que de la programmer pour rien.
+
+       Un rendez-vous n'y a aucun privilège, et c'est voulu : c'est au visiteur
+       de décider ce qu'il sacrifie, et il ne le peut que si on le lui dit. */
+    if (t0 < finPrec){ chevauchent.push(x); return; }
+    const pt = pointFixe(x);
+    if (!pt) sansLieu.push(x);
     /* Sans heure de fin, on compte une heure : enchaîner aussitôt ferait un
        programme faux, et attendre la journée entière un programme vide. */
     const t1 = x.f ? Math.max(t0 + 5, minutesDe(x.f)) : t0 + 60;
-    rdv.push({ c: x.c, pt: pt, t0: t0, t1: t1 });
+    fixes.push({ x: x, pt: pt, t0: t0, t1: t1 });
     finPrec = t1;
   });
 
@@ -362,7 +426,7 @@ function calculeJournee(choix){
   const PTS = [];
   const iDepart = choix.depart ? PTS.push(choix.depart) - 1 : -1;
   const iStands = stands.map(o => PTS.push(pointObjet(o)) - 1);
-  rdv.forEach(r => { r.i = PTS.push(r.pt) - 1; });
+  fixes.forEach(r => { r.i = PTS.push(r.pt) - 1; });
 
   const D = matriceJournee(PTS, pmr);
   /* Un bout de trajet dont on ignore un des deux bouts ne coûte rien : le
@@ -371,12 +435,12 @@ function calculeJournee(choix){
   const dist = (a, b) => (a < 0 || b < 0 || !PTS[a] || !PTS[b]) ? 0 : D[a][b];
   const tempsCreneau = (c, m) => enMinutes(m) + c.stands.length * tv;
 
-  /* Les intervalles entre rendez-vous, c'est là qu'on range les stands. Une
+  /* Les intervalles entre points fixes, c'est là qu'on range les stands. Une
      conférence dont la salle n'est située nulle part borne l'heure sans borner
      le lieu : on ne sait pas s'en approcher, et on repart d'où l'on était. */
   const creneaux = [];
   let de = iDepart, t0 = choix.arrivee;
-  rdv.forEach(r => {
+  fixes.forEach(r => {
     creneaux.push({ de: de, t0: t0, vers: r.pt ? r.i : -1, tMax: r.t0, stands: [] });
     if (r.pt) de = r.i;
     t0 = r.t1;
@@ -439,11 +503,11 @@ function calculeJournee(choix){
       t += tv;
       ou = s;
     });
-    const r = rdv[k];
+    const r = fixes[k];
     if (!r) return;
     rejoint(ou, r.i);
     const arrive = t;                       // l'heure qu'il serait vraiment
-    if (arrive > r.t0 + 1) retards.push({ c: r.c, min: arrive - r.t0 });
+    if (arrive > r.t0 + 1) retards.push({ x: r.x, min: arrive - r.t0 });
     /* Un creux avant le premier rendez-vous n'est pas de même nature que les
        autres : ceux du milieu de journée sont pris entre deux choses fixes,
        celui-là ne tient qu'à l'heure qu'on a dite en arrivant. Le visiteur
@@ -452,21 +516,21 @@ function calculeJournee(choix){
     else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive,
                                           premier: k === 0 });
     const n = pose(r.i, true);
-    /* Le retard voyage avec la conférence : la ligne garde l'heure du
-       programme — c'est elle qui est affichée partout ailleurs — et dit à
-       côté celle où l'on y serait vraiment. Une alerte en bas de tiroir se
-       lit trop tard pour la ligne qu'elle concerne. */
-    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1,
+    /* Le retard voyage avec la ligne : elle garde l'heure du programme — c'est
+       elle qui est affichée partout ailleurs — et dit à côté celle où l'on y
+       serait vraiment. Une alerte en bas de tiroir se lit trop tard pour la
+       ligne qu'elle concerne. */
+    etapes.push({ genre: "fixe", n: n, x: r.x, pt: r.pt, t0: r.t0, t1: r.t1,
                   retard: Math.max(0, arrive - r.t0) });
-    /* La conférence garde ses heures — ce sont celles du programme — mais
-       l'horloge du visiteur, elle, ne remonte pas : arriver après la fin
-       d'une séance n'est pas y assister, et la suite de la journée part de
-       l'heure qu'il est, non de celle qu'on aurait aimé. */
+    /* Le point fixe garde ses heures — ce sont celles du programme, ou celles
+       convenues avec l'exposant — mais l'horloge du visiteur, elle, ne
+       remonte pas : arriver après la fin n'est pas y avoir été, et la suite de
+       la journée part de l'heure qu'il est, non de celle qu'on aurait aimé. */
     t = Math.max(arrive, r.t1);
-    /* Une conférence dont la salle n'est rattachée à aucune zone ne dit pas
-       où l'on se trouve après elle : on repart du dernier endroit connu,
-       sans quoi le trajet suivant — un changement de pavillon, souvent —
-       disparaîtrait du déroulé sans un mot. */
+    /* Un point fixe qui n'est situé nulle part ne dit pas où l'on se trouve
+       après lui : on repart du dernier endroit connu, sans quoi le trajet
+       suivant — un changement de pavillon, souvent — disparaîtrait du déroulé
+       sans un mot. */
     if (r.pt) ou = r.i;
   });
 
@@ -510,20 +574,24 @@ function lienJournee(hote, texte){
 function arretJournee(hote, e){
   const b = document.createElement("button");
   b.type = "button";
-  b.className = "jArret" + (e.genre === "conf" ? " conf" : "");
+  b.className = "jArret" + (e.genre === "fixe" ? " conf" : "") +
+                (e.genre === "fixe" && e.x.genre === "rdv" ? " rdv" : "");
   b.innerHTML = '<span class="jN"></span><span class="jTxt"><span class="jT"></span>' +
                 '<span class="jS"></span></span><span class="jD"></span>';
   b.querySelector(".jN").textContent = e.n;
   b.querySelector(".jD").textContent = ecritMinutes(e.t1 - e.t0);
-  if (e.genre === "conf"){
-    if (e.c.couleur) b.style.setProperty("--tc", e.c.couleur);
-    b.querySelector(".jT").textContent = e.c.nom;
+  if (e.genre === "fixe"){
+    const c = couleurFixe(e.x);
+    if (c) b.style.setProperty("--tc", c);
+    b.querySelector(".jT").textContent =
+      (e.x.genre === "rdv" ? "Rendez-vous · " : "") + nomFixe(e.x);
     b.querySelector(".jS").textContent =
-      ([e.c.salle, e.pt ? e.pt.detail : ""].filter(Boolean).join(" · ") ||
-       "Salle non située sur le plan") +
+      ([lieuFixe(e.x), e.pt ? e.pt.detail : ""].filter(Boolean).join(" · ") ||
+       (e.x.genre === "rdv" ? "Lieu non situé sur le plan"
+                            : "Salle non située sur le plan")) +
       (e.retard > 1 ? " · vous y seriez à " + ecritHeure(e.t0 + e.retard) : "");
     if (e.retard > 1) b.classList.add("tard");
-    b.onclick = () => ficheConf(e.c.id, "parcours");
+    b.onclick = ouvreFixe(e.x);
   } else {
     b.querySelector(".jT").textContent = e.pt.nom;
     b.querySelector(".jS").textContent = e.pt.detail;
@@ -603,9 +671,10 @@ function remplitJournee(){
 
   /* Un rendez-vous qu'on n'atteint pas ne se raye pas tout seul : le visiteur
      décidera ce qu'il sacrifie, pas nous. */
-  j.retards.forEach(r => dit("iAlerte", "« " + r.c.nom + " » : au mieux, vous y " +
+  j.retards.forEach(r => dit("iAlerte", "« " + nomFixe(r.x) + " » : au mieux, vous y " +
     "arriveriez " + ecritMinutes(r.min) + " après le début — le trajet n'y suffit " +
-    "pas. Arrivez plus tôt, ou retirez ce qui la précède."));
+    "pas. Arrivez plus tôt, ou retirez ce qui précède." +
+    (r.x.genre === "rdv" ? " Prévenez l'exposant si vous ne pouvez pas être à l'heure." : "")));
 
   /* En l'état cette liste reste vide : la journée n'a pas d'heure de fin, si
      bien qu'un stand refusé entre deux conférences finit toujours par tenir
@@ -619,33 +688,18 @@ function remplitJournee(){
     ouvre: () => select(o.id, true, "parcours"),
   }));
 
-  groupe("Un autre jour", j.horsJour, c => ({
-    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
-    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
-    ouvre: () => ficheConf(c.id, "parcours"),
-  }));
+  groupe("Un autre jour", j.horsJour,
+    x => rangFixe(x, jourCourt(instantFixe(x)) || "date inconnue"));
 
-  groupe("En même temps qu'une autre", j.chevauchent, c => ({
-    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
-    titre: c.nom,
-    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
-            (c.salle ? " · " + c.salle : ""),
-    ouvre: () => ficheConf(c.id, "parcours"),
-  }));
+  groupe("En même temps qu'autre chose", j.chevauchent, x => rangFixe(x, heureFixe(x)));
 
-  groupe("Déjà commencées à votre arrivée", j.passees, c => ({
-    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
-    titre: c.nom,
-    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
-            (c.salle ? " · " + c.salle : ""),
-    ouvre: () => ficheConf(c.id, "parcours"),
-  }));
+  groupe("Déjà commencé à votre arrivée", j.passees, x => rangFixe(x, heureFixe(x)));
 
   if (j.sansLieu.length) dit("iNote", j.sansLieu.length > 1
-    ? "Certaines conférences retenues ne sont rattachées à aucune zone du plan : " +
-      "elles gardent leur heure, mais le trajet ne peut pas y mener."
-    : "« " + j.sansLieu[0].nom + " » n'est rattachée à aucune zone du plan : elle " +
-      "garde son heure, mais le trajet ne peut pas y mener.");
+    ? "Certains points de votre journée ne sont situés nulle part sur le plan : " +
+      "ils gardent leur heure, mais le trajet ne peut pas y mener."
+    : "« " + nomFixe(j.sansLieu[0]) + " » n'est situé nulle part sur le plan : " +
+      "l'heure est gardée, mais le trajet ne peut pas y mener.");
 
   /* Une demi-heure à patienter se remarque, et sans un mot elle passe pour une
      étourderie du calcul. On dit donc d'où elle vient — il n'y avait plus rien
@@ -735,9 +789,9 @@ function ouvreOrganisation(){
 
   ouvreModale("Organiser ma journée", corps => {
     const p = document.createElement("p");
-    p.textContent = "On place d'abord les conférences que vous avez retenues — " +
-      "elles ne se déplacent pas — puis on glisse les stands entre elles, dans " +
-      "l'ordre qui fait le moins de chemin.";
+    p.textContent = "On place d'abord ce qui a une heure — vos rendez-vous et " +
+      "les conférences retenues, qui ne se déplacent pas — puis on glisse les " +
+      "stands entre eux, dans l'ordre qui fait le moins de chemin.";
     corps.appendChild(p);
 
     const form = document.createElement("div");

@@ -132,14 +132,40 @@ const REQUETE_PROGRAMME = `query Programme($eventId: ID!, $id: ID!, $cursor: Str
   }
 }`;
 
+/* Les rendez-vous d'un visiteur, tels que son application les lui montre.
+   Même graphe que le programme, mais sous `viewer` et non `publicViewer` : la
+   vue connectée, qui refuse tout net sans identité. Le visiteur n'y est pas
+   nommé — c'est son jeton qui le désigne — et l'événement non plus, pour la
+   même raison.
+
+   `exhibitors` y est du type `ProgramExhibitor`, celui-là même que les
+   sessions portent : le rattachement au plan emprunte donc la chaîne déjà
+   éprouvée, fiche d'invité → `id_dossier` → stand, sans rien inventer. */
+const REQUETE_RDV = `query MesRendezVous {
+  viewer {
+    meetings {
+      id
+      startDate
+      endDate
+      status
+      location { name }
+      exhibitors { id name companyName }
+    }
+  }
+}`;
+
 /** Un appel au graphe qui ne jette pas : une erreur GraphQL est une réponse. */
 async function grapheJson(
   requete: string,
   variables: Record<string, unknown>,
+  jeton?: string,
 ): Promise<any> {
   const r = await fetch(GRAPHE, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(jeton ? { Authorization: "Bearer " + jeton } : {}),
+    },
     body: JSON.stringify({ query: requete, variables }),
   });
   try {
@@ -395,17 +421,7 @@ export class Eventmaker {
        une société déjà présente au catalogue, pas la personne qui porte le
        badge. */
     const ids = [...new Set([...citesParSession.values()].flatMap((m) => [...m.keys()]))];
-    const dossiers = new Map(await enParallele(ids, DE_FRONT, async (gid) => {
-      try {
-        const g = await this.json<Record<string, any>>(
-          `/events/${id}/guests/${gid}.json`,
-          { guest_metadata: "true" },
-        );
-        return [gid, this.dossier(g, champs(g.guest_metadata))] as [string, string];
-      } catch (_) {
-        return [gid, ""] as [string, string];
-      }
-    }));
+    const dossiers = await this.dossiersDeFiches(id, ids);
 
     const out = new Map<string, ExposantConfEm[]>();
     for (const [session, cites] of citesParSession) {
@@ -418,6 +434,88 @@ export class Eventmaker {
       if (l.length) out.set(session, l);
     }
     return out;
+  }
+
+  /**
+   * Le dossier que porte chacune de ces fiches d'invité.
+   *
+   * Le graphe ne nomme un exposant que par l'identifiant de sa fiche ; le
+   * dossier, lui, n'est que dans la fiche, qu'il faut donc relire une par une.
+   * Une lecture qui échoue rend un dossier vide plutôt que de faire échouer les
+   * autres : une fiche supprimée depuis n'est pas une panne.
+   */
+  private async dossiersDeFiches(
+    id: string,
+    ids: string[],
+  ): Promise<Map<string, string>> {
+    return new Map(await enParallele(ids, DE_FRONT, async (gid) => {
+      try {
+        const g = await this.json<Record<string, any>>(
+          `/events/${id}/guests/${gid}.json`,
+          { guest_metadata: "true" },
+        );
+        return [gid, this.dossier(g, champs(g.guest_metadata))] as [string, string];
+      } catch (_) {
+        return [gid, ""] as [string, string];
+      }
+    }));
+  }
+
+  /**
+   * Les rendez-vous du visiteur qui présente ce jeton.
+   *
+   * Ce n'est pas la synchronisation qui appelle ceci, mais la fonction « rdv »,
+   * à la demande : un rendez-vous appartient à une personne, il se prend et
+   * s'annule entre deux synchronisations, et rien de tout cela n'a sa place
+   * dans une charge publique servie à tout le monde.
+   *
+   * Deux jetons se croisent ici, et il ne faut pas les confondre. Celui du
+   * visiteur, passé en argument, dit au graphe de qui l'on parle ; il vient de
+   * l'application du salon et ne sert qu'à cet appel. Celui de l'organisateur,
+   * qui est dans la configuration, relit ensuite les fiches des exposants cités
+   * — le visiteur n'a pas les droits pour cela, et n'a pas à les avoir.
+   *
+   * Le dossier rendu n'est pas encore un stand : c'est l'appelant qui le
+   * traduit, lui seul connaissant le plan. Ici on ne sait rien du plan.
+   */
+  async rendezVous(jetonVisiteur: string, id: string): Promise<RendezVousEm[]> {
+    const r = await grapheJson(REQUETE_RDV, {}, jetonVisiteur);
+    /* Une identité refusée n'est pas une absence de rendez-vous, et les deux
+       ne se disent pas pareil au visiteur : on jette plutôt que de rendre une
+       liste vide qui lui ferait croire son agenda désert. */
+    if (r?.errors?.length) {
+      throw new Error(String(r.errors[0]?.message ?? "graphe Eventmaker"));
+    }
+    const bruts: any[] = r?.data?.viewer?.meetings ?? [];
+    if (!bruts.length) return [];
+
+    const ids = [
+      ...new Set(bruts.flatMap((m) => (m?.exhibitors ?? []).map((e: any) => String(e.id)))),
+    ];
+    const dossiers = await this.dossiersDeFiches(id, ids);
+
+    return bruts.map((m) => {
+      const cites: { dossier: string; nom: string | null }[] = [];
+      for (const e of m?.exhibitors ?? []) {
+        const dossier = dossiers.get(String(e.id));
+        // deux badges d'une même enseigne citent le même dossier : une fois suffit
+        if (dossier && !cites.some((x) => x.dossier === dossier)) {
+          cites.push({ dossier, nom: ou(e.companyName ?? e.name) });
+        }
+      }
+      return {
+        id: String(m.id),
+        debut: m.startDate ?? null,
+        fin: m.endDate ?? null,
+        statut: ou(m.status),
+        /* « Table 12 », « Espace networking » : le nom du lieu tel que
+           l'organisateur l'a saisi. Ce n'est pas une zone du plan, et rien ne
+           dit qu'il s'y retrouve — c'est le stand de l'exposant qui situe le
+           rendez-vous, ce libellé ne fait que le préciser. */
+        lieu: ou(m.location?.name),
+        exposants: cites,
+      };
+    });
   }
 
   /**
@@ -705,6 +803,22 @@ export interface ConferenceEm {
   type: string | null;
   couleur: string | null;
   theme: string | null;
+}
+
+/**
+ * Un rendez-vous tel que le graphe le rend, avant que le plan ne le situe.
+ *
+ * Les heures arrivent en ISO, sans équivalent local — le graphe n'a pas le
+ * `start_date_to_timezone` des sessions REST. C'est le fuseau de l'événement,
+ * déjà connu de la page, qui les ramènera à l'heure du salon.
+ */
+export interface RendezVousEm {
+  id: string;
+  debut: string | null;
+  fin: string | null;
+  statut: string | null;
+  lieu: string | null;
+  exposants: { dossier: string; nom: string | null }[];
 }
 
 /** Le code d'emplacement caché dans un nom de salle : « Agora (P160) ». */

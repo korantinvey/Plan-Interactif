@@ -30,13 +30,13 @@ Fonctions :
 
 `#pousseConf` · `#razConf`
 
-### `_admin2.html` — 139 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 22 · `entetesApi` 37 · `chargeFond` 60 · `charge` 92
+`demarre` 8 · `annonce` 28 · `entetesApi` 43 · `chargeFond` 66 · `charge` 98
 
 ### `_auth-plan.html` — 118 l. → plan-admin.html
 
@@ -130,7 +130,7 @@ Fonctions :
 `supprimeForme` 184 · `editionPointerDown` 194 · `editionPointerMove` 239
 `editionPointerUp` 270
 
-### `_head.html` — 1291 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1302 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -177,17 +177,20 @@ Fonctions :
 `armeVisee` 1205 · `finVisee` 1213 · `viseItineraire` 1225 · `ouvreItineraire` 1248
 `fermeItineraire` 1265 · `versItineraire` 1275
 
-### `_journee.html` — 861 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 915 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
 Fonctions :
 
-`minutesDe` 50 · `finInstant` 51 · `ecritHeure` 53 · `ecritMinutes` 58 · `joursSalon` 66
-`jourPropose` 77 · `pointConf` 92 · `departsProposes` 110 · `matriceJournee` 134
-`rangeJournee` 228 · `calculeJournee` 324 · `rangJournee` 491 · `lienJournee` 503
-`arretJournee` 510 · `remplitJournee` 535 · `appliqueVueParcours` 671 · `traceJournee` 697
-`montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 828
+`minutesDe` 50 · `finInstant` 51 · `ecritHeure` 53 · `ecritMinutes` 58 · `pointsFixes` 81
+`instantFixe` 87 · `finFixe` 88 · `idFixe` 89 · `nomFixe` 90 · `couleurFixe` 91
+`pointFixe` 94 · `lieuFixe` 101 · `ouvreFixe` 108 · `rangFixe` 113 · `heureFixe` 119
+`joursSalon` 125 · `jourPropose` 136 · `pointConf` 150 · `departsProposes` 168
+`matriceJournee` 192 · `rangeJournee` 286 · `calculeJournee` 382 · `rangJournee` 555
+`lienJournee` 567 · `arretJournee` 574 · `remplitJournee` 603 · `appliqueVueParcours` 725
+`traceJournee` 751 · `montreJournee` 759 · `perimeJournee` 772 · `ouvreOrganisation` 781
+`lanceJournee` 882
 
 ### `_js.html` — 1476 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -237,18 +240,18 @@ Fonctions :
 `ouvreModale` 5 · `fermeModale` 19 · `confirme` 26 · `deplaceVers` 44 · `versExtremite` 56
 `remplitOrdre` 64 · `ouvreOrdre` 126
 
-### `_parcours.html` — 290 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 329 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
-`cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 68 · `boutonParcours` 74
-`rafraichitMarque` 79 · `brancheParcours` 91 · `marqueParcours` 107
-`rafraichitParcours` 121 · `instantConf` 145 · `cleTemps` 149 · `jourCourt` 155
-`rangParcours` 159 · `groupeParcours` 175 · `remplitParcours` 184 · `ouvreParcours` 246
-`fermeParcours` 258
+`cleParcours` 21 · `casierParcours` 24 · `dansParcours` 27 · `chargeParcours` 29
+`enregistreParcours` 53 · `basculeParcours` 58 · `signetParcours` 85 · `boutonParcours` 91
+`rafraichitMarque` 96 · `brancheParcours` 108 · `marqueParcours` 124
+`rafraichitParcours` 146 · `instantConf` 170 · `cleTemps` 174 · `jourCourt` 180
+`rangParcours` 184 · `groupeParcours` 200 · `remplitParcours` 209 · `ouvreParcours` 282
+`fermeParcours` 294
 
 ### `_pile.html` — 278 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -291,6 +294,16 @@ Fonctions :
 
 `#lienPublic`
 
+### `_rdv.html` — 365 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 11 quater. Rendez-vous pris dans l'application du salon
+
+Fonctions :
+
+`cleJetonRdv` 54 · `offreRdv` 67 · `jetonRdv` 70 · `poseJetonRdv` 83 · `litFragmentRdv` 122
+`connecteRdv` 141 · `deconnecteRdv` 152 · `chargeRdv` 169 · `instantRdv` 237 · `finRdv` 238
+`rdvRetenus` 241 · `cleTempsRdv` 245 · `titreRdv` 251 · `standRdv` 255 · `sectionRdv` 265
+
 ## Dans `web/`, mais que la construction ne produit pas
 
 Ces fichiers sont servis sans qu'aucune source ne les regénère : les
@@ -304,9 +317,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 716 l.
+### `supabase/functions/_partage/eventmaker.ts` — 830 l.
 
-`grapheJson` 136 · `enParallele` 566 · `texteSeul` 586 · `champs` 665 · `separe` 685
+`grapheJson` 158 · `enParallele` 664 · `texteSeul` 684 · `champs` 763 · `separe` 783
 
 ### `supabase/functions/_partage/gaia.ts` — 224 l.
 
@@ -328,14 +341,14 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 315 l.
+### `supabase/functions/plan-public/index.ts` — 321 l.
 
 `cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
 
-### `supabase/functions/sync-evenement/index.ts` — 1035 l.
+### `supabase/functions/sync-evenement/index.ts` — 1055 l.
 
 `cors` 34 · `client` 72 · `gaia` 79 · `libellesChoix` 90 · `fournisseur` 115 · `range` 155
-`champsKlipso` 176 · `hebergee` 996 · `nettoieUrl` 1011 · `groupeTextes` 1021
+`champsKlipso` 176 · `hebergee` 1016 · `nettoieUrl` 1031 · `groupeTextes` 1041
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -354,11 +367,12 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260908000002_empreinte_fond.sql` — plan
 - `20260909000001_empreinte_calque.sql` — calque
 - `20260909000002_retire_empreinte_plan.sql` — plan
+- `20260909000003_dossiers.sql` — evenement
 
 ## Le reste
 
-- `src/index.mjs` — 168 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `meta` 49 · `gardable` 62 · `range` 67 · `rafraichit` 74 · `mesure` 85
+- `src/index.mjs` — 205 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `meta` 50 · `gardable` 63 · `range` 68 · `rafraichit` 75 · `mesure` 86 · `rdv` 115
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/carte.js` — produit ce fichier.

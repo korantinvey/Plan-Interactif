@@ -389,6 +389,13 @@ Deno.serve(async (req) => {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
       const resume: Record<string, unknown>[] = [];
 
+      /* La correspondance dossier → stand, réunie sur tous les pavillons. Elle
+         se défait à la fin de la boucle avec `parDossier`, qui est propre à un
+         pavillon, et un rendez-vous ne dit pas d'avance sur lequel il tombe :
+         c'est un identifiant de fiche Eventmaker, rien de plus. On la garde
+         donc pour la fonction « rdv », qui la relira bien après. */
+      const tousDossiers: Record<string, string> = {};
+
       /* Les exposants peuvent venir d'Eventmaker. Le rattachement se fait par
          le numéro de stand : Klipso le compose de l'allée et du numéro,
          Eventmaker le saisit à la main, et les deux sont comparés sous forme
@@ -869,6 +876,8 @@ Deno.serve(async (req) => {
           await db.from("cible").upsert(uniques, { onConflict: "evenement_id,genre,id" });
         }
 
+        for (const [d, s] of parDossier) tousDossiers[d] = s;
+
         resume.push({
           pavillon: plan.Libelle,
           stands: stands.length,
@@ -878,6 +887,17 @@ Deno.serve(async (req) => {
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
+      }
+
+      /* On complète plutôt qu'on ne remplace : synchroniser un seul pavillon
+         ne dit rien des dossiers des autres, et les effacer priverait leurs
+         stands de leurs rendez-vous jusqu'à la prochaine synchronisation
+         complète. Une entrée devenue caduque ne gêne personne — elle désigne
+         un stand que la page ne connaît plus, et que la page écarte. */
+      if (Object.keys(tousDossiers).length) {
+        await db.from("evenement")
+          .update({ dossiers: { ...(evt.dossiers ?? {}), ...tousDossiers } })
+          .eq("id", evt.id);
       }
 
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
