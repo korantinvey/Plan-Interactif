@@ -9,10 +9,19 @@
  *
  * Le fond de plan pèse cinquante fois les stands : il part dans un second
  * appel, pour que le plan s'affiche et devienne manipulable sans l'attendre.
- * Sa version est l'empreinte de son propre contenu, et non l'heure de la
- * dernière synchronisation : celle-ci changeait à chaque passage, et un salon
- * resynchronise pour rafraîchir ses exposants bien plus souvent que sa
- * géométrie. Le navigateur ne retélécharge donc un fond que s'il a changé.
+ * Son adresse porte une version — `v=` — que le premier appel a donnée, et
+ * sous laquelle il est déclaré immuable : le navigateur ne le retélécharge
+ * jamais tant qu'elle tient, et ne peut pas resservir l'ancien dès qu'elle
+ * change. Cette version est une empreinte de ce qui sera servi, non une date :
+ * le dessin de chaque calque, la façon dont cette fonction le découpe, et ce
+ * que l'apparence en montre. Une synchronisation qui ne change rien ne fait
+ * donc plus rien retélécharger ; une retouche faite hors synchronisation, si.
+ *
+ * Et le fond ne part qu'amputé de ce que l'exploitant a masqué : le visiteur
+ * n'a aucun moyen de rallumer un calque, il n'a donc rien à faire de son
+ * dessin. L'exploitant authentifié, lui, reçoit le fond entier — c'est à
+ * partir de là qu'il choisit, et sa version ne tient pas compte de l'apparence
+ * pour qu'essayer un réglage ne lui coûte pas un téléchargement.
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
@@ -24,6 +33,8 @@
  * fuiter par ce chemin.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { sansMasques } from "../_partage/svg.ts";
+import { versionFond } from "../_partage/version.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -62,6 +73,34 @@ const db = (req: Request) => {
     },
   );
 };
+
+/**
+ * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
+ * « Batiment » — et de sous-calques — « Batiment/8-VRD-ASS ».
+ *
+ * Un réglage absent montre, comme la page l'entend elle aussi : un salon dont
+ * l'apparence n'a jamais été publiée continue donc de recevoir tout son fond.
+ */
+function masquesDe(reglages: unknown): Record<string, boolean> {
+  const masques: Record<string, boolean> = {};
+  for (const [cle, r] of Object.entries((reglages ?? {}) as Record<string, { visible?: boolean }>)) {
+    if (r && r.visible === false) masques[cle] = true;
+  }
+  return masques;
+}
+
+/** Les mêmes, lus pour un seul pavillon — c'est le second appel qui les demande. */
+async function masquesDuPlan(
+  sb: ReturnType<typeof db>,
+  planId: string,
+): Promise<Record<string, boolean>> {
+  const { data } = await sb
+    .from("apparence")
+    .select("reglages")
+    .eq("plan_id", planId)
+    .maybeSingle();
+  return masquesDe(data?.reglages);
+}
 
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
@@ -143,15 +182,30 @@ Deno.serve(async (req) => {
         .not("svg", "is", null)
         .order("ordre_klipso", { ascending: true });
 
-      return repond({
-        plan: fond,
-        calques: (cal ?? []).map((c) => ({ cle: c.cle, svg: c.svg })),
-      });
+      /* Ce que l'exploitant a masqué ne part pas.
+         Un visiteur n'a aucun moyen de le rallumer — le panneau des calques
+         n'existe qu'en administration — et il en recevait pourtant tout le
+         dessin : chez FEP26, 2,5 Mo pour 35 Ko à l'écran. L'exploitant, lui,
+         reçoit le fond entier : c'est à partir de là qu'il choisit. Le
+         masquage entre dans la version que porte l'adresse, sans quoi le
+         navigateur resservirait le découpage d'avant. */
+      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id);
+      const retenus = (cal ?? [])
+        .filter((c) => !masques[String(c.cle)])
+        .map((c) => ({
+          cle: c.cle,
+          svg: sansMasques(
+            String(c.svg),
+            (id) => Boolean(masques[String(c.cle) + "/" + id]),
+          ),
+        }));
+
+      return repond({ plan: fond, calques: retenus });
     }
 
     const { data: plans } = await sb
       .from("plan")
-      .select("id, id_klipso, libelle, hall, emprise, empreinte")
+      .select("id, id_klipso, libelle, hall, emprise")
       .eq("evenement_id", evt.id)
       .order("libelle", { ascending: true });
     if (!plans?.length) {
@@ -166,7 +220,10 @@ Deno.serve(async (req) => {
     const [calques, apparences, dessins, instantanes] = await Promise.all([
       // pas de colonne svg ici : c'est elle qui pèse, et le second appel la sert.
       // On filtre quand même dessus : un calque sans dessin n'a rien à lister.
-      sb.from("calque").select("plan_id, id_klipso, cle, libelle, ordre_klipso")
+      // L'empreinte, elle, tient en trente-deux octets et dit ce que pèse le
+      // dessin sans le lire : c'est d'elle que sort la version du fond.
+      sb.from("calque")
+        .select("plan_id, id_klipso, cle, libelle, ordre_klipso, empreinte")
         .in("plan_id", ids).not("svg", "is", null),
       sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
       sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
@@ -183,6 +240,21 @@ Deno.serve(async (req) => {
     const parDessin = par(dessins.data);
     const parApparence = Object.fromEntries((apparences.data ?? []).map((a) => [a.plan_id, a]));
     const parInstantane = Object.fromEntries((instantanes.data ?? []).map((i) => [i.plan_id, i]));
+
+    /* La version du fond de chaque pavillon, calculée sur ce qui sera servi :
+       les empreintes des dessins, et — pour un visiteur seul — le masquage qui
+       décide de ce qu'on lui envoie. Le même jeu de masques que celui du second
+       appel, pour que la version ne puisse pas dire autre chose que lui. */
+    const versions = new Map<string, string>();
+    for (const p of plans) {
+      versions.set(
+        p.id,
+        await versionFond(
+          parCalque[p.id] ?? [],
+          identifie ? null : masquesDe(parApparence[p.id]?.reglages),
+        ),
+      );
+    }
 
     const sortie = {
       evenement: evt.nom,
@@ -202,9 +274,9 @@ Deno.serve(async (req) => {
           libelle: p.libelle,
           hall: p.hall,
           emprise: p.emprise ?? charge.emprise ?? null,
-          // tant qu'un pavillon n'a pas été resynchronisé, il n'en a pas :
-          // la page retombe alors sur l'horodatage, comme avant
-          empreinte: p.empreinte ?? null,
+          // ce que la page joindra à l'adresse du fond : tant qu'elle ne bouge
+          // pas, le navigateur ne redemande rien
+          versionFond: versions.get(p.id),
           fond: (parCalque[p.id] ?? [])
             .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
             .map((c) => ({

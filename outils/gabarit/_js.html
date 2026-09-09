@@ -83,13 +83,23 @@ function indexe(d){
         .map(x => (x.nom || "") + " " + (x.plan || "")).join(" ").toLowerCase();
     });
   });
+  /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
+     des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
+     dans la configuration, parlent bien de lui. */
+  indexeSecteurs();
+
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
      téléphone n'a rien dans son stockage local. Le poste ne sert plus que de
-     cache, et de refuge si un enregistrement a échoué. */
+     cache, et de refuge si un enregistrement a échoué — celui de ce salon-ci,
+     que la clé de rangement désigne maintenant. */
+  ouvreConf(d);
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
-    if (a.reglages && Object.keys(a.reglages).length) Object.assign(CONF, a.reglages);
+    // un enregistrement d'avant le cloisonnement porte les calques d'autres
+    // salons : ils ne désignent rien ici, et fausseraient la publication
+    if (a.reglages && Object.keys(a.reglages).length)
+      Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     if (Array.isArray(p.dessins) && p.dessins.length){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
@@ -127,8 +137,6 @@ function indexe(d){
       if (e && e.stand && !l.some(x => x.stand === e.stand)) l.push(e);
     });
   }));
-
-  indexeSecteurs();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;

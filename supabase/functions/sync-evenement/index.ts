@@ -69,21 +69,6 @@ const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
 // Annotations techniques posées sur le plan : ce ne sont pas des noms de zone.
 const TECHNIQUE = /\bkW\b|Hauteur \d|Coffret|Mur inclinable/i;
 
-/**
- * Une empreinte courte du fond de plan.
- *
- * Elle sert de version dans l'adresse du fond, à la place de l'heure de
- * synchronisation : celle-ci changeait à chaque passage, et faisait
- * retélécharger six cent soixante kilo-octets de dessin inchangé à tous les
- * visiteurs. Six octets suffisent — une collision entre deux versions d'un même
- * pavillon montrerait un fond périmé, jamais un fond faux.
- */
-async function condense(v: string): Promise<string> {
-  const bin = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
-  return Array.from(new Uint8Array(bin).slice(0, 6),
-    (o) => o.toString(16).padStart(2, "0")).join("");
-}
-
 const client = () =>
   createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -562,9 +547,6 @@ Deno.serve(async (req) => {
         // salles de conférence. Le calque qui les porte ne s'appelle pas pareil
         // d'un salon à l'autre, on ne peut donc pas le nommer.
         const tousTextes: { x: number; y: number; txt: string }[] = [];
-        /* Ce qui compose le fond, dans l'ordre où l'API le rendra : c'est de
-           cela, et de rien d'autre, que l'empreinte doit dépendre. */
-        const fond: string[] = [];
         for (const c of calques) {
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
@@ -572,7 +554,6 @@ Deno.serve(async (req) => {
           tousTextes.push(...lus);
           if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
           const { svg } = allege(brut);
-          fond.push(c.Libelle, svg ?? "");
           await db.from("calque").upsert({
             plan_id: planId,
             id_klipso: c.Id,
@@ -852,7 +833,6 @@ Deno.serve(async (req) => {
           emprise: emp,
           nb_stands: stands.length,
           nb_zones: zones.length,
-          empreinte: await condense(fond.join("\u0000")),
           modifie_le: new Date().toISOString(),
         }).eq("id", planId);
 

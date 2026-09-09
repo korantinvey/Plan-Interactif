@@ -11,31 +11,32 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 430 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 480 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.285 · 10. Mode administration
-- l.349 · Renommer une zone organisateur
+- l.335 · 10. Mode administration
+- l.399 · Renommer une zone organisateur
 
 Fonctions :
 
-`conf` 11 · `jeton` 12 · `sousCle` 13 · `styleFond` 15 · `sousCalques` 36
-`styleDataGroupe` 45 · `appliqueCouleursData` 47 · `styleData` 63 · `appliqueApparence` 69
-`appliqueCommandes` 127 · `minutesVisite` 155 · `ouvreReglages` 167 · `enregistreConf` 235
-`rgbHex` 241 · `hexa` 248 · `luminance` 252 · `ecarte` 266 · `joli` 281 · `retireAdmin` 298
-`activeAdmin` 311 · `renommeZone` 359 · `enregistreNomZone` 383
+`cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 61 · `jeton` 62 · `sousCle` 63
+`styleFond` 65 · `sousCalques` 86 · `styleDataGroupe` 95 · `appliqueCouleursData` 97
+`styleData` 113 · `appliqueApparence` 119 · `appliqueCommandes` 177 · `minutesVisite` 205
+`ouvreReglages` 217 · `enregistreConf` 285 · `rgbHex` 291 · `hexa` 298 · `luminance` 302
+`ecarte` 316 · `joli` 331 · `retireAdmin` 348 · `activeAdmin` 361 · `renommeZone` 409
+`enregistreNomZone` 433
 
 Éléments :
 
 `#pousseConf` · `#razConf`
 
-### `_admin2.html` — 136 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 139 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 22 · `entetesApi` 37 · `chargeFond` 60 · `charge` 89
+`demarre` 8 · `annonce` 22 · `entetesApi` 37 · `chargeFond` 60 · `charge` 92
 
 ### `_auth-plan.html` — 118 l. → plan-admin.html
 
@@ -188,32 +189,32 @@ Fonctions :
 `arretJournee` 510 · `remplitJournee` 535 · `appliqueVueParcours` 671 · `traceJournee` 697
 `montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 828
 
-### `_js.html` — 1468 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 1476 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.39 · 1. Index global — la recherche porte sur tous les pavillons
-- l.147 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.238 · 3. Rendu du pavillon courant
-- l.301 · 4. Libellés — le nom de l'exposant prime sur le numéro
-- l.357 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
-- l.566 · 6. Vue
-- l.665 · 7. Sélection et fiche
-- l.1167 · 8. Interactions du plan
-- l.1326 · Le tiroir de la liste — écrans étroits
+- l.155 · 2. Mesure de texte — largeur réelle dans la police de rendu
+- l.246 · 3. Rendu du pavillon courant
+- l.309 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.365 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+- l.574 · 6. Vue
+- l.673 · 7. Sélection et fiche
+- l.1175 · 8. Interactions du plan
+- l.1334 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
-`$` 12 · `esc` 14 · `P` 36 · `indexe` 42 · `largeur` 152 · `decoupe` 171 · `habille` 184
-`lignesSvg` 195 · `ligneCode` 216 · `monteHabillage` 244 · `montePlan` 261 · `onglets` 286
-`changePlan` 293 · `ancre` 309 · `place` 310 · `libelles` 312 · `indexeSecteurs` 378
-`secteursMontres` 391 · `couleurConf` 395 · `hslHex` 399 · `couleurSecteur` 417
-`chipsSecteurs` 427 · `coloreSecteurs` 450 · `appliqueSecteurs` 477 · `dansSecteurs` 493
-`visible` 495 · `visibleSurPlan` 508 · `appliqueFiltre` 513 · `liste` 521
-`appliqueVue` 569 · `rafraichitVue` 590 · `poseVue` 602 · `masque` 620 · `fit` 640
-`zoom` 652 · `echelle` 657 · `ETROIT` 671 · `anime` 673 · `noeud` 690 · `canalPlan` 695
-`select` 703 · `centre` 722 · `montre` 737 · `momentLocal` 763 · `programme` 786
-`jourLong` 816 · `ficheConf` 827 · `lien` 921 · `ecarteClicFantome` 938 · `nomSociete` 947
-`societes` 960 · `choisitExposant` 971 · `ouvre` 1007 · `ferme` 1148 · `onglet` 1157
-`milieu` 1187 · `commencePince` 1193 · `suitPince` 1207 · `mesureTiroir` 1336
+`$` 12 · `esc` 14 · `P` 36 · `indexe` 42 · `largeur` 160 · `decoupe` 179 · `habille` 192
+`lignesSvg` 203 · `ligneCode` 224 · `monteHabillage` 252 · `montePlan` 269 · `onglets` 294
+`changePlan` 301 · `ancre` 317 · `place` 318 · `libelles` 320 · `indexeSecteurs` 386
+`secteursMontres` 399 · `couleurConf` 403 · `hslHex` 407 · `couleurSecteur` 425
+`chipsSecteurs` 435 · `coloreSecteurs` 458 · `appliqueSecteurs` 485 · `dansSecteurs` 501
+`visible` 503 · `visibleSurPlan` 516 · `appliqueFiltre` 521 · `liste` 529
+`appliqueVue` 577 · `rafraichitVue` 598 · `poseVue` 610 · `masque` 628 · `fit` 648
+`zoom` 660 · `echelle` 665 · `ETROIT` 679 · `anime` 681 · `noeud` 698 · `canalPlan` 703
+`select` 711 · `centre` 730 · `montre` 745 · `momentLocal` 771 · `programme` 794
+`jourLong` 824 · `ficheConf` 835 · `lien` 929 · `ecarteClicFantome` 946 · `nomSociete` 955
+`societes` 968 · `choisitExposant` 979 · `ouvre` 1015 · `ferme` 1156 · `onglet` 1165
+`milieu` 1195 · `commencePince` 1201 · `suitPince` 1215 · `mesureTiroir` 1344
 
 Éléments :
 
@@ -267,7 +268,7 @@ Fonctions :
 
 Fonctions :
 
-`accesBase` 15 · `base` 24 · `reglagesSeuls` 40 · `pousseConfiguration` 46
+`accesBase` 15 · `base` 24 · `reglagesSeuls` 42 · `pousseConfiguration` 46
 
 ### `_rapport-head.html` — 27 l. → rapport.html
 
@@ -315,23 +316,26 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `r2` 23 · `distSegment` 55 · `distBord` 64 · `poleInterieur` 83 · `portee` 104
 
-### `supabase/functions/_partage/svg.ts` — 94 l.
+### `supabase/functions/_partage/svg.ts` — 216 l.
 
-`r2` 21
+`r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106
+
+### `supabase/functions/_partage/version.ts` — 77 l.
+
+`condense` 73
 
 ### `supabase/functions/mesure/index.ts` — 120 l.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 243 l.
+### `supabase/functions/plan-public/index.ts` — 315 l.
 
-`cors` 37 · `db` 54
+`cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
 
-### `supabase/functions/sync-evenement/index.ts` — 1055 l.
+### `supabase/functions/sync-evenement/index.ts` — 1035 l.
 
-`cors` 34 · `condense` 81 · `client` 87 · `gaia` 94 · `libellesChoix` 105
-`fournisseur` 130 · `range` 170 · `champsKlipso` 191 · `hebergee` 1016 · `nettoieUrl` 1031
-`groupeTextes` 1041
+`cors` 34 · `client` 72 · `gaia` 79 · `libellesChoix` 90 · `fournisseur` 115 · `range` 155
+`champsKlipso` 176 · `hebergee` 996 · `nettoieUrl` 1011 · `groupeTextes` 1021
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -348,6 +352,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260904000011_mesures.sql` — mesure, fn rapport_utilisation
 - `20260908000001_compteurs.sql` — cible, compteur, compteur_cible, visiteur_jour, fn enregistre_mesures, fn rapport_utilisation
 - `20260908000002_empreinte_fond.sql` — plan
+- `20260909000001_empreinte_calque.sql` — calque
+- `20260909000002_retire_empreinte_plan.sql` — plan
 
 ## Le reste
 
