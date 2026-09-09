@@ -187,6 +187,17 @@ allée, une grille offre des milliers de trajets de même longueur.
   les escaliers équivalents et le trait traverse l'allée en biais. À deux
   mètres, un crochet ne se justifie plus que s'il fait gagner davantage : les
   tronçons redeviennent de longues lignes droites.
+- **Le bord d'une allée coûte deux cases de plus que son milieu**, la pénalité
+  s'éteignant à deux mètres du mur. Le prix du virage se retourne ici contre
+  le centrage : rejoindre le milieu en coûte deux, et il faut que la traversée
+  se rembourse. Le réglage d'origine — un quart de case d'écart — demandait
+  seize mètres de ligne droite avant d'être rentable, si bien que le trait
+  longeait les emplacements d'un bout à l'autre du hall ; à deux, quatre
+  mètres suffisent. L'accroche vise elle aussi le milieu plutôt que le bord :
+  la première case d'allée rencontrée touche la façade, et démarrer là obligeait
+  à deux virages que le calcul ne payait qu'à contrecœur. Mesuré sur cent vingt
+  trajets : la part du tracé collée au mur tombe de 26 % à 7 %, pour 6 % de
+  longueur en plus.
 - **Longer un bord coûte une demi-case.** La pénalité s'éteint à deux mètres du
   mur le plus proche — au-delà, dans une aire dégagée, aucun « milieu » n'a de
   sens — et tient le trait au centre du passage partout ailleurs.
@@ -216,6 +227,41 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   et le trajet l'emprunte dans les deux sens. Les plans posés avant cette fusion
   n'ont rien à reprendre — l'ancien pictogramme « Sortie » se range sous le
   nouveau.
+
+### Entrer sur un emplacement
+
+On n'entre pas sur un stand en traversant son voisin, et l'on y entre par le
+milieu d'une façade qui n'est pas mitoyenne. La règle paraît évidente ; elle ne
+l'était pas pour le calcul, qui la violait de deux manières.
+
+L'accroche s'écartait du centre en anneaux **murs compris**, sans distinguer à
+qui ils appartenaient : un stand serré entre deux voisins s'accrochait à
+l'allée d'en face, à travers le stand du voisin. Elle ne franchit désormais que
+sa propre emprise, dégagement compris — peinte comme la grille l'a été, pour
+que les deux se recouvrent exactement. Un emplacement qu'aucune allée ne borde
+garde son garde-fou : mieux vaut un trait qui coupe par le voisin qu'un stand
+qu'on ne sait plus atteindre.
+
+L'amorce, elle, sortait du stand **parallèlement à l'allée** avant d'en
+franchir la façade : elle longeait l'intérieur de l'emplacement sur toute sa
+profondeur, puis ressortait par le côté — d'où les crochets dessinés au milieu
+des stands. Elle quitte maintenant l'emplacement droit, perpendiculairement, et
+le côté par lequel elle sort est **la face libre la plus proche** : celles
+qu'un autre emplacement borde sont écartées, ce qui fait sortir un stand de
+rangée par son unique côté ouvert plutôt que par le voisin qui se trouvait dans
+l'axe. Les façades se lisent dans la géométrie et non dans le pavage : entre
+deux stands serrés, les dégagements se rejoignent et tout devient mur, si bien
+qu'on ne distinguait plus une façade fermée d'un passage trop étroit.
+
+Éprouvé sur les 974 emplacements des trois pavillons : trois amorces sur mille
+traversent encore un voisin, toutes sur des emplacements que le plan enclave.
+
+Enfin, **les mètres parcourus à l'intérieur d'un emplacement ne comptent pas**.
+Le trait part du centre du stand parce que c'est lui qu'on montre, mais
+personne ne traverse un stand de son milieu à sa façade pour en sortir : on y
+est déjà. Les compter gonflait chaque tronçon de la demi-profondeur de ses deux
+emplacements, et autant de minutes de marche annoncées pour rien sur une
+journée de vingt visites.
 
 ### Ce qui n'est pas praticable
 

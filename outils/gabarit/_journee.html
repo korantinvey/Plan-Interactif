@@ -157,7 +157,8 @@ function matriceJournee(pts, pmr){
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
-    const cases = idx.map(i => accroche(g, pts[i].xy));
+    // l'emprise de l'arrêt : on n'accroche pas une allée à travers un voisin
+    const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
     const portes = sortiesDe(p, pmr).map(f => accroche(g, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
