@@ -327,9 +327,39 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
-/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
-   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
-.dcal .repere .repLab{text-anchor:start}
+/* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
+   son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
+   n'y répond pas. */
+.dcal .repere{pointer-events:auto;cursor:pointer}
+.dcal .repere *{pointer-events:all}
+/* Le repère ouvert se marque comme le fait le cartouche : un liseré clair
+   autour de la pastille. Le contour du navigateur, lui, est retiré — il
+   dessine un carré noir autour d'un groupe SVG, à côté de la forme qu'il
+   entoure — et remplacé au clavier par le même liseré, en encre. */
+.dcal .repere.sel > rect{stroke:var(--surface);stroke-width:.6;paint-order:stroke}
+.dcal .repere:focus{outline:none}
+.dcal .repere:focus-visible > rect{stroke:var(--ink);stroke-width:.5;paint-order:stroke}
+/* Ce qu'un passage rejoint sur un autre plan : un escalier son palier à
+   l'étage, une porte celle du hall d'en face. La liste se lit d'un coup
+   d'œil, chaque ligne se retire d'une croix. */
+.elemLiens{display:flex;flex-direction:column;gap:5px}
+.elemLiens[hidden]{display:none}
+.elemLiens select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.elemLiens select:focus{border-color:var(--accent);outline:none}
+.elemLiens i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.elemLiens i:empty{display:none}
+.lienListe{display:flex;flex-direction:column;gap:4px}
+.lienListe:empty{display:none}
+.lienListe .lien{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);
+  padding:4px 4px 4px 7px;background:var(--surface-2);border-radius:var(--radius);
+  border-left:2px solid var(--accent)}
+.lienListe .lien span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le temps du passage : un champ étroit, son unité collée, et l'invite qui
+   montre le temps ordinaire du type — vide ne veut pas dire zéro. */
+.elem .lienListe .lien input{width:44px;flex:none;padding:2px 4px;font-size:11.5px;
+  text-align:right;background:var(--surface);border:1px solid var(--line)}
+.lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -783,6 +813,11 @@ button.expo:hover{background:var(--line)}
 .iEtape{display:flex;flex-direction:column;gap:2px;padding:8px 10px;background:var(--surface-2);
   border-radius:var(--radius);border-left:2px solid var(--accent)}
 .iEtape.transfert{border-left-style:dashed;border-left-color:var(--line-strong)}
+/* Une étape qui se déroule dans un pavillon qu'on ne regarde pas s'y rend
+   d'un clic : c'est un bouton, mais il garde l'aspect des autres étapes —
+   c'est la même liste, et seul le survol le distingue. */
+.iEtape.ailleurs{width:100%;text-align:left}
+.iEtape.ailleurs:hover{background:var(--accent-soft)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
 
@@ -1192,6 +1227,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
+        <div class="elemLiens" id="elemLiens" hidden>
+          <span class="eyebrow">Passages vers d'autres plans</span>
+          <div class="lienListe" id="elemLiensListe"></div>
+          <select id="elemLienAjout"></select>
+          <i id="elemLienAide"></i>
+        </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden

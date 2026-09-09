@@ -187,6 +187,17 @@ allée, une grille offre des milliers de trajets de même longueur.
   les escaliers équivalents et le trait traverse l'allée en biais. À deux
   mètres, un crochet ne se justifie plus que s'il fait gagner davantage : les
   tronçons redeviennent de longues lignes droites.
+- **Le bord d'une allée coûte deux cases de plus que son milieu**, la pénalité
+  s'éteignant à deux mètres du mur. Le prix du virage se retourne ici contre
+  le centrage : rejoindre le milieu en coûte deux, et il faut que la traversée
+  se rembourse. Le réglage d'origine — un quart de case d'écart — demandait
+  seize mètres de ligne droite avant d'être rentable, si bien que le trait
+  longeait les emplacements d'un bout à l'autre du hall ; à deux, quatre
+  mètres suffisent. L'accroche vise elle aussi le milieu plutôt que le bord :
+  la première case d'allée rencontrée touche la façade, et démarrer là obligeait
+  à deux virages que le calcul ne payait qu'à contrecœur. Mesuré sur cent vingt
+  trajets : la part du tracé collée au mur tombe de 26 % à 7 %, pour 6 % de
+  longueur en plus.
 - **Longer un bord coûte une demi-case.** La pénalité s'éteint à deux mètres du
   mur le plus proche — au-delà, dans une aire dégagée, aucun « milieu » n'a de
   sens — et tient le trait au centre du passage partout ailleurs.
@@ -204,17 +215,53 @@ Deux choix méritent d'être connus avant de les remettre en cause :
   emplacements ; rien n'y empêcherait un trajet de contourner le hall par
   l'extérieur. À défaut de mieux, la marche est bornée à l'enveloppe convexe
   des emplacements, dont les stands du pourtour dessinent le bord.
-- **Ce qui sépare deux pavillons ne figure sur aucun plan.** D'un pavillon à
-  l'autre, le trajet se coupe à la porte — le tronçon de départ jusqu'à la
-  porte la plus proche, puis celui d'une porte du pavillon suivant jusqu'à
-  l'arrivée — et le visiteur lit « rejoignez le pavillon 7.2 » entre deux
-  tracés qui, eux, sont exacts. La distance annoncée est celle des tronçons, et
-  l'affichage le dit (« au moins 165 m »). Sans repère « Entrée/Sortie » sur le
-  plan, cette partie n'est pas tracée, et le tiroir l'explique plutôt que
-  d'inventer. Entrée et sortie ne font qu'un type de repère : on entre et on
-  sort par la même porte, et le trajet l'emprunte dans les deux sens. Les plans
-  posés avant cette fusion n'ont rien à reprendre — l'ancien pictogramme
-  « Sortie » se range sous le nouveau.
+- **Ce qui sépare deux plans ne figure sur aucun d'eux.** Tant que l'exploitant
+  n'a rien relié — voir *Passer d'un plan à l'autre*, plus bas — le trajet se
+  coupe à la porte : le tronçon de départ jusqu'à la porte la plus proche, puis
+  celui d'une porte du pavillon suivant jusqu'à l'arrivée, et le visiteur lit
+  « rejoignez le pavillon 7.2 » entre deux tracés qui, eux, sont exacts. La
+  distance annoncée est alors celle des seuls tronçons, et l'affichage le dit
+  (« au moins 165 m »). Sans repère « Entrée/Sortie » sur le plan, cette partie
+  n'est pas tracée, et le tiroir l'explique plutôt que d'inventer. Entrée et
+  sortie ne font qu'un type de repère : on entre et on sort par la même porte,
+  et le trajet l'emprunte dans les deux sens. Les plans posés avant cette fusion
+  n'ont rien à reprendre — l'ancien pictogramme « Sortie » se range sous le
+  nouveau.
+
+### Entrer sur un emplacement
+
+On n'entre pas sur un stand en traversant son voisin, et l'on y entre par le
+milieu d'une façade qui n'est pas mitoyenne. La règle paraît évidente ; elle ne
+l'était pas pour le calcul, qui la violait de deux manières.
+
+L'accroche s'écartait du centre en anneaux **murs compris**, sans distinguer à
+qui ils appartenaient : un stand serré entre deux voisins s'accrochait à
+l'allée d'en face, à travers le stand du voisin. Elle ne franchit désormais que
+sa propre emprise, dégagement compris — peinte comme la grille l'a été, pour
+que les deux se recouvrent exactement. Un emplacement qu'aucune allée ne borde
+garde son garde-fou : mieux vaut un trait qui coupe par le voisin qu'un stand
+qu'on ne sait plus atteindre.
+
+L'amorce, elle, sortait du stand **parallèlement à l'allée** avant d'en
+franchir la façade : elle longeait l'intérieur de l'emplacement sur toute sa
+profondeur, puis ressortait par le côté — d'où les crochets dessinés au milieu
+des stands. Elle quitte maintenant l'emplacement droit, perpendiculairement, et
+le côté par lequel elle sort est **la face libre la plus proche** : celles
+qu'un autre emplacement borde sont écartées, ce qui fait sortir un stand de
+rangée par son unique côté ouvert plutôt que par le voisin qui se trouvait dans
+l'axe. Les façades se lisent dans la géométrie et non dans le pavage : entre
+deux stands serrés, les dégagements se rejoignent et tout devient mur, si bien
+qu'on ne distinguait plus une façade fermée d'un passage trop étroit.
+
+Éprouvé sur les 974 emplacements des trois pavillons : trois amorces sur mille
+traversent encore un voisin, toutes sur des emplacements que le plan enclave.
+
+Enfin, **les mètres parcourus à l'intérieur d'un emplacement ne comptent pas**.
+Le trait part du centre du stand parce que c'est lui qu'on montre, mais
+personne ne traverse un stand de son milieu à sa façade pour en sortir : on y
+est déjà. Les compter gonflait chaque tronçon de la demi-profondeur de ses deux
+emplacements, et autant de minutes de marche annoncées pour rien sur une
+journée de vingt visites.
 
 ### Ce qui n'est pas praticable
 
@@ -266,9 +313,8 @@ Un repère porte deux choses distinctes, et les confondre coûtait cher.
 
 Son **type** se choisit dans une liste — Entrée/Sortie, WC, Escalier, Accueil,
 Restauration, Ascenseur… — et c'est lui qui porte les propriétés : le
-pictogramme affiché, la qualité de porte par où un trajet passe d'un pavillon à
-l'autre, et l'obstacle qu'un escalier ou un escalator oppose au mode
-accessible. Son **libellé** s'écrit librement et ne sert qu'à distinguer un
+pictogramme affiché, la qualité de passage par où un trajet change de plan, et
+l'obstacle qu'un escalier ou un escalator oppose au mode accessible. Son **libellé** s'écrit librement et ne sert qu'à distinguer un
 exemplaire d'un autre.
 
 Le type était auparavant deviné depuis le libellé, sur correspondance exacte :
@@ -277,15 +323,81 @@ dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui nommai
 ses portes perdait ce qui les rendait utiles, et deux escaliers ne pouvaient
 pas être nommés sans cesser tous deux d'être des escaliers.
 
-Sur le plan, le libellé s'écrit à côté du pictogramme dès qu'il dit autre chose
-que lui : « Entrée Nord » a besoin de son nord, « WC » n'a besoin de rien. Le
-type se change après coup depuis le panneau de la forme choisie — une porte mal
-typée ne se voit qu'en essayant un trajet, et il serait absurde de la
+**Sur le plan, la pastille ne porte que le pictogramme.** Le libellé s'écrivait
+à côté dès qu'il disait autre chose que lui — « Entrée Nord » a besoin de son
+nord — mais un nom écrit à la taille du plan ne se lit qu'en zoomant, et la
+pastille s'allongeait de tout ce texte en travers de l'allée qu'elle désigne.
+Le pictogramme répond à la question qu'on se pose de loin : ce que c'est. Le
+nom se demande de près, et **le clic ouvre une fiche** qui le donne, avec ce
+que le repère dessert quand c'est un passage — un escalier qui monte à deux
+étages le dit là. Deux boutons y suivent, comme sur la fiche d'un exposant :
+centrer sur le plan, et prendre ce repère pour arrivée d'un itinéraire. Le
+cartouche des points d'intérêt, en bas du plan, continue de les nommer tous et
+met en avant ceux qui portent le même nom.
+
+Un repère sans pictogramme — un libellé libre, « Point presse » — garde sa
+pastille de texte : c'est tout ce qu'il a à montrer.
+
+Le type se change après coup depuis le panneau de la forme choisie — une porte
+mal typée ne se voit qu'en essayant un trajet, et il serait absurde de la
 redessiner pour cela.
 
 Les repères posés avant cette séparation n'ont que leur libellé : il continue
 d'être interprété pour eux, et leur plan s'affiche comme il le faisait. Le type
 s'écrit dès qu'on y touche.
+
+### Passer d'un plan à l'autre
+
+Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
+étage est un plan à part ; deux halls voisins communiquent par une porte, et
+chacun est un plan. Les données ne disent rien de ce qui les relie — c'est
+l'exploitant qui le sait, et qui le déclare.
+
+Un repère qui est un **passage** — Entrée/Sortie, Escalier, Escalator,
+Ascenseur — porte, dans le panneau de la forme choisie, la liste de ce qu'il
+rejoint. On y ajoute ce qu'il dessert : l'escalier à son palier, la porte à
+celle d'en face. **Un passage en rejoint autant qu'il en dessert** — l'escalier
+du rez-de-chaussée monte au premier et au second, et ce sont deux passages,
+chacun avec son temps. Seuls les passages des **autres** plans sont proposés —
+en relier deux du même hall ne décrirait rien qu'une allée ne dise déjà. La
+liaison s'écrit des deux côtés d'un seul geste, se retire d'une croix, et part
+aux visiteurs avec les dessins, à la publication.
+
+Chaque ligne de la liste porte un **temps de passage**, en minutes, qui s'ajoute
+au temps de marche du trajet. Il se règle par couple et non par repère, pour la
+raison qui précède : le même escalier met deux minutes au premier étage et cinq
+au second. Le champ laissé vide n'est pas zéro — c'est le temps ordinaire du
+type de passage, celui qu'affiche son invite : une minute pour une porte, un
+escalier ou un escalator, deux pour un ascenseur, qui s'attend.
+
+Le calcul enchaîne alors les plans comme il enchaîne les allées : on marche
+jusqu'à l'escalier, on le prend, on repart de son palier à l'étage. Le tiroir
+déroule les étapes — *60 m dans le pavillon 7.1*, *prenez l'escalier « Escalier
+Nord », comptez 2 min*, *20 m dans le pavillon 7.2* — et chaque étape qui se
+déroule ailleurs ouvre son plan d'un clic. La distance annoncée n'est plus
+minorée : elle est celle du trajet entier, et le temps de chaque passage
+s'ajoute à celui de la marche.
+
+Un passage a aussi un prix, en mètres, qui n'est pas une mesure mais un
+arbitrage : quinze pour une porte, vingt-cinq pour un escalator, trente pour un
+escalier, quarante-cinq pour un ascenseur. C'est ce qu'on accepte de marcher en
+plus pour l'éviter — de quoi préférer un couloir à un ascenseur qu'il faut
+attendre, sans jamais refuser le seul chemin qui existe. **Le temps déclaré
+pèse sur ce prix** : ce qu'il ajoute au temps ordinaire du type se convertit en
+mètres au pas de marche, si bien qu'un ascenseur annoncé à cinq minutes coûte
+autant qu'un long détour et que le trajet lui préfère l'escalier — ce qui est
+exactement ce qu'on veut dire en le déclarant.
+
+En mode accessible, escaliers et escalators sortent du graphe : seuls les
+portes et les ascenseurs relient encore. Un étage desservi par ses seuls
+escaliers redevient donc hors d'atteinte, et le tiroir le dit — c'est la
+réponse juste, et le remède est un ascenseur relié, pas un calcul plus
+optimiste.
+
+La liaison se lit dans les deux sens même écrite d'un seul côté : un dessin
+repris d'un salon précédent, un côté effacé par mégarde, et le passage existe
+toujours dans le hall. Un calque masqué, en revanche, ne relie rien — comme
+partout ailleurs, le trajet doit s'expliquer par ce qu'on voit.
 
 ### Le mode accessible
 
@@ -411,12 +523,16 @@ garde les heures du programme, mais si on ne peut y être qu'après le début, l
 ligne le dit — « vous y seriez à 12h02 » — et la suite part de l'heure qu'il
 est vraiment.
 
-Entre deux pavillons, la journée hérite de la franchise de l'itinéraire : rien
-dans les données ne décrit ce qui les relie, le trajet n'est pas tracé, et la
-distance annoncée devient « au moins ». Ordonner demande pourtant un prix,
-sans quoi l'algorithme ferait l'aller-retour entre deux halls comme il change
-d'allée : un forfait dissuasif suffit à regrouper les visites pavillon par
-pavillon, et il ne compte jamais dans les mètres annoncés.
+Entre deux plans, la journée hérite de l'itinéraire, franchise comprise : là
+où des passages sont déclarés, elle enchaîne les plans et trace tout le trajet ;
+là où rien n'est relié, le trajet n'est pas tracé et la distance annoncée
+devient « au moins ». Ordonner demande de toute façon un prix, sans quoi
+l'algorithme ferait l'aller-retour entre deux halls comme il change d'allée :
+un forfait dissuasif — trois cents mètres — suffit à regrouper les visites
+pavillon par pavillon. Deux plans qu'un passage joint n'en valent qu'une
+soixantaine : un étage se rejoint par son escalier, et l'ordre de visite doit
+pouvoir y monter puis redescendre. Ni l'un ni l'autre ne compte jamais dans les
+mètres annoncés.
 
 ### Le temps de visite par stand
 

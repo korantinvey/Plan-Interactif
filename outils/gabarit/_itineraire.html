@@ -60,7 +60,13 @@ const TOURNANT = 4;
  * et vouloir le tenir ferait faire des détours pour rien.
  */
 const PORTEE_CENTRE = 4;   // cases
-const POIDS_CENTRE = .5;   // au ras du mur, une case coûte une demie de plus
+/* Deux plutôt qu'une demie. Le prix du virage est de quatre cases : passer du
+   bord au milieu en coûte deux, et il faut donc que la traversée se rembourse
+   sur une longueur raisonnable d'allée. À une demie, l'écart entre le bord et
+   le milieu valait un quart de case, soit seize mètres de ligne droite avant
+   d'être rentable — le trait longeait les stands d'un bout à l'autre du hall.
+   À deux, quatre mètres suffisent. */
+const POIDS_CENTRE = 2;
 
 /* ------------------------------------------------------------
    L'enveloppe du hall
@@ -127,7 +133,9 @@ function enveloppe(p){
 /* Une grille par pavillon et par mode : elle ne dépend que des emplacements
    et des obstacles dessinés, qui ne bougent qu'en administration. */
 const GRILLES = new Map();
-function oublieGrilles(){ GRILLES.clear(); }
+/* Les distances de marche et les façades s'en déduisent : ce qui périme l'une
+   périme les autres. */
+function oublieGrilles(){ GRILLES.clear(); BALAYAGES.clear(); oublieFaces(); }
 
 /** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
 const calquesDe = (p) => (typeof DESSINS === "object" && DESSINS[p.id]) || [];
@@ -294,7 +302,7 @@ function grille(p, pmr){
   // moitié, la case est du côté du mur
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
-  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur };
+  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur, pmr: pmr };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   GRILLES.set(cle, g);
@@ -401,14 +409,49 @@ function centreCase(g, i){
 const PORTEE_ACCROCHE = 24;
 
 /**
+ * Les cases qu'un emplacement occupe en propre, son dégagement compris.
+ *
+ * Peinte comme la grille l'a été — même pas, même épaisseur de trait — pour
+ * que les deux se recouvrent exactement : ce qui est mur à cause de ce stand
+ * est ici marqué sien, ce qui l'est à cause d'un autre ne l'est pas.
+ *
+ * On ne peint qu'une fenêtre autour du point, de la taille de ce qu'on
+ * accepte de fouiller : un pavillon entier repeint pour chaque accroche
+ * coûterait plus que toutes les recherches réunies.
+ */
+function empriseDe(g, d, cx0, cy0, cote){
+  const cv = document.createElement("canvas");
+  cv.width = cote; cv.height = cote;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.setTransform(1 / PAS_GRILLE, 0, 0, 1 / PAS_GRILLE,
+                   -g.x0 / PAS_GRILLE - cx0, -g.y0 / PAS_GRILLE - cy0);
+  ctx.lineJoin = ctx.lineCap = "round";
+  ctx.lineWidth = 2 * (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+  ctx.fillStyle = ctx.strokeStyle = "#000";
+  const t = new Path2D(d);
+  ctx.fill(t); ctx.stroke(t);
+  const px = ctx.getImageData(0, 0, cote, cote).data;
+  const m = new Uint8Array(cote * cote);
+  for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+  return m;
+}
+
+/**
  * La case de la nappe principale la plus proche d'un point.
  *
  * Le centre d'un stand tombe dans le mur — c'est bien lui qu'on désigne, mais
- * c'est l'allée devant lui qu'on emprunte. On s'écarte donc en anneaux, murs
- * compris, jusqu'à toucher les allées : la façade la plus accessible est
- * atteinte la première, sans qu'on ait eu à la chercher.
+ * c'est l'allée devant lui qu'on emprunte. On s'écarte donc en anneaux
+ * jusqu'à toucher les allées : la façade la plus proche est atteinte la
+ * première, sans qu'on ait eu à la chercher.
+ *
+ * Encore faut-il que ce soit la sienne. On traversait les murs sans distinguer
+ * à qui ils étaient, si bien qu'un stand serré entre deux voisins s'accrochait
+ * à l'allée d'en face, à travers le stand du voisin : le trait entrait par une
+ * façade qui n'était pas la sienne, et l'amorce dessinait un crochet au milieu
+ * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
+ * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accroche(g, xy){
+function accrocheDepuis(g, xy, chez){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const cx = Math.min(g.w - 1, Math.max(0, Math.floor((xy[0] - g.x0) / PAS_GRILLE)));
@@ -418,6 +461,15 @@ function accroche(g, xy){
   if (g.nappe[d]) return d;
 
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
+  const cote = 2 * PORTEE_ACCROCHE + 1;
+  const cx0 = dx0 - PORTEE_ACCROCHE, cy0 = dy0 - PORTEE_ACCROCHE;
+  const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
+  const chezSoi = (nx, ny) => {
+    if (!sien) return true;
+    const px = nx - cx0, py = ny - cy0;
+    return px >= 0 && py >= 0 && px < cote && py < cote && sien[py * cote + px] === 1;
+  };
+
   const vu = new Uint8Array(g.w * g.h);
   const file = [d];
   vu[d] = 1;
@@ -433,12 +485,61 @@ function accroche(g, xy){
       if (vu[j]) continue;
       vu[j] = 1;
       if (g.nappe[j]) return j;
+      // le mur d'un autre ne se franchit pas : c'est là toute la règle
+      if (g.mur[j] && !chezSoi(nx, ny)) continue;
       // une poche fermée ne mène nulle part : on la traverse sans s'y arrêter
       if (repli < 0 && !g.mur[j]) repli = j;
       file.push(j);
     }
   }
   return repli;
+}
+
+/**
+ * Du bord de l'allée à son milieu.
+ *
+ * L'anneau rend la première case d'allée rencontrée : celle qui touche la
+ * façade, au ras du mur. Le trajet démarrait donc collé aux stands, et il
+ * fallait deux virages pour rejoindre le milieu — que le calcul ne payait
+ * qu'à contrecœur, si bien que le trait longeait les emplacements d'un bout à
+ * l'autre. On remonte donc la pente : on s'éloigne du mur tant qu'un voisin
+ * est plus au large, sans dépasser la portée au-delà de laquelle un « milieu »
+ * n'a plus de sens. Quelques pas suffisent, l'allée n'ayant que sa largeur.
+ */
+function versLeMilieu(g, i){
+  let cur = i;
+  for (let pas = 0; pas < PORTEE_CENTRE; pas++){
+    if (g.marge[cur] >= PORTEE_CENTRE) break;
+    const cx = cur % g.w, cy = (cur - cx) / g.w;
+    let mieux = cur;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (g.nappe[j] && g.marge[j] > g.marge[mieux]) mieux = j;
+    }
+    if (mieux === cur) break;
+    cur = mieux;
+  }
+  return cur;
+}
+
+/**
+ * L'accroche, et son garde-fou.
+ *
+ * Un emplacement qu'aucune allée ne borde — enclavé au milieu d'un îlot, ou
+ * dont le dégagement mange le seul passage — n'a pas de façade à offrir. Le
+ * laisser injoignable serait pire que le défaut qu'on corrige : on relâche
+ * alors la règle plutôt que de rendre la main, quitte à retrouver un trait qui
+ * coupe par le voisin. Ce qui se voit, au moins, se comprend.
+ */
+function accroche(g, xy, chez){
+  let r = accrocheDepuis(g, xy, chez);
+  if (chez && !(r >= 0 && g.nappe[r])){
+    const large = accrocheDepuis(g, xy, null);
+    if (large >= 0 && g.nappe[large]) r = large;
+  }
+  return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
 }
 
 /* ------------------------------------------------------------
@@ -622,6 +723,48 @@ function reduit(g, suite){
 const longueur = (pts) => pts.reduce((s, q, i) =>
   i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0, 0);
 
+/**
+ * Ce qu'on marche vraiment, l'intérieur des emplacements déduit.
+ *
+ * Le trait part du centre du stand, parce que c'est lui qu'on montre — mais
+ * personne ne traverse un stand de son milieu à sa façade pour en sortir : on
+ * y est déjà. Compter ces mètres gonflait chaque tronçon de la demi-profondeur
+ * de ses deux emplacements, soit une dizaine de mètres par arrêt, et autant de
+ * minutes de marche annoncées pour rien sur une journée de vingt visites.
+ *
+ * On retranche donc les deux amorces, chacune tant qu'elle reste chez elle.
+ * On ne balaie que les extrémités : entre les deux, le trait est dans les
+ * allées, et l'y chercher coûterait plus que ce qu'on en retirerait.
+ */
+function longueurDehors(pts, chezD, chezA){
+  let m = longueur(pts);
+  if (!chezD && !chezA) return m;
+  const ctx = document.createElement("canvas").getContext("2d");
+  const dedans = (t, q) => ctx.isPointInPath(t, q[0], q[1]);
+  /* Depuis un bout, on avance par petits pas et on décompte tant qu'on est
+     dans l'emplacement. Le premier pas dehors arrête le décompte : un trait
+     qui y rentrerait de nouveau plus loin serait un trajet, pas une amorce. */
+  const rogne = (suite, d) => {
+    if (!d) return 0;
+    const t = new Path2D(d);
+    let ote = 0;
+    for (let i = 0; i + 1 < suite.length; i++){
+      const A = suite[i], B = suite[i + 1];
+      const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
+      for (let k = 0; k < n; k++){
+        const u = (k + .5) / n;
+        if (!dedans(t, [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u])) return ote;
+        ote += l / n;
+      }
+    }
+    return ote;
+  };
+  m -= rogne(pts, chezD);
+  m -= rogne(pts.slice().reverse(), chezA);
+  return Math.max(0, m);
+}
+
 /** Deux sommets à cinq centimètres l'un de l'autre ne sont qu'un. */
 function nettoie(pts){
   const out = [];
@@ -629,6 +772,64 @@ function nettoie(pts){
     const p = out[out.length - 1];
     if (!p || Math.hypot(q[0] - p[0], q[1] - p[1]) > .05) out.push(q);
   }
+  return out;
+}
+
+/**
+ * Les faces libres d'un emplacement : celles qu'aucun voisin ne borde.
+ *
+ * Un stand de rangée est mitoyen sur trois côtés et n'ouvre que sur le
+ * quatrième. Le déduire du pavage ne marchait qu'à moitié : entre deux stands
+ * serrés, le dégagement des deux se rejoint et tout devient mur, si bien qu'on
+ * ne distinguait plus une façade fermée d'un passage trop étroit. On lit donc
+ * la géométrie plutôt que la grille — on échantillonne juste devant chaque
+ * côté, et un côté sur lequel un autre emplacement se referme est mitoyen.
+ *
+ * Le résultat se garde : une emprise ne bouge qu'en administration, et une
+ * journée de vingt arrêts redemanderait vingt fois les mêmes façades.
+ */
+const FACES = new Map();
+function oublieFaces(){ FACES.clear(); }
+
+function facesLibres(p, o){
+  const cle = p.id + "|" + o.id;
+  const garde = FACES.get(cle);
+  if (garde) return garde;
+
+  const s = sommets(o);
+  const ctx = document.createElement("canvas").getContext("2d");
+  const moi = new Path2D(o.d);
+  /* On ne compare qu'au voisinage : cinq cents emprises passées en revue pour
+     chaque façade coûteraient plus que tout le reste du tronçon. */
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  s.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
+                   y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+  const pres = [];
+  for (const v of p.stands.concat(p.zones)){
+    if (v === o || v.id === o.id || !v.d) continue;
+    const c = v.lc || v.c;
+    if (!c || c[0] < x0 - 40 || c[0] > x1 + 40 || c[1] < y0 - 40 || c[1] > y1 + 40) continue;
+    pres.push(new Path2D(v.d));
+  }
+
+  const out = [];
+  for (let i = 0; i + 1 < s.length; i++){
+    const A = s[i], B = s[i + 1];
+    const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (l < .8) continue;                    // un chanfrein n'est pas une façade
+    // la normale qui sort : celle dont un pas ne retombe pas dans l'emprise
+    let ux = -(B[1] - A[1]) / l, uy = (B[0] - A[0]) / l;
+    const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+    if (ctx.isPointInPath(moi, mx + ux * .05, my + uy * .05)){ ux = -ux; uy = -uy; }
+    let libre = true;
+    for (let k = 1; k <= 5 && libre; k++){
+      const u = k / 6;
+      const x = A[0] + (B[0] - A[0]) * u + ux * .3, y = A[1] + (B[1] - A[1]) * u + uy * .3;
+      if (pres.some(t => ctx.isPointInPath(t, x, y))) libre = false;
+    }
+    if (libre) out.push({ mid: [mx, my], u: [ux, uy], l: l });
+  }
+  FACES.set(cle, out);
   return out;
 }
 
@@ -641,23 +842,65 @@ const AMORCE_MAX = 20;   // mètres
  *
  * Le trajet part du centre du stand désigné — c'est lui qu'on montre — et
  * rejoint l'allée. Relier les deux d'un trait donnait une oblique, seul trait
- * de travers d'un tracé par ailleurs d'équerre. On la coude donc : on sort du
- * stand parallèlement à l'allée, puis on la rejoint perpendiculairement, ce
- * qui est aussi la manière dont on y entre pour de vrai.
+ * de travers d'un tracé par ailleurs d'équerre. On la coude donc.
+ *
+ * Reste à savoir dans quel ordre. On sortait d'abord parallèlement à l'allée,
+ * puis on la rejoignait de biais : c'est-à-dire qu'on longeait l'intérieur du
+ * stand sur toute sa profondeur avant d'en franchir la façade. Quand le point
+ * d'accroche tombait au-delà de l'emplacement — ce qui est le cas ordinaire
+ * d'un stand d'angle — le trait dessinait un crochet au milieu de la surface,
+ * puis ressortait par le côté.
+ *
+ * On fait donc l'inverse, qui est aussi ce qu'un visiteur fait : on quitte
+ * l'emplacement **droit par sa face la plus proche**, perpendiculairement, et
+ * c'est une fois dans l'allée qu'on la remonte. Un seul coude, dehors, et le
+ * trait n'entre jamais de travers.
+ *
+ * L'orientation de l'allée suggère de quel côté couder, mais elle ne le sait
+ * pas toujours : un stand dont la seule façade libre donne au nord, abordé par
+ * une allée qui file d'est en ouest, se verrait sortir par l'est — c'est-à-dire
+ * à travers son voisin. On propose donc les deux coudes possibles et on garde
+ * le premier qui sorte par chez soi ; `sortable` en juge, et laisse passer
+ * quand on ne sait pas de qui est le mur.
  *
  * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
  */
-function amorce(pts, ancre){
+function amorce(pts, ancre, sens){
   if (pts.length < 2) return [];
   const a = pts[0], b = pts[1];
   const vertical = Math.abs(b[0] - a[0]) < .01;
   const horizontal = Math.abs(b[1] - a[1]) < .01;
-  if (vertical === horizontal) return [];        // ni l'un ni l'autre, ou un point
-  const coude = vertical ? [ancre[0], a[1]] : [a[0], ancre[1]];
+  /* À défaut de face libre connue — un repère, un point désigné du doigt — on
+     retombe sur l'orientation de l'allée : on en sort par le travers. */
+  const parAllee = vertical === horizontal ? null : (vertical ? "h" : "v");
+  const s = sens || parAllee;
+  if (!s) return [];
+  const coude = s === "h" ? [a[0], ancre[1]] : [ancre[0], a[1]];
   const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
   const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
   if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
   return [coude];
+}
+
+/**
+ * Par quelle face on quitte un emplacement.
+ *
+ * Celle qui n'est pas mitoyenne — et, s'il y en a plusieurs, la plus proche de
+ * l'allée qu'on rejoint. C'est ce qui fait sortir un stand de rangée par son
+ * unique côté ouvert, et non par le voisin qui se trouvait dans l'axe. Rend le
+ * sens dans lequel on s'en va, ou rien si l'emplacement n'ouvre nulle part :
+ * l'accroche a alors déjà dû s'autoriser à passer par le voisin, et l'amorce
+ * n'a plus de face à respecter.
+ */
+function faceDeSortie(p, obj, ancre){
+  if (!obj || !obj.d) return null;
+  const libres = facesLibres(p, obj);
+  let mieux = null, d = Infinity;
+  for (const f of libres){
+    const q = Math.hypot(f.mid[0] - ancre[0], f.mid[1] - ancre[1]);
+    if (q < d){ d = q; mieux = f; }
+  }
+  return mieux ? (Math.abs(mieux.u[0]) > Math.abs(mieux.u[1]) ? "h" : "v") : null;
 }
 
 /**
@@ -666,17 +909,20 @@ function amorce(pts, ancre){
  * Les vrais points sont raccrochés aux extrémités : le trait doit partir du
  * stand, pas de l'allée devant lui, sinon il paraît commencer à côté.
  */
-function troncon(p, pmr, depart, arrivee){
+function troncon(p, pmr, depart, arrivee, objD, objA){
   const g = grille(p, pmr);
-  const a = accroche(g, depart), b = accroche(g, arrivee);
+  const dD = objD && objD.d, dA = objA && objA.d;
+  const a = accroche(g, depart, dD), b = accroche(g, arrivee, dA);
   if (a < 0 || b < 0) return null;
   const suite = cherche(g, a, b);
   if (!suite) return null;
   const chemin = reduit(g, suite);
+  const envers = chemin.slice().reverse();
   const pts = nettoie([depart.slice()]
-    .concat(amorce(chemin, depart), chemin,
-            amorce(chemin.slice().reverse(), arrivee), [arrivee.slice()]));
-  return { genre: "marche", p: p.i, pts: pts, m: longueur(pts) };
+    .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
+            amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
+            [arrivee.slice()]));
+  return { genre: "marche", p: p.i, pts: pts, m: longueurDehors(pts, dD, dA) };
 }
 
 /* ------------------------------------------------------------
@@ -693,13 +939,15 @@ function troncon(p, pmr, depart, arrivee){
 function pointObjet(o){
   const pl = DATA.plans[o.p];
   return { cle: "o:" + o.id, id: o.id, genre: "objet", p: o.p,
-           xy: (o.lc || o.c).slice(),
+           xy: (o.lc || o.c).slice(), d: o.d, obj: o,
            nom: o.nom || o.plan || (o.kind === "zone" ? "Zone" : "Stand " + (o.code || "")).trim(),
            detail: pl.libelle + (o.code ? " · " + o.code : "") };
 }
 function pointRepere(f, p){
+  const type = pictoForme(f);
   return { cle: "r:" + f.id, id: f.id, genre: "repere", p: p.i,
-           xy: f.pts[0].slice(), nom: f.txt, detail: p.libelle + " · repère" };
+           xy: f.pts[0].slice(), nom: nomRepere(f),
+           detail: p.libelle + " · " + (type ? nomTypeRepere(type).toLowerCase() : "repère") };
 }
 
 /** Les points proposés pour une saisie. Sans mot-clé, les repères seuls : mille
@@ -752,7 +1000,7 @@ function portesDe(p){
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
-function versPorte(p, pmr, xy, entrant){
+function versPorte(p, pmr, xy, entrant, chez){
   const portes = portesDe(p);
   if (!portes.length) return null;
   /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
@@ -763,35 +1011,386 @@ function versPorte(p, pmr, xy, entrant){
     .sort((a, b) => a.d - b.d).slice(0, 4);
   let mieux = null;
   for (const q of proches){
-    const t = entrant ? troncon(p, pmr, q.f.pts[0], xy) : troncon(p, pmr, xy, q.f.pts[0]);
+    const t = entrant ? troncon(p, pmr, q.f.pts[0], xy, null, chez)
+                      : troncon(p, pmr, xy, q.f.pts[0], chez, null);
     if (t && (!mieux || t.m < mieux.m)) mieux = t;
   }
   return mieux;
 }
 
+/* ------------------------------------------------------------
+   Les liaisons — ce qui relie un plan à un autre
+   ------------------------------------------------------------ */
 /**
- * Le trajet, tronçon par tronçon.
+ * Un salon ne tient pas dans un plan.
  *
- * Dans un même pavillon il n'y en a qu'un. D'un pavillon à l'autre, les
- * données ne disent rien de ce qui les relie — ni passerelle, ni allée
- * extérieure, ni distance. On ne l'invente pas : le trajet se coupe à la
- * porte, et le visiteur lit « rejoignez le pavillon 7.2 » entre deux tracés
- * qui, eux, sont exacts.
+ * Un hall a deux niveaux, et le premier étage est un plan à part ; deux halls
+ * voisins communiquent par une porte, et chacun est un plan. Dans les deux
+ * cas le calcul s'arrêtait au bord : le trajet se coupait, et le visiteur
+ * lisait « rejoignez le pavillon 7.2 » sans savoir par où. C'était honnête —
+ * les données ne disent rien de ce qui relie deux plans — mais cela laissait
+ * le visiteur seul à l'endroit précis où il hésite.
+ *
+ * Ce que les données ne disent pas, l'exploitant le sait : cet escalier-ci
+ * monte à celui-là, cette porte-ci donne sur celle-là. Il le déclare donc,
+ * d'un repère à l'autre, et le calcul enchaîne alors les plans comme il
+ * enchaîne les allées — on marche jusqu'à l'escalier, on le prend, on repart
+ * de son jumeau à l'étage.
+ *
+ * Seuls les repères qui sont un passage peuvent en porter une : une porte, un
+ * escalier, un escalator, un ascenseur. Un WC ne relie rien, et pouvoir le
+ * relier ne ferait qu'ouvrir la porte aux erreurs de saisie.
  */
-function calculeRoute(){
-  const a = ITI.a, b = ITI.b, pmr = ITI.pmr;
-  if (!a || !b) return null;
-  if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
+const TYPES_LIAISON = {
+  /* Le coût est en mètres, l'unité de la recherche : ce que l'on accepte de
+     marcher en plus pour éviter ce passage. Une porte ne se paie presque
+     rien ; un ascenseur s'attend, et deux étages à pied lui restent parfois
+     préférables. La durée, elle, s'ajoute à celle de la marche. */
+  entree:    { nom: "porte",     art: "la porte",     accessible: true,  cout: 15, min: 1 },
+  escalier:  { nom: "escalier",  art: "l'escalier",   accessible: false, cout: 30, min: 1 },
+  escalator: { nom: "escalator", art: "l'escalator",  accessible: false, cout: 25, min: 1 },
+  /* Le seul passage vertical qu'un fauteuil emprunte : sans lui, un étage
+     relié par ses seuls escaliers est simplement hors d'atteinte. */
+  ascenseur: { nom: "ascenseur", art: "l'ascenseur",  accessible: true,  cout: 45, min: 2 },
+};
 
-  if (a.p === b.p){
-    const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy);
-    return t ? { pmr: pmr, etapes: [t], m: t.m }
-             : { pmr: pmr, etapes: [], m: 0, sansChemin: true };
+/** Ce qu'un repère vaut comme passage, ou rien s'il n'en est pas un. */
+const typeLiaison = (f) =>
+  f && f.t === "repere" ? TYPES_LIAISON[pictoForme(f)] || null : null;
+
+/** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
+ *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
+ *  « WC », et non rien. */
+const nomRepere = (f) => String(f.txt || "").trim() ||
+  nomTypeRepere(pictoForme(f));
+
+/**
+ * L'annuaire des passages : chacun d'eux, et ceux qu'il rejoint.
+ *
+ * Une liaison s'écrit des deux côtés — on la pose d'un repère, elle apparaît
+ * sur l'autre — mais on lit l'union plutôt que l'intersection : une seule des
+ * deux écritures suffit à la déclarer. Un dessin repris d'un salon précédent,
+ * un côté effacé par mégarde, et le passage existe toujours dans le hall :
+ * le refuser au visiteur au nom d'une écriture manquante serait le punir d'un
+ * détail qu'il ne voit pas.
+ *
+ * Les repères des calques masqués figurent dans l'annuaire — l'administration
+ * doit pouvoir nommer ce qu'elle relie — mais pas dans le calcul, qui s'en
+ * tient à ce que le visiteur voit.
+ */
+let LIAISONS = null;
+function oublieLiaisons(){ LIAISONS = null; }
+
+/**
+ * Ce qu'un repère déclare rejoindre, tel qu'on le relit.
+ *
+ * Un repère en relie autant qu'il en dessert : l'escalier du rez-de-chaussée
+ * monte au premier et au second, et ce sont deux passages, chacun avec son
+ * temps. La liaison s'est d'abord écrite comme un simple identifiant ; elle
+ * porte maintenant sa durée, et les deux formes se lisent — un plan
+ * enregistré avant n'a rien à reprendre et retombe sur le temps ordinaire de
+ * son type.
+ */
+function lienEcrits(f){
+  return ((f && f.liens) || []).map(l => typeof l === "string"
+    ? { id: l, min: null }
+    : { id: l && l.id, min: l && l.min == null ? null : +l.min })
+    .filter(l => l.id);
+}
+
+/* On réécrit la forme courte quand aucune durée n'est fixée : un plan qui ne
+   s'en sert pas garde un enregistrement inchangé. */
+function ecritLiens(f, l){
+  if (!l.length) delete f.liens;
+  else f.liens = l.map(x => x.min == null ? x.id : { id: x.id, min: x.min });
+}
+
+function annuaireLiaisons(){
+  if (LIAISONS) return LIAISONS;
+  const par = new Map();      // id du repère → { f, p, visible }
+  for (const p of (DATA && DATA.plans) || []){
+    for (const c of calquesDe(p)){
+      for (const f of c.formes || []){
+        if (typeLiaison(f)) par.set(f.id, { f: f, p: p, visible: c.visible !== false });
+      }
+    }
+  }
+  // id → (id rejoint → temps déclaré, ou rien), dans les deux sens
+  const vers = new Map();
+  const relie = (a, b, min) => {
+    if (a === b || !par.has(a) || !par.has(b)) return;
+    if (!vers.has(a)) vers.set(a, new Map());
+    const m = vers.get(a);
+    /* Les deux côtés portent la même durée, écrite d'un seul geste. S'ils
+       divergent — une annulation qui n'a défait qu'un côté — on garde la plus
+       longue : un passage annoncé trop court se paie sur place. */
+    const vu = m.get(b);
+    m.set(b, min == null ? (vu == null ? null : vu)
+                         : (vu == null ? min : Math.max(vu, min)));
+  };
+  par.forEach((o, id) => lienEcrits(o.f).forEach(l => {
+    relie(id, l.id, l.min); relie(l.id, id, l.min);
+  }));
+  LIAISONS = { par: par, vers: vers };
+  return LIAISONS;
+}
+
+/** Ce qu'un repère rejoint, du point de vue de l'administration : les deux
+ *  sens confondus, calques masqués compris, chacun avec son temps déclaré. */
+function liensDe(f){
+  const an = annuaireLiaisons();
+  const out = [];
+  (an.vers.get(f.id) || new Map()).forEach((min, id) => {
+    const o = an.par.get(id);
+    if (o) out.push({ o: o, min: min });
+  });
+  return out;
+}
+
+/**
+ * Ce que coûte un passage dans la recherche, en mètres.
+ *
+ * Le forfait de son type, augmenté de ce que le temps déclaré ajoute au temps
+ * ordinaire, converti en mètres au pas de marche. Un ascenseur déclaré à cinq
+ * minutes devient donc aussi cher qu'un long détour, et le trajet préfère
+ * l'escalier — ce qui est exactement ce qu'on veut dire en le déclarant. Le
+ * prix reste positif : un passage annoncé instantané ne doit pas devenir un
+ * raccourci qu'on emprunte pour rien.
+ */
+function coutLiaison(t, min, pmr){
+  const sup = (min == null ? 0 : min - t.min) * (pmr ? ALLURE_PMR : ALLURE) * 60;
+  return Math.max(5, t.cout + sup);
+}
+
+/** Un passage praticable : montré au visiteur, relié à un autre, et permis
+ *  dans ce mode — un escalier n'en est pas un pour un fauteuil. */
+function passagePraticable(an, id, pmr){
+  const o = an.par.get(id);
+  if (!o || !o.visible || !an.vers.has(id)) return null;
+  const t = typeLiaison(o.f);
+  return pmr && !t.accessible ? null : o;
+}
+
+/** Les passages praticables d'un plan. */
+function passagesDe(p, pmr){
+  const an = annuaireLiaisons(), l = [];
+  an.par.forEach((o, id) => {
+    if (o.p.i === p.i && passagePraticable(an, id, pmr)) l.push(o.f);
+  });
+  return l;
+}
+
+/** Par où l'on quitte un plan : ses portes, et les passages déclarés — un
+ *  étage se quitte par son escalier, et non par la porte du hall d'en bas. */
+function sortiesDe(p, pmr){
+  const l = portesDe(p);
+  for (const f of passagesDe(p, pmr)) if (l.indexOf(f) < 0) l.push(f);
+  return l;
+}
+
+/** Les couples de plans qu'un passage joint directement, pour qui n'a besoin
+ *  que de savoir s'ils le sont. */
+function plansRelies(pmr){
+  const an = annuaireLiaisons(), out = new Set();
+  an.vers.forEach((suite, id) => {
+    const o = passagePraticable(an, id, pmr);
+    if (!o) return;
+    suite.forEach((min, idv) => {
+      const v = passagePraticable(an, idv, pmr);
+      if (v) out.add(o.p.i + "|" + v.p.i);
+    });
+  });
+  return out;
+}
+
+/* ------------------------------------------------------------
+   Le chemin qui passe d'un plan à l'autre
+   ------------------------------------------------------------ */
+/**
+ * La distance de marche depuis un point vers tout le reste du pavillon.
+ *
+ * Un balayage en largeur, comme pour la journée : chercher un A* par couple
+ * de passages coûterait davantage pour un chiffre qu'on ne fait que comparer.
+ * Le tracé montré au visiteur, lui, reste celui de `troncon`.
+ */
+const BALAYAGES = new Map();
+function balayage(p, pmr, xy, chez){
+  const cle = p.id + (pmr ? "|pmr" : "") + "|" + xy[0].toFixed(2) + "," + xy[1].toFixed(2);
+  const garde = BALAYAGES.get(cle);
+  if (garde) return garde;
+  const g = grille(p, pmr);
+  /* On ne sort pas d'un emplacement en traversant son voisin : l'accroche s'en
+     tient à l'emprise du sien, quand on sait laquelle c'est. */
+  const c = accroche(g, xy, chez);
+  const b = { g: g, d: c >= 0 ? distancesDepuis(g, c) : null };
+  BALAYAGES.set(cle, b);
+  return b;
+}
+
+/** Rend -1 quand aucune allée ne mène au point demandé. */
+function distanceDepuis(bal, xy, chez){
+  if (!bal.d) return -1;
+  const c = accroche(bal.g, xy, chez);
+  if (c < 0) return -1;
+  return bal.d[c] >= 0 ? bal.d[c] * PAS_GRILLE : -1;
+}
+
+/* Ce qu'on s'autorise de balayages pour un trajet. Chacun parcourt un
+   pavillon entier case par case — quelques dizaines de millisecondes, plus
+   sur un téléphone. Une vingtaine couvre tout salon réel ; la borne n'est là
+   que pour l'exploitant qui relierait tout à tout, et le trajet reste alors
+   le meilleur de ceux qu'on a eu le temps d'examiner. */
+const LIMITE_BALAYAGES = 20;
+
+/**
+ * Le chemin le plus court d'un point à un autre, passages compris.
+ *
+ * Dijkstra sur un graphe minuscule : les deux bouts du trajet et les passages
+ * praticables. Une arête de marche coûte les mètres d'allée qui séparent deux
+ * points d'un même plan ; une arête de passage coûte le forfait de son type.
+ * Les distances de marche ne se calculent qu'au moment où un nœud est retenu,
+ * et jamais deux fois : un salon dont les plans ne se relient pas ne fait
+ * donc qu'un balayage avant de rendre les armes.
+ *
+ * Rend la suite des sauts, ou rien si les liaisons déclarées ne mènent pas de
+ * l'un à l'autre.
+ */
+function cheminLiaisons(a, b, pmr){
+  const an = annuaireLiaisons();
+  if (!an.vers.size) return null;
+
+  /* Les deux bouts du trajet peuvent être des emplacements : ils gardent leur
+     emprise et leur objet, dont dépendent l'accroche à l'allée et l'amorce. Un
+     passage, lui, n'est qu'un point. */
+  const noeuds = [{ ip: a.p, xy: a.xy.slice(), d: a.d, obj: a.obj },
+                  { ip: b.p, xy: b.xy.slice(), d: b.d, obj: b.obj }];
+  const rang = new Map();
+  /* Un escalier ne relie rien pour un fauteuil : le mode accessible retire le
+     passage du graphe plutôt que de le pénaliser, faute de quoi il finirait
+     par le proposer là où il n'y a rien d'autre. */
+  an.par.forEach((o, id) => {
+    if (!passagePraticable(an, id, pmr)) return;
+    rang.set(id, noeuds.length);
+    noeuds.push({ ip: o.p.i, xy: o.f.pts[0].slice(), id: id, f: o.f, t: typeLiaison(o.f) });
+  });
+  if (noeuds.length < 4) return null;   // il faut au moins les deux bouts d'un passage
+
+  const n = noeuds.length;
+  const D = new Float64Array(n).fill(Infinity);
+  const vient = new Array(n).fill(null);
+  const vu = new Uint8Array(n);
+  D[0] = 0;
+  let balayages = 0;
+
+  for (;;){
+    let u = -1;
+    for (let i = 0; i < n; i++) if (!vu[i] && D[i] < Infinity && (u < 0 || D[i] < D[u])) u = i;
+    if (u < 0 || u === 1) break;        // plus rien à ouvrir, ou l'arrivée est arrêtée
+    vu[u] = 1;
+
+    /* Emprunter le passage : son prix est celui du passage, et non d'un
+       chemin — on ne marche pas dans un escalier, on le monte. */
+    const suite = noeuds[u].id ? an.vers.get(noeuds[u].id) : null;
+    if (suite) suite.forEach((dit, idv) => {
+      const v = rang.get(idv);
+      /* Un passage joint deux plans. Deux repères du même plan reliés l'un à
+         l'autre — ce que l'administration ne propose pas, mais qu'une reprise
+         de données peut porter — feraient un raccourci que personne ne peut
+         emprunter : on l'ignore plutôt que de tracer un trajet impossible. */
+      if (v === undefined || vu[v] || noeuds[v].ip === noeuds[u].ip) return;
+      /* Le temps du passage est celui fixé pour ce couple-ci, et à défaut
+         celui de son type : le même escalier met une minute au premier étage
+         et davantage au second. */
+      const min = dit == null ? noeuds[u].t.min : dit;
+      const d = D[u] + coutLiaison(noeuds[u].t, dit, pmr);
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison", min: min }; }
+    });
+
+    /* Marcher dans le plan où l'on se trouve. */
+    const p = DATA.plans[noeuds[u].ip];
+    if (!p || balayages >= LIMITE_BALAYAGES) continue;
+    balayages++;
+    const bal = balayage(p, pmr, noeuds[u].xy, noeuds[u].d);
+    for (let v = 0; v < n; v++){
+      if (v === u || vu[v] || noeuds[v].ip !== noeuds[u].ip) continue;
+      const m = distanceDepuis(bal, noeuds[v].xy, noeuds[v].d);
+      if (m < 0) continue;
+      const d = D[u] + m;
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "marche" }; }
+    }
   }
 
+  if (!isFinite(D[1])) return null;
+  const sauts = [];
+  for (let i = 1; i !== 0; ){
+    const e = vient[i];
+    if (!e) return null;
+    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre, min: e.min });
+    i = e.de;
+  }
+  return sauts;
+}
+
+/**
+ * Le trajet que décrit une suite de sauts : les allées qu'on marche, les
+ * passages qu'on emprunte.
+ *
+ * Un tronçon qui ne se trace pas ne fait pas échouer le trajet : la suite est
+ * juste, et mieux vaut un plan où un morceau manque qu'un « aucun chemin »
+ * qui serait faux.
+ */
+function routeParLiaisons(sauts, pmr){
+  const etapes = [], avertis = [];
+  let minutes = 0, liaisons = 0;
+  for (const s of sauts){
+    if (s.genre === "liaison"){
+      liaisons++;
+      minutes += s.min;
+      etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
+                    min: s.min, nom: nomRepere(s.a.f), nomVers: nomRepere(s.b.f),
+                    de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
+      continue;
+    }
+    /* Deux points confondus — le départ posé sur l'escalier lui-même : il n'y
+       a pas d'allée entre eux, et une étape de zéro mètre n'apprend rien. */
+    if (Math.hypot(s.b.xy[0] - s.a.xy[0], s.b.xy[1] - s.a.xy[1]) < .5) continue;
+    const p = DATA.plans[s.a.ip];
+    const t = troncon(p, pmr, s.a.xy, s.b.xy, s.a.obj, s.b.obj);
+    if (t) etapes.push(t);
+    else avertis.push("Le chemin dans le " + p.libelle + " n'a pas pu être tracé : " +
+                      "cette partie du trajet manque à l'écran.");
+  }
+  return { etapes: etapes, avertis: avertis, liaisons: liaisons, minutes: minutes,
+           partiel: !!avertis.length,
+           m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/**
+ * Le trajet d'un point à un autre, quel que soit le nombre de plans traversés.
+ *
+ * Trois cas, dans cet ordre. Le même plan, et c'est un tronçon. Des plans que
+ * des passages relient, et c'est la suite de sauts. Des plans que rien ne
+ * relie — aucune liaison déclarée, ou aucune praticable en fauteuil — et l'on
+ * retombe sur ce qu'on savait faire avant : sortir par la porte la plus
+ * proche, dire « rejoignez le pavillon 7.2 », reprendre à l'entrée de
+ * l'autre. Le trajet est alors coupé, et il le dit.
+ */
+function routeEntre(a, b, pmr){
+  if (a.p === b.p){
+    const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy, a.obj, b.obj);
+    if (t) return { etapes: [t], m: t.m };
+  }
+
+  /* Un plan peut aussi se rejoindre lui-même par un autre — deux moitiés d'un
+     hall que seule une passerelle relie : la recherche par liaisons a donc
+     lieu même quand le départ et l'arrivée partagent leur plan. */
+  const sauts = cheminLiaisons(a, b, pmr);
+  if (sauts) return routeParLiaisons(sauts, pmr);
+  if (a.p === b.p) return { etapes: [], m: 0, sansChemin: true };
+
   const pa = DATA.plans[a.p], pb = DATA.plans[b.p];
-  const t1 = versPorte(pa, pmr, a.xy, false);
-  const t2 = versPorte(pb, pmr, b.xy, true);
+  const t1 = versPorte(pa, pmr, a.xy, false, a.obj);
+  const t2 = versPorte(pb, pmr, b.xy, true, b.obj);
   const etapes = [];
   const avertis = [];
   if (t1) etapes.push(t1);
@@ -803,9 +1402,25 @@ function calculeRoute(){
                     "cette partie du trajet n'est pas tracée.");
   /* Sans repère d'entrée ni de sortie, il ne reste que « changez de pavillon » :
      mieux vaut le dire que d'annoncer un trajet de zéro mètre. */
-  return { pmr: pmr, etapes: etapes, avertis: avertis, coupe: true,
+  return { etapes: etapes, avertis: avertis, coupe: true,
            partiel: !t1 || !t2, aucunTrace: !t1 && !t2,
            m: etapes.reduce((s, e) => s + (e.m || 0), 0) };
+}
+
+/**
+ * Le trajet demandé dans le tiroir.
+ *
+ * Dans un même pavillon il n'y a qu'un tronçon. D'un plan à l'autre, tout
+ * dépend de ce que l'exploitant a relié : les passages déclarés enchaînent
+ * les plans sans rupture, leur absence laisse le trajet coupé à la porte.
+ */
+function calculeRoute(){
+  const a = ITI.a, b = ITI.b, pmr = ITI.pmr;
+  if (!a || !b) return null;
+  if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
+  const r = routeEntre(a, b, pmr);
+  r.pmr = pmr;
+  return r;
 }
 
 /* ------------------------------------------------------------
@@ -972,8 +1587,12 @@ function ecritDistance(m){
   return m < 950 ? Math.round(m / 5) * 5 + " m"
                  : (m / 1000).toFixed(1).replace(".", ",") + " km";
 }
-function ecritDuree(m, pmr){
-  const min = Math.max(1, Math.round(m / ((pmr ? ALLURE_PMR : ALLURE) * 60)));
+/* Les minutes d'un passage s'ajoutent à celles de la marche : monter un
+   étage prend le temps de le monter, attendre un ascenseur celui de
+   l'attendre, et un trajet qui les tairait promettrait ce qu'il ne tient
+   pas. */
+function ecritDuree(m, pmr, passages){
+  const min = Math.max(1, Math.round(m / ((pmr ? ALLURE_PMR : ALLURE) * 60)) + (passages || 0));
   return "≈ " + min + " min";
 }
 
@@ -1089,6 +1708,29 @@ function relance(){
   }, 30);
 }
 
+/**
+ * Ce qu'une étape de passage dit au visiteur.
+ *
+ * Une porte se franchit d'un pavillon à l'autre et se nomme des deux côtés :
+ * savoir par où l'on sort ne suffit pas, il faut savoir par où l'on entre. Un
+ * escalier porte le plus souvent le même nom en haut et en bas — le répéter
+ * ferait douter qu'on soit au bon endroit, on ne le redit donc que lorsqu'il
+ * change.
+ */
+function phraseLiaison(e){
+  const t = TYPES_LIAISON[e.type] || TYPES_LIAISON.entree;
+  /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
+     trajet dont les mètres ne rendent pas compte. */
+  const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
+  if (e.type === "entree")
+    return { t: "Changement de pavillon",
+             s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
+                e.vers + " par « " + e.nomVers + " »." + duree };
+  return { t: t.nom[0].toUpperCase() + t.nom.slice(1) + " · " + e.nom,
+           s: "Prenez " + t.art + " « " + e.nom + " » : vous arrivez dans le " + e.vers +
+              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." + duree };
+}
+
 function montreResultat(etat){
   const z = $("iResultat"), badge = $("iResume");
   z.innerHTML = "";
@@ -1125,35 +1767,65 @@ function montreResultat(etat){
   if (ROUTE.aucunTrace){
     badge.textContent = "non tracé";
   } else {
-    /* Ce qui sépare deux pavillons ne figure sur aucun plan — ni passerelle, ni
-       allée extérieure : la distance annoncée est celle des tronçons tracés, et
-       elle le dit. */
-    badge.textContent = (ROUTE.coupe ? "≥ " : "") +
-      ecritDistance(ROUTE.m) + " · " + ecritDuree(ROUTE.m, ROUTE.pmr);
+    /* Ce qui sépare deux pavillons que rien ne relie ne figure sur aucun plan
+       — ni passerelle, ni allée extérieure : la distance annoncée est alors
+       celle des seuls tronçons tracés, et elle le dit. Un trajet qui emprunte
+       des passages déclarés, lui, est complet d'un bout à l'autre ; il ne lui
+       manque que les mètres de l'escalier, comptés en minutes. */
+    badge.textContent = (ROUTE.coupe ? "≥ " : "") + ecritDistance(ROUTE.m) +
+      " · " + ecritDuree(ROUTE.m, ROUTE.pmr, ROUTE.minutes);
     const bilan = document.createElement("div");
     bilan.className = "iBilan";
     bilan.innerHTML = '<b></b><span></span>';
     bilan.querySelector("b").textContent = (ROUTE.coupe ? "au moins " : "") + ecritDistance(ROUTE.m);
-    bilan.querySelector("span").textContent = ecritDuree(ROUTE.m, ROUTE.pmr) +
+    bilan.querySelector("span").textContent =
+      ecritDuree(ROUTE.m, ROUTE.pmr, ROUTE.minutes) +
       (ROUTE.pmr ? " · itinéraire accessible" : " de marche") +
-      (ROUTE.coupe ? " · hors trajet entre pavillons" : "");
+      (ROUTE.coupe ? " · hors trajet entre pavillons"
+                   : ROUTE.liaisons ? " · " + ROUTE.liaisons + " passage" +
+                                      (ROUTE.liaisons > 1 ? "s" : "")
+                   : "");
     z.appendChild(bilan);
   }
 
-  if (ROUTE.coupe){
+  /* Un trajet en plusieurs morceaux se lit comme une suite : où l'on marche,
+     par où l'on passe. Un tronçon unique n'a rien à énumérer — le trait sur le
+     plan le dit mieux qu'une ligne de texte. */
+  if (ROUTE.etapes.length > 1){
     const l = document.createElement("div");
     l.className = "iEtapes";
     ROUTE.etapes.forEach(e => {
-      const d = document.createElement("div");
-      d.className = "iEtape" + (e.genre === "transfert" ? " transfert" : "");
+      const passage = e.genre === "transfert" || e.genre === "liaison";
+      /* Le trajet traverse des plans qu'on ne regarde pas : chaque étape de
+         marche ouvre le sien. Sans cela, le visiteur lit « 80 m dans le
+         pavillon 7.2 » et n'a aucun moyen de voir lesquels. */
+      const ailleurs = e.genre === "marche" && e.p !== state.plan;
+      const d = document.createElement(ailleurs ? "button" : "div");
+      if (ailleurs){
+        d.type = "button";
+        d.onclick = () => {
+          changePlan(e.p);
+          dessineItineraire();
+          cadreItineraire();
+          montreResultat();
+        };
+      }
+      d.className = "iEtape" + (passage ? " transfert" : "") + (ailleurs ? " ailleurs" : "");
       d.innerHTML = '<span class="t"></span><span class="s"></span>';
+      const dit2 = (t, s) => {
+        d.querySelector(".t").textContent = t;
+        d.querySelector(".s").textContent = s;
+      };
       if (e.genre === "transfert"){
-        d.querySelector(".t").textContent = "Changement de pavillon";
-        d.querySelector(".s").textContent = "Sortez du " + e.de + ", rejoignez le " + e.vers + ".";
+        dit2("Changement de pavillon",
+             "Sortez du " + e.de + ", rejoignez le " + e.vers + ".");
+      } else if (e.genre === "liaison"){
+        const p = phraseLiaison(e);
+        dit2(p.t, p.s);
       } else {
-        d.querySelector(".t").textContent = DATA.plans[e.p].libelle;
-        d.querySelector(".s").textContent = ecritDistance(e.m) + " dans le pavillon" +
-          (e.p === state.plan ? " · tracé à l'écran" : "");
+        dit2(DATA.plans[e.p].libelle,
+             ecritDistance(e.m) + " dans le pavillon" +
+             (e.p === state.plan ? " · tracé à l'écran" : " · voir"));
       }
       l.appendChild(d);
     });
@@ -1223,11 +1895,21 @@ function finVisee(){
  * auquel cas la fiche ne doit pas s'ouvrir par-dessus.
  */
 function viseItineraire(id){
-  if (!visee) return false;
   const o = parId.get(id);
-  if (!o) return false;
+  return o ? visePoint(pointObjet(o)) : false;
+}
+
+/** Viser un repère : le geste est le même, le point vient d'ailleurs. */
+function visePoi(id){
+  if (!visee) return false;
+  const cible = formeParId(id);
+  return cible && cible.f.t === "repere" ? visePoint(pointRepere(cible.f, P())) : false;
+}
+
+function visePoint(pt){
+  if (!visee) return false;
   const r = visee;
-  ITI[r] = pointObjet(o);
+  ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
   /* Deux points à désigner, deux gestes : tant que l'autre champ est vide, on
      enchaîne plutôt que de faire rouvrir le tiroir pour le refermer aussitôt. */
@@ -1272,8 +1954,11 @@ function fermeItineraire(){
 
 /** Depuis une fiche : « j'y vais ». L'arrivée est connue, le départ reste à
  *  dire — c'est lui qu'on met sous le curseur. */
-function versItineraire(o){
-  ITI.b = pointObjet(o);
+const versItineraire = (o) => versItineraireDe(pointObjet(o));
+
+/** Le même geste depuis un repère, qui n'est pas un objet du plan. */
+function versItineraireDe(pt){
+  ITI.b = pt;
   $("iArrivee").value = ITI.b.nom;
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();
