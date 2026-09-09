@@ -2,7 +2,7 @@
  * API publique du plan.
  *
  *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
- *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
+ *   GET /plan-public?slug=…&fond=<idPlan>&v=…&a=…   le fond d'un pavillon
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
@@ -11,6 +11,13 @@
  * appel, pour que le plan s'affiche et devienne manipulable sans l'attendre.
  * Ce fond ne change qu'à la synchronisation, dont l'horodatage sert de clé de
  * version : le navigateur ne le retélécharge jamais deux fois.
+ *
+ * Et il ne part qu'amputé de ce que l'exploitant a masqué : le visiteur n'a
+ * aucun moyen de rallumer un calque, il n'a donc rien à faire de son dessin.
+ * L'exploitant authentifié, lui, reçoit le fond entier — c'est à partir de là
+ * qu'il choisit. La page joint alors l'empreinte de l'apparence (`a=`) à
+ * l'adresse, sans quoi un fond déclaré immuable resterait figé sur le
+ * découpage d'avant.
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
@@ -22,6 +29,7 @@
  * fuiter par ce chemin.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { sansMasques } from "../_partage/svg.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -60,6 +68,30 @@ const db = (req: Request) => {
     },
   );
 };
+
+/**
+ * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
+ * « Batiment » — et de sous-calques — « Batiment/8-VRD-ASS ».
+ *
+ * Un réglage absent montre, comme la page l'entend elle aussi : un salon dont
+ * l'apparence n'a jamais été publiée continue donc de recevoir tout son fond.
+ */
+async function masquesDuPlan(
+  sb: ReturnType<typeof db>,
+  planId: string,
+): Promise<Record<string, boolean>> {
+  const { data } = await sb
+    .from("apparence")
+    .select("reglages")
+    .eq("plan_id", planId)
+    .maybeSingle();
+  const reglages = (data?.reglages ?? {}) as Record<string, { visible?: boolean }>;
+  const masques: Record<string, boolean> = {};
+  for (const [cle, r] of Object.entries(reglages)) {
+    if (r && r.visible === false) masques[cle] = true;
+  }
+  return masques;
+}
 
 Deno.serve(async (req) => {
   const CORS = { ...cors(req), ...METHODES };
@@ -141,10 +173,25 @@ Deno.serve(async (req) => {
         .not("svg", "is", null)
         .order("ordre_klipso", { ascending: true });
 
-      return repond({
-        plan: fond,
-        calques: (cal ?? []).map((c) => ({ cle: c.cle, svg: c.svg })),
-      });
+      /* Ce que l'exploitant a masqué ne part pas.
+         Un visiteur n'a aucun moyen de le rallumer — le panneau des calques
+         n'existe qu'en administration — et il en recevait pourtant tout le
+         dessin : chez FEP26, 2,5 Mo pour 35 Ko à l'écran. L'exploitant, lui,
+         reçoit le fond entier : c'est à partir de là qu'il choisit. La page
+         porte l'empreinte de l'apparence dans son adresse, pour que le
+         navigateur n'aille pas resservir le découpage d'avant. */
+      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id);
+      const retenus = (cal ?? [])
+        .filter((c) => !masques[String(c.cle)])
+        .map((c) => ({
+          cle: c.cle,
+          svg: sansMasques(
+            String(c.svg),
+            (id) => Boolean(masques[String(c.cle) + "/" + id]),
+          ),
+        }));
+
+      return repond({ plan: fond, calques: retenus });
     }
 
     const { data: plans } = await sb

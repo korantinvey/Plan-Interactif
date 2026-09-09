@@ -81,6 +81,25 @@ export function allege(source: string): { svg: string; sousCalques: SousCalque[]
   return { svg, sousCalques: groupes.map((g) => ({ ...g, contenu: "" })) };
 }
 
+/**
+ * Le dessin d'un calque, débarrassé des sous-calques que l'exploitant a
+ * masqués. `allege` les pose à plat — un `<g>` par sous-calque, jamais
+ * imbriqués — d'où ce découpage sur la seule balise ouvrante.
+ *
+ * C'est là que pèse le fond : chez FEP26, les sous-calques masqués de
+ * « Batiment » font 2 Mo des 2,6 Mo servis. Les retirer avant l'envoi, plutôt
+ * qu'après réception, épargne au visiteur un dessin qu'il ne verra pas.
+ */
+export function sansMasques(svg: string, masque: (id: string) => boolean): string {
+  return svg
+    .split(/(?=<g )/)
+    .filter((part) => {
+      const m = /^<g[^>]*\bid="([^"]*)"/.exec(part);
+      return !m || !masque(m[1]);
+    })
+    .join("");
+}
+
 /** Les textes d'un calque, utilisés pour nommer les zones organisateur. */
 export function textes(source: string): { x: number; y: number; txt: string }[] {
   const out: { x: number; y: number; txt: string }[] = [];

@@ -57,15 +57,37 @@ function entetesApi(){
  * indéfiniment et ne le redemande qu'après une mise à jour du plan.
  */
 const _fonds = new Map();
+
+/**
+ * Une empreinte de l'apparence publiée, jointe à l'adresse du fond.
+ *
+ * Le service ne sert au visiteur que les calques montrés ; le fond d'un
+ * pavillon dépend donc de l'apparence autant que de la synchronisation. Or il
+ * est déclaré immuable — sans cette empreinte, masquer un calque ne
+ * changerait rien pour qui a déjà chargé la page, et en rallumer un ne le
+ * ferait jamais apparaître. L'exploitant, lui, reçoit le fond entier : son
+ * adresse n'a pas à bouger quand il essaie un réglage.
+ */
+function empreinteApparence(p){
+  const t = JSON.stringify((p.apparence || {}).reglages || {});
+  let h = 2166136261;                       // FNV-1a, suffisant pour une clé de cache
+  for (let i = 0; i < t.length; i++){
+    h ^= t.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
 function chargeFond(i){
   const p = DATA?.plans?.[i];
   if (!p || !API) return Promise.resolve();
   if (p.fond.length === 0 || p.fond.every(c => c.svg !== undefined)) return Promise.resolve();
   if (_fonds.has(p.id)) return _fonds.get(p.id);
 
+  const admin = document.documentElement.dataset.role === "admin";
   const q = API + "?slug=" + encodeURIComponent(SLUG) +
             "&fond=" + encodeURIComponent(p.id) +
-            "&v=" + encodeURIComponent(DATA.genereLe || "0");
+            "&v=" + encodeURIComponent(DATA.genereLe || "0") +
+            (admin ? "" : "&a=" + empreinteApparence(p));
   const promesse = fetch(q, { headers: entetesApi() })
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
