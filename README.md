@@ -29,6 +29,12 @@ Points établis pendant l'étude de l'API, à ne pas redécouvrir :
 - Les **libellés de calques ne sont pas des identifiants** : le calque des
   secteurs s'appelle `INFOPRO_SECTEURS_DELIMITATION` dans deux pavillons et
   `…DELIMITATIONS` dans le troisième. Tout est indexé sur les GUID.
+- Le **secteur est une propriété de l'emplacement**, `Stand.SecteurExp`, et non
+  un champ de dossier exposant : il n'a rien à régler, il vaut pour un stand
+  encore libre, et il tient même quand les exposants viennent d'ailleurs. C'est
+  un champ « choix », donc un code dont le libellé se lit dans la codification —
+  comme la nomenclature. Le calque de délimitation cité plus haut n'en dit rien :
+  il ne porte que des traits.
 - Le jeton GAIA vit **15 minutes**. On le garde 13. Cela n'a aucun rapport avec
   la fréquence de rafraîchissement du plan, qui se règle par événement.
 

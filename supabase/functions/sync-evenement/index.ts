@@ -56,6 +56,12 @@ const NOMS: Record<string, string> = {
   "INFOPRO_ZONE_NON_ELINGUABLE": "Zones non élingables",
 };
 
+/* Le secteur commercial de l'emplacement. GAIA le nomme pareil sur tous les
+   salons — c'est une propriété standard du stand, et non un champ de dossier
+   que chaque organisateur baptiserait à sa façon : il n'y a donc rien à régler
+   pour lui, ni ici ni dans la console. */
+const CHAMP_SECTEUR = "SecteurExp";
+
 // Les calques de texte que le rendu recalcule lui-même : conservés, mais c'est
 // d'eux qu'on tire les noms de zones tant que x_LibZOD n'est pas renseigné.
 const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
@@ -72,6 +78,32 @@ const client = () =>
 
 const gaia = (instance: string, eventId?: string) =>
   new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
+
+/**
+ * Les libellés d'un champ « choix », et de quoi dire pourquoi il n'y en a pas.
+ *
+ * L'échec n'est pas bloquant : sans libellé le plan reste juste, avec des
+ * codes. Perdre une synchronisation entière pour un défaut d'habillage serait
+ * disproportionné — d'où l'erreur rendue plutôt que jetée, et remontée dans le
+ * compte rendu.
+ */
+async function libellesChoix(g: Gaia, entite: string, champ: string): Promise<{
+  libelles: Record<string, string>;
+  chemin: string | null;
+  erreur: string | null;
+}> {
+  if (!champ) return { libelles: {}, chemin: null, erreur: null };
+  try {
+    const chemin = await g.cheminCodification(entite, champ);
+    return { libelles: await g.codification(chemin), chemin, erreur: null };
+  } catch (e) {
+    return {
+      libelles: {},
+      chemin: null,
+      erreur: e instanceof Error ? e.message : String(e),
+    };
+  }
+}
 
 /* Un domaine que rien ne reprend vaut mieux « aucun » qu'un fournisseur choisi
    par défaut : celui-ci laisserait croire à une reprise qui n'a pas lieu. */
@@ -420,37 +452,33 @@ Deno.serve(async (req) => {
 
       etape("plan", "encours");
 
-      /* Les nomenclatures ne portent qu'un code — « FEP26_NOM10201 » — dont le
-         libellé vit dans le service « codification ». On le résout ici, une fois
-         pour tout l'événement, plutôt qu'à chaque affichage.
+      /* Les champs « choix » ne portent qu'un code — « FEP26_NOM10201 » — dont
+         le libellé vit dans le service « codification ». On les résout ici, une
+         fois pour tout l'événement, plutôt qu'à chaque affichage.
 
-         L'échec n'est pas bloquant : sans libellé le plan reste juste, avec des
-         codes. Perdre une synchronisation entière pour un défaut d'habillage
-         serait disproportionné. */
-      let libNomencl: Record<string, string> = {};
-      let errNomencl: string | null = null;
-      let cheminNomencl: string | null = null;
-      /* Le champ de nomenclature est celui que désigne la correspondance :
+         Pour la nomenclature, le champ est celui que désigne la correspondance :
          c'est lui qui porte les codes, donc lui dont il faut la codification. */
-      const champNomencl = srcStands === "klipso"
-        ? decoupe(cibleK("nomenclature")[0] ?? "").nom
-        : "";
-      if (champNomencl) {
-        try {
-          cheminNomencl = await g.cheminCodification("DossierExp", champNomencl);
-          libNomencl = await g.codification(cheminNomencl);
-        } catch (e) {
-          errNomencl = e instanceof Error ? e.message : String(e);
-        }
-      }
+      const nomencl = await libellesChoix(g, "DossierExp",
+        srcStands === "klipso" ? decoupe(cibleK("nomenclature")[0] ?? "").nom : "");
+      /* Le secteur est un champ « choix » comme la nomenclature, mais porté par
+         l'emplacement : sa codification est celle du stand, et on la demande
+         quelle que soit la source des exposants — le plan, lui, vient toujours
+         de Klipso. */
+      const choixSect = await libellesChoix(g, "Stand", CHAMP_SECTEUR);
 
       /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
        *  salon — « FEP26_NOM10201 » ne dit rien de plus que « NOM10201 ». */
+      const lisible = (table: Record<string, string>, c: string) =>
+        table[c] || c.replace(/^[A-Z0-9]+_/, "");
       const nomenclature = (v: unknown): string[] | null => {
         if (!v) return null;
         const liste = ([] as unknown[]).concat(v).map(String).filter(Boolean);
         if (!liste.length) return null;
-        return liste.map((c) => libNomencl[c] || c.replace(/^[A-Z0-9]+_/, ""));
+        return liste.map((c) => lisible(nomencl.libelles, c));
+      };
+      const secteur = (v: unknown): string | null => {
+        const c = ou(v);
+        return c ? lisible(choixSect.libelles, c) : null;
       };
 
       let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
@@ -514,7 +542,7 @@ Deno.serve(async (req) => {
           "Id", "IdPlan", "IdIlot", "IdDossierExpAff", "NomSurPlan", "Enseigne",
           "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
           "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
-          "StandFictif", "x_CouleurPlan",
+          "StandFictif", "x_CouleurPlan", CHAMP_SECTEUR,
         ]);
         const champsDossier = new Set(["Id", "AvancementImplantation", "Categorie"]);
         for (const c of CIBLES.klipso) {
@@ -588,6 +616,12 @@ Deno.serve(async (req) => {
               fb: val("facebook"), li: val("linkedin"), ig: val("instagram"),
             };
 
+          /* Le secteur est une propriété de l'emplacement, pas de la société qui
+             l'occupe : un stand encore libre appartient déjà au sien. Il ne
+             dépend donc ni de l'appariement, ni de la source des exposants — et
+             c'est ce qui rend un plan colorié par secteurs lisible. */
+          const sect = secteur(s[CHAMP_SECTEUR]);
+
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
             code,
@@ -604,6 +638,10 @@ Deno.serve(async (req) => {
             ...((ok && (expoEm ? em!.neuf : vrai(lit(cibleK("nouveau"), origines))))
               ? { neuf: true } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
+            /* La clé ne descend pas quand le salon ne sectorise pas :
+               l'instantané est servi au public, il n'a pas à porter des
+               « null » par centaines. */
+            ...(sect ? { sect } : {}),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
             niveaux: s.NbNiveau,
@@ -798,9 +836,14 @@ Deno.serve(async (req) => {
         ok: true,
         pavillons: resume,
         nomenclature: {
-          libelles: Object.keys(libNomencl).length,
-          chemin: cheminNomencl,
-          erreur: errNomencl,
+          libelles: Object.keys(nomencl.libelles).length,
+          chemin: nomencl.chemin,
+          erreur: nomencl.erreur,
+        },
+        secteurs: {
+          libelles: Object.keys(choixSect.libelles).length,
+          chemin: choixSect.chemin,
+          erreur: choixSect.erreur,
         },
         ...(resumeEm ? { eventmaker: resumeEm } : {}),
       });

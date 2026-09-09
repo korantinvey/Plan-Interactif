@@ -13,6 +13,10 @@
   --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
+  /* Un secteur n'a qu'une teinte : la saturation et la clarté viennent du
+     thème, sans quoi le libellé du stand — écrit à l'encre du texte —
+     deviendrait illisible sur l'un des deux. */
+  --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
@@ -25,6 +29,7 @@
     --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
     --zone:#F0B429; --zone-soft:#3A2F12;
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+    --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
   }
@@ -36,6 +41,7 @@
   --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
   --zone:#F0B429; --zone-soft:#3A2F12;
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+  --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
 }
@@ -93,6 +99,23 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Les secteurs : une bande qui sert de légende et de filtre. Dans sa colonne
+   elle se replie sur plusieurs lignes — une légende ne se lit que d'un coup
+   d'œil, et un secteur caché hors du cadre ne se devine pas. */
+.secteurs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.secteurs::-webkit-scrollbar{display:none}
+.secteurs .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.secteurs .chip:hover{border-color:var(--line-strong)}
+.secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink)}
+.secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+  background:hsl(var(--sect-h) 60% var(--sect-dot-l))}
+/* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
+   trouve pas : le filtre reste, le repère de couleur s'efface. */
+.sans-secteurs .secteurs .chip i{display:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -145,6 +168,10 @@ button{cursor:pointer;background:none;border:none}
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
+/* La teinte du secteur est posée sur le groupe par la page. La règle vient
+   avant le survol et la sélection, à spécificité égale, pour leur laisser la
+   main : un stand qu'on désigne doit se voir plus que son secteur. */
+.stand[data-sect] path{fill:hsl(var(--sect-h) var(--sect-s) var(--sect-l))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */
@@ -789,6 +816,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
+  /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
+     ligne qui défile, et ce qu'elle montre déborde par le côté. */
+  .secteurs{flex-wrap:nowrap;overflow-x:auto}
+
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
@@ -937,6 +968,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
     </div>
+    <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
   </aside>
@@ -1120,7 +1152,7 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins. */
-const state = { q: "", qn: "", sel: null, plan: 0 };
+const state = { q: "", qn: "", sel: null, plan: 0, secteurs: new Set() };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1162,7 +1194,8 @@ function indexe(d){
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
-      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "")).toLowerCase();
+      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
+                " " + (s.sect || "")).toLowerCase();
     });
   });
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
@@ -1199,6 +1232,8 @@ function indexe(d){
       if (e && e.stand && !l.some(x => x.stand === e.stand)) l.push(e);
     });
   }));
+
+  indexeSecteurs();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -1386,8 +1421,8 @@ function libelles(){
 }
 
 /* ============================================================
-   5. Recherche — sans mot-clé on reste sur le pavillon affiché,
-      dès qu'on cherche on balaie les trois
+   5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+      pavillon affiché, dès qu'on filtre on balaie les trois
 
    On ne cherche qu'un exposant. Les zones organisateur — restauration,
    accueil, animations — ne se retiennent pas par leur nom : on les repère
@@ -1396,10 +1431,93 @@ function libelles(){
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
    leur fiche et leur programme.
    ============================================================ */
+/* Les secteurs, et la teinte de chacun.
+
+   Les teintes tournent sur une roue plutôt que de se tirer d'une palette
+   nommée : un salon découpe en cinq secteurs, un autre en dix-huit, et une
+   palette finie redonnerait deux fois la même couleur sans qu'on l'ait voulu.
+   L'ordre est celui des noms, jamais celui des stands : le même secteur garde
+   sa couleur d'un pavillon à l'autre, et d'une synchronisation à la suivante. */
+const TEINTES = [212, 28, 145, 340, 262, 42, 190, 8, 100, 310, 172, 62];
+let SECTEURS = new Map();
+
+function indexeSecteurs(){
+  const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(s => s.sect)))]
+    .filter(Boolean).sort(COLLATION.compare);
+  SECTEURS = new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]]));
+}
+
+/**
+ * Les secteurs se montrent-ils ?
+ *
+ * Un salon qui ne sectorise pas n'a rien à montrer ; ailleurs c'est un réglage,
+ * car un plan déjà réglé au blanc ou à la couleur maison de l'exploitant ne
+ * doit pas se retrouver bariolé sans qu'il l'ait demandé.
+ */
+const secteursMontres = () => SECTEURS.size > 0 && conf("_secteurs").visible !== false;
+
+/* La bande des secteurs : légende du plan à gauche, filtre de la liste à
+   droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
+   ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
+   dire. */
+function chipsSecteurs(){
+  const b = $("secteurs");
+  b.hidden = !secteursMontres();
+  if (b.hidden) return;
+  b.innerHTML = [...SECTEURS].map(([nom, h]) =>
+    '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
+    state.secteurs.has(nom) + '" style="--sect-h:' + h + '"><i></i>' +
+    esc(nom) + '</button>').join("");
+  b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
+    const n = x.dataset.s;
+    if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
+    x.setAttribute("aria-pressed", state.secteurs.has(n));
+    appliqueFiltre();
+  });
+}
+
+/**
+ * La teinte du secteur, posée sur le groupe du stand plutôt que sur son tracé :
+ * la feuille de style la lit de là, et garde la main sur le survol et la
+ * sélection, qui doivent l'emporter sur elle.
+ */
+function coloreSecteurs(){
+  const on = secteursMontres();
+  racine.classList.toggle("sans-secteurs", !on);
+  document.querySelectorAll("#stands g").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    const h = on && o ? SECTEURS.get(o.sect) : undefined;
+    if (h === undefined){
+      g.removeAttribute("data-sect");
+      g.style.removeProperty("--sect-h");
+    } else {
+      g.setAttribute("data-sect", "");
+      g.style.setProperty("--sect-h", h);
+    }
+  });
+}
+
+/** La légende, les couleurs et le filtre suivent le même réglage : retirés du
+ *  plan, ils ne doivent pas laisser derrière eux un filtre invisible qui
+ *  continuerait de retrancher des stands de la liste. */
+function appliqueSecteurs(){
+  if (!secteursMontres()) state.secteurs.clear();
+  chipsSecteurs();
+  coloreSecteurs();
+  // la bande fait partie de ce qui dépasse du tiroir replié : sa hauteur
+  // change, et les commandes du plan se posent dessus
+  mesureTiroir();
+}
+
+/* Un secteur retenu porte, comme un mot-clé, sur tout le salon : un exposant
+   du secteur cherché peut être dans un autre pavillon que celui qu'on
+   regarde. Les deux se cumulent — le mot-clé cherche dans les secteurs
+   retenus, et non à côté d'eux. */
 function visible(o){
-  if (!state.qn) return true;
+  if (!state.qn && !state.secteurs.size) return true;
   if (o.kind !== "stand") return false;
-  return (o.rech || "").includes(state.qn);
+  if (state.secteurs.size && !state.secteurs.has(o.sect)) return false;
+  return !state.qn || (o.rech || "").includes(state.qn);
 }
 
 function appliqueFiltre(){
@@ -1413,14 +1531,15 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  const portee = q ? TOUS : P().stands;
+  const tout = Boolean(q) || state.secteurs.size > 0;
+  const portee = tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (q ? " · tous pavillons" : " · " + P().libelle);
+    (tout ? " · tous pavillons" : " · " + P().libelle);
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const sous = o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
@@ -1850,6 +1969,8 @@ function ouvre(o, rect, canal){
   const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && o.plan && o.plan !== titre ? f("Raison sociale", esc(o.plan)) : "") +
+    // le libellé est résolu à la synchronisation : la page l'affiche tel quel
+    ok("secteur", f("Secteur", o.sect ? esc(o.sect) : "")) +
     ok("adresse", f("Adresse", o.adr ? esc(o.adr) : "")) +
     /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
        par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
@@ -2105,6 +2226,10 @@ $("q").addEventListener("input", e => {
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La mesure du tiroir appartient à ce module, mais la bande des secteurs
+   paraît et disparaît ailleurs : on lui laisse de quoi la redemander. */
+let mesureTiroir = () => {};
+
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
   if (!tiroir || !prise) return;
@@ -2117,7 +2242,7 @@ $("q").addEventListener("input", e => {
   function mesure(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
-    const h = prise.offsetHeight + part(".search") + part(".count");
+    const h = prise.offsetHeight + part(".search") + part(".secteurs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
@@ -2218,6 +2343,7 @@ $("q").addEventListener("input", e => {
     else mesure();
   });
 
+  mesureTiroir = mesure;
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
@@ -2312,6 +2438,7 @@ function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
+  appliqueSecteurs();
 }
 
 /**
@@ -2393,6 +2520,24 @@ function ouvreReglages(){
       };
       bloc.appendChild(l);
     });
+
+    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+       retirent une commande du plan, celui-ci change ce que le plan donne à
+       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+       promettrait des couleurs qu'aucune donnée ne porte. */
+    if (SECTEURS.size){
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+      const c = l.querySelector("input");
+      c.checked = conf("_secteurs").visible !== false;
+      c.onchange = e => {
+        conf("_secteurs").visible = e.target.checked;
+        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+      };
+      bloc.appendChild(l);
+    }
+
     corps.appendChild(bloc);
   }, [{ libelle: "Fermer" }]);
 }
