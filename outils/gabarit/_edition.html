@@ -91,6 +91,23 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* Le type d'un repère se change après coup : une porte mal typée ne se voit
+     qu'en essayant un trajet, et il serait absurde de la redessiner pour
+     cela. Un repère d'avant la séparation du type et du libellé n'en porte
+     pas : la liste s'ouvre sur celui que son libellé laisse deviner, et le
+     choix s'écrit dès qu'on y touche. */
+  const cp = $("elemPicto");
+  if (cp){
+    const estRepere = f.t === "repere";
+    cp.hidden = !estRepere;
+    if (estRepere){
+      if (!cp.options.length)
+        cp.innerHTML = TYPES_REPERE
+          .map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+      cp.value = pictoForme(f) || "";
+    }
+  }
+
   /* Une image peut désigner un stand : le logo d'un exposant posé sur son
      emplacement ouvre sa fiche au clic. */
   const estImage = f.t === "image";
@@ -148,6 +165,20 @@ function appliqueTexte(){
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
+ *  vaut pour l'itinéraire — une porte, un escalier à contourner en fauteuil. */
+function appliquePicto(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "repere") return;
+  memorise();
+  cible.f.picto = $("elemPicto").value;
+  enregistreDessins();
+  /* Le pavage des allées tient compte des escaliers et des escalators : en
+     désigner un, ou cesser de le faire, change les trajets accessibles. */
+  oublieGrilles();
+  dessineDessins(); dessinePoignees();
 }
 
 function supprimeForme(){

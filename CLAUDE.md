@@ -13,6 +13,7 @@ depuis `outils/gabarit/`, puis **versionnées**, car Cloudflare les sert sans
 ```
 outils/gabarit/*.html → outils/tpl-multi.html → web/*.html
 outils/gabarit/_console.css                   → web/console.css
+outils/gabarit/** + supabase/**               → CARTE.md
 ```
 
 Le piège tient en une phrase : modifier un module de `outils/gabarit/` sans
@@ -34,6 +35,8 @@ avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 - `web/*.html`, `web/console.css`, `web/config.js` — sortie de la
   construction ; éditez `outils/gabarit/`.
 - `outils/tpl-multi.html` — intermédiaire, régénéré par `assemble.js`.
+- `CARTE.md` — index relu dans les sources par `carte.js`. Pour le corriger,
+  corrigez ce qu'il décrit : un bandeau de section, un nom de fonction.
 
 ## Données figées
 
@@ -54,6 +57,48 @@ versionner n'expose rien de plus.
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase |
+
+## Chercher sans tout ouvrir
+
+Le dépôt est petit, et pourtant coûteux à lire en aveugle : `web/` recopie
+`outils/gabarit/` en quatre exemplaires, si bien qu'une recherche de « calque »
+remontait 444 lignes dont 400 étaient la même chose recopiée. Trois choses
+règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
+
+- **`CARTE.md`** est l'index des sources : pour chaque module, ses sections, ses
+  fonctions et ses identifiants, **avec les numéros de ligne**. Il est produit
+  par `npm run construire` et vérifié par `npm run verifie` — il ne peut donc
+  pas mentir. C'est le premier fichier à lire, et souvent le seul avant d'aller
+  droit au bon endroit.
+- **`.ignore`** retire de la recherche plein texte `web/`, `tpl-multi.html` et
+  `plans.json` : ils sont fabriqués ou figés, on n'y corrige rien. Ils restent
+  lisibles en les nommant, quand il faut vraiment vérifier une page construite.
+- **Deux modules dépassent 1300 lignes.** On y entre par tranche
+  (`sed -n '531,700p'`), jamais en entier : `CARTE.md` donne la tranche.
+
+### Ce qu'on veut toucher, et où
+
+| intention | où |
+|---|---|
+| recherche, index des exposants, liste | `_js.html` § 1 et 5 |
+| rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
+| tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
+| couleurs, visibilité et réglages des calques | `_admin1.html` |
+| démarrage de la page, appel API, panne réseau | `_admin2.html` |
+| tracé des calques de dessin | `_dessin.html` |
+| déplacer, redimensionner une forme existante | `_edition.html` |
+| ordre des calques, pile | `_pile.html` |
+| enregistrer la configuration pour tous | `_pousse.html` |
+| parcours de visite | `_parcours.html` |
+| itinéraire d'un point du salon à un autre | `_itineraire.html` |
+| ordre de visite, conférences, horaires | `_journee.html` |
+| comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
+| styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
+| console multi-événements | `_console-js.html`, socle `_console-base.html` |
+| rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
+| accès administrateur d'un plan | `_auth-plan.html` |
+| synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
+| API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 
 ## Déploiement
 

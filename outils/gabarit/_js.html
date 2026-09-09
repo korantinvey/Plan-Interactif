@@ -32,7 +32,7 @@ let HEBERGES = [];
    `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
-const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0 };
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set() };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -74,7 +74,8 @@ function indexe(d){
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
-      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "")).toLowerCase();
+      s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
+                " " + (s.sect || "")).toLowerCase();
       /* Les enseignes que le stand héberge, à part : le plan doit rester
          allumé quand on en cherche une, mais la liste ne doit pas répondre
          « Hippopotamus » à qui a tapé « Burger King ». */
@@ -108,8 +109,9 @@ function indexe(d){
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => ({
       kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-      nom: x.nom, plan: x.plan,
-      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "")).toLowerCase(),
+      sect: s.sect, nom: x.nom, plan: x.plan,
+      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
+             " " + (s.sect || "")).toLowerCase(),
     }))));
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -130,6 +132,8 @@ function indexe(d){
       if (e && e.stand && !l.some(x => x.stand === e.stand)) l.push(e);
     });
   }));
+
+  indexeSecteurs();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -356,8 +360,8 @@ function libelles(){
 }
 
 /* ============================================================
-   5. Recherche — sans mot-clé on reste sur le pavillon affiché,
-      dès qu'on cherche on balaie les trois
+   5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+      pavillon affiché, dès qu'on filtre on balaie les trois
 
    On ne cherche qu'un exposant. Les zones organisateur — restauration,
    accueil, animations — ne se retiennent pas par leur nom : on les repère
@@ -366,11 +370,97 @@ function libelles(){
    mot-clé ni sans. Sur le plan, rien ne change : elles gardent leur libellé,
    leur fiche et leur programme.
    ============================================================ */
-/** Ce que la liste retient : une société répond pour elle-même, jamais pour son voisin. */
+/* Les secteurs, et la teinte de chacun.
+
+   Les teintes tournent sur une roue plutôt que de se tirer d'une palette
+   nommée : un salon découpe en cinq secteurs, un autre en dix-huit, et une
+   palette finie redonnerait deux fois la même couleur sans qu'on l'ait voulu.
+   L'ordre est celui des noms, jamais celui des stands : le même secteur garde
+   sa couleur d'un pavillon à l'autre, et d'une synchronisation à la suivante. */
+const TEINTES = [212, 28, 145, 340, 262, 42, 190, 8, 100, 310, 172, 62];
+let SECTEURS = new Map();
+
+function indexeSecteurs(){
+  const noms = [...new Set(DATA.plans.flatMap(p => p.stands.map(s => s.sect)))]
+    .filter(Boolean).sort(COLLATION.compare);
+  SECTEURS = new Map(noms.map((n, i) => [n, TEINTES[i % TEINTES.length]]));
+}
+
+/**
+ * Les secteurs se montrent-ils ?
+ *
+ * Un salon qui ne sectorise pas n'a rien à montrer ; ailleurs c'est un réglage,
+ * car un plan déjà réglé au blanc ou à la couleur maison de l'exploitant ne
+ * doit pas se retrouver bariolé sans qu'il l'ait demandé.
+ */
+const secteursMontres = () => SECTEURS.size > 0 && conf("_secteurs").visible !== false;
+
+/* La bande des secteurs : légende du plan à gauche, filtre de la liste à
+   droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
+   ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
+   dire. */
+function chipsSecteurs(){
+  const b = $("secteurs");
+  b.hidden = !secteursMontres();
+  if (b.hidden) return;
+  b.innerHTML = [...SECTEURS].map(([nom, h]) =>
+    '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
+    state.secteurs.has(nom) + '" style="--sect-h:' + h + '"><i></i>' +
+    esc(nom) + '</button>').join("");
+  b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
+    const n = x.dataset.s;
+    if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
+    x.setAttribute("aria-pressed", state.secteurs.has(n));
+    appliqueFiltre();
+  });
+}
+
+/**
+ * La teinte du secteur, posée sur le groupe du stand plutôt que sur son tracé :
+ * la feuille de style la lit de là, et garde la main sur le survol et la
+ * sélection, qui doivent l'emporter sur elle.
+ */
+function coloreSecteurs(){
+  const on = secteursMontres();
+  racine.classList.toggle("sans-secteurs", !on);
+  document.querySelectorAll("#stands g").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    const h = on && o ? SECTEURS.get(o.sect) : undefined;
+    if (h === undefined){
+      g.removeAttribute("data-sect");
+      g.style.removeProperty("--sect-h");
+    } else {
+      g.setAttribute("data-sect", "");
+      g.style.setProperty("--sect-h", h);
+    }
+  });
+}
+
+/** La légende, les couleurs et le filtre suivent le même réglage : retirés du
+ *  plan, ils ne doivent pas laisser derrière eux un filtre invisible qui
+ *  continuerait de retrancher des stands de la liste. */
+function appliqueSecteurs(){
+  if (!secteursMontres()) state.secteurs.clear();
+  chipsSecteurs();
+  coloreSecteurs();
+  // la bande fait partie de ce qui dépasse du tiroir replié : sa hauteur
+  // change, et les commandes du plan se posent dessus
+  mesureTiroir();
+}
+
+/**
+ * Ce que la liste retient : une société répond pour elle-même, jamais pour son
+ * voisin. Un secteur retenu porte, comme un mot-clé, sur tout le salon — un
+ * exposant du secteur cherché peut être dans un autre pavillon que celui qu'on
+ * regarde — et les deux se cumulent : le mot-clé cherche dans les secteurs
+ * retenus, et non à côté d'eux.
+ */
+const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+
 function visible(o){
-  if (!state.qn) return true;
+  if (!state.qn && !state.secteurs.size) return true;
   if (o.kind === "zone") return false;
-  return (o.rech || "").includes(state.qn);
+  return dansSecteurs(o) && (!state.qn || (o.rech || "").includes(state.qn));
 }
 
 /**
@@ -381,7 +471,8 @@ function visible(o){
  * d'un autre. C'est le seul endroit où une enseigne répond pour son hôte.
  */
 function visibleSurPlan(o){
-  return visible(o) || (!!state.qn && (o.rechH || "").includes(state.qn));
+  return visible(o) ||
+    (!!state.qn && dansSecteurs(o) && (o.rechH || "").includes(state.qn));
 }
 
 function appliqueFiltre(){
@@ -395,17 +486,20 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  /* Les sociétés hébergées ne rejoignent la liste que sur recherche. Hors
-     recherche, elle est le sommaire des emplacements du pavillon — et son
-     compte, celui qu'annonce l'en-tête. */
-  const portee = q ? TOUS.concat(HEBERGES) : P().stands;
+  // un secteur retenu déborde le pavillon affiché, comme un mot-clé
+  const tout = Boolean(q) || state.secteurs.size > 0;
+  /* Les sociétés hébergées ne rejoignent la liste que sur recherche : on les y
+     trouve par leur nom, et un filtre n'est pas un nom. Hors recherche, la
+     liste est le sommaire des emplacements — et son compte, celui qu'annonce
+     l'en-tête. */
+  const portee = q ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (q ? " · tous pavillons" : " · " + P().libelle);
+    (tout ? " · tous pavillons" : " · " + P().libelle);
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
@@ -700,7 +794,7 @@ function ficheConf(id, canal){
   // pavillon que celui qu'on regarde
   const c = CONFS.get(String(id));
   if (!c) return;
-  mesure("fiche_conf", canal);
+  mesure("fiche_conf", canal, String(id));
   const fz = DATA.fuseau;
   const d = momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
   const f = momentLocal(c.finLocal, fz) || momentLocal(c.fin, fz);
@@ -933,6 +1027,10 @@ function ouvre(o, rect, canal, iSoc){
   const infos =
     // la raison sociale n'apprend rien quand elle est déjà le titre
     ok("raison", !zone && soc.plan && soc.plan !== titre ? f("Raison sociale", esc(soc.plan)) : "") +
+    /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
+       quelle que soit la société qu'on y regarde. Son libellé est résolu à la
+       synchronisation, la page l'affiche tel quel. */
+    ok("secteur", f("Secteur", o.sect ? esc(o.sect) : "")) +
     ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : "")) +
     /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
        par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
@@ -1010,7 +1108,7 @@ function ouvre(o, rect, canal, iSoc){
   ecarteClicFantome();
   anime(rect, 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
-  if (!zone) mesure("fiche_stand", canal);
+  if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
@@ -1198,6 +1296,10 @@ $("q").addEventListener("input", e => {
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La mesure du tiroir appartient à ce module, mais la bande des secteurs
+   paraît et disparaît ailleurs : on lui laisse de quoi la redemander. */
+let mesureTiroir = () => {};
+
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
   if (!tiroir || !prise) return;
@@ -1210,7 +1312,7 @@ $("q").addEventListener("input", e => {
   function mesure(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
-    const h = prise.offsetHeight + part(".search") + part(".count");
+    const h = prise.offsetHeight + part(".search") + part(".secteurs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
@@ -1311,6 +1413,7 @@ $("q").addEventListener("input", e => {
     else mesure();
   });
 
+  mesureTiroir = mesure;
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);

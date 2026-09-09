@@ -13,6 +13,10 @@
   --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
+  /* Un secteur n'a qu'une teinte : la saturation et la clarté viennent du
+     thème, sans quoi le libellé du stand — écrit à l'encre du texte —
+     deviendrait illisible sur l'un des deux. */
+  --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
@@ -25,6 +29,7 @@
     --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
     --zone:#F0B429; --zone-soft:#3A2F12;
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+    --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
   }
@@ -36,6 +41,7 @@
   --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
   --zone:#F0B429; --zone-soft:#3A2F12;
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
+  --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
 }
@@ -100,6 +106,23 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Les secteurs : une bande qui sert de légende et de filtre. Dans sa colonne
+   elle se replie sur plusieurs lignes — une légende ne se lit que d'un coup
+   d'œil, et un secteur caché hors du cadre ne se devine pas. */
+.secteurs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.secteurs::-webkit-scrollbar{display:none}
+.secteurs .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.secteurs .chip:hover{border-color:var(--line-strong)}
+.secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink)}
+.secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+  background:hsl(var(--sect-h) 60% var(--sect-dot-l))}
+/* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
+   trouve pas : le filtre reste, le repère de couleur s'efface. */
+.sans-secteurs .secteurs .chip i{display:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -158,6 +181,10 @@ button{cursor:pointer;background:none;border:none}
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
+/* La teinte du secteur est posée sur le groupe par la page. La règle vient
+   avant le survol et la sélection, à spécificité égale, pour leur laisser la
+   main : un stand qu'on désigne doit se voir plus que son secteur. */
+.stand[data-sect] path{fill:hsl(var(--sect-h) var(--sect-s) var(--sect-l))}
 /* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
    continu dans la couleur d'accent, plus discret que la sélection pour ne pas
    se confondre avec elle. Une zone y entre par ses conférences. */
@@ -273,13 +300,17 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .elem[hidden]{display:none}
 /* Un repère matérialise ce que le plan ne nomme pas : sanitaires, entrées,
    accueil. Une pastille dans la couleur du calque, un libellé court dedans. */
-#repereChoix,#repereTexte{display:none}
-.outils.mode-repere #repereChoix,.outils.mode-repere #repereTexte{display:block}
-#repereChoix,#repereTexte{width:100%;padding:6px 8px;background:var(--surface-2);
+#repereType,#repereTexte{display:none}
+.outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
+#repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+#elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
 .dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* Le libellé posé à côté d'un pictogramme part de son bord, et non du centre
+   de la pastille : c'est le texte qui s'allonge, pas l'icône qui se décale. */
+.dcal .repere .repLab{text-anchor:start}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -660,6 +691,7 @@ button.expo:hover{background:var(--line)}
   background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink)}
 .jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
+.jSansPorte{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
 
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
@@ -931,6 +963,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
+  /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
+     ligne qui défile, et ce qu'elle montre déborde par le côté. */
+  .secteurs{flex-wrap:nowrap;overflow-x:auto}
+
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
@@ -1079,6 +1115,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
     </div>
+    <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
   </aside>
@@ -1126,14 +1163,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
-      <select id="repereChoix"></select>
-      <input id="repereTexte" placeholder="Libellé du repère" maxlength="24">
+      <select id="repereType" title="Ce que le repère est"></select>
+      <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
       <div class="elem" id="elemSel" hidden>
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
+        <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>

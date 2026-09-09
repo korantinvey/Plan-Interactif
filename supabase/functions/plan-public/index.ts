@@ -186,9 +186,9 @@ Deno.serve(async (req) => {
          Un visiteur n'a aucun moyen de le rallumer — le panneau des calques
          n'existe qu'en administration — et il en recevait pourtant tout le
          dessin : chez FEP26, 2,5 Mo pour 35 Ko à l'écran. L'exploitant, lui,
-         reçoit le fond entier : c'est à partir de là qu'il choisit. La page
-         porte l'empreinte de l'apparence dans son adresse, pour que le
-         navigateur n'aille pas resservir le découpage d'avant. */
+         reçoit le fond entier : c'est à partir de là qu'il choisit. Le
+         masquage entre dans la version que porte l'adresse, sans quoi le
+         navigateur resservirait le découpage d'avant. */
       const masques = identifie ? {} : await masquesDuPlan(sb, pl.id);
       const retenus = (cal ?? [])
         .filter((c) => !masques[String(c.cle)])

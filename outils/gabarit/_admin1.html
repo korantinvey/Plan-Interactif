@@ -129,6 +129,7 @@ function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
+  appliqueSecteurs();
 }
 
 /**
@@ -230,6 +231,24 @@ function ouvreReglages(){
       };
       bloc.appendChild(l);
     });
+
+    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+       retirent une commande du plan, celui-ci change ce que le plan donne à
+       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+       promettrait des couleurs qu'aucune donnée ne porte. */
+    if (SECTEURS.size){
+      const l = document.createElement("label");
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+      const c = l.querySelector("input");
+      c.checked = conf("_secteurs").visible !== false;
+      c.onchange = e => {
+        conf("_secteurs").visible = e.target.checked;
+        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+      };
+      bloc.appendChild(l);
+    }
+
     corps.appendChild(bloc);
 
     const duree = document.createElement("div");
