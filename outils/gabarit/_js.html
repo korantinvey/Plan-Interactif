@@ -718,6 +718,7 @@ function select(id, recentrer, canal, iSoc){
   state.sel = id;
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
+  dessineMarques();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
@@ -1157,6 +1158,7 @@ function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
+  dessineMarques();
   liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }

@@ -102,18 +102,23 @@ function brancheParcours(hote){
    Ce que le parcours change à l'écran
    ------------------------------------------------------------ */
 /**
- * Le liseré sur le plan.
+ * Les liserés du plan.
  *
- * Il ne se peint pas sur le stand retenu mais sur un calque à part, posé
- * au-dessus des couches. Porté par le stand lui-même, il disparaissait le long
- * des cloisons mitoyennes : deux stands voisins partagent le même segment, et
- * celui que le plan trace en second y repassait son propre contour par-dessus
- * le liseré du premier. Un stand retenu au milieu d'un îlot n'était alors
- * cerné que sur ses côtés libres. Recopier le tracé plus haut règle la
- * question sans toucher à l'ordre des couches, que l'exploitant règle.
+ * Deux marques se posent sur un stand sans que les données le disent : celle
+ * de la sélection, et celle du parcours. Ni l'une ni l'autre ne se peint sur
+ * le stand lui-même — elles se recopient dans un calque à part, posé au-dessus
+ * des couches.
  *
- * Une zone y entre par les conférences qu'elle abrite : c'est là qu'il faudra
- * se rendre à l'heure dite, la conférence n'ayant pas de forme propre.
+ * Portées par le stand, elles disparaissaient le long des cloisons mitoyennes :
+ * deux stands voisins partagent le même segment, et celui que le plan trace en
+ * second y repassait son propre contour par-dessus le liseré du premier. Un
+ * stand pris au milieu d'un îlot n'était alors cerné que sur ses côtés libres.
+ * Une zone est logée à la même enseigne, et plus mal encore : les stands se
+ * tracent après elle et recouvrent tout ce qui passe sous eux.
+ *
+ * Recopier le tracé plus haut règle la question sans toucher à l'ordre des
+ * couches, que l'exploitant règle. L'aplat de la sélection, lui, reste sur le
+ * stand : c'est une couleur de surface, elle n'a rien à gagner à monter.
  */
 function calqueMarques(){
   let g = $("marques");
@@ -126,6 +131,41 @@ function calqueMarques(){
   return g;
 }
 
+/**
+ * Le calque se relit dans le plan plutôt qu'il ne se tient à jour : les deux
+ * marques changent par des chemins sans rapport — un signet, un clic, un
+ * changement de pavillon — et une seule lecture les remet d'accord.
+ */
+function dessineMarques(){
+  /* Les liserés vivent hors des couches : rien ne les masquerait avec elles.
+     Une couche de données retirée par l'exploitant doit pourtant emporter les
+     marques de ce qu'elle portait, sans quoi le plan garderait des contours
+     sans stands. */
+  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
+  const vu = { stands: montree("stands"), zones: montree("zones") };
+  let parc = "", sel = "";
+  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
+    if (!vu[g.parentNode.id]) return;
+    const p = g.querySelector("path");
+    if (!p) return;
+    /* Une zone garde son trait discontinu jusque dans sa sélection — c'est ce
+       qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
+       il dit qu'on a retenu l'endroit, pas ce qu'il est. */
+    const d = ' d="' + p.getAttribute("d") + '"/>';
+    if (g.classList.contains("enparcours")) parc += '<path class="parc"' + d;
+    if (g.classList.contains("sel"))
+      sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + d;
+  });
+  // la sélection en dernier : c'est elle qu'on vient de désigner
+  calqueMarques().innerHTML = parc + sel;
+}
+
+/**
+ * Ce qu'un visiteur a retenu, marqué sur le plan.
+ *
+ * Une zone y entre par les conférences qu'elle abrite : c'est là qu'il faudra
+ * se rendre à l'heure dite, la conférence n'ayant pas de forme propre.
+ */
 function marqueParcours(){
   if (!DATA) return;
   const zones = new Set();
@@ -133,21 +173,11 @@ function marqueParcours(){
     const c = CONFS.get(id);
     if (c && c.zone) zones.add(String(c.zone));
   });
-  /* Le liseré vit hors des couches : rien ne le masquerait avec elles. Une
-     couche de données retirée par l'exploitant doit pourtant emporter les
-     marques de ce qu'elle portait, sans quoi le plan garderait des contours
-     sans stands. */
-  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
-  const vu = { stands: montree("stands"), zones: montree("zones") };
-  let out = "";
-  document.querySelectorAll("#stands g, #zones g").forEach(g => {
-    const id = g.dataset.id;
-    const dedans = PARCOURS.stands.indexOf(id) >= 0 || zones.has(id);
-    g.classList.toggle("enparcours", dedans);
-    const p = dedans && vu[g.parentNode.id] && g.querySelector("path");
-    if (p) out += '<path d="' + p.getAttribute("d") + '"/>';
+  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
+    g.classList.toggle("enparcours",
+      PARCOURS.stands.indexOf(g.dataset.id) >= 0 || zones.has(g.dataset.id));
   });
-  calqueMarques().innerHTML = out;
+  dessineMarques();
 }
 
 function rafraichitParcours(){

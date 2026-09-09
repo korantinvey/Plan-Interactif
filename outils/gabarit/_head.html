@@ -189,26 +189,33 @@ button{cursor:pointer;background:none;border:none}
    avant le survol et la sélection, à spécificité égale, pour leur laisser la
    main : un stand qu'on désigne doit se voir plus que son secteur. */
 .stand[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
-/* Ce qu'on a retenu doit se retrouver sur le plan sans le relire : un liseré
-   continu, plus discret que la sélection pour ne pas se confondre avec elle.
-   Une zone y entre par ses conférences.
+/* Les deux liserés que le plan pose sur un stand — celui de la sélection,
+   celui du parcours — se tracent dans « #marques », un calque à part posé
+   au-dessus des couches, et non sur le stand lui-même : une cloison mitoyenne
+   appartient aux deux stands qu'elle sépare, et le second tracé y effaçait le
+   liseré du premier. Le calque ne reçoit aucun clic — c'est le stand qu'on
+   désigne, pas sa marque.
 
-   Il se trace dans « #marques », un calque à part posé au-dessus des couches,
-   et non sur le stand lui-même : une cloison mitoyenne appartient aux deux
-   stands qu'elle sépare, et le second tracé y effaçait le liseré du premier.
-   Le calque ne reçoit aucun clic — c'est le stand qu'on désigne, pas sa
-   marque. */
+   Le parcours reste le plus discret des deux : ce qu'on a retenu doit se
+   retrouver sur le plan sans le relire, sans pour autant se confondre avec ce
+   qu'on vient de désigner. Une zone y entre par ses conférences. */
 #marques{pointer-events:none}
-#marques path{fill:none;stroke:var(--c-parc,var(--accent));stroke-width:2;
-  stroke-dasharray:none;vector-effect:non-scaling-stroke}
-html.sans-parcours #marques{display:none}
+#marques path{fill:none;stroke-dasharray:none;vector-effect:non-scaling-stroke}
+#marques .parc{stroke:var(--c-parc,var(--accent));stroke-width:2}
+#marques .sel{stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+/* le trait discontinu est ce qui distingue une zone d'un stand : sa sélection
+   le garde */
+#marques .sel.zn{stroke-dasharray:5 4}
+html.sans-parcours #marques .parc{display:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
    et « appliqueCouleursData » en tire le liseré, assez écarté pour se lire
-   par-dessus. Sans réglage, l'accent d'origine. */
-.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft));
-  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+   par-dessus. Sans réglage, l'accent d'origine.
+
+   Seul l'aplat se pose ici : le liseré monte dans « #marques », hors d'atteinte
+   des stands voisins. */
+.stand.sel path,.zone.sel path{fill:var(--c-sel,var(--accent-soft))}
 .stand,.zone{cursor:pointer}
 .dim{opacity:.22}
 

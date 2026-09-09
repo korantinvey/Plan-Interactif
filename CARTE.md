@@ -130,7 +130,7 @@ Fonctions :
 `supprimeForme` 184 · `editionPointerDown` 194 · `editionPointerMove` 239
 `editionPointerUp` 270
 
-### `_head.html` — 1299 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1306 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -189,7 +189,7 @@ Fonctions :
 `arretJournee` 510 · `remplitJournee` 535 · `appliqueVueParcours` 671 · `traceJournee` 697
 `montreJournee` 705 · `perimeJournee` 718 · `ouvreOrganisation` 727 · `lanceJournee` 828
 
-### `_js.html` — 1476 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 1478 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.39 · 1. Index global — la recherche porte sur tous les pavillons
 - l.155 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -198,8 +198,8 @@ Fonctions :
 - l.365 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
 - l.574 · 6. Vue
 - l.673 · 7. Sélection et fiche
-- l.1175 · 8. Interactions du plan
-- l.1334 · Le tiroir de la liste — écrans étroits
+- l.1177 · 8. Interactions du plan
+- l.1336 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -211,10 +211,10 @@ Fonctions :
 `visible` 503 · `visibleSurPlan` 516 · `appliqueFiltre` 521 · `liste` 529
 `appliqueVue` 577 · `rafraichitVue` 598 · `poseVue` 610 · `masque` 628 · `fit` 648
 `zoom` 660 · `echelle` 665 · `ETROIT` 679 · `anime` 681 · `noeud` 698 · `canalPlan` 703
-`select` 711 · `centre` 730 · `montre` 745 · `momentLocal` 771 · `programme` 794
-`jourLong` 824 · `ficheConf` 835 · `lien` 929 · `ecarteClicFantome` 946 · `nomSociete` 955
-`societes` 968 · `choisitExposant` 979 · `ouvre` 1015 · `ferme` 1156 · `onglet` 1165
-`milieu` 1195 · `commencePince` 1201 · `suitPince` 1215 · `mesureTiroir` 1344
+`select` 711 · `centre` 731 · `montre` 746 · `momentLocal` 772 · `programme` 795
+`jourLong` 825 · `ficheConf` 836 · `lien` 930 · `ecarteClicFantome` 947 · `nomSociete` 956
+`societes` 969 · `choisitExposant` 980 · `ouvre` 1016 · `ferme` 1157 · `onglet` 1167
+`milieu` 1197 · `commencePince` 1203 · `suitPince` 1217 · `mesureTiroir` 1346
 
 Éléments :
 
@@ -237,7 +237,7 @@ Fonctions :
 `ouvreModale` 5 · `fermeModale` 19 · `confirme` 26 · `deplaceVers` 44 · `versExtremite` 56
 `remplitOrdre` 64 · `ouvreOrdre` 126
 
-### `_parcours.html` — 322 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 352 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -245,10 +245,10 @@ Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
 `enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 68 · `boutonParcours` 74
-`rafraichitMarque` 79 · `brancheParcours` 91 · `calqueMarques` 118 · `marqueParcours` 129
-`rafraichitParcours` 153 · `instantConf` 177 · `cleTemps` 181 · `jourCourt` 187
-`rangParcours` 191 · `groupeParcours` 207 · `remplitParcours` 216 · `ouvreParcours` 278
-`fermeParcours` 290
+`rafraichitMarque` 79 · `brancheParcours` 91 · `calqueMarques` 123 · `dessineMarques` 139
+`marqueParcours` 169 · `rafraichitParcours` 183 · `instantConf` 207 · `cleTemps` 211
+`jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
+`ouvreParcours` 308 · `fermeParcours` 320
 
 ### `_pile.html` — 288 l. → plan-admin.html, plan-smcl.html, plan.html
 
