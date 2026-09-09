@@ -11,9 +11,16 @@
  *   — elle ne change pas quand rien de ce qui est servi ne change, sans quoi
  *     chaque synchronisation ferait retélécharger un fond identique.
  *
- * Elle tient à trois choses, et à rien d'autre : l'empreinte de chaque dessin,
- * que la base calcule elle-même ; ce que l'apparence masque, pour un visiteur
- * qui ne reçoit que le montré ; et le format de découpe de la fonction qui sert.
+ * Elle tient à trois choses, et à rien d'autre : l'empreinte des dessins
+ * réellement servis, que la base calcule elle-même ; ce que l'apparence masque,
+ * pour un visiteur qui ne reçoit que le montré ; et le format de découpe de la
+ * fonction qui sert.
+ *
+ * Elle s'arrête au calque : un sous-calque masqué ne part pas non plus, mais
+ * l'empreinte que porte la base couvre le dessin entier. Retoucher un
+ * sous-calque masqué fait donc redemander un fond identique — le prix à payer
+ * pour que le premier appel n'ait jamais à lire les dessins, qui sont
+ * précisément ce qu'il évite de lire.
  *
  * Le condensé est tronqué à huit octets. Ce n'est pas un secret à garder, c'est
  * un état à distinguer : soixante-quatre bits laissent une chance sur cinq
@@ -41,11 +48,16 @@ export async function versionFond(
   calques: CalqueVersionne[],
   masques: Record<string, boolean> | null,
 ): Promise<string> {
+  /* Un calque masqué ne part pas : que son dessin change n'y change rien, et
+     le redemander à un visiteur serait lui faire retélécharger le même fond.
+     Son absence, elle, est déjà dite par la liste des masques. */
+  const servis = masques ? calques.filter((c) => !masques[c.cle]) : calques;
+
   /* Un calque tient dans sa ligne par tout ce qui le distingue : son rang, son
      nom, son dessin. Les lignes sont triées, et non pas prises dans l'ordre où
      la base les rend — cet ordre-là n'est garanti nulle part, et la version
      doit être la même à chaque appel. */
-  const lignes = calques
+  const lignes = servis
     .map((c) => [c.ordre_klipso ?? "", c.cle, c.empreinte ?? "?"].join(":"))
     .sort();
 
