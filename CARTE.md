@@ -156,25 +156,27 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 1346 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 1591 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
 Fonctions :
 
-`sommets` 80 · `enveloppe` 89 · `oublieGrilles` 130 · `calquesDe` 133 · `reperesDe` 138
-`cleRoleIti` 188 · `roleIti` 189 · `nomRoleIti` 190 · `formesRole` 200 · `obstaclesPmr` 224
-`grille` 251 · `distanceAuMur` 312 · `nappePrincipale` 354 · `caseDe` 387 · `centreCase` 392
-`accroche` 411 · `Tas` 450 · `travail` 494 · `cherche` 512 · `distancesDepuis` 578
-`reduit` 611 · `longueur` 622 · `nettoie` 626 · `amorce` 650 · `troncon` 669
-`pointObjet` 693 · `pointRepere` 700 · `candidats` 707 · `pointSaisi` 733 · `portesDe` 750
-`versPorte` 755 · `calculeRoute` 781 · `couleurNappe` 828 · `rafraichitApercu` 834
-`marchesIci` 875 · `rayonBout` 880 · `dessineItineraire` 885 · `rafraichitBouts` 929
-`cadreItineraire` 944 · `champIti` 967 · `ecritDistance` 971 · `ecritDuree` 975
-`fermeSugg` 980 · `montreSugg` 987 · `choisitPoint` 1019 · `valideSaisie` 1028
-`effaceItineraire` 1038 · `relance` 1058 · `montreResultat` 1092 · `bandeauVisee` 1193
-`armeVisee` 1205 · `finVisee` 1213 · `viseItineraire` 1225 · `ouvreItineraire` 1248
-`fermeItineraire` 1265 · `versItineraire` 1275
+`sommets` 86 · `enveloppe` 95 · `oublieGrilles` 136 · `calquesDe` 139 · `reperesDe` 144
+`cleRoleIti` 194 · `roleIti` 195 · `nomRoleIti` 196 · `formesRole` 206 · `obstaclesPmr` 230
+`grille` 257 · `distanceAuMur` 318 · `nappePrincipale` 360 · `caseDe` 393 · `centreCase` 398
+`empriseDe` 420 · `accrocheDepuis` 452 · `versLeMilieu` 507 · `accroche` 534 · `Tas` 549
+`travail` 593 · `cherche` 611 · `distancesDepuis` 677 · `reduit` 710 · `longueur` 721
+`longueurDehors` 737 · `nettoie` 767 · `oublieFaces` 790 · `facesLibres` 792 · `amorce` 866
+`faceDeSortie` 893 · `troncon` 910 · `pointObjet` 937 · `pointRepere` 944 · `candidats` 951
+`pointSaisi` 977 · `portesDe` 994 · `versPorte` 999 · `calculeRoute` 1026
+`couleurNappe` 1073 · `rafraichitApercu` 1079 · `marchesIci` 1120 · `rayonBout` 1125
+`dessineItineraire` 1130 · `rafraichitBouts` 1174 · `cadreItineraire` 1189 · `champIti` 1212
+`ecritDistance` 1216 · `ecritDuree` 1220 · `fermeSugg` 1225 · `montreSugg` 1232
+`choisitPoint` 1264 · `valideSaisie` 1273 · `effaceItineraire` 1283 · `relance` 1303
+`montreResultat` 1337 · `bandeauVisee` 1438 · `armeVisee` 1450 · `finVisee` 1458
+`viseItineraire` 1470 · `ouvreItineraire` 1493 · `fermeItineraire` 1510
+`versItineraire` 1520
 
 ### `_journee.html` — 861 l. → plan-admin.html, plan-smcl.html, plan.html
 

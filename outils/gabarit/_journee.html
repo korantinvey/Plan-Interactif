@@ -154,7 +154,7 @@ function matriceJournee(pts, pmr){
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
-    const cases = idx.map(i => accroche(g, pts[i].xy));
+    const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
     const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
@@ -400,7 +400,7 @@ function calculeJournee(choix){
     if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
     const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
     if (pa === pb){
-      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy);
+      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy, PTS[a].obj, PTS[b].obj);
       const l = tr ? tr.m : dist(a, b);
       if (tr) trace.push(tr);
       etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
@@ -409,8 +409,8 @@ function calculeJournee(choix){
       return;
     }
     coupe = true;
-    const sortie = versPorte(pa, pmr, PTS[a].xy, false);
-    const entree = versPorte(pb, pmr, PTS[b].xy, true);
+    const sortie = versPorte(pa, pmr, PTS[a].xy, false, PTS[a].obj);
+    const entree = versPorte(pb, pmr, PTS[b].xy, true, PTS[b].obj);
     if (sortie){ trace.push(sortie); m += sortie.m; }
     trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
     if (entree){ trace.push(entree); m += entree.m; }

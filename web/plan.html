@@ -4878,7 +4878,13 @@ const TOURNANT = 4;
  * et vouloir le tenir ferait faire des détours pour rien.
  */
 const PORTEE_CENTRE = 4;   // cases
-const POIDS_CENTRE = .5;   // au ras du mur, une case coûte une demie de plus
+/* Deux plutôt qu'une demie. Le prix du virage est de quatre cases : passer du
+   bord au milieu en coûte deux, et il faut donc que la traversée se rembourse
+   sur une longueur raisonnable d'allée. À une demie, l'écart entre le bord et
+   le milieu valait un quart de case, soit seize mètres de ligne droite avant
+   d'être rentable — le trait longeait les stands d'un bout à l'autre du hall.
+   À deux, quatre mètres suffisent. */
+const POIDS_CENTRE = 2;
 
 /* ------------------------------------------------------------
    L'enveloppe du hall
@@ -4945,7 +4951,7 @@ function enveloppe(p){
 /* Une grille par pavillon et par mode : elle ne dépend que des emplacements
    et des obstacles dessinés, qui ne bougent qu'en administration. */
 const GRILLES = new Map();
-function oublieGrilles(){ GRILLES.clear(); }
+function oublieGrilles(){ GRILLES.clear(); oublieFaces(); }
 
 /** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
 const calquesDe = (p) => (typeof DESSINS === "object" && DESSINS[p.id]) || [];
@@ -5112,7 +5118,7 @@ function grille(p, pmr){
   // moitié, la case est du côté du mur
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
-  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur };
+  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur, pmr: pmr };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   GRILLES.set(cle, g);
@@ -5219,14 +5225,49 @@ function centreCase(g, i){
 const PORTEE_ACCROCHE = 24;
 
 /**
+ * Les cases qu'un emplacement occupe en propre, son dégagement compris.
+ *
+ * Peinte comme la grille l'a été — même pas, même épaisseur de trait — pour
+ * que les deux se recouvrent exactement : ce qui est mur à cause de ce stand
+ * est ici marqué sien, ce qui l'est à cause d'un autre ne l'est pas.
+ *
+ * On ne peint qu'une fenêtre autour du point, de la taille de ce qu'on
+ * accepte de fouiller : un pavillon entier repeint pour chaque accroche
+ * coûterait plus que toutes les recherches réunies.
+ */
+function empriseDe(g, d, cx0, cy0, cote){
+  const cv = document.createElement("canvas");
+  cv.width = cote; cv.height = cote;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  ctx.setTransform(1 / PAS_GRILLE, 0, 0, 1 / PAS_GRILLE,
+                   -g.x0 / PAS_GRILLE - cx0, -g.y0 / PAS_GRILLE - cy0);
+  ctx.lineJoin = ctx.lineCap = "round";
+  ctx.lineWidth = 2 * (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+  ctx.fillStyle = ctx.strokeStyle = "#000";
+  const t = new Path2D(d);
+  ctx.fill(t); ctx.stroke(t);
+  const px = ctx.getImageData(0, 0, cote, cote).data;
+  const m = new Uint8Array(cote * cote);
+  for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 128 ? 1 : 0;
+  return m;
+}
+
+/**
  * La case de la nappe principale la plus proche d'un point.
  *
  * Le centre d'un stand tombe dans le mur — c'est bien lui qu'on désigne, mais
- * c'est l'allée devant lui qu'on emprunte. On s'écarte donc en anneaux, murs
- * compris, jusqu'à toucher les allées : la façade la plus accessible est
- * atteinte la première, sans qu'on ait eu à la chercher.
+ * c'est l'allée devant lui qu'on emprunte. On s'écarte donc en anneaux
+ * jusqu'à toucher les allées : la façade la plus proche est atteinte la
+ * première, sans qu'on ait eu à la chercher.
+ *
+ * Encore faut-il que ce soit la sienne. On traversait les murs sans distinguer
+ * à qui ils étaient, si bien qu'un stand serré entre deux voisins s'accrochait
+ * à l'allée d'en face, à travers le stand du voisin : le trait entrait par une
+ * façade qui n'était pas la sienne, et l'amorce dessinait un crochet au milieu
+ * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
+ * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accroche(g, xy){
+function accrocheDepuis(g, xy, chez){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const cx = Math.min(g.w - 1, Math.max(0, Math.floor((xy[0] - g.x0) / PAS_GRILLE)));
@@ -5236,6 +5277,15 @@ function accroche(g, xy){
   if (g.nappe[d]) return d;
 
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
+  const cote = 2 * PORTEE_ACCROCHE + 1;
+  const cx0 = dx0 - PORTEE_ACCROCHE, cy0 = dy0 - PORTEE_ACCROCHE;
+  const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
+  const chezSoi = (nx, ny) => {
+    if (!sien) return true;
+    const px = nx - cx0, py = ny - cy0;
+    return px >= 0 && py >= 0 && px < cote && py < cote && sien[py * cote + px] === 1;
+  };
+
   const vu = new Uint8Array(g.w * g.h);
   const file = [d];
   vu[d] = 1;
@@ -5251,12 +5301,61 @@ function accroche(g, xy){
       if (vu[j]) continue;
       vu[j] = 1;
       if (g.nappe[j]) return j;
+      // le mur d'un autre ne se franchit pas : c'est là toute la règle
+      if (g.mur[j] && !chezSoi(nx, ny)) continue;
       // une poche fermée ne mène nulle part : on la traverse sans s'y arrêter
       if (repli < 0 && !g.mur[j]) repli = j;
       file.push(j);
     }
   }
   return repli;
+}
+
+/**
+ * Du bord de l'allée à son milieu.
+ *
+ * L'anneau rend la première case d'allée rencontrée : celle qui touche la
+ * façade, au ras du mur. Le trajet démarrait donc collé aux stands, et il
+ * fallait deux virages pour rejoindre le milieu — que le calcul ne payait
+ * qu'à contrecœur, si bien que le trait longeait les emplacements d'un bout à
+ * l'autre. On remonte donc la pente : on s'éloigne du mur tant qu'un voisin
+ * est plus au large, sans dépasser la portée au-delà de laquelle un « milieu »
+ * n'a plus de sens. Quelques pas suffisent, l'allée n'ayant que sa largeur.
+ */
+function versLeMilieu(g, i){
+  let cur = i;
+  for (let pas = 0; pas < PORTEE_CENTRE; pas++){
+    if (g.marge[cur] >= PORTEE_CENTRE) break;
+    const cx = cur % g.w, cy = (cur - cx) / g.w;
+    let mieux = cur;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
+      const nx = cx + dx, ny = cy + dy;
+      if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
+      const j = ny * g.w + nx;
+      if (g.nappe[j] && g.marge[j] > g.marge[mieux]) mieux = j;
+    }
+    if (mieux === cur) break;
+    cur = mieux;
+  }
+  return cur;
+}
+
+/**
+ * L'accroche, et son garde-fou.
+ *
+ * Un emplacement qu'aucune allée ne borde — enclavé au milieu d'un îlot, ou
+ * dont le dégagement mange le seul passage — n'a pas de façade à offrir. Le
+ * laisser injoignable serait pire que le défaut qu'on corrige : on relâche
+ * alors la règle plutôt que de rendre la main, quitte à retrouver un trait qui
+ * coupe par le voisin. Ce qui se voit, au moins, se comprend.
+ */
+function accroche(g, xy, chez){
+  let r = accrocheDepuis(g, xy, chez);
+  if (chez && !(r >= 0 && g.nappe[r])){
+    const large = accrocheDepuis(g, xy, null);
+    if (large >= 0 && g.nappe[large]) r = large;
+  }
+  return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
 }
 
 /* ------------------------------------------------------------
@@ -5440,6 +5539,48 @@ function reduit(g, suite){
 const longueur = (pts) => pts.reduce((s, q, i) =>
   i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0, 0);
 
+/**
+ * Ce qu'on marche vraiment, l'intérieur des emplacements déduit.
+ *
+ * Le trait part du centre du stand, parce que c'est lui qu'on montre — mais
+ * personne ne traverse un stand de son milieu à sa façade pour en sortir : on
+ * y est déjà. Compter ces mètres gonflait chaque tronçon de la demi-profondeur
+ * de ses deux emplacements, soit une dizaine de mètres par arrêt, et autant de
+ * minutes de marche annoncées pour rien sur une journée de vingt visites.
+ *
+ * On retranche donc les deux amorces, chacune tant qu'elle reste chez elle.
+ * On ne balaie que les extrémités : entre les deux, le trait est dans les
+ * allées, et l'y chercher coûterait plus que ce qu'on en retirerait.
+ */
+function longueurDehors(pts, chezD, chezA){
+  let m = longueur(pts);
+  if (!chezD && !chezA) return m;
+  const ctx = document.createElement("canvas").getContext("2d");
+  const dedans = (t, q) => ctx.isPointInPath(t, q[0], q[1]);
+  /* Depuis un bout, on avance par petits pas et on décompte tant qu'on est
+     dans l'emplacement. Le premier pas dehors arrête le décompte : un trait
+     qui y rentrerait de nouveau plus loin serait un trajet, pas une amorce. */
+  const rogne = (suite, d) => {
+    if (!d) return 0;
+    const t = new Path2D(d);
+    let ote = 0;
+    for (let i = 0; i + 1 < suite.length; i++){
+      const A = suite[i], B = suite[i + 1];
+      const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
+      for (let k = 0; k < n; k++){
+        const u = (k + .5) / n;
+        if (!dedans(t, [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u])) return ote;
+        ote += l / n;
+      }
+    }
+    return ote;
+  };
+  m -= rogne(pts, chezD);
+  m -= rogne(pts.slice().reverse(), chezA);
+  return Math.max(0, m);
+}
+
 /** Deux sommets à cinq centimètres l'un de l'autre ne sont qu'un. */
 function nettoie(pts){
   const out = [];
@@ -5447,6 +5588,64 @@ function nettoie(pts){
     const p = out[out.length - 1];
     if (!p || Math.hypot(q[0] - p[0], q[1] - p[1]) > .05) out.push(q);
   }
+  return out;
+}
+
+/**
+ * Les faces libres d'un emplacement : celles qu'aucun voisin ne borde.
+ *
+ * Un stand de rangée est mitoyen sur trois côtés et n'ouvre que sur le
+ * quatrième. Le déduire du pavage ne marchait qu'à moitié : entre deux stands
+ * serrés, le dégagement des deux se rejoint et tout devient mur, si bien qu'on
+ * ne distinguait plus une façade fermée d'un passage trop étroit. On lit donc
+ * la géométrie plutôt que la grille — on échantillonne juste devant chaque
+ * côté, et un côté sur lequel un autre emplacement se referme est mitoyen.
+ *
+ * Le résultat se garde : une emprise ne bouge qu'en administration, et une
+ * journée de vingt arrêts redemanderait vingt fois les mêmes façades.
+ */
+const FACES = new Map();
+function oublieFaces(){ FACES.clear(); }
+
+function facesLibres(p, o){
+  const cle = p.id + "|" + o.id;
+  const garde = FACES.get(cle);
+  if (garde) return garde;
+
+  const s = sommets(o);
+  const ctx = document.createElement("canvas").getContext("2d");
+  const moi = new Path2D(o.d);
+  /* On ne compare qu'au voisinage : cinq cents emprises passées en revue pour
+     chaque façade coûteraient plus que tout le reste du tronçon. */
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  s.forEach(q => { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
+                   y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); });
+  const pres = [];
+  for (const v of p.stands.concat(p.zones)){
+    if (v === o || v.id === o.id || !v.d) continue;
+    const c = v.lc || v.c;
+    if (!c || c[0] < x0 - 40 || c[0] > x1 + 40 || c[1] < y0 - 40 || c[1] > y1 + 40) continue;
+    pres.push(new Path2D(v.d));
+  }
+
+  const out = [];
+  for (let i = 0; i + 1 < s.length; i++){
+    const A = s[i], B = s[i + 1];
+    const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (l < .8) continue;                    // un chanfrein n'est pas une façade
+    // la normale qui sort : celle dont un pas ne retombe pas dans l'emprise
+    let ux = -(B[1] - A[1]) / l, uy = (B[0] - A[0]) / l;
+    const mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2;
+    if (ctx.isPointInPath(moi, mx + ux * .05, my + uy * .05)){ ux = -ux; uy = -uy; }
+    let libre = true;
+    for (let k = 1; k <= 5 && libre; k++){
+      const u = k / 6;
+      const x = A[0] + (B[0] - A[0]) * u + ux * .3, y = A[1] + (B[1] - A[1]) * u + uy * .3;
+      if (pres.some(t => ctx.isPointInPath(t, x, y))) libre = false;
+    }
+    if (libre) out.push({ mid: [mx, my], u: [ux, uy], l: l });
+  }
+  FACES.set(cle, out);
   return out;
 }
 
@@ -5459,23 +5658,65 @@ const AMORCE_MAX = 20;   // mètres
  *
  * Le trajet part du centre du stand désigné — c'est lui qu'on montre — et
  * rejoint l'allée. Relier les deux d'un trait donnait une oblique, seul trait
- * de travers d'un tracé par ailleurs d'équerre. On la coude donc : on sort du
- * stand parallèlement à l'allée, puis on la rejoint perpendiculairement, ce
- * qui est aussi la manière dont on y entre pour de vrai.
+ * de travers d'un tracé par ailleurs d'équerre. On la coude donc.
+ *
+ * Reste à savoir dans quel ordre. On sortait d'abord parallèlement à l'allée,
+ * puis on la rejoignait de biais : c'est-à-dire qu'on longeait l'intérieur du
+ * stand sur toute sa profondeur avant d'en franchir la façade. Quand le point
+ * d'accroche tombait au-delà de l'emplacement — ce qui est le cas ordinaire
+ * d'un stand d'angle — le trait dessinait un crochet au milieu de la surface,
+ * puis ressortait par le côté.
+ *
+ * On fait donc l'inverse, qui est aussi ce qu'un visiteur fait : on quitte
+ * l'emplacement **droit par sa face la plus proche**, perpendiculairement, et
+ * c'est une fois dans l'allée qu'on la remonte. Un seul coude, dehors, et le
+ * trait n'entre jamais de travers.
+ *
+ * L'orientation de l'allée suggère de quel côté couder, mais elle ne le sait
+ * pas toujours : un stand dont la seule façade libre donne au nord, abordé par
+ * une allée qui file d'est en ouest, se verrait sortir par l'est — c'est-à-dire
+ * à travers son voisin. On propose donc les deux coudes possibles et on garde
+ * le premier qui sorte par chez soi ; `sortable` en juge, et laisse passer
+ * quand on ne sait pas de qui est le mur.
  *
  * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
  */
-function amorce(pts, ancre){
+function amorce(pts, ancre, sens){
   if (pts.length < 2) return [];
   const a = pts[0], b = pts[1];
   const vertical = Math.abs(b[0] - a[0]) < .01;
   const horizontal = Math.abs(b[1] - a[1]) < .01;
-  if (vertical === horizontal) return [];        // ni l'un ni l'autre, ou un point
-  const coude = vertical ? [ancre[0], a[1]] : [a[0], ancre[1]];
+  /* À défaut de face libre connue — un repère, un point désigné du doigt — on
+     retombe sur l'orientation de l'allée : on en sort par le travers. */
+  const parAllee = vertical === horizontal ? null : (vertical ? "h" : "v");
+  const s = sens || parAllee;
+  if (!s) return [];
+  const coude = s === "h" ? [a[0], ancre[1]] : [ancre[0], a[1]];
   const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
   const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
   if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
   return [coude];
+}
+
+/**
+ * Par quelle face on quitte un emplacement.
+ *
+ * Celle qui n'est pas mitoyenne — et, s'il y en a plusieurs, la plus proche de
+ * l'allée qu'on rejoint. C'est ce qui fait sortir un stand de rangée par son
+ * unique côté ouvert, et non par le voisin qui se trouvait dans l'axe. Rend le
+ * sens dans lequel on s'en va, ou rien si l'emplacement n'ouvre nulle part :
+ * l'accroche a alors déjà dû s'autoriser à passer par le voisin, et l'amorce
+ * n'a plus de face à respecter.
+ */
+function faceDeSortie(p, obj, ancre){
+  if (!obj || !obj.d) return null;
+  const libres = facesLibres(p, obj);
+  let mieux = null, d = Infinity;
+  for (const f of libres){
+    const q = Math.hypot(f.mid[0] - ancre[0], f.mid[1] - ancre[1]);
+    if (q < d){ d = q; mieux = f; }
+  }
+  return mieux ? (Math.abs(mieux.u[0]) > Math.abs(mieux.u[1]) ? "h" : "v") : null;
 }
 
 /**
@@ -5484,17 +5725,20 @@ function amorce(pts, ancre){
  * Les vrais points sont raccrochés aux extrémités : le trait doit partir du
  * stand, pas de l'allée devant lui, sinon il paraît commencer à côté.
  */
-function troncon(p, pmr, depart, arrivee){
+function troncon(p, pmr, depart, arrivee, objD, objA){
   const g = grille(p, pmr);
-  const a = accroche(g, depart), b = accroche(g, arrivee);
+  const dD = objD && objD.d, dA = objA && objA.d;
+  const a = accroche(g, depart, dD), b = accroche(g, arrivee, dA);
   if (a < 0 || b < 0) return null;
   const suite = cherche(g, a, b);
   if (!suite) return null;
   const chemin = reduit(g, suite);
+  const envers = chemin.slice().reverse();
   const pts = nettoie([depart.slice()]
-    .concat(amorce(chemin, depart), chemin,
-            amorce(chemin.slice().reverse(), arrivee), [arrivee.slice()]));
-  return { genre: "marche", p: p.i, pts: pts, m: longueur(pts) };
+    .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
+            amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
+            [arrivee.slice()]));
+  return { genre: "marche", p: p.i, pts: pts, m: longueurDehors(pts, dD, dA) };
 }
 
 /* ------------------------------------------------------------
@@ -5511,7 +5755,7 @@ function troncon(p, pmr, depart, arrivee){
 function pointObjet(o){
   const pl = DATA.plans[o.p];
   return { cle: "o:" + o.id, id: o.id, genre: "objet", p: o.p,
-           xy: (o.lc || o.c).slice(),
+           xy: (o.lc || o.c).slice(), d: o.d, obj: o,
            nom: o.nom || o.plan || (o.kind === "zone" ? "Zone" : "Stand " + (o.code || "")).trim(),
            detail: pl.libelle + (o.code ? " · " + o.code : "") };
 }
@@ -5570,7 +5814,7 @@ function portesDe(p){
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
-function versPorte(p, pmr, xy, entrant){
+function versPorte(p, pmr, xy, entrant, chez){
   const portes = portesDe(p);
   if (!portes.length) return null;
   /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
@@ -5581,7 +5825,8 @@ function versPorte(p, pmr, xy, entrant){
     .sort((a, b) => a.d - b.d).slice(0, 4);
   let mieux = null;
   for (const q of proches){
-    const t = entrant ? troncon(p, pmr, q.f.pts[0], xy) : troncon(p, pmr, xy, q.f.pts[0]);
+    const t = entrant ? troncon(p, pmr, q.f.pts[0], xy, null, chez)
+                      : troncon(p, pmr, xy, q.f.pts[0], chez, null);
     if (t && (!mieux || t.m < mieux.m)) mieux = t;
   }
   return mieux;
@@ -5602,14 +5847,14 @@ function calculeRoute(){
   if (a.cle === b.cle) return { pmr: pmr, etapes: [], m: 0, memePoint: true };
 
   if (a.p === b.p){
-    const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy);
+    const t = troncon(DATA.plans[a.p], pmr, a.xy, b.xy, a.obj, b.obj);
     return t ? { pmr: pmr, etapes: [t], m: t.m }
              : { pmr: pmr, etapes: [], m: 0, sansChemin: true };
   }
 
   const pa = DATA.plans[a.p], pb = DATA.plans[b.p];
-  const t1 = versPorte(pa, pmr, a.xy, false);
-  const t2 = versPorte(pb, pmr, b.xy, true);
+  const t1 = versPorte(pa, pmr, a.xy, false, a.obj);
+  const t2 = versPorte(pb, pmr, b.xy, true, b.obj);
   const etapes = [];
   const avertis = [];
   if (t1) etapes.push(t1);
@@ -6318,7 +6563,7 @@ function matriceJournee(pts, pmr){
   parPlan.forEach((idx, ip) => {
     const p = DATA.plans[ip];
     const g = grille(p, pmr);
-    const cases = idx.map(i => accroche(g, pts[i].xy));
+    const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
     const portes = portesDe(p).map(f => accroche(g, f.pts[0]))
       .filter(c => c >= 0 && g.nappe[c]);
     idx.forEach((i, k) => {
@@ -6564,7 +6809,7 @@ function calculeJournee(choix){
     if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
     const pa = DATA.plans[PTS[a].p], pb = DATA.plans[PTS[b].p];
     if (pa === pb){
-      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy);
+      const tr = troncon(pa, pmr, PTS[a].xy, PTS[b].xy, PTS[a].obj, PTS[b].obj);
       const l = tr ? tr.m : dist(a, b);
       if (tr) trace.push(tr);
       etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: !!tr });
@@ -6573,8 +6818,8 @@ function calculeJournee(choix){
       return;
     }
     coupe = true;
-    const sortie = versPorte(pa, pmr, PTS[a].xy, false);
-    const entree = versPorte(pb, pmr, PTS[b].xy, true);
+    const sortie = versPorte(pa, pmr, PTS[a].xy, false, PTS[a].obj);
+    const entree = versPorte(pb, pmr, PTS[b].xy, true, PTS[b].obj);
     if (sortie){ trace.push(sortie); m += sortie.m; }
     trace.push({ genre: "transfert", de: pa.libelle, vers: pb.libelle });
     if (entree){ trace.push(entree); m += entree.m; }
