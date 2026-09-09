@@ -118,19 +118,20 @@ Fonctions :
 `activeCalque` 657 · `montreRoleIti` 693 · `creeCalque` 724 · `demandeNom` 737
 `renommeCalque` 756
 
-### `_edition.html` — 376 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 410 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
 Fonctions :
 
 `formeParId` 11 · `boite` 19 · `curseurPoignee` 27 · `poignees` 32 · `dessinePoignees` 41
-`choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 138 · `changeLien` 160
-`majLiens` 183 · `etiquetteStand` 219 · `remplitListeStands` 224 · `standSaisi` 233
-`appliqueLiaison` 243 · `appliqueTexte` 254 · `appliquePicto` 265 · `supprimeForme` 283
-`editionPointerDown` 293 · `editionPointerMove` 338 · `editionPointerUp` 369
+`choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 142 · `ecritDesDeuxCotes` 164
+`changeLien` 176 · `changeDureeLien` 192 · `majLiens` 209 · `etiquetteStand` 253
+`remplitListeStands` 258 · `standSaisi` 267 · `appliqueLiaison` 277 · `appliqueTexte` 288
+`appliquePicto` 299 · `supprimeForme` 317 · `editionPointerDown` 327
+`editionPointerMove` 372 · `editionPointerUp` 403
 
-### `_head.html` — 1318 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1323 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -158,7 +159,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 1705 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 1763 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -171,18 +172,19 @@ Fonctions :
 `reduit` 613 · `longueur` 624 · `nettoie` 628 · `amorce` 652 · `troncon` 671
 `pointObjet` 695 · `pointRepere` 702 · `candidats` 709 · `pointSaisi` 735 · `portesDe` 752
 `versPorte` 757 · `typeLiaison` 811 · `nomLiaison` 815 · `oublieLiaisons` 833
-`annuaireLiaisons` 835 · `liensDe` 860 · `passagePraticable` 867 · `passagesDe` 875
-`sortiesDe` 885 · `plansRelies` 893 · `balayage` 917 · `distanceDepuis` 929
-`cheminLiaisons` 956 · `routeParLiaisons` 1032 · `routeEntre` 1068 · `calculeRoute` 1107
-`couleurNappe` 1133 · `rafraichitApercu` 1139 · `marchesIci` 1180 · `rayonBout` 1185
-`dessineItineraire` 1190 · `rafraichitBouts` 1234 · `cadreItineraire` 1249 · `champIti` 1272
-`ecritDistance` 1276 · `ecritDuree` 1284 · `fermeSugg` 1289 · `montreSugg` 1296
-`choisitPoint` 1328 · `valideSaisie` 1337 · `effaceItineraire` 1347 · `relance` 1367
-`phraseLiaison` 1410 · `montreResultat` 1421 · `bandeauVisee` 1552 · `armeVisee` 1564
-`finVisee` 1572 · `viseItineraire` 1584 · `ouvreItineraire` 1607 · `fermeItineraire` 1624
-`versItineraire` 1634
+`lienEcrits` 845 · `ecritLiens` 854 · `annuaireLiaisons` 859 · `liensDe` 891
+`coutLiaison` 911 · `passagePraticable` 918 · `passagesDe` 926 · `sortiesDe` 936
+`plansRelies` 944 · `balayage` 968 · `distanceDepuis` 980 · `cheminLiaisons` 1007
+`routeParLiaisons` 1087 · `routeEntre` 1123 · `calculeRoute` 1162 · `couleurNappe` 1188
+`rafraichitApercu` 1194 · `marchesIci` 1235 · `rayonBout` 1240 · `dessineItineraire` 1245
+`rafraichitBouts` 1289 · `cadreItineraire` 1304 · `champIti` 1327 · `ecritDistance` 1331
+`ecritDuree` 1339 · `fermeSugg` 1344 · `montreSugg` 1351 · `choisitPoint` 1383
+`valideSaisie` 1392 · `effaceItineraire` 1402 · `relance` 1422 · `phraseLiaison` 1465
+`montreResultat` 1479 · `bandeauVisee` 1610 · `armeVisee` 1622 · `finVisee` 1630
+`viseItineraire` 1642 · `ouvreItineraire` 1665 · `fermeItineraire` 1682
+`versItineraire` 1692
 
-### `_journee.html` — 890 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 892 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
@@ -190,9 +192,9 @@ Fonctions :
 
 `minutesDe` 51 · `finInstant` 52 · `ecritHeure` 54 · `ecritMinutes` 59 · `joursSalon` 67
 `jourPropose` 78 · `pointConf` 93 · `departsProposes` 111 · `matriceJournee` 135
-`rangeJournee` 236 · `calculeJournee` 332 · `rangJournee` 518 · `lienJournee` 530
-`arretJournee` 537 · `remplitJournee` 562 · `appliqueVueParcours` 700 · `traceJournee` 726
-`montreJournee` 734 · `perimeJournee` 747 · `ouvreOrganisation` 756 · `lanceJournee` 857
+`rangeJournee` 236 · `calculeJournee` 332 · `rangJournee` 520 · `lienJournee` 532
+`arretJournee` 539 · `remplitJournee` 564 · `appliqueVueParcours` 702 · `traceJournee` 728
+`montreJournee` 736 · `perimeJournee` 749 · `ouvreOrganisation` 758 · `lanceJournee` 859
 
 ### `_js.html` — 1481 l. → plan-admin.html, plan-smcl.html, plan.html
 

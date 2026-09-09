@@ -832,6 +832,30 @@ const nomLiaison = (f) => String(f.txt || "").trim() ||
 let LIAISONS = null;
 function oublieLiaisons(){ LIAISONS = null; }
 
+/**
+ * Ce qu'un repère déclare rejoindre, tel qu'on le relit.
+ *
+ * Un repère en relie autant qu'il en dessert : l'escalier du rez-de-chaussée
+ * monte au premier et au second, et ce sont deux passages, chacun avec son
+ * temps. La liaison s'est d'abord écrite comme un simple identifiant ; elle
+ * porte maintenant sa durée, et les deux formes se lisent — un plan
+ * enregistré avant n'a rien à reprendre et retombe sur le temps ordinaire de
+ * son type.
+ */
+function lienEcrits(f){
+  return ((f && f.liens) || []).map(l => typeof l === "string"
+    ? { id: l, min: null }
+    : { id: l && l.id, min: l && l.min == null ? null : +l.min })
+    .filter(l => l.id);
+}
+
+/* On réécrit la forme courte quand aucune durée n'est fixée : un plan qui ne
+   s'en sert pas garde un enregistrement inchangé. */
+function ecritLiens(f, l){
+  if (!l.length) delete f.liens;
+  else f.liens = l.map(x => x.min == null ? x.id : { id: x.id, min: x.min });
+}
+
 function annuaireLiaisons(){
   if (LIAISONS) return LIAISONS;
   const par = new Map();      // id du repère → { f, p, visible }
@@ -842,24 +866,51 @@ function annuaireLiaisons(){
       }
     }
   }
-  const vers = new Map();     // id → ids rejoints, dans les deux sens
-  const relie = (a, b) => {
+  // id → (id rejoint → temps déclaré, ou rien), dans les deux sens
+  const vers = new Map();
+  const relie = (a, b, min) => {
     if (a === b || !par.has(a) || !par.has(b)) return;
-    if (!vers.has(a)) vers.set(a, new Set());
-    vers.get(a).add(b);
+    if (!vers.has(a)) vers.set(a, new Map());
+    const m = vers.get(a);
+    /* Les deux côtés portent la même durée, écrite d'un seul geste. S'ils
+       divergent — une annulation qui n'a défait qu'un côté — on garde la plus
+       longue : un passage annoncé trop court se paie sur place. */
+    const vu = m.get(b);
+    m.set(b, min == null ? (vu == null ? null : vu)
+                         : (vu == null ? min : Math.max(vu, min)));
   };
-  par.forEach((o, id) => (o.f.liens || []).forEach(autre => {
-    relie(id, autre); relie(autre, id);
+  par.forEach((o, id) => lienEcrits(o.f).forEach(l => {
+    relie(id, l.id, l.min); relie(l.id, id, l.min);
   }));
   LIAISONS = { par: par, vers: vers };
   return LIAISONS;
 }
 
 /** Ce qu'un repère rejoint, du point de vue de l'administration : les deux
- *  sens confondus, calques masqués compris. */
+ *  sens confondus, calques masqués compris, chacun avec son temps déclaré. */
 function liensDe(f){
   const an = annuaireLiaisons();
-  return [...(an.vers.get(f.id) || [])].map(id => an.par.get(id)).filter(Boolean);
+  const out = [];
+  (an.vers.get(f.id) || new Map()).forEach((min, id) => {
+    const o = an.par.get(id);
+    if (o) out.push({ o: o, min: min });
+  });
+  return out;
+}
+
+/**
+ * Ce que coûte un passage dans la recherche, en mètres.
+ *
+ * Le forfait de son type, augmenté de ce que le temps déclaré ajoute au temps
+ * ordinaire, converti en mètres au pas de marche. Un ascenseur déclaré à cinq
+ * minutes devient donc aussi cher qu'un long détour, et le trajet préfère
+ * l'escalier — ce qui est exactement ce qu'on veut dire en le déclarant. Le
+ * prix reste positif : un passage annoncé instantané ne doit pas devenir un
+ * raccourci qu'on emprunte pour rien.
+ */
+function coutLiaison(t, min, pmr){
+  const sup = (min == null ? 0 : min - t.min) * (pmr ? ALLURE_PMR : ALLURE) * 60;
+  return Math.max(5, t.cout + sup);
 }
 
 /** Un passage praticable : montré au visiteur, relié à un autre, et permis
@@ -895,7 +946,7 @@ function plansRelies(pmr){
   an.vers.forEach((suite, id) => {
     const o = passagePraticable(an, id, pmr);
     if (!o) return;
-    suite.forEach(idv => {
+    suite.forEach((min, idv) => {
       const v = passagePraticable(an, idv, pmr);
       if (v) out.add(o.p.i + "|" + v.p.i);
     });
@@ -985,15 +1036,19 @@ function cheminLiaisons(a, b, pmr){
     /* Emprunter le passage : son prix est celui du passage, et non d'un
        chemin — on ne marche pas dans un escalier, on le monte. */
     const suite = noeuds[u].id ? an.vers.get(noeuds[u].id) : null;
-    if (suite) suite.forEach(idv => {
+    if (suite) suite.forEach((dit, idv) => {
       const v = rang.get(idv);
       /* Un passage joint deux plans. Deux repères du même plan reliés l'un à
          l'autre — ce que l'administration ne propose pas, mais qu'une reprise
          de données peut porter — feraient un raccourci que personne ne peut
          emprunter : on l'ignore plutôt que de tracer un trajet impossible. */
       if (v === undefined || vu[v] || noeuds[v].ip === noeuds[u].ip) return;
-      const d = D[u] + noeuds[u].t.cout;
-      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison" }; }
+      /* Le temps du passage est celui fixé pour ce couple-ci, et à défaut
+         celui de son type : le même escalier met une minute au premier étage
+         et davantage au second. */
+      const min = dit == null ? noeuds[u].t.min : dit;
+      const d = D[u] + coutLiaison(noeuds[u].t, dit, pmr);
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison", min: min }; }
     });
 
     /* Marcher dans le plan où l'on se trouve. */
@@ -1015,7 +1070,7 @@ function cheminLiaisons(a, b, pmr){
   for (let i = 1; i !== 0; ){
     const e = vient[i];
     if (!e) return null;
-    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre });
+    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre, min: e.min });
     i = e.de;
   }
   return sauts;
@@ -1035,9 +1090,9 @@ function routeParLiaisons(sauts, pmr){
   for (const s of sauts){
     if (s.genre === "liaison"){
       liaisons++;
-      minutes += s.a.t.min;
+      minutes += s.min;
       etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
-                    nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
+                    min: s.min, nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
                     de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
       continue;
     }
@@ -1409,13 +1464,16 @@ function relance(){
  */
 function phraseLiaison(e){
   const t = TYPES_LIAISON[e.type] || TYPES_LIAISON.entree;
+  /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
+     trajet dont les mètres ne rendent pas compte. */
+  const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
   if (e.type === "entree")
     return { t: "Changement de pavillon",
              s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
-                e.vers + " par « " + e.nomVers + " »." };
+                e.vers + " par « " + e.nomVers + " »." + duree };
   return { t: t.nom[0].toUpperCase() + t.nom.slice(1) + " · " + e.nom,
            s: "Prenez " + t.art + " « " + e.nom + " » : vous arrivez dans le " + e.vers +
-              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." };
+              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." + duree };
 }
 
 function montreResultat(etat){

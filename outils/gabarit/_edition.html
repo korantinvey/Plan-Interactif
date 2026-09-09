@@ -134,10 +134,14 @@ function majElement(){
  * décrirait rien qu'une allée ne dise déjà, et deux portes d'un même pavillon
  * feraient un raccourci que personne ne peut emprunter. Ce qui reste est
  * exactement ce dont on a besoin — le palier à l'étage, la porte d'en face.
+ *
+ * Un repère en relie autant qu'il en dessert : la liste reste ouverte tant
+ * qu'il demeure des passages à joindre, parce qu'un escalier de
+ * rez-de-chaussée monte au premier comme au second.
  */
 function candidatsLiaison(f){
   const an = annuaireLiaisons();
-  const deja = an.vers.get(f.id) || new Set();
+  const deja = an.vers.get(f.id) || new Map();
   const ici = P().id;
   const out = [];
   an.par.forEach((o, id) => {
@@ -149,32 +153,54 @@ function candidatsLiaison(f){
 }
 
 /**
- * Poser ou retirer une liaison, des deux côtés à la fois.
+ * Écrire une liaison sur les deux repères qu'elle joint.
  *
  * Un passage n'a pas de sens : on descend l'escalier qu'on a monté. Il
- * s'écrit donc sur les deux repères, et le second vit dans un autre plan —
- * hors de l'historique d'annulation, qui ne connaît que le plan ouvert. Le
- * calcul lit de toute façon l'union des deux écritures : une annulation qui
- * ne défait qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
+ * s'écrit donc des deux côtés, et le second vit dans un autre plan — hors de
+ * l'historique d'annulation, qui ne connaît que le plan ouvert. Le calcul lit
+ * de toute façon l'union des deux écritures : une annulation qui ne défait
+ * qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
  */
-function changeLien(idAutre, ajoute){
+function ecritDesDeuxCotes(idAutre, change){
   const cible = formeSel && formeParId(formeSel);
   const autre = annuaireLiaisons().par.get(idAutre);
   if (!cible || !autre || !typeLiaison(cible.f)) return;
   memorise();
-  const pose = (f, id) => {
-    const l = new Set(f.liens || []);
-    if (ajoute) l.add(id); else l.delete(id);
-    if (l.size) f.liens = [...l]; else delete f.liens;
-  };
-  pose(cible.f, idAutre);
-  pose(autre.f, cible.f.id);
+  ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
+  ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
   enregistreDessins();
   majElement();
 }
 
+/** Poser ou retirer un passage. */
+function changeLien(idAutre, ajoute){
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const reste = l.filter(x => x.id !== id);
+    if (ajoute) reste.push({ id: id, min: null });
+    return reste;
+  });
+}
+
 /**
- * Le panneau des liaisons du repère choisi.
+ * Fixer le temps d'un passage, ou le rendre à celui de son type.
+ *
+ * Il se règle par couple, et non par repère : le même escalier met une minute
+ * au premier étage et davantage au second, et c'est bien deux passages
+ * distincts qu'on a déclarés. Le champ vide n'est pas zéro — c'est « le temps
+ * ordinaire de ce type de passage », celui qu'affiche son invite.
+ */
+function changeDureeLien(idAutre, txt){
+  const brut = String(txt == null ? "" : txt).trim();
+  const v = brut === "" ? null : Math.max(0, Math.min(120, Math.round(+brut) || 0));
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const x = l.find(y => y.id === id);
+    if (x) x.min = v; else l.push({ id: id, min: v });
+    return l;
+  });
+}
+
+/**
+ * Le panneau des passages du repère choisi.
  *
  * Il n'apparaît que pour ce qui est un passage — une porte, un escalier, un
  * escalator, un ascenseur. Sur un WC il n'aurait rien à relier, et proposer
@@ -190,13 +216,19 @@ function majLiens(f){
   const liste = $("elemLiensListe");
   liste.innerHTML = "";
   const liens = liensDe(f);
-  liens.forEach(o => {
+  liens.forEach(x => {
     const d = document.createElement("div");
     d.className = "lien";
-    d.innerHTML = '<span></span><button class="btnSup" title="Retirer ce passage">&times;</button>';
-    d.querySelector("span").textContent = o.p.libelle + " · " + nomLiaison(o.f) +
-      (o.visible ? "" : " (calque masqué)");
-    d.querySelector("button").onclick = () => changeLien(o.f.id, false);
+    d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
+      'step="1" title="Temps de passage, en minutes"><b>min</b>' +
+      '<button class="btnSup" title="Retirer ce passage">&times;</button>';
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomLiaison(x.o.f) +
+      (x.o.visible ? "" : " (calque masqué)");
+    const ch = d.querySelector(".lienMin");
+    ch.value = x.min == null ? "" : x.min;
+    ch.placeholder = t.min;
+    ch.onchange = () => changeDureeLien(x.o.f.id, ch.value);
+    d.querySelector("button").onclick = () => changeLien(x.o.f.id, false);
     liste.appendChild(d);
   });
 
@@ -209,10 +241,12 @@ function majLiens(f){
   sel.disabled = !dispo.length;
 
   $("elemLienAide").textContent = liens.length
-    ? "Un trajet qui arrive ici continue de l'autre côté."
-    : "Reliez ce " + t.nom + " à son jumeau sur l'autre plan — l'escalier au palier " +
-      "qu'il dessert, la porte à celle d'en face — et les itinéraires enchaîneront " +
-      "les deux plans au lieu de s'arrêter là.";
+    ? "Un trajet qui arrive ici continue de l'autre côté. Le temps de chaque " +
+      "passage s'ajoute à celui de la marche ; laissé vide, il vaut " +
+      ecritMinutes(t.min) + "."
+    : "Reliez ce " + t.nom + " à ce qu'il dessert sur les autres plans — un escalier " +
+      "monte souvent à deux étages, et chacun est un passage — et les itinéraires " +
+      "enchaîneront les plans au lieu de s'arrêter là.";
 }
 
 /** « G55 — SMC2 », ou le seul des deux qui existe. */

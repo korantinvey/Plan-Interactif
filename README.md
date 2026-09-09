@@ -296,25 +296,38 @@ l'exploitant qui le sait, et qui le déclare.
 
 Un repère qui est un **passage** — Entrée/Sortie, Escalier, Escalator,
 Ascenseur — porte, dans le panneau de la forme choisie, la liste de ce qu'il
-rejoint. On y ajoute son jumeau : l'escalier au palier qu'il dessert, la porte
-à celle d'en face. Seuls les passages des **autres** plans sont proposés — en
-relier deux du même hall ne décrirait rien qu'une allée ne dise déjà. La
+rejoint. On y ajoute ce qu'il dessert : l'escalier à son palier, la porte à
+celle d'en face. **Un passage en rejoint autant qu'il en dessert** — l'escalier
+du rez-de-chaussée monte au premier et au second, et ce sont deux passages,
+chacun avec son temps. Seuls les passages des **autres** plans sont proposés —
+en relier deux du même hall ne décrirait rien qu'une allée ne dise déjà. La
 liaison s'écrit des deux côtés d'un seul geste, se retire d'une croix, et part
 aux visiteurs avec les dessins, à la publication.
 
-Le calcul enchaîne alors les plans comme il enchaîne les allées : on marche
-jusqu'à l'escalier, on le prend, on repart de son jumeau à l'étage. Le tiroir
-déroule les étapes — *60 m dans le pavillon 7.1*, *prenez l'escalier « Escalier
-Nord »*, *20 m dans le pavillon 7.2* — et chaque étape qui se déroule ailleurs
-ouvre son plan d'un clic. La distance annoncée n'est plus minorée : elle est
-celle du trajet entier, et seules les minutes du passage s'ajoutent à celles de
-la marche — une pour un escalier, deux pour un ascenseur, qui s'attend.
+Chaque ligne de la liste porte un **temps de passage**, en minutes, qui s'ajoute
+au temps de marche du trajet. Il se règle par couple et non par repère, pour la
+raison qui précède : le même escalier met deux minutes au premier étage et cinq
+au second. Le champ laissé vide n'est pas zéro — c'est le temps ordinaire du
+type de passage, celui qu'affiche son invite : une minute pour une porte, un
+escalier ou un escalator, deux pour un ascenseur, qui s'attend.
 
-Un passage a un prix, en mètres, qui n'est pas une mesure mais un arbitrage :
-quinze pour une porte, vingt-cinq pour un escalator, trente pour un escalier,
-quarante-cinq pour un ascenseur. C'est ce qu'on accepte de marcher en plus pour
-l'éviter — de quoi préférer un couloir à un ascenseur qu'il faut attendre, sans
-jamais refuser le seul chemin qui existe.
+Le calcul enchaîne alors les plans comme il enchaîne les allées : on marche
+jusqu'à l'escalier, on le prend, on repart de son palier à l'étage. Le tiroir
+déroule les étapes — *60 m dans le pavillon 7.1*, *prenez l'escalier « Escalier
+Nord », comptez 2 min*, *20 m dans le pavillon 7.2* — et chaque étape qui se
+déroule ailleurs ouvre son plan d'un clic. La distance annoncée n'est plus
+minorée : elle est celle du trajet entier, et le temps de chaque passage
+s'ajoute à celui de la marche.
+
+Un passage a aussi un prix, en mètres, qui n'est pas une mesure mais un
+arbitrage : quinze pour une porte, vingt-cinq pour un escalator, trente pour un
+escalier, quarante-cinq pour un ascenseur. C'est ce qu'on accepte de marcher en
+plus pour l'éviter — de quoi préférer un couloir à un ascenseur qu'il faut
+attendre, sans jamais refuser le seul chemin qui existe. **Le temps déclaré
+pèse sur ce prix** : ce qu'il ajoute au temps ordinaire du type se convertit en
+mètres au pas de marche, si bien qu'un ascenseur annoncé à cinq minutes coûte
+autant qu'un long détour et que le trajet lui préfère l'escalier — ce qui est
+exactement ce qu'on veut dire en le déclarant.
 
 En mode accessible, escaliers et escalators sortent du graphe : seuls les
 portes et les ascenseurs relient encore. Un étage desservi par ses seuls

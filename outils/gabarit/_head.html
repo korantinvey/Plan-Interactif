@@ -331,6 +331,11 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
   padding:4px 4px 4px 7px;background:var(--surface-2);border-radius:var(--radius);
   border-left:2px solid var(--accent)}
 .lienListe .lien span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le temps du passage : un champ étroit, son unité collée, et l'invite qui
+   montre le temps ordinaire du type — vide ne veut pas dire zéro. */
+.elem .lienListe .lien input{width:44px;flex:none;padding:2px 4px;font-size:11.5px;
+  text-align:right;background:var(--surface);border:1px solid var(--line)}
+.lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -1199,7 +1204,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
-          <span class="eyebrow">Passage vers un autre plan</span>
+          <span class="eyebrow">Passages vers d'autres plans</span>
           <div class="lienListe" id="elemLiensListe"></div>
           <select id="elemLienAjout"></select>
           <i id="elemLienAide"></i>

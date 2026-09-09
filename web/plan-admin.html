@@ -336,6 +336,11 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
   padding:4px 4px 4px 7px;background:var(--surface-2);border-radius:var(--radius);
   border-left:2px solid var(--accent)}
 .lienListe .lien span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le temps du passage : un champ étroit, son unité collée, et l'invite qui
+   montre le temps ordinaire du type — vide ne veut pas dire zéro. */
+.elem .lienListe .lien input{width:44px;flex:none;padding:2px 4px;font-size:11.5px;
+  text-align:right;background:var(--surface);border:1px solid var(--line)}
+.lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
 .elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
@@ -1204,7 +1209,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
-          <span class="eyebrow">Passage vers un autre plan</span>
+          <span class="eyebrow">Passages vers d'autres plans</span>
           <div class="lienListe" id="elemLiensListe"></div>
           <select id="elemLienAjout"></select>
           <i id="elemLienAide"></i>
@@ -4183,10 +4188,14 @@ function majElement(){
  * décrirait rien qu'une allée ne dise déjà, et deux portes d'un même pavillon
  * feraient un raccourci que personne ne peut emprunter. Ce qui reste est
  * exactement ce dont on a besoin — le palier à l'étage, la porte d'en face.
+ *
+ * Un repère en relie autant qu'il en dessert : la liste reste ouverte tant
+ * qu'il demeure des passages à joindre, parce qu'un escalier de
+ * rez-de-chaussée monte au premier comme au second.
  */
 function candidatsLiaison(f){
   const an = annuaireLiaisons();
-  const deja = an.vers.get(f.id) || new Set();
+  const deja = an.vers.get(f.id) || new Map();
   const ici = P().id;
   const out = [];
   an.par.forEach((o, id) => {
@@ -4198,32 +4207,54 @@ function candidatsLiaison(f){
 }
 
 /**
- * Poser ou retirer une liaison, des deux côtés à la fois.
+ * Écrire une liaison sur les deux repères qu'elle joint.
  *
  * Un passage n'a pas de sens : on descend l'escalier qu'on a monté. Il
- * s'écrit donc sur les deux repères, et le second vit dans un autre plan —
- * hors de l'historique d'annulation, qui ne connaît que le plan ouvert. Le
- * calcul lit de toute façon l'union des deux écritures : une annulation qui
- * ne défait qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
+ * s'écrit donc des deux côtés, et le second vit dans un autre plan — hors de
+ * l'historique d'annulation, qui ne connaît que le plan ouvert. Le calcul lit
+ * de toute façon l'union des deux écritures : une annulation qui ne défait
+ * qu'un côté laisse le passage en place plutôt qu'un lien boiteux.
  */
-function changeLien(idAutre, ajoute){
+function ecritDesDeuxCotes(idAutre, change){
   const cible = formeSel && formeParId(formeSel);
   const autre = annuaireLiaisons().par.get(idAutre);
   if (!cible || !autre || !typeLiaison(cible.f)) return;
   memorise();
-  const pose = (f, id) => {
-    const l = new Set(f.liens || []);
-    if (ajoute) l.add(id); else l.delete(id);
-    if (l.size) f.liens = [...l]; else delete f.liens;
-  };
-  pose(cible.f, idAutre);
-  pose(autre.f, cible.f.id);
+  ecritLiens(cible.f, change(lienEcrits(cible.f), idAutre));
+  ecritLiens(autre.f, change(lienEcrits(autre.f), cible.f.id));
   enregistreDessins();
   majElement();
 }
 
+/** Poser ou retirer un passage. */
+function changeLien(idAutre, ajoute){
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const reste = l.filter(x => x.id !== id);
+    if (ajoute) reste.push({ id: id, min: null });
+    return reste;
+  });
+}
+
 /**
- * Le panneau des liaisons du repère choisi.
+ * Fixer le temps d'un passage, ou le rendre à celui de son type.
+ *
+ * Il se règle par couple, et non par repère : le même escalier met une minute
+ * au premier étage et davantage au second, et c'est bien deux passages
+ * distincts qu'on a déclarés. Le champ vide n'est pas zéro — c'est « le temps
+ * ordinaire de ce type de passage », celui qu'affiche son invite.
+ */
+function changeDureeLien(idAutre, txt){
+  const brut = String(txt == null ? "" : txt).trim();
+  const v = brut === "" ? null : Math.max(0, Math.min(120, Math.round(+brut) || 0));
+  ecritDesDeuxCotes(idAutre, (l, id) => {
+    const x = l.find(y => y.id === id);
+    if (x) x.min = v; else l.push({ id: id, min: v });
+    return l;
+  });
+}
+
+/**
+ * Le panneau des passages du repère choisi.
  *
  * Il n'apparaît que pour ce qui est un passage — une porte, un escalier, un
  * escalator, un ascenseur. Sur un WC il n'aurait rien à relier, et proposer
@@ -4239,13 +4270,19 @@ function majLiens(f){
   const liste = $("elemLiensListe");
   liste.innerHTML = "";
   const liens = liensDe(f);
-  liens.forEach(o => {
+  liens.forEach(x => {
     const d = document.createElement("div");
     d.className = "lien";
-    d.innerHTML = '<span></span><button class="btnSup" title="Retirer ce passage">&times;</button>';
-    d.querySelector("span").textContent = o.p.libelle + " · " + nomLiaison(o.f) +
-      (o.visible ? "" : " (calque masqué)");
-    d.querySelector("button").onclick = () => changeLien(o.f.id, false);
+    d.innerHTML = '<span></span><input class="lienMin" type="number" min="0" max="120" ' +
+      'step="1" title="Temps de passage, en minutes"><b>min</b>' +
+      '<button class="btnSup" title="Retirer ce passage">&times;</button>';
+    d.querySelector("span").textContent = x.o.p.libelle + " · " + nomLiaison(x.o.f) +
+      (x.o.visible ? "" : " (calque masqué)");
+    const ch = d.querySelector(".lienMin");
+    ch.value = x.min == null ? "" : x.min;
+    ch.placeholder = t.min;
+    ch.onchange = () => changeDureeLien(x.o.f.id, ch.value);
+    d.querySelector("button").onclick = () => changeLien(x.o.f.id, false);
     liste.appendChild(d);
   });
 
@@ -4258,10 +4295,12 @@ function majLiens(f){
   sel.disabled = !dispo.length;
 
   $("elemLienAide").textContent = liens.length
-    ? "Un trajet qui arrive ici continue de l'autre côté."
-    : "Reliez ce " + t.nom + " à son jumeau sur l'autre plan — l'escalier au palier " +
-      "qu'il dessert, la porte à celle d'en face — et les itinéraires enchaîneront " +
-      "les deux plans au lieu de s'arrêter là.";
+    ? "Un trajet qui arrive ici continue de l'autre côté. Le temps de chaque " +
+      "passage s'ajoute à celui de la marche ; laissé vide, il vaut " +
+      ecritMinutes(t.min) + "."
+    : "Reliez ce " + t.nom + " à ce qu'il dessert sur les autres plans — un escalier " +
+      "monte souvent à deux étages, et chacun est un passage — et les itinéraires " +
+      "enchaîneront les plans au lieu de s'arrêter là.";
 }
 
 /** « G55 — SMC2 », ou le seul des deux qui existe. */
@@ -6077,6 +6116,30 @@ const nomLiaison = (f) => String(f.txt || "").trim() ||
 let LIAISONS = null;
 function oublieLiaisons(){ LIAISONS = null; }
 
+/**
+ * Ce qu'un repère déclare rejoindre, tel qu'on le relit.
+ *
+ * Un repère en relie autant qu'il en dessert : l'escalier du rez-de-chaussée
+ * monte au premier et au second, et ce sont deux passages, chacun avec son
+ * temps. La liaison s'est d'abord écrite comme un simple identifiant ; elle
+ * porte maintenant sa durée, et les deux formes se lisent — un plan
+ * enregistré avant n'a rien à reprendre et retombe sur le temps ordinaire de
+ * son type.
+ */
+function lienEcrits(f){
+  return ((f && f.liens) || []).map(l => typeof l === "string"
+    ? { id: l, min: null }
+    : { id: l && l.id, min: l && l.min == null ? null : +l.min })
+    .filter(l => l.id);
+}
+
+/* On réécrit la forme courte quand aucune durée n'est fixée : un plan qui ne
+   s'en sert pas garde un enregistrement inchangé. */
+function ecritLiens(f, l){
+  if (!l.length) delete f.liens;
+  else f.liens = l.map(x => x.min == null ? x.id : { id: x.id, min: x.min });
+}
+
 function annuaireLiaisons(){
   if (LIAISONS) return LIAISONS;
   const par = new Map();      // id du repère → { f, p, visible }
@@ -6087,24 +6150,51 @@ function annuaireLiaisons(){
       }
     }
   }
-  const vers = new Map();     // id → ids rejoints, dans les deux sens
-  const relie = (a, b) => {
+  // id → (id rejoint → temps déclaré, ou rien), dans les deux sens
+  const vers = new Map();
+  const relie = (a, b, min) => {
     if (a === b || !par.has(a) || !par.has(b)) return;
-    if (!vers.has(a)) vers.set(a, new Set());
-    vers.get(a).add(b);
+    if (!vers.has(a)) vers.set(a, new Map());
+    const m = vers.get(a);
+    /* Les deux côtés portent la même durée, écrite d'un seul geste. S'ils
+       divergent — une annulation qui n'a défait qu'un côté — on garde la plus
+       longue : un passage annoncé trop court se paie sur place. */
+    const vu = m.get(b);
+    m.set(b, min == null ? (vu == null ? null : vu)
+                         : (vu == null ? min : Math.max(vu, min)));
   };
-  par.forEach((o, id) => (o.f.liens || []).forEach(autre => {
-    relie(id, autre); relie(autre, id);
+  par.forEach((o, id) => lienEcrits(o.f).forEach(l => {
+    relie(id, l.id, l.min); relie(l.id, id, l.min);
   }));
   LIAISONS = { par: par, vers: vers };
   return LIAISONS;
 }
 
 /** Ce qu'un repère rejoint, du point de vue de l'administration : les deux
- *  sens confondus, calques masqués compris. */
+ *  sens confondus, calques masqués compris, chacun avec son temps déclaré. */
 function liensDe(f){
   const an = annuaireLiaisons();
-  return [...(an.vers.get(f.id) || [])].map(id => an.par.get(id)).filter(Boolean);
+  const out = [];
+  (an.vers.get(f.id) || new Map()).forEach((min, id) => {
+    const o = an.par.get(id);
+    if (o) out.push({ o: o, min: min });
+  });
+  return out;
+}
+
+/**
+ * Ce que coûte un passage dans la recherche, en mètres.
+ *
+ * Le forfait de son type, augmenté de ce que le temps déclaré ajoute au temps
+ * ordinaire, converti en mètres au pas de marche. Un ascenseur déclaré à cinq
+ * minutes devient donc aussi cher qu'un long détour, et le trajet préfère
+ * l'escalier — ce qui est exactement ce qu'on veut dire en le déclarant. Le
+ * prix reste positif : un passage annoncé instantané ne doit pas devenir un
+ * raccourci qu'on emprunte pour rien.
+ */
+function coutLiaison(t, min, pmr){
+  const sup = (min == null ? 0 : min - t.min) * (pmr ? ALLURE_PMR : ALLURE) * 60;
+  return Math.max(5, t.cout + sup);
 }
 
 /** Un passage praticable : montré au visiteur, relié à un autre, et permis
@@ -6140,7 +6230,7 @@ function plansRelies(pmr){
   an.vers.forEach((suite, id) => {
     const o = passagePraticable(an, id, pmr);
     if (!o) return;
-    suite.forEach(idv => {
+    suite.forEach((min, idv) => {
       const v = passagePraticable(an, idv, pmr);
       if (v) out.add(o.p.i + "|" + v.p.i);
     });
@@ -6230,15 +6320,19 @@ function cheminLiaisons(a, b, pmr){
     /* Emprunter le passage : son prix est celui du passage, et non d'un
        chemin — on ne marche pas dans un escalier, on le monte. */
     const suite = noeuds[u].id ? an.vers.get(noeuds[u].id) : null;
-    if (suite) suite.forEach(idv => {
+    if (suite) suite.forEach((dit, idv) => {
       const v = rang.get(idv);
       /* Un passage joint deux plans. Deux repères du même plan reliés l'un à
          l'autre — ce que l'administration ne propose pas, mais qu'une reprise
          de données peut porter — feraient un raccourci que personne ne peut
          emprunter : on l'ignore plutôt que de tracer un trajet impossible. */
       if (v === undefined || vu[v] || noeuds[v].ip === noeuds[u].ip) return;
-      const d = D[u] + noeuds[u].t.cout;
-      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison" }; }
+      /* Le temps du passage est celui fixé pour ce couple-ci, et à défaut
+         celui de son type : le même escalier met une minute au premier étage
+         et davantage au second. */
+      const min = dit == null ? noeuds[u].t.min : dit;
+      const d = D[u] + coutLiaison(noeuds[u].t, dit, pmr);
+      if (d < D[v]){ D[v] = d; vient[v] = { de: u, genre: "liaison", min: min }; }
     });
 
     /* Marcher dans le plan où l'on se trouve. */
@@ -6260,7 +6354,7 @@ function cheminLiaisons(a, b, pmr){
   for (let i = 1; i !== 0; ){
     const e = vient[i];
     if (!e) return null;
-    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre });
+    sauts.unshift({ a: noeuds[e.de], b: noeuds[i], genre: e.genre, min: e.min });
     i = e.de;
   }
   return sauts;
@@ -6280,9 +6374,9 @@ function routeParLiaisons(sauts, pmr){
   for (const s of sauts){
     if (s.genre === "liaison"){
       liaisons++;
-      minutes += s.a.t.min;
+      minutes += s.min;
       etapes.push({ genre: "liaison", type: pictoForme(s.a.f), p: s.a.ip, pVers: s.b.ip,
-                    nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
+                    min: s.min, nom: nomLiaison(s.a.f), nomVers: nomLiaison(s.b.f),
                     de: DATA.plans[s.a.ip].libelle, vers: DATA.plans[s.b.ip].libelle });
       continue;
     }
@@ -6654,13 +6748,16 @@ function relance(){
  */
 function phraseLiaison(e){
   const t = TYPES_LIAISON[e.type] || TYPES_LIAISON.entree;
+  /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
+     trajet dont les mètres ne rendent pas compte. */
+  const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
   if (e.type === "entree")
     return { t: "Changement de pavillon",
              s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
-                e.vers + " par « " + e.nomVers + " »." };
+                e.vers + " par « " + e.nomVers + " »." + duree };
   return { t: t.nom[0].toUpperCase() + t.nom.slice(1) + " · " + e.nom,
            s: "Prenez " + t.art + " « " + e.nom + " » : vous arrivez dans le " + e.vers +
-              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." };
+              (e.nomVers !== e.nom ? ", « " + e.nomVers + " »" : "") + "." + duree };
 }
 
 function montreResultat(etat){
@@ -7374,9 +7471,11 @@ function calculeJournee(choix){
         t += enMinutes(e.m);
         m += e.m;
       } else if (e.genre === "liaison"){
-        const min = (TYPES_LIAISON[e.type] || {}).min || TRANSFERT_MIN;
-        etapes.push(Object.assign({ min: min }, e));
-        t += min;
+        /* Le temps du passage est celui que l'exploitant a fixé pour ce
+           couple-là : la journée le réserve dans l'horaire, comme elle
+           réserve le temps de marche. */
+        etapes.push(e);
+        t += e.min || 0;
       } else {
         etapes.push({ genre: "transfert", de: e.de, vers: e.vers, min: TRANSFERT_MIN });
         t += TRANSFERT_MIN;
@@ -7552,7 +7651,7 @@ function remplitJournee(){
       lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
         (e.trace ? "" : " (non tracé)"));
     } else if (e.genre === "liaison"){
-      lienJournee(fil, phraseLiaison(e).s + " Comptez " + ecritMinutes(e.min) + ".");
+      lienJournee(fil, phraseLiaison(e).s);
     } else if (e.genre === "transfert"){
       lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
         ", ce trajet n'est pas sur le plan");

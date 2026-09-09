@@ -424,9 +424,11 @@ function calculeJournee(choix){
         t += enMinutes(e.m);
         m += e.m;
       } else if (e.genre === "liaison"){
-        const min = (TYPES_LIAISON[e.type] || {}).min || TRANSFERT_MIN;
-        etapes.push(Object.assign({ min: min }, e));
-        t += min;
+        /* Le temps du passage est celui que l'exploitant a fixé pour ce
+           couple-là : la journée le réserve dans l'horaire, comme elle
+           réserve le temps de marche. */
+        etapes.push(e);
+        t += e.min || 0;
       } else {
         etapes.push({ genre: "transfert", de: e.de, vers: e.vers, min: TRANSFERT_MIN });
         t += TRANSFERT_MIN;
@@ -602,7 +604,7 @@ function remplitJournee(){
       lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
         (e.trace ? "" : " (non tracé)"));
     } else if (e.genre === "liaison"){
-      lienJournee(fil, phraseLiaison(e).s + " Comptez " + ecritMinutes(e.min) + ".");
+      lienJournee(fil, phraseLiaison(e).s);
     } else if (e.genre === "transfert"){
       lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
         ", ce trajet n'est pas sur le plan");
