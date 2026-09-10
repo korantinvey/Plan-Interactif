@@ -981,6 +981,17 @@ const LIGNES_FICHE = {
       aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
   ],
   zone: [
+    /* Les deux seuls champs du plan qui ne viennent d'aucune source : une zone
+       n'a pas de fiche d'exposant derrière elle, et ce qu'on lit sur elle a été
+       écrit à la main, zone par zone, depuis les réglages du plan. */
+    { cle: "description", libelle: "Description",
+      fixe: "saisie depuis le plan, zone par zone",
+      aide: "Ce qu'on trouve dans la zone, ses horaires, ses conditions " +
+        "d'accès. Elle s'écrit depuis les réglages du plan, et ne paraît " +
+        "sur la fiche que là où elle est remplie." },
+    { cle: "lien", libelle: "Lien",
+      fixe: "saisi depuis le plan, zone par zone",
+      aide: "Une page où en savoir plus, saisie avec la description." },
     { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
       aide: "Le programme tenu dans la zone, par ordre chronologique." },
   ],

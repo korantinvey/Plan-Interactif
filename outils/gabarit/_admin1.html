@@ -145,7 +145,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
-  appliqueFiche();
+  appliqueModele();
 }
 
 /**
@@ -287,58 +287,69 @@ function appliqueAccent(){
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
 
-/* Les habillages de la fiche détail. Le premier n'a pas de classe : c'est la
-   fiche telle que la feuille de style la dessine, et le point de départ de
-   tous les autres. */
-const MODELES_FICHE = [
+/* Les habillages du plan. Chacun tient en deux moitiés — la liste des
+   exposants et la fiche détail — taillées dans la même police et les mêmes
+   couleurs : on ne choisit pas l'allure d'un panneau sans choisir celle de
+   l'autre, sous peine de deux salons côte à côte. Le premier n'a de classe
+   ni d'un côté ni de l'autre : c'est le plan tel que la feuille de style le
+   dessine, et le point de départ de tous les autres. */
+const MODELES = [
   { cle: "sobre", nom: "Sobre",
-    resume: "Le rendu d'origine : un seul rythme du haut en bas." },
+    resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
   { cle: "grille", nom: "Grille",
-    resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
+    resume: "Encre pleine, numéro en filigrane, filets francs jusque dans la liste." },
   { cle: "console", nom: "Console",
     resume: "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon." },
   { cle: "billet", nom: "Billet",
-    resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
+    resume: "Bandeau d'accent sur la recherche, numéros comptables, lignes perforées." },
   { cle: "magazine", nom: "Magazine",
-    resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
+    resume: "Serif à fort contraste et italiques : le catalogue et son sommaire." },
   { cle: "brut", nom: "Brut",
     resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
   { cle: "verre", nom: "Verre",
-    resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
+    resume: "Un bloc de la couleur du salon, champs et lignes en carreaux translucides." },
   { cle: "kraft", nom: "Kraft",
     resume: "Carton et machine à écrire, « nouvel exposant » tamponné de travers." },
   { cle: "signal", nom: "Signalétique",
     resume: "Aplat, flèche et capitales : un stand se lit comme une direction de hall." },
   { cle: "chrono", nom: "Chronologie",
-    resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
+    resume: "Le programme en ligne de temps, et la liste égrenée le long du même rail." },
   { cle: "nu", nom: "Nu",
     resume: "Ni cadre ni libellés : la hiérarchie typographique seule." },
 ];
-const modeleFiche = () => {
+const modeleRetenu = () => {
   const c = (CONF["_fiche"] || {}).modele;
-  return MODELES_FICHE.some(m => m.cle === c) ? c : "sobre";
+  return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
-/** Pose l'habillage retenu sur la fiche. Une seule classe à la fois : les
- *  modèles se recouvrent, et deux ensemble ne veulent rien dire. */
-function appliqueFiche(){
-  const d = $("detail");
-  if (!d) return;
-  const cle = modeleFiche();
-  MODELES_FICHE.forEach(m => d.classList.toggle("modele-" + m.cle, m.cle === cle));
+/**
+ * Pose l'habillage retenu sur ses deux moitiés : la fiche détail et la liste
+ * des exposants. Un seul geste pour les deux — le modèle est un accord, et
+ * l'exploitant qui choisit « Kraft » choisit le carton partout.
+ *
+ * Une seule classe à la fois de chaque côté : les modèles se recouvrent, et
+ * deux ensemble ne veulent rien dire.
+ */
+function appliqueModele(){
+  const cle = modeleRetenu();
+  const pose = (el, prefixe) => el && MODELES.forEach(m =>
+    el.classList.toggle(prefixe + m.cle, m.cle === cle));
+  pose($("detail"), "modele-");
+  pose($("side"), "liste-");
 }
 
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
-   Les onze vignettes montrent la même fiche sous onze habillages : c'est en la
-   comparant à elle-même qu'on choisit. Mais elle ne peut pas être une fiche
-   inventée — un salon qui a retiré l'adresse et remonté sa nomenclature
-   choisirait son modèle sur des champs qu'il n'affiche pas, dans un ordre qui
-   n'est pas le sien.
+   Les onze vignettes montrent la même liste et la même fiche sous onze
+   habillages : c'est en les comparant à elles-mêmes qu'on choisit. Mais elles
+   ne peuvent pas être inventées — un salon qui a retiré l'adresse et remonté
+   sa nomenclature choisirait son modèle sur des champs qu'il n'affiche pas,
+   dans un ordre qui n'est pas le sien.
 
    Les vignettes portent donc les champs retenus, dans l'ordre réglé depuis la
-   console, et les valeurs d'un vrai stand.
+   console, et les valeurs d'un vrai stand — et, à côté, les voisins de
+   sommaire de ce stand, tels que la liste les rangerait.
    ------------------------------------------------------------------ */
 
 /* Comment lire chaque champ du corps sur un stand. Les mêmes sources que la
@@ -377,6 +388,16 @@ const EXEMPLES_CORPS = {
   thematiques: "Réemploi;Bois de pays",
 };
 
+/* De quoi peupler la liste d'un salon dont aucun stand n'est encore connu.
+   Une liste vide ne dirait rien d'un habillage : c'est sur des lignes qui se
+   suivent que se voit un filet, un pointillé ou un rail. */
+const EXEMPLES_LISTE = [
+  ["B07", "Atelier du Marais"], ["C02", "Bois & Compagnie"],
+  ["D14", "Ateliers Ligneron"], ["D22", "Duchêne Agencement"],
+  ["E05", "Fonderie de l'Ouest"], ["E18", "Granit Armor"],
+  ["F03", "Habitat Lumière"], ["F11", "Menuiseries Rocher"],
+];
+
 /** Ce qu'un stand porte pour un champ du corps, en une chaîne. */
 function texteCorps(o, cle){
   if (cle.indexOf(PREFIXE_PERSO) === 0){
@@ -402,6 +423,34 @@ function standApercu(cles){
     if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
   }));
   return { stand: mieux, hall, neuf };
+}
+
+/**
+ * Les lignes de la liste d'aperçu : le stand de la fiche et ses voisins de
+ * sommaire, dans l'ordre où la liste les range.
+ *
+ * Le stand de la fiche est marqué courant, et non le premier venu : les
+ * modèles habillent la ligne ouverte plus que les autres — un négatif, un
+ * curseur, un point allumé — et c'est celle-là qu'on veut voir en regard de la
+ * fiche qui la déplie.
+ */
+function lignesApercu(stand){
+  const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
+  const voisins = ((pl && pl.stands) || []).filter(o => o.nom)
+    .sort((a, b) => COLLATION.compare(String(a.nom), String(b.nom)));
+  /* Une liste de deux lignes ne montre pas un habillage : sans assez de
+     voisins, on prend les exemples plutôt qu'une vignette à moitié vide. */
+  if (voisins.length < 4){
+    return EXEMPLES_LISTE.map(([code, nom], i) =>
+      ({ code, nom, courant: i === 2 }));
+  }
+  /* Le stand retenu, avec ce qui le précède et ce qui le suit : la vignette
+     montre huit lignes, et la sienne ne doit être ni la première ni la
+     dernière — un filet de séparation se lit entre deux voisines. */
+  const i = Math.max(0, voisins.indexOf(stand));
+  const debut = Math.min(Math.max(0, i - 2), Math.max(0, voisins.length - 8));
+  return voisins.slice(debut, debut + 8).map(o =>
+    ({ code: codeCase(o), nom: o.nom, courant: o === stand }));
 }
 
 /**
@@ -431,6 +480,16 @@ function contenuApercu(){
        le champ, et plusieurs modèles l'habillent — on choisirait sur une
        marque qu'on n'aura jamais. */
     neuf: neuf && montre("stand", "nouveau"),
+    lignes: lignesApercu(stand),
+    /* Le compteur du pavillon, tel que la liste l'écrit : c'est une ligne de
+       texte que plusieurs modèles habillent — capitales, chasse fixe,
+       italique — et la taire priverait la vignette de sa tête. */
+    compte: (() => {
+      const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
+      const n = ((pl && pl.stands) || []).length || EXEMPLES_LISTE.length;
+      return n + (n > 1 ? " résultats" : " résultat") + " · " +
+        ((pl && pl.libelle) || hall || EXEMPLES_CORPS.hall);
+    })(),
   };
 }
 
@@ -486,6 +545,45 @@ function apercuFiche(cle, vu){
 }
 
 /**
+ * L'autre moitié de la vignette : la liste des exposants sous le même
+ * habillage.
+ *
+ * Des balises neutres, comme pour la fiche : l'aperçu vit dans le bouton qui
+ * choisit le modèle, et celui-ci ne peut contenir ni bouton ni champ de
+ * saisie. Les classes sont celles du vrai panneau — c'est la même feuille de
+ * style qui l'habille, à la réduction près.
+ */
+function apercuListe(cle, vu){
+  const d = document.createElement("div");
+  d.className = "apercu-liste liste-" + cle;
+  // l'aperçu se regarde, il ne se manipule pas
+  d.inert = true;
+  const lignes = vu.lignes.map(l =>
+    '<span class="row" data-sorte="stand" aria-current="' + (l.courant ? "true" : "false") + '">' +
+    '<span class="code">' + esc(l.code) + '</span>' +
+    '<span><span class="nm">' + esc(l.nom) + '</span><span class="s"></span></span></span>').join("");
+  d.innerHTML =
+    '<div class="search"><div class="search-field">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      '<span class="champ">Exposant, stand…</span>' +
+    '</div></div>' +
+    '<div class="count"><span>' + esc(vu.compte) + '</span></div>' +
+    '<div class="list">' + lignes + '</div>';
+  return d;
+}
+
+/** Les deux moitiés d'un habillage, dans l'ordre de l'écran : la liste, puis
+ *  la fiche qu'on ouvre depuis elle. C'est leur accord qu'on choisit. */
+function apercuDuo(cle, vu){
+  const d = document.createElement("div");
+  d.className = "duo";
+  d.appendChild(apercuListe(cle, vu));
+  d.appendChild(apercuFiche(cle, vu));
+  return d;
+}
+
+/**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
@@ -522,7 +620,133 @@ function ouvreReglages(){
     };
     voletPlan(volet("Plan"));
     voletApparence(volet("Apparence"));
+    /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
+       compte aucune, il n'ouvrirait que sur une liste vide. */
+    if (TOUS.some(z => z.kind === "zone")) voletZones(volet("Zones"));
   }, [{ libelle: "Fermer" }], "large");
+}
+
+/**
+ * Les zones organisateur, l'une après l'autre.
+ *
+ * Une zone se reprend jusqu'ici depuis sa forme sur le plan : encore
+ * faut-il la retrouver, et rien ne distingue de loin une réserve d'une agora.
+ * L'exploitant qui remplit les fiches d'un salon les veut en liste, et passe
+ * de l'une à l'autre sans refermer.
+ *
+ * D'où les deux volets : la liste à gauche, la fiche de celle qu'on a choisie
+ * à droite. Chaque rang dit ce qu'il en est déjà — une fiche écrite, une zone
+ * retirée du plan public — pour qu'on voie d'un coup d'œil ce qui reste à
+ * faire.
+ */
+function voletZones(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que le visiteur lit sur une zone organisateur. La source " +
+    "n'en donne que le contour et parfois un nom : le reste s'écrit ici, et " +
+    "paraît sans attendre la prochaine synchronisation.";
+  hote.appendChild(p);
+
+  /* Sans nom, une zone ne se distingue pas de la suivante : celles qui en ont
+     un se lisent dans l'ordre alphabétique, les autres attendent à la fin —
+     c'est là qu'est le travail. */
+  const zones = TOUS.filter(z => z.kind === "zone").slice().sort((a, b) =>
+    (a.nom ? 0 : 1) - (b.nom ? 0 : 1) ||
+    String(a.nom || "").localeCompare(String(b.nom || ""), "fr") ||
+    String(a.id).localeCompare(String(b.id)));
+
+  const grille = document.createElement("div");
+  grille.className = "zonesReg";
+  const colonne = document.createElement("div");
+  colonne.className = "listeZ";
+  const detail = document.createElement("div");
+  detail.className = "detailZ";
+  grille.appendChild(colonne);
+  grille.appendChild(detail);
+  hote.appendChild(grille);
+
+  const rangs = new Map();
+  /* Ce qu'un rang dit de sa zone. Réécrit après chaque enregistrement : le nom
+     vient d'y changer, et la fiche d'y apparaître. */
+  const ecritRang = (z) => {
+    const b = rangs.get(z.id);
+    if (!b) return;
+    b.innerHTML = "";
+    const n = document.createElement("span");
+    n.className = "n";
+    n.textContent = z.nom || "Zone sans nom";
+    b.appendChild(n);
+    const dit = [];
+    if (z.description || z.lien) dit.push("fiche");
+    if (z.masquee) dit.push("masquée");
+    if (dit.length){
+      const e = document.createElement("span");
+      e.className = "etat";
+      e.textContent = dit.join(" · ");
+      b.appendChild(e);
+    }
+  };
+
+  const choisit = (z) => {
+    rangs.forEach((b, id) => b.setAttribute("aria-pressed", String(id === z.id)));
+    detail.innerHTML = "";
+    ficheZoneEnPlace(detail, z, () => ecritRang(z));
+  };
+
+  zones.forEach(z => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => choisit(z);
+    colonne.appendChild(b);
+    rangs.set(z.id, b);
+    ecritRang(z);
+  });
+
+  // une liste dont rien n'est choisi n'a que du vide en face d'elle
+  choisit(zones[0]);
+}
+
+/**
+ * La fiche d'une zone, posée dans les réglages plutôt que dans une fenêtre.
+ *
+ * Elle enregistre pour elle-même, sans le pied de la fenêtre : celui-ci ferme
+ * les réglages, et l'on vient ici pour en remplir plusieurs. L'état de
+ * l'enregistrement se dit donc à côté du bouton.
+ */
+function ficheZoneEnPlace(hote, o, apres){
+  const ou = document.createElement("p");
+  ou.className = "ouZ";
+  ou.textContent = [(DATA.plans[o.p] || {}).libelle,
+    o.masquee ? "retirée du plan public" : ""].filter(Boolean).join(" · ");
+  hote.appendChild(ou);
+
+  const valeurs = champsZone(hote, o);
+
+  const pied = document.createElement("div");
+  pied.className = "piedZ";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn fort";
+  b.textContent = "Enregistrer";
+  const etat = document.createElement("span");
+  etat.className = "etatZ";
+  b.onclick = async () => {
+    b.disabled = true;
+    etat.textContent = "Enregistrement…";
+    etat.dataset.mal = "false";
+    try {
+      await enregistreZone(o, valeurs());
+      etat.textContent = "Enregistré.";
+      if (apres) apres();
+    } catch (e) {
+      etat.textContent = "Échec : " + e.message;
+      etat.dataset.mal = "true";
+    }
+    b.disabled = false;
+  };
+  pied.appendChild(b);
+  pied.appendChild(etat);
+  hote.appendChild(pied);
 }
 
 /** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
@@ -656,13 +880,14 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
- *  fiche détail. */
+/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
+ *  deux panneaux — la liste des exposants et la fiche détail. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
-    "boutons, pastilles, et les modèles de fiche s'en habillent. Le modèle " +
-    "décide de l'allure du panneau qui s'ouvre sur un stand.";
+    "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
+    "l'allure des deux panneaux à la fois : la liste des exposants et la " +
+    "fiche qui s'ouvre sur un stand.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -716,18 +941,18 @@ function voletApparence(hote){
 
   const titre = document.createElement("span");
   titre.className = "eyebrow";
-  titre.textContent = "Modèle de fiche";
+  titre.textContent = "Modèle d'habillage";
   titre.style.display = "block";
   titre.style.margin = "0 0 9px";
   hote.appendChild(titre);
 
   const grille = document.createElement("div");
   grille.className = "modeles";
-  const courant = modeleFiche();
-  // le même contenu pour les onze : c'est en comparant la même fiche à
-  // elle-même qu'on choisit son habillage
+  const courant = modeleRetenu();
+  // le même contenu pour les onze : c'est en comparant les mêmes liste et
+  // fiche à elles-mêmes qu'on choisit leur habillage
   const vu = contenuApercu();
-  MODELES_FICHE.forEach(m => {
+  MODELES.forEach(m => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "mod";
@@ -737,10 +962,10 @@ function voletApparence(hote){
       '<span class="resume"></span>';
     b.querySelector(".nom .t").textContent = m.nom;
     b.querySelector(".resume").textContent = m.resume;
-    b.querySelector(".vue").appendChild(apercuFiche(m.cle, vu));
+    b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
-      enregistreConf(); appliqueFiche();
+      enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
     };
@@ -868,54 +1093,323 @@ function activeAdmin(){
 
 
 /* ============================================================
-   Renommer une zone organisateur
+   La fiche d'une zone organisateur
    Une zone tire son nom de Klipso, ou des textes posés sur le plan. Quand ni
    l'un ni l'autre ne donne rien — les vingt-deux zones de Franchise Expo
    s'affichent « Zone sans nom » — il faut pouvoir le saisir.
 
-   Le nom est enregistré sur l'événement, pas dans le navigateur : c'est le
-   visiteur qui doit le lire. Et il s'applique à la lecture, si bien qu'il
+   Et le nom est souvent tout ce qu'elle a : la source ne dit rien d'autre
+   d'un espace de restauration, d'une agora ou d'une halte-garderie, qui ont
+   pourtant des horaires, un contenu, une page où s'inscrire. Une zone est donc
+   la seule chose du plan dont la fiche s'écrit à la main : un libellé, une
+   description mise en forme, un lien.
+
+   Le même formulaire s'ouvre de deux endroits — du crayon posé sur la fiche,
+   et de la liste des zones dans les réglages, quand on les reprend l'une après
+   l'autre sans avoir à les retrouver sur le plan.
+
+   La fiche est enregistrée sur l'événement, pas dans le navigateur : c'est le
+   visiteur qui doit la lire. Et elle s'applique à la lecture, si bien qu'elle
    paraît sans attendre la prochaine synchronisation.
    ============================================================ */
-function renommeZone(o){
-  let champ;
-  ouvreModale("Renommer la zone", corps => {
-    const l = document.createElement("label");
-    l.innerHTML = "<span>Nom de la zone</span><input>";
-    champ = l.querySelector("input");
-    champ.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
-    champ.placeholder = "Agora, Halte-garderie, Pitch Retail…";
-    corps.appendChild(l);
-    const aide = document.createElement("p");
-    aide.className = "aide";
-    aide.textContent = "Laissez vide pour revenir au nom d'origine, s'il y en a un.";
-    corps.appendChild(aide);
-    setTimeout(() => { champ.focus(); champ.select(); }, 30);
-    champ.onkeydown = e => {
-      if (e.key === "Enter"){ e.preventDefault(); enregistreNomZone(o, champ.value); fermeModale(); }
-    };
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Enregistrer", genre: "primaire",
-      action: () => enregistreNomZone(o, champ.value) },
-  ]);
+
+/**
+ * Un champ du formulaire : son intitulé, ce qu'on y saisit, et la ligne d'aide
+ * qui dit ce qu'il devient. Les trois vont ensemble — un champ sans son aide
+ * se remplit au jugé.
+ */
+function champZone(hote, titre, dedans, aide){
+  const bloc = document.createElement("div");
+  bloc.className = "champZ";
+  const l = document.createElement("span");
+  l.className = "tZ";
+  l.textContent = titre;
+  bloc.appendChild(l);
+  bloc.appendChild(dedans);
+  if (aide){
+    const a = document.createElement("span");
+    a.className = "aideZ";
+    a.textContent = aide;
+    bloc.appendChild(a);
+  }
+  hote.appendChild(bloc);
+  return dedans;
 }
 
-async function enregistreNomZone(o, valeur){
-  const nom = String(valeur || "").trim();
-  try {
-    const noms = await ecritTableZones("zones", DATA.nomsZones, t => {
-      if (nom) t[o.id] = nom; else delete t[o.id];
-    });
-    DATA.nomsZones = noms;
-    // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
-    if (o.origine === undefined) o.origine = o.nom;
-    o.nom = nom || o.origine || null;
-    libelles(); liste();
-    ouvre(o, null);
-  } catch (e) {
-    annonce("Renommage impossible : " + e.message, true);
-  }
+/**
+ * Les trois champs d'une zone, posés dans « hote ».
+ *
+ * Rend de quoi les relire au moment d'enregistrer, plutôt que d'écrire à
+ * chaque frappe : une description se rédige, et la sauver en cours de phrase
+ * la publierait à moitié faite.
+ */
+function champsZone(hote, o){
+  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+    "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
+    "revenir au nom d'origine, s'il y en a un.");
+  libelle.type = "text";
+  libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
+  libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+
+  /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
+     visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
+     salon ne dit — « Atmosphère Mobilité » ne se devine pas. */
+  const type = champZone(hote, "Type", document.createElement("select"),
+    "Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au " +
+    "bas du plan : le visiteur y retrouve d'un geste toutes les zones du même " +
+    "type. Sans type, la zone reste sur le plan comme aujourd'hui.");
+  type.innerHTML = TYPES_ZONE.map(t =>
+    '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
+  type.value = (typeZone(o) || {}).v || "";
+
+  const riche = editeurRiche(o.description || "");
+  champZone(hote, "Description", riche.cadre,
+    "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
+    "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const lienZ = champZone(hote, "Lien", document.createElement("input"),
+    "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
+    "n'apparaît sur la fiche que si vous en donnez une.");
+  lienZ.type = "url";
+  lienZ.placeholder = "https://…";
+  lienZ.value = o.lien || "";
+
+  return () => ({ libelle: libelle.value, type: type.value,
+                  description: riche.lit(), lien: lienZ.value });
+}
+
+/* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :
+   une description de zone est un paragraphe et deux listes, pas une page à
+   composer — et tout ce qui n'est pas ici serait de toute façon retiré à
+   l'affichage. */
+const OUTILS_RICHE = [
+  { cmd: "bold", signe: "G", titre: "Gras", style: "font-weight:700" },
+  { cmd: "italic", signe: "I", titre: "Italique", style: "font-style:italic" },
+  { cmd: "insertUnorderedList", signe: "•", titre: "Liste à puces" },
+  { cmd: "insertOrderedList", signe: "1.", titre: "Liste numérotée" },
+];
+
+/**
+ * L'éditeur de la description.
+ *
+ * Une zone de saisie ordinaire aurait rendu un bloc de texte : or ce qu'on
+ * écrit là — des horaires, ce qu'on y trouve, comment s'y inscrire — se lit
+ * en paragraphes et en listes. D'où un éditeur, réduit à ce que la fiche sait
+ * afficher : gras, italique, listes, liens.
+ *
+ * Il s'appuie sur « execCommand », que les navigateurs disent déprécié depuis
+ * dix ans et qu'aucun n'a retiré : c'est cela, ou réécrire à la main la mise en
+ * forme d'une sélection, pour un champ que l'exploitant remplit trois fois.
+ *
+ * Ce qui est collé arrive en texte nu : coller depuis un traitement de texte
+ * apportait sa feuille de style entière, dont il ne restait rien après relecture
+ * — l'éditeur montrait alors une mise en forme que la fiche n'affichait pas.
+ */
+function editeurRiche(html){
+  const cadre = document.createElement("div");
+  cadre.className = "edrich";
+  const barre = document.createElement("div");
+  barre.className = "barre";
+  const zone = document.createElement("div");
+  zone.className = "zone";
+  zone.contentEditable = "true";
+  zone.setAttribute("role", "textbox");
+  zone.setAttribute("aria-multiline", "true");
+  zone.setAttribute("aria-label", "Description de la zone");
+  zone.dataset.vide = "Ce qu'on trouve dans cette zone, ses horaires…";
+  zone.innerHTML = assainitRiche(html);
+
+  /* Chrome sépare les lignes par des « div », Firefox par des « br » : sans
+     cette demande, deux navigateurs produisent deux balisages pour le même
+     texte. Elle échoue silencieusement là où elle n'est pas comprise, et la
+     relecture ramène de toute façon les deux au paragraphe. */
+  try { document.execCommand("defaultParagraphSeparator", false, "p"); } catch (e) {}
+
+  const marques = [];
+  const majMarques = () => marques.forEach(m => {
+    let on = false;
+    try { on = document.queryCommandState(m.cmd); } catch (e) {}
+    m.el.setAttribute("aria-pressed", String(on));
+  });
+
+  const bouton = (signe, titre) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = signe;
+    b.title = titre;
+    b.setAttribute("aria-label", titre);
+    /* Un bouton qui prend le focus emporte la sélection avec lui : la commande
+       s'appliquerait alors à rien. On lui refuse le focus plutôt que de
+       relever et reposer la sélection à chaque clic. */
+    b.onmousedown = e => e.preventDefault();
+    barre.appendChild(b);
+    return b;
+  };
+
+  OUTILS_RICHE.forEach(t => {
+    const b = bouton(t.signe, t.titre);
+    if (t.style) b.style.cssText = t.style;
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => {
+      zone.focus();
+      try { document.execCommand(t.cmd, false, null); } catch (e) {}
+      majMarques();
+    };
+    marques.push({ cmd: t.cmd, el: b });
+  });
+
+  /* Poser un lien demande une adresse, qu'il faut bien saisir quelque part :
+     une seconde fenêtre par-dessus celle des réglages fermerait la première —
+     la page n'en tient qu'une — d'où cette rangée, qui se déplie sous la barre
+     et rend la main au texte. */
+  const rangee = document.createElement("div");
+  rangee.className = "lienbarre";
+  rangee.hidden = true;
+  const url = document.createElement("input");
+  url.type = "url";
+  url.placeholder = "https://…";
+  rangee.appendChild(url);
+  let plage = null;
+
+  /* La sélection du moment, mise de côté : le temps de taper une adresse, le
+     focus a quitté le texte, et avec lui ce sur quoi le lien devait porter. */
+  const retientPlage = () => {
+    const s = getSelection();
+    plage = s && s.rangeCount && zone.contains(s.getRangeAt(0).commonAncestorContainer)
+      ? s.getRangeAt(0).cloneRange() : null;
+  };
+  const reposePlage = () => {
+    zone.focus();
+    if (!plage) return;
+    const s = getSelection();
+    s.removeAllRanges();
+    s.addRange(plage);
+  };
+
+  const poser = document.createElement("button");
+  poser.type = "button";
+  poser.className = "ok";
+  poser.textContent = "Poser";
+  poser.onclick = () => {
+    const u = adresseSure(url.value);
+    if (!u){ url.focus(); url.select(); return; }
+    reposePlage();
+    const s = getSelection();
+    try {
+      /* Un lien posé sans rien avoir sélectionné n'aurait pas de texte à
+         porter : c'est l'adresse elle-même qui en tient lieu. */
+      if (s && s.isCollapsed) document.execCommand("insertHTML", false,
+        '<a href="' + esc(u) + '">' + esc(u.replace(/^https?:\/\//i, "")) + "</a>");
+      else document.execCommand("createLink", false, u);
+    } catch (e) {}
+    rangee.hidden = true;
+    url.value = "";
+  };
+  rangee.appendChild(poser);
+
+  const retirer = document.createElement("button");
+  retirer.type = "button";
+  retirer.textContent = "Retirer";
+  retirer.onclick = () => {
+    reposePlage();
+    try { document.execCommand("unlink", false, null); } catch (e) {}
+    rangee.hidden = true;
+  };
+  rangee.appendChild(retirer);
+
+  const bLien = bouton("Lien", "Poser un lien sur le texte choisi");
+  bLien.className = "lg";
+  bLien.onclick = () => {
+    retientPlage();
+    rangee.hidden = !rangee.hidden;
+    if (!rangee.hidden) setTimeout(() => url.focus(), 20);
+  };
+
+  zone.addEventListener("paste", e => {
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData("text/plain");
+    try { document.execCommand("insertText", false, t); } catch (err) {}
+  });
+  ["keyup", "mouseup", "focus"].forEach(ev => zone.addEventListener(ev, majMarques));
+
+  cadre.appendChild(barre);
+  cadre.appendChild(rangee);
+  cadre.appendChild(zone);
+
+  return {
+    cadre: cadre,
+    /* Ce qui sera enregistré : relu ici comme il le sera à l'affichage, et
+       ramené à rien s'il ne reste que le paragraphe vide qu'un éditeur vidé
+       laisse derrière lui — sans quoi la fiche annoncerait une description
+       qui ne dit rien. */
+    lit: () => {
+      const h = assainitRiche(zone.innerHTML);
+      const d = document.createElement("div");
+      d.innerHTML = h;
+      return d.textContent.trim() ? h : "";
+    },
+  };
+}
+
+/** La fiche d'une zone, ouverte du crayon posé sur la fiche du plan. */
+function ficheZone(o){
+  let valeurs;
+  ouvreModale(o.nom || "Zone sans nom", corps => {
+    valeurs = champsZone(corps, o);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Enregistrer", genre: "primaire", action: () => {
+        enregistreZone(o, valeurs())
+          .catch(e => annonce("Enregistrement impossible : " + e.message, true));
+      } },
+  ], "large");
+}
+
+/**
+ * Enregistrer la fiche d'une zone.
+ *
+ * Le libellé et le reste ne vivent pas dans la même colonne — le premier
+ * s'applique au plan, où il nomme la forme, les autres n'existent que sur la
+ * fiche — mais ils se saisissent ensemble : ils partent donc en une seule
+ * écriture, sans quoi un enregistrement à moitié passé laisserait le nom
+ * changé et la description perdue.
+ */
+async function enregistreZone(o, v){
+  const nom = String(v.libelle || "").trim();
+  const description = String(v.description || "");
+  // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
+  const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
+  // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
+  // n'aurait qu'un lien mort à montrer
+  const adresse = adresseSure(v.lien);
+  const tables = await ecritTablesZones([
+    { colonne: "zones", secours: DATA.nomsZones, change: t => {
+        if (nom) t[o.id] = nom; else delete t[o.id];
+      } },
+    { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
+        const fiche = {};
+        if (genre) fiche.type = genre;
+        if (description) fiche.description = description;
+        if (adresse) fiche.lien = adresse;
+        // une fiche vidée sort de la table plutôt que d'y rester en creux
+        if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
+      } },
+  ]);
+  DATA.nomsZones = tables.zones;
+  DATA.fichesZones = tables.zones_fiches;
+  // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
+  if (o.origine === undefined) o.origine = o.nom;
+  o.nom = nom || o.origine || null;
+  o.description = description;
+  o.lien = adresse;
+  o.type = genre;
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
+  o.rech = String(o.nom || "").toLowerCase();
+  libelles(); liste();
+  // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
+  cartouchePoi();
+  // la fiche ouverte sur cette zone montre déjà l'ancienne version
+  if (state.sel === o.id) ouvre(o, null);
 }
 
 
@@ -956,13 +1450,18 @@ function marqueZonesMasquees(){
 
 
 /**
- * Réécrire une des tables de l'événement indexées par zone — les noms, les
- * masquages. Chacune tient dans une seule colonne : la renvoyer telle que la
- * page l'avait chargée effacerait ce qu'un autre poste y a mis depuis. On
- * repart donc de ce que la base contient à l'instant, et « change » n'y touche
- * que la zone concernée.
+ * Réécrire les tables de l'événement indexées par zone — les noms, les
+ * masquages, les fiches. Chacune tient dans une seule colonne : la renvoyer
+ * telle que la page l'avait chargée effacerait ce qu'un autre poste y a mis
+ * depuis. On repart donc de ce que la base contient à l'instant, et « change »
+ * n'y touche que la zone concernée.
+ *
+ * Plusieurs colonnes à la fois quand elles se saisissent ensemble : la fiche
+ * d'une zone tient à la fois du nom, qui s'écrit sur le plan, et du reste, qui
+ * n'existe que sur la fiche. Deux écritures les auraient dissociées à la
+ * première qui échoue.
  */
-async function ecritTableZones(colonne, secours, change){
+async function ecritTablesZones(travaux){
   let cfg = null, ses = null;
   try {
     cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
@@ -971,20 +1470,30 @@ async function ecritTableZones(colonne, secours, change){
   if (!cfg?.url || !ses?.access_token) throw new Error("session absente, reconnectez-vous");
 
   const entetes = { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token };
-  const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=" + colonne + "&slug=eq." +
+  const colonnes = travaux.map(t => t.colonne).join(",");
+  const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=" + colonnes + "&slug=eq." +
     encodeURIComponent(DATA.slug), { headers: entetes })
     .then(r => r.ok ? r.json() : []).catch(() => []);
-  const table = { ...(enBase[0]?.[colonne] || secours || {}) };
-  change(table);
+
+  const tables = {}, corps = { modifie_le: new Date().toISOString() };
+  travaux.forEach(t => {
+    const table = { ...(enBase[0]?.[t.colonne] || t.secours || {}) };
+    t.change(table);
+    tables[t.colonne] = corps[t.colonne] = table;
+  });
 
   const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
     method: "PATCH",
     headers: { ...entetes, "Content-Type": "application/json", "Prefer": "return=minimal" },
-    body: JSON.stringify({ [colonne]: table, modifie_le: new Date().toISOString() }),
+    body: JSON.stringify(corps),
   });
   if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
-  return table;
+  return tables;
 }
+
+/** La même chose pour une seule colonne, qui est le cas courant. */
+const ecritTableZones = (colonne, secours, change) =>
+  ecritTablesZones([{ colonne, secours, change }]).then(t => t[colonne]);
 
 
 /* ============================================================
@@ -1075,6 +1584,11 @@ function modePlacementLibelles(on){
      referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
   if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
   if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
+     touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
+     rallume ou s'éteint donc ici, une fois pour tous, plutôt que dans chacun. */
+  const crayon = document.querySelector("#pile .rlib");
+  if (crayon) crayon.setAttribute("aria-pressed", PLACE_LIBELLES);
   majPaletteLibelle();
   libelles();
 }
@@ -1144,14 +1658,7 @@ function libellePointerUp(e){
   return true;
 }
 
-/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
-   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
-   cochée — et le refaire remplacerait le nœud en pleine gestion de son
-   propre événement. */
-if ($("libFerme")) $("libFerme").onclick = () => {
-  modePlacementLibelles(false);
-  construitPanneau();
-};
+if ($("libFerme")) $("libFerme").onclick = () => modePlacementLibelles(false);
 if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
 if ($("libTaille")){
   $("libTaille").oninput = e => {

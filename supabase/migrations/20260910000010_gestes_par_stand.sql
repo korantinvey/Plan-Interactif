@@ -200,26 +200,41 @@ comment on function enregistre_mesures is
 revoke all on function enregistre_mesures(text, text, jsonb) from public;
 grant execute on function enregistre_mesures(text, text, jsonb) to service_role;
 
--- ------------------------------------------------------- rapport par exposant
+
+-- ------------------------------------------------- l'audience, tout entière
 /*
- * Ce que chaque exposant a recueilli, une ligne par stand.
+ * `audience_cibles` sait déjà lire `compteur_cible` par stand : c'est elle qui
+ * peint la carte de chaleur. L'export tableur pose la même question à la même
+ * table, en demandant seulement plus de colonnes — le détail par canal, les
+ * itinéraires, les ajouts au programme.
  *
- * Tous les stands y figurent, même à zéro. Un tableau qui n'aligne que les
- * stands consultés ne se lit pas : l'organisateur ne saurait pas si un exposant
- * absent n'a intéressé personne ou n'a jamais été posé sur le plan, et c'est
- * précisément la question qu'il vient poser.
+ * On l'élargit donc plutôt que d'écrire une seconde fonction à côté. Deux
+ * agrégations du même compteur auraient divergé au premier ajustement — une
+ * borne de période corrigée d'un côté, pas de l'autre — et la carte de chaleur
+ * aurait fini par montrer d'autres chiffres que le classeur qu'elle illustre.
  *
- * Le classement se fait par total décroissant : c'est le palmarès qu'on
- * regarde d'abord, et un tableur se retrie d'un clic.
+ * `p_complet` ouvre les deux choses dont l'export a besoin, et que la carte ne
+ * veut pas :
  *
- * Rendu en jsonb plutôt qu'en lignes, comme `rapport_utilisation` : la page qui
- * l'appelle en fait un classeur, pas un tableau à l'écran, et les canaux d'un
- * stand tiennent mieux dans un objet que dans huit colonnes figées ici.
+ *   · toutes les cibles du salon, même à zéro. Un tableau qui n'aligne que les
+ *     stands consultés ne se lit pas — l'organisateur ne saurait pas si un
+ *     exposant absent n'a intéressé personne ou n'a jamais été posé sur le
+ *     plan. La carte, elle, n'a rien à peindre d'un stand à zéro.
+ *   · le détail de chaque ligne. La carte n'affiche qu'un nombre par stand ;
+ *     le lui envoyer quand même doublerait sa charge pour rien.
+ *
+ * La lecture de `compteur_cible`, elle, reste unique : un seul balayage sert
+ * les fiches, les itinéraires et les parcours, séparés ensuite par leur genre.
  */
-create or replace function rapport_exposants(
+drop function if exists audience_cibles(uuid, integer, text);
+
+create or replace function audience_cibles(
   p_evenement uuid,
-  p_debut     timestamptz default null,
-  p_fin       timestamptz default null
+  -- les N derniers jours, comptés dans le fuseau du salon ; nul pour tout
+  p_jours     integer default null,
+  p_genre     text    default 'fiche_stand',
+  -- toutes les cibles et tout leur détail : ce que le tableur demande
+  p_complet   boolean default false
 ) returns jsonb
 language sql
 stable
@@ -227,51 +242,98 @@ security invoker
 set search_path = public
 as $$
   with zone as (
+    -- Le découpage par jour est celui des compteurs : dans le fuseau du salon,
+    -- sinon les deux premières heures d'une soirée parisienne tomberaient la
+    -- veille. Un fuseau inconnu ferait échouer la conversion : on retombe sur
+    -- UTC, comme ailleurs.
     select coalesce(
       (select e.fuseau from evenement e
         where e.id = p_evenement
           and e.fuseau in (select name from pg_timezone_names)),
       'UTC') as tz
   ),
-  /* Les compteurs par cible se datent au jour, dans le fuseau du salon : la
-     période s'y ramène de la même façon que pour les visiteurs uniques. Une
-     période qui ne commence pas à minuit compte donc sa première journée
-     entière — c'est le prix du jour comme grain, et il est payé une fois. */
-  c as (
+  bornes as (
+    select case
+             when p_jours is null then null
+             else (now() at time zone (select tz from zone))::date
+                  - (greatest(p_jours, 1) - 1)
+           end as depuis
+  ),
+  /* Un seul balayage de la période, tous gestes confondus. Le filtre porte sur
+     `objet` et non sur `genre` : c'est lui qui dit de quoi on parle depuis que
+     les deux sont séparés, et pour une fiche ouverte les deux se valent. */
+  lues as (
     select cc.genre, cc.cible, cc.canal, cc.n
       from compteur_cible cc
      where cc.evenement_id = p_evenement
-       and cc.objet = 'fiche_stand'
-       and (p_debut is null or cc.jour >= (p_debut at time zone (select tz from zone))::date)
-       and (p_fin   is null or cc.jour <  (p_fin   at time zone (select tz from zone))::date)
+       -- le vocabulaire reste clos : un genre inventé ne rend rien plutôt que
+       -- de faire croire à un salon sans audience
+       and p_genre in ('fiche_stand', 'fiche_conf')
+       and cc.objet = p_genre
+       and ((select depuis from bornes) is null
+            or cc.jour >= (select depuis from bornes))
   ),
-  par_canal as (
-    select cible, case when canal = '' then 'autre' else canal end as canal, sum(n) as n
-      from c where genre = 'fiche_stand' group by 1, 2
+  somme as (
+    select cible, sum(n)::bigint as n from lues where genre = p_genre group by 1
   ),
-  fiches as (
-    select cible, sum(n) as total, jsonb_object_agg(canal, n) as canaux
-      from par_canal group by cible
+  canaux as (
+    select cible, jsonb_object_agg(canal, n) as par
+      from (select cible, case when canal = '' then 'autre' else canal end as canal,
+                   sum(n)::bigint as n
+              from lues where genre = p_genre group by 1, 2) t
+     group by cible
   ),
-  itis as (select cible, sum(n) as n from c where genre = 'itineraire' group by 1),
-  parcs as (select cible, sum(n) as n from c where genre = 'parcours'   group by 1)
-  select coalesce(jsonb_agg(x order by x.total desc, x.nom nulls last, x.code nulls last), '[]'::jsonb)
-    from (
-      select s.code,
-             s.nom,
-             coalesce(f.total, 0)               as fiche,
-             coalesce(f.canaux, '{}'::jsonb)    as canaux,
-             coalesce(i.n, 0)                   as itineraires,
-             coalesce(p.n, 0)                   as parcours,
-             coalesce(f.total, 0) + coalesce(i.n, 0) + coalesce(p.n, 0) as total
-        from cible s
-        left join fiches f on f.cible = s.id
-        left join itis   i on i.cible = s.id
-        left join parcs  p on p.cible = s.id
-       where s.evenement_id = p_evenement
-         and s.genre = 'fiche_stand'
-    ) x;
+  itis  as (select cible, sum(n)::bigint as n from lues where genre = 'itineraire' group by 1),
+  parcs as (select cible, sum(n)::bigint as n from lues where genre = 'parcours'   group by 1),
+  /*
+   * Les deux côtés comptent, d'où la jointure pleine.
+   *
+   * À gauche, une cible retirée du salon depuis garde ses consultations : les
+   * taire fausserait le total qu'on affiche. À droite, un stand que personne
+   * n'a ouvert n'a aucune ligne de compteur — et c'est précisément celui que
+   * le tableur doit montrer.
+   */
+  base as (
+    select coalesce(s.cible, c.id) as id, c.code, c.nom, coalesce(s.n, 0) as n
+      from somme s
+      full join (select id, code, nom from cible
+                  where evenement_id = p_evenement and genre = p_genre) c
+        on c.id = s.cible
+     where p_complet or s.cible is not null
+  )
+  select jsonb_build_object(
+    'genre',   p_genre,
+    'jours',   p_jours,
+    'complet', p_complet,
+    'fuseau',  (select tz from zone),
+    'debut',   (select depuis from bornes),
+    'total',   (select coalesce(sum(n), 0) from somme),
+    /* De quand date le comptage par objet, toutes périodes confondues. Sans
+       lui, une page ne sait pas distinguer « personne n'a ouvert de fiche » de
+       « on ne comptait pas encore les fiches » — et le journal qui a précédé
+       les compteurs ne retenait pas leur objet, si bien que ce jour-là est
+       postérieur au premier visiteur mesuré. */
+    'depuis', (select min(jour) from compteur_cible
+                where evenement_id = p_evenement and genre = p_genre),
+    'cibles', (select coalesce(jsonb_agg(
+                 case when p_complet then jsonb_build_object(
+                        'id', b.id, 'code', b.code, 'nom', b.nom, 'n', b.n,
+                        'canaux',      coalesce(k.par, '{}'::jsonb),
+                        'itineraires', coalesce(i.n, 0),
+                        'parcours',    coalesce(p.n, 0))
+                      else jsonb_build_object(
+                        'id', b.id, 'code', b.code, 'nom', b.nom, 'n', b.n)
+                 end
+                 order by b.n desc, b.code nulls last), '[]'::jsonb)
+                 from base b
+                 left join canaux k on k.cible = b.id
+                 left join itis   i on i.cible = b.id
+                 left join parcs  p on p.cible = b.id)
+  );
 $$;
 
-comment on function rapport_exposants is
-  'Une ligne par stand : ouvertures de fiche par canal, itinéraires demandés, ajouts au programme de visite. Tous les stands, même à zéro.';
+comment on function audience_cibles is
+  'Les consultations par stand (ou par conférence) d''un salon sur les N derniers jours. Rend tout en un objet, libellés compris. Avec « p_complet », toutes les cibles même à zéro, et le détail de chaque ligne : canaux, itinéraires demandés, ajouts au programme.';
+
+revoke all on function audience_cibles(uuid, integer, text, boolean) from public;
+grant execute on function audience_cibles(uuid, integer, text, boolean) to authenticated;

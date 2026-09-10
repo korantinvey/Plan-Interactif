@@ -253,17 +253,24 @@ function dessineRapport() {
    Il se charge au clic, pas au chargement de la page : c'est un appel de
    plusieurs centaines de kilo-octets, et la plupart des consultations du
    rapport n'en veulent pas.
+
+   Les chiffres sont ceux de la carte de chaleur, au sens strict : même
+   fonction, `audience_cibles`, même balayage du même compteur. Elle ne peint
+   qu'un nombre par stand, le tableur en aligne quatorze colonnes — c'est à
+   quoi sert « p_complet » — mais aucun des deux ne recalcule ce que l'autre a
+   déjà compté, et un ajustement de période les corrige ensemble.
    ------------------------------------------------------------------ */
 /** Ce qui encadre le détail par canal. */
 const COL_TETE = [
   { titre: "Emplacement", largeur: 14, lit: (r) => r.code || "" },
   { titre: "Exposant", largeur: 38, lit: (r) => r.nom || "" },
-  { titre: "Fiches ouvertes", largeur: 16, lit: (r) => r.fiche },
+  { titre: "Fiches ouvertes", largeur: 16, lit: (r) => Number(r.n) || 0 },
 ];
 const COL_PIED = [
-  { titre: "Itinéraires calculés", largeur: 20, lit: (r) => r.itineraires },
-  { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => r.parcours },
-  { titre: "Total interactions", largeur: 18, lit: (r) => r.total },
+  { titre: "Itinéraires calculés", largeur: 20, lit: (r) => Number(r.itineraires) || 0 },
+  { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => Number(r.parcours) || 0 },
+  { titre: "Total interactions", largeur: 18,
+    lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
 ];
 
 /**
@@ -317,10 +324,20 @@ async function exporteExposants() {
   b.disabled = true;
   b.textContent = "Préparation…";
   try {
-    const lignes = (await rest("rpc/rapport_exposants", {
+    /* La période se passe en nombre de jours et non en date : c'est la forme
+       qu'attend `audience_cibles`, et elle se compte dans le fuseau du salon
+       plutôt que dans celui du lecteur — la carte de chaleur et le classeur
+       découpent ainsi la même journée. */
+    const r = await rest("rpc/audience_cibles", {
       method: "POST",
-      body: JSON.stringify({ p_evenement: selection, p_debut: debutPeriode(), p_fin: null }),
-    })) || [];
+      body: JSON.stringify({
+        p_evenement: selection,
+        p_jours: periode === "tout" ? null : Number(periode),
+        p_genre: "fiche_stand",
+        p_complet: true,
+      }),
+    });
+    const lignes = (r && r.cibles) || [];
     /* Aucun exposant n'est un renseignement, pas une panne : le salon n'a
        jamais été synchronisé, et c'est ce qu'il faut dire. */
     if (!lignes.length) {

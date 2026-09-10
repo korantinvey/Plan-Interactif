@@ -94,10 +94,11 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
+| carte de chaleur du plan | `_chaleur.html`, migration `audience` |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
 | console multi-événements | `_console-js.html`, socle `_console-base.html` |
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
-| export tableur du rapport | `_rapport-js.html` § Export, écriture `.xlsx` dans `_classeur.html` |
+| export tableur du rapport | `_rapport-js.html` § Export, écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
