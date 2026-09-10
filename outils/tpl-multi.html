@@ -1878,6 +1878,21 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border-top:1px solid var(--line)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
+/* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
+   visible et rouge — c'est bien ce qu'il fera — mais éteint : le retirer
+   laisserait croire qu'il n'y a rien à faire, le griser en gris le rangerait
+   parmi les commandes ordinaires. */
+.mfen footer .btn[disabled]{opacity:.4;cursor:default;filter:none}
+
+/* La remise à zéro des compteurs.
+   La phrase qui dit « sans retour » ne peut pas se lire comme les autres :
+   c'est la seule que l'on regrette de ne pas avoir lue. */
+.mcorps p.alerte{color:#C2372B;font-weight:500}
+.mcorps p.etatRaz{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;
+  color:var(--ink-3);line-height:1.5}
+.mcorps p.etatRaz.err{color:#C2372B}
+.mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
+.mcorps .razMot span{color:var(--ink-2)}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
@@ -5443,18 +5458,22 @@ function apercuDuo(cle, vu){
  * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
  * l'écran.
  */
-function ouvreReglages(){
+function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");
     barre.className = "ongReg";
     corps.appendChild(barre);
     const boutons = [], volets = [];
+    /* Le volet à ouvrir peut être nommé : la remise à zéro des compteurs passe
+       par une fenêtre de confirmation, qui prend la place de celle-ci, et
+       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet. */
     const volet = (titre) => {
       const i = boutons.length;
+      const actif = ouvrir ? titre === ouvrir : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
-      b.setAttribute("aria-pressed", String(i === 0));
+      b.setAttribute("aria-pressed", String(actif));
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         volets.forEach((x, j) => { x.hidden = j !== i; });
@@ -5462,13 +5481,17 @@ function ouvreReglages(){
       barre.appendChild(b);
       boutons.push(b);
       const v = document.createElement("div");
-      v.hidden = i > 0;
+      v.hidden = !actif;
       corps.appendChild(v);
       volets.push(v);
       return v;
     };
     voletPlan(volet("Plan"));
     voletApparence(volet("Apparence"));
+    /* La mesure a son volet à elle. Elle ne parle ni de ce que les visiteurs
+       voient ni de l'allure du plan, et ce qu'on y trouve — un effacement sans
+       retour — n'a rien à faire au milieu de cases à cocher. */
+    voletMesure(volet(NOM_VOLET_MESURE));
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -12865,7 +12888,7 @@ if (MESURE_ACTIVE){
 }
 
 /* ============================================================
-   14. Carte de chaleur — la fréquentation posée sur le plan
+   14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 
    Le rapport d'utilisation dit combien de fiches ont été ouvertes ; il ne dit
    pas lesquelles. C'est pourtant l'autre moitié de la question, et la seule
@@ -13270,6 +13293,206 @@ function rangChaleur(hote){
   c.checked = chalOuvert;
   c.onchange = (e) => montreChaleur(e.target.checked);
   hote.appendChild(d);
+}
+
+/* ============================================================
+   Remise à zéro des compteurs
+
+   La recette d'un plan se fait sur le plan : on ouvre des fiches, on cherche
+   une enseigne, on calcule un itinéraire — et sur la page publique, la seule
+   qui mesure. Ces gestes sont ceux de l'exploitant, et ils comptent comme ceux
+   d'un visiteur : rien ne les en distingue à l'écriture, puisque la page
+   publique ne regarde aucune session. C'est ce qui lui permet de ne poser ni
+   cookie ni identité, et c'est pourquoi le premier chiffre d'un salon est
+   toujours faux.
+
+   On ne peut pas deviner quand la recette s'arrête : la veille de l'ouverture,
+   rien ne dit au système que les visites qui suivent sont les vraies. C'est
+   donc un geste, et un geste qu'on protège — il n'y a pas de sauvegarde
+   derrière, et personne ne se relit deux fois avant de cliquer « Oui ».
+   ============================================================ */
+const NOM_VOLET_MESURE = "Mesure";
+const MOT_RAZ = "réinitialiser";
+
+/* Le mot se compare sans ses accents : on demande une intention, pas une
+   disposition de clavier. Tout le reste — la casse, les espaces autour —
+   tombe de même. */
+const aplati = (t) => String(t || "").trim().toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** Le volet « Mesure » des réglages : ce que comptent les compteurs, et le
+ *  seul chemin pour les effacer. */
+function voletMesure(hote){
+  const p = document.createElement("p");
+  p.textContent = "Le plan compte ce qu'on en fait : visites, recherches, " +
+    "itinéraires, et les fiches ouvertes stand par stand. Ces chiffres " +
+    "nourrissent le rapport d'utilisation et la carte de chaleur.";
+  hote.appendChild(p);
+
+  const q = document.createElement("p");
+  q.textContent = "La recette gonfle ces compteurs — les fiches qu'on ouvre " +
+    "pour vérifier le plan sont comptées comme des visites, la page publique " +
+    "ne sachant pas qui la regarde. Remettez-les à zéro le jour où le salon " +
+    "ouvre, pour que le premier chiffre soit le bon.";
+  hote.appendChild(q);
+
+  const acts = document.createElement("div");
+  acts.className = "acts";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn danger";
+  b.textContent = "Réinitialiser les compteurs…";
+  b.onclick = ouvreRemiseAZero;
+  acts.appendChild(b);
+  hote.appendChild(acts);
+}
+
+/** L'identifiant du salon en base, retrouvé depuis son slug et retenu. */
+async function evenementCourant(acces){
+  if (_evtChaleur) return _evtChaleur;
+  const evt = await base(acces,
+    "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+  if (!evt.length) throw new Error("événement introuvable");
+  _evtChaleur = evt[0].id;
+  return _evtChaleur;
+}
+
+/**
+ * La fenêtre de confirmation.
+ *
+ * Elle fait trois choses, et la troisième est la moins évidente. Elle dit ce
+ * qui part et ce qui reste. Elle demande d'écrire le mot en toutes lettres —
+ * un bouton rouge se clique par réflexe, une phrase se tape en connaissance de
+ * cause. Et elle va chercher les chiffres en cours avant de laisser faire :
+ * cela met un nombre sur ce qu'on s'apprête à perdre, et cela prouve au
+ * passage que la base répond, plutôt que de le découvrir après avoir tapé.
+ */
+function ouvreRemiseAZero(){
+  let tally = null;
+
+  ouvreModale("Réinitialiser les compteurs", corps => {
+    const perd = document.createElement("p");
+    perd.innerHTML = "<b>Toute la mesure de ce salon sera effacée</b> : visites, " +
+      "visiteurs, recherches, itinéraires, programmes de visite, et les " +
+      "consultations de chaque stand. Le rapport d'utilisation et la carte de " +
+      "chaleur repartent de zéro, pour tous les comptes.";
+    corps.appendChild(perd);
+
+    const garde = document.createElement("p");
+    garde.textContent = "Le plan lui-même n'est pas touché : emplacements, " +
+      "exposants, dessins, calques et réglages restent tels quels.";
+    corps.appendChild(garde);
+
+    const jamais = document.createElement("p");
+    jamais.className = "alerte";
+    jamais.textContent = "Cette action est irréversible. Aucune sauvegarde n'est " +
+      "conservée : ces chiffres ne pourront pas être retrouvés.";
+    corps.appendChild(jamais);
+
+    const etat = document.createElement("p");
+    etat.className = "etatRaz";
+    etat.textContent = "Lecture des compteurs en cours…";
+    corps.appendChild(etat);
+
+    const l = document.createElement("label");
+    l.className = "razMot";
+    l.innerHTML = '<span></span><input type="text" class="nomcalque" ' +
+      'autocomplete="off" autocapitalize="none" spellcheck="false">';
+    l.querySelector("span").textContent =
+      "Pour confirmer, tapez « " + MOT_RAZ + " » :";
+    corps.appendChild(l);
+
+    const saisie = l.querySelector("input");
+    const bouton = () => $("mPied").querySelector(".danger");
+    const relit = () => {
+      const b = bouton();
+      if (b) b.disabled = aplati(saisie.value) !== aplati(MOT_RAZ) || !tally;
+    };
+    saisie.oninput = relit;
+    saisie.onkeydown = (e) => {
+      const b = bouton();
+      if (e.key === "Enter" && b && !b.disabled){ e.preventDefault(); b.click(); }
+    };
+
+    /* Les chiffres en cours. Tant qu'ils ne sont pas là, le bouton reste
+       fermé : on ne détruit pas ce qu'on n'a pas pu lire. */
+    (async () => {
+      const acces = accesBase();
+      if (!acces) throw new Error("session absente, reconnectez-vous");
+      const evt = await evenementCourant(acces);
+      return base(acces, "rpc/rapport_utilisation", {
+        method: "POST",
+        body: JSON.stringify({ p_evenement: evt, p_debut: null, p_fin: null }),
+      });
+    })().then(r => {
+      tally = r || {};
+      const n = (v) => nbChal(v);
+      etat.textContent = tally.depuis
+        ? "À effacer : " + n(tally.visites) + " visite" + (tally.visites > 1 ? "s" : "") +
+          ", " + n(tally.visiteurs) + " visiteur" + (tally.visiteurs > 1 ? "s" : "") +
+          ", " + n(tally.recherches) + " recherche" + (tally.recherches > 1 ? "s" : "") +
+          ", " + n(tally.stands && tally.stands.total) + " fiche" +
+          ((tally.stands && tally.stands.total) > 1 ? "s" : "") + " d'exposant, " +
+          "mesurés depuis le " +
+          new Date(tally.depuis).toLocaleDateString("fr-FR") + "."
+        : "Ce salon n'a encore aucune mesure : il n'y a rien à effacer.";
+      relit();
+    }).catch(e => {
+      etat.textContent = "Compteurs illisibles : " + e.message +
+        " — la remise à zéro échouerait de même.";
+      etat.classList.add("err");
+    });
+
+    setTimeout(() => saisie.focus(), 60);
+  }, [
+    // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
+    { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
+    { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
+  ]);
+
+  const b = $("mPied").querySelector(".danger");
+  if (b) b.disabled = true;
+}
+
+/** L'effacement lui-même, et le compte rendu de ce qui est parti. */
+async function lanceRemiseAZero(){
+  const b = $("mPied").querySelector(".danger");
+  const etat = $("mCorps").querySelector(".etatRaz");
+  if (b){ b.disabled = true; b.textContent = "Effacement…"; }
+  try {
+    const acces = accesBase();
+    if (!acces) throw new Error("session absente, reconnectez-vous");
+    const evt = await evenementCourant(acces);
+    const r = await base(acces, "rpc/reinitialise_compteurs", {
+      method: "POST", body: JSON.stringify({ p_evenement: evt }),
+    });
+    const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
+              Number(r?.visiteurs || 0) + Number(r?.journal || 0);
+
+    /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
+       qui ne reposent plus sur rien. */
+    if (chalOuvert) rafraichitChaleur();
+
+    $("mCorps").innerHTML = "";
+    const p = document.createElement("p");
+    p.textContent = n
+      ? "Compteurs remis à zéro : " + nbChal(n) + " ligne" + (n > 1 ? "s" : "") +
+        " effacée" + (n > 1 ? "s" : "") + ". Le salon repart de zéro."
+      : "Il n'y avait aucune mesure à effacer.";
+    $("mCorps").appendChild(p);
+    $("mPied").innerHTML = "";
+    const f = document.createElement("button");
+    f.className = "btn";
+    f.textContent = "Fermer";
+    f.onclick = fermeModale;
+    $("mPied").appendChild(f);
+  } catch (e) {
+    if (etat){
+      etat.textContent = "Remise à zéro impossible : " + e.message;
+      etat.classList.add("err");
+    }
+    if (b){ b.disabled = false; b.textContent = "Réinitialiser"; }
+  }
 }
 /* ============================================================
    12. Démarrage

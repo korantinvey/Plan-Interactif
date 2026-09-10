@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1259 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1267 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.903 · 10. Mode administration
-- l.969 · Renommer une zone organisateur
-- l.1021 · Masquer une zone organisateur
-- l.1089 · Placer un libellé à la main
+- l.911 · 10. Mode administration
+- l.977 · Renommer une zone organisateur
+- l.1029 · Masquer une zone organisateur
+- l.1097 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,15 +27,15 @@ Fonctions :
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
 `modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
 `lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
-`apercuDuo` 578 · `ouvreReglages` 597 · `voletPlan` 628 · `nomDuTon` 755
-`voletApparence` 759 · `enregistreConf` 853 · `rgbHex` 859 · `hexa` 866 · `luminance` 870
-`ecarte` 884 · `joli` 899 · `retireAdmin` 916 · `activeAdmin` 929 · `renommeZone` 979
-`enregistreNomZone` 1003 · `basculeAffichageZone` 1032 · `marqueZonesMasquees` 1049
-`ecritTableZones` 1064 · `cleLibelle` 1110 · `empreinteLibelle` 1126
-`placementLibelle` 1134 · `posePlacement` 1144 · `libelleAutomatique` 1161
-`modePlacementLibelles` 1170 · `majPaletteLibelle` 1187 · `choisitLibelle` 1204
-`pousseLibelle` 1211 · `libellePointerDown` 1219 · `libellePointerMove` 1234
-`libellePointerUp` 1243
+`apercuDuo` 578 · `ouvreReglages` 597 · `voletPlan` 636 · `nomDuTon` 763
+`voletApparence` 767 · `enregistreConf` 861 · `rgbHex` 867 · `hexa` 874 · `luminance` 878
+`ecarte` 892 · `joli` 907 · `retireAdmin` 924 · `activeAdmin` 937 · `renommeZone` 987
+`enregistreNomZone` 1011 · `basculeAffichageZone` 1040 · `marqueZonesMasquees` 1057
+`ecritTableZones` 1072 · `cleLibelle` 1118 · `empreinteLibelle` 1134
+`placementLibelle` 1142 · `posePlacement` 1152 · `libelleAutomatique` 1169
+`modePlacementLibelles` 1178 · `majPaletteLibelle` 1195 · `choisitLibelle` 1212
+`pousseLibelle` 1219 · `libellePointerDown` 1227 · `libellePointerMove` 1242
+`libellePointerUp` 1251
 
 Éléments :
 
@@ -75,9 +75,10 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 408 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 608 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
+- l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
+- l.410 · Remise à zéro des compteurs
 
 Fonctions :
 
@@ -85,7 +86,8 @@ Fonctions :
 `coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
 `replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
 `dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
-`montreChaleur` 356 · `rangChaleur` 392
+`montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
+`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 570
 
 Éléments :
 
@@ -191,7 +193,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2426 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2441 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -464,6 +466,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000006_ferme_lecture_anon.sql` — —
 - `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
 - `20260910000008_audience.sql` — fn audience_cibles
+- `20260910000009_remise_a_zero.sql` — fn reinitialise_compteurs
 
 ## Le reste
 
