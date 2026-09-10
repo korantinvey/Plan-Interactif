@@ -138,7 +138,7 @@ Fonctions :
 `appliquePicto` 299 · `supprimeForme` 317 · `editionPointerDown` 327
 `editionPointerMove` 372 · `editionPointerUp` 403
 
-### `_head.html` — 1481 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1494 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -206,17 +206,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2006 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2010 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.44 · 1. Index global — la recherche porte sur tous les pavillons
 - l.184 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.275 · 3. Rendu du pavillon courant
 - l.338 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.394 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1050 · 6. Vue
-- l.1149 · 7. Sélection et fiche
-- l.1684 · 8. Interactions du plan
-- l.1855 · Le tiroir de la liste — écrans étroits
+- l.1054 · 6. Vue
+- l.1153 · 7. Sélection et fiche
+- l.1688 · 8. Interactions du plan
+- l.1859 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -229,15 +229,15 @@ Fonctions :
 `libelleCritere` 681 · `separeValeurs` 689 · `valeursCritere` 706 · `texteCriteres` 719
 `indexeCriteres` 732 · `dansCriteres` 759 · `critereActif` 767 · `basculeCritere` 769
 `videCriteres` 777 · `nCriteres` 784 · `majCriteres` 793 · `ouvreCriteres` 851
-`filtre` 960 · `critParSociete` 964 · `visible` 967 · `releveHotes` 979
-`visibleSurPlan` 987 · `appliqueFiltre` 991 · `liste` 1000 · `appliqueVue` 1053
-`rafraichitVue` 1074 · `poseVue` 1086 · `masque` 1104 · `fit` 1124 · `zoom` 1136
-`echelle` 1141 · `ETROIT` 1155 · `anime` 1157 · `noeud` 1174 · `canalPlan` 1179
-`select` 1187 · `centre` 1207 · `centrePoint` 1211 · `montre` 1226 · `momentLocal` 1252
-`programme` 1275 · `jourLong` 1305 · `ficheConf` 1316 · `lien` 1410
-`ecarteClicFantome` 1427 · `nomSociete` 1436 · `societes` 1449 · `choisitExposant` 1460
-`ouvre` 1496 · `ferme` 1664 · `onglet` 1674 · `milieu` 1704 · `commencePince` 1710
-`suitPince` 1724 · `mesureTiroir` 1866 · `montreTiroir` 1869
+`filtre` 964 · `critParSociete` 968 · `visible` 971 · `releveHotes` 983
+`visibleSurPlan` 991 · `appliqueFiltre` 995 · `liste` 1004 · `appliqueVue` 1057
+`rafraichitVue` 1078 · `poseVue` 1090 · `masque` 1108 · `fit` 1128 · `zoom` 1140
+`echelle` 1145 · `ETROIT` 1159 · `anime` 1161 · `noeud` 1178 · `canalPlan` 1183
+`select` 1191 · `centre` 1211 · `centrePoint` 1215 · `montre` 1230 · `momentLocal` 1256
+`programme` 1279 · `jourLong` 1309 · `ficheConf` 1320 · `lien` 1414
+`ecarteClicFantome` 1431 · `nomSociete` 1440 · `societes` 1453 · `choisitExposant` 1464
+`ouvre` 1500 · `ferme` 1668 · `onglet` 1678 · `milieu` 1708 · `commencePince` 1714
+`suitPince` 1728 · `mesureTiroir` 1870 · `montreTiroir` 1873
 
 Éléments :
 
@@ -251,14 +251,14 @@ Fonctions :
 
 `jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 111
 
-### `_modales.html` — 135 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_modales.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
 Fonctions :
 
-`ouvreModale` 5 · `fermeModale` 19 · `confirme` 26 · `deplaceVers` 44 · `versExtremite` 56
-`remplitOrdre` 64 · `ouvreOrdre` 126
+`ouvreModale` 13 · `fermeModale` 29 · `confirme` 36 · `deplaceVers` 54 · `versExtremite` 66
+`remplitOrdre` 74 · `ouvreOrdre` 136
 
 ### `_parcours.html` — 352 l. → plan-admin.html, plan-smcl.html, plan.html
 

@@ -870,10 +870,14 @@ function ouvreCriteres(){
       h.innerHTML = '<span class="t"></span><span class="r"></span>';
       h.querySelector(".t").textContent = c.libelle;
       const retenu = h.querySelector(".r");
+      /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
+         offertes n'aidait pas à choisir — on ne coche pas un critère parce
+         qu'il en propose quinze — et cette ligne-là devait rester libre pour
+         la seule chose qu'un critère replié ne doit jamais cacher. */
       const disRetenu = () => {
         const n = (state.crit.get(c.cle) || new Set()).size;
         retenu.textContent = c.vide ? "aucune valeur relevée"
-          : !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
+          : !n ? ""
           : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
         retenu.dataset.on = String(n > 0);
         retenu.dataset.manque = String(Boolean(c.vide));
@@ -952,7 +956,7 @@ function ouvreCriteres(){
   }, [
     { libelle: "Tout effacer", action: videCriteres },
     { libelle: "Voir les résultats", genre: "primaire" },
-  ]);
+  ], "cote");
 }
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se

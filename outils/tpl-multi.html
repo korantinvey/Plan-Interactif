@@ -981,6 +981,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
+/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
+   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
+   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
+   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
+   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
+   fini avec les filtres. */
+.modale[data-genre="cote"]{background:none;place-items:center start}
+.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 .mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
@@ -998,7 +1006,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
-   nombre de fiches qu'elles retiennent — sans lui, on coche à l'aveugle. */
+   nombre de fiches que chacune retient — sans lui, on coche à l'aveugle. Le
+   titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
 /* Le titre est la prise : replié, un critère tient sur une ligne, et la
@@ -1130,6 +1139,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
+  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
+     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
+     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
+  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
@@ -2351,10 +2364,14 @@ function ouvreCriteres(){
       h.innerHTML = '<span class="t"></span><span class="r"></span>';
       h.querySelector(".t").textContent = c.libelle;
       const retenu = h.querySelector(".r");
+      /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
+         offertes n'aidait pas à choisir — on ne coche pas un critère parce
+         qu'il en propose quinze — et cette ligne-là devait rester libre pour
+         la seule chose qu'un critère replié ne doit jamais cacher. */
       const disRetenu = () => {
         const n = (state.crit.get(c.cle) || new Set()).size;
         retenu.textContent = c.vide ? "aucune valeur relevée"
-          : !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
+          : !n ? ""
           : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
         retenu.dataset.on = String(n > 0);
         retenu.dataset.manque = String(Boolean(c.vide));
@@ -2433,7 +2450,7 @@ function ouvreCriteres(){
   }, [
     { libelle: "Tout effacer", action: videCriteres },
     { libelle: "Voir les résultats", genre: "primaire" },
-  ]);
+  ], "cote");
 }
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
@@ -5694,7 +5711,17 @@ async function pousseConfiguration(bouton){
 /* ============================================================
    Fenêtres modales : confirmation et réorganisation des calques
    ============================================================ */
-function ouvreModale(titre, remplitCorps, boutons){
+/**
+ * Une fenêtre par-dessus le plan.
+ *
+ * `genre` la range autrement : « cote » la pose à gauche et retire le voile,
+ * pour une fenêtre dont on regarde l'effet sur le plan pendant qu'on s'en sert.
+ * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
+ * demande une réponse avant de rendre la main.
+ */
+function ouvreModale(titre, remplitCorps, boutons, genre){
+  if (genre) $("modale").dataset.genre = genre;
+  else delete $("modale").dataset.genre;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));
