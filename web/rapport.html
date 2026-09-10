@@ -24,7 +24,9 @@
     <div class="droite">
       <a class="btn petit" id="lienConsole" href="admin-plans">Console</a>
       <button class="btn petit" id="btnRecharger">Actualiser</button>
-      <button class="btn petit" id="btnTheme" aria-label="Thème">◐</button>
+      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -228,6 +230,7 @@ function ecranConnexion(message) {
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
   }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+      { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
   async function tente() {
@@ -296,19 +299,69 @@ function signale(txt, erreur) {
 /* ------------------------------------------------------------------
    Briques d'affichage
    ------------------------------------------------------------------ */
-const bloc = (titre) => {
+/**
+ * Un bloc de la fiche : son intitulé, et à droite ce qui se compte sans le lire
+ * — « 1 pavillon · 1 publié ». La note est facultative ; les blocs qui n'ont
+ * rien à compter n'en portent pas.
+ */
+const bloc = (titre, note) => {
   const d = document.createElement("div");
   d.className = "bloc";
+  const h = document.createElement("div");
+  h.className = "bloc-hd";
   const t = document.createElement("span");
   t.className = "eyebrow";
   t.textContent = titre;
-  d.appendChild(t);
+  h.appendChild(t);
+  if (note) {
+    const n = document.createElement("span");
+    n.className = "note";
+    n.textContent = note;
+    h.appendChild(n);
+  }
+  d.appendChild(h);
   return d;
 };
 const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
 
+/* Un menu déplié se referme sur un clic ailleurs et sur Échap : sans cela il
+   resterait ouvert au-dessus de la fiche, et rien ne dirait comment le fermer. */
+document.addEventListener("click", (ev) => {
+  document.querySelectorAll("details.menu[open]").forEach((d) => {
+    if (!d.contains(ev.target) || ev.target.closest(".menu-pan")) d.open = false;
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  document.querySelectorAll("details.menu[open]").forEach((d) => d.open = false);
+});
+
 /** Adresse de base des pages, déduite de celle de la console. */
 const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+/* La page qui pose un mot de passe, qu'on y arrive par une invitation, par un
+   oubli, ou depuis un écran de connexion. Elle est servie sans extension par
+   Cloudflare, comme les autres. */
+const PAGE_MDP = BASE_PAGES + "motdepasse";
+
+/**
+ * L'identifiant du compte connecté, lu dans le jeton.
+ *
+ * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
+ * un aller-retour à chaque chargement pour une donnée que le navigateur tient
+ * en main. Seule la charge utile est lue : la signature, elle, n'est vérifiable
+ * que par le serveur, qui le fera à chaque requête.
+ */
+function idCompte() {
+  const jeton = SESSION?.access_token;
+  if (!jeton) return null;
+  try {
+    const p = jeton.split(".")[1];
+    if (!p) return null;
+    const brut = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(brut).sub || null;
+  } catch (e) { return null; }
+}
 
 /* ------------------------------------------------------------------
    Thème
@@ -572,6 +625,10 @@ function dessineBarre() {
     '<option value="' + esc(e.id) + '"' + (e.id === selection ? " selected" : "") +
     '>' + esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
   s.hidden = !EVTS.length;
+  /* Le retour à la console rapporte le salon qu'on lisait : elle le rouvre au
+     lieu de retomber sur le premier de la liste. */
+  const e = EVTS.find((x) => x.id === selection);
+  $("lienConsole").href = "admin-plans" + (e?.slug ? "?plan=" + encodeURIComponent(e.slug) : "");
   const p = $("choixPeriode");
   if (!p.options.length) {
     p.innerHTML = PERIODES.map((x) =>

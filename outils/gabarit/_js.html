@@ -25,6 +25,10 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
    pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
    recherche seule consulte. */
 let HEBERGES = [];
+/* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
+   héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
+   n'a pas à balayer la liste pour savoir si le filtre les retient. */
+let PAR_HEBERGE = new Map();
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins.
@@ -128,17 +132,17 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
-     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
-     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+     qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
+     propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
       /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
          rubriques, ses champs propres sont les siens et non ceux de son hôte,
          et un filtre doit la retenir pour ce qu'elle est. Elle n'emprunte à
-         l'emplacement que ce qui le décrit — numéro, pavillon, surface. */
+         l'emplacement que ce qui le décrit — numéro, pavillon, secteur. */
       const h = {
-        kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-        sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
+        kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
+        nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
@@ -146,6 +150,7 @@ function indexe(d){
                 " " + texteCriteres(h)).toLowerCase();
       return h;
     })));
+  PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
   indexeCriteres();
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -310,8 +315,12 @@ let MONTE = false;
 
 function montePlan(){
   const p = P();
+  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+     sera pas sur le plan public. */
   $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+    '" tabindex="0" role="button" aria-label="' +
     esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
   $("stands").innerHTML = p.stands.map(s =>
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
@@ -367,13 +376,22 @@ function libelles(){
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
   let out = "";
 
+  /* Chaque libellé dans son propre groupe, sous l'identifiant de ce qu'il
+     nomme : c'est ce qui permet de l'attraper pour le placer à la main. Le nom
+     de l'attribut n'est pas « data-id » à dessein — ce groupe n'est pas
+     l'emplacement, et le clic qui ouvre une fiche ne doit pas le confondre
+     avec lui. */
+  const groupe = (o, h) => h
+    ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
+    : "";
+
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
-    const pz = place(z), az = ancre(z);
-    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
-    if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
+    const pz = place(z);
+    out += groupe(z, libelleZone(z, ancre(z), pz[0], pz[1], sel, pxParM,
+                                 placementLibelle(z)));
   }
 
   for (const s of p.stands){
@@ -383,25 +401,73 @@ function libelles(){
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
-    const ps = place(s), as = ancre(s);
-    const w = ps[0], h = ps[1];
-
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-    const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-    const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-    const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
-    if (!codeLisible && !nomLisible) continue;
-
-    const c = sel ? " sel" : "";
-    const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
-    const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = as[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-    if (codeLisible)
-      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+    const ps = place(s);
+    out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
+                                        placementLibelle(s)));
   }
+
   l.innerHTML = out;
+  /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
+     non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
+     nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
+     appel au même endroit. */
+  poseLibellesDessines(pxParM);
+}
+
+/* ------------------------------------------------------------
+ * Le placement réglé à la main, appliqué à ce que le calcul propose : un
+ * décalage en mètres, et un facteur de taille.
+ *
+ * Le facteur multiplie ce que le calcul a trouvé au lieu de le remplacer :
+ * l'enseigne garde ainsi le découpage en lignes que sa place lui donnait, et
+ * l'agrandir ne la recompose pas d'un coup en travers du stand.
+ *
+ * En mode placement, un libellé réglé s'affiche quelle que soit sa taille à
+ * l'écran. Sans cela, le réduire au point de le faire disparaître le rendrait
+ * inatteignable — et le réglage, impossible à défaire.
+ * ------------------------------------------------------------ */
+const decaleLibelle = (xy, reg) => reg ? [xy[0] + (reg.dx || 0), xy[1] + (reg.dy || 0)] : xy;
+const facteurLibelle = (reg) => reg && reg.k > 0 ? reg.k : 1;
+const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
+
+/** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
+function libelleZone(z, az, w, h, sel, pxParM, reg){
+  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  if (!a) return "";
+  const f = a.f * facteurLibelle(reg);
+  if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
+  const xy = decaleLibelle(az, reg);
+  return lignesSvg(a.lignes, f, xy[0], xy[1],
+    "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
+}
+
+/**
+ * Le libellé d'un emplacement : le nom de l'enseigne, son numéro dessous.
+ *
+ * Il s'écrit pour deux choses que rien d'autre ne rapproche — le stand rendu
+ * par la synchronisation, qui tient son ancrage et sa place de la source, et
+ * le stand dessiné à la main, qui les tient de son rectangle. Le rendu doit
+ * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
+ * forme quelconque.
+ */
+function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
+  const k = facteurLibelle(reg), force = libelleForce(reg);
+  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const fn = nom ? nom.f * k : 0;
+  const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
+  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+  const codeLisible = fc && (sel || force || fc * pxParM >= (nomLisible ? 5 : 6));
+  if (!codeLisible && !nomLisible) return "";
+
+  const c = sel ? " sel" : "";
+  const xy = decaleLibelle(as, reg);
+  const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0;
+  const hCode = codeLisible ? fc * 1.25 : 0;
+  let y = xy[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, fn, xy[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, xy[0], y + fc * .92, fc, w * .9 * k, c);
+  return out;
 }
 
 /* ============================================================
@@ -544,9 +610,13 @@ function pastilleSecteur(nom){
  */
 function coloreSecteurs(){
   /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
-     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire. */
+     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire.
+
+     Les stands dessinés à la main la reçoivent aussi : ils découpent un
+     emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
+     secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
-  document.querySelectorAll("#stands g").forEach(g => {
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? o.sect : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
@@ -1005,11 +1075,27 @@ function visibleSurPlan(o){
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
+/**
+ * Ce qu'un stand dessiné suit : le filtre de la société qu'il désigne, et non
+ * celui de l'emplacement. Une hébergée écartée par un critère doit s'éteindre
+ * quand bien même son hôte reste allumé — c'est justement pour la distinguer
+ * de lui qu'on l'a dessinée.
+ */
+function visibleSociete(o, i){
+  if (!(i >= 0)) return visibleSurPlan(o);
+  const h = PAR_HEBERGE.get(o.id + "#" + i);
+  return h ? visible(h) : visibleSurPlan(o);
+}
+
 function appliqueFiltre(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+  });
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
   libelles(); liste();
 }
@@ -1038,11 +1124,9 @@ function liste(){
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
-    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
-       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
-       de stand et son nom la désignent, cela suffit. */
-    const sous = heberge ? ""
-      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
+       stand et son nom. La surface louée et les angles ouverts regardent la
+       commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
@@ -1050,7 +1134,7 @@ function liste(){
       '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
-      '<span class="s">' + sous + badge + '</span></span></button>';
+      '<span class="s">' + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
@@ -1188,12 +1272,27 @@ function anime(rect, sens){
       easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
   if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
 }
-const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+/* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
+   ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
+   veut allumer, cadrer et animer. */
+function noeud(id){
+  const q = '[data-id="' + CSS.escape(id) + '"]';
+  return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
+}
 
-/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
-   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
-   dessinée — c'est ce qui les sépare. */
-const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+/* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
+   l'exploitant a posé dessus, ou le découpage qu'il y a dessiné. Le logo seul
+   fait un chemin à part — les deux autres sont le plan tel qu'on le voit. */
+function canalPlan(cible){
+  if (!cible || !cible.dataset.f) return "plan";
+  const c = formeParId(cible.dataset.f);
+  return c && c.f.t === "image" ? "image" : "plan";
+}
+
+/** Le rang de la société désignée par un nœud du plan, s'il en désigne une :
+ *  un stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
+const rangSociete = (el) =>
+  el && el.dataset.soc !== undefined ? Number(el.dataset.soc) : undefined;
 
 /**
  * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
@@ -1212,6 +1311,7 @@ function select(id, recentrer, canal, iSoc){
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   dessineMarques();
+  marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
@@ -1256,6 +1356,21 @@ function montre(type, cle){
 const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
+
+/* Les intitulés du corps de la fiche. Ils vivent dans une table plutôt qu'en
+   toutes lettres à leur ligne parce qu'ils s'écrivent à deux endroits : sur la
+   fiche, et dans l'aperçu des modèles du panneau d'apparence. Un aperçu qui ne
+   nommerait pas les champs comme la fiche ne montrerait pas la fiche. */
+const LIBELLE_CORPS = {
+  raison: "Raison sociale", secteur: "Secteur", adresse: "Adresse",
+  ville: "Ville", pays: "Pays", niveaux: "Niveaux", telephone: "Téléphone",
+  site: "Site web", facebook: "Facebook", linkedin: "LinkedIn",
+  instagram: "Instagram", nomenclature: "Nomenclature", thematiques: "Thématiques",
+};
+
+/** L'intitulé d'un champ du corps — un champ propre au salon porte le sien. */
+const libelleCorps = cle => cle.indexOf(PREFIXE_PERSO) === 0
+  ? libelleCritere(cle) : (LIBELLE_CORPS[cle] || cle);
 
 /**
  * L'ordre réglé par l'exploitant, complété de ce qu'il ne connaît pas encore.
@@ -1329,7 +1444,10 @@ function momentLocal(v, fuseau){
 function programme(l, titre){
   l = l || [];
   if (!l.length) return "";
-  let out = '<div class="field"><span class="eyebrow">' + esc(titre || "Programme") +
+  /* La classe nomme le bloc du programme : deux modèles de fiche le traitent
+     à part — l'un le déroule en ligne de temps, l'autre lui laisse son libellé
+     quand il efface tous les autres. */
+  let out = '<div class="field prog-bloc"><span class="eyebrow">' + esc(titre || "Programme") +
     '</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
@@ -1577,6 +1695,10 @@ function ouvre(o, rect, canal, iSoc){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et une zone n'a pas de numéro du tout. */
+  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
@@ -1615,31 +1737,31 @@ function ouvre(o, rect, canal, iSoc){
   const corps = {};
   // la raison sociale n'apprend rien quand elle est déjà le titre
   corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f("Raison sociale", esc(soc.plan)) : "");
+    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f("Secteur", o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : ""));
+  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
+  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court"));
+  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
+  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f("Téléphone", soc.tel
+  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court"));
-  corps.site = ok("site", f("Site web", lien(soc.site)));
-  corps.facebook = ok("facebook", f("Facebook", lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f("LinkedIn", lien(soc.li)));
-  corps.instagram = ok("instagram", f("Instagram", lien(soc.ig)));
+  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
+  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
+  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
+  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f("Nomenclature", soc.nomencl
+    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
         .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
     : "");
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
@@ -1651,7 +1773,7 @@ function ouvre(o, rect, canal, iSoc){
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
   corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f("Thématiques", soc.themes
+    ? f(LIBELLE_CORPS.thematiques, soc.themes
         .map(n => themeFiltrable(n)
           ? '<button type="button" class="ligne theme" data-t="' +
             esc(String(n)) + '">' + esc(String(n)) + '</button>'
@@ -1725,6 +1847,23 @@ function ouvre(o, rect, canal, iSoc){
     cr.hidden = !(ADMIN && zone);
     cr.onclick = () => renommeZone(o);
   }
+  /* Une zone technique — réserve, quai de livraison — n'apprend rien au
+     visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
+     d'être un bouton : elle ne paraît qu'en administration, seule vue où une
+     zone éteinte soit encore là. */
+  const vis = $("dVis");
+  if (vis){
+    vis.hidden = !(ADMIN && zone);
+    if (!vis.hidden){
+      const affichee = !o.masquee;
+      vis.textContent = "Affiché : " + (affichee ? "oui" : "non");
+      vis.setAttribute("aria-pressed", affichee ? "true" : "false");
+      vis.title = affichee
+        ? "Retirer cette zone du plan public"
+        : "Remettre cette zone sur le plan public";
+      vis.onclick = () => basculeAffichageZone(o);
+    }
+  }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
@@ -1737,6 +1876,7 @@ function ferme(){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
+  marqueStandsDessines();
   liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
@@ -1816,6 +1956,9 @@ svg.addEventListener("pointerdown", e => {
   doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (doigts.size === 2){ commencePince(); return; }
   if (doigts.size > 2) return;
+  /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
+     l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id],[data-poi]") };
@@ -1824,6 +1967,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -1838,6 +1982,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -1854,12 +1999,13 @@ svg.addEventListener("pointerup", e => {
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible));
+    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
+  glisseLib = null;
   drag = null;
   svg.classList.remove("dragging");
 });
@@ -1879,7 +2025,8 @@ svg.addEventListener("keydown", e => {
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
       return;
     }
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
+    if (!viseItineraire(g.dataset.id))
+      select(g.dataset.id, false, canalPlan(g), rangSociete(g));
   }
 });
 document.addEventListener("keydown", e => {
@@ -1892,7 +2039,18 @@ document.addEventListener("keydown", e => {
   if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return;
   }
+  /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
+     et au mètre touche majuscule tenue : c'est la finition d'un placement,
+     après le glisser qui l'a amené à peu près là. */
+  if (PLACE_LIBELLES && libSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                  e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   if (e.key === "Escape"){
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
@@ -2073,5 +2231,8 @@ $("btnTheme").onclick = () => {
   const next = sombre ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+  /* La couleur principale a deux versions, une par fond : celle du thème
+     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
+  appliqueAccent();
 };
 </script>

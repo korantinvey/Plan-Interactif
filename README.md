@@ -201,6 +201,57 @@ autre pavillon que celui qu'on regarde. Une société hébergée répond pour
 elle-même — c'est bien sa fiche à elle qui porte sa ville et ses rubriques — et
 le stand qui l'accueille reste allumé sur le plan.
 
+## Placer un libellé à la main
+
+Le nom d'un stand se pose tout seul : au milieu de l'emplacement, à la taille
+que la place autorise, découpé en une à trois lignes selon ce qui rentre. C'est
+juste pour un rectangle, et ce l'est moins dès que le plan sort du cas d'école
+— un stand en L dont le nom tombe sur la découpe, deux enseignes voisines dont
+les noms se touchent, une zone organisateur dont l'intitulé traverse une allée.
+L'exploitant voit ces cas-là ; le calcul, non.
+
+La case **« Placer les libellés à la main »**, sous la couche *Textes* du
+panneau des calques, ouvre un mode où l'on attrape un libellé et où on le pose
+ailleurs. Une palette s'ouvre sur celui qu'on retouche : sa taille, et de quoi
+revenir au placement automatique. Les flèches du clavier l'ajustent au quart de
+mètre, au mètre touche majuscule tenue. Hors de ce mode, un libellé ne reçoit
+aucun clic — c'est le stand qui est dessous qu'on désigne à travers lui.
+
+Deux choses valent d'être sues :
+
+- **La taille est un facteur, pas une valeur.** Elle multiplie ce que le calcul
+  a trouvé au lieu de le remplacer, si bien que l'enseigne garde le découpage
+  en lignes que sa place lui donnait : l'agrandir ne la recompose pas d'un coup
+  en travers du stand.
+- **Dans ce mode, un libellé réglé s'affiche quelle que soit sa taille à
+  l'écran.** Sans cela, le réduire au point de le faire disparaître le rendrait
+  inatteignable, et le réglage impossible à défaire.
+
+Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre des
+calques, et part aux visiteurs à la publication.
+
+### Ce qui le périme, et ce qui ne le périme pas
+
+Une synchronisation ne touche jamais à l'apparence : un placement fait
+aujourd'hui est encore là demain, c'est ce qu'on attend de lui.
+
+Mais un décalage ne veut dire quelque chose que par rapport à une forme et à un
+texte donnés. Chaque placement porte donc l'**empreinte** de ce dont il dépend :
+ce qui s'écrit — le nom, le numéro — et la forme qui le porte, son ancrage et
+la place dont il dispose autour. Si Klipso renomme l'exposant, déplace le stand
+ou le redimensionne, l'empreinte ne correspond plus et le placement cesse de
+s'appliquer : le libellé revient à sa position calculée. Le laisser flotter à
+côté d'un stand qui a bougé serait pire que de le replacer tout seul.
+
+Il n'est pas effacé pour autant, il cesse de valoir : si la forme revient telle
+qu'elle était, il revient avec elle. Une synchronisation qui ne change rien —
+le cas ordinaire — ne périme donc rien.
+
+Le nom retenu dans l'empreinte est celui qui s'affiche, y compris quand
+l'exploitant l'a choisi lui-même sur une zone : renommer, c'est écrire autre
+chose, et cet autre chose n'a pas de raison de tenir à la même taille au même
+endroit.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des
@@ -422,6 +473,42 @@ Les repères posés avant cette séparation n'ont que leur libellé : il continu
 d'être interprété pour eux, et leur plan s'affiche comme il le faisait. Le type
 s'écrit dès qu'on y touche.
 
+### Matérialiser un co-exposant sur son stand
+
+La synchronisation rend **une forme par dossier**. Un stand loué à plusieurs
+n'en a donc qu'une, et les sociétés qui s'y installent n'existent que dans une
+liste, sous le nom du titulaire : la fiche les nomme, la recherche les trouve,
+mais sur le plan elles ne sont nulle part. Le visiteur qui cherche l'une d'elles
+arrive devant une cloison où est peint le nom d'une autre. Un stand de
+restauration en héberge jusqu'à onze.
+
+L'outil **Stand** de la barre de dessin les matérialise. On choisit l'exposant —
+titulaire ou co-exposant, la liste mêle les deux et les désigne par
+« numéro — enseigne » — puis on trace sa part du stand comme un rectangle. La
+part est un dessin, elle vit sur un calque et se publie avec lui ; ce n'est pas
+une donnée, et la synchronisation suivante ne la touche pas.
+
+Ce qu'elle n'est pas, c'est un dessin de plus :
+
+- elle se **lit** comme un stand — même aplat, même teinte de secteur, même
+  liseré de survol et de sélection, même libellé, avec le numéro de
+  l'emplacement dessous ;
+- elle **s'ouvre** au clic sur la fiche complète de sa société, celle-là et pas
+  une autre : on ne redemande pas qui l'on vient voir, la forme vient de le
+  dire ;
+- elle suit le **filtre** de sa société et non celui de l'emplacement — une
+  hébergée écartée par un critère s'éteint quand bien même son hôte reste
+  allumé, ce qui est précisément la raison de l'avoir dessinée ;
+- elle renvoie l'**itinéraire** vers le stand qui la porte. On ne marche pas
+  jusqu'à un co-exposant : on marche jusqu'à son hôte, et c'est là qu'on le
+  trouve.
+
+Le rattachement se change après coup dans le panneau de la forme choisie. Vidé,
+la forme reste sur le plan mais devient muette — plus de libellé, plus de clic —
+et le dit ainsi qu'elle attend son exposant. Il en va de même quand la
+synchronisation retire la société qu'elle désignait : on ne se rabat pas sur le
+titulaire, ce serait donner à une enseigne la place d'une autre.
+
 ### Passer d'un plan à l'autre
 
 Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
@@ -487,17 +574,23 @@ Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
    évité, sans rien redessiner. Les pentes, les emmarchements et les estrades
    n'ont pas de pictogramme et n'en auront pas : ils se tracent sur un calque
    dont le rôle est *Infranchissable en fauteuil*. Ce calque reste invisible au
-   visiteur — c'est le trajet qui en tient compte, pas le dessin — et se
-   reconnaît à son trait pointillé pendant l'édition.
+   visiteur — c'est le trajet qui en tient compte, pas le dessin, et le masquer
+   n'y change rien — et se reconnaît à son trait pointillé pendant l'édition.
 
 Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
 de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
 réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalier.
 
-Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
-s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
-de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
-et le bouton des fiches suit celui de la barre.
+Un calque masqué ne compte pas, ni ses repères ni les liaisons qu'ils portent :
+le trajet doit s'expliquer par ce qu'on voit à l'écran. Les calques *de rôle*
+font exception, et c'est voulu : *Infranchissable*, *Infranchissable en
+fauteuil* et *Où l'on peut marcher* décrivent le terrain, pas l'affichage. On
+les éteint justement parce que le visiteur n'a pas à voir le contour des
+sanitaires — le trajet, lui, continue de les contourner.
+
+La fonction se retire comme le parcours de visite, depuis « Réglages du plan »
+— « Proposer le calcul d'itinéraire » — et le bouton des fiches suit celui de
+la barre.
 
 ## Organiser sa journée
 
@@ -629,8 +722,9 @@ moteur.
 Le plan était une boîte noire : on savait combien d'exposants il portait, jamais
 s'il servait. La page `rapport` répond à la question que pose l'organisateur —
 combien sont venus, ce qu'ils ont cherché, quelles fiches ils ont ouvertes, et
-**par quel chemin**. On y arrive depuis la console, par le bouton
-« Utilisation » de la fiche d'un événement, ou directement :
+**par quel chemin**. On y arrive depuis la console, par
+« Rapport d'utilisation » au menu **Actions** de la fiche d'un événement, ou
+directement :
 `…/rapport?plan=<slug>`. La connexion est celle de la console, la même session.
 
 Ce qu'elle montre, pour la période choisie — sept, trente, quatre-vingt-dix
@@ -723,6 +817,61 @@ Un canal inconnu, en revanche, n'emporte pas son geste : la fiche a bien été
 ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 
 La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
+
+## Comptes et profils
+
+Il n'y a pas d'inscription libre : un compte est créé par quelqu'un qui en a
+déjà un, et reçoit son mot de passe par courriel. Deux profils, et un seul
+mécanisme derrière.
+
+| profil | ce qu'il voit | ce qu'il peut faire |
+|---|---|---|
+| **Administrateur** | tous les salons, présents et à venir | tout, y compris créer des salons et gérer les comptes |
+| **Organisateur** | les salons qu'on lui a affectés | tout, sur ces salons-là |
+
+L'organisateur n'est pas un demi-administrateur. Sur un salon qui lui revient,
+il a exactement les mêmes droits : synchroniser, régler l'apparence, dessiner,
+publier, lire le rapport d'utilisation, supprimer. Ce qui change n'est pas la
+nature du droit, c'est son étendue. Il ne peut pas créer de salon — il en
+reçoit — ni voir ceux des autres, qui ne lui apparaissent nulle part.
+
+Cette limite n'est pas une affaire d'interface. C'est la base qui l'applique,
+par ses politiques de sécurité, et deux fonctions y suffisent :
+`est_admin()` et `acces_salon(<salon>)`. Toute politique d'écriture appelle
+l'une ou l'autre, de sorte que la règle n'est écrite qu'une fois. Un
+organisateur qui forgerait une requête à la main obtiendrait la même réponse
+que la console lui donne : rien.
+
+### Créer un compte
+
+Dans la console, **Comptes** — le bouton n'apparaît que pour un
+administrateur. On y saisit une adresse, un nom, un profil, et l'on coche les
+salons. L'invité reçoit un courriel, choisit son mot de passe sur la page
+`/motdepasse`, et se retrouve connecté.
+
+Tant qu'il n'a pas ouvert son invitation, son compte porte la mention
+« Invitation en attente ». **Renvoyer l'invitation** relance le courriel ; le
+compte n'est jamais recréé, ce qui lui ferait perdre ses salons.
+
+Le même bouton sert plus tard à **envoyer un lien de mot de passe** à qui l'a
+oublié. L'intéressé peut aussi se débrouiller seul : « Mot de passe oublié »,
+sur l'écran de connexion de la console comme sur celui du plan, mène à la même
+page.
+
+Un administrateur ne peut ni se retirer son propre rôle, ni supprimer son
+propre compte : ce serait fermer la porte de l'intérieur, sans personne
+au-dehors pour rouvrir.
+
+### Le premier compte
+
+Un projet neuf n'a personne pour affecter qui que ce soit. Le tout premier
+compte créé est donc administrateur, quelle que soit la porte empruntée —
+l'invitation depuis la console, ou **Authentication → Users → Add user** dans
+le tableau de bord Supabase. Les suivants sont organisateurs par défaut.
+
+Sur un projet déjà en service, la migration reprend les comptes existants
+comme administrateurs : ce sont ceux de l'exploitant, et la migration ne doit
+pas fermer la console à celui qui la pousse.
 
 ## Créer le projet Supabase
 
@@ -968,6 +1117,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
 | `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |
+| `/motdepasse` | choisir ou réinitialiser son mot de passe | par lien reçu |
 
 La page publique ne contient aucune commande d'administration : elles sont
 retirées du document au chargement. La page d'administration exige une session
@@ -977,13 +1127,33 @@ Supabase valide, vérifiée auprès du serveur à chaque ouverture.
 
 Créer le compte administrateur dans **Authentication → Users → Add user**, avec
 un mot de passe. C'est ce compte qui ouvre la console ; il n'y a pas
-d'inscription libre, et c'est voulu.
+d'inscription libre, et c'est voulu. Le premier compte du projet est
+administrateur d'office — voir « Comptes et profils ».
+
+Deux réglages conditionnent les invitations et les mots de passe oubliés :
+
+- **Authentication → URL Configuration** : ajouter `https://<domaine>/motdepasse`
+  aux *Redirect URLs*. Sans elle, le lien reçu par courriel retombe sur la page
+  d'accueil du projet et le mot de passe ne peut pas être posé.
+- **Authentication → Emails** : le service d'envoi intégré de Supabase est
+  limité à quelques messages par heure et n'est pas prévu pour la production.
+  Dès qu'on invite de vrais organisateurs, brancher un **SMTP** à soi
+  (Project Settings → Authentication → SMTP Settings).
 
 ### Sécurité des fonctions
 
 `sync-evenement` exige un utilisateur authentifié : elle écrit en base et
 interroge Klipso avec la clé de l'organisateur. La simple clé publique, qui
-circule dans toutes les pages, ne suffit pas.
+circule dans toutes les pages, ne suffit pas. Elle vérifie en outre que
+l'appelant a bien ce salon — elle écrit ensuite avec la clé de service, qui
+ignore les politiques de la base, et c'est donc là qu'il faut poser la
+question.
+
+`comptes` crée, modifie et supprime les comptes : cela relève de l'API
+d'administration de Supabase, qui exige la clé de service. Cette clé ne pouvant
+pas descendre dans un navigateur, elle reste dans la fonction, qui relit
+elle-même le rôle de l'appelant en base. Un jeton valide d'organisateur n'y
+obtient rien.
 
 `plan-public` reste en lecture libre — c'est son rôle — mais les deux fonctions
 n'annoncent leurs en-têtes CORS que pour les origines déclarées dans

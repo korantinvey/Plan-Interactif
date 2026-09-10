@@ -87,11 +87,14 @@ function construitPanneau(){
     nom.textContent = x.nom;
 
     /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
-       rappeler ici évite de le chercher, ou de l'oublier. */
+       rappeler ici évite de le chercher, ou de l'oublier. La coche d'à côté
+       n'éteint que l'affichage — le calcul, lui, continue d'en tenir compte,
+       et rien d'autre ne le dirait. */
     if (x.t === "dessin" && roleIti(x.ref)){
       const b = document.createElement("i");
       b.className = "rle";
       b.textContent = nomRoleIti(roleIti(x.ref));
+      b.title = "Ce calque compte dans les itinéraires, même masqué.";
       nom.after(b);
     }
 
@@ -165,10 +168,12 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* les deux couleurs de texte se règlent sous la couche Textes */
+    /* les deux couleurs de texte se règlent sous la couche Textes, et avec
+       elles le placement à la main de chaque libellé */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
+      rangPlacement(hote);
     }
   });
 
@@ -278,6 +283,25 @@ function rangSous(hote, cle, libelle, defaut, applique){
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
                        enregistreConf(); applique(); };
+  hote.appendChild(d);
+}
+
+/**
+ * La case qui ouvre le placement des libellés à la main.
+ *
+ * Elle vit sous la couche des textes parce que c'est elle qu'on retouche, à
+ * côté de sa couleur et de sa visibilité. Ce n'est pas un réglage du salon
+ * mais un mode de travail : elle ne se retient pas, et se relève décochée à
+ * chaque ouverture du panneau.
+ */
+function rangPlacement(hote){
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox"><span></span></label>';
+  d.querySelector("label span").textContent = "Placer les libellés à la main";
+  const c = d.querySelector("input");
+  c.checked = PLACE_LIBELLES;
+  c.onchange = e => modePlacementLibelles(e.target.checked);
   hote.appendChild(d);
 }
 

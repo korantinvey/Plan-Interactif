@@ -17,7 +17,10 @@
   --ambre:#C98A06; --ambre-soft:#F7EAC6;
   --rouge:#C2372B; --rouge-soft:#F6DDDA;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
-  --radius:4px;
+  /* Deux rayons : celui des commandes, et celui des blocs qui les portent. Un
+     rayon unique donnait soit des cartes à angle vif, soit des boutons en
+     pastille — ils ne sont pas à la même échelle. */
+  --radius:6px; --radius-bloc:10px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -56,26 +59,29 @@ button{cursor:pointer;background:none;border:none}
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 
-/* Deux précautions pour le téléphone.
-   `1fr` vaut `minmax(auto, 1fr)` : la colonne ne descend jamais sous la
-   largeur incompressible de son contenu — un nom d'événement en `nowrap`, un
-   tableau — et la console débordait alors de l'écran, sans autre issue que de
-   dézoomer à la main. `minmax(0, 1fr)` autorise la colonne à rétrécir, et les
-   coupures d'usage (ellipse, retour à la ligne) reprennent la main.
+/* Une seule colonne, et deux rangs : la barre du haut, puis la fiche. La
+   liste des salons tenait une colonne de gauche entière pour un choix qu'on
+   fait en arrivant ; elle est passée en liste déroulante dans la barre.
    `100vh` vaut, sur un navigateur mobile, la hauteur barre d'outils masquée :
    le bas de la console passerait dessous. `100dvh` suit cette barre. */
-.app{display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:auto 1fr;
-  height:100vh;height:100dvh;min-height:600px}
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 18px;height:58px;
+.app{display:grid;grid-template-rows:auto 1fr;
+  height:100vh;height:100dvh;min-height:520px}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 18px;height:58px;
   background:var(--surface);border-bottom:1px solid var(--line);z-index:5}
 .topbar h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px;margin:0;
   letter-spacing:-.02em;white-space:nowrap}
-.topbar .sous{font-size:12px;color:var(--ink-3);white-space:nowrap}
+/* Les deux pages choisissent leur salon dans la barre du haut. */
+.topbar select{padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);max-width:34vw}
+.topbar select:focus{border-color:var(--accent);outline:none}
+/* Le salon ouvert est la navigation de la console : il se lit comme un titre,
+   pas comme un réglage. */
+#choixEvt{font-weight:600;min-width:170px}
 .statut{margin-left:auto;font-size:12.5px;color:var(--ink-3);max-width:46%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .statut.err{color:var(--rouge)}
 .statut.ok{color:var(--vert)}
-.topbar .droite{margin-left:12px;display:flex;gap:7px;align-items:center}
+.topbar .droite{margin-left:12px;display:flex;gap:8px;align-items:center}
 
 .btn{padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:500;
   border:1px solid var(--line);white-space:nowrap}
@@ -91,12 +97,7 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .lien{font-size:12.5px;color:var(--ink-3);text-decoration:underline}
 .lien:hover{color:var(--ink)}
 
-/* ---------- colonne des événements ---------- */
-.rail{background:var(--surface);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0;min-width:0}
-.rail header{padding:13px 16px 11px;border-bottom:1px solid var(--line);
-  display:flex;align-items:center;justify-content:space-between;gap:8px}
-.railActs{display:flex;align-items:center;gap:6px}
+/* Les deux boutons ronds de la barre du haut : recharger, et le thème. */
 .icone{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .icone:hover{border-color:var(--line-strong);color:var(--ink)}
@@ -105,14 +106,8 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 @keyframes tourne{to{transform:rotate(360deg)}}
 .icone.occupe svg{animation:tourne .9s linear infinite}
 @media (prefers-reduced-motion:reduce){.icone.occupe svg{animation:none}}
-.rail .liste{overflow-y:auto;flex:1;min-height:0}
-.evt{display:block;width:100%;text-align:left;padding:11px 16px;border-bottom:1px solid var(--line)}
-.evt:hover{background:var(--surface-2)}
-.evt[aria-current="true"]{background:var(--accent-soft)}
-.evt .nom{display:block;font-weight:600;font-size:14px;line-height:1.25;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.evt .meta{display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11.5px;color:var(--ink-3)}
-.vide{padding:36px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
+
+.vide{padding:56px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
 
 .etat{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
   padding:2px 7px;border-radius:999px;letter-spacing:.02em;
@@ -121,16 +116,48 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .etat.brouillon{background:var(--ambre-soft);color:var(--ambre)}
 .etat::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* ---------- panneau de droite ---------- */
-.fiche{overflow-y:auto;padding:22px 26px 60px;min-width:0}
-.fiche .entete{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}
-.fiche h2{font-family:"Archivo",sans-serif;font-size:21px;letter-spacing:-.02em;margin:2px 0 5px}
-.fiche .entete .droite{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+/* ---------- la fiche du salon ---------- */
+.fiche{overflow-y:auto;padding:24px 26px 64px;min-width:0}
+/* Une colonne de lecture. Sur un grand écran, la fiche s'étirait jusqu'au bord :
+   un champ « identifiant d'URL » large de neuf cents pixels n'aide personne, et
+   l'œil n'avait plus de bord où revenir. */
+.fiche > *{max-width:920px;margin-inline:auto}
+.fiche .entete{display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.fiche .ent-txt{display:flex;align-items:center;gap:11px;min-width:0}
+.fiche h2{font-family:"Archivo",sans-serif;font-size:22px;letter-spacing:-.02em;margin:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fiche .entete .droite{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn .ext{margin-left:5px;font-size:11px;opacity:.55}
 
-.bloc{background:var(--surface);border:1px solid var(--line);border-radius:6px;
-  padding:16px 18px;margin-bottom:14px}
-.bloc > .eyebrow{display:block;margin-bottom:12px}
-.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
+/* Le menu des actions rares. Sept boutons de même poids alignés en haut de la
+   fiche donnaient à « Supprimer » l'importance de « Plan public » : seules les
+   deux sorties vers le plan restent à découvert, le reste se déplie.
+   Un « details » plutôt qu'un menu écrit à la main — le clavier vient avec. */
+.menu{position:relative}
+.menu > summary{list-style:none;display:inline-flex;align-items:center;gap:7px}
+.menu > summary::-webkit-details-marker{display:none}
+.menu > summary::after{content:"";width:0;height:0;border:4px solid transparent;
+  border-top-color:currentColor;margin-top:3px;opacity:.6}
+.menu[open] > summary{background:var(--surface-2);border-color:var(--line-strong)}
+.menu-pan{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:230px;
+  padding:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius-bloc);box-shadow:var(--shadow);
+  display:flex;flex-direction:column}
+.mitem{display:block;width:100%;text-align:left;padding:8px 10px;font-size:13px;
+  border-radius:var(--radius);color:var(--ink);text-decoration:none;white-space:nowrap}
+.mitem:hover{background:var(--surface-2)}
+.mitem.inactif{opacity:.45;pointer-events:none}
+.mitem.danger{color:var(--rouge)}
+.mitem.danger:hover{background:var(--rouge-soft)}
+.menu-pan hr{width:100%;border:none;border-top:1px solid var(--line);margin:5px 0}
+
+.bloc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-bloc);
+  padding:15px 18px 17px;margin-bottom:16px}
+/* L'intitulé du bloc, et à droite ce qui se compte d'un coup d'œil — combien de
+   pavillons, combien de publiés. */
+.bloc-hd{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.bloc-hd .note{margin-left:auto;font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 18px}
 .source-inerte{opacity:.62}
 /* Un cadre de la fiche détail : ce dont il parle, et de qui cela vient.
    L'en-tête porte le fournisseur en pastille — c'est la question qu'on se pose
@@ -225,6 +252,46 @@ table.champs .outil.danger:hover{color:var(--rouge);border-color:var(--rouge)}
    place qu'elle prendra plutôt que de la masquer. */
 .ordre-ligne.tire{opacity:.4;background:var(--surface-2)}
 .ordre-ligne.tire .outil{visibility:hidden}
+
+/* L'aperçu de la fiche, à droite de la liste. Une liste d'intitulés ne dit pas
+   ce qu'on obtient : la fiche se redessine à côté, aux mêmes largeurs que sur
+   le plan — 340 px — pour que ce qu'on y lit vaille pour ce que le visiteur
+   verra. Elle se colle en haut, la liste étant la plus longue des deux. */
+.ordre-deux{display:grid;grid-template-columns:minmax(0,1fr) 300px;
+  gap:20px;align-items:start}
+.apercu-cadre{position:sticky;top:0}
+.apercu-cadre > .eyebrow{display:block;margin-bottom:7px}
+.apercu-cadre > .aide{margin:8px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+.apercu-fiche{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);overflow:hidden}
+.af-hd{padding:14px 15px 12px;border-bottom:1px solid var(--line)}
+.af-bads{display:flex;gap:6px;align-items:center}
+.af-bad{display:inline-flex;font-size:11px;padding:3px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-2)}
+/* Comme sur le plan : la pastille des nouveaux venus reprend l'accent de la
+   page, et son texte la fonte du corps — un numéro se lit en mono, une mention
+   se lit comme une phrase. */
+.af-bad.neuf{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.af-hd h4{font-family:"Archivo",sans-serif;font-size:17px;letter-spacing:-.02em;
+  margin:8px 0 5px;text-wrap:balance}
+.af-code{margin:0;font-size:12px;color:var(--ink-3)}
+.af-bd{padding:14px 15px;display:flex;flex-direction:column;gap:13px;
+  max-height:34vh;overflow-y:auto}
+.af-champ{display:flex;flex-direction:column;gap:3px}
+.af-champ .v{font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
+.af-champ .v .ligne{display:block}
+.af-champ .v .ligne + .ligne{margin-top:3px}
+/* Un champ retenu que le relevé ne renseigne pas : le taire ferait croire
+   qu'on l'a retiré de la fiche. */
+.af-vide{color:var(--ink-3);font-style:italic;font-size:12.5px;margin:0}
+
+/* Sous la barre des 900 px la fenêtre n'a plus de quoi tenir deux colonnes :
+   l'aperçu passe sous la liste plutôt que de l'étrangler. */
+@media (max-width:900px){
+  .ordre-deux{grid-template-columns:minmax(0,1fr)}
+  .apercu-cadre{position:static}
+  .apercu-fiche{max-width:340px}
+}
 .pied-perso{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:10px 0 6px}
 .pied-perso .aide{font-size:11.5px;color:var(--ink-3)}
@@ -280,17 +347,31 @@ table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   table.champs td.critere{display:flex;align-items:center;gap:7px;padding-top:6px}
   table.champs td.critere .etiq{display:inline}
 }
-.reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
-  border-top:1px solid var(--line)}
-.reglage-ligne:first-of-type{border-top:none;padding-top:2px}
-.reglage-ligne .rt{font-size:13px;color:var(--ink);flex:0 0 auto}
-.reglage-ligne .rv{flex:1;min-width:0;font-size:12px;color:var(--ink-3);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media (max-width:520px){
-  .reglage-ligne{flex-wrap:wrap}
-  .reglage-ligne .rv{flex:1 0 100%;order:3;white-space:normal}
+/* Trois colonnes constantes : ce qui se règle, ce que cela vaut, de quoi le
+   changer. Les intitulés alignés donnent à la liste son peigne — c'est lui
+   qu'on suit pour trouver la ligne qu'on cherche. */
+.reglage-ligne{display:grid;grid-template-columns:minmax(150px,205px) minmax(0,1fr) auto;
+  align-items:center;gap:18px;padding:11px 0}
+.reglage-ligne + .reglage-ligne{border-top:1px solid var(--line)}
+.reglage-ligne .rt{font-size:13.5px;font-weight:500;color:var(--ink)}
+/* Le résumé d'un réglage tient parfois en une phrase — les champs de la fiche
+   détail en énumèrent cinq. Deux lignes, puis coupe : la ligne garde sa
+   hauteur, et le détail s'ouvre à côté. */
+.reglage-ligne .rv{min-width:0;font-size:12.5px;color:var(--ink-3);line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.reglage-ligne .rv .err{color:var(--rouge)}
+.reglage-ligne .rv .ok{color:var(--vert)}
+.reglage-ligne .act{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.reglage-ligne .act select{padding:6px 9px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px;max-width:190px}
+@media (max-width:620px){
+  .reglage-ligne{grid-template-columns:minmax(0,1fr);gap:6px}
+  .reglage-ligne .act{justify-content:flex-start;flex-wrap:wrap}
 }
 .mcorps > p.aide{margin:14px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
+/* Un compte-rendu d'action, dit à l'endroit où l'action a été demandée : la
+   barre du haut reste derrière le voile de la fenêtre. */
+.mcorps > p.aide.alerte{color:var(--rouge)}
 .onglets{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
 .onglets button{padding:7px 12px;background:none;border:none;border-bottom:2px solid transparent;
   margin-bottom:-1px;font-size:12.5px;color:var(--ink-3);cursor:pointer}
@@ -321,6 +402,10 @@ th{text-align:left;font-size:10px;font-weight:600;letter-spacing:.12em;text-tran
   color:var(--ink-3);padding:0 10px 7px;font-family:"Archivo",sans-serif}
 td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
 td.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+/* Un nombre se compare par sa droite : deux colonnes de chiffres alignées à
+   gauche ne se lisent pas l'une contre l'autre. */
+th.num,td.num{text-align:right}
+table.pavillons th:first-child,table.pavillons td:first-child{width:1%;white-space:nowrap}
 tr.eteint td{opacity:.45}
 .coche{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
 
@@ -349,20 +434,49 @@ tr.eteint td{opacity:.45}
 .etat-ligne .err{color:var(--rouge)}
 .etat-ligne .ok{color:var(--vert)}
 
-.integration{display:flex;gap:8px;align-items:flex-start}
-.integration textarea{flex:1;min-height:60px}
+.integration{display:flex;gap:10px;align-items:flex-start}
+.integration textarea{flex:1;min-height:56px;background:var(--surface-2);line-height:1.5}
 
 /* ---------- fenêtres ---------- */
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+.mfen{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-bloc);
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(440px,100%);max-height:84vh;
   display:flex;flex-direction:column;overflow:hidden}
 /* La correspondance des champs aligne un libellé, une liste déroulante et un
    exemple de valeur : 440 px les écrasent tous les trois. La fenêtre s'élargit
    quand elle porte ce tableau, et elle seule. */
-.mfen:has(table.champs){width:min(860px,100%)}
+/* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
+   troisième onglet, la liste d'ordre et son aperçu côte à côte. */
+.mfen:has(table.champs){width:min(1040px,100%)}
+/* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
+   de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
+/* Les comptes : l'annuaire aligne quatre colonnes, la fiche aligne ses champs
+   par deux. 440 px écrasent les deux. La marque est portée par un élément tracé
+   dès l'ouverture, sans quoi la fenêtre s'ouvrirait étroite puis sauterait à sa
+   largeur quand la liste revient du réseau. */
+.mfen:has(.compte),.mfen:has(table.comptes){width:min(760px,100%)}
+
+/* L'annuaire des comptes. Une ligne par personne : ce qui l'identifie à
+   gauche, son profil à droite, et le bouton qui ouvre sa fiche. Rien ne s'y
+   règle — c'est une liste où l'on cherche quelqu'un. */
+table.comptes{width:100%;border-collapse:collapse;font-size:12.5px}
+table.comptes th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-3);padding:0 8px 8px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.comptes td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.comptes td.n{color:var(--ink);font-weight:600}
+table.comptes td.mail{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3);overflow-wrap:anywhere}
+table.comptes td.act{text-align:right;white-space:nowrap;width:1%}
+table.comptes .prov + .prov{margin-left:5px}
+/* Une invitation partie mais jamais ouverte : le compte existe et ne sert pas
+   encore. La barre le dit sans qu'on ait à lire la colonne du profil. */
+table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--ambre)}
+/* Sur écran étroit, le tableau défile plutôt que d'écraser ses colonnes : une
+   adresse coupée en trois lignes ne se lit pas. */
+.table-defile{overflow-x:auto}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
@@ -370,14 +484,12 @@ tr.eteint td{opacity:.45}
 .mcorps{padding:15px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px}
 .mcorps p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
-  border-top:1px solid var(--line)}
+  border-top:1px solid var(--line);flex-wrap:wrap}
 
 @media (max-width:900px){
-  /* la colonne unique doit elle aussi pouvoir rétrécir sous son contenu */
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr;min-height:0}
-  .rail{border-right:none;border-bottom:1px solid var(--line);max-height:190px}
+  .app{min-height:0}
   .fiche{padding:16px}
-  .topbar .sous{display:none}
+  .fiche > *{max-width:none}
 }
 
 /* Sur un téléphone, la barre du haut et l'en-tête de fiche tiennent sur deux
@@ -387,7 +499,9 @@ tr.eteint td{opacity:.45}
 @media (max-width:620px){
   .topbar{height:auto;min-height:58px;flex-wrap:wrap;gap:6px 10px;padding:9px 14px}
   .topbar .statut{max-width:100%}
-  .fiche .entete{flex-direction:column;gap:12px}
+  /* En colonne, l'alignement transversal devient l'horizontal : sans cette
+     reprise, le titre et ses boutons se centreraient. */
+  .fiche .entete{flex-direction:column;align-items:flex-start;gap:12px}
   .fiche .entete .droite{margin-left:0;justify-content:flex-start}
   table.pavillons{display:block;overflow-x:auto}
 }
@@ -402,8 +516,6 @@ tr.eteint td{opacity:.45}
 .page{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:520px}
 .page .fiche{padding:22px 26px 60px}
 .page .fiche > *{max-width:1080px}
-.topbar select{padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
-  border-radius:var(--radius);max-width:34vw}
 .topbar .periode{display:flex;align-items:center;gap:7px}
 
 /* Les grands nombres. Un chiffre se lit avant son intitulé : il vient donc en
