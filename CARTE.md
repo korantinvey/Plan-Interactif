@@ -212,17 +212,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2069 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2067 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.44 · 1. Index global — la recherche porte sur tous les pavillons
 - l.184 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.275 · 3. Rendu du pavillon courant
 - l.338 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.394 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1054 · 6. Vue
-- l.1153 · 7. Sélection et fiche
-- l.1744 · 8. Interactions du plan
-- l.1915 · Le tiroir de la liste — écrans étroits
+- l.1052 · 6. Vue
+- l.1151 · 7. Sélection et fiche
+- l.1742 · 8. Interactions du plan
+- l.1913 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -236,14 +236,14 @@ Fonctions :
 `indexeCriteres` 732 · `dansCriteres` 759 · `critereActif` 767 · `basculeCritere` 769
 `videCriteres` 777 · `nCriteres` 784 · `majCriteres` 793 · `ouvreCriteres` 851
 `filtre` 964 · `critParSociete` 968 · `visible` 971 · `releveHotes` 983
-`visibleSurPlan` 991 · `appliqueFiltre` 995 · `liste` 1004 · `appliqueVue` 1057
-`rafraichitVue` 1078 · `poseVue` 1090 · `masque` 1108 · `fit` 1128 · `zoom` 1140
-`echelle` 1145 · `ETROIT` 1159 · `anime` 1161 · `noeud` 1178 · `canalPlan` 1183
-`select` 1191 · `centre` 1211 · `centrePoint` 1215 · `montre` 1230 · `ordreCorps` 1256
-`momentLocal` 1293 · `programme` 1316 · `jourLong` 1349 · `ficheConf` 1360 · `lien` 1454
-`ecarteClicFantome` 1471 · `nomSociete` 1480 · `societes` 1493 · `choisitExposant` 1504
-`ouvre` 1540 · `ferme` 1724 · `onglet` 1734 · `milieu` 1764 · `commencePince` 1770
-`suitPince` 1784 · `mesureTiroir` 1926 · `montreTiroir` 1929
+`visibleSurPlan` 991 · `appliqueFiltre` 995 · `liste` 1004 · `appliqueVue` 1055
+`rafraichitVue` 1076 · `poseVue` 1088 · `masque` 1106 · `fit` 1126 · `zoom` 1138
+`echelle` 1143 · `ETROIT` 1157 · `anime` 1159 · `noeud` 1176 · `canalPlan` 1181
+`select` 1189 · `centre` 1209 · `centrePoint` 1213 · `montre` 1228 · `ordreCorps` 1254
+`momentLocal` 1291 · `programme` 1314 · `jourLong` 1347 · `ficheConf` 1358 · `lien` 1452
+`ecarteClicFantome` 1469 · `nomSociete` 1478 · `societes` 1491 · `choisitExposant` 1502
+`ouvre` 1538 · `ferme` 1722 · `onglet` 1732 · `milieu` 1762 · `commencePince` 1768
+`suitPince` 1782 · `mesureTiroir` 1924 · `montreTiroir` 1927
 
 Éléments :
 

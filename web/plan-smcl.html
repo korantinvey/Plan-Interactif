@@ -2875,11 +2875,9 @@ function liste(){
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
-    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
-       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
-       de stand et son nom la désignent, cela suffit. */
-    const sous = heberge ? ""
-      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
+       stand et son nom. La surface et les angles ouverts relèvent de la fiche,
+       pas d'un sommaire qu'on parcourt du regard. */
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
@@ -2887,7 +2885,7 @@ function liste(){
       '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
-      '<span class="s">' + sous + badge + '</span></span></button>';
+      '<span class="s">' + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
