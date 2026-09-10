@@ -25,8 +25,9 @@
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
- * la configuration d'un salon avant sa mise en ligne. C'est la politique de
- * sécurité de la base qui tranche, pas cette fonction.
+ * la configuration d'un salon avant sa mise en ligne. Pour l'exploitant, c'est
+ * la politique de sécurité de la base qui tranche ; pour le visiteur, c'est
+ * cette fonction — `db` dit pourquoi.
  *
  * Elle ne parle jamais à Klipso : elle lit ce que la synchronisation a écrit.
  * Le plan reste donc servi si GAIA est indisponible, et la clé API ne peut pas
@@ -57,22 +58,61 @@ const cors = (req: Request) => {
 const METHODES = { "Access-Control-Allow-Methods": "GET, OPTIONS" };
 
 /**
- * Le client emprunte l'identité de l'appelant quand il en a une : un
- * exploitant authentifié voit ses brouillons, un visiteur ne voit que le
- * publié. C'est la politique de sécurité de la base qui tranche, pas la
- * fonction — elle se contente de transmettre le jeton.
+ * Le client de lecture, en deux régimes.
+ *
+ * Un appelant qui présente une session lit avec la clé publique et son jeton :
+ * la politique de sécurité de la base tranche alors ce qu'il voit — ses salons,
+ * brouillons compris. Un visiteur, lui, lit avec la clé de service, et ce sont
+ * les filtres de cette fonction qui bornent ce qui sort.
+ *
+ * Pourquoi ce détour plutôt que la clé publique pour tout le monde : la lecture
+ * publique reposait sur des politiques ouvertes au rôle « anon », donc sur la
+ * clé livrée avec les pages. Les tables se lisaient alors directement, sans
+ * passer par ici, et rendaient bien plus que cette fonction ne consent à
+ * rendre : tous les salons d'un coup plutôt que celui qu'on demande, les zones
+ * que l'exploitant a masquées, le dessin des calques qu'il a éteints. Le soin
+ * pris ici ne protégeait rien tant qu'on pouvait lire à côté. Refermer cet
+ * accès demandait de cesser de lire sous « anon ».
+ *
+ * Le prix est que, pour ce chemin-là, la publication n'est plus gardée par la
+ * base mais par `salon()` et `publies()`. Ce sont les deux seules portes du
+ * régime visiteur, et tout ce que la fonction lit ensuite pend de l'une ou de
+ * l'autre : une lecture ajoutée plus tard part donc de là, faute de quoi un
+ * brouillon sortirait.
  */
 const db = (req: Request) => {
   const jeton = req.headers.get("Authorization") ?? "";
-  return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    {
-      auth: { persistSession: false },
-      global: jeton ? { headers: { Authorization: jeton } } : {},
-    },
-  );
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const options = { auth: { persistSession: false } };
+  return jeton
+    ? createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      ...options,
+      global: { headers: { Authorization: jeton } },
+    })
+    : createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, options);
 };
+
+/** Le salon : publié pour un visiteur, accessible pour un exploitant. */
+const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
+  const q = sb
+    .from("evenement")
+    .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees")
+    .eq("slug", slug);
+  return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
+};
+
+/**
+ * Ses pavillons : publiés pour un visiteur, tous pour un exploitant.
+ *
+ * Le filtre est posé sur la lecture des pavillons et non sur celles qui
+ * suivent — calques, apparence, dessins, instantanés pendent tous d'un
+ * pavillon, et n'existent pour la fonction que par les identifiants qu'elle
+ * tient d'ici. Refermer cette porte-là les referme toutes.
+ */
+const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
+  q: Q,
+  identifie: boolean,
+): Q => (identifie ? q : q.eq("publie", true));
 
 /**
  * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
@@ -139,13 +179,9 @@ Deno.serve(async (req) => {
 
     const sb = db(req);
 
-    // la politique de sécurité ne laisse passer que les événements publiés,
-    // sauf à l'exploitant dont la session est valide
-    const { data: evt, error: err } = await sb
-      .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees")
-      .eq("slug", slug)
-      .maybeSingle();
+    // seuls les événements publiés passent, sauf à l'exploitant dont la
+    // session est valide : la politique de sécurité tranche pour lui
+    const { data: evt, error: err } = await salon(sb, slug, identifie);
 
     // Un jeton périmé ne doit pas se traduire par « introuvable » : l'appelant
     // a besoin de savoir qu'il lui suffit de se reconnecter.
@@ -167,12 +203,12 @@ Deno.serve(async (req) => {
     // Second appel : uniquement le dessin d'un pavillon.
     const fond = new URL(req.url).searchParams.get("fond");
     if (fond) {
-      const { data: pl } = await sb
-        .from("plan")
-        .select("id")
-        .eq("evenement_id", evt.id)
-        .eq("id_klipso", fond)
-        .maybeSingle();
+      const { data: pl } = await publies(
+        sb.from("plan").select("id")
+          .eq("evenement_id", evt.id)
+          .eq("id_klipso", fond),
+        identifie,
+      ).maybeSingle();
       if (!pl) return repond({ erreur: "Pavillon introuvable." }, 404);
 
       const { data: cal } = await sb
@@ -203,11 +239,12 @@ Deno.serve(async (req) => {
       return repond({ plan: fond, calques: retenus });
     }
 
-    const { data: plans } = await sb
-      .from("plan")
-      .select("id, id_klipso, libelle, hall, emprise")
-      .eq("evenement_id", evt.id)
-      .order("libelle", { ascending: true });
+    const { data: plans } = await publies(
+      sb.from("plan")
+        .select("id, id_klipso, libelle, hall, emprise")
+        .eq("evenement_id", evt.id),
+      identifie,
+    ).order("libelle", { ascending: true });
     if (!plans?.length) {
       return repond({
         erreur: identifie

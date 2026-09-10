@@ -384,9 +384,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 331 l.
+### `supabase/functions/plan-public/index.ts` — 368 l.
 
-`cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
+`cors` 49 · `db` 83 · `salon` 96 · `masquesDe` 124 · `masquesDuPlan` 133
 
 ### `supabase/functions/sync-evenement/index.ts` — 1102 l.
 
