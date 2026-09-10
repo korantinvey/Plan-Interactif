@@ -4591,12 +4591,15 @@ function ouvre(o, rect, canal, iSoc){
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
-  /* Le pavillon situe la fiche — sauf quand il ne dit rien de plus : un salon
-     qui tient sur un seul plan le nomme souvent comme lui-même, et le nom du
-     salon est déjà en tête de la page. La pastille disparaît alors avec lui
-     s'il n'y a pas de numéro derrière : une zone n'en a jamais. */
-  const pav = String(pl.libelle || "").trim().toLowerCase() ===
-              String(DATA.evenement || "").trim().toLowerCase() ? "" : pl.libelle;
+  /* Le pavillon ne situe la fiche que s'il y en a plusieurs : sur un salon qui
+     tient sur un seul plan, il ne distingue rien, il porte souvent le nom du
+     salon — déjà en tête de la page — et l'onglet des pavillons le nomme de
+     toute façon. Il tombe aussi quand il redit ce nom-là, fût-ce parmi
+     d'autres. La pastille disparaît avec lui s'il ne reste aucun numéro
+     derrière : une zone n'en a jamais. */
+  const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
+                  String(DATA.evenement || "").trim().toLowerCase();
+  const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
   const num = ok("code", o.code) ? String(o.code) : "";
   $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
   $("dCode").hidden = !$("dCode").textContent;

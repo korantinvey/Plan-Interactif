@@ -288,7 +288,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2572 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2575 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -297,8 +297,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2217 · 8. Interactions du plan
-- l.2418 · Le tiroir de la liste — écrans étroits
+- l.2220 · 8. Interactions du plan
+- l.2421 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -322,9 +322,9 @@ Fonctions :
 `libelleCorps` 1547 · `ordreCorps` 1559 · `momentLocal` 1596 · `programme` 1619
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `assainitRiche` 1805
 `enBlocs` 1845 · `rangeRiche` 1858 · `ecarteClicFantome` 1886 · `nomSociete` 1895
-`societes` 1908 · `choisitExposant` 1919 · `ouvre` 1955 · `ferme` 2191 · `onglet` 2207
-`milieu` 2237 · `commencePince` 2243 · `suitPince` 2257 · `mesureTiroir` 2429
-`montreTiroir` 2432
+`societes` 1908 · `choisitExposant` 1919 · `ouvre` 1955 · `ferme` 2194 · `onglet` 2210
+`milieu` 2240 · `commencePince` 2246 · `suitPince` 2260 · `mesureTiroir` 2432
+`montreTiroir` 2435
 
 Éléments :
 
