@@ -291,19 +291,19 @@ const MODELES_FICHE = [
   { cle: "grille", nom: "Grille",
     resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
   { cle: "console", nom: "Console",
-    resume: "Phosphore vert, chasse fixe, libellés en invite de commande." },
+    resume: "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon." },
   { cle: "billet", nom: "Billet",
     resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
   { cle: "magazine", nom: "Magazine",
     resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
   { cle: "brut", nom: "Brut",
-    resume: "Trait épais, ombre dure, jaune de chantier. Ne suit pas le thème." },
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
   { cle: "verre", nom: "Verre",
     resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
   { cle: "kraft", nom: "Kraft",
-    resume: "Carton et machine à écrire, la mention « nouvel exposant » tamponnée." },
+    resume: "Carton et machine à écrire, « nouvel exposant » tamponné de travers." },
   { cle: "signal", nom: "Signalétique",
-    resume: "Vert de fléchage et capitales : un stand se lit comme une direction." },
+    resume: "Aplat, flèche et capitales : un stand se lit comme une direction de hall." },
   { cle: "chrono", nom: "Chronologie",
     resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
   { cle: "nu", nom: "Nu",
@@ -473,52 +473,75 @@ function voletPlan(hote){
   hote.appendChild(duree);
 }
 
-/* Quelques tons qui tiennent sur les deux thèmes, pour choisir sans ouvrir le
-   nuancier du système : celui d'origine, puis de quoi couvrir la gamme des
-   chartes de salon sans tomber dans les couleurs que le plan emploie déjà
-   pour dire autre chose — le doré des zones, le rouge d'une alerte. */
-const TONS = ["#2F49D1", "#0E7A3C", "#B4402F", "#7A3DBE", "#0F7C8A", "#C06A0B", "#25303A"];
+/* Le nuancier. Des tons de charte plutôt qu'une roue : choisir une couleur
+   principale, c'est choisir celle du salon, pas la nuance exacte d'un dégradé.
+   Ils sont rangés par famille — bleus, verts, chauds, rouges, violets,
+   neutres — et tous assez soutenus pour porter du texte, blanc ou noir, sans
+   qu'il faille le vérifier au cas par cas. La dernière pastille ouvre le
+   nuancier du système, pour une charte à l'hexadécimal près. */
+const TONS = [
+  ["#2F49D1", "Bleu d'encre"], ["#1B5FD9", "Bleu roi"], ["#23356B", "Bleu nuit"],
+  ["#0F6F8A", "Bleu canard"], ["#0E8A7D", "Turquoise"], ["#0E7A3C", "Vert prairie"],
+  ["#2C5E4A", "Vert forêt"], ["#5C7A1E", "Olive"],
+  ["#B07A0B", "Or brûlé"], ["#C06A0B", "Ambre"], ["#C05621", "Terracotta"],
+  ["#B4402F", "Brique"], ["#A82437", "Grenat"], ["#8E1F3F", "Cerise"],
+  ["#B32A63", "Framboise"], ["#A8318C", "Fuchsia"],
+  ["#7A3DBE", "Violet"], ["#5333C4", "Indigo"], ["#6B3A5E", "Prune"],
+  ["#7A5230", "Brun"], ["#3F5566", "Ardoise"], ["#25303A", "Anthracite"],
+];
+const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
 /** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
  *  fiche détail. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
-    "boutons, pastilles. Le modèle de fiche décide de l'allure du panneau qui " +
-    "s'ouvre sur un stand.";
+    "boutons, pastilles, et les modèles de fiche s'en habillent. Le modèle " +
+    "décide de l'allure du panneau qui s'ouvre sur un stand.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
   coul.className = "reglage-coul";
-  coul.innerHTML = '<span class="eyebrow">Couleur principale</span>' +
-    '<input type="color" class="cc"><span class="nuancier"></span>' +
-    '<button type="button" class="raz">Couleur d\'origine</button>';
-  const cc = coul.querySelector(".cc");
+  coul.innerHTML = '<div class="tete"><span class="eyebrow">Couleur principale</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const val = coul.querySelector(".val");
   const nuancier = coul.querySelector(".nuancier");
   const majPastilles = () => {
     const v = (conf("_accent").couleur || "").toLowerCase();
-    nuancier.querySelectorAll("button").forEach(b =>
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
-    cc.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
+    const n = nomDuTon(v);
+    val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
+                        : "Réglage d'origine";
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
   };
   const choisit = (v) => {
     conf("_accent").couleur = v;
     enregistreConf(); appliqueAccent(); majPastilles();
   };
-  TONS.forEach(t => {
+  TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.dataset.ton = t;
-    b.style.background = t;
-    b.title = t;
-    b.setAttribute("aria-label", "Couleur " + t);
-    b.onclick = () => { cc.value = t; choisit(t); };
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
-     glisse : on suit, c'est le seul moyen de voir la couleur s'installer sur
-     le plan pendant qu'on la cherche. Rien ne part en base pour autant. */
-  cc.oninput = e => choisit(e.target.value);
+  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
+     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
+     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
+     en base pour autant, la publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
     delete conf("_accent").couleur;
     enregistreConf(); appliqueAccent(); majPastilles();

@@ -723,13 +723,24 @@ button.expo:hover{background:var(--line)}
 .modele-grille .btn{border:2px solid var(--ink);border-radius:0;font-weight:700;font-size:11px;
   text-transform:uppercase;letter-spacing:.07em;padding:9px 12px}
 
-/* Console — le salon vu depuis la régie : phosphore vert, chasse fixe, et les
-   libellés en invite de commande. Le balayage en fond est un décor assumé. */
-.modele-console{color:var(--ink);--surface:#080D0A;--surface-2:#0E1712;--line:#1B2A20;--line-strong:#2B4133;
-  --ink:#D6F7D2;--ink-2:#8CC98A;--ink-3:#5A8A5C;
-  --accent:#6BFF9C;--accent-soft:#0F3320;--accent-ink:#04120A;--radius:0;
+/* Console — le salon vu depuis la régie : chasse fixe, libellés en invite de
+   commande, balayage d'écran en fond. Le phosphore n'a pas de couleur à lui :
+   il prend celle du salon, et un plan bleu donne une console bleue. */
+.modele-console{color:var(--ink);
+  --nuit:#04070A;
+  --surface:color-mix(in srgb,var(--accent-base) 9%,var(--nuit));
+  --surface-2:color-mix(in srgb,var(--accent-base) 16%,var(--nuit));
+  --line:color-mix(in srgb,var(--accent-base) 26%,var(--nuit));
+  --line-strong:color-mix(in srgb,var(--accent-base) 42%,var(--nuit));
+  --ink:color-mix(in srgb,var(--accent-clair) 80%,#FFFFFF);
+  --ink-2:color-mix(in srgb,var(--accent-clair) 72%,var(--nuit));
+  --ink-3:color-mix(in srgb,var(--accent-clair) 48%,var(--nuit));
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,var(--nuit));
+  --accent-ink:var(--nuit);--radius:0;
   font-family:"IBM Plex Mono",monospace;
-  background-image:repeating-linear-gradient(180deg,rgba(107,255,156,.05) 0 1px,transparent 1px 4px)}
+  background-image:repeating-linear-gradient(180deg,
+    color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
 .modele-console .detail-hd{border-bottom-style:dashed}
 .modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;
   letter-spacing:-.01em}
@@ -787,27 +798,32 @@ button.expo:hover{background:var(--line)}
 .modele-magazine .btn{border:none;border-bottom:2px solid var(--ink);border-radius:0;padding:5px 0;
   font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
 
-/* Brut — trait de trois pixels, ombre portée dure, jaune de chantier. Elle ne
-   se fond dans rien, et garde ses couleurs dans les deux thèmes : c'est le
-   propos, une fiche qui se pose sur le plan comme une affiche. */
-.modele-brut{color:var(--ink);--surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
+/* Brut — trait de trois pixels, ombre portée dure, aplat franc. Elle ne se
+   fond dans rien : le noir et le papier ne bougent pas d'un thème à l'autre,
+   et l'aplat de l'en-tête est la couleur du salon, prise telle quelle. */
+.modele-brut{color:var(--ink);
+  --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
   --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
-  --accent:#1B3AE8;--accent-soft:#DCE7FF;--accent-ink:#FFFFFF;--radius:0;
-  border-left:3px solid #111}
-.modele-brut .detail-hd{background:#FFE14D;border-bottom:3px solid #111}
-.modele-brut .detail-hd h2{font-weight:700;font-size:22px;text-transform:uppercase;line-height:1.08}
+  --accent:var(--accent-base);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 15%,#FFFDF5);
+  --radius:0;border-left:3px solid #111}
+.modele-brut .detail-hd{background:var(--accent-base);border-bottom:3px solid #111;
+  color:var(--accent-ink)}
+.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+  text-transform:uppercase;line-height:1.08}
+.modele-brut .detail-hd .eyebrow{color:var(--accent-ink);opacity:.75}
 .modele-brut .marque,.modele-brut .close,.modele-brut .crayon{border:2px solid #111;border-radius:0;
-  color:#111;background:#fff}
-.modele-brut .detail-hd .badge{background:#111;color:#FFE14D;border-radius:0;font-weight:600}
-.modele-brut .detail-hd .badge.neuf{background:#FF5C39;color:#fff;text-transform:uppercase;
-  font-size:10px;letter-spacing:.05em}
+  color:#111;background:#FFFDF5}
+.modele-brut .detail-hd .badge{background:#111;color:#FFFDF5;border-radius:0;font-weight:600}
+.modele-brut .detail-hd .badge.neuf{background:#FFFDF5;color:#111;border:2px solid #111;
+  text-transform:uppercase;font-size:10px;letter-spacing:.05em}
 .modele-brut .field .eyebrow{align-self:flex-start;background:#111;color:#FFFDF5;padding:3px 7px}
-.modele-brut .prog .conf{background:#DCE7FF;border:2px solid #111;border-left:7px solid #FF5C39;
-  border-radius:0}
+.modele-brut .prog .conf{background:var(--accent-soft);border:2px solid #111;
+  border-left:7px solid var(--accent-base);border-radius:0}
 .modele-brut .prog .jour{border-bottom-width:2px}
-.modele-brut .btn{border:3px solid #111;border-radius:0;background:#fff;font-weight:700;
+.modele-brut .btn{border:3px solid #111;border-radius:0;background:#fff;color:#111;font-weight:700;
   text-transform:uppercase;font-size:11px;letter-spacing:.05em;box-shadow:3px 3px 0 #111}
-.modele-brut .acts .btn:first-child{background:#1B3AE8;color:#fff}
+.modele-brut .acts .btn:first-child{background:var(--accent-base);color:var(--accent-ink)}
 
 /* Verre — la fiche cesse d'être une feuille posée sur le plan : elle devient
    un bloc de la couleur du salon, et chaque champ un panneau qui laisse
@@ -836,10 +852,14 @@ button.expo:hover{background:var(--line)}
 
 /* Kraft — la fiche d'exposant telle qu'on la remplissait avant : carton
    recyclé, machine à écrire, et la mention « nouvel exposant » tamponnée de
-   travers à l'encre rouge. */
-.modele-kraft{color:var(--ink);--surface:#E7DBC2;--surface-2:#DBCEB0;--line:#C3B18C;--line-strong:#A9946A;
+   travers. Le papier est le papier ; l'encre du tampon et celle des filets
+   sont la couleur du salon, assombrie de ce qu'il faut pour tenir dessus. */
+.modele-kraft{color:var(--ink);
+  --papier:#E7DBC2;
+  --surface:var(--papier);--surface-2:#DBCEB0;--line:#C3B18C;--line-strong:#A9946A;
   --ink:#3B3022;--ink-2:#6B5B3F;--ink-3:#7A6849;
-  --accent:#1D5B52;--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
+  --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
+  --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
   background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
 .modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;font-size:19px;
   text-transform:uppercase;letter-spacing:.01em}
@@ -847,38 +867,46 @@ button.expo:hover{background:var(--line)}
 .modele-kraft .field .v{font-family:"Courier Prime",monospace;font-size:13px}
 .modele-kraft .detail-hd .badge{font-family:"Courier Prime",monospace;border-radius:0;
   background:none;border:1px solid var(--line-strong);color:var(--ink-2)}
-.modele-kraft .detail-hd .badge.neuf{background:none;border:2px solid #B4402F;color:#B4402F;
+.modele-kraft .detail-hd .badge.neuf{background:none;border:2px solid var(--encre);color:var(--encre);
   border-radius:2px;font-family:"Courier Prime",monospace;font-weight:700;text-transform:uppercase;
   letter-spacing:.08em;transform:rotate(-5deg);margin-left:10px}
-.modele-kraft .prog .conf{background:rgba(255,252,244,.55);border-left:3px solid #B4402F;border-radius:0}
+.modele-kraft .prog .conf{background:rgba(255,252,244,.55);border-left:3px solid var(--encre);border-radius:0}
 .modele-kraft .btn{border:1px dashed var(--line-strong);border-radius:0;
   font-family:"Courier Prime",monospace;font-weight:700}
-.modele-kraft .acts .btn:first-child{background:var(--ink);color:var(--surface);border-style:solid}
+.modele-kraft .acts .btn:first-child{background:var(--encre);color:var(--papier);border-style:solid}
 
-/* Signalétique — le panneau du hall posé dans la fiche : vert de fléchage,
-   jaune de mise en garde, capitales. On lit un stand comme on lit une
+/* Signalétique — le panneau du hall posé dans la fiche : aplat franc,
+   capitales, flèche, et le gros filet qui souligne un panneau de direction. La
+   couleur du salon est celle du panneau — on lit un stand comme on lit une
    direction, de loin et vite. */
-.modele-signal{color:var(--ink);--surface:#12171B;--surface-2:#1A2128;--line:#232B32;--line-strong:#3A444D;
+.modele-signal{color:var(--ink);
+  --surface:#12171B;--surface-2:#1A2128;--line:#232B32;--line-strong:#3A444D;
   --ink:#F2F5F7;--ink-2:#B7C0C7;--ink-3:#8A959E;
-  --accent:#7FE0A6;--accent-soft:#123322;--accent-ink:#0B120E;--radius:2px}
-.modele-signal .detail-hd{background:#0E7A3C;border-bottom:4px solid #095F2E}
-.modele-signal .detail-hd h2{color:#fff;font-weight:700;font-size:20px;text-transform:uppercase;
-  line-height:1.12}
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,#12171B);
+  /* « --accent-ink » reste celui de la page : c'est l'encre qui s'écrit sur
+     l'aplat du panneau, et elle vire au clair ou au sombre selon le ton
+     choisi. La figer ici rendait un panneau jaune illisible. */
+  --radius:2px}
+.modele-signal .detail-hd{background:var(--accent-base);
+  border-bottom:4px solid var(--accent-fort);color:var(--accent-ink)}
+.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:20px;
+  text-transform:uppercase;line-height:1.12}
 .modele-signal .detail-hd h2::before{content:"→ ";font-weight:500}
-.modele-signal .detail-hd .eyebrow{color:rgba(255,255,255,.78)}
-.modele-signal .marque,.modele-signal .close,.modele-signal .crayon{color:#fff;
-  border-color:rgba(255,255,255,.4);background:none}
-.modele-signal .detail-hd .badge{background:#fff;color:#0E7A3C;font-weight:600}
-.modele-signal .detail-hd .badge.neuf{background:#FFD400;color:#12171B;text-transform:uppercase;
-  font-size:10px;letter-spacing:.06em}
+.modele-signal .detail-hd .eyebrow{color:var(--accent-ink);opacity:.78}
+.modele-signal .marque,.modele-signal .close,.modele-signal .crayon{color:var(--accent-ink);
+  border-color:color-mix(in srgb,var(--accent-ink) 40%,transparent);background:none}
+.modele-signal .detail-hd .badge{background:var(--accent-ink);color:var(--accent-base);font-weight:600}
+.modele-signal .detail-hd .badge.neuf{background:var(--accent-clair);color:var(--accent-ink);
+  text-transform:uppercase;font-size:10px;letter-spacing:.06em}
 .modele-signal .detail-bd{gap:0}
 .modele-signal .field{padding:11px 0;border-bottom:1px solid var(--line);gap:4px}
 .modele-signal .field.court .v{text-transform:uppercase;letter-spacing:.03em;font-weight:600}
-.modele-signal .prog .conf{border-left:4px solid #FFD400}
-.modele-signal .prog .conf .h{color:#FFD400}
+.modele-signal .prog .conf{border-left:4px solid var(--accent-clair)}
+.modele-signal .prog .conf .h{color:var(--accent-clair)}
 .modele-signal .acts{padding-top:15px}
 .modele-signal .btn{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.06em}
-.modele-signal .acts .btn:first-child{background:#fff;color:#12171B;border-color:#fff}
+.modele-signal .acts .btn:first-child{background:var(--ink);color:#12171B;border-color:var(--ink)}
 
 /* Chronologie — un exposant qui tient cinq conférences a une journée, pas une
    liste : les heures se suivent le long d'un rail, et le reste de la fiche se
@@ -1228,16 +1256,28 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   color:var(--ink-2)}
 .ongReg button:hover{color:var(--ink)}
 .ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-/* La couleur principale : le nuancier propose les tons qui tiennent sur les
-   deux thèmes, le sélecteur laisse la main à qui a une charte. */
-.reglage-coul{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 16px}
-.reglage-coul .cc{width:32px;height:24px}
-.reglage-coul .nuancier{display:flex;gap:6px;flex-wrap:wrap}
-.reglage-coul .nuancier button{width:22px;height:22px;border-radius:50%;
-  border:1px solid rgba(0,0,0,.18)}
-.reglage-coul .nuancier button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
+/* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
+   on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
+   dernière pastille ouvre le nuancier du système pour ceux qui ont un
+   hexadécimal à respecter. */
+.reglage-coul{margin:2px 0 18px}
+.reglage-coul .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
 .reglage-coul .raz{margin-left:auto;font-size:12px;color:var(--ink-3);text-decoration:underline}
 .reglage-coul .raz:hover{color:var(--ink)}
+.nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
+.nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
+  padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
+/* Le ton retenu se cerne d'un anneau posé à l'extérieur : un liseré pris sur
+   la pastille aurait mangé la couleur qu'on est en train de juger. */
+.nuancier button[aria-pressed="true"]::after{content:"";position:absolute;inset:-4px;
+  border:2px solid var(--ink);border-radius:9px}
+.nuancier .perso{display:grid;place-items:center;cursor:pointer;overflow:hidden;
+  background:conic-gradient(#E4574B,#E4B14B,#5FBE6A,#4BB6E4,#6B5FE4,#D45FC0,#E4574B)}
+.nuancier .perso input{position:absolute;inset:0;width:100%;height:100%;padding:0;
+  border:none;opacity:0;cursor:pointer}
+.nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
+  background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    sa propre fiche, réduite, remplie d'un exposant d'exemple. Le bas s'efface
    plutôt que de se couper net — l'aperçu montre le haut de la fiche, qui est
@@ -1258,7 +1298,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    feuille de style qui l'habille, à l'échelle près. */
 .apercu{--reduc:.59;position:absolute;top:0;left:0;width:calc(100% / var(--reduc));
   transform:scale(var(--reduc));transform-origin:top left;
-  background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;
+  /* « background-color » et non le raccourci : celui-ci effacerait le fond
+     que les modèles peignent — le dégradé du verre, le grain du kraft — car
+     cette règle vient après la leur. */
+  background-color:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;
   pointer-events:none}
 .modale[data-genre="large"] .mfen{width:min(760px,100%)}
 .reglages{margin-top:10px}
@@ -4161,19 +4204,19 @@ const MODELES_FICHE = [
   { cle: "grille", nom: "Grille",
     resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
   { cle: "console", nom: "Console",
-    resume: "Phosphore vert, chasse fixe, libellés en invite de commande." },
+    resume: "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon." },
   { cle: "billet", nom: "Billet",
     resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
   { cle: "magazine", nom: "Magazine",
     resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
   { cle: "brut", nom: "Brut",
-    resume: "Trait épais, ombre dure, jaune de chantier. Ne suit pas le thème." },
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
   { cle: "verre", nom: "Verre",
     resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
   { cle: "kraft", nom: "Kraft",
-    resume: "Carton et machine à écrire, la mention « nouvel exposant » tamponnée." },
+    resume: "Carton et machine à écrire, « nouvel exposant » tamponné de travers." },
   { cle: "signal", nom: "Signalétique",
-    resume: "Vert de fléchage et capitales : un stand se lit comme une direction." },
+    resume: "Aplat, flèche et capitales : un stand se lit comme une direction de hall." },
   { cle: "chrono", nom: "Chronologie",
     resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
   { cle: "nu", nom: "Nu",
@@ -4343,52 +4386,75 @@ function voletPlan(hote){
   hote.appendChild(duree);
 }
 
-/* Quelques tons qui tiennent sur les deux thèmes, pour choisir sans ouvrir le
-   nuancier du système : celui d'origine, puis de quoi couvrir la gamme des
-   chartes de salon sans tomber dans les couleurs que le plan emploie déjà
-   pour dire autre chose — le doré des zones, le rouge d'une alerte. */
-const TONS = ["#2F49D1", "#0E7A3C", "#B4402F", "#7A3DBE", "#0F7C8A", "#C06A0B", "#25303A"];
+/* Le nuancier. Des tons de charte plutôt qu'une roue : choisir une couleur
+   principale, c'est choisir celle du salon, pas la nuance exacte d'un dégradé.
+   Ils sont rangés par famille — bleus, verts, chauds, rouges, violets,
+   neutres — et tous assez soutenus pour porter du texte, blanc ou noir, sans
+   qu'il faille le vérifier au cas par cas. La dernière pastille ouvre le
+   nuancier du système, pour une charte à l'hexadécimal près. */
+const TONS = [
+  ["#2F49D1", "Bleu d'encre"], ["#1B5FD9", "Bleu roi"], ["#23356B", "Bleu nuit"],
+  ["#0F6F8A", "Bleu canard"], ["#0E8A7D", "Turquoise"], ["#0E7A3C", "Vert prairie"],
+  ["#2C5E4A", "Vert forêt"], ["#5C7A1E", "Olive"],
+  ["#B07A0B", "Or brûlé"], ["#C06A0B", "Ambre"], ["#C05621", "Terracotta"],
+  ["#B4402F", "Brique"], ["#A82437", "Grenat"], ["#8E1F3F", "Cerise"],
+  ["#B32A63", "Framboise"], ["#A8318C", "Fuchsia"],
+  ["#7A3DBE", "Violet"], ["#5333C4", "Indigo"], ["#6B3A5E", "Prune"],
+  ["#7A5230", "Brun"], ["#3F5566", "Ardoise"], ["#25303A", "Anthracite"],
+];
+const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
 /** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
  *  fiche détail. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
-    "boutons, pastilles. Le modèle de fiche décide de l'allure du panneau qui " +
-    "s'ouvre sur un stand.";
+    "boutons, pastilles, et les modèles de fiche s'en habillent. Le modèle " +
+    "décide de l'allure du panneau qui s'ouvre sur un stand.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
   coul.className = "reglage-coul";
-  coul.innerHTML = '<span class="eyebrow">Couleur principale</span>' +
-    '<input type="color" class="cc"><span class="nuancier"></span>' +
-    '<button type="button" class="raz">Couleur d\'origine</button>';
-  const cc = coul.querySelector(".cc");
+  coul.innerHTML = '<div class="tete"><span class="eyebrow">Couleur principale</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const val = coul.querySelector(".val");
   const nuancier = coul.querySelector(".nuancier");
   const majPastilles = () => {
     const v = (conf("_accent").couleur || "").toLowerCase();
-    nuancier.querySelectorAll("button").forEach(b =>
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
-    cc.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
+    const n = nomDuTon(v);
+    val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
+                        : "Réglage d'origine";
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
   };
   const choisit = (v) => {
     conf("_accent").couleur = v;
     enregistreConf(); appliqueAccent(); majPastilles();
   };
-  TONS.forEach(t => {
+  TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.dataset.ton = t;
-    b.style.background = t;
-    b.title = t;
-    b.setAttribute("aria-label", "Couleur " + t);
-    b.onclick = () => { cc.value = t; choisit(t); };
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
-     glisse : on suit, c'est le seul moyen de voir la couleur s'installer sur
-     le plan pendant qu'on la cherche. Rien ne part en base pour autant. */
-  cc.oninput = e => choisit(e.target.value);
+  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
+     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
+     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
+     en base pour autant, la publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
     delete conf("_accent").couleur;
     enregistreConf(); appliqueAccent(); majPastilles();

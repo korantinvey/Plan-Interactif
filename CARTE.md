@@ -11,11 +11,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 759 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 782 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.613 · 10. Mode administration
-- l.678 · Renommer une zone organisateur
+- l.636 · 10. Mode administration
+- l.701 · Renommer une zone organisateur
 
 Fonctions :
 
@@ -24,9 +24,9 @@ Fonctions :
 `styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 189 · `minutesVisite` 217
 `trio` 232 · `melange` 242 · `themeSombre` 250 · `appliqueAccent` 264 · `modeleFiche` 312
 `appliqueFiche` 319 · `apercuFiche` 330 · `ouvreReglages` 379 · `voletPlan` 410
-`voletApparence` 484 · `enregistreConf` 563 · `rgbHex` 569 · `hexa` 576 · `luminance` 580
-`ecarte` 594 · `joli` 609 · `retireAdmin` 626 · `activeAdmin` 639 · `renommeZone` 688
-`enregistreNomZone` 712
+`nomDuTon` 492 · `voletApparence` 496 · `enregistreConf` 586 · `rgbHex` 592 · `hexa` 599
+`luminance` 603 · `ecarte` 617 · `joli` 632 · `retireAdmin` 649 · `activeAdmin` 662
+`renommeZone` 711 · `enregistreNomZone` 735
 
 Éléments :
 
@@ -143,7 +143,7 @@ Fonctions :
 `appliqueRayon` 309 · `appliquePicto` 319 · `supprimeForme` 337 · `editionPointerDown` 347
 `editionPointerMove` 392 · `editionPointerUp` 423
 
-### `_head.html` — 1802 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1845 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
