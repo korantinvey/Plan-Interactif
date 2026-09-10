@@ -606,19 +606,29 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .poi .poiPicto{width:17px;height:17px;flex:none}
 .poi .poiPicto path{fill:currentColor}
 /* Mise en avant : tout le plan s'efface sauf les repères retenus, qui gagnent
-   un liseré et un halo battant. Faire pulser le repère lui-même le rendait
-   invisible une fois sur deux — c'est l'inverse de l'effet recherché. */
+   un liseré, un halo et un battement. Faire pulser l'opacité du repère
+   lui-même le rendait invisible une fois sur deux — c'est l'inverse de
+   l'effet recherché. */
 html.poi-actif #stands,html.poi-actif #zones,html.poi-actif #labels,
 html.poi-actif #couches .cal,
 html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
-.dcal .repere.phare{animation:pulsePoi 1.4s ease-in-out infinite}
-@keyframes pulsePoi{
-  0%,100%{filter:drop-shadow(0 0 .3px var(--accent))}
-  50%{filter:drop-shadow(0 0 2.4px var(--accent))}
-}
+/* Le battement passe par « transform », et non par « filter ».
+   Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
+   délègue pas au compositeur, si bien que le navigateur recalculait les styles
+   et repeignait le plan entier — cinq cents stands et leurs libellés — à
+   chaque image, tant qu'un point d'intérêt restait mis en avant. Le plan et
+   l'interface partagent une seule couche : sur un téléphone, tout l'écran
+   tremblait avec lui, à commencer par le bandeau du haut. « transform » et
+   « opacity » sont les deux propriétés que le compositeur anime seul, sans
+   rien repeindre ; le halo reste donc posé une fois pour toutes, et c'est la
+   taille du repère qui bat. */
+.dcal .repere.phare{filter:drop-shadow(0 0 1.6px var(--accent));
+  transform-box:fill-box;transform-origin:center;
+  animation:pulsePoi 1.4s ease-in-out infinite}
+@keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){
-  .dcal .repere.phare{animation:none;filter:drop-shadow(0 0 1.6px var(--accent))}
+  .dcal .repere.phare{animation:none}
 }
 @media (max-width:760px){.poi{max-width:88%;bottom:12px}}
 
@@ -1291,9 +1301,16 @@ html.vise-plan #plan{cursor:crosshair}
 #itin .iTrait{stroke:var(--accent);stroke-width:3.5}
 /* Des pointillés qui défilent : ils disent le sens du trajet, ce qu'un trait
    plein ne fait pas, et sans ajouter de flèches qui se chevaucheraient dans
-   les virages. */
+   les virages.
+
+   Ils avancent par sauts d'un point, et non d'un glissement continu : le
+   décalage d'un tracé ne se délègue pas au compositeur — même piège que le
+   halo des points d'intérêt — et chaque valeur nouvelle repeint le plan sous
+   le trajet, qui traverse le salon entier. Douze paliers par tour valent onze
+   repeints par seconde au lieu de soixante, sans qu'on lise le sens moins
+   bien. */
 #itin .iSens{stroke:var(--accent-ink);stroke-width:1.6;stroke-dasharray:1 11;opacity:.85;
-  animation:defile 1.1s linear infinite}
+  animation:defile 1.1s steps(12) infinite}
 @keyframes defile{to{stroke-dashoffset:-12}}
 @media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
@@ -9451,6 +9468,71 @@ function reduit(g, suite){
   return pts;
 }
 
+/* Ce qu'on accepte entre le trait montré et le trajet calculé. Un peu plus
+   d'une case : en deçà, l'escalier ne se laisse pas redresser ; au-delà, on
+   raboterait des détours que le trajet fait pour de bonnes raisons. */
+const LISSAGE = .8;   // mètres
+
+/** Le segment tient-il dans le passage ? On l'échantillonne à la demi-case :
+ *  plus fin ne dirait rien de plus, la grille n'en sait pas davantage. */
+function passable(g, A, B){
+  const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+  const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
+  for (let k = 0; k <= n; k++){
+    const u = k / n;
+    const i = caseDe(g, A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u);
+    if (i < 0 || g.mur[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * L'escalier redressé en la droite qu'il dessinait.
+ *
+ * La grille suit l'orientation dominante du pavillon, ce qui suffit tant que
+ * toutes les allées la partagent. Un hall arrondi n'en a pas : ses allées
+ * tournent, et celles qui s'écartent de la dominante se descendent de nouveau
+ * en marches d'une demi-case. Ces marches ne sont pas un trajet, ce sont les
+ * arrondis de la grille — on les efface.
+ *
+ * On garde donc un sommet seulement quand le supprimer écarterait le trait de
+ * plus d'une case du trajet calculé : les marches, qui tiennent dans cette
+ * tolérance, se fondent en la droite que le visiteur marche vraiment, et le
+ * virage d'un vrai carrefour, qui la dépasse de loin, reste. C'est ce qui
+ * distingue ce redressement du fil tendu qu'on tirait autrefois : le fil
+ * regardait la longueur et coupait donc les coins, celui-ci regarde l'écart
+ * et n'en coupe aucun.
+ *
+ * La tolérance seule ne suffit pourtant pas à garantir qu'on passe : une allée
+ * qui se rétrécit, un poteau au milieu, et la corde traverse ce que les
+ * marches contournaient. Chaque raccourci est donc essayé sur la grille avant
+ * d'être retenu.
+ */
+function lisse(g, pts){
+  if (pts.length < 3) return pts;
+  const garde = new Uint8Array(pts.length);
+  garde[0] = garde[pts.length - 1] = 1;
+  // en pile plutôt qu'en récursion : un pavillon traversé fait des milliers
+  // de sommets, et la pile d'appels n'est pas faite pour ça
+  const restes = [[0, pts.length - 1]];
+  while (restes.length){
+    const [i, j] = restes.pop();
+    if (j <= i + 1) continue;
+    const A = pts[i], B = pts[j];
+    const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy);
+    let pire = -1, k = i + 1;
+    for (let m = i + 1; m < j; m++){
+      const e = l ? Math.abs((pts[m][0] - A[0]) * dy - (pts[m][1] - A[1]) * dx) / l
+                  : Math.hypot(pts[m][0] - A[0], pts[m][1] - A[1]);
+      if (e > pire){ pire = e; k = m; }
+    }
+    if (pire <= LISSAGE && passable(g, A, B)) continue;
+    garde[k] = 1;
+    restes.push([i, k], [k, j]);
+  }
+  return pts.filter((q, i) => garde[i]);
+}
+
 const longueur = (pts) => pts.reduce((s, q, i) =>
   i ? s + Math.hypot(q[0] - pts[i - 1][0], q[1] - pts[i - 1][1]) : 0, 0);
 
@@ -9611,32 +9693,35 @@ const AMORCE_MAX = 20;   // mètres
  * c'est une fois dans l'allée qu'on la remonte. Un seul coude, dehors, et le
  * trait n'entre jamais de travers.
  *
- * L'orientation de l'allée suggère de quel côté couder, mais elle ne le sait
- * pas toujours : un stand dont la seule façade libre donne au nord, abordé par
- * une allée qui file d'est en ouest, se verrait sortir par l'est — c'est-à-dire
- * à travers son voisin. On propose donc les deux coudes possibles et on garde
- * le premier qui sorte par chez soi ; `sortable` en juge, et laisse passer
- * quand on ne sait pas de qui est le mur.
+ * Où poser le coude, en revanche, ne se devine pas : c'est là où la façade du
+ * stand rencontre l'allée. On croise donc les deux droites — celle qui part du
+ * centre en franchissant la façade, celle que suit le trajet — et le coude est
+ * leur intersection. Un quart de tour ne s'y suppose nulle part, ce qui vaut
+ * mieux : l'allée d'un hall arrondi n'en fait pas.
  *
  * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
  */
-function amorce(g, pts, ancre, sens){
+function amorce(pts, ancre, sortie){
   if (pts.length < 2) return [];
-  // dans les axes de la grille : « d'équerre » veut dire le long des allées,
-  // pas le long des axes du plan, et les deux diffèrent dès qu'un hall tourne
-  const a = dansGrille(g, pts[0]), b = dansGrille(g, pts[1]), an = dansGrille(g, ancre);
-  const vertical = Math.abs(b[0] - a[0]) < .01;
-  const horizontal = Math.abs(b[1] - a[1]) < .01;
+  const a = pts[0], b = pts[1];
+  const lu = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (!lu) return [];
+  const u = [(b[0] - a[0]) / lu, (b[1] - a[1]) / lu];
   /* À défaut de face libre connue — un repère, un point désigné du doigt — on
      retombe sur l'orientation de l'allée : on en sort par le travers. */
-  const parAllee = vertical === horizontal ? null : (vertical ? "h" : "v");
-  const s = sens || parAllee;
-  if (!s) return [];
-  const coude = s === "h" ? [a[0], an[1]] : [an[0], a[1]];
-  const l1 = Math.hypot(coude[0] - an[0], coude[1] - an[1]);
+  const f = sortie || [-u[1], u[0]];
+  const den = f[0] * u[1] - f[1] * u[0];
+  // on sort dans l'axe de l'allée : il n'y a alors pas de coude à poser
+  if (Math.abs(den) < 1e-6) return [];
+  const t = ((a[0] - ancre[0]) * u[1] - (a[1] - ancre[1]) * u[0]) / den;
+  // l'allée est derrière la façade par laquelle on sort : le coude serait un
+  // crochet de l'autre côté du stand, mieux vaut le trait direct
+  if (t < 0) return [];
+  const coude = [ancre[0] + f[0] * t, ancre[1] + f[1] * t];
+  const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
   const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
   if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
-  return [horsGrille(g, coude)];
+  return [coude];
 }
 
 /**
