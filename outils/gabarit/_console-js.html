@@ -3,7 +3,7 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
                  [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
                  [1440, "Une fois par jour"]];
 
-let EVTS = [], selection = null, PLANS = {}, filtre = "";
+let EVTS = [], selection = null, PLANS = {};
 
 
 /**
@@ -99,8 +99,16 @@ const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
 const courant = () => EVTS.find((e) => e.id === selection);
 
 async function charge() {
+  // le rôle avant les salons : c'est lui qui dit ce que la console propose,
+  // et la liste des salons n'est déjà plus la même d'un profil à l'autre
+  await litMonProfil();
+  /* La base ne renvoie que les salons du compte : un organisateur n'en reçoit
+     que les siens, un administrateur les reçoit tous. Le tri par date de
+     modification met en tête celui qu'on vient de toucher. */
   EVTS = await rest("evenement?select=*&order=modifie_le.desc");
-  if (!EVTS.some((e) => e.id === selection)) selection = EVTS[0]?.id ?? null;
+  if (!EVTS.some((e) => e.id === selection)) {
+    selection = (selonAdresse() || EVTS[0])?.id ?? null;
+  }
   if (selection) await chargePlans(selection);
   dessine();
 }
@@ -119,45 +127,48 @@ async function majEvenement(id, champs) {
 }
 
 /* ------------------------------------------------------------------
-   Colonne de gauche
-   ------------------------------------------------------------------ */
-/** Ce que le filtre laisse passer : le nom, ou l'identifiant d'URL. */
-const retenus = () => !filtre ? EVTS
-  : EVTS.filter((e) => (e.nom + " " + (e.slug || "")).toLowerCase().includes(filtre));
+   Choix du salon
 
-function dessineRail() {
-  const box = $("listeEvts");
-  /* Le champ de filtre ne paraît qu'au-delà d'une poignée de salons : sous ce
-     seuil la liste se parcourt d'un coup d'œil, et le champ ne serait qu'une
-     ligne de plus à regarder. */
-  $("filtre").hidden = EVTS.length <= 6;
-  if (!EVTS.length) {
-    box.innerHTML = '<div class="vide">Aucun événement.<br>Créez-en un pour commencer.</div>';
-    return;
-  }
-  const liste = retenus();
-  if (!liste.length) {
-    box.innerHTML = '<div class="vide">Aucun événement ne correspond.</div>';
-    return;
-  }
-  box.innerHTML = liste.map((e) => {
-    const p = PLANS[e.id] || [];
-    const publies = p.filter((x) => x.publie).length;
-    /* Les pavillons ne sont chargés que pour l'événement ouvert : un tiret sur
-       toutes les autres lignes annonçait une absence là où il n'y a qu'une
-       ignorance. La mention ne paraît donc que lorsqu'il y a de quoi compter. */
-    return '<button class="evt" data-id="' + e.id + '" aria-current="' + (e.id === selection) + '">' +
-      '<span class="nom">' + esc(e.nom) + '</span>' +
-      '<span class="meta"><span class="etat ' + e.etat + '">' +
-      (e.etat === "publie" ? "Publié" : "Brouillon") + '</span>' +
-      (p.length ? '<span>' + publies + "/" + p.length + " pavillons</span>" : "") +
-      '</span></button>';
-  }).join("");
-  box.querySelectorAll(".evt").forEach((b) => b.onclick = async () => {
-    selection = b.dataset.id;
+   La console n'affiche qu'un salon à la fois : la liste de tous les autres
+   tenait une colonne entière de l'écran pour un choix qu'on fait une fois en
+   arrivant. Elle se replie donc dans la barre du haut, comme sur la page de
+   rapport, et la fiche prend toute la largeur.
+
+   Ce que la liste porte ne se décide pas ici : la base ne renvoie que les
+   salons auxquels le compte a droit.
+   ------------------------------------------------------------------ */
+/** Le salon nommé dans l'adresse, s'il fait partie de ceux qu'on peut ouvrir. */
+function selonAdresse() {
+  const slug = new URLSearchParams(location.search).get("plan");
+  return slug ? EVTS.find((e) => e.slug === slug) || null : null;
+}
+
+/* Le salon ouvert tient dans l'adresse : on revient sur la console par un
+   signet ou par le bouton « Console » du rapport, et on retrouve le sien
+   plutôt que le premier de la liste. */
+function majAdresse() {
+  const e = courant();
+  const url = new URL(location.href);
+  if (e?.slug) url.searchParams.set("plan", e.slug);
+  else url.searchParams.delete("plan");
+  history.replaceState(null, "", url);
+}
+
+function dessineChoix() {
+  const sel = $("choixEvt");
+  // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
+  sel.hidden = !EVTS.length;
+  if (!EVTS.length) { sel.innerHTML = ""; return; }
+  /* Un brouillon se signale dans la liste : c'est le seul état dont on doive
+     se souvenir avant même d'ouvrir la fiche — son plan public ne répond pas. */
+  sel.innerHTML = EVTS.map((e) =>
+    '<option value="' + e.id + '"' + (e.id === selection ? " selected" : "") + '>' +
+    esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  sel.onchange = async () => {
+    selection = sel.value;
     if (!PLANS[selection]) await chargePlans(selection);
     dessine();
-  });
+  };
 }
 
 /* ------------------------------------------------------------------
@@ -179,8 +190,8 @@ function champ(cle, libelle, aide, attrs) {
     attente = setTimeout(async () => {
       try {
         await majEvenement(e.id, { [cle]: e[cle] });
-        if (cle === "nom") dessineRail();
-        if (cle === "slug") { i.value = e.slug; majIntegration(); }
+        if (cle === "nom") dessineChoix();
+        if (cle === "slug") { i.value = e.slug; majIntegration(); majAdresse(); }
       } catch (err) { signale(err.message, true); }
     }, 500);
   };
@@ -193,7 +204,14 @@ function dessineFiche() {
   const f = $("fiche");
   if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour accéder aux événements.</div>'; return; }
   if (!e) {
-    f.innerHTML = '<div class="vide">Sélectionnez un événement à gauche,<br>ou créez-en un nouveau.</div>';
+    /* Un organisateur sans salon n'a rien à créer et rien à choisir : lui
+       proposer « Nouveau » l'enverrait contre un refus de la base. Ce qui lui
+       manque, c'est une affectation, et c'est cela qu'on lui dit. */
+    f.innerHTML = '<div class="vide"></div>';
+    f.querySelector(".vide").innerHTML = MOI?.role === "admin"
+      ? "Aucun salon pour l'instant.<br>Créez-en un avec « Nouveau »."
+      : "Aucun salon ne vous a été affecté.<br>" +
+        "Demandez l'accès à l'administrateur du projet.";
     return;
   }
   f.innerHTML = "";
@@ -231,6 +249,10 @@ function dessineFiche() {
     catch (err) { signale(err.message, true); }
   };
   $("btnSources").onclick = () => ouvreSources(() => dessine());
+  // dupliquer, c'est créer un salon : réservé à l'administrateur, comme
+  // « Nouveau ». La base le refuserait de toute façon, mais un bouton qui
+  // n'aboutit jamais est un bouton de trop.
+  $("btnDupliquer").hidden = MOI?.role !== "admin";
   $("btnDupliquer").onclick = () => dupliquer(e);
   $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
     "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
@@ -2306,31 +2328,328 @@ $("btnExport").onclick = (ev) => {
 };
 $("btnProjet").onclick = () => ecranConfig();
 
-/* Le filtre tient hors de la liste : la redessiner ne lui reprend pas le
-   curseur, et ce qu'on vient de taper reste là où on le tape. */
-$("chFiltre").oninput = () => {
-  filtre = $("chFiltre").value.trim().toLowerCase();
-  dessineRail();
-};
 
+
+
+/* ------------------------------------------------------------------
+   Comptes et accès
+
+   Deux profils, et un seul écran. L'administrateur voit tous les salons ;
+   l'organisateur ne voit que ceux qu'on lui a cochés, et y a exactement les
+   mêmes droits. C'est la base qui l'applique — cet écran ne fait que dire à
+   qui appartient quoi.
+
+   Créer un compte, envoyer son invitation ou le supprimer demande la clé de
+   service : tout passe donc par la fonction `comptes`, jamais par la table.
+   ------------------------------------------------------------------ */
+let MOI = null;
+
+/** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
+ *  qu'elle obtient, c'est la base qui le décide. */
+async function litMonProfil() {
+  const id = idCompte();
+  MOI = null;
+  if (!id) return;
+  const r = await rest("profil?select=id,nom,email,role&id=eq." + encodeURIComponent(id));
+  MOI = (Array.isArray(r) ? r[0] : null) || null;
+}
+
+const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
+
+/** L'adresse où retomber après avoir cliqué le lien reçu par courriel. */
+const RETOUR_MDP = () => PAGE_MDP;
+
+function ouvreComptes() {
+  let comptes = [];
+  let hote = null;
+  /* La barre du haut reste derrière le voile de la fenêtre : ce qui se passe
+     ici doit se lire ici. Le message survit au redessin de la liste, sans quoi
+     un enregistrement réussi effacerait sa propre confirmation. */
+  let mot = { texte: "", erreur: false };
+  const dis = (texte, erreur) => {
+    mot = { texte, erreur: !!erreur };
+    const p = $("comptesMsg");
+    if (p) { p.textContent = texte; p.className = "aide" + (erreur ? " alerte" : ""); }
+  };
+
+  const salons = () => EVTS.map((e) => ({ id: e.id, nom: e.nom }));
+
+  /* Les cases des salons. Un administrateur les a tous par définition : lui en
+     cocher serait laisser croire qu'on peut lui en retirer. */
+  function casesSalons(role, choisis) {
+    const zone = document.createElement("div");
+    zone.className = "valeurs";
+    if (role === "admin") {
+      const p = document.createElement("p");
+      p.className = "aide";
+      p.textContent = "Tous les salons, y compris ceux créés plus tard.";
+      zone.appendChild(p);
+      return zone;
+    }
+    if (!salons().length) {
+      const p = document.createElement("p");
+      p.className = "aide";
+      p.textContent = "Aucun salon à affecter pour l'instant.";
+      zone.appendChild(p);
+      return zone;
+    }
+    salons().forEach((e) => {
+      const l = document.createElement("label");
+      l.className = "puce";
+      l.innerHTML = "<input type='checkbox'><span></span>";
+      l.querySelector("span").textContent = e.nom;
+      const c = l.querySelector("input");
+      c.value = e.id;
+      c.checked = choisis.includes(e.id);
+      zone.appendChild(l);
+    });
+    return zone;
+  }
+
+  const coches = (zone) => Array.from(zone.querySelectorAll("input:checked")).map((c) => c.value);
+
+  async function appelle(corps, message) {
+    dis(message || "Enregistrement…");
+    const r = await fonction("comptes", corps);
+    await recharge();
+    dis("Enregistré.");
+    return r;
+  }
+
+  async function recharge() {
+    const r = await fonction("comptes", { action: "liste" });
+    comptes = r.profils || [];
+    if (hote) rendu(hote);
+  }
+
+  /* ---------------------------------------------------- une fiche de compte */
+  function ficheCompte(c) {
+    const cadre = document.createElement("div");
+    cadre.className = "cadre compte";
+
+    const hd = document.createElement("div");
+    hd.className = "cadre-hd";
+    const titre = document.createElement("span");
+    titre.className = "eyebrow";
+    titre.textContent = c.nom || c.email;
+    hd.appendChild(titre);
+    const marque = document.createElement("span");
+    marque.className = "prov";
+    marque.textContent = NOM_ROLE[c.role] || c.role;
+    hd.appendChild(marque);
+    if (!c.actif) {
+      const att = document.createElement("span");
+      att.className = "prov";
+      att.dataset.src = "aucun";
+      att.textContent = "Invitation en attente";
+      hd.appendChild(att);
+    }
+    if (c.id === MOI?.id) {
+      const moi = document.createElement("span");
+      moi.className = "prov";
+      moi.dataset.src = "aucun";
+      moi.textContent = "Vous";
+      hd.appendChild(moi);
+    }
+    cadre.appendChild(hd);
+
+    const adresse = document.createElement("p");
+    adresse.className = "aide";
+    adresse.textContent = c.email;
+    cadre.appendChild(adresse);
+
+    const g = grille();
+    const lNom = document.createElement("label");
+    lNom.innerHTML = "<span>Nom</span><input>";
+    lNom.querySelector("input").value = c.nom || "";
+    const lRole = document.createElement("label");
+    lRole.innerHTML = "<span>Profil</span><select>" +
+      "<option value='organisateur'>Organisateur</option>" +
+      "<option value='admin'>Administrateur</option></select>";
+    const selRole = lRole.querySelector("select");
+    selRole.value = c.role;
+    // se retirer soi-même l'administration fermerait la porte de l'intérieur
+    selRole.disabled = c.id === MOI?.id;
+    g.append(lNom, lRole);
+    cadre.appendChild(g);
+
+    const titreAcces = document.createElement("span");
+    titreAcces.className = "eyebrow sous-titre";
+    titreAcces.textContent = "Salons";
+    cadre.appendChild(titreAcces);
+    let zone = casesSalons(c.role, c.evenements || []);
+    cadre.appendChild(zone);
+    // changer de profil change ce qu'il y a à cocher : la liste suit sans
+    // qu'on ait à refermer la fenêtre
+    selRole.onchange = () => {
+      const neuve = casesSalons(selRole.value, coches(zone));
+      zone.replaceWith(neuve);
+      zone = neuve;
+    };
+
+    const pied = document.createElement("div");
+    pied.className = "pied-perso";
+
+    const enr = document.createElement("button");
+    enr.className = "btn petit primaire";
+    enr.textContent = "Enregistrer";
+    enr.onclick = async () => {
+      try {
+        await appelle({
+          action: "maj", id: c.id,
+          nom: lNom.querySelector("input").value,
+          role: selRole.value,
+          evenements: selRole.value === "admin" ? [] : coches(zone),
+        });
+      } catch (e) { dis(e.message, true); }
+    };
+
+    const lien = document.createElement("button");
+    lien.className = "btn petit";
+    lien.textContent = c.actif ? "Envoyer un lien de mot de passe" : "Renvoyer l'invitation";
+    lien.onclick = async () => {
+      try {
+        await appelle({ action: "relance", id: c.id, retour: RETOUR_MDP() }, "Envoi…");
+        dis("Lien envoyé à " + c.email + ".");
+      } catch (e) { dis(e.message, true); }
+    };
+
+    pied.append(enr, lien);
+
+    if (c.id !== MOI?.id) {
+      const sup = document.createElement("button");
+      sup.className = "btn petit danger";
+      sup.textContent = "Supprimer";
+      sup.onclick = () => {
+        /* La fenêtre des comptes est celle qui est ouverte : une confirmation
+           la remplacerait. On confirme donc sur le bouton lui-même. */
+        if (sup.dataset.sur !== "1") {
+          sup.dataset.sur = "1";
+          sup.textContent = "Confirmer la suppression";
+          setTimeout(() => {
+            if (!sup.isConnected) return;
+            sup.dataset.sur = "";
+            sup.textContent = "Supprimer";
+          }, 4000);
+          return;
+        }
+        appelle({ action: "supprime", id: c.id }, "Suppression…")
+          .catch((e) => dis(e.message, true));
+      };
+      pied.appendChild(sup);
+    }
+
+    cadre.appendChild(pied);
+    return cadre;
+  }
+
+  /* ------------------------------------------------------- l'invitation */
+  function ficheInvitation() {
+    const cadre = document.createElement("div");
+    cadre.className = "cadre";
+    const hd = document.createElement("div");
+    hd.className = "cadre-hd";
+    hd.innerHTML = "<span class='eyebrow'>Inviter quelqu'un</span>";
+    cadre.appendChild(hd);
+
+    const aide = document.createElement("p");
+    aide.className = "aide";
+    aide.textContent = "Le compte est créé sans mot de passe : l'invité en reçoit " +
+      "un par courriel, et le choisit lui-même.";
+    cadre.appendChild(aide);
+
+    const g = grille();
+    const lMail = document.createElement("label");
+    lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
+    const lNom = document.createElement("label");
+    lNom.innerHTML = "<span>Nom</span><input>";
+    const lRole = document.createElement("label");
+    lRole.innerHTML = "<span>Profil</span><select>" +
+      "<option value='organisateur'>Organisateur</option>" +
+      "<option value='admin'>Administrateur</option></select>";
+    const selRole = lRole.querySelector("select");
+    g.append(lMail, lNom, lRole);
+    cadre.appendChild(g);
+
+    const titreAcces = document.createElement("span");
+    titreAcces.className = "eyebrow sous-titre";
+    titreAcces.textContent = "Salons";
+    cadre.appendChild(titreAcces);
+    let zone = casesSalons("organisateur", []);
+    cadre.appendChild(zone);
+    selRole.onchange = () => {
+      const neuve = casesSalons(selRole.value, coches(zone));
+      zone.replaceWith(neuve);
+      zone = neuve;
+    };
+
+    const pied = document.createElement("div");
+    pied.className = "pied-perso";
+    const env = document.createElement("button");
+    env.className = "btn petit primaire";
+    env.textContent = "Envoyer l'invitation";
+    env.onclick = async () => {
+      const email = lMail.querySelector("input").value.trim();
+      if (email.indexOf("@") < 1) { dis("Adresse incomplète.", true); return; }
+      env.disabled = true;
+      try {
+        await appelle({
+          action: "invite", email,
+          nom: lNom.querySelector("input").value,
+          role: selRole.value,
+          evenements: selRole.value === "admin" ? [] : coches(zone),
+          retour: RETOUR_MDP(),
+        }, "Envoi de l'invitation…");
+        dis("Invitation envoyée à " + email + ".");
+      } catch (e) {
+        dis(e.message, true);
+        env.disabled = false;
+      }
+    };
+    pied.appendChild(env);
+    cadre.appendChild(pied);
+    return cadre;
+  }
+
+  function rendu(corps) {
+    corps.innerHTML = "";
+    comptes.forEach((c) => corps.appendChild(ficheCompte(c)));
+    corps.appendChild(ficheInvitation());
+    const p = document.createElement("p");
+    p.id = "comptesMsg";
+    p.className = "aide" + (mot.erreur ? " alerte" : "");
+    p.textContent = mot.texte;
+    corps.appendChild(p);
+  }
+
+  ouvreModale("Comptes et accès", (corps) => {
+    hote = corps;
+    mot = { texte: "Chargement…", erreur: false };
+    rendu(corps);
+    recharge().then(() => dis("")).catch((e) => dis(e.message, true));
+  }, [{ libelle: "Fermer" }], () => { hote = null; });
+}
+
+$("btnComptes").onclick = ouvreComptes;
 
 /* ------------------------------------------------------------------
    Rendu et démarrage
    ------------------------------------------------------------------ */
 /** Fin de session : la console n'a plus d'événements à montrer. */
 function videEcran() {
-  EVTS = []; selection = null;
+  EVTS = []; selection = null; MOI = null;
   dessine();
 }
 
 function dessine() {
-  const n = EVTS.length;
-  const p = EVTS.filter((e) => e.etat === "publie").length;
-  $("sousTitre").textContent = n
-    ? n + (n > 1 ? " événements" : " événement") + " · " + p + " publié" + (p > 1 ? "s" : "")
-    : "";
-  dessineRail();
+  // les comptes et la création d'un salon sont le fait de l'administrateur ;
+  // un organisateur reçoit ses salons, il ne s'en donne pas
+  const patron = MOI?.role === "admin";
+  $("btnComptes").hidden = !patron;
+  $("btnNouveau").hidden = !patron;
+  dessineChoix();
   dessineFiche();
+  majAdresse();
 }
 
 async function demarre() {

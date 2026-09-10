@@ -43,7 +43,7 @@ Fonctions :
 
 `demarre` 8 · `annonce` 24 · `entetesApi` 39 · `chargeFond` 62 · `charge` 94
 
-### `_auth-plan.html` — 118 l. → plan-admin.html
+### `_auth-plan.html` — 119 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
@@ -54,11 +54,11 @@ Fonctions :
 
 Éléments :
 
-`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOk`
+`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 318 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 343 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -66,50 +66,53 @@ Fonctions :
 
 `$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `ouvreModale` 65 · `fermeModale` 80
 `demande` 90 · `confirme` 112 · `ecranConfig` 123 · `normaliseUrl` 159
-`ecranConnexion` 178 · `deconnecte` 240 · `signale` 251 · `bloc` 272 · `grille` 290
+`ecranConnexion` 178 · `deconnecte` 241 · `signale` 252 · `bloc` 273 · `grille` 291
+`idCompte` 321
 
 Éléments :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 42 l. → admin-plans.html
+### `_console-head.html` — 36 l. → admin-plans.html
 
 Éléments :
 
-`#sousTitre` · `#statut` · `#btnProjet` · `#btnExport` · `#btnTheme` · `#btnRecharger`
-`#btnNouveau` · `#filtre` · `#chFiltre` · `#listeEvts` · `#fiche`
+`#choixEvt` · `#btnRecharger` · `#btnNouveau` · `#statut` · `#btnComptes` · `#btnProjet`
+`#btnExport` · `#btnTheme` · `#fiche`
 
-### `_console-js.html` — 2348 l. → admin-plans.html
+### `_console-js.html` — 2667 l. → admin-plans.html
 
-- l.349 · Provenance des données
-- l.476 · Contenu de la fiche détail
+- l.371 · Provenance des données
+- l.498 · Contenu de la fiche détail
 
 Fonctions :
 
 `fluxFonction` 17 · `barreAvancement` 56 · `fonction` 79 · `slugifie` 95 · `courant` 99
-`charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `retenus` 125 · `dessineRail` 128
-`champ` 166 · `dessineFiche` 191 · `fournisseurUtilise` 411 · `source` 415 · `champCle` 420
-`ligneSource` 455 · `origineConferences` 564 · `resumeProvenance` 629 · `resumeSalles` 646
-`resumeFiche` 657 · `caseFiche` 700 · `champsPersos` 743 · `criteres` 749 · `ecritFiche` 752
-`caseCritere` 767 · `clePerso` 786 · `ajouteChampPerso` 794 · `renommeChampPerso` 805
-`retireChampPerso` 823 · `lignesPerso` 871 · `clesCorps` 906 · `ordreEffectif` 920
-`libelleCorps` 935 · `champsLus` 977 · `exempleCible` 992 · `valeurApercu` 1014
-`dessineApercu` 1042 · `panneauOrdre` 1115 · `ligneOutil` 1297 · `ligneReglage` 1313
-`ouvreProvenance` 1325 · `ouvreSources` 1348 · `ouvreSalles` 1404 · `cadreFiche` 1519
-`ouvreFiche` 1548 · `sousTitre` 1698 · `tableauChamps` 1713 · `encode` 1856 · `decode` 1858
-`correspondance` 1863 · `sansPrefixe` 1866 · `courte` 1867 · `intitule` 1882
-`intituleSuite` 1894 · `separeValeurs` 1908 · `champOrigine` 1920 · `majLiens` 2149
-`majIntegration` 2176 · `majMsgSync` 2183 · `synchronise` 2198 · `dupliquer` 2241
-`videEcran` 2321 · `dessine` 2326 · `demarre` 2336
+`charge` 101 · `chargePlans` 116 · `majEvenement` 121 · `selonAdresse` 141
+`majAdresse` 149 · `dessineChoix` 157 · `champ` 177 · `dessineFiche` 202
+`fournisseurUtilise` 433 · `source` 437 · `champCle` 442 · `ligneSource` 477
+`origineConferences` 586 · `resumeProvenance` 651 · `resumeSalles` 668 · `resumeFiche` 679
+`caseFiche` 722 · `champsPersos` 765 · `criteres` 771 · `ecritFiche` 774 · `caseCritere` 789
+`clePerso` 808 · `ajouteChampPerso` 816 · `renommeChampPerso` 827 · `retireChampPerso` 845
+`lignesPerso` 893 · `clesCorps` 928 · `ordreEffectif` 942 · `libelleCorps` 957
+`champsLus` 999 · `exempleCible` 1014 · `valeurApercu` 1036 · `dessineApercu` 1064
+`panneauOrdre` 1137 · `ligneOutil` 1319 · `ligneReglage` 1335 · `ouvreProvenance` 1347
+`ouvreSources` 1370 · `ouvreSalles` 1426 · `cadreFiche` 1541 · `ouvreFiche` 1570
+`sousTitre` 1720 · `tableauChamps` 1735 · `encode` 1878 · `decode` 1880
+`correspondance` 1885 · `sansPrefixe` 1888 · `courte` 1889 · `intitule` 1904
+`intituleSuite` 1916 · `separeValeurs` 1930 · `champOrigine` 1942 · `majLiens` 2171
+`majIntegration` 2198 · `majMsgSync` 2205 · `synchronise` 2220 · `dupliquer` 2263
+`litMonProfil` 2349 · `RETOUR_MDP` 2360 · `ouvreComptes` 2362 · `videEcran` 2639
+`dessine` 2644 · `demarre` 2655
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 560 l. → console.css
+### `_console.css` — 539 l. → console.css
 
-- l.504 · Page de rapport
+- l.485 · Page de rapport
 
 ### `_dessin.html` — 1062 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -272,6 +275,20 @@ Fonctions :
 `ouvreModale` 13 · `fermeModale` 29 · `confirme` 36 · `deplaceVers` 54 · `versExtremite` 66
 `remplitOrdre` 74 · `ouvreOrdre` 136
 
+### `_motdepasse.html` — 242 l. → motdepasse.html
+
+- l.54 · Poser un mot de passe
+
+Fonctions :
+
+`$` 70 · `CFG` 72 · `dit` 80 · `fragment` 86 · `garde` 93 · `lit` 97 · `demandeLien` 170
+`ouvreSaisie` 179
+
+Éléments :
+
+`#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
+`#envoyer` · `#msg` · `#apres` · `#versConsole`
+
 ### `_parcours.html` — 352 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
@@ -312,7 +329,7 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnRecharger` · `#btnTheme`
 `#rapport`
 
-### `_rapport-js.html` — 310 l. → rapport.html
+### `_rapport-js.html` — 314 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
@@ -320,7 +337,7 @@ Fonctions :
 
 `nb` 45 · `courant` 46 · `chargeEvenements` 51 · `debutPeriode` 61 · `chargeRapport` 69
 `chiffre` 80 · `barres` 99 · `jours` 126 · `dessineRapport` 147 · `dessineBarre` 245
-`rafraichit` 263 · `videEcran` 282 · `demarre` 296
+`rafraichit` 267 · `videEcran` 286 · `demarre` 300
 
 Éléments :
 
@@ -367,10 +384,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
 
-### `supabase/functions/sync-evenement/index.ts` — 1091 l.
+### `supabase/functions/sync-evenement/index.ts` — 1102 l.
 
 `cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 152
-`champsKlipso` 173 · `hebergee` 1049 · `nettoieUrl` 1067 · `groupeTextes` 1077
+`champsKlipso` 173 · `hebergee` 1060 · `nettoieUrl` 1078 · `groupeTextes` 1088
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -392,6 +409,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000001_champs_perso.sql` — —
 - `20260910000002_ordre_fiche.sql` — —
 - `20260910000003_zones_masquees.sql` — evenement
+- `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 
 ## Le reste
 

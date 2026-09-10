@@ -59,21 +59,24 @@ button{cursor:pointer;background:none;border:none}
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 
-/* Deux précautions pour le téléphone.
-   `1fr` vaut `minmax(auto, 1fr)` : la colonne ne descend jamais sous la
-   largeur incompressible de son contenu — un nom d'événement en `nowrap`, un
-   tableau — et la console débordait alors de l'écran, sans autre issue que de
-   dézoomer à la main. `minmax(0, 1fr)` autorise la colonne à rétrécir, et les
-   coupures d'usage (ellipse, retour à la ligne) reprennent la main.
+/* Une seule colonne, et deux rangs : la barre du haut, puis la fiche. La
+   liste des salons tenait une colonne de gauche entière pour un choix qu'on
+   fait en arrivant ; elle est passée en liste déroulante dans la barre.
    `100vh` vaut, sur un navigateur mobile, la hauteur barre d'outils masquée :
    le bas de la console passerait dessous. `100dvh` suit cette barre. */
-.app{display:grid;grid-template-columns:284px minmax(0,1fr);grid-template-rows:auto 1fr;
-  height:100vh;height:100dvh;min-height:600px}
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:16px;padding:0 18px;height:58px;
+.app{display:grid;grid-template-rows:auto 1fr;
+  height:100vh;height:100dvh;min-height:520px}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 18px;height:58px;
   background:var(--surface);border-bottom:1px solid var(--line);z-index:5}
 .topbar h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px;margin:0;
   letter-spacing:-.02em;white-space:nowrap}
-.topbar .sous{font-size:12px;color:var(--ink-3);white-space:nowrap}
+/* Les deux pages choisissent leur salon dans la barre du haut. */
+.topbar select{padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);max-width:34vw}
+.topbar select:focus{border-color:var(--accent);outline:none}
+/* Le salon ouvert est la navigation de la console : il se lit comme un titre,
+   pas comme un réglage. */
+#choixEvt{font-weight:600;min-width:170px}
 .statut{margin-left:auto;font-size:12.5px;color:var(--ink-3);max-width:46%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .statut.err{color:var(--rouge)}
@@ -94,18 +97,7 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .lien{font-size:12.5px;color:var(--ink-3);text-decoration:underline}
 .lien:hover{color:var(--ink)}
 
-/* ---------- colonne des événements ---------- */
-.rail{background:var(--surface);border-right:1px solid var(--line);
-  display:flex;flex-direction:column;min-height:0;min-width:0}
-.rail header{padding:12px 14px 11px;border-bottom:1px solid var(--line);
-  display:flex;align-items:center;justify-content:space-between;gap:8px}
-/* Le filtre n'apparaît qu'au-delà d'une poignée de salons : sous ce seuil, la
-   liste se lit d'un coup d'œil et le champ ne serait qu'une ligne de plus. */
-.rail .filtre{padding:9px 10px 0}
-.rail .filtre input{width:100%;padding:6px 9px;font-size:12.5px;background:var(--surface-2);
-  border:1px solid var(--line);border-radius:var(--radius)}
-.rail .filtre input:focus{border-color:var(--accent);background:var(--surface);outline:none}
-.railActs{display:flex;align-items:center;gap:6px}
+/* Les deux boutons ronds de la barre du haut : recharger, et le thème. */
 .icone{width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink-2);background:var(--surface)}
 .icone:hover{border-color:var(--line-strong);color:var(--ink)}
@@ -114,22 +106,8 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 @keyframes tourne{to{transform:rotate(360deg)}}
 .icone.occupe svg{animation:tourne .9s linear infinite}
 @media (prefers-reduced-motion:reduce){.icone.occupe svg{animation:none}}
-.rail .liste{overflow-y:auto;flex:1;min-height:0;padding:8px}
-/* Une ligne par salon, sans filet entre elles : huit filets alignés faisaient
-   une grille là où il n'y a qu'une liste. Le survol sépare, la barre d'accent
-   désigne. */
-.evt{position:relative;display:block;width:100%;text-align:left;
-  padding:9px 11px;border-radius:var(--radius)}
-.evt + .evt{margin-top:2px}
-.evt:hover{background:var(--surface-2)}
-.evt[aria-current="true"]{background:var(--accent-soft)}
-.evt[aria-current="true"] .nom{color:var(--accent)}
-.evt[aria-current="true"]::before{content:"";position:absolute;left:0;top:9px;bottom:9px;
-  width:2px;border-radius:0 2px 2px 0;background:var(--accent)}
-.evt .nom{display:block;font-weight:600;font-size:13.5px;line-height:1.3;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap}
-.evt .meta{display:flex;align-items:center;gap:7px;margin-top:4px;font-size:11.5px;color:var(--ink-3)}
-.vide{padding:36px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
+
+.vide{padding:56px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
 
 .etat{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;
   padding:2px 7px;border-radius:999px;letter-spacing:.02em;
@@ -138,7 +116,7 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .etat.brouillon{background:var(--ambre-soft);color:var(--ambre)}
 .etat::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* ---------- panneau de droite ---------- */
+/* ---------- la fiche du salon ---------- */
 .fiche{overflow-y:auto;padding:24px 26px 64px;min-width:0}
 /* Une colonne de lecture. Sur un grand écran, la fiche s'étirait jusqu'au bord :
    un champ « identifiant d'URL » large de neuf cents pixels n'aide personne, et
@@ -391,6 +369,9 @@ table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   .reglage-ligne .act{justify-content:flex-start;flex-wrap:wrap}
 }
 .mcorps > p.aide{margin:14px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
+/* Un compte-rendu d'action, dit à l'endroit où l'action a été demandée : la
+   barre du haut reste derrière le voile de la fenêtre. */
+.mcorps > p.aide.alerte{color:var(--rouge)}
 .onglets{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
 .onglets button{padding:7px 12px;background:none;border:none;border-bottom:2px solid transparent;
   margin-bottom:-1px;font-size:12.5px;color:var(--ink-3);cursor:pointer}
@@ -469,6 +450,9 @@ tr.eteint td{opacity:.45}
 /* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
    troisième onglet, la liste d'ordre et son aperçu côte à côte. */
 .mfen:has(table.champs){width:min(1040px,100%)}
+/* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
+   de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
+.mfen:has(.compte){width:min(760px,100%)}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
@@ -479,12 +463,9 @@ tr.eteint td{opacity:.45}
   border-top:1px solid var(--line)}
 
 @media (max-width:900px){
-  /* la colonne unique doit elle aussi pouvoir rétrécir sous son contenu */
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr;min-height:0}
-  .rail{border-right:none;border-bottom:1px solid var(--line);max-height:200px}
+  .app{min-height:0}
   .fiche{padding:16px}
   .fiche > *{max-width:none}
-  .topbar .sous{display:none}
 }
 
 /* Sur un téléphone, la barre du haut et l'en-tête de fiche tiennent sur deux
@@ -511,8 +492,6 @@ tr.eteint td{opacity:.45}
 .page{display:grid;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:520px}
 .page .fiche{padding:22px 26px 60px}
 .page .fiche > *{max-width:1080px}
-.topbar select{padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
-  border-radius:var(--radius);max-width:34vw}
 .topbar .periode{display:flex;align-items:center;gap:7px}
 
 /* Les grands nombres. Un chiffre se lit avant son intitulé : il vient donc en

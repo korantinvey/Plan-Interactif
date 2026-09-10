@@ -10,9 +10,20 @@
 <div class="app">
   <header class="topbar">
     <h1>Console des plans</h1>
-    <span class="sous" id="sousTitre"></span>
+    <!-- Le salon se choisit ici, comme sur la page de rapport. La liste ne
+         porte que les salons auxquels le compte a droit : c'est la base qui la
+         borne — `acces_salon()` — et non cette page, qui ne fait qu'afficher
+         ce qu'elle reçoit. -->
+    <select id="choixEvt" aria-label="Salon"></select>
+    <button class="icone" id="btnRecharger" title="Recharger depuis le serveur" aria-label="Recharger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    </button>
+    <!-- Créer un salon est le fait de l'administrateur : le bouton part caché
+         et ne paraît qu'une fois le profil lu. -->
+    <button class="btn petit primaire" id="btnNouveau" hidden>Nouveau</button>
     <span class="statut" id="statut" role="status" aria-live="polite"></span>
     <div class="droite">
+      <button class="btn petit" id="btnComptes" hidden>Comptes</button>
       <button class="btn petit" id="btnProjet">Projet</button>
       <button class="btn petit" id="btnExport">Exporter</button>
       <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
@@ -21,22 +32,5 @@
     </div>
   </header>
 
-  <aside class="rail">
-    <header>
-      <span class="eyebrow">Événements</span>
-      <span class="railActs">
-        <button class="icone" id="btnRecharger" title="Recharger depuis le serveur" aria-label="Recharger">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-        </button>
-        <button class="btn petit primaire" id="btnNouveau">Nouveau</button>
-      </span>
-    </header>
-    <div class="filtre" id="filtre" hidden>
-      <input id="chFiltre" type="search" placeholder="Filtrer les événements" aria-label="Filtrer les événements" spellcheck="false">
-    </div>
-    <div class="liste" id="listeEvts"></div>
-  </aside>
-
   <main class="fiche" id="fiche"></main>
 </div>
-
