@@ -8650,16 +8650,21 @@ function construitPanneau(){
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
     }
-    /* Les couleurs des secteurs se règlent sous la couche Stands : c'est elle
-       qu'elles repeignent, et il n'y a pas de couche par secteur. Elles ne
-       paraissent que si le salon sectorise et que le plan les montre — sans
+    /* La carte de chaleur se range sous la couche Stands : c'est elle qu'elle
+       repeint. Elle n'a pas de couleur à régler — les siennes sortent des
+       chiffres — et elle ne se publie pas.
+
+       Avant les secteurs, et non après : ceux-ci sont une légende, longue de
+       vingt lignes sur un salon qui sectorise finement, et l'interrupteur s'y
+       perdait — sur SIMI il tombait hors de l'écran, à croire qu'il manquait.
+       Une commande ne se range pas au bout d'une liste de couleurs. */
+    if (x.k === "data:stands" && ADMIN) rangChaleur(hote);
+    /* Les couleurs des secteurs se règlent au même endroit : c'est la même
+       couche qu'elles repeignent, et il n'y a pas de couche par secteur. Elles
+       ne paraissent que si le salon sectorise et que le plan les montre — sans
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* La carte de chaleur se range au même endroit et pour la même raison :
-       c'est la couche des stands qu'elle repeint. Elle n'a pas de couleur à
-       régler — les siennes sortent des chiffres — et elle ne se publie pas. */
-    if (x.k === "data:stands" && ADMIN) rangChaleur(hote);
     /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
