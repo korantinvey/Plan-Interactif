@@ -177,21 +177,43 @@ button{cursor:pointer;background:none;border:none}
    Un masque plutôt qu'un dégradé de couleur : il découpe au lieu de teindre, et
    tient donc dans les deux thèmes sans avoir à être décliné, par-dessus le fond
    du tiroir comme par-dessus celui de la bande. */
-.defile{--fondu:26px}
-.defile[data-gauche],.defile[data-droite]{
+.bande{position:relative;--fondu:44px}
+.bande[data-gauche] .defile,.bande[data-droite] .defile{
   -webkit-mask-image:var(--masque);mask-image:var(--masque)}
-.defile[data-droite]{
+.bande[data-droite]{
   --masque:linear-gradient(to right,#000 calc(100% - var(--fondu)),transparent)}
-.defile[data-gauche]{
+.bande[data-gauche]{
   --masque:linear-gradient(to right,transparent,#000 var(--fondu))}
-.defile[data-gauche][data-droite]{
+.bande[data-gauche][data-droite]{
   --masque:linear-gradient(to right,transparent,#000 var(--fondu),
     #000 calc(100% - var(--fondu)),transparent)}
+/* La flèche, posée sur le fondu du côté où il reste quelque chose.
+
+   Le fondu seul ne suffisait pas : il dit qu'on n'a pas tout vu, il ne dit pas
+   comment voir le reste, et le geste ne vient pas de lui-même sur une bande
+   large de trois puces. La flèche le dit, et le fait — une pression avance
+   d'un écran, sans qu'on ait à pousser du doigt. Elle est hors de la bande,
+   sinon le masque l'effacerait avec les puces qu'elle surmonte.
+
+   Elle ne paraît jamais au large : les bandes s'y replient sur plusieurs
+   lignes, rien ne déborde, et aucun bord ne se marque. */
+.bande .fleche{display:none;position:absolute;top:50%;z-index:2;
+  width:27px;height:27px;margin-top:-13px;border-radius:50%;
+  align-items:center;justify-content:center;
+  background:var(--surface);color:var(--ink-2);
+  border:1px solid var(--line-strong);box-shadow:0 1px 5px rgba(0,0,0,.16)}
+.bande .fleche svg{width:15px;height:15px}
+.bande .fleche:active{background:var(--surface-2)}
+.bande[data-gauche] .fleche[data-vers="-1"]{display:flex;left:5px}
+.bande[data-droite] .fleche[data-vers="1"]{display:flex;right:5px}
 /* Les thématiques : la même bande de puces que les secteurs, sans pastille de
    couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
    le salon en range beaucoup, un bouton en donnant alors la suite. */
-.themes{padding:10px 16px;border-bottom:1px solid var(--line)}
-.themes .chips{display:flex;flex-wrap:wrap;gap:6px}
+/* La marge latérale est portée par la bande elle-même, et non par le bloc qui
+   l'entoure : c'est ce qui met sa flèche à la même distance du bord que celle
+   des secteurs, dont la marge est aussi à l'intérieur. */
+.themes{padding:10px 0;border-bottom:1px solid var(--line)}
+.themes .chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px}
 /* Deux lignes de puces : la hauteur est celle du contenu, coupée net. Un dégradé
    dirait mieux qu'il en reste, mais il faudrait le teinter dans les deux
    thèmes ; le bouton le dit avec un nombre, ce qui est plus sûr. */
@@ -209,7 +231,7 @@ button{cursor:pointer;background:none;border:none}
    ne la retient pas pour les mêmes raisons. */
 .themes .chip .nb{color:var(--ink-3);font-variant-numeric:tabular-nums}
 .themes .chip[aria-pressed="true"] .nb{color:var(--ink-2)}
-.themes .plus{margin-top:6px;color:var(--accent);background:none}
+.themes .plus{margin:6px 0 0 16px;color:var(--accent);background:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -1319,10 +1341,43 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     </div>
     <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
          pourquoi la liste est si courte, le panneau étant refermé. -->
-    <div class="actifs" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
-    <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
+    <!-- Chaque bande de puces vit dans un cadre qui ne sert qu'à porter ses
+         flèches : la bande elle-même est estompée sur son bord, et une flèche
+         posée dedans s'estomperait avec. -->
+    <div class="bande">
+      <div class="actifs defile" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
+    <div class="bande">
+      <div class="secteurs defile" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
     <div class="themes" id="themes" hidden>
-      <div class="chips" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
+      <div class="bande">
+        <div class="chips defile" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
+        <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
       <button class="chip plus" id="themesPlus" type="button" aria-expanded="false" hidden></button>
     </div>
     <div class="count"><span id="countTxt">—</span></div>
@@ -1970,25 +2025,42 @@ function couleurSecteur(nom){
    défaut de cadrage, et le reste du salon n'est jamais visité.
 
    On marque donc le bord par lequel il reste quelque chose, et lui seul ; le
-   CSS l'estompe. Arrivé au bout, plus rien ne s'efface — c'est ainsi qu'on sait
+   CSS l'estompe et y pose une flèche, qui le dit et le fait. Arrivé au bout, plus rien ne s'efface — c'est ainsi qu'on sait
    qu'on a tout vu. Sur grand écran les bandes se replient sur plusieurs lignes
    et ne défilent pas : rien ne déborde, rien ne se marque, la règle ne
    s'applique nulle part sans qu'on ait à la conditionner à la largeur. */
-const BANDES = () => [$("actifs"), $("secteurs"), $("themesChips")].filter(Boolean);
+const BANDES = () => [...document.querySelectorAll(".bande")];
 
+/**
+ * Marquer, sur chaque cadre, le bord par lequel il reste quelque chose.
+ *
+ * Le cadre plutôt que la bande : c'est lui qui porte les flèches, et le CSS ne
+ * sait pas remonter d'un enfant à son voisin.
+ */
 function majFondus(){
-  BANDES().forEach(n => {
-    n.classList.add("defile");
+  BANDES().forEach(b => {
+    const n = b.querySelector(".defile");
+    if (!n) return;
     /* Le défilement est fractionnaire — zoom du navigateur, densité d'écran —
        et n'atteint jamais le bout au pixel près : un pixel de marge, sinon le
        fondu de droite ne s'éteint pas là où il n'y a plus rien. */
     const reste = n.scrollWidth - n.clientWidth - n.scrollLeft;
-    n.toggleAttribute("data-gauche", n.scrollLeft > 1);
-    n.toggleAttribute("data-droite", reste > 1);
+    b.toggleAttribute("data-gauche", n.scrollLeft > 1);
+    b.toggleAttribute("data-droite", reste > 1);
   });
 }
 
-BANDES().forEach(n => n.addEventListener("scroll", majFondus, { passive: true }));
+BANDES().forEach(b => {
+  const n = b.querySelector(".defile");
+  if (n) n.addEventListener("scroll", majFondus, { passive: true });
+  /* Une pression avance d'un écran, moins une puce : celle qu'on avait sous
+     les yeux reste en vue, et l'on garde le fil de ce qu'on parcourt. Le
+     défilement doux fait défiler les événements, qui remarquent les bords. */
+  b.querySelectorAll(".fleche").forEach(f => f.onclick = () => {
+    if (!n) return;
+    n.scrollBy({ left: Number(f.dataset.vers) * n.clientWidth * .8, behavior: "smooth" });
+  });
+});
 /* La bascule tiroir / colonne change tout : ce qui défilait ne défile plus, et
    les puces se replient. Les polices, elles, arrivent après le premier calcul
    et changent la largeur mesurée. */

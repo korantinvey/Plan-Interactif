@@ -263,9 +263,12 @@ Trois entrées, la même liste au bout.
   ne range que deux exposants évite de la retenir pour rien. Au-delà de dix, la
   bande se replie sur deux lignes, un bouton donnant la suite ; en tiroir, sur
   téléphone, elle redevient une ligne qui défile, comme les secteurs — et le
-  bord par lequel il reste quelque chose s'estompe, faute de quoi une puce
-  coupée net au bord de l'écran se lit comme un défaut de cadrage et non comme
-  une invitation à pousser du doigt. Arrivé au bout, plus rien ne s'efface.
+  bord par lequel il reste quelque chose s'estompe sous une flèche, faute de
+  quoi une puce coupée net au bord de l'écran se lit comme un défaut de cadrage
+  et non comme une invitation à pousser du doigt. Le fondu seul ne suffisait
+  pas : il dit qu'on n'a pas tout vu, il ne dit pas comment voir le reste, et
+  la flèche le dit et le fait — une pression avance d'un écran. Arrivé au bout,
+  plus rien ne s'efface, et la flèche s'en va.
 - **La fiche.** Chaque thématique y est une prise vers les exposants qui la
   partagent : on repart alors à neuf, mot-clé et secteurs effacés, sinon la
   liste répondrait à une question qu'on ne pose plus.

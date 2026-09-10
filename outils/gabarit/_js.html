@@ -468,25 +468,42 @@ function couleurSecteur(nom){
    défaut de cadrage, et le reste du salon n'est jamais visité.
 
    On marque donc le bord par lequel il reste quelque chose, et lui seul ; le
-   CSS l'estompe. Arrivé au bout, plus rien ne s'efface — c'est ainsi qu'on sait
+   CSS l'estompe et y pose une flèche, qui le dit et le fait. Arrivé au bout, plus rien ne s'efface — c'est ainsi qu'on sait
    qu'on a tout vu. Sur grand écran les bandes se replient sur plusieurs lignes
    et ne défilent pas : rien ne déborde, rien ne se marque, la règle ne
    s'applique nulle part sans qu'on ait à la conditionner à la largeur. */
-const BANDES = () => [$("actifs"), $("secteurs"), $("themesChips")].filter(Boolean);
+const BANDES = () => [...document.querySelectorAll(".bande")];
 
+/**
+ * Marquer, sur chaque cadre, le bord par lequel il reste quelque chose.
+ *
+ * Le cadre plutôt que la bande : c'est lui qui porte les flèches, et le CSS ne
+ * sait pas remonter d'un enfant à son voisin.
+ */
 function majFondus(){
-  BANDES().forEach(n => {
-    n.classList.add("defile");
+  BANDES().forEach(b => {
+    const n = b.querySelector(".defile");
+    if (!n) return;
     /* Le défilement est fractionnaire — zoom du navigateur, densité d'écran —
        et n'atteint jamais le bout au pixel près : un pixel de marge, sinon le
        fondu de droite ne s'éteint pas là où il n'y a plus rien. */
     const reste = n.scrollWidth - n.clientWidth - n.scrollLeft;
-    n.toggleAttribute("data-gauche", n.scrollLeft > 1);
-    n.toggleAttribute("data-droite", reste > 1);
+    b.toggleAttribute("data-gauche", n.scrollLeft > 1);
+    b.toggleAttribute("data-droite", reste > 1);
   });
 }
 
-BANDES().forEach(n => n.addEventListener("scroll", majFondus, { passive: true }));
+BANDES().forEach(b => {
+  const n = b.querySelector(".defile");
+  if (n) n.addEventListener("scroll", majFondus, { passive: true });
+  /* Une pression avance d'un écran, moins une puce : celle qu'on avait sous
+     les yeux reste en vue, et l'on garde le fil de ce qu'on parcourt. Le
+     défilement doux fait défiler les événements, qui remarquent les bords. */
+  b.querySelectorAll(".fleche").forEach(f => f.onclick = () => {
+    if (!n) return;
+    n.scrollBy({ left: Number(f.dataset.vers) * n.clientWidth * .8, behavior: "smooth" });
+  });
+});
 /* La bascule tiroir / colonne change tout : ce qui défilait ne défile plus, et
    les puces se replient. Les polices, elles, arrivent après le premier calcul
    et changent la largeur mesurée. */
