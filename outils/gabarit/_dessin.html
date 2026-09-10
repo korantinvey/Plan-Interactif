@@ -9,6 +9,30 @@ const CLE_DESSINS = "plan-dessins";
 let DESSINS = {};
 try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
+/* Ce qui n'est pas encore parti en base.
+   Les dessins vivent à deux endroits : la base, qui fait foi pour les
+   visiteurs, et le poste, où l'exploitant travaille. Au chargement, la base
+   écrasait le poste sans rien demander — un calque tracé puis non publié
+   disparaissait au premier rechargement, alors qu'il était encore dans le
+   stockage local. Il ne se perdait pas : il devenait invisible, puis
+   l'enregistrement suivant l'effaçait pour de bon.
+
+   On retient donc, pavillon par pavillon, qu'un dessin a bougé depuis la
+   dernière publication. Ce travail-là l'emporte sur la base tant qu'il n'y est
+   pas parti — lui seul n'existe nulle part ailleurs. */
+const CLE_ATTENTE = "plan-dessins-attente";
+let ATTENTE = {};
+try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
+
+/** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
+const enAttente = (id) => ATTENTE[id] === true;
+
+function marqueAttente(id, oui){
+  if (oui) ATTENTE[id] = true; else delete ATTENTE[id];
+  try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
+  majAttente();
+}
+
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
@@ -20,6 +44,9 @@ const enregistreDessins = () => {
   oublieGrilles();
   oublieLiaisons();
   rafraichitApercu();
+  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
+     dès la première forme tracée, et non au moment où l'on pense à publier. */
+  marqueAttente(P().id, true);
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite

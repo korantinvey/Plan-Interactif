@@ -11,6 +11,27 @@
    une rafale d'événements, et l'exploitant doit pouvoir essayer sans publier.
    ============================================================ */
 
+/* Ce qui reste à publier, dit par le bouton lui-même.
+   Un dessin s'enregistre sur le poste au fil du geste, ce qui donne le
+   sentiment qu'il est à l'abri : rien ne distinguait alors un travail publié
+   d'un travail qui n'avait jamais quitté ce navigateur. Le bouton porte donc
+   la marque tant qu'un pavillon a de l'avance sur la base. */
+const LIBELLE_POUSSE = "Pousser la configuration";
+
+/* Pendant la publication le bouton raconte où elle en est : la marque ne doit
+   pas lui reprendre la parole à chaque pavillon qui vient de partir. */
+let publication = false;
+
+function majAttente(){
+  const b = $("pousseConf");
+  if (!b || publication) return;
+  const reste = (DATA?.plans || []).some(p => enAttente(p.id));
+  b.textContent = reste ? LIBELLE_POUSSE + " •" : LIBELLE_POUSSE;
+  b.title = reste
+    ? "Des dessins ne sont enregistrés que sur ce poste : publiez-les."
+    : "";
+}
+
 /** Session et projet, tels que la console les a laissés sur le poste. */
 function accesBase(){
   try {
@@ -50,6 +71,7 @@ async function pousseConfiguration(bouton){
     return;
   }
   const dit = (t) => { if (bouton) bouton.textContent = t; };
+  publication = true;
   dit("Publication…");
 
   try {
@@ -103,6 +125,12 @@ async function pousseConfiguration(bouton){
         "calque_dessin?plan_id=eq." + planId +
         (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
         { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+
+      /* Ce pavillon est en base : le poste ne le devance plus, et le
+         chargement suivant peut reprendre ce que la base en dit. On le note
+         pavillon par pavillon — un échec à mi-parcours laisse marqués ceux qui
+         n'y sont pas encore passés. */
+      marqueAttente(p.id, false);
     }
 
     dit("Configuration publiée");
@@ -113,5 +141,5 @@ async function pousseConfiguration(bouton){
     dit("Publication impossible");
     annonce("Publication impossible : " + e.message, true);
   }
-  setTimeout(() => dit("Pousser la configuration"), 2600);
+  setTimeout(() => { publication = false; majAttente(); }, 2600);
 }

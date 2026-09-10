@@ -11,11 +11,11 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 492 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 493 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.347 · 10. Mode administration
-- l.411 · Renommer une zone organisateur
+- l.412 · Renommer une zone organisateur
 
 Fonctions :
 
@@ -23,20 +23,20 @@ Fonctions :
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
 `styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 187 · `minutesVisite` 215
 `ouvreReglages` 227 · `enregistreConf` 297 · `rgbHex` 303 · `hexa` 310 · `luminance` 314
-`ecarte` 328 · `joli` 343 · `retireAdmin` 360 · `activeAdmin` 373 · `renommeZone` 421
-`enregistreNomZone` 445
+`ecarte` 328 · `joli` 343 · `retireAdmin` 360 · `activeAdmin` 373 · `renommeZone` 422
+`enregistreNomZone` 446
 
 Éléments :
 
 `#pousseConf` · `#razConf`
 
-### `_admin2.html` — 139 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 141 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 22 · `entetesApi` 37 · `chargeFond` 60 · `charge` 92
+`demarre` 8 · `annonce` 24 · `entetesApi` 39 · `chargeFond` 62 · `charge` 94
 
 ### `_auth-plan.html` — 118 l. → plan-admin.html
 
@@ -102,21 +102,22 @@ Fonctions :
 
 - l.343 · Page de rapport
 
-### `_dessin.html` — 843 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 870 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
 Fonctions :
 
-`mesCalques` 14 · `enregistreDessins` 15 · `instantane` 39 · `memorise` 40 · `restaure` 45
-`annule` 54 · `refais` 65 · `trouveCalque` 67 · `nouvelId` 68 · `cheminForme` 71
-`dessineDessins` 81 · `versPlan` 118 · `apercu` 124 · `ajouteForme` 135 · `pictoDe` 231
-`nomTypeRepere` 269 · `pictoForme` 280 · `traceRepere` 297 · `cartouchePoi` 357
-`ouvrePoi` 418 · `mesureCartouche` 481 · `eclairePoi` 488 · `signale` 499
-`calquePourImage` 513 · `poseImage` 526 · `importeImage` 539 · `dessinPointerDown` 587
-`dessinPointerMove` 627 · `dessinPointerUp` 643 · `termineTrace` 663 · `aide` 670
-`choisitOutil` 687 · `activeCalque` 734 · `montreRoleIti` 770 · `creeCalque` 801
-`demandeNom` 814 · `renommeCalque` 833
+`enAttente` 28 · `marqueAttente` 30 · `mesCalques` 38 · `enregistreDessins` 39
+`instantane` 66 · `memorise` 67 · `restaure` 72 · `annule` 81 · `refais` 92
+`trouveCalque` 94 · `nouvelId` 95 · `cheminForme` 98 · `dessineDessins` 108 · `versPlan` 145
+`apercu` 151 · `ajouteForme` 162 · `pictoDe` 258 · `nomTypeRepere` 296 · `pictoForme` 307
+`traceRepere` 324 · `cartouchePoi` 384 · `ouvrePoi` 445 · `mesureCartouche` 508
+`eclairePoi` 515 · `signale` 526 · `calquePourImage` 540 · `poseImage` 553
+`importeImage` 566 · `dessinPointerDown` 614 · `dessinPointerMove` 654
+`dessinPointerUp` 670 · `termineTrace` 690 · `aide` 697 · `choisitOutil` 714
+`activeCalque` 761 · `montreRoleIti` 797 · `creeCalque` 828 · `demandeNom` 841
+`renommeCalque` 860
 
 Éléments :
 
@@ -202,33 +203,33 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 1498 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 1502 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.39 · 1. Index global — la recherche porte sur tous les pavillons
-- l.160 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.251 · 3. Rendu du pavillon courant
-- l.314 · 4. Libellés — le nom de l'exposant prime sur le numéro
-- l.370 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
-- l.579 · 6. Vue
-- l.678 · 7. Sélection et fiche
-- l.1186 · 8. Interactions du plan
-- l.1356 · Le tiroir de la liste — écrans étroits
+- l.164 · 2. Mesure de texte — largeur réelle dans la police de rendu
+- l.255 · 3. Rendu du pavillon courant
+- l.318 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.374 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+- l.583 · 6. Vue
+- l.682 · 7. Sélection et fiche
+- l.1190 · 8. Interactions du plan
+- l.1360 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
-`$` 12 · `esc` 14 · `P` 36 · `indexe` 42 · `largeur` 165 · `decoupe` 184 · `habille` 197
-`lignesSvg` 208 · `ligneCode` 229 · `monteHabillage` 257 · `montePlan` 274 · `onglets` 299
-`changePlan` 306 · `ancre` 322 · `place` 323 · `libelles` 325 · `indexeSecteurs` 391
-`secteursMontres` 404 · `couleurConf` 408 · `hslHex` 412 · `couleurSecteur` 430
-`chipsSecteurs` 440 · `coloreSecteurs` 463 · `appliqueSecteurs` 490 · `dansSecteurs` 506
-`visible` 508 · `visibleSurPlan` 521 · `appliqueFiltre` 526 · `liste` 534
-`appliqueVue` 582 · `rafraichitVue` 603 · `poseVue` 615 · `masque` 633 · `fit` 653
-`zoom` 665 · `echelle` 670 · `ETROIT` 684 · `anime` 686 · `noeud` 703 · `canalPlan` 708
-`select` 716 · `centre` 736 · `centrePoint` 740 · `montre` 755 · `momentLocal` 781
-`programme` 804 · `jourLong` 834 · `ficheConf` 845 · `lien` 939 · `ecarteClicFantome` 956
-`nomSociete` 965 · `societes` 978 · `choisitExposant` 989 · `ouvre` 1025 · `ferme` 1166
-`onglet` 1176 · `milieu` 1206 · `commencePince` 1212 · `suitPince` 1226
-`mesureTiroir` 1366
+`$` 12 · `esc` 14 · `P` 36 · `indexe` 42 · `largeur` 169 · `decoupe` 188 · `habille` 201
+`lignesSvg` 212 · `ligneCode` 233 · `monteHabillage` 261 · `montePlan` 278 · `onglets` 303
+`changePlan` 310 · `ancre` 326 · `place` 327 · `libelles` 329 · `indexeSecteurs` 395
+`secteursMontres` 408 · `couleurConf` 412 · `hslHex` 416 · `couleurSecteur` 434
+`chipsSecteurs` 444 · `coloreSecteurs` 467 · `appliqueSecteurs` 494 · `dansSecteurs` 510
+`visible` 512 · `visibleSurPlan` 525 · `appliqueFiltre` 530 · `liste` 538
+`appliqueVue` 586 · `rafraichitVue` 607 · `poseVue` 619 · `masque` 637 · `fit` 657
+`zoom` 669 · `echelle` 674 · `ETROIT` 688 · `anime` 690 · `noeud` 707 · `canalPlan` 712
+`select` 720 · `centre` 740 · `centrePoint` 744 · `montre` 759 · `momentLocal` 785
+`programme` 808 · `jourLong` 838 · `ficheConf` 849 · `lien` 943 · `ecarteClicFantome` 960
+`nomSociete` 969 · `societes` 982 · `choisitExposant` 993 · `ouvre` 1029 · `ferme` 1170
+`onglet` 1180 · `milieu` 1210 · `commencePince` 1216 · `suitPince` 1230
+`mesureTiroir` 1370
 
 Éléments :
 
@@ -276,13 +277,13 @@ Fonctions :
 `construitPanneau` 60 · `sectionSelection` 205 · `ligneCouleur` 230 · `rangSecteur` 250
 `rangSous` 262 · `defautCouleur` 284
 
-### `_pousse.html` — 117 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pousser la configuration
 
 Fonctions :
 
-`accesBase` 15 · `base` 24 · `reglagesSeuls` 42 · `pousseConfiguration` 46
+`majAttente` 25 · `accesBase` 36 · `base` 45 · `reglagesSeuls` 63 · `pousseConfiguration` 67
 
 ### `_rapport-head.html` — 27 l. → rapport.html
 

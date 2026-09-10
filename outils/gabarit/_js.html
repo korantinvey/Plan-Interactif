@@ -101,7 +101,11 @@ function indexe(d){
     if (a.reglages && Object.keys(a.reglages).length)
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
-    if (Array.isArray(p.dessins) && p.dessins.length){
+    /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
+       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
+       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       données figées n'en porte pas du tout : on n'y touche à rien. */
+    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });

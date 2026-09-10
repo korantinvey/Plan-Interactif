@@ -10,6 +10,8 @@ function demarre(d){
   montePlan();
   fit();
   liste();
+  // le plan chargé, le bouton peut dire ce qui reste à publier
+  majAttente();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();

@@ -1453,7 +1453,11 @@ function indexe(d){
     if (a.reglages && Object.keys(a.reglages).length)
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
-    if (Array.isArray(p.dessins) && p.dessins.length){
+    /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
+       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
+       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       données figées n'en porte pas du tout : on n'y touche à rien. */
+    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
@@ -3254,6 +3258,7 @@ function activeAdmin(){
      et les dessins ne sont pas cliquables. C'est à cela que sert ce drapeau,
      qui jusqu'ici ne servait à rien. */
   if (MONTE){ dessineDessins(); construitPanneau(); }
+  majAttente();
 }
 
 
@@ -3350,6 +3355,30 @@ const CLE_DESSINS = "plan-dessins";
 let DESSINS = {};
 try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
+/* Ce qui n'est pas encore parti en base.
+   Les dessins vivent à deux endroits : la base, qui fait foi pour les
+   visiteurs, et le poste, où l'exploitant travaille. Au chargement, la base
+   écrasait le poste sans rien demander — un calque tracé puis non publié
+   disparaissait au premier rechargement, alors qu'il était encore dans le
+   stockage local. Il ne se perdait pas : il devenait invisible, puis
+   l'enregistrement suivant l'effaçait pour de bon.
+
+   On retient donc, pavillon par pavillon, qu'un dessin a bougé depuis la
+   dernière publication. Ce travail-là l'emporte sur la base tant qu'il n'y est
+   pas parti — lui seul n'existe nulle part ailleurs. */
+const CLE_ATTENTE = "plan-dessins-attente";
+let ATTENTE = {};
+try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
+
+/** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
+const enAttente = (id) => ATTENTE[id] === true;
+
+function marqueAttente(id, oui){
+  if (oui) ATTENTE[id] = true; else delete ATTENTE[id];
+  try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
+  majAttente();
+}
+
 /** Les calques de dessin du pavillon courant. Ceux du service ont été repris
  *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
 const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
@@ -3361,6 +3390,9 @@ const enregistreDessins = () => {
   oublieGrilles();
   oublieLiaisons();
   rafraichitApercu();
+  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
+     dès la première forme tracée, et non au moment où l'on pense à publier. */
+  marqueAttente(P().id, true);
   try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
@@ -4893,6 +4925,27 @@ function defautCouleur(x){
    une rafale d'événements, et l'exploitant doit pouvoir essayer sans publier.
    ============================================================ */
 
+/* Ce qui reste à publier, dit par le bouton lui-même.
+   Un dessin s'enregistre sur le poste au fil du geste, ce qui donne le
+   sentiment qu'il est à l'abri : rien ne distinguait alors un travail publié
+   d'un travail qui n'avait jamais quitté ce navigateur. Le bouton porte donc
+   la marque tant qu'un pavillon a de l'avance sur la base. */
+const LIBELLE_POUSSE = "Pousser la configuration";
+
+/* Pendant la publication le bouton raconte où elle en est : la marque ne doit
+   pas lui reprendre la parole à chaque pavillon qui vient de partir. */
+let publication = false;
+
+function majAttente(){
+  const b = $("pousseConf");
+  if (!b || publication) return;
+  const reste = (DATA?.plans || []).some(p => enAttente(p.id));
+  b.textContent = reste ? LIBELLE_POUSSE + " •" : LIBELLE_POUSSE;
+  b.title = reste
+    ? "Des dessins ne sont enregistrés que sur ce poste : publiez-les."
+    : "";
+}
+
 /** Session et projet, tels que la console les a laissés sur le poste. */
 function accesBase(){
   try {
@@ -4932,6 +4985,7 @@ async function pousseConfiguration(bouton){
     return;
   }
   const dit = (t) => { if (bouton) bouton.textContent = t; };
+  publication = true;
   dit("Publication…");
 
   try {
@@ -4985,6 +5039,12 @@ async function pousseConfiguration(bouton){
         "calque_dessin?plan_id=eq." + planId +
         (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
         { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+
+      /* Ce pavillon est en base : le poste ne le devance plus, et le
+         chargement suivant peut reprendre ce que la base en dit. On le note
+         pavillon par pavillon — un échec à mi-parcours laisse marqués ceux qui
+         n'y sont pas encore passés. */
+      marqueAttente(p.id, false);
     }
 
     dit("Configuration publiée");
@@ -4995,7 +5055,7 @@ async function pousseConfiguration(bouton){
     dit("Publication impossible");
     annonce("Publication impossible : " + e.message, true);
   }
-  setTimeout(() => dit("Pousser la configuration"), 2600);
+  setTimeout(() => { publication = false; majAttente(); }, 2600);
 }
 
 /* ============================================================
@@ -8560,6 +8620,8 @@ function demarre(d){
   montePlan();
   fit();
   liste();
+  // le plan chargé, le bouton peut dire ce qui reste à publier
+  majAttente();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
