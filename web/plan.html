@@ -2442,8 +2442,13 @@ function libelles(){
                                  placementLibelle(z)));
   }
 
+  /* Quand la sélection s'est arrêtée à un découpage, l'emplacement qui
+     l'héberge n'est pas ce qu'on a choisi : son libellé reste celui d'un stand
+     ordinaire, et c'est le découpage qui écrit le sien en évidence. */
+  const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
+
   for (const s of p.stands){
-    const sel = s.id === state.sel;
+    const sel = s.id === state.sel && !decoupe;
     if (!sel && (!visibleSurPlan(s) || !dansVue(s))) continue;
     /* Le stand garde le nom de son titulaire, quelle que soit la fiche
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
@@ -3392,8 +3397,14 @@ function anime(rect, sens){
 }
 /* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
    ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
-   veut allumer, cadrer et animer. */
-function noeud(id){
+   veut allumer, cadrer et animer.
+
+   Sauf quand un découpage matérialise justement la société choisie : lui et
+   son hôte portent alors le même identifiant, et allumer les deux donnerait à
+   voir un grand stand allumé pour désigner le petit qui est dedans. */
+function noeud(id, iSoc){
+  const d = decoupeStand(id, iSoc);
+  if (d) return d;
   const q = '[data-id="' + CSS.escape(id) + '"]';
   return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
 }
@@ -3427,7 +3438,7 @@ function select(id, recentrer, canal, iSoc){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = id;
   state.selSoc = iSoc === undefined ? -1 : iSoc;
-  const n = noeud(id); if (n) n.classList.add("sel");
+  const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
   dessineMarques();
   marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
@@ -3991,12 +4002,17 @@ function ouvre(o, rect, canal, iSoc){
 }
 function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
-  document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  /* La forme d'où la fiche est partie, relevée tant que la sélection tient
+     encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
+     le découpage qu'il héberge. */
+  const n = ouvert && id ? noeud(id, state.selSoc) : null;
+  const rect = n ? n.getBoundingClientRect() : null;
+  document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
   marqueStandsDessines();
   liste(); libelles(); $("voile").classList.remove("on");
-  if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
+  if (ouvert) anime(rect, -1);
 }
 /* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
    entière, et la bascule ne relit rien. */
@@ -6198,6 +6214,22 @@ function poseLibellesDessines(pxParM){
       if (lab) lab.innerHTML = texteStandDessine(f, pxParM);
     }
   }
+}
+
+/**
+ * Le découpage qui matérialise une société sur un emplacement, s'il a été
+ * dessiné.
+ *
+ * Un stand dessiné porte l'identifiant de son hôte : c'est ce qui lui donne le
+ * clic, la fiche et l'itinéraire sans rien apprendre de neuf au reste de la
+ * page. Mais quand deux enseignes se partagent un emplacement, allumer l'hôte
+ * allumerait du même coup la voisine, qu'on n'a pas demandée. La sélection
+ * s'arrête donc au découpage dès qu'il en existe un pour la société choisie.
+ */
+function decoupeStand(id, iSoc){
+  const z = (id === null || id === undefined) ? null : $("couches");
+  return (z && z.querySelector('.dcal .sdes[data-id="' + CSS.escape(String(id)) +
+                               '"][data-soc="' + Number(iSoc) + '"]')) || null;
 }
 
 /**

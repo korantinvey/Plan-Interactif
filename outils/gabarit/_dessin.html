@@ -672,6 +672,22 @@ function poseLibellesDessines(pxParM){
 }
 
 /**
+ * Le découpage qui matérialise une société sur un emplacement, s'il a été
+ * dessiné.
+ *
+ * Un stand dessiné porte l'identifiant de son hôte : c'est ce qui lui donne le
+ * clic, la fiche et l'itinéraire sans rien apprendre de neuf au reste de la
+ * page. Mais quand deux enseignes se partagent un emplacement, allumer l'hôte
+ * allumerait du même coup la voisine, qu'on n'a pas demandée. La sélection
+ * s'arrête donc au découpage dès qu'il en existe un pour la société choisie.
+ */
+function decoupeStand(id, iSoc){
+  const z = (id === null || id === undefined) ? null : $("couches");
+  return (z && z.querySelector('.dcal .sdes[data-id="' + CSS.escape(String(id)) +
+                               '"][data-soc="' + Number(iSoc) + '"]')) || null;
+}
+
+/**
  * La sélection des stands dessinés, posée sans retracer les calques : relire
  * un calque réanalyse ses images, ce qui est cher pour un liseré qui change à
  * chaque clic. La classe se pose donc à la main, comme le fait déjà la
