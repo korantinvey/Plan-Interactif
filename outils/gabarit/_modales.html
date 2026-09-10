@@ -2,7 +2,17 @@
 /* ============================================================
    Fenêtres modales : confirmation et réorganisation des calques
    ============================================================ */
-function ouvreModale(titre, remplitCorps, boutons){
+/**
+ * Une fenêtre par-dessus le plan.
+ *
+ * `genre` la range autrement : « cote » la pose à gauche et retire le voile,
+ * pour une fenêtre dont on regarde l'effet sur le plan pendant qu'on s'en sert.
+ * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
+ * demande une réponse avant de rendre la main.
+ */
+function ouvreModale(titre, remplitCorps, boutons, genre){
+  if (genre) $("modale").dataset.genre = genre;
+  else delete $("modale").dataset.genre;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));

@@ -208,11 +208,18 @@ const aplani = (v: unknown): string =>
  */
 export const vrai = (v: unknown, attendues?: string[] | null): boolean => {
   if (v === null || v === undefined || typeof v === "object") return false;
-  const t = aplani(v);
   if (attendues && attendues.length) {
-    return t !== "" && attendues.some((a) => aplani(a) === t);
+    /* Un champ à choix multiple ne porte pas une valeur mais plusieurs, jointes
+       dans une seule chaîne par un point-virgule — « Nouveaux exposants;
+       Exposants internationaux ». Comparée entière, elle ne reconnaîtrait que
+       l'exposant qui n'a qu'une seule catégorie ; la comparaison se fait donc
+       valeur par valeur, et des deux côtés — une valeur retenue avant ce
+       découpage porte encore la chaîne entière. */
+    const portees = separeValeurs(v).map(aplani);
+    const veut = separeValeurs(attendues).map(aplani);
+    return portees.some((x) => veut.includes(x));
   }
-  return v === true || ACCORDS.has(t);
+  return v === true || ACCORDS.has(aplani(v));
 };
 
 /**
@@ -337,20 +344,63 @@ export function cibles(fournisseur: string, fiche: unknown): Cible[] {
 }
 
 /**
+ * Les valeurs d'un champ à choix multiple, séparées.
+ *
+ * Ni Klipso ni Eventmaker ne rendent une liste : ils rendent une chaîne où les
+ * valeurs se suivent, séparées par un point-virgule — « Devenir
+ * master-franchisé;Adhérent FFF ». Prise telle quelle, la chaîne entière
+ * devient une valeur à part entière, et un exposant qui en porte deux ne se
+ * retrouve avec personne : autant de valeurs distinctes que de combinaisons.
+ * C'est la même règle pour les thématiques et la nomenclature.
+ */
+export function separeValeurs(v: unknown): string[] {
+  return ([] as unknown[]).concat(v ?? [])
+    .flatMap((x) => String(x ?? "").split(";"))
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
+   mais du texte libre : en proposer la liste n'aiderait personne. */
+export const VALEURS_MAX = 8;
+
+/* Une valeur trop longue n'est pas un choix mais une phrase : la proposer à
+   cocher encombrerait la fenêtre sans rien désigner d'utile. */
+const VALEUR_LONGUE = 60;
+
+/**
+ * Range dans un relevé les valeurs distinctes qu'une fiche porte sur un champ.
+ *
+ * Les valeurs se séparent avant d'être comptées : sans quoi un champ à choix
+ * multiple montre autant d'entrées que de combinaisons cochées — « Nouveaux
+ * exposants;Exposants internationaux » en est une, « Exposants
+ * internationaux » une autre — et dépasse le seuil du texte libre alors qu'il
+ * n'offre que trois choix.
+ *
+ * Une de plus que le seuil est retenue à dessein : c'est elle qui dira à
+ * l'appelant que le champ est du texte libre, et qu'il faut lâcher la liste.
+ */
+export function noteValeurs(liste: string[], v: unknown): void {
+  for (const val of separeValeurs(v)) {
+    if (liste.length > VALEURS_MAX) return;
+    if (val.length > VALEUR_LONGUE || liste.includes(val)) continue;
+    liste.push(val);
+  }
+}
+
+/**
  * La valeur d'un champ personnalisé, telle que l'instantané la portera.
  *
- * Une liste reste une liste — c'est par elle qu'un critère de recherche offre
- * plusieurs valeurs — et le reste devient du texte. Rien de vide ne descend :
- * l'instantané est servi au public, il n'a pas à porter des chaînes vides par
- * centaines.
+ * Plusieurs valeurs restent une liste — c'est par elle qu'un critère de
+ * recherche les offre une à une — et une seule redevient du texte, que la
+ * fiche affiche sur sa ligne. Rien de vide ne descend : l'instantané est servi
+ * au public, il n'a pas à porter des chaînes vides par centaines.
  */
 export function valeurPerso(v: unknown): string | string[] | null {
-  if (Array.isArray(v)) {
-    const l = v.map((x) => String(x ?? "").trim()).filter(Boolean);
-    return l.length ? l : null;
-  }
-  if (v === null || v === undefined || typeof v === "object") return null;
   if (typeof v === "boolean") return v ? "oui" : null;
-  const s = String(v).trim();
-  return s || null;
+  if (v !== null && v !== undefined && !Array.isArray(v) && typeof v === "object") {
+    return null;
+  }
+  const l = separeValeurs(v);
+  return !l.length ? null : l.length === 1 ? l[0] : l;
 }

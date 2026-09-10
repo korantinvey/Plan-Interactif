@@ -12,7 +12,10 @@
  *     le nom et le courriel, mais sur l'invité correspondant, dont les champs
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
-import { DEFAUTS, PREFIXE_PERSO, lit, ou, valeurPerso, vrai } from "./champs.ts";
+import {
+  DEFAUTS, PREFIXE_PERSO, lit, noteValeurs, ou, separeValeurs, valeurPerso, vrai,
+  VALEURS_MAX,
+} from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
 export interface ConfigEm {
@@ -66,10 +69,6 @@ const DE_FRONT = 6;
    l'organisateur et donc propres au salon, et les champs natifs de l'invité,
    identiques partout. L'ordre les sépare dans la liste de la console. */
 const GROUPES = ["Champ personnalisé", "Fiche invité · champ standard"];
-
-/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
-   mais du texte libre : en proposer la liste n'aiderait personne. */
-const VALEURS_MAX = 8;
 
 /* « Inscrit » dans l'interface Eventmaker. Une fiche en attente, refusée ou
    désinscrite ne doit pas paraître sur le plan public. */
@@ -527,8 +526,11 @@ export class Eventmaker {
         facebook: v("facebook"),
         linkedin: v("linkedin"),
         instagram: v("instagram"),
-        nomencl: separe(this.valeur(g, m, "nomenclature", true) as unknown[]),
-        themes: separe(this.valeur(g, m, "thematiques", true) as unknown[]),
+        /* Une cible multiple ne descend pas en liste : Eventmaker joint ses
+           valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 » —, et
+           c'est la règle commune à tous les champs à choix qui la défait. */
+        nomencl: separeValeurs(this.valeur(g, m, "nomenclature", true)),
+        themes: separeValeurs(this.valeur(g, m, "thematiques", true)),
         perso: this.perso(g, m),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
@@ -669,9 +671,7 @@ class Releve {
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
        déclenchent. Au-delà de VALEURS_MAX, le champ est du texte libre : la
        liste ne servirait plus à rien, et pèserait. */
-    if (d.valeurs.length <= VALEURS_MAX && !d.valeurs.includes(ex) && ex.length <= 60) {
-      d.valeurs.push(ex);
-    }
+    noteValeurs(d.valeurs, ex);
     this.vus.set(cle, d);
   }
 
@@ -700,22 +700,6 @@ function champs(meta: unknown): Record<string, string> {
     if (typeof n === "string" && typeof v === "string" && v.trim()) out[n] = v.trim();
   }
   return out;
-}
-
-/**
- * Les valeurs d'une cible multiple, une par entrée.
- *
- * Un champ personnalisé à choix multiple ne descend pas en liste : Eventmaker
- * joint ses valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 ».
- * Sans le défaire, la fiche afficherait la ligne entière comme une seule
- * rubrique. Aucune valeur de catalogue ne porte de point-virgule, la séparation
- * ne coupe donc rien qui tienne ensemble.
- */
-function separe(valeurs: unknown[]): string[] {
-  return valeurs
-    .flatMap((v) => String(v).split(";"))
-    .map((x) => x.trim())
-    .filter(Boolean);
 }
 
 /** Une conférence telle que le plan en a besoin. */

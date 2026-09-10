@@ -144,9 +144,17 @@ l'API.
 
 Un champ à choix côté Klipso ne porte qu'un code : sa codification est demandée
 comme celle de la nomenclature, une fois par champ et pour tout l'événement, de
-sorte que la fiche montre « Prêt-à-porter » et non `FEP26_GAM102`. Une valeur
-multiple reste une liste — c'est par elle qu'un critère de recherche offrira
-plusieurs valeurs.
+sorte que la fiche montre « Prêt-à-porter » et non `FEP26_GAM102`.
+
+**Un champ à choix multiple se sépare tout seul.** Ni Klipso ni Eventmaker ne
+rendent une liste : ils rendent une chaîne où les valeurs se suivent, jointes
+par un point-virgule — « Devenir master-franchisé;Adhérent FFF ». Prise telle
+quelle, la chaîne entière ferait une valeur à part entière : le filtre
+proposerait autant d'entrées que de combinaisons, et deux exposants qui
+partagent une thématique ne se retrouveraient pas. C'est la règle commune aux
+thématiques, à la nomenclature et aux champs propres au salon, appliquée à la
+synchronisation comme à l'affichage — les fiches déjà relevées n'attendent donc
+pas le prochain passage pour se laisser filtrer.
 
 ### Les critères de recherche
 

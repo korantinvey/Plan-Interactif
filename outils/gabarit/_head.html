@@ -119,9 +119,8 @@ button{cursor:pointer;background:none;border:none}
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
-/* Les critères retenus. Même bande que les secteurs — une ligne qui défile à
-   l'étroit, plusieurs qui se replient au large — mais elle ne paraît que
-   lorsqu'il y a quelque chose à montrer. */
+/* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
+   replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
   border-bottom:1px solid var(--line);scrollbar-width:none}
 .actifs::-webkit-scrollbar{display:none}
@@ -139,31 +138,16 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Les secteurs : une bande qui sert de légende et de filtre. Dans sa colonne
-   elle se replie sur plusieurs lignes — une légende ne se lit que d'un coup
-   d'œil, et un secteur caché hors du cadre ne se devine pas. */
-.secteurs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
-  border-bottom:1px solid var(--line);scrollbar-width:none}
-.secteurs::-webkit-scrollbar{display:none}
-.secteurs .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
-  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
-.secteurs .chip:hover{border-color:var(--line-strong)}
-.secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
-  border-color:var(--accent);color:var(--ink)}
-/* La pastille montre la couleur du stand, la choisie comme l'automatique. Un
-   liseré la borde : une couleur pâle, choisie pour un aplat, disparaîtrait
-   sinon sur le fond clair du tiroir. */
-.secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+/* La pastille d'un secteur, sur la puce qui le coche et sur celle qui le dit
+   retenu. Un liseré la borde : une couleur pâle, choisie pour un aplat,
+   disparaîtrait sinon sur le fond clair du panneau. */
+.pastille{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
   border:1px solid var(--line-strong);
   background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
-/* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
-   trouve pas : le filtre reste, le repère de couleur s'efface. */
-.sans-secteurs .secteurs .chip i{display:none}
 /* Une bande qui défile ne le dit pas d'elle-même.
 
-   En tiroir, critères retenus, secteurs et thématiques tiennent chacun sur une
-   ligne qui déborde par le côté : une puce coupée net au bord de l'écran ressemble à un défaut de
+   En tiroir, les critères retenus tiennent sur une ligne qui déborde par le
+   côté : une puce coupée net au bord de l'écran ressemble à un défaut de
    cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
    quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
    s'efface, et l'on sait qu'on a tout vu.
@@ -200,32 +184,6 @@ button{cursor:pointer;background:none;border:none}
 .bande .fleche:active{background:var(--surface-2)}
 .bande[data-gauche] .fleche[data-vers="-1"]{display:flex;left:5px}
 .bande[data-droite] .fleche[data-vers="1"]{display:flex;right:5px}
-/* Les thématiques : la même bande de puces que les secteurs, sans pastille de
-   couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
-   le salon en range beaucoup, un bouton en donnant alors la suite. */
-/* La marge latérale est portée par la bande elle-même, et non par le bloc qui
-   l'entoure : c'est ce qui met sa flèche à la même distance du bord que celle
-   des secteurs, dont la marge est aussi à l'intérieur. */
-.themes{padding:10px 0;border-bottom:1px solid var(--line)}
-.themes .chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px}
-/* Deux lignes de puces : la hauteur est celle du contenu, coupée net. Un dégradé
-   dirait mieux qu'il en reste, mais il faudrait le teinter dans les deux
-   thèmes ; le bouton le dit avec un nombre, ce qui est plus sûr. */
-.themes .chips.replie{max-height:62px;overflow:hidden}
-.themes .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
-  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
-.themes .chip:hover{border-color:var(--line-strong)}
-/* La règle ci-dessus pose un display : sans cela, « hidden » ne cacherait plus
-   le bouton de dépliage sur les salons qui n'ont que peu de thématiques. */
-.themes .chip[hidden]{display:none}
-.themes .chip[aria-pressed="true"]{background:var(--accent-soft);
-  border-color:var(--accent);color:var(--ink)}
-/* Le compte range la thématique dans le salon : deux exposants ou soixante, on
-   ne la retient pas pour les mêmes raisons. */
-.themes .chip .nb{color:var(--ink-3);font-variant-numeric:tabular-nums}
-.themes .chip[aria-pressed="true"] .nb{color:var(--ink-2)}
-.themes .plus{margin:6px 0 0 16px;color:var(--accent);background:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -1031,6 +989,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
+/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
+   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
+   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
+   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
+   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
+   fini avec les filtres. */
+.modale[data-genre="cote"]{background:none;place-items:center start}
+.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 .mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
@@ -1048,7 +1014,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
-   nombre de fiches qu'elles retiennent — sans lui, on coche à l'aveugle. */
+   nombre de fiches que chacune retient — sans lui, on coche à l'aveugle. Le
+   titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
 /* Le titre est la prise : replié, un critère tient sur une ligne, et la
@@ -1173,20 +1140,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
-  .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
-  /* Les thématiques suivent, et n'ont alors plus rien à déplier : tout est
-     atteignable en poussant la bande du doigt, et le bouton ne dirait qu'un
-     nombre qu'on a déjà sous les yeux. */
-  .themes .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-  .themes .chips::-webkit-scrollbar{display:none}
-  .themes .chips.replie{max-height:none;overflow-y:hidden}
-  .themes .plus{display:none}
+  .actifs{flex-wrap:nowrap;overflow-x:auto}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
   .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
+  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
+     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
+     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
+  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
@@ -1360,31 +1324,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         aria-label="Voir la suite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-    </div>
-    <div class="bande">
-      <div class="secteurs defile" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
-      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
-        aria-label="Revenir au début">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
-      <button class="fleche" type="button" data-vers="1" tabindex="-1"
-        aria-label="Voir la suite">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
-    </div>
-    <div class="themes" id="themes" hidden>
-      <div class="bande">
-        <div class="chips defile" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
-        <button class="fleche" type="button" data-vers="-1" tabindex="-1"
-        aria-label="Revenir au début">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <button class="fleche" type="button" data-vers="1" tabindex="-1"
-        aria-label="Voir la suite">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
-      <button class="chip plus" id="themesPlus" type="button" aria-expanded="false" hidden></button>
     </div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
