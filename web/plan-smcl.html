@@ -147,9 +147,15 @@ button{cursor:pointer;background:none;border:none}
 .actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
 .actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
-.search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
+.search :is(input,.champ){width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Le champ de la vignette des modèles. Un <input> ne peut pas vivre dans le
+   bouton qui choisit le modèle — pas plus qu'un bouton n'en contient un autre
+   — et l'habillage se joue pourtant sur la boîte de recherche : elle est donc
+   rejouée par une balise neutre, que les modèles habillent avec la vraie. */
+.search .champ{display:block;color:var(--ink-3);font-size:13px;line-height:1.5;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* La pastille d'un secteur, sur la puce qui le coche et sur celle qui le dit
    retenu. Un liseré la borde : une couleur pâle, choisie pour un aplat,
    disparaîtrait sinon sur le fond clair du panneau. */
@@ -1070,6 +1076,272 @@ button.expo:hover{background:var(--line)}
   text-decoration:underline;text-underline-offset:5px}
 
 /* ------------------------------------------------------------
+   Modèles de liste
+
+   Le modèle choisi ne s'arrête pas à la fiche. La liste des exposants est
+   l'autre moitié de ce qu'on regarde, et souvent la première : un panneau de
+   recherche ordinaire posé contre une fiche console ne fait pas un salon, il
+   en fait deux. Chaque habillage a donc ici son pendant — même police, mêmes
+   jetons de couleur, même parti pris — et la classe part sur le panneau en
+   même temps que celle de la fiche.
+
+   Même méthode que pour la fiche : on redéfinit d'abord les jetons sur le
+   panneau — le reste de la feuille les lit déjà, si bien que la recherche, le
+   compteur et les puces de critère suivent sans qu'on les nomme — puis on
+   n'écrit à la main que la signature du modèle.
+
+   « Sobre » n'a pas de classe : c'est la liste telle que la feuille la
+   dessine, et le point de départ de tous les autres.
+
+   Les sélecteurs partent de la classe et non de « #side » : la vignette des
+   réglages porte les mêmes classes en réduction.
+   ------------------------------------------------------------ */
+
+/* Grille — l'aplat d'encre de la fiche devient ici le filet plein qui sépare
+   deux lignes, et le stand retenu se retourne en négatif : le numéro peint
+   sur la cloison, en clair sur le noir. */
+.liste-grille{--radius:0;border-right-width:2px;border-right-color:var(--ink)}
+.liste-grille .search{border-bottom:2px solid var(--ink)}
+.liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--line-strong)}
+.liste-grille .crit-btn{border-color:var(--ink)}
+.liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
+  font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase}
+.liste-grille .row{border-bottom:1px solid var(--ink)}
+.liste-grille .row .code{border:1px solid var(--ink);border-radius:0;color:var(--ink);font-weight:600}
+.liste-grille .row .nm{font-family:"Archivo",sans-serif;font-weight:600;font-size:12px;
+  text-transform:uppercase;letter-spacing:.01em}
+.liste-grille .row[aria-current="true"]{background:var(--ink)}
+.liste-grille .row[aria-current="true"] :is(.nm,.s,.hall){color:var(--surface)}
+.liste-grille .row[aria-current="true"] .code{background:var(--surface);color:var(--ink);
+  border-color:var(--surface)}
+/* La ligne courante se lit en négatif : la puce du pavillon, qui s'appuyait
+   sur un fond clair, n'a plus qu'un filet pour se tenir. */
+.liste-grille .row[aria-current="true"] .hall{background:none;border:1px solid var(--surface)}
+.liste-grille :is(.row .hall,.actifs .actif,.actifs .vider){border-radius:0}
+
+/* Console — le sommaire lu depuis la régie : le phosphore du salon, la chasse
+   fixe partout, et le curseur de bloc qui marque la ligne courante. */
+.liste-console{color:var(--ink);
+  --nuit:#04070A;
+  --surface:color-mix(in srgb,var(--accent-base) 9%,var(--nuit));
+  --surface-2:color-mix(in srgb,var(--accent-base) 16%,var(--nuit));
+  --line:color-mix(in srgb,var(--accent-base) 26%,var(--nuit));
+  --line-strong:color-mix(in srgb,var(--accent-base) 42%,var(--nuit));
+  --ink:color-mix(in srgb,var(--accent-clair) 80%,#FFFFFF);
+  --ink-2:color-mix(in srgb,var(--accent-clair) 72%,var(--nuit));
+  --ink-3:color-mix(in srgb,var(--accent-clair) 48%,var(--nuit));
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,var(--nuit));
+  --accent-ink:var(--nuit);--radius:0;
+  font-family:"IBM Plex Mono",monospace;
+  background-image:repeating-linear-gradient(180deg,
+    color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
+.liste-console .search{border-bottom-style:dashed}
+.liste-console .search :is(input,.champ){background:var(--surface-2);border-color:var(--line)}
+/* Le gris de repos du thème s'éteint sur le noir de la régie : le compteur y
+   reprend l'encre secondaire, qui, elle, tient. */
+.liste-console .count{color:var(--ink-2);letter-spacing:.04em}
+.liste-console .count::before{content:"› ";color:var(--accent)}
+.liste-console .row{border-bottom-style:dashed}
+.liste-console .row .nm{font-size:12.5px;font-weight:500}
+/* La ligne courante ne se peint pas, elle se pointe : un curseur de bloc,
+   comme celui qui précède le nom sur la fiche. */
+.liste-console .row[aria-current="true"] .nm::before{content:"▍";color:var(--accent);margin-right:5px}
+.liste-console :is(.row .hall,.actifs .actif,.actifs .vider){border-radius:0}
+
+/* Billet — la recherche prend le bandeau d'accent du talon, et les lignes se
+   détachent les unes des autres sur une perforation. */
+.liste-billet .search{background:var(--accent);border-bottom:none;color:var(--accent-ink)}
+.liste-billet .search :is(input,.champ){background:rgba(255,255,255,.2);border-color:transparent;
+  border-radius:999px;color:var(--accent-ink)}
+.liste-billet .search input::placeholder{color:var(--accent-ink);opacity:.7}
+.liste-billet .search .champ{color:var(--accent-ink);opacity:.75}
+.liste-billet .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-billet .crit-btn{background:rgba(255,255,255,.2);border-color:transparent;
+  border-radius:999px;color:var(--accent-ink)}
+.liste-billet .count{border-bottom:2px dashed var(--line-strong);
+  font-family:"IBM Plex Mono",monospace;font-size:11px}
+.liste-billet .row{border-bottom:1px dashed var(--line-strong)}
+.liste-billet .row .code{border-radius:999px;border-color:var(--line-strong);font-weight:600}
+.liste-billet .row[aria-current="true"] .code{background:var(--accent);color:var(--accent-ink);
+  border-color:var(--accent)}
+.liste-billet .row .hall{border-radius:999px}
+
+/* Magazine — le sommaire du catalogue : le numéro de stand en chiffre
+   d'appel, séparé du nom par un filet, et pas un aplat pour marquer la page
+   ouverte — un simple trait dans la marge. */
+.liste-magazine .search{border-bottom:2px solid var(--ink)}
+.liste-magazine .search :is(input,.champ){background:none;border-color:var(--line);border-radius:0}
+.liste-magazine .count{border-bottom:1px solid var(--line);color:var(--ink-2);
+  font-family:"Fraunces",Georgia,serif;font-style:italic;font-size:12.5px}
+.liste-magazine .row{padding:11px 16px}
+.liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
+  background:none;padding:2px 9px 2px 0;text-align:left;color:var(--ink-3);
+  font-family:"Fraunces",Georgia,serif;font-size:14px;font-weight:600;letter-spacing:0}
+.liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
+  line-height:1.15;letter-spacing:-.01em}
+.liste-magazine .row .s{font-style:italic}
+.liste-magazine .row[aria-current="true"]{background:none;box-shadow:inset 3px 0 0 var(--accent)}
+.liste-magazine .row[aria-current="true"] .code{color:var(--accent)}
+.liste-magazine .row .hall{background:none;font-family:"Fraunces",Georgia,serif;
+  font-style:italic;font-size:11px}
+
+/* Brut — le même trait de trois pixels, le même papier et le même noir que la
+   fiche : la liste ne se fond pas davantage qu'elle dans le thème. */
+.liste-brut{color:var(--ink);
+  --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
+  --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
+  --accent:var(--accent-base);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 15%,#FFFDF5);
+  --radius:0;border-right:3px solid #111}
+.liste-brut .search{background:var(--accent-base);border-bottom:3px solid #111}
+.liste-brut .search :is(input,.champ){background:#FFFDF5;border:2px solid #111;color:#111}
+.liste-brut .search-field svg{color:#111}
+.liste-brut .crit-btn{background:#FFFDF5;border:2px solid #111;color:#111}
+.liste-brut .count{border-bottom:3px solid #111;color:#111;font-size:10.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase}
+.liste-brut .row{border-bottom:2px solid #111}
+.liste-brut .row .code{border:2px solid #111;color:#111;font-weight:700}
+.liste-brut .row .nm{font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.01em}
+.liste-brut .row[aria-current="true"]{background:var(--accent-base)}
+.liste-brut .row[aria-current="true"] :is(.nm,.s){color:var(--accent-ink)}
+.liste-brut .row[aria-current="true"] .code{background:#FFFDF5;color:#111;border-color:#111}
+.liste-brut .row .hall{background:none;border:1px solid #111;border-radius:0}
+.liste-brut .row[aria-current="true"] .hall{color:var(--accent-ink);border-color:var(--accent-ink)}
+.liste-brut :is(.actifs .actif,.actifs .vider){border:2px solid #111;border-radius:0}
+
+/* Verre — le panneau cesse d'être une colonne posée à côté du plan : il
+   devient le même bloc de couleur que la fiche, et chaque ligne un carreau qui
+   laisse passer le fond. */
+.liste-verre{color:var(--ink);--surface:rgba(255,255,255,.1);--surface-2:rgba(255,255,255,.14);
+  --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
+  --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
+  --accent:#FFFFFF;--accent-soft:rgba(255,255,255,.22);--accent-ink:var(--accent-fort);
+  border-right-color:rgba(255,255,255,.28);
+  background-image:radial-gradient(105% 60% at 10% 0%,var(--accent-clair) 0%,
+    var(--accent-base) 46%,var(--accent-fort) 100%)}
+.liste-verre .search :is(input,.champ){background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.2);border-radius:999px;color:#fff}
+.liste-verre .search input::placeholder{color:rgba(255,255,255,.62)}
+.liste-verre .crit-btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);
+  border-radius:999px;color:#fff}
+/* Un carreau, et non une ligne : il lui faut de l'air autour. La marge se
+   prend sur la liste et non sur la ligne — un bouton dont on desserre la
+   largeur se rétracte sur son texte, et les carreaux se rangeaient en escalier
+   au lieu de s'aligner. */
+.liste-verre .list{padding:0 10px}
+.liste-verre .row{margin:5px 0;padding:9px 12px;border-bottom:none;
+  border:1px solid rgba(255,255,255,.16);border-radius:13px;background:rgba(255,255,255,.11)}
+.liste-verre .row:hover{background:rgba(255,255,255,.2)}
+.liste-verre .row[aria-current="true"]{background:rgba(255,255,255,.26);
+  border-color:rgba(255,255,255,.5)}
+.liste-verre .row .code{border-color:rgba(255,255,255,.4);border-radius:999px;color:#fff}
+.liste-verre .row[aria-current="true"] .code{background:#fff;color:var(--accent-fort);
+  border-color:transparent}
+.liste-verre .row .hall{background:rgba(255,255,255,.18);border-radius:999px;color:#fff}
+
+/* Kraft — le sommaire tapé à la machine sur le même carton que la fiche, les
+   lignes séparées d'un pointillé de perforation. */
+.liste-kraft{color:var(--ink);
+  --papier:#E7DBC2;
+  --surface:var(--papier);--surface-2:#DBCEB0;--line:#C3B18C;--line-strong:#A9946A;
+  --ink:#3B3022;--ink-2:#6B5B3F;--ink-3:#7A6849;
+  --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
+  --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
+  font-family:"Courier Prime",monospace;
+  background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
+.liste-kraft .search{border-bottom:1px dashed var(--line-strong)}
+.liste-kraft .search :is(input,.champ){background:rgba(255,252,244,.55);
+  border-color:var(--line-strong);border-radius:0}
+.liste-kraft .count{border-bottom:1px dashed var(--line-strong);
+  font-family:"Courier Prime",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.liste-kraft .row{border-bottom:1px dashed var(--line)}
+.liste-kraft .row .code{border-color:var(--line-strong);border-radius:0;
+  font-family:"Courier Prime",monospace;font-weight:700}
+.liste-kraft .row .nm{font-family:"Courier Prime",monospace;font-size:12.5px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.01em}
+.liste-kraft .row[aria-current="true"]{background:rgba(255,252,244,.55);
+  box-shadow:inset 3px 0 0 var(--encre)}
+.liste-kraft .row .hall{border-radius:0;font-family:"Courier Prime",monospace}
+
+/* Signalétique — la liste devient le tableau de direction du hall : fond
+   sombre, bandeau de couleur en tête, capitales et flèche devant chaque nom.
+   On y lit un stand comme on lit une sortie. */
+.liste-signal{color:var(--ink);
+  --surface:#12171B;--surface-2:#1A2128;--line:#232B32;--line-strong:#3A444D;
+  --ink:#F2F5F7;--ink-2:#B7C0C7;--ink-3:#8A959E;
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,#12171B);
+  --radius:2px}
+.liste-signal .search{background:var(--accent-base);border-bottom:4px solid var(--accent-fort);
+  color:var(--accent-ink)}
+.liste-signal .search :is(input,.champ){color:var(--accent-ink);
+  background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
+  border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
+.liste-signal .search input::placeholder{color:var(--accent-ink);opacity:.7}
+.liste-signal .search .champ{color:var(--accent-ink);opacity:.75}
+.liste-signal .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-signal .crit-btn{color:var(--accent-ink);
+  background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
+  border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
+.liste-signal .count{color:var(--ink-2);font-size:10.5px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase}
+.liste-signal .row .code{background:var(--surface-2);border-color:var(--line-strong);
+  border-radius:2px;color:var(--ink);font-weight:600}
+.liste-signal .row .nm{font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.liste-signal .row .nm::before{content:"→ ";color:var(--accent-clair);font-weight:500}
+.liste-signal .row[aria-current="true"]{box-shadow:inset 4px 0 0 var(--accent-base)}
+.liste-signal .row[aria-current="true"] .code{background:var(--accent-base);color:var(--accent-ink);
+  border-color:transparent}
+
+/* Chronologie — le rail de la fiche traverse la liste : les numéros de stand
+   s'alignent à droite comme des heures, chacun marqué d'un point sur la ligne
+   de temps, et la ligne courante s'y allume plutôt que de se peindre. */
+.liste-chrono .search{border-bottom:none}
+.liste-chrono .row{position:relative;border-bottom:none;padding:8px 16px}
+/* Le rail se reprend d'une ligne à l'autre plutôt que de courir sur la liste
+   entière : tracé sur le cadre qui défile, il serait resté en place et aurait
+   quitté l'écran dès la deuxième page de résultats. Seule la première ligne
+   porte le dégradé qui l'allume, comme sur la fiche. */
+.liste-chrono .row::after{content:"";position:absolute;left:68px;top:0;bottom:0;width:2px;
+  background:var(--line)}
+.liste-chrono .row:first-child::after{background:linear-gradient(var(--accent),var(--line))}
+.liste-chrono .row::before{content:"";position:absolute;left:63px;top:50%;z-index:1;
+  width:12px;height:12px;margin-top:-6px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--line-strong)}
+.liste-chrono .row:hover::before{border-color:var(--accent)}
+.liste-chrono .row[aria-current="true"]::before{background:var(--accent);border-color:var(--accent)}
+.liste-chrono .row .code{background:none;border:none;border-radius:0;padding:0 2px 0 0;
+  color:var(--ink-3);letter-spacing:.05em;text-align:right}
+/* Le point empiète sur la gouttière : le nom se décale de sa largeur, sinon
+   il commencerait dessous. */
+.liste-chrono .row > span:last-child{padding-left:18px}
+.liste-chrono .row .nm{font-weight:600;letter-spacing:-.02em}
+.liste-chrono .row[aria-current="true"]{background:none}
+.liste-chrono .row[aria-current="true"] .nm{color:var(--accent)}
+.liste-chrono :is(.row .hall,.actifs .actif,.actifs .vider){border-radius:999px}
+
+/* Nu — ni cadre, ni case, ni aplat : un nom se reconnaît sans qu'on l'encadre.
+   Le numéro reste — c'est ce qu'on est venu chercher — mais rangé au bout de
+   la ligne, à sa place de référence plutôt que d'étiquette. */
+.liste-nu{border-right-color:transparent}
+.liste-nu .search{border-bottom:none;padding:16px 20px 10px}
+.liste-nu .search :is(input,.champ){background:none;border-width:0 0 1px;
+  border-color:var(--line);border-radius:0;padding-left:30px}
+.liste-nu .count{border-bottom:none;padding:4px 20px 10px}
+.liste-nu .row{grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;
+  padding:11px 20px;border-bottom:none}
+.liste-nu .row > span:last-child{order:1;min-width:0}
+.liste-nu .row .code{order:2;background:none;border:none;border-radius:0;padding:0;
+  color:var(--ink-3);font-size:11px;letter-spacing:.04em;text-align:right}
+.liste-nu .row .nm{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.liste-nu .row:hover{background:none}
+.liste-nu .row:hover .nm{text-decoration:underline;text-underline-offset:4px}
+.liste-nu .row[aria-current="true"]{background:none}
+.liste-nu .row[aria-current="true"] :is(.nm,.code){color:var(--accent)}
+
+/* ------------------------------------------------------------
    Parcours de visite
 
    Le visiteur retient des exposants et des conférences en circulant, puis
@@ -1403,10 +1675,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
-   sa propre fiche, réduite, remplie d'un exposant d'exemple. Le bas s'efface
-   plutôt que de se couper net — l'aperçu montre le haut de la fiche, qui est
-   ce qui la distingue. */
-.modeles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+   ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
+   bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
+   qui est ce qui les distingue.
+
+   Les deux côte à côte, dans l'ordre de l'écran : c'est ensemble qu'ils font
+   l'habillage, et un modèle se choisit sur l'accord des deux. La vignette est
+   donc plus large qu'au temps où elle ne montrait que la fiche. */
+.modeles{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
 .mod{display:block;width:100%;padding:0;text-align:left;background:var(--surface-2);
   border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .mod:hover{border-color:var(--line-strong)}
@@ -1418,15 +1694,30 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mod .nom .coche{margin-left:auto;color:var(--accent);font-size:13px;visibility:hidden}
 .mod[aria-pressed="true"] .nom .coche{visibility:visible}
 .mod .resume{display:block;padding:0 11px 10px;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
-/* L'aperçu porte les mêmes classes que la fiche du plan : c'est la même
-   feuille de style qui l'habille, à l'échelle près. */
-.apercu{--reduc:.59;position:absolute;top:0;left:0;width:calc(100% / var(--reduc));
+/* L'aperçu porte les mêmes classes que la liste et la fiche du plan : c'est la
+   même feuille de style qui l'habille, à l'échelle près. La réduction est
+   posée une fois sur le couple, sans quoi les deux moitiés ne seraient pas au
+   même format. */
+.duo{--reduc:.58;position:absolute;top:0;left:0;
+  width:calc(100% / var(--reduc));height:calc(100% / var(--reduc));
   transform:scale(var(--reduc));transform-origin:top left;
+  display:flex;pointer-events:none}
+/* La liste garde une largeur fixe : proportionnelle, elle se serait resserrée
+   au point de couper les noms sur la vignette la plus étroite. */
+.apercu-liste{flex:0 0 152px}
+.apercu{flex:1 1 auto}
+.apercu,.apercu-liste{min-width:0;overflow:hidden;
   /* « background-color » et non le raccourci : celui-ci effacerait le fond
      que les modèles peignent — le dégradé du verre, le grain du kraft — car
      cette règle vient après la leur. */
-  background-color:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;
-  pointer-events:none}
+  background-color:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column}
+/* La liste de l'aperçu ne défile pas : ce qui dépasse la vignette s'efface
+   avec le reste, sous le fondu du bas. */
+.apercu-liste .list{overflow:hidden}
+/* La vignette est trois fois plus étroite que le vrai panneau : le compteur y
+   passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
+   qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
+.apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .modale[data-genre="large"] .mfen{width:min(760px,100%)}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
@@ -4524,7 +4815,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
-  appliqueFiche();
+  appliqueModele();
 }
 
 /**
@@ -4666,58 +4957,69 @@ function appliqueAccent(){
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
 
-/* Les habillages de la fiche détail. Le premier n'a pas de classe : c'est la
-   fiche telle que la feuille de style la dessine, et le point de départ de
-   tous les autres. */
-const MODELES_FICHE = [
+/* Les habillages du plan. Chacun tient en deux moitiés — la liste des
+   exposants et la fiche détail — taillées dans la même police et les mêmes
+   couleurs : on ne choisit pas l'allure d'un panneau sans choisir celle de
+   l'autre, sous peine de deux salons côte à côte. Le premier n'a de classe
+   ni d'un côté ni de l'autre : c'est le plan tel que la feuille de style le
+   dessine, et le point de départ de tous les autres. */
+const MODELES = [
   { cle: "sobre", nom: "Sobre",
-    resume: "Le rendu d'origine : un seul rythme du haut en bas." },
+    resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
   { cle: "grille", nom: "Grille",
-    resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
+    resume: "Encre pleine, numéro en filigrane, filets francs jusque dans la liste." },
   { cle: "console", nom: "Console",
     resume: "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon." },
   { cle: "billet", nom: "Billet",
-    resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
+    resume: "Bandeau d'accent sur la recherche, numéros comptables, lignes perforées." },
   { cle: "magazine", nom: "Magazine",
-    resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
+    resume: "Serif à fort contraste et italiques : le catalogue et son sommaire." },
   { cle: "brut", nom: "Brut",
     resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
   { cle: "verre", nom: "Verre",
-    resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
+    resume: "Un bloc de la couleur du salon, champs et lignes en carreaux translucides." },
   { cle: "kraft", nom: "Kraft",
     resume: "Carton et machine à écrire, « nouvel exposant » tamponné de travers." },
   { cle: "signal", nom: "Signalétique",
     resume: "Aplat, flèche et capitales : un stand se lit comme une direction de hall." },
   { cle: "chrono", nom: "Chronologie",
-    resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
+    resume: "Le programme en ligne de temps, et la liste égrenée le long du même rail." },
   { cle: "nu", nom: "Nu",
     resume: "Ni cadre ni libellés : la hiérarchie typographique seule." },
 ];
-const modeleFiche = () => {
+const modeleRetenu = () => {
   const c = (CONF["_fiche"] || {}).modele;
-  return MODELES_FICHE.some(m => m.cle === c) ? c : "sobre";
+  return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
-/** Pose l'habillage retenu sur la fiche. Une seule classe à la fois : les
- *  modèles se recouvrent, et deux ensemble ne veulent rien dire. */
-function appliqueFiche(){
-  const d = $("detail");
-  if (!d) return;
-  const cle = modeleFiche();
-  MODELES_FICHE.forEach(m => d.classList.toggle("modele-" + m.cle, m.cle === cle));
+/**
+ * Pose l'habillage retenu sur ses deux moitiés : la fiche détail et la liste
+ * des exposants. Un seul geste pour les deux — le modèle est un accord, et
+ * l'exploitant qui choisit « Kraft » choisit le carton partout.
+ *
+ * Une seule classe à la fois de chaque côté : les modèles se recouvrent, et
+ * deux ensemble ne veulent rien dire.
+ */
+function appliqueModele(){
+  const cle = modeleRetenu();
+  const pose = (el, prefixe) => el && MODELES.forEach(m =>
+    el.classList.toggle(prefixe + m.cle, m.cle === cle));
+  pose($("detail"), "modele-");
+  pose($("side"), "liste-");
 }
 
 /* ------------------------------------------------------------------
    L'exposant des aperçus
 
-   Les onze vignettes montrent la même fiche sous onze habillages : c'est en la
-   comparant à elle-même qu'on choisit. Mais elle ne peut pas être une fiche
-   inventée — un salon qui a retiré l'adresse et remonté sa nomenclature
-   choisirait son modèle sur des champs qu'il n'affiche pas, dans un ordre qui
-   n'est pas le sien.
+   Les onze vignettes montrent la même liste et la même fiche sous onze
+   habillages : c'est en les comparant à elles-mêmes qu'on choisit. Mais elles
+   ne peuvent pas être inventées — un salon qui a retiré l'adresse et remonté
+   sa nomenclature choisirait son modèle sur des champs qu'il n'affiche pas,
+   dans un ordre qui n'est pas le sien.
 
    Les vignettes portent donc les champs retenus, dans l'ordre réglé depuis la
-   console, et les valeurs d'un vrai stand.
+   console, et les valeurs d'un vrai stand — et, à côté, les voisins de
+   sommaire de ce stand, tels que la liste les rangerait.
    ------------------------------------------------------------------ */
 
 /* Comment lire chaque champ du corps sur un stand. Les mêmes sources que la
@@ -4756,6 +5058,16 @@ const EXEMPLES_CORPS = {
   thematiques: "Réemploi;Bois de pays",
 };
 
+/* De quoi peupler la liste d'un salon dont aucun stand n'est encore connu.
+   Une liste vide ne dirait rien d'un habillage : c'est sur des lignes qui se
+   suivent que se voit un filet, un pointillé ou un rail. */
+const EXEMPLES_LISTE = [
+  ["B07", "Atelier du Marais"], ["C02", "Bois & Compagnie"],
+  ["D14", "Ateliers Ligneron"], ["D22", "Duchêne Agencement"],
+  ["E05", "Fonderie de l'Ouest"], ["E18", "Granit Armor"],
+  ["F03", "Habitat Lumière"], ["F11", "Menuiseries Rocher"],
+];
+
 /** Ce qu'un stand porte pour un champ du corps, en une chaîne. */
 function texteCorps(o, cle){
   if (cle.indexOf(PREFIXE_PERSO) === 0){
@@ -4781,6 +5093,34 @@ function standApercu(cles){
     if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
   }));
   return { stand: mieux, hall, neuf };
+}
+
+/**
+ * Les lignes de la liste d'aperçu : le stand de la fiche et ses voisins de
+ * sommaire, dans l'ordre où la liste les range.
+ *
+ * Le stand de la fiche est marqué courant, et non le premier venu : les
+ * modèles habillent la ligne ouverte plus que les autres — un négatif, un
+ * curseur, un point allumé — et c'est celle-là qu'on veut voir en regard de la
+ * fiche qui la déplie.
+ */
+function lignesApercu(stand){
+  const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
+  const voisins = ((pl && pl.stands) || []).filter(o => o.nom)
+    .sort((a, b) => COLLATION.compare(String(a.nom), String(b.nom)));
+  /* Une liste de deux lignes ne montre pas un habillage : sans assez de
+     voisins, on prend les exemples plutôt qu'une vignette à moitié vide. */
+  if (voisins.length < 4){
+    return EXEMPLES_LISTE.map(([code, nom], i) =>
+      ({ code, nom, courant: i === 2 }));
+  }
+  /* Le stand retenu, avec ce qui le précède et ce qui le suit : la vignette
+     montre huit lignes, et la sienne ne doit être ni la première ni la
+     dernière — un filet de séparation se lit entre deux voisines. */
+  const i = Math.max(0, voisins.indexOf(stand));
+  const debut = Math.min(Math.max(0, i - 2), Math.max(0, voisins.length - 8));
+  return voisins.slice(debut, debut + 8).map(o =>
+    ({ code: o.code || "—", nom: o.nom, courant: o === stand }));
 }
 
 /**
@@ -4810,6 +5150,16 @@ function contenuApercu(){
        le champ, et plusieurs modèles l'habillent — on choisirait sur une
        marque qu'on n'aura jamais. */
     neuf: neuf && montre("stand", "nouveau"),
+    lignes: lignesApercu(stand),
+    /* Le compteur du pavillon, tel que la liste l'écrit : c'est une ligne de
+       texte que plusieurs modèles habillent — capitales, chasse fixe,
+       italique — et la taire priverait la vignette de sa tête. */
+    compte: (() => {
+      const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
+      const n = ((pl && pl.stands) || []).length || EXEMPLES_LISTE.length;
+      return n + (n > 1 ? " résultats" : " résultat") + " · " +
+        ((pl && pl.libelle) || hall || EXEMPLES_CORPS.hall);
+    })(),
   };
 }
 
@@ -4861,6 +5211,45 @@ function apercuFiche(cle, vu){
       '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
       '<span class="btn itin">Itinéraire</span></div>' +
     '</div>';
+  return d;
+}
+
+/**
+ * L'autre moitié de la vignette : la liste des exposants sous le même
+ * habillage.
+ *
+ * Des balises neutres, comme pour la fiche : l'aperçu vit dans le bouton qui
+ * choisit le modèle, et celui-ci ne peut contenir ni bouton ni champ de
+ * saisie. Les classes sont celles du vrai panneau — c'est la même feuille de
+ * style qui l'habille, à la réduction près.
+ */
+function apercuListe(cle, vu){
+  const d = document.createElement("div");
+  d.className = "apercu-liste liste-" + cle;
+  // l'aperçu se regarde, il ne se manipule pas
+  d.inert = true;
+  const lignes = vu.lignes.map(l =>
+    '<span class="row" data-sorte="stand" aria-current="' + (l.courant ? "true" : "false") + '">' +
+    '<span class="code">' + esc(l.code) + '</span>' +
+    '<span><span class="nm">' + esc(l.nom) + '</span><span class="s"></span></span></span>').join("");
+  d.innerHTML =
+    '<div class="search"><div class="search-field">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+      '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>' +
+      '<span class="champ">Exposant, stand…</span>' +
+    '</div></div>' +
+    '<div class="count"><span>' + esc(vu.compte) + '</span></div>' +
+    '<div class="list">' + lignes + '</div>';
+  return d;
+}
+
+/** Les deux moitiés d'un habillage, dans l'ordre de l'écran : la liste, puis
+ *  la fiche qu'on ouvre depuis elle. C'est leur accord qu'on choisit. */
+function apercuDuo(cle, vu){
+  const d = document.createElement("div");
+  d.className = "duo";
+  d.appendChild(apercuListe(cle, vu));
+  d.appendChild(apercuFiche(cle, vu));
   return d;
 }
 
@@ -5035,13 +5424,14 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
- *  fiche détail. */
+/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
+ *  deux panneaux — la liste des exposants et la fiche détail. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
-    "boutons, pastilles, et les modèles de fiche s'en habillent. Le modèle " +
-    "décide de l'allure du panneau qui s'ouvre sur un stand.";
+    "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
+    "l'allure des deux panneaux à la fois : la liste des exposants et la " +
+    "fiche qui s'ouvre sur un stand.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -5095,18 +5485,18 @@ function voletApparence(hote){
 
   const titre = document.createElement("span");
   titre.className = "eyebrow";
-  titre.textContent = "Modèle de fiche";
+  titre.textContent = "Modèle d'habillage";
   titre.style.display = "block";
   titre.style.margin = "0 0 9px";
   hote.appendChild(titre);
 
   const grille = document.createElement("div");
   grille.className = "modeles";
-  const courant = modeleFiche();
-  // le même contenu pour les onze : c'est en comparant la même fiche à
-  // elle-même qu'on choisit son habillage
+  const courant = modeleRetenu();
+  // le même contenu pour les onze : c'est en comparant les mêmes liste et
+  // fiche à elles-mêmes qu'on choisit leur habillage
   const vu = contenuApercu();
-  MODELES_FICHE.forEach(m => {
+  MODELES.forEach(m => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "mod";
@@ -5116,10 +5506,10 @@ function voletApparence(hote){
       '<span class="resume"></span>';
     b.querySelector(".nom .t").textContent = m.nom;
     b.querySelector(".resume").textContent = m.resume;
-    b.querySelector(".vue").appendChild(apercuFiche(m.cle, vu));
+    b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
-      enregistreConf(); appliqueFiche();
+      enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
     };
