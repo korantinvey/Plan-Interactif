@@ -115,6 +115,94 @@ const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
 ): Q => (identifie ? q : q.eq("publie", true));
 
 /**
+ * Ce qu'une fiche ne montre pas ne descend pas.
+ *
+ * L'exploitant décoche « Téléphone » dans la console et la page cesse de
+ * l'afficher — mais l'instantané partait tel quel, coordonnées comprises, chez
+ * chaque visiteur : le réglage ne cachait qu'à l'écran, là où il promet de ne
+ * pas publier. Il s'applique ici, où il a un sens.
+ *
+ * N'y figurent que les champs dont rien d'autre ne se sert. La recherche
+ * indexe l'enseigne, la raison sociale, le numéro, le secteur et les
+ * thématiques : ceux-là restent, décochés ou non, sans quoi on cesserait de
+ * trouver en tapant ce qu'on lisait hier. Les autres ne se lisent que sur la
+ * fiche — ou comme critère, d'où la réserve de `retraits()`.
+ */
+const CHAMPS_FICHE: Record<string, string> = {
+  adresse: "adr",
+  ville: "ville",
+  pays: "pays",
+  telephone: "tel",
+  site: "site",
+  facebook: "fb",
+  linkedin: "li",
+  instagram: "ig",
+  nomenclature: "nomencl",
+};
+
+/** Les champs propres au salon portent leur clé préfixée dans le réglage. */
+const PREFIXE_PERSO = "perso:";
+
+interface Retraits {
+  cles: string[];
+  persos: string[];
+}
+
+/**
+ * Ce qu'il faut retirer des fiches de ce salon, ou rien.
+ *
+ * Une entrée absente vaut « affiché » — un salon qui n'a jamais touché au
+ * réglage ne perd donc rien. Un champ décoché mais retenu comme critère reste
+ * envoyé : c'est de lui que la page tire les valeurs du filtre, et la
+ * recherche ce qu'elle indexe des critères. Le décocher ne dit alors que « pas
+ * sur la fiche », pas « pas du tout ».
+ */
+function retraits(fiche: Record<string, unknown>): Retraits | null {
+  const montre = (fiche.stand ?? {}) as Record<string, boolean>;
+  const criteres = (fiche.criteres ?? {}) as Record<string, boolean>;
+  const retire = (cible: string) =>
+    montre[cible] === false && criteres[cible] !== true;
+
+  const cles = Object.entries(CHAMPS_FICHE)
+    .filter(([cible]) => retire(cible))
+    .map(([, cle]) => cle);
+  const persos = ((fiche.perso ?? []) as { cle?: string }[])
+    .map((c) => String(c?.cle ?? ""))
+    .filter((cle) => cle && retire(PREFIXE_PERSO + cle));
+
+  return cles.length || persos.length ? { cles, persos } : null;
+}
+
+/**
+ * La même fiche, amputée de ce que le salon n'affiche pas.
+ *
+ * Les sociétés hébergées portent les mêmes champs que leur hôte — c'est bien
+ * leur fiche à elles — et le même réglage les gouverne : les oublier laisserait
+ * sortir par les co-exposants ce qu'on retire des titulaires.
+ */
+function ampute(
+  stand: Record<string, unknown>,
+  r: Retraits,
+): Record<string, unknown> {
+  const s = { ...stand };
+  for (const cle of r.cles) delete s[cle];
+
+  if (r.persos.length && s.perso) {
+    const perso = { ...(s.perso as Record<string, unknown>) };
+    for (const cle of r.persos) delete perso[cle];
+    // la clé ne descend pas quand elle ne porte plus rien : le stand la portait
+    // vide sur tout un salon
+    if (Object.keys(perso).length) s.perso = perso;
+    else delete s.perso;
+  }
+
+  if (Array.isArray(s.coex)) {
+    s.coex = (s.coex as Record<string, unknown>[]).map((x) => ampute(x, r));
+  }
+  return s;
+}
+
+/**
  * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
  * « Batiment » — et de sous-calques — « Batiment/8-VRD-ASS ».
  *
@@ -278,6 +366,9 @@ Deno.serve(async (req) => {
     const parApparence = Object.fromEntries((apparences.data ?? []).map((a) => [a.plan_id, a]));
     const parInstantane = Object.fromEntries((instantanes.data ?? []).map((i) => [i.plan_id, i]));
 
+    // le même pour tout le salon : il ne dépend que de son réglage de fiche
+    const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
+
     /* La version du fond de chaque pavillon, calculée sur ce qui sera servi :
        les empreintes des dessins, et — pour un visiteur seul — le masquage qui
        décide de ce qu'on lui envoie. Le même jeu de masques que celui du second
@@ -326,7 +417,14 @@ Deno.serve(async (req) => {
               nom: c.libelle,
               ordre: c.ordre_klipso,
             })),
-          stands: charge.stands ?? [],
+          /* L'exploitant reçoit les fiches entières : c'est de là qu'il coche.
+             Le visiteur ne reçoit que ce que la fiche montre — le reste ne lui
+             servirait à rien, et un salon qui a décoché les coordonnées ne les
+             publie plus du tout. */
+          stands: retrait
+            ? ((charge.stands ?? []) as Record<string, unknown>[])
+              .map((s) => ampute(s, retrait))
+            : charge.stands ?? [],
           // le nom choisi par l'exploitant l'emporte, et s'applique ici plutôt
           // qu'à la synchronisation : renommer doit se voir tout de suite
           /* Ce que l'exploitant a masqué ne part pas chez le visiteur : une
