@@ -487,17 +487,23 @@ Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
    évité, sans rien redessiner. Les pentes, les emmarchements et les estrades
    n'ont pas de pictogramme et n'en auront pas : ils se tracent sur un calque
    dont le rôle est *Infranchissable en fauteuil*. Ce calque reste invisible au
-   visiteur — c'est le trajet qui en tient compte, pas le dessin — et se
-   reconnaît à son trait pointillé pendant l'édition.
+   visiteur — c'est le trajet qui en tient compte, pas le dessin, et le masquer
+   n'y change rien — et se reconnaît à son trait pointillé pendant l'édition.
 
 Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
 de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
 réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalier.
 
-Un calque masqué ne compte pas, ni ses formes ni ses repères : le trajet doit
-s'expliquer par ce qu'on voit à l'écran. La fonction se retire comme le parcours
-de visite, depuis « Réglages du plan » — « Proposer le calcul d'itinéraire » —
-et le bouton des fiches suit celui de la barre.
+Un calque masqué ne compte pas, ni ses repères ni les liaisons qu'ils portent :
+le trajet doit s'expliquer par ce qu'on voit à l'écran. Les calques *de rôle*
+font exception, et c'est voulu : *Infranchissable*, *Infranchissable en
+fauteuil* et *Où l'on peut marcher* décrivent le terrain, pas l'affichage. On
+les éteint justement parce que le visiteur n'a pas à voir le contour des
+sanitaires — le trajet, lui, continue de les contourner.
+
+La fonction se retire comme le parcours de visite, depuis « Réglages du plan »
+— « Proposer le calcul d'itinéraire » — et le bouton des fiches suit celui de
+la barre.
 
 ## Organiser sa journée
 

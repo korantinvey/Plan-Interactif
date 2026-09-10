@@ -87,11 +87,14 @@ function construitPanneau(){
     nom.textContent = x.nom;
 
     /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
-       rappeler ici évite de le chercher, ou de l'oublier. */
+       rappeler ici évite de le chercher, ou de l'oublier. La coche d'à côté
+       n'éteint que l'affichage — le calcul, lui, continue d'en tenir compte,
+       et rien d'autre ne le dirait. */
     if (x.t === "dessin" && roleIti(x.ref)){
       const b = document.createElement("i");
       b.className = "rle";
       b.textContent = nomRoleIti(roleIti(x.ref));
+      b.title = "Ce calque compte dans les itinéraires, même masqué.";
       nom.after(b);
     }
 
