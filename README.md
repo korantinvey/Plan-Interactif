@@ -862,6 +862,13 @@ Un administrateur ne peut ni se retirer son propre rôle, ni supprimer son
 propre compte : ce serait fermer la porte de l'intérieur, sans personne
 au-dehors pour rouvrir.
 
+Le rôle ne se demande pas. Un compte qui naît porte les nom et prénom qu'on a
+donnés à l'invitation, mais toujours le profil d'organisateur — c'est la
+fonction `comptes`, avec la clé de service, qui écrit ensuite le rôle voulu.
+Le déclencheur lisait autrefois ce rôle dans les métadonnées du compte, qui
+viennent de celui qui le crée : une inscription faite à la porte pouvait s'y
+déclarer administrateur, et le cloisonnement tombait d'un bloc.
+
 ### Le premier compte
 
 Un projet neuf n'a personne pour affecter qui que ce soit. Le tout premier
@@ -910,7 +917,6 @@ demande le mot de passe de la base.
 npx supabase login
 npx supabase link --project-ref jylkfskotuafptaxujao
 npx supabase db push
-npx supabase secrets set KLIPSO_INSTANCE=infoprodigital
 npx supabase secrets set KLIPSO_API_KEY=...
 npx supabase secrets set EVENTMAKER_TOKEN=...
 npx supabase secrets set ORIGINES_AUTORISEES=https://mon-domaine
@@ -1130,7 +1136,13 @@ un mot de passe. C'est ce compte qui ouvre la console ; il n'y a pas
 d'inscription libre, et c'est voulu. Le premier compte du projet est
 administrateur d'office — voir « Comptes et profils ».
 
-Deux réglages conditionnent les invitations et les mots de passe oubliés :
+« Pas d'inscription libre » est un réglage, pas une propriété du code :
+**Authentication → Sign In / Providers → Allow new users to sign up** doit être
+fermé. Ouvert, il laisse créer un compte à qui détient la clé publique, c'est-à-dire
+à qui a ouvert une page. Ce compte-là ne voit rien — un organisateur sans salon
+affecté n'en lit aucun — mais il n'a rien à faire dans l'annuaire.
+
+Deux autres réglages conditionnent les invitations et les mots de passe oubliés :
 
 - **Authentication → URL Configuration** : ajouter `https://<domaine>/motdepasse`
   aux *Redirect URLs*. Sans elle, le lien reçu par courriel retombe sur la page
@@ -1147,7 +1159,9 @@ interroge Klipso avec la clé de l'organisateur. La simple clé publique, qui
 circule dans toutes les pages, ne suffit pas. Elle vérifie en outre que
 l'appelant a bien ce salon — elle écrit ensuite avec la clé de service, qui
 ignore les politiques de la base, et c'est donc là qu'il faut poser la
-question.
+question. Elle n'interroge Klipso que pour un salon de la base, jamais pour
+une instance et un événement nommés dans la requête : ce serait prêter la clé
+Klipso de l'exploitant, et rendre les pavillons d'un salon voisin.
 
 `comptes` crée, modifie et supprime les comptes : cela relève de l'API
 d'administration de Supabase, qui exige la clé de service. Cette clé ne pouvant

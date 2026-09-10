@@ -415,10 +415,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 160 · `ampute` 183 · `masquesDe` 212
 `masquesDuPlan` 221
 
-### `supabase/functions/sync-evenement/index.ts` — 1102 l.
+### `supabase/functions/sync-evenement/index.ts` — 1095 l.
 
-`cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 152
-`champsKlipso` 173 · `hebergee` 1060 · `nettoieUrl` 1078 · `groupeTextes` 1088
+`cors` 41 · `client` 79 · `gaia` 86 · `libellesChoix` 97 · `fournisseur` 122 · `range` 158
+`champsKlipso` 179 · `hebergee` 1053 · `nettoieUrl` 1071 · `groupeTextes` 1081
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -443,6 +443,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 - `20260910000006_ferme_lecture_anon.sql` — —
+- `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
 
 ## Le reste
 
