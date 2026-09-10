@@ -363,14 +363,22 @@ function libelles(){
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
   let out = "";
 
+  /* Chaque libellé dans son propre groupe, sous l'identifiant de ce qu'il
+     nomme : c'est ce qui permet de l'attraper pour le placer à la main. Le nom
+     de l'attribut n'est pas « data-id » à dessein — ce groupe n'est pas
+     l'emplacement, et le clic qui ouvre une fiche ne doit pas le confondre
+     avec lui. */
+  const groupe = (o, h) => h
+    ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
+    : "";
+
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
-    const pz = place(z), az = ancre(z);
-    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
-    if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1],
-      "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
+    const pz = place(z);
+    out += groupe(z, libelleZone(z, ancre(z), pz[0], pz[1], sel, pxParM,
+                                 placementLibelle(z)));
   }
 
   for (const s of p.stands){
@@ -381,7 +389,8 @@ function libelles(){
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
     const ps = place(s);
-    out += libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM);
+    out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
+                                        placementLibelle(s)));
   }
 
   l.innerHTML = out;
@@ -390,6 +399,33 @@ function libelles(){
      nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
      appel au même endroit. */
   poseLibellesDessines(pxParM);
+}
+
+/* ------------------------------------------------------------
+ * Le placement réglé à la main, appliqué à ce que le calcul propose : un
+ * décalage en mètres, et un facteur de taille.
+ *
+ * Le facteur multiplie ce que le calcul a trouvé au lieu de le remplacer :
+ * l'enseigne garde ainsi le découpage en lignes que sa place lui donnait, et
+ * l'agrandir ne la recompose pas d'un coup en travers du stand.
+ *
+ * En mode placement, un libellé réglé s'affiche quelle que soit sa taille à
+ * l'écran. Sans cela, le réduire au point de le faire disparaître le rendrait
+ * inatteignable — et le réglage, impossible à défaire.
+ * ------------------------------------------------------------ */
+const decaleLibelle = (xy, reg) => reg ? [xy[0] + (reg.dx || 0), xy[1] + (reg.dy || 0)] : xy;
+const facteurLibelle = (reg) => reg && reg.k > 0 ? reg.k : 1;
+const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
+
+/** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
+function libelleZone(z, az, w, h, sel, pxParM, reg){
+  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  if (!a) return "";
+  const f = a.f * facteurLibelle(reg);
+  if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
+  const xy = decaleLibelle(az, reg);
+  return lignesSvg(a.lignes, f, xy[0], xy[1],
+    "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
 }
 
 /**
@@ -401,20 +437,23 @@ function libelles(){
  * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
  * forme quelconque.
  */
-function libelleEmplacement(s, as, w, h, sel, pxParM){
+function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
+  const k = facteurLibelle(reg), force = libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-  const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
+  const fn = nom ? nom.f * k : 0;
+  const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-  const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-  const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
+  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+  const codeLisible = fc && (sel || force || fc * pxParM >= (nomLisible ? 5 : 6));
   if (!codeLisible && !nomLisible) return "";
 
   const c = sel ? " sel" : "";
-  const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
+  const xy = decaleLibelle(as, reg);
+  const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0;
   const hCode = codeLisible ? fc * 1.25 : 0;
-  let y = as[1] - (hNom + hCode) / 2, out = "";
-  if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-  if (codeLisible) out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+  let y = xy[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, fn, xy[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, xy[0], y + fc * .92, fc, w * .9 * k, c);
   return out;
 }
 
@@ -1899,6 +1938,9 @@ svg.addEventListener("pointerdown", e => {
   doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (doigts.size === 2){ commencePince(); return; }
   if (doigts.size > 2) return;
+  /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
+     l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id],[data-poi]") };
@@ -1907,6 +1949,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -1921,6 +1964,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -1943,6 +1987,7 @@ svg.addEventListener("pointerup", e => {
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
+  glisseLib = null;
   drag = null;
   svg.classList.remove("dragging");
 });
@@ -1976,7 +2021,18 @@ document.addEventListener("keydown", e => {
   if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return;
   }
+  /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
+     et au mètre touche majuscule tenue : c'est la finition d'un placement,
+     après le glisser qui l'a amené à peu près là. */
+  if (PLACE_LIBELLES && libSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                  e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   if (e.key === "Escape"){
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }

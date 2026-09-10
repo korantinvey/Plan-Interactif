@@ -766,7 +766,7 @@ let ADMIN = false;
  */
 function retireAdmin(){
   ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
-  ["panel", "outils", "elemSel"].forEach(id => {
+  ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
     e.hidden = true;
@@ -803,7 +803,8 @@ function activeAdmin(){
   $("razConf").onclick = () => {
     CONF = JSON.parse(JSON.stringify(DEFAUTS));
     try { localStorage.removeItem(CLE_CONF); } catch (e) {}
-    appliqueApparence(); construitPanneau();
+    // les placements de libellés vivent dans CONF : ils repartent avec elle
+    appliqueApparence(); libelles(); construitPanneau();
   };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
@@ -933,4 +934,179 @@ async function ecritTableZones(colonne, secours, change){
   });
   if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
   return table;
+}
+
+
+/* ============================================================
+   Placer un libellé à la main
+
+   Le nom d'un stand est posé automatiquement : au milieu de l'emplacement, à
+   la taille que la place autorise. C'est juste pour un rectangle, et ce l'est
+   moins dès que le plan sort du cas d'école — un stand en L dont le nom tombe
+   sur la découpe, deux enseignes voisines dont les noms se touchent, une zone
+   organisateur dont l'intitulé traverse une allée. L'exploitant voit ces
+   cas-là, le calcul non : il lui faut pouvoir déplacer et agrandir un libellé.
+
+   Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre
+   des calques, et part aux visiteurs à la publication.
+
+   Il porte avec lui l'empreinte de ce dont il dépend : ce qui s'écrit, et la
+   forme qui le porte. Une synchronisation qui n'y touche pas le laisse en
+   place — c'est tout l'objet — mais une qui renomme l'exposant, déplace le
+   stand ou le redimensionne le périme : le décalage ne décrit plus rien, et
+   laisser le nom flotter à côté serait pire que de le replacer tout seul.
+   Le réglage n'est pas effacé pour autant, il cesse de s'appliquer : si la
+   forme revient telle qu'elle était, il revient avec elle.
+   ============================================================ */
+const cleLibelle = (id) => "_lab:" + id;
+
+/* Le mode est transitoire : on y entre pour retoucher, on en sort. Il ne se
+   retient pas d'une session à l'autre — ce n'est pas un réglage du salon. */
+let PLACE_LIBELLES = false;
+let libSel = null;      // l'objet dont on retouche le libellé
+let glisseLib = null;   // le geste en cours
+
+/**
+ * Ce dont dépend le placement d'un libellé : ce qui s'y écrit, et la forme qui
+ * le porte — son ancrage et la place dont il dispose autour.
+ *
+ * Le nom retenu est celui qui s'affiche, y compris quand l'exploitant l'a
+ * choisi lui-même sur une zone : renommer, c'est écrire autre chose, et cet
+ * autre chose n'a pas de raison de tenir à la même taille au même endroit.
+ */
+function empreinteLibelle(o){
+  const a = ancre(o) || [0, 0], p = place(o) || [0, 0];
+  return [o.nom || "", o.code || "",
+          (+a[0]).toFixed(2), (+a[1]).toFixed(2),
+          (+p[0]).toFixed(2), (+p[1]).toFixed(2)].join("|");
+}
+
+/** Le placement réglé à la main, s'il décrit encore ce qui est sur le plan. */
+function placementLibelle(o){
+  const r = CONF[cleLibelle(o.id)];
+  return r && r.e === empreinteLibelle(o) ? r : null;
+}
+
+/**
+ * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
+ * par image, et enregistrer à chaque fois sérialiserait toute la configuration
+ * soixante fois par seconde. C'est la fin du geste qui enregistre.
+ */
+function posePlacement(o, change){
+  const r = placementLibelle(o);
+  const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
+              e: empreinteLibelle(o) };
+  change(n);
+  n.dx = +(+n.dx).toFixed(2);
+  n.dy = +(+n.dy).toFixed(2);
+  n.k = Math.max(.4, Math.min(3, +n.k || 1));
+  /* Un placement qui ne déplace ni n'agrandit rien n'est pas un réglage : il
+     sort de la configuration plutôt que d'y peser et d'y vieillir. */
+  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[cleLibelle(o.id)];
+  else CONF[cleLibelle(o.id)] = n;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Rendre un libellé à son placement automatique. */
+function libelleAutomatique(){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  delete CONF[cleLibelle(o.id)];
+  enregistreConf();
+  libelles();
+  majPaletteLibelle();
+}
+
+function modePlacementLibelles(on){
+  PLACE_LIBELLES = !!on && ADMIN;
+  racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
+  /* Le placement et le dessin se disputeraient le glisser : entrer dans l'un
+     referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
+  if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
+  if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  majPaletteLibelle();
+  libelles();
+}
+
+/** La palette du libellé retouché : sa taille, et de quoi y renoncer. */
+function majPaletteLibelle(){
+  const z = $("libReg");
+  if (!z || !ADMIN || !$("libNom")) return;
+  const o = libSel && parId.get(libSel);
+  z.classList.toggle("open", !!(PLACE_LIBELLES && o));
+  if (!(PLACE_LIBELLES && o)) return;
+  const r = placementLibelle(o);
+  $("libNom").textContent = o.nom || o.code ||
+    (o.kind === "zone" ? "Zone sans nom" : "Stand");
+  $("libTaille").value = r && r.k ? r.k : 1;
+  $("libAuto").disabled = !r;
+  $("libAide").textContent = r
+    ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
+    : "Glissez ce libellé pour le déplacer, ou tirez la taille.";
+}
+
+/** Choisir le libellé qu'on retouche — au clic, ou en le glissant. */
+function choisitLibelle(id){
+  libSel = id;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Le pas du clavier : un quart de mètre, un mètre touche majuscule tenue. */
+function pousseLibelle(dx, dy){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  posePlacement(o, n => { n.dx += dx; n.dy += dy; });
+  enregistreConf();
+}
+
+/* --- le geste ; renvoie vrai si l'événement est consommé --- */
+function libellePointerDown(e){
+  if (!PLACE_LIBELLES) return false;
+  const g = e.target.closest("#labels .lbl");
+  if (!g) return false;
+  const o = parId.get(g.dataset.lbl);
+  if (!o) return false;
+  e.preventDefault();
+  choisitLibelle(o.id);
+  const r = placementLibelle(o);
+  glisseLib = { o: o, depart: versPlan(e.clientX, e.clientY),
+                dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
+function libellePointerMove(e){
+  if (!glisseLib) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
+  const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
+  posePlacement(glisseLib.o, n => { n.dx = dx; n.dy = dy; });
+  return true;
+}
+
+function libellePointerUp(e){
+  if (!glisseLib) return false;
+  glisseLib = null;
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  enregistreConf();
+  return true;
+}
+
+/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
+   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
+   cochée — et le refaire remplacerait le nœud en pleine gestion de son
+   propre événement. */
+if ($("libFerme")) $("libFerme").onclick = () => {
+  modePlacementLibelles(false);
+  construitPanneau();
+};
+if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
+if ($("libTaille")){
+  $("libTaille").oninput = e => {
+    const o = libSel && parId.get(libSel);
+    if (o) posePlacement(o, n => { n.k = +e.target.value; });
+  };
+  $("libTaille").onchange = enregistreConf;
 }
