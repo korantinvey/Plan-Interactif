@@ -416,6 +416,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000003_zones_masquees.sql` — evenement
 - `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
+- `20260910000006_ferme_lecture_anon.sql` — —
 
 ## Le reste
 
