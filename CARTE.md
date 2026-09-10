@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 1839 l. → admin-plans.html
+### `_console-js.html` — 1996 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -85,24 +85,25 @@ Fonctions :
 `charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `dessineRail` 124 · `champ` 150
 `dessineFiche` 175 · `fournisseurUtilise` 383 · `source` 387 · `champCle` 392
 `ligneSource` 427 · `origineConferences` 532 · `resumeProvenance` 597 · `resumeSalles` 614
-`resumeFiche` 625 · `caseFiche` 666 · `champsPersos` 709 · `criteres` 715 · `ecritFiche` 718
-`caseCritere` 733 · `clePerso` 752 · `ajouteChampPerso` 760 · `renommeChampPerso` 771
-`retireChampPerso` 789 · `lignesPerso` 834 · `ligneReglage` 854 · `ouvreProvenance` 867
-`ouvreSources` 890 · `ouvreSalles` 946 · `cadreFiche` 1059 · `ouvreFiche` 1088
-`sousTitre` 1221 · `tableauChamps` 1236 · `encode` 1379 · `decode` 1381
-`correspondance` 1386 · `sansPrefixe` 1389 · `courte` 1390 · `intitule` 1405
-`intituleSuite` 1417 · `champOrigine` 1430 · `majLiens` 1647 · `majIntegration` 1674
-`majMsgSync` 1681 · `synchronise` 1695 · `dupliquer` 1738 · `videEcran` 1812
-`dessine` 1817 · `demarre` 1827
+`resumeFiche` 625 · `caseFiche` 668 · `champsPersos` 711 · `criteres` 717 · `ecritFiche` 720
+`caseCritere` 735 · `clePerso` 754 · `ajouteChampPerso` 762 · `renommeChampPerso` 773
+`retireChampPerso` 791 · `lignesPerso` 839 · `clesCorps` 874 · `ordreEffectif` 888
+`libelleCorps` 903 · `cadreOrdre` 920 · `ligneReglage` 1000 · `ouvreProvenance` 1013
+`ouvreSources` 1036 · `ouvreSalles` 1092 · `cadreFiche` 1205 · `ouvreFiche` 1234
+`sousTitre` 1378 · `tableauChamps` 1393 · `encode` 1536 · `decode` 1538
+`correspondance` 1543 · `sansPrefixe` 1546 · `courte` 1547 · `intitule` 1562
+`intituleSuite` 1574 · `champOrigine` 1587 · `majLiens` 1804 · `majIntegration` 1831
+`majMsgSync` 1838 · `synchronise` 1852 · `dupliquer` 1895 · `videEcran` 1969
+`dessine` 1974 · `demarre` 1984
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 424 l. → console.css
+### `_console.css` — 437 l. → console.css
 
-- l.368 · Page de rapport
+- l.381 · Page de rapport
 
 ### `_dessin.html` — 870 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -207,7 +208,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 1991 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2040 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.45 · 1. Index global — la recherche porte sur tous les pavillons
 - l.185 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -216,8 +217,8 @@ Fonctions :
 - l.395 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
 - l.1035 · 6. Vue
 - l.1134 · 7. Sélection et fiche
-- l.1669 · 8. Interactions du plan
-- l.1840 · Le tiroir de la liste — écrans étroits
+- l.1718 · 8. Interactions du plan
+- l.1889 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -234,11 +235,11 @@ Fonctions :
 `appliqueFiltre` 975 · `liste` 984 · `appliqueVue` 1038 · `rafraichitVue` 1059
 `poseVue` 1071 · `masque` 1089 · `fit` 1109 · `zoom` 1121 · `echelle` 1126 · `ETROIT` 1140
 `anime` 1142 · `noeud` 1159 · `canalPlan` 1164 · `select` 1172 · `centre` 1192
-`centrePoint` 1196 · `montre` 1211 · `momentLocal` 1237 · `programme` 1260 · `jourLong` 1290
-`ficheConf` 1301 · `lien` 1395 · `ecarteClicFantome` 1412 · `nomSociete` 1421
-`societes` 1434 · `choisitExposant` 1445 · `ouvre` 1481 · `ferme` 1649 · `onglet` 1659
-`milieu` 1689 · `commencePince` 1695 · `suitPince` 1709 · `mesureTiroir` 1851
-`montreTiroir` 1854
+`centrePoint` 1196 · `montre` 1211 · `ordreCorps` 1237 · `momentLocal` 1274
+`programme` 1297 · `jourLong` 1327 · `ficheConf` 1338 · `lien` 1432
+`ecarteClicFantome` 1449 · `nomSociete` 1458 · `societes` 1471 · `choisitExposant` 1482
+`ouvre` 1518 · `ferme` 1698 · `onglet` 1708 · `milieu` 1738 · `commencePince` 1744
+`suitPince` 1758 · `mesureTiroir` 1900 · `montreTiroir` 1903
 
 Éléments :
 
@@ -379,6 +380,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260909000001_empreinte_calque.sql` — calque
 - `20260909000002_retire_empreinte_plan.sql` — plan
 - `20260910000001_champs_perso.sql` — —
+- `20260910000002_ordre_fiche.sql` — —
 
 ## Le reste
 

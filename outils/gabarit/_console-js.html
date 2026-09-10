@@ -647,6 +647,8 @@ function resumeFiche(e) {
   const nCrit = Object.keys(criteres(e)).length;
   mots.push(nCrit ? nCrit + " critère" + (nCrit > 1 ? "s" : "") + " de recherche"
     : "aucun critère de recherche");
+  // l'ordre remanié ne se lit dans aucune des listes ci-dessus
+  if ((((e.fiche || {}).ordre) || []).length) mots.push("ordre d'affichage remanié");
   if (src !== "aucun") {
     mots.push(associes
       ? associes + " champ" + (associes > 1 ? "s" : "") + " associé" +
@@ -800,6 +802,9 @@ function retireChampPerso(cle, libelle, redessine) {
       await ecritFiche(e, {
         perso: champsPersos(e).filter((c) => c.cle !== cle),
         stand, criteres: crit,
+        /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
+           sous le même intitulé à la place qu'occupait le premier. */
+        ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
       });
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
@@ -844,6 +849,147 @@ function lignesPerso(e, redessine) {
         action: () => retireChampPerso(c.cle, c.libelle, redessine) },
     ],
   }));
+}
+
+/* ------------------------------------------------------------------
+   Ordre d'affichage du corps de la fiche
+
+   Ce que la fiche montre se règle champ par champ, plus haut. Dans quel ordre
+   elle le montre ne se réglait nulle part : l'ordre du code valait pour tous
+   les salons, alors que c'est justement là qu'ils diffèrent — ici le secteur
+   est ce qu'on vient lire, là l'adresse, là encore le champ que le salon s'est
+   ajouté passe devant tout le reste.
+   ------------------------------------------------------------------ */
+
+/* L'ordre par défaut du corps, tel que la page l'applique tant que rien n'est
+   réglé. Le même tableau vit dans la page — « ORDRE_CORPS_FICHE » de
+   « _js.html » : les deux se suivent. N'y figure que le corps ; le numéro de
+   stand et la pastille des nouveaux venus tiennent dans l'en-tête, les
+   conférences ont leur propre volet, et rien de tout cela ne se déplace. */
+const ORDRE_FICHE_DEFAUT = ["raison", "secteur", "adresse", "ville", "pays",
+  "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
+  "nomenclature", "thematiques"];
+
+/** Les clés du corps pour cet événement, dans leur ordre par défaut. */
+function clesCorps(e, src) {
+  const offertes = LIGNES_FICHE.stand
+    .filter((l) => l.cle && (!l.source || l.source === src)).map((l) => l.cle);
+  return ORDRE_FICHE_DEFAUT.filter((c) => offertes.indexOf(c) >= 0)
+    .concat(champsPersos(e).map((c) => PREFIXE_PERSO + c.cle));
+}
+
+/**
+ * L'ordre enregistré, complété de ce qu'il ne connaît pas encore.
+ *
+ * Même règle que la page — un champ ajouté après coup reprend la place que le
+ * défaut lui donne, derrière le champ qu'il y suit — sans quoi la console
+ * montrerait un ordre et le visiteur en lirait un autre.
+ */
+function ordreEffectif(e, defaut) {
+  const regle = (((e.fiche || {}).ordre) || [])
+    .filter((c) => defaut.indexOf(c) >= 0);
+  if (!regle.length) return defaut.slice();
+  const sortie = regle.slice();
+  defaut.forEach((c, i) => {
+    if (sortie.indexOf(c) >= 0) return;
+    let j = -1;
+    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(defaut[k]);
+    sortie.splice(j + 1, 0, c);
+  });
+  return sortie;
+}
+
+/** L'intitulé d'une clé du corps, tel que la fiche l'affiche. */
+function libelleCorps(e, cle) {
+  if (cle.indexOf(PREFIXE_PERSO) === 0) {
+    const c = champsPersos(e).find((x) => PREFIXE_PERSO + x.cle === cle);
+    return c ? c.libelle : sansPrefixe(cle);
+  }
+  const l = LIGNES_FICHE.stand.find((x) => x.cle === cle);
+  return l ? l.libelle : cle;
+}
+
+/**
+ * La liste ordonnable.
+ *
+ * Elle se redessine sur place plutôt que de rouvrir la fenêtre : remonter un
+ * champ de six rangs demande six clics, et rouvrir à chacun d'eux ramènerait
+ * l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient d'actionner
+ * reprend le focus, pour que le clic suivant tombe au même endroit.
+ */
+function cadreOrdre(e, src) {
+  const hote = document.createElement("div");
+  let ordre = ordreEffectif(e, clesCorps(e, src));
+
+  const deplace = async (i, pas, cle) => {
+    const suite = ordre.slice();
+    suite.splice(i + pas, 0, suite.splice(i, 1)[0]);
+    ordre = suite;
+    const focus = { cle, sens: pas < 0 ? 0 : 1 };
+    rendu(focus);
+    await ecritFiche(e, { ordre: suite });
+    // le service a pu refuser : la liste reprend alors ce qui est enregistré
+    ordre = ordreEffectif(e, clesCorps(e, src));
+    rendu(focus);
+  };
+
+  const rendu = (focus) => {
+    hote.textContent = "";
+    const liste = document.createElement("div");
+    liste.className = "ordre-liste";
+    ordre.forEach((cle, i) => {
+      const d = document.createElement("div");
+      d.className = "ordre-ligne";
+      d.dataset.cle = cle;
+      d.innerHTML = '<span class="rang"></span><span class="lib"></span>' +
+        '<button type="button" class="outil">▲</button>' +
+        '<button type="button" class="outil">▼</button>';
+      d.querySelector(".rang").textContent = String(i + 1);
+      const libelle = libelleCorps(e, cle);
+      d.querySelector(".lib").textContent = libelle;
+      /* Un champ masqué garde sa place : le remonter aujourd'hui pour
+         l'afficher demain doit rester possible, et le retirer d'ici ferait
+         sauter un rang sans qu'on sache lequel ni pourquoi. */
+      if (((e.fiche || {}).stand || {})[cle] === false) {
+        d.classList.add("source-inerte");
+        d.title = "Masqué : ce champ ne paraît pas sur la fiche.";
+      }
+      const b = d.querySelectorAll("button");
+      [["Monter", -1, 0], ["Descendre", 1, ordre.length - 1]].forEach(
+        ([titre, pas, bord], n) => {
+          b[n].title = titre;
+          b[n].setAttribute("aria-label", titre + " " + libelle);
+          b[n].disabled = i === bord;
+          b[n].onclick = () => deplace(i, pas, cle);
+        });
+      liste.appendChild(d);
+    });
+    hote.appendChild(liste);
+
+    const pied = document.createElement("div");
+    pied.className = "pied-perso";
+    const r = document.createElement("button");
+    r.type = "button";
+    r.className = "btn petit";
+    r.textContent = "Rétablir l'ordre d'origine";
+    r.disabled = !(((e.fiche || {}).ordre) || []).length;
+    r.onclick = async () => {
+      await ecritFiche(e, { ordre: [] });
+      ordre = ordreEffectif(e, clesCorps(e, src));
+      rendu();
+    };
+    pied.appendChild(r);
+    hote.appendChild(pied);
+
+    if (focus) {
+      const b = hote.querySelector('.ordre-ligne[data-cle="' + focus.cle +
+        '"] button:nth-of-type(' + (focus.sens + 1) + ')');
+      if (b && !b.disabled) b.focus();
+    }
+  };
+
+  rendu();
+  return hote;
 }
 
 /**
@@ -1196,6 +1342,17 @@ function ouvreFiche(apres) {
             return pied;
           })(),
         ]));
+
+      /* L'ordre de lecture vient en dernier, et c'est sa place : il ne se
+         règle qu'une fois qu'on sait ce que la fiche montre. */
+      pan.appendChild(cadreFiche(
+        { titre: "Ordre d'affichage", domaine: "stands",
+          aide: "L'ordre dans lequel la fiche déroule ses champs, de haut en " +
+            "bas. Ce que le visiteur vient lire en premier n'est pas le même " +
+            "d'un salon à l'autre. L'en-tête — l'enseigne, le pavillon, le " +
+            "numéro de stand — et le volet des conférences ne se déplacent " +
+            "pas : ils ne font pas partie du corps." },
+        [cadreOrdre(e, src)]));
     });
 
     corps.appendChild(barre);
