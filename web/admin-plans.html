@@ -18,9 +18,11 @@
     <span class="sous" id="sousTitre"></span>
     <span class="statut" id="statut" role="status" aria-live="polite"></span>
     <div class="droite">
-      <button class="btn petit" id="btnImport">Importer</button>
+      <button class="btn petit" id="btnProjet">Projet</button>
       <button class="btn petit" id="btnExport">Exporter</button>
-      <button class="btn petit" id="btnTheme" aria-label="Thème">◐</button>
+      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
     </div>
   </header>
 
@@ -34,6 +36,9 @@
         <button class="btn petit primaire" id="btnNouveau">Nouveau</button>
       </span>
     </header>
+    <div class="filtre" id="filtre" hidden>
+      <input id="chFiltre" type="search" placeholder="Filtrer les événements" aria-label="Filtrer les événements" spellcheck="false">
+    </div>
     <div class="liste" id="listeEvts"></div>
   </aside>
 
@@ -306,16 +311,42 @@ function signale(txt, erreur) {
 /* ------------------------------------------------------------------
    Briques d'affichage
    ------------------------------------------------------------------ */
-const bloc = (titre) => {
+/**
+ * Un bloc de la fiche : son intitulé, et à droite ce qui se compte sans le lire
+ * — « 1 pavillon · 1 publié ». La note est facultative ; les blocs qui n'ont
+ * rien à compter n'en portent pas.
+ */
+const bloc = (titre, note) => {
   const d = document.createElement("div");
   d.className = "bloc";
+  const h = document.createElement("div");
+  h.className = "bloc-hd";
   const t = document.createElement("span");
   t.className = "eyebrow";
   t.textContent = titre;
-  d.appendChild(t);
+  h.appendChild(t);
+  if (note) {
+    const n = document.createElement("span");
+    n.className = "note";
+    n.textContent = note;
+    h.appendChild(n);
+  }
+  d.appendChild(h);
   return d;
 };
 const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
+
+/* Un menu déplié se referme sur un clic ailleurs et sur Échap : sans cela il
+   resterait ouvert au-dessus de la fiche, et rien ne dirait comment le fermer. */
+document.addEventListener("click", (ev) => {
+  document.querySelectorAll("details.menu[open]").forEach((d) => {
+    if (!d.contains(ev.target) || ev.target.closest(".menu-pan")) d.open = false;
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  document.querySelectorAll("details.menu[open]").forEach((d) => d.open = false);
+});
 
 /** Adresse de base des pages, déduite de celle de la console. */
 const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
@@ -337,7 +368,7 @@ const RYTHMES = [[0, "Manuel uniquement"], [15, "Toutes les 15 minutes"],
                  [60, "Toutes les heures"], [360, "Toutes les 6 heures"],
                  [1440, "Une fois par jour"]];
 
-let EVTS = [], selection = null, PLANS = {};
+let EVTS = [], selection = null, PLANS = {}, filtre = "";
 
 
 /**
@@ -455,21 +486,37 @@ async function majEvenement(id, champs) {
 /* ------------------------------------------------------------------
    Colonne de gauche
    ------------------------------------------------------------------ */
+/** Ce que le filtre laisse passer : le nom, ou l'identifiant d'URL. */
+const retenus = () => !filtre ? EVTS
+  : EVTS.filter((e) => (e.nom + " " + (e.slug || "")).toLowerCase().includes(filtre));
+
 function dessineRail() {
   const box = $("listeEvts");
+  /* Le champ de filtre ne paraît qu'au-delà d'une poignée de salons : sous ce
+     seuil la liste se parcourt d'un coup d'œil, et le champ ne serait qu'une
+     ligne de plus à regarder. */
+  $("filtre").hidden = EVTS.length <= 6;
   if (!EVTS.length) {
     box.innerHTML = '<div class="vide">Aucun événement.<br>Créez-en un pour commencer.</div>';
     return;
   }
-  box.innerHTML = EVTS.map((e) => {
+  const liste = retenus();
+  if (!liste.length) {
+    box.innerHTML = '<div class="vide">Aucun événement ne correspond.</div>';
+    return;
+  }
+  box.innerHTML = liste.map((e) => {
     const p = PLANS[e.id] || [];
     const publies = p.filter((x) => x.publie).length;
+    /* Les pavillons ne sont chargés que pour l'événement ouvert : un tiret sur
+       toutes les autres lignes annonçait une absence là où il n'y a qu'une
+       ignorance. La mention ne paraît donc que lorsqu'il y a de quoi compter. */
     return '<button class="evt" data-id="' + e.id + '" aria-current="' + (e.id === selection) + '">' +
       '<span class="nom">' + esc(e.nom) + '</span>' +
       '<span class="meta"><span class="etat ' + e.etat + '">' +
       (e.etat === "publie" ? "Publié" : "Brouillon") + '</span>' +
-      '<span>' + (p.length ? publies + "/" + p.length + " pavillons" : "—") +
-      '</span></span></button>';
+      (p.length ? '<span>' + publies + "/" + p.length + " pavillons</span>" : "") +
+      '</span></button>';
   }).join("");
   box.querySelectorAll(".evt").forEach((b) => b.onclick = async () => {
     selection = b.dataset.id;
@@ -516,23 +563,33 @@ function dessineFiche() {
   }
   f.innerHTML = "";
 
+  /* Deux sorties vers le plan restent à découvert — ce sont elles qu'on
+     cherche en ouvrant la console. Le reste se déplie : publier, dupliquer et
+     supprimer n'ont pas à peser autant que « Plan public », et sept boutons de
+     même poids sur une ligne ne se hiérarchisaient plus. */
   const entete = document.createElement("div");
   entete.className = "entete";
-  entete.innerHTML = '<div><span class="eyebrow">Événement</span><h2></h2>' +
+  entete.innerHTML = '<div class="ent-txt"><h2></h2>' +
     '<span class="etat ' + e.etat + '">' + (e.etat === "publie" ? "Publié" : "Brouillon") + '</span></div>' +
     '<div class="droite">' +
-    '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
-    '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
-    '<a class="btn petit" id="lienRapport">Utilisation</a>' +
-    '<button class="btn petit" id="btnSources">Sources de données</button>' +
-    '<button class="btn petit" id="btnEtat"></button>' +
-    '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
-    '<button class="btn petit danger" id="btnSupprimer">Supprimer</button></div>';
+    '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public' +
+    '<span class="ext" aria-hidden="true">↗</span></a>' +
+    '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration' +
+    '<span class="ext" aria-hidden="true">↗</span></a>' +
+    '<details class="menu"><summary class="btn petit">Actions</summary>' +
+    '<div class="menu-pan">' +
+    '<a class="mitem" id="lienRapport">Rapport d\'utilisation</a>' +
+    '<button class="mitem" id="btnSources">Sources de données</button>' +
+    '<button class="mitem" id="btnEtat"></button>' +
+    '<button class="mitem" id="btnDupliquer">Dupliquer l\'événement</button>' +
+    '<hr>' +
+    '<button class="mitem danger" id="btnSupprimer">Supprimer l\'événement</button>' +
+    '</div></details></div>';
   entete.querySelector("h2").textContent = e.nom;
   f.appendChild(entete);
 
   majLiens(e);
-  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier";
+  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
   $("btnEtat").onclick = async () => {
     e.etat = e.etat === "publie" ? "brouillon" : "publie";
     try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
@@ -557,42 +614,44 @@ function dessineFiche() {
   b1.appendChild(g1);
   f.appendChild(b1);
 
-  const b2 = bloc("Synchronisation");
-  const g2 = grille();
-  const lr = document.createElement("label");
-  lr.innerHTML = '<span>Rythme de rafraîchissement</span><select>' +
-    RYTHMES.map((r) => '<option value="' + r[0] + '"' +
-      (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("") + '</select>';
-  lr.querySelector("select").onchange = async (ev) => {
+  /* D'où viennent les données, ce qu'on en montre, et à quelle fraîcheur : la
+     synchronisation tenait un bloc à elle pour une liste déroulante et un
+     bouton, et la question qu'elle répond est celle des lignes voisines. */
+  const bd = bloc("Données");
+  bd.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
+    ouvreProvenance));
+  bd.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
+  bd.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
+
+  const rythme = document.createElement("select");
+  rythme.setAttribute("aria-label", "Rythme de rafraîchissement");
+  rythme.innerHTML = RYTHMES.map((r) => '<option value="' + r[0] + '"' +
+    (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("");
+  rythme.onchange = async (ev) => {
     e.rythme_min = +ev.target.value;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
     catch (err) { signale(err.message, true); }
   };
-  g2.appendChild(lr);
-  b2.appendChild(g2);
+  const bsync = document.createElement("button");
+  bsync.className = "btn petit";
+  bsync.id = "btnSync";
+  bsync.textContent = "Synchroniser maintenant";
+  bd.appendChild(ligneOutil("Synchronisation", '<span id="msgSync"></span>', [rythme, bsync]));
 
-  const ligne = document.createElement("div");
-  ligne.className = "etat-ligne";
-  ligne.innerHTML = '<button class="btn petit" id="btnSync">Synchroniser maintenant</button>' +
-    '<span id="msgSync"></span>';
-  b2.appendChild(ligne);
   const zoneAv = document.createElement("div");
   zoneAv.id = "avancement";
-  b2.appendChild(zoneAv);
-  f.appendChild(b2);
-  $("btnSync").onclick = () => synchronise(e);
-
-  const br = bloc("Réglages");
-  br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
-    ouvreProvenance));
-  br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
-  br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
-  f.appendChild(br);
+  bd.appendChild(zoneAv);
+  f.appendChild(bd);
   majMsgSync(e);
+  $("btnSync").onclick = () => synchronise(e);
 
   /* --- pavillons --- */
   const plans = PLANS[e.id] || [];
-  const b3 = bloc("Pavillons");
+  const publies = plans.filter((p) => p.publie).length;
+  const b3 = bloc("Pavillons", plans.length
+    ? plans.length + " pavillon" + (plans.length > 1 ? "s" : "") + " · " +
+      publies + " publié" + (publies > 1 ? "s" : "")
+    : "");
   if (!plans.length) {
     const p = document.createElement("p");
     p.className = "astuce";
@@ -603,7 +662,7 @@ function dessineFiche() {
     // nommé pour qu'un écran étroit le fasse défiler seul, sans emporter la fiche
     t.className = "pavillons";
     t.innerHTML = "<thead><tr><th>Publier</th><th>Pavillon</th><th>Hall</th>" +
-      "<th>Emplacements</th><th>Zones</th></tr></thead><tbody></tbody>";
+      '<th class="num">Emplacements</th><th class="num">Zones</th></tr></thead><tbody></tbody>';
     const tb = t.querySelector("tbody");
     plans.forEach((p) => {
       const tr = document.createElement("tr");
@@ -1596,20 +1655,35 @@ function panneauOrdre(e, src) {
 }
 
 /**
- * Une ligne de réglage : ce qu'il vaut, et de quoi l'ouvrir. Le détail tient
- * dans une fenêtre — quatre listes déroulantes et neuf cases à cocher rendaient
- * la fiche illisible alors qu'on n'y touche qu'une fois par salon.
+ * Une ligne du bloc « Données » : ce dont il s'agit, ce que cela vaut, et de
+ * quoi le changer. Les trois colonnes sont les mêmes d'une ligne à l'autre —
+ * c'est cet alignement qui fait retrouver la ligne qu'on cherche.
  */
-function ligneReglage(titre, resume, ouvre) {
+function ligneOutil(titre, valeur, controles) {
   const d = document.createElement("div");
   d.className = "reglage-ligne";
-  d.innerHTML = '<span class="rt"></span><span class="rv"></span>' +
-                '<button class="btn petit">Modifier</button>';
+  d.innerHTML = '<span class="rt"></span><span class="rv">' + valeur +
+                '</span><span class="act"></span>';
   d.querySelector(".rt").textContent = titre;
+  const a = d.querySelector(".act");
+  controles.forEach((c) => a.appendChild(c));
+  return d;
+}
+
+/**
+ * Une ligne dont le détail s'ouvre en fenêtre : quatre listes déroulantes et
+ * neuf cases à cocher rendaient la fiche illisible alors qu'on n'y touche
+ * qu'une fois par salon. Ici, seul le résumé reste.
+ */
+function ligneReglage(titre, resume, ouvre) {
+  const b = document.createElement("button");
+  b.className = "btn petit";
+  b.textContent = "Modifier";
+  const d = ligneOutil(titre, "", [b]);
   const v = d.querySelector(".rv");
   const maj = () => { v.textContent = resume(); };
   maj();
-  d.querySelector("button").onclick = () => ouvre(maj);
+  b.onclick = () => ouvre(maj);
   return d;
 }
 
@@ -1626,7 +1700,7 @@ function ouvreProvenance(apres) {
     const note = document.createElement("p");
     note.className = "aide";
     note.textContent = "Les identifiants d'événement se saisissent dans " +
-      "« Sources de données », en haut de la fiche.";
+      "« Sources de données », au menu Actions de la fiche.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
@@ -2476,8 +2550,9 @@ function majMsgSync(e) {
   if (!m) return;
   if (e.derniere_err) { m.className = "err"; m.textContent = "Dernière erreur : " + e.derniere_err; return; }
   m.className = "";
+  // la ligne s'intitule déjà « Synchronisation » : le mot n'a pas à revenir
   m.textContent = e.derniere_sync
-    ? "Dernière synchronisation : " +
+    ? "Dernière : " +
       new Date(e.derniere_sync).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
     : "Jamais synchronisé.";
 }
@@ -2594,8 +2669,14 @@ $("btnExport").onclick = (ev) => {
     () => { ev.target.textContent = "Copié"; setTimeout(() => ev.target.textContent = "Exporter", 1700); },
     () => { ev.target.textContent = "Échec"; });
 };
-$("btnImport").onclick = () => ecranConfig();
-$("btnImport").textContent = "Projet";
+$("btnProjet").onclick = () => ecranConfig();
+
+/* Le filtre tient hors de la liste : la redessiner ne lui reprend pas le
+   curseur, et ce qu'on vient de taper reste là où on le tape. */
+$("chFiltre").oninput = () => {
+  filtre = $("chFiltre").value.trim().toLowerCase();
+  dessineRail();
+};
 
 
 /* ------------------------------------------------------------------

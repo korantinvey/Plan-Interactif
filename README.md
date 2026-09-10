@@ -635,8 +635,9 @@ moteur.
 Le plan était une boîte noire : on savait combien d'exposants il portait, jamais
 s'il servait. La page `rapport` répond à la question que pose l'organisateur —
 combien sont venus, ce qu'ils ont cherché, quelles fiches ils ont ouvertes, et
-**par quel chemin**. On y arrive depuis la console, par le bouton
-« Utilisation » de la fiche d'un événement, ou directement :
+**par quel chemin**. On y arrive depuis la console, par
+« Rapport d'utilisation » au menu **Actions** de la fiche d'un événement, ou
+directement :
 `…/rapport?plan=<slug>`. La connexion est celle de la console, la même session.
 
 Ce qu'elle montre, pour la période choisie — sept, trente, quatre-vingt-dix

@@ -58,7 +58,7 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 292 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 318 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -66,50 +66,50 @@ Fonctions :
 
 `$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `ouvreModale` 65 · `fermeModale` 80
 `demande` 90 · `confirme` 112 · `ecranConfig` 123 · `normaliseUrl` 159
-`ecranConnexion` 178 · `deconnecte` 240 · `signale` 251 · `bloc` 267 · `grille` 276
+`ecranConnexion` 178 · `deconnecte` 240 · `signale` 251 · `bloc` 272 · `grille` 290
 
 Éléments :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 37 l. → admin-plans.html
+### `_console-head.html` — 42 l. → admin-plans.html
 
 Éléments :
 
-`#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
-`#btnNouveau` · `#listeEvts` · `#fiche`
+`#sousTitre` · `#statut` · `#btnProjet` · `#btnExport` · `#btnTheme` · `#btnRecharger`
+`#btnNouveau` · `#filtre` · `#chFiltre` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2298 l. → admin-plans.html
+### `_console-js.html` — 2348 l. → admin-plans.html
 
-- l.321 · Provenance des données
-- l.448 · Contenu de la fiche détail
+- l.349 · Provenance des données
+- l.476 · Contenu de la fiche détail
 
 Fonctions :
 
 `fluxFonction` 17 · `barreAvancement` 56 · `fonction` 79 · `slugifie` 95 · `courant` 99
-`charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `dessineRail` 124 · `champ` 150
-`dessineFiche` 175 · `fournisseurUtilise` 383 · `source` 387 · `champCle` 392
-`ligneSource` 427 · `origineConferences` 536 · `resumeProvenance` 601 · `resumeSalles` 618
-`resumeFiche` 629 · `caseFiche` 672 · `champsPersos` 715 · `criteres` 721 · `ecritFiche` 724
-`caseCritere` 739 · `clePerso` 758 · `ajouteChampPerso` 766 · `renommeChampPerso` 777
-`retireChampPerso` 795 · `lignesPerso` 843 · `clesCorps` 878 · `ordreEffectif` 892
-`libelleCorps` 907 · `champsLus` 949 · `exempleCible` 964 · `valeurApercu` 986
-`dessineApercu` 1014 · `panneauOrdre` 1087 · `ligneReglage` 1269 · `ouvreProvenance` 1282
-`ouvreSources` 1305 · `ouvreSalles` 1361 · `cadreFiche` 1476 · `ouvreFiche` 1505
-`sousTitre` 1655 · `tableauChamps` 1670 · `encode` 1813 · `decode` 1815
-`correspondance` 1820 · `sansPrefixe` 1823 · `courte` 1824 · `intitule` 1839
-`intituleSuite` 1851 · `separeValeurs` 1865 · `champOrigine` 1877 · `majLiens` 2106
-`majIntegration` 2133 · `majMsgSync` 2140 · `synchronise` 2154 · `dupliquer` 2197
-`videEcran` 2271 · `dessine` 2276 · `demarre` 2286
+`charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `retenus` 125 · `dessineRail` 128
+`champ` 166 · `dessineFiche` 191 · `fournisseurUtilise` 411 · `source` 415 · `champCle` 420
+`ligneSource` 455 · `origineConferences` 564 · `resumeProvenance` 629 · `resumeSalles` 646
+`resumeFiche` 657 · `caseFiche` 700 · `champsPersos` 743 · `criteres` 749 · `ecritFiche` 752
+`caseCritere` 767 · `clePerso` 786 · `ajouteChampPerso` 794 · `renommeChampPerso` 805
+`retireChampPerso` 823 · `lignesPerso` 871 · `clesCorps` 906 · `ordreEffectif` 920
+`libelleCorps` 935 · `champsLus` 977 · `exempleCible` 992 · `valeurApercu` 1014
+`dessineApercu` 1042 · `panneauOrdre` 1115 · `ligneOutil` 1297 · `ligneReglage` 1313
+`ouvreProvenance` 1325 · `ouvreSources` 1348 · `ouvreSalles` 1404 · `cadreFiche` 1519
+`ouvreFiche` 1548 · `sousTitre` 1698 · `tableauChamps` 1713 · `encode` 1856 · `decode` 1858
+`correspondance` 1863 · `sansPrefixe` 1866 · `courte` 1867 · `intitule` 1882
+`intituleSuite` 1894 · `separeValeurs` 1908 · `champOrigine` 1920 · `majLiens` 2149
+`majIntegration` 2176 · `majMsgSync` 2183 · `synchronise` 2198 · `dupliquer` 2241
+`videEcran` 2321 · `dessine` 2326 · `demarre` 2336
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
-`#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
+`#btnSupprimer` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 493 l. → console.css
+### `_console.css` — 560 l. → console.css
 
-- l.437 · Page de rapport
+- l.504 · Page de rapport
 
 ### `_dessin.html` — 1062 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -305,7 +305,7 @@ Fonctions :
 
 `majAttente` 25 · `accesBase` 36 · `base` 45 · `reglagesSeuls` 63 · `pousseConfiguration` 67
 
-### `_rapport-head.html` — 27 l. → rapport.html
+### `_rapport-head.html` — 29 l. → rapport.html
 
 Éléments :
 
