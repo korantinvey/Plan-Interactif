@@ -14172,7 +14172,8 @@ function ouvreRemiseAZero(){
       const evt = await evenementCourant(acces);
       return base(acces, "rpc/rapport_utilisation", {
         method: "POST",
-        body: JSON.stringify({ p_evenement: evt, p_debut: null, p_fin: null }),
+        // sans période : ce qu'on s'apprête à effacer, c'est tout l'historique
+        body: JSON.stringify({ p_evenement: evt }),
       });
     })().then(r => {
       tally = r || {};

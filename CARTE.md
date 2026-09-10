@@ -76,7 +76,7 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 608 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 609 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.410 · Remise à zéro des compteurs
@@ -88,7 +88,7 @@ Fonctions :
 `replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
 `dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
 `montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
-`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 570
+`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 571
 
 Éléments :
 
@@ -392,16 +392,16 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 432 l. → rapport.html
+### `_rapport-js.html` — 430 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`nb` 45 · `courant` 46 · `chargeEvenements` 51 · `debutPeriode` 61 · `chargeRapport` 69
-`chiffre` 80 · `barres` 99 · `jours` 126 · `dessineRapport` 147 · `colonnesExport` 284
-`nomFichierExport` 303 · `nomFeuilleExport` 313 · `exporteExposants` 320
-`dessineBarre` 361 · `rafraichit` 384 · `videEcran` 403 · `demarre` 418
+`nb` 45 · `courant` 46 · `chargeEvenements` 51 · `joursPeriode` 69 · `chargeRapport` 71
+`chiffre` 82 · `barres` 101 · `jours` 128 · `dessineRapport` 149 · `colonnesExport` 286
+`nomFichierExport` 305 · `nomFeuilleExport` 315 · `exporteExposants` 322
+`dessineBarre` 359 · `rafraichit` 382 · `videEcran` 401 · `demarre` 416
 
 Éléments :
 
@@ -482,6 +482,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000009_fiches_zones.sql` — evenement
 - `20260910000010_remise_a_zero.sql` — fn reinitialise_compteurs
 - `20260910000011_gestes_par_stand.sql` — compteur_cible, fn enregistre_mesures, fn audience_cibles
+- `20260910000012_periode_du_salon.sql` — fn periode_salon, fn rapport_utilisation, fn audience_cibles
 
 ## Le reste
 
