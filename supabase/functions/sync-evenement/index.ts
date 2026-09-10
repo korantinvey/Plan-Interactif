@@ -1,11 +1,17 @@
 /**
  * Synchronisation d'un événement depuis Klipso.
  *
- * Deux usages :
- *   { action: "plans", instance, eventId }  → liste les pavillons, sans rien
- *                                             écrire. Sert à la console avant
- *                                             qu'un événement soit enregistré.
- *   { evenementId }                         → synchronisation complète.
+ *   { evenementId }  → synchronisation complète.
+ *
+ * Un seul usage, et c'est voulu. Il en existait un second — « action: plans »
+ * — qui interrogeait Klipso pour une instance et un identifiant d'événement
+ * donnés dans la requête, sans les rapporter à aucun salon de la base : la
+ * fonction prêtait alors la clé Klipso de l'exploitant à qui la lui demandait,
+ * et rendait les pavillons d'un salon dont l'appelant n'avait pas à connaître
+ * l'existence. La console ne s'en servait plus.
+ *
+ * L'événement à synchroniser est donc toujours un salon de la base, et le
+ * droit de l'appelant sur ce salon se vérifie avant tout appel sortant.
  *
  * La clé Klipso vient des secrets de la fonction. Elle ne transite ni par la
  * requête, ni par la base, ni par le navigateur.
@@ -264,19 +270,6 @@ Deno.serve(async (req) => {
     }
 
     const corps = await req.json();
-
-    /* ------------------ découverte des pavillons ------------------ */
-    if (corps.action === "plans") {
-      const instance = corps.instance ?? Deno.env.get("KLIPSO_INSTANCE");
-      if (!instance) return repond({ erreur: "Instance manquante." }, 400);
-      const g = gaia(instance, corps.eventId);
-      const plans = await g.tout<Record<string, unknown>>("Plan", {
-        fields: ["Id", "Libelle", "HallExp"],
-      });
-      return repond({
-        plans: plans.map((p) => ({ Id: p.Id, Libelle: p.Libelle, HallExp: p.HallExp })),
-      });
-    }
 
     /* ------------------ synchronisation complète ------------------ */
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
