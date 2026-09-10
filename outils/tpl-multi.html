@@ -194,11 +194,15 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
-.row{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;width:100%;text-align:left;
+.row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--accent-soft)}
-.row .code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;padding:3px 0;
+/* Le numéro tient sur une ligne : c'est un tout, et l'empiler en deux morceaux
+   le donnait à lire comme deux numéros. La case s'élargit plutôt, jusqu'au
+   plafond que `caseNumero` lui fixe. */
+.row .code{font-family:"IBM Plex Mono",monospace;font-size:var(--caseF,11.5px);font-weight:500;
+  padding:3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
 .row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
 /* Une zone et une conférence n'ont pas de numéro : leur case dit la sorte. En
@@ -3167,6 +3171,44 @@ const PLAFOND_SORTE = 500;
 const CASE_SORTE = { zone: "Zone", conf: "Conf" };
 
 /**
+ * Ce que la case affiche.
+ *
+ * Deux emplacements réunis arrivent séparés par un tiret entouré d'espaces —
+ * « D70 - E71 ». Ces espaces sont les seuls endroits où le numéro accepte de
+ * se couper : dans une case étroite, il s'y coupait, et la liste alignait des
+ * numéros en deux morceaux empilés. Le tiret dit déjà la réunion, les espaces
+ * n'y ajoutent rien.
+ */
+const codeCase = (o) => CASE_SORTE[o.kind] ||
+  String(o.code || "").replace(/\s*([-–—\/])\s*/g, "$1").trim() || "—";
+
+/**
+ * La case du numéro, de même largeur sur toutes les lignes.
+ *
+ * Une case taillée ligne à ligne mettrait les noms en escalier ; la case fixe
+ * qu'elle remplace coupait les numéros doubles. C'est donc le plus long numéro
+ * du salon qui la règle — et non le plus long des résultats affichés, qui
+ * ferait sauter la colonne des noms à chaque frappe.
+ *
+ * Un plafond garde au nom la place qui lui revient sur un téléphone : passé
+ * lui, c'est la police du numéro qui cède, plutôt que la case. Elle a son
+ * propre plancher, sans quoi un numéro aberrant — il en arrive — rendrait
+ * illisibles les huit cents autres pour tenir tout entier.
+ */
+const CASE_MIN = 48, CASE_MAX = 92, CASE_CADRE = 10, CASE_POLICE = 11.5;
+function caseNumero(){
+  let w = 0;
+  for (const o of TOUS)
+    if (o.kind === "stand" && o.code) w = Math.max(w, largeur(codeCase(o), P_CODE));
+  w *= CASE_POLICE;
+  const place = CASE_MAX - CASE_CADRE;
+  return {
+    l: Math.round(Math.min(Math.max(w + CASE_CADRE, CASE_MIN), CASE_MAX)),
+    f: w > place ? Math.max(9, CASE_POLICE * place / w) : CASE_POLICE,
+  };
+}
+
+/**
  * Ce que la seconde ligne ajoute : pour une conférence, quand et où.
  *
  * Un titre seul ne distingue pas deux sessions d'un programme qui en compte
@@ -3223,6 +3265,10 @@ function liste(){
     return n <= PLAFOND_SORTE;
   });
 
+  const boite = caseNumero();
+  box.style.setProperty("--caseL", boite.l + "px");
+  box.style.setProperty("--caseF", boite.f.toFixed(2) + "px");
+
   box.innerHTML = montres.length ? montres.map(o => {
     const heberge = o.kind === "coex";
     /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
@@ -3239,7 +3285,7 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang +
       // une conférence n'est pas un objet du plan : rien ne peut la désigner
       '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
-      '<span class="code">' + esc(CASE_SORTE[o.kind] || o.code || "—") + '</span>' +
+      '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
