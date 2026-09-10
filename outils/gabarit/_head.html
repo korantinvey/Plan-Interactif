@@ -346,6 +346,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
    de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
 #apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
   stroke-dasharray:2 5;opacity:.55;pointer-events:none}
+/* La silhouette calculée, montrée avant d'être posée : pleine et translucide,
+   pour qu'on juge d'un coup d'œil ce qu'elle recouvre et ce qu'elle rate. */
+#apercuContour path{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);stroke-width:2;
+  vector-effect:non-scaling-stroke;pointer-events:none}
 
 .outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:8px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
@@ -471,6 +475,7 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
 .calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
+.panel .ajout.auto{margin-top:4px;border-style:solid}
 .panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
@@ -1007,6 +1012,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen header button:hover{color:var(--ink)}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.mcorps .mBilan{margin:8px 0 10px;font-weight:600;color:var(--ink)}
+.mCurseur{display:grid;grid-template-columns:1fr 130px 56px;align-items:center;gap:10px;
+  margin:7px 0;font-size:12.5px;color:var(--ink-2)}
+.mCurseur input{width:100%;accent-color:var(--accent)}
+.mCurseur i{font-style:normal;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.mSous{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.mSous summary{font-size:12.5px;color:var(--ink-3);cursor:pointer}
+.mSous label{display:flex;align-items:center;gap:7px;margin-top:6px;font-size:12px;
+  color:var(--ink-2);word-break:break-all}
+@media (max-width:600px){.mCurseur{grid-template-columns:1fr;gap:2px}
+  .mCurseur i{text-align:left}}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
   border-top:1px solid var(--line)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}

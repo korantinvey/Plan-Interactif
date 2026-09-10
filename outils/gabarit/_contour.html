@@ -1,0 +1,646 @@
+/* ============================================================
+   11 bis. Contour automatique d'un pavillon
+   Un relevé de bureau d'études décrit un bâtiment ; un plan de visiteur
+   décrit un lieu. Le second veut une silhouette pleine, franche, sans les
+   portes ni les poteaux — celle qu'un studio graphique redessine à la main
+   pour chaque salon. On la calcule ici, à partir du relevé lui-même.
+
+   Le procédé n'a rien de savant : on imprime les murs sur une grille, on
+   bouche ce qui est plus étroit qu'une porte, on remplit ce qui reste
+   enfermé, puis on suit le bord de la tache obtenue. Ce bord est en escalier
+   — on l'abat en segments, on aligne ces segments sur l'équerre du bâtiment,
+   et l'on arrondit. Aucun modèle n'est interrogé : la géométrie suffit, et
+   elle a l'avantage de donner deux fois le même contour pour le même plan.
+   ============================================================ */
+
+/**
+ * Tout ce que le relevé contient de tracé, sans distinction.
+ *
+ * On ne se fie pas au nom des calques : d'un salon à l'autre, d'un bureau
+ * d'études à l'autre, les conventions changent — « 2-FDP-INTERIEUR » ici,
+ * autre chose ailleurs, et rien du tout parfois. Un procédé qui les lirait
+ * marcherait sur un plan et se tairait sur le suivant.
+ *
+ * Il se trouve qu'on n'en a pas besoin. Ce qu'on cherche est une enveloppe :
+ * tout ce qui se tient à l'intérieur du bâtiment s'y perd, portes comprises —
+ * une porte est percée dans le mur, elle ne le déborde pas. Seul compte ce qui
+ * traîne dehors, et cela se voit à l'aperçu bien mieux que dans un nom. Les
+ * textes font exception, mais pour une raison de forme et non de nom : une
+ * étiquette posée au milieu d'une allée est un pâté sans épaisseur de mur.
+ */
+function sousCalquesContour(){
+  const liste = [];
+  for (const f of P().fond){
+    const g = $("couches").querySelector('.cal[data-cle="' + CSS.escape(f.cle) + '"]');
+    if (!g) continue;
+    for (const sub of g.querySelectorAll("g[data-s]")){
+      // un sous-calque sans trait ne pèse rien dans une silhouette
+      const n = sub.querySelectorAll("path,polyline,polygon,circle,rect,line").length;
+      if (!n) continue;
+      liste.push({ id: sub.id, el: sub, cle: f.cle, n, pris: true });
+    }
+  }
+  return liste;
+}
+
+/* ------------------------------------------------------------
+   1. Imprimer les murs sur une grille
+   ------------------------------------------------------------ */
+
+/**
+ * Le relevé, rendu en noir sur une grille de la taille du pavillon.
+ *
+ * On confie le tracé au navigateur plutôt que de refaire un rasteriseur :
+ * un relevé contient des arcs, des courbes et des épaisseurs de trait dont la
+ * lecture fidèle est un métier. On recopie donc les calques choisis dans un
+ * document SVG autonome, qu'on lui demande de dessiner.
+ *
+ * L'épaisseur imposée compte autant que le tracé : un mur relevé en deux
+ * traits fins laisserait, à cette échelle, deux lignes séparées par du vide.
+ */
+function imprimeReleve(choisis, metresParPixel){
+  const e = P().emprise;
+  const larg = Math.max(1, Math.round((e.x1 - e.x0) / metresParPixel));
+  const haut = Math.max(1, Math.round((e.y1 - e.y0) / metresParPixel));
+  const corps = choisis.map(c => {
+    const g = c.el.cloneNode(true);
+    g.querySelectorAll("text,tspan").forEach(t => t.remove());
+    g.removeAttribute("style");
+    g.setAttribute("fill", "none");
+    g.setAttribute("stroke", "#000");
+    g.setAttribute("stroke-width", metresParPixel * 1.5);
+    return g.outerHTML;
+  }).join("");
+  const doc = '<svg xmlns="http://www.w3.org/2000/svg" width="' + larg + '" height="' + haut +
+              '" viewBox="' + e.x0 + " " + e.y0 + " " + (e.x1 - e.x0) + " " + (e.y1 - e.y0) +
+              '">' + corps + "</svg>";
+
+  /* Le document pèse plus d'un mégaoctet : il part par un objet-URL et non en
+     base64 — l'encodage y passait le document caractère par caractère, et
+     débordait la pile d'appels avant d'avoir fini. */
+  const url = URL.createObjectURL(new Blob([doc], { type: "image/svg+xml" }));
+  return new Promise((ok, non) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const cv = document.createElement("canvas");
+      cv.width = larg; cv.height = haut;
+      const ctx = cv.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
+      const px = ctx.getImageData(0, 0, larg, haut).data;
+      const grille = new Uint8Array(larg * haut);
+      // le tracé est noir sur transparent : l'opacité seule dit où il passe
+      for (let i = 0, n = grille.length; i < n; i++) grille[i] = px[i * 4 + 3] > 40 ? 1 : 0;
+      ok({ grille, larg, haut, m: metresParPixel, x0: e.x0, y0: e.y0 });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      non(new Error("Le relevé n'a pas pu être dessiné."));
+    };
+    img.src = url;
+  });
+}
+
+/* ------------------------------------------------------------
+   2. Boucher, remplir, isoler
+   ------------------------------------------------------------ */
+
+/**
+ * Le carré de la distance au point marqué le plus proche, pour chaque case.
+ *
+ * C'est la transformée de Felzenszwalb : une passe par colonnes, une par
+ * lignes, chacune en temps linéaire. On s'en sert deux fois — pour épaissir,
+ * puis pour amincir d'autant — et c'est ce qui rend la fermeture assez rapide
+ * pour être rejouée à chaque mouvement d'un réglage.
+ */
+function distances(grille, larg, haut, marque){
+  const INF = 1e12;
+  const d = new Float64Array(larg * haut);
+  for (let i = 0; i < d.length; i++) d[i] = (grille[i] === marque) ? 0 : INF;
+
+  const n = Math.max(larg, haut);
+  const f = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1), s = new Float64Array(n);
+  const passe = (taille, lit, ecrit) => {
+    for (let i = 0; i < taille; i++) f[i] = lit(i);
+    let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+    for (let q = 1; q < taille; q++){
+      let x = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (x <= z[k]){
+        k--;
+        x = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      }
+      k++; v[k] = q; z[k] = x; z[k + 1] = INF;
+    }
+    k = 0;
+    for (let q = 0; q < taille; q++){
+      while (z[k + 1] < q) k++;
+      s[q] = (q - v[k]) * (q - v[k]) + f[v[k]];
+    }
+    for (let i = 0; i < taille; i++) ecrit(i, s[i]);
+  };
+
+  for (let x = 0; x < larg; x++)
+    passe(haut, y => d[y * larg + x], (y, val) => { d[y * larg + x] = val; });
+  for (let y = 0; y < haut; y++)
+    passe(larg, x => d[y * larg + x], (x, val) => { d[y * larg + x] = val; });
+  return d;
+}
+
+/**
+ * La fermeture morphologique : épaissir de `r`, puis amincir d'autant.
+ *
+ * C'est elle qui fait disparaître les portes. Une baie d'un mètre quatre-vingts
+ * est un trou dans la ligne de mur ; épaissir la ligne le referme, amincir
+ * ensuite rend au mur son épaisseur sans rouvrir le trou. Tout ce qui est plus
+ * étroit que `r` se referme ainsi, portes, seuils et interruptions de tracé —
+ * et rien de plus large ne bouge.
+ */
+function fermeGrille(grille, larg, haut, r){
+  const r2 = r * r;
+  const dGrosse = distances(grille, larg, haut, 1);
+  const gros = new Uint8Array(larg * haut);
+  for (let i = 0; i < gros.length; i++) gros[i] = dGrosse[i] <= r2 ? 1 : 0;
+  const dMince = distances(gros, larg, haut, 0);
+  const fin = new Uint8Array(larg * haut);
+  for (let i = 0; i < fin.length; i++) fin[i] = dMince[i] > r2 ? 1 : 0;
+  return fin;
+}
+
+/**
+ * Remplir ce qui est enfermé.
+ *
+ * Après fermeture, un pavillon n'est encore qu'un anneau de murs. Ce qui fait
+ * la silhouette, c'est le dedans : on inonde le vide depuis les bords de la
+ * grille, et tout vide que l'eau n'atteint pas est du dedans.
+ */
+function remplitEnferme(grille, larg, haut){
+  const vu = new Uint8Array(larg * haut);
+  const pile = [];
+  const pose = (x, y) => {
+    const i = y * larg + x;
+    if (x < 0 || y < 0 || x >= larg || y >= haut || vu[i] || grille[i]) return;
+    vu[i] = 1; pile.push(i);
+  };
+  for (let x = 0; x < larg; x++){ pose(x, 0); pose(x, haut - 1); }
+  for (let y = 0; y < haut; y++){ pose(0, y); pose(larg - 1, y); }
+  while (pile.length){
+    const i = pile.pop(), x = i % larg, y = (i - x) / larg;
+    pose(x + 1, y); pose(x - 1, y); pose(x, y + 1); pose(x, y - 1);
+  }
+  const plein = new Uint8Array(larg * haut);
+  for (let i = 0; i < plein.length; i++) plein[i] = (grille[i] || !vu[i]) ? 1 : 0;
+  return plein;
+}
+
+/**
+ * Les taches de la grille, de la plus large à la plus étroite.
+ *
+ * Un salon tient parfois en deux bâtiments reliés par une passerelle, et le
+ * relevé traîne toujours quelques traits isolés — une borne, un morceau de
+ * voirie. On sépare donc les taches, et l'appelant décide de ce qui est trop
+ * petit pour être un pavillon.
+ */
+function taches(grille, larg, haut){
+  const num = new Int32Array(larg * haut).fill(-1);
+  const trouvees = [];
+  const pile = [];
+  for (let d = 0; d < grille.length; d++){
+    if (!grille[d] || num[d] >= 0) continue;
+    const n = trouvees.length;
+    let aire = 0;
+    num[d] = n; pile.push(d);
+    while (pile.length){
+      const i = pile.pop(), x = i % larg, y = (i - x) / larg;
+      aire++;
+      const voisin = (vx, vy) => {
+        if (vx < 0 || vy < 0 || vx >= larg || vy >= haut) return;
+        const j = vy * larg + vx;
+        if (grille[j] && num[j] < 0){ num[j] = n; pile.push(j); }
+      };
+      voisin(x + 1, y); voisin(x - 1, y); voisin(x, y + 1); voisin(x, y - 1);
+    }
+    trouvees.push({ n, aire, depart: d });
+  }
+  trouvees.sort((a, b) => b.aire - a.aire);
+  return { num, trouvees };
+}
+
+/* ------------------------------------------------------------
+   3. Suivre le bord
+   ------------------------------------------------------------ */
+
+/**
+ * Le pourtour d'une tache, suivi le long des arêtes entre cases.
+ *
+ * On marche sur la grille des coins, et non sur les cases : le contour obtenu
+ * passe exactement entre le plein et le vide, sans le demi-pixel de biais
+ * qu'un suivi de centres introduirait. La règle tient en une phrase — garder
+ * le plein à sa droite — et suffit à faire le tour complet.
+ */
+function pourtour(num, larg, haut, etiquette, depart){
+  const dedans = (x, y) =>
+    x >= 0 && y >= 0 && x < larg && y < haut && num[y * larg + x] === etiquette;
+  const x0 = depart % larg, y0 = (depart - x0) / larg;
+  // le départ est la première case en lecture : rien au-dessus, on part vers l'est
+  const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];   // est, sud, ouest, nord
+  let cx = x0, cy = y0, d = 0;
+  const pts = [];
+  const garde = larg * haut * 4;
+  for (let pas = 0; pas < garde; pas++){
+    /* Les deux cases devant soi, l'une à gauche l'autre à droite du cap.
+       Elles décident du virage : pas de plein à droite, on tourne à droite
+       pour le retrouver ; du plein des deux côtés, on tourne à gauche. */
+    let agx, agy, adx, ady;
+    if (d === 0){ agx = cx; agy = cy - 1; adx = cx; ady = cy; }
+    else if (d === 1){ agx = cx; agy = cy; adx = cx - 1; ady = cy; }
+    else if (d === 2){ agx = cx - 1; agy = cy; adx = cx - 1; ady = cy - 1; }
+    else { agx = cx - 1; agy = cy - 1; adx = cx; ady = cy - 1; }
+    if (!dedans(adx, ady)) d = (d + 1) & 3;
+    else if (dedans(agx, agy)) d = (d + 3) & 3;
+    /* Le tour est bouclé quand on repart du coin de départ dans le cap de
+       départ — après le virage, donc, et non après le pas : on revient sur ce
+       coin une fois par côté qui y aboutit, et un seul de ces passages
+       redonne le cap initial. */
+    if (pas && cx === x0 && cy === y0 && d === 0) break;
+    pts.push([cx, cy]);
+    cx += DIRS[d][0]; cy += DIRS[d][1];
+  }
+  return pts;
+}
+
+/* ------------------------------------------------------------
+   4. Abattre l'escalier, mettre d'équerre
+   ------------------------------------------------------------ */
+
+/** Douglas-Peucker : la ligne brisée qui ne s'écarte jamais de plus de `tol`. */
+function allege(pts, tol){
+  if (pts.length < 3) return pts.slice();
+  const garde = new Uint8Array(pts.length);
+  garde[0] = garde[pts.length - 1] = 1;
+  const pile = [[0, pts.length - 1]];
+  while (pile.length){
+    const [a, b] = pile.pop();
+    if (b <= a + 1) continue;
+    const A = pts[a], B = pts[b];
+    const dx = B[0] - A[0], dy = B[1] - A[1];
+    const l = Math.hypot(dx, dy);
+    let pire = -1, iPire = -1;
+    for (let i = a + 1; i < b; i++){
+      const P = pts[i];
+      const e = l < 1e-9 ? Math.hypot(P[0] - A[0], P[1] - A[1])
+                         : Math.abs(dy * (P[0] - A[0]) - dx * (P[1] - A[1])) / l;
+      if (e > pire){ pire = e; iPire = i; }
+    }
+    if (pire > tol){ garde[iPire] = 1; pile.push([a, iPire], [iPire, b]); }
+  }
+  return pts.filter((_, i) => garde[i]);
+}
+
+/**
+ * L'équerre du bâtiment.
+ *
+ * Un pavillon est rarement bâti dans l'axe du repère du relevé : le mettre à
+ * l'horizontale reviendrait à le tordre. On cherche donc son orientation
+ * propre, en pesant chaque direction par la longueur du mur qui la suit — les
+ * grands murs décident, les décrochements ne votent presque pas. Le quart de
+ * tour suffit comme période : un mur et son perpendiculaire disent la même
+ * équerre.
+ */
+function equerre(pts, ferme){
+  const cases = new Float64Array(900);   // dixièmes de degré, sur 90°
+  const n = pts.length;
+  for (let i = 0; i < (ferme ? n : n - 1); i++){
+    const a = pts[i], b = pts[(i + 1) % n];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l = Math.hypot(dx, dy);
+    if (l < 1e-9) continue;
+    let deg = Math.atan2(dy, dx) * 180 / Math.PI;
+    deg = ((deg % 90) + 90) % 90;
+    cases[Math.min(899, Math.round(deg * 10))] += l;
+  }
+  // un mur légèrement de biais doit renforcer son voisin, pas lui faire concurrence
+  let meilleur = 0, score = -1;
+  for (let i = 0; i < 900; i++){
+    let s = 0;
+    for (let k = -20; k <= 20; k++) s += cases[(i + k + 900) % 900] * (1 - Math.abs(k) / 25);
+    if (s > score){ score = s; meilleur = i; }
+  }
+  return meilleur / 10 * Math.PI / 180;
+}
+
+/**
+ * Le contour remis d'équerre.
+ *
+ * Chaque côté bascule sur la direction admise la plus proche — l'équerre du
+ * bâtiment et ses diagonales — pourvu qu'il n'ait pas à tourner de plus que
+ * `tolDeg` : un mur franchement oblique reste oblique, c'en est un.
+ *
+ * Puis les sommets sont refaits, non pas déplacés mais recalculés : chaque
+ * côté devient une droite, et le sommet est leur intersection. C'est ce qui
+ * donne des angles nets là où un simple arrondi des directions laisserait des
+ * murs qui ne se rejoignent plus.
+ */
+function metDEquerre(pts, theta, tolDeg, minCote){
+  const n = pts.length;
+  if (n < 4) return pts.slice();
+  const tol = tolDeg * Math.PI / 180;
+
+  // 1. chaque côté devient une droite : un point qu'il traverse, une direction
+  let cotes = [];
+  for (let i = 0; i < n; i++){
+    const a = pts[i], b = pts[(i + 1) % n];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l = Math.hypot(dx, dy);
+    if (l < 1e-9) continue;
+    let dir = Math.atan2(dy, dx);
+    // la direction admise la plus proche, à un huitième de tour près
+    const k = Math.round((dir - theta) / (Math.PI / 4));
+    const vise = theta + k * (Math.PI / 4);
+    let ecart = dir - vise;
+    ecart = Math.atan2(Math.sin(ecart), Math.cos(ecart));
+    if (Math.abs(ecart) <= tol) dir = vise;
+    cotes.push({ mx: (a[0] + b[0]) / 2, my: (a[1] + b[1]) / 2, dir, l });
+  }
+
+  /* 2. deux côtés de suite dans la même direction n'en font qu'un ; un côté
+        plus court que `minCote` est un décrochement de relevé, pas un mur :
+        il disparaît, et ses voisins se rejoignent. On répète tant que la
+        fusion en libère d'autres. */
+  const ecartDir = (a, b) => Math.abs(Math.atan2(Math.sin(a.dir - b.dir), Math.cos(a.dir - b.dir)));
+  const memeDir = (a, b) => ecartDir(a, b) < 1e-6;
+  /* Deux côtés qui se suivent en sens opposé décrivent un aller-retour : le
+     contour revient sur lui-même, et cette langue de largeur nulle n'est rien
+     d'autre qu'un trait du relevé pris pour un mur. Elle n'a pas de coin à
+     calculer — deux droites opposées ne se coupent nulle part. */
+  const replie = (a, b) => Math.abs(ecartDir(a, b) - Math.PI) < 1e-6;
+  const fusionne = (a, b) => ({
+    mx: (a.mx * a.l + b.mx * b.l) / (a.l + b.l),
+    my: (a.my * a.l + b.my * b.l) / (a.l + b.l),
+    dir: a.l >= b.l ? a.dir : b.dir, l: a.l + b.l,
+  });
+  const tours = cotes.length + 50;
+  for (let tour = 0; tour < tours && cotes.length > 4; tour++){
+    let bouge = false;
+    for (let i = 0; i < cotes.length && cotes.length > 4; i++){
+      const j = (i + 1) % cotes.length;
+      if (memeDir(cotes[i], cotes[j])){
+        cotes[i] = fusionne(cotes[i], cotes[j]);
+        cotes.splice(j, 1); bouge = true; i--;
+      }
+    }
+    /* Le plus court d'abord : retirer un décrochement en révèle souvent un
+       autre. Mais retirer un côté rapproche ses deux voisins, et deux voisins
+       qui divergent se rejoignent alors très loin — c'est ainsi qu'un coin de
+       bâtiment part en biais à travers la halle. On refuse donc la suppression
+       qui déplacerait le sommet de plus que la longueur du côté ôté ne le
+       justifie, et l'on passe au suivant. */
+    const courts = cotes.map((c, i) => i).filter(i => cotes[i].l < minCote)
+                        .sort((a, b) => cotes[a].l - cotes[b].l);
+    for (const i of courts){
+      if (cotes.length <= 4) break;
+      const a = cotes[(i - 1 + cotes.length) % cotes.length], b = cotes[(i + 1) % cotes.length];
+      const ax = Math.cos(a.dir), ay = Math.sin(a.dir);
+      const bx = Math.cos(b.dir), by = Math.sin(b.dir);
+      const det = ax * by - ay * bx;
+      if (Math.abs(det) > 1e-9){
+        const t = ((b.mx - a.mx) * by - (b.my - a.my) * bx) / det;
+        const px = a.mx + ax * t, py = a.my + ay * t;
+        if (Math.hypot(px - cotes[i].mx, py - cotes[i].my) > 4 * minCote + cotes[i].l) continue;
+      }
+      cotes.splice(i, 1); bouge = true;
+      break;
+    }
+    if (!bouge) break;
+  }
+
+  /* 2 bis. Plus aucun côté parallèle à son voisin.
+     Deux droites parallèles ne se coupent nulle part : elles ne peuvent pas
+     donner de coin. Les sauter laissait le contour joindre les deux sommets
+     voisins par une arête qui n'appartenait à aucun mur — d'où les biseaux
+     dans les silhouettes. On les réduit donc à une seule droite, ce qu'elles
+     décrivent en vérité, jusqu'à ce qu'il n'en reste plus une paire. */
+  for (let tour = 0; tour < 200 && cotes.length > 3; tour++){
+    let i = -1;
+    for (let k = 0; k < cotes.length; k++){
+      const j = (k + 1) % cotes.length;
+      if (memeDir(cotes[k], cotes[j]) || replie(cotes[k], cotes[j])){ i = k; break; }
+    }
+    if (i < 0) break;
+    const j = (i + 1) % cotes.length;
+    // un aller-retour n'a pas de sens de parcours à conserver : on garde celui
+    // du plus long, qui est le mur, et non la langue qui en repart
+    const a = cotes[i], b = cotes[j];
+    const garde = a.l >= b.l ? a : b;
+    cotes[i] = { mx: (a.mx * a.l + b.mx * b.l) / (a.l + b.l),
+                 my: (a.my * a.l + b.my * b.l) / (a.l + b.l),
+                 dir: garde.dir, l: a.l + b.l };
+    cotes.splice(j, 1);
+    if (j === 0) cotes.unshift(cotes.pop());   // la paire enjambait la fermeture
+  }
+
+  // 3. les sommets, refaits par intersection des droites consécutives
+  const sommets = [];
+  for (let i = 0; i < cotes.length; i++){
+    const a = cotes[i], b = cotes[(i + 1) % cotes.length];
+    const ax = Math.cos(a.dir), ay = Math.sin(a.dir);
+    const bx = Math.cos(b.dir), by = Math.sin(b.dir);
+    const det = ax * by - ay * bx;
+    // l'étape précédente a fait en sorte qu'il n'en reste plus
+    if (Math.abs(det) < 1e-9) continue;
+    const t = ((b.mx - a.mx) * by - (b.my - a.my) * bx) / det;
+    sommets.push([+(a.mx + ax * t).toFixed(2), +(a.my + ay * t).toFixed(2)]);
+  }
+  return sommets;
+}
+
+/* ------------------------------------------------------------
+   5. La chaîne complète
+   ------------------------------------------------------------ */
+
+/** L'aire d'un polygone, en mètres carrés — sert à écarter les miettes. */
+function airePolygone(pts){
+  let s = 0;
+  for (let i = 0; i < pts.length; i++){
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return Math.abs(s) / 2;
+}
+
+/**
+ * Les silhouettes du pavillon, en mètres, prêtes à être posées.
+ * `releve` vient d'`imprimeReleve` ; le reste sont les réglages de l'écran.
+ */
+function silhouettes(releve, opt){
+  const { grille, larg, haut, m, x0, y0 } = releve;
+  const ferme = fermeGrille(grille, larg, haut, opt.porte / 2 / m);
+  const plein = remplitEnferme(ferme, larg, haut);
+  const { num, trouvees } = taches(plein, larg, haut);
+  if (!trouvees.length) return [];
+
+  const dehors = [];
+  const seuil = Math.max(trouvees[0].aire * 0.04, (opt.airemin || 200) / (m * m));
+  for (const t of trouvees){
+    if (t.aire < seuil) continue;
+    const bord = pourtour(num, larg, haut, t.n, t.depart)
+      .map(p => [x0 + p[0] * m, y0 + p[1] * m]);
+    if (bord.length < 8) continue;
+    const leger = allege(bord, opt.detail);
+    const droit = metDEquerre(leger, equerre(leger, true), opt.biais, opt.minCote);
+    if (droit.length >= 3 && airePolygone(droit) > (opt.airemin || 200)) dehors.push(droit);
+  }
+  return dehors;
+}
+
+/* ------------------------------------------------------------
+   6. L'écran de réglage
+   ------------------------------------------------------------ */
+
+const REGLAGES_CONTOUR = {
+  porte: 3,        // ce qu'on referme, en mètres : une porte, un seuil
+  detail: 1.2,     // l'écart toléré en abattant l'escalier du bord
+  biais: 12,       // le redressement consenti à un mur, en degrés
+  minCote: 10,     // en deçà, un côté est un décrochement de relevé
+  arrondi: 2,      // le rayon des angles
+  airemin: 200,    // la plus petite tache qui mérite d'être un bâtiment
+};
+
+let _apercuContour = null;
+
+/** Les silhouettes montrées sur le plan pendant qu'on règle. */
+function montreSilhouettes(polys){
+  let g = $("apercuContour");
+  if (!polys || !polys.length){ if (g) g.remove(); return; }
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "apercuContour";
+    svg.appendChild(g);
+  }
+  g.innerHTML = polys.map(p =>
+    '<path d="' + cheminArrondi(p, REGLAGES_CONTOUR.arrondi, true) + '"/>').join("");
+}
+
+/**
+ * L'écran qui calcule le contour et le montre avant de le poser.
+ *
+ * Les réglages se jouent sur l'aperçu, jamais sur le plan : le relevé n'est
+ * imprimé qu'une fois — c'est la seule étape coûteuse — et seul le reste de la
+ * chaîne est rejoué. On voit donc l'effet d'un curseur immédiatement, ce qui
+ * est la seule façon de choisir « trois mètres » plutôt que « deux ».
+ */
+function ouvreContourAuto(){
+  const sous = sousCalquesContour();
+  if (!sous.length){
+    ouvreModale("Contour automatique", c => {
+      const t = document.createElement("p");
+      t.textContent = "Le fond de plan n'est pas encore chargé. Réessayez dans un instant.";
+      c.appendChild(t);
+    }, [{ libelle: "Fermer" }]);
+    return;
+  }
+  let releve = null, calcul = null, dernier = [];
+
+  const rejoue = () => {
+    if (!releve) return;
+    dernier = silhouettes(releve, REGLAGES_CONTOUR);
+    montreSilhouettes(dernier);
+    const b = $("contourBilan");
+    if (b) b.textContent = dernier.length
+      ? dernier.length + (dernier.length > 1 ? " bâtiments" : " bâtiment") + " · " +
+        dernier.reduce((s, p) => s + p.length, 0) + " sommets"
+      : "Rien trouvé : élargissez ce qui est rebouché.";
+  };
+
+  const imprime = () => {
+    const choisis = sous.filter(s => s.pris);
+    const b = $("contourBilan");
+    if (!choisis.length){ if (b) b.textContent = "Choisissez au moins un calque."; return; }
+    if (b) b.textContent = "Lecture du relevé…";
+    /* Un quart de mètre par case : assez fin pour qu'un mur reste un mur, assez
+       grossier pour que la chaîne tienne dans une image d'écran. */
+    imprimeReleve(choisis, 0.25)
+      .then(r => { releve = r; rejoue(); })
+      .catch(e => { if (b) b.textContent = e.message; });
+  };
+
+  ouvreModale("Contour automatique", corps => {
+    const aide = document.createElement("p");
+    aide.className = "mAide";
+    aide.textContent = "Le relevé technique est réduit à la silhouette du bâtiment : " +
+      "les portes se referment, les décrochements s'effacent, les murs se remettent d'équerre.";
+    corps.appendChild(aide);
+
+    const bilan = document.createElement("p");
+    bilan.id = "contourBilan";
+    bilan.className = "mBilan";
+    bilan.textContent = "Lecture du relevé…";
+    corps.appendChild(bilan);
+
+    const curseur = (cle, nom, min, max, pas, unite) => {
+      const l = document.createElement("label");
+      l.className = "mCurseur";
+      l.innerHTML = "<span>" + esc(nom) + "</span>";
+      const c = document.createElement("input");
+      c.type = "range"; c.min = min; c.max = max; c.step = pas;
+      c.value = REGLAGES_CONTOUR[cle];
+      const v = document.createElement("i");
+      v.textContent = REGLAGES_CONTOUR[cle] + unite;
+      c.oninput = () => {
+        REGLAGES_CONTOUR[cle] = +c.value;
+        v.textContent = c.value + unite;
+        clearTimeout(calcul);
+        calcul = setTimeout(rejoue, 60);
+      };
+      l.append(c, v);
+      corps.appendChild(l);
+    };
+    curseur("porte", "Ouvertures à refermer", 0.5, 12, .5, " m");
+    curseur("detail", "Détail conservé", 0.2, 4, .1, " m");
+    curseur("minCote", "Plus petit mur gardé", 0, 20, .5, " m");
+    curseur("biais", "Redressement consenti", 0, 45, 1, "°");
+    curseur("arrondi", "Arrondi des angles", 0, 10, .5, " m");
+
+    const rep = document.createElement("details");
+    rep.className = "mSous";
+    rep.innerHTML = "<summary>Ce qu'on lit du relevé</summary>";
+    sous.forEach(s => {
+      const l = document.createElement("label");
+      const c = document.createElement("input");
+      c.type = "checkbox"; c.checked = s.pris;
+      c.onchange = () => { s.pris = c.checked; imprime(); };
+      l.append(c, document.createTextNode(" " + s.id));
+      rep.appendChild(l);
+    });
+    corps.appendChild(rep);
+    setTimeout(imprime, 0);
+  }, [
+    { libelle: "Annuler", action: () => montreSilhouettes(null) },
+    { libelle: "Poser le contour", genre: "fort", action: () => {
+        montreSilhouettes(null);
+        if (!dernier.length) return;
+        poseContours(dernier);
+      } },
+  /* Sans voile et rangée sur le côté : un aperçu qu'on assombrit et qu'on
+     recouvre ne sert à rien, et c'est pourtant lui qu'on est venu regarder. */
+  ], "cote");
+}
+
+/** Le contour calculé, posé sur un calque de dessin à lui. */
+function poseContours(polys){
+  memorise();
+  const c = { id: nouvelId(), nom: "Contour du bâtiment", couleur: "#8A8F98",
+              rempli: true, visible: true, formes: [] };
+  for (const p of polys)
+    c.formes.push({ id: nouvelId(), t: "poly", pts: p, r: REGLAGES_CONTOUR.arrondi });
+  /* Sous les stands, jamais dessus : c'est un fond, et il masquerait le plan.
+     Le calque part donc au bas de la pile, où l'exploitant peut le remonter. */
+  mesCalques().unshift(c);
+  enregistreDessins();
+  dessineDessins();
+  construitPanneau();
+  activeCalque(c.id);
+  /* Le contour ne remplace rien tant que le relevé reste affiché par-dessus :
+     on le dit ici, faute de quoi l'exploitant croit que l'outil n'a rien fait. */
+  if ($("outilsAide"))
+    $("outilsAide").textContent = "Contour posé. Masquez les calques techniques pour ne garder que lui.";
+}

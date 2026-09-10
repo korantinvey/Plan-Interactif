@@ -105,6 +105,17 @@ Fonctions :
 
 - l.395 · Page de rapport
 
+### `_contour.html` — 646 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 11 bis. Contour automatique d'un pavillon
+
+Fonctions :
+
+`sousCalquesContour` 31 · `imprimeReleve` 61 · `distances` 116 · `fermeGrille` 158
+`remplitEnferme` 176 · `taches` 203 · `pourtour` 240 · `allege` 276 · `equerre` 309
+`metDEquerre` 343 · `airePolygone` 461 · `silhouettes` 474 · `montreSilhouettes` 511
+`ouvreContourAuto` 531 · `poseContours` 629
+
 ### `_dessin.html` — 1056 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
@@ -141,7 +152,7 @@ Fonctions :
 `appliqueRayon` 309 · `appliquePicto` 319 · `supprimeForme` 337 · `editionPointerDown` 347
 `editionPointerMove` 392 · `editionPointerUp` 423
 
-### `_head.html` — 1511 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1527 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -277,17 +288,17 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 288 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 297 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.191 · Repères
+- l.200 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 205 · `ligneCouleur` 230 · `rangSecteur` 250
-`rangSous` 262 · `defautCouleur` 284
+`construitPanneau` 60 · `sectionSelection` 214 · `ligneCouleur` 239 · `rangSecteur` 259
+`rangSous` 271 · `defautCouleur` 293
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
