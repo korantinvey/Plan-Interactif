@@ -297,8 +297,12 @@ let MONTE = false;
 
 function montePlan(){
   const p = P();
+  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+     sera pas sur le plan public. */
   $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+    '" tabindex="0" role="button" aria-label="' +
     esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
   $("stands").innerHTML = p.stands.map(s =>
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
@@ -360,7 +364,8 @@ function libelles(){
     const pz = place(z), az = ancre(z);
     const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
+    out += lignesSvg(a.lignes, a.f, az[0], az[1],
+      "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
   }
 
   for (const s of p.stands){
@@ -1706,6 +1711,23 @@ function ouvre(o, rect, canal, iSoc){
   if (cr){
     cr.hidden = !(ADMIN && zone);
     cr.onclick = () => renommeZone(o);
+  }
+  /* Une zone technique — réserve, quai de livraison — n'apprend rien au
+     visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
+     d'être un bouton : elle ne paraît qu'en administration, seule vue où une
+     zone éteinte soit encore là. */
+  const vis = $("dVis");
+  if (vis){
+    vis.hidden = !(ADMIN && zone);
+    if (!vis.hidden){
+      const affichee = !o.masquee;
+      vis.textContent = "Affiché : " + (affichee ? "oui" : "non");
+      vis.setAttribute("aria-pressed", affichee ? "true" : "false");
+      vis.title = affichee
+        ? "Retirer cette zone du plan public"
+        : "Remettre cette zone sur le plan public";
+      vis.onclick = () => basculeAffichageZone(o);
+    }
   }
   $("detail").classList.add("open");
   $("voile").classList.add("on");

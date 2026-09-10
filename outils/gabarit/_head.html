@@ -240,6 +240,10 @@ button{cursor:pointer;background:none;border:none}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
+/* Une zone éteinte par l'exploitant : présente en administration, absente du
+   plan public. La teinte pâlie le dit sans la faire disparaître — c'est de sa
+   fiche qu'on revient sur le choix, encore faut-il pouvoir la désigner. */
+.zone.masquee path{fill-opacity:.14;stroke-opacity:.4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
 /* La teinte du secteur est posée sur le groupe par la page. La règle vient
@@ -287,6 +291,7 @@ html.sans-parcours #marques .parc{display:none}
   font-family:"IBM Plex Mono",monospace;font-weight:500}
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+#labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
 #labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
@@ -559,6 +564,17 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
   border:1px solid var(--line-strong)}
 .badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* « Affiché : oui/non » — l'interrupteur d'une zone organisateur, en
+   administration seulement. Une pastille comme les autres, car c'est d'abord
+   un état qu'on lit ; la puce qui la précède en donne la réponse de loin, sans
+   relire le mot. */
+.badge.bascule{font-family:inherit;margin-left:6px;cursor:pointer;
+  align-items:center;border:1px solid var(--line-strong)}
+.badge.bascule::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--accent)}
+.badge.bascule[aria-pressed="false"]{color:var(--ink-3)}
+.badge.bascule[aria-pressed="false"]::before{background:var(--ink-3)}
+.badge.bascule:hover{color:var(--ink);border-color:var(--ink-3)}
 /* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
    société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
    leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
@@ -1431,7 +1447,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge part" id="dPartage" hidden></button>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"

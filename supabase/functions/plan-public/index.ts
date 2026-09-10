@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     // sauf à l'exploitant dont la session est valide
     const { data: evt, error: err } = await sb
       .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones")
+      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -266,6 +266,9 @@ Deno.serve(async (req) => {
       fuseau: evt.fuseau ?? null,
       // l'administration en a besoin pour savoir ce qui a déjà été renommé
       nomsZones: evt.zones ?? {},
+      // et pour savoir ce qu'elle a retiré du plan public : le visiteur, lui,
+      // ne reçoit pas les zones masquées, la liste ne lui apprendrait rien
+      zonesMasquees: identifie ? (evt.zones_masquees ?? {}) : {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -289,10 +292,23 @@ Deno.serve(async (req) => {
           stands: charge.stands ?? [],
           // le nom choisi par l'exploitant l'emporte, et s'applique ici plutôt
           // qu'à la synchronisation : renommer doit se voir tout de suite
-          zones: ((charge.zones ?? []) as Record<string, unknown>[]).map((z) => {
-            const choisi = (evt.zones ?? {})[String(z.id)];
-            return choisi ? { ...z, nom: choisi } : z;
-          }),
+          /* Ce que l'exploitant a masqué ne part pas chez le visiteur : une
+             zone technique — réserve, quai de livraison — occupe le plan sans
+             rien lui apprendre. L'exploitant, lui, les reçoit toutes,
+             signalées : c'est de là qu'il revient sur son choix. */
+          zones: ((charge.zones ?? []) as Record<string, unknown>[])
+            .filter((z) =>
+              identifie || !(evt.zones_masquees ?? {})[String(z.id)]
+            )
+            .map((z) => {
+              const choisi = (evt.zones ?? {})[String(z.id)];
+              const masquee = Boolean((evt.zones_masquees ?? {})[String(z.id)]);
+              return {
+                ...z,
+                ...(choisi ? { nom: choisi } : {}),
+                ...(masquee ? { masquee: true } : {}),
+              };
+            }),
           conferences: charge.conferences ?? [],
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }

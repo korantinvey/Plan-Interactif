@@ -249,6 +249,10 @@ button{cursor:pointer;background:none;border:none}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
+/* Une zone éteinte par l'exploitant : présente en administration, absente du
+   plan public. La teinte pâlie le dit sans la faire disparaître — c'est de sa
+   fiche qu'on revient sur le choix, encore faut-il pouvoir la désigner. */
+.zone.masquee path{fill-opacity:.14;stroke-opacity:.4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
 /* La teinte du secteur est posée sur le groupe par la page. La règle vient
@@ -296,6 +300,7 @@ html.sans-parcours #marques .parc{display:none}
   font-family:"IBM Plex Mono",monospace;font-weight:500}
 #labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+#labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
 #labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
@@ -568,6 +573,17 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
   border:1px solid var(--line-strong)}
 .badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* « Affiché : oui/non » — l'interrupteur d'une zone organisateur, en
+   administration seulement. Une pastille comme les autres, car c'est d'abord
+   un état qu'on lit ; la puce qui la précède en donne la réponse de loin, sans
+   relire le mot. */
+.badge.bascule{font-family:inherit;margin-left:6px;cursor:pointer;
+  align-items:center;border:1px solid var(--line-strong)}
+.badge.bascule::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--accent)}
+.badge.bascule[aria-pressed="false"]{color:var(--ink-3)}
+.badge.bascule[aria-pressed="false"]::before{background:var(--ink-3)}
+.badge.bascule:hover{color:var(--ink);border-color:var(--ink-3)}
 /* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
    société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
    leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
@@ -1440,7 +1456,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge part" id="dPartage" hidden></button>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -1816,8 +1832,12 @@ let MONTE = false;
 
 function montePlan(){
   const p = P();
+  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+     sera pas sur le plan public. */
   $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+    '" tabindex="0" role="button" aria-label="' +
     esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
   $("stands").innerHTML = p.stands.map(s =>
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
@@ -1879,7 +1899,8 @@ function libelles(){
     const pz = place(z), az = ancre(z);
     const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
+    out += lignesSvg(a.lignes, a.f, az[0], az[1],
+      "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
   }
 
   for (const s of p.stands){
@@ -3226,6 +3247,23 @@ function ouvre(o, rect, canal, iSoc){
     cr.hidden = !(ADMIN && zone);
     cr.onclick = () => renommeZone(o);
   }
+  /* Une zone technique — réserve, quai de livraison — n'apprend rien au
+     visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
+     d'être un bouton : elle ne paraît qu'en administration, seule vue où une
+     zone éteinte soit encore là. */
+  const vis = $("dVis");
+  if (vis){
+    vis.hidden = !(ADMIN && zone);
+    if (!vis.hidden){
+      const affichee = !o.masquee;
+      vis.textContent = "Affiché : " + (affichee ? "oui" : "non");
+      vis.setAttribute("aria-pressed", affichee ? "true" : "false");
+      vis.title = affichee
+        ? "Retirer cette zone du plan public"
+        : "Remettre cette zone sur le plan public";
+      vis.onclick = () => basculeAffichageZone(o);
+    }
+  }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
@@ -4022,42 +4060,10 @@ function renommeZone(o){
 
 async function enregistreNomZone(o, valeur){
   const nom = String(valeur || "").trim();
-
-  let cfg = null, ses = null;
   try {
-    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
-    ses = JSON.parse(localStorage.getItem("console-session") || "null");
-  } catch (e) {}
-  if (!cfg?.url || !ses?.access_token){
-    annonce("Session absente : reconnectez-vous pour renommer.", true);
-    return;
-  }
-
-  try {
-    /* Les noms tiennent dans une seule colonne : l'enregistrement la réécrit
-       entière. La renvoyer telle que la page l'avait chargée effacerait tout
-       renommage survenu depuis — d'un autre poste, ou d'un onglet resté
-       ouvert. On repart donc de ce que la base contient à l'instant, et on
-       n'y touche que la zone concernée. */
-    const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=zones&slug=eq." +
-      encodeURIComponent(DATA.slug), {
-      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token },
-    }).then(r => r.ok ? r.json() : []).catch(() => []);
-    const noms = { ...(enBase[0]?.zones || DATA.nomsZones || {}) };
-    if (nom) noms[o.id] = nom; else delete noms[o.id];
-
-    const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
-      method: "PATCH",
-      headers: {
-        "apikey": cfg.anonKey,
-        "Authorization": "Bearer " + ses.access_token,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal",
-      },
-      body: JSON.stringify({ zones: noms, modifie_le: new Date().toISOString() }),
+    const noms = await ecritTableZones("zones", DATA.nomsZones, t => {
+      if (nom) t[o.id] = nom; else delete t[o.id];
     });
-    if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
-
     DATA.nomsZones = noms;
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;
@@ -4067,6 +4073,74 @@ async function enregistreNomZone(o, valeur){
   } catch (e) {
     annonce("Renommage impossible : " + e.message, true);
   }
+}
+
+
+/* ============================================================
+   Masquer une zone organisateur
+   Toutes les zones que Klipso renvoie ne s'adressent pas au visiteur : un
+   local technique, une réserve, un quai de livraison occupent le plan sans
+   rien lui apprendre. L'exploitant les éteint une par une depuis leur fiche.
+
+   Une zone éteinte ne part plus dans le plan public ; en administration elle
+   reste, en teinte pâlie, car c'est de là qu'on revient sur son choix. Le
+   masquage est enregistré sur l'événement, et s'applique à la lecture : il
+   paraît sans attendre la prochaine synchronisation.
+   ============================================================ */
+async function basculeAffichageZone(o){
+  const masquer = !o.masquee;
+  try {
+    const masques = await ecritTableZones("zones_masquees", DATA.zonesMasquees, t => {
+      if (masquer) t[o.id] = true; else delete t[o.id];
+    });
+    DATA.zonesMasquees = masques;
+    o.masquee = masquer || undefined;
+    marqueZonesMasquees();
+    libelles();
+    ouvre(o, null);
+  } catch (e) {
+    annonce("Changement impossible : " + e.message, true);
+  }
+}
+
+/** La teinte pâlie des zones éteintes, reposée sur le plan en place. */
+function marqueZonesMasquees(){
+  document.querySelectorAll("#zones g").forEach(g => {
+    const z = parId.get(g.dataset.id);
+    g.classList.toggle("masquee", !!z && !!z.masquee);
+  });
+}
+
+
+/**
+ * Réécrire une des tables de l'événement indexées par zone — les noms, les
+ * masquages. Chacune tient dans une seule colonne : la renvoyer telle que la
+ * page l'avait chargée effacerait ce qu'un autre poste y a mis depuis. On
+ * repart donc de ce que la base contient à l'instant, et « change » n'y touche
+ * que la zone concernée.
+ */
+async function ecritTableZones(colonne, secours, change){
+  let cfg = null, ses = null;
+  try {
+    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
+    ses = JSON.parse(localStorage.getItem("console-session") || "null");
+  } catch (e) {}
+  if (!cfg?.url || !ses?.access_token) throw new Error("session absente, reconnectez-vous");
+
+  const entetes = { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token };
+  const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=" + colonne + "&slug=eq." +
+    encodeURIComponent(DATA.slug), { headers: entetes })
+    .then(r => r.ok ? r.json() : []).catch(() => []);
+  const table = { ...(enBase[0]?.[colonne] || secours || {}) };
+  change(table);
+
+  const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH",
+    headers: { ...entetes, "Content-Type": "application/json", "Prefer": "return=minimal" },
+    body: JSON.stringify({ [colonne]: table, modifie_le: new Date().toISOString() }),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
+  return table;
 }
 
 /* ============================================================
