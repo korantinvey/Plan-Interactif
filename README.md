@@ -819,6 +819,44 @@ ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel, et
 par `audience_cibles()` pour le détail par stand.
 
+### Remettre les compteurs à zéro
+
+La recette d'un plan se fait sur le plan : on ouvre des fiches, on cherche une
+enseigne, on calcule un itinéraire — et sur la page publique, la seule qui
+mesure. Ces gestes sont ceux de l'exploitant, et ils comptent comme ceux d'un
+visiteur : rien ne les en distingue à l'écriture, puisque la page publique ne
+regarde aucune session. C'est ce qui lui permet de ne poser ni cookie ni
+identité, et c'est pourquoi le premier chiffre d'un salon est toujours faux.
+
+Personne ne peut deviner quand la recette s'arrête : la veille de l'ouverture,
+rien ne dit au système que les visites qui suivent sont les vraies. C'est donc
+un geste, depuis **l'engrenage du plan d'administration**, volet « Mesure ».
+
+Il est protégé, parce qu'il n'y a rien derrière : la fenêtre dit ce qui part et
+ce qui reste, affiche les chiffres en cours — un nombre sur ce qu'on s'apprête
+à perdre, et la preuve au passage que la base répond — et n'ouvre le bouton
+qu'une fois le mot **réinitialiser** écrit en toutes lettres. Un bouton rouge se
+clique par réflexe ; une phrase se tape en connaissance de cause. Le mot se
+compare sans ses accents ni sa casse : on demande une intention, pas une
+disposition de clavier.
+
+`reinitialise_compteurs()` efface en une transaction — un échec à mi-chemin
+laisserait un salon dont les visiteurs uniques ne correspondraient plus à ses
+visites, pire qu'un salon faux. Elle vide `compteur`, `compteur_cible`,
+`visiteur_jour`, et `mesure` pour ce salon. `cible` reste : ce n'est pas de la
+mesure mais le vocabulaire écrit par la synchronisation, et la vider priverait
+le rapport de ses libellés jusqu'à la synchronisation suivante. Le journal
+`mesure`, lui, part pour une raison qui n'est pas son poids : la reprise de
+`20260908000001_compteurs.sql` s'arme sur « compteur est vide », et l'épargner
+laisserait de quoi ressusciter les anciens gestes le jour où on rejoue cette
+migration.
+
+Comme partout ici, la fonction est en « security invoker » : elle n'ajoute
+aucun pouvoir, ce sont les politiques d'effacement — bornées par
+`acces_salon()` — qui tranchent. Un compte sans accès au salon est refusé
+explicitement plutôt que de se voir répondre « zéro ligne effacée », qui se
+lirait comme une réussite.
+
 ### La carte de chaleur
 
 Le rapport dit combien de fiches ont été ouvertes ; il ne dit pas lesquelles.

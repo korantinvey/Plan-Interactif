@@ -1984,6 +1984,21 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border-top:1px solid var(--line)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
+/* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
+   visible et rouge — c'est bien ce qu'il fera — mais éteint : le retirer
+   laisserait croire qu'il n'y a rien à faire, le griser en gris le rangerait
+   parmi les commandes ordinaires. */
+.mfen footer .btn[disabled]{opacity:.4;cursor:default;filter:none}
+
+/* La remise à zéro des compteurs.
+   La phrase qui dit « sans retour » ne peut pas se lire comme les autres :
+   c'est la seule que l'on regrette de ne pas avoir lue. */
+.mcorps p.alerte{color:#C2372B;font-weight:500}
+.mcorps p.etatRaz{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:12px;
+  color:var(--ink-3);line-height:1.5}
+.mcorps p.etatRaz.err{color:#C2372B}
+.mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
+.mcorps .razMot span{color:var(--ink-2)}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le

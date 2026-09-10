@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1669 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1677 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1029 · 10. Mode administration
-- l.1095 · La fiche d'une zone organisateur
-- l.1416 · Masquer une zone organisateur
-- l.1499 · Placer un libellé à la main
+- l.1037 · 10. Mode administration
+- l.1103 · La fiche d'une zone organisateur
+- l.1424 · Masquer une zone organisateur
+- l.1507 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,16 +27,16 @@ Fonctions :
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
 `modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
 `lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
-`apercuDuo` 578 · `ouvreReglages` 597 · `voletZones` 642 · `ficheZoneEnPlace` 716
-`voletPlan` 754 · `nomDuTon` 881 · `voletApparence` 885 · `enregistreConf` 979
-`rgbHex` 985 · `hexa` 992 · `luminance` 996 · `ecarte` 1010 · `joli` 1025
-`retireAdmin` 1042 · `activeAdmin` 1055 · `champZone` 1121 · `champsZone` 1146
-`editeurRiche` 1208 · `ficheZone` 1355 · `enregistreZone` 1377 · `basculeAffichageZone` 1427
-`marqueZonesMasquees` 1444 · `ecritTablesZones` 1464 · `ecritTableZones` 1495
-`cleLibelle` 1520 · `empreinteLibelle` 1536 · `placementLibelle` 1544 · `posePlacement` 1554
-`libelleAutomatique` 1571 · `modePlacementLibelles` 1580 · `majPaletteLibelle` 1597
-`choisitLibelle` 1614 · `pousseLibelle` 1621 · `libellePointerDown` 1629
-`libellePointerMove` 1644 · `libellePointerUp` 1653
+`apercuDuo` 578 · `ouvreReglages` 597 · `voletZones` 650 · `ficheZoneEnPlace` 724
+`voletPlan` 762 · `nomDuTon` 889 · `voletApparence` 893 · `enregistreConf` 987
+`rgbHex` 993 · `hexa` 1000 · `luminance` 1004 · `ecarte` 1018 · `joli` 1033
+`retireAdmin` 1050 · `activeAdmin` 1063 · `champZone` 1129 · `champsZone` 1154
+`editeurRiche` 1216 · `ficheZone` 1363 · `enregistreZone` 1385 · `basculeAffichageZone` 1435
+`marqueZonesMasquees` 1452 · `ecritTablesZones` 1472 · `ecritTableZones` 1503
+`cleLibelle` 1528 · `empreinteLibelle` 1544 · `placementLibelle` 1552 · `posePlacement` 1562
+`libelleAutomatique` 1579 · `modePlacementLibelles` 1588 · `majPaletteLibelle` 1605
+`choisitLibelle` 1622 · `pousseLibelle` 1629 · `libellePointerDown` 1637
+`libellePointerMove` 1652 · `libellePointerUp` 1661
 
 Éléments :
 
@@ -76,9 +76,10 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 408 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 608 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
+- l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
+- l.410 · Remise à zéro des compteurs
 
 Fonctions :
 
@@ -86,7 +87,8 @@ Fonctions :
 `coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
 `replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
 `dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
-`montreChaleur` 356 · `rangChaleur` 392
+`montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
+`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 570
 
 Éléments :
 
@@ -202,7 +204,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2532 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2547 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -478,7 +480,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
 - `20260910000008_audience.sql` — fn audience_cibles
 - `20260910000009_fiches_zones.sql` — evenement
-- `20260910000010_gestes_par_stand.sql` — compteur_cible, fn enregistre_mesures, fn audience_cibles
+- `20260910000010_remise_a_zero.sql` — fn reinitialise_compteurs
+- `20260910000011_gestes_par_stand.sql` — compteur_cible, fn enregistre_mesures, fn audience_cibles
 
 ## Le reste
 

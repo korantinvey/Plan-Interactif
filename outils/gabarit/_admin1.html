@@ -594,18 +594,22 @@ function apercuDuo(cle, vu){
  * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
  * l'écran.
  */
-function ouvreReglages(){
+function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");
     barre.className = "ongReg";
     corps.appendChild(barre);
     const boutons = [], volets = [];
+    /* Le volet à ouvrir peut être nommé : la remise à zéro des compteurs passe
+       par une fenêtre de confirmation, qui prend la place de celle-ci, et
+       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet. */
     const volet = (titre) => {
       const i = boutons.length;
+      const actif = ouvrir ? titre === ouvrir : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
-      b.setAttribute("aria-pressed", String(i === 0));
+      b.setAttribute("aria-pressed", String(actif));
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         volets.forEach((x, j) => { x.hidden = j !== i; });
@@ -613,7 +617,7 @@ function ouvreReglages(){
       barre.appendChild(b);
       boutons.push(b);
       const v = document.createElement("div");
-      v.hidden = i > 0;
+      v.hidden = !actif;
       corps.appendChild(v);
       volets.push(v);
       return v;
@@ -623,6 +627,10 @@ function ouvreReglages(){
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
     if (TOUS.some(z => z.kind === "zone")) voletZones(volet("Zones"));
+    /* La mesure a son volet à elle, et en dernier. Elle ne parle ni de ce que
+       les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
+       effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
+    voletMesure(volet(NOM_VOLET_MESURE));
   }, [{ libelle: "Fermer" }], "large");
 }
 
