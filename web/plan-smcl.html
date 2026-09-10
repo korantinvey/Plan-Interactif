@@ -331,6 +331,16 @@ html.sans-parcours #marques .parc{display:none}
 .sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
 .sans-lab-stand .dcal .lab{display:none}
 .sans-lab-zone #labels text.zn{display:none}
+/* Placer un libellé à la main.
+   Hors de ce mode un libellé ne reçoit aucun clic : c'est le stand qui est
+   dessous qu'on désigne à travers lui, et c'est sa fiche qu'on veut. Dedans,
+   c'est le nom lui-même qu'on attrape — d'où le pointeur, et la teinte
+   d'accent qui dit lequel répondra. */
+html.mode-libelles #labels .lbl{cursor:move}
+html.mode-libelles #labels .lbl text,
+html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
+html.mode-libelles #labels .lbl:hover text,
+html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 
 /* --- calques de dessin --- */
 .dcal{pointer-events:none}
@@ -421,6 +431,15 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
+/* La palette de placement emprunte l'allure de la barre de dessin — même
+   coin, même cadre — parce qu'elle joue le même rôle : elle règle ce qu'on est
+   en train de retoucher sur le plan. Les deux ne s'ouvrent jamais ensemble,
+   entrer en placement referme le dessin. */
+.libreg input[type="range"]{padding:0;border:none;background:none;accent-color:var(--accent)}
+.libreg .auto{width:100%;padding:7px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:12.5px;color:var(--ink-2);background:var(--surface)}
+.libreg .auto:hover:not([disabled]){border-color:var(--line-strong);color:var(--ink)}
+.libreg .auto[disabled]{opacity:.4;cursor:default}
 .dcal image{pointer-events:none}
 .dcal.editable image{pointer-events:auto}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
@@ -1802,6 +1821,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </div>
     </div>
 
+    <div class="outils libreg" id="libReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="libNom"></span>
+        <span class="outilsActs">
+          <button id="libFerme" title="Terminer — Échap"
+            aria-label="Terminer le placement des libellés">&times;</button>
+        </span>
+      </div>
+      <label class="elemChamp"><span>Taille</span>
+        <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
+      <button class="auto" id="libAuto">Placement automatique</button>
+      <div class="outilsPied"><span id="libAide"></span></div>
+    </div>
+
     <div class="modale" id="modale">
       <div class="mfen" role="dialog" aria-modal="true">
         <header><h2 id="mTitre"></h2><button id="mFermer" aria-label="Fermer">&times;</button></header>
@@ -2267,14 +2300,22 @@ function libelles(){
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
   let out = "";
 
+  /* Chaque libellé dans son propre groupe, sous l'identifiant de ce qu'il
+     nomme : c'est ce qui permet de l'attraper pour le placer à la main. Le nom
+     de l'attribut n'est pas « data-id » à dessein — ce groupe n'est pas
+     l'emplacement, et le clic qui ouvre une fiche ne doit pas le confondre
+     avec lui. */
+  const groupe = (o, h) => h
+    ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
+    : "";
+
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
-    const pz = place(z), az = ancre(z);
-    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
-    if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1],
-      "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
+    const pz = place(z);
+    out += groupe(z, libelleZone(z, ancre(z), pz[0], pz[1], sel, pxParM,
+                                 placementLibelle(z)));
   }
 
   for (const s of p.stands){
@@ -2285,7 +2326,8 @@ function libelles(){
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
     const ps = place(s);
-    out += libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM);
+    out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
+                                        placementLibelle(s)));
   }
 
   l.innerHTML = out;
@@ -2294,6 +2336,33 @@ function libelles(){
      nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
      appel au même endroit. */
   poseLibellesDessines(pxParM);
+}
+
+/* ------------------------------------------------------------
+ * Le placement réglé à la main, appliqué à ce que le calcul propose : un
+ * décalage en mètres, et un facteur de taille.
+ *
+ * Le facteur multiplie ce que le calcul a trouvé au lieu de le remplacer :
+ * l'enseigne garde ainsi le découpage en lignes que sa place lui donnait, et
+ * l'agrandir ne la recompose pas d'un coup en travers du stand.
+ *
+ * En mode placement, un libellé réglé s'affiche quelle que soit sa taille à
+ * l'écran. Sans cela, le réduire au point de le faire disparaître le rendrait
+ * inatteignable — et le réglage, impossible à défaire.
+ * ------------------------------------------------------------ */
+const decaleLibelle = (xy, reg) => reg ? [xy[0] + (reg.dx || 0), xy[1] + (reg.dy || 0)] : xy;
+const facteurLibelle = (reg) => reg && reg.k > 0 ? reg.k : 1;
+const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
+
+/** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
+function libelleZone(z, az, w, h, sel, pxParM, reg){
+  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  if (!a) return "";
+  const f = a.f * facteurLibelle(reg);
+  if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
+  const xy = decaleLibelle(az, reg);
+  return lignesSvg(a.lignes, f, xy[0], xy[1],
+    "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
 }
 
 /**
@@ -2305,20 +2374,23 @@ function libelles(){
  * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
  * forme quelconque.
  */
-function libelleEmplacement(s, as, w, h, sel, pxParM){
+function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
+  const k = facteurLibelle(reg), force = libelleForce(reg);
   const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-  const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
+  const fn = nom ? nom.f * k : 0;
+  const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
   const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-  const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-  const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
+  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+  const codeLisible = fc && (sel || force || fc * pxParM >= (nomLisible ? 5 : 6));
   if (!codeLisible && !nomLisible) return "";
 
   const c = sel ? " sel" : "";
-  const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
+  const xy = decaleLibelle(as, reg);
+  const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0;
   const hCode = codeLisible ? fc * 1.25 : 0;
-  let y = as[1] - (hNom + hCode) / 2, out = "";
-  if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-  if (codeLisible) out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+  let y = xy[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, fn, xy[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, xy[0], y + fc * .92, fc, w * .9 * k, c);
   return out;
 }
 
@@ -3803,6 +3875,9 @@ svg.addEventListener("pointerdown", e => {
   doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (doigts.size === 2){ commencePince(); return; }
   if (doigts.size > 2) return;
+  /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
+     l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id],[data-poi]") };
@@ -3811,6 +3886,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -3825,6 +3901,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -3847,6 +3924,7 @@ svg.addEventListener("pointerup", e => {
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
+  glisseLib = null;
   drag = null;
   svg.classList.remove("dragging");
 });
@@ -3880,7 +3958,18 @@ document.addEventListener("keydown", e => {
   if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return;
   }
+  /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
+     et au mètre touche majuscule tenue : c'est la finition d'un placement,
+     après le glisser qui l'a amené à peu près là. */
+  if (PLACE_LIBELLES && libSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                  e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   if (e.key === "Escape"){
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
@@ -4833,7 +4922,7 @@ let ADMIN = false;
  */
 function retireAdmin(){
   ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
-  ["panel", "outils", "elemSel"].forEach(id => {
+  ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
     e.hidden = true;
@@ -4870,7 +4959,8 @@ function activeAdmin(){
   $("razConf").onclick = () => {
     CONF = JSON.parse(JSON.stringify(DEFAUTS));
     try { localStorage.removeItem(CLE_CONF); } catch (e) {}
-    appliqueApparence(); construitPanneau();
+    // les placements de libellés vivent dans CONF : ils repartent avec elle
+    appliqueApparence(); libelles(); construitPanneau();
   };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
@@ -5000,6 +5090,181 @@ async function ecritTableZones(colonne, secours, change){
   });
   if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
   return table;
+}
+
+
+/* ============================================================
+   Placer un libellé à la main
+
+   Le nom d'un stand est posé automatiquement : au milieu de l'emplacement, à
+   la taille que la place autorise. C'est juste pour un rectangle, et ce l'est
+   moins dès que le plan sort du cas d'école — un stand en L dont le nom tombe
+   sur la découpe, deux enseignes voisines dont les noms se touchent, une zone
+   organisateur dont l'intitulé traverse une allée. L'exploitant voit ces
+   cas-là, le calcul non : il lui faut pouvoir déplacer et agrandir un libellé.
+
+   Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre
+   des calques, et part aux visiteurs à la publication.
+
+   Il porte avec lui l'empreinte de ce dont il dépend : ce qui s'écrit, et la
+   forme qui le porte. Une synchronisation qui n'y touche pas le laisse en
+   place — c'est tout l'objet — mais une qui renomme l'exposant, déplace le
+   stand ou le redimensionne le périme : le décalage ne décrit plus rien, et
+   laisser le nom flotter à côté serait pire que de le replacer tout seul.
+   Le réglage n'est pas effacé pour autant, il cesse de s'appliquer : si la
+   forme revient telle qu'elle était, il revient avec elle.
+   ============================================================ */
+const cleLibelle = (id) => "_lab:" + id;
+
+/* Le mode est transitoire : on y entre pour retoucher, on en sort. Il ne se
+   retient pas d'une session à l'autre — ce n'est pas un réglage du salon. */
+let PLACE_LIBELLES = false;
+let libSel = null;      // l'objet dont on retouche le libellé
+let glisseLib = null;   // le geste en cours
+
+/**
+ * Ce dont dépend le placement d'un libellé : ce qui s'y écrit, et la forme qui
+ * le porte — son ancrage et la place dont il dispose autour.
+ *
+ * Le nom retenu est celui qui s'affiche, y compris quand l'exploitant l'a
+ * choisi lui-même sur une zone : renommer, c'est écrire autre chose, et cet
+ * autre chose n'a pas de raison de tenir à la même taille au même endroit.
+ */
+function empreinteLibelle(o){
+  const a = ancre(o) || [0, 0], p = place(o) || [0, 0];
+  return [o.nom || "", o.code || "",
+          (+a[0]).toFixed(2), (+a[1]).toFixed(2),
+          (+p[0]).toFixed(2), (+p[1]).toFixed(2)].join("|");
+}
+
+/** Le placement réglé à la main, s'il décrit encore ce qui est sur le plan. */
+function placementLibelle(o){
+  const r = CONF[cleLibelle(o.id)];
+  return r && r.e === empreinteLibelle(o) ? r : null;
+}
+
+/**
+ * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
+ * par image, et enregistrer à chaque fois sérialiserait toute la configuration
+ * soixante fois par seconde. C'est la fin du geste qui enregistre.
+ */
+function posePlacement(o, change){
+  const r = placementLibelle(o);
+  const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
+              e: empreinteLibelle(o) };
+  change(n);
+  n.dx = +(+n.dx).toFixed(2);
+  n.dy = +(+n.dy).toFixed(2);
+  n.k = Math.max(.4, Math.min(3, +n.k || 1));
+  /* Un placement qui ne déplace ni n'agrandit rien n'est pas un réglage : il
+     sort de la configuration plutôt que d'y peser et d'y vieillir. */
+  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[cleLibelle(o.id)];
+  else CONF[cleLibelle(o.id)] = n;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Rendre un libellé à son placement automatique. */
+function libelleAutomatique(){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  delete CONF[cleLibelle(o.id)];
+  enregistreConf();
+  libelles();
+  majPaletteLibelle();
+}
+
+function modePlacementLibelles(on){
+  PLACE_LIBELLES = !!on && ADMIN;
+  racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
+  /* Le placement et le dessin se disputeraient le glisser : entrer dans l'un
+     referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
+  if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
+  if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  majPaletteLibelle();
+  libelles();
+}
+
+/** La palette du libellé retouché : sa taille, et de quoi y renoncer. */
+function majPaletteLibelle(){
+  const z = $("libReg");
+  if (!z || !ADMIN || !$("libNom")) return;
+  const o = libSel && parId.get(libSel);
+  z.classList.toggle("open", !!(PLACE_LIBELLES && o));
+  if (!(PLACE_LIBELLES && o)) return;
+  const r = placementLibelle(o);
+  $("libNom").textContent = o.nom || o.code ||
+    (o.kind === "zone" ? "Zone sans nom" : "Stand");
+  $("libTaille").value = r && r.k ? r.k : 1;
+  $("libAuto").disabled = !r;
+  $("libAide").textContent = r
+    ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
+    : "Glissez ce libellé pour le déplacer, ou tirez la taille.";
+}
+
+/** Choisir le libellé qu'on retouche — au clic, ou en le glissant. */
+function choisitLibelle(id){
+  libSel = id;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Le pas du clavier : un quart de mètre, un mètre touche majuscule tenue. */
+function pousseLibelle(dx, dy){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  posePlacement(o, n => { n.dx += dx; n.dy += dy; });
+  enregistreConf();
+}
+
+/* --- le geste ; renvoie vrai si l'événement est consommé --- */
+function libellePointerDown(e){
+  if (!PLACE_LIBELLES) return false;
+  const g = e.target.closest("#labels .lbl");
+  if (!g) return false;
+  const o = parId.get(g.dataset.lbl);
+  if (!o) return false;
+  e.preventDefault();
+  choisitLibelle(o.id);
+  const r = placementLibelle(o);
+  glisseLib = { o: o, depart: versPlan(e.clientX, e.clientY),
+                dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
+function libellePointerMove(e){
+  if (!glisseLib) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
+  const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
+  posePlacement(glisseLib.o, n => { n.dx = dx; n.dy = dy; });
+  return true;
+}
+
+function libellePointerUp(e){
+  if (!glisseLib) return false;
+  glisseLib = null;
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  enregistreConf();
+  return true;
+}
+
+/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
+   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
+   cochée — et le refaire remplacerait le nœud en pleine gestion de son
+   propre événement. */
+if ($("libFerme")) $("libFerme").onclick = () => {
+  modePlacementLibelles(false);
+  construitPanneau();
+};
+if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
+if ($("libTaille")){
+  $("libTaille").oninput = e => {
+    const o = libSel && parId.get(libSel);
+    if (o) posePlacement(o, n => { n.k = +e.target.value; });
+  };
+  $("libTaille").onchange = enregistreConf;
 }
 
 /* ============================================================
@@ -6911,10 +7176,12 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* les deux couleurs de texte se règlent sous la couche Textes */
+    /* les deux couleurs de texte se règlent sous la couche Textes, et avec
+       elles le placement à la main de chaque libellé */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
+      rangPlacement(hote);
     }
   });
 
@@ -7024,6 +7291,25 @@ function rangSous(hote, cle, libelle, defaut, applique){
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
                        enregistreConf(); applique(); };
+  hote.appendChild(d);
+}
+
+/**
+ * La case qui ouvre le placement des libellés à la main.
+ *
+ * Elle vit sous la couche des textes parce que c'est elle qu'on retouche, à
+ * côté de sa couleur et de sa visibilité. Ce n'est pas un réglage du salon
+ * mais un mode de travail : elle ne se retient pas, et se relève décochée à
+ * chaque ouverture du panneau.
+ */
+function rangPlacement(hote){
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox"><span></span></label>';
+  d.querySelector("label span").textContent = "Placer les libellés à la main";
+  const c = d.querySelector("input");
+  c.checked = PLACE_LIBELLES;
+  c.onchange = e => modePlacementLibelles(e.target.checked);
   hote.appendChild(d);
 }
 

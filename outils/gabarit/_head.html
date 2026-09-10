@@ -326,6 +326,16 @@ html.sans-parcours #marques .parc{display:none}
 .sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
 .sans-lab-stand .dcal .lab{display:none}
 .sans-lab-zone #labels text.zn{display:none}
+/* Placer un libellé à la main.
+   Hors de ce mode un libellé ne reçoit aucun clic : c'est le stand qui est
+   dessous qu'on désigne à travers lui, et c'est sa fiche qu'on veut. Dedans,
+   c'est le nom lui-même qu'on attrape — d'où le pointeur, et la teinte
+   d'accent qui dit lequel répondra. */
+html.mode-libelles #labels .lbl{cursor:move}
+html.mode-libelles #labels .lbl text,
+html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
+html.mode-libelles #labels .lbl:hover text,
+html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 
 /* --- calques de dessin --- */
 .dcal{pointer-events:none}
@@ -416,6 +426,15 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
+/* La palette de placement emprunte l'allure de la barre de dessin — même
+   coin, même cadre — parce qu'elle joue le même rôle : elle règle ce qu'on est
+   en train de retoucher sur le plan. Les deux ne s'ouvrent jamais ensemble,
+   entrer en placement referme le dessin. */
+.libreg input[type="range"]{padding:0;border:none;background:none;accent-color:var(--accent)}
+.libreg .auto{width:100%;padding:7px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:12.5px;color:var(--ink-2);background:var(--surface)}
+.libreg .auto:hover:not([disabled]){border-color:var(--line-strong);color:var(--ink)}
+.libreg .auto[disabled]{opacity:.4;cursor:default}
 .dcal image{pointer-events:none}
 .dcal.editable image{pointer-events:auto}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
@@ -1795,6 +1814,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span id="outilsAide"></span>
         <button class="reset" id="annuleDernier">Annuler &nbsp;·&nbsp; Ctrl+Z</button>
       </div>
+    </div>
+
+    <div class="outils libreg" id="libReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="libNom"></span>
+        <span class="outilsActs">
+          <button id="libFerme" title="Terminer — Échap"
+            aria-label="Terminer le placement des libellés">&times;</button>
+        </span>
+      </div>
+      <label class="elemChamp"><span>Taille</span>
+        <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
+      <button class="auto" id="libAuto">Placement automatique</button>
+      <div class="outilsPied"><span id="libAide"></span></div>
     </div>
 
     <div class="modale" id="modale">

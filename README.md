@@ -201,6 +201,57 @@ autre pavillon que celui qu'on regarde. Une société hébergée répond pour
 elle-même — c'est bien sa fiche à elle qui porte sa ville et ses rubriques — et
 le stand qui l'accueille reste allumé sur le plan.
 
+## Placer un libellé à la main
+
+Le nom d'un stand se pose tout seul : au milieu de l'emplacement, à la taille
+que la place autorise, découpé en une à trois lignes selon ce qui rentre. C'est
+juste pour un rectangle, et ce l'est moins dès que le plan sort du cas d'école
+— un stand en L dont le nom tombe sur la découpe, deux enseignes voisines dont
+les noms se touchent, une zone organisateur dont l'intitulé traverse une allée.
+L'exploitant voit ces cas-là ; le calcul, non.
+
+La case **« Placer les libellés à la main »**, sous la couche *Textes* du
+panneau des calques, ouvre un mode où l'on attrape un libellé et où on le pose
+ailleurs. Une palette s'ouvre sur celui qu'on retouche : sa taille, et de quoi
+revenir au placement automatique. Les flèches du clavier l'ajustent au quart de
+mètre, au mètre touche majuscule tenue. Hors de ce mode, un libellé ne reçoit
+aucun clic — c'est le stand qui est dessous qu'on désigne à travers lui.
+
+Deux choses valent d'être sues :
+
+- **La taille est un facteur, pas une valeur.** Elle multiplie ce que le calcul
+  a trouvé au lieu de le remplacer, si bien que l'enseigne garde le découpage
+  en lignes que sa place lui donnait : l'agrandir ne la recompose pas d'un coup
+  en travers du stand.
+- **Dans ce mode, un libellé réglé s'affiche quelle que soit sa taille à
+  l'écran.** Sans cela, le réduire au point de le faire disparaître le rendrait
+  inatteignable, et le réglage impossible à défaire.
+
+Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre des
+calques, et part aux visiteurs à la publication.
+
+### Ce qui le périme, et ce qui ne le périme pas
+
+Une synchronisation ne touche jamais à l'apparence : un placement fait
+aujourd'hui est encore là demain, c'est ce qu'on attend de lui.
+
+Mais un décalage ne veut dire quelque chose que par rapport à une forme et à un
+texte donnés. Chaque placement porte donc l'**empreinte** de ce dont il dépend :
+ce qui s'écrit — le nom, le numéro — et la forme qui le porte, son ancrage et
+la place dont il dispose autour. Si Klipso renomme l'exposant, déplace le stand
+ou le redimensionne, l'empreinte ne correspond plus et le placement cesse de
+s'appliquer : le libellé revient à sa position calculée. Le laisser flotter à
+côté d'un stand qui a bougé serait pire que de le replacer tout seul.
+
+Il n'est pas effacé pour autant, il cesse de valoir : si la forme revient telle
+qu'elle était, il revient avec elle. Une synchronisation qui ne change rien —
+le cas ordinaire — ne périme donc rien.
+
+Le nom retenu dans l'empreinte est celui qui s'affiche, y compris quand
+l'exploitant l'a choisi lui-même sur une zone : renommer, c'est écrire autre
+chose, et cet autre chose n'a pas de raison de tenir à la même taille au même
+endroit.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des
