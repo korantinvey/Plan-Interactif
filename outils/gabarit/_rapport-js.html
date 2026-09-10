@@ -248,6 +248,10 @@ function dessineBarre() {
     '<option value="' + esc(e.id) + '"' + (e.id === selection ? " selected" : "") +
     '>' + esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
   s.hidden = !EVTS.length;
+  /* Le retour à la console rapporte le salon qu'on lisait : elle le rouvre au
+     lieu de retomber sur le premier de la liste. */
+  const e = EVTS.find((x) => x.id === selection);
+  $("lienConsole").href = "admin-plans" + (e?.slug ? "?plan=" + encodeURIComponent(e.slug) : "");
   const p = $("choixPeriode");
   if (!p.options.length) {
     p.innerHTML = PERIODES.map((x) =>
