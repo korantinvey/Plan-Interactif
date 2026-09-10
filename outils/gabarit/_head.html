@@ -100,8 +100,38 @@ button{cursor:pointer;background:none;border:none}
    plan, et cette barre est la prise qu'on saisit. Sur grand écran la liste a
    sa colonne, il n'y a pas de tiroir, donc pas de prise. */
 .poignee{display:none}
-.search{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-.search-field{position:relative}
+.search{padding:14px 16px 12px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px}
+/* La recherche prend la place, le bouton des critères ce qu'il faut : sur un
+   téléphone les deux tiennent sur la même ligne, et le tiroir replié ne perd
+   pas une ligne de plus. */
+.search-field{position:relative;flex:1;min-width:0}
+.crit-btn{position:relative;flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;width:34px;height:34px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink-2)}
+.crit-btn:hover{border-color:var(--line-strong);color:var(--ink)}
+.crit-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.crit-btn svg{width:15px;height:15px}
+.crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
+  padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Les critères retenus. Même bande que les secteurs — une ligne qui défile à
+   l'étroit, plusieurs qui se replient au large — mais elle ne paraît que
+   lorsqu'il y a quelque chose à montrer. */
+.actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.actifs::-webkit-scrollbar{display:none}
+.actifs .actif{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+  max-width:100%;padding:4px 8px 4px 10px;font-size:12px;color:var(--ink);
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px}
+.actifs .actif .k{color:var(--ink-3);font-size:11px;flex:0 0 auto}
+.actifs .actif .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actifs .actif .v:empty{display:none}
+.actifs .actif .x{color:var(--ink-3);font-size:13px;line-height:1;flex:0 0 auto}
+.actifs .actif:hover .x{color:var(--ink)}
+.actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
+.actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
@@ -934,6 +964,44 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 
+/* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
+   puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
+   nombre de fiches qu'elles retiennent — sans lui, on coche à l'aveugle. */
+.grp-crit{padding:0;border-top:1px solid var(--line)}
+.grp-crit:first-child{border-top:none}
+/* Le titre est la prise : replié, un critère tient sur une ligne, et la
+   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+.grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
+  cursor:pointer;list-style:none}
+.grp-crit > summary::-webkit-details-marker{display:none}
+.grp-crit > summary::after{content:"";width:7px;height:7px;margin-left:auto;
+  border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+.grp-crit[open] > summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.grp-crit > summary .t{font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-2)}
+.grp-crit > summary .r{font-size:11.5px;color:var(--ink-3)}
+.grp-crit > summary .r[data-on="true"]{color:var(--accent);font-weight:600}
+.grp-crit > *:last-child{margin-bottom:10px}
+.grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
+   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+.puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.puce-crit:hover{border-color:var(--line-strong)}
+.puce-crit[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink);font-weight:600}
+.puce-crit .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.puce-crit .n{font-size:11px;color:var(--ink-3);flex:0 0 auto}
+.puce-crit[aria-pressed="true"] .n{color:var(--accent)}
+.puces-crit .aucune{font-size:12px;color:var(--ink-3)}
+.compte-crit{margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-3)}
+
 /* liste réordonnable : le premier rang est le plus en avant */
 .ordre{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 .ordre li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;
@@ -1017,9 +1085,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
-  /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
-     ligne qui défile, et ce qu'elle montre déborde par le côté. */
-  .secteurs{flex-wrap:nowrap;overflow-x:auto}
+  /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
+     seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
+  .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
+  /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
+     sur un écran qu'il occuperait tout entier. */
+  .modale{padding:0;place-items:end stretch}
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
+  /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
+  .puce-crit{padding:8px 12px}
+  .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
@@ -1168,7 +1243,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
+      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
+           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
+           désigné des champs à proposer. -->
+      <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
+        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
+        <span class="compteur" id="nFiltres" hidden>0</span>
+      </button>
     </div>
+    <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
+         pourquoi la liste est si courte, le panneau étant refermé. -->
+    <div class="actifs" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
     <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>

@@ -100,8 +100,38 @@ button{cursor:pointer;background:none;border:none}
    plan, et cette barre est la prise qu'on saisit. Sur grand écran la liste a
    sa colonne, il n'y a pas de tiroir, donc pas de prise. */
 .poignee{display:none}
-.search{padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-.search-field{position:relative}
+.search{padding:14px 16px 12px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:8px}
+/* La recherche prend la place, le bouton des critères ce qu'il faut : sur un
+   téléphone les deux tiennent sur la même ligne, et le tiroir replié ne perd
+   pas une ligne de plus. */
+.search-field{position:relative;flex:1;min-width:0}
+.crit-btn{position:relative;flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;width:34px;height:34px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink-2)}
+.crit-btn:hover{border-color:var(--line-strong);color:var(--ink)}
+.crit-btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.crit-btn svg{width:15px;height:15px}
+.crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
+  padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
+  font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Les critères retenus. Même bande que les secteurs — une ligne qui défile à
+   l'étroit, plusieurs qui se replient au large — mais elle ne paraît que
+   lorsqu'il y a quelque chose à montrer. */
+.actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
+  border-bottom:1px solid var(--line);scrollbar-width:none}
+.actifs::-webkit-scrollbar{display:none}
+.actifs .actif{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;
+  max-width:100%;padding:4px 8px 4px 10px;font-size:12px;color:var(--ink);
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px}
+.actifs .actif .k{color:var(--ink-3);font-size:11px;flex:0 0 auto}
+.actifs .actif .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actifs .actif .v:empty{display:none}
+.actifs .actif .x{color:var(--ink-3);font-size:13px;line-height:1;flex:0 0 auto}
+.actifs .actif:hover .x{color:var(--ink)}
+.actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
+.actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
@@ -934,6 +964,44 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 
+/* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
+   puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
+   nombre de fiches qu'elles retiennent — sans lui, on coche à l'aveugle. */
+.grp-crit{padding:0;border-top:1px solid var(--line)}
+.grp-crit:first-child{border-top:none}
+/* Le titre est la prise : replié, un critère tient sur une ligne, et la
+   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+.grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
+  cursor:pointer;list-style:none}
+.grp-crit > summary::-webkit-details-marker{display:none}
+.grp-crit > summary::after{content:"";width:7px;height:7px;margin-left:auto;
+  border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s}
+.grp-crit[open] > summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+.grp-crit > summary .t{font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-2)}
+.grp-crit > summary .r{font-size:11.5px;color:var(--ink-3)}
+.grp-crit > summary .r[data-on="true"]{color:var(--accent);font-weight:600}
+.grp-crit > *:last-child{margin-bottom:10px}
+.grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
+   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+.puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
+  padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.puce-crit:hover{border-color:var(--line-strong)}
+.puce-crit[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink);font-weight:600}
+.puce-crit .l{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.puce-crit .n{font-size:11px;color:var(--ink-3);flex:0 0 auto}
+.puce-crit[aria-pressed="true"] .n{color:var(--accent)}
+.puces-crit .aucune{font-size:12px;color:var(--ink-3)}
+.compte-crit{margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink-3)}
+
 /* liste réordonnable : le premier rang est le plus en avant */
 .ordre{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 .ordre li{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;
@@ -1017,9 +1085,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
 
-  /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
-     ligne qui défile, et ce qu'elle montre déborde par le côté. */
-  .secteurs{flex-wrap:nowrap;overflow-x:auto}
+  /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
+     seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
+  .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
+  /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
+     sur un écran qu'il occuperait tout entier. */
+  .modale{padding:0;place-items:end stretch}
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
+  /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
+  .puce-crit{padding:8px 12px}
+  .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
@@ -1168,7 +1243,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
       </div>
+      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
+           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
+           désigné des champs à proposer. -->
+      <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
+        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
+        <span class="compteur" id="nFiltres" hidden>0</span>
+      </button>
     </div>
+    <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
+         pourquoi la liste est si courte, le panneau étant refermé. -->
+    <div class="actifs" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
     <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
@@ -1379,7 +1465,12 @@ let HEBERGES = [];
    `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
-const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set() };
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set(),
+                /* Les critères retenus : une clé de champ, les valeurs cochées.
+                   Un critère sans valeur cochée n'existe pas — il sort de la
+                   table plutôt que d'y rester comme un filtre qui ne filtre
+                   rien. */
+                crit: new Map() };
 const P = () => DATA.plans[state.plan];
 let view, emp;
 
@@ -1421,13 +1512,12 @@ function indexe(d){
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
+      /* Les champs retenus comme critères entrent aussi dans la recherche
+         plein texte : un exploitant qui désigne « Gamme de produits » comme
+         critère veut qu'on trouve « bio » en le tapant, pas seulement en
+         dépliant un filtre. */
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
-                " " + (s.sect || "")).toLowerCase();
-      /* Les enseignes que le stand héberge, à part : le plan doit rester
-         allumé quand on en cherche une, mais la liste ne doit pas répondre
-         « Hippopotamus » à qui a tapé « Burger King ». */
-      s.rechH = (s.coex || [])
-        .map(x => (x.nom || "") + " " + (x.plan || "")).join(" ").toLowerCase();
+                " " + (s.sect || "") + " " + texteCriteres(s)).toLowerCase();
     });
   });
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
@@ -1468,12 +1558,20 @@ function indexe(d){
      qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
      en propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
-    (s.coex || []).map((x, k) => ({
-      kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-      sect: s.sect, nom: x.nom, plan: x.plan,
-      rech: ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
-             " " + (s.sect || "")).toLowerCase(),
-    }))));
+    (s.coex || []).map((x, k) => {
+      /* Les champs qui servent de critères sont ceux de la société, pas de son
+         hôte : une hébergée a sa ville, ses rubriques, ses champs propres, et
+         un filtre doit la retenir pour ce qu'elle est. */
+      const h = {
+        kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
+        sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
+        nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
+      };
+      h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
+                " " + (s.sect || "") + " " + texteCriteres(h)).toLowerCase();
+      return h;
+    })));
+  indexeCriteres();
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
      que là où l'on se trouve. L'index des conférences est donc global, comme
@@ -1854,27 +1952,309 @@ function appliqueSecteurs(){
  * regarde — et les deux se cumulent : le mot-clé cherche dans les secteurs
  * retenus, et non à côté d'eux.
  */
-const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+/* ------------------------------------------------------------
+   Les critères de recherche
 
-function visible(o){
-  if (!state.qn && !state.secteurs.size) return true;
-  if (o.kind === "zone") return false;
-  return dansSecteurs(o) && (!state.qn || (o.rech || "").includes(state.qn));
+   Chercher par mot-clé suppose de savoir quoi taper. Un visiteur qui veut
+   « les enseignes de restauration présentes en Auvergne-Rhône-Alpes » ne sait
+   pas sous quel intitulé le salon range cela — mais l'exploitant, lui, le
+   sait : il désigne depuis la console les champs qui font des critères, et
+   c'est de la donnée elle-même que les valeurs proposées sont tirées.
+
+   Rien n'est offert d'office. Un plan qui déplierait douze filtres sur un
+   téléphone n'aurait plus de plan : les critères tiennent derrière un seul
+   bouton, et ce qui est retenu se relit d'un coup d'œil sous la recherche.
+   ------------------------------------------------------------ */
+const PREFIXE_PERSO = "perso:";
+
+/* Ce qu'un critère lit sur une fiche. Les champs propres au salon vivent dans
+   « perso » ; les autres sont posés à plat, chacun sous le nom que la
+   synchronisation lui donne — ce ne sont pas les mêmes que les cibles de la
+   console, d'où cette table. */
+const LECTURE_CRITERE = {
+  ville: o => [o.ville],
+  pays: o => [o.pays],
+  nomenclature: o => o.nomencl,
+  thematiques: o => o.themes,
+  // un oui/non n'a qu'une valeur à cocher : le champ lui-même
+  nouveau: o => o.neuf ? ["Oui"] : [],
+};
+const OUI_NON = { nouveau: true };
+const LIBELLE_CRITERE = {
+  ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
+  thematiques: "Thématiques", nouveau: "Nouvel exposant",
+};
+
+/** Les champs retenus comme critères, dans l'ordre où la console les range. */
+function clesCriteres(){
+  const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
+  return Object.keys(r).filter(k => r[k] === true);
+}
+
+/** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
+function libelleCritere(cle){
+  if (cle.indexOf(PREFIXE_PERSO) !== 0) return LIBELLE_CRITERE[cle] || cle;
+  const c = ((DATA && DATA.fiche && DATA.fiche.perso) || [])
+    .find(x => x && PREFIXE_PERSO + x.cle === cle);
+  return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
+}
+
+/** Les valeurs d'une fiche pour un critère, toujours une liste de textes. */
+function valeursCritere(o, cle){
+  const brut = cle.indexOf(PREFIXE_PERSO) === 0
+    ? (o.perso || {})[cle.slice(PREFIXE_PERSO.length)]
+    : (LECTURE_CRITERE[cle] ? LECTURE_CRITERE[cle](o) : null);
+  if (brut === null || brut === undefined || brut === "") return [];
+  /* Une liste peut porter des trous — une société hébergée sans ville en a un
+     là où les autres ont la leur — et « undefined » deviendrait une valeur à
+     cocher si on la traduisait en texte avant de l'écarter. */
+  return [].concat(brut).filter(v => v !== null && v !== undefined)
+    .map(v => String(v).trim()).filter(Boolean);
+}
+
+/** Tout ce qu'une fiche porte de critères, pour la recherche plein texte. */
+function texteCriteres(o){
+  return clesCriteres().flatMap(c => valeursCritere(o, c)).join(" ");
 }
 
 /**
- * Ce que le plan garde allumé.
+ * Les critères et leurs valeurs, relevés dans le salon entier.
  *
- * Plus large que la liste, et il le faut : chercher un co-exposant doit
- * éclairer le stand où l'on va le trouver, alors que ce stand porte le nom
- * d'un autre. C'est le seul endroit où une enseigne répond pour son hôte.
+ * Les valeurs viennent des fiches, jamais d'une liste tenue à part : un filtre
+ * qui proposerait une ville où personne n'expose ne rendrait que des listes
+ * vides. Elles sont comptées, et rangées de la plus portée à la moins portée —
+ * c'est l'ordre dans lequel on les cherche.
+ */
+let CRITERES = [];
+function indexeCriteres(){
+  const fiches = TOUS.filter(o => o.kind === "stand").concat(HEBERGES);
+  CRITERES = clesCriteres().map(cle => {
+    const n = new Map();
+    fiches.forEach(o => valeursCritere(o, cle)
+      .forEach(v => n.set(v, (n.get(v) || 0) + 1)));
+    return {
+      cle, libelle: libelleCritere(cle), ouiNon: OUI_NON[cle] === true,
+      valeurs: [...n].sort((a, b) => (b[1] - a[1]) || COLLATION.compare(a[0], b[0]))
+        .map(([v, k]) => ({ v, n: k })),
+    };
+  // un critère que rien ne renseigne ne s'offre pas : il ne rendrait rien
+  }).filter(c => c.valeurs.length);
+  /* Un critère retenu avant un rechargement peut avoir disparu du réglage, ou
+     n'avoir plus aucune valeur : il resterait sinon à retrancher des fiches
+     sans que rien ne le montre. */
+  [...state.crit.keys()].forEach(k => {
+    if (!CRITERES.some(c => c.cle === k)) state.crit.delete(k);
+  });
+  majCriteres();
+}
+
+/** Ce que la liste retient d'un critère : une valeur cochée suffit. */
+function dansCriteres(o){
+  for (const [cle, choisies] of state.crit){
+    const v = valeursCritere(o, cle);
+    if (!v.some(x => choisies.has(x))) return false;
+  }
+  return true;
+}
+
+const critereActif = (cle, v) => state.crit.has(cle) && state.crit.get(cle).has(v);
+
+function basculeCritere(cle, v){
+  const l = state.crit.get(cle) || new Set();
+  if (l.has(v)) l.delete(v); else l.add(v);
+  if (l.size) state.crit.set(cle, l); else state.crit.delete(cle);
+  majCriteres();
+  appliqueFiltre();
+}
+
+function videCriteres(){
+  state.crit.clear();
+  majCriteres();
+  appliqueFiltre();
+}
+
+/** Le nombre de valeurs retenues, tous critères confondus. */
+const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
+
+/**
+ * La barre : le bouton qui ouvre les critères, et ce qui est retenu.
+ *
+ * Les valeurs retenues restent sous les yeux, chacune sur une puce qui la
+ * retire d'une pression. Sans elles, on ne saurait plus pourquoi la liste est
+ * si courte — et sur un téléphone, le panneau qui les porte est fermé.
+ */
+function majCriteres(){
+  const btn = $("btnFiltres"), barre = $("actifs");
+  if (!btn || !barre) return;
+  btn.hidden = !CRITERES.length;
+  const n = nCriteres();
+  const jeton = $("nFiltres");
+  jeton.hidden = !n;
+  jeton.textContent = n;
+  btn.setAttribute("aria-pressed", String(n > 0));
+
+  barre.hidden = !n;
+  barre.innerHTML = "";
+  if (!n) { mesureTiroir(); return; }
+  state.crit.forEach((valeurs, cle) => {
+    const lib = libelleCritere(cle);
+    valeurs.forEach(v => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "actif";
+      b.title = "Retirer ce critère";
+      b.innerHTML = '<span class="k"></span><span class="v"></span>' +
+        '<span class="x" aria-hidden="true">×</span>';
+      b.querySelector(".k").textContent = lib;
+      b.querySelector(".v").textContent = OUI_NON[cle] ? "" : v;
+      b.setAttribute("aria-label", "Retirer le critère " + lib + " " + v);
+      b.onclick = () => basculeCritere(cle, v);
+      barre.appendChild(b);
+    });
+  });
+  if (n > 1){
+    const t = document.createElement("button");
+    t.type = "button";
+    t.className = "actif vider";
+    t.textContent = "Tout effacer";
+    t.onclick = videCriteres;
+    barre.appendChild(t);
+  }
+  // la barre fait partie de ce qui dépasse du tiroir replié : sa hauteur change
+  mesureTiroir();
+}
+
+/* Au-delà d'une douzaine de valeurs, on ne les parcourt plus des yeux : une
+   ligne de saisie les tamise sur place. */
+const VALEURS_TAMIS = 12;
+
+/**
+ * Le panneau des critères.
+ *
+ * Une fenêtre plutôt qu'un dépliant sous la recherche : sur un téléphone elle
+ * occupe l'écran qu'il faut sans pousser la liste hors de vue, et le pouce y
+ * atteint tout. Chaque groupe se replie une fois choisi — on ne règle pas
+ * douze critères d'affilée — et le pied dit combien de fiches restent.
+ */
+function ouvreCriteres(){
+  ouvreModale("Critères de recherche", corps => {
+    const compte = document.createElement("p");
+    compte.className = "compte-crit";
+    const dis = () => {
+      const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
+      compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
+    };
+
+    CRITERES.forEach(c => {
+      /* Un critère replié par défaut, sauf s'il est le seul et qu'il tient à
+         l'écran : cent trente-neuf rubriques dépliées d'office repoussaient
+         les autres critères et le pied de la fenêtre hors de vue, sur
+         téléphone comme ailleurs. Le titre dit ce qui est retenu dedans, de
+         sorte qu'un critère replié ne cache jamais un choix fait. */
+      const g = document.createElement("details");
+      g.className = "grp-crit";
+      g.open = CRITERES.length === 1 && c.valeurs.length <= VALEURS_TAMIS;
+      const h = document.createElement("summary");
+      h.innerHTML = '<span class="t"></span><span class="r"></span>';
+      h.querySelector(".t").textContent = c.libelle;
+      const retenu = h.querySelector(".r");
+      const disRetenu = () => {
+        const n = (state.crit.get(c.cle) || new Set()).size;
+        retenu.textContent = !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
+          : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
+        retenu.dataset.on = String(n > 0);
+      };
+      disRetenu();
+      g.appendChild(h);
+
+      const puces = document.createElement("div");
+      puces.className = "puces-crit";
+
+      /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
+         et deux puces « oui » et « non » diraient deux fois la même chose. */
+      const offertes = c.ouiNon ? [c.valeurs[0]] : c.valeurs;
+
+      const dessine = (tamis) => {
+        puces.innerHTML = "";
+        const t = (tamis || "").trim().toLowerCase();
+        const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
+        if (!vues.length){
+          const vide = document.createElement("span");
+          vide.className = "aucune";
+          vide.textContent = "Aucune valeur ne correspond.";
+          puces.appendChild(vide);
+          return;
+        }
+        vues.forEach(x => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "puce-crit";
+          b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
+          b.innerHTML = '<span class="l"></span><span class="n"></span>';
+          b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
+          b.querySelector(".n").textContent = x.n;
+          b.onclick = () => {
+            basculeCritere(c.cle, x.v);
+            b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
+            disRetenu();
+            dis();
+          };
+          puces.appendChild(b);
+        });
+      };
+
+      if (!c.ouiNon && offertes.length > VALEURS_TAMIS){
+        const ch = document.createElement("input");
+        ch.type = "search";
+        ch.className = "tamis";
+        ch.placeholder = "Filtrer " + c.libelle.toLowerCase() + "…";
+        ch.autocomplete = "off";
+        ch.oninput = () => dessine(ch.value);
+        g.appendChild(ch);
+      }
+      dessine("");
+      g.appendChild(puces);
+      corps.appendChild(g);
+    });
+
+    dis();
+    corps.appendChild(compte);
+  }, [
+    { libelle: "Tout effacer", action: videCriteres },
+    { libelle: "Voir les résultats", genre: "primaire" },
+  ]);
+}
+
+const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+
+const filtre = () => Boolean(state.qn) || state.secteurs.size > 0 || state.crit.size > 0;
+
+function visible(o){
+  if (!filtre()) return true;
+  if (o.kind === "zone") return false;
+  return dansSecteurs(o) && dansCriteres(o) &&
+    (!state.qn || (o.rech || "").includes(state.qn));
+}
+
+/* Les stands qu'une société hébergée éclaire. Le plan doit rester allumé sur
+   le stand où l'on va la trouver, alors qu'il porte le nom d'un autre : c'est
+   le seul endroit où une enseigne répond pour son hôte. Le relevé se refait à
+   chaque changement de filtre, et non à chaque stand dessiné. */
+let HOTES = new Set();
+const releveHotes = () => {
+  HOTES = new Set(HEBERGES.filter(visible).map(x => x.id));
+};
+
+/**
+ * Ce que le plan garde allumé : ce que la liste retient, plus les stands qui
+ * hébergent une société retenue.
  */
 function visibleSurPlan(o){
-  return visible(o) ||
-    (!!state.qn && dansSecteurs(o) && (o.rechH || "").includes(state.qn));
+  return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
 function appliqueFiltre(){
+  releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSurPlan(o));
@@ -1885,13 +2265,13 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  // un secteur retenu déborde le pavillon affiché, comme un mot-clé
-  const tout = Boolean(q) || state.secteurs.size > 0;
-  /* Les sociétés hébergées ne rejoignent la liste que sur recherche : on les y
-     trouve par leur nom, et un filtre n'est pas un nom. Hors recherche, la
-     liste est le sommaire des emplacements — et son compte, celui qu'annonce
-     l'en-tête. */
-  const portee = q ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
+  // un secteur ou un critère retenu déborde le pavillon affiché, comme un mot-clé
+  const tout = filtre();
+  /* Les sociétés hébergées ne rejoignent la liste que sur recherche ou sur
+     critère : on les y trouve par ce qu'elles portent, et un secteur n'est
+     porté que par l'emplacement. Sans rien de tout cela, la liste est le
+     sommaire des emplacements — et son compte, celui qu'annonce l'en-tête. */
+  const portee = q || state.crit.size ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
@@ -2462,7 +2842,19 @@ function ouvre(o, rect, canal, iSoc){
     ok("thematiques", soc.themes && soc.themes.length
       ? f("Thématiques", soc.themes
           .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-      : "");
+      : "") +
+    /* Les champs que ce salon-ci s'est ajoutés, dans l'ordre où la console les
+       range, et après ce que toutes les fiches ont en commun : ils lui sont
+       propres, ils ne passent pas devant l'adresse. */
+    ((!zone && DATA.fiche && DATA.fiche.perso) || []).map(c => {
+      const v = ((soc.perso || {})[c.cle]);
+      if (v === undefined || v === null || v === "") return "";
+      const l = [].concat(v).map(String).filter(Boolean);
+      if (!l.length) return "";
+      return ok(PREFIXE_PERSO + c.cle, f(esc(c.libelle), l.length > 1
+        ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
+        : esc(l[0])));
+    }).join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
@@ -2684,6 +3076,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && e.target.id !== "q" && e.target.id !== "texteADessiner") termineTrace(true);
 });
 
+$("btnFiltres").onclick = ouvreCriteres;
 $("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
 $("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
 $("zFit").onclick = fit;
@@ -2712,8 +3105,9 @@ $("q").addEventListener("input", e => {
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
-/* La mesure du tiroir appartient à ce module, mais la bande des secteurs
-   paraît et disparaît ailleurs : on lui laisse de quoi la redemander. */
+/* La mesure du tiroir appartient à ce module, mais les bandes qui dépassent —
+   les secteurs, les critères retenus — paraissent et disparaissent ailleurs :
+   on leur laisse de quoi la redemander. */
 let mesureTiroir = () => {};
 
 (function tiroirListe(){
@@ -2728,7 +3122,8 @@ let mesureTiroir = () => {};
   function mesure(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
-    const h = prise.offsetHeight + part(".search") + part(".secteurs") + part(".count");
+    const h = prise.offsetHeight + part(".search") + part(".secteurs") +
+              part(".actifs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 

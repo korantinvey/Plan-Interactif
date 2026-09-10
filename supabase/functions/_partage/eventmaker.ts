@@ -12,7 +12,8 @@
  *     le nom et le courriel, mais sur l'invité correspondant, dont les champs
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
-import { DEFAUTS, lit, ou, vrai } from "./champs.ts";
+import { DEFAUTS, PREFIXE_PERSO, lit, ou, valeurPerso, vrai } from "./champs.ts";
+import type { ChampPerso } from "./champs.ts";
 
 export interface ConfigEm {
   jeton: string;
@@ -30,6 +31,12 @@ export interface ConfigEm {
    * de choix plutôt qu'un oui/non. Sans elles, c'est l'accord usuel qui décide.
    */
   valeurs?: Record<string, string[]>;
+  /**
+   * Les champs que le salon s'est ajoutés. Ils se lisent comme les autres
+   * cibles — leur champ d'origine est dans `champs`, sous le préfixe qui les
+   * distingue — mais leur liste n'est connue que de l'événement.
+   */
+  perso?: ChampPerso[];
 }
 
 const BASE = "https://app.eventmaker.io/api/v1";
@@ -92,6 +99,8 @@ export interface ExposantEm {
   instagram: string | null;
   nomencl: string[];
   themes: string[];
+  /** Les champs propres au salon, par clé. Vide sur un salon qui n'en a pas. */
+  perso: Record<string, string | string[]>;
   // une pastille sur la fiche, quand le salon distingue ses nouveaux venus
   neuf: boolean;
   exclu: boolean;
@@ -199,6 +208,25 @@ export class Eventmaker {
   ): unknown {
     const liste = this.cfg.champs?.[cible] ?? DEFAUTS.eventmaker[cible] ?? [];
     return lit(liste, { "": m, invite: g }, multiple);
+  }
+
+  /**
+   * Les champs que le salon s'est ajoutés, lus sur une fiche.
+   *
+   * Rien d'automatique ici : un champ personnalisé n'a pas de défaut — il
+   * n'existe que parce qu'un exploitant l'a créé et lui a désigné une origine.
+   * Sans origine désignée, il ne descend pas.
+   */
+  private perso(
+    g: Record<string, any>,
+    m: Record<string, string>,
+  ): Record<string, string | string[]> {
+    const out: Record<string, string | string[]> = {};
+    for (const c of this.cfg.perso ?? []) {
+      const v = valeurPerso(this.valeur(g, m, PREFIXE_PERSO + c.cle, Boolean(c.multiple)));
+      if (v !== null) out[c.cle] = v;
+    }
+    return out;
   }
 
   /**
@@ -501,6 +529,7 @@ export class Eventmaker {
         instagram: v("instagram"),
         nomencl: separe(this.valeur(g, m, "nomenclature", true) as unknown[]),
         themes: separe(this.valeur(g, m, "thematiques", true) as unknown[]),
+        perso: this.perso(g, m),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
       };

@@ -125,6 +125,68 @@ utilisait la synchronisation : un salon déjà en service ne change pas de
 comportement, et une cible ajoutée plus tard ne le fait pas non plus. Le réglage
 prend effet à la synchronisation suivante.
 
+### Les champs qu'un salon est seul à tenir
+
+Les cibles ci-dessus sont les mêmes partout, et c'est bien ainsi : une enseigne,
+une ville, un site web se retrouvent d'un salon à l'autre. Mais chaque salon a un
+champ que les autres n'ont pas — « Gamme de produits », « Franchise depuis »,
+« Pays d'origine de l'enseigne » — dont personne d'autre n'a l'usage. L'ajouter
+au code revenait à l'ajouter à tous les salons pour qu'un seul s'en serve.
+
+Le cadre **Champs propres à ce salon**, en bas de la fenêtre, en crée autant
+qu'il en faut. On donne l'intitulé — celui que la fiche affichera —, puis on
+désigne le champ d'origine dans la même liste que les autres cibles. Le champ
+n'existe que pour l'événement où il a été créé : son intitulé vit dans la fiche,
+son origine dans la correspondance, comme n'importe quelle cible. Il se renomme
+et se retire d'une pression, et le retirer efface aussi son origine et son
+réglage de recherche — un champ que plus rien n'affiche n'a pas à être demandé à
+l'API.
+
+Un champ à choix côté Klipso ne porte qu'un code : sa codification est demandée
+comme celle de la nomenclature, une fois par champ et pour tout l'événement, de
+sorte que la fiche montre « Prêt-à-porter » et non `FEP26_GAM102`. Une valeur
+multiple reste une liste — c'est par elle qu'un critère de recherche offrira
+plusieurs valeurs.
+
+### Les critères de recherche
+
+Chercher par mot-clé suppose de savoir quoi taper. Un visiteur qui veut « les
+enseignes de restauration présentes en Auvergne-Rhône-Alpes » ne sait pas sous
+quel intitulé le salon range cela — mais l'exploitant, lui, le sait.
+
+Chaque ligne de la fenêtre porte donc une troisième case, **Critère**. Cochée, le
+champ est proposé au visiteur comme filtre, et ses valeurs entrent dans ce que la
+recherche plein texte balaie. Toutes les lignes ne s'y prêtent pas : un numéro de
+téléphone ou une adresse ne se choisissent pas dans une liste, et le secteur a
+déjà sa bande de couleurs sur le plan — un second filtre pour lui ferait double
+emploi. Les champs propres au salon, eux, sont tous éligibles.
+
+La case ne décide pas de l'affichage : un champ peut filtrer sans paraître sur la
+fiche — un code interne, une famille de produits — et l'inverse est vrai tout
+autant. C'est pourquoi son origine reste réglable même quand la fiche ne le
+montre pas.
+
+Côté visiteur, rien n'est offert d'office. **Les valeurs proposées viennent des
+fiches**, jamais d'une liste tenue à part : un filtre qui proposerait une ville
+où personne n'expose ne rendrait que des listes vides. Elles portent le nombre de
+fiches qu'elles retiennent, et se rangent de la plus portée à la moins portée.
+Un critère que rien ne renseigne ne paraît pas.
+
+Sur le plan, les critères tiennent derrière **un seul bouton**, à côté de la
+recherche : dépliés, ils prendraient sur un téléphone la place du plan. La
+fenêtre les montre repliés, un par ligne, avec ce qui est retenu dans chacun ;
+on en déplie un à la fois, et un critère à cent trente-neuf valeurs se tamise sur
+place plutôt que de repousser les autres hors de vue. Ce qui est retenu se relit
+sous la recherche, chaque valeur sur une puce qui la retire d'une pression —
+sans quoi, la fenêtre refermée, on ne saurait plus pourquoi la liste est si
+courte.
+
+Les critères se cumulent entre eux et avec le mot-clé, comme le filtre par
+secteur, et portent sur tout le salon : un exposant retenu peut être dans un
+autre pavillon que celui qu'on regarde. Une société hébergée répond pour
+elle-même — c'est bien sa fiche à elle qui porte sa ville et ses rubriques — et
+le stand qui l'accueille reste allumé sur le plan.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des

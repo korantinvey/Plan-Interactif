@@ -182,6 +182,26 @@ table.champs td.montre label.case{display:inline-block;gap:0}
 table.champs td.montre label.case span:empty{display:none}
 table.champs td.montre label.case input{margin:0;vertical-align:middle}
 table.champs td.montre .etat-salle{margin:0}
+/* La case « critère de recherche » : elle ne décide pas de l'affichage mais de
+   ce que le visiteur pourra filtrer sur le plan. Colonne étroite, comme celle
+   de l'affichage — c'est une case, pas un réglage à lire. */
+table.champs td.critere{width:78px;text-align:center}
+table.champs td.critere label.case{display:inline-block;gap:0}
+table.champs td.critere label.case span:empty{display:none}
+table.champs td.critere label.case input{margin:0;vertical-align:middle}
+/* L'étiquette ne sert qu'en colonne empilée, où l'en-tête a disparu. */
+table.champs td.critere .etiq{display:none;font-size:11px;color:var(--ink-3)}
+/* Renommer et retirer un champ propre au salon : deux boutons discrets posés
+   après l'intitulé, seuls de toute la fenêtre à agir sur la ligne elle-même. */
+table.champs .outil{margin-left:6px;padding:0 5px;font-size:12px;line-height:1.4;
+  color:var(--ink-3);border:1px solid var(--line);border-radius:4px;
+  background:var(--surface-2)}
+table.champs .outil:hover{color:var(--ink);border-color:var(--line-strong)}
+table.champs .outil.danger:hover{color:var(--rouge);border-color:var(--rouge)}
+.pied-perso{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 0 6px}
+.pied-perso .aide{font-size:11.5px;color:var(--ink-3)}
+
 /* Les valeurs qui font compter un champ à choix. « anciennete » vaut
    « Nouveau Client », « Client N-1 » ou « Retour » : aucune n'est un oui, et
    c'est à l'exploitant de dire lesquelles comptent — un salon signalera les
@@ -225,8 +245,13 @@ table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   table.champs tr[data-etat] td:first-child{box-shadow:none}
   /* Les colonnes empilées ne sont plus des colonnes : leur largeur de tableau
      y étrangle le texte, et « Numéro de stand » se coupait en deux. */
-  table.champs td.n,table.champs td.montre{width:auto;max-width:none;text-align:left}
+  table.champs td.n,table.champs td.montre,
+  table.champs td.critere{width:auto;max-width:none;text-align:left}
   table.champs td.montre{padding-bottom:4px}
+  /* Empilée, la case du critère n'a plus d'en-tête au-dessus d'elle : son
+     étiquette prend le relais, à côté d'elle et non au-dessus. */
+  table.champs td.critere{display:flex;align-items:center;gap:7px;padding-top:6px}
+  table.champs td.critere .etiq{display:inline}
 }
 .reglage-ligne{display:flex;align-items:center;gap:12px;padding:9px 0;
   border-top:1px solid var(--line)}
@@ -310,7 +335,7 @@ tr.eteint td{opacity:.45}
 /* La correspondance des champs aligne un libellé, une liste déroulante et un
    exemple de valeur : 440 px les écrasent tous les trois. La fenêtre s'élargit
    quand elle porte ce tableau, et elle seule. */
-.mfen:has(table.champs){width:min(780px,100%)}
+.mfen:has(table.champs){width:min(860px,100%)}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
