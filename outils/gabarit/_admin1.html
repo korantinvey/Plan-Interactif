@@ -1075,6 +1075,11 @@ function modePlacementLibelles(on){
      referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
   if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
   if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
+     touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
+     rallume ou s'éteint donc ici, une fois pour tous, plutôt que dans chacun. */
+  const crayon = document.querySelector("#pile .rlib");
+  if (crayon) crayon.setAttribute("aria-pressed", PLACE_LIBELLES);
   majPaletteLibelle();
   libelles();
 }
@@ -1144,14 +1149,7 @@ function libellePointerUp(e){
   return true;
 }
 
-/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
-   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
-   cochée — et le refaire remplacerait le nœud en pleine gestion de son
-   propre événement. */
-if ($("libFerme")) $("libFerme").onclick = () => {
-  modePlacementLibelles(false);
-  construitPanneau();
-};
+if ($("libFerme")) $("libFerme").onclick = () => modePlacementLibelles(false);
 if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
 if ($("libTaille")){
   $("libTaille").oninput = e => {

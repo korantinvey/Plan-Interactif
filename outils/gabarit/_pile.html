@@ -106,6 +106,10 @@ function construitPanneau(){
     d.innerHTML = '<label><input type="checkbox"' + coche + '><span></span></label>' +
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
+      /* avant la pastille, et non après comme le crayon d'un calque de dessin :
+         les couleurs des couches de données forment une colonne, et un bouton
+         glissé entre elles la romprait */
+      (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
       (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
@@ -181,6 +185,18 @@ function construitPanneau(){
       };
     }
 
+    /* Le crayon des textes ouvre le placement des libellés à la main, comme
+       celui d'un calque de dessin ouvre ses outils : deux façons de retoucher
+       ce qu'une couche pose sur le plan, donc le même bouton au même endroit.
+       Une case à cocher le disait aussi, mais en ligne séparée sous la couche,
+       où elle se lisait comme un réglage du salon — alors que c'est un mode de
+       travail, qui ne se retient pas d'une visite à l'autre. */
+    if (x.k === "data:labels"){
+      const cr = d.querySelector(".rlib");
+      cr.setAttribute("aria-pressed", PLACE_LIBELLES);
+      cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!PLACE_LIBELLES); };
+    }
+
     hote.appendChild(d);
 
     /* sous-calques de l'habillage : couleur et visibilité, pas d'ordre */
@@ -196,12 +212,10 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* les deux couleurs de texte se règlent sous la couche Textes, et avec
-       elles le placement à la main de chaque libellé */
+    /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
-      rangPlacement(hote);
     }
   });
 
@@ -311,25 +325,6 @@ function rangSous(hote, cle, libelle, defaut, applique){
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
                        enregistreConf(); applique(); };
-  hote.appendChild(d);
-}
-
-/**
- * La case qui ouvre le placement des libellés à la main.
- *
- * Elle vit sous la couche des textes parce que c'est elle qu'on retouche, à
- * côté de sa couleur et de sa visibilité. Ce n'est pas un réglage du salon
- * mais un mode de travail : elle ne se retient pas, et se relève décochée à
- * chaque ouverture du panneau.
- */
-function rangPlacement(hote){
-  const d = document.createElement("div");
-  d.className = "calq sous";
-  d.innerHTML = '<label><input type="checkbox"><span></span></label>';
-  d.querySelector("label span").textContent = "Placer les libellés à la main";
-  const c = d.querySelector("input");
-  c.checked = PLACE_LIBELLES;
-  c.onchange = e => modePlacementLibelles(e.target.checked);
   hote.appendChild(d);
 }
 
