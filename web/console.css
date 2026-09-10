@@ -193,11 +193,38 @@ table.champs td.critere label.case input{margin:0;vertical-align:middle}
 table.champs td.critere .etiq{display:none;font-size:11px;color:var(--ink-3)}
 /* Renommer et retirer un champ propre au salon : deux boutons discrets posés
    après l'intitulé, seuls de toute la fenêtre à agir sur la ligne elle-même. */
-table.champs .outil{margin-left:6px;padding:0 5px;font-size:12px;line-height:1.4;
+table.champs .outil,.ordre-ligne .outil{margin-left:6px;padding:0 5px;font-size:12px;line-height:1.4;
   color:var(--ink-3);border:1px solid var(--line);border-radius:4px;
   background:var(--surface-2)}
-table.champs .outil:hover{color:var(--ink);border-color:var(--line-strong)}
+table.champs .outil:hover,.ordre-ligne .outil:not(:disabled):hover{color:var(--ink);
+  border-color:var(--line-strong)}
 table.champs .outil.danger:hover{color:var(--rouge);border-color:var(--rouge)}
+/* L'ordre d'affichage du corps de la fiche : une ligne par champ, sa poignée
+   et son rang à gauche, de quoi le monter et le descendre à droite. Le rang
+   est écrit plutôt que laissé à compter — c'est lui qu'on retient d'un
+   aller-retour vers le plan. Les deux flèches gardent leur largeur en bout de
+   course, sans quoi la colonne se déciderait ligne par ligne. */
+.ordre-liste{display:flex;flex-direction:column;margin-top:4px}
+.ordre-ligne{display:flex;align-items:center;gap:8px;font-size:12.5px;
+  padding:7px 8px;border-bottom:1px solid var(--line);background:var(--surface)}
+/* Le curseur est tout ce qui annonce qu'une ligne se prend : la poignée le dit
+   déjà en forme, la ligne entière le confirme au survol. */
+.ordre-ligne{cursor:grab}
+.ordre-ligne:active{cursor:grabbing}
+.ordre-ligne .poignee{flex:0 0 auto;color:var(--ink-3);font-size:15px;line-height:1}
+.ordre-ligne .rang{flex:0 0 22px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--ink-3);text-align:right}
+.ordre-ligne .lib{color:var(--ink)}
+/* « propre au salon » : deux champs peuvent porter le même intitulé, et rien
+   d'autre ici ne les distinguerait. L'espace restant lui revient, pour que les
+   flèches restent alignées d'une ligne à l'autre. */
+.ordre-ligne .etiq{flex:1;font-size:11px;color:var(--ink-3)}
+.ordre-ligne .etiq:not(:empty){margin-left:2px}
+.ordre-ligne .outil:disabled{opacity:.3;cursor:default}
+/* La ligne qu'on tient : posée à plat sous le curseur, elle laisse voir la
+   place qu'elle prendra plutôt que de la masquer. */
+.ordre-ligne.tire{opacity:.4;background:var(--surface-2)}
+.ordre-ligne.tire .outil{visibility:hidden}
 .pied-perso{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:10px 0 6px}
 .pied-perso .aide{font-size:11.5px;color:var(--ink-3)}

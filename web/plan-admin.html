@@ -2731,6 +2731,43 @@ function montre(type, cle){
   return !r || r[cle] !== false;
 }
 
+/* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
+   l'exploitant n'y a pas touché.
+
+   Le même tableau vit dans la console — « ORDRE_FICHE_DEFAUT » de
+   « _console-js.html » — qui propose de le remanier : les deux se suivent.
+   N'y figure que le corps ; le numéro de stand et la pastille des nouveaux
+   venus tiennent dans l'en-tête, les conférences ont leur propre volet, et
+   rien de tout cela ne se déplace. */
+const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
+  "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
+  "nomenclature", "thematiques"];
+
+/**
+ * L'ordre réglé par l'exploitant, complété de ce qu'il ne connaît pas encore.
+ *
+ * Un champ ajouté après coup — au code, ou par le salon — ne figure pas dans
+ * la liste enregistrée. L'oublier le ferait disparaître de la fiche, et le
+ * rejeter à la fin le sortirait de son voisinage sans qu'on l'ait demandé : il
+ * reprend donc la place que le défaut lui donne, derrière le champ qu'il y
+ * suit.
+ */
+function ordreCorps(persos){
+  const defaut = ORDRE_CORPS_FICHE.concat(persos || []);
+  const regle = ((DATA && DATA.fiche && DATA.fiche.ordre) || [])
+    .filter(c => defaut.indexOf(c) >= 0);
+  if (!regle.length) return defaut;
+  const sortie = regle.slice();
+  defaut.forEach((c, i) => {
+    if (sortie.indexOf(c) >= 0) return;
+    // le premier voisin de gauche que le réglage connaît donne le point d'entrée
+    let j = -1;
+    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(defaut[k]);
+    sortie.splice(j + 1, 0, c);
+  });
+  return sortie;
+}
+
 /**
  * Le programme d'une zone, en vignettes chronologiques.
  *
@@ -3049,65 +3086,77 @@ function ouvre(o, rect, canal, iSoc){
   const confs = ok("conferences", zone
     ? programme(P().parZone && P().parZone.get(o.id))
     : programme(sien, "Conférences"));
-  // ni la surface, ni les angles ouverts, ni l'état de commercialisation
-  // n'apprennent quoi que ce soit au visiteur
-  const infos =
-    // la raison sociale n'apprend rien quand elle est déjà le titre
-    ok("raison", !zone && soc.plan && soc.plan !== titre ? f("Raison sociale", esc(soc.plan)) : "") +
-    /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
-       quelle que soit la société qu'on y regarde. Son libellé est résolu à la
-       synchronisation, la page l'affiche tel quel. */
-    ok("secteur", f("Secteur", o.sect ? esc(o.sect) : "")) +
-    ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : "")) +
-    /* Les quatre champs courts se suivent : sur mobile ils s'apparient deux
-       par deux, et un ordre entrecoupé y laisserait des demi-lignes vides. */
-    ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court")) +
-    ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court")) +
-    /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
-       stand, quelle que soit la société qu'on y regarde. */
-    ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court")) +
-    // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-    ok("telephone", f("Téléphone", soc.tel
-      ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
-      : "", "court")) +
-    ok("site", f("Site web", lien(soc.site))) +
-    ok("facebook", f("Facebook", lien(soc.fb))) +
-    ok("linkedin", f("LinkedIn", lien(soc.li))) +
-    ok("instagram", f("Instagram", lien(soc.ig))) +
-    // le libellé est résolu à la synchronisation : la page l'affiche tel quel
-    ok("nomenclature", soc.nomencl && soc.nomencl.length
-      ? f("Nomenclature", soc.nomencl
-          .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-      : "") +
-    /* Les thématiques disent ce que l'exposant vient faire là, quand la
-       nomenclature dit ce qu'il vend : elles se suivent, et un salon qui n'en
-       tient pas ne reçoit pas la clé du tout.
+  /* Le corps de la fiche, champ par champ sous sa clé plutôt que d'un seul
+     tenant : l'ordre de lecture n'est pas le même d'un salon à l'autre — ici
+     la nomenclature prime, là l'adresse — et c'est l'exploitant qui le règle
+     depuis la console. Le rangement vient après, une fois tout écrit.
 
-       Chacune mène aux exposants qui la partagent — mais seulement là où
-       l'exploitant en a fait un critère : ailleurs, rien ne saurait dresser la
-       liste promise, et une thématique qui ne mène nulle part vaut mieux en
-       texte qu'en lien mort. */
-    ok("thematiques", soc.themes && soc.themes.length
-      ? f("Thématiques", soc.themes
-          .map(n => themeFiltrable(n)
-            ? '<button type="button" class="ligne theme" data-t="' +
-              esc(String(n)) + '">' + esc(String(n)) + '</button>'
-            : '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-      : "") +
-    /* Les champs que ce salon-ci s'est ajoutés, dans l'ordre où la console les
-       range, et après ce que toutes les fiches ont en commun : ils lui sont
-       propres, ils ne passent pas devant l'adresse. */
-    ((!zone && DATA.fiche && DATA.fiche.perso) || []).map(c => {
-      const v = ((soc.perso || {})[c.cle]);
-      if (v === undefined || v === null || v === "") return "";
-      // le point-virgule sépare les valeurs d'un champ à choix : la fiche les
-      // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
-      const l = separeValeurs(v);
-      if (!l.length) return "";
-      return ok(PREFIXE_PERSO + c.cle, f(esc(c.libelle), l.length > 1
+     Ni la surface, ni les angles ouverts, ni l'état de commercialisation
+     n'apprennent quoi que ce soit au visiteur : ils n'y figurent pas. */
+  const corps = {};
+  // la raison sociale n'apprend rien quand elle est déjà le titre
+  corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
+    ? f("Raison sociale", esc(soc.plan)) : "");
+  /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
+     quelle que soit la société qu'on y regarde. Son libellé est résolu à la
+     synchronisation, la page l'affiche tel quel. */
+  corps.secteur = ok("secteur", f("Secteur", o.sect ? esc(o.sect) : ""));
+  corps.adresse = ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : ""));
+  /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
+     décide donc aussi de qui se retrouve à côté de qui, et un champ long
+     glissé au milieu d'eux y laisse une demi-ligne vide. */
+  corps.ville = ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court"));
+  corps.pays = ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court"));
+  /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
+     stand, quelle que soit la société qu'on y regarde. */
+  corps.niveaux = ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
+  corps.telephone = ok("telephone", f("Téléphone", soc.tel
+    ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
+    : "", "court"));
+  corps.site = ok("site", f("Site web", lien(soc.site)));
+  corps.facebook = ok("facebook", f("Facebook", lien(soc.fb)));
+  corps.linkedin = ok("linkedin", f("LinkedIn", lien(soc.li)));
+  corps.instagram = ok("instagram", f("Instagram", lien(soc.ig)));
+  // le libellé est résolu à la synchronisation : la page l'affiche tel quel
+  corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
+    ? f("Nomenclature", soc.nomencl
+        .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
+    : "");
+  /* Les thématiques disent ce que l'exposant vient faire là, quand la
+     nomenclature dit ce qu'il vend ; un salon qui n'en tient pas ne reçoit pas
+     la clé du tout.
+
+     Chacune mène aux exposants qui la partagent — mais seulement là où
+     l'exploitant en a fait un critère : ailleurs, rien ne saurait dresser la
+     liste promise, et une thématique qui ne mène nulle part vaut mieux en
+     texte qu'en lien mort. */
+  corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
+    ? f("Thématiques", soc.themes
+        .map(n => themeFiltrable(n)
+          ? '<button type="button" class="ligne theme" data-t="' +
+            esc(String(n)) + '">' + esc(String(n)) + '</button>'
+          : '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
+    : "");
+  /* Les champs que ce salon-ci s'est ajoutés : l'ordre par défaut les range
+     derrière ce que toutes les fiches ont en commun — ils lui sont propres,
+     ils ne passent pas d'office devant l'adresse — sans empêcher l'exploitant
+     de les faire remonter. */
+  const perso = (!zone && DATA.fiche && DATA.fiche.perso) || [];
+  perso.forEach(c => {
+    const v = (soc.perso || {})[c.cle];
+    if (v === undefined || v === null || v === "") return;
+    // le point-virgule sépare les valeurs d'un champ à choix : la fiche les
+    // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
+    const l = separeValeurs(v);
+    if (!l.length) return;
+    corps[PREFIXE_PERSO + c.cle] = ok(PREFIXE_PERSO + c.cle,
+      f(esc(c.libelle), l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
         : esc(l[0])));
-    }).join("");
+  });
+  const infos = ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
+    .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
