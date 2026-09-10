@@ -127,6 +127,27 @@ button{cursor:pointer;background:none;border:none}
 /* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
    trouve pas : le filtre reste, le repère de couleur s'efface. */
 .sans-secteurs .secteurs .chip i{display:none}
+/* Une bande qui défile ne le dit pas d'elle-même.
+
+   En tiroir, secteurs et thématiques tiennent sur une ligne qui déborde par le
+   côté : une puce coupée net au bord de l'écran ressemble à un défaut de
+   cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
+   quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
+   s'efface, et l'on sait qu'on a tout vu.
+
+   Un masque plutôt qu'un dégradé de couleur : il découpe au lieu de teindre, et
+   tient donc dans les deux thèmes sans avoir à être décliné, par-dessus le fond
+   du tiroir comme par-dessus celui de la bande. */
+.defile{--fondu:26px}
+.defile[data-gauche],.defile[data-droite]{
+  -webkit-mask-image:var(--masque);mask-image:var(--masque)}
+.defile[data-droite]{
+  --masque:linear-gradient(to right,#000 calc(100% - var(--fondu)),transparent)}
+.defile[data-gauche]{
+  --masque:linear-gradient(to right,transparent,#000 var(--fondu))}
+.defile[data-gauche][data-droite]{
+  --masque:linear-gradient(to right,transparent,#000 var(--fondu),
+    #000 calc(100% - var(--fondu)),transparent)}
 /* Les thématiques : la même bande de puces que les secteurs, sans pastille de
    couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
    le salon en range beaucoup, un bouton en donnant alors la suite. */

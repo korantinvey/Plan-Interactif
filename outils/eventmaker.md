@@ -262,7 +262,10 @@ Trois entrées, la même liste au bout.
   « Solutions transverses », « Solutions métier » — et savoir qu'une thématique
   ne range que deux exposants évite de la retenir pour rien. Au-delà de dix, la
   bande se replie sur deux lignes, un bouton donnant la suite ; en tiroir, sur
-  téléphone, elle redevient une ligne qui défile, comme les secteurs.
+  téléphone, elle redevient une ligne qui défile, comme les secteurs — et le
+  bord par lequel il reste quelque chose s'estompe, faute de quoi une puce
+  coupée net au bord de l'écran se lit comme un défaut de cadrage et non comme
+  une invitation à pousser du doigt. Arrivé au bout, plus rien ne s'efface.
 - **La fiche.** Chaque thématique y est une prise vers les exposants qui la
   partagent : on repart alors à neuf, mot-clé et secteurs effacés, sinon la
   liste répondrait à une question qu'on ne pose plus.

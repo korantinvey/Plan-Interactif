@@ -447,6 +447,40 @@ function couleurSecteur(nom){
            parseFloat(jeton("--sect-s")) || 58, parseFloat(jeton("--sect-l")) || 87);
 }
 
+/* Les bandes qui défilent, et ce qui le fait voir.
+
+   En tiroir — sur téléphone — secteurs et thématiques tiennent sur une ligne
+   unique qui déborde par le côté : la hauteur s'y paie sur le plan, et deux
+   lignes de puces le mangeraient. Mais une puce coupée net au bord de l'écran
+   ne se lit pas comme une invitation à pousser du doigt : elle se lit comme un
+   défaut de cadrage, et le reste du salon n'est jamais visité.
+
+   On marque donc le bord par lequel il reste quelque chose, et lui seul ; le
+   CSS l'estompe. Arrivé au bout, plus rien ne s'efface — c'est ainsi qu'on sait
+   qu'on a tout vu. Sur grand écran les bandes se replient sur plusieurs lignes
+   et ne défilent pas : rien ne déborde, rien ne se marque, la règle ne
+   s'applique nulle part sans qu'on ait à la conditionner à la largeur. */
+const BANDES = () => [$("secteurs"), $("themesChips")].filter(Boolean);
+
+function majFondus(){
+  BANDES().forEach(n => {
+    n.classList.add("defile");
+    /* Le défilement est fractionnaire — zoom du navigateur, densité d'écran —
+       et n'atteint jamais le bout au pixel près : un pixel de marge, sinon le
+       fondu de droite ne s'éteint pas là où il n'y a plus rien. */
+    const reste = n.scrollWidth - n.clientWidth - n.scrollLeft;
+    n.toggleAttribute("data-gauche", n.scrollLeft > 1);
+    n.toggleAttribute("data-droite", reste > 1);
+  });
+}
+
+BANDES().forEach(n => n.addEventListener("scroll", majFondus, { passive: true }));
+/* La bascule tiroir / colonne change tout : ce qui défilait ne défile plus, et
+   les puces se replient. Les polices, elles, arrivent après le premier calcul
+   et changent la largeur mesurée. */
+addEventListener("resize", majFondus);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(majFondus);
+
 /* La bande des secteurs : légende du plan à gauche, filtre de la liste à
    droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
    ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
@@ -467,6 +501,7 @@ function chipsSecteurs(){
     x.setAttribute("aria-pressed", state.secteurs.has(n));
     appliqueFiltre();
   });
+  majFondus();
 }
 
 /**
@@ -573,6 +608,7 @@ function chipsThemes(){
     ? "Replier" : "Toutes les thématiques (" + THEMES.size + ")";
   plus.setAttribute("aria-expanded", String(themesDeployes));
   plus.onclick = () => { themesDeployes = !themesDeployes; chipsThemes(); mesureTiroir(); };
+  majFondus();
 }
 
 /** Comme les secteurs : retirées du salon, elles ne doivent pas laisser
