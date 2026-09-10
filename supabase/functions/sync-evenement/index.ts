@@ -29,7 +29,7 @@ import { allege, textes } from "../_partage/svg.ts";
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
     .split(",").map((s) => s.trim()).filter(Boolean),
-  "https://plan-interactif.korantin-vey.workers.dev",
+  "https://plan-interactif.interactiveplan.workers.dev",
   "http://localhost:4180",
 ];
 const cors = (req: Request) => {
