@@ -54,8 +54,14 @@ function basculeParcours(genre, id){
   enregistreParcours();
   rafraichitParcours();
   /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
-     visiteur en train de composer sa journée. */
-  mesure("parcours");
+     visiteur en train de composer sa journée, et le total des gestes les
+     compte tous les deux.
+
+     Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
+     visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
+     retiré » ne veut rien dire. */
+  mesure("parcours", "", i < 0 ? k : "",
+         genre === "conf" ? "fiche_conf" : "fiche_stand");
 }
 
 /* ------------------------------------------------------------

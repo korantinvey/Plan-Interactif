@@ -2062,7 +2062,15 @@ function relance(){
      lettre du champ d'arrivée relance le même trajet : il ne compte qu'une
      fois. */
   const empreinte = ITI.a.cle + ">" + ITI.b.cle + (ITI.pmr ? " pmr" : "");
-  if (empreinte !== _dernierTrajet){ _dernierTrajet = empreinte; mesure("itineraire"); }
+  if (empreinte !== _dernierTrajet){
+    _dernierTrajet = empreinte;
+    /* Ce que l'exposant veut savoir, c'est combien de visiteurs ont demandé la
+       route jusqu'à lui : le trajet se rattache donc à son arrivée, jamais à
+       son départ. Une zone organisateur n'est pas un exposant, un repère non
+       plus — dans les deux cas le geste se compte, sans cible. */
+    const but = ITI.b.obj;
+    mesure("itineraire", "", but && but.kind === "stand" ? but.id : "", "fiche_stand");
+  }
   attente = setTimeout(() => {
     attente = null;
     try {

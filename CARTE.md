@@ -77,7 +77,7 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 608 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 609 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
 - l.410 · Remise à zéro des compteurs
@@ -89,11 +89,20 @@ Fonctions :
 `replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
 `dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
 `montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
-`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 570
+`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 571
 
 Éléments :
 
 `#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
+
+### `_classeur.html` — 234 l. → rapport.html
+
+- l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
+
+Fonctions :
+
+`CRC_TABLE` 29 · `crc32` 39 · `archiveZip` 54 · `texteXml` 110 · `colonneXl` 113
+`XL_PARTS` 124 · `feuilleXl` 178 · `classeurXl` 214 · `enregistreFichier` 225
 
 ### `_config.js` — 15 l. → config.js
 
@@ -228,7 +237,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2409 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2417 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -253,12 +262,12 @@ Fonctions :
 `dessineItineraire` 1875 · `rafraichitBouts` 1919 · `cadreItineraire` 1934 · `champIti` 1957
 `ecritDistance` 1961 · `ecritDuree` 1969 · `fermeSugg` 1974 · `montreSugg` 1981
 `choisitPoint` 2013 · `valideSaisie` 2022 · `effaceItineraire` 2032 · `relance` 2052
-`phraseLiaison` 2095 · `montreResultat` 2109 · `bandeauVisee` 2240 · `armeVisee` 2252
-`finVisee` 2260 · `viseItineraire` 2272 · `visePoi` 2278 · `visePoint` 2284
-`ouvreItineraire` 2305 · `fermeItineraire` 2322 · `versItineraire` 2332
-`versItineraireDe` 2335
+`phraseLiaison` 2103 · `montreResultat` 2117 · `bandeauVisee` 2248 · `armeVisee` 2260
+`finVisee` 2268 · `viseItineraire` 2280 · `visePoi` 2286 · `visePoint` 2292
+`ouvreItineraire` 2313 · `fermeItineraire` 2330 · `versItineraire` 2340
+`versItineraireDe` 2343
 
-### `_journee.html` — 893 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 895 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
@@ -312,13 +321,13 @@ Fonctions :
 
 `#data` · `#dGo` · `#dItin`
 
-### `_mesure.html` — 140 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 147 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 111
+`jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 117
 
 ### `_modales.html` — 161 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -343,18 +352,18 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 352 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 358 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 68 · `boutonParcours` 74
-`rafraichitMarque` 79 · `brancheParcours` 91 · `calqueMarques` 123 · `dessineMarques` 139
-`marqueParcours` 169 · `rafraichitParcours` 183 · `instantConf` 207 · `cleTemps` 211
-`jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
-`ouvreParcours` 308 · `fermeParcours` 320
+`enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 74 · `boutonParcours` 80
+`rafraichitMarque` 85 · `brancheParcours` 97 · `calqueMarques` 129 · `dessineMarques` 145
+`marqueParcours` 175 · `rafraichitParcours` 189 · `instantConf` 213 · `cleTemps` 217
+`jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
+`ouvreParcours` 314 · `fermeParcours` 326
 
 ### `_pile.html` — 356 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -377,22 +386,23 @@ Fonctions :
 
 `majAttente` 25 · `accesBase` 36 · `base` 45 · `reglagesSeuls` 63 · `pousseConfiguration` 67
 
-### `_rapport-head.html` — 29 l. → rapport.html
+### `_rapport-head.html` — 30 l. → rapport.html
 
 Éléments :
 
-`#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnRecharger` · `#btnTheme`
-`#rapport`
+`#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
+`#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 314 l. → rapport.html
+### `_rapport-js.html` — 430 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`nb` 45 · `courant` 46 · `chargeEvenements` 51 · `debutPeriode` 61 · `chargeRapport` 69
-`chiffre` 80 · `barres` 99 · `jours` 126 · `dessineRapport` 147 · `dessineBarre` 245
-`rafraichit` 267 · `videEcran` 286 · `demarre` 300
+`nb` 45 · `courant` 46 · `chargeEvenements` 51 · `joursPeriode` 69 · `chargeRapport` 71
+`chiffre` 82 · `barres` 101 · `jours` 128 · `dessineRapport` 149 · `colonnesExport` 286
+`nomFichierExport` 305 · `nomFeuilleExport` 315 · `exporteExposants` 322
+`dessineBarre` 359 · `rafraichit` 382 · `videEcran` 401 · `demarre` 416
 
 Éléments :
 
@@ -431,7 +441,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/mesure/index.ts` — 120 l.
+### `supabase/functions/mesure/index.ts` — 125 l.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
@@ -472,6 +482,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000008_audience.sql` — fn audience_cibles
 - `20260910000009_fiches_zones.sql` — evenement
 - `20260910000010_remise_a_zero.sql` — fn reinitialise_compteurs
+- `20260910000011_gestes_par_stand.sql` — compteur_cible, fn enregistre_mesures, fn audience_cibles
+- `20260910000012_periode_du_salon.sql` — fn periode_salon, fn rapport_utilisation, fn audience_cibles
 
 ## Le reste
 
