@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1162 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1160 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.804 · 10. Mode administration
@@ -32,9 +32,9 @@ Fonctions :
 `renommeZone` 880 · `enregistreNomZone` 904 · `basculeAffichageZone` 933
 `marqueZonesMasquees` 950 · `ecritTableZones` 965 · `cleLibelle` 1011
 `empreinteLibelle` 1027 · `placementLibelle` 1035 · `posePlacement` 1045
-`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1083
-`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
-`libellePointerMove` 1130 · `libellePointerUp` 1139
+`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1088
+`choisitLibelle` 1105 · `pousseLibelle` 1112 · `libellePointerDown` 1120
+`libellePointerMove` 1135 · `libellePointerUp` 1144
 
 Éléments :
 
@@ -134,7 +134,7 @@ Fonctions :
 
 - l.523 · Page de rapport
 
-### `_dessin.html` — 1340 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1348 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -154,8 +154,8 @@ Fonctions :
 `eclairePoi` 862 · `signale` 873 · `calquePourImage` 887 · `poseImage` 900
 `importeImage` 913 · `dessinPointerDown` 964 · `dessinPointerMove` 1038
 `dessinPointerUp` 1076 · `termineTrace` 1112 · `aide` 1122 · `choisitOutil` 1147
-`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1267 · `creeCalque` 1298
-`demandeNom` 1311 · `renommeCalque` 1330
+`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1275 · `creeCalque` 1306
+`demandeNom` 1319 · `renommeCalque` 1338
 
 Éléments :
 
@@ -174,7 +174,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2010 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2016 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -333,17 +333,17 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 312 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 335 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.196 · Repères
+- l.238 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 210 · `ligneCouleur` 235 · `rangSecteur` 255
-`rangSous` 267 · `rangPlacement` 297 · `defautCouleur` 308
+`nature` 69 · `intertitre` 71 · `construitPanneau` 78 · `sectionSelection` 252
+`ligneCouleur` 277 · `rangSecteur` 297 · `rangSous` 309 · `defautCouleur` 331
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
