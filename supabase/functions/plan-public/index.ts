@@ -96,7 +96,9 @@ const db = (req: Request) => {
 const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
-    .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees")
+    .select(
+      "id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches",
+    )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
 };
@@ -397,6 +399,11 @@ Deno.serve(async (req) => {
       // et pour savoir ce qu'elle a retiré du plan public : le visiteur, lui,
       // ne reçoit pas les zones masquées, la liste ne lui apprendrait rien
       zonesMasquees: identifie ? (evt.zones_masquees ?? {}) : {},
+      /* Les fiches que l'exploitant a écrites, en table : c'est de là que
+         l'administration repart pour les réécrire sans perdre les autres. Le
+         visiteur les a déjà, posées sur chaque zone — la table ne lui
+         apprendrait rien de plus. */
+      fichesZones: identifie ? (evt.zones_fiches ?? {}) : {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -438,10 +445,21 @@ Deno.serve(async (req) => {
             .map((z) => {
               const choisi = (evt.zones ?? {})[String(z.id)];
               const masquee = Boolean((evt.zones_masquees ?? {})[String(z.id)]);
+              /* Ce que l'exploitant a écrit sur la zone. Klipso n'en donne
+                 rien : sans cette fiche, une agora n'a que son nom à montrer.
+                 Elle part au visiteur comme à l'exploitant — c'est pour le
+                 visiteur qu'elle a été écrite. */
+              const fiche = ((evt.zones_fiches ?? {}) as Record<
+                string,
+                Record<string, unknown>
+              >)[String(z.id)] ?? {};
               return {
                 ...z,
                 ...(choisi ? { nom: choisi } : {}),
                 ...(masquee ? { masquee: true } : {}),
+                ...(fiche.type ? { type: fiche.type } : {}),
+                ...(fiche.description ? { description: fiche.description } : {}),
+                ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),
           conferences: charge.conferences ?? [],

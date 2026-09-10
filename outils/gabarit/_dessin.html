@@ -463,6 +463,32 @@ const TYPES_REPERE = [
 ];
 const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
 
+/**
+ * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
+ *
+ * Un visiteur qui cherche où déjeuner, où déposer son manteau ou où se tient
+ * la prochaine conférence ne cherche pas un nom : il cherche une fonction. La
+ * source n'en dit rien — une zone n'a qu'un contour et parfois un intitulé,
+ * « Atmosphère Mobilité » ou « LA SERRE », d'où l'on ne devine pas ce qu'on y
+ * fait — et c'est l'exploitant qui la donne, zone par zone, depuis sa fiche.
+ *
+ * Le type ne change rien au dessin du plan : il ouvre l'entrée du cartouche
+ * des points d'intérêt, d'où l'on retrouve d'un geste toutes les zones qui le
+ * portent. Ce sont donc les pictogrammes des repères qui le figurent — un
+ * visiteur ne distingue pas ce que l'exploitant a dessiné de ce que le salon a
+ * fourni, et n'a aucune raison de le faire.
+ */
+const TYPES_ZONE = [
+  { v: "",             nom: "Sans type" },
+  { v: "restauration", nom: "Restauration", picto: "restauration" },
+  { v: "conferences",  nom: "Conférences",  picto: "reunion" },
+  { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
+  { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+];
+
+/** Le type d'une zone, s'il lui en a été donné un. */
+const typeZone = (z) => TYPES_ZONE.find(t => t.v && z && t.v === z.type) || null;
+
 /* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
    plus qu'un, une porte de hall étant les deux à la fois. */
 const PICTO_ALIAS = { sortie: "entree" };
@@ -725,6 +751,12 @@ function rafraichitStandsDessines(){
  * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
  * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
  * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ *
+ * Les zones organisateur auxquelles l'exploitant a donné un type y entrent de
+ * la même façon, et sous la même clé : ce qui s'appelle « Restauration » d'un
+ * côté et de l'autre est la même chose pour qui cherche à déjeuner, et deux
+ * pastilles identiques n'auraient rien appris. Ce que l'une a été dessinée et
+ * l'autre fournie par le salon ne regarde pas le visiteur.
  */
 let poiChoisi = null;
 
@@ -732,16 +764,37 @@ function cartouchePoi(){
   const z = $("poi");
   if (!z) return;
   const parNom = new Map();
+  const entree = (nom, picto) => {
+    if (!parNom.has(nom)) parNom.set(nom, { n: 0, picto: picto || null });
+    const e = parNom.get(nom);
+    // le premier qui en porte un le donne : un repère sans pictogramme et une
+    // zone typée sous le même nom ne doivent pas faire une pastille muette
+    if (!e.picto && picto) e.picto = picto;
+    return e;
+  };
+
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      const cle = f.txt.trim();
-      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: pictoForme(f) });
-      parNom.get(cle).n++;
+      entree(f.txt.trim(), pictoForme(f)).n++;
     }
   }
+  /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
+     plan, ne comptent pas : le cartouche promettrait une restauration que le
+     visiteur ne trouverait nulle part. */
+  if (conf("data:zones").visible !== false){
+    for (const zo of P().zones){
+      const t = typeZone(zo);
+      if (t && !zo.masquee) entree(t.nom, t.picto).n++;
+    }
+  }
+
   z.hidden = parNom.size === 0;
+  /* Le pavillon d'à côté n'a pas les mêmes points d'intérêt : ce qui n'y est
+     plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
+     sans que rien n'y soit mis en avant. */
+  if (poiChoisi && !parNom.has(poiChoisi)) poiChoisi = null;
   if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
@@ -858,13 +911,25 @@ function mesureCartouche(){
   document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
-/** Met en avant les repères du type choisi. */
+/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois. */
+const phareRepere = (f) => Boolean(poiChoisi && f && String(f.txt || "").trim() === poiChoisi);
+const phareZone = (o) => Boolean(poiChoisi && o && o.kind === "zone" &&
+  (typeZone(o) || {}).nom === poiChoisi);
+
+/** Met en avant les repères et les zones du point d'intérêt choisi. */
 function eclairePoi(){
   $("couches").querySelectorAll(".dcal .repere").forEach(g => {
     const f = formeParId(g.dataset.f);
-    const on = poiChoisi && f && String(f.f.txt || "").trim() === poiChoisi;
-    g.classList.toggle("phare", !!on);
+    g.classList.toggle("phare", phareRepere(f && f.f));
   });
+  $("zones").querySelectorAll("g").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.id))));
+  /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
+     retrait avec le reste du plan aurait effacé la seule chose qui distingue
+     deux restaurations. Il se réécrit à chaque déplacement de la vue, et
+     reprend donc sa marque dans « libelles() ». */
+  $("labels").querySelectorAll(".lbl").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }
 
