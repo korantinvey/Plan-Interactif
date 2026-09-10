@@ -1368,7 +1368,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
-  max-height:min(74vh,600px);overflow-y:auto}
+  max-height:min(74vh,600px,100% - 24px - var(--chalh,0px));overflow-y:auto}
 .panel.open{display:block}
 .panel .eyebrow{display:block;margin-bottom:8px}
 
@@ -1703,14 +1703,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
   .sans-zoom .scalebar{left:14px}
   .poi{bottom:calc(var(--replie,150px) + 12px)}
-  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px}
+  /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
+     se borne des deux côtés, sinon elle remonte sous lui. */
+  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
+    max-height:calc(100% - var(--replie,150px) - var(--chalh,0px) - 36px)}
   /* Le cartouche prend toute la largeur restante : à 272 px il laissait une
      colonne vide sans rien y gagner, et son palmarès se coupait au milieu des
      enseignes. Il partage ce coin avec la pile des calques, qui se referme
      quand il s'ouvre. */
-  .chalbar{bottom:calc(var(--replie,150px) + 12px);left:12px;width:auto;max-height:50dvh}
-  /* replié, il reprend sa largeur de légende : il n'a plus rien à étaler */
-  .chalbar.reduit{left:auto;width:auto}
+  /* Le cartouche passe en haut du plan. En bas il partageait le coin de la
+     pile des calques, où vit désormais l'interrupteur qui l'ouvre : l'un
+     recouvrait l'autre au moment précis où l'on s'en sert. En haut à droite,
+     rien ne l'attend — la palette de dessin tient l'autre coin. */
+  .chalbar{top:12px;bottom:auto;right:12px;left:auto;
+    width:auto;max-width:calc(100% - 24px);max-height:46dvh}
 
   /* La fiche devient un tiroir elle aussi. En fenêtre centrée sur voile, elle
      masquait le plan au moment précis où l'on venait d'y désigner un stand :
@@ -1821,10 +1827,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         title="Mon parcours de visite" aria-label="Mon parcours de visite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
         <span class="compteur" id="nParcours" hidden>0</span>
-      </button>
-      <button class="iconbtn" id="btnChaleur" aria-pressed="false" hidden
-        title="Carte de chaleur — fréquentation par stand" aria-label="Carte de chaleur">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c1.2 3.6 4.8 4.8 4.8 8.5a4.8 4.8 0 0 1-9.6 0c0-1.9.9-3.1 1.6-4.1.6 1.1 1.3 1.7 2.1 1.7-.6-2.3-1-4.3 1.1-6.1Z"/><path d="M12 21.5v-3"/></svg>
       </button>
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
@@ -5330,7 +5332,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages", "btnChaleur"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -5353,17 +5355,10 @@ function activeAdmin(){
     b.onclick = () => {
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
-      // même coin, au-dessus du tiroir : un seul panneau sur un écran étroit
-      if (o && ETROIT()) fermeChaleur();
     };
   }
   const r = $("btnReglages");
   if (r){ r.hidden = false; r.onclick = ouvreReglages; }
-  /* La fréquentation se lit sur le plan lui-même, et non depuis la console :
-     c'est ici qu'on redessine les allées, et c'est ici qu'il faut savoir
-     lesquelles ont servi. */
-  const ch = $("btnChaleur");
-  if (ch){ ch.hidden = false; ch.onclick = basculeChaleur; }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
@@ -8161,6 +8156,10 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
+    /* La carte de chaleur se range au même endroit et pour la même raison :
+       c'est la couche des stands qu'elle repeint. Elle n'a pas de couleur à
+       régler — les siennes sortent des chiffres — et elle ne se publie pas. */
+    if (x.k === "data:stands" && ADMIN) rangChaleur(hote);
     /* les deux couleurs de texte se règlent sous la couche Textes, et avec
        elles le placement à la main de chaque libellé */
     if (x.k === "data:labels"){
@@ -12445,15 +12444,18 @@ function tonChaleur(t){
 }
 
 /**
- * La place d'un stand sur l'échelle.
+ * Le niveau d'un stand sur l'échelle.
  *
  * Rapportée au maximum, elle n'aurait rien montré : sur un salon la fiche la
  * plus ouverte l'est dix à cent fois plus que la médiane, et tout le reste du
  * plan serait resté du même bleu. Le logarithme rend ces écarts lisibles sans
  * changer l'ordre. Il compresse, donc il faut le dire : le cartouche porte les
  * nombres aux bornes et au milieu de la bande, et non des pourcentages.
+ *
+ * « rangChaleur » plus bas est une rangée du panneau, pas un rang sur cette
+ * échelle : d'où ce nom-ci.
  */
-const rangChaleur = (n, max) => max > 0 ? Math.log1p(n) / Math.log1p(max) : 0;
+const niveauChaleur = (n, max) => max > 0 ? Math.log1p(n) / Math.log1p(max) : 0;
 
 /** L'inverse : le nombre de consultations qu'une position de la bande vaut. */
 const valeurChaleur = (u, max) => Math.round(Math.expm1(u * Math.log1p(max)));
@@ -12527,7 +12529,7 @@ function coloreChaleur(){
     }
     const n = CHALEUR.par.get(g.dataset.id) || 0;
     g.setAttribute("data-chaleur", "");
-    g.style.setProperty("--chal-c", tonChaleur(rangChaleur(n, CHALEUR.max)));
+    g.style.setProperty("--chal-c", tonChaleur(niveauChaleur(n, CHALEUR.max)));
     /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
        se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
        relance a besoin du nombre, pas de la nuance. */
@@ -12599,6 +12601,22 @@ function cartoucheChaleur(){
  * thermique la couleur ne dit pas seule ce qu'elle vaut, et une carte sans
  * légende n'est plus qu'un coloriage.
  */
+/**
+ * La hauteur du cartouche, rendue à la feuille de style.
+ *
+ * L'interrupteur du calque vit dans la pile, en haut à droite ; le cartouche
+ * se lit en bas du même bord. Sans cette mesure il recouvrait la pile au
+ * moment précis où l'on venait d'y cocher la case, et la liste des calques
+ * disparaissait sous ce qu'elle venait d'allumer. La pile s'arrête donc où le
+ * cartouche commence — c'est déjà ce que fait l'échelle avec le cartouche des
+ * repères, et par le même chemin.
+ */
+function mesureCartoucheChaleur(){
+  const c = $("chaleur");
+  const h = c && !c.hidden ? c.offsetHeight + 12 : 0;
+  racine.style.setProperty("--chalh", h + "px");
+}
+
 function replieChaleur(v){
   chalReduit = v;
   const c = $("chaleur"), b = $("chalReduit");
@@ -12607,6 +12625,7 @@ function replieChaleur(v){
   b.setAttribute("aria-expanded", String(!v));
   b.title = v ? "Déployer le cartouche" : "Replier sur la légende";
   b.setAttribute("aria-label", b.title);
+  mesureCartoucheChaleur();
 }
 
 function ecritEtatChaleur(txt, erreur){
@@ -12695,40 +12714,82 @@ async function rafraichitChaleur(){
     $("chalEch").hidden = true;
     $("chalTop").innerHTML = "";
     ecritEtatChaleur("Fréquentation indisponible : " + e.message, true);
+    mesureCartoucheChaleur();
     return;
   }
   coloreChaleur();
   dessineEchelleChaleur();
   dessineTopChaleur();
   ecritEtatChaleur(phraseChaleur());
+  // la phrase et le palmarès viennent de changer de hauteur
+  mesureCartoucheChaleur();
 }
 
 /* ------------------------------------------------------------------
    Ouverture et fermeture
    ------------------------------------------------------------------ */
-function fermeChaleur(){
-  if (!chalOuvert) return;
-  chalOuvert = false;
-  const c = $("chaleur");
-  if (c) c.hidden = true;
-  const b = $("btnChaleur");
-  if (b) b.setAttribute("aria-pressed", "false");
-  coloreChaleur();
+/**
+ * Allumer ou éteindre la lecture.
+ *
+ * La garde sur ADMIN n'est pas une ceinture de plus : c'est elle qui répond de
+ * la promesse faite au panneau — ce calque ne part jamais chez les visiteurs.
+ * Il ne se publie pas parce qu'il n'existe pas dans CONF, et il ne s'allume pas
+ * hors de l'administration parce qu'ici on refuse de l'allumer. La page
+ * publique appelle bien « coloreChaleur » comme les autres, à chaque montage :
+ * elle n'y trouve rien à peindre, et c'est tout ce qu'elle en verra.
+ */
+function montreChaleur(v){
+  if (v && !ADMIN) return;
+  if (v === chalOuvert) return;
+  chalOuvert = v;
+  /* La case du panneau n'est pas toujours celle qu'on vient de cocher : le
+     mode peut s'ouvrir au démarrage, ou depuis un autre chemin. On la remet
+     d'accord plutôt que de rebâtir la pile, qui perdrait le défilement et le
+     focus au moment même où l'on s'en sert. */
+  const b = document.querySelector("#pile .chalCase");
+  if (b) b.checked = v;
+  if (!v){
+    const c = $("chaleur");
+    if (c) c.hidden = true;
+    coloreChaleur();
+    mesureCartoucheChaleur();
+    return;
+  }
+  cartoucheChaleur().hidden = false;
+  mesureCartoucheChaleur();
+  rafraichitChaleur();
 }
 
-function basculeChaleur(){
-  if (chalOuvert) return fermeChaleur();
-  chalOuvert = true;
-  const b = $("btnChaleur");
-  if (b) b.setAttribute("aria-pressed", "true");
-  cartoucheChaleur().hidden = false;
-  /* Sur un écran étroit les deux panneaux d'administration se posent dans le
-     même coin, au-dessus du tiroir : on n'en montre qu'un. */
-  if (ETROIT() && $("panel").classList.contains("open")){
-    $("panel").classList.remove("open");
-    if ($("btnLayers")) $("btnLayers").setAttribute("aria-pressed", "false");
-  }
-  rafraichitChaleur();
+/* La hauteur disponible change avec la fenêtre, et le cartouche se replie tout
+   seul sur ce qui reste : la pile doit suivre. */
+addEventListener("resize", mesureCartoucheChaleur);
+
+/**
+ * Le rang du panneau des calques, sous la couche « Stands ».
+ *
+ * Sous elle parce que c'est elle qu'il repeint — c'est déjà la place des
+ * couleurs de secteur, et pour la même raison. Et sans sélecteur de couleur,
+ * seul de toute la pile : les siennes ne se choisissent pas, elles sortent des
+ * chiffres et se refont à chaque changement de période. Une pastille le dit,
+ * et dit l'autre chose qu'on ne devinerait pas — que ce calque reste sur ce
+ * poste, quoi qu'on publie.
+ */
+function rangChaleur(hote){
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox" class="chalCase"><span></span></label>';
+  const nom = d.querySelector("label span");
+  nom.textContent = "Carte de chaleur";
+  const p = document.createElement("i");
+  p.className = "rle";
+  p.textContent = "non publié";
+  p.title = "Une lecture pour l'exploitant : ce calque ne part jamais sur le plan public, " +
+            "et la publication de la configuration ne l'emporte pas.";
+  nom.after(p);
+  const c = d.querySelector("input");
+  c.checked = chalOuvert;
+  c.onchange = (e) => montreChaleur(e.target.checked);
+  hote.appendChild(d);
 }
 /* ============================================================
    12. Démarrage

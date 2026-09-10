@@ -168,6 +168,10 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
+    /* La carte de chaleur se range au même endroit et pour la même raison :
+       c'est la couche des stands qu'elle repeint. Elle n'a pas de couleur à
+       régler — les siennes sortent des chiffres — et elle ne se publie pas. */
+    if (x.k === "data:stands" && ADMIN) rangChaleur(hote);
     /* les deux couleurs de texte se règlent sous la couche Textes, et avec
        elles le placement à la main de chaque libellé */
     if (x.k === "data:labels"){

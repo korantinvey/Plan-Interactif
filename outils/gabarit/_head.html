@@ -1363,7 +1363,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
-  max-height:min(74vh,600px);overflow-y:auto}
+  max-height:min(74vh,600px,100% - 24px - var(--chalh,0px));overflow-y:auto}
 .panel.open{display:block}
 .panel .eyebrow{display:block;margin-bottom:8px}
 
@@ -1698,14 +1698,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
   .sans-zoom .scalebar{left:14px}
   .poi{bottom:calc(var(--replie,150px) + 12px)}
-  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px}
+  /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
+     se borne des deux côtés, sinon elle remonte sous lui. */
+  .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
+    max-height:calc(100% - var(--replie,150px) - var(--chalh,0px) - 36px)}
   /* Le cartouche prend toute la largeur restante : à 272 px il laissait une
      colonne vide sans rien y gagner, et son palmarès se coupait au milieu des
      enseignes. Il partage ce coin avec la pile des calques, qui se referme
      quand il s'ouvre. */
-  .chalbar{bottom:calc(var(--replie,150px) + 12px);left:12px;width:auto;max-height:50dvh}
-  /* replié, il reprend sa largeur de légende : il n'a plus rien à étaler */
-  .chalbar.reduit{left:auto;width:auto}
+  /* Le cartouche passe en haut du plan. En bas il partageait le coin de la
+     pile des calques, où vit désormais l'interrupteur qui l'ouvre : l'un
+     recouvrait l'autre au moment précis où l'on s'en sert. En haut à droite,
+     rien ne l'attend — la palette de dessin tient l'autre coin. */
+  .chalbar{top:12px;bottom:auto;right:12px;left:auto;
+    width:auto;max-width:calc(100% - 24px);max-height:46dvh}
 
   /* La fiche devient un tiroir elle aussi. En fenêtre centrée sur voile, elle
      masquait le plan au moment précis où l'on venait d'y désigner un stand :
@@ -1816,10 +1822,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         title="Mon parcours de visite" aria-label="Mon parcours de visite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
         <span class="compteur" id="nParcours" hidden>0</span>
-      </button>
-      <button class="iconbtn" id="btnChaleur" aria-pressed="false" hidden
-        title="Carte de chaleur — fréquentation par stand" aria-label="Carte de chaleur">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.5c1.2 3.6 4.8 4.8 4.8 8.5a4.8 4.8 0 0 1-9.6 0c0-1.9.9-3.1 1.6-4.1.6 1.1 1.3 1.7 2.1 1.7-.6-2.3-1-4.3 1.1-6.1Z"/><path d="M12 21.5v-3"/></svg>
       </button>
       <button class="iconbtn" id="btnLayers" aria-pressed="false" title="Calques" aria-label="Calques">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>

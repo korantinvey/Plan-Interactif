@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1169 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1162 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.804 · 10. Mode administration
-- l.877 · Renommer une zone organisateur
-- l.929 · Masquer une zone organisateur
-- l.997 · Placer un libellé à la main
+- l.870 · Renommer une zone organisateur
+- l.922 · Masquer une zone organisateur
+- l.990 · Placer un libellé à la main
 
 Fonctions :
 
@@ -29,12 +29,12 @@ Fonctions :
 `contenuApercu` 414 · `apercuFiche` 437 · `ouvreReglages` 499 · `voletPlan` 530
 `nomDuTon` 657 · `voletApparence` 661 · `enregistreConf` 754 · `rgbHex` 760 · `hexa` 767
 `luminance` 771 · `ecarte` 785 · `joli` 800 · `retireAdmin` 817 · `activeAdmin` 830
-`renommeZone` 887 · `enregistreNomZone` 911 · `basculeAffichageZone` 940
-`marqueZonesMasquees` 957 · `ecritTableZones` 972 · `cleLibelle` 1018
-`empreinteLibelle` 1034 · `placementLibelle` 1042 · `posePlacement` 1052
-`libelleAutomatique` 1069 · `modePlacementLibelles` 1078 · `majPaletteLibelle` 1090
-`choisitLibelle` 1107 · `pousseLibelle` 1114 · `libellePointerDown` 1122
-`libellePointerMove` 1137 · `libellePointerUp` 1146
+`renommeZone` 880 · `enregistreNomZone` 904 · `basculeAffichageZone` 933
+`marqueZonesMasquees` 950 · `ecritTableZones` 965 · `cleLibelle` 1011
+`empreinteLibelle` 1027 · `placementLibelle` 1035 · `posePlacement` 1045
+`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1083
+`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
+`libellePointerMove` 1130 · `libellePointerUp` 1139
 
 Éléments :
 
@@ -74,16 +74,17 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 346 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 408 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
 
 Fonctions :
 
-`nbChal` 32 · `tonChaleur` 51 · `rangChaleur` 70 · `valeurChaleur` 73 · `chargeChaleur` 86
-`coloreChaleur` 127 · `cartoucheChaleur` 162 · `replieChaleur` 216 · `ecritEtatChaleur` 226
-`dessineEchelleChaleur` 234 · `dessineTopChaleur` 254 · `phraseChaleur` 285
-`rafraichitChaleur` 302 · `fermeChaleur` 323 · `basculeChaleur` 333
+`nbChal` 32 · `tonChaleur` 51 · `niveauChaleur` 73 · `valeurChaleur` 76 · `chargeChaleur` 89
+`coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
+`replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
+`dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
+`montreChaleur` 356 · `rangChaleur` 392
 
 Éléments :
 
@@ -189,17 +190,17 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2087 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2089 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
 `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones` · `#btnItineraire`
-`#btnParcours` · `#nParcours` · `#btnChaleur` · `#btnLayers` · `#btnReglages` · `#btnTheme`
-`#side` · `#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt`
-`#list` · `#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn`
-`#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt`
-`#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti`
-`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#side`
+`#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt` · `#list`
+`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
+`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
+`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
 `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
 `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
@@ -348,17 +349,17 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 312 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 316 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.196 · Repères
+- l.200 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 210 · `ligneCouleur` 235 · `rangSecteur` 255
-`rangSous` 267 · `rangPlacement` 297 · `defautCouleur` 308
+`construitPanneau` 60 · `sectionSelection` 214 · `ligneCouleur` 239 · `rangSecteur` 259
+`rangSous` 271 · `rangPlacement` 301 · `defautCouleur` 312
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

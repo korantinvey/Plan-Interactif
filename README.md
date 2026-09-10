@@ -827,8 +827,20 @@ l'année suivante : quel emplacement a retenu, quelle travée personne n'a
 regardée. `compteur_cible` le sait — une ligne par (stand, jour, canal) — mais
 neuf cents lignes de tableau ne se lisent pas. Sur le plan, si.
 
-Elle s'ouvre depuis **la page d'administration du plan**, par l'icône de flamme
-de la barre du haut, à côté des calques. Les emplacements se colorent alors du
+C'est **un calque de la page d'administration du plan** : il s'allume dans la
+pile des calques, sous « Stands » — c'est cette couche qu'il repeint, comme les
+couleurs de secteur juste au-dessus. Seul de toute la pile, il n'a pas de
+sélecteur de couleur : les siennes ne se choisissent pas, elles sortent des
+chiffres et se refont à chaque changement de période.
+
+Il ne part **jamais** sur le plan public, et deux choses l'en empêchent plutôt
+qu'une. Il n'existe pas dans `CONF` — la publication de la configuration n'a
+donc rien à emporter, ni réglage ni rang dans la pile. Et il refuse de
+s'allumer hors administration : la page publique appelle bien le même code à
+chaque montage, elle n'y trouve simplement rien à peindre. Une pastille
+« non publié » le dit dans la pile, parce que rien d'autre ne le dirait.
+
+Les emplacements se colorent du
 bleu — pas ou peu de consultations — au rouge, et le cartouche donne la période
 (sept, trente, quatre-vingt-dix jours, ou depuis le début), l'échelle et les dix
 premiers, cliquables pour aller les voir sur le plan. Le survol d'un stand donne
@@ -838,8 +850,9 @@ la publication de la configuration ne l'emporte pas.
 Deux commandes, et elles ne font pas la même chose. Le chevron du cartouche le
 **replie sur sa légende** — le plan reste peint, on gagne le coin de l'écran, et
 l'échelle demeure parce qu'une carte thermique sans elle n'est plus qu'un
-coloriage. C'est l'icône de la barre du haut qui **éteint la lecture** et rend
-au plan ses couleurs ordinaires. Le repli est retenu d'une lecture à l'autre.
+coloriage. C'est la case de la pile qui **éteint la lecture** et rend au plan
+ses couleurs ordinaires. Le repli est retenu d'une lecture à l'autre, et la
+pile s'arrête où le cartouche commence : ils partagent le même bord.
 
 Trois choses qu'il faut savoir avant d'en tirer une conclusion :
 
