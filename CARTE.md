@@ -174,7 +174,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2010 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2016 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -333,17 +333,18 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 312 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 340 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.196 · Repères
+- l.224 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 210 · `ligneCouleur` 235 · `rangSecteur` 255
-`rangSous` 267 · `rangPlacement` 297 · `defautCouleur` 308
+`nature` 69 · `intertitre` 71 · `construitPanneau` 78 · `sectionSelection` 238
+`ligneCouleur` 263 · `rangSecteur` 283 · `rangSous` 295 · `rangPlacement` 325
+`defautCouleur` 336
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

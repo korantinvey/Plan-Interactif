@@ -56,7 +56,25 @@ function deplaceCouche(k, dir){
 
 /* ============================================================
    Panneau : une seule liste, tous types confondus
+
+   Deux natures s'y mêlent pourtant, et rien ne les distinguait : ce que le
+   salon fournit — habillage Klipso, zones, stands, textes — et ce que
+   l'exploitant a dessiné lui-même. Les premières se refont à chaque
+   synchronisation, les secondes sont son travail : on ne les supprime pas du
+   même cœur léger. Un intertitre ouvre donc chaque suite d'une même nature.
+   Il suit l'ordre plutôt qu'il ne l'impose — un calque de dessin glissé sous
+   les stands reste où on l'a mis, et gagne son propre intertitre là.
    ============================================================ */
+const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
+const nature = x => x.t === "dessin" ? "dessin" : "salon";
+
+function intertitre(hote, cle){
+  const t = document.createElement("span");
+  t.className = "eyebrow secpile";
+  t.textContent = NATURES[cle];
+  hote.appendChild(t);
+}
+
 function construitPanneau(){
   const hote = $("pile");
   hote.innerHTML = "";
@@ -67,7 +85,17 @@ function construitPanneau(){
   hote.appendChild(reorg);
   const liste = pile().slice().reverse();   // premier plan en tête
 
+  /* Un intertitre ne vaut que s'il sépare : tant que le salon n'a pas de
+     calque dessiné, la pile est d'une seule nature et se passe de titre. */
+  const melange = liste.some(x => nature(x) === "dessin") &&
+                  liste.some(x => nature(x) === "salon");
+  let natureCourante = null;
+
   liste.forEach((x, i) => {
+    if (melange && nature(x) !== natureCourante){
+      natureCourante = nature(x);
+      intertitre(hote, natureCourante);
+    }
     const d = document.createElement("div");
     d.className = "calq" + (x.t === "dessin" ? " perso" : "") +
                   (x.t === "dessin" && x.ref.id === calqueActif ? " actif" : "");

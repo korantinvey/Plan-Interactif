@@ -583,7 +583,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
 .calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
-.panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
+.panel .ajout{width:100%;margin-top:12px;padding:6px;border:1px dashed var(--line-strong);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -1363,6 +1363,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher
    devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
 .apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+/* Ce que le salon fournit et ce que l'exploitant a dessiné se suivent dans la
+   même pile : un trait et un intertitre disent où l'une finit et l'autre
+   commence. Le premier de la liste vient sous le bouton de réorganisation, qui
+   le sépare déjà — inutile d'y ajouter un trait. */
+.panel .secpile{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.panel .reorg + .secpile{margin-top:0;padding-top:0;border-top:none}
 .apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
@@ -7963,7 +7969,25 @@ function deplaceCouche(k, dir){
 
 /* ============================================================
    Panneau : une seule liste, tous types confondus
+
+   Deux natures s'y mêlent pourtant, et rien ne les distinguait : ce que le
+   salon fournit — habillage Klipso, zones, stands, textes — et ce que
+   l'exploitant a dessiné lui-même. Les premières se refont à chaque
+   synchronisation, les secondes sont son travail : on ne les supprime pas du
+   même cœur léger. Un intertitre ouvre donc chaque suite d'une même nature.
+   Il suit l'ordre plutôt qu'il ne l'impose — un calque de dessin glissé sous
+   les stands reste où on l'a mis, et gagne son propre intertitre là.
    ============================================================ */
+const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
+const nature = x => x.t === "dessin" ? "dessin" : "salon";
+
+function intertitre(hote, cle){
+  const t = document.createElement("span");
+  t.className = "eyebrow secpile";
+  t.textContent = NATURES[cle];
+  hote.appendChild(t);
+}
+
 function construitPanneau(){
   const hote = $("pile");
   hote.innerHTML = "";
@@ -7974,7 +7998,17 @@ function construitPanneau(){
   hote.appendChild(reorg);
   const liste = pile().slice().reverse();   // premier plan en tête
 
+  /* Un intertitre ne vaut que s'il sépare : tant que le salon n'a pas de
+     calque dessiné, la pile est d'une seule nature et se passe de titre. */
+  const melange = liste.some(x => nature(x) === "dessin") &&
+                  liste.some(x => nature(x) === "salon");
+  let natureCourante = null;
+
   liste.forEach((x, i) => {
+    if (melange && nature(x) !== natureCourante){
+      natureCourante = nature(x);
+      intertitre(hote, natureCourante);
+    }
     const d = document.createElement("div");
     d.className = "calq" + (x.t === "dessin" ? " perso" : "") +
                   (x.t === "dessin" && x.ref.id === calqueActif ? " actif" : "");
