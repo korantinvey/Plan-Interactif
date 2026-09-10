@@ -243,6 +243,49 @@ Le graphe ne sert à rien ici : `publicViewer` ne porte que le programme, et ni
 `exhibitors` ni `themes` n'existent à sa racine. Tout se lit en REST, sur la
 fiche d'invité, avec les champs qu'on lisait déjà.
 
+### Ce que la page en fait
+
+Elles ne se contentent plus de figurer sur la fiche : c'est par elles qu'on
+cherche, et c'est là leur usage réel — un visiteur ne connaît pas le nom des
+enseignes qu'il vient voir, il sait ce qu'il vient y chercher.
+
+Trois entrées, la même liste au bout.
+
+- **Le mot-clé.** Les thématiques rejoignent le nom, le numéro, l'enseigne et le
+  secteur dans la chaîne que la recherche balaie. Taper « robotique » répond,
+  sans avoir à savoir que c'est un rangement et non une raison sociale.
+- **La bande de puces**, sous celle des secteurs, sur le modèle de celle-ci :
+  multiple, cumulée avec le mot-clé et avec les secteurs, et débordant le
+  pavillon affiché comme eux. Elle ne paraît que sur les salons qui tiennent
+  des thématiques, c'est-à-dire là où l'exploitant a désigné le champ. Chaque
+  puce porte son compte : les libellés d'un même salon se ressemblent —
+  « Solutions transverses », « Solutions métier » — et savoir qu'une thématique
+  ne range que deux exposants évite de la retenir pour rien. Au-delà de dix, la
+  bande se replie sur deux lignes, un bouton donnant la suite ; en tiroir, sur
+  téléphone, elle redevient une ligne qui défile, comme les secteurs.
+- **La fiche.** Chaque thématique y est une prise vers les exposants qui la
+  partagent : on repart alors à neuf, mot-clé et secteurs effacés, sinon la
+  liste répondrait à une question qu'on ne pose plus.
+
+Deux choses qui n'allaient pas de soi.
+
+**Une thématique appartient à la société, pas à l'emplacement** — c'est ce qui
+la sépare du secteur. Une enseigne hébergée a les siennes, différentes de celles
+de son hôte : elle rejoint donc la liste dès qu'une thématique est retenue, au
+même titre que sous un mot-clé, faute de quoi elle serait introuvable là même où
+on la cherche. Sur le plan, le stand qui la loge s'allume — il porte le nom d'un
+autre, et c'est pourtant là qu'on va. Chaque hébergée est confrontée seule au
+filtre : mot-clé et thématique doivent désigner la même, sans quoi un stand
+s'allumerait pour deux moitiés de réponse portées par deux sociétés.
+
+**Plusieurs thématiques retenues élargissent**, elles ne restreignent pas. On
+les additionne comme les secteurs : demander l'exposant qui fait tout à la fois
+ne rendrait personne.
+
+Rien à colorier sur le plan, en revanche : la bande des secteurs est aussi une
+légende, celle des thématiques n'est qu'un filtre — une même société en porte
+plusieurs, et un stand n'a qu'une couleur.
+
 ## Deux pièges
 
 `/exhibitors.json` **ignore `page` et `per_page`** : il rend ses 613 fiches à

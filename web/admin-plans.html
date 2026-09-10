@@ -801,8 +801,9 @@ function ligneSource(dom, libelle, offerts, aide) {
  *   source  restreint la ligne à un fournisseur. Absente, elle vaut pour tous.
  *   critere autorise la ligne à servir de critère de recherche sur le plan.
  *           Toutes ne s'y prêtent pas : un numéro de téléphone ou une adresse
- *           ne se choisissent pas dans une liste, et le secteur a déjà sa
- *           bande de couleurs — un second filtre pour lui ferait double emploi.
+ *           ne se choisissent pas dans une liste, et le secteur comme les
+ *           thématiques ont déjà leur bande de puces — un second filtre pour
+ *           eux ferait double emploi.
  */
 const LIGNES_FICHE = {
   stand: [
@@ -841,8 +842,10 @@ const LIGNES_FICHE = {
     /* Klipso n'a pas de thématiques : ses rubriques passent par la
        nomenclature, et proposer une ligne que rien n'alimenterait ferait
        chercher un champ qui n'existe pas. */
+    /* Pas de case « critère » : les thématiques ont leur propre bande de puces
+       sous la recherche du plan, comme les secteurs. */
     { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
-      source: "eventmaker", critere: true,
+      source: "eventmaker",
       aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
         "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
         "à l'exemple, certains salons n'y portent que des codes." },

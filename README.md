@@ -157,9 +157,10 @@ quel intitulé le salon range cela — mais l'exploitant, lui, le sait.
 Chaque ligne de la fenêtre porte donc une troisième case, **Critère**. Cochée, le
 champ est proposé au visiteur comme filtre, et ses valeurs entrent dans ce que la
 recherche plein texte balaie. Toutes les lignes ne s'y prêtent pas : un numéro de
-téléphone ou une adresse ne se choisissent pas dans une liste, et le secteur a
-déjà sa bande de couleurs sur le plan — un second filtre pour lui ferait double
-emploi. Les champs propres au salon, eux, sont tous éligibles.
+téléphone ou une adresse ne se choisissent pas dans une liste, et le secteur
+comme les thématiques ont déjà leur bande de puces sous la recherche — un second
+filtre pour eux ferait double emploi. Les champs propres au salon, eux, sont tous
+éligibles.
 
 La case ne décide pas de l'affichage : un champ peut filtrer sans paraître sur la
 fiche — un code interne, une famille de produits — et l'inverse est vrai tout
@@ -181,8 +182,8 @@ sous la recherche, chaque valeur sur une puce qui la retire d'une pression —
 sans quoi, la fenêtre refermée, on ne saurait plus pourquoi la liste est si
 courte.
 
-Les critères se cumulent entre eux et avec le mot-clé, comme le filtre par
-secteur, et portent sur tout le salon : un exposant retenu peut être dans un
+Les critères se cumulent entre eux, avec le mot-clé, avec le filtre par secteur
+et avec celui par thématique, et portent sur tout le salon : un exposant retenu peut être dans un
 autre pavillon que celui qu'on regarde. Une société hébergée répond pour
 elle-même — c'est bien sa fiche à elle qui porte sa ville et ses rubriques — et
 le stand qui l'accueille reste allumé sur le plan.

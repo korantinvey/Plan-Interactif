@@ -32,7 +32,8 @@ let HEBERGES = [];
    `selSoc` dit laquelle des sociétés d'un stand partagé est ouverte : -1 le
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
-const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0, secteurs: new Set(),
+const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0,
+                secteurs: new Set(), themes: new Set(),
                 /* Les critères retenus : une clé de champ, les valeurs cochées.
                    Un critère sans valeur cochée n'existe pas — il sort de la
                    table plutôt que d'y rester comme un filtre qui ne filtre
@@ -79,18 +80,24 @@ function indexe(d){
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
     p.stands.forEach(s => {
       s.kind = "stand"; s.p = i;
-      /* Les champs retenus comme critères entrent aussi dans la recherche
-         plein texte : un exploitant qui désigne « Gamme de produits » comme
-         critère veut qu'on trouve « bio » en le tapant, pas seulement en
-         dépliant un filtre. */
+      /* Les thématiques y entrent comme le reste — un visiteur qui tape
+         « robotique » n'a pas à savoir que c'est un rangement d'exposants et
+         non un nom d'enseigne — et les champs retenus comme critères de même :
+         un exploitant qui désigne « Gamme de produits » comme critère veut
+         qu'on trouve « bio » en le tapant, pas seulement en dépliant un
+         filtre. */
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
-                " " + (s.sect || "") + " " + texteCriteres(s)).toLowerCase();
+                " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
+                " " + texteCriteres(s)).toLowerCase();
     });
   });
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
   indexeSecteurs();
+  /* Les thématiques se relèvent de même, mais sur les sociétés et non sur les
+     emplacements : les hébergées ont les leurs. */
+  indexeThemes();
 
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
@@ -126,16 +133,18 @@ function indexe(d){
      en propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
-      /* Les champs qui servent de critères sont ceux de la société, pas de son
-         hôte : une hébergée a sa ville, ses rubriques, ses champs propres, et
-         un filtre doit la retenir pour ce qu'elle est. */
+      /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
+         rubriques, ses champs propres sont les siens et non ceux de son hôte,
+         et un filtre doit la retenir pour ce qu'elle est. Elle n'emprunte à
+         l'emplacement que ce qui le décrit — numéro, pavillon, surface. */
       const h = {
         kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
         sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
-                " " + (s.sect || "") + " " + texteCriteres(h)).toLowerCase();
+                " " + (s.sect || "") + " " + (x.themes || []).join(" ") +
+                " " + texteCriteres(h)).toLowerCase();
       return h;
     })));
   indexeCriteres();
@@ -170,6 +179,7 @@ function indexe(d){
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
+  appliqueThemes();
   chargeParcours();
 }
 
@@ -512,6 +522,109 @@ function appliqueSecteurs(){
   mesureTiroir();
 }
 
+/* Les thématiques.
+
+   Elles ne viennent que d'Eventmaker, et seulement des salons qui en tiennent :
+   ni la bande, ni le filtre n'existent ailleurs. Contrairement aux secteurs,
+   elles ne décrivent pas l'emplacement mais la société qui l'occupe — une
+   enseigne hébergée a les siennes, différentes de celles de son hôte — et une
+   même société en porte plusieurs. Rien à colorier sur le plan, donc : c'est un
+   filtre de la liste, pas une légende.
+
+   Le compte accolé à chaque nom n'est pas un ornement : les libellés se
+   ressemblent d'un champ à l'autre — « Solutions transverses », « Solutions
+   métier » — et savoir qu'une thématique ne range que deux exposants évite de
+   la retenir pour rien. */
+let THEMES = new Map();
+/* Au-delà d'une dizaine, la bande dépliée prendrait toute la colonne : un
+   salon en range parfois trente. Elle se replie alors sur deux lignes. */
+const SEUIL_THEMES = 10;
+let themesDeployes = false;
+
+function indexeThemes(){
+  const n = new Map();
+  const compte = l => (l || []).forEach(x => {
+    const t = String(x).trim();
+    if (t) n.set(t, (n.get(t) || 0) + 1);
+  });
+  DATA.plans.forEach(p => p.stands.forEach(s => {
+    compte(s.themes);
+    (s.coex || []).forEach(x => compte(x.themes));
+  }));
+  THEMES = new Map([...n].sort((a, b) => COLLATION.compare(a[0], b[0])));
+  /* Une thématique retenue que la synchronisation vient de retirer ne désigne
+     plus personne : laissée là, elle viderait la liste sans qu'aucune puce
+     allumée ne dise pourquoi. */
+  [...state.themes].forEach(t => { if (!THEMES.has(t)) state.themes.delete(t); });
+}
+
+/** La bande des thématiques : les puces, et de quoi les déplier toutes. */
+function chipsThemes(){
+  const b = $("themes");
+  b.hidden = !THEMES.size;
+  if (b.hidden) return;
+  const trop = THEMES.size > SEUIL_THEMES, replie = trop && !themesDeployes;
+  /* Repliée, la bande ne montre que ses premières lignes : une thématique
+     retenue passe donc en tête, car un filtre qu'on ne voit plus est un filtre
+     qu'on oublie d'enlever. Dépliée, l'ordre des noms ne bouge plus sous le
+     doigt qui enchaîne les puces. */
+  const noms = [...THEMES.keys()];
+  if (replie) noms.sort((x, y) =>
+    (state.themes.has(y) ? 1 : 0) - (state.themes.has(x) ? 1 : 0) ||
+    COLLATION.compare(x, y));
+  const box = $("themesChips");
+  box.classList.toggle("replie", replie);
+  box.innerHTML = noms.map(n =>
+    '<button class="chip" type="button" data-t="' + esc(n) + '" aria-pressed="' +
+    state.themes.has(n) + '">' + esc(n) +
+    '<span class="nb">' + THEMES.get(n) + '</span></button>').join("");
+  box.querySelectorAll(".chip").forEach(x => x.onclick = () => basculeTheme(x.dataset.t));
+  const plus = $("themesPlus");
+  plus.hidden = !trop;
+  plus.textContent = themesDeployes
+    ? "Replier" : "Toutes les thématiques (" + THEMES.size + ")";
+  plus.setAttribute("aria-expanded", String(themesDeployes));
+  plus.onclick = () => { themesDeployes = !themesDeployes; chipsThemes(); mesureTiroir(); };
+}
+
+/** Comme les secteurs : retirées du salon, elles ne doivent pas laisser
+ *  derrière elles un filtre invisible. */
+function appliqueThemes(){
+  if (!THEMES.size) state.themes.clear();
+  chipsThemes();
+  // la bande dépasse du tiroir replié, et les commandes du plan se posent
+  // dessus : sa hauteur vient de changer
+  mesureTiroir();
+}
+
+function basculeTheme(n){
+  if (state.themes.has(n)) state.themes.delete(n); else state.themes.add(n);
+  chipsThemes();
+  appliqueFiltre();
+}
+
+/**
+ * Retenir une seule thématique, celle qu'on vient de lire sur une fiche.
+ *
+ * C'est l'autre porte d'entrée : de l'exposant vers ses semblables. On repart
+ * donc à neuf — mot-clé et secteurs effacés — sinon la liste répondrait à une
+ * question qu'on ne pose plus, et paraîtrait vide sans raison.
+ */
+function filtreTheme(n){
+  if (!THEMES.has(n)) return;
+  state.themes = new Set([n]);
+  state.secteurs.clear();
+  state.q = ""; state.qn = "";
+  if ($("q")) $("q").value = "";
+  themesDeployes = false;
+  ferme();
+  chipsSecteurs();
+  appliqueThemes();
+  appliqueFiltre();
+  // sur téléphone la liste est repliée : le filtre n'aurait rien à montrer
+  montreTiroir();
+}
+
 /**
  * Ce que la liste retient : une société répond pour elle-même, jamais pour son
  * voisin. Un secteur retenu porte, comme un mot-clé, sur tout le salon — un
@@ -542,15 +655,18 @@ const LECTURE_CRITERE = {
   ville: o => [o.ville],
   pays: o => [o.pays],
   nomenclature: o => o.nomencl,
-  thematiques: o => o.themes,
   // un oui/non n'a qu'une valeur à cocher : le champ lui-même
   nouveau: o => o.neuf ? ["Oui"] : [],
 };
 const OUI_NON = { nouveau: true };
 const LIBELLE_CRITERE = {
   ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
-  thematiques: "Thématiques", nouveau: "Nouvel exposant",
+  nouveau: "Nouvel exposant",
 };
+/* Ni le secteur ni les thématiques ne figurent ici : ils ont chacun leur bande
+   de puces sous la recherche, et un second filtre pour eux ferait double
+   emploi. Une cible absente de cette table ne rend aucune valeur, donc aucun
+   critère — un réglage ancien qui la désignerait encore reste sans effet. */
 
 /** Les champs retenus comme critères, dans l'ordre où la console les range. */
 function clesCriteres(){
@@ -793,13 +909,22 @@ function ouvreCriteres(){
 }
 
 const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+/* Plusieurs thématiques retenues élargissent, elles ne restreignent pas : on
+   les additionne comme les secteurs, et un exposant qui en porte une seule des
+   trois cochées répond. Restreindre reviendrait à demander l'exposant qui fait
+   tout, et il n'existe pas. */
+const dansThemes = o => !state.themes.size ||
+  (o.themes || []).some(t => state.themes.has(String(t).trim()));
 
-const filtre = () => Boolean(state.qn) || state.secteurs.size > 0 || state.crit.size > 0;
+/** Quelque chose retranche-t-il de la liste ? Le mot-clé, un secteur, une
+ *  thématique, un critère : tous se cumulent, aucun ne prime. */
+const filtre = () => Boolean(state.qn) || state.secteurs.size > 0 ||
+  state.themes.size > 0 || state.crit.size > 0;
 
 function visible(o){
   if (!filtre()) return true;
   if (o.kind === "zone") return false;
-  return dansSecteurs(o) && dansCriteres(o) &&
+  return dansSecteurs(o) && dansThemes(o) && dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
 
@@ -832,13 +957,18 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  // un secteur ou un critère retenu déborde le pavillon affiché, comme un mot-clé
+  // un secteur, une thématique ou un critère retenus débordent le pavillon
+  // affiché, comme un mot-clé
   const tout = filtre();
-  /* Les sociétés hébergées ne rejoignent la liste que sur recherche ou sur
-     critère : on les y trouve par ce qu'elles portent, et un secteur n'est
-     porté que par l'emplacement. Sans rien de tout cela, la liste est le
-     sommaire des emplacements — et son compte, celui qu'annonce l'en-tête. */
-  const portee = q || state.crit.size ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
+  /* Les sociétés hébergées rejoignent la liste dès qu'on cherche une société,
+     et non un emplacement : par son nom, par ce qu'elle vient faire là, ou par
+     l'un des champs que l'exploitant propose en critère. Ceux-là sont à elle,
+     pas à son hôte — l'en écarter la rendrait introuvable justement là où on la
+     cherche. Un secteur, lui, n'est porté que par l'emplacement. Sans rien de
+     tout cela, la liste reste le sommaire des emplacements, et son compte celui
+     qu'annonce l'en-tête. */
+  const parSociete = Boolean(q) || state.themes.size > 0 || state.crit.size > 0;
+  const portee = parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
@@ -871,7 +1001,8 @@ function liste(){
      du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
      serait une question dont on a déjà la réponse. */
   box.querySelectorAll(".row").forEach(b => b.onclick =
-    () => select(b.dataset.id, true, q ? "recherche" : "liste", Number(b.dataset.soc)));
+    () => select(b.dataset.id, true, parSociete ? "recherche" : "liste",
+                 Number(b.dataset.soc)));
 }
 
 /* ============================================================
@@ -1408,7 +1539,8 @@ function ouvre(o, rect, canal, iSoc){
        tient pas ne reçoit pas la clé du tout. */
     ok("thematiques", soc.themes && soc.themes.length
       ? f("Thématiques", soc.themes
-          .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
+          .map(n => '<button type="button" class="ligne theme" data-t="' +
+            esc(String(n)) + '">' + esc(String(n)) + '</button>').join(""))
       : "") +
     /* Les champs que ce salon-ci s'est ajoutés, dans l'ordre où la console les
        range, et après ce que toutes les fiches ont en commun : ils lui sont
@@ -1457,6 +1589,11 @@ function ouvre(o, rect, canal, iSoc){
   else { sig.dataset.mg = "stand"; sig.dataset.mi = o.id; }
   // un seul branchement pour le signet de tête et ceux du programme
   brancheParcours($("detail"));
+  /* Une thématique lue sur une fiche est une porte vers les autres exposants
+     qui la partagent : c'est le chemin qu'on prend quand on a trouvé à peu
+     près ce qu'on cherchait, et qu'on veut voir le reste. */
+  $("dBody").querySelectorAll(".theme").forEach(b =>
+    b.onclick = () => filtreTheme(b.dataset.t));
   $("dGo").onclick = () => centre(o);
   // « j'y vais » : l'arrivée est celle qu'on lit, le départ reste à dire
   $("dItin").onclick = () => versItineraire(o);
@@ -1676,6 +1813,9 @@ $("q").addEventListener("input", e => {
    les secteurs, les critères retenus — paraissent et disparaissent ailleurs :
    on leur laisse de quoi la redemander. */
 let mesureTiroir = () => {};
+/* De même, une thématique retenue depuis une fiche doit faire monter le tiroir :
+   sur téléphone la liste qui vient de changer est sous le plan. */
+let montreTiroir = () => {};
 
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
@@ -1690,7 +1830,7 @@ let mesureTiroir = () => {};
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
     const h = prise.offsetHeight + part(".search") + part(".secteurs") +
-              part(".actifs") + part(".count");
+              part(".themes") + part(".actifs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
@@ -1792,6 +1932,10 @@ let mesureTiroir = () => {};
   });
 
   mesureTiroir = mesure;
+  /* Le cran du milieu, pas le plein écran : on vient de retenir une
+     thématique depuis le plan, et on veut voir la liste sans perdre de vue
+     l'endroit d'où l'on part. */
+  montreTiroir = () => { if (etroit() && cran() === "replie") pose("demi"); };
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
