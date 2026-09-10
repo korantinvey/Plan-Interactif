@@ -206,6 +206,12 @@ button{cursor:pointer;background:none;border:none}
 .row .code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;padding:3px 0;
   text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
 .row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
+/* Une zone et une conférence n'ont pas de numéro : leur case dit la sorte. En
+   lettres, et sans le cadre — celui-ci cite un numéro peint sur une cloison,
+   et l'emprunter pour un mot ferait lire « Zone » comme un emplacement. */
+.row[data-sorte="zone"] .code,.row[data-sorte="conf"] .code{
+  font-family:"Instrument Sans",sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;border-color:transparent;background:var(--surface-2);color:var(--ink-3)}
 .row.l .code{opacity:.5}
 /* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
    texte : sans cela il s'étire à la taille du nom, et l'ellipse annoncée plus
@@ -2023,6 +2029,10 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
    pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
    recherche seule consulte. */
 let HEBERGES = [];
+/* Le programme entier, dédoublonné, tel que la recherche le balaie. Une
+   conférence n'est ni une forme ni un emplacement : elle n'entre pas dans
+   « TOUS » et se cherche depuis sa propre liste, comme les hébergées. */
+let CONFERENCES = [];
 /* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
    héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
    n'a pas à balayer la liste pour savoir si le filtre les retient. */
@@ -2075,7 +2085,13 @@ function indexe(d){
     });
     [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
       String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
-    p.zones.forEach(z => { z.kind = "zone"; z.p = i; });
+    /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
+       la trouver : « accueil », « restauration », « village start-up » sont des
+       endroits du salon au même titre qu'un stand. */
+    p.zones.forEach(z => {
+      z.kind = "zone"; z.p = i;
+      z.rech = String(z.nom || "").toLowerCase();
+    });
     /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
        toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
        reconstruisait jusqu'ici la même chaîne pour chacun d'eux. */
@@ -2155,7 +2171,10 @@ function indexe(d){
      que là où l'on se trouve. L'index des conférences est donc global, comme
      celui des stands. */
   CONFS = new Map();
-  DATA.plans.forEach(p => p.conferences.forEach(c => CONFS.set(String(c.id), c)));
+  DATA.plans.forEach((p, i) => p.conferences.forEach(c => {
+    c.kind = "conf"; c.p = i;
+    CONFS.set(String(c.id), c);
+  }));
   /* Une même conférence est remontée dans chaque pavillon qui la porte, et
      chacun n'y cite que les exposants qu'il héberge : leur liste complète se
      recompose ici, sinon la fiche n'afficherait que ceux du dernier pavillon
@@ -2169,6 +2188,33 @@ function indexe(d){
       if (e && e.stand && !l.some(x => x.stand === e.stand)) l.push(e);
     });
   }));
+  /* Ce qu'on tape pour retrouver une conférence : son titre d'abord, puis ce
+     qui la fait reconnaître quand on ne l'a pas en tête — sa salle, son type,
+     sa thématique, et l'exposant qui la tient, souvent le seul nom dont on se
+     souvienne. Sa présentation n'y entre pas : un paragraphe entier ferait
+     répondre la moitié du programme au premier mot courant venu. */
+  CONFERENCES = [...CONFS.values()];
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
+       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
+       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
+       porterait sa ligne serait un hasard de synchronisation : elle se cherche
+       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
+       fait. */
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+    /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
+       de son stand qui prime : le programme cite parfois une raison sociale là
+       où le salon connaît une enseigne. */
+    c.rech = ((c.nom || "") + " " + (c.salle || "") + " " + (c.type || "") +
+              " " + (c.theme || "") + " " +
+              tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
+             ).toLowerCase();
+  });
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -3054,9 +3100,13 @@ const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 const critParSociete = () =>
   [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
+/* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
+   décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
+   d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
+   cases cochées ; c'est l'effet voulu, et non un oubli à rattraper : qui filtre
+   par « gamme de produits » cherche des exposants. */
 function visible(o){
   if (!filtre()) return true;
-  if (o.kind === "zone") return false;
   return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
@@ -3103,6 +3153,42 @@ function appliqueFiltre(){
   libelles(); liste();
 }
 
+/* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
+   dix : les stands passent devant, puis les endroits du salon, puis le
+   programme — le plus nombreux, et le moins souvent visé. Une hébergée se range
+   avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
+   pavillon : trois sortes entremêlées par pavillon ne se lisaient plus. */
+const RANGS = { stand: 0, coex: 0, zone: 1, conf: 2 };
+const rangSorte = (o) => RANGS[o.kind] || 0;
+
+/** Combien de lignes d'une même sorte la liste veut bien poser. Au-delà, on
+ *  n'a plus une liste mais un annuaire : c'est le mot-clé qu'il faut préciser,
+ *  et le compte au-dessus le dit. */
+const PLAFOND_SORTE = 500;
+
+/* Le premier bloc d'une ligne porte le numéro de stand ; une zone et une
+   conférence n'en ont pas, et laisser la case vide effaçait justement ce qui
+   les distingue d'un stand sans numéro. Elle dit alors la sorte. */
+const CASE_SORTE = { zone: "Zone", conf: "Conf" };
+
+/**
+ * Ce que la seconde ligne ajoute : pour une conférence, quand et où.
+ *
+ * Un titre seul ne distingue pas deux sessions d'un programme qui en compte
+ * trois cents, et « quand » est la première question qu'on se pose en en
+ * trouvant une : le jour s'abrège pour tenir sur la ligne, la fiche l'écrit en
+ * toutes lettres.
+ */
+function sousLigne(o){
+  if (o.kind !== "conf") return "";
+  const d = momentLocal(o.debutLocal, DATA.fuseau) || momentLocal(o.debut, DATA.fuseau);
+  const quand = d
+    ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()].slice(0, 3) + ". " +
+      d.jour + " · " + d.h + "h" + d.min
+    : "";
+  return [quand, o.salle].filter(Boolean).join(" · ");
+}
+
 function liste(){
   const box = $("list");
   const q = state.qn;
@@ -3116,8 +3202,14 @@ function liste(){
      les fait pas paraître. Sans rien de tout cela, la liste reste le sommaire
      des emplacements, et son compte celui qu'annonce l'en-tête. */
   const parSociete = Boolean(q) || critParSociete();
-  const portee = parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
+  /* Le programme ne rejoint la liste que sur un mot-clé. Un critère ne dit rien
+     d'une conférence, et le sommaire d'un pavillon est celui de ses
+     emplacements : ajouter là trois cents sessions noierait les stands qu'on
+     est venu parcourir. */
+  const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
+    .concat(q ? CONFERENCES : []);
   const vus = portee.filter(visible).sort((a, b) =>
+    (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
@@ -3125,19 +3217,37 @@ function liste(){
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
     (tout ? " · tous pavillons" : " · " + P().libelle);
 
-  box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
+  /* Le plafond se compte par sorte, et non sur la liste entière : les stands
+     passant devant, une recherche large le remplissait à eux seuls et les
+     zones comme le programme, rangés derrière, disparaissaient sans que rien
+     ne le dise — alors que le compte annoncé, lui, les avait comptés. */
+  const tenus = new Map();
+  const montres = vus.filter(o => {
+    const r = rangSorte(o), n = (tenus.get(r) || 0) + 1;
+    tenus.set(r, n);
+    return n <= PLAFOND_SORTE;
+  });
+
+  box.innerHTML = montres.length ? montres.map(o => {
     const heberge = o.kind === "coex";
     /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
        stand et son nom. La surface louée et les angles ouverts regardent la
        commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
-    const badge = o.p !== state.plan
+    const conf = o.kind === "conf";
+    // une conférence que rien ne situe encore n'est dans aucun pavillon : celui
+    // qui l'a remontée n'en dit rien au visiteur
+    const badge = o.p !== state.plan && !(conf && !o.situee)
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
-    return '<button class="row" data-id="' + o.id + '" data-soc="' + rang +
-      '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
-      '<span class="code">' + esc(o.code || "—") + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
-      '<span class="s">' + badge + '</span></span></button>';
+    const sous = sousLigne(o);
+    return '<button class="row" data-id="' + esc(o.id) +
+      '" data-sorte="' + o.kind + '" data-soc="' + rang +
+      // une conférence n'est pas un objet du plan : rien ne peut la désigner
+      '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
+      '<span class="code">' + esc(CASE_SORTE[o.kind] || o.code || "—") + '</span>' +
+      '<span><span class="nm">' + esc(o.nom || o.plan ||
+        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
+      '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
@@ -3145,10 +3255,16 @@ function liste(){
 
      Un rang part avec l'identifiant, et la fiche s'ouvre droit sur la société
      du rang cliqué : la liste vient de la nommer, redemander laquelle on veut
-     serait une question dont on a déjà la réponse. */
-  box.querySelectorAll(".row").forEach(b => b.onclick =
-    () => select(b.dataset.id, true, parSociete ? "recherche" : "liste",
-                 Number(b.dataset.soc)));
+     serait une question dont on a déjà la réponse.
+
+     Une conférence n'est pas un emplacement : `select` ne saurait pas la
+     cadrer, et c'est sa fiche qu'on ouvre — d'où elle offre de situer sa
+     salle sur le plan. */
+  box.querySelectorAll(".row").forEach(b => b.onclick = () => {
+    if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
+    select(b.dataset.id, true, parSociete ? "recherche" : "liste",
+           Number(b.dataset.soc));
+  });
 }
 
 /* ============================================================
