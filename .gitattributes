@@ -1,0 +1,19 @@
+# Les pages de `web/`, `tpl-multi.html` et `CARTE.md` ne s'écrivent pas : ils se
+# fabriquent depuis `outils/gabarit/`. Une ligne changée dans un module du
+# gabarit en réécrit donc un millier, recopiées en quatre exemplaires — et deux
+# branches parallèles se retrouvent à arbitrer un conflit sur du contenu que
+# personne n'a tapé. L'arbitrage est même piégeux : garder un morceau de chaque
+# côté fige une page dans un état que le gabarit ne produit plus.
+#
+# `merge=ours` retire ces fichiers de la fusion : git garde la version en place
+# sans rien mélanger, et `npm run construire` rétablit ensuite la vérité depuis
+# le gabarit, lui, fusionné normalement. Le conflit disparaît sans perte, parce
+# que rien de ce qu'il portait n'était une source.
+#
+# Le pilote `ours` est déclaré par `.claude/hooks/session-start.sh`, à chaque
+# ouverture de session. Sur un clone où il n'a jamais tourné, git revient
+# silencieusement à la fusion ligne à ligne : l'ancien comportement, pénible
+# mais pas faux.
+web/**                merge=ours
+outils/tpl-multi.html merge=ours
+CARTE.md              merge=ours

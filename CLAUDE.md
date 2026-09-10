@@ -38,6 +38,32 @@ avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 - `CARTE.md` — index relu dans les sources par `carte.js`. Pour le corriger,
   corrigez ce qu'il décrit : un bandeau de section, un nom de fonction.
 
+## Plusieurs sessions en parallèle
+
+Deux conversations ouvertes sur le même dépôt se heurtaient à deux endroits.
+Les deux sont désamorcés, chacun avec un geste qui l'accompagne.
+
+**Les fichiers fabriqués ne se fusionnent plus.** `.gitattributes` marque
+`web/**`, `outils/tpl-multi.html` et `CARTE.md` en `merge=ours` : git garde la
+version en place au lieu de mélanger deux reconstructions — une ligne de gabarit
+en réécrivait mille, recopiées quatre fois, et le conflit portait sur du contenu
+que personne n'avait tapé. Le geste qui va avec n'est pas optionnel : **après
+toute fusion ou rebasage, `npm run construire`**, sans quoi `web/` ne reflète
+qu'une des deux branches. `npm run verifie` le signale, le workflow `Pages` le
+rattrape — un commit plus tard, à retirer avant la poussée suivante.
+
+**Les migrations sont horodatées à la seconde**, non plus numérotées à la
+suite : `npm run migration -- "Titre"` produit `AAAAMMJJHHMMSS_titre.sql`.
+Deviner « le numéro suivant » revenait à le prendre en même temps que l'autre
+session, puis à renommer un fichier peut-être déjà appliqué en production. Une
+migration partie sur `main` ne se renomme jamais : elle y est enregistrée sous
+son ancien nom, et rejouerait sous le nouveau.
+
+**Jamais de poussée forcée.** Le workflow `Pages` commite sur la branche poussée
+quand `web/` était en retard : le clone local se retrouve derrière sans l'avoir
+vu, et un `--force` efface alors le travail d'à côté. `git pull --rebase`, et
+`npm run verifie` avant de valider pour que le robot n'ait rien à ajouter.
+
 ## Données figées
 
 `web/plan-smcl.html` embarque ses données au lieu d'appeler l'API : c'est la
@@ -53,7 +79,7 @@ versionner n'expose rien de plus.
 |---|---|
 | `outils/gabarit/` | la source des pages |
 | `web/` | les pages construites, servies par Cloudflare |
-| `supabase/migrations/` | schéma de la base — numérotées, rejouables |
+| `supabase/migrations/` | schéma de la base — horodatées, rejouables |
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase |
@@ -113,7 +139,8 @@ pour `web/` et le Worker. Toute poussée, sur n'importe quelle branche,
 reconstruit les pages (`pages.yml`).
 
 Conséquence à garder en tête : **une migration poussée sur `main` part en
-production**. Les migrations sont numérotées et rejouables, jamais réécrites.
+production**. Les migrations sont rejouables et jamais réécrites : une
+correction est une migration de plus.
 
 ## Secrets
 

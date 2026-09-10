@@ -1159,8 +1159,15 @@ Rien n'est fait à la main : chaque élément est dans le dépôt, et cet ordre 
 | Données de démonstration | `outils/plans.json` → `web/plan-smcl.html` | reconstruites à la poussée |
 | Automatisation | `.github/workflows/` | appliquée dès la fusion dans `main` |
 
-Les migrations sont numérotées et rejouables : `db push` n'applique que celles
-qui manquent. Les fonctions, elles, se redéploient entièrement à chaque fois.
+Les migrations sont rejouables : `db push` n'applique que celles qui manquent.
+Les fonctions, elles, se redéploient entièrement à chaque fois.
+
+Une nouvelle migration se crée avec `npm run migration -- "Titre"`, qui la
+nomme `AAAAMMJJHHMMSS_titre.sql`. L'horodatage n'est pas cosmétique : deux
+branches ouvertes en même temps devinaient le même numéro de suite, et l'une
+devait renommer son fichier au moment de la fusion — or une migration déjà
+appliquée en production est enregistrée là-bas sous son ancien nom, et
+rejouerait sous le nouveau. À la seconde près, la collision n'a plus lieu.
 
 ## Emprunts
 
