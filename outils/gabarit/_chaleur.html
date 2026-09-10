@@ -25,6 +25,9 @@ const CHAL_PERIODES = [["7", "7 j"], ["30", "30 j"], ["90", "90 j"], ["tout", "T
    drapeau dit aussi quand *cesser* de peindre : sans lui, la page publique
    balaierait ses neuf cents stands à chaque montage pour n'y rien retirer. */
 let CHALEUR = null, chalOuvert = false, chalPose = false, chalJours = "30";
+/* Replié ou non — retenu d'une lecture à l'autre : qui a replié le cartouche
+   une fois travaille au plan, et n'a pas à le replier à chaque ouverture. */
+let chalReduit = false;
 
 const nbChal = (n) => Number(n || 0).toLocaleString("fr-FR");
 
@@ -165,7 +168,10 @@ function cartoucheChaleur(){
   c.hidden = true;
   c.innerHTML =
     '<div class="chalTete"><span class="eyebrow">Fréquentation par stand</span>' +
-    '<button type="button" id="chalFerme" title="Fermer" aria-label="Fermer la carte de chaleur">&times;</button></div>' +
+    '<button type="button" id="chalReduit" aria-expanded="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+    '</button></div>' +
     '<div class="chalPer" id="chalPer" role="group" aria-label="Période"></div>' +
     '<div class="chalEch" id="chalEch" hidden><i></i>' +
     '<div class="bornes"><span>0</span><span></span><span></span></div></div>' +
@@ -173,7 +179,7 @@ function cartoucheChaleur(){
     '<ol class="chalTop" id="chalTop"></ol>';
   $("stage").appendChild(c);
 
-  $("chalFerme").onclick = () => fermeChaleur();
+  $("chalReduit").onclick = () => replieChaleur(!chalReduit);
   const per = $("chalPer");
   CHAL_PERIODES.forEach(([cle, lib]) => {
     const b = document.createElement("button");
@@ -190,7 +196,31 @@ function cartoucheChaleur(){
     };
     per.appendChild(b);
   });
+  replieChaleur(chalReduit);
   return c;
+}
+
+/**
+ * Replier le cartouche sur sa légende — et non le fermer.
+ *
+ * Une croix se lit « fermer », et celle-ci éteignait la carte en même temps
+ * que le cartouche : on masquait la légende pour mieux voir le plan, et le
+ * plan repartait tout blanc. Les deux gestes n'en faisaient qu'un, ce qui
+ * n'est vrai d'aucun des deux.
+ *
+ * Ils se séparent donc. Le chevron replie ; le bouton de la barre éteint la
+ * lecture. Et ce qu'on garde en repliant, c'est l'échelle : sur une rampe
+ * thermique la couleur ne dit pas seule ce qu'elle vaut, et une carte sans
+ * légende n'est plus qu'un coloriage.
+ */
+function replieChaleur(v){
+  chalReduit = v;
+  const c = $("chaleur"), b = $("chalReduit");
+  if (!c || !b) return;
+  c.classList.toggle("reduit", v);
+  b.setAttribute("aria-expanded", String(!v));
+  b.title = v ? "Déployer le cartouche" : "Replier sur la légende";
+  b.setAttribute("aria-label", b.title);
 }
 
 function ecritEtatChaleur(txt, erreur){

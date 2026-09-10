@@ -835,6 +835,12 @@ premiers, cliquables pour aller les voir sur le plan. Le survol d'un stand donne
 son chiffre exact. Rien ne s'enregistre : c'est une lecture, pas un réglage, et
 la publication de la configuration ne l'emporte pas.
 
+Deux commandes, et elles ne font pas la même chose. Le chevron du cartouche le
+**replie sur sa légende** — le plan reste peint, on gagne le coin de l'écran, et
+l'échelle demeure parce qu'une carte thermique sans elle n'est plus qu'un
+coloriage. C'est l'icône de la barre du haut qui **éteint la lecture** et rend
+au plan ses couleurs ordinaires. Le repli est retenu d'une lecture à l'autre.
+
 Trois choses qu'il faut savoir avant d'en tirer une conclusion :
 
 - Ce sont des **consultations de fiche**, pas des visiteurs uniques. Compter les

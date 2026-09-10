@@ -74,20 +74,20 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 316 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 346 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
 
 Fonctions :
 
-`nbChal` 29 · `tonChaleur` 48 · `rangChaleur` 67 · `valeurChaleur` 70 · `chargeChaleur` 83
-`coloreChaleur` 124 · `cartoucheChaleur` 159 · `ecritEtatChaleur` 196
-`dessineEchelleChaleur` 204 · `dessineTopChaleur` 224 · `phraseChaleur` 255
-`rafraichitChaleur` 272 · `fermeChaleur` 293 · `basculeChaleur` 303
+`nbChal` 32 · `tonChaleur` 51 · `rangChaleur` 70 · `valeurChaleur` 73 · `chargeChaleur` 86
+`coloreChaleur` 127 · `cartoucheChaleur` 162 · `replieChaleur` 216 · `ecritEtatChaleur` 226
+`dessineEchelleChaleur` 234 · `dessineTopChaleur` 254 · `phraseChaleur` 285
+`rafraichitChaleur` 302 · `fermeChaleur` 323 · `basculeChaleur` 333
 
 Éléments :
 
-`#chalFerme` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
+`#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
 ### `_config.js` — 15 l. → config.js
 
@@ -189,7 +189,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2077 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2087 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
