@@ -331,6 +331,9 @@ table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   .reglage-ligne .rv{flex:1 0 100%;order:3;white-space:normal}
 }
 .mcorps > p.aide{margin:14px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.5}
+/* Un compte-rendu d'action, dit à l'endroit où l'action a été demandée : la
+   barre du haut reste derrière le voile de la fenêtre. */
+.mcorps > p.aide.alerte{color:var(--rouge)}
 .onglets{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line)}
 .onglets button{padding:7px 12px;background:none;border:none;border-bottom:2px solid transparent;
   margin-bottom:-1px;font-size:12.5px;color:var(--ink-3);cursor:pointer}
@@ -405,6 +408,11 @@ tr.eteint td{opacity:.45}
 /* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
    troisième onglet, la liste d'ordre et son aperçu côte à côte. */
 .mfen:has(table.champs){width:min(1040px,100%)}
+/* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
+   de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
+.mfen:has(.compte){width:min(760px,100%)}
+/* Le formulaire d'invitation la porte aussi : la largeur est ainsi arrêtée au
+   premier tracé, avant que la liste des comptes soit revenue du réseau. */
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}

@@ -97,6 +97,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | console multi-événements | `_console-js.html`, socle `_console-base.html` |
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
 | accès administrateur d'un plan | `_auth-plan.html` |
+| comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
+| invitation, mot de passe oublié | `_motdepasse.html` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 

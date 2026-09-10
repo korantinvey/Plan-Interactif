@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mot de passe — Plan interactif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<script src="config.js"></script>
+
+<link rel="stylesheet" href="console.css">
+
+<style>
+/* Une page à une seule décision : elle n'a ni colonne ni barre d'outils, et
+   se contente d'une carte au milieu. */
+.seule{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px}
+.carte{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+  box-shadow:var(--shadow);padding:26px 26px 22px;width:min(420px,100%)}
+.carte h1{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:0 0 6px}
+.carte p.intro{margin:0 0 18px;font-size:12.5px;color:var(--ink-3);line-height:1.55}
+.carte label + label{margin-top:12px}
+.carte .pied{display:flex;align-items:center;gap:10px;margin-top:18px}
+.carte .pied .btn{flex:0 0 auto}
+.carte .msg{margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+.carte .msg.err{color:var(--rouge)}
+.carte .msg.ok{color:var(--vert)}
+</style>
+
+<div class="seule">
+  <div class="carte">
+    <h1 id="titre">Mot de passe</h1>
+    <p class="intro" id="intro">Vérification du lien…</p>
+
+    <div id="formMdp" hidden>
+      <label><span>Nouveau mot de passe</span>
+        <input id="mdp1" type="password" autocomplete="new-password">
+        <span class="aide">Huit caractères au moins.</span></label>
+      <label><span>Confirmation</span>
+        <input id="mdp2" type="password" autocomplete="new-password"></label>
+      <div class="pied"><button class="btn primaire" id="poser">Enregistrer</button></div>
+    </div>
+
+    <div id="formMail" hidden>
+      <label><span>Adresse e-mail</span>
+        <input id="mail" type="email" autocomplete="username"></label>
+      <div class="pied"><button class="btn primaire" id="envoyer">Recevoir un lien</button></div>
+    </div>
+
+    <p class="msg" id="msg"></p>
+    <div class="pied" id="apres" hidden>
+      <a class="btn" id="versConsole" href="admin-plans">Ouvrir la console</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Poser un mot de passe
+
+   Une invitation et un oubli de mot de passe arrivent ici par le même chemin :
+   Supabase envoie un lien, le lien ouvre cette page avec un jeton, et le jeton
+   permet la seule chose qu'on veuille en faire — écrire un mot de passe. La
+   page ne sait rien faire d'autre, et n'a besoin d'aucune session préalable.
+
+   Elle sert aussi de porte d'entrée quand on n'a pas de lien : sans jeton, elle
+   demande une adresse et en fait envoyer un.
+
+   Le jeton voyage de deux façons selon la version du service : dans le
+   fragment (`#access_token=…`), qui ne quitte jamais le navigateur, ou dans la
+   requête sous forme de jeton à vérifier (`?token_hash=…&type=…`). On accepte
+   les deux plutôt que de dépendre d'un réglage de projet.
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+
+const CFG = (() => {
+  try {
+    const local = JSON.parse(localStorage.getItem("console-config") || "null");
+    if (local?.url && local?.anonKey) return local;
+  } catch (e) {}
+  return window.PLAN_CONFIG || null;
+})();
+
+const dit = (texte, genre) => {
+  $("msg").textContent = texte || "";
+  $("msg").className = "msg" + (genre ? " " + genre : "");
+};
+
+/** Les paramètres du fragment, qui portent le jeton quand il y en a un. */
+function fragment() {
+  const h = (location.hash || "").replace(/^#/, "");
+  return new URLSearchParams(h);
+}
+
+/** Le mot de passe posé, la session qui vient de servir est celle de la
+ *  console : on la lui laisse, et l'invité entre sans se reconnecter. */
+function garde(session) {
+  try { localStorage.setItem("console-session", JSON.stringify(session)); } catch (e) {}
+}
+
+async function lit(reponse) {
+  const txt = await reponse.text();
+  let j = {};
+  try { j = txt ? JSON.parse(txt) : {}; } catch (e) { j = { msg: txt.slice(0, 160) }; }
+  return j;
+}
+
+let JETON = null;
+
+/* ------------------------------------------------------------------
+   Écrire le mot de passe
+   ------------------------------------------------------------------ */
+$("poser").onclick = async () => {
+  const a = $("mdp1").value, b = $("mdp2").value;
+  if (a.length < 8) return dit("Huit caractères au moins.", "err");
+  if (a !== b) return dit("Les deux saisies diffèrent.", "err");
+  dit("Enregistrement…");
+  $("poser").disabled = true;
+  try {
+    const r = await fetch(CFG.url + "/auth/v1/user", {
+      method: "PUT",
+      headers: {
+        "apikey": CFG.anonKey,
+        "Authorization": "Bearer " + JETON,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password: a }),
+    });
+    const j = await lit(r);
+    if (!r.ok) throw new Error(j.error_description || j.msg || j.message || "Refusé (HTTP " + r.status + ")");
+    $("formMdp").hidden = true;
+    $("apres").hidden = false;
+    dit("Mot de passe enregistré.", "ok");
+  } catch (e) {
+    $("poser").disabled = false;
+    dit(e.message, "err");
+  }
+};
+
+/* ------------------------------------------------------------------
+   Demander un lien
+   ------------------------------------------------------------------ */
+$("envoyer").onclick = async () => {
+  const adresse = $("mail").value.trim();
+  if (adresse.indexOf("@") < 1) return dit("Adresse incomplète.", "err");
+  dit("Envoi…");
+  $("envoyer").disabled = true;
+  try {
+    const r = await fetch(CFG.url + "/auth/v1/recover", {
+      method: "POST",
+      headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: adresse,
+        // le lien doit revenir ici, et nulle part ailleurs
+        redirect_to: location.origin + location.pathname,
+      }),
+    });
+    const j = await lit(r);
+    if (!r.ok) throw new Error(j.error_description || j.msg || j.message || "Envoi refusé.");
+    /* On ne dit pas si l'adresse existe : ce serait un moyen commode de
+       dresser la liste des comptes du projet. */
+    dit("Si un compte porte cette adresse, un lien vient de partir. " +
+        "Le message peut mettre une minute, et finir dans les indésirables.", "ok");
+  } catch (e) {
+    dit(e.message, "err");
+  } finally {
+    $("envoyer").disabled = false;
+  }
+};
+
+/* ------------------------------------------------------------------
+   Ce que le lien apporte
+   ------------------------------------------------------------------ */
+function demandeLien(message, genre) {
+  $("titre").textContent = "Mot de passe oublié";
+  $("intro").textContent = "Indiquez votre adresse : vous recevrez un lien pour " +
+    "choisir un nouveau mot de passe.";
+  $("formMail").hidden = false;
+  if (message) dit(message, genre || "err");
+  setTimeout(() => $("mail").focus(), 40);
+}
+
+function ouvreSaisie(invitation) {
+  $("titre").textContent = invitation ? "Bienvenue" : "Nouveau mot de passe";
+  $("intro").textContent = invitation
+    ? "Choisissez le mot de passe qui ouvrira votre console."
+    : "Choisissez votre nouveau mot de passe.";
+  $("formMdp").hidden = false;
+  setTimeout(() => $("mdp1").focus(), 40);
+}
+
+(async () => {
+  if (!CFG?.url || !CFG?.anonKey) {
+    $("intro").textContent = "";
+    return dit("Ce site n'est pas relié à un projet : ouvrez d'abord la console.", "err");
+  }
+
+  const f = fragment();
+  const q = new URLSearchParams(location.search);
+
+  // un lien périmé ou déjà utilisé revient avec son motif : le dire vaut mieux
+  // que de présenter un formulaire qui ne marchera pas
+  const souci = f.get("error_description") || q.get("error_description");
+  if (souci) {
+    $("intro").textContent = "";
+    return demandeLien(decodeURIComponent(souci.replace(/\+/g, " ")));
+  }
+
+  const type = f.get("type") || q.get("type") || "";
+
+  if (f.get("access_token")) {
+    JETON = f.get("access_token");
+    garde({ access_token: JETON, refresh_token: f.get("refresh_token") || null });
+    // le jeton n'a pas à rester dans la barre d'adresse ni dans l'historique
+    history.replaceState(null, "", location.pathname);
+    $("intro").textContent = "";
+    return ouvreSaisie(type === "invite");
+  }
+
+  const hache = q.get("token_hash") || q.get("token");
+  if (hache) {
+    try {
+      const r = await fetch(CFG.url + "/auth/v1/verify", {
+        method: "POST",
+        headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ type: type || "recovery", token_hash: hache }),
+      });
+      const j = await lit(r);
+      if (!r.ok || !j.access_token) {
+        throw new Error(j.error_description || j.msg || "Ce lien n'est plus valable.");
+      }
+      JETON = j.access_token;
+      garde(j);
+      history.replaceState(null, "", location.pathname);
+      $("intro").textContent = "";
+      return ouvreSaisie(type === "invite");
+    } catch (e) {
+      $("intro").textContent = "";
+      return demandeLien(e.message);
+    }
+  }
+
+  $("intro").textContent = "";
+  demandeLien();
+})();
+</script>
+
+</body>
+</html>

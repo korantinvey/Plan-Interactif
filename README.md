@@ -766,6 +766,61 @@ ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 
 La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
 
+## Comptes et profils
+
+Il n'y a pas d'inscription libre : un compte est créé par quelqu'un qui en a
+déjà un, et reçoit son mot de passe par courriel. Deux profils, et un seul
+mécanisme derrière.
+
+| profil | ce qu'il voit | ce qu'il peut faire |
+|---|---|---|
+| **Administrateur** | tous les salons, présents et à venir | tout, y compris créer des salons et gérer les comptes |
+| **Organisateur** | les salons qu'on lui a affectés | tout, sur ces salons-là |
+
+L'organisateur n'est pas un demi-administrateur. Sur un salon qui lui revient,
+il a exactement les mêmes droits : synchroniser, régler l'apparence, dessiner,
+publier, lire le rapport d'utilisation, supprimer. Ce qui change n'est pas la
+nature du droit, c'est son étendue. Il ne peut pas créer de salon — il en
+reçoit — ni voir ceux des autres, qui ne lui apparaissent nulle part.
+
+Cette limite n'est pas une affaire d'interface. C'est la base qui l'applique,
+par ses politiques de sécurité, et deux fonctions y suffisent :
+`est_admin()` et `acces_salon(<salon>)`. Toute politique d'écriture appelle
+l'une ou l'autre, de sorte que la règle n'est écrite qu'une fois. Un
+organisateur qui forgerait une requête à la main obtiendrait la même réponse
+que la console lui donne : rien.
+
+### Créer un compte
+
+Dans la console, **Comptes** — le bouton n'apparaît que pour un
+administrateur. On y saisit une adresse, un nom, un profil, et l'on coche les
+salons. L'invité reçoit un courriel, choisit son mot de passe sur la page
+`/motdepasse`, et se retrouve connecté.
+
+Tant qu'il n'a pas ouvert son invitation, son compte porte la mention
+« Invitation en attente ». **Renvoyer l'invitation** relance le courriel ; le
+compte n'est jamais recréé, ce qui lui ferait perdre ses salons.
+
+Le même bouton sert plus tard à **envoyer un lien de mot de passe** à qui l'a
+oublié. L'intéressé peut aussi se débrouiller seul : « Mot de passe oublié »,
+sur l'écran de connexion de la console comme sur celui du plan, mène à la même
+page.
+
+Un administrateur ne peut ni se retirer son propre rôle, ni supprimer son
+propre compte : ce serait fermer la porte de l'intérieur, sans personne
+au-dehors pour rouvrir.
+
+### Le premier compte
+
+Un projet neuf n'a personne pour affecter qui que ce soit. Le tout premier
+compte créé est donc administrateur, quelle que soit la porte empruntée —
+l'invitation depuis la console, ou **Authentication → Users → Add user** dans
+le tableau de bord Supabase. Les suivants sont organisateurs par défaut.
+
+Sur un projet déjà en service, la migration reprend les comptes existants
+comme administrateurs : ce sont ceux de l'exploitant, et la migration ne doit
+pas fermer la console à celui qui la pousse.
+
 ## Créer le projet Supabase
 
 1. Sur **supabase.com**, créez un compte puis un projet.
@@ -1010,6 +1065,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
 | `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |
+| `/motdepasse` | choisir ou réinitialiser son mot de passe | par lien reçu |
 
 La page publique ne contient aucune commande d'administration : elles sont
 retirées du document au chargement. La page d'administration exige une session
@@ -1019,13 +1075,33 @@ Supabase valide, vérifiée auprès du serveur à chaque ouverture.
 
 Créer le compte administrateur dans **Authentication → Users → Add user**, avec
 un mot de passe. C'est ce compte qui ouvre la console ; il n'y a pas
-d'inscription libre, et c'est voulu.
+d'inscription libre, et c'est voulu. Le premier compte du projet est
+administrateur d'office — voir « Comptes et profils ».
+
+Deux réglages conditionnent les invitations et les mots de passe oubliés :
+
+- **Authentication → URL Configuration** : ajouter `https://<domaine>/motdepasse`
+  aux *Redirect URLs*. Sans elle, le lien reçu par courriel retombe sur la page
+  d'accueil du projet et le mot de passe ne peut pas être posé.
+- **Authentication → Emails** : le service d'envoi intégré de Supabase est
+  limité à quelques messages par heure et n'est pas prévu pour la production.
+  Dès qu'on invite de vrais organisateurs, brancher un **SMTP** à soi
+  (Project Settings → Authentication → SMTP Settings).
 
 ### Sécurité des fonctions
 
 `sync-evenement` exige un utilisateur authentifié : elle écrit en base et
 interroge Klipso avec la clé de l'organisateur. La simple clé publique, qui
-circule dans toutes les pages, ne suffit pas.
+circule dans toutes les pages, ne suffit pas. Elle vérifie en outre que
+l'appelant a bien ce salon — elle écrit ensuite avec la clé de service, qui
+ignore les politiques de la base, et c'est donc là qu'il faut poser la
+question.
+
+`comptes` crée, modifie et supprime les comptes : cela relève de l'API
+d'administration de Supabase, qui exige la clé de service. Cette clé ne pouvant
+pas descendre dans un navigateur, elle reste dans la fonction, qui relit
+elle-même le rôle de l'appelant en base. Un jeton valide d'organisateur n'y
+obtient rien.
 
 `plan-public` reste en lecture libre — c'est son rôle — mais les deux fonctions
 n'annoncent leurs en-têtes CORS que pour les origines déclarées dans

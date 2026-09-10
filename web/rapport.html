@@ -228,6 +228,7 @@ function ecranConnexion(message) {
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
   }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+      { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
   async function tente() {
@@ -309,6 +310,30 @@ const grille = () => { const d = document.createElement("div"); d.className = "g
 
 /** Adresse de base des pages, déduite de celle de la console. */
 const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+/* La page qui pose un mot de passe, qu'on y arrive par une invitation, par un
+   oubli, ou depuis un écran de connexion. Elle est servie sans extension par
+   Cloudflare, comme les autres. */
+const PAGE_MDP = BASE_PAGES + "motdepasse";
+
+/**
+ * L'identifiant du compte connecté, lu dans le jeton.
+ *
+ * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
+ * un aller-retour à chaque chargement pour une donnée que le navigateur tient
+ * en main. Seule la charge utile est lue : la signature, elle, n'est vérifiable
+ * que par le serveur, qui le fera à chaque requête.
+ */
+function idCompte() {
+  const jeton = SESSION?.access_token;
+  if (!jeton) return null;
+  try {
+    const p = jeton.split(".")[1];
+    if (!p) return null;
+    const brut = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(brut).sub || null;
+  } catch (e) { return null; }
+}
 
 /* ------------------------------------------------------------------
    Thème

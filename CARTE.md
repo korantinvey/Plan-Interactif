@@ -43,7 +43,7 @@ Fonctions :
 
 `demarre` 8 · `annonce` 24 · `entetesApi` 39 · `chargeFond` 62 · `charge` 94
 
-### `_auth-plan.html` — 118 l. → plan-admin.html
+### `_auth-plan.html` — 119 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
@@ -54,11 +54,11 @@ Fonctions :
 
 Éléments :
 
-`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOk`
+`#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 292 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 317 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -66,50 +66,52 @@ Fonctions :
 
 `$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `ouvreModale` 65 · `fermeModale` 80
 `demande` 90 · `confirme` 112 · `ecranConfig` 123 · `normaliseUrl` 159
-`ecranConnexion` 178 · `deconnecte` 240 · `signale` 251 · `bloc` 267 · `grille` 276
+`ecranConnexion` 178 · `deconnecte` 241 · `signale` 252 · `bloc` 268 · `grille` 277
+`idCompte` 295
 
 Éléments :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 37 l. → admin-plans.html
+### `_console-head.html` — 38 l. → admin-plans.html
 
 Éléments :
 
-`#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
-`#btnNouveau` · `#listeEvts` · `#fiche`
+`#sousTitre` · `#statut` · `#btnComptes` · `#btnImport` · `#btnExport` · `#btnTheme`
+`#btnRecharger` · `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2298 l. → admin-plans.html
+### `_console-js.html` — 2615 l. → admin-plans.html
 
-- l.321 · Provenance des données
-- l.448 · Contenu de la fiche détail
+- l.328 · Provenance des données
+- l.455 · Contenu de la fiche détail
 
 Fonctions :
 
 `fluxFonction` 17 · `barreAvancement` 56 · `fonction` 79 · `slugifie` 95 · `courant` 99
-`charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `dessineRail` 124 · `champ` 150
-`dessineFiche` 175 · `fournisseurUtilise` 383 · `source` 387 · `champCle` 392
-`ligneSource` 427 · `origineConferences` 536 · `resumeProvenance` 601 · `resumeSalles` 618
-`resumeFiche` 629 · `caseFiche` 672 · `champsPersos` 715 · `criteres` 721 · `ecritFiche` 724
-`caseCritere` 739 · `clePerso` 758 · `ajouteChampPerso` 766 · `renommeChampPerso` 777
-`retireChampPerso` 795 · `lignesPerso` 843 · `clesCorps` 878 · `ordreEffectif` 892
-`libelleCorps` 907 · `champsLus` 949 · `exempleCible` 964 · `valeurApercu` 986
-`dessineApercu` 1014 · `panneauOrdre` 1087 · `ligneReglage` 1269 · `ouvreProvenance` 1282
-`ouvreSources` 1305 · `ouvreSalles` 1361 · `cadreFiche` 1476 · `ouvreFiche` 1505
-`sousTitre` 1655 · `tableauChamps` 1670 · `encode` 1813 · `decode` 1815
-`correspondance` 1820 · `sansPrefixe` 1823 · `courte` 1824 · `intitule` 1839
-`intituleSuite` 1851 · `separeValeurs` 1865 · `champOrigine` 1877 · `majLiens` 2106
-`majIntegration` 2133 · `majMsgSync` 2140 · `synchronise` 2154 · `dupliquer` 2197
-`videEcran` 2271 · `dessine` 2276 · `demarre` 2286
+`charge` 101 · `chargePlans` 111 · `majEvenement` 116 · `dessineRail` 127 · `champ` 153
+`dessineFiche` 178 · `fournisseurUtilise` 390 · `source` 394 · `champCle` 399
+`ligneSource` 434 · `origineConferences` 543 · `resumeProvenance` 608 · `resumeSalles` 625
+`resumeFiche` 636 · `caseFiche` 679 · `champsPersos` 722 · `criteres` 728 · `ecritFiche` 731
+`caseCritere` 746 · `clePerso` 765 · `ajouteChampPerso` 773 · `renommeChampPerso` 784
+`retireChampPerso` 802 · `lignesPerso` 850 · `clesCorps` 885 · `ordreEffectif` 899
+`libelleCorps` 914 · `champsLus` 956 · `exempleCible` 971 · `valeurApercu` 993
+`dessineApercu` 1021 · `panneauOrdre` 1094 · `ligneReglage` 1276 · `ouvreProvenance` 1289
+`ouvreSources` 1312 · `ouvreSalles` 1368 · `cadreFiche` 1483 · `ouvreFiche` 1512
+`sousTitre` 1662 · `tableauChamps` 1677 · `encode` 1820 · `decode` 1822
+`correspondance` 1827 · `sansPrefixe` 1830 · `courte` 1831 · `intitule` 1846
+`intituleSuite` 1858 · `separeValeurs` 1872 · `champOrigine` 1884 · `majLiens` 2113
+`majIntegration` 2140 · `majMsgSync` 2147 · `synchronise` 2161 · `dupliquer` 2204
+`litMonProfil` 2289 · `RETOUR_MDP` 2300 · `ouvreComptes` 2302 · `videEcran` 2583
+`dessine` 2588 · `demarre` 2603
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 493 l. → console.css
+### `_console.css` — 501 l. → console.css
 
-- l.437 · Page de rapport
+- l.445 · Page de rapport
 
 ### `_dessin.html` — 1272 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -276,6 +278,20 @@ Fonctions :
 `ouvreModale` 13 · `fermeModale` 29 · `confirme` 36 · `deplaceVers` 54 · `versExtremite` 66
 `remplitOrdre` 74 · `ouvreOrdre` 136
 
+### `_motdepasse.html` — 242 l. → motdepasse.html
+
+- l.54 · Poser un mot de passe
+
+Fonctions :
+
+`$` 70 · `CFG` 72 · `dit` 80 · `fragment` 86 · `garde` 93 · `lit` 97 · `demandeLien` 170
+`ouvreSaisie` 179
+
+Éléments :
+
+`#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
+`#envoyer` · `#msg` · `#apres` · `#versConsole`
+
 ### `_parcours.html` — 352 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
@@ -371,10 +387,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
 
-### `supabase/functions/sync-evenement/index.ts` — 1091 l.
+### `supabase/functions/sync-evenement/index.ts` — 1102 l.
 
 `cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 152
-`champsKlipso` 173 · `hebergee` 1049 · `nettoieUrl` 1067 · `groupeTextes` 1077
+`champsKlipso` 173 · `hebergee` 1060 · `nettoieUrl` 1078 · `groupeTextes` 1088
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -396,6 +412,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000001_champs_perso.sql` — —
 - `20260910000002_ordre_fiche.sql` — —
 - `20260910000003_zones_masquees.sql` — evenement
+- `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 
 ## Le reste
 

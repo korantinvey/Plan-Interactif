@@ -89,8 +89,15 @@ fs.writeFileSync(W + "admin-plans.html",
 fs.writeFileSync(W + "rapport.html",
   page(assemble("_rapport-head.html", "_rapport-js.html")));
 
+/* --- poser son mot de passe ---
+   Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul
+   bagage le jeton d'un lien reçu par courriel. Un écran de connexion y serait
+   un contresens. */
+fs.writeFileSync(W + "motdepasse.html",
+  page(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8")));
+
 for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
-                 "admin-plans.html", "rapport.html"]) {
+                 "admin-plans.html", "rapport.html", "motdepasse.html"]) {
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
