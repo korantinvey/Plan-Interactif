@@ -76,7 +76,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2097 l. → admin-plans.html
+### `_console-js.html` — 2099 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -91,12 +91,12 @@ Fonctions :
 `caseCritere` 735 · `clePerso` 754 · `ajouteChampPerso` 762 · `renommeChampPerso` 773
 `retireChampPerso` 791 · `lignesPerso` 839 · `clesCorps` 874 · `ordreEffectif` 888
 `libelleCorps` 903 · `panneauOrdre` 926 · `ligneReglage` 1075 · `ouvreProvenance` 1088
-`ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1280 · `ouvreFiche` 1309
-`sousTitre` 1454 · `tableauChamps` 1469 · `encode` 1612 · `decode` 1614
-`correspondance` 1619 · `sansPrefixe` 1622 · `courte` 1623 · `intitule` 1638
-`intituleSuite` 1650 · `separeValeurs` 1664 · `champOrigine` 1676 · `majLiens` 1905
-`majIntegration` 1932 · `majMsgSync` 1939 · `synchronise` 1953 · `dupliquer` 1996
-`videEcran` 2070 · `dessine` 2075 · `demarre` 2085
+`ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1282 · `ouvreFiche` 1311
+`sousTitre` 1456 · `tableauChamps` 1471 · `encode` 1614 · `decode` 1616
+`correspondance` 1621 · `sansPrefixe` 1624 · `courte` 1625 · `intitule` 1640
+`intituleSuite` 1652 · `separeValeurs` 1666 · `champOrigine` 1678 · `majLiens` 1907
+`majIntegration` 1934 · `majMsgSync` 1941 · `synchronise` 1955 · `dupliquer` 1998
+`videEcran` 2072 · `dessine` 2077 · `demarre` 2087
 
 Éléments :
 

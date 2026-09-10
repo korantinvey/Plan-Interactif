@@ -1189,14 +1189,16 @@ async function ouvreSalles(apres) {
         if (frais.length) { noms = frais[0].zones || {}; e.zones = noms; }
       } catch (err) { /* la liste chargée fera l'affaire */ }
       zones = inst.flatMap((i) => (i.charge?.zones || [])
-        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom, m2: z.m2 })));
+        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom })));
     }
   } catch (err) { signale(err.message, true); }
   const parZone = Object.fromEntries(zones.map((z) => [z.id, z]));
   const nomZone = (id) => {
     const z = parZone[id];
     if (!z) return id ? id + " (absente du plan)" : "";
-    return (z.nom || "Zone sans nom") + (z.m2 ? " · " + Math.round(z.m2) + " m²" : "");
+    /* La surface de la zone ne distingue rien qu'un nom ne dise mieux, et
+       n'intéresse pas plus ici qu'ailleurs : la zone se nomme, un point. */
+    return z.nom || "Zone sans nom";
   };
 
   ouvreModale("Salles de conférence", (corps) => {

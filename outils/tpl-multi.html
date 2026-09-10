@@ -1973,17 +1973,17 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
-     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
-     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+     qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
+     propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
       /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
          rubriques, ses champs propres sont les siens et non ceux de son hôte,
          et un filtre doit la retenir pour ce qu'elle est. Elle n'emprunte à
-         l'emplacement que ce qui le décrit — numéro, pavillon, surface. */
+         l'emplacement que ce qui le décrit — numéro, pavillon, secteur. */
       const h = {
-        kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-        sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
+        kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
+        nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
@@ -2871,8 +2871,8 @@ function liste(){
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
     /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
-       stand et son nom. La surface et les angles ouverts relèvent de la fiche,
-       pas d'un sommaire qu'on parcourt du regard. */
+       stand et son nom. La surface louée et les angles ouverts regardent la
+       commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
