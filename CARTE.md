@@ -139,28 +139,27 @@ Fonctions :
 `appliquePicto` 299 · `supprimeForme` 317 · `editionPointerDown` 327
 `editionPointerMove` 372 · `editionPointerUp` 403
 
-### `_head.html` — 1511 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1481 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
 `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones` · `#btnItineraire`
 `#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#side`
-`#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#secteurs` · `#countTxt`
-`#list` · `#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn`
-`#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt`
-`#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti`
-`#roleAide` · `#voirNappe` · `#texteADessiner` · `#repereType` · `#repereTexte`
-`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
-`#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
-`#elemLienAjout` · `#elemLienAide` · `#elemTailleBloc` · `#elemTaille` · `#elemStand`
-`#listeStands` · `#outilsAide` · `#annuleDernier` · `#modale` · `#mTitre` · `#mFermer`
-`#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dPartage`
-`#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
-`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
-`#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
-`#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
-`#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
+`#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt` · `#list`
+`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
+`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
+`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#fichierImage`
+`#choisirImage` · `#vignette` · `#elemSel` · `#elemType` · `#elemSupprimer` · `#elemPicto`
+`#elemTexte` · `#elemLiens` · `#elemLiensListe` · `#elemLienAjout` · `#elemLienAide`
+`#elemTailleBloc` · `#elemTaille` · `#elemStand` · `#listeStands` · `#outilsAide`
+`#annuleDernier` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied` · `#panel`
+`#pile` · `#voile` · `#detail` · `#dMarque` · `#closeDetail` · `#dKind` · `#dName` · `#dRen`
+`#dCode` · `#dNeuf` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb`
+`#dBody` · `#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps`
+`#jCorps` · `#pPied` · `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour`
+`#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg`
+`#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_index.html` — 30 l. → index.html
 
@@ -208,38 +207,38 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2040 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2055 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.45 · 1. Index global — la recherche porte sur tous les pavillons
-- l.185 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.276 · 3. Rendu du pavillon courant
-- l.339 · 4. Libellés — le nom de l'exposant prime sur le numéro
-- l.395 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
-- l.1035 · 6. Vue
-- l.1134 · 7. Sélection et fiche
-- l.1718 · 8. Interactions du plan
-- l.1889 · Le tiroir de la liste — écrans étroits
+- l.44 · 1. Index global — la recherche porte sur tous les pavillons
+- l.184 · 2. Mesure de texte — largeur réelle dans la police de rendu
+- l.275 · 3. Rendu du pavillon courant
+- l.338 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.394 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
+- l.1050 · 6. Vue
+- l.1149 · 7. Sélection et fiche
+- l.1733 · 8. Interactions du plan
+- l.1904 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
-`$` 12 · `esc` 14 · `P` 42 · `indexe` 48 · `largeur` 190 · `decoupe` 209 · `habille` 222
-`lignesSvg` 233 · `ligneCode` 254 · `monteHabillage` 282 · `montePlan` 299 · `onglets` 324
-`changePlan` 331 · `ancre` 347 · `place` 348 · `libelles` 350 · `indexeSecteurs` 416
-`secteursMontres` 429 · `couleurConf` 433 · `hslHex` 437 · `couleurSecteur` 455
-`BANDES` 474 · `majFondus` 482 · `chipsSecteurs` 516 · `coloreSecteurs` 540
-`appliqueSecteurs` 567 · `filtreTheme` 588 · `themeFiltrable` 655 · `clesCriteres` 663
-`libelleCritere` 669 · `separeValeurs` 677 · `valeursCritere` 694 · `texteCriteres` 707
-`indexeCriteres` 720 · `dansCriteres` 747 · `critereActif` 755 · `basculeCritere` 757
-`videCriteres` 765 · `nCriteres` 772 · `majCriteres` 781 · `ouvreCriteres` 838
-`dansSecteurs` 944 · `filtre` 948 · `visible` 951 · `releveHotes` 963 · `visibleSurPlan` 971
-`appliqueFiltre` 975 · `liste` 984 · `appliqueVue` 1038 · `rafraichitVue` 1059
-`poseVue` 1071 · `masque` 1089 · `fit` 1109 · `zoom` 1121 · `echelle` 1126 · `ETROIT` 1140
-`anime` 1142 · `noeud` 1159 · `canalPlan` 1164 · `select` 1172 · `centre` 1192
-`centrePoint` 1196 · `montre` 1211 · `ordreCorps` 1237 · `momentLocal` 1274
-`programme` 1297 · `jourLong` 1327 · `ficheConf` 1338 · `lien` 1432
-`ecarteClicFantome` 1449 · `nomSociete` 1458 · `societes` 1471 · `choisitExposant` 1482
-`ouvre` 1518 · `ferme` 1698 · `onglet` 1708 · `milieu` 1738 · `commencePince` 1744
-`suitPince` 1758 · `mesureTiroir` 1900 · `montreTiroir` 1903
+`$` 12 · `esc` 14 · `P` 41 · `indexe` 47 · `largeur` 189 · `decoupe` 208 · `habille` 221
+`lignesSvg` 232 · `ligneCode` 253 · `monteHabillage` 281 · `montePlan` 298 · `onglets` 323
+`changePlan` 330 · `ancre` 346 · `place` 347 · `libelles` 349 · `indexeSecteurs` 415
+`secteursMontres` 428 · `couleurConf` 432 · `hslHex` 436 · `couleurSecteur` 454
+`BANDES` 473 · `majFondus` 481 · `pastilleSecteur` 519 · `coloreSecteurs` 532
+`appliqueSecteurs` 565 · `filtreTheme` 582 · `themeFiltrable` 658 · `clesCriteres` 674
+`libelleCritere` 681 · `separeValeurs` 689 · `valeursCritere` 706 · `texteCriteres` 719
+`indexeCriteres` 732 · `dansCriteres` 759 · `critereActif` 767 · `basculeCritere` 769
+`videCriteres` 777 · `nCriteres` 784 · `majCriteres` 793 · `ouvreCriteres` 851
+`filtre` 960 · `critParSociete` 964 · `visible` 967 · `releveHotes` 979
+`visibleSurPlan` 987 · `appliqueFiltre` 991 · `liste` 1000 · `appliqueVue` 1053
+`rafraichitVue` 1074 · `poseVue` 1086 · `masque` 1104 · `fit` 1124 · `zoom` 1136
+`echelle` 1141 · `ETROIT` 1155 · `anime` 1157 · `noeud` 1174 · `canalPlan` 1179
+`select` 1187 · `centre` 1207 · `centrePoint` 1211 · `montre` 1226 · `ordreCorps` 1252
+`momentLocal` 1289 · `programme` 1312 · `jourLong` 1342 · `ficheConf` 1353 · `lien` 1447
+`ecarteClicFantome` 1464 · `nomSociete` 1473 · `societes` 1486 · `choisitExposant` 1497
+`ouvre` 1533 · `ferme` 1713 · `onglet` 1723 · `milieu` 1753 · `commencePince` 1759
+`suitPince` 1773 · `mesureTiroir` 1915 · `montreTiroir` 1918
 
 Éléments :
 

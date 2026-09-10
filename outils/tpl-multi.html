@@ -119,9 +119,8 @@ button{cursor:pointer;background:none;border:none}
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
-/* Les critères retenus. Même bande que les secteurs — une ligne qui défile à
-   l'étroit, plusieurs qui se replient au large — mais elle ne paraît que
-   lorsqu'il y a quelque chose à montrer. */
+/* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
+   replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
   border-bottom:1px solid var(--line);scrollbar-width:none}
 .actifs::-webkit-scrollbar{display:none}
@@ -139,31 +138,16 @@ button{cursor:pointer;background:none;border:none}
 .search input{width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Les secteurs : une bande qui sert de légende et de filtre. Dans sa colonne
-   elle se replie sur plusieurs lignes — une légende ne se lit que d'un coup
-   d'œil, et un secteur caché hors du cadre ne se devine pas. */
-.secteurs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
-  border-bottom:1px solid var(--line);scrollbar-width:none}
-.secteurs::-webkit-scrollbar{display:none}
-.secteurs .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
-  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
-.secteurs .chip:hover{border-color:var(--line-strong)}
-.secteurs .chip[aria-pressed="true"]{background:var(--accent-soft);
-  border-color:var(--accent);color:var(--ink)}
-/* La pastille montre la couleur du stand, la choisie comme l'automatique. Un
-   liseré la borde : une couleur pâle, choisie pour un aplat, disparaîtrait
-   sinon sur le fond clair du tiroir. */
-.secteurs .chip i{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
+/* La pastille d'un secteur, sur la puce qui le coche et sur celle qui le dit
+   retenu. Un liseré la borde : une couleur pâle, choisie pour un aplat,
+   disparaîtrait sinon sur le fond clair du panneau. */
+.pastille{width:9px;height:9px;border-radius:50%;flex:0 0 auto;
   border:1px solid var(--line-strong);
   background:var(--sect-c,hsl(var(--sect-h) 60% var(--sect-dot-l)))}
-/* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
-   trouve pas : le filtre reste, le repère de couleur s'efface. */
-.sans-secteurs .secteurs .chip i{display:none}
 /* Une bande qui défile ne le dit pas d'elle-même.
 
-   En tiroir, les critères retenus et les secteurs tiennent chacun sur une
-   ligne qui déborde par le côté : une puce coupée net au bord de l'écran ressemble à un défaut de
+   En tiroir, les critères retenus tiennent sur une ligne qui déborde par le
+   côté : une puce coupée net au bord de l'écran ressemble à un défaut de
    cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
    quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
    s'efface, et l'on sait qu'on a tout vu.
@@ -200,9 +184,6 @@ button{cursor:pointer;background:none;border:none}
 .bande .fleche:active{background:var(--surface-2)}
 .bande[data-gauche] .fleche[data-vers="-1"]{display:flex;left:5px}
 .bande[data-droite] .fleche[data-vers="1"]{display:flex;right:5px}
-/* Les thématiques : la même bande de puces que les secteurs, sans pastille de
-   couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
-   le salon en range beaucoup, un bouton en donnant alors la suite. */
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -1142,7 +1123,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
-  .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
+  .actifs{flex-wrap:nowrap;overflow-x:auto}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
@@ -1314,17 +1295,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
          posée dedans s'estomperait avec. -->
     <div class="bande">
       <div class="actifs defile" id="actifs" role="group" aria-label="Critères retenus" hidden></div>
-      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
-        aria-label="Revenir au début">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </button>
-      <button class="fleche" type="button" data-vers="1" tabindex="-1"
-        aria-label="Voir la suite">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </button>
-    </div>
-    <div class="bande">
-      <div class="secteurs defile" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
       <button class="fleche" type="button" data-vers="-1" tabindex="-1"
         aria-label="Revenir au début">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -1544,7 +1514,6 @@ let HEBERGES = [];
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
 const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0,
-                secteurs: new Set(),
                 /* Les critères retenus : une clé de champ, les valeurs cochées.
                    Un critère sans valeur cochée n'existe pas — il sort de la
                    table plutôt que d'y rester comme un filtre qui ne filtre
@@ -1904,7 +1873,7 @@ function libelles(){
 }
 
 /* ============================================================
-   5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
+   5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
       pavillon affiché, dès qu'on filtre on balaie les trois
 
    On ne cherche qu'un exposant. Les zones organisateur — restauration,
@@ -1971,8 +1940,8 @@ function couleurSecteur(nom){
 
 /* Les bandes qui défilent, et ce qui le fait voir.
 
-   En tiroir — sur téléphone — les critères retenus et les secteurs tiennent
-   chacun sur une ligne unique qui déborde par le côté : la hauteur s'y paie sur le plan, et deux
+   En tiroir — sur téléphone — les critères retenus tiennent sur une ligne
+   unique qui déborde par le côté : la hauteur s'y paie sur le plan, et deux
    lignes de puces le mangeraient. Mais une puce coupée net au bord de l'écran
    ne se lit pas comme une invitation à pousser du doigt : elle se lit comme un
    défaut de cadrage, et le reste du salon n'est jamais visité.
@@ -2020,27 +1989,20 @@ BANDES().forEach(b => {
 addEventListener("resize", majFondus);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(majFondus);
 
-/* La bande des secteurs : légende du plan à gauche, filtre de la liste à
-   droite, et c'est la même chose. Elle ne paraît que si le salon sectorise —
-   ailleurs elle prendrait la place de deux lignes de résultats pour ne rien
-   dire. */
-function chipsSecteurs(){
-  const b = $("secteurs");
-  b.hidden = !secteursMontres();
-  if (b.hidden) return;
-  b.innerHTML = [...SECTEURS].map(([nom, h]) => {
-    const c = couleurConf(conf("secteur:" + nom).couleur);
-    return '<button class="chip" type="button" data-s="' + esc(nom) + '" aria-pressed="' +
-      state.secteurs.has(nom) + '" style="--sect-h:' + h + (c ? ";--sect-c:" + c : "") +
-      '"><i></i>' + esc(nom) + '</button>';
-  }).join("");
-  b.querySelectorAll(".chip").forEach(x => x.onclick = () => {
-    const n = x.dataset.s;
-    if (state.secteurs.has(n)) state.secteurs.delete(n); else state.secteurs.add(n);
-    x.setAttribute("aria-pressed", state.secteurs.has(n));
-    appliqueFiltre();
-  });
-  majFondus();
+/**
+ * La pastille d'un secteur, telle qu'une puce de critère la porte.
+ *
+ * Le secteur a rejoint les critères de recherche, où rien d'autre n'est
+ * coloré : sa teinte n'y est plus une décoration mais ce qui rattache le nom
+ * qu'on coche aux stands qu'on voit sur le plan. Elle vient donc avec lui,
+ * là où la bande la portait.
+ */
+function pastilleSecteur(nom){
+  const h = SECTEURS.get(nom);
+  if (h === undefined) return "";
+  const c = couleurConf(conf("secteur:" + nom).couleur);
+  return '<i class="pastille" style="--sect-h:' + h +
+    (c ? ";--sect-c:" + c : "") + '"></i>';
 }
 
 /**
@@ -2049,8 +2011,9 @@ function chipsSecteurs(){
  * sélection, qui doivent l'emporter sur elle.
  */
 function coloreSecteurs(){
+  /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
+     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire. */
   const on = secteursMontres();
-  racine.classList.toggle("sans-secteurs", !on);
   document.querySelectorAll("#stands g").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? o.sect : null;
@@ -2072,16 +2035,18 @@ function coloreSecteurs(){
   });
 }
 
-/** La légende, les couleurs et le filtre suivent le même réglage : retirés du
- *  plan, ils ne doivent pas laisser derrière eux un filtre invisible qui
- *  continuerait de retrancher des stands de la liste. */
+/* Le secteur n'est offert comme critère que là où le plan sectorise et le
+   montre : le réglage qui l'éteint doit donc retirer le filtre avec les
+   couleurs, et non le laisser retrancher des stands sans que rien ne le dise.
+   Un simple changement de couleur, lui, ne rebâtit pas l'index — on le relève
+   à chaque glissement du sélecteur. */
+let _secteursOfferts = null;
+
+/** Les couleurs du plan et le critère suivent le même réglage. */
 function appliqueSecteurs(){
-  if (!secteursMontres()) state.secteurs.clear();
-  chipsSecteurs();
   coloreSecteurs();
-  // la bande fait partie de ce qui dépasse du tiroir replié : sa hauteur
-  // change, et les commandes du plan se posent dessus
-  mesureTiroir();
+  const offert = secteursMontres();
+  if (offert !== _secteursOfferts){ _secteursOfferts = offert; indexeCriteres(); }
 }
 
 /**
@@ -2092,19 +2057,16 @@ function appliqueSecteurs(){
  * par le critère « Thématiques », comme la fenêtre des critères — c'est le même
  * filtre, atteint par un autre chemin.
  *
- * On repart à neuf : mot-clé, secteurs et autres critères effacés, sinon la
- * liste répondrait à une question qu'on ne pose plus, et paraîtrait vide sans
- * raison.
+ * On repart à neuf : mot-clé et autres critères effacés, sinon la liste
+ * répondrait à une question qu'on ne pose plus, et paraîtrait vide sans raison.
  */
 function filtreTheme(n){
   if (!themeFiltrable(n)) return;
-  state.secteurs.clear();
   state.crit.clear();
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
   ferme();
-  chipsSecteurs();
   majCriteres();
   appliqueFiltre();
   // sur téléphone la liste est repliée : le filtre n'aurait rien à montrer
@@ -2113,10 +2075,10 @@ function filtreTheme(n){
 
 /**
  * Ce que la liste retient : une société répond pour elle-même, jamais pour son
- * voisin. Un secteur retenu porte, comme un mot-clé, sur tout le salon — un
+ * voisin. Un critère retenu porte, comme un mot-clé, sur tout le salon — un
  * exposant du secteur cherché peut être dans un autre pavillon que celui qu'on
- * regarde — et les deux se cumulent : le mot-clé cherche dans les secteurs
- * retenus, et non à côté d'eux.
+ * regarde — et les deux se cumulent : le mot-clé cherche parmi ce que les
+ * critères ont retenu, et non à côté.
  */
 /* ------------------------------------------------------------
    Les critères de recherche
@@ -2138,6 +2100,7 @@ const PREFIXE_PERSO = "perso:";
    synchronisation lui donne — ce ne sont pas les mêmes que les cibles de la
    console, d'où cette table. */
 const LECTURE_CRITERE = {
+  secteur: o => [o.sect],
   ville: o => [o.ville],
   pays: o => [o.pays],
   nomenclature: o => o.nomencl,
@@ -2147,18 +2110,28 @@ const LECTURE_CRITERE = {
 };
 const OUI_NON = { nouveau: true };
 const LIBELLE_CRITERE = {
-  ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
+  secteur: "Secteur", ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
   thematiques: "Thématiques", nouveau: "Nouvel exposant",
 };
-/* Les thématiques sont un critère comme les autres, et n'ont pas de bande à
-   elles : un salon en range parfois trente, ce qui prenait sous la recherche
-   la place de deux lignes de résultats, et les rangeait à part de filtres qui
-   font le même travail. Le secteur, lui, reste dehors — sa bande est d'abord
-   la légende des couleurs du plan, et il n'y a rien à colorier ici.
+/* Thématiques et secteurs ont eu chacun leur bande de puces sous la recherche.
+   Elles prenaient la place de deux lignes de résultats — un salon range parfois
+   trente thématiques — et rangeaient à part des filtres qui font le même
+   travail que la ville ou la nomenclature. Tout tient donc ici.
+
+   Le secteur y garde sa couleur : ailleurs elle serait une décoration, ici elle
+   rattache le nom qu'on coche aux stands qu'on voit sur le plan, dont il reste
+   la seule légende.
 
    Une cible absente de cette table ne rend aucune valeur, donc aucun critère —
    un réglage ancien qui la désignerait encore reste sans effet. */
 const CLE_THEMES = "thematiques";
+const CLE_SECTEUR = "secteur";
+
+/* Le secteur décrit l'emplacement, pas la société qui l'occupe : le retenir ne
+   fait donc pas paraître les sociétés hébergées, qui n'en ont pas en propre —
+   elles empruntent celui de leur hôte, et la liste dirait deux fois le même
+   emplacement. C'est ce qui le sépare de tous les autres critères. */
+const CRITERES_EMPLACEMENT = new Set([CLE_SECTEUR]);
 
 /** Une thématique lue sur une fiche mène-t-elle quelque part ? Seulement si
  *  l'exploitant a fait des thématiques un critère, et si celle-ci en est une
@@ -2170,10 +2143,19 @@ const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
    sur le plan public, il n'existe pas. */
 const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
 
-/** Les champs retenus comme critères, dans l'ordre où la console les range. */
+/**
+ * Les champs retenus comme critères, dans l'ordre où la console les range.
+ *
+ * Le secteur ouvre la marche et ne se coche pas : il ne vient d'aucun champ de
+ * fiche à associer mais du plan lui-même, où il est là ou n'est pas. Le
+ * réglage qui l'éteint est celui des couleurs, et il l'éteint des deux côtés.
+ * C'est aussi le découpage le plus large du salon : le poser en tête range les
+ * critères du plus grossier au plus fin.
+ */
 function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
-  return Object.keys(r).filter(k => r[k] === true);
+  const cochees = Object.keys(r).filter(k => r[k] === true);
+  return secteursMontres() ? [CLE_SECTEUR].concat(cochees) : cochees;
 }
 
 /** L'intitulé d'un critère : celui du salon pour un champ qu'il s'est ajouté. */
@@ -2312,7 +2294,8 @@ function majCriteres(){
       b.type = "button";
       b.className = "actif";
       b.title = "Retirer ce critère";
-      b.innerHTML = '<span class="k"></span><span class="v"></span>' +
+      b.innerHTML = (cle === CLE_SECTEUR ? pastilleSecteur(v) : "") +
+        '<span class="k"></span><span class="v"></span>' +
         '<span class="x" aria-hidden="true">×</span>';
       b.querySelector(".k").textContent = lib;
       b.querySelector(".v").textContent = OUI_NON[cle] ? "" : v;
@@ -2417,7 +2400,8 @@ function ouvreCriteres(){
           b.type = "button";
           b.className = "puce-crit";
           b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-          b.innerHTML = '<span class="l"></span><span class="n"></span>';
+          b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
+            '<span class="l"></span><span class="n"></span>';
           b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
           b.querySelector(".n").textContent = x.n;
           b.onclick = () => {
@@ -2452,17 +2436,19 @@ function ouvreCriteres(){
   ]);
 }
 
-const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
+/** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
+ *  cumulent, aucun ne prime. */
+const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 
-/** Quelque chose retranche-t-il de la liste ? Le mot-clé, un secteur, un
- *  critère : tous se cumulent, aucun ne prime. */
-const filtre = () => Boolean(state.qn) || state.secteurs.size > 0 ||
-  state.crit.size > 0;
+/* Un critère qui parle de la société fait paraître les hébergées ; le secteur,
+   qui parle de l'emplacement, non. */
+const critParSociete = () =>
+  [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
 function visible(o){
   if (!filtre()) return true;
   if (o.kind === "zone") return false;
-  return dansSecteurs(o) && dansCriteres(o) &&
+  return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
 
@@ -2495,17 +2481,16 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  // un secteur ou un critère retenus débordent le pavillon affiché, comme un
-  // mot-clé
+  // un critère retenu déborde le pavillon affiché, comme un mot-clé
   const tout = filtre();
   /* Les sociétés hébergées rejoignent la liste dès qu'on cherche une société,
      et non un emplacement : par son nom, par ce qu'elle vient faire là, ou par
      l'un des champs que l'exploitant propose en critère. Ceux-là sont à elle,
      pas à son hôte — l'en écarter la rendrait introuvable justement là où on la
-     cherche. Un secteur, lui, n'est porté que par l'emplacement. Sans rien de
-     tout cela, la liste reste le sommaire des emplacements, et son compte celui
-     qu'annonce l'en-tête. */
-  const parSociete = Boolean(q) || state.crit.size > 0;
+     cherche. Le secteur fait exception : porté par l'emplacement seul, il ne
+     les fait pas paraître. Sans rien de tout cela, la liste reste le sommaire
+     des emplacements, et son compte celui qu'annonce l'en-tête. */
+  const parSociete = Boolean(q) || critParSociete();
   const portee = parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
@@ -3425,8 +3410,8 @@ let montreTiroir = () => {};
   function mesure(){
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
-    const h = prise.offsetHeight + part(".search") + part(".secteurs") +
-              part(".actifs") + part(".count");
+    const h = prise.offsetHeight + part(".search") + part(".actifs") +
+              part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 
