@@ -229,7 +229,14 @@ button{cursor:pointer;background:none;border:none}
 .row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
-.stage{position:relative;overflow:hidden;background:var(--ground)}
+/* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
+   bord droit : la scène a donc toujours de quoi défiler. Or `hidden` cache la
+   barre sans interdire le défilement par programme — mettre le curseur dans un
+   tiroir encore en transition, donc hors champ, faisait glisser toute la scène
+   pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
+   tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
+   refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -11146,7 +11153,10 @@ function versItineraireDe(pt){
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();
   if (ITI.a) relance();
-  else { montreResultat(); $("iDepart").focus(); }
+  /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
+     la transition, et un focus ordinaire ferait défiler la scène pour l'y
+     amener. On demande le curseur, pas le déplacement. */
+  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {
