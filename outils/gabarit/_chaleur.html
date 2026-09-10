@@ -29,33 +29,30 @@ let CHALEUR = null, chalOuvert = false, chalPose = false, chalJours = "30";
 const nbChal = (n) => Number(n || 0).toLocaleString("fr-FR");
 
 /**
- * Du bleu au rouge, en passant par le violet.
+ * La rampe d'une caméra thermique : bleu, cyan, vert, jaune, orange, rouge.
  *
- * Le chemin compte autant que les deux bouts. Un dégradé qui traverse le vert
- * et le jaune — l'arc-en-ciel des cartes de chaleur — n'ordonne rien : ses
- * teintes se lisent comme des catégories, et son jaune paraît plus clair que
- * ses deux extrémités, si bien que le milieu de l'échelle saute aux yeux plus
- * que son maximum. Ici seule la teinte tourne, du bleu au rouge, tandis que la
- * clarté avance d'un bout à l'autre : le rang se lit même sans distinguer les
- * couleurs, et survit à une impression en gris.
+ * C'est le langage que tout le monde a déjà vu, et il se lit sans légende :
+ * personne n'a besoin qu'on lui dise que le rouge est chaud. On y perd ce que
+ * gagnait une rampe monochrome — la clarté n'avance plus d'un bout à l'autre,
+ * le jaune du milieu paraît plus vif que le rouge du bout, et le rang ne se
+ * lit plus en noir et blanc. Le cartouche porte donc les nombres, et le survol
+ * d'un stand donne le sien.
  *
- * Comme pour les secteurs, la saturation et la clarté viennent du thème et non
- * du code : le libellé du stand s'écrit à l'encre du texte, et une rampe
- * unique le rendrait illisible sur l'un des deux fonds.
+ * Elle ne suit pas le thème : une image thermique est la même de jour comme de
+ * nuit. C'est ce qui oblige à reprendre l'encre des libellés — voir
+ * « mode-chaleur » dans la feuille de style.
  */
-function rampeChaleur(){
-  const v = (n, d) => { const x = parseFloat(jeton(n)); return isNaN(x) ? d : x; };
-  return { s0: v("--chal-s0", 42), s1: v("--chal-s1", 72),
-           l0: v("--chal-l0", 90), l1: v("--chal-l1", 60) };
-}
+const THERMIQUE = ["#2B54D6", "#1F7DE8", "#16C4D8", "#2FCE71", "#93D82B",
+                   "#F0DC14", "#F79328", "#E22319"];
 
-/* La rampe est relevée une fois par peinture et passée aux neuf cents stands :
-   la redemander à la feuille de style pour chacun d'eux coûtait quatre lectures
-   du style calculé par emplacement, à chaque changement de pavillon. */
-function tonChaleur(t, r){
-  const u = Math.max(0, Math.min(1, t));
-  const { s0, s1, l0, l1 } = r || rampeChaleur();
-  return hslHex(225 + u * 130, s0 + u * (s1 - s0), l0 + u * (l1 - l0));
+function tonChaleur(t){
+  const u = Math.max(0, Math.min(1, t)) * (THERMIQUE.length - 1);
+  const i = Math.min(Math.floor(u), THERMIQUE.length - 2), f = u - i;
+  const a = THERMIQUE[i], b = THERMIQUE[i + 1];
+  const voie = (n) => Math.round(parseInt(a.slice(n, n + 2), 16) * (1 - f) +
+                                 parseInt(b.slice(n, n + 2), 16) * f);
+  return "#" + [voie(1), voie(3), voie(5)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
 }
 
 /**
@@ -128,7 +125,9 @@ function coloreChaleur(){
   const on = chalOuvert && CHALEUR;
   if (!on && !chalPose) return;      // rien n'a jamais été peint : rien à effacer
   chalPose = !!on;
-  const rampe = on ? rampeChaleur() : null;
+  /* L'encre des libellés ne peut plus venir du thème dès que les stands
+     prennent la température : la feuille de style s'en charge, à ce drapeau. */
+  racine.classList.toggle("mode-chaleur", !!on);
   document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const titre = g.querySelector(":scope > title.chal");
     if (!on){
@@ -139,7 +138,7 @@ function coloreChaleur(){
     }
     const n = CHALEUR.par.get(g.dataset.id) || 0;
     g.setAttribute("data-chaleur", "");
-    g.style.setProperty("--chal-c", tonChaleur(rangChaleur(n, CHALEUR.max), rampe));
+    g.style.setProperty("--chal-c", tonChaleur(rangChaleur(n, CHALEUR.max)));
     /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
        se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
        relance a besoin du nombre, pas de la nuance. */
@@ -206,8 +205,8 @@ function dessineEchelleChaleur(){
   const e = $("chalEch");
   e.hidden = CHALEUR.max <= 0;
   if (e.hidden) return;
-  const rampe = rampeChaleur();
-  const arrets = [0, .25, .5, .75, 1].map(u => tonChaleur(u, rampe)).join(",");
+  // les arrêts de la rampe, tous : en échantillonner cinq raterait le vert
+  const arrets = THERMIQUE.join(",");
   e.querySelector("i").style.background = "linear-gradient(90deg," + arrets + ")";
   const b = e.querySelectorAll(".bornes span");
   b[1].textContent = nbChal(valeurChaleur(.5, CHALEUR.max));
@@ -300,17 +299,6 @@ function fermeChaleur(){
   if (b) b.setAttribute("aria-pressed", "false");
   coloreChaleur();
 }
-
-/* Le thème peut basculer alors que la carte est ouverte : les rangs ne
-   changent pas, les tons si. */
-function retonneChaleur(){
-  if (!chalOuvert || !CHALEUR) return;
-  coloreChaleur();
-  dessineEchelleChaleur();
-}
-try {
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", retonneChaleur);
-} catch (e) {}
 
 function basculeChaleur(){
   if (chalOuvert) return fermeChaleur();

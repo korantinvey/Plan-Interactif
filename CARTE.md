@@ -74,16 +74,16 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 328 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 316 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
 
 Fonctions :
 
-`nbChal` 29 · `rampeChaleur` 46 · `tonChaleur` 55 · `rangChaleur` 70 · `valeurChaleur` 73
-`chargeChaleur` 86 · `coloreChaleur` 127 · `cartoucheChaleur` 160 · `ecritEtatChaleur` 197
-`dessineEchelleChaleur` 205 · `dessineTopChaleur` 225 · `phraseChaleur` 256
-`rafraichitChaleur` 273 · `fermeChaleur` 294 · `retonneChaleur` 306 · `basculeChaleur` 315
+`nbChal` 29 · `tonChaleur` 48 · `rangChaleur` 67 · `valeurChaleur` 70 · `chargeChaleur` 83
+`coloreChaleur` 124 · `cartoucheChaleur` 159 · `ecritEtatChaleur` 196
+`dessineEchelleChaleur` 204 · `dessineTopChaleur` 224 · `phraseChaleur` 255
+`rafraichitChaleur` 272 · `fermeChaleur` 293 · `basculeChaleur` 303
 
 Éléments :
 
@@ -189,7 +189,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2066 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2077 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -263,7 +263,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2426 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2424 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu

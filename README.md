@@ -848,13 +848,22 @@ Trois choses qu'il faut savoir avant d'en tirer une conclusion :
   tout le reste du plan serait resté du même bleu. Le cartouche porte donc des
   nombres à ses bornes et en son milieu, jamais des pourcentages.
 
-Le dégradé ne traverse ni le vert ni le jaune : l'arc-en-ciel des cartes de
-chaleur n'ordonne rien, ses teintes se lisent comme des catégories et son jaune
-paraît plus clair que ses deux bouts. Ici seule la teinte tourne, du bleu au
-rouge par le violet, tandis que la clarté avance d'un bout à l'autre — le rang se
-lit même sans distinguer les couleurs. Saturation et clarté viennent du thème,
-comme celles des secteurs, sans quoi le libellé du stand deviendrait illisible
-sur l'un des deux fonds.
+La rampe est celle d'une caméra thermique — bleu, cyan, vert, jaune, orange,
+rouge. C'est le langage que tout le monde a déjà vu : personne n'a besoin qu'on
+lui dise que le rouge est chaud, et la carte se lit sans passer par sa légende.
+
+Elle se paie en deux endroits, et les deux sont traités. La clarté n'y avance
+pas d'un bout à l'autre — le jaune du milieu est plus vif que le rouge du bout —
+donc le rang ne se lit pas dans la couleur seule : d'où les nombres au
+cartouche, et le chiffre exact au survol d'un stand. Et comme aucune encre ne
+tient sur toute la rampe — noire, elle se perd sur le bleu ; blanche, sur le
+jaune — les libellés reçoivent un liseré clair le temps de la lecture, mesuré
+en `em` pour qu'il suive la taille du texte quand on dézoome. La couleur de
+libellé que l'exploitant a pu régler est écartée pendant ce temps : elle avait
+été accordée à ses stands, pas à une caméra thermique.
+
+Contrairement au reste du plan, la rampe ne suit pas le thème : une image
+thermique est la même de jour comme de nuit.
 
 ## Comptes et profils
 
