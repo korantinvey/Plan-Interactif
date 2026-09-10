@@ -1321,7 +1321,10 @@ function momentLocal(v, fuseau){
 function programme(l, titre){
   l = l || [];
   if (!l.length) return "";
-  let out = '<div class="field"><span class="eyebrow">' + esc(titre || "Programme") +
+  /* La classe nomme le bloc du programme : deux modèles de fiche le traitent
+     à part — l'un le déroule en ligne de temps, l'autre lui laisse son libellé
+     quand il efface tous les autres. */
+  let out = '<div class="field prog-bloc"><span class="eyebrow">' + esc(titre || "Programme") +
     '</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
@@ -1564,6 +1567,10 @@ function ouvre(o, rect, canal, iSoc){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et une zone n'a pas de numéro du tout. */
+  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
@@ -2077,5 +2084,8 @@ $("btnTheme").onclick = () => {
   const next = sombre ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+  /* La couleur principale a deux versions, une par fond : celle du thème
+     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
+  appliqueAccent();
 };
 </script>

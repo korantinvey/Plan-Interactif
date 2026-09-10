@@ -11,22 +11,24 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 529 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 818 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.347 · 10. Mode administration
-- l.412 · Renommer une zone organisateur
-- l.464 · Masquer une zone organisateur
+- l.636 · 10. Mode administration
+- l.701 · Renommer une zone organisateur
+- l.753 · Masquer une zone organisateur
 
 Fonctions :
 
 `cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 62 · `jeton` 63 · `sousCle` 64
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
-`styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 187 · `minutesVisite` 215
-`ouvreReglages` 227 · `enregistreConf` 297 · `rgbHex` 303 · `hexa` 310 · `luminance` 314
-`ecarte` 328 · `joli` 343 · `retireAdmin` 360 · `activeAdmin` 373 · `renommeZone` 422
-`enregistreNomZone` 446 · `basculeAffichageZone` 475 · `marqueZonesMasquees` 492
-`ecritTableZones` 507
+`styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 189 · `minutesVisite` 217
+`trio` 232 · `melange` 242 · `themeSombre` 250 · `appliqueAccent` 264 · `modeleFiche` 312
+`appliqueFiche` 319 · `apercuFiche` 330 · `ouvreReglages` 379 · `voletPlan` 410
+`nomDuTon` 492 · `voletApparence` 496 · `enregistreConf` 586 · `rgbHex` 592 · `hexa` 599
+`luminance` 603 · `ecarte` 617 · `joli` 632 · `retireAdmin` 649 · `activeAdmin` 662
+`renommeZone` 711 · `enregistreNomZone` 735 · `basculeAffichageZone` 764
+`marqueZonesMasquees` 781 · `ecritTableZones` 796
 
 Éléments :
 
@@ -143,7 +145,7 @@ Fonctions :
 `appliqueRayon` 309 · `appliquePicto` 319 · `supprimeForme` 337 · `editionPointerDown` 347
 `editionPointerMove` 392 · `editionPointerUp` 423
 
-### `_head.html` — 1526 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 1861 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -213,7 +215,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2081 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2091 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.44 · 1. Index global — la recherche porte sur tous les pavillons
 - l.184 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -222,8 +224,8 @@ Fonctions :
 - l.399 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1059 · 6. Vue
 - l.1158 · 7. Sélection et fiche
-- l.1759 · 8. Interactions du plan
-- l.1930 · Le tiroir de la liste — écrans étroits
+- l.1766 · 8. Interactions du plan
+- l.1937 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -241,10 +243,10 @@ Fonctions :
 `rafraichitVue` 1083 · `poseVue` 1095 · `masque` 1113 · `fit` 1133 · `zoom` 1145
 `echelle` 1150 · `ETROIT` 1164 · `anime` 1166 · `noeud` 1183 · `canalPlan` 1188
 `select` 1196 · `centre` 1216 · `centrePoint` 1220 · `montre` 1235 · `ordreCorps` 1261
-`momentLocal` 1298 · `programme` 1321 · `jourLong` 1351 · `ficheConf` 1362 · `lien` 1456
-`ecarteClicFantome` 1473 · `nomSociete` 1482 · `societes` 1495 · `choisitExposant` 1506
-`ouvre` 1542 · `ferme` 1739 · `onglet` 1749 · `milieu` 1779 · `commencePince` 1785
-`suitPince` 1799 · `mesureTiroir` 1941 · `montreTiroir` 1944
+`momentLocal` 1298 · `programme` 1321 · `jourLong` 1354 · `ficheConf` 1365 · `lien` 1459
+`ecarteClicFantome` 1476 · `nomSociete` 1485 · `societes` 1498 · `choisitExposant` 1509
+`ouvre` 1545 · `ferme` 1746 · `onglet` 1756 · `milieu` 1786 · `commencePince` 1792
+`suitPince` 1806 · `mesureTiroir` 1948 · `montreTiroir` 1951
 
 Éléments :
 
