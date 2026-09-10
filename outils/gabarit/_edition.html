@@ -25,12 +25,12 @@ function boite(f){
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
 function curseurPoignee(f, i){
-  if (f.t === "rect" || f.t === "image") return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
+  if (estCadre(f)) return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
   return "move";
 }
 
 function poignees(f){
-  if (f.t === "rect" || f.t === "image"){
+  if (estCadre(f)){
     const b = boite(f);
     return [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
   }
@@ -80,7 +80,8 @@ function majElement(){
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
-                 texte: "Texte", image: "Image", repere: "Repère" };
+                 texte: "Texte", image: "Image", repere: "Repère",
+                 stand: "Stand dessiné" };
   $("elemType").textContent = NOMS[f.t] || f.t;
   // un repère porte lui aussi un libellé et une taille
   const estTexte = f.t === "texte" || f.t === "repere";
@@ -95,7 +96,8 @@ function majElement(){
      posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
      se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
      calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
-  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne" ||
+                        f.t === "stand";
   const br = $("elemRayonBloc");
   if (br){
     br.hidden = !arrondissable;
@@ -131,6 +133,19 @@ function majElement(){
       remplitListeStands();
       const s = f.stand && parId.get(f.stand);
       ch.value = s ? etiquetteStand(s) : "";
+    }
+  }
+
+  /* Un stand dessiné, lui, désigne une société et non un emplacement : c'est
+     tout l'objet du découpage, deux enseignes se partageant le même numéro. */
+  const cs = $("elemSoc");
+  if (cs){
+    const estStandDessine = f.t === "stand";
+    cs.hidden = !estStandDessine;
+    if (estStandDessine){
+      remplitListeSocietes();
+      const l = societeDeForme(f);
+      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
     }
   }
 }
@@ -296,6 +311,29 @@ function appliqueLiaison(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/**
+ * Rattacher un stand dessiné à une société, ou l'en détacher.
+ *
+ * Détaché, il reste sur le plan — il a été tracé, on ne l'efface pas dans le
+ * dos de qui vient de mal saisir un nom — mais il n'ouvre plus rien et perd
+ * son libellé : le plan dit ainsi qu'il attend encore son exposant.
+ */
+function appliqueSociete(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "stand") return;
+  const ch = $("elemSoc");
+  const l = societeSaisie(ch.value);
+  memorise();
+  if (l){
+    cible.f.stand = l.o.id; cible.f.soc = l.i;
+    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+  } else {
+    delete cible.f.stand; delete cible.f.soc;
+    ch.value = "";
+  }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
 function appliqueTexte(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
@@ -397,7 +435,7 @@ function editionPointerMove(e){
 
   if (geste.type === "deplace"){
     f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
-  } else if (f.t === "rect" || f.t === "image"){
+  } else if (estCadre(f)){
     // la poignée opposée reste fixe ; l'image garde ses proportions
     const b = [Math.min(geste.pts[0][0], geste.pts[1][0]), Math.min(geste.pts[0][1], geste.pts[1][1]),
                Math.max(geste.pts[0][0], geste.pts[1][0]), Math.max(geste.pts[0][1], geste.pts[1][1])];

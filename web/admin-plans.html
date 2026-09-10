@@ -2718,15 +2718,19 @@ $("btnProjet").onclick = () => ecranConfig();
 /* ------------------------------------------------------------------
    Comptes et accès
 
-   Deux profils, et un seul écran. L'administrateur voit tous les salons ;
-   l'organisateur ne voit que ceux qu'on lui a cochés, et y a exactement les
-   mêmes droits. C'est la base qui l'applique — cet écran ne fait que dire à
-   qui appartient quoi.
+   Deux écrans plutôt qu'un. Le premier est un annuaire : une ligne par
+   personne, ce qu'il faut pour la reconnaître, et rien de plus — on y cherche
+   quelqu'un, on n'y règle rien. Le second est sa fiche, où tout se modifie.
+
+   Les réglages tenaient d'abord dans la liste elle-même. À quatre comptes la
+   fenêtre faisait trois écrans de haut, et l'on y perdait de vue celui qu'on
+   était venu chercher.
 
    Créer un compte, envoyer son invitation ou le supprimer demande la clé de
    service : tout passe donc par la fonction `comptes`, jamais par la table.
    ------------------------------------------------------------------ */
 let MOI = null;
+let COMPTES = [];
 
 /** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
  *  qu'elle obtient, c'est la base qui le décide. */
@@ -2734,7 +2738,7 @@ async function litMonProfil() {
   const id = idCompte();
   MOI = null;
   if (!id) return;
-  const r = await rest("profil?select=id,nom,email,role&id=eq." + encodeURIComponent(id));
+  const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
   MOI = (Array.isArray(r) ? r[0] : null) || null;
 }
 
@@ -2743,278 +2747,301 @@ const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
 /** L'adresse où retomber après avoir cliqué le lien reçu par courriel. */
 const RETOUR_MDP = () => PAGE_MDP;
 
-function ouvreComptes() {
-  let comptes = [];
-  let hote = null;
-  /* La barre du haut reste derrière le voile de la fenêtre : ce qui se passe
-     ici doit se lire ici. Le message survit au redessin de la liste, sans quoi
-     un enregistrement réussi effacerait sa propre confirmation. */
-  let mot = { texte: "", erreur: false };
-  const dis = (texte, erreur) => {
-    mot = { texte, erreur: !!erreur };
-    const p = $("comptesMsg");
-    if (p) { p.textContent = texte; p.className = "aide" + (erreur ? " alerte" : ""); }
+async function litComptes() {
+  const r = await fonction("comptes", { action: "liste" });
+  COMPTES = r.profils || [];
+  return COMPTES;
+}
+
+/* Un message qui vit dans la fenêtre plutôt que dans la barre du haut, restée
+   derrière le voile. Rendu avec le reste, il survit au redessin — sans quoi un
+   enregistrement réussi effacerait sa propre confirmation. */
+function ligneMessage(corps, id, mot) {
+  const p = document.createElement("p");
+  p.id = id;
+  p.className = "aide" + (mot.erreur ? " alerte" : "");
+  p.textContent = mot.texte;
+  corps.appendChild(p);
+}
+
+/* Les salons cochés. Un administrateur les a tous par définition : lui en
+   cocher serait laisser croire qu'on peut lui en retirer. */
+function casesSalons(role, choisis) {
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+  const note = (texte) => {
+    const p = document.createElement("p");
+    p.className = "aide";
+    p.textContent = texte;
+    zone.appendChild(p);
   };
+  if (role === "admin") { note("Tous les salons, y compris ceux créés plus tard."); return zone; }
+  if (!EVTS.length) { note("Aucun salon à affecter pour l'instant."); return zone; }
+  EVTS.forEach((e) => {
+    const l = document.createElement("label");
+    l.className = "puce";
+    l.innerHTML = "<input type='checkbox'><span></span>";
+    l.querySelector("span").textContent = e.nom;
+    const c = l.querySelector("input");
+    c.value = e.id;
+    c.checked = choisis.includes(e.id);
+    zone.appendChild(l);
+  });
+  return zone;
+}
 
-  const salons = () => EVTS.map((e) => ({ id: e.id, nom: e.nom }));
+const cochés = (zone) =>
+  Array.from(zone.querySelectorAll("input:checked")).map((c) => c.value);
 
-  /* Les cases des salons. Un administrateur les a tous par définition : lui en
-     cocher serait laisser croire qu'on peut lui en retirer. */
-  function casesSalons(role, choisis) {
-    const zone = document.createElement("div");
-    zone.className = "valeurs";
-    if (role === "admin") {
-      const p = document.createElement("p");
-      p.className = "aide";
-      p.textContent = "Tous les salons, y compris ceux créés plus tard.";
-      zone.appendChild(p);
-      return zone;
-    }
-    if (!salons().length) {
-      const p = document.createElement("p");
-      p.className = "aide";
-      p.textContent = "Aucun salon à affecter pour l'instant.";
-      zone.appendChild(p);
-      return zone;
-    }
-    salons().forEach((e) => {
-      const l = document.createElement("label");
-      l.className = "puce";
-      l.innerHTML = "<input type='checkbox'><span></span>";
-      l.querySelector("span").textContent = e.nom;
-      const c = l.querySelector("input");
-      c.value = e.id;
-      c.checked = choisis.includes(e.id);
-      zone.appendChild(l);
-    });
-    return zone;
-  }
+/* ------------------------------------------------------------------
+   L'annuaire
+   ------------------------------------------------------------------ */
+function ouvreComptes(message) {
+  let hote = null;
+  let mot = { texte: message || "Chargement…", erreur: !!(message && message.erreur) };
 
-  const coches = (zone) => Array.from(zone.querySelectorAll("input:checked")).map((c) => c.value);
+  function ligne(c) {
+    const tr = document.createElement("tr");
+    // une invitation jamais ouverte se signale en bord de ligne : c'est ce qui
+    // distingue un compte créé d'un compte qui sert
+    tr.dataset.actif = c.actif ? "oui" : "non";
 
-  async function appelle(corps, message) {
-    dis(message || "Enregistrement…");
-    const r = await fonction("comptes", corps);
-    await recharge();
-    dis("Enregistré.");
-    return r;
-  }
+    const tdNom = document.createElement("td");
+    tdNom.className = "n";
+    tdNom.textContent = c.nom || "—";
+    const tdPrenom = document.createElement("td");
+    tdPrenom.textContent = c.prenom || "—";
+    const tdMail = document.createElement("td");
+    tdMail.className = "mail";
+    tdMail.textContent = c.email;
 
-  async function recharge() {
-    const r = await fonction("comptes", { action: "liste" });
-    comptes = r.profils || [];
-    if (hote) rendu(hote);
-  }
-
-  /* ---------------------------------------------------- une fiche de compte */
-  function ficheCompte(c) {
-    const cadre = document.createElement("div");
-    cadre.className = "cadre compte";
-
-    const hd = document.createElement("div");
-    hd.className = "cadre-hd";
-    const titre = document.createElement("span");
-    titre.className = "eyebrow";
-    titre.textContent = c.nom || c.email;
-    hd.appendChild(titre);
-    const marque = document.createElement("span");
-    marque.className = "prov";
-    marque.textContent = NOM_ROLE[c.role] || c.role;
-    hd.appendChild(marque);
+    const tdRole = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "prov";
+    badge.textContent = NOM_ROLE[c.role] || c.role;
+    tdRole.appendChild(badge);
     if (!c.actif) {
       const att = document.createElement("span");
       att.className = "prov";
       att.dataset.src = "aucun";
-      att.textContent = "Invitation en attente";
-      hd.appendChild(att);
+      att.textContent = "En attente";
+      tdRole.appendChild(att);
     }
     if (c.id === MOI?.id) {
-      const moi = document.createElement("span");
-      moi.className = "prov";
-      moi.dataset.src = "aucun";
-      moi.textContent = "Vous";
-      hd.appendChild(moi);
-    }
-    cadre.appendChild(hd);
-
-    const adresse = document.createElement("p");
-    adresse.className = "aide";
-    adresse.textContent = c.email;
-    cadre.appendChild(adresse);
-
-    const g = grille();
-    const lNom = document.createElement("label");
-    lNom.innerHTML = "<span>Nom</span><input>";
-    lNom.querySelector("input").value = c.nom || "";
-    const lRole = document.createElement("label");
-    lRole.innerHTML = "<span>Profil</span><select>" +
-      "<option value='organisateur'>Organisateur</option>" +
-      "<option value='admin'>Administrateur</option></select>";
-    const selRole = lRole.querySelector("select");
-    selRole.value = c.role;
-    // se retirer soi-même l'administration fermerait la porte de l'intérieur
-    selRole.disabled = c.id === MOI?.id;
-    g.append(lNom, lRole);
-    cadre.appendChild(g);
-
-    const titreAcces = document.createElement("span");
-    titreAcces.className = "eyebrow sous-titre";
-    titreAcces.textContent = "Salons";
-    cadre.appendChild(titreAcces);
-    let zone = casesSalons(c.role, c.evenements || []);
-    cadre.appendChild(zone);
-    // changer de profil change ce qu'il y a à cocher : la liste suit sans
-    // qu'on ait à refermer la fenêtre
-    selRole.onchange = () => {
-      const neuve = casesSalons(selRole.value, coches(zone));
-      zone.replaceWith(neuve);
-      zone = neuve;
-    };
-
-    const pied = document.createElement("div");
-    pied.className = "pied-perso";
-
-    const enr = document.createElement("button");
-    enr.className = "btn petit primaire";
-    enr.textContent = "Enregistrer";
-    enr.onclick = async () => {
-      try {
-        await appelle({
-          action: "maj", id: c.id,
-          nom: lNom.querySelector("input").value,
-          role: selRole.value,
-          evenements: selRole.value === "admin" ? [] : coches(zone),
-        });
-      } catch (e) { dis(e.message, true); }
-    };
-
-    const lien = document.createElement("button");
-    lien.className = "btn petit";
-    lien.textContent = c.actif ? "Envoyer un lien de mot de passe" : "Renvoyer l'invitation";
-    lien.onclick = async () => {
-      try {
-        await appelle({ action: "relance", id: c.id, retour: RETOUR_MDP() }, "Envoi…");
-        dis("Lien envoyé à " + c.email + ".");
-      } catch (e) { dis(e.message, true); }
-    };
-
-    pied.append(enr, lien);
-
-    if (c.id !== MOI?.id) {
-      const sup = document.createElement("button");
-      sup.className = "btn petit danger";
-      sup.textContent = "Supprimer";
-      sup.onclick = () => {
-        /* La fenêtre des comptes est celle qui est ouverte : une confirmation
-           la remplacerait. On confirme donc sur le bouton lui-même. */
-        if (sup.dataset.sur !== "1") {
-          sup.dataset.sur = "1";
-          sup.textContent = "Confirmer la suppression";
-          setTimeout(() => {
-            if (!sup.isConnected) return;
-            sup.dataset.sur = "";
-            sup.textContent = "Supprimer";
-          }, 4000);
-          return;
-        }
-        appelle({ action: "supprime", id: c.id }, "Suppression…")
-          .catch((e) => dis(e.message, true));
-      };
-      pied.appendChild(sup);
+      const vous = document.createElement("span");
+      vous.className = "prov";
+      vous.dataset.src = "aucun";
+      vous.textContent = "Vous";
+      tdRole.appendChild(vous);
     }
 
-    cadre.appendChild(pied);
-    return cadre;
-  }
+    const tdAct = document.createElement("td");
+    tdAct.className = "act";
+    const bt = document.createElement("button");
+    bt.className = "btn petit";
+    bt.textContent = "Modifier";
+    bt.onclick = () => ouvreFicheCompte(c);
+    tdAct.appendChild(bt);
 
-  /* ------------------------------------------------------- l'invitation */
-  function ficheInvitation() {
-    const cadre = document.createElement("div");
-    cadre.className = "cadre";
-    const hd = document.createElement("div");
-    hd.className = "cadre-hd";
-    hd.innerHTML = "<span class='eyebrow'>Inviter quelqu'un</span>";
-    cadre.appendChild(hd);
-
-    const aide = document.createElement("p");
-    aide.className = "aide";
-    aide.textContent = "Le compte est créé sans mot de passe : l'invité en reçoit " +
-      "un par courriel, et le choisit lui-même.";
-    cadre.appendChild(aide);
-
-    const g = grille();
-    const lMail = document.createElement("label");
-    lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
-    const lNom = document.createElement("label");
-    lNom.innerHTML = "<span>Nom</span><input>";
-    const lRole = document.createElement("label");
-    lRole.innerHTML = "<span>Profil</span><select>" +
-      "<option value='organisateur'>Organisateur</option>" +
-      "<option value='admin'>Administrateur</option></select>";
-    const selRole = lRole.querySelector("select");
-    g.append(lMail, lNom, lRole);
-    cadre.appendChild(g);
-
-    const titreAcces = document.createElement("span");
-    titreAcces.className = "eyebrow sous-titre";
-    titreAcces.textContent = "Salons";
-    cadre.appendChild(titreAcces);
-    let zone = casesSalons("organisateur", []);
-    cadre.appendChild(zone);
-    selRole.onchange = () => {
-      const neuve = casesSalons(selRole.value, coches(zone));
-      zone.replaceWith(neuve);
-      zone = neuve;
-    };
-
-    const pied = document.createElement("div");
-    pied.className = "pied-perso";
-    const env = document.createElement("button");
-    env.className = "btn petit primaire";
-    env.textContent = "Envoyer l'invitation";
-    env.onclick = async () => {
-      const email = lMail.querySelector("input").value.trim();
-      if (email.indexOf("@") < 1) { dis("Adresse incomplète.", true); return; }
-      env.disabled = true;
-      try {
-        await appelle({
-          action: "invite", email,
-          nom: lNom.querySelector("input").value,
-          role: selRole.value,
-          evenements: selRole.value === "admin" ? [] : coches(zone),
-          retour: RETOUR_MDP(),
-        }, "Envoi de l'invitation…");
-        dis("Invitation envoyée à " + email + ".");
-      } catch (e) {
-        dis(e.message, true);
-        env.disabled = false;
-      }
-    };
-    pied.appendChild(env);
-    cadre.appendChild(pied);
-    return cadre;
+    tr.append(tdNom, tdPrenom, tdMail, tdRole, tdAct);
+    return tr;
   }
 
   function rendu(corps) {
     corps.innerHTML = "";
-    comptes.forEach((c) => corps.appendChild(ficheCompte(c)));
-    corps.appendChild(ficheInvitation());
-    const p = document.createElement("p");
-    p.id = "comptesMsg";
-    p.className = "aide" + (mot.erreur ? " alerte" : "");
-    p.textContent = mot.texte;
-    corps.appendChild(p);
+    if (COMPTES.length) {
+      // le tableau garde ses colonnes sur écran étroit plutôt que de les
+      // écraser : il défile, la fenêtre non
+      const cadre = document.createElement("div");
+      cadre.className = "table-defile";
+      const t = document.createElement("table");
+      t.className = "comptes";
+      t.innerHTML = "<thead><tr><th>Nom</th><th>Prénom</th><th>E-mail</th>" +
+        "<th>Profil</th><th></th></tr></thead><tbody></tbody>";
+      const tb = t.querySelector("tbody");
+      COMPTES.forEach((c) => tb.appendChild(ligne(c)));
+      cadre.appendChild(t);
+      corps.appendChild(cadre);
+    }
+    ligneMessage(corps, "comptesMsg", mot);
   }
 
   ouvreModale("Comptes et accès", (corps) => {
     hote = corps;
-    mot = { texte: "Chargement…", erreur: false };
     rendu(corps);
-    recharge().then(() => dis("")).catch((e) => dis(e.message, true));
-  }, [{ libelle: "Fermer" }], () => { hote = null; });
+    litComptes()
+      .then(() => {
+        mot = { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
+        if (hote) rendu(hote);
+      })
+      .catch((e) => {
+        mot = { texte: e.message, erreur: true };
+        if (hote) rendu(hote);
+      });
+  }, [{ libelle: "Fermer" },
+      { libelle: "Inviter quelqu'un", genre: "primaire",
+        // la fenêtre est remplacée par la fiche, elle ne doit pas se refermer
+        action: () => { ouvreFicheCompte(null); return false; } }],
+     () => { hote = null; });
 }
 
-$("btnComptes").onclick = ouvreComptes;
+/* ------------------------------------------------------------------
+   La fiche d'une personne — la même pour l'inviter et pour la modifier
+   ------------------------------------------------------------------ */
+function ouvreFicheCompte(c) {
+  const neuf = !c;
+  const moi = !neuf && c.id === MOI?.id;
+  let mot = { texte: "", erreur: false };
+  let cMail, cNom, cPrenom, selRole, zone;
+  let surSuppression = false;
+
+  const dis = (texte, erreur) => {
+    mot = { texte, erreur: !!erreur };
+    const p = $("ficheMsg");
+    if (p) { p.textContent = texte; p.className = "aide" + (erreur ? " alerte" : ""); }
+  };
+
+  /** Retour à l'annuaire, qui recharge : ce qu'on vient d'écrire doit s'y voir. */
+  const retour = (message) => ouvreComptes(message);
+
+  const champs = () => ({
+    nom: cNom.value,
+    prenom: cPrenom.value,
+    role: selRole.value,
+    evenements: selRole.value === "admin" ? [] : cochés(zone),
+  });
+
+  async function enregistre() {
+    dis("Enregistrement…");
+    try {
+      await fonction("comptes", { action: "maj", id: c.id, ...champs() });
+      retour("Compte enregistré.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function invite() {
+    const email = cMail.value.trim();
+    if (email.indexOf("@") < 1) return dis("Adresse incomplète.", true);
+    dis("Envoi de l'invitation…");
+    try {
+      await fonction("comptes",
+        { action: "invite", email, ...champs(), retour: RETOUR_MDP() });
+      retour("Invitation envoyée à " + email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function envoieLien() {
+    dis("Envoi…");
+    try {
+      await fonction("comptes", { action: "relance", id: c.id, retour: RETOUR_MDP() });
+      dis("Lien envoyé à " + c.email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function supprime() {
+    /* La fenêtre est déjà celle qui est ouverte : une demande de confirmation
+       la remplacerait. On confirme donc sur place, au second clic. */
+    if (!surSuppression) {
+      surSuppression = true;
+      dis("Cliquez à nouveau sur « Supprimer » pour confirmer.", true);
+      setTimeout(() => { if (surSuppression) { surSuppression = false; dis(""); } }, 5000);
+      return;
+    }
+    surSuppression = false;
+    dis("Suppression…");
+    try {
+      await fonction("comptes", { action: "supprime", id: c.id });
+      retour("Compte supprimé.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  const boutons = [{ libelle: "Retour", action: () => { retour(); return false; } }];
+  if (neuf) {
+    boutons.push({ libelle: "Envoyer l'invitation", genre: "primaire",
+                   action: () => { invite(); return false; } });
+  } else {
+    if (!moi) {
+      boutons.push({ libelle: "Supprimer", genre: "danger",
+                     action: () => { supprime(); return false; } });
+    }
+    boutons.push({ libelle: "Envoyer un lien de mot de passe",
+                   action: () => { envoieLien(); return false; } });
+    boutons.push({ libelle: "Enregistrer", genre: "primaire",
+                   action: () => { enregistre(); return false; } });
+  }
+
+  ouvreModale(neuf ? "Inviter quelqu'un" : "Modifier le compte", (corps) => {
+    const cadre = document.createElement("div");
+    cadre.className = "cadre compte";
+
+    if (neuf) {
+      const aide = document.createElement("p");
+      aide.className = "aide";
+      aide.textContent = "Le compte est créé sans mot de passe : l'invité en " +
+        "reçoit un lien par courriel, et le choisit lui-même.";
+      cadre.appendChild(aide);
+    }
+
+    const g = grille();
+    const lMail = document.createElement("label");
+    lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
+    cMail = lMail.querySelector("input");
+    if (!neuf) {
+      cMail.value = c.email;
+      /* L'adresse est l'identité du compte auprès du service d'authentification :
+         la changer ici la désaccorderait de celle qui ouvre la session. */
+      cMail.readOnly = true;
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "L'adresse ne se change pas : c'est elle qui ouvre la session.";
+      lMail.appendChild(note);
+    }
+    const lNom = document.createElement("label");
+    lNom.innerHTML = "<span>Nom</span><input autocomplete='family-name'>";
+    cNom = lNom.querySelector("input");
+    if (!neuf) cNom.value = c.nom || "";
+    const lPrenom = document.createElement("label");
+    lPrenom.innerHTML = "<span>Prénom</span><input autocomplete='given-name'>";
+    cPrenom = lPrenom.querySelector("input");
+    if (!neuf) cPrenom.value = c.prenom || "";
+    const lRole = document.createElement("label");
+    lRole.innerHTML = "<span>Profil</span><select>" +
+      "<option value='organisateur'>Organisateur</option>" +
+      "<option value='admin'>Administrateur</option></select>";
+    selRole = lRole.querySelector("select");
+    selRole.value = neuf ? "organisateur" : c.role;
+    // se retirer soi-même l'administration fermerait la porte de l'intérieur
+    selRole.disabled = moi;
+    if (moi) {
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "Vous ne pouvez pas retirer votre propre rôle.";
+      lRole.appendChild(note);
+    }
+    g.append(lMail, lNom, lPrenom, lRole);
+    cadre.appendChild(g);
+
+    const titre = document.createElement("span");
+    titre.className = "eyebrow sous-titre";
+    titre.textContent = "Salons";
+    cadre.appendChild(titre);
+    zone = casesSalons(selRole.value, neuf ? [] : (c.evenements || []));
+    cadre.appendChild(zone);
+    // changer de profil change ce qu'il y a à cocher : la liste suit sans
+    // qu'on ait à refermer la fenêtre
+    selRole.onchange = () => {
+      const neuve = casesSalons(selRole.value, cochés(zone));
+      zone.replaceWith(neuve);
+      zone = neuve;
+    };
+
+    corps.appendChild(cadre);
+    ligneMessage(corps, "ficheMsg", mot);
+    setTimeout(() => (neuf ? cMail : cNom).focus(), 40);
+  }, boutons);
+}
+
+$("btnComptes").onclick = () => ouvreComptes();
 
 /* ------------------------------------------------------------------
    Rendu et démarrage

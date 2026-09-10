@@ -207,14 +207,17 @@ const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
  * L'oublier alors faisait traverser un local par le trajet, ce qui est un
  * bogue plus grand que le détour inexpliqué qu'on cherchait à éviter.
  * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
- * délimiter une circulation.
+ * délimiter une circulation. Un stand dessiné en a une, comme le rectangle
+ * dont il est un cas particulier : posé hors de l'emplacement qu'il découpe,
+ * il barre le passage aussi sûrement qu'une cloison.
  */
 function formesRole(p, role){
   const l = [];
   for (const c of calquesDe(p)){
     if (roleIti(c) !== role) continue;
     for (const f of c.formes || []){
-      if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
+      if (f.t === "rect" || f.t === "poly" || f.t === "stand")
+        l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && role !== "circulation")
         l.push({ d: cheminForme(f), trait: true });
     }

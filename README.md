@@ -422,6 +422,42 @@ Les repères posés avant cette séparation n'ont que leur libellé : il continu
 d'être interprété pour eux, et leur plan s'affiche comme il le faisait. Le type
 s'écrit dès qu'on y touche.
 
+### Matérialiser un co-exposant sur son stand
+
+La synchronisation rend **une forme par dossier**. Un stand loué à plusieurs
+n'en a donc qu'une, et les sociétés qui s'y installent n'existent que dans une
+liste, sous le nom du titulaire : la fiche les nomme, la recherche les trouve,
+mais sur le plan elles ne sont nulle part. Le visiteur qui cherche l'une d'elles
+arrive devant une cloison où est peint le nom d'une autre. Un stand de
+restauration en héberge jusqu'à onze.
+
+L'outil **Stand** de la barre de dessin les matérialise. On choisit l'exposant —
+titulaire ou co-exposant, la liste mêle les deux et les désigne par
+« numéro — enseigne » — puis on trace sa part du stand comme un rectangle. La
+part est un dessin, elle vit sur un calque et se publie avec lui ; ce n'est pas
+une donnée, et la synchronisation suivante ne la touche pas.
+
+Ce qu'elle n'est pas, c'est un dessin de plus :
+
+- elle se **lit** comme un stand — même aplat, même teinte de secteur, même
+  liseré de survol et de sélection, même libellé, avec le numéro de
+  l'emplacement dessous ;
+- elle **s'ouvre** au clic sur la fiche complète de sa société, celle-là et pas
+  une autre : on ne redemande pas qui l'on vient voir, la forme vient de le
+  dire ;
+- elle suit le **filtre** de sa société et non celui de l'emplacement — une
+  hébergée écartée par un critère s'éteint quand bien même son hôte reste
+  allumé, ce qui est précisément la raison de l'avoir dessinée ;
+- elle renvoie l'**itinéraire** vers le stand qui la porte. On ne marche pas
+  jusqu'à un co-exposant : on marche jusqu'à son hôte, et c'est là qu'on le
+  trouve.
+
+Le rattachement se change après coup dans le panneau de la forme choisie. Vidé,
+la forme reste sur le plan mais devient muette — plus de libellé, plus de clic —
+et le dit ainsi qu'elle attend son exposant. Il en va de même quand la
+synchronisation retire la société qu'elle désignait : on ne se rabat pas sur le
+titulaire, ce serait donner à une enseigne la place d'une autre.
+
 ### Passer d'un plan à l'autre
 
 Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
