@@ -569,6 +569,26 @@ function voletPlan(hote){
     bloc.appendChild(l);
   }
 
+  /* Sur quoi l'itinéraire se règle. Le hall d'un seul tenant se traverse
+     mieux d'équerre, le hall arrondi mieux allée par allée, et le plan seul
+     dit lequel des deux il est — d'où la case, plutôt qu'une règle qu'on
+     aurait devinée de loin. */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées";
+    const c = l.querySelector("input");
+    c.checked = conf("_guidage").allees === true;
+    c.onchange = e => {
+      conf("_guidage").allees = e.target.checked;
+      enregistreConf();
+      // le trait affiché a été calculé avec l'autre réglage : il se refait
+      if (typeof relance === "function") relance();
+    };
+    bloc.appendChild(l);
+  }
+
   /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
      a : sur un salon d'un exposant par emplacement, ces deux cases ne
      promettraient qu'un plan déjà tel quel. */

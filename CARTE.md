@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1142 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1162 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.784 · 10. Mode administration
-- l.850 · Renommer une zone organisateur
-- l.902 · Masquer une zone organisateur
-- l.970 · Placer un libellé à la main
+- l.804 · 10. Mode administration
+- l.870 · Renommer une zone organisateur
+- l.922 · Masquer une zone organisateur
+- l.990 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,14 +27,14 @@ Fonctions :
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
 `modeleFiche` 317 · `appliqueFiche` 324 · `texteCorps` 381 · `standApercu` 396
 `contenuApercu` 414 · `apercuFiche` 437 · `ouvreReglages` 499 · `voletPlan` 530
-`nomDuTon` 637 · `voletApparence` 641 · `enregistreConf` 734 · `rgbHex` 740 · `hexa` 747
-`luminance` 751 · `ecarte` 765 · `joli` 780 · `retireAdmin` 797 · `activeAdmin` 810
-`renommeZone` 860 · `enregistreNomZone` 884 · `basculeAffichageZone` 913
-`marqueZonesMasquees` 930 · `ecritTableZones` 945 · `cleLibelle` 991
-`empreinteLibelle` 1007 · `placementLibelle` 1015 · `posePlacement` 1025
-`libelleAutomatique` 1042 · `modePlacementLibelles` 1051 · `majPaletteLibelle` 1063
-`choisitLibelle` 1080 · `pousseLibelle` 1087 · `libellePointerDown` 1095
-`libellePointerMove` 1110 · `libellePointerUp` 1119
+`nomDuTon` 657 · `voletApparence` 661 · `enregistreConf` 754 · `rgbHex` 760 · `hexa` 767
+`luminance` 771 · `ecarte` 785 · `joli` 800 · `retireAdmin` 817 · `activeAdmin` 830
+`renommeZone` 880 · `enregistreNomZone` 904 · `basculeAffichageZone` 933
+`marqueZonesMasquees` 950 · `ecritTableZones` 965 · `cleLibelle` 1011
+`empreinteLibelle` 1027 · `placementLibelle` 1035 · `posePlacement` 1045
+`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1083
+`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
+`libellePointerMove` 1130 · `libellePointerUp` 1139
 
 Éléments :
 
@@ -206,7 +206,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2311 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2406 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -217,23 +217,24 @@ Fonctions :
 `anglePlan` 276 · `dansGrille` 315 · `horsGrille` 316 · `grille` 326 · `distanceAuMur` 405
 `nappePrincipale` 447 · `celluleDe` 482 · `caseDe` 486 · `centreCase` 491 · `empriseDe` 513
 `accrocheDepuis` 545 · `versLeMilieu` 601 · `accroche` 628 · `Tas` 643 · `travail` 687
-`cherche` 705 · `distancesDepuis` 771 · `distancesMulti` 785 · `reduit` 820 · `passable` 838
-`lisse` 871 · `longueur` 896 · `longueurDehors` 912 · `nettoie` 954 · `oublieFaces` 989
-`facesLibres` 991 · `amorce` 1064 · `faceDeSortie` 1097 · `accesDe` 1130
-`couplesAcces` 1165 · `troncon` 1185 · `pointObjet` 1217 · `pointRepere` 1224
-`candidats` 1233 · `pointSaisi` 1259 · `portesDe` 1276 · `versPorte` 1281
-`typeLiaison` 1336 · `nomRepere` 1342 · `oublieLiaisons` 1360 · `lienEcrits` 1372
-`ecritLiens` 1381 · `annuaireLiaisons` 1386 · `liensDe` 1418 · `coutLiaison` 1438
-`passagePraticable` 1445 · `passagesDe` 1453 · `sortiesDe` 1463 · `plansRelies` 1471
-`balayage` 1495 · `distanceDepuis` 1509 · `cheminLiaisons` 1536 · `routeParLiaisons` 1620
-`routeEntre` 1656 · `calculeRoute` 1695 · `couleurNappe` 1721 · `rafraichitApercu` 1727
-`marchesIci` 1770 · `rayonBout` 1775 · `dessineItineraire` 1780 · `rafraichitBouts` 1824
-`cadreItineraire` 1839 · `champIti` 1862 · `ecritDistance` 1866 · `ecritDuree` 1874
-`fermeSugg` 1879 · `montreSugg` 1886 · `choisitPoint` 1918 · `valideSaisie` 1927
-`effaceItineraire` 1937 · `relance` 1957 · `phraseLiaison` 2000 · `montreResultat` 2014
-`bandeauVisee` 2145 · `armeVisee` 2157 · `finVisee` 2165 · `viseItineraire` 2177
-`visePoi` 2183 · `visePoint` 2189 · `ouvreItineraire` 2210 · `fermeItineraire` 2227
-`versItineraire` 2237 · `versItineraireDe` 2240
+`cherche` 705 · `distancesDepuis` 771 · `distancesMulti` 785 · `reduit` 820
+`guidageAllees` 856 · `recentre` 885 · `passable` 933 · `lisse` 966 · `longueur` 991
+`longueurDehors` 1007 · `nettoie` 1049 · `oublieFaces` 1084 · `facesLibres` 1086
+`amorce` 1159 · `faceDeSortie` 1194 · `accesDe` 1224 · `couplesAcces` 1259 · `troncon` 1279
+`pointObjet` 1312 · `pointRepere` 1319 · `candidats` 1328 · `pointSaisi` 1354
+`portesDe` 1371 · `versPorte` 1376 · `typeLiaison` 1431 · `nomRepere` 1437
+`oublieLiaisons` 1455 · `lienEcrits` 1467 · `ecritLiens` 1476 · `annuaireLiaisons` 1481
+`liensDe` 1513 · `coutLiaison` 1533 · `passagePraticable` 1540 · `passagesDe` 1548
+`sortiesDe` 1558 · `plansRelies` 1566 · `balayage` 1590 · `distanceDepuis` 1604
+`cheminLiaisons` 1631 · `routeParLiaisons` 1715 · `routeEntre` 1751 · `calculeRoute` 1790
+`couleurNappe` 1816 · `rafraichitApercu` 1822 · `marchesIci` 1865 · `rayonBout` 1870
+`dessineItineraire` 1875 · `rafraichitBouts` 1919 · `cadreItineraire` 1934 · `champIti` 1957
+`ecritDistance` 1961 · `ecritDuree` 1969 · `fermeSugg` 1974 · `montreSugg` 1981
+`choisitPoint` 2013 · `valideSaisie` 2022 · `effaceItineraire` 2032 · `relance` 2052
+`phraseLiaison` 2095 · `montreResultat` 2109 · `bandeauVisee` 2240 · `armeVisee` 2252
+`finVisee` 2260 · `viseItineraire` 2272 · `visePoi` 2278 · `visePoint` 2284
+`ouvreItineraire` 2305 · `fermeItineraire` 2322 · `versItineraire` 2332
+`versItineraireDe` 2335
 
 ### `_journee.html` — 893 l. → plan-admin.html, plan-smcl.html, plan.html
 

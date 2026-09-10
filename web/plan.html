@@ -4820,6 +4820,26 @@ function voletPlan(hote){
     bloc.appendChild(l);
   }
 
+  /* Sur quoi l'itinéraire se règle. Le hall d'un seul tenant se traverse
+     mieux d'équerre, le hall arrondi mieux allée par allée, et le plan seul
+     dit lequel des deux il est — d'où la case, plutôt qu'une règle qu'on
+     aurait devinée de loin. */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées";
+    const c = l.querySelector("input");
+    c.checked = conf("_guidage").allees === true;
+    c.onchange = e => {
+      conf("_guidage").allees = e.target.checked;
+      enregistreConf();
+      // le trait affiché a été calculé avec l'autre réglage : il se refait
+      if (typeof relance === "function") relance();
+    };
+    bloc.appendChild(l);
+  }
+
   /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
      a : sur un salon d'un exposant par emplacement, ces deux cases ne
      promettraient qu'un plan déjà tel quel. */
@@ -9471,7 +9491,102 @@ function reduit(g, suite){
 /* Ce qu'on accepte entre le trait montré et le trajet calculé. Un peu plus
    d'une case : en deçà, l'escalier ne se laisse pas redresser ; au-delà, on
    raboterait des détours que le trajet fait pour de bonnes raisons. */
-const LISSAGE = .8;   // mètres
+const LISSAGE = .5;   // mètres
+
+/* Jusqu'où l'on va chercher le bord de l'allée, de part et d'autre du trait.
+   Au-delà ce n'est plus une allée mais une esplanade, et son milieu ne veut
+   plus rien dire — on laisse alors le trajet où il passe. */
+const DEMI_ALLEE = 4;   // mètres
+
+/**
+ * Sur quoi le trait se règle : l'inclinaison du hall, ou les allées.
+ *
+ * Les deux répondent à la même question par des bouts différents, et aucune
+ * ne gagne partout. L'inclinaison du hall est une droite : le trajet en sort
+ * net, d'équerre, avec le moins de sommets possible — c'est ce qu'on veut
+ * partout où le pavillon est d'une seule venue, ce qui est le cas courant.
+ * Les allées, elles, se suivent une à une : un hall arrondi, ou dont les
+ * rangées ne s'accordent pas, y gagne un trait qui reste entre ses bordures,
+ * au prix de quelques sommets de plus et d'un tracé parfois moins net.
+ *
+ * D'où le réglage plutôt qu'une règle : l'exploitant voit son plan, nous non.
+ * Le hall par défaut — il convient à la majorité des salons, et c'est le
+ * comportement que les plans déjà publiés connaissent.
+ */
+const guidageAllees = () => (CONF["_guidage"] || {}).allees === true;
+
+/**
+ * Le trait ramené entre les bordures qui l'encadrent.
+ *
+ * La grille suit une orientation, une seule, et l'A* préfère les longues
+ * lignes droites : dans un hall arrondi, dont les allées tournent d'un bout à
+ * l'autre, il traverse donc l'allée en écharpe plutôt que de la suivre —
+ * quarante mètres d'un trait qui entre par le milieu et ressort contre une
+ * façade. Aucun redressement n'y peut rien : il n'y a pas d'escalier à
+ * effacer, le trait est déjà droit, et c'est précisément le reproche.
+ *
+ * On le mesure donc là où le visiteur le mesure : entre les deux bordures. À
+ * chaque demi-mètre on cherche le mur à droite et à gauche, en travers du
+ * trait, et on pose le point à mi-distance. Les stands qui bordent l'allée
+ * dictent ainsi le tracé, et un segment redevient parallèle à l'allée sans
+ * qu'on ait eu à lui calculer d'angle : le milieu de deux façades parallèles
+ * leur est parallèle.
+ *
+ * Trois réserves, qui sont les trois façons de n'être pas dans une allée. Il
+ * faut un mur des deux côtés : un seul ne fait pas un milieu, et s'en écarter
+ * pousserait le trait vers le large sans raison. Le décalage se lit ensuite
+ * sur quelques mètres et non point par point — entre deux stands d'une même
+ * rangée, la façade s'interrompt, un bord part à quatre mètres et le trait
+ * partirait le rejoindre pour revenir aussitôt ; la médiane sur une longueur
+ * de stand ignore ce trou sans rien perdre de la courbure, qui est lente. Et
+ * un point ne se déplace que là où il reste praticable, ce que la grille seule
+ * décide.
+ */
+function recentre(g, pts){
+  if (pts.length < 2) return pts;
+  const pas = PAS_GRILLE / 2;
+  const libre = (x, y) => { const i = caseDe(g, x, y); return i >= 0 && !g.mur[i]; };
+  /* Jusqu'où le mur est-il, dans cette direction ? On avance par demi-cases :
+     la grille ne connaît pas de bord plus fin que ça. */
+  const jusquAuMur = (q, vx, vy) => {
+    for (let d = pas; d <= DEMI_ALLEE; d += pas)
+      if (!libre(q[0] + vx * d, q[1] + vy * d)) return d - pas;
+    return DEMI_ALLEE;
+  };
+
+  // le trait échantillonné à la case, chacun avec la normale de son segment
+  const ech = [], norm = [], brut = [];
+  for (let i = 0; i + 1 < pts.length; i++){
+    const A = pts[i], B = pts[i + 1];
+    const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy);
+    if (!l) continue;
+    const nx = -dy / l, ny = dx / l;
+    const n = Math.max(1, Math.round(l / PAS_GRILLE));
+    for (let k = 0; k < n; k++){
+      const u = k / n;
+      const q = [A[0] + dx * u, A[1] + dy * u];
+      const dp = jusquAuMur(q, nx, ny), dm = jusquAuMur(q, -nx, -ny);
+      ech.push(q); norm.push([nx, ny]);
+      // sans deux bords, il n'y a pas de milieu : on ne bouge pas
+      brut.push(dp >= DEMI_ALLEE || dm >= DEMI_ALLEE ? 0 : (dp - dm) / 2);
+    }
+  }
+  if (!ech.length) return pts;
+
+  /* La médiane glissante sur une longueur de stand : assez large pour enjamber
+     une façade interrompue, assez courte pour suivre une allée qui tourne. */
+  const demi = Math.round(3 / PAS_GRILLE);
+  const out = [];
+  for (let i = 0; i < ech.length; i++){
+    const f = brut.slice(Math.max(0, i - demi), i + demi + 1).sort((a, b) => a - b);
+    const e = f[f.length >> 1];
+    const q = ech[i], n = norm[i];
+    const r = [q[0] + n[0] * e, q[1] + n[1] * e];
+    out.push(e && libre(r[0], r[1]) ? r : q);
+  }
+  out.push(pts[pts.length - 1].slice());
+  return out;
+}
 
 /** Le segment tient-il dans le passage ? On l'échantillonne à la demi-case :
  *  plus fin ne dirait rien de plus, la grille n'en sait pas davantage. */
@@ -9729,12 +9844,14 @@ function amorce(pts, ancre, sortie){
  *
  * Celle qui n'est pas mitoyenne — et, s'il y en a plusieurs, la plus proche de
  * l'allée qu'on rejoint. C'est ce qui fait sortir un stand de rangée par son
- * unique côté ouvert, et non par le voisin qui se trouvait dans l'axe. Rend le
- * sens dans lequel on s'en va, ou rien si l'emplacement n'ouvre nulle part :
- * l'accroche a alors déjà dû s'autoriser à passer par le voisin, et l'amorce
- * n'a plus de face à respecter.
+ * unique côté ouvert, et non par le voisin qui se trouvait dans l'axe. Rend la
+ * normale par laquelle on s'en va — telle quelle, sans la ramener à un quart
+ * de tour : c'est elle qui donne son angle au coude de l'amorce, et un stand
+ * de hall arrondi n'est pas posé d'équerre. Rien si l'emplacement n'ouvre
+ * nulle part : l'accroche a alors déjà dû s'autoriser à passer par le voisin,
+ * et l'amorce n'a plus de face à respecter.
  */
-function faceDeSortie(g, p, obj, ancre){
+function faceDeSortie(p, obj, ancre){
   if (!obj || !obj.d) return null;
   const libres = facesLibres(p, obj);
   let mieux = null, d = Infinity;
@@ -9742,10 +9859,7 @@ function faceDeSortie(g, p, obj, ancre){
     const q = Math.hypot(f.mid[0] - ancre[0], f.mid[1] - ancre[1]);
     if (q < d){ d = q; mieux = f; }
   }
-  if (!mieux) return null;
-  // la normale se juge dans les axes de la grille, où l'amorce sera coudée
-  const u = dansGrille(g, mieux.u);
-  return Math.abs(u[0]) > Math.abs(u[1]) ? "h" : "v";
+  return mieux ? mieux.u.slice() : null;
 }
 
 /**
@@ -9831,11 +9945,12 @@ function troncon(p, pmr, depart, arrivee, objD, objA){
   for (const [a, b] of couplesAcces(g, A, B)){
     const suite = cherche(g, a, b);
     if (!suite) continue;
-    const chemin = reduit(g, suite);
+    const brut = reduit(g, suite);
+    const chemin = lisse(g, guidageAllees() ? recentre(g, brut) : brut);
     const envers = chemin.slice().reverse();
     const pts = nettoie([depart.slice()]
-      .concat(amorce(g, chemin, depart, faceDeSortie(g, p, objD, chemin[0])), chemin,
-              amorce(g, envers, arrivee, faceDeSortie(g, p, objA, envers[0])),
+      .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
+              amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
               [arrivee.slice()]));
     const m = longueurDehors(pts, dD, dA);
     if (!mieux || m < mieux.m) mieux = { genre: "marche", p: p.i, pts: pts, m: m };
