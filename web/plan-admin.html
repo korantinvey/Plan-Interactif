@@ -8162,7 +8162,7 @@ function enveloppe(p){
 const GRILLES = new Map();
 /* Les distances de marche et les façades s'en déduisent : ce qui périme l'une
    périme les autres. */
-function oublieGrilles(){ GRILLES.clear(); BALAYAGES.clear(); oublieFaces(); }
+function oublieGrilles(){ GRILLES.clear(); BALAYAGES.clear(); ANGLES.clear(); oublieFaces(); }
 
 /** Les calques de dessin d'un pavillon quelconque, pas seulement l'affiché. */
 const calquesDe = (p) => (typeof DESSINS === "object" && DESSINS[p.id]) || [];
@@ -8283,6 +8283,66 @@ function obstaclesPmr(p){
 }
 
 /**
+ * L'angle des allées, en radians.
+ *
+ * Les cases de la grille sont carrées et le trajet n'y avance que d'équerre :
+ * tant qu'elle est posée sur les axes du plan, un pavillon dessiné de travers
+ * — un hall arrondi, un bâtiment qui ne regarde pas le nord — voit ses allées
+ * descendues en escalier, marche après marche, au lieu d'être suivies. On
+ * tourne donc la grille avec le hall : l'escalier redevient la ligne droite
+ * qu'un visiteur marche, et les virages retombent aux carrefours.
+ *
+ * L'angle se lit dans les emplacements eux-mêmes, rangés le long des allées
+ * qu'ils bordent : leurs façades en donnent la direction. À un quart de tour
+ * près, puisqu'un rectangle a deux directions et qu'elles se valent ici. On
+ * cherche le pic plutôt que la moyenne — un hall a toujours quelques stands
+ * posés de biais, et il ne faut pas qu'ils entraînent tous les autres — puis
+ * on l'affine sur les degrés voisins, l'allée méritant mieux qu'un degré près.
+ */
+const ANGLES = new Map();
+function anglePlan(p){
+  const garde = ANGLES.get(p.id);
+  if (garde !== undefined) return garde;
+
+  /* Un bac par degré pour trouver le pic ; à côté, la somme des directions
+     elles-mêmes, pour ne pas rendre ensuite le milieu du bac à la place de
+     l'angle qu'on y a rangé. Les directions s'ajoutent quadruplées : au quart
+     de tour près, un angle fait alors le tour entier, et 89° se moyenne avec
+     1° sans tomber au milieu, à 45°. */
+  const bacs = new Float64Array(90), vc = new Float64Array(90), vs = new Float64Array(90);
+  for (const o of p.stands.concat(p.zones)){
+    const s = sommets(o);
+    for (let i = 0; i + 1 < s.length; i++){
+      const dx = s[i + 1][0] - s[i][0], dy = s[i + 1][1] - s[i][1];
+      const l = Math.hypot(dx, dy);
+      if (l < .8) continue;              // un chanfrein ne dit rien de l'allée
+      const a = Math.atan2(dy, dx);
+      const b = Math.floor((((a * 180 / Math.PI) % 90) + 90) % 90);
+      bacs[b] += l; vc[b] += l * Math.cos(4 * a); vs[b] += l * Math.sin(4 * a);
+    }
+  }
+  let pic = 0;
+  for (let i = 1; i < 90; i++) if (bacs[i] > bacs[pic]) pic = i;
+  // le pic et ses voisins : l'allée mérite mieux qu'un degré près
+  let sc = 0, ss = 0;
+  for (let k = -2; k <= 2; k++){
+    const i = (pic + k + 90) % 90;
+    sc += vc[i]; ss += vs[i];
+  }
+  let t = (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
+  // un pavillon d'équerre le reste : un quart de degré ne se voit pas, et la
+  // grille droite se raisonne mieux quand il faut y revenir
+  if (Math.abs(t) < .004) t = 0;
+  ANGLES.set(p.id, t);
+  return t;
+}
+
+/** Du plan à la grille tournée, et retour. Une rotation pure : appliquée à un
+ *  vecteur — la normale d'une façade — elle vaut aussi bien que sur un point. */
+const dansGrille = (g, q) => [q[0] * g.co + q[1] * g.si, -q[0] * g.si + q[1] * g.co];
+const horsGrille = (g, q) => [q[0] * g.co - q[1] * g.si, q[0] * g.si + q[1] * g.co];
+
+/**
  * Le hall en noir et blanc.
  *
  * Le canevas fait le gros du travail : il sait remplir un contour et
@@ -8295,14 +8355,26 @@ function grille(p, pmr){
   const garde = GRILLES.get(cle);
   if (garde) return garde;
 
+  const angle = anglePlan(p), co = Math.cos(angle), si = Math.sin(angle);
+  /* L'emprise est celle du plan, à l'équerre ; la grille, elle, est tournée.
+     On encadre donc les quatre coins tournés : un peu large aux angles, ce
+     qui ne coûte que des cases de mur. */
   const e = p.emprise;
-  const w = Math.ceil((e.x1 - e.x0) / PAS_GRILLE) + 2;
-  const h = Math.ceil((e.y1 - e.y0) / PAS_GRILLE) + 2;
+  let X0 = Infinity, Y0 = Infinity, X1 = -Infinity, Y1 = -Infinity;
+  for (const q of [[e.x0, e.y0], [e.x1, e.y0], [e.x1, e.y1], [e.x0, e.y1]]){
+    const [X, Y] = dansGrille({ co: co, si: si }, q);
+    X0 = Math.min(X0, X); X1 = Math.max(X1, X);
+    Y0 = Math.min(Y0, Y); Y1 = Math.max(Y1, Y);
+  }
+  // une case pour un demi-mètre, décalée d'une case pour garder une marge
+  const x0 = X0 - PAS_GRILLE, y0 = Y0 - PAS_GRILLE;
+  const w = Math.ceil((X1 - X0) / PAS_GRILLE) + 2;
+  const h = Math.ceil((Y1 - Y0) / PAS_GRILLE) + 2;
   const cv = document.createElement("canvas");
   cv.width = w; cv.height = h;
   const ctx = cv.getContext("2d", { willReadFrequently: true });
-  // une case pour un demi-mètre, décalée d'une case pour garder une marge
-  ctx.setTransform(1 / PAS_GRILLE, 0, 0, 1 / PAS_GRILLE, 1 - e.x0 / PAS_GRILLE, 1 - e.y0 / PAS_GRILLE);
+  ctx.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
+                   -x0 / PAS_GRILLE, -y0 / PAS_GRILLE);
   ctx.lineJoin = ctx.lineCap = "round";
   ctx.lineWidth = 2 * (pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
   ctx.fillStyle = ctx.strokeStyle = "#000";
@@ -8313,7 +8385,13 @@ function grille(p, pmr){
     ctx.stroke(t);
   };
 
-  ctx.fillRect(e.x0 - 2, e.y0 - 2, e.x1 - e.x0 + 4, e.y1 - e.y0 + 4);
+  /* Tout est mur avant qu'on ne creuse. On peint en cases plutôt qu'en
+     mètres : la grille tournée déborde l'emprise du plan par ses coins, et
+     un rectangle posé à l'équerre les laisserait blancs. */
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
   /* On creuse ce qui est praticable. Si l'exploitant a dessiné la circulation,
      c'est elle qui fait foi, et rien d'autre du pavillon n'est ouvert. Sinon
      on retombe sur l'enveloppe des emplacements, qui vaut mieux que rien mais
@@ -8336,7 +8414,7 @@ function grille(p, pmr){
   // moitié, la case est du côté du mur
   for (let i = 0; i < mur.length; i++) mur[i] = px[i * 4 + 3] > 128 ? 1 : 0;
 
-  const g = { x0: e.x0 - PAS_GRILLE, y0: e.y0 - PAS_GRILLE, w: w, h: h, mur: mur, pmr: pmr };
+  const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, pmr: pmr, co: co, si: si };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
   GRILLES.set(cle, g);
@@ -8426,14 +8504,20 @@ function nappePrincipale(g){
   return nappe;
 }
 
+/** La case où tombe un point du plan, débordements compris : c'est à l'appelant
+ *  de décider ce qu'il fait d'une colonne hors grille. */
+function celluleDe(g, x, y){
+  const q = dansGrille(g, [x, y]);
+  return [Math.floor((q[0] - g.x0) / PAS_GRILLE), Math.floor((q[1] - g.y0) / PAS_GRILLE)];
+}
 function caseDe(g, x, y){
-  const cx = Math.floor((x - g.x0) / PAS_GRILLE), cy = Math.floor((y - g.y0) / PAS_GRILLE);
+  const [cx, cy] = celluleDe(g, x, y);
   if (cx < 0 || cy < 0 || cx >= g.w || cy >= g.h) return -1;
   return cy * g.w + cx;
 }
 function centreCase(g, i){
   const cx = i % g.w, cy = (i - cx) / g.w;
-  return [g.x0 + (cx + .5) * PAS_GRILLE, g.y0 + (cy + .5) * PAS_GRILLE];
+  return horsGrille(g, [g.x0 + (cx + .5) * PAS_GRILLE, g.y0 + (cy + .5) * PAS_GRILLE]);
 }
 
 /* Jusqu'où l'on accepte de chercher l'allée d'un point : douze mètres, la
@@ -8457,7 +8541,7 @@ function empriseDe(g, d, cx0, cy0, cote){
   const cv = document.createElement("canvas");
   cv.width = cote; cv.height = cote;
   const ctx = cv.getContext("2d", { willReadFrequently: true });
-  ctx.setTransform(1 / PAS_GRILLE, 0, 0, 1 / PAS_GRILLE,
+  ctx.setTransform(g.co / PAS_GRILLE, -g.si / PAS_GRILLE, g.si / PAS_GRILLE, g.co / PAS_GRILLE,
                    -g.x0 / PAS_GRILLE - cx0, -g.y0 / PAS_GRILLE - cy0);
   ctx.lineJoin = ctx.lineCap = "round";
   ctx.lineWidth = 2 * (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
@@ -8488,8 +8572,9 @@ function empriseDe(g, d, cx0, cy0, cote){
 function accrocheDepuis(g, xy, chez){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
-    const cx = Math.min(g.w - 1, Math.max(0, Math.floor((xy[0] - g.x0) / PAS_GRILLE)));
-    const cy = Math.min(g.h - 1, Math.max(0, Math.floor((xy[1] - g.y0) / PAS_GRILLE)));
+    const [gx, gy] = celluleDe(g, xy[0], xy[1]);
+    const cx = Math.min(g.w - 1, Math.max(0, gx));
+    const cy = Math.min(g.h - 1, Math.max(0, gy));
     d = cy * g.w + cx;
   }
   if (g.nappe[d]) return d;
@@ -8815,12 +8900,36 @@ function longueurDehors(pts, chezD, chezA){
   return Math.max(0, m);
 }
 
-/** Deux sommets à cinq centimètres l'un de l'autre ne sont qu'un. */
+/**
+ * Deux sommets à cinq centimètres l'un de l'autre ne sont qu'un — et un
+ * sommet sur lequel le trait rebrousse chemin n'en est pas un.
+ *
+ * Le coude de l'amorce se pose au droit du stand ; le trajet, lui, touche
+ * l'allée là où la façade s'ouvre, et les deux tombent rarement au même
+ * endroit. Le trait remontait donc l'allée jusqu'au bout du trajet, puis
+ * revenait sur ses pas jusqu'au coude : le retour se superpose à l'aller et
+ * ne se voit pas, mais le dépassement, lui, se voit — un petit T au bout de
+ * l'itinéraire. On retire donc le sommet sur lequel on rebrousse : le trait
+ * s'arrête là où il tourne, et le compte des mètres cesse de payer deux fois
+ * un aller-retour que personne ne marche.
+ */
 function nettoie(pts){
   const out = [];
   for (const q of pts){
     const p = out[out.length - 1];
     if (!p || Math.hypot(q[0] - p[0], q[1] - p[1]) > .05) out.push(q);
+  }
+  for (let i = 1; i + 1 < out.length; i++){
+    const a = out[i - 1], b = out[i], c = out[i + 1];
+    const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1];
+    const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy);
+    if (!lu || !lv) continue;
+    /* Franchement rebroussé, et pas seulement pointu : un demi-tour d'allée à
+       allée garde toujours la largeur de l'allée entre l'aller et le retour,
+       et ce n'est pas de lui qu'on parle. */
+    if ((ux * vx + uy * vy) / (lu * lv) > -.999) continue;
+    out.splice(i, 1);
+    i = Math.max(0, i - 2);
   }
   return out;
 }
@@ -8915,9 +9024,11 @@ const AMORCE_MAX = 20;   // mètres
  *
  * Rend le coude à insérer, ou rien s'il n'y a pas lieu d'en poser un.
  */
-function amorce(pts, ancre, sens){
+function amorce(g, pts, ancre, sens){
   if (pts.length < 2) return [];
-  const a = pts[0], b = pts[1];
+  // dans les axes de la grille : « d'équerre » veut dire le long des allées,
+  // pas le long des axes du plan, et les deux diffèrent dès qu'un hall tourne
+  const a = dansGrille(g, pts[0]), b = dansGrille(g, pts[1]), an = dansGrille(g, ancre);
   const vertical = Math.abs(b[0] - a[0]) < .01;
   const horizontal = Math.abs(b[1] - a[1]) < .01;
   /* À défaut de face libre connue — un repère, un point désigné du doigt — on
@@ -8925,11 +9036,11 @@ function amorce(pts, ancre, sens){
   const parAllee = vertical === horizontal ? null : (vertical ? "h" : "v");
   const s = sens || parAllee;
   if (!s) return [];
-  const coude = s === "h" ? [a[0], ancre[1]] : [ancre[0], a[1]];
-  const l1 = Math.hypot(coude[0] - ancre[0], coude[1] - ancre[1]);
+  const coude = s === "h" ? [a[0], an[1]] : [an[0], a[1]];
+  const l1 = Math.hypot(coude[0] - an[0], coude[1] - an[1]);
   const l2 = Math.hypot(a[0] - coude[0], a[1] - coude[1]);
   if (l1 > AMORCE_MAX || l2 > AMORCE_MAX) return [];
-  return [coude];
+  return [horsGrille(g, coude)];
 }
 
 /**
@@ -8942,7 +9053,7 @@ function amorce(pts, ancre, sens){
  * l'accroche a alors déjà dû s'autoriser à passer par le voisin, et l'amorce
  * n'a plus de face à respecter.
  */
-function faceDeSortie(p, obj, ancre){
+function faceDeSortie(g, p, obj, ancre){
   if (!obj || !obj.d) return null;
   const libres = facesLibres(p, obj);
   let mieux = null, d = Infinity;
@@ -8950,7 +9061,10 @@ function faceDeSortie(p, obj, ancre){
     const q = Math.hypot(f.mid[0] - ancre[0], f.mid[1] - ancre[1]);
     if (q < d){ d = q; mieux = f; }
   }
-  return mieux ? (Math.abs(mieux.u[0]) > Math.abs(mieux.u[1]) ? "h" : "v") : null;
+  if (!mieux) return null;
+  // la normale se juge dans les axes de la grille, où l'amorce sera coudée
+  const u = dansGrille(g, mieux.u);
+  return Math.abs(u[0]) > Math.abs(u[1]) ? "h" : "v";
 }
 
 /**
@@ -9039,8 +9153,8 @@ function troncon(p, pmr, depart, arrivee, objD, objA){
     const chemin = reduit(g, suite);
     const envers = chemin.slice().reverse();
     const pts = nettoie([depart.slice()]
-      .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
-              amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
+      .concat(amorce(g, chemin, depart, faceDeSortie(g, p, objD, chemin[0])), chemin,
+              amorce(g, envers, arrivee, faceDeSortie(g, p, objA, envers[0])),
               [arrivee.slice()]));
     const m = longueurDehors(pts, dD, dA);
     if (!mieux || m < mieux.m) mieux = { genre: "marche", p: p.i, pts: pts, m: m };
@@ -9592,6 +9706,8 @@ function rafraichitApercu(){
   el.setAttribute("y", g.y0);
   el.setAttribute("width", g.w * PAS_GRILLE);
   el.setAttribute("height", g.h * PAS_GRILLE);
+  // la nappe est posée dans les axes de la grille : on la remet d'aplomb
+  el.setAttribute("transform", "rotate(" + (Math.atan2(g.si, g.co) * 180 / Math.PI) + ")");
   el.setAttribute("preserveAspectRatio", "none");
   el.setAttribute("href", cv.toDataURL());
   if (!vieux) svg.insertBefore(el, svg.querySelector("#itin, #apercu, #poignees"));
