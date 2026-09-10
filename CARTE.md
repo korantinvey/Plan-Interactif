@@ -95,7 +95,7 @@ Fonctions :
 
 `#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
-### `_classeur.html` — 234 l. → rapport.html
+### `_classeur.html` — 234 l. → admin-plans.html, rapport.html
 
 - l.2 · Classeur — écrire un vrai fichier Excel, sans bibliothèque
 
@@ -121,16 +121,16 @@ Fonctions :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 55 l. → admin-plans.html
+### `_console-head.html` — 56 l. → admin-plans.html
 
 Éléments :
 
 `#choixEvt` · `#etatEvt` · `#btnRecharger` · `#btnNouveau` · `#statut` · `#lienPublic`
-`#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
+`#lienAdmin` · `#lienRapport` · `#btnExcel` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2711 l. → admin-plans.html
+### `_console-js.html` — 2715 l. → admin-plans.html
 
 - l.372 · Provenance des données
 - l.499 · Contenu de la fiche détail
@@ -152,9 +152,9 @@ Fonctions :
 `correspondance` 1897 · `sansPrefixe` 1900 · `courte` 1901 · `intitule` 1916
 `intituleSuite` 1928 · `separeValeurs` 1942 · `champOrigine` 1954 · `majLiens` 2183
 `majIntegration` 2210 · `majMsgSync` 2217 · `synchronise` 2232 · `dupliquer` 2275
-`litMonProfil` 2369 · `RETOUR_MDP` 2380 · `litComptes` 2382 · `ligneMessage` 2391
-`casesSalons` 2401 · `ouvreComptes` 2431 · `ouvreFicheCompte` 2523 · `videEcran` 2682
-`dessine` 2687 · `demarre` 2699
+`litMonProfil` 2373 · `RETOUR_MDP` 2384 · `litComptes` 2386 · `ligneMessage` 2395
+`casesSalons` 2405 · `ouvreComptes` 2435 · `ouvreFicheCompte` 2527 · `videEcran` 2686
+`dessine` 2691 · `demarre` 2703
 
 Éléments :
 
@@ -204,6 +204,15 @@ Fonctions :
 `remplitListeStands` 287 · `standSaisi` 296 · `appliqueLiaison` 306 · `appliqueSociete` 324
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
+
+### `_export.html` — 146 l. → admin-plans.html, rapport.html
+
+- l.2 · Export par exposant — une ligne par stand, une colonne par provenance
+
+Fonctions :
+
+`nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
+`nomFeuilleExport` 92 · `exporteExposants` 108
 
 ### `_head.html` — 2600 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
@@ -393,16 +402,15 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 430 l. → rapport.html
+### `_rapport-js.html` — 308 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`nb` 45 · `courant` 46 · `chargeEvenements` 51 · `joursPeriode` 69 · `chargeRapport` 71
-`chiffre` 82 · `barres` 101 · `jours` 128 · `dessineRapport` 149 · `colonnesExport` 286
-`nomFichierExport` 305 · `nomFeuilleExport` 315 · `exporteExposants` 322
-`dessineBarre` 359 · `rafraichit` 382 · `videEcran` 401 · `demarre` 416
+`courant` 35 · `chargeEvenements` 40 · `joursPeriode` 58 · `chargeRapport` 60 · `chiffre` 71
+`barres` 90 · `jours` 117 · `dessineRapport` 138 · `dessineBarre` 236 · `rafraichit` 259
+`videEcran` 278 · `demarre` 294
 
 Éléments :
 

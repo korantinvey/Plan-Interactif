@@ -83,12 +83,13 @@ const assemble = (tete, ...corps) =>
   fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle +
   corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
+/* Les deux écrans exportent le même classeur : le module d'écriture puis celui
+   de l'export passent avant, et c'est la page qui ferme le script. */
 fs.writeFileSync(W + "admin-plans.html",
-  page(assemble("_console-head.html", "_console-js.html")));
+  page(assemble("_console-head.html", "_classeur.html", "_export.html", "_console-js.html")));
 
-// le classeur passe avant : le rapport s'en sert, et c'est lui qui ferme le script
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("_rapport-head.html", "_classeur.html", "_rapport-js.html")));
+  page(assemble("_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html")));
 
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul

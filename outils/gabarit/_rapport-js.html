@@ -22,27 +22,16 @@ const PERIODES = [
   ["tout", "Depuis le début"],
 ];
 
-/* Par quel chemin une fiche s'est ouverte. L'ordre est celui de la lecture,
-   et la liste reste affichée en entier même à zéro : « aucun clic sur un
-   logo » se lit alors comme un renseignement — aucun logo n'a été posé — et
-   non comme un canal oublié. */
-const CANAUX_STAND = [
-  ["recherche", "Recherche"],
-  ["plan", "Clic sur le plan"],
-  ["image", "Clic sur un logo ou une image"],
-  ["conference", "Nom cité par une conférence"],
-  ["liste", "Liste du pavillon"],
-  ["parcours", "Programme de visite"],
-  ["lien", "Lien direct"],
-];
+/* Les canaux d'une fiche exposant — `CANAUX_STAND`, `AUTRE` — et le formatage
+   des nombres viennent du module d'export : les barres d'ici et les colonnes du
+   classeur nomment les mêmes provenances, et il n'y a pas deux vocabulaires.
+   Ceux d'une conférence ne servent qu'ici, le classeur ne les aligne pas. */
 const CANAUX_CONF = [
   ["salle", "Programme d'une salle"],
   ["exposant", "Fiche d'un exposant"],
   ["parcours", "Programme de visite"],
 ];
-const AUTRE = ["autre", "Autre"];
 
-const nb = (n) => Number(n || 0).toLocaleString("fr-FR");
 const courant = () => EVTS.find((e) => e.id === selection);
 
 /* ------------------------------------------------------------------
@@ -244,118 +233,6 @@ function dessineRapport() {
   f.appendChild(b4);
 }
 
-/* ------------------------------------------------------------------
-   Export par exposant
-
-   Les chiffres du haut disent ce qu'a fait le salon ; celui-ci dit ce qu'a
-   recueilli chaque exposant, un par ligne. C'est le tableau qu'on n'affiche
-   pas — neuf cents lignes sur quatorze colonnes ne se lisent pas dans une page
-   — et qu'on donne à trier, filtrer et découper dans un tableur.
-
-   Il se charge au clic, pas au chargement de la page : c'est un appel de
-   plusieurs centaines de kilo-octets, et la plupart des consultations du
-   rapport n'en veulent pas.
-
-   Les chiffres sont ceux de la carte de chaleur, au sens strict : même
-   fonction, `audience_cibles`, même balayage du même compteur. Elle ne peint
-   qu'un nombre par stand, le tableur en aligne quatorze colonnes — c'est à
-   quoi sert « p_complet » — mais aucun des deux ne recalcule ce que l'autre a
-   déjà compté, et un ajustement de période les corrige ensemble.
-   ------------------------------------------------------------------ */
-/** Ce qui encadre le détail par canal. */
-const COL_TETE = [
-  { titre: "Emplacement", largeur: 14, lit: (r) => r.code || "" },
-  { titre: "Exposant", largeur: 38, lit: (r) => r.nom || "" },
-  { titre: "Fiches ouvertes", largeur: 16, lit: (r) => Number(r.n) || 0 },
-];
-const COL_PIED = [
-  { titre: "Itinéraires calculés", largeur: 20, lit: (r) => Number(r.itineraires) || 0 },
-  { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => Number(r.parcours) || 0 },
-  { titre: "Total interactions", largeur: 18,
-    lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
-];
-
-/**
- * Les colonnes, canaux compris.
- *
- * Les canaux connus paraissent tous, même vides — une colonne « clic sur un
- * logo » à zéro renseigne, elle dit qu'aucun logo n'a été posé — et dans le
- * même ordre qu'à l'écran. Un canal inconnu de cette page, ajouté depuis, prend
- * la suite sous son nom brut plutôt que de disparaître de la somme.
- */
-function colonnesExport(lignes) {
-  const canaux = CANAUX_STAND.concat([AUTRE]);
-  const inconnus = new Set();
-  lignes.forEach((r) => Object.keys(r.canaux || {}).forEach((c) => {
-    if (!canaux.some((x) => x[0] === c)) inconnus.add(c);
-  }));
-  [...inconnus].sort().forEach((c) => canaux.push([c, c]));
-  return COL_TETE.concat(
-    canaux.map(([cle, lib]) => ({
-      titre: "Ouvertures · " + lib.charAt(0).toLowerCase() + lib.slice(1),
-      largeur: Math.min(36, Math.max(15, lib.length + 13)),
-      lit: (r) => (r.canaux || {})[cle] || 0,
-    })),
-    COL_PIED);
-}
-
-/* Le nom porte le salon et la période : deux exports de suite dans le même
-   dossier ne doivent ni se recouvrir ni se confondre une fois détachés de la
-   page qui les a produits. */
-function nomFichierExport(e) {
-  return ("utilisation-" + (e?.slug || "salon") +
-    "-" + (periode === "tout" ? "tout" : periode + "j") +
-    "-" + new Date().toISOString().slice(0, 10) + ".xlsx")
-    .replace(/[^A-Za-z0-9._-]+/g, "-");
-}
-
-/* Le nom de la feuille redit la période : le fichier voyage seul, souvent
-   jusqu'à l'exposant, et rien d'autre à l'intérieur ne dirait ce qu'il couvre.
-   Excel refuse au-delà de trente et un caractères, et refuse `[]:*?/\`. */
-function nomFeuilleExport() {
-  const lib = (PERIODES.find((p) => p[0] === periode) || [])[1] || "";
-  return ("Exposants (" + lib.charAt(0).toLowerCase() + lib.slice(1) + ")")
-    .replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31);
-}
-
-let _export = false;
-async function exporteExposants() {
-  if (_export || !selection) return;
-  const b = $("btnExcel"), e = courant(), libelle = b.textContent;
-  _export = true;
-  b.disabled = true;
-  b.textContent = "Préparation…";
-  try {
-    const r = await rest("rpc/audience_cibles", {
-      method: "POST",
-      body: JSON.stringify({
-        p_evenement: selection,
-        p_jours: joursPeriode(),
-        p_genre: "fiche_stand",
-        p_complet: true,
-      }),
-    });
-    const lignes = (r && r.cibles) || [];
-    /* Aucun exposant n'est un renseignement, pas une panne : le salon n'a
-       jamais été synchronisé, et c'est ce qu'il faut dire. */
-    if (!lignes.length) {
-      signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
-      return;
-    }
-    const cols = colonnesExport(lignes);
-    enregistreFichier(
-      classeurXl(nomFeuilleExport(), cols, lignes.map((r) => cols.map((c) => c.lit(r)))),
-      nomFichierExport(e));
-    signale(nb(lignes.length) + " exposants exportés.");
-  } catch (err) {
-    signale(err.message, true);
-  } finally {
-    _export = false;
-    b.disabled = false;
-    b.textContent = libelle;
-  }
-}
-
 function dessineBarre() {
   const s = $("choixEvt");
   s.innerHTML = EVTS.map((e) =>
@@ -411,7 +288,8 @@ $("choixEvt").onchange = (e) => {
 };
 $("choixPeriode").onchange = (e) => { periode = e.target.value; rafraichit(); };
 $("btnRecharger").onclick = () => rafraichit();
-$("btnExcel").onclick = () => exporteExposants();
+// ici l'export suit la période affichée ; dans la console, il prend tout
+$("btnExcel").onclick = (ev) => exporteExposants(ev.currentTarget, joursPeriode());
 
 async function demarre() {
   try {

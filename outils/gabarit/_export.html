@@ -1,0 +1,146 @@
+
+/* ============================================================
+   Export par exposant — une ligne par stand, une colonne par provenance
+
+   Les chiffres du rapport disent ce qu'a fait le salon ; celui-ci dit ce qu'a
+   recueilli chaque exposant. C'est le tableau qu'on n'affiche nulle part —
+   neuf cents lignes sur quinze colonnes ne se lisent pas dans une page — et
+   qu'on donne à trier, filtrer et découper dans un tableur. C'est aussi ce
+   qu'un organisateur recolle dans le courriel qu'il envoie à son exposant.
+
+   Le module vit à part parce que deux écrans l'ouvrent : la console, où il est
+   une action du salon ouvert, et le rapport, où il suit la période affichée.
+   Recopié dans les deux, il aurait divergé — et ces deux boutons doivent
+   rendre le même fichier.
+
+   Les chiffres sont ceux de la carte de chaleur, au sens strict : même
+   fonction, `audience_cibles`, même balayage du même compteur. Elle ne peint
+   qu'un nombre par stand, le tableur en aligne quinze colonnes — c'est à quoi
+   sert « p_complet » — mais aucun des deux ne recalcule ce que l'autre a déjà
+   compté.
+   ============================================================ */
+const nb = (n) => Number(n || 0).toLocaleString("fr-FR");
+
+/* Par quel chemin une fiche s'est ouverte. L'ordre est celui de la lecture, et
+   la liste sert aussi bien aux barres du rapport qu'aux colonnes du classeur :
+   les deux nomment les mêmes canaux, il n'y a pas deux vocabulaires. */
+const CANAUX_STAND = [
+  ["recherche", "Recherche"],
+  ["plan", "Clic sur le plan"],
+  ["image", "Clic sur un logo ou une image"],
+  ["conference", "Nom cité par une conférence"],
+  ["liste", "Liste du pavillon"],
+  ["parcours", "Programme de visite"],
+  ["lien", "Lien direct"],
+];
+const AUTRE = ["autre", "Autre"];
+
+/** Ce qui encadre le détail par canal. */
+const COL_TETE = [
+  { titre: "Emplacement", largeur: 14, lit: (r) => r.code || "" },
+  { titre: "Exposant", largeur: 38, lit: (r) => r.nom || "" },
+  { titre: "Fiches ouvertes", largeur: 16, lit: (r) => Number(r.n) || 0 },
+];
+const COL_PIED = [
+  { titre: "Itinéraires calculés", largeur: 20, lit: (r) => Number(r.itineraires) || 0 },
+  { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => Number(r.parcours) || 0 },
+  { titre: "Total interactions", largeur: 18,
+    lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
+];
+
+/**
+ * Les colonnes, canaux compris.
+ *
+ * Les canaux connus paraissent tous, même vides — une colonne « clic sur un
+ * logo » à zéro renseigne, elle dit qu'aucun logo n'a été posé — et dans le
+ * même ordre qu'à l'écran. Un canal inconnu de cette page, ajouté depuis, prend
+ * la suite sous son nom brut plutôt que de disparaître de la somme.
+ */
+function colonnesExport(lignes) {
+  const canaux = CANAUX_STAND.concat([AUTRE]);
+  const inconnus = new Set();
+  lignes.forEach((r) => Object.keys(r.canaux || {}).forEach((c) => {
+    if (!canaux.some((x) => x[0] === c)) inconnus.add(c);
+  }));
+  [...inconnus].sort().forEach((c) => canaux.push([c, c]));
+  return COL_TETE.concat(
+    canaux.map(([cle, lib]) => ({
+      titre: "Ouvertures · " + lib.charAt(0).toLowerCase() + lib.slice(1),
+      largeur: Math.min(36, Math.max(15, lib.length + 13)),
+      lit: (r) => (r.canaux || {})[cle] || 0,
+    })),
+    COL_PIED);
+}
+
+/** La période en toutes lettres, depuis le nombre de jours demandé. */
+const libellePeriode = (jours) =>
+  jours ? jours + " derniers jours" : "depuis le début";
+
+/* Le nom porte le salon et la période : deux exports de suite dans le même
+   dossier ne doivent ni se recouvrir ni se confondre une fois détachés de la
+   page qui les a produits. */
+function nomFichierExport(e, jours) {
+  return ("utilisation-" + (e?.slug || "salon") +
+    "-" + (jours ? jours + "j" : "tout") +
+    "-" + new Date().toISOString().slice(0, 10) + ".xlsx")
+    .replace(/[^A-Za-z0-9._-]+/g, "-");
+}
+
+/* Le nom de la feuille redit la période : le fichier voyage seul, souvent
+   jusqu'à l'exposant, et rien d'autre à l'intérieur ne dirait ce qu'il couvre.
+   Excel refuse au-delà de trente et un caractères, et refuse `[]:*?/\`. */
+const nomFeuilleExport = (jours) =>
+  ("Exposants (" + libellePeriode(jours) + ")")
+    .replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31);
+
+/**
+ * Fabriquer le classeur, et le proposer à l'enregistrement.
+ *
+ * Le bouton et la période viennent de l'appelant : la console n'a pas de
+ * sélecteur de période — elle exporte tout — quand le rapport suit celle qu'il
+ * affiche. Le reste est identique, et c'est bien l'objet de ce module.
+ *
+ * Il se charge au clic, jamais à l'ouverture de la page : c'est un appel de
+ * plusieurs centaines de kilo-octets, et la plupart des visites n'en veulent
+ * pas.
+ */
+let _export = false;
+async function exporteExposants(bouton, jours) {
+  if (_export || !selection) return;
+  const e = courant(), libelle = bouton ? bouton.textContent : "";
+  _export = true;
+  if (bouton) { bouton.disabled = true; bouton.textContent = "Préparation…"; }
+  /* Dit tout de suite, car le menu d'où part souvent ce clic se referme
+     aussitôt : sans cela rien ne bougerait à l'écran pendant l'appel. */
+  signale("Préparation du classeur…");
+  try {
+    const r = await rest("rpc/audience_cibles", {
+      method: "POST",
+      body: JSON.stringify({
+        p_evenement: selection,
+        p_jours: jours || null,
+        p_genre: "fiche_stand",
+        p_complet: true,
+      }),
+    });
+    const lignes = (r && r.cibles) || [];
+    /* Aucun exposant n'est un renseignement, pas une panne : le salon n'a
+       jamais été synchronisé, et c'est ce qu'il faut dire. */
+    if (!lignes.length) {
+      signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
+      return;
+    }
+    const cols = colonnesExport(lignes);
+    enregistreFichier(
+      classeurXl(nomFeuilleExport(jours), cols, lignes.map((r2) => cols.map((c) => c.lit(r2)))),
+      nomFichierExport(e, jours));
+    const s = lignes.length > 1 ? "s" : "";
+    signale(nb(lignes.length) + " exposant" + s + " exporté" + s +
+            " (" + libellePeriode(jours) + ").");
+  } catch (err) {
+    signale(err.message, true);
+  } finally {
+    _export = false;
+    if (bouton) { bouton.disabled = false; bouton.textContent = libelle; }
+  }
+}
