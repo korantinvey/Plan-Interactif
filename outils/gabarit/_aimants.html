@@ -1,0 +1,474 @@
+
+/* ============================================================
+   11 quater. Dessiner juste — cote, aimants, répétition
+   ============================================================
+   Un geste à main levée donne des stands de 3,47 × 2,08 m : la main sait
+   viser un endroit, pas une dimension. Trois secours, qui se complètent.
+   La cote dit ce qu'on trace pendant qu'on le trace. Les aimants accrochent
+   le geste à la géométrie déjà posée, qui elle est juste au centimètre. Et
+   la répétition redonne une taille trouvée au lieu de la faire retrouver.
+   ============================================================ */
+
+/* --- ce que le geste mesure --- */
+
+/** Un nombre de mètres écrit en français, sans zéros inutiles : « 12 », « 6,5 ». */
+const ecritMetres = (v) =>
+  (Math.round(Math.abs(v) * 100) / 100).toFixed(2).replace(/\.?0+$/, "").replace(".", ",");
+
+/** « 12 × 6 m » — ce que deux coins opposés mesurent. */
+const coteCadre = (a, b) =>
+  ecritMetres(b[0] - a[0]) + " × " + ecritMetres(b[1] - a[1]) + " m";
+
+/**
+ * La cote du geste en cours, écrite sur le plan près du point qu'on déplace.
+ *
+ * Sur le plan, et non dans la palette : l'œil suit la forme qu'il trace, et
+ * une taille qu'il faut aller chercher du regard ne corrige rien — on s'en
+ * aperçoit une fois le stand posé, ce qui est trop tard. Le texte est
+ * dimensionné en mètres, comme les poignées : il garde donc sa taille à
+ * l'écran quel que soit le zoom.
+ */
+function montreCote(txt, p){
+  let el = $("cote");
+  if (!txt || !p){ if (el) el.remove(); return; }
+  if (!el){
+    el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    el.id = "cote";
+    svg.appendChild(el);
+  }
+  const r = svg.getBoundingClientRect();
+  const u = view.w / (r.width || 1);          // un pixel d'écran, en mètres
+  el.setAttribute("font-size", +(13 * u).toFixed(3));
+  el.setAttribute("x", +(p[0] + 12 * u).toFixed(2));
+  el.setAttribute("y", +(p[1] - 12 * u).toFixed(2));
+  el.textContent = txt;
+}
+
+/* ------------------------------------------------------------
+   Les aimants
+   ------------------------------------------------------------
+   Un plan de salon n'est pas quadrillé : il est fait d'emplacements dont on
+   connaît les coins au centimètre, tenus par la synchronisation. C'est donc
+   à eux que le geste s'accroche, et non à une grille qu'on aurait inventée —
+   s'aligner sur une grille reviendrait ici à manquer le seul repère qui
+   existe vraiment. S'y ajoutent les formes déjà dessinées : un stand loué à
+   cinq se découpe en cinq parts qui se touchent, et la deuxième part doit
+   pouvoir se poser contre la première.
+   ------------------------------------------------------------ */
+
+const aimantsActifs = () => !$("aimants") || $("aimants").checked;
+
+/** Les abscisses — ou les ordonnées — distinctes d'un relevé. Une rangée de
+ *  stands partage les siennes : les dédoubler allège d'autant le balayage. */
+const axesDe = (pts, i) => [...new Set(pts.map(q => q[i]))];
+
+/** Les points d'un contour qui servent d'aimant : ses sommets, et son centre.
+ *  Le centre parce qu'un logo se pose au milieu de l'emplacement qu'il
+ *  désigne, et que viser ce milieu à l'œil ne donne jamais deux fois le même. */
+function pointsAimants(pts){
+  if (!pts.length) return pts;
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const cx = +((Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2).toFixed(2);
+  const cy = +((Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2).toFixed(2);
+  return pts.concat([[cx, cy]]);
+}
+
+/**
+ * Les sommets des emplacements et des zones du pavillon.
+ *
+ * Ils ne bougent qu'à la synchronisation, laquelle recharge la page : on les
+ * relève une fois par pavillon et on n'y revient pas.
+ */
+const AIMANTS_FOND = new Map();
+function aimantsDuPlan(){
+  const p = P();
+  let a = AIMANTS_FOND.get(p.id);
+  if (a) return a;
+  const pts = [], emprises = [];
+  const releve = (o) => {
+    const s = sommets(o);
+    if (!s.length) return;
+    pts.push(...pointsAimants(s));
+    const xs = s.map(q => q[0]), ys = s.map(q => q[1]);
+    emprises.push([Math.min.apply(null, xs), Math.min.apply(null, ys),
+                   Math.max.apply(null, xs), Math.max.apply(null, ys)]);
+  };
+  for (const o of p.stands) releve(o);
+  for (const o of p.zones) releve(o);
+  a = { pts: pts, xs: axesDe(pts, 0), ys: axesDe(pts, 1), emprises: emprises };
+  AIMANTS_FOND.set(p.id, a);
+  return a;
+}
+
+/* ------------------------------------------------------------
+   La grille propre à chaque emplacement
+   ------------------------------------------------------------
+   Une grille par stand, née de son propre coin — et non une trame unique
+   posée sur le pavillon. Deux stands voisins que le relevé ne pose pas au
+   même centimètre ont donc chacun la sienne, ce qui est exactement ce qu'on
+   veut : on découpe un stand par rapport à lui-même, on ne l'aligne pas sur
+   une origine qui ne veut rien dire pour lui.
+   ------------------------------------------------------------ */
+
+/** Le pas demandé, en mètres. */
+const pasAimant = () => {
+  const v = parseFloat($("aimantPas") ? $("aimantPas").value : "");
+  return isFinite(v) && v > 0 ? v : .5;
+};
+
+/** Une coordonnée ramenée sur les crans d'une emprise. Le bord est un cran
+ *  comme un autre : une largeur qui n'est pas un multiple du pas garde son
+ *  coin plutôt que de voir sa grille déborder. */
+const cale = (v, a, b, s) =>
+  +Math.max(a, Math.min(b, a + Math.round((v - a) / s) * s)).toFixed(2);
+
+/** L'emprise sous le geste tient la grille qui compte : hors d'un stand, il
+ *  n'y a rien à caler dessus. La marge laisse accrocher depuis le bord. */
+const sousLeGeste = (c, e, tol) =>
+  c[0] >= e[0] - tol && c[0] <= e[2] + tol && c[1] >= e[1] - tol && c[1] <= e[3] + tol;
+
+/**
+ * Le meilleur cran de grille pour un axe, parmi les points du geste.
+ *
+ * Par axe, et non par point : au pas de soixante-quinze centimètres, une
+ * abscisse peut tomber à un doigt d'un cran quand l'ordonnée en est loin.
+ * Exiger les deux à la fois ne rattraperait alors ni l'une ni l'autre, là où
+ * chacune séparément range ce qu'elle peut.
+ */
+function cranGrille(coins, i, tol){
+  const s = pasAimant();
+  let m = null;
+  for (const c of coins)
+    for (const e of aimantsDuPlan().emprises){
+      if (!sousLeGeste(c, e, tol)) continue;
+      const v = cale(c[i], e[i], e[i + 2], s);
+      const d = Math.abs(v - c[i]);
+      if (d < tol && (!m || d < m.d)) m = { d: d, v: v, dep: c[i] };
+    }
+  return m;
+}
+
+/* Les formes dessinées, elles, changent à chaque geste. Le relevé se refait
+   donc dès qu'un dessin est enregistré — c'est-à-dire entre deux gestes, et
+   jamais pendant l'un d'eux. */
+let AIMANTS_DES = null, AIMANTS_SAUF = null, AIMANTS_PLAN = null;
+const oublieAimants = () => { AIMANTS_DES = null; };
+
+function aimantsDessines(sauf){
+  if (AIMANTS_DES && AIMANTS_SAUF === sauf && AIMANTS_PLAN === P().id) return AIMANTS_DES;
+  const pts = [];
+  for (const c of mesCalques()){
+    if (c.visible === false) continue;
+    for (const f of c.formes){
+      /* Une forme ne s'accroche pas à elle-même : ses propres bords la
+         retiendraient sur place à chaque tentative de la déplacer. */
+      if (f.id === sauf || f.t === "texte") continue;
+      if (estCadre(f)){
+        const b = boite(f);
+        pts.push(...pointsAimants([[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]));
+      } else pts.push(...pointsAimants(f.pts));
+    }
+  }
+  AIMANTS_SAUF = sauf;
+  AIMANTS_PLAN = P().id;
+  AIMANTS_DES = { pts: pts, xs: axesDe(pts, 0), ys: axesDe(pts, 1) };
+  return AIMANTS_DES;
+}
+
+/** Les points d'un geste autorisés à s'accrocher : les quatre coins d'un
+ *  cadre et son centre, les sommets d'un tracé — sa boîte au-delà d'une
+ *  douzaine, où balayer chaque sommet ne changerait plus rien qu'au temps de
+ *  calcul. Le centre parce qu'une image se pose au milieu d'un stand, et que
+ *  c'est alors centre contre centre qu'il faut l'accrocher. */
+function coinsGeste(pts, cadre){
+  if (!cadre && pts.length <= 12) return pointsAimants(pts);
+  const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+  const x0 = Math.min.apply(null, xs), y0 = Math.min.apply(null, ys);
+  const x1 = Math.max.apply(null, xs), y1 = Math.max.apply(null, ys);
+  return pointsAimants([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+}
+
+/**
+ * Les points auxquels le geste pourrait s'accrocher, montrés autour de lui.
+ *
+ * Autour de lui, et non tous : un pavillon en compte plusieurs milliers, et
+ * les semer sur le plan reviendrait à le recouvrir d'un semis illisible qui
+ * n'apprendrait rien. À portée du geste, en revanche, ils disent exactement
+ * ce que la main peut viser — et pourquoi elle vient d'être corrigée.
+ *
+ * Ils s'affichent aussi à vide, tant qu'un outil de tracé est choisi : c'est
+ * en approchant du stand voisin qu'on veut savoir si son coin est saisissable,
+ * pas une fois le rectangle commencé.
+ */
+const PORTEE_VUE = 120;    // en pixels d'écran autour du geste
+let AIMANTS_VUS = "";      // ce qui est déjà à l'écran, pour ne pas le refaire
+function montreAimants(coins, opts){
+  const o = opts || {};
+  let g = $("aimantsVus");
+  const efface = () => { if (g) g.remove(); AIMANTS_VUS = ""; };
+  if (!coins || !coins.length || !aimantsActifs() || o.alt){ efface(); return; }
+  const r = svg.getBoundingClientRect();
+  const u = view.w / (r.width || 1);        // un pixel d'écran, en mètres
+  /* Une portée comptée en pixels et non en mètres : ce qu'on montre, c'est le
+     voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on
+     travaille sur un hall entier ou sur un stand. */
+  const portee = u * PORTEE_VUE;
+  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const vus = new Map();
+  for (const c of coins)
+    for (const jeu of jeux)
+      for (const q of jeu.pts){
+        if (Math.abs(q[0] - c[0]) > portee || Math.abs(q[1] - c[1]) > portee) continue;
+        const cle = q[0] + "," + q[1];
+        if (!vus.has(cle)) vus.set(cle, q);
+      }
+
+  /* Les crans de la grille, eux, ne se montrent qu'à quelques pas : au pas de
+     vingt-cinq centimètres, un stand entier en porte plus d'un millier, et
+     couvrir le plan de points reviendrait à n'en montrer aucun. */
+  const pas = pasAimant();
+  const pg = Math.min(portee, pas * 8);
+  const grille = new Map();
+  for (const c of coins)
+    for (const e of aimantsDuPlan().emprises){
+      if (!sousLeGeste(c, e, pg)) continue;
+      const de = (v, a, b) => [Math.max(a, a + Math.ceil((v - pg - a) / pas) * pas),
+                               Math.min(b, v + pg)];
+      const [x0, x1] = de(c[0], e[0], e[2]), [y0, y1] = de(c[1], e[1], e[3]);
+      for (let x = x0; x <= x1 + 1e-6; x += pas)
+        for (let y = y0; y <= y1 + 1e-6; y += pas){
+          const q = [+x.toFixed(2), +y.toFixed(2)];
+          const cle = q[0] + "," + q[1];
+          if (!vus.has(cle) && !grille.has(cle)) grille.set(cle, q);
+        }
+    }
+
+  if (!vus.size && !grille.size){ efface(); return; }
+  /* Le curseur bouge à chaque image, le voisinage presque jamais : sans cette
+     comparaison, on reconstruirait cent cercles soixante fois par seconde
+     pour redessiner exactement les mêmes. */
+  const rayon = +(u * 3).toFixed(3);          // constant à l'écran, lui aussi
+  // le zoom entre dans la comparaison : les mêmes points s'y redessinent
+  const cle = rayon + "|" + [...vus.keys()].join(";") + "|" + [...grille.keys()].join(";");
+  if (g && cle === AIMANTS_VUS) return;
+  AIMANTS_VUS = cle;
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "aimantsVus";
+    svg.appendChild(g);
+  }
+  /* Le plafond n'est qu'un garde-fou. Les crans passent derrière les sommets,
+     et plus discrets qu'eux : un coin de stand reste l'accrochage franc, un
+     cran n'est qu'une graduation. */
+  const cercle = (q, cl) => '<circle' + cl + ' cx="' + q[0] + '" cy="' + q[1] +
+                            '" r="' + (cl ? +(rayon * .62).toFixed(3) : rayon) + '"/>';
+  g.innerHTML = [...grille.values()].slice(0, 600).map(q => cercle(q, ' class="cran"')).join("") +
+                [...vus.values()].slice(0, 400).map(q => cercle(q, "")).join("");
+}
+
+/** Le meilleur sommet à portée d'un des points du geste. */
+function meilleurSommet(coins, jeux, tol){
+  let m = null;
+  for (const c of coins)
+    for (const jeu of jeux)
+      for (const q of jeu.pts){
+        // le rejet par la boîte évite une racine carrée par emplacement
+        if (Math.abs(q[0] - c[0]) > tol || Math.abs(q[1] - c[1]) > tol) continue;
+        const d = Math.hypot(q[0] - c[0], q[1] - c[1]);
+        if (!m || d < m.d) m = { d: d, dx: q[0] - c[0], dy: q[1] - c[1], q: q };
+      }
+  return m;
+}
+
+/** La petite croix qui dit quel point a pris. */
+const croixAimant = (q, tol) => {
+  const r = +(tol * .7).toFixed(2);
+  return "M" + (q[0] - r) + " " + q[1] + "h" + (2 * r) +
+         "M" + q[0] + " " + (q[1] - r) + "v" + (2 * r);
+};
+
+/**
+ * Ce que le geste doit corriger pour tomber juste, et le repère qui l'explique.
+ *
+ * Trois degrés, dans cet ordre. Un sommet d'abord — un coin d'emplacement, un
+ * centre : il prend les deux coordonnées d'un coup, et c'est l'accrochage le
+ * plus franc. La grille propre de l'emplacement ensuite, pour tout ce qui se
+ * pose *dans* un stand plutôt qu'à ses angles. Les axes enfin, chacun pour
+ * son compte : c'est ce qui range une rangée de stands dont aucun coin ne se
+ * touche.
+ *
+ * `coins` porte les points du geste qui ont le droit de s'accrocher : un
+ * tracé n'en a qu'un, celui qu'on déplace ; une forme entière offre les
+ * quatre coins de sa boîte et son centre, et retient la plus petite
+ * correction. `axes` vaut « x » quand la hauteur est commandée d'ailleurs —
+ * les proportions d'une image — et que l'accrochage ne doit toucher qu'à la
+ * largeur.
+ */
+function correction(coins, opts){
+  const o = opts || {};
+  montreAimants(coins, o);
+  if (!aimantsActifs() || o.alt){ apercuGuide(null); return [0, 0]; }
+  const tol = toleranceTrace();
+  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const seulX = o.axes === "x";
+
+  /* Un sommet passe avant tout : c'est l'accrochage franc, celui qui pose un
+     coin sur un coin. La grille et les alignements se disputent le reste, axe
+     par axe. */
+  const pris = meilleurSommet(coins, jeux, tol);
+  if (pris){
+    apercuGuide(croixAimant(pris.q, tol));
+    // une image ne corrige que sa largeur : sa hauteur suit ses proportions
+    return [pris.dx, seulX ? 0 : pris.dy];
+  }
+
+  const axe = (i) => {
+    let d = 0, ec = tol, v = null;
+    for (const c of coins)
+      for (const jeu of jeux)
+        for (const x of (i ? jeu.ys : jeu.xs)){
+          const e = Math.abs(x - c[i]);
+          if (e < ec){ ec = e; d = x - c[i]; v = x; }
+        }
+    // le cran de la grille de l'emplacement où l'on se trouve, s'il fait mieux
+    const g = cranGrille(coins, i, tol);
+    if (g && g.d < ec){ d = g.v - g.dep; v = g.v; }
+    return [d, v];
+  };
+  const ax = axe(0), ay = seulX ? [0, null] : axe(1);
+  /* Le trait qui traverse la vue dit sur quoi le bord vient de s'aligner :
+     sans lui, l'accrochage passe pour une main qui a tremblé. */
+  const g = (ax[1] == null ? "" : "M" + ax[1] + " " + view.y + "v" + view.h) +
+            (ay[1] == null ? "" : "M" + view.x + " " + ay[1] + "h" + view.w);
+  apercuGuide(g || null);
+  return [ax[0], ay[0]];
+}
+
+/** Un point du geste, accroché. */
+function aimante(p, opts){
+  const [dx, dy] = correction([p], opts);
+  return dx || dy ? [+(p[0] + dx).toFixed(2), +(p[1] + dy).toFixed(2)] : p;
+}
+
+/* ------------------------------------------------------------
+   Reposer la même taille
+   ------------------------------------------------------------ */
+
+/* La dernière taille tracée, par outil. Un salon aligne des emplacements
+   identiques, et retracer vingt fois le même rectangle à la main est le plus
+   sûr moyen d'en obtenir vingt qui diffèrent tous. */
+const DERNIERE = {};
+
+function retientTaille(f){
+  if (!estCadre(f)) return;
+  const b = boite(f);
+  DERNIERE[f.t] = [+(b[2] - b[0]).toFixed(2), +(b[3] - b[1]).toFixed(2)];
+}
+
+/**
+ * Le cadre qu'un clic sans glisser demande : la dernière taille tracée,
+ * posée depuis le point cliqué.
+ *
+ * Depuis le coin, et non autour du point : c'est ce coin que l'aimant vient
+ * de poser sur celui d'un emplacement, et une taille reprise à partir de là
+ * range le stand suivant contre le précédent sans qu'on ait rien à viser.
+ */
+function reprendTaille(f){
+  const t = DERNIERE[f.t];
+  if (!t) return false;
+  const a = f.pts[0];
+  let l = t[0], h = t[1];
+  /* Une autre image n'a pas les proportions de la précédente. On garde la
+     largeur — c'est elle qu'on voulait identique d'un logo à l'autre — et la
+     hauteur suit. */
+  if (f.t === "image" && imageEnAttente) h = +(l / imageEnAttente.ratio).toFixed(2);
+  f.pts = [a.slice(), [+(a[0] + l).toFixed(2), +(a[1] + h).toFixed(2)]];
+  return true;
+}
+
+/**
+ * La copie de la forme choisie, posée contre elle.
+ *
+ * Contre elle, et non décalée en biais comme le ferait un logiciel de dessin :
+ * ce qu'on répète ici, ce sont des emplacements mitoyens, et un Ctrl+D répété
+ * doit dérouler la rangée. Ce qui n'a pas de largeur — un repère, un texte —
+ * se décale d'un mètre, faute de mieux.
+ */
+function dupliqueForme(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.c.id !== calqueActif) return;
+  const f = cible.f;
+  const b = boite(f);
+  const dx = Math.max(1, +(b[2] - b[0]).toFixed(2));
+  /* Copie de surface : `pts` est refait, `liens` retiré, et tout le reste —
+     le libellé, la société, la source d'une image — se partage sans se
+     recopier. Une image dupliquée ne pèse donc rien de plus. */
+  const copie = Object.assign({}, f, {
+    pts: f.pts.map(q => [+(q[0] + dx).toFixed(2), q[1]]) });
+  /* Les passages se déclarent des deux côtés : recopiés d'un seul, ils
+     désigneraient un repère qui ne les connaît pas. La copie naît donc sans
+     liaison — c'est un lieu de plus, et non le même. */
+  delete copie.liens;
+  const id = ajouteForme(copie);
+  if (!id) return;
+  choisitForme(id);
+  retientTaille(copie);
+  signale(id);          // posée à côté, elle se confondrait avec sa voisine
+}
+
+/** Le clavier ajuste au quart de mètre ce que la main a posé à peu près, et
+ *  au mètre touche majuscule tenue : le pas des libellés, pour n'avoir qu'une
+ *  convention à retenir. */
+function pousseForme(dx, dy){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.c.id !== calqueActif) return;
+  memorise();
+  cible.f.pts = cible.f.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+  ecritDimensions(cible.f);
+}
+
+/* ------------------------------------------------------------
+   La taille au clavier
+   ------------------------------------------------------------ */
+
+/** Ce que les deux champs disent de la forme choisie. On n'écrit que ce qui
+ *  change : réécrire un champ qu'on est en train de remplir y replacerait le
+ *  curseur à la fin, au milieu de la frappe. */
+function ecritDimensions(f){
+  const z = $("elemDim");
+  if (!z) return;
+  z.hidden = !f || !estCadre(f);
+  if (z.hidden) return;
+  const b = boite(f);
+  const met = (id, v) => { const c = $(id); if (+c.value !== v) c.value = v; };
+  met("elemLargeur", +(b[2] - b[0]).toFixed(2));
+  met("elemHauteur", +(b[3] - b[1]).toFixed(2));
+}
+
+/**
+ * La taille exacte de la forme choisie.
+ *
+ * Le coin supérieur gauche ne bouge pas : on corrige une dimension, on ne
+ * déplace pas ce qui était déjà bien placé. Une image garde ses proportions,
+ * et c'est la largeur qui commande — d'un logo à l'autre, c'est elle qu'on
+ * veut identique.
+ */
+function appliqueDimension(quoi){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estCadre(cible.f)) return;
+  const f = cible.f, b = boite(f);
+  let l = +$("elemLargeur").value, h = +$("elemHauteur").value;
+  // un champ vidé, ou en cours de frappe, n'est pas une taille
+  if (!(l > 0) || !(h > 0)) return;
+  if (f.t === "image"){
+    const ratio = (b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
+    if (quoi === "h") l = +(h * ratio).toFixed(2);
+    else h = +(l / ratio).toFixed(2);
+  }
+  memorise();
+  f.pts = [[b[0], b[1]], [+(b[0] + l).toFixed(2), +(b[1] + h).toFixed(2)]];
+  retientTaille(f);
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+  ecritDimensions(f);
+}

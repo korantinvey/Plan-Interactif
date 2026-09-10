@@ -2035,6 +2035,9 @@ document.addEventListener("keydown", e => {
     const t = e.key.toLowerCase();
     if (t === "z" && !e.shiftKey){ e.preventDefault(); annule(); return; }
     if (t === "y" || (t === "z" && e.shiftKey)){ e.preventDefault(); refais(); return; }
+    /* Répéter plutôt que redessiner : c'est ainsi qu'une rangée de stands
+       identiques se déroule, la copie prenant la place de la sélection. */
+    if (t === "d" && formeSel){ e.preventDefault(); dupliqueForme(); return; }
   }
   if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return;
@@ -2047,6 +2050,15 @@ document.addEventListener("keydown", e => {
     const pas = e.shiftKey ? 1 : .25;
     pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
                   e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
+  /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
+     voisine, le clavier lui donne l'allée qui les sépare. */
+  if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseForme(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return;
   }
   if (e.key === "Escape"){

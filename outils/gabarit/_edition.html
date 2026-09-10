@@ -83,6 +83,9 @@ function majElement(){
                  texte: "Texte", image: "Image", repere: "Repère",
                  stand: "Stand dessiné" };
   $("elemType").textContent = NOMS[f.t] || f.t;
+  /* La largeur et la hauteur en toutes lettres : c'est là qu'on rattrape un
+     cadre tracé à peu près, et qu'on en obtient deux fois le même. */
+  ecritDimensions(f);
   // un repère porte lui aussi un libellé et une taille
   const estTexte = f.t === "texte" || f.t === "repere";
   $("elemTexte").hidden = !estTexte;
@@ -430,10 +433,17 @@ function editionPointerDown(e){
 function editionPointerMove(e){
   if (!geste) return false;
   const p = versPlan(e.clientX, e.clientY);
-  const dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
+  let dx = p[0] - geste.depart[0], dy = p[1] - geste.depart[1];
   const f = geste.f;
+  // une forme ne s'accroche pas à elle-même : elle ne bougerait plus
+  const acc = { alt: e.altKey, sauf: f.id };
 
   if (geste.type === "deplace"){
+    /* Le déplacement s'accroche par ses quatre coins, et retient la plus
+       petite correction : glisser un stand contre son voisin le range par
+       celui de ses bords qui arrive le premier. */
+    const c = correction(coinsGeste(geste.pts, estCadre(f)).map(q => [q[0] + dx, q[1] + dy]), acc);
+    dx += c[0]; dy += c[1];
     f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
   } else if (estCadre(f)){
     // la poignée opposée reste fixe ; l'image garde ses proportions
@@ -443,26 +453,43 @@ function editionPointerMove(e){
     const fixe = coins[(geste.i + 2) % 4];
     let mx = coins[geste.i][0] + dx, my = coins[geste.i][1] + dy;
     if (f.t === "image" && f.pts.length === 2){
+      /* Seule la largeur s'accroche : la hauteur est commandée par les
+         proportions de l'image, et un aimant qui la tirerait les casserait. */
+      acc.axes = "x";
+      mx += correction([[mx, my]], acc)[0];
       const ratio = (b[2] - b[0]) / Math.max(.01, b[3] - b[1]);
       const l = Math.abs(mx - fixe[0]);
       my = fixe[1] + Math.sign(my - fixe[1] || 1) * (l / ratio);
+    } else {
+      const c = correction([[mx, my]], acc);
+      mx += c[0]; my += c[1];
     }
     f.pts = [[+Math.min(fixe[0], mx).toFixed(2), +Math.min(fixe[1], my).toFixed(2)],
              [+Math.max(fixe[0], mx).toFixed(2), +Math.max(fixe[1], my).toFixed(2)]];
   } else {
     const q = geste.pts.map(x => x.slice());
-    q[geste.i] = [+(q[geste.i][0] + dx).toFixed(2), +(q[geste.i][1] + dy).toFixed(2)];
+    q[geste.i] = aimante([+(q[geste.i][0] + dx).toFixed(2), +(q[geste.i][1] + dy).toFixed(2)], acc);
     f.pts = q;
   }
   dessineDessins(); dessinePoignees();
+  /* La cote et les champs suivent le geste : c'est en le retenant qu'on
+     s'arrête sur douze mètres, pas en le vérifiant après coup. */
+  if (estCadre(f)){
+    const b = boite(f);
+    montreCote(coteCadre([b[0], b[1]], [b[2], b[3]]), [b[2], b[3]]);
+  }
+  ecritDimensions(f);
   return true;
 }
 
 function editionPointerUp(e){
   if (!geste) return false;
+  const f = geste.f;
   geste = null;
   svg.style.cursor = "";
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  apercuGuide(null); montreCote(null); montreAimants(null);
+  retientTaille(f);
   enregistreDessins();
   return true;
 }

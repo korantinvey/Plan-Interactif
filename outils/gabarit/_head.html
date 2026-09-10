@@ -395,10 +395,29 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
    de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
 #apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
   stroke-dasharray:2 5;opacity:.55;pointer-events:none}
+/* Les points d'accrochage à portée du geste. Discrets : ils annoncent une
+   possibilité, ils ne désignent rien — c'est la croix du repère d'alignement
+   qui dit lequel a pris. */
+#aimantsVus{pointer-events:none}
+#aimantsVus circle{fill:var(--accent);fill-opacity:.6;stroke:var(--surface);
+  stroke-width:1px;vector-effect:non-scaling-stroke}
+/* Un cran de grille n'est qu'une graduation : il se voit sans disputer au
+   coin du stand le regard qu'on lui porte. */
+#aimantsVus .cran{fill-opacity:.3;stroke:none}
+/* La cote se lit par-dessus le fond de plan, qui porte déjà ses propres
+   cotes et ses hachures : le liseré de la couleur du fond la détache sans
+   qu'il faille lui poser un cartouche. */
+#cote{fill:var(--accent);stroke:var(--surface);stroke-width:3px;paint-order:stroke;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke;font-weight:600;
+  pointer-events:none;user-select:none}
 
-.outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:8px;
+/* On travaille longtemps dans cette palette : elle est assez large pour que les
+   libellés tiennent sur une ligne, et bornée en hauteur pour ne jamais sortir
+   du plan sur un écran bas — elle défile alors plutôt que de déborder. */
+.outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:9px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:10px 12px;width:212px}
+  box-shadow:var(--shadow);padding:12px 14px;width:264px;
+  max-height:calc(100% - 24px);overflow-y:auto}
 .outils.open{display:flex}
 .outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .outilsActs{display:flex;align-items:center;gap:2px}
@@ -408,11 +427,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
    plutôt que de laisser les derniers déborder de la palette. */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
-.outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
-  color:var(--ink-2);font-size:13px;display:grid;place-items:center}
+.outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.outils input{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+.outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
 .outils .choix{display:none;width:100%;padding:7px;border:1px solid var(--accent);
@@ -471,7 +490,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
    d'œil, chaque ligne se retire d'une croix. */
 .elemLiens{display:flex;flex-direction:column;gap:5px}
 .elemLiens[hidden]{display:none}
-.elemLiens select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+.elemLiens select{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
 .elemLiens select:focus{border-color:var(--accent);outline:none}
 .elemLiens i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
@@ -488,26 +507,31 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   text-align:right;background:var(--surface);border:1px solid var(--line)}
 .lienListe .lien b{font-weight:400;font-size:10.5px;color:var(--ink-3)}
 .elemTete{display:flex;align-items:center;justify-content:space-between}
-.elemChamp{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3)}
+.elemChamp{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3)}
 .elemChamp input{flex:1;min-width:0}
+.elemChamp select{flex:1;min-width:0;padding:7px 9px;font-size:13px;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.elemChamp select:focus{border-color:var(--accent);outline:none}
 .elemChamp[hidden]{display:none}
+#elemDim{display:flex;flex-direction:column;gap:6px}
+#elemDim[hidden]{display:none}
 /* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
    puisque c'est en dessinant qu'on le décide. */
 .outilsRole{display:flex;flex-direction:column;gap:3px}
-.outilsRole select{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+.outilsRole select{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
 .outilsRole select:focus{border-color:var(--accent);outline:none}
-.outilsRole i{font-style:normal;font-size:11px;line-height:1.4;color:var(--ink-3)}
+.outilsRole i{font-style:normal;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
 .outilsRole i:empty{display:none}
-.outilsVoir{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-3);
+.outilsVoir{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);
   cursor:pointer}
-.outils .outilsVoir input{width:14px;height:14px;flex:none;padding:0;accent-color:var(--accent)}
+.outils .outilsVoir input{width:15px;height:15px;flex:none;padding:0;accent-color:var(--accent)}
 #nappe{pointer-events:none;image-rendering:pixelated;opacity:.55}
 .calq .rle{font-style:normal;font-size:10px;padding:1px 5px;border-radius:999px;
   background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .btnSup{color:var(--ink-3);font-size:13px;line-height:1;padding:1px 3px}
 .btnSup:hover{color:#C2372B}
-.elem input{width:100%;padding:6px 8px;font-size:12.5px;background:var(--surface-2);
+.elem input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .elem input:focus{border-color:var(--accent);outline:none}
 
@@ -517,7 +541,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 #poignees .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
   vector-effect:non-scaling-stroke;pointer-events:auto}
 #poignees .pgn:hover{fill:var(--accent-soft)}
-.outilsPied{display:flex;flex-direction:column;gap:5px;font-size:11.5px;color:var(--ink-3)}
+.outilsPied{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-3)}
 .calq .mv{width:15px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1;padding:0}
 .calq .mv:hover{color:var(--ink)}
 .calq .mv[disabled]{opacity:.25;cursor:default}
@@ -603,7 +627,12 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .crayon{border:none;background:none;color:var(--ink-3);font-size:14px;line-height:1;
   padding:2px 4px;border-radius:var(--radius);vertical-align:middle;cursor:pointer}
 .crayon:hover{color:var(--accent);background:var(--surface-2)}
-.detail-hd .crayon{margin-left:6px}
+/* Dans l'en-tête, le crayon est *dans* le titre, à la suite du dernier mot :
+   posé après le bloc, il retombait sur la ligne des pastilles et semblait
+   proposer de renommer le pavillon. Il n'hérite pas de la graisse du titre —
+   un modèle de fiche peut le vouloir gras et large, une icône reste une
+   icône. */
+.detail-hd h2 .crayon{margin-left:6px;font-weight:400;letter-spacing:normal}
 .detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
   text-wrap:balance;padding-right:26px}
@@ -1763,6 +1792,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <select id="roleIti"></select><i id="roleAide"></i></label>
       <label class="outilsVoir"><input type="checkbox" id="voirNappe">
         <span>Voir ce qui est praticable</span></label>
+      <label class="outilsVoir"><input type="checkbox" id="aimants" checked>
+        <span>Accrocher aux stands et aux zones — Alt pour relâcher</span></label>
+      <label class="elemChamp"><span>Pas de la grille</span>
+        <select id="aimantPas">
+          <option value="0.25">25 cm</option>
+          <option value="0.5" selected>50 cm</option>
+          <option value="0.75">75 cm</option>
+          <option value="1">1 m</option>
+        </select></label>
       <div class="outilsBtns">
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
@@ -1799,6 +1837,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <div class="lienListe" id="elemLiensListe"></div>
           <select id="elemLienAjout"></select>
           <i id="elemLienAide"></i>
+        </div>
+        <div id="elemDim" hidden>
+          <label class="elemChamp"><span>Largeur</span>
+            <input id="elemLargeur" type="number" min="0.1" max="999" step="0.5"></label>
+          <label class="elemChamp"><span>Hauteur</span>
+            <input id="elemHauteur" type="number" min="0.1" max="999" step="0.5"></label>
         </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
@@ -1851,8 +1895,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
         <span class="eyebrow" id="dKind"></span>
-        <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
-          title="Renommer" aria-label="Renommer">&#9998;</button>
+        <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
+          title="Renommer" aria-label="Renommer">&#9998;</button></h2>
         <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
