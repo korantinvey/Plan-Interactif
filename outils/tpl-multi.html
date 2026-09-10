@@ -3108,6 +3108,21 @@ const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
 
+/* Les intitulés du corps de la fiche. Ils vivent dans une table plutôt qu'en
+   toutes lettres à leur ligne parce qu'ils s'écrivent à deux endroits : sur la
+   fiche, et dans l'aperçu des modèles du panneau d'apparence. Un aperçu qui ne
+   nommerait pas les champs comme la fiche ne montrerait pas la fiche. */
+const LIBELLE_CORPS = {
+  raison: "Raison sociale", secteur: "Secteur", adresse: "Adresse",
+  ville: "Ville", pays: "Pays", niveaux: "Niveaux", telephone: "Téléphone",
+  site: "Site web", facebook: "Facebook", linkedin: "LinkedIn",
+  instagram: "Instagram", nomenclature: "Nomenclature", thematiques: "Thématiques",
+};
+
+/** L'intitulé d'un champ du corps — un champ propre au salon porte le sien. */
+const libelleCorps = cle => cle.indexOf(PREFIXE_PERSO) === 0
+  ? libelleCritere(cle) : (LIBELLE_CORPS[cle] || cle);
+
 /**
  * L'ordre réglé par l'exploitant, complété de ce qu'il ne connaît pas encore.
  *
@@ -3468,31 +3483,31 @@ function ouvre(o, rect, canal, iSoc){
   const corps = {};
   // la raison sociale n'apprend rien quand elle est déjà le titre
   corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f("Raison sociale", esc(soc.plan)) : "");
+    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f("Secteur", o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : ""));
+  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
+  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court"));
+  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
+  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f("Téléphone", soc.tel
+  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court"));
-  corps.site = ok("site", f("Site web", lien(soc.site)));
-  corps.facebook = ok("facebook", f("Facebook", lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f("LinkedIn", lien(soc.li)));
-  corps.instagram = ok("instagram", f("Instagram", lien(soc.ig)));
+  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
+  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
+  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
+  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f("Nomenclature", soc.nomencl
+    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
         .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
     : "");
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
@@ -3504,7 +3519,7 @@ function ouvre(o, rect, canal, iSoc){
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
   corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f("Thématiques", soc.themes
+    ? f(LIBELLE_CORPS.thematiques, soc.themes
         .map(n => themeFiltrable(n)
           ? '<button type="button" class="ligne theme" data-t="' +
             esc(String(n)) + '">' + esc(String(n)) + '</button>'
@@ -4272,42 +4287,157 @@ function appliqueFiche(){
   MODELES_FICHE.forEach(m => d.classList.toggle("modele-" + m.cle, m.cle === cle));
 }
 
-/* Un exposant d'exemple pour les aperçus. Il ne vient pas des données du
-   salon : la fiche d'aperçu doit se ressembler d'un salon à l'autre, et le
-   premier stand venu peut n'avoir ni conférence, ni adresse, ni thématique —
-   c'est-à-dire rien de ce que les modèles habillent. */
-function apercuFiche(cle){
+/* ------------------------------------------------------------------
+   L'exposant des aperçus
+
+   Les onze vignettes montrent la même fiche sous onze habillages : c'est en la
+   comparant à elle-même qu'on choisit. Mais elle ne peut pas être une fiche
+   inventée — un salon qui a retiré l'adresse et remonté sa nomenclature
+   choisirait son modèle sur des champs qu'il n'affiche pas, dans un ordre qui
+   n'est pas le sien.
+
+   Les vignettes portent donc les champs retenus, dans l'ordre réglé depuis la
+   console, et les valeurs d'un vrai stand.
+   ------------------------------------------------------------------ */
+
+/* Comment lire chaque champ du corps sur un stand. Les mêmes sources que la
+   fiche : ce que le plan porte reste au stand, le reste vient de la société. */
+const LECTURE_CORPS = {
+  raison: o => o.plan && o.plan !== o.nom ? o.plan : "",
+  secteur: o => o.sect,
+  adresse: o => o.adr,
+  ville: o => o.ville,
+  pays: o => o.pays,
+  niveaux: o => o.niveaux > 1 ? String(o.niveaux) : "",
+  telephone: o => o.tel,
+  site: o => o.site,
+  facebook: o => o.fb,
+  linkedin: o => o.li,
+  instagram: o => o.ig,
+  nomenclature: o => o.nomencl,
+  thematiques: o => o.themes,
+};
+
+/* Les champs qui tiennent en un mot s'apparient deux par deux sur écran
+   étroit : la vignette le montre, comme la fiche le fait. */
+const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
+
+/* De quoi remplir un champ qu'aucun stand ne renseigne. Le taire ferait
+   choisir un modèle sur une fiche plus courte que la vraie, et laisserait
+   croire le champ retiré. */
+const EXEMPLES_CORPS = {
+  nom: "Ateliers Ligneron", code: "D14", hall: "Hall 2",
+  raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
+  adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
+  niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
+  facebook: "facebook.com/ligneron", linkedin: "linkedin.com/company/ligneron",
+  instagram: "instagram.com/ligneron",
+  nomenclature: "Menuiserie;Agencement de boutique",
+  thematiques: "Réemploi;Bois de pays",
+};
+
+/** Ce qu'un stand porte pour un champ du corps, en une chaîne. */
+function texteCorps(o, cle){
+  if (cle.indexOf(PREFIXE_PERSO) === 0){
+    return separeValeurs((o.perso || {})[cle.slice(PREFIXE_PERSO.length)]).join(";");
+  }
+  const l = LECTURE_CORPS[cle];
+  return l ? separeValeurs(l(o)).join(";") : "";
+}
+
+/**
+ * Le stand qui remplit le mieux les champs retenus.
+ *
+ * Le premier venu n'irait pas : il peut n'avoir ni adresse, ni thématique, ni
+ * nomenclature — c'est-à-dire rien de ce que les modèles habillent — et on
+ * choisirait un habillage sur une fiche vide.
+ */
+function standApercu(cles){
+  let mieux = null, hall = "", score = 0, neuf = false;
+  Object.values(DATA.plans || {}).forEach(pl => (pl.stands || []).forEach(o => {
+    if (!o.nom) return;
+    neuf = neuf || Boolean(o.neuf);
+    const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
+    if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
+  }));
+  return { stand: mieux, hall, neuf };
+}
+
+/**
+ * Ce que les onze vignettes montrent : relevé une fois, elles s'en partagent.
+ *
+ * Un champ propre au salon qu'aucun stand ne renseigne n'a pas d'exemple à
+ * prêter — le code ne connaît pas son sujet — d'où la mention en clair plutôt
+ * qu'une valeur inventée qui passerait pour une vraie.
+ */
+function contenuApercu(){
+  const persos = (DATA.fiche && DATA.fiche.perso) || [];
+  const cles = ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
+    .filter(c => montre("stand", c));
+  const { stand, hall, neuf } = standApercu(cles);
+  const vals = {};
+  cles.forEach(c => {
+    vals[c] = (stand && texteCorps(stand, c)) || EXEMPLES_CORPS[c] ||
+      (c.indexOf(PREFIXE_PERSO) === 0 ? "Valeur d'exemple" : "");
+  });
+  return {
+    cles: cles.filter(c => vals[c]), vals,
+    nom: (stand && stand.nom) || EXEMPLES_CORPS.nom,
+    code: (stand && stand.code) || EXEMPLES_CORPS.code,
+    hall: hall || EXEMPLES_CORPS.hall,
+    /* La pastille ne paraît que là où le salon distingue ses nouveaux venus :
+       le réglage seul la ferait voir sur des salons dont aucune fiche ne porte
+       le champ, et plusieurs modèles l'habillent — on choisirait sur une
+       marque qu'on n'aura jamais. */
+    neuf: neuf && montre("stand", "nouveau"),
+  };
+}
+
+function apercuFiche(cle, vu){
   const d = document.createElement("div");
   d.className = "apercu modele-" + cle;
   // l'aperçu se regarde, il ne se manipule pas
   d.inert = true;
   const champ = (l, v, c) => '<div class="field' + (c ? " " + c : "") + '">' +
-    '<span class="eyebrow">' + l + '</span><span class="v">' + v + '</span></div>';
-  d.innerHTML =
-    '<div class="detail-hd" data-code="D14">' +
-      /* Des balises neutres plutôt que des boutons : l'aperçu vit dans un
-         bouton — celui qui choisit le modèle — et un bouton n'en contient pas
-         un autre. Les classes suffisent à l'habillage. */
-      '<div class="hdActs"><span class="marque">' +
-      '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
-      '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span><h2>Ateliers Ligneron</h2>' +
-      '<span class="badge">Hall 2 · D14</span>' +
-      '<span class="badge neuf">Nouvel exposant</span>' +
-    '</div>' +
-    '<div class="detail-bd">' +
-      champ("Secteur", "Aménagement &amp; second œuvre") +
-      champ("Ville", "Nantes", "court") +
-      champ("Pays", "France", "court") +
-      champ("Site web", '<a href="#">ateliers-ligneron.fr</a>') +
-      '<div class="field prog-bloc"><span class="eyebrow">Conférences</span><div class="prog">' +
+    '<span class="eyebrow">' + esc(l) + '</span><span class="v">' + v + '</span></div>';
+  /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
+     aussi, plusieurs modèles n'habillant que les liens. */
+  const LIENS = ["site", "facebook", "linkedin", "instagram"];
+  const corps = vu.cles.map(c => {
+    const l = separeValeurs(vu.vals[c]);
+    const v = l.length > 1
+      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
+      : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]);
+    return champ(libelleCorps(c), v, COURTS_CORPS.indexOf(c) >= 0 ? "court" : "");
+  }).join("");
+  /* Le programme reste celui de l'exemple, quand tout le reste vient du salon :
+     le stand qui remplit le mieux la fiche ne tient pas forcément de
+     conférence, et le modèle qui déroule une ligne de temps n'aurait rien à
+     montrer. */
+  const confs = montre("stand", "conferences")
+    ? '<div class="field prog-bloc"><span class="eyebrow">Conférences</span><div class="prog">' +
         '<div class="confRang"><span class="conf"><span class="h">10h30 – 11h15</span>' +
         '<span class="t">Le bois de pays dans la commande publique</span>' +
         '<span class="ty">Table ronde</span></span></div>' +
         '<div class="confRang"><span class="conf"><span class="h">16h00 – 16h45</span>' +
         '<span class="t">Agencer une boutique en réemploi</span>' +
         '<span class="ty">Démonstration</span></span></div>' +
-      '</div></div>' +
+      '</div></div>'
+    : "";
+  const code = montre("stand", "code") ? vu.code : "";
+  d.innerHTML =
+    '<div class="detail-hd" data-code="' + esc(code) + '">' +
+      /* Des balises neutres plutôt que des boutons : l'aperçu vit dans un
+         bouton — celui qui choisit le modèle — et un bouton n'en contient pas
+         un autre. Les classes suffisent à l'habillage. */
+      '<div class="hdActs"><span class="marque">' +
+      '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
+      '</span><span class="close">&times;</span></div>' +
+      '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
+      '<span class="badge">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+      (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+    '</div>' +
+    '<div class="detail-bd">' + corps + confs +
       '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
       '<span class="btn itin">Itinéraire</span></div>' +
     '</div>';
@@ -4508,6 +4638,9 @@ function voletApparence(hote){
   const grille = document.createElement("div");
   grille.className = "modeles";
   const courant = modeleFiche();
+  // le même contenu pour les onze : c'est en comparant la même fiche à
+  // elle-même qu'on choisit son habillage
+  const vu = contenuApercu();
   MODELES_FICHE.forEach(m => {
     const b = document.createElement("button");
     b.type = "button";
@@ -4518,7 +4651,7 @@ function voletApparence(hote){
       '<span class="resume"></span>';
     b.querySelector(".nom .t").textContent = m.nom;
     b.querySelector(".resume").textContent = m.resume;
-    b.querySelector(".vue").appendChild(apercuFiche(m.cle));
+    b.querySelector(".vue").appendChild(apercuFiche(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
       enregistreConf(); appliqueFiche();

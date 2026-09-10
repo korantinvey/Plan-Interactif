@@ -1112,9 +1112,15 @@ function panneauOrdre(e, src) {
   cadre.className = "apercu-cadre";
   cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
     '<div class="apercu-fiche"></div><p class="aide"></p>';
+  /* L'habillage de la fiche — onze modèles — se choisit plan par plan, dans le
+     panneau d'apparence du plan lui-même : la console n'en a ni le réglage ni
+     la feuille de style. L'aperçu montre donc l'ordre, pas le modèle, et le
+     dit plutôt que de laisser croire que le salon aura celui-ci. */
   cadre.querySelector("p").textContent = "Les valeurs viennent du relevé de la " +
     "dernière synchronisation. Sur téléphone, les champs qui tiennent en un " +
-    "mot se rangent deux par deux.";
+    "mot se rangent deux par deux. Le modèle de fiche, lui, se choisit depuis " +
+    "le plan — engrenage, « Apparence » — où ses vignettes reprennent ces " +
+    "champs dans cet ordre.";
   const apercu = cadre.querySelector(".apercu-fiche");
   deux.appendChild(cadre);
 
