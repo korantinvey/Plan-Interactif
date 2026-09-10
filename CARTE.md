@@ -175,7 +175,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2314 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2340 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 

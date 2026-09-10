@@ -837,22 +837,36 @@ button.expo:hover{background:var(--line)}
    porte les mêmes classes en réduction.
    ------------------------------------------------------------ */
 
-/* Grille — l'en-tête est un aplat d'encre, le numéro du stand y est peint en
-   grand derrière le nom, et les champs se rangent entre des filets pleins
-   plutôt que dans du vide. */
+/* Grille — l'en-tête est un aplat de la couleur du salon, le numéro du stand y
+   est peint en grand derrière le nom, et les champs se rangent entre des
+   filets pleins plutôt que dans du vide.
+
+   L'aplat était d'encre, et le modèle ne bougeait pas d'un ton à l'autre : on
+   choisissait une couleur au nuancier sans que rien ne s'en ressente. L'encre
+   reste ce qui trace — filets, cadres, ligne retournée — et la couleur prend
+   ce qui s'emplit. « --accent-ink » suit l'aplat : noir sur un jaune, blanc
+   sur un bleu. */
 .modele-grille{--radius:0;border-left:2px solid var(--ink)}
-.modele-grille .detail-hd{background:var(--ink);border-bottom:none;overflow:hidden}
+.modele-grille .detail-hd{background:var(--accent-base);border-bottom:none;overflow:hidden}
 .modele-grille .detail-hd::after{content:attr(data-code);position:absolute;right:-6px;bottom:-26px;
   font-family:"Archivo",sans-serif;font-weight:700;font-size:78px;line-height:1;
-  letter-spacing:-.06em;color:var(--surface);opacity:.14;pointer-events:none}
-.modele-grille .detail-hd > *{position:relative;z-index:1}
-.modele-grille .detail-hd h2{color:var(--surface);font-weight:700;font-size:22px;
+  letter-spacing:-.06em;color:var(--accent-ink);opacity:.16;pointer-events:none}
+/* Le contenu passe devant le filigrane. Le bloc des commandes en est
+   excepté : il se cale sur un coin de l'en-tête, et lui donner une
+   position relative le renvoyait dans le fil du texte, par-dessus
+   l'intitulé. */
+.modele-grille .detail-hd > *:not(.hdActs){position:relative;z-index:1}
+.modele-grille .hdActs{z-index:2}
+.modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
   text-transform:uppercase;line-height:1.1}
-.modele-grille .detail-hd .eyebrow{color:var(--surface);opacity:.6}
-.modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--surface);
-  border-color:rgba(255,255,255,.35);background:none}
-.modele-grille .detail-hd .badge{border-radius:0;background:var(--surface);color:var(--ink);font-weight:600}
-.modele-grille .detail-hd .badge.neuf{background:var(--accent);color:var(--accent-ink)}
+.modele-grille .detail-hd .eyebrow{color:var(--accent-ink);opacity:.65}
+.modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--accent-ink);
+  border-color:color-mix(in srgb,var(--accent-ink) 38%,transparent);background:none}
+.modele-grille .detail-hd .badge{border-radius:0;background:var(--accent-ink);
+  color:var(--accent-base);font-weight:600}
+/* Le nouvel exposant ne peut pas reprendre la couleur du salon : il la porte
+   déjà sous lui. C'est l'encre des filets qui le marque. */
+.modele-grille .detail-hd .badge.neuf{background:var(--ink);color:var(--surface)}
 .modele-grille .detail-bd{gap:0}
 .modele-grille .field{padding:11px 0;border-bottom:1px solid var(--ink);gap:5px}
 .modele-grille .field .eyebrow{color:var(--ink);font-weight:700}
@@ -916,7 +930,12 @@ button.expo:hover{background:var(--line)}
 .modele-magazine .detail-hd::before{content:attr(data-code);position:absolute;top:2px;right:14px;
   font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:66px;line-height:1;
   color:var(--surface-2);pointer-events:none}
-.modele-magazine .detail-hd > *{position:relative;z-index:1}
+/* Le contenu passe devant le filigrane. Le bloc des commandes en est
+   excepté : il se cale sur un coin de l'en-tête, et lui donner une
+   position relative le renvoyait dans le fil du texte, par-dessus
+   l'intitulé. */
+.modele-magazine .detail-hd > *:not(.hdActs){position:relative;z-index:1}
+.modele-magazine .hdActs{z-index:2}
 .modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;
   line-height:1.06;letter-spacing:-.02em;margin:14px 0 12px}
 .modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
@@ -1116,9 +1135,15 @@ button.expo:hover{background:var(--line)}
    deux lignes, et le stand retenu se retourne en négatif : le numéro peint
    sur la cloison, en clair sur le noir. */
 .liste-grille{--radius:0;border-right-width:2px;border-right-color:var(--ink)}
-.liste-grille .search{border-bottom:2px solid var(--ink)}
-.liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--line-strong)}
-.liste-grille .crit-btn{border-color:var(--ink)}
+/* La recherche est l'en-tête de la liste : elle prend l'aplat de couleur que
+   la fiche prend en tête, et le champ s'y pose comme une case imprimée sur un
+   bandeau — blanc, cerclé d'encre. */
+.liste-grille .search{background:var(--accent-base);border-bottom:2px solid var(--ink);
+  color:var(--accent-ink)}
+.liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--ink);
+  color:var(--ink)}
+.liste-grille .search-field svg{color:var(--ink-3)}
+.liste-grille .crit-btn{background:var(--surface);border-color:var(--ink);color:var(--ink)}
 .liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
   font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase}
@@ -1195,8 +1220,9 @@ button.expo:hover{background:var(--line)}
   background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
   font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
   /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
-     s'y rapporte, plutôt que de la déborder sur un salon aux numéros longs. */
-  font-size:calc(var(--caseF,11.5px) * 1.15)}
+     s'y tient, plutôt que de la déborder sur un salon aux numéros longs — un
+     serif un peu plus large que la chasse fixe se rattrape à l'approche. */
+  font-size:var(--caseF,11.5px);letter-spacing:-.02em}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
 .liste-magazine .row .s{font-style:italic}
