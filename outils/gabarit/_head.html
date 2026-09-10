@@ -384,6 +384,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 
 #apercu{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-dasharray:6 4;pointer-events:none}
+/* Le repère d'alignement dit d'où vient la ligne sur laquelle le point vient
+   de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
+#apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
+  stroke-dasharray:2 5;opacity:.55;pointer-events:none}
 
 .outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:8px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
@@ -394,8 +398,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
-.outilsBtns{display:flex;gap:4px}
-.outilsBtns button{flex:1;height:28px;border:1px solid var(--line);border-radius:var(--radius);
+/* Huit outils ne tiennent plus sur une rangée : la grille les range par
+   quatre, plutôt que de laisser le dernier déborder de la palette. */
+.outilsBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:13px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -408,6 +414,8 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outils.mode-image .choix{display:block}
 .outils #texteADessiner{display:none}
 .outils.mode-texte #texteADessiner{display:block}
+#contourReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-contour #contourReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
@@ -1419,10 +1427,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
         <button data-o="poly" title="Polygone — clic pour chaque sommet, Entrée pour fermer">&#11040;</button>
+        <button data-o="contour" title="Contour de hall — un clic par angle, segments redressés, Entrée pour fermer">&#8978;</button>
         <button data-o="ligne" title="Ligne — clic pour chaque point, Entrée pour terminer">&#9585;</button>
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+      </div>
+      <div id="contourReg">
+        <label class="elemChamp"><span>Arrondi</span>
+          <input id="contourRayon" type="number" min="0" max="10" step="0.5" value="2"></label>
+        <label class="outilsVoir"><input type="checkbox" id="contourAimant" checked>
+          <span>Redresser les segments</span></label>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
@@ -1443,6 +1458,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
+        <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
+          <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>

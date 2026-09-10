@@ -91,6 +91,17 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
+     posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
+     se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
+     calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const br = $("elemRayonBloc");
+  if (br){
+    br.hidden = !arrondissable;
+    if (arrondissable) $("elemRayon").value = f.r || 0;
+  }
+
   /* Le type d'un repère se change après coup : une porte mal typée ne se voit
      qu'en essayant un trajet, et il serait absurde de la redessiner pour
      cela. Un repère d'avant la séparation du type et du libellé n'en porte
@@ -292,6 +303,15 @@ function appliqueTexte(){
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** L'arrondi des coins de la forme choisie. */
+function appliqueRayon(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible) return;
+  memorise();
+  cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  enregistreDessins(); dessineDessins();
 }
 
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il

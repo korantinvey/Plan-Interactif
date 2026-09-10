@@ -389,6 +389,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 
 #apercu{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-dasharray:6 4;pointer-events:none}
+/* Le repère d'alignement dit d'où vient la ligne sur laquelle le point vient
+   de s'accrocher : sans lui, l'accrochage passe pour une main qui tremble. */
+#apercuGuide{fill:none;stroke:var(--accent);stroke-width:1;vector-effect:non-scaling-stroke;
+  stroke-dasharray:2 5;opacity:.55;pointer-events:none}
 
 .outils{position:absolute;top:12px;left:12px;z-index:6;display:none;flex-direction:column;gap:8px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
@@ -399,8 +403,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
-.outilsBtns{display:flex;gap:4px}
-.outilsBtns button{flex:1;height:28px;border:1px solid var(--line);border-radius:var(--radius);
+/* Huit outils ne tiennent plus sur une rangée : la grille les range par
+   quatre, plutôt que de laisser le dernier déborder de la palette. */
+.outilsBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:13px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -413,6 +419,8 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outils.mode-image .choix{display:block}
 .outils #texteADessiner{display:none}
 .outils.mode-texte #texteADessiner{display:block}
+#contourReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-contour #contourReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
@@ -1424,10 +1432,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="main" title="Sélectionner" aria-pressed="true">&#9099;</button>
         <button data-o="rect" title="Rectangle">&#9645;</button>
         <button data-o="poly" title="Polygone — clic pour chaque sommet, Entrée pour fermer">&#11040;</button>
+        <button data-o="contour" title="Contour de hall — un clic par angle, segments redressés, Entrée pour fermer">&#8978;</button>
         <button data-o="ligne" title="Ligne — clic pour chaque point, Entrée pour terminer">&#9585;</button>
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+      </div>
+      <div id="contourReg">
+        <label class="elemChamp"><span>Arrondi</span>
+          <input id="contourRayon" type="number" min="0" max="10" step="0.5" value="2"></label>
+        <label class="outilsVoir"><input type="checkbox" id="contourAimant" checked>
+          <span>Redresser les segments</span></label>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
@@ -1448,6 +1463,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         </div>
         <label class="elemChamp" id="elemTailleBloc" hidden><span>Taille</span>
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
+        <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
+          <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
@@ -4174,6 +4191,7 @@ function annule(){
   if (enCours && enCours.pts.length > 1){
     enCours.pts.pop();
     apercu(cheminForme({ t: "ligne", pts: enCours.pts }));
+    apercuGuide(null);
     aide();
     return;
   }
@@ -4186,15 +4204,71 @@ const trouveCalque = id => mesCalques().find(c => c.id === id);
 const nouvelId = () => "d" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
 
 /* --- rendu --- */
+
+/**
+ * Le tracé d'une suite de sommets, coins abattus d'un rayon donné.
+ *
+ * Un relevé de bureau d'études décrit un bâtiment ; un plan de visiteur décrit
+ * un lieu. Le second veut des murs francs et des angles doux, là où le premier
+ * détaille chaque battant de porte. D'où ce rayon : il tient en mètres, comme
+ * le reste du tracé, et suit donc le zoom au lieu de s'épaissir avec lui.
+ *
+ * Le rayon demandé n'est qu'un maximum. Un angle serré entre deux murs courts
+ * n'a pas la place de l'accueillir : la coupe s'arrête alors à la moitié du
+ * plus court des deux côtés, et l'arrondi se resserre d'autant. Sans cette
+ * limite, deux coins voisins se mangeraient l'un l'autre et le contour se
+ * retournerait.
+ */
+function cheminArrondi(pts, r, ferme){
+  const n = pts.length;
+  const droit = "M" + pts.map(p => p[0] + " " + p[1]).join("L") + (ferme ? "Z" : "");
+  if (!(r > 0) || n < 3) return droit;
+  const cm = (x) => +x.toFixed(2);
+
+  /* Les extrémités d'une ligne ouverte restent vives : il n'y a rien à
+     raccorder au-delà. */
+  const coins = new Array(n).fill(null);
+  for (let i = ferme ? 0 : 1; i <= (ferme ? n - 1 : n - 2); i++){
+    const a = pts[(i - 1 + n) % n], b = pts[i], c = pts[(i + 1) % n];
+    const lu = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const lv = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    if (!lu || !lv) continue;
+    const u = [(a[0] - b[0]) / lu, (a[1] - b[1]) / lu];
+    const v = [(c[0] - b[0]) / lv, (c[1] - b[1]) / lv];
+    // un sommet aligné ou replié sur lui-même n'a pas d'angle à adoucir
+    const theta = Math.acos(Math.max(-1, Math.min(1, u[0] * v[0] + u[1] * v[1])));
+    if (theta < .05 || Math.PI - theta < .05) continue;
+    const t = Math.min(r / Math.tan(theta / 2), lu / 2, lv / 2);
+    // le sens de l'arc suit celui du virage ; l'axe des ordonnées descend,
+    // un produit vectoriel positif tourne donc dans le sens des aiguilles
+    const sens = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) > 0 ? 1 : 0;
+    coins[i] = { e: [cm(b[0] + u[0] * t), cm(b[1] + u[1] * t)],
+                 s: [cm(b[0] + v[0] * t), cm(b[1] + v[1] * t)],
+                 r: cm(t * Math.tan(theta / 2)), sens };
+  }
+  if (coins.every(c => !c)) return droit;
+
+  const point = (p) => p[0] + " " + p[1];
+  const depart = ferme && coins[0] ? coins[0].s : pts[0];
+  let d = "M" + point(depart);
+  for (let k = 1; k <= (ferme ? n : n - 1); k++){
+    const co = coins[k % n];
+    d += co ? "L" + point(co.e) + "A" + co.r + " " + co.r + " 0 0 " + co.sens + " " + point(co.s)
+            : "L" + point(pts[k % n]);
+  }
+  return d + (ferme ? "Z" : "");
+}
+
 function cheminForme(f){
   if (f.t === "rect" || f.t === "image"){
     const [a, b] = f.pts;
     const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
     const w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
+    if (f.t === "rect" && f.r > 0)
+      return cheminArrondi([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], f.r, true);
     return "M" + x + " " + y + "h" + w + "v" + h + "h" + (-w) + "Z";
   }
-  const d = "M" + f.pts.map(p => p[0] + " " + p[1]).join("L");
-  return f.t === "ligne" ? d : d + "Z";
+  return cheminArrondi(f.pts, f.r || 0, f.t !== "ligne");
 }
 function dessineDessins(){
   const c = $("couches");
@@ -4248,6 +4322,104 @@ function apercu(d){
     svg.appendChild(el);
   }
   el.setAttribute("d", d);
+}
+
+/** Le trait fin qui montre sur quoi le point vient de s'aligner. */
+function apercuGuide(d){
+  let el = $("apercuGuide");
+  if (!d){ if (el) el.remove(); return; }
+  if (!el){
+    el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    el.id = "apercuGuide";
+    svg.appendChild(el);
+  }
+  el.setAttribute("d", d);
+}
+
+/* ------------------------------------------------------------
+   Aide au tracé d'un contour de hall
+   ------------------------------------------------------------
+   Le fond de plan vient d'un relevé technique : il porte l'épaisseur des
+   murs, le battant de chaque porte, le moindre décrochement de poteau. Un
+   visiteur n'a que faire de tout cela — il lui faut la silhouette du
+   pavillon, franche, pour savoir où il est. On la retrace donc par-dessus,
+   et deux choses suffisent à la rendre nette : des segments redressés, et
+   des angles adoucis. Les portes disparaissent d'elles-mêmes, puisqu'on ne
+   les suit pas.
+   ------------------------------------------------------------ */
+
+/** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
+function toleranceTrace(){
+  const r = svg.getBoundingClientRect();
+  return r.width ? view.w / r.width * 12 : .3;
+}
+
+const aimanteContour = () =>
+  !$("contourAimant") || $("contourAimant").checked;
+
+const rayonContour = () => {
+  const v = parseFloat($("contourRayon") ? $("contourRayon").value : "");
+  return isFinite(v) && v > 0 ? v : 0;
+};
+
+/**
+ * Le prochain sommet, redressé.
+ *
+ * Deux corrections, dans cet ordre. La direction d'abord : elle bascule sur
+ * le huitième de tour le plus proche, ce qui donne des murs d'équerre et des
+ * pans coupés à quarante-cinq degrés sans viser. La longueur ensuite : si le
+ * point tombe près de la verticale ou de l'horizontale d'un sommet déjà posé,
+ * il s'y accroche. C'est ce second réglage qui fait qu'un contour se referme
+ * exactement là où il a commencé, au lieu de laisser un décalage d'un
+ * dixième de mètre que le zoom finit toujours par montrer.
+ *
+ * `guide` reçoit le sommet servi de référence, s'il y en a un : l'appelant en
+ * tire le trait qui l'explique.
+ */
+function redresseTrace(p, pts, guide){
+  if (guide) guide.q = null;
+  if (!pts.length || !aimanteContour()) return p;
+  const tol = toleranceTrace();
+  const b = pts[pts.length - 1];
+  const dx = p[0] - b[0], dy = p[1] - b[1];
+  const l = Math.hypot(dx, dy);
+  if (l < 1e-6) return p;
+  const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+  const ux = Math.cos(a), uy = Math.sin(a);
+  let x = b[0] + ux * l, y = b[1] + uy * l, meilleur = null;
+  for (const q of pts){
+    /* On cherche la longueur qui met le point sur l'abscisse — ou l'ordonnée
+       — du sommet q. Une direction presque parallèle à l'axe visé donnerait
+       une longueur démesurée pour un gain nul : on l'écarte. */
+    for (const axe of [0, 1]){
+      const c = axe ? uy : ux;
+      if (Math.abs(c) < .3) continue;
+      const l2 = (q[axe] - b[axe]) / c;
+      if (l2 < tol) continue;              // derrière soi, ou sur soi
+      const px = b[0] + ux * l2, py = b[1] + uy * l2;
+      const ecart = Math.hypot(px - x, py - y);
+      if (ecart < tol && (!meilleur || ecart < meilleur.ecart))
+        meilleur = { x: px, y: py, ecart, q, axe };
+    }
+  }
+  if (meilleur){
+    x = meilleur.x; y = meilleur.y;
+    if (guide) guide.q = meilleur;
+  }
+  return [+x.toFixed(2), +y.toFixed(2)];
+}
+
+/** Le trait pointillé qui relie le sommet de référence au point accroché. */
+function traceGuide(g, p){
+  if (!g || !g.q){ apercuGuide(null); return; }
+  const q = g.q.q;
+  apercuGuide("M" + q[0] + " " + q[1] + "L" + p[0] + " " + p[1]);
+}
+
+/** Le contour se referme quand on revient sur son premier sommet. */
+function fermeIci(p, pts){
+  if (pts.length < 3) return false;
+  return Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < toleranceTrace() * 1.5;
 }
 
 function ajouteForme(f){
@@ -4735,6 +4907,22 @@ function dessinPointerDown(e){
     enCours = { t: "image", pts: [p, p] };
     return true;
   }
+  /* Le contour est un polygone, tracé la main tenue : chaque sommet est
+     redressé sur celui d'avant, et revenir sur le premier referme la
+     silhouette — c'est le geste que l'on cherche en arrivant là. */
+  if (outil === "contour"){
+    if (!enCours) enCours = { t: "poly", pts: [p] };
+    else {
+      const g = {};
+      const q = redresseTrace(p, enCours.pts, g);
+      if (fermeIci(q, enCours.pts) || fermeIci(p, enCours.pts)){ termineTrace(true); return true; }
+      enCours.pts.push(q);
+    }
+    apercuGuide(null);
+    apercu(cheminForme({ t: "ligne", pts: enCours.pts }));
+    aide();
+    return true;
+  }
   // polygone et ligne : un clic par sommet
   if (!enCours) enCours = { t: outil, pts: [p] };
   else enCours.pts.push(p);
@@ -4754,7 +4942,16 @@ function dessinPointerMove(e){
     }
     apercu(cheminForme(enCours));
   } else {
-    apercu(cheminForme({ t: "ligne", pts: [...enCours.pts, p] }));
+    let q = p;
+    if (outil === "contour"){
+      const g = {};
+      q = redresseTrace(p, enCours.pts, g);
+      // de retour sur le premier sommet : montrer la boucle telle qu'elle
+      // se fermerait, plutôt qu'un segment qui passe à côté
+      if (fermeIci(q, enCours.pts) || fermeIci(p, enCours.pts)){ q = enCours.pts[0]; g.q = null; }
+      traceGuide(g, q);
+    }
+    apercu(cheminForme({ t: "ligne", pts: [...enCours.pts, q] }));
   }
   return true;
 }
@@ -4781,8 +4978,10 @@ function dessinPointerUp(e){
 function termineTrace(valider){
   if (!enCours) return;
   const mini = enCours.t === "ligne" ? 2 : 3;
+  // l'arrondi se lit à la validation : on peut le régler le tracé commencé
+  if (outil === "contour" && rayonContour() > 0) enCours.r = rayonContour();
   if (valider && enCours.pts.length >= mini) ajouteForme(enCours);
-  enCours = null; apercu(null); aide();
+  enCours = null; apercu(null); apercuGuide(null); aide();
 }
 
 function aide(){
@@ -4791,6 +4990,8 @@ function aide(){
                              : "Cliquez une forme pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
+              contour: "Un clic par angle du hall. Revenez sur le premier point, " +
+                       "ou Entrée, pour fermer le contour.",
               ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
               texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
               repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
@@ -4812,6 +5013,7 @@ function choisitOutil(o){
   dessinePoignees(); majElement();
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
+  b.classList.toggle("mode-contour", o === "contour");
   b.classList.toggle("mode-repere", o === "repere");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
@@ -4836,6 +5038,7 @@ $("repereType").onchange = () => $("repereTexte").focus();
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
+if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
 $("elemPicto").onchange = appliquePicto;
 /* La liste des passages revient à « Relier à… » dès que le choix est fait :
    c'est une action, pas un réglage — on en pose plusieurs à la suite. */
@@ -5052,6 +5255,17 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
+     posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
+     se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
+     calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const br = $("elemRayonBloc");
+  if (br){
+    br.hidden = !arrondissable;
+    if (arrondissable) $("elemRayon").value = f.r || 0;
+  }
+
   /* Le type d'un repère se change après coup : une porte mal typée ne se voit
      qu'en essayant un trajet, et il serait absurde de la redessiner pour
      cela. Un repère d'avant la séparation du type et du libellé n'en porte
@@ -5253,6 +5467,15 @@ function appliqueTexte(){
   cible.f.txt = $("elemTexte").value;
   cible.f.taille = Math.max(.3, Math.min(30, +$("elemTaille").value || 2));
   enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
+/** L'arrondi des coins de la forme choisie. */
+function appliqueRayon(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible) return;
+  memorise();
+  cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  enregistreDessins(); dessineDessins();
 }
 
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
