@@ -144,6 +144,8 @@ function appliqueApparence(){
   appliqueCouleursData();
   appliqueCommandes();
   appliqueSecteurs();
+  appliqueAccent();
+  appliqueFiche();
 }
 
 /**
@@ -217,79 +219,343 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/* ------------------------------------------------------------
+   Couleur principale et modèle de fiche
+
+   Deux réglages d'apparence qui ne portent sur aucun calque : la teinte dont
+   le plan se sert partout — sélection, liens, boutons pleins — et l'habillage
+   de la fiche détail. Ils vivent dans CONF sous une clé préfixée, donc ils
+   partent aux visiteurs avec le reste de la configuration.
+   ------------------------------------------------------------ */
+
+/** Les trois composantes d'une couleur écrite « #rrggbb ». */
+const trio = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+};
+
+/** Deux couleurs mêlées, `t` disant combien on va de la première vers la
+ *  seconde. Sert à décliner l'accent sans demander cinq teintes à
+ *  l'exploitant : il en choisit une, le reste s'en déduit. */
+const melange = (a, b, t) => {
+  const x = trio(a), y = trio(b);
+  return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
+};
+
+/** Le thème effectivement peint : celui qu'on a choisi, sinon celui du
+ *  système. La couleur principale s'y adapte — un bleu d'imprimerie s'éteint
+ *  sur un fond noir, et le même ton ne peut pas servir des deux côtés. */
+const themeSombre = () => {
+  const t = racine.getAttribute("data-theme");
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+/**
+ * Pose la couleur principale et ses déclinaisons sur la racine.
+ *
+ * L'exploitant n'en règle qu'une, celle qu'il voit : l'aplat doux des
+ * pastilles, l'encre qui s'écrit sur un bouton plein et les deux nuances dont
+ * les modèles de fiche composent leurs fonds s'en déduisent. Sans réglage, on
+ * retire les variables plutôt que d'en réécrire : la feuille de style reprend
+ * la main, et avec elle le bleu d'origine — qui a déjà ses deux versions.
+ */
+function appliqueAccent(){
+  const noms = ["--accent", "--accent-base", "--accent-soft", "--accent-ink",
+                "--accent-clair", "--accent-fort"];
+  const choisie = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
+  if (!choisie){ noms.forEach(n => racine.style.removeProperty(n)); return; }
+  const sombre = themeSombre();
+  /* Sur fond sombre, un ton franc s'éteint : on l'éclaircit d'un tiers, comme
+     le thème le fait de son propre bleu. */
+  const base = sombre ? melange(choisie, "#FFFFFF", 0.34) : choisie;
+  const pose = (n, v) => racine.style.setProperty(n, v);
+  pose("--accent", base);
+  pose("--accent-base", base);
+  pose("--accent-soft", melange(base, sombre ? "#0E1113" : "#FFFFFF", sombre ? 0.76 : 0.86));
+  // le texte d'un bouton plein : noir sur un jaune, blanc sur un bleu
+  pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
+  pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
+  pose("--accent-fort", melange(base, "#000000", 0.42));
+}
+/* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/* Les habillages de la fiche détail. Le premier n'a pas de classe : c'est la
+   fiche telle que la feuille de style la dessine, et le point de départ de
+   tous les autres. */
+const MODELES_FICHE = [
+  { cle: "sobre", nom: "Sobre",
+    resume: "Le rendu d'origine : un seul rythme du haut en bas." },
+  { cle: "grille", nom: "Grille",
+    resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
+  { cle: "console", nom: "Console",
+    resume: "Phosphore vert, chasse fixe, libellés en invite de commande." },
+  { cle: "billet", nom: "Billet",
+    resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
+  { cle: "magazine", nom: "Magazine",
+    resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
+  { cle: "brut", nom: "Brut",
+    resume: "Trait épais, ombre dure, jaune de chantier. Ne suit pas le thème." },
+  { cle: "verre", nom: "Verre",
+    resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
+  { cle: "kraft", nom: "Kraft",
+    resume: "Carton et machine à écrire, la mention « nouvel exposant » tamponnée." },
+  { cle: "signal", nom: "Signalétique",
+    resume: "Vert de fléchage et capitales : un stand se lit comme une direction." },
+  { cle: "chrono", nom: "Chronologie",
+    resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
+  { cle: "nu", nom: "Nu",
+    resume: "Ni cadre ni libellés : la hiérarchie typographique seule." },
+];
+const modeleFiche = () => {
+  const c = (CONF["_fiche"] || {}).modele;
+  return MODELES_FICHE.some(m => m.cle === c) ? c : "sobre";
+};
+
+/** Pose l'habillage retenu sur la fiche. Une seule classe à la fois : les
+ *  modèles se recouvrent, et deux ensemble ne veulent rien dire. */
+function appliqueFiche(){
+  const d = $("detail");
+  if (!d) return;
+  const cle = modeleFiche();
+  MODELES_FICHE.forEach(m => d.classList.toggle("modele-" + m.cle, m.cle === cle));
+}
+
+/* Un exposant d'exemple pour les aperçus. Il ne vient pas des données du
+   salon : la fiche d'aperçu doit se ressembler d'un salon à l'autre, et le
+   premier stand venu peut n'avoir ni conférence, ni adresse, ni thématique —
+   c'est-à-dire rien de ce que les modèles habillent. */
+function apercuFiche(cle){
+  const d = document.createElement("div");
+  d.className = "apercu modele-" + cle;
+  // l'aperçu se regarde, il ne se manipule pas
+  d.inert = true;
+  const champ = (l, v, c) => '<div class="field' + (c ? " " + c : "") + '">' +
+    '<span class="eyebrow">' + l + '</span><span class="v">' + v + '</span></div>';
+  d.innerHTML =
+    '<div class="detail-hd" data-code="D14">' +
+      /* Des balises neutres plutôt que des boutons : l'aperçu vit dans un
+         bouton — celui qui choisit le modèle — et un bouton n'en contient pas
+         un autre. Les classes suffisent à l'habillage. */
+      '<div class="hdActs"><span class="marque">' +
+      '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
+      '</span><span class="close">&times;</span></div>' +
+      '<span class="eyebrow">Stand</span><h2>Ateliers Ligneron</h2>' +
+      '<span class="badge">Hall 2 · D14</span>' +
+      '<span class="badge neuf">Nouvel exposant</span>' +
+    '</div>' +
+    '<div class="detail-bd">' +
+      champ("Secteur", "Aménagement &amp; second œuvre") +
+      champ("Ville", "Nantes", "court") +
+      champ("Pays", "France", "court") +
+      champ("Site web", '<a href="#">ateliers-ligneron.fr</a>') +
+      '<div class="field prog-bloc"><span class="eyebrow">Conférences</span><div class="prog">' +
+        '<div class="confRang"><span class="conf"><span class="h">10h30 – 11h15</span>' +
+        '<span class="t">Le bois de pays dans la commande publique</span>' +
+        '<span class="ty">Table ronde</span></span></div>' +
+        '<div class="confRang"><span class="conf"><span class="h">16h00 – 16h45</span>' +
+        '<span class="t">Agencer une boutique en réemploi</span>' +
+        '<span class="ty">Démonstration</span></span></div>' +
+      '</div></div>' +
+      '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
+      '<span class="btn itin">Itinéraire</span></div>' +
+    '</div>';
+  return d;
+}
+
 /**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
  * déjà longue, et se lisaient comme une couche de plus. Une fenêtre à part les
  * range, et laisse la place à celles qui viendront.
+ *
+ * Deux volets : ce que le plan montre, et de quoi il a l'air. Le second est
+ * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
+ * l'écran.
  */
 function ouvreReglages(){
   ouvreModale("Réglages du plan", corps => {
-    const p = document.createElement("p");
-    p.textContent = "Ce que les visiteurs voient sur le plan. " +
-      "Publiez la configuration pour que le changement leur parvienne.";
-    corps.appendChild(p);
-
-    const bloc = document.createElement("div");
-    bloc.className = "reglages";
-    COMMANDES.forEach(cmd => {
-      const l = document.createElement("label");
-      l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = cmd.libelle;
-      const c = l.querySelector("input");
-      c.checked = conf(cmd.cle).visible !== false;
-      c.onchange = e => {
-        conf(cmd.cle).visible = e.target.checked;
-        enregistreConf(); appliqueCommandes();
-        // la couleur du parcours vit dans la pile : elle suit le réglage
-        if (ADMIN) construitPanneau();
+    const barre = document.createElement("div");
+    barre.className = "ongReg";
+    corps.appendChild(barre);
+    const boutons = [], volets = [];
+    const volet = (titre) => {
+      const i = boutons.length;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = titre;
+      b.setAttribute("aria-pressed", String(i === 0));
+      b.onclick = () => {
+        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+        volets.forEach((x, j) => { x.hidden = j !== i; });
       };
-      bloc.appendChild(l);
-    });
-
-    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
-       retirent une commande du plan, celui-ci change ce que le plan donne à
-       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
-       promettrait des couleurs qu'aucune donnée ne porte. */
-    if (SECTEURS.size){
-      const l = document.createElement("label");
-      l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
-      const c = l.querySelector("input");
-      c.checked = conf("_secteurs").visible !== false;
-      c.onchange = e => {
-        conf("_secteurs").visible = e.target.checked;
-        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
-        // les couleurs des secteurs vivent dans la pile : elles suivent
-        if (ADMIN) construitPanneau();
-      };
-      bloc.appendChild(l);
-    }
-
-    corps.appendChild(bloc);
-
-    const duree = document.createElement("div");
-    duree.className = "reglage-nb";
-    duree.innerHTML = '<label><span class="l"></span>' +
-      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
-      '<span class="u">min</span></label><span class="aide"></span>';
-    duree.querySelector(".l").textContent = "Temps de visite par stand";
-    duree.querySelector(".aide").textContent =
-      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
-      "qui décide combien de stands tiennent entre deux conférences.";
-    const n = duree.querySelector("input");
-    n.value = minutesVisite();
-    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
-       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
-       on le quitte. */
-    n.oninput = e => {
-      const v = Math.round(+e.target.value);
-      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+      barre.appendChild(b);
+      boutons.push(b);
+      const v = document.createElement("div");
+      v.hidden = i > 0;
+      corps.appendChild(v);
+      volets.push(v);
+      return v;
     };
-    n.onblur = () => { n.value = minutesVisite(); };
-    corps.appendChild(duree);
-  }, [{ libelle: "Fermer" }]);
+    voletPlan(volet("Plan"));
+    voletApparence(volet("Apparence"));
+  }, [{ libelle: "Fermer" }], "large");
+}
+
+/** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
+ *  le temps qu'on passe sur un stand. */
+function voletPlan(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que les visiteurs voient sur le plan. " +
+    "Publiez la configuration pour que le changement leur parvienne.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  COMMANDES.forEach(cmd => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = cmd.libelle;
+    const c = l.querySelector("input");
+    c.checked = conf(cmd.cle).visible !== false;
+    c.onchange = e => {
+      conf(cmd.cle).visible = e.target.checked;
+      enregistreConf(); appliqueCommandes();
+      // la couleur du parcours vit dans la pile : elle suit le réglage
+      if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  });
+
+  /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+     retirent une commande du plan, celui-ci change ce que le plan donne à
+     voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+     promettrait des couleurs qu'aucune donnée ne porte. */
+  if (SECTEURS.size){
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+    const c = l.querySelector("input");
+    c.checked = conf("_secteurs").visible !== false;
+    c.onchange = e => {
+      conf("_secteurs").visible = e.target.checked;
+      enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+      // les couleurs des secteurs vivent dans la pile : elles suivent
+      if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  }
+
+  hote.appendChild(bloc);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+    '<span class="u">min</span></label><span class="aide"></span>';
+  duree.querySelector(".l").textContent = "Temps de visite par stand";
+  duree.querySelector(".aide").textContent =
+    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+    "qui décide combien de stands tiennent entre deux conférences.";
+  const n = duree.querySelector("input");
+  n.value = minutesVisite();
+  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+     on le quitte. */
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesVisite(); };
+  hote.appendChild(duree);
+}
+
+/* Quelques tons qui tiennent sur les deux thèmes, pour choisir sans ouvrir le
+   nuancier du système : celui d'origine, puis de quoi couvrir la gamme des
+   chartes de salon sans tomber dans les couleurs que le plan emploie déjà
+   pour dire autre chose — le doré des zones, le rouge d'une alerte. */
+const TONS = ["#2F49D1", "#0E7A3C", "#B4402F", "#7A3DBE", "#0F7C8A", "#C06A0B", "#25303A"];
+
+/** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
+ *  fiche détail. */
+function voletApparence(hote){
+  const p = document.createElement("p");
+  p.textContent = "La couleur principale sert partout : sélection, liens, " +
+    "boutons, pastilles. Le modèle de fiche décide de l'allure du panneau qui " +
+    "s'ouvre sur un stand.";
+  hote.appendChild(p);
+
+  const coul = document.createElement("div");
+  coul.className = "reglage-coul";
+  coul.innerHTML = '<span class="eyebrow">Couleur principale</span>' +
+    '<input type="color" class="cc"><span class="nuancier"></span>' +
+    '<button type="button" class="raz">Couleur d\'origine</button>';
+  const cc = coul.querySelector(".cc");
+  const nuancier = coul.querySelector(".nuancier");
+  const majPastilles = () => {
+    const v = (conf("_accent").couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    cc.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
+  };
+  const choisit = (v) => {
+    conf("_accent").couleur = v;
+    enregistreConf(); appliqueAccent(); majPastilles();
+  };
+  TONS.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = t;
+    b.style.background = t;
+    b.title = t;
+    b.setAttribute("aria-label", "Couleur " + t);
+    b.onclick = () => { cc.value = t; choisit(t); };
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir la couleur s'installer sur
+     le plan pendant qu'on la cherche. Rien ne part en base pour autant. */
+  cc.oninput = e => choisit(e.target.value);
+  coul.querySelector(".raz").onclick = () => {
+    delete conf("_accent").couleur;
+    enregistreConf(); appliqueAccent(); majPastilles();
+  };
+  hote.appendChild(coul);
+  majPastilles();
+
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.textContent = "Modèle de fiche";
+  titre.style.display = "block";
+  titre.style.margin = "0 0 9px";
+  hote.appendChild(titre);
+
+  const grille = document.createElement("div");
+  grille.className = "modeles";
+  const courant = modeleFiche();
+  MODELES_FICHE.forEach(m => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mod";
+    b.setAttribute("aria-pressed", String(m.cle === courant));
+    b.innerHTML = '<span class="vue"></span>' +
+      '<span class="nom"><span class="t"></span><span class="coche">✓</span></span>' +
+      '<span class="resume"></span>';
+    b.querySelector(".nom .t").textContent = m.nom;
+    b.querySelector(".resume").textContent = m.resume;
+    b.querySelector(".vue").appendChild(apercuFiche(m.cle));
+    b.onclick = () => {
+      conf("_fiche").modele = m.cle;
+      enregistreConf(); appliqueFiche();
+      grille.querySelectorAll(".mod").forEach(x =>
+        x.setAttribute("aria-pressed", String(x === b)));
+    };
+    grille.appendChild(b);
+  });
+  hote.appendChild(grille);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
