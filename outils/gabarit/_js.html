@@ -1529,6 +1529,10 @@ const LIBELLE_CORPS = {
   ville: "Ville", pays: "Pays", niveaux: "Niveaux", telephone: "Téléphone",
   site: "Site web", facebook: "Facebook", linkedin: "LinkedIn",
   instagram: "Instagram", nomenclature: "Nomenclature", thematiques: "Thématiques",
+  /* Les deux champs qu'une zone organisateur porte en propre : ils ne viennent
+     pas d'une fiche d'exposant mais de la main de l'exploitant, et ne
+     s'écrivent donc jamais sur un stand. */
+  description: "Description", lien: "Lien",
 };
 
 /** L'intitulé d'un champ du corps — un champ propre au salon porte le sien. */
@@ -1750,6 +1754,118 @@ function lien(v){
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
 }
 
+/**
+ * Une adresse dont on peut faire un lien.
+ *
+ * Tout ce qui n'est pas une page, un courriel ou un numéro est écarté :
+ * « javascript: » et « data: » sont des adresses valides pour le navigateur,
+ * et exécuteraient ce qu'on aurait posé dedans.
+ */
+function adresseSure(v){
+  const u = String(v == null ? "" : v).trim().replace(/[\u0000-\u001F]/g, "");
+  if (!u) return "";
+  if (/^(https?:|mailto:|tel:)/i.test(u)) return u;
+  // une adresse écrite sans protocole est une page web : c'est le cas courant
+  if (/^[\w.-]+\.[a-z]{2,}(\/|$|\?|#)/i.test(u)) return "https://" + u.replace(/^\/+/, "");
+  return "";
+}
+
+/* Ce qu'une description écrite dans l'éditeur a le droit de contenir, et sous
+   quel nom elle le garde : de la mise en forme, rien d'autre. Les balises que
+   les navigateurs produisent pour dire la même chose — « b », « i », « div » —
+   sont ramenées à celle qu'on garde, pour n'avoir qu'un balisage à habiller. */
+const RICHE_BALISES = { P: "p", DIV: "p", BR: "br", STRONG: "strong", B: "strong",
+  EM: "em", I: "em", U: "u", UL: "ul", OL: "ol", LI: "li", A: "a" };
+/* Celles dont le contenu part avec elles : le texte d'un script n'est pas du
+   texte, et le déplier reviendrait à l'écrire dans la fiche. */
+const RICHE_MUETTES = { SCRIPT: 1, STYLE: 1, IFRAME: 1, OBJECT: 1, EMBED: 1,
+  TEMPLATE: 1, NOSCRIPT: 1, SVG: 1, MATH: 1, LINK: 1, META: 1, FORM: 1 };
+
+/**
+ * La description d'une zone, relue avant d'être affichée.
+ *
+ * Elle est écrite par un exploitant authentifié, dans un éditeur qui ne produit
+ * que de la mise en forme — mais elle passe par la base, revient par l'API, et
+ * finit dans la fiche de tous les visiteurs. Un balisage arrivé par un autre
+ * chemin que l'éditeur ne doit pas s'y exécuter : on ne filtre donc pas ce
+ * qu'on refuse, on ne garde que ce qu'on reconnaît.
+ *
+ * Une balise inconnue mais inoffensive — un titre, une police — laisse son
+ * texte derrière elle : perdre la mise en forme vaut mieux que perdre la
+ * phrase.
+ */
+function assainitRiche(html){
+  const brut = String(html == null ? "" : html);
+  if (!brut) return "";
+  const lu = new DOMParser().parseFromString("<body>" + brut + "</body>", "text/html").body;
+  const sortie = document.createElement("div");
+  const copie = (de, vers) => {
+    de.childNodes.forEach(n => {
+      if (n.nodeType === 3){ vers.appendChild(document.createTextNode(n.nodeValue)); return; }
+      if (n.nodeType !== 1) return;
+      if (RICHE_MUETTES[n.tagName]) return;
+      const nom = RICHE_BALISES[n.tagName];
+      // inconnue : on la déplie, son contenu reste
+      if (!nom){ copie(n, vers); return; }
+      const e = document.createElement(nom);
+      if (nom === "a"){
+        const u = adresseSure(n.getAttribute("href"));
+        // un lien sans adresse tenable n'est plus qu'un bout de phrase
+        if (!u){ copie(n, vers); return; }
+        e.setAttribute("href", u);
+        e.setAttribute("target", "_blank");
+        e.setAttribute("rel", "noopener");
+      }
+      copie(n, e);
+      vers.appendChild(e);
+    });
+  };
+  copie(lu, sortie);
+  rangeRiche(sortie);
+  return sortie.innerHTML;
+}
+
+/* Ce que le balisage doit être en sortie : des blocs au premier rang, du texte
+   dedans. Un éditeur laisse rarement les choses ainsi — une liste mise en forme
+   reste dans le paragraphe qui la portait, une première ligne n'en a jamais eu.
+   Or « p » n'accepte pas de bloc : le navigateur qui relit la fiche referme
+   alors le paragraphe devant la liste, et laisse un blanc là où on ne l'attend
+   pas. Autant ranger ici, où l'on tient encore l'arbre. */
+const BLOCS_RICHE = { P: 1, UL: 1, OL: 1 };
+
+/** Une suite de nœuds rangée en blocs : chaque passage de texte prend un « p ». */
+function enBlocs(noeuds){
+  const frag = document.createDocumentFragment();
+  let par = null;
+  [...noeuds].forEach(n => {
+    if (n.nodeType === 1 && BLOCS_RICHE[n.tagName]){ par = null; frag.appendChild(n); return; }
+    // un blanc entre deux blocs n'ouvre pas un paragraphe pour lui seul
+    if (!par && n.nodeType === 3 && !n.nodeValue.trim()) return;
+    if (!par){ par = document.createElement("p"); frag.appendChild(par); }
+    par.appendChild(n);
+  });
+  return frag;
+}
+
+function rangeRiche(hote){
+  // les blocs glissés dans un paragraphe en sortent, avec ce qui les entoure
+  for (let tour = 0; tour < 8; tour++){
+    const dedans = [...hote.querySelectorAll("p")]
+      .filter(e => [...e.children].some(c => BLOCS_RICHE[c.tagName]));
+    if (!dedans.length) break;
+    dedans.forEach(e => e.replaceWith(enBlocs(e.childNodes)));
+  }
+  // et ce qui traîne au premier rang sans paragraphe en prend un
+  if ([...hote.childNodes].some(n => !(n.nodeType === 1 && BLOCS_RICHE[n.tagName])))
+    hote.replaceChildren(enBlocs(hote.childNodes));
+  /* Refermer un paragraphe devant une liste en sème un vide de part et
+     d'autre : c'est la ponctuation du navigateur, pas une ligne blanche que
+     quelqu'un aurait voulue — celle-là porte un « br ». */
+  hote.querySelectorAll("p").forEach(e => {
+    if (!e.textContent.trim() && !e.querySelector("br")) e.remove();
+  });
+}
+
 /* Un appui tactile produit, quelque trois cents millisecondes plus tard, un
    clic de compatibilité aux mêmes coordonnées. La fiche venant d'apparaître
    sous le doigt, ce clic fantôme la refermait aussitôt — d'où l'impression
@@ -1959,12 +2075,33 @@ function ouvre(o, rect, canal, iSoc){
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
         : esc(l[0])));
   });
-  const infos = ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
-    .map(c => corps[c] || "").join("");
+  /* Ce que l'exploitant a écrit sur une zone, depuis les réglages du plan.
+     C'est tout ce qu'une zone a en propre : Klipso ne lui donne qu'un nom et
+     un contour, et le reste de ce corps décrit un exposant qu'elle n'a pas.
+
+     La description porte du balisage, puisqu'elle s'écrit dans un éditeur :
+     elle est relue avant d'être posée dans la fiche. Le libellé du champ ne
+     paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
+     n'en a pas. */
+  corps.description = zone
+    ? ok("description", o.description
+        ? f(LIBELLE_CORPS.description,
+            '<div class="riche">' + assainitRiche(o.description) + '</div>')
+        : "")
+    : "";
+  corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
+  /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
+     range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
+     dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
+     plus. */
+  const infos = zone
+    ? corps.description + corps.lien
+    : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
+        .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
-     l'adresse et les contacts hors de l'écran. Une zone, elle, n'a rien à
-     dire d'autre que son programme : il reste en tête. */
+     l'adresse et les contacts hors de l'écran. Une zone se présente d'abord —
+     ce qu'on y trouve — et déroule son programme ensuite. */
   const bloc2 = (cls, id, h) =>
     '<div class="' + cls + '" id="' + id + '" role="tabpanel">' + h + '</div>';
   /* Ce qu'est l'exposant et ce qu'il anime se partagent la fiche dès qu'il y
@@ -1977,9 +2114,8 @@ function ouvre(o, rect, canal, iSoc){
   $("dOngNb").textContent = partage && sien.length ? sien.length : "";
   // une fiche s'ouvre sur le détail : c'est ce qu'on est venu y lire
   onglet("detail");
-  $("dBody").innerHTML = (zone
-      ? bloc2("cConf", "dPaneConf", confs) + bloc2("cInfos", "dPaneInfos", infos)
-      : bloc2("cInfos", "dPaneInfos", infos) + bloc2("cConf", "dPaneConf", confs)) +
+  $("dBody").innerHTML = bloc2("cInfos", "dPaneInfos", infos) +
+    bloc2("cConf", "dPaneConf", confs) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
   /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
@@ -2008,7 +2144,7 @@ function ouvre(o, rect, canal, iSoc){
   const cr = $("dRen");
   if (cr){
     cr.hidden = !(ADMIN && zone);
-    cr.onclick = () => renommeZone(o);
+    cr.onclick = () => ficheZone(o);
   }
   /* Une zone technique — réserve, quai de livraison — n'apprend rien au
      visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant

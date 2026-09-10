@@ -755,6 +755,11 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   .detail.deux .cConf{grid-column:2;display:flex;flex-direction:column}
   .detail.deux .acts{grid-column:1/-1}
 }
+/* Une fiche a deux blocs — ce qu'elle décrit, ce qu'elle programme — et l'un
+   des deux est souvent vide : une zone sans description, un stand sans
+   conférence. Vide, il reste un élément de la colonne, et l'écart qui le
+   sépare du suivant se lisait comme une marge de trop en haut de la fiche. */
+.detail-bd > .cInfos:empty,.detail-bd > .cConf:empty{display:none}
 .field{display:flex;flex-direction:column;gap:3px}
 .field .v{font-size:14px;line-height:1.45}
 .field .v a{color:var(--accent)}
@@ -767,6 +772,14 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
 .field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
 .field .v .ligne.theme:hover{text-decoration:underline}
+/* La description d'une zone, écrite dans un éditeur : elle porte ses propres
+   paragraphes et ses propres listes, là où tous les autres champs tiennent en
+   une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */
+.field .v .riche > *:first-child{margin-top:0}
+.field .v .riche > *:last-child{margin-bottom:0}
+.field .v .riche p{margin:0 0 .55em}
+.field .v .riche ul,.field .v .riche ol{margin:0 0 .55em;padding-left:1.25em}
+.field .v .riche li{margin:0 0 .2em}
 /* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
    c'est par elle qu'on se repère, et un filet de la couleur de son type. */
 .prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
@@ -1763,6 +1776,85 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
    qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
 .apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Les zones organisateur dans les réglages : la liste d'un côté, la fiche de
+   celle qu'on a choisie de l'autre. Un exploitant les reprend l'une après
+   l'autre, et doit voir en même temps ce qu'il écrit et ce qui reste à
+   écrire. */
+.zonesReg{display:grid;grid-template-columns:minmax(0,208px) minmax(0,1fr);
+  gap:14px;align-items:start;margin-top:12px}
+/* La liste défile pour elle seule : vingt-deux zones auraient poussé le bouton
+   d'enregistrement hors de la fenêtre. */
+.listeZ{display:flex;flex-direction:column;gap:2px;max-height:46dvh;
+  overflow-y:auto;padding-right:2px}
+.listeZ button{display:flex;align-items:baseline;gap:7px;width:100%;padding:7px 9px;
+  font-size:13px;text-align:left;color:var(--ink-2);background:var(--surface-2);
+  border:1px solid transparent;border-radius:var(--radius)}
+.listeZ button:hover{border-color:var(--line-strong);color:var(--ink)}
+.listeZ button[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink);font-weight:600}
+.listeZ .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.listeZ .etat{flex:none;font-size:10.5px;color:var(--ink-3);
+  letter-spacing:.03em;text-transform:uppercase}
+.detailZ{min-width:0}
+.ouZ{margin:0 0 10px;font-size:11.5px;color:var(--ink-3)}
+.champZ{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.champZ .tZ{font-size:11px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-2)}
+.champZ input{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
+.champZ input:focus{border-color:var(--accent);outline:none}
+.champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+.piedZ{display:flex;align-items:center;gap:10px;margin-top:2px}
+/* Enregistrer n'est pas un réglage parmi d'autres : ici, rien ne part tant
+   qu'on ne l'a pas demandé — une description se rédige, et s'enregistrer à
+   chaque frappe la publierait en cours de phrase. */
+.piedZ .btn.fort{color:#fff;background:var(--accent);border-color:var(--accent);
+  font-weight:500}
+.piedZ .btn.fort:hover{opacity:.9}
+.piedZ .btn[disabled]{opacity:.5}
+.etatZ{font-size:12px;color:var(--ink-3)}
+.etatZ[data-mal="true"]{color:#C2372B}
+
+/* L'éditeur de la description. Sa barre ne propose que ce que la fiche sait
+   afficher : proposer un titre ou une couleur montrerait une mise en forme
+   que la relecture retire à l'affichage. */
+.edrich{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);overflow:hidden}
+.edrich:focus-within{border-color:var(--accent)}
+.edrich .barre{display:flex;flex-wrap:wrap;gap:2px;padding:4px;
+  border-bottom:1px solid var(--line)}
+.edrich .barre button{min-width:27px;height:26px;padding:0 7px;font-size:12.5px;
+  line-height:1;color:var(--ink-2);border-radius:3px}
+.edrich .barre button.lg{font-size:11.5px}
+.edrich .barre button:hover{background:var(--line);color:var(--ink)}
+.edrich .barre button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.edrich .lienbarre{display:flex;gap:6px;padding:6px;background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.edrich .lienbarre[hidden]{display:none}
+.edrich .lienbarre input{flex:1;min-width:0;padding:5px 8px;font-size:12.5px;
+  color:var(--ink);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.edrich .lienbarre input:focus{border-color:var(--accent);outline:none}
+.edrich .lienbarre button{flex:none;padding:5px 10px;font-size:12px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.edrich .lienbarre button:hover{border-color:var(--line-strong);color:var(--ink)}
+.edrich .lienbarre button.ok{color:var(--accent);border-color:var(--accent)}
+.edrich .zone{min-height:118px;max-height:32dvh;overflow-y:auto;padding:9px 10px;
+  font-size:14px;line-height:1.5;color:var(--ink)}
+.edrich .zone:focus{outline:none}
+.edrich .zone > *:first-child{margin-top:0}
+.edrich .zone p{margin:0 0 .55em}
+.edrich .zone ul,.edrich .zone ol{margin:0 0 .55em;padding-left:1.25em}
+.edrich .zone a{color:var(--accent)}
+/* Un éditeur vide ne dit pas ce qu'on y met : la consigne s'efface à la
+   première frappe, comme dans un champ ordinaire. */
+.edrich .zone:empty::before{content:attr(data-vide);color:var(--ink-3)}
+/* Sur un écran étroit la fenêtre n'a plus deux colonnes à donner : la liste
+   passe au-dessus de la fiche, raccourcie pour ne pas la repousser. */
+@media (max-width:640px){
+  .zonesReg{grid-template-columns:minmax(0,1fr)}
+  .listeZ{max-height:26dvh}
+}
 .modale[data-genre="large"] .mfen{width:min(760px,100%)}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
@@ -2260,7 +2352,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         </div>
         <span class="eyebrow" id="dKind"></span>
         <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
-          title="Renommer" aria-label="Renommer">&#9998;</button></h2>
+          title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
         <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>

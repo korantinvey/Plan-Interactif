@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1259 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1651 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.903 · 10. Mode administration
-- l.969 · Renommer une zone organisateur
-- l.1021 · Masquer une zone organisateur
-- l.1089 · Placer un libellé à la main
+- l.1029 · 10. Mode administration
+- l.1095 · La fiche d'une zone organisateur
+- l.1398 · Masquer une zone organisateur
+- l.1481 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,15 +27,16 @@ Fonctions :
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
 `modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
 `lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
-`apercuDuo` 578 · `ouvreReglages` 597 · `voletPlan` 628 · `nomDuTon` 755
-`voletApparence` 759 · `enregistreConf` 853 · `rgbHex` 859 · `hexa` 866 · `luminance` 870
-`ecarte` 884 · `joli` 899 · `retireAdmin` 916 · `activeAdmin` 929 · `renommeZone` 979
-`enregistreNomZone` 1003 · `basculeAffichageZone` 1032 · `marqueZonesMasquees` 1049
-`ecritTableZones` 1064 · `cleLibelle` 1110 · `empreinteLibelle` 1126
-`placementLibelle` 1134 · `posePlacement` 1144 · `libelleAutomatique` 1161
-`modePlacementLibelles` 1170 · `majPaletteLibelle` 1187 · `choisitLibelle` 1204
-`pousseLibelle` 1211 · `libellePointerDown` 1219 · `libellePointerMove` 1234
-`libellePointerUp` 1243
+`apercuDuo` 578 · `ouvreReglages` 597 · `voletZones` 642 · `ficheZoneEnPlace` 716
+`voletPlan` 754 · `nomDuTon` 881 · `voletApparence` 885 · `enregistreConf` 979
+`rgbHex` 985 · `hexa` 992 · `luminance` 996 · `ecarte` 1010 · `joli` 1025
+`retireAdmin` 1042 · `activeAdmin` 1055 · `champZone` 1121 · `champsZone` 1146
+`editeurRiche` 1196 · `ficheZone` 1343 · `enregistreZone` 1365 · `basculeAffichageZone` 1409
+`marqueZonesMasquees` 1426 · `ecritTablesZones` 1446 · `ecritTableZones` 1477
+`cleLibelle` 1502 · `empreinteLibelle` 1518 · `placementLibelle` 1526 · `posePlacement` 1536
+`libelleAutomatique` 1553 · `modePlacementLibelles` 1562 · `majPaletteLibelle` 1579
+`choisitLibelle` 1596 · `pousseLibelle` 1603 · `libellePointerDown` 1611
+`libellePointerMove` 1626 · `libellePointerUp` 1635
 
 Éléments :
 
@@ -101,7 +102,7 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2700 l. → admin-plans.html
+### `_console-js.html` — 2711 l. → admin-plans.html
 
 - l.372 · Provenance des données
 - l.499 · Contenu de la fiche détail
@@ -112,20 +113,20 @@ Fonctions :
 `charge` 101 · `chargePlans` 116 · `majEvenement` 121 · `selonAdresse` 141
 `majAdresse` 149 · `majBarre` 164 · `dessineChoix` 206 · `champ` 226 · `dessineFiche` 251
 `fournisseurUtilise` 434 · `source` 438 · `champCle` 443 · `ligneSource` 478
-`origineConferences` 587 · `resumeProvenance` 652 · `resumeSalles` 669 · `resumeFiche` 680
-`caseFiche` 723 · `champsPersos` 766 · `criteres` 772 · `ecritFiche` 775 · `caseCritere` 790
-`clePerso` 809 · `ajouteChampPerso` 817 · `renommeChampPerso` 828 · `retireChampPerso` 846
-`lignesPerso` 894 · `clesCorps` 929 · `ordreEffectif` 943 · `libelleCorps` 958
-`champsLus` 1000 · `exempleCible` 1015 · `valeurApercu` 1037 · `dessineApercu` 1065
-`panneauOrdre` 1138 · `ligneOutil` 1320 · `ligneReglage` 1336 · `ouvreProvenance` 1348
-`ouvreSources` 1371 · `ouvreSalles` 1427 · `cadreFiche` 1542 · `ouvreFiche` 1571
-`sousTitre` 1721 · `tableauChamps` 1736 · `encode` 1879 · `decode` 1881
-`correspondance` 1886 · `sansPrefixe` 1889 · `courte` 1890 · `intitule` 1905
-`intituleSuite` 1917 · `separeValeurs` 1931 · `champOrigine` 1943 · `majLiens` 2172
-`majIntegration` 2199 · `majMsgSync` 2206 · `synchronise` 2221 · `dupliquer` 2264
-`litMonProfil` 2358 · `RETOUR_MDP` 2369 · `litComptes` 2371 · `ligneMessage` 2380
-`casesSalons` 2390 · `ouvreComptes` 2420 · `ouvreFicheCompte` 2512 · `videEcran` 2671
-`dessine` 2676 · `demarre` 2688
+`origineConferences` 598 · `resumeProvenance` 663 · `resumeSalles` 680 · `resumeFiche` 691
+`caseFiche` 734 · `champsPersos` 777 · `criteres` 783 · `ecritFiche` 786 · `caseCritere` 801
+`clePerso` 820 · `ajouteChampPerso` 828 · `renommeChampPerso` 839 · `retireChampPerso` 857
+`lignesPerso` 905 · `clesCorps` 940 · `ordreEffectif` 954 · `libelleCorps` 969
+`champsLus` 1011 · `exempleCible` 1026 · `valeurApercu` 1048 · `dessineApercu` 1076
+`panneauOrdre` 1149 · `ligneOutil` 1331 · `ligneReglage` 1347 · `ouvreProvenance` 1359
+`ouvreSources` 1382 · `ouvreSalles` 1438 · `cadreFiche` 1553 · `ouvreFiche` 1582
+`sousTitre` 1732 · `tableauChamps` 1747 · `encode` 1890 · `decode` 1892
+`correspondance` 1897 · `sansPrefixe` 1900 · `courte` 1901 · `intitule` 1916
+`intituleSuite` 1928 · `separeValeurs` 1942 · `champOrigine` 1954 · `majLiens` 2183
+`majIntegration` 2210 · `majMsgSync` 2217 · `synchronise` 2232 · `dupliquer` 2275
+`litMonProfil` 2369 · `RETOUR_MDP` 2380 · `litComptes` 2382 · `ligneMessage` 2391
+`casesSalons` 2401 · `ouvreComptes` 2431 · `ouvreFicheCompte` 2523 · `videEcran` 2682
+`dessine` 2687 · `demarre` 2699
 
 Éléments :
 
@@ -175,7 +176,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2340 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2432 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -249,7 +250,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2418 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2554 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -258,8 +259,8 @@ Fonctions :
 - l.518 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1308 · 6. Vue
 - l.1407 · 7. Sélection et fiche
-- l.2063 · 8. Interactions du plan
-- l.2264 · Le tiroir de la liste — écrans étroits
+- l.2199 · 8. Interactions du plan
+- l.2400 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -280,11 +281,12 @@ Fonctions :
 `rafraichitVue` 1332 · `poseVue` 1344 · `masque` 1362 · `fit` 1382 · `zoom` 1394
 `echelle` 1399 · `ETROIT` 1413 · `anime` 1415 · `noeud` 1439 · `canalPlan` 1449
 `rangSociete` 1457 · `select` 1466 · `centre` 1487 · `centrePoint` 1491 · `montre` 1506
-`libelleCorps` 1535 · `ordreCorps` 1547 · `momentLocal` 1584 · `programme` 1607
-`jourLong` 1640 · `ficheConf` 1651 · `lien` 1745 · `ecarteClicFantome` 1762
-`nomSociete` 1771 · `societes` 1784 · `choisitExposant` 1795 · `ouvre` 1831 · `ferme` 2037
-`onglet` 2053 · `milieu` 2083 · `commencePince` 2089 · `suitPince` 2103
-`mesureTiroir` 2275 · `montreTiroir` 2278
+`libelleCorps` 1539 · `ordreCorps` 1551 · `momentLocal` 1588 · `programme` 1611
+`jourLong` 1644 · `ficheConf` 1655 · `lien` 1749 · `adresseSure` 1764 · `assainitRiche` 1797
+`enBlocs` 1837 · `rangeRiche` 1850 · `ecarteClicFantome` 1878 · `nomSociete` 1887
+`societes` 1900 · `choisitExposant` 1911 · `ouvre` 1947 · `ferme` 2173 · `onglet` 2189
+`milieu` 2219 · `commencePince` 2225 · `suitPince` 2239 · `mesureTiroir` 2411
+`montreTiroir` 2414
 
 Éléments :
 
@@ -413,10 +415,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 466 l.
+### `supabase/functions/plan-public/index.ts` — 483 l.
 
-`cors` 49 · `db` 83 · `salon` 96 · `retraits` 160 · `ampute` 183 · `masquesDe` 212
-`masquesDuPlan` 221
+`cors` 49 · `db` 83 · `salon` 96 · `retraits` 162 · `ampute` 185 · `masquesDe` 214
+`masquesDuPlan` 223
 
 ### `supabase/functions/sync-evenement/index.ts` — 1095 l.
 
@@ -447,6 +449,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 - `20260910000006_ferme_lecture_anon.sql` — —
 - `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
+- `20260910000008_fiches_zones.sql` — evenement
 
 ## Le reste
 
