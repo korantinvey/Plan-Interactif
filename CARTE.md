@@ -394,9 +394,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 331 l.
+### `supabase/functions/plan-public/index.ts` — 466 l.
 
-`cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
+`cors` 49 · `db` 83 · `salon` 96 · `retraits` 160 · `ampute` 183 · `masquesDe` 212
+`masquesDuPlan` 221
 
 ### `supabase/functions/sync-evenement/index.ts` — 1102 l.
 
@@ -425,6 +426,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000003_zones_masquees.sql` — evenement
 - `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
+- `20260910000006_ferme_lecture_anon.sql` — —
 
 ## Le reste
 
