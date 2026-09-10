@@ -6,7 +6,7 @@
 <title>Plan du salon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap">
 
 <script src="config.js"></script>
 
@@ -16,6 +16,11 @@
   --line:#D2D5CB; --line-strong:#B4B9AC;
   --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
   --accent:#2F49D1; --accent-soft:#DCE1FA; --accent-ink:#FFFFFF;
+  /* L'accent décliné : les modèles de fiche s'en servent pour composer un
+     dégradé ou un aplat sans avoir à deviner la couleur choisie. « base »
+     reste l'accent tel qu'il est peint, même là où un modèle redéfinit
+     « --accent » pour son propre usage. */
+  --accent-base:#2F49D1; --accent-clair:#6A80EE; --accent-fort:#1B2A8E;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
   /* Un secteur n'a qu'une teinte : la saturation et la clarté viennent du
@@ -32,6 +37,7 @@
     --line:#2A3034; --line-strong:#3B4348;
     --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
     --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
+    --accent-base:#7A8CFF; --accent-clair:#A9B5FF; --accent-fort:#3F4E9E;
     --zone:#F0B429; --zone-soft:#3A2F12;
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
     --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
@@ -44,6 +50,7 @@
   --line:#2A3034; --line-strong:#3B4348;
   --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
   --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
+  --accent-base:#7A8CFF; --accent-clair:#A9B5FF; --accent-fort:#3F4E9E;
   --zone:#F0B429; --zone-soft:#3A2F12;
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
   --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
@@ -245,6 +252,10 @@ button{cursor:pointer;background:none;border:none}
 .zone path{fill:var(--c-zone,var(--zone));fill-opacity:.5;
   stroke:var(--c-zone,var(--zone));stroke-width:1.2;
   vector-effect:non-scaling-stroke;stroke-dasharray:5 4}
+/* Une zone éteinte par l'exploitant : présente en administration, absente du
+   plan public. La teinte pâlie le dit sans la faire disparaître — c'est de sa
+   fiche qu'on revient sur le choix, encore faut-il pouvoir la désigner. */
+.zone.masquee path{fill-opacity:.14;stroke-opacity:.4}
 .stand path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
   stroke-width:1;vector-effect:non-scaling-stroke}
 /* La teinte du secteur est posée sur le groupe par la page. La règle vient
@@ -288,13 +299,20 @@ html.sans-parcours #marques .parc{display:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
 
-#labels text{pointer-events:none;text-anchor:middle;fill:var(--c-lab-stand,var(--ink-2));
+/* Deux endroits écrivent le même libellé : « #labels », qui porte ceux du
+   plan, et « .lab » — le libellé qu'un stand dessiné garde dans sa propre
+   forme, faute de pouvoir compter sur l'ordre des couches. Les règles valent
+   pour les deux, et le second sélecteur passe par « .dcal » pour l'emporter
+   sur l'habillage du calque, qui teinte tout ce qu'il porte. */
+#labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
+  fill:var(--c-lab-stand,var(--ink-2));
   font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
+#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+#labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
-#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
 /* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
    la page, comme la pastille des nouveaux venus sur la fiche : c'est une
    distinction, pas une alerte, et le plan a déjà le langage des zones. */
@@ -308,9 +326,21 @@ html.sans-parcours #marques .parc{display:none}
 #labels text.coexN{fill:var(--accent);font-weight:700}
 #labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Le réglage qui masque les libellés de stand emporte la pastille : elle en
-   fait partie, et la laisser flotter seule ne se comprendrait pas. */
-.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
+   fait partie, et la laisser flotter seule ne se comprendrait pas. Il emporte
+   aussi ceux des stands dessinés : ce sont des libellés de stand. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
+.sans-lab-stand .dcal .lab{display:none}
 .sans-lab-zone #labels text.zn{display:none}
+/* Placer un libellé à la main.
+   Hors de ce mode un libellé ne reçoit aucun clic : c'est le stand qui est
+   dessous qu'on désigne à travers lui, et c'est sa fiche qu'on veut. Dedans,
+   c'est le nom lui-même qu'on attrape — d'où le pointeur, et la teinte
+   d'accent qui dit lequel répondra. */
+html.mode-libelles #labels .lbl{cursor:move}
+html.mode-libelles #labels .lbl text,
+html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
+html.mode-libelles #labels .lbl:hover text,
+html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 
 /* --- calques de dessin --- */
 .dcal{pointer-events:none}
@@ -319,15 +349,14 @@ html.sans-parcours #marques .parc{display:none}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
 .dcal.editable{pointer-events:auto}
-/* En mode sélection, tous les calques de dessin répondent, pas seulement celui
-   qu'on modifie : cliquer une forme d'un autre calque l'active. Sans cela, une
-   image posée sur un calque inactif restait sourde et rien ne le disait. */
-html.mode-edition .dcal{pointer-events:auto}
-html.mode-edition .dcal path,html.mode-edition .dcal image,
-html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
+/* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
+   calques restent sourds : leur clic appartient à la vue, sans quoi un geste
+   destiné au plan emportait un dessin voisin. L'image liée à un stand fait
+   exception plus haut — elle ouvre sa fiche, comme pour un visiteur. */
 /* une forme en contour seul doit rester attrapable par son intérieur */
-.dcal.editable path,.dcal.editable image,.dcal.editable text{pointer-events:all}
-.dcal .forme{cursor:pointer}
+.dcal.editable path,.dcal.editable image,
+.dcal.editable text,.dcal.editable rect{pointer-events:all}
+.dcal.editable .forme{cursor:pointer}
 .dcal.editable .forme.pick{cursor:move}
 @keyframes halo{0%{opacity:.15}35%{opacity:1}100%{opacity:1}}
 /* Une forme déclarée infranchissable pour les PMR ne change rien pour le
@@ -340,6 +369,26 @@ html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
+   lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
+   la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
+   Le sélecteur porte « html » pour tenir devant celui du rôle « circulation »,
+   plus spécifique, qui repeindrait le découpage en allée. */
+html .dcal .forme.sdes path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
+  stroke-width:1;stroke-dasharray:none;fill-opacity:1}
+html .dcal .forme.sdes[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+/* Rattaché — « lie », comme une image liée — il répond au pointeur par son
+   tracé, y compris sur la page publique où le mode édition n'existe pas.
+   Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
+.dcal .forme.sdes.lie path{pointer-events:all}
+html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+/* Le liseré de la sélection reste sur la forme : « #marques » recopie les
+   tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
+html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+.dcal .forme.sdes:focus{outline:none}
+html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -365,9 +414,9 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
-/* Huit outils ne tiennent plus sur une rangée : la grille les range par
-   quatre, plutôt que de laisser le dernier déborder de la palette. */
-.outilsBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+/* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
+   plutôt que de laisser les derniers déborder de la palette. */
+.outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:13px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
@@ -386,6 +435,15 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
+/* La palette de placement emprunte l'allure de la barre de dessin — même
+   coin, même cadre — parce qu'elle joue le même rôle : elle règle ce qu'on est
+   en train de retoucher sur le plan. Les deux ne s'ouvrent jamais ensemble,
+   entrer en placement referme le dessin. */
+.libreg input[type="range"]{padding:0;border:none;background:none;accent-color:var(--accent)}
+.libreg .auto{width:100%;padding:7px;border:1px solid var(--line);border-radius:var(--radius);
+  font-size:12.5px;color:var(--ink-2);background:var(--surface)}
+.libreg .auto:hover:not([disabled]){border-color:var(--line-strong);color:var(--ink)}
+.libreg .auto[disabled]{opacity:.4;cursor:default}
 .dcal image{pointer-events:none}
 .dcal.editable image{pointer-events:auto}
 .elem{display:flex;flex-direction:column;gap:6px;padding:8px 0 2px;
@@ -397,6 +455,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
+   n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
+.outils #standSoc{display:none}
+.outils.mode-stand #standSoc{display:block}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
@@ -521,19 +583,29 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .poi .poiPicto{width:17px;height:17px;flex:none}
 .poi .poiPicto path{fill:currentColor}
 /* Mise en avant : tout le plan s'efface sauf les repères retenus, qui gagnent
-   un liseré et un halo battant. Faire pulser le repère lui-même le rendait
-   invisible une fois sur deux — c'est l'inverse de l'effet recherché. */
+   un liseré, un halo et un battement. Faire pulser l'opacité du repère
+   lui-même le rendait invisible une fois sur deux — c'est l'inverse de
+   l'effet recherché. */
 html.poi-actif #stands,html.poi-actif #zones,html.poi-actif #labels,
 html.poi-actif #couches .cal,
 html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
-.dcal .repere.phare{animation:pulsePoi 1.4s ease-in-out infinite}
-@keyframes pulsePoi{
-  0%,100%{filter:drop-shadow(0 0 .3px var(--accent))}
-  50%{filter:drop-shadow(0 0 2.4px var(--accent))}
-}
+/* Le battement passe par « transform », et non par « filter ».
+   Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
+   délègue pas au compositeur, si bien que le navigateur recalculait les styles
+   et repeignait le plan entier — cinq cents stands et leurs libellés — à
+   chaque image, tant qu'un point d'intérêt restait mis en avant. Le plan et
+   l'interface partagent une seule couche : sur un téléphone, tout l'écran
+   tremblait avec lui, à commencer par le bandeau du haut. « transform » et
+   « opacity » sont les deux propriétés que le compositeur anime seul, sans
+   rien repeindre ; le halo reste donc posé une fois pour toutes, et c'est la
+   taille du repère qui bat. */
+.dcal .repere.phare{filter:drop-shadow(0 0 1.6px var(--accent));
+  transform-box:fill-box;transform-origin:center;
+  animation:pulsePoi 1.4s ease-in-out infinite}
+@keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){
-  .dcal .repere.phare{animation:none;filter:drop-shadow(0 0 1.6px var(--accent))}
+  .dcal .repere.phare{animation:none}
 }
 @media (max-width:760px){.poi{max-width:88%;bottom:12px}}
 
@@ -570,6 +642,17 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .badge.part{font-family:inherit;margin-left:6px;cursor:pointer;
   border:1px solid var(--line-strong)}
 .badge.part:hover{color:var(--ink);border-color:var(--ink-3)}
+/* « Affiché : oui/non » — l'interrupteur d'une zone organisateur, en
+   administration seulement. Une pastille comme les autres, car c'est d'abord
+   un état qu'on lit ; la puce qui la précède en donne la réponse de loin, sans
+   relire le mot. */
+.badge.bascule{font-family:inherit;margin-left:6px;cursor:pointer;
+  align-items:center;border:1px solid var(--line-strong)}
+.badge.bascule::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:var(--accent)}
+.badge.bascule[aria-pressed="false"]{color:var(--ink-3)}
+.badge.bascule[aria-pressed="false"]::before{background:var(--ink-3)}
+.badge.bascule:hover{color:var(--ink);border-color:var(--ink-3)}
 /* Les sociétés d'un stand partagé, dans la fenêtre de choix. Un rang par
    société — jusqu'à une douzaine sur les plus peuplés — et rien d'autre que
    leur nom : celle qui loue le stand vient en tête, ce qui la dit assez. */
@@ -685,6 +768,276 @@ button.expo:hover{background:var(--line)}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
+
+/* ------------------------------------------------------------
+   Modèles de fiche
+
+   Une même fiche, plusieurs écritures : l'exploitant choisit depuis les
+   réglages celle qui va à son salon, et le choix part aux visiteurs avec le
+   reste de la configuration.
+
+   Un modèle redéfinit d'abord les jetons de couleur sur la fiche elle-même —
+   le reste de la feuille les lit déjà, si bien qu'une pastille, un bouton ou
+   une vignette de conférence suivent sans qu'on les nomme — puis n'écrit à la
+   main que sa signature : un filigrane, une perforation, un rail.
+
+   Les sélecteurs partent de la classe et non de « #detail » : le même
+   habillage sert à la fiche du plan et à son aperçu dans les réglages, qui
+   porte les mêmes classes en réduction.
+   ------------------------------------------------------------ */
+
+/* Grille — l'en-tête est un aplat d'encre, le numéro du stand y est peint en
+   grand derrière le nom, et les champs se rangent entre des filets pleins
+   plutôt que dans du vide. */
+.modele-grille{--radius:0;border-left:2px solid var(--ink)}
+.modele-grille .detail-hd{background:var(--ink);border-bottom:none;overflow:hidden}
+.modele-grille .detail-hd::after{content:attr(data-code);position:absolute;right:-6px;bottom:-26px;
+  font-family:"Archivo",sans-serif;font-weight:700;font-size:78px;line-height:1;
+  letter-spacing:-.06em;color:var(--surface);opacity:.14;pointer-events:none}
+.modele-grille .detail-hd > *{position:relative;z-index:1}
+.modele-grille .detail-hd h2{color:var(--surface);font-weight:700;font-size:22px;
+  text-transform:uppercase;line-height:1.1}
+.modele-grille .detail-hd .eyebrow{color:var(--surface);opacity:.6}
+.modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--surface);
+  border-color:rgba(255,255,255,.35);background:none}
+.modele-grille .detail-hd .badge{border-radius:0;background:var(--surface);color:var(--ink);font-weight:600}
+.modele-grille .detail-hd .badge.neuf{background:var(--accent);color:var(--accent-ink)}
+.modele-grille .detail-bd{gap:0}
+.modele-grille .field{padding:11px 0;border-bottom:1px solid var(--ink);gap:5px}
+.modele-grille .field .eyebrow{color:var(--ink);font-weight:700}
+.modele-grille .prog .conf{background:none;border-radius:0;border-left:3px solid var(--ink);padding-left:10px}
+.modele-grille .acts{padding-top:15px}
+.modele-grille .btn{border:2px solid var(--ink);border-radius:0;font-weight:700;font-size:11px;
+  text-transform:uppercase;letter-spacing:.07em;padding:9px 12px}
+
+/* Console — le salon vu depuis la régie : chasse fixe, libellés en invite de
+   commande, balayage d'écran en fond. Le phosphore n'a pas de couleur à lui :
+   il prend celle du salon, et un plan bleu donne une console bleue. */
+.modele-console{color:var(--ink);
+  --nuit:#04070A;
+  --surface:color-mix(in srgb,var(--accent-base) 9%,var(--nuit));
+  --surface-2:color-mix(in srgb,var(--accent-base) 16%,var(--nuit));
+  --line:color-mix(in srgb,var(--accent-base) 26%,var(--nuit));
+  --line-strong:color-mix(in srgb,var(--accent-base) 42%,var(--nuit));
+  --ink:color-mix(in srgb,var(--accent-clair) 80%,#FFFFFF);
+  --ink-2:color-mix(in srgb,var(--accent-clair) 72%,var(--nuit));
+  --ink-3:color-mix(in srgb,var(--accent-clair) 48%,var(--nuit));
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,var(--nuit));
+  --accent-ink:var(--nuit);--radius:0;
+  font-family:"IBM Plex Mono",monospace;
+  background-image:repeating-linear-gradient(180deg,
+    color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
+.modele-console .detail-hd{border-bottom-style:dashed}
+.modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;
+  letter-spacing:-.01em}
+.modele-console .detail-hd h2::before{content:"▍";color:var(--accent);margin-right:7px}
+.modele-console .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.1em}
+.modele-console .field .eyebrow::before{content:"$ ";color:var(--accent)}
+.modele-console .field .v{font-size:13px}
+.modele-console .btn{color:var(--accent)}
+.modele-console .acts .btn:first-child{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+/* Billet — le stand comme une place réservée : bandeau d'accent, numéro en
+   gros caractères comptables, et la ligne perforée du talon qu'on détache. */
+.modele-billet{overflow:hidden}
+.detail.modele-billet{border-radius:16px 0 0 16px}
+.modele-billet .detail-hd{background:var(--accent);border-bottom:none}
+.modele-billet .detail-hd h2{color:var(--accent-ink);padding-right:118px}
+.modele-billet .detail-hd .eyebrow{color:var(--accent-ink);opacity:.72}
+.modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
+  color:var(--accent-ink);pointer-events:none}
+.modele-billet .marque,.modele-billet .close,.modele-billet .crayon{color:var(--accent-ink);
+  border-color:rgba(255,255,255,.4);background:none}
+.modele-billet .detail-hd .badge{background:rgba(255,255,255,.2);color:var(--accent-ink)}
+.modele-billet .detail-hd .badge.neuf{background:var(--accent-ink);color:var(--accent)}
+.modele-billet .detail-bd{border-top:2px dashed var(--line-strong);padding-top:20px}
+.modele-billet .field .v{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.modele-billet .btn{border-radius:999px;padding:8px 14px}
+.modele-billet .acts .btn:first-child{background:var(--accent);color:var(--accent-ink);
+  border-color:transparent;font-weight:600}
+
+/* Magazine — le catalogue papier du salon : serif à fort contraste, libellés
+   en italique, le numéro du stand en chiffre d'ouverture, des filets à la
+   place des aplats. */
+.modele-magazine .detail-hd{padding:28px 22px 18px;border-bottom:none}
+.modele-magazine .detail-hd::before{content:attr(data-code);position:absolute;top:2px;right:14px;
+  font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:66px;line-height:1;
+  color:var(--surface-2);pointer-events:none}
+.modele-magazine .detail-hd > *{position:relative;z-index:1}
+.modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;
+  line-height:1.06;letter-spacing:-.02em;margin:14px 0 12px}
+.modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
+.modele-magazine .detail-hd .badge{background:none;padding:0;font-family:"Fraunces",Georgia,serif;
+  font-style:italic;font-size:13px;color:var(--ink-2)}
+.modele-magazine .detail-hd .badge.neuf{background:none;color:var(--accent);margin-left:12px}
+.modele-magazine .detail-bd{padding:4px 22px 24px;gap:18px}
+.modele-magazine .detail-bd::before{content:"";display:block;flex:none;grid-column:1/-1;
+  width:52px;height:3px;background:var(--ink)}
+.modele-magazine .field .eyebrow{font-family:"Fraunces",Georgia,serif;font-style:italic;
+  font-size:12.5px;letter-spacing:0;text-transform:none}
+.modele-magazine .field .v{font-size:15px;line-height:1.55}
+.modele-magazine .prog .conf{background:none;border-left:none;border-top:1px solid var(--line);
+  border-radius:0;padding:9px 0 3px}
+.modele-magazine .prog .conf .t{font-family:"Fraunces",Georgia,serif;font-size:14.5px;line-height:1.3}
+.modele-magazine .acts{gap:20px}
+.modele-magazine .btn{border:none;border-bottom:2px solid var(--ink);border-radius:0;padding:5px 0;
+  font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+
+/* Brut — trait de trois pixels, ombre portée dure, aplat franc. Elle ne se
+   fond dans rien : le noir et le papier ne bougent pas d'un thème à l'autre,
+   et l'aplat de l'en-tête est la couleur du salon, prise telle quelle. */
+.modele-brut{color:var(--ink);
+  --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
+  --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
+  --accent:var(--accent-base);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 15%,#FFFDF5);
+  --radius:0;border-left:3px solid #111}
+.modele-brut .detail-hd{background:var(--accent-base);border-bottom:3px solid #111;
+  color:var(--accent-ink)}
+.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+  text-transform:uppercase;line-height:1.08}
+.modele-brut .detail-hd .eyebrow{color:var(--accent-ink);opacity:.75}
+.modele-brut .marque,.modele-brut .close,.modele-brut .crayon{border:2px solid #111;border-radius:0;
+  color:#111;background:#FFFDF5}
+.modele-brut .detail-hd .badge{background:#111;color:#FFFDF5;border-radius:0;font-weight:600}
+.modele-brut .detail-hd .badge.neuf{background:#FFFDF5;color:#111;border:2px solid #111;
+  text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+.modele-brut .field .eyebrow{align-self:flex-start;background:#111;color:#FFFDF5;padding:3px 7px}
+.modele-brut .prog .conf{background:var(--accent-soft);border:2px solid #111;
+  border-left:7px solid var(--accent-base);border-radius:0}
+.modele-brut .prog .jour{border-bottom-width:2px}
+.modele-brut .btn{border:3px solid #111;border-radius:0;background:#fff;color:#111;font-weight:700;
+  text-transform:uppercase;font-size:11px;letter-spacing:.05em;box-shadow:3px 3px 0 #111}
+.modele-brut .acts .btn:first-child{background:var(--accent-base);color:var(--accent-ink)}
+
+/* Verre — la fiche cesse d'être une feuille posée sur le plan : elle devient
+   un bloc de la couleur du salon, et chaque champ un panneau qui laisse
+   passer le fond. Le dégradé se compose des déclinaisons de l'accent, donc de
+   la couleur choisie dans les réglages. */
+.modele-verre{color:var(--ink);--surface:rgba(255,255,255,.1);--surface-2:rgba(255,255,255,.14);
+  --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
+  --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
+  --accent:#FFFFFF;--accent-soft:rgba(255,255,255,.22);--accent-ink:var(--accent-fort);
+  border-left-color:rgba(255,255,255,.28);
+  background-image:radial-gradient(125% 95% at 10% 0%,var(--accent-clair) 0%,
+    var(--accent-base) 46%,var(--accent-fort) 100%)}
+.detail.modele-verre{border-radius:20px 0 0 20px}
+.modele-verre .detail-hd{border-bottom-color:rgba(255,255,255,.22)}
+.modele-verre .detail-hd h2{font-weight:700;letter-spacing:-.025em}
+.modele-verre .marque,.modele-verre .close,.modele-verre .crayon{background:rgba(255,255,255,.14)}
+.modele-verre .detail-hd .badge.neuf{background:#fff;color:var(--accent-fort)}
+.modele-verre .detail-bd{gap:9px}
+.modele-verre .field{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);
+  border-radius:13px;padding:11px 14px;gap:4px}
+.modele-verre .prog .conf{border-left-color:rgba(255,255,255,.5);border-radius:10px}
+.modele-verre .prog .jour{background:none;border-bottom-color:rgba(255,255,255,.4)}
+.modele-verre .btn{border-radius:999px;border-color:rgba(255,255,255,.45);padding:8px 15px}
+.modele-verre .acts .btn:first-child{background:#fff;color:var(--accent-fort);
+  border-color:transparent;font-weight:700}
+
+/* Kraft — la fiche d'exposant telle qu'on la remplissait avant : carton
+   recyclé, machine à écrire, et la mention « nouvel exposant » tamponnée de
+   travers. Le papier est le papier ; l'encre du tampon et celle des filets
+   sont la couleur du salon, assombrie de ce qu'il faut pour tenir dessus. */
+.modele-kraft{color:var(--ink);
+  --papier:#E7DBC2;
+  --surface:var(--papier);--surface-2:#DBCEB0;--line:#C3B18C;--line-strong:#A9946A;
+  --ink:#3B3022;--ink-2:#6B5B3F;--ink-3:#7A6849;
+  --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
+  --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
+  background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
+.modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;font-size:19px;
+  text-transform:uppercase;letter-spacing:.01em}
+.modele-kraft .eyebrow{font-family:"Courier Prime",monospace;letter-spacing:.16em}
+.modele-kraft .field .v{font-family:"Courier Prime",monospace;font-size:13px}
+.modele-kraft .detail-hd .badge{font-family:"Courier Prime",monospace;border-radius:0;
+  background:none;border:1px solid var(--line-strong);color:var(--ink-2)}
+.modele-kraft .detail-hd .badge.neuf{background:none;border:2px solid var(--encre);color:var(--encre);
+  border-radius:2px;font-family:"Courier Prime",monospace;font-weight:700;text-transform:uppercase;
+  letter-spacing:.08em;transform:rotate(-5deg);margin-left:10px}
+.modele-kraft .prog .conf{background:rgba(255,252,244,.55);border-left:3px solid var(--encre);border-radius:0}
+.modele-kraft .btn{border:1px dashed var(--line-strong);border-radius:0;
+  font-family:"Courier Prime",monospace;font-weight:700}
+.modele-kraft .acts .btn:first-child{background:var(--encre);color:var(--papier);border-style:solid}
+
+/* Signalétique — le panneau du hall posé dans la fiche : aplat franc,
+   capitales, flèche, et le gros filet qui souligne un panneau de direction. La
+   couleur du salon est celle du panneau — on lit un stand comme on lit une
+   direction, de loin et vite. */
+.modele-signal{color:var(--ink);
+  --surface:#12171B;--surface-2:#1A2128;--line:#232B32;--line-strong:#3A444D;
+  --ink:#F2F5F7;--ink-2:#B7C0C7;--ink-3:#8A959E;
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,#12171B);
+  /* « --accent-ink » reste celui de la page : c'est l'encre qui s'écrit sur
+     l'aplat du panneau, et elle vire au clair ou au sombre selon le ton
+     choisi. La figer ici rendait un panneau jaune illisible. */
+  --radius:2px}
+.modele-signal .detail-hd{background:var(--accent-base);
+  border-bottom:4px solid var(--accent-fort);color:var(--accent-ink)}
+.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:20px;
+  text-transform:uppercase;line-height:1.12}
+.modele-signal .detail-hd h2::before{content:"→ ";font-weight:500}
+.modele-signal .detail-hd .eyebrow{color:var(--accent-ink);opacity:.78}
+.modele-signal .marque,.modele-signal .close,.modele-signal .crayon{color:var(--accent-ink);
+  border-color:color-mix(in srgb,var(--accent-ink) 40%,transparent);background:none}
+.modele-signal .detail-hd .badge{background:var(--accent-ink);color:var(--accent-base);font-weight:600}
+.modele-signal .detail-hd .badge.neuf{background:var(--accent-clair);color:var(--accent-ink);
+  text-transform:uppercase;font-size:10px;letter-spacing:.06em}
+.modele-signal .detail-bd{gap:0}
+.modele-signal .field{padding:11px 0;border-bottom:1px solid var(--line);gap:4px}
+.modele-signal .field.court .v{text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.modele-signal .prog .conf{border-left:4px solid var(--accent-clair)}
+.modele-signal .prog .conf .h{color:var(--accent-clair)}
+.modele-signal .acts{padding-top:15px}
+.modele-signal .btn{font-weight:700;text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+.modele-signal .acts .btn:first-child{background:var(--ink);color:#12171B;border-color:var(--ink)}
+
+/* Chronologie — un exposant qui tient cinq conférences a une journée, pas une
+   liste : les heures se suivent le long d'un rail, et le reste de la fiche se
+   range en colonne pour leur laisser la vedette. */
+.modele-chrono .detail-hd{border-bottom:none}
+.modele-chrono .detail-hd h2{font-weight:700;letter-spacing:-.025em}
+.modele-chrono .detail-bd{gap:11px}
+.modele-chrono .field{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:baseline}
+.modele-chrono .field .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.05em;text-align:right}
+.modele-chrono .field.prog-bloc{display:block;margin-top:6px;padding-top:14px;
+  border-top:1px solid var(--line)}
+.modele-chrono .prog{position:relative;padding-left:22px;gap:0;margin-top:10px}
+.modele-chrono .prog::before{content:"";position:absolute;left:5px;top:8px;bottom:12px;width:2px;
+  background:linear-gradient(var(--accent),var(--line))}
+.modele-chrono .confRang{position:relative;padding-bottom:14px}
+.modele-chrono .confRang::before{content:"";position:absolute;left:-22px;top:5px;width:12px;height:12px;
+  border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.modele-chrono .prog .conf{background:none;border-left:none;border-radius:0;padding:0}
+.modele-chrono .prog .conf:hover{background:none;color:var(--accent)}
+.modele-chrono .prog .conf .h{color:var(--accent)}
+.modele-chrono .prog .jour{margin-left:-22px}
+.modele-chrono .btn{border-radius:999px;padding:8px 15px}
+.modele-chrono .acts .btn:first-child{background:var(--accent);color:var(--accent-ink);
+  border-color:transparent;font-weight:600}
+
+/* Nu — ni cadre, ni fond, ni libellés : une adresse se reconnaît sans qu'on
+   écrive « adresse », et ce qui reste — la hiérarchie et le blanc — suffit à
+   lire la fiche. Le programme garde le sien : lui seul ne se devine pas. */
+.modele-nu{box-shadow:none;border-left-color:transparent}
+.modele-nu .detail-hd{border-bottom:none;padding:30px 24px 4px}
+.modele-nu .detail-hd .eyebrow{display:none}
+.modele-nu .detail-hd h2{font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.06;
+  margin:0 0 12px}
+.modele-nu .detail-hd .badge{background:none;padding:0;color:var(--ink-3);font-size:12.5px}
+.modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;margin-left:12px}
+.modele-nu .detail-bd{padding:14px 24px 26px;gap:9px}
+.modele-nu .field .eyebrow{display:none}
+.modele-nu .field .v{color:var(--ink-2)}
+.modele-nu .field.prog-bloc{margin-top:8px;padding-top:14px;border-top:1px solid var(--line)}
+.modele-nu .field.prog-bloc .eyebrow{display:block;margin-bottom:6px}
+.modele-nu .prog .conf{background:none;border-left:none;border-radius:0;padding:0 0 8px}
+.modele-nu .acts{gap:20px;margin-top:10px}
+.modele-nu .btn{border:none;padding:0;color:var(--accent);font-weight:600;
+  text-decoration:underline;text-underline-offset:5px}
 
 /* ------------------------------------------------------------
    Parcours de visite
@@ -920,9 +1273,16 @@ html.vise-plan #plan{cursor:crosshair}
 #itin .iTrait{stroke:var(--accent);stroke-width:3.5}
 /* Des pointillés qui défilent : ils disent le sens du trajet, ce qu'un trait
    plein ne fait pas, et sans ajouter de flèches qui se chevaucheraient dans
-   les virages. */
+   les virages.
+
+   Ils avancent par sauts d'un point, et non d'un glissement continu : le
+   décalage d'un tracé ne se délègue pas au compositeur — même piège que le
+   halo des points d'intérêt — et chaque valeur nouvelle repeint le plan sous
+   le trajet, qui traverse le salon entier. Douze paliers par tour valent onze
+   repeints par seconde au lieu de soixante, sans qu'on lise le sens moins
+   bien. */
 #itin .iSens{stroke:var(--accent-ink);stroke-width:1.6;stroke-dasharray:1 11;opacity:.85;
-  animation:defile 1.1s linear infinite}
+  animation:defile 1.1s steps(12) infinite}
 @keyframes defile{to{stroke-dashoffset:-12}}
 @media (prefers-reduced-motion:reduce){#itin .iSens{animation:none}}
 #itin .iBout{fill:var(--accent);stroke:var(--surface);stroke-width:2.5;
@@ -980,6 +1340,64 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb input:focus{border-color:var(--accent);outline:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
+
+/* Les réglages tiennent en deux volets : ce que le plan montre, et de quoi il
+   a l'air. Séparés par des onglets plutôt qu'empilés — le second est une
+   planche d'aperçus, et poussait le premier hors de l'écran. */
+.ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:999px}
+.ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
+  color:var(--ink-2)}
+.ongReg button:hover{color:var(--ink)}
+.ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+/* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
+   on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
+   dernière pastille ouvre le nuancier du système pour ceux qui ont un
+   hexadécimal à respecter. */
+.reglage-coul{margin:2px 0 18px}
+.reglage-coul .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
+.reglage-coul .raz{margin-left:auto;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.reglage-coul .raz:hover{color:var(--ink)}
+.nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
+.nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
+  padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
+/* Le ton retenu se cerne d'un anneau posé à l'extérieur : un liseré pris sur
+   la pastille aurait mangé la couleur qu'on est en train de juger. */
+.nuancier button[aria-pressed="true"]::after{content:"";position:absolute;inset:-4px;
+  border:2px solid var(--ink);border-radius:9px}
+.nuancier .perso{display:grid;place-items:center;cursor:pointer;overflow:hidden;
+  background:conic-gradient(#E4574B,#E4B14B,#5FBE6A,#4BB6E4,#6B5FE4,#D45FC0,#E4574B)}
+.nuancier .perso input{position:absolute;inset:0;width:100%;height:100%;padding:0;
+  border:none;opacity:0;cursor:pointer}
+.nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
+  background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
+   sa propre fiche, réduite, remplie d'un exposant d'exemple. Le bas s'efface
+   plutôt que de se couper net — l'aperçu montre le haut de la fiche, qui est
+   ce qui la distingue. */
+.modeles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+.mod{display:block;width:100%;padding:0;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.mod:hover{border-color:var(--line-strong)}
+.mod[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.mod .vue{display:block;position:relative;height:198px;overflow:hidden;background:var(--ground);
+  -webkit-mask-image:linear-gradient(#000 74%,transparent);mask-image:linear-gradient(#000 74%,transparent)}
+.mod .nom{display:flex;align-items:center;gap:7px;padding:9px 11px;font-size:12.5px;
+  font-weight:600;border-top:1px solid var(--line)}
+.mod .nom .coche{margin-left:auto;color:var(--accent);font-size:13px;visibility:hidden}
+.mod[aria-pressed="true"] .nom .coche{visibility:visible}
+.mod .resume{display:block;padding:0 11px 10px;font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+/* L'aperçu porte les mêmes classes que la fiche du plan : c'est la même
+   feuille de style qui l'habille, à l'échelle près. */
+.apercu{--reduc:.59;position:absolute;top:0;left:0;width:calc(100% / var(--reduc));
+  transform:scale(var(--reduc));transform-origin:top left;
+  /* « background-color » et non le raccourci : celui-ci effacerait le fond
+     que les modèles peignent — le dégradé du verre, le grain du kraft — car
+     cette règle vient après la leur. */
+  background-color:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;
+  pointer-events:none}
+.modale[data-genre="large"] .mfen{width:min(760px,100%)}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
@@ -1392,6 +1810,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+        <button data-o="stand" title="Stand — matérialiser un exposant ou un co-exposant sur son emplacement">&#9707;</button>
       </div>
       <div id="contourReg">
         <label class="elemChamp"><span>Arrondi</span>
@@ -1402,6 +1821,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
+      <input id="standSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+        placeholder="Exposant à matérialiser">
+      <datalist id="listeSoc"></datalist>
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
@@ -1423,11 +1845,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
+        <input id="elemSoc" list="listeSoc" spellcheck="false" hidden
+          placeholder="Exposant — numéro ou nom">
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
         <button class="reset" id="annuleDernier">Annuler &nbsp;·&nbsp; Ctrl+Z</button>
       </div>
+    </div>
+
+    <div class="outils libreg" id="libReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="libNom"></span>
+        <span class="outilsActs">
+          <button id="libFerme" title="Terminer — Échap"
+            aria-label="Terminer le placement des libellés">&times;</button>
+        </span>
+      </div>
+      <label class="elemChamp"><span>Taille</span>
+        <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
+      <button class="auto" id="libAuto">Placement automatique</button>
+      <div class="outilsPied"><span id="libAide"></span></div>
     </div>
 
     <div class="modale" id="modale">
@@ -1453,7 +1891,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <span class="eyebrow" id="dKind"></span>
         <h2 id="dName"></h2><button class="crayon" id="dRen" hidden
           title="Renommer" aria-label="Renommer">&#9998;</button>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge part" id="dPartage" hidden></button>
+        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -1557,6 +1995,10 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
    pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
    recherche seule consulte. */
 let HEBERGES = [];
+/* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
+   héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
+   n'a pas à balayer la liste pour savoir si le filtre les retient. */
+let PAR_HEBERGE = new Map();
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins.
@@ -1660,17 +2102,17 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
-     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
-     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+     qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
+     propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
       /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
          rubriques, ses champs propres sont les siens et non ceux de son hôte,
          et un filtre doit la retenir pour ce qu'elle est. Elle n'emprunte à
-         l'emplacement que ce qui le décrit — numéro, pavillon, surface. */
+         l'emplacement que ce qui le décrit — numéro, pavillon, secteur. */
       const h = {
-        kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-        sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
+        kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
+        nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
@@ -1678,6 +2120,7 @@ function indexe(d){
                 " " + texteCriteres(h)).toLowerCase();
       return h;
     })));
+  PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
   indexeCriteres();
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -1769,6 +2212,19 @@ function lignesSvg(lignes, f, x, yCentre, cls){
 }
 
 /**
+ * Ce que le plan dit des stands partagés, et que l'exploitant peut retirer.
+ *
+ * Deux réglages, parce que les deux gênes ne sont pas la même : la pastille
+ * charge le plan d'un chiffre de plus, la fenêtre de choix ajoute un clic
+ * avant toute fiche. Un salon où deux stands seulement sont partagés veut
+ * souvent se passer de la seconde sans renoncer à la première.
+ *
+ * Rien retiré par défaut : un réglage absent laisse le salon tel qu'il était.
+ */
+const coexComptes = () => conf("_coexNombre").visible !== false;
+const coexChoisit = () => conf("_coexChoix").visible !== false;
+
+/**
  * La ligne du numéro de stand, et le compte des sociétés qu'il héberge.
  *
  * Un stand partagé garde le nom de son titulaire — c'est le sien, c'est lui
@@ -1786,7 +2242,7 @@ function ligneCode(s, xc, yBase, f, wMax, cls){
   const texte = (x, c, txt) =>
     '<text class="' + c + '" x="' + x.toFixed(2) + '" y="' + yBase.toFixed(2) +
     '" font-size="' + f.toFixed(2) + '">' + esc(txt) + '</text>';
-  const n = (s.coex || []).length;
+  const n = coexComptes() ? (s.coex || []).length : 0;
   const wCode = largeur(s.code, P_CODE) * f;
   const compte = "+" + n;
   const marge = f * .34, ecart = f * .42;
@@ -1829,8 +2285,12 @@ let MONTE = false;
 
 function montePlan(){
   const p = P();
+  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+     sera pas sur le plan public. */
   $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+    '" tabindex="0" role="button" aria-label="' +
     esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
   $("stands").innerHTML = p.stands.map(s =>
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
@@ -1886,13 +2346,22 @@ function libelles(){
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
   let out = "";
 
+  /* Chaque libellé dans son propre groupe, sous l'identifiant de ce qu'il
+     nomme : c'est ce qui permet de l'attraper pour le placer à la main. Le nom
+     de l'attribut n'est pas « data-id » à dessein — ce groupe n'est pas
+     l'emplacement, et le clic qui ouvre une fiche ne doit pas le confondre
+     avec lui. */
+  const groupe = (o, h) => h
+    ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
+    : "";
+
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && (!visibleSurPlan(z) || !dansVue(z)))) continue;
-    const pz = place(z), az = ancre(z);
-    const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
-    if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
+    const pz = place(z);
+    out += groupe(z, libelleZone(z, ancre(z), pz[0], pz[1], sel, pxParM,
+                                 placementLibelle(z)));
   }
 
   for (const s of p.stands){
@@ -1902,25 +2371,73 @@ function libelles(){
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
-    const ps = place(s), as = ancre(s);
-    const w = ps[0], h = ps[1];
-
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-    const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-    const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-    const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
-    if (!codeLisible && !nomLisible) continue;
-
-    const c = sel ? " sel" : "";
-    const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
-    const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = as[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-    if (codeLisible)
-      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+    const ps = place(s);
+    out += groupe(s, libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM,
+                                        placementLibelle(s)));
   }
+
   l.innerHTML = out;
+  /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
+     non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
+     nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
+     appel au même endroit. */
+  poseLibellesDessines(pxParM);
+}
+
+/* ------------------------------------------------------------
+ * Le placement réglé à la main, appliqué à ce que le calcul propose : un
+ * décalage en mètres, et un facteur de taille.
+ *
+ * Le facteur multiplie ce que le calcul a trouvé au lieu de le remplacer :
+ * l'enseigne garde ainsi le découpage en lignes que sa place lui donnait, et
+ * l'agrandir ne la recompose pas d'un coup en travers du stand.
+ *
+ * En mode placement, un libellé réglé s'affiche quelle que soit sa taille à
+ * l'écran. Sans cela, le réduire au point de le faire disparaître le rendrait
+ * inatteignable — et le réglage, impossible à défaire.
+ * ------------------------------------------------------------ */
+const decaleLibelle = (xy, reg) => reg ? [xy[0] + (reg.dx || 0), xy[1] + (reg.dy || 0)] : xy;
+const facteurLibelle = (reg) => reg && reg.k > 0 ? reg.k : 1;
+const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
+
+/** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
+function libelleZone(z, az, w, h, sel, pxParM, reg){
+  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  if (!a) return "";
+  const f = a.f * facteurLibelle(reg);
+  if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
+  const xy = decaleLibelle(az, reg);
+  return lignesSvg(a.lignes, f, xy[0], xy[1],
+    "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
+}
+
+/**
+ * Le libellé d'un emplacement : le nom de l'enseigne, son numéro dessous.
+ *
+ * Il s'écrit pour deux choses que rien d'autre ne rapproche — le stand rendu
+ * par la synchronisation, qui tient son ancrage et sa place de la source, et
+ * le stand dessiné à la main, qui les tient de son rectangle. Le rendu doit
+ * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
+ * forme quelconque.
+ */
+function libelleEmplacement(s, as, w, h, sel, pxParM, reg){
+  const k = facteurLibelle(reg), force = libelleForce(reg);
+  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const fn = nom ? nom.f * k : 0;
+  const nomLisible = nom && (sel || force || fn * pxParM >= 4.5);
+  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+  const codeLisible = fc && (sel || force || fc * pxParM >= (nomLisible ? 5 : 6));
+  if (!codeLisible && !nomLisible) return "";
+
+  const c = sel ? " sel" : "";
+  const xy = decaleLibelle(as, reg);
+  const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0;
+  const hCode = codeLisible ? fc * 1.25 : 0;
+  let y = xy[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, fn, xy[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, xy[0], y + fc * .92, fc, w * .9 * k, c);
+  return out;
 }
 
 /* ============================================================
@@ -2063,9 +2580,13 @@ function pastilleSecteur(nom){
  */
 function coloreSecteurs(){
   /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
-     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire. */
+     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire.
+
+     Les stands dessinés à la main la reçoivent aussi : ils découpent un
+     emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
+     secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
-  document.querySelectorAll("#stands g").forEach(g => {
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? o.sect : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
@@ -2524,11 +3045,27 @@ function visibleSurPlan(o){
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
+/**
+ * Ce qu'un stand dessiné suit : le filtre de la société qu'il désigne, et non
+ * celui de l'emplacement. Une hébergée écartée par un critère doit s'éteindre
+ * quand bien même son hôte reste allumé — c'est justement pour la distinguer
+ * de lui qu'on l'a dessinée.
+ */
+function visibleSociete(o, i){
+  if (!(i >= 0)) return visibleSurPlan(o);
+  const h = PAR_HEBERGE.get(o.id + "#" + i);
+  return h ? visible(h) : visibleSurPlan(o);
+}
+
 function appliqueFiltre(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+  });
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
   libelles(); liste();
 }
@@ -2557,11 +3094,9 @@ function liste(){
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
-    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
-       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
-       de stand et son nom la désignent, cela suffit. */
-    const sous = heberge ? ""
-      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
+       stand et son nom. La surface louée et les angles ouverts regardent la
+       commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
@@ -2569,7 +3104,7 @@ function liste(){
       '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
-      '<span class="s">' + sous + badge + '</span></span></button>';
+      '<span class="s">' + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
@@ -2707,12 +3242,27 @@ function anime(rect, sens){
       easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
   if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
 }
-const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+/* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
+   ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
+   veut allumer, cadrer et animer. */
+function noeud(id){
+  const q = '[data-id="' + CSS.escape(id) + '"]';
+  return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
+}
 
-/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
-   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
-   dessinée — c'est ce qui les sépare. */
-const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+/* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
+   l'exploitant a posé dessus, ou le découpage qu'il y a dessiné. Le logo seul
+   fait un chemin à part — les deux autres sont le plan tel qu'on le voit. */
+function canalPlan(cible){
+  if (!cible || !cible.dataset.f) return "plan";
+  const c = formeParId(cible.dataset.f);
+  return c && c.f.t === "image" ? "image" : "plan";
+}
+
+/** Le rang de la société désignée par un nœud du plan, s'il en désigne une :
+ *  un stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
+const rangSociete = (el) =>
+  el && el.dataset.soc !== undefined ? Number(el.dataset.soc) : undefined;
 
 /**
  * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
@@ -2731,6 +3281,7 @@ function select(id, recentrer, canal, iSoc){
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   dessineMarques();
+  marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
@@ -2775,6 +3326,21 @@ function montre(type, cle){
 const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
+
+/* Les intitulés du corps de la fiche. Ils vivent dans une table plutôt qu'en
+   toutes lettres à leur ligne parce qu'ils s'écrivent à deux endroits : sur la
+   fiche, et dans l'aperçu des modèles du panneau d'apparence. Un aperçu qui ne
+   nommerait pas les champs comme la fiche ne montrerait pas la fiche. */
+const LIBELLE_CORPS = {
+  raison: "Raison sociale", secteur: "Secteur", adresse: "Adresse",
+  ville: "Ville", pays: "Pays", niveaux: "Niveaux", telephone: "Téléphone",
+  site: "Site web", facebook: "Facebook", linkedin: "LinkedIn",
+  instagram: "Instagram", nomenclature: "Nomenclature", thematiques: "Thématiques",
+};
+
+/** L'intitulé d'un champ du corps — un champ propre au salon porte le sien. */
+const libelleCorps = cle => cle.indexOf(PREFIXE_PERSO) === 0
+  ? libelleCritere(cle) : (LIBELLE_CORPS[cle] || cle);
 
 /**
  * L'ordre réglé par l'exploitant, complété de ce qu'il ne connaît pas encore.
@@ -2848,7 +3414,10 @@ function momentLocal(v, fuseau){
 function programme(l, titre){
   l = l || [];
   if (!l.length) return "";
-  let out = '<div class="field"><span class="eyebrow">' + esc(titre || "Programme") +
+  /* La classe nomme le bloc du programme : deux modèles de fiche le traitent
+     à part — l'un le déroule en ligne de temps, l'autre lui laisse son libellé
+     quand il efface tous les autres. */
+  let out = '<div class="field prog-bloc"><span class="eyebrow">' + esc(titre || "Programme") +
     '</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
@@ -3069,7 +3638,12 @@ function choisitExposant(o, rect, canal){
 function ouvre(o, rect, canal, iSoc){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
-  if (heberges.length && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
+     l'emplacement, et c'est son nom qui est peint sur la cloison. Les sociétés
+     qu'il héberge restent atteignables par la liste : le réglage allège le
+     plan, il ne retire personne du salon. */
+  const plusieurs = heberges.length > 0 && coexChoisit();
+  if (plusieurs && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
@@ -3091,11 +3665,15 @@ function ouvre(o, rect, canal, iSoc){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et une zone n'a pas de numéro du tout. */
+  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
-  part.hidden = !heberges.length;
-  if (heberges.length){
+  part.hidden = !plusieurs;
+  if (plusieurs){
     part.textContent = (heberges.length + 1) + " exposants ici";
     part.onclick = () => choisitExposant(o, null, canal);
   }
@@ -3129,31 +3707,31 @@ function ouvre(o, rect, canal, iSoc){
   const corps = {};
   // la raison sociale n'apprend rien quand elle est déjà le titre
   corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f("Raison sociale", esc(soc.plan)) : "");
+    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f("Secteur", o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : ""));
+  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
+  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court"));
+  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
+  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f("Téléphone", soc.tel
+  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court"));
-  corps.site = ok("site", f("Site web", lien(soc.site)));
-  corps.facebook = ok("facebook", f("Facebook", lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f("LinkedIn", lien(soc.li)));
-  corps.instagram = ok("instagram", f("Instagram", lien(soc.ig)));
+  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
+  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
+  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
+  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f("Nomenclature", soc.nomencl
+    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
         .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
     : "");
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
@@ -3165,7 +3743,7 @@ function ouvre(o, rect, canal, iSoc){
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
   corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f("Thématiques", soc.themes
+    ? f(LIBELLE_CORPS.thematiques, soc.themes
         .map(n => themeFiltrable(n)
           ? '<button type="button" class="ligne theme" data-t="' +
             esc(String(n)) + '">' + esc(String(n)) + '</button>'
@@ -3239,6 +3817,23 @@ function ouvre(o, rect, canal, iSoc){
     cr.hidden = !(ADMIN && zone);
     cr.onclick = () => renommeZone(o);
   }
+  /* Une zone technique — réserve, quai de livraison — n'apprend rien au
+     visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
+     d'être un bouton : elle ne paraît qu'en administration, seule vue où une
+     zone éteinte soit encore là. */
+  const vis = $("dVis");
+  if (vis){
+    vis.hidden = !(ADMIN && zone);
+    if (!vis.hidden){
+      const affichee = !o.masquee;
+      vis.textContent = "Affiché : " + (affichee ? "oui" : "non");
+      vis.setAttribute("aria-pressed", affichee ? "true" : "false");
+      vis.title = affichee
+        ? "Retirer cette zone du plan public"
+        : "Remettre cette zone sur le plan public";
+      vis.onclick = () => basculeAffichageZone(o);
+    }
+  }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
@@ -3251,6 +3846,7 @@ function ferme(){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
+  marqueStandsDessines();
   liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
@@ -3330,6 +3926,9 @@ svg.addEventListener("pointerdown", e => {
   doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (doigts.size === 2){ commencePince(); return; }
   if (doigts.size > 2) return;
+  /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
+     l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id],[data-poi]") };
@@ -3338,6 +3937,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = svg.getBoundingClientRect(), k = view.w / r.width;
@@ -3352,6 +3952,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
@@ -3368,12 +3969,13 @@ svg.addEventListener("pointerup", e => {
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible));
+    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
+  glisseLib = null;
   drag = null;
   svg.classList.remove("dragging");
 });
@@ -3393,7 +3995,8 @@ svg.addEventListener("keydown", e => {
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
       return;
     }
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
+    if (!viseItineraire(g.dataset.id))
+      select(g.dataset.id, false, canalPlan(g), rangSociete(g));
   }
 });
 document.addEventListener("keydown", e => {
@@ -3406,7 +4009,18 @@ document.addEventListener("keydown", e => {
   if (ADMIN && !saisie && (e.key === "Delete" || e.key === "Backspace") && formeSel){
     e.preventDefault(); supprimeForme(); return;
   }
+  /* Le clavier ajuste au quart de mètre ce que la main pose approximativement,
+     et au mètre touche majuscule tenue : c'est la finition d'un placement,
+     après le glisser qui l'a amené à peu près là. */
+  if (PLACE_LIBELLES && libSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseLibelle(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                  e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   if (e.key === "Escape"){
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
@@ -3587,6 +4201,9 @@ $("btnTheme").onclick = () => {
   const next = sombre ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+  /* La couleur principale a deux versions, une par fond : celle du thème
+     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
+  appliqueAccent();
 };
 
 /* ============================================================
@@ -3734,6 +4351,8 @@ function appliqueApparence(){
   appliqueCouleursData();
   appliqueCommandes();
   appliqueSecteurs();
+  appliqueAccent();
+  appliqueFiche();
 }
 
 /**
@@ -3807,79 +4426,514 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/** Ce salon héberge-t-il des sociétés sur le stand d'une autre ? La question
+ *  se pose sur les trois pavillons : un seul stand partagé suffit. */
+const salonPartage = () => (DATA?.plans || [])
+  .some(p => (p.stands || []).some(s => (s.coex || []).length));
+
+/* ------------------------------------------------------------
+   Couleur principale et modèle de fiche
+
+   Deux réglages d'apparence qui ne portent sur aucun calque : la teinte dont
+   le plan se sert partout — sélection, liens, boutons pleins — et l'habillage
+   de la fiche détail. Ils vivent dans CONF sous une clé préfixée, donc ils
+   partent aux visiteurs avec le reste de la configuration.
+   ------------------------------------------------------------ */
+
+/** Les trois composantes d'une couleur écrite « #rrggbb ». */
+const trio = (hex) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [n >> 16 & 255, n >> 8 & 255, n & 255];
+};
+
+/** Deux couleurs mêlées, `t` disant combien on va de la première vers la
+ *  seconde. Sert à décliner l'accent sans demander cinq teintes à
+ *  l'exploitant : il en choisit une, le reste s'en déduit. */
+const melange = (a, b, t) => {
+  const x = trio(a), y = trio(b);
+  return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
+};
+
+/** Le thème effectivement peint : celui qu'on a choisi, sinon celui du
+ *  système. La couleur principale s'y adapte — un bleu d'imprimerie s'éteint
+ *  sur un fond noir, et le même ton ne peut pas servir des deux côtés. */
+const themeSombre = () => {
+  const t = racine.getAttribute("data-theme");
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+/**
+ * Pose la couleur principale et ses déclinaisons sur la racine.
+ *
+ * L'exploitant n'en règle qu'une, celle qu'il voit : l'aplat doux des
+ * pastilles, l'encre qui s'écrit sur un bouton plein et les deux nuances dont
+ * les modèles de fiche composent leurs fonds s'en déduisent. Sans réglage, on
+ * retire les variables plutôt que d'en réécrire : la feuille de style reprend
+ * la main, et avec elle le bleu d'origine — qui a déjà ses deux versions.
+ */
+function appliqueAccent(){
+  const noms = ["--accent", "--accent-base", "--accent-soft", "--accent-ink",
+                "--accent-clair", "--accent-fort"];
+  const choisie = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
+  if (!choisie){ noms.forEach(n => racine.style.removeProperty(n)); return; }
+  const sombre = themeSombre();
+  /* Sur fond sombre, un ton franc s'éteint : on l'éclaircit d'un tiers, comme
+     le thème le fait de son propre bleu. */
+  const base = sombre ? melange(choisie, "#FFFFFF", 0.34) : choisie;
+  const pose = (n, v) => racine.style.setProperty(n, v);
+  pose("--accent", base);
+  pose("--accent-base", base);
+  pose("--accent-soft", melange(base, sombre ? "#0E1113" : "#FFFFFF", sombre ? 0.76 : 0.86));
+  // le texte d'un bouton plein : noir sur un jaune, blanc sur un bleu
+  pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
+  pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
+  pose("--accent-fort", melange(base, "#000000", 0.42));
+}
+/* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/* Les habillages de la fiche détail. Le premier n'a pas de classe : c'est la
+   fiche telle que la feuille de style la dessine, et le point de départ de
+   tous les autres. */
+const MODELES_FICHE = [
+  { cle: "sobre", nom: "Sobre",
+    resume: "Le rendu d'origine : un seul rythme du haut en bas." },
+  { cle: "grille", nom: "Grille",
+    resume: "En-tête à l'encre pleine, numéro du stand en filigrane, champs entre filets." },
+  { cle: "console", nom: "Console",
+    resume: "Chasse fixe et invites de commande, sur un phosphore à la couleur du salon." },
+  { cle: "billet", nom: "Billet",
+    resume: "Bandeau d'accent, numéro en gros caractères, ligne perforée." },
+  { cle: "magazine", nom: "Magazine",
+    resume: "Serif à fort contraste et libellés en italique, comme un catalogue." },
+  { cle: "brut", nom: "Brut",
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
+  { cle: "verre", nom: "Verre",
+    resume: "Un bloc de la couleur du salon, les champs en panneaux translucides." },
+  { cle: "kraft", nom: "Kraft",
+    resume: "Carton et machine à écrire, « nouvel exposant » tamponné de travers." },
+  { cle: "signal", nom: "Signalétique",
+    resume: "Aplat, flèche et capitales : un stand se lit comme une direction de hall." },
+  { cle: "chrono", nom: "Chronologie",
+    resume: "Le programme en ligne de temps, le reste de la fiche en colonne." },
+  { cle: "nu", nom: "Nu",
+    resume: "Ni cadre ni libellés : la hiérarchie typographique seule." },
+];
+const modeleFiche = () => {
+  const c = (CONF["_fiche"] || {}).modele;
+  return MODELES_FICHE.some(m => m.cle === c) ? c : "sobre";
+};
+
+/** Pose l'habillage retenu sur la fiche. Une seule classe à la fois : les
+ *  modèles se recouvrent, et deux ensemble ne veulent rien dire. */
+function appliqueFiche(){
+  const d = $("detail");
+  if (!d) return;
+  const cle = modeleFiche();
+  MODELES_FICHE.forEach(m => d.classList.toggle("modele-" + m.cle, m.cle === cle));
+}
+
+/* ------------------------------------------------------------------
+   L'exposant des aperçus
+
+   Les onze vignettes montrent la même fiche sous onze habillages : c'est en la
+   comparant à elle-même qu'on choisit. Mais elle ne peut pas être une fiche
+   inventée — un salon qui a retiré l'adresse et remonté sa nomenclature
+   choisirait son modèle sur des champs qu'il n'affiche pas, dans un ordre qui
+   n'est pas le sien.
+
+   Les vignettes portent donc les champs retenus, dans l'ordre réglé depuis la
+   console, et les valeurs d'un vrai stand.
+   ------------------------------------------------------------------ */
+
+/* Comment lire chaque champ du corps sur un stand. Les mêmes sources que la
+   fiche : ce que le plan porte reste au stand, le reste vient de la société. */
+const LECTURE_CORPS = {
+  raison: o => o.plan && o.plan !== o.nom ? o.plan : "",
+  secteur: o => o.sect,
+  adresse: o => o.adr,
+  ville: o => o.ville,
+  pays: o => o.pays,
+  niveaux: o => o.niveaux > 1 ? String(o.niveaux) : "",
+  telephone: o => o.tel,
+  site: o => o.site,
+  facebook: o => o.fb,
+  linkedin: o => o.li,
+  instagram: o => o.ig,
+  nomenclature: o => o.nomencl,
+  thematiques: o => o.themes,
+};
+
+/* Les champs qui tiennent en un mot s'apparient deux par deux sur écran
+   étroit : la vignette le montre, comme la fiche le fait. */
+const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
+
+/* De quoi remplir un champ qu'aucun stand ne renseigne. Le taire ferait
+   choisir un modèle sur une fiche plus courte que la vraie, et laisserait
+   croire le champ retiré. */
+const EXEMPLES_CORPS = {
+  nom: "Ateliers Ligneron", code: "D14", hall: "Hall 2",
+  raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
+  adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
+  niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
+  facebook: "facebook.com/ligneron", linkedin: "linkedin.com/company/ligneron",
+  instagram: "instagram.com/ligneron",
+  nomenclature: "Menuiserie;Agencement de boutique",
+  thematiques: "Réemploi;Bois de pays",
+};
+
+/** Ce qu'un stand porte pour un champ du corps, en une chaîne. */
+function texteCorps(o, cle){
+  if (cle.indexOf(PREFIXE_PERSO) === 0){
+    return separeValeurs((o.perso || {})[cle.slice(PREFIXE_PERSO.length)]).join(";");
+  }
+  const l = LECTURE_CORPS[cle];
+  return l ? separeValeurs(l(o)).join(";") : "";
+}
+
+/**
+ * Le stand qui remplit le mieux les champs retenus.
+ *
+ * Le premier venu n'irait pas : il peut n'avoir ni adresse, ni thématique, ni
+ * nomenclature — c'est-à-dire rien de ce que les modèles habillent — et on
+ * choisirait un habillage sur une fiche vide.
+ */
+function standApercu(cles){
+  let mieux = null, hall = "", score = 0, neuf = false;
+  Object.values(DATA.plans || {}).forEach(pl => (pl.stands || []).forEach(o => {
+    if (!o.nom) return;
+    neuf = neuf || Boolean(o.neuf);
+    const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
+    if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
+  }));
+  return { stand: mieux, hall, neuf };
+}
+
+/**
+ * Ce que les onze vignettes montrent : relevé une fois, elles s'en partagent.
+ *
+ * Un champ propre au salon qu'aucun stand ne renseigne n'a pas d'exemple à
+ * prêter — le code ne connaît pas son sujet — d'où la mention en clair plutôt
+ * qu'une valeur inventée qui passerait pour une vraie.
+ */
+function contenuApercu(){
+  const persos = (DATA.fiche && DATA.fiche.perso) || [];
+  const cles = ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
+    .filter(c => montre("stand", c));
+  const { stand, hall, neuf } = standApercu(cles);
+  const vals = {};
+  cles.forEach(c => {
+    vals[c] = (stand && texteCorps(stand, c)) || EXEMPLES_CORPS[c] ||
+      (c.indexOf(PREFIXE_PERSO) === 0 ? "Valeur d'exemple" : "");
+  });
+  return {
+    cles: cles.filter(c => vals[c]), vals,
+    nom: (stand && stand.nom) || EXEMPLES_CORPS.nom,
+    code: (stand && stand.code) || EXEMPLES_CORPS.code,
+    hall: hall || EXEMPLES_CORPS.hall,
+    /* La pastille ne paraît que là où le salon distingue ses nouveaux venus :
+       le réglage seul la ferait voir sur des salons dont aucune fiche ne porte
+       le champ, et plusieurs modèles l'habillent — on choisirait sur une
+       marque qu'on n'aura jamais. */
+    neuf: neuf && montre("stand", "nouveau"),
+  };
+}
+
+function apercuFiche(cle, vu){
+  const d = document.createElement("div");
+  d.className = "apercu modele-" + cle;
+  // l'aperçu se regarde, il ne se manipule pas
+  d.inert = true;
+  const champ = (l, v, c) => '<div class="field' + (c ? " " + c : "") + '">' +
+    '<span class="eyebrow">' + esc(l) + '</span><span class="v">' + v + '</span></div>';
+  /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
+     aussi, plusieurs modèles n'habillant que les liens. */
+  const LIENS = ["site", "facebook", "linkedin", "instagram"];
+  const corps = vu.cles.map(c => {
+    const l = separeValeurs(vu.vals[c]);
+    const v = l.length > 1
+      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
+      : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]);
+    return champ(libelleCorps(c), v, COURTS_CORPS.indexOf(c) >= 0 ? "court" : "");
+  }).join("");
+  /* Le programme reste celui de l'exemple, quand tout le reste vient du salon :
+     le stand qui remplit le mieux la fiche ne tient pas forcément de
+     conférence, et le modèle qui déroule une ligne de temps n'aurait rien à
+     montrer. */
+  const confs = montre("stand", "conferences")
+    ? '<div class="field prog-bloc"><span class="eyebrow">Conférences</span><div class="prog">' +
+        '<div class="confRang"><span class="conf"><span class="h">10h30 – 11h15</span>' +
+        '<span class="t">Le bois de pays dans la commande publique</span>' +
+        '<span class="ty">Table ronde</span></span></div>' +
+        '<div class="confRang"><span class="conf"><span class="h">16h00 – 16h45</span>' +
+        '<span class="t">Agencer une boutique en réemploi</span>' +
+        '<span class="ty">Démonstration</span></span></div>' +
+      '</div></div>'
+    : "";
+  const code = montre("stand", "code") ? vu.code : "";
+  d.innerHTML =
+    '<div class="detail-hd" data-code="' + esc(code) + '">' +
+      /* Des balises neutres plutôt que des boutons : l'aperçu vit dans un
+         bouton — celui qui choisit le modèle — et un bouton n'en contient pas
+         un autre. Les classes suffisent à l'habillage. */
+      '<div class="hdActs"><span class="marque">' +
+      '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
+      '</span><span class="close">&times;</span></div>' +
+      '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
+      '<span class="badge">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+      (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+    '</div>' +
+    '<div class="detail-bd">' + corps + confs +
+      '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
+      '<span class="btn itin">Itinéraire</span></div>' +
+    '</div>';
+  return d;
+}
+
 /**
  * Réglages généraux du plan.
  *
  * Ils ne portent sur aucun calque : dans la pile ils alourdissaient une liste
  * déjà longue, et se lisaient comme une couche de plus. Une fenêtre à part les
  * range, et laisse la place à celles qui viendront.
+ *
+ * Deux volets : ce que le plan montre, et de quoi il a l'air. Le second est
+ * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
+ * l'écran.
  */
 function ouvreReglages(){
   ouvreModale("Réglages du plan", corps => {
-    const p = document.createElement("p");
-    p.textContent = "Ce que les visiteurs voient sur le plan. " +
-      "Publiez la configuration pour que le changement leur parvienne.";
-    corps.appendChild(p);
+    const barre = document.createElement("div");
+    barre.className = "ongReg";
+    corps.appendChild(barre);
+    const boutons = [], volets = [];
+    const volet = (titre) => {
+      const i = boutons.length;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = titre;
+      b.setAttribute("aria-pressed", String(i === 0));
+      b.onclick = () => {
+        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+        volets.forEach((x, j) => { x.hidden = j !== i; });
+      };
+      barre.appendChild(b);
+      boutons.push(b);
+      const v = document.createElement("div");
+      v.hidden = i > 0;
+      corps.appendChild(v);
+      volets.push(v);
+      return v;
+    };
+    voletPlan(volet("Plan"));
+    voletApparence(volet("Apparence"));
+  }, [{ libelle: "Fermer" }], "large");
+}
 
-    const bloc = document.createElement("div");
-    bloc.className = "reglages";
-    COMMANDES.forEach(cmd => {
+/** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
+ *  le temps qu'on passe sur un stand. */
+function voletPlan(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que les visiteurs voient sur le plan. " +
+    "Publiez la configuration pour que le changement leur parvienne.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  COMMANDES.forEach(cmd => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = cmd.libelle;
+    const c = l.querySelector("input");
+    c.checked = conf(cmd.cle).visible !== false;
+    c.onchange = e => {
+      conf(cmd.cle).visible = e.target.checked;
+      enregistreConf(); appliqueCommandes();
+      // la couleur du parcours vit dans la pile : elle suit le réglage
+      if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  });
+
+  /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
+     retirent une commande du plan, celui-ci change ce que le plan donne à
+     voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
+     promettrait des couleurs qu'aucune donnée ne porte. */
+  if (SECTEURS.size){
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
+    const c = l.querySelector("input");
+    c.checked = conf("_secteurs").visible !== false;
+    c.onchange = e => {
+      conf("_secteurs").visible = e.target.checked;
+      enregistreConf(); appliqueSecteurs(); appliqueFiltre();
+      // les couleurs des secteurs vivent dans la pile : elles suivent
+      if (ADMIN) construitPanneau();
+    };
+    bloc.appendChild(l);
+  }
+
+  /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
+     a : sur un salon d'un exposant par emplacement, ces deux cases ne
+     promettraient qu'un plan déjà tel quel. */
+  if (salonPartage()){
+    [{ cle: "_coexNombre",
+       libelle: "Compter les co-exposants sur le plan",
+       // le compte fait partie du libellé du stand : il se redessine avec lui
+       apres: () => libelles() },
+     { cle: "_coexChoix",
+       libelle: "Afficher la liste des co-exposants au clic sur le stand" }
+    ].forEach(r => {
       const l = document.createElement("label");
       l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = cmd.libelle;
+      l.querySelector("span").textContent = r.libelle;
       const c = l.querySelector("input");
-      c.checked = conf(cmd.cle).visible !== false;
+      c.checked = conf(r.cle).visible !== false;
       c.onchange = e => {
-        conf(cmd.cle).visible = e.target.checked;
-        enregistreConf(); appliqueCommandes();
-        // la couleur du parcours vit dans la pile : elle suit le réglage
-        if (ADMIN) construitPanneau();
+        conf(r.cle).visible = e.target.checked;
+        enregistreConf();
+        if (r.apres) r.apres();
       };
       bloc.appendChild(l);
     });
+  }
 
-    /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
-       retirent une commande du plan, celui-ci change ce que le plan donne à
-       voir. Il ne s'offre que sur un salon sectorisé — ailleurs la case
-       promettrait des couleurs qu'aucune donnée ne porte. */
-    if (SECTEURS.size){
-      const l = document.createElement("label");
-      l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = "Montrer les secteurs — couleurs et filtre";
-      const c = l.querySelector("input");
-      c.checked = conf("_secteurs").visible !== false;
-      c.onchange = e => {
-        conf("_secteurs").visible = e.target.checked;
-        enregistreConf(); appliqueSecteurs(); appliqueFiltre();
-        // les couleurs des secteurs vivent dans la pile : elles suivent
-        if (ADMIN) construitPanneau();
-      };
-      bloc.appendChild(l);
-    }
+  hote.appendChild(bloc);
 
-    corps.appendChild(bloc);
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+    '<span class="u">min</span></label><span class="aide"></span>';
+  duree.querySelector(".l").textContent = "Temps de visite par stand";
+  duree.querySelector(".aide").textContent =
+    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+    "qui décide combien de stands tiennent entre deux conférences.";
+  const n = duree.querySelector("input");
+  n.value = minutesVisite();
+  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+     on le quitte. */
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesVisite(); };
+  hote.appendChild(duree);
+}
 
-    const duree = document.createElement("div");
-    duree.className = "reglage-nb";
-    duree.innerHTML = '<label><span class="l"></span>' +
-      '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
-      '<span class="u">min</span></label><span class="aide"></span>';
-    duree.querySelector(".l").textContent = "Temps de visite par stand";
-    duree.querySelector(".aide").textContent =
-      "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
-      "qui décide combien de stands tiennent entre deux conférences.";
-    const n = duree.querySelector("input");
-    n.value = minutesVisite();
-    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
-       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
-       on le quitte. */
-    n.oninput = e => {
-      const v = Math.round(+e.target.value);
-      if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+/* Le nuancier. Des tons de charte plutôt qu'une roue : choisir une couleur
+   principale, c'est choisir celle du salon, pas la nuance exacte d'un dégradé.
+   Ils sont rangés par famille — bleus, verts, chauds, rouges, violets,
+   neutres — et tous assez soutenus pour porter du texte, blanc ou noir, sans
+   qu'il faille le vérifier au cas par cas. La dernière pastille ouvre le
+   nuancier du système, pour une charte à l'hexadécimal près. */
+const TONS = [
+  ["#2F49D1", "Bleu d'encre"], ["#1B5FD9", "Bleu roi"], ["#23356B", "Bleu nuit"],
+  ["#0F6F8A", "Bleu canard"], ["#0E8A7D", "Turquoise"], ["#0E7A3C", "Vert prairie"],
+  ["#2C5E4A", "Vert forêt"], ["#5C7A1E", "Olive"],
+  ["#B07A0B", "Or brûlé"], ["#C06A0B", "Ambre"], ["#C05621", "Terracotta"],
+  ["#B4402F", "Brique"], ["#A82437", "Grenat"], ["#8E1F3F", "Cerise"],
+  ["#B32A63", "Framboise"], ["#A8318C", "Fuchsia"],
+  ["#7A3DBE", "Violet"], ["#5333C4", "Indigo"], ["#6B3A5E", "Prune"],
+  ["#7A5230", "Brun"], ["#3F5566", "Ardoise"], ["#25303A", "Anthracite"],
+];
+const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
+
+/** De quoi le plan a l'air : sa couleur principale, et l'habillage de sa
+ *  fiche détail. */
+function voletApparence(hote){
+  const p = document.createElement("p");
+  p.textContent = "La couleur principale sert partout : sélection, liens, " +
+    "boutons, pastilles, et les modèles de fiche s'en habillent. Le modèle " +
+    "décide de l'allure du panneau qui s'ouvre sur un stand.";
+  hote.appendChild(p);
+
+  const coul = document.createElement("div");
+  coul.className = "reglage-coul";
+  coul.innerHTML = '<div class="tete"><span class="eyebrow">Couleur principale</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const val = coul.querySelector(".val");
+  const nuancier = coul.querySelector(".nuancier");
+  const majPastilles = () => {
+    const v = (conf("_accent").couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    const n = nomDuTon(v);
+    val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
+                        : "Réglage d'origine";
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
+  };
+  const choisit = (v) => {
+    conf("_accent").couleur = v;
+    enregistreConf(); appliqueAccent(); majPastilles();
+  };
+  TONS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
+     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
+     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
+     en base pour autant, la publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+  coul.querySelector(".raz").onclick = () => {
+    delete conf("_accent").couleur;
+    enregistreConf(); appliqueAccent(); majPastilles();
+  };
+  hote.appendChild(coul);
+  majPastilles();
+
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.textContent = "Modèle de fiche";
+  titre.style.display = "block";
+  titre.style.margin = "0 0 9px";
+  hote.appendChild(titre);
+
+  const grille = document.createElement("div");
+  grille.className = "modeles";
+  const courant = modeleFiche();
+  // le même contenu pour les onze : c'est en comparant la même fiche à
+  // elle-même qu'on choisit son habillage
+  const vu = contenuApercu();
+  MODELES_FICHE.forEach(m => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mod";
+    b.setAttribute("aria-pressed", String(m.cle === courant));
+    b.innerHTML = '<span class="vue"></span>' +
+      '<span class="nom"><span class="t"></span><span class="coche">✓</span></span>' +
+      '<span class="resume"></span>';
+    b.querySelector(".nom .t").textContent = m.nom;
+    b.querySelector(".resume").textContent = m.resume;
+    b.querySelector(".vue").appendChild(apercuFiche(m.cle, vu));
+    b.onclick = () => {
+      conf("_fiche").modele = m.cle;
+      enregistreConf(); appliqueFiche();
+      grille.querySelectorAll(".mod").forEach(x =>
+        x.setAttribute("aria-pressed", String(x === b)));
     };
-    n.onblur = () => { n.value = minutesVisite(); };
-    corps.appendChild(duree);
-  }, [{ libelle: "Fermer" }]);
+    grille.appendChild(b);
+  });
+  hote.appendChild(grille);
 }
 
 /** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
@@ -3949,7 +5003,7 @@ let ADMIN = false;
  */
 function retireAdmin(){
   ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
-  ["panel", "outils", "elemSel"].forEach(id => {
+  ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
     e.hidden = true;
@@ -3986,7 +5040,8 @@ function activeAdmin(){
   $("razConf").onclick = () => {
     CONF = JSON.parse(JSON.stringify(DEFAUTS));
     try { localStorage.removeItem(CLE_CONF); } catch (e) {}
-    appliqueApparence(); construitPanneau();
+    // les placements de libellés vivent dans CONF : ils repartent avec elle
+    appliqueApparence(); libelles(); construitPanneau();
   };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
@@ -4035,42 +5090,10 @@ function renommeZone(o){
 
 async function enregistreNomZone(o, valeur){
   const nom = String(valeur || "").trim();
-
-  let cfg = null, ses = null;
   try {
-    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
-    ses = JSON.parse(localStorage.getItem("console-session") || "null");
-  } catch (e) {}
-  if (!cfg?.url || !ses?.access_token){
-    annonce("Session absente : reconnectez-vous pour renommer.", true);
-    return;
-  }
-
-  try {
-    /* Les noms tiennent dans une seule colonne : l'enregistrement la réécrit
-       entière. La renvoyer telle que la page l'avait chargée effacerait tout
-       renommage survenu depuis — d'un autre poste, ou d'un onglet resté
-       ouvert. On repart donc de ce que la base contient à l'instant, et on
-       n'y touche que la zone concernée. */
-    const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=zones&slug=eq." +
-      encodeURIComponent(DATA.slug), {
-      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token },
-    }).then(r => r.ok ? r.json() : []).catch(() => []);
-    const noms = { ...(enBase[0]?.zones || DATA.nomsZones || {}) };
-    if (nom) noms[o.id] = nom; else delete noms[o.id];
-
-    const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
-      method: "PATCH",
-      headers: {
-        "apikey": cfg.anonKey,
-        "Authorization": "Bearer " + ses.access_token,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal",
-      },
-      body: JSON.stringify({ zones: noms, modifie_le: new Date().toISOString() }),
+    const noms = await ecritTableZones("zones", DATA.nomsZones, t => {
+      if (nom) t[o.id] = nom; else delete t[o.id];
     });
-    if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
-
     DATA.nomsZones = noms;
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;
@@ -4080,6 +5103,249 @@ async function enregistreNomZone(o, valeur){
   } catch (e) {
     annonce("Renommage impossible : " + e.message, true);
   }
+}
+
+
+/* ============================================================
+   Masquer une zone organisateur
+   Toutes les zones que Klipso renvoie ne s'adressent pas au visiteur : un
+   local technique, une réserve, un quai de livraison occupent le plan sans
+   rien lui apprendre. L'exploitant les éteint une par une depuis leur fiche.
+
+   Une zone éteinte ne part plus dans le plan public ; en administration elle
+   reste, en teinte pâlie, car c'est de là qu'on revient sur son choix. Le
+   masquage est enregistré sur l'événement, et s'applique à la lecture : il
+   paraît sans attendre la prochaine synchronisation.
+   ============================================================ */
+async function basculeAffichageZone(o){
+  const masquer = !o.masquee;
+  try {
+    const masques = await ecritTableZones("zones_masquees", DATA.zonesMasquees, t => {
+      if (masquer) t[o.id] = true; else delete t[o.id];
+    });
+    DATA.zonesMasquees = masques;
+    o.masquee = masquer || undefined;
+    marqueZonesMasquees();
+    libelles();
+    ouvre(o, null);
+  } catch (e) {
+    annonce("Changement impossible : " + e.message, true);
+  }
+}
+
+/** La teinte pâlie des zones éteintes, reposée sur le plan en place. */
+function marqueZonesMasquees(){
+  document.querySelectorAll("#zones g").forEach(g => {
+    const z = parId.get(g.dataset.id);
+    g.classList.toggle("masquee", !!z && !!z.masquee);
+  });
+}
+
+
+/**
+ * Réécrire une des tables de l'événement indexées par zone — les noms, les
+ * masquages. Chacune tient dans une seule colonne : la renvoyer telle que la
+ * page l'avait chargée effacerait ce qu'un autre poste y a mis depuis. On
+ * repart donc de ce que la base contient à l'instant, et « change » n'y touche
+ * que la zone concernée.
+ */
+async function ecritTableZones(colonne, secours, change){
+  let cfg = null, ses = null;
+  try {
+    cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
+    ses = JSON.parse(localStorage.getItem("console-session") || "null");
+  } catch (e) {}
+  if (!cfg?.url || !ses?.access_token) throw new Error("session absente, reconnectez-vous");
+
+  const entetes = { "apikey": cfg.anonKey, "Authorization": "Bearer " + ses.access_token };
+  const enBase = await fetch(cfg.url + "/rest/v1/evenement?select=" + colonne + "&slug=eq." +
+    encodeURIComponent(DATA.slug), { headers: entetes })
+    .then(r => r.ok ? r.json() : []).catch(() => []);
+  const table = { ...(enBase[0]?.[colonne] || secours || {}) };
+  change(table);
+
+  const r = await fetch(cfg.url + "/rest/v1/evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH",
+    headers: { ...entetes, "Content-Type": "application/json", "Prefer": "return=minimal" },
+    body: JSON.stringify({ [colonne]: table, modifie_le: new Date().toISOString() }),
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status + " " + (await r.text()).slice(0, 120));
+  return table;
+}
+
+
+/* ============================================================
+   Placer un libellé à la main
+
+   Le nom d'un stand est posé automatiquement : au milieu de l'emplacement, à
+   la taille que la place autorise. C'est juste pour un rectangle, et ce l'est
+   moins dès que le plan sort du cas d'école — un stand en L dont le nom tombe
+   sur la découpe, deux enseignes voisines dont les noms se touchent, une zone
+   organisateur dont l'intitulé traverse une allée. L'exploitant voit ces
+   cas-là, le calcul non : il lui faut pouvoir déplacer et agrandir un libellé.
+
+   Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre
+   des calques, et part aux visiteurs à la publication.
+
+   Il porte avec lui l'empreinte de ce dont il dépend : ce qui s'écrit, et la
+   forme qui le porte. Une synchronisation qui n'y touche pas le laisse en
+   place — c'est tout l'objet — mais une qui renomme l'exposant, déplace le
+   stand ou le redimensionne le périme : le décalage ne décrit plus rien, et
+   laisser le nom flotter à côté serait pire que de le replacer tout seul.
+   Le réglage n'est pas effacé pour autant, il cesse de s'appliquer : si la
+   forme revient telle qu'elle était, il revient avec elle.
+   ============================================================ */
+const cleLibelle = (id) => "_lab:" + id;
+
+/* Le mode est transitoire : on y entre pour retoucher, on en sort. Il ne se
+   retient pas d'une session à l'autre — ce n'est pas un réglage du salon. */
+let PLACE_LIBELLES = false;
+let libSel = null;      // l'objet dont on retouche le libellé
+let glisseLib = null;   // le geste en cours
+
+/**
+ * Ce dont dépend le placement d'un libellé : ce qui s'y écrit, et la forme qui
+ * le porte — son ancrage et la place dont il dispose autour.
+ *
+ * Le nom retenu est celui qui s'affiche, y compris quand l'exploitant l'a
+ * choisi lui-même sur une zone : renommer, c'est écrire autre chose, et cet
+ * autre chose n'a pas de raison de tenir à la même taille au même endroit.
+ */
+function empreinteLibelle(o){
+  const a = ancre(o) || [0, 0], p = place(o) || [0, 0];
+  return [o.nom || "", o.code || "",
+          (+a[0]).toFixed(2), (+a[1]).toFixed(2),
+          (+p[0]).toFixed(2), (+p[1]).toFixed(2)].join("|");
+}
+
+/** Le placement réglé à la main, s'il décrit encore ce qui est sur le plan. */
+function placementLibelle(o){
+  const r = CONF[cleLibelle(o.id)];
+  return r && r.e === empreinteLibelle(o) ? r : null;
+}
+
+/**
+ * Poser un placement, sans l'écrire sur le poste : un glisser en produit un
+ * par image, et enregistrer à chaque fois sérialiserait toute la configuration
+ * soixante fois par seconde. C'est la fin du geste qui enregistre.
+ */
+function posePlacement(o, change){
+  const r = placementLibelle(o);
+  const n = { dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0, k: r && r.k > 0 ? r.k : 1,
+              e: empreinteLibelle(o) };
+  change(n);
+  n.dx = +(+n.dx).toFixed(2);
+  n.dy = +(+n.dy).toFixed(2);
+  n.k = Math.max(.4, Math.min(3, +n.k || 1));
+  /* Un placement qui ne déplace ni n'agrandit rien n'est pas un réglage : il
+     sort de la configuration plutôt que d'y peser et d'y vieillir. */
+  if (!n.dx && !n.dy && Math.abs(n.k - 1) < .001) delete CONF[cleLibelle(o.id)];
+  else CONF[cleLibelle(o.id)] = n;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Rendre un libellé à son placement automatique. */
+function libelleAutomatique(){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  delete CONF[cleLibelle(o.id)];
+  enregistreConf();
+  libelles();
+  majPaletteLibelle();
+}
+
+function modePlacementLibelles(on){
+  PLACE_LIBELLES = !!on && ADMIN;
+  racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
+  /* Le placement et le dessin se disputeraient le glisser : entrer dans l'un
+     referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
+  if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
+  if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  majPaletteLibelle();
+  libelles();
+}
+
+/** La palette du libellé retouché : sa taille, et de quoi y renoncer. */
+function majPaletteLibelle(){
+  const z = $("libReg");
+  if (!z || !ADMIN || !$("libNom")) return;
+  const o = libSel && parId.get(libSel);
+  z.classList.toggle("open", !!(PLACE_LIBELLES && o));
+  if (!(PLACE_LIBELLES && o)) return;
+  const r = placementLibelle(o);
+  $("libNom").textContent = o.nom || o.code ||
+    (o.kind === "zone" ? "Zone sans nom" : "Stand");
+  $("libTaille").value = r && r.k ? r.k : 1;
+  $("libAuto").disabled = !r;
+  $("libAide").textContent = r
+    ? "Glissez le libellé, ou ajustez-le aux flèches du clavier."
+    : "Glissez ce libellé pour le déplacer, ou tirez la taille.";
+}
+
+/** Choisir le libellé qu'on retouche — au clic, ou en le glissant. */
+function choisitLibelle(id){
+  libSel = id;
+  libelles();
+  majPaletteLibelle();
+}
+
+/** Le pas du clavier : un quart de mètre, un mètre touche majuscule tenue. */
+function pousseLibelle(dx, dy){
+  const o = libSel && parId.get(libSel);
+  if (!o) return;
+  posePlacement(o, n => { n.dx += dx; n.dy += dy; });
+  enregistreConf();
+}
+
+/* --- le geste ; renvoie vrai si l'événement est consommé --- */
+function libellePointerDown(e){
+  if (!PLACE_LIBELLES) return false;
+  const g = e.target.closest("#labels .lbl");
+  if (!g) return false;
+  const o = parId.get(g.dataset.lbl);
+  if (!o) return false;
+  e.preventDefault();
+  choisitLibelle(o.id);
+  const r = placementLibelle(o);
+  glisseLib = { o: o, depart: versPlan(e.clientX, e.clientY),
+                dx: r ? r.dx || 0 : 0, dy: r ? r.dy || 0 : 0 };
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
+function libellePointerMove(e){
+  if (!glisseLib) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const dx = glisseLib.dx + p[0] - glisseLib.depart[0];
+  const dy = glisseLib.dy + p[1] - glisseLib.depart[1];
+  posePlacement(glisseLib.o, n => { n.dx = dx; n.dy = dy; });
+  return true;
+}
+
+function libellePointerUp(e){
+  if (!glisseLib) return false;
+  glisseLib = null;
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  enregistreConf();
+  return true;
+}
+
+/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
+   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
+   cochée — et le refaire remplacerait le nœud en pleine gestion de son
+   propre événement. */
+if ($("libFerme")) $("libFerme").onclick = () => {
+  modePlacementLibelles(false);
+  construitPanneau();
+};
+if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
+if ($("libTaille")){
+  $("libTaille").oninput = e => {
+    const o = libSel && parId.get(libSel);
+    if (o) posePlacement(o, n => { n.k = +e.target.value; });
+  };
+  $("libTaille").onchange = enregistreConf;
 }
 
 /* ============================================================
@@ -4234,12 +5500,18 @@ function cheminArrondi(pts, r, ferme){
   return d + (ferme ? "Z" : "");
 }
 
+/* Rectangle, image, stand dessiné : trois formes que deux coins opposés
+   suffisent à tenir. Le tracé, les poignées et le redimensionnement les
+   traitent donc ensemble. */
+const estCadre = (f) => f.t === "rect" || f.t === "image" || f.t === "stand";
+
 function cheminForme(f){
-  if (f.t === "rect" || f.t === "image"){
+  if (estCadre(f)){
     const [a, b] = f.pts;
     const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
     const w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
-    if (f.t === "rect" && f.r > 0)
+    // une image porte son propre cadrage : l'arrondir rognerait le visuel
+    if (f.t !== "image" && f.r > 0)
       return cheminArrondi([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], f.r, true);
     return "M" + x + " " + y + "h" + w + "v" + h + "h" + (-w) + "Z";
   }
@@ -4270,6 +5542,8 @@ function dessineDessins(){
         '" preserveAspectRatio="xMidYMid meet"/></g>'
       : f.t === "repere"
       ? traceRepere(f)
+      : f.t === "stand"
+      ? traceStandDessine(f)
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
@@ -4279,6 +5553,9 @@ function dessineDessins(){
   }
   ordonneDom();
   cartouchePoi();
+  /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
+     fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
+  rafraichitStandsDessines();
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -4610,6 +5887,169 @@ function traceRepere(f){
     '" font-size="' + t.toFixed(2) + '">' + esc(nom) + '</text></g>';
 }
 
+/* ------------------------------------------------------------
+   Les stands dessinés à la main
+   ------------------------------------------------------------
+   La synchronisation ne rend qu'une forme par dossier : un stand loué à
+   plusieurs n'en a donc qu'une, et les sociétés qui s'y installent n'existent
+   que dans une liste. Sur le plan elles ne sont nulle part, et le visiteur qui
+   cherche l'une d'elles lit le nom d'une autre peint sur la cloison.
+
+   L'exploitant les matérialise donc lui-même : il découpe le stand en autant
+   de rectangles qu'il y a d'enseignes, et rattache chacun à la société qu'il
+   désigne. Ce n'est pas un dessin de plus — la forme se lit comme un stand,
+   même aplat et même libellé, s'ouvre au clic sur la fiche complète de sa
+   société, et renvoie l'itinéraire vers le stand qui la porte : on ne marche
+   pas jusqu'à un co-exposant, on marche jusqu'à son hôte.
+   ------------------------------------------------------------ */
+
+/** L'étiquette sous laquelle une société se désigne : « G55 — SMC2 ». */
+const etiquetteSociete = (code, nom) => [code, nom].filter(Boolean).join(" — ");
+
+/** Le nom d'une société tel qu'il s'écrit sur le plan — vide s'il n'y en a
+ *  pas, là où la fiche se rabat sur « Sans nom ». */
+const nomSurLePlan = (soc) => soc.nom || soc.plan || "";
+
+/**
+ * Ce qu'un stand dessiné désigne : l'emplacement, le rang de la société, la
+ * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
+ * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
+ *
+ * On ne se rabat pas alors sur le titulaire : ce serait donner à une enseigne
+ * la place d'une autre. La forme reste sur le plan, muette et sans clic, et le
+ * panneau d'édition invite à la rattacher de nouveau.
+ */
+function societeDeForme(f){
+  if (!f || f.t !== "stand" || !f.stand) return null;
+  const o = parId.get(f.stand);
+  if (!o || o.kind !== "stand") return null;
+  const i = Number.isInteger(f.soc) ? f.soc : -1;
+  const soc = i < 0 ? o : (o.coex || [])[i];
+  return soc ? { o: o, i: i, soc: soc } : null;
+}
+
+/** Les sociétés du pavillon courant, titulaires et hébergées mêlées : c'est
+ *  parmi elles que se choisit ce qu'un stand dessiné matérialise. */
+function societesDuPlan(){
+  const out = [];
+  P().stands.forEach(s => societes(s).forEach(x => {
+    const nom = nomSurLePlan(x.soc);
+    if (!s.code && !nom) return;
+    out.push({ o: s, i: x.i, soc: x.soc,
+               etiquette: etiquetteSociete(s.code, nom) || s.id });
+  }));
+  return out;
+}
+
+function remplitListeSocietes(){
+  const l = $("listeSoc");
+  if (!l) return;
+  l.innerHTML = societesDuPlan()
+    .map(x => '<option value="' + esc(x.etiquette) + '">').join("");
+}
+
+/** Retrouve la société désignée par ce qui a été saisi. */
+function societeSaisie(txt){
+  const v = String(txt || "").trim().toLowerCase();
+  if (!v) return null;
+  const l = societesDuPlan();
+  return l.find(x => x.etiquette.toLowerCase() === v)
+      || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
+      || null;
+}
+
+/**
+ * Un stand dessiné, tracé comme le stand qu'il découpe.
+ *
+ * Il porte l'identifiant de son hôte et le rang de la société qu'on vient y
+ * voir : le reste de la page n'a alors rien de nouveau à apprendre — le clic,
+ * la sélection, la fiche et l'itinéraire lisent déjà ces deux-là.
+ */
+function traceStandDessine(f){
+  const l = societeDeForme(f);
+  const sel = l && l.o.id === state.sel && l.i === state.selSoc;
+  const nom = l ? nomSurLePlan(l.soc) : "";
+  return '<g class="forme sdes' + (f.id === formeSel ? " pick" : "") +
+    (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + f.id + '"' +
+    (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
+         '" tabindex="0" role="button" aria-label="' +
+         esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
+    '><path d="' + cheminForme(f) + '"/><g class="lab"></g></g>';
+}
+
+/**
+ * Le libellé d'un stand dessiné : le nom de sa société, le numéro de
+ * l'emplacement dessous — exactement ce qu'un stand du plan écrit.
+ *
+ * Il vit dans la forme et non dans « #labels », où vivent ceux du plan. Un
+ * calque de dessin peut être empilé par-dessus le calque des textes, et son
+ * aplat recouvrait alors le nom qu'il était censé porter. Attaché à sa forme,
+ * le libellé la suit jusque dans l'ordre des couches.
+ *
+ * Il se relit à chaque changement de vue, comme les autres : c'est la taille
+ * du texte à l'écran qui décide s'il est lisible ou s'il vaut mieux se taire.
+ */
+function texteStandDessine(f, pxParM){
+  const l = societeDeForme(f);
+  if (!l) return "";
+  const nom = nomSurLePlan(l.soc);
+  if (!nom && !l.o.code) return "";
+  const b = boite(f);
+  const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  const sel = l.o.id === state.sel && l.i === state.selSoc;
+  if (!sel && (!visibleSociete(l.o, l.i) ||
+               cx < view.x - 25 || cx > view.x + view.w + 25 ||
+               cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
+                            b[2] - b[0], b[3] - b[1], sel, pxParM);
+}
+
+/** Les libellés de tous les stands dessinés du pavillon, posés dans leurs
+ *  formes. Le pavillon en compte quelques dizaines au plus : on les relit
+ *  tous plutôt que de tenir à jour ce qui a bougé. */
+function poseLibellesDessines(pxParM){
+  const z = $("couches");
+  for (const cal of mesCalques()){
+    for (const f of cal.formes){
+      if (f.t !== "stand") continue;
+      const lab = z.querySelector('.sdes[data-f="' + CSS.escape(f.id) + '"] .lab');
+      if (lab) lab.innerHTML = texteStandDessine(f, pxParM);
+    }
+  }
+}
+
+/**
+ * La sélection des stands dessinés, posée sans retracer les calques : relire
+ * un calque réanalyse ses images, ce qui est cher pour un liseré qui change à
+ * chaque clic. La classe se pose donc à la main, comme le fait déjà la
+ * sélection d'édition.
+ */
+function marqueStandsDessines(){
+  $("couches").querySelectorAll(".dcal .sdes").forEach(g => {
+    g.classList.toggle("sel", g.dataset.id === state.sel &&
+                              Number(g.dataset.soc) === state.selSoc);
+  });
+}
+
+/**
+ * Ce qu'un stand dessiné reçoit une fois tracé : la teinte de son secteur, le
+ * fondu que le filtre pose sur ce qu'il écarte, et son libellé.
+ *
+ * Rien de tout cela ne tient dans le gabarit de la forme : les deux premiers
+ * se lisent dans les réglages du salon, le troisième dans la vue courante — et
+ * le premier montage a lieu avant qu'il y en ait une.
+ */
+function rafraichitStandsDessines(){
+  if (!DATA || !view) return;
+  coloreSecteurs();
+  $("couches").querySelectorAll(".dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
+  });
+  const r = svg.getBoundingClientRect();
+  poseLibellesDessines((r.width || 1) / view.w);
+}
+
 /**
  * Cartouche des points d'intérêt.
  *
@@ -4855,7 +6295,7 @@ function dessinPointerDown(e){
   // sans cela le navigateur démarre une sélection de texte et le
   // relâchement du pointeur ne revient jamais
   e.preventDefault();
-  if (outil === "rect" || outil === "image"){
+  if (outil === "rect" || outil === "image" || outil === "stand"){
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   }
   const p = versPlan(e.clientX, e.clientY);
@@ -4877,6 +6317,20 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
+  /* Un stand dessiné ne vaut que par la société qu'il désigne : sans elle on
+     poserait un rectangle muet, invisible pour le visiteur puisqu'il n'ouvre
+     aucune fiche. On demande donc l'exposant avant le tracé, comme on demande
+     son libellé à un repère. */
+  if (outil === "stand"){
+    const l = societeSaisie($("standSoc").value);
+    if (!l){
+      $("outilsAide").textContent = "Choisissez d'abord l'exposant à matérialiser.";
+      $("standSoc").focus(); $("standSoc").select();
+      return true;
+    }
+    enCours = { t: "stand", pts: [p, p], stand: l.o.id, soc: l.i };
+    return true;
+  }
   if (outil === "image"){
     if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
     enCours = { t: "image", pts: [p, p] };
@@ -4909,7 +6363,7 @@ function dessinPointerMove(e){
   if (editionPointerMove(e)) return true;
   if (!enCours) return false;
   const p = versPlan(e.clientX, e.clientY);
-  if (enCours.t === "rect" || enCours.t === "image"){
+  if (estCadre(enCours)){
     enCours.pts[1] = p;
     if (enCours.t === "image"){    // on respecte les proportions de l'image
       const l = enCours.pts[1][0] - enCours.pts[0][0];
@@ -4936,7 +6390,7 @@ function dessinPointerUp(e){
   if (e && e.pointerId != null){
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   }
-  if (enCours.t === "rect" || enCours.t === "image"){
+  if (estCadre(enCours)){
     const a = enCours.pts[0], b = enCours.pts[1];
     if (Math.abs(b[0] - a[0]) > .3 && Math.abs(b[1] - a[1]) > .3){
       if (enCours.t === "image"){
@@ -4945,6 +6399,9 @@ function dessinPointerUp(e){
         enCours.src = imageEnAttente.src;
       }
       ajouteForme(enCours);
+      /* Un stand loué à cinq se découpe en cinq : on enchaîne, et le champ
+         redit lequel vient d'être posé plutôt que de se vider en silence. */
+      if (enCours.t === "stand") enchaineStand(enCours);
     }
     enCours = null; apercu(null);
   }
@@ -4962,7 +6419,7 @@ function termineTrace(valider){
 function aide(){
   if (!$("outilsAide")) return;
   const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
-                             : "Cliquez une forme pour la modifier.",
+                             : "Cliquez une forme de ce calque pour la modifier.",
               rect: "Cliquez-glissez pour tracer un rectangle.",
               poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
               contour: "Un clic par angle du hall. Revenez sur le premier point, " +
@@ -4970,6 +6427,7 @@ function aide(){
               ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
               texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
               repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
+              stand: "Choisissez l'exposant, puis cliquez-glissez sur sa part du stand.",
               image: imageEnAttente ? "Glissez sur le plan pour poser une autre copie."
                                     : "Choisissez une image, ou déposez le fichier sur le plan.",
               _: "" };
@@ -4990,11 +6448,25 @@ function choisitOutil(o){
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-contour", o === "contour");
   b.classList.toggle("mode-repere", o === "repere");
+  b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
   if (o === "repere") $("repereTexte").focus();
+  if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   aide();
 }
+
+/** Le stand posé nomme sa société, et rend la main pour la suivante. */
+function enchaineStand(f){
+  const l = societeDeForme(f);
+  const ch = $("standSoc");
+  if (l && $("outilsAide"))
+    $("outilsAide").textContent = "« " +
+      (nomSurLePlan(l.soc) || ("Stand " + (l.o.code || "")).trim()) +
+      " » matérialisé. Choisissez l'exposant suivant.";
+  if (ch){ ch.focus(); ch.select(); }
+}
+
 $("outils").querySelectorAll(".outilsBtns button")
   .forEach(b => b.onclick = () => choisitOutil(b.dataset.o));
 $("annuleDernier").onclick = annule;
@@ -5026,6 +6498,10 @@ $("elemLienAjout").onchange = (e) => {
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
 $("elemStand").onblur = appliqueLiaison;
+/* Le stand dessiné se rattache de même : à la sortie du champ, et non à
+   chaque frappe — « SM » ne désigne personne et effacerait le lien. */
+$("elemSoc").onchange = appliqueSociete;
+$("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
@@ -5063,6 +6539,12 @@ const AIDE_ROLE = {
     "au bord est retiré tout seul.",
 };
 
+/* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
+   retire de l'écran sans le retirer du calcul. C'est ce qu'on attend d'un mur,
+   et c'est assez surprenant pour être écrit sous la liste. */
+const AIDE_ROLE_MASQUE = " Masquer le calque ne change rien au calcul : " +
+  "le dessin disparaît de l'écran, pas du terrain.";
+
 function montreRoleIti(c){
   const sel = $("roleIti");
   if (!sel) return;
@@ -5073,7 +6555,7 @@ function montreRoleIti(c){
       '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
   const r = c ? roleIti(c) : "";
   sel.value = r;
-  $("roleAide").textContent = AIDE_ROLE[r] || "";
+  $("roleAide").textContent = (AIDE_ROLE[r] || "") + (r ? AIDE_ROLE_MASQUE : "");
 }
 
 $("roleIti").onchange = e => {
@@ -5164,12 +6646,12 @@ function boite(f){
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
 function curseurPoignee(f, i){
-  if (f.t === "rect" || f.t === "image") return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
+  if (estCadre(f)) return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
   return "move";
 }
 
 function poignees(f){
-  if (f.t === "rect" || f.t === "image"){
+  if (estCadre(f)){
     const b = boite(f);
     return [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
   }
@@ -5219,7 +6701,8 @@ function majElement(){
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
-                 texte: "Texte", image: "Image", repere: "Repère" };
+                 texte: "Texte", image: "Image", repere: "Repère",
+                 stand: "Stand dessiné" };
   $("elemType").textContent = NOMS[f.t] || f.t;
   // un repère porte lui aussi un libellé et une taille
   const estTexte = f.t === "texte" || f.t === "repere";
@@ -5234,7 +6717,8 @@ function majElement(){
      posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
      se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
      calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
-  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne" ||
+                        f.t === "stand";
   const br = $("elemRayonBloc");
   if (br){
     br.hidden = !arrondissable;
@@ -5270,6 +6754,19 @@ function majElement(){
       remplitListeStands();
       const s = f.stand && parId.get(f.stand);
       ch.value = s ? etiquetteStand(s) : "";
+    }
+  }
+
+  /* Un stand dessiné, lui, désigne une société et non un emplacement : c'est
+     tout l'objet du découpage, deux enseignes se partageant le même numéro. */
+  const cs = $("elemSoc");
+  if (cs){
+    const estStandDessine = f.t === "stand";
+    cs.hidden = !estStandDessine;
+    if (estStandDessine){
+      remplitListeSocietes();
+      const l = societeDeForme(f);
+      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
     }
   }
 }
@@ -5435,6 +6932,29 @@ function appliqueLiaison(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/**
+ * Rattacher un stand dessiné à une société, ou l'en détacher.
+ *
+ * Détaché, il reste sur le plan — il a été tracé, on ne l'efface pas dans le
+ * dos de qui vient de mal saisir un nom — mais il n'ouvre plus rien et perd
+ * son libellé : le plan dit ainsi qu'il attend encore son exposant.
+ */
+function appliqueSociete(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "stand") return;
+  const ch = $("elemSoc");
+  const l = societeSaisie(ch.value);
+  memorise();
+  if (l){
+    cible.f.stand = l.o.id; cible.f.soc = l.i;
+    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+  } else {
+    delete cible.f.stand; delete cible.f.soc;
+    ch.value = "";
+  }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
 function appliqueTexte(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
@@ -5506,14 +7026,14 @@ function editionPointerDown(e){
     const cible = formeParId(id);
     const sienne = cible && cible.c.id === calqueActif;
 
-    /* Une image liée à un stand ouvre sa fiche, comme pour un visiteur — sauf
-       sur le calque qu'on est en train de modifier, où le clic sert à la
-       déplacer. Le calque actif est donc l'atelier, les autres la vitrine. */
-    if (!sienne && g.dataset.id) return false;
+    /* Seul le calque ouvert par l'exploitant se laisse retoucher. Une forme
+       d'un autre calque n'est ni sélectionnée ni déplacée : trop de dessins
+       partaient à la dérive sur un clic destiné à la vue. Pour la reprendre,
+       il faut ouvrir son calque depuis le panneau. Une image liée à un stand
+       reste l'exception : elle ouvre sa fiche, comme pour un visiteur ; le
+       reste laisse passer le geste vers le plan, qui se déplace. */
+    if (!sienne) return false;
 
-    // cliquer une forme d'un autre calque l'ouvre : c'est le geste qu'on
-    // attend, plutôt que de devoir d'abord le désigner dans le panneau
-    if (!sienne) activeCalque(cible.c.id);
     if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
@@ -5536,7 +7056,7 @@ function editionPointerMove(e){
 
   if (geste.type === "deplace"){
     f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
-  } else if (f.t === "rect" || f.t === "image"){
+  } else if (estCadre(f)){
     // la poignée opposée reste fixe ; l'image garde ses proportions
     const b = [Math.min(geste.pts[0][0], geste.pts[1][0]), Math.min(geste.pts[0][1], geste.pts[1][1]),
                Math.max(geste.pts[0][0], geste.pts[1][0]), Math.max(geste.pts[0][1], geste.pts[1][1])];
@@ -6302,11 +7822,14 @@ function construitPanneau(){
     nom.textContent = x.nom;
 
     /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
-       rappeler ici évite de le chercher, ou de l'oublier. */
+       rappeler ici évite de le chercher, ou de l'oublier. La coche d'à côté
+       n'éteint que l'affichage — le calcul, lui, continue d'en tenir compte,
+       et rien d'autre ne le dirait. */
     if (x.t === "dessin" && roleIti(x.ref)){
       const b = document.createElement("i");
       b.className = "rle";
       b.textContent = nomRoleIti(roleIti(x.ref));
+      b.title = "Ce calque compte dans les itinéraires, même masqué.";
       nom.after(b);
     }
 
@@ -6380,10 +7903,12 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* les deux couleurs de texte se règlent sous la couche Textes */
+    /* les deux couleurs de texte se règlent sous la couche Textes, et avec
+       elles le placement à la main de chaque libellé */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
+      rangPlacement(hote);
     }
   });
 
@@ -6502,6 +8027,25 @@ function rangSous(hote, cle, libelle, defaut, applique){
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
                        enregistreConf(); applique(); };
+  hote.appendChild(d);
+}
+
+/**
+ * La case qui ouvre le placement des libellés à la main.
+ *
+ * Elle vit sous la couche des textes parce que c'est elle qu'on retouche, à
+ * côté de sa couleur et de sa visibilité. Ce n'est pas un réglage du salon
+ * mais un mode de travail : elle ne se retient pas, et se relève décochée à
+ * chaque ouverture du panneau.
+ */
+function rangPlacement(hote){
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox"><span></span></label>';
+  d.querySelector("label span").textContent = "Placer les libellés à la main";
+  const c = d.querySelector("input");
+  c.checked = PLACE_LIBELLES;
+  c.onchange = e => modePlacementLibelles(e.target.checked);
   hote.appendChild(d);
 }
 
@@ -7354,17 +8898,24 @@ const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
 /**
  * Les formes d'un pavillon portant un rôle donné.
  *
- * Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
- * voit à l'écran, et contourner un obstacle invisible passerait pour un bogue.
+ * La visibilité du calque n'entre pas en compte, à la différence des repères :
+ * un mur reste un mur quand on l'éteint. Un calque de rôle ne décrit pas ce
+ * qu'on montre mais le terrain — les sanitaires, la rampe, les allées — et
+ * l'exploitant l'éteint précisément parce que le visiteur n'a pas à le voir.
+ * L'oublier alors faisait traverser un local par le trajet, ce qui est un
+ * bogue plus grand que le détour inexpliqué qu'on cherchait à éviter.
  * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
- * délimiter une circulation.
+ * délimiter une circulation. Un stand dessiné en a une, comme le rectangle
+ * dont il est un cas particulier : posé hors de l'emplacement qu'il découpe,
+ * il barre le passage aussi sûrement qu'une cloison.
  */
 function formesRole(p, role){
   const l = [];
   for (const c of calquesDe(p)){
-    if (c.visible === false || roleIti(c) !== role) continue;
+    if (roleIti(c) !== role) continue;
     for (const f of c.formes || []){
-      if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
+      if (f.t === "rect" || f.t === "poly" || f.t === "stand")
+        l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && role !== "circulation")
         l.push({ d: cheminForme(f), trait: true });
     }
@@ -10504,6 +12055,7 @@ function ecranAcces(message){
     '<label><span>Mot de passe</span><input id="aMdp" type="password" autocomplete="current-password"></label>' +
     '</div>' +
     '<footer><a class="btn" id="aPublic">Voir le plan public</a>' +
+    '<a class="btn" id="aOubli" href="motdepasse">Mot de passe oublié</a>' +
     '<button class="btn primaire" id="aOk">Se connecter</button></footer></div>';
   document.body.appendChild(voile);
 

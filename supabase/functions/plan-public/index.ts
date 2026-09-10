@@ -25,8 +25,9 @@
  *
  * Un visiteur ne voit que les événements publiés. Un exploitant authentifié
  * présente sa session et voit aussi ses brouillons : c'est ainsi qu'on prépare
- * la configuration d'un salon avant sa mise en ligne. C'est la politique de
- * sécurité de la base qui tranche, pas cette fonction.
+ * la configuration d'un salon avant sa mise en ligne. Pour l'exploitant, c'est
+ * la politique de sécurité de la base qui tranche ; pour le visiteur, c'est
+ * cette fonction — `db` dit pourquoi.
  *
  * Elle ne parle jamais à Klipso : elle lit ce que la synchronisation a écrit.
  * Le plan reste donc servi si GAIA est indisponible, et la clé API ne peut pas
@@ -42,7 +43,7 @@ import { versionFond } from "../_partage/version.ts";
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
     .split(",").map((s) => s.trim()).filter(Boolean),
-  "https://plan-interactif.korantin-vey.workers.dev",
+  "https://plan-interactif.interactiveplan.workers.dev",
   "http://localhost:4180",
 ];
 const cors = (req: Request) => {
@@ -57,22 +58,149 @@ const cors = (req: Request) => {
 const METHODES = { "Access-Control-Allow-Methods": "GET, OPTIONS" };
 
 /**
- * Le client emprunte l'identité de l'appelant quand il en a une : un
- * exploitant authentifié voit ses brouillons, un visiteur ne voit que le
- * publié. C'est la politique de sécurité de la base qui tranche, pas la
- * fonction — elle se contente de transmettre le jeton.
+ * Le client de lecture, en deux régimes.
+ *
+ * Un appelant qui présente une session lit avec la clé publique et son jeton :
+ * la politique de sécurité de la base tranche alors ce qu'il voit — ses salons,
+ * brouillons compris. Un visiteur, lui, lit avec la clé de service, et ce sont
+ * les filtres de cette fonction qui bornent ce qui sort.
+ *
+ * Pourquoi ce détour plutôt que la clé publique pour tout le monde : la lecture
+ * publique reposait sur des politiques ouvertes au rôle « anon », donc sur la
+ * clé livrée avec les pages. Les tables se lisaient alors directement, sans
+ * passer par ici, et rendaient bien plus que cette fonction ne consent à
+ * rendre : tous les salons d'un coup plutôt que celui qu'on demande, les zones
+ * que l'exploitant a masquées, le dessin des calques qu'il a éteints. Le soin
+ * pris ici ne protégeait rien tant qu'on pouvait lire à côté. Refermer cet
+ * accès demandait de cesser de lire sous « anon ».
+ *
+ * Le prix est que, pour ce chemin-là, la publication n'est plus gardée par la
+ * base mais par `salon()` et `publies()`. Ce sont les deux seules portes du
+ * régime visiteur, et tout ce que la fonction lit ensuite pend de l'une ou de
+ * l'autre : une lecture ajoutée plus tard part donc de là, faute de quoi un
+ * brouillon sortirait.
  */
 const db = (req: Request) => {
   const jeton = req.headers.get("Authorization") ?? "";
-  return createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    {
-      auth: { persistSession: false },
-      global: jeton ? { headers: { Authorization: jeton } } : {},
-    },
-  );
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const options = { auth: { persistSession: false } };
+  return jeton
+    ? createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      ...options,
+      global: { headers: { Authorization: jeton } },
+    })
+    : createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, options);
 };
+
+/** Le salon : publié pour un visiteur, accessible pour un exploitant. */
+const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
+  const q = sb
+    .from("evenement")
+    .select("id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees")
+    .eq("slug", slug);
+  return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
+};
+
+/**
+ * Ses pavillons : publiés pour un visiteur, tous pour un exploitant.
+ *
+ * Le filtre est posé sur la lecture des pavillons et non sur celles qui
+ * suivent — calques, apparence, dessins, instantanés pendent tous d'un
+ * pavillon, et n'existent pour la fonction que par les identifiants qu'elle
+ * tient d'ici. Refermer cette porte-là les referme toutes.
+ */
+const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
+  q: Q,
+  identifie: boolean,
+): Q => (identifie ? q : q.eq("publie", true));
+
+/**
+ * Ce qu'une fiche ne montre pas ne descend pas.
+ *
+ * L'exploitant décoche « Téléphone » dans la console et la page cesse de
+ * l'afficher — mais l'instantané partait tel quel, coordonnées comprises, chez
+ * chaque visiteur : le réglage ne cachait qu'à l'écran, là où il promet de ne
+ * pas publier. Il s'applique ici, où il a un sens.
+ *
+ * N'y figurent que les champs dont rien d'autre ne se sert. La recherche
+ * indexe l'enseigne, la raison sociale, le numéro, le secteur et les
+ * thématiques : ceux-là restent, décochés ou non, sans quoi on cesserait de
+ * trouver en tapant ce qu'on lisait hier. Les autres ne se lisent que sur la
+ * fiche — ou comme critère, d'où la réserve de `retraits()`.
+ */
+const CHAMPS_FICHE: Record<string, string> = {
+  adresse: "adr",
+  ville: "ville",
+  pays: "pays",
+  telephone: "tel",
+  site: "site",
+  facebook: "fb",
+  linkedin: "li",
+  instagram: "ig",
+  nomenclature: "nomencl",
+};
+
+/** Les champs propres au salon portent leur clé préfixée dans le réglage. */
+const PREFIXE_PERSO = "perso:";
+
+interface Retraits {
+  cles: string[];
+  persos: string[];
+}
+
+/**
+ * Ce qu'il faut retirer des fiches de ce salon, ou rien.
+ *
+ * Une entrée absente vaut « affiché » — un salon qui n'a jamais touché au
+ * réglage ne perd donc rien. Un champ décoché mais retenu comme critère reste
+ * envoyé : c'est de lui que la page tire les valeurs du filtre, et la
+ * recherche ce qu'elle indexe des critères. Le décocher ne dit alors que « pas
+ * sur la fiche », pas « pas du tout ».
+ */
+function retraits(fiche: Record<string, unknown>): Retraits | null {
+  const montre = (fiche.stand ?? {}) as Record<string, boolean>;
+  const criteres = (fiche.criteres ?? {}) as Record<string, boolean>;
+  const retire = (cible: string) =>
+    montre[cible] === false && criteres[cible] !== true;
+
+  const cles = Object.entries(CHAMPS_FICHE)
+    .filter(([cible]) => retire(cible))
+    .map(([, cle]) => cle);
+  const persos = ((fiche.perso ?? []) as { cle?: string }[])
+    .map((c) => String(c?.cle ?? ""))
+    .filter((cle) => cle && retire(PREFIXE_PERSO + cle));
+
+  return cles.length || persos.length ? { cles, persos } : null;
+}
+
+/**
+ * La même fiche, amputée de ce que le salon n'affiche pas.
+ *
+ * Les sociétés hébergées portent les mêmes champs que leur hôte — c'est bien
+ * leur fiche à elles — et le même réglage les gouverne : les oublier laisserait
+ * sortir par les co-exposants ce qu'on retire des titulaires.
+ */
+function ampute(
+  stand: Record<string, unknown>,
+  r: Retraits,
+): Record<string, unknown> {
+  const s = { ...stand };
+  for (const cle of r.cles) delete s[cle];
+
+  if (r.persos.length && s.perso) {
+    const perso = { ...(s.perso as Record<string, unknown>) };
+    for (const cle of r.persos) delete perso[cle];
+    // la clé ne descend pas quand elle ne porte plus rien : le stand la portait
+    // vide sur tout un salon
+    if (Object.keys(perso).length) s.perso = perso;
+    else delete s.perso;
+  }
+
+  if (Array.isArray(s.coex)) {
+    s.coex = (s.coex as Record<string, unknown>[]).map((x) => ampute(x, r));
+  }
+  return s;
+}
 
 /**
  * Ce que l'apparence d'un pavillon donne pour masqué : les clés de calques —
@@ -139,13 +267,9 @@ Deno.serve(async (req) => {
 
     const sb = db(req);
 
-    // la politique de sécurité ne laisse passer que les événements publiés,
-    // sauf à l'exploitant dont la session est valide
-    const { data: evt, error: err } = await sb
-      .from("evenement")
-      .select("id, nom, slug, derniere_sync, fiche, fuseau, zones")
-      .eq("slug", slug)
-      .maybeSingle();
+    // seuls les événements publiés passent, sauf à l'exploitant dont la
+    // session est valide : la politique de sécurité tranche pour lui
+    const { data: evt, error: err } = await salon(sb, slug, identifie);
 
     // Un jeton périmé ne doit pas se traduire par « introuvable » : l'appelant
     // a besoin de savoir qu'il lui suffit de se reconnecter.
@@ -167,12 +291,12 @@ Deno.serve(async (req) => {
     // Second appel : uniquement le dessin d'un pavillon.
     const fond = new URL(req.url).searchParams.get("fond");
     if (fond) {
-      const { data: pl } = await sb
-        .from("plan")
-        .select("id")
-        .eq("evenement_id", evt.id)
-        .eq("id_klipso", fond)
-        .maybeSingle();
+      const { data: pl } = await publies(
+        sb.from("plan").select("id")
+          .eq("evenement_id", evt.id)
+          .eq("id_klipso", fond),
+        identifie,
+      ).maybeSingle();
       if (!pl) return repond({ erreur: "Pavillon introuvable." }, 404);
 
       const { data: cal } = await sb
@@ -203,11 +327,12 @@ Deno.serve(async (req) => {
       return repond({ plan: fond, calques: retenus });
     }
 
-    const { data: plans } = await sb
-      .from("plan")
-      .select("id, id_klipso, libelle, hall, emprise")
-      .eq("evenement_id", evt.id)
-      .order("libelle", { ascending: true });
+    const { data: plans } = await publies(
+      sb.from("plan")
+        .select("id, id_klipso, libelle, hall, emprise")
+        .eq("evenement_id", evt.id),
+      identifie,
+    ).order("libelle", { ascending: true });
     if (!plans?.length) {
       return repond({
         erreur: identifie
@@ -241,6 +366,9 @@ Deno.serve(async (req) => {
     const parApparence = Object.fromEntries((apparences.data ?? []).map((a) => [a.plan_id, a]));
     const parInstantane = Object.fromEntries((instantanes.data ?? []).map((i) => [i.plan_id, i]));
 
+    // le même pour tout le salon : il ne dépend que de son réglage de fiche
+    const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
+
     /* La version du fond de chaque pavillon, calculée sur ce qui sera servi :
        les empreintes des dessins, et — pour un visiteur seul — le masquage qui
        décide de ce qu'on lui envoie. Le même jeu de masques que celui du second
@@ -266,6 +394,9 @@ Deno.serve(async (req) => {
       fuseau: evt.fuseau ?? null,
       // l'administration en a besoin pour savoir ce qui a déjà été renommé
       nomsZones: evt.zones ?? {},
+      // et pour savoir ce qu'elle a retiré du plan public : le visiteur, lui,
+      // ne reçoit pas les zones masquées, la liste ne lui apprendrait rien
+      zonesMasquees: identifie ? (evt.zones_masquees ?? {}) : {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
@@ -286,13 +417,33 @@ Deno.serve(async (req) => {
               nom: c.libelle,
               ordre: c.ordre_klipso,
             })),
-          stands: charge.stands ?? [],
+          /* L'exploitant reçoit les fiches entières : c'est de là qu'il coche.
+             Le visiteur ne reçoit que ce que la fiche montre — le reste ne lui
+             servirait à rien, et un salon qui a décoché les coordonnées ne les
+             publie plus du tout. */
+          stands: retrait
+            ? ((charge.stands ?? []) as Record<string, unknown>[])
+              .map((s) => ampute(s, retrait))
+            : charge.stands ?? [],
           // le nom choisi par l'exploitant l'emporte, et s'applique ici plutôt
           // qu'à la synchronisation : renommer doit se voir tout de suite
-          zones: ((charge.zones ?? []) as Record<string, unknown>[]).map((z) => {
-            const choisi = (evt.zones ?? {})[String(z.id)];
-            return choisi ? { ...z, nom: choisi } : z;
-          }),
+          /* Ce que l'exploitant a masqué ne part pas chez le visiteur : une
+             zone technique — réserve, quai de livraison — occupe le plan sans
+             rien lui apprendre. L'exploitant, lui, les reçoit toutes,
+             signalées : c'est de là qu'il revient sur son choix. */
+          zones: ((charge.zones ?? []) as Record<string, unknown>[])
+            .filter((z) =>
+              identifie || !(evt.zones_masquees ?? {})[String(z.id)]
+            )
+            .map((z) => {
+              const choisi = (evt.zones ?? {})[String(z.id)];
+              const masquee = Boolean((evt.zones_masquees ?? {})[String(z.id)]);
+              return {
+                ...z,
+                ...(choisi ? { nom: choisi } : {}),
+                ...(masquee ? { masquee: true } : {}),
+              };
+            }),
           conferences: charge.conferences ?? [],
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }

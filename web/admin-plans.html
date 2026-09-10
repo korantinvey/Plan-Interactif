@@ -15,31 +15,49 @@
 <div class="app">
   <header class="topbar">
     <h1>Console des plans</h1>
-    <span class="sous" id="sousTitre"></span>
+    <!-- Le salon se choisit ici, comme sur la page de rapport. La liste ne
+         porte que les salons auxquels le compte a droit : c'est la base qui la
+         borne — `acces_salon()` — et non cette page, qui ne fait qu'afficher
+         ce qu'elle reçoit. -->
+    <select id="choixEvt" aria-label="Salon"></select>
+    <span class="etat" id="etatEvt" hidden></span>
+    <button class="icone" id="btnRecharger" title="Recharger depuis le serveur" aria-label="Recharger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    </button>
+    <!-- Créer un salon est le fait de l'administrateur : le bouton part caché
+         et ne paraît qu'une fois le profil lu. -->
+    <button class="btn petit primaire" id="btnNouveau" hidden>Nouveau</button>
     <span class="statut" id="statut" role="status" aria-live="polite"></span>
+    <!-- Tout ce qui commande vit dans cette barre, salon et console mêlés :
+         une seconde rangée de boutons en tête de fiche faisait deux endroits
+         où chercher, et deux lignes là où une suffit. Les deux sorties vers le
+         plan restent à découvert — ce sont elles qu'on vient chercher — et le
+         reste se déplie. -->
     <div class="droite">
-      <button class="btn petit" id="btnImport">Importer</button>
-      <button class="btn petit" id="btnExport">Exporter</button>
-      <button class="btn petit" id="btnTheme" aria-label="Thème">◐</button>
+      <a class="btn petit" id="lienPublic" target="_blank" rel="noopener" hidden>Plan public<span class="ext" aria-hidden="true">↗</span></a>
+      <a class="btn petit" id="lienAdmin" target="_blank" rel="noopener" hidden>Administration<span class="ext" aria-hidden="true">↗</span></a>
+      <details class="menu">
+        <summary class="btn petit">Actions</summary>
+        <div class="menu-pan">
+          <a class="mitem" id="lienRapport" data-portee="salon">Rapport d'utilisation</a>
+          <button class="mitem" id="btnSources" data-portee="salon">Sources de données</button>
+          <button class="mitem" id="btnEtat" data-portee="salon"></button>
+          <button class="mitem" id="btnDupliquer" data-portee="salon">Dupliquer l'événement</button>
+          <button class="mitem danger" id="btnSupprimer" data-portee="salon">Supprimer l'événement</button>
+          <hr id="sepActions">
+          <button class="mitem" id="btnComptes" hidden>Comptes et accès</button>
+          <button class="mitem" id="btnProjet">Adresse du projet…</button>
+          <button class="mitem" id="btnExport">Copier les données (JSON)</button>
+        </div>
+      </details>
+      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
     </div>
   </header>
 
-  <aside class="rail">
-    <header>
-      <span class="eyebrow">Événements</span>
-      <span class="railActs">
-        <button class="icone" id="btnRecharger" title="Recharger depuis le serveur" aria-label="Recharger">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-        </button>
-        <button class="btn petit primaire" id="btnNouveau">Nouveau</button>
-      </span>
-    </header>
-    <div class="liste" id="listeEvts"></div>
-  </aside>
-
   <main class="fiche" id="fiche"></main>
 </div>
-
 <div class="modale" id="modale">
   <div class="mfen" role="dialog" aria-modal="true">
     <header><h3 id="mTitre"></h3><button id="mFermer" aria-label="Fermer">&times;</button></header>
@@ -238,6 +256,7 @@ function ecranConnexion(message) {
     info.textContent = "Projet : " + (CFG?.url || "non configuré");
     corps.appendChild(info);
   }, [{ libelle: "Changer de projet", action: () => { ecranConfig(); } },
+      { libelle: "Mot de passe oublié", action: () => { location.href = PAGE_MDP; } },
       { libelle: "Se connecter", genre: "primaire", action: () => { tente(); return false; } }]);
 
   async function tente() {
@@ -306,19 +325,69 @@ function signale(txt, erreur) {
 /* ------------------------------------------------------------------
    Briques d'affichage
    ------------------------------------------------------------------ */
-const bloc = (titre) => {
+/**
+ * Un bloc de la fiche : son intitulé, et à droite ce qui se compte sans le lire
+ * — « 1 pavillon · 1 publié ». La note est facultative ; les blocs qui n'ont
+ * rien à compter n'en portent pas.
+ */
+const bloc = (titre, note) => {
   const d = document.createElement("div");
   d.className = "bloc";
+  const h = document.createElement("div");
+  h.className = "bloc-hd";
   const t = document.createElement("span");
   t.className = "eyebrow";
   t.textContent = titre;
-  d.appendChild(t);
+  h.appendChild(t);
+  if (note) {
+    const n = document.createElement("span");
+    n.className = "note";
+    n.textContent = note;
+    h.appendChild(n);
+  }
+  d.appendChild(h);
   return d;
 };
 const grille = () => { const d = document.createElement("div"); d.className = "grille"; return d; };
 
+/* Un menu déplié se referme sur un clic ailleurs et sur Échap : sans cela il
+   resterait ouvert au-dessus de la fiche, et rien ne dirait comment le fermer. */
+document.addEventListener("click", (ev) => {
+  document.querySelectorAll("details.menu[open]").forEach((d) => {
+    if (!d.contains(ev.target) || ev.target.closest(".menu-pan")) d.open = false;
+  });
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  document.querySelectorAll("details.menu[open]").forEach((d) => d.open = false);
+});
+
 /** Adresse de base des pages, déduite de celle de la console. */
 const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
+
+/* La page qui pose un mot de passe, qu'on y arrive par une invitation, par un
+   oubli, ou depuis un écran de connexion. Elle est servie sans extension par
+   Cloudflare, comme les autres. */
+const PAGE_MDP = BASE_PAGES + "motdepasse";
+
+/**
+ * L'identifiant du compte connecté, lu dans le jeton.
+ *
+ * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
+ * un aller-retour à chaque chargement pour une donnée que le navigateur tient
+ * en main. Seule la charge utile est lue : la signature, elle, n'est vérifiable
+ * que par le serveur, qui le fera à chaque requête.
+ */
+function idCompte() {
+  const jeton = SESSION?.access_token;
+  if (!jeton) return null;
+  try {
+    const p = jeton.split(".")[1];
+    if (!p) return null;
+    const brut = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(brut).sub || null;
+  } catch (e) { return null; }
+}
 
 /* ------------------------------------------------------------------
    Thème
@@ -433,8 +502,16 @@ const slugifie = (t) => String(t).toLowerCase().normalize("NFD")
 const courant = () => EVTS.find((e) => e.id === selection);
 
 async function charge() {
+  // le rôle avant les salons : c'est lui qui dit ce que la console propose,
+  // et la liste des salons n'est déjà plus la même d'un profil à l'autre
+  await litMonProfil();
+  /* La base ne renvoie que les salons du compte : un organisateur n'en reçoit
+     que les siens, un administrateur les reçoit tous. Le tri par date de
+     modification met en tête celui qu'on vient de toucher. */
   EVTS = await rest("evenement?select=*&order=modifie_le.desc");
-  if (!EVTS.some((e) => e.id === selection)) selection = EVTS[0]?.id ?? null;
+  if (!EVTS.some((e) => e.id === selection)) {
+    selection = (selonAdresse() || EVTS[0])?.id ?? null;
+  }
   if (selection) await chargePlans(selection);
   dessine();
 }
@@ -453,29 +530,97 @@ async function majEvenement(id, champs) {
 }
 
 /* ------------------------------------------------------------------
-   Colonne de gauche
+   Choix du salon
+
+   La console n'affiche qu'un salon à la fois : la liste de tous les autres
+   tenait une colonne entière de l'écran pour un choix qu'on fait une fois en
+   arrivant. Elle se replie donc dans la barre du haut, comme sur la page de
+   rapport, et la fiche prend toute la largeur.
+
+   Ce que la liste porte ne se décide pas ici : la base ne renvoie que les
+   salons auxquels le compte a droit.
    ------------------------------------------------------------------ */
-function dessineRail() {
-  const box = $("listeEvts");
-  if (!EVTS.length) {
-    box.innerHTML = '<div class="vide">Aucun événement.<br>Créez-en un pour commencer.</div>';
-    return;
+/** Le salon nommé dans l'adresse, s'il fait partie de ceux qu'on peut ouvrir. */
+function selonAdresse() {
+  const slug = new URLSearchParams(location.search).get("plan");
+  return slug ? EVTS.find((e) => e.slug === slug) || null : null;
+}
+
+/* Le salon ouvert tient dans l'adresse : on revient sur la console par un
+   signet ou par le bouton « Console » du rapport, et on retrouve le sien
+   plutôt que le premier de la liste. */
+function majAdresse() {
+  const e = courant();
+  const url = new URL(location.href);
+  if (e?.slug) url.searchParams.set("plan", e.slug);
+  else url.searchParams.delete("plan");
+  history.replaceState(null, "", url);
+}
+
+/**
+ * Ce que la barre du haut dit du salon ouvert, et ce qu'elle en commande.
+ *
+ * Ces boutons vivaient en tête de fiche, sur une seconde rangée. Ils décrivent
+ * pourtant le même salon que la liste déroulante voisine : les réunir fait un
+ * seul endroit où commander, et une ligne au lieu de deux.
+ */
+function majBarre() {
+  const e = courant();
+  const badge = $("etatEvt");
+  badge.hidden = !e;
+  if (e) {
+    badge.className = "etat " + e.etat;
+    badge.textContent = e.etat === "publie" ? "Publié" : "Brouillon";
   }
-  box.innerHTML = EVTS.map((e) => {
-    const p = PLANS[e.id] || [];
-    const publies = p.filter((x) => x.publie).length;
-    return '<button class="evt" data-id="' + e.id + '" aria-current="' + (e.id === selection) + '">' +
-      '<span class="nom">' + esc(e.nom) + '</span>' +
-      '<span class="meta"><span class="etat ' + e.etat + '">' +
-      (e.etat === "publie" ? "Publié" : "Brouillon") + '</span>' +
-      '<span>' + (p.length ? publies + "/" + p.length + " pavillons" : "—") +
-      '</span></span></button>';
-  }).join("");
-  box.querySelectorAll(".evt").forEach((b) => b.onclick = async () => {
-    selection = b.dataset.id;
+  // sans salon ouvert, les commandes qui le visent n'ont pas d'objet ; celles
+  // de la console — les comptes, le projet — restent, elles, atteignables
+  document.querySelectorAll('.menu-pan [data-portee="salon"]').forEach((b) => {
+    b.hidden = !e;
+  });
+  $("sepActions").hidden = !e;
+  $("lienPublic").hidden = !e;
+  $("lienAdmin").hidden = !e;
+  if (!e) return;
+
+  majLiens(e);
+  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
+  $("btnEtat").onclick = async () => {
+    e.etat = e.etat === "publie" ? "brouillon" : "publie";
+    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
+    catch (err) { signale(err.message, true); }
+  };
+  $("btnSources").onclick = () => ouvreSources(() => dessine());
+  // dupliquer, c'est créer un salon : réservé à l'administrateur, comme
+  // « Nouveau ». La base le refuserait de toute façon, mais un bouton qui
+  // n'aboutit jamais est un bouton de trop.
+  $("btnDupliquer").hidden = MOI?.role !== "admin";
+  $("btnDupliquer").onclick = () => dupliquer(e);
+  $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
+    "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
+    "définitivement perdus.", "Supprimer", async () => {
+      try {
+        await rest("evenement?id=eq." + e.id, { method: "DELETE" });
+        selection = null;
+        await charge();
+      } catch (err) { signale(err.message, true); }
+    });
+}
+
+function dessineChoix() {
+  const sel = $("choixEvt");
+  // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
+  sel.hidden = !EVTS.length;
+  if (!EVTS.length) { sel.innerHTML = ""; return; }
+  /* Un brouillon se signale dans la liste : c'est le seul état dont on doive
+     se souvenir avant même d'ouvrir la fiche — son plan public ne répond pas. */
+  sel.innerHTML = EVTS.map((e) =>
+    '<option value="' + e.id + '"' + (e.id === selection ? " selected" : "") + '>' +
+    esc(e.nom) + (e.etat === "publie" ? "" : " · brouillon") + '</option>').join("");
+  sel.onchange = async () => {
+    selection = sel.value;
     if (!PLANS[selection]) await chargePlans(selection);
     dessine();
-  });
+  };
 }
 
 /* ------------------------------------------------------------------
@@ -497,8 +642,8 @@ function champ(cle, libelle, aide, attrs) {
     attente = setTimeout(async () => {
       try {
         await majEvenement(e.id, { [cle]: e[cle] });
-        if (cle === "nom") dessineRail();
-        if (cle === "slug") { i.value = e.slug; majIntegration(); }
+        if (cle === "nom") dessineChoix();
+        if (cle === "slug") { i.value = e.slug; majIntegration(); majAdresse(); }
       } catch (err) { signale(err.message, true); }
     }, 500);
   };
@@ -511,44 +656,17 @@ function dessineFiche() {
   const f = $("fiche");
   if (!SESSION) { f.innerHTML = '<div class="vide">Connectez-vous pour accéder aux événements.</div>'; return; }
   if (!e) {
-    f.innerHTML = '<div class="vide">Sélectionnez un événement à gauche,<br>ou créez-en un nouveau.</div>';
+    /* Un organisateur sans salon n'a rien à créer et rien à choisir : lui
+       proposer « Nouveau » l'enverrait contre un refus de la base. Ce qui lui
+       manque, c'est une affectation, et c'est cela qu'on lui dit. */
+    f.innerHTML = '<div class="vide"></div>';
+    f.querySelector(".vide").innerHTML = MOI?.role === "admin"
+      ? "Aucun salon pour l'instant.<br>Créez-en un avec « Nouveau »."
+      : "Aucun salon ne vous a été affecté.<br>" +
+        "Demandez l'accès à l'administrateur du projet.";
     return;
   }
   f.innerHTML = "";
-
-  const entete = document.createElement("div");
-  entete.className = "entete";
-  entete.innerHTML = '<div><span class="eyebrow">Événement</span><h2></h2>' +
-    '<span class="etat ' + e.etat + '">' + (e.etat === "publie" ? "Publié" : "Brouillon") + '</span></div>' +
-    '<div class="droite">' +
-    '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public</a>' +
-    '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration</a>' +
-    '<a class="btn petit" id="lienRapport">Utilisation</a>' +
-    '<button class="btn petit" id="btnSources">Sources de données</button>' +
-    '<button class="btn petit" id="btnEtat"></button>' +
-    '<button class="btn petit" id="btnDupliquer">Dupliquer</button>' +
-    '<button class="btn petit danger" id="btnSupprimer">Supprimer</button></div>';
-  entete.querySelector("h2").textContent = e.nom;
-  f.appendChild(entete);
-
-  majLiens(e);
-  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier";
-  $("btnEtat").onclick = async () => {
-    e.etat = e.etat === "publie" ? "brouillon" : "publie";
-    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
-    catch (err) { signale(err.message, true); }
-  };
-  $("btnSources").onclick = () => ouvreSources(() => dessine());
-  $("btnDupliquer").onclick = () => dupliquer(e);
-  $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
-    "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
-    "définitivement perdus.", "Supprimer", async () => {
-      try {
-        await rest("evenement?id=eq." + e.id, { method: "DELETE" });
-        selection = null;
-        await charge();
-      } catch (err) { signale(err.message, true); }
-    });
 
   const b1 = bloc("Identité");
   const g1 = grille();
@@ -557,42 +675,44 @@ function dessineFiche() {
   b1.appendChild(g1);
   f.appendChild(b1);
 
-  const b2 = bloc("Synchronisation");
-  const g2 = grille();
-  const lr = document.createElement("label");
-  lr.innerHTML = '<span>Rythme de rafraîchissement</span><select>' +
-    RYTHMES.map((r) => '<option value="' + r[0] + '"' +
-      (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("") + '</select>';
-  lr.querySelector("select").onchange = async (ev) => {
+  /* D'où viennent les données, ce qu'on en montre, et à quelle fraîcheur : la
+     synchronisation tenait un bloc à elle pour une liste déroulante et un
+     bouton, et la question qu'elle répond est celle des lignes voisines. */
+  const bd = bloc("Données");
+  bd.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
+    ouvreProvenance));
+  bd.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
+  bd.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
+
+  const rythme = document.createElement("select");
+  rythme.setAttribute("aria-label", "Rythme de rafraîchissement");
+  rythme.innerHTML = RYTHMES.map((r) => '<option value="' + r[0] + '"' +
+    (e.rythme_min === r[0] ? " selected" : "") + '>' + r[1] + '</option>').join("");
+  rythme.onchange = async (ev) => {
     e.rythme_min = +ev.target.value;
     try { await majEvenement(e.id, { rythme_min: e.rythme_min }); }
     catch (err) { signale(err.message, true); }
   };
-  g2.appendChild(lr);
-  b2.appendChild(g2);
+  const bsync = document.createElement("button");
+  bsync.className = "btn petit";
+  bsync.id = "btnSync";
+  bsync.textContent = "Synchroniser maintenant";
+  bd.appendChild(ligneOutil("Synchronisation", '<span id="msgSync"></span>', [rythme, bsync]));
 
-  const ligne = document.createElement("div");
-  ligne.className = "etat-ligne";
-  ligne.innerHTML = '<button class="btn petit" id="btnSync">Synchroniser maintenant</button>' +
-    '<span id="msgSync"></span>';
-  b2.appendChild(ligne);
   const zoneAv = document.createElement("div");
   zoneAv.id = "avancement";
-  b2.appendChild(zoneAv);
-  f.appendChild(b2);
-  $("btnSync").onclick = () => synchronise(e);
-
-  const br = bloc("Réglages");
-  br.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
-    ouvreProvenance));
-  br.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
-  br.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
-  f.appendChild(br);
+  bd.appendChild(zoneAv);
+  f.appendChild(bd);
   majMsgSync(e);
+  $("btnSync").onclick = () => synchronise(e);
 
   /* --- pavillons --- */
   const plans = PLANS[e.id] || [];
-  const b3 = bloc("Pavillons");
+  const publies = plans.filter((p) => p.publie).length;
+  const b3 = bloc("Pavillons", plans.length
+    ? plans.length + " pavillon" + (plans.length > 1 ? "s" : "") + " · " +
+      publies + " publié" + (publies > 1 ? "s" : "")
+    : "");
   if (!plans.length) {
     const p = document.createElement("p");
     p.className = "astuce";
@@ -603,7 +723,7 @@ function dessineFiche() {
     // nommé pour qu'un écran étroit le fasse défiler seul, sans emporter la fiche
     t.className = "pavillons";
     t.innerHTML = "<thead><tr><th>Publier</th><th>Pavillon</th><th>Hall</th>" +
-      "<th>Emplacements</th><th>Zones</th></tr></thead><tbody></tbody>";
+      '<th class="num">Emplacements</th><th class="num">Zones</th></tr></thead><tbody></tbody>';
     const tb = t.querySelector("tbody");
     plans.forEach((p) => {
       const tr = document.createElement("tr");
@@ -831,7 +951,11 @@ const LIGNES_FICHE = {
       aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
     { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
     { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
-    { cle: "telephone", cible: "telephone", libelle: "Téléphone société" },
+    /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
+       téléphone à montrer et n'a pas à dire lequel. L'aperçu suit la fiche :
+       c'est ce que le visiteur lira. */
+    { cle: "telephone", cible: "telephone", libelle: "Téléphone société",
+      surFiche: "Téléphone" },
     { cle: "site", cible: "site", libelle: "Site web" },
     { cle: "facebook", cible: "facebook", libelle: "Facebook" },
     { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
@@ -1243,6 +1367,163 @@ function libelleCorps(e, cle) {
   return l ? l.libelle : cle;
 }
 
+/* ------------------------------------------------------------------
+   Aperçu de la fiche
+
+   Une liste de quinze intitulés ne dit pas ce qu'on obtient : on règle un ordre
+   sans voir la fiche, et il fallait ouvrir le plan public pour juger. L'aperçu
+   la redessine à côté, avec les champs retenus, dans l'ordre réglé.
+
+   Les valeurs sont celles du relevé de la dernière synchronisation — les mêmes
+   qui s'affichent dans les listes de champs d'origine. Elles viennent donc des
+   fiches du salon, et pas d'un exposant inventé : un mauvais champ associé se
+   voit à sa valeur, ce qui est la moitié de ce qu'on vient vérifier ici.
+   ------------------------------------------------------------------ */
+
+/* De quoi remplir une ligne que le relevé ne renseigne pas — un champ qui
+   vient du plan et non d'une fiche, ou une synchronisation pas encore lancée.
+   L'aperçu montre alors la forme de la valeur, à défaut de la valeur. */
+const EXEMPLES_FICHE = {
+  nom: "Maison Perrin", code: "A12", niveaux: "2", secteur: "Restauration",
+  raison: "Perrin & Cie SAS", adresse: "12 rue des Lilas", ville: "Nantes",
+  pays: "France", telephone: "02 40 00 00 00", site: "perrin.fr",
+  facebook: "facebook.com/perrin", linkedin: "linkedin.com/company/perrin",
+  instagram: "instagram.com/perrin",
+  nomenclature: "Équipement de cuisine", thematiques: "Circuits courts",
+};
+
+/**
+ * Les champs d'origine qu'une cible lit, réglés ou non.
+ *
+ * Trois états, et l'aperçu doit les distinguer : un réglage à la main l'emporte
+ * sur tout, « aucun » compris — c'est un choix, et il rend la ligne vide ; à
+ * défaut, la proposition du relevé, qui est ce que la synchronisation ferait ;
+ * à défaut encore, le champ par défaut du fournisseur.
+ */
+function champsLus(bloc, cible) {
+  const regle = (bloc.champs || {})[cible];
+  if (regle !== undefined) return [].concat(regle).filter(Boolean);
+  const propose = bloc.propose && bloc.propose[cible];
+  if (propose && propose.length) return [].concat(propose).filter(Boolean);
+  return [].concat((bloc.defauts || {})[cible] || []).filter(Boolean);
+}
+
+/**
+ * Une valeur d'exemple pour une cible, telle que les fiches la portent.
+ *
+ * La nomenclature cumule ses champs quand les autres s'arrêtent au premier
+ * renseigné : l'aperçu suit la même règle, sans quoi il montrerait une seule
+ * rubrique là où la fiche en aligne quatre.
+ */
+function exempleCible(bloc, cible) {
+  const detectes = bloc.detectes || [];
+  const exemples = champsLus(bloc, cible)
+    .map((c) => (detectes.find((d) => d.cle === c) || {}).exemple)
+    .filter(Boolean).map(String);
+  if (!exemples.length) return "";
+  return cible === "nomenclature" ? exemples.join(";") : exemples[0];
+}
+
+/**
+ * Ce qu'une ligne de l'aperçu porte, et pourquoi elle ne porte rien.
+ *
+ * Trois cas se ressemblent à l'écran et ne veulent pas dire la même chose. Un
+ * champ qui ne vient d'aucune fiche — le secteur, les niveaux, que le plan
+ * porte — n'a rien à relever : la valeur d'exemple montre alors la forme, et
+ * c'est tout ce qu'on peut en dire. Un champ dont l'exploitant a choisi
+ * « aucun » est vide par décision, et lui prêter une valeur inventée
+ * masquerait précisément ce qu'il vient de régler. Un champ associé mais que
+ * le relevé ne renseigne pas est vide par accident, et c'est ce qu'il faut
+ * lire — tant qu'une synchronisation a eu lieu, faute de quoi rien n'a encore
+ * été lu et la forme reprend ses droits.
+ */
+function valeurApercu(bloc, cle) {
+  /* La cible porte le nom de la clé, pour un champ propre au salon comme pour
+     les autres. */
+  const ligne = LIGNES_FICHE.stand.find((l) => l.cle === cle);
+  const duPlan = cle.indexOf(PREFIXE_PERSO) !== 0 && !(ligne && ligne.cible);
+  if (duPlan) return { valeur: EXEMPLES_FICHE[cle] || "", faute: "sans valeur" };
+
+  let brut = exempleCible(bloc, cle);
+  // le code postal rejoint l'adresse sur la même ligne, comme sur une enveloppe
+  if (cle === "adresse") {
+    brut = [brut, exempleCible(bloc, "codePostal")].filter(Boolean).join(" ");
+  }
+  if (brut) return { valeur: brut, faute: "" };
+  if ((bloc.champs || {})[cle] === "") {
+    return { valeur: "", faute: "aucun champ associé" };
+  }
+  return bloc.detecteLe
+    ? { valeur: "", faute: "vide sur les fiches lues" }
+    : { valeur: EXEMPLES_FICHE[cle] || "", faute: "pas encore synchronisé" };
+}
+
+/**
+ * La fiche telle que le visiteur la recevra.
+ *
+ * Le balisage reprend celui du plan — même en-tête, mêmes champs, même
+ * `eyebrow` sur les intitulés — parce qu'un aperçu qui ne ressemble pas à ce
+ * qu'il annonce ne sert qu'à se rassurer.
+ */
+function dessineApercu(hote, e, src, cles) {
+  const bloc = correspondance(e, src);
+  const regle = (e.fiche || {}).stand || {};
+  const parait = (cle) => regle[cle] !== false;
+  hote.textContent = "";
+
+  const tete = document.createElement("div");
+  tete.className = "af-hd";
+  const nom = exempleCible(bloc, "nom") || EXEMPLES_FICHE.nom;
+  tete.innerHTML = '<div class="af-bads"><span class="af-bad mono"></span>' +
+    '<span class="af-bad neuf">Nouveau</span></div>' +
+    '<h4></h4><p class="af-code"></p>';
+  tete.querySelector(".af-bad").textContent = "Stand";
+  // la pastille ne paraît que là où le salon distingue ses nouveaux venus
+  tete.querySelector(".neuf").hidden = !parait("nouveau") ||
+    !champsLus(bloc, "nouveau").length;
+  tete.querySelector("h4").textContent = nom;
+  tete.querySelector(".af-code").textContent = "Pavillon 1" +
+    (parait("code") ? " · " + EXEMPLES_FICHE.code : "");
+  hote.appendChild(tete);
+
+  const corps = document.createElement("div");
+  corps.className = "af-bd";
+  cles.forEach((cle) => {
+    if (!parait(cle)) return;
+    const { valeur, faute } = valeurApercu(bloc, cle);
+    const f = document.createElement("div");
+    f.className = "af-champ";
+    f.innerHTML = '<span class="eyebrow"></span><span class="v"></span>';
+    const l = LIGNES_FICHE.stand.find((x) => x.cle === cle);
+    f.querySelector(".eyebrow").textContent = (l && l.surFiche) || libelleCorps(e, cle);
+    const v = f.querySelector(".v");
+    if (!valeur) {
+      /* Rien à montrer : le dire plutôt que de sauter la ligne, sans quoi on
+         croirait le champ retiré de la fiche. */
+      v.className = "v af-vide";
+      v.textContent = faute;
+    } else {
+      /* Le point-virgule sépare les valeurs d'un champ à choix : la fiche les
+         montre l'une sous l'autre, l'aperçu aussi. */
+      const l = separeValeurs(valeur);
+      l.forEach((x) => {
+        const s = document.createElement("span");
+        s.className = "ligne";
+        s.textContent = x;
+        v.appendChild(s);
+      });
+    }
+    corps.appendChild(f);
+  });
+  if (!corps.children.length) {
+    const p = document.createElement("p");
+    p.className = "af-vide";
+    p.textContent = "Aucun champ affiché : la fiche se réduira à son en-tête.";
+    corps.appendChild(p);
+  }
+  hote.appendChild(corps);
+}
+
 /**
  * Le panneau de l'ordre d'affichage.
  *
@@ -1270,8 +1551,32 @@ function panneauOrdre(e, src) {
     "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
   hote.appendChild(aide);
 
+  const deux = document.createElement("div");
+  deux.className = "ordre-deux";
+  hote.appendChild(deux);
+
   const liste = document.createElement("div");
   liste.className = "ordre-liste";
+  deux.appendChild(liste);
+
+  /* L'aperçu se colle en haut : la liste est plus longue que lui, et le
+     laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
+     qu'on range. */
+  const cadre = document.createElement("div");
+  cadre.className = "apercu-cadre";
+  cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
+    '<div class="apercu-fiche"></div><p class="aide"></p>';
+  /* L'habillage de la fiche — onze modèles — se choisit plan par plan, dans le
+     panneau d'apparence du plan lui-même : la console n'en a ni le réglage ni
+     la feuille de style. L'aperçu montre donc l'ordre, pas le modèle, et le
+     dit plutôt que de laisser croire que le salon aura celui-ci. */
+  cadre.querySelector("p").textContent = "Les valeurs viennent du relevé de la " +
+    "dernière synchronisation. Sur téléphone, les champs qui tiennent en un " +
+    "mot se rangent deux par deux. Le modèle de fiche, lui, se choisit depuis " +
+    "le plan — engrenage, « Apparence » — où ses vignettes reprennent ces " +
+    "champs dans cet ordre.";
+  const apercu = cadre.querySelector(".apercu-fiche");
+  deux.appendChild(cadre);
 
   /** Enregistre l'ordre courant, et reprend ce qui l'est vraiment si on refuse. */
   const enregistre = async (focus) => {
@@ -1305,6 +1610,9 @@ function panneauOrdre(e, src) {
       b[0].disabled = i === 0;
       b[1].disabled = i === n - 1;
     });
+    // l'aperçu suit le glissé plutôt que d'attendre le lâcher : c'est lui
+    // qu'on regarde en déplaçant, pas la liste
+    dessineApercu(apercu, e, src, [...liste.children].map((d) => d.dataset.cle));
   };
 
   /**
@@ -1395,27 +1703,48 @@ function panneauOrdre(e, src) {
     }
   };
 
-  hote.appendChild(liste);
+  /* On revient ici après avoir coché ou décoché dans l'onglet Stand : l'aperçu
+     doit s'en apercevoir, sans quoi il montrerait un champ qu'on vient de
+     retirer. */
+  hote.rafraichit = () => {
+    ordre = ordreEffectif(e, clesCorps(e, src));
+    rendu();
+  };
 
   rendu();
   return hote;
 }
 
 /**
- * Une ligne de réglage : ce qu'il vaut, et de quoi l'ouvrir. Le détail tient
- * dans une fenêtre — quatre listes déroulantes et neuf cases à cocher rendaient
- * la fiche illisible alors qu'on n'y touche qu'une fois par salon.
+ * Une ligne du bloc « Données » : ce dont il s'agit, ce que cela vaut, et de
+ * quoi le changer. Les trois colonnes sont les mêmes d'une ligne à l'autre —
+ * c'est cet alignement qui fait retrouver la ligne qu'on cherche.
  */
-function ligneReglage(titre, resume, ouvre) {
+function ligneOutil(titre, valeur, controles) {
   const d = document.createElement("div");
   d.className = "reglage-ligne";
-  d.innerHTML = '<span class="rt"></span><span class="rv"></span>' +
-                '<button class="btn petit">Modifier</button>';
+  d.innerHTML = '<span class="rt"></span><span class="rv">' + valeur +
+                '</span><span class="act"></span>';
   d.querySelector(".rt").textContent = titre;
+  const a = d.querySelector(".act");
+  controles.forEach((c) => a.appendChild(c));
+  return d;
+}
+
+/**
+ * Une ligne dont le détail s'ouvre en fenêtre : quatre listes déroulantes et
+ * neuf cases à cocher rendaient la fiche illisible alors qu'on n'y touche
+ * qu'une fois par salon. Ici, seul le résumé reste.
+ */
+function ligneReglage(titre, resume, ouvre) {
+  const b = document.createElement("button");
+  b.className = "btn petit";
+  b.textContent = "Modifier";
+  const d = ligneOutil(titre, "", [b]);
   const v = d.querySelector(".rv");
   const maj = () => { v.textContent = resume(); };
   maj();
-  d.querySelector("button").onclick = () => ouvre(maj);
+  b.onclick = () => ouvre(maj);
   return d;
 }
 
@@ -1432,7 +1761,7 @@ function ouvreProvenance(apres) {
     const note = document.createElement("p");
     note.className = "aide";
     note.textContent = "Les identifiants d'événement se saisissent dans " +
-      "« Sources de données », en haut de la fiche.";
+      "« Sources de données », au menu Actions de la fiche.";
     corps.appendChild(note);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
@@ -1523,14 +1852,16 @@ async function ouvreSalles(apres) {
         if (frais.length) { noms = frais[0].zones || {}; e.zones = noms; }
       } catch (err) { /* la liste chargée fera l'affaire */ }
       zones = inst.flatMap((i) => (i.charge?.zones || [])
-        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom, m2: z.m2 })));
+        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom })));
     }
   } catch (err) { signale(err.message, true); }
   const parZone = Object.fromEntries(zones.map((z) => [z.id, z]));
   const nomZone = (id) => {
     const z = parZone[id];
     if (!z) return id ? id + " (absente du plan)" : "";
-    return (z.nom || "Zone sans nom") + (z.m2 ? " · " + Math.round(z.m2) + " m²" : "");
+    /* La surface de la zone ne distingue rien qu'un nom ne dise mieux, et
+       n'intéresse pas plus ici qu'ailleurs : la zone se nomme, un point. */
+    return z.nom || "Zone sans nom";
   };
 
   ouvreModale("Salles de conférence", (corps) => {
@@ -1668,6 +1999,11 @@ function ouvreFiche(apres) {
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         panneaux.forEach((x, j) => { x.hidden = j !== i; });
+        /* Un panneau qui dépend des autres se refait en reparaissant : l'aperçu
+           de l'ordre montre les champs cochés dans l'onglet Stand, qui ont pu
+           changer pendant qu'il était caché. */
+        const pan = panneaux[i].firstChild;
+        if (pan && pan.rafraichit) pan.rafraichit();
       };
       barre.appendChild(b);
       boutons.push(b);
@@ -2275,8 +2611,9 @@ function majMsgSync(e) {
   if (!m) return;
   if (e.derniere_err) { m.className = "err"; m.textContent = "Dernière erreur : " + e.derniere_err; return; }
   m.className = "";
+  // la ligne s'intitule déjà « Synchronisation » : le mot n'a pas à revenir
   m.textContent = e.derniere_sync
-    ? "Dernière synchronisation : " +
+    ? "Dernière : " +
       new Date(e.derniere_sync).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
     : "Jamais synchronisé.";
 }
@@ -2387,33 +2724,368 @@ $("btnRecharger").onclick = async () => {
   }
 };
 
+/* Un relevé de ce que la console a en main — les salons et leurs pavillons —
+   copié dans le presse-papiers. Rien ne s'enregistre : cela sert à joindre un
+   état à un signalement, pas à sauvegarder quoi que ce soit. */
 $("btnExport").onclick = (ev) => {
+  const b = ev.currentTarget;
   const txt = JSON.stringify({ evenements: EVTS, plans: PLANS }, null, 2);
   navigator.clipboard?.writeText(txt).then(
-    () => { ev.target.textContent = "Copié"; setTimeout(() => ev.target.textContent = "Exporter", 1700); },
-    () => { ev.target.textContent = "Échec"; });
+    () => { b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier les données (JSON)", 1700); },
+    () => { b.textContent = "Échec de la copie"; });
 };
-$("btnImport").onclick = () => ecranConfig();
-$("btnImport").textContent = "Projet";
+$("btnProjet").onclick = () => ecranConfig();
 
+
+
+
+/* ------------------------------------------------------------------
+   Comptes et accès
+
+   Deux écrans plutôt qu'un. Le premier est un annuaire : une ligne par
+   personne, ce qu'il faut pour la reconnaître, et rien de plus — on y cherche
+   quelqu'un, on n'y règle rien. Le second est sa fiche, où tout se modifie.
+
+   Les réglages tenaient d'abord dans la liste elle-même. À quatre comptes la
+   fenêtre faisait trois écrans de haut, et l'on y perdait de vue celui qu'on
+   était venu chercher.
+
+   Créer un compte, envoyer son invitation ou le supprimer demande la clé de
+   service : tout passe donc par la fonction `comptes`, jamais par la table.
+   ------------------------------------------------------------------ */
+let MOI = null;
+let COMPTES = [];
+
+/** Le rôle du compte connecté. Il décide de ce que la console propose ; ce
+ *  qu'elle obtient, c'est la base qui le décide. */
+async function litMonProfil() {
+  const id = idCompte();
+  MOI = null;
+  if (!id) return;
+  const r = await rest("profil?select=id,nom,prenom,email,role&id=eq." + encodeURIComponent(id));
+  MOI = (Array.isArray(r) ? r[0] : null) || null;
+}
+
+const NOM_ROLE = { admin: "Administrateur", organisateur: "Organisateur" };
+
+/** L'adresse où retomber après avoir cliqué le lien reçu par courriel. */
+const RETOUR_MDP = () => PAGE_MDP;
+
+async function litComptes() {
+  const r = await fonction("comptes", { action: "liste" });
+  COMPTES = r.profils || [];
+  return COMPTES;
+}
+
+/* Un message qui vit dans la fenêtre plutôt que dans la barre du haut, restée
+   derrière le voile. Rendu avec le reste, il survit au redessin — sans quoi un
+   enregistrement réussi effacerait sa propre confirmation. */
+function ligneMessage(corps, id, mot) {
+  const p = document.createElement("p");
+  p.id = id;
+  p.className = "aide" + (mot.erreur ? " alerte" : "");
+  p.textContent = mot.texte;
+  corps.appendChild(p);
+}
+
+/* Les salons cochés. Un administrateur les a tous par définition : lui en
+   cocher serait laisser croire qu'on peut lui en retirer. */
+function casesSalons(role, choisis) {
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+  const note = (texte) => {
+    const p = document.createElement("p");
+    p.className = "aide";
+    p.textContent = texte;
+    zone.appendChild(p);
+  };
+  if (role === "admin") { note("Tous les salons, y compris ceux créés plus tard."); return zone; }
+  if (!EVTS.length) { note("Aucun salon à affecter pour l'instant."); return zone; }
+  EVTS.forEach((e) => {
+    const l = document.createElement("label");
+    l.className = "puce";
+    l.innerHTML = "<input type='checkbox'><span></span>";
+    l.querySelector("span").textContent = e.nom;
+    const c = l.querySelector("input");
+    c.value = e.id;
+    c.checked = choisis.includes(e.id);
+    zone.appendChild(l);
+  });
+  return zone;
+}
+
+const cochés = (zone) =>
+  Array.from(zone.querySelectorAll("input:checked")).map((c) => c.value);
+
+/* ------------------------------------------------------------------
+   L'annuaire
+   ------------------------------------------------------------------ */
+function ouvreComptes(message) {
+  let hote = null;
+  let mot = { texte: message || "Chargement…", erreur: !!(message && message.erreur) };
+
+  function ligne(c) {
+    const tr = document.createElement("tr");
+    // une invitation jamais ouverte se signale en bord de ligne : c'est ce qui
+    // distingue un compte créé d'un compte qui sert
+    tr.dataset.actif = c.actif ? "oui" : "non";
+
+    const tdNom = document.createElement("td");
+    tdNom.className = "n";
+    tdNom.textContent = c.nom || "—";
+    const tdPrenom = document.createElement("td");
+    tdPrenom.textContent = c.prenom || "—";
+    const tdMail = document.createElement("td");
+    tdMail.className = "mail";
+    tdMail.textContent = c.email;
+
+    const tdRole = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "prov";
+    badge.textContent = NOM_ROLE[c.role] || c.role;
+    tdRole.appendChild(badge);
+    if (!c.actif) {
+      const att = document.createElement("span");
+      att.className = "prov";
+      att.dataset.src = "aucun";
+      att.textContent = "En attente";
+      tdRole.appendChild(att);
+    }
+    if (c.id === MOI?.id) {
+      const vous = document.createElement("span");
+      vous.className = "prov";
+      vous.dataset.src = "aucun";
+      vous.textContent = "Vous";
+      tdRole.appendChild(vous);
+    }
+
+    const tdAct = document.createElement("td");
+    tdAct.className = "act";
+    const bt = document.createElement("button");
+    bt.className = "btn petit";
+    bt.textContent = "Modifier";
+    bt.onclick = () => ouvreFicheCompte(c);
+    tdAct.appendChild(bt);
+
+    tr.append(tdNom, tdPrenom, tdMail, tdRole, tdAct);
+    return tr;
+  }
+
+  function rendu(corps) {
+    corps.innerHTML = "";
+    if (COMPTES.length) {
+      // le tableau garde ses colonnes sur écran étroit plutôt que de les
+      // écraser : il défile, la fenêtre non
+      const cadre = document.createElement("div");
+      cadre.className = "table-defile";
+      const t = document.createElement("table");
+      t.className = "comptes";
+      t.innerHTML = "<thead><tr><th>Nom</th><th>Prénom</th><th>E-mail</th>" +
+        "<th>Profil</th><th></th></tr></thead><tbody></tbody>";
+      const tb = t.querySelector("tbody");
+      COMPTES.forEach((c) => tb.appendChild(ligne(c)));
+      cadre.appendChild(t);
+      corps.appendChild(cadre);
+    }
+    ligneMessage(corps, "comptesMsg", mot);
+  }
+
+  ouvreModale("Comptes et accès", (corps) => {
+    hote = corps;
+    rendu(corps);
+    litComptes()
+      .then(() => {
+        mot = { texte: COMPTES.length ? "" : "Aucun compte.", erreur: false };
+        if (hote) rendu(hote);
+      })
+      .catch((e) => {
+        mot = { texte: e.message, erreur: true };
+        if (hote) rendu(hote);
+      });
+  }, [{ libelle: "Fermer" },
+      { libelle: "Inviter quelqu'un", genre: "primaire",
+        // la fenêtre est remplacée par la fiche, elle ne doit pas se refermer
+        action: () => { ouvreFicheCompte(null); return false; } }],
+     () => { hote = null; });
+}
+
+/* ------------------------------------------------------------------
+   La fiche d'une personne — la même pour l'inviter et pour la modifier
+   ------------------------------------------------------------------ */
+function ouvreFicheCompte(c) {
+  const neuf = !c;
+  const moi = !neuf && c.id === MOI?.id;
+  let mot = { texte: "", erreur: false };
+  let cMail, cNom, cPrenom, selRole, zone;
+  let surSuppression = false;
+
+  const dis = (texte, erreur) => {
+    mot = { texte, erreur: !!erreur };
+    const p = $("ficheMsg");
+    if (p) { p.textContent = texte; p.className = "aide" + (erreur ? " alerte" : ""); }
+  };
+
+  /** Retour à l'annuaire, qui recharge : ce qu'on vient d'écrire doit s'y voir. */
+  const retour = (message) => ouvreComptes(message);
+
+  const champs = () => ({
+    nom: cNom.value,
+    prenom: cPrenom.value,
+    role: selRole.value,
+    evenements: selRole.value === "admin" ? [] : cochés(zone),
+  });
+
+  async function enregistre() {
+    dis("Enregistrement…");
+    try {
+      await fonction("comptes", { action: "maj", id: c.id, ...champs() });
+      retour("Compte enregistré.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function invite() {
+    const email = cMail.value.trim();
+    if (email.indexOf("@") < 1) return dis("Adresse incomplète.", true);
+    dis("Envoi de l'invitation…");
+    try {
+      await fonction("comptes",
+        { action: "invite", email, ...champs(), retour: RETOUR_MDP() });
+      retour("Invitation envoyée à " + email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function envoieLien() {
+    dis("Envoi…");
+    try {
+      await fonction("comptes", { action: "relance", id: c.id, retour: RETOUR_MDP() });
+      dis("Lien envoyé à " + c.email + ".");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  async function supprime() {
+    /* La fenêtre est déjà celle qui est ouverte : une demande de confirmation
+       la remplacerait. On confirme donc sur place, au second clic. */
+    if (!surSuppression) {
+      surSuppression = true;
+      dis("Cliquez à nouveau sur « Supprimer » pour confirmer.", true);
+      setTimeout(() => { if (surSuppression) { surSuppression = false; dis(""); } }, 5000);
+      return;
+    }
+    surSuppression = false;
+    dis("Suppression…");
+    try {
+      await fonction("comptes", { action: "supprime", id: c.id });
+      retour("Compte supprimé.");
+    } catch (e) { dis(e.message, true); }
+  }
+
+  const boutons = [{ libelle: "Retour", action: () => { retour(); return false; } }];
+  if (neuf) {
+    boutons.push({ libelle: "Envoyer l'invitation", genre: "primaire",
+                   action: () => { invite(); return false; } });
+  } else {
+    if (!moi) {
+      boutons.push({ libelle: "Supprimer", genre: "danger",
+                     action: () => { supprime(); return false; } });
+    }
+    boutons.push({ libelle: "Envoyer un lien de mot de passe",
+                   action: () => { envoieLien(); return false; } });
+    boutons.push({ libelle: "Enregistrer", genre: "primaire",
+                   action: () => { enregistre(); return false; } });
+  }
+
+  ouvreModale(neuf ? "Inviter quelqu'un" : "Modifier le compte", (corps) => {
+    const cadre = document.createElement("div");
+    cadre.className = "cadre compte";
+
+    if (neuf) {
+      const aide = document.createElement("p");
+      aide.className = "aide";
+      aide.textContent = "Le compte est créé sans mot de passe : l'invité en " +
+        "reçoit un lien par courriel, et le choisit lui-même.";
+      cadre.appendChild(aide);
+    }
+
+    const g = grille();
+    const lMail = document.createElement("label");
+    lMail.innerHTML = "<span>Adresse e-mail</span><input type='email'>";
+    cMail = lMail.querySelector("input");
+    if (!neuf) {
+      cMail.value = c.email;
+      /* L'adresse est l'identité du compte auprès du service d'authentification :
+         la changer ici la désaccorderait de celle qui ouvre la session. */
+      cMail.readOnly = true;
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "L'adresse ne se change pas : c'est elle qui ouvre la session.";
+      lMail.appendChild(note);
+    }
+    const lNom = document.createElement("label");
+    lNom.innerHTML = "<span>Nom</span><input autocomplete='family-name'>";
+    cNom = lNom.querySelector("input");
+    if (!neuf) cNom.value = c.nom || "";
+    const lPrenom = document.createElement("label");
+    lPrenom.innerHTML = "<span>Prénom</span><input autocomplete='given-name'>";
+    cPrenom = lPrenom.querySelector("input");
+    if (!neuf) cPrenom.value = c.prenom || "";
+    const lRole = document.createElement("label");
+    lRole.innerHTML = "<span>Profil</span><select>" +
+      "<option value='organisateur'>Organisateur</option>" +
+      "<option value='admin'>Administrateur</option></select>";
+    selRole = lRole.querySelector("select");
+    selRole.value = neuf ? "organisateur" : c.role;
+    // se retirer soi-même l'administration fermerait la porte de l'intérieur
+    selRole.disabled = moi;
+    if (moi) {
+      const note = document.createElement("span");
+      note.className = "aide";
+      note.textContent = "Vous ne pouvez pas retirer votre propre rôle.";
+      lRole.appendChild(note);
+    }
+    g.append(lMail, lNom, lPrenom, lRole);
+    cadre.appendChild(g);
+
+    const titre = document.createElement("span");
+    titre.className = "eyebrow sous-titre";
+    titre.textContent = "Salons";
+    cadre.appendChild(titre);
+    zone = casesSalons(selRole.value, neuf ? [] : (c.evenements || []));
+    cadre.appendChild(zone);
+    // changer de profil change ce qu'il y a à cocher : la liste suit sans
+    // qu'on ait à refermer la fenêtre
+    selRole.onchange = () => {
+      const neuve = casesSalons(selRole.value, cochés(zone));
+      zone.replaceWith(neuve);
+      zone = neuve;
+    };
+
+    corps.appendChild(cadre);
+    ligneMessage(corps, "ficheMsg", mot);
+    setTimeout(() => (neuf ? cMail : cNom).focus(), 40);
+  }, boutons);
+}
+
+$("btnComptes").onclick = () => ouvreComptes();
 
 /* ------------------------------------------------------------------
    Rendu et démarrage
    ------------------------------------------------------------------ */
 /** Fin de session : la console n'a plus d'événements à montrer. */
 function videEcran() {
-  EVTS = []; selection = null;
+  EVTS = []; selection = null; MOI = null;
   dessine();
 }
 
 function dessine() {
-  const n = EVTS.length;
-  const p = EVTS.filter((e) => e.etat === "publie").length;
-  $("sousTitre").textContent = n
-    ? n + (n > 1 ? " événements" : " événement") + " · " + p + " publié" + (p > 1 ? "s" : "")
-    : "";
-  dessineRail();
+  // les comptes et la création d'un salon sont le fait de l'administrateur ;
+  // un organisateur reçoit ses salons, il ne s'en donne pas
+  const patron = MOI?.role === "admin";
+  $("btnComptes").hidden = !patron;
+  $("btnNouveau").hidden = !patron;
+  dessineChoix();
+  majBarre();
   dessineFiche();
+  majAdresse();
 }
 
 async function demarre() {

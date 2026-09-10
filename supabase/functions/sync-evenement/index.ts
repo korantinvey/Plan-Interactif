@@ -29,7 +29,7 @@ import { allege, textes } from "../_partage/svg.ts";
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
     .split(",").map((s) => s.trim()).filter(Boolean),
-  "https://plan-interactif.korantin-vey.workers.dev",
+  "https://plan-interactif.interactiveplan.workers.dev",
   "http://localhost:4180",
 ];
 const cors = (req: Request) => {
@@ -252,12 +252,13 @@ Deno.serve(async (req) => {
     /* La synchronisation écrit dans la base et interroge Klipso avec la clé
        de l'organisateur : elle exige un utilisateur authentifié, pas la
        simple clé publique qui circule dans toutes les pages. */
-    const utilisateur = await createClient(
+    const commeUtilisateur = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
         auth: { persistSession: false } },
-    ).auth.getUser();
+    );
+    const utilisateur = await commeUtilisateur.auth.getUser();
     if (!utilisateur.data?.user) {
       return repond({ erreur: "Authentification requise." }, 401);
     }
@@ -279,6 +280,16 @@ Deno.serve(async (req) => {
 
     /* ------------------ synchronisation complète ------------------ */
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
+
+    /* La suite écrit avec la clé de service, qui ignore les politiques de la
+       base : c'est donc ici, et nulle part plus loin, que se vérifie le droit
+       de l'appelant sur ce salon. On pose la question à la base sous l'identité
+       de l'appelant — un organisateur ne lit que les salons qui lui sont
+       affectés, et un salon qu'il ne lit pas ne lui revient pas. */
+    const { data: permis } = await commeUtilisateur
+      .from("evenement").select("id").eq("id", corps.evenementId).maybeSingle();
+    if (!permis) return repond({ erreur: "Salon inaccessible." }, 403);
+
     const db = client();
 
     const { data: evt, error: e1 } = await db
