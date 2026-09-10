@@ -128,17 +128,17 @@ function indexe(d){
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
   /* Un rang de recherche par société hébergée. Il emprunte à son hôte tout ce
-     qui décrit l'emplacement — identifiant, numéro, pavillon, surface — et n'a
-     en propre que son nom et son rang, par lequel la fiche la retrouvera. */
+     qui décrit l'emplacement — identifiant, numéro, pavillon — et n'a en
+     propre que son nom et son rang, par lequel la fiche la retrouvera. */
   HEBERGES = DATA.plans.flatMap((p, i) => p.stands.flatMap(s =>
     (s.coex || []).map((x, k) => {
       /* Une hébergée répond pour elle-même : ses thématiques, sa ville, ses
          rubriques, ses champs propres sont les siens et non ceux de son hôte,
          et un filtre doit la retenir pour ce qu'elle est. Elle n'emprunte à
-         l'emplacement que ce qui le décrit — numéro, pavillon, surface. */
+         l'emplacement que ce qui le décrit — numéro, pavillon, secteur. */
       const h = {
-        kind: "coex", id: s.id, i: k, p: i, code: s.code, m2: s.m2, angles: s.angles,
-        sect: s.sect, nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
+        kind: "coex", id: s.id, i: k, p: i, code: s.code, sect: s.sect,
+        nom: x.nom, plan: x.plan, ville: x.ville, pays: x.pays,
         nomencl: x.nomencl, themes: x.themes, perso: x.perso, neuf: x.neuf,
       };
       h.rech = ((x.nom || "") + " " + (s.code || "") + " " + (x.plan || "") +
@@ -297,8 +297,12 @@ let MONTE = false;
 
 function montePlan(){
   const p = P();
+  /* Une zone que l'exploitant a éteinte ne parvient jamais au visiteur : si
+     elle est là, c'est qu'on administre, et la teinte pâlie dit qu'elle ne
+     sera pas sur le plan public. */
   $("zones").innerHTML = p.zones.map(z =>
-    '<g class="zone" data-id="' + z.id + '" tabindex="0" role="button" aria-label="' +
+    '<g class="zone' + (z.masquee ? ' masquee' : '') + '" data-id="' + z.id +
+    '" tabindex="0" role="button" aria-label="' +
     esc(z.nom || "zone") + '"><path d="' + z.d + '"/></g>').join("");
   $("stands").innerHTML = p.stands.map(s =>
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
@@ -360,7 +364,8 @@ function libelles(){
     const pz = place(z), az = ancre(z);
     const a = habille(z.nom, pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a || (!sel && a.f * pxParM < 6.5)) continue;
-    out += lignesSvg(a.lignes, a.f, az[0], az[1], "zn" + (sel ? " sel" : ""));
+    out += lignesSvg(a.lignes, a.f, az[0], az[1],
+      "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""));
   }
 
   for (const s of p.stands){
@@ -870,10 +875,14 @@ function ouvreCriteres(){
       h.innerHTML = '<span class="t"></span><span class="r"></span>';
       h.querySelector(".t").textContent = c.libelle;
       const retenu = h.querySelector(".r");
+      /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
+         offertes n'aidait pas à choisir — on ne coche pas un critère parce
+         qu'il en propose quinze — et cette ligne-là devait rester libre pour
+         la seule chose qu'un critère replié ne doit jamais cacher. */
       const disRetenu = () => {
         const n = (state.crit.get(c.cle) || new Set()).size;
         retenu.textContent = c.vide ? "aucune valeur relevée"
-          : !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
+          : !n ? ""
           : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
         retenu.dataset.on = String(n > 0);
         retenu.dataset.manque = String(Boolean(c.vide));
@@ -952,7 +961,7 @@ function ouvreCriteres(){
   }, [
     { libelle: "Tout effacer", action: videCriteres },
     { libelle: "Voir les résultats", genre: "primaire" },
-  ]);
+  ], "cote");
 }
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
@@ -1021,11 +1030,9 @@ function liste(){
 
   box.innerHTML = vus.length ? vus.slice(0, 500).map(o => {
     const heberge = o.kind === "coex";
-    /* Une société hébergée n'a pas de surface à elle : elle occupe celle d'un
-       autre, et la lui prêter la dirait plus grande qu'elle n'est. Son numéro
-       de stand et son nom la désignent, cela suffit. */
-    const sous = heberge ? ""
-      : o.m2 + " m²" + (o.angles ? " · " + o.angles + " angle" + (o.angles > 1 ? "s" : "") : "");
+    /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
+       stand et son nom. La surface louée et les angles ouverts regardent la
+       commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const badge = o.p !== state.plan
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
@@ -1033,7 +1040,7 @@ function liste(){
       '" aria-current="' + (state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(o.code || "—") + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan || ("Stand " + (o.code || "")).trim()) + '</span>' +
-      '<span class="s">' + sous + badge + '</span></span></button>';
+      '<span class="s">' + badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
@@ -1312,7 +1319,10 @@ function momentLocal(v, fuseau){
 function programme(l, titre){
   l = l || [];
   if (!l.length) return "";
-  let out = '<div class="field"><span class="eyebrow">' + esc(titre || "Programme") +
+  /* La classe nomme le bloc du programme : deux modèles de fiche le traitent
+     à part — l'un le déroule en ligne de temps, l'autre lui laisse son libellé
+     quand il efface tous les autres. */
+  let out = '<div class="field prog-bloc"><span class="eyebrow">' + esc(titre || "Programme") +
     '</span><div class="prog">';
   let jourCourant = null;
   for (const c of l){
@@ -1555,6 +1565,10 @@ function ouvre(o, rect, canal, iSoc){
   const pl = DATA.plans[o.p] || P();
   $("dCode").textContent = pl.libelle +
     (ok("code", o.code) ? " · " + o.code : "");
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et une zone n'a pas de numéro du tout. */
+  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
@@ -1702,6 +1716,23 @@ function ouvre(o, rect, canal, iSoc){
   if (cr){
     cr.hidden = !(ADMIN && zone);
     cr.onclick = () => renommeZone(o);
+  }
+  /* Une zone technique — réserve, quai de livraison — n'apprend rien au
+     visiteur. L'exploitant l'éteint d'ici, et la pastille dit l'état avant
+     d'être un bouton : elle ne paraît qu'en administration, seule vue où une
+     zone éteinte soit encore là. */
+  const vis = $("dVis");
+  if (vis){
+    vis.hidden = !(ADMIN && zone);
+    if (!vis.hidden){
+      const affichee = !o.masquee;
+      vis.textContent = "Affiché : " + (affichee ? "oui" : "non");
+      vis.setAttribute("aria-pressed", affichee ? "true" : "false");
+      vis.title = affichee
+        ? "Retirer cette zone du plan public"
+        : "Remettre cette zone sur le plan public";
+      vis.onclick = () => basculeAffichageZone(o);
+    }
   }
   $("detail").classList.add("open");
   $("voile").classList.add("on");
@@ -2051,5 +2082,8 @@ $("btnTheme").onclick = () => {
   const next = sombre ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
+  /* La couleur principale a deux versions, une par fond : celle du thème
+     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
+  appliqueAccent();
 };
 </script>

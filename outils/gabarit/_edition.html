@@ -91,6 +91,17 @@ function majElement(){
     $("elemTaille").value = f.taille || 2;
   }
 
+  /* L'arrondi se règle après coup, et sur n'importe quel tracé : un contour
+     posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
+     se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
+     calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const br = $("elemRayonBloc");
+  if (br){
+    br.hidden = !arrondissable;
+    if (arrondissable) $("elemRayon").value = f.r || 0;
+  }
+
   /* Le type d'un repère se change après coup : une porte mal typée ne se voit
      qu'en essayant un trajet, et il serait absurde de la redessiner pour
      cela. Un repère d'avant la séparation du type et du libellé n'en porte
@@ -294,6 +305,15 @@ function appliqueTexte(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/** L'arrondi des coins de la forme choisie. */
+function appliqueRayon(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible) return;
+  memorise();
+  cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  enregistreDessins(); dessineDessins();
+}
+
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
  *  vaut pour l'itinéraire — une porte, un escalier à contourner en fauteuil. */
 function appliquePicto(){
@@ -347,14 +367,14 @@ function editionPointerDown(e){
     const cible = formeParId(id);
     const sienne = cible && cible.c.id === calqueActif;
 
-    /* Une image liée à un stand ouvre sa fiche, comme pour un visiteur — sauf
-       sur le calque qu'on est en train de modifier, où le clic sert à la
-       déplacer. Le calque actif est donc l'atelier, les autres la vitrine. */
-    if (!sienne && g.dataset.id) return false;
+    /* Seul le calque ouvert par l'exploitant se laisse retoucher. Une forme
+       d'un autre calque n'est ni sélectionnée ni déplacée : trop de dessins
+       partaient à la dérive sur un clic destiné à la vue. Pour la reprendre,
+       il faut ouvrir son calque depuis le panneau. Une image liée à un stand
+       reste l'exception : elle ouvre sa fiche, comme pour un visiteur ; le
+       reste laisse passer le geste vers le plan, qui se déplace. */
+    if (!sienne) return false;
 
-    // cliquer une forme d'un autre calque l'ouvre : c'est le geste qu'on
-    // attend, plutôt que de devoir d'abord le désigner dans le panneau
-    if (!sienne) activeCalque(cible.c.id);
     if (id !== formeSel) choisitForme(id);
     if (cible){
       memorise();
