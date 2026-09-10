@@ -68,6 +68,19 @@ function deplaceCouche(k, dir){
 const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
 const nature = x => x.t === "dessin" ? "dessin" : "salon";
 
+/* Le bouton d'ajout ferme la suite des calques dessinés plutôt que le panneau :
+   c'est un de ces calques-là qu'il crée, et au bas de la pile il paraissait
+   valoir pour tout ce qui le précédait, couches du salon comprises. Restent les
+   plans sans aucun dessin : là il n'a pas de suite à fermer, et revient en fin
+   de liste — la seule place qui reste. */
+function boutonAjout(hote){
+  const plus = document.createElement("button");
+  plus.className = "ajout";
+  plus.textContent = "+ Nouveau calque de dessin";
+  plus.onclick = creeCalque;
+  hote.appendChild(plus);
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -89,6 +102,7 @@ function construitPanneau(){
      calque dessiné, la pile est d'une seule nature et se passe de titre. */
   const melange = liste.some(x => nature(x) === "dessin") &&
                   liste.some(x => nature(x) === "salon");
+  const dernierDessin = liste.reduce((r, x, i) => nature(x) === "dessin" ? i : r, -1);
   let natureCourante = null;
 
   liste.forEach((x, i) => {
@@ -217,13 +231,11 @@ function construitPanneau(){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
     }
+
+    if (i === dernierDessin) boutonAjout(hote);
   });
 
-  const plus = document.createElement("button");
-  plus.className = "ajout";
-  plus.textContent = "+ Nouveau calque de dessin";
-  plus.onclick = creeCalque;
-  hote.appendChild(plus);
+  if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
 

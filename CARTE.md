@@ -333,17 +333,18 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 335 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 347 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.238 · Repères
+- l.250 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`nature` 69 · `intertitre` 71 · `construitPanneau` 78 · `sectionSelection` 252
-`ligneCouleur` 277 · `rangSecteur` 297 · `rangSous` 309 · `defautCouleur` 331
+`nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
+`sectionSelection` 264 · `ligneCouleur` 289 · `rangSecteur` 309 · `rangSous` 321
+`defautCouleur` 343
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

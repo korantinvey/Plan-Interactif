@@ -583,7 +583,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
 .calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
-.panel .ajout{width:100%;margin-top:12px;padding:6px;border:1px dashed var(--line-strong);
+.panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -7987,6 +7987,19 @@ function deplaceCouche(k, dir){
 const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
 const nature = x => x.t === "dessin" ? "dessin" : "salon";
 
+/* Le bouton d'ajout ferme la suite des calques dessinés plutôt que le panneau :
+   c'est un de ces calques-là qu'il crée, et au bas de la pile il paraissait
+   valoir pour tout ce qui le précédait, couches du salon comprises. Restent les
+   plans sans aucun dessin : là il n'a pas de suite à fermer, et revient en fin
+   de liste — la seule place qui reste. */
+function boutonAjout(hote){
+  const plus = document.createElement("button");
+  plus.className = "ajout";
+  plus.textContent = "+ Nouveau calque de dessin";
+  plus.onclick = creeCalque;
+  hote.appendChild(plus);
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -8008,6 +8021,7 @@ function construitPanneau(){
      calque dessiné, la pile est d'une seule nature et se passe de titre. */
   const melange = liste.some(x => nature(x) === "dessin") &&
                   liste.some(x => nature(x) === "salon");
+  const dernierDessin = liste.reduce((r, x, i) => nature(x) === "dessin" ? i : r, -1);
   let natureCourante = null;
 
   liste.forEach((x, i) => {
@@ -8136,13 +8150,11 @@ function construitPanneau(){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
     }
+
+    if (i === dernierDessin) boutonAjout(hote);
   });
 
-  const plus = document.createElement("button");
-  plus.className = "ajout";
-  plus.textContent = "+ Nouveau calque de dessin";
-  plus.onclick = creeCalque;
-  hote.appendChild(plus);
+  if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
 
