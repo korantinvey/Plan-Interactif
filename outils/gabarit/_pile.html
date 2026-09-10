@@ -183,15 +183,6 @@ function construitPanneau(){
   plus.onclick = creeCalque;
   hote.appendChild(plus);
 
-  /* Le contour du bâtiment n'est pas un calque de plus à dessiner : c'est le
-     relevé lui-même, ramené à ce qu'un visiteur en retient. D'où sa place
-     juste sous la création de calque, et non dans la palette de dessin. */
-  const auto = document.createElement("button");
-  auto.className = "ajout auto";
-  auto.textContent = "⌖ Contour du bâtiment, calculé";
-  auto.onclick = ouvreContourAuto;
-  hote.appendChild(auto);
-
   sectionSelection(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les

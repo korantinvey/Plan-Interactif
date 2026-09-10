@@ -86,7 +86,6 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
-| contour d'un hall, calculé depuis le relevé | `_contour.html` |
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | ordre des calques, pile | `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
