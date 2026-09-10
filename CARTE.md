@@ -76,6 +76,22 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
+### `_chaleur.html` — 408 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
+
+Fonctions :
+
+`nbChal` 32 · `tonChaleur` 51 · `niveauChaleur` 73 · `valeurChaleur` 76 · `chargeChaleur` 89
+`coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
+`replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
+`dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
+`montreChaleur` 356 · `rangChaleur` 392
+
+Éléments :
+
+`#chalReduit` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
+
 ### `_config.js` — 15 l. → config.js
 
 ### `_console-base.html` — 343 l. → admin-plans.html, rapport.html
@@ -177,7 +193,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2446 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2532 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -251,17 +267,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2559 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2565 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.333 · 3. Rendu du pavillon courant
 - l.400 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1310 · 6. Vue
-- l.1409 · 7. Sélection et fiche
-- l.2204 · 8. Interactions du plan
-- l.2405 · Le tiroir de la liste — écrans étroits
+- l.1316 · 6. Vue
+- l.1415 · 7. Sélection et fiche
+- l.2210 · 8. Interactions du plan
+- l.2411 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -272,22 +288,22 @@ Fonctions :
 `libelleForce` 478 · `libelleZone` 481 · `libelleEmplacement` 500 · `indexeSecteurs` 541
 `secteursMontres` 554 · `couleurConf` 558 · `hslHex` 562 · `couleurSecteur` 580
 `BANDES` 599 · `majFondus` 607 · `pastilleSecteur` 645 · `coloreSecteurs` 658
-`appliqueSecteurs` 695 · `filtreTheme` 712 · `themeFiltrable` 788 · `clesCriteres` 804
-`libelleCritere` 811 · `separeValeurs` 819 · `valeursCritere` 836 · `texteCriteres` 849
-`indexeCriteres` 862 · `dansCriteres` 889 · `critereActif` 897 · `basculeCritere` 899
-`videCriteres` 907 · `nCriteres` 914 · `majCriteres` 923 · `ouvreCriteres` 981
-`filtre` 1094 · `critParSociete` 1098 · `visible` 1106 · `releveHotes` 1117
-`visibleSurPlan` 1125 · `visibleSociete` 1135 · `appliqueFiltre` 1141 · `rangSorte` 1160
-`codeCase` 1181 · `caseNumero` 1198 · `sousLigne` 1218 · `liste` 1228 · `appliqueVue` 1313
-`rafraichitVue` 1334 · `poseVue` 1346 · `masque` 1364 · `fit` 1384 · `zoom` 1396
-`echelle` 1401 · `ETROIT` 1415 · `anime` 1417 · `noeud` 1441 · `canalPlan` 1451
-`rangSociete` 1459 · `select` 1468 · `centre` 1489 · `centrePoint` 1493 · `montre` 1508
-`libelleCorps` 1541 · `ordreCorps` 1553 · `momentLocal` 1590 · `programme` 1613
-`jourLong` 1646 · `ficheConf` 1657 · `lien` 1751 · `adresseSure` 1766 · `assainitRiche` 1799
-`enBlocs` 1839 · `rangeRiche` 1852 · `ecarteClicFantome` 1880 · `nomSociete` 1889
-`societes` 1902 · `choisitExposant` 1913 · `ouvre` 1949 · `ferme` 2178 · `onglet` 2194
-`milieu` 2224 · `commencePince` 2230 · `suitPince` 2244 · `mesureTiroir` 2416
-`montreTiroir` 2419
+`appliqueSecteurs` 701 · `filtreTheme` 718 · `themeFiltrable` 794 · `clesCriteres` 810
+`libelleCritere` 817 · `separeValeurs` 825 · `valeursCritere` 842 · `texteCriteres` 855
+`indexeCriteres` 868 · `dansCriteres` 895 · `critereActif` 903 · `basculeCritere` 905
+`videCriteres` 913 · `nCriteres` 920 · `majCriteres` 929 · `ouvreCriteres` 987
+`filtre` 1100 · `critParSociete` 1104 · `visible` 1112 · `releveHotes` 1123
+`visibleSurPlan` 1131 · `visibleSociete` 1141 · `appliqueFiltre` 1147 · `rangSorte` 1166
+`codeCase` 1187 · `caseNumero` 1204 · `sousLigne` 1224 · `liste` 1234 · `appliqueVue` 1319
+`rafraichitVue` 1340 · `poseVue` 1352 · `masque` 1370 · `fit` 1390 · `zoom` 1402
+`echelle` 1407 · `ETROIT` 1421 · `anime` 1423 · `noeud` 1447 · `canalPlan` 1457
+`rangSociete` 1465 · `select` 1474 · `centre` 1495 · `centrePoint` 1499 · `montre` 1514
+`libelleCorps` 1547 · `ordreCorps` 1559 · `momentLocal` 1596 · `programme` 1619
+`jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `assainitRiche` 1805
+`enBlocs` 1845 · `rangeRiche` 1858 · `ecarteClicFantome` 1886 · `nomSociete` 1895
+`societes` 1908 · `choisitExposant` 1919 · `ouvre` 1955 · `ferme` 2184 · `onglet` 2200
+`milieu` 2230 · `commencePince` 2236 · `suitPince` 2250 · `mesureTiroir` 2422
+`montreTiroir` 2425
 
 Éléments :
 
@@ -337,18 +353,18 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 347 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 356 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.250 · Repères
+- l.259 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
 `nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
-`sectionSelection` 264 · `ligneCouleur` 289 · `rangSecteur` 309 · `rangSous` 321
-`defautCouleur` 343
+`sectionSelection` 273 · `ligneCouleur` 298 · `rangSecteur` 318 · `rangSous` 330
+`defautCouleur` 352
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -450,7 +466,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 - `20260910000006_ferme_lecture_anon.sql` — —
 - `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
-- `20260910000008_fiches_zones.sql` — evenement
+- `20260910000008_audience.sql` — fn audience_cibles
+- `20260910000009_fiches_zones.sql` — evenement
 
 ## Le reste
 

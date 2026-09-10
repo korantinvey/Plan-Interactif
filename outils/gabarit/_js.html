@@ -682,6 +682,12 @@ function coloreSecteurs(){
       else g.style.removeProperty("--sect-c");
     }
   });
+  /* La carte de chaleur se pose sur les mêmes formes et par-dessus la même
+     teinte. Elle suit donc ici : c'est le seul point que traversent tous les
+     chemins qui rebâtissent les stands — changement de pavillon, arrivée du
+     fond, rafraîchissement des découpages dessinés. Elle ne fait rien tant
+     qu'on ne l'a pas ouverte, ce qui n'arrive qu'en administration. */
+  coloreChaleur();
 }
 
 /* Le secteur n'est offert comme critère que là où le plan sectorise et le

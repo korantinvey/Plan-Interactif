@@ -816,7 +816,73 @@ synchronisation, dit ce qui existe et donne les libellés que le rapport affiche
 Un canal inconnu, en revanche, n'emporte pas son geste : la fiche a bien été
 ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 
-La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
+La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel, et
+par `audience_cibles()` pour le détail par stand.
+
+### La carte de chaleur
+
+Le rapport dit combien de fiches ont été ouvertes ; il ne dit pas lesquelles.
+C'est l'autre moitié de la question, et la seule qui se reporte sur le plan de
+l'année suivante : quel emplacement a retenu, quelle travée personne n'a
+regardée. `compteur_cible` le sait — une ligne par (stand, jour, canal) — mais
+neuf cents lignes de tableau ne se lisent pas. Sur le plan, si.
+
+C'est **un calque de la page d'administration du plan** : il s'allume dans la
+pile des calques, sous « Stands » — c'est cette couche qu'il repeint, comme les
+couleurs de secteur juste au-dessus. Seul de toute la pile, il n'a pas de
+sélecteur de couleur : les siennes ne se choisissent pas, elles sortent des
+chiffres et se refont à chaque changement de période.
+
+Il ne part **jamais** sur le plan public, et deux choses l'en empêchent plutôt
+qu'une. Il n'existe pas dans `CONF` — la publication de la configuration n'a
+donc rien à emporter, ni réglage ni rang dans la pile. Et il refuse de
+s'allumer hors administration : la page publique appelle bien le même code à
+chaque montage, elle n'y trouve simplement rien à peindre. Une pastille
+« non publié » le dit dans la pile, parce que rien d'autre ne le dirait.
+
+Les emplacements se colorent du
+bleu — pas ou peu de consultations — au rouge, et le cartouche donne la période
+(sept, trente, quatre-vingt-dix jours, ou depuis le début), l'échelle et les dix
+premiers, cliquables pour aller les voir sur le plan. Le survol d'un stand donne
+son chiffre exact. Rien ne s'enregistre : c'est une lecture, pas un réglage, et
+la publication de la configuration ne l'emporte pas.
+
+Deux commandes, et elles ne font pas la même chose. Le chevron du cartouche le
+**replie sur sa légende** — le plan reste peint, on gagne le coin de l'écran, et
+l'échelle demeure parce qu'une carte thermique sans elle n'est plus qu'un
+coloriage. C'est la case de la pile qui **éteint la lecture** et rend au plan
+ses couleurs ordinaires. Le repli est retenu d'une lecture à l'autre, et la
+pile s'arrête où le cartouche commence : ils partagent le même bord.
+
+Trois choses qu'il faut savoir avant d'en tirer une conclusion :
+
+- Ce sont des **consultations de fiche**, pas des visiteurs uniques. Compter les
+  seconds demanderait de retenir les paires (stand, visiteur), soit exactement le
+  volume que les compteurs ont supprimé — et c'est aussi le nombre que l'exposant
+  comprend.
+- Les **zones organisateur ne sont pas comptées** : la page ne les mesure pas
+  davantage, une zone n'est pas un exposant. Elles gardent leur teinte.
+- L'échelle est **logarithmique**. Rapportée au maximum, elle n'aurait rien
+  montré : la fiche la plus ouverte l'est dix à cent fois plus que la médiane, et
+  tout le reste du plan serait resté du même bleu. Le cartouche porte donc des
+  nombres à ses bornes et en son milieu, jamais des pourcentages.
+
+La rampe est celle d'une caméra thermique — bleu, cyan, vert, jaune, orange,
+rouge. C'est le langage que tout le monde a déjà vu : personne n'a besoin qu'on
+lui dise que le rouge est chaud, et la carte se lit sans passer par sa légende.
+
+Elle se paie en deux endroits, et les deux sont traités. La clarté n'y avance
+pas d'un bout à l'autre — le jaune du milieu est plus vif que le rouge du bout —
+donc le rang ne se lit pas dans la couleur seule : d'où les nombres au
+cartouche, et le chiffre exact au survol d'un stand. Et comme aucune encre ne
+tient sur toute la rampe — noire, elle se perd sur le bleu ; blanche, sur le
+jaune — les libellés reçoivent un liseré clair le temps de la lecture, mesuré
+en `em` pour qu'il suive la taille du texte quand on dézoome. La couleur de
+libellé que l'exploitant a pu régler est écartée pendant ce temps : elle avait
+été accordée à ses stands, pas à une caméra thermique.
+
+Contrairement au reste du plan, la rampe ne suit pas le thème : une image
+thermique est la même de jour comme de nuit.
 
 ## Comptes et profils
 
