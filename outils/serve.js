@@ -8,7 +8,15 @@ const path = require("path");
 const DIR = path.join(__dirname, "..", "web") + path.sep;
 const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
 
-const TYPES = { html: "text/html; charset=utf-8", js: "text/javascript; charset=utf-8" };
+/* La feuille de style ne peut pas tomber dans le type par défaut : un
+   navigateur refuse un style qui n'arrive pas en `text/css`, sans rien dire
+   d'autre qu'une page sans mise en forme — et la console, dont tout l'écran
+   tient dans `console.css`, s'y montrait nue jusqu'à la fenêtre de connexion. */
+const TYPES = {
+  html: "text/html; charset=utf-8",
+  js: "text/javascript; charset=utf-8",
+  css: "text/css; charset=utf-8",
+};
 
 http.createServer((q, s) => {
   let u = q.url.split("?")[0];
