@@ -159,7 +159,7 @@ button{cursor:pointer;background:none;border:none}
 .sans-secteurs .secteurs .chip i{display:none}
 /* Une bande qui défile ne le dit pas d'elle-même.
 
-   En tiroir, critères retenus, secteurs et thématiques tiennent chacun sur une
+   En tiroir, les critères retenus et les secteurs tiennent chacun sur une
    ligne qui déborde par le côté : une puce coupée net au bord de l'écran ressemble à un défaut de
    cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
    quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
@@ -200,29 +200,6 @@ button{cursor:pointer;background:none;border:none}
 /* Les thématiques : la même bande de puces que les secteurs, sans pastille de
    couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
    le salon en range beaucoup, un bouton en donnant alors la suite. */
-/* La marge latérale est portée par la bande elle-même, et non par le bloc qui
-   l'entoure : c'est ce qui met sa flèche à la même distance du bord que celle
-   des secteurs, dont la marge est aussi à l'intérieur. */
-.themes{padding:10px 0;border-bottom:1px solid var(--line)}
-.themes .chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px}
-/* Deux lignes de puces : la hauteur est celle du contenu, coupée net. Un dégradé
-   dirait mieux qu'il en reste, mais il faudrait le teinter dans les deux
-   thèmes ; le bouton le dit avec un nombre, ce qui est plus sûr. */
-.themes .chips.replie{max-height:62px;overflow:hidden}
-.themes .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
-  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
-.themes .chip:hover{border-color:var(--line-strong)}
-/* La règle ci-dessus pose un display : sans cela, « hidden » ne cacherait plus
-   le bouton de dépliage sur les salons qui n'ont que peu de thématiques. */
-.themes .chip[hidden]{display:none}
-.themes .chip[aria-pressed="true"]{background:var(--accent-soft);
-  border-color:var(--accent);color:var(--ink)}
-/* Le compte range la thématique dans le salon : deux exposants ou soixante, on
-   ne la retient pas pour les mêmes raisons. */
-.themes .chip .nb{color:var(--ink-3);font-variant-numeric:tabular-nums}
-.themes .chip[aria-pressed="true"] .nb{color:var(--ink-2)}
-.themes .plus{margin:6px 0 0 16px;color:var(--accent);background:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -1159,13 +1136,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
   .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
-  /* Les thématiques suivent, et n'ont alors plus rien à déplier : tout est
-     atteignable en poussant la bande du doigt, et le bouton ne dirait qu'un
-     nombre qu'on a déjà sous les yeux. */
-  .themes .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-  .themes .chips::-webkit-scrollbar{display:none}
-  .themes .chips.replie{max-height:none;overflow-y:hidden}
-  .themes .plus{display:none}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
@@ -1356,20 +1326,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         aria-label="Voir la suite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-    </div>
-    <div class="themes" id="themes" hidden>
-      <div class="bande">
-        <div class="chips defile" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
-        <button class="fleche" type="button" data-vers="-1" tabindex="-1"
-        aria-label="Revenir au début">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <button class="fleche" type="button" data-vers="1" tabindex="-1"
-        aria-label="Voir la suite">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
-      <button class="chip plus" id="themesPlus" type="button" aria-expanded="false" hidden></button>
     </div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>

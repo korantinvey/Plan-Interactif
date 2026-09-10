@@ -164,7 +164,7 @@ button{cursor:pointer;background:none;border:none}
 .sans-secteurs .secteurs .chip i{display:none}
 /* Une bande qui défile ne le dit pas d'elle-même.
 
-   En tiroir, critères retenus, secteurs et thématiques tiennent chacun sur une
+   En tiroir, les critères retenus et les secteurs tiennent chacun sur une
    ligne qui déborde par le côté : une puce coupée net au bord de l'écran ressemble à un défaut de
    cadrage, pas à une invitation à pousser du doigt. Le bord par lequel il reste
    quelque chose s'estompe donc, et lui seul — arrivé au bout, plus rien ne
@@ -205,29 +205,6 @@ button{cursor:pointer;background:none;border:none}
 /* Les thématiques : la même bande de puces que les secteurs, sans pastille de
    couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
    le salon en range beaucoup, un bouton en donnant alors la suite. */
-/* La marge latérale est portée par la bande elle-même, et non par le bloc qui
-   l'entoure : c'est ce qui met sa flèche à la même distance du bord que celle
-   des secteurs, dont la marge est aussi à l'intérieur. */
-.themes{padding:10px 0;border-bottom:1px solid var(--line)}
-.themes .chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px}
-/* Deux lignes de puces : la hauteur est celle du contenu, coupée net. Un dégradé
-   dirait mieux qu'il en reste, mais il faudrait le teinter dans les deux
-   thèmes ; le bouton le dit avec un nombre, ce qui est plus sûr. */
-.themes .chips.replie{max-height:62px;overflow:hidden}
-.themes .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
-  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
-  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
-.themes .chip:hover{border-color:var(--line-strong)}
-/* La règle ci-dessus pose un display : sans cela, « hidden » ne cacherait plus
-   le bouton de dépliage sur les salons qui n'ont que peu de thématiques. */
-.themes .chip[hidden]{display:none}
-.themes .chip[aria-pressed="true"]{background:var(--accent-soft);
-  border-color:var(--accent);color:var(--ink)}
-/* Le compte range la thématique dans le salon : deux exposants ou soixante, on
-   ne la retient pas pour les mêmes raisons. */
-.themes .chip .nb{color:var(--ink-3);font-variant-numeric:tabular-nums}
-.themes .chip[aria-pressed="true"] .nb{color:var(--ink-2)}
-.themes .plus{margin:6px 0 0 16px;color:var(--accent);background:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -1164,13 +1141,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
   .secteurs,.actifs{flex-wrap:nowrap;overflow-x:auto}
-  /* Les thématiques suivent, et n'ont alors plus rien à déplier : tout est
-     atteignable en poussant la bande du doigt, et le bouton ne dirait qu'un
-     nombre qu'on a déjà sous les yeux. */
-  .themes .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
-  .themes .chips::-webkit-scrollbar{display:none}
-  .themes .chips.replie{max-height:none;overflow-y:hidden}
-  .themes .plus{display:none}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
@@ -1361,20 +1331,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         aria-label="Voir la suite">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-    </div>
-    <div class="themes" id="themes" hidden>
-      <div class="bande">
-        <div class="chips defile" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
-        <button class="fleche" type="button" data-vers="-1" tabindex="-1"
-        aria-label="Revenir au début">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <button class="fleche" type="button" data-vers="1" tabindex="-1"
-        aria-label="Voir la suite">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-      </div>
-      <button class="chip plus" id="themesPlus" type="button" aria-expanded="false" hidden></button>
     </div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
@@ -1586,7 +1542,7 @@ let HEBERGES = [];
    titulaire, sinon le rang de l'hébergé. Sans lui, la liste marquerait comme
    courants tous les rangs d'un même stand. */
 const state = { q: "", qn: "", sel: null, selSoc: -1, plan: 0,
-                secteurs: new Set(), themes: new Set(),
+                secteurs: new Set(),
                 /* Les critères retenus : une clé de champ, les valeurs cochées.
                    Un critère sans valeur cochée n'existe pas — il sort de la
                    table plutôt que d'y rester comme un filtre qui ne filtre
@@ -1638,7 +1594,10 @@ function indexe(d){
          non un nom d'enseigne — et les champs retenus comme critères de même :
          un exploitant qui désigne « Gamme de produits » comme critère veut
          qu'on trouve « bio » en le tapant, pas seulement en dépliant un
-         filtre. */
+         filtre. Les thématiques y entrent qu'elles soient un critère ou non :
+         dès lors qu'elles paraissent sur la fiche, ce qu'on y lit doit se
+         retrouver en le tapant. Elles s'y répètent quand elles en sont un,
+         ce dont une recherche par sous-chaîne ne s'aperçoit pas. */
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
                 " " + texteCriteres(s)).toLowerCase();
@@ -1648,9 +1607,6 @@ function indexe(d){
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
   indexeSecteurs();
-  /* Les thématiques se relèvent de même, mais sur les sociétés et non sur les
-     emplacements : les hébergées ont les leurs. */
-  indexeThemes();
 
   /* L'habillage choisi par l'exploitant vient du service et l'emporte sur ce
      que garde le poste : c'est lui que les visiteurs doivent voir, et un
@@ -1732,7 +1688,6 @@ function indexe(d){
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
-  appliqueThemes();
   chargeParcours();
 }
 
@@ -2014,8 +1969,8 @@ function couleurSecteur(nom){
 
 /* Les bandes qui défilent, et ce qui le fait voir.
 
-   En tiroir — sur téléphone — critères retenus, secteurs et thématiques
-   tiennent chacun sur une ligne unique qui déborde par le côté : la hauteur s'y paie sur le plan, et deux
+   En tiroir — sur téléphone — les critères retenus et les secteurs tiennent
+   chacun sur une ligne unique qui déborde par le côté : la hauteur s'y paie sur le plan, et deux
    lignes de puces le mangeraient. Mais une puce coupée net au bord de l'écran
    ne se lit pas comme une invitation à pousser du doigt : elle se lit comme un
    défaut de cadrage, et le reste du salon n'est jamais visité.
@@ -2127,107 +2082,28 @@ function appliqueSecteurs(){
   mesureTiroir();
 }
 
-/* Les thématiques.
-
-   Elles ne viennent que d'Eventmaker, et seulement des salons qui en tiennent :
-   ni la bande, ni le filtre n'existent ailleurs. Contrairement aux secteurs,
-   elles ne décrivent pas l'emplacement mais la société qui l'occupe — une
-   enseigne hébergée a les siennes, différentes de celles de son hôte — et une
-   même société en porte plusieurs. Rien à colorier sur le plan, donc : c'est un
-   filtre de la liste, pas une légende.
-
-   Le compte accolé à chaque nom n'est pas un ornement : les libellés se
-   ressemblent d'un champ à l'autre — « Solutions transverses », « Solutions
-   métier » — et savoir qu'une thématique ne range que deux exposants évite de
-   la retenir pour rien. */
-let THEMES = new Map();
-/* Au-delà d'une dizaine, la bande dépliée prendrait toute la colonne : un
-   salon en range parfois trente. Elle se replie alors sur deux lignes. */
-const SEUIL_THEMES = 10;
-let themesDeployes = false;
-
-function indexeThemes(){
-  const n = new Map();
-  const compte = l => (l || []).forEach(x => {
-    const t = String(x).trim();
-    if (t) n.set(t, (n.get(t) || 0) + 1);
-  });
-  DATA.plans.forEach(p => p.stands.forEach(s => {
-    compte(s.themes);
-    (s.coex || []).forEach(x => compte(x.themes));
-  }));
-  THEMES = new Map([...n].sort((a, b) => COLLATION.compare(a[0], b[0])));
-  /* Une thématique retenue que la synchronisation vient de retirer ne désigne
-     plus personne : laissée là, elle viderait la liste sans qu'aucune puce
-     allumée ne dise pourquoi. */
-  [...state.themes].forEach(t => { if (!THEMES.has(t)) state.themes.delete(t); });
-}
-
-/** La bande des thématiques : les puces, et de quoi les déplier toutes. */
-function chipsThemes(){
-  const b = $("themes");
-  b.hidden = !THEMES.size;
-  if (b.hidden) return;
-  const trop = THEMES.size > SEUIL_THEMES, replie = trop && !themesDeployes;
-  /* Repliée, la bande ne montre que ses premières lignes : une thématique
-     retenue passe donc en tête, car un filtre qu'on ne voit plus est un filtre
-     qu'on oublie d'enlever. Dépliée, l'ordre des noms ne bouge plus sous le
-     doigt qui enchaîne les puces. */
-  const noms = [...THEMES.keys()];
-  if (replie) noms.sort((x, y) =>
-    (state.themes.has(y) ? 1 : 0) - (state.themes.has(x) ? 1 : 0) ||
-    COLLATION.compare(x, y));
-  const box = $("themesChips");
-  box.classList.toggle("replie", replie);
-  box.innerHTML = noms.map(n =>
-    '<button class="chip" type="button" data-t="' + esc(n) + '" aria-pressed="' +
-    state.themes.has(n) + '">' + esc(n) +
-    '<span class="nb">' + THEMES.get(n) + '</span></button>').join("");
-  box.querySelectorAll(".chip").forEach(x => x.onclick = () => basculeTheme(x.dataset.t));
-  const plus = $("themesPlus");
-  plus.hidden = !trop;
-  plus.textContent = themesDeployes
-    ? "Replier" : "Toutes les thématiques (" + THEMES.size + ")";
-  plus.setAttribute("aria-expanded", String(themesDeployes));
-  plus.onclick = () => { themesDeployes = !themesDeployes; chipsThemes(); mesureTiroir(); };
-  majFondus();
-}
-
-/** Comme les secteurs : retirées du salon, elles ne doivent pas laisser
- *  derrière elles un filtre invisible. */
-function appliqueThemes(){
-  if (!THEMES.size) state.themes.clear();
-  chipsThemes();
-  // la bande dépasse du tiroir replié, et les commandes du plan se posent
-  // dessus : sa hauteur vient de changer
-  mesureTiroir();
-}
-
-function basculeTheme(n){
-  if (state.themes.has(n)) state.themes.delete(n); else state.themes.add(n);
-  chipsThemes();
-  appliqueFiltre();
-}
-
 /**
  * Retenir une seule thématique, celle qu'on vient de lire sur une fiche.
  *
- * C'est l'autre porte d'entrée : de l'exposant vers ses semblables. On repart
- * donc à neuf — mot-clé, secteurs et critères effacés — sinon la liste
- * répondrait à une question qu'on ne pose plus, et paraîtrait vide sans raison.
+ * C'est l'autre porte d'entrée : de l'exposant vers ses semblables, quand on a
+ * trouvé à peu près ce qu'on cherchait et qu'on veut voir le reste. Elle passe
+ * par le critère « Thématiques », comme la fenêtre des critères — c'est le même
+ * filtre, atteint par un autre chemin.
+ *
+ * On repart à neuf : mot-clé, secteurs et autres critères effacés, sinon la
+ * liste répondrait à une question qu'on ne pose plus, et paraîtrait vide sans
+ * raison.
  */
 function filtreTheme(n){
-  if (!THEMES.has(n)) return;
-  state.themes = new Set([n]);
+  if (!themeFiltrable(n)) return;
   state.secteurs.clear();
   state.crit.clear();
+  state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
-  themesDeployes = false;
   ferme();
   chipsSecteurs();
   majCriteres();
-  appliqueThemes();
   appliqueFiltre();
   // sur téléphone la liste est repliée : le filtre n'aurait rien à montrer
   montreTiroir();
@@ -2263,18 +2139,30 @@ const LECTURE_CRITERE = {
   ville: o => [o.ville],
   pays: o => [o.pays],
   nomenclature: o => o.nomencl,
+  thematiques: o => o.themes,
   // un oui/non n'a qu'une valeur à cocher : le champ lui-même
   nouveau: o => o.neuf ? ["Oui"] : [],
 };
 const OUI_NON = { nouveau: true };
 const LIBELLE_CRITERE = {
   ville: "Ville", pays: "Pays", nomenclature: "Nomenclature",
-  nouveau: "Nouvel exposant",
+  thematiques: "Thématiques", nouveau: "Nouvel exposant",
 };
-/* Ni le secteur ni les thématiques ne figurent ici : ils ont chacun leur bande
-   de puces sous la recherche, et un second filtre pour eux ferait double
-   emploi. Une cible absente de cette table ne rend aucune valeur, donc aucun
-   critère — un réglage ancien qui la désignerait encore reste sans effet. */
+/* Les thématiques sont un critère comme les autres, et n'ont pas de bande à
+   elles : un salon en range parfois trente, ce qui prenait sous la recherche
+   la place de deux lignes de résultats, et les rangeait à part de filtres qui
+   font le même travail. Le secteur, lui, reste dehors — sa bande est d'abord
+   la légende des couleurs du plan, et il n'y a rien à colorier ici.
+
+   Une cible absente de cette table ne rend aucune valeur, donc aucun critère —
+   un réglage ancien qui la désignerait encore reste sans effet. */
+const CLE_THEMES = "thematiques";
+
+/** Une thématique lue sur une fiche mène-t-elle quelque part ? Seulement si
+ *  l'exploitant a fait des thématiques un critère, et si celle-ci en est une
+ *  valeur — sinon le lien promettrait une liste qu'on ne saurait pas dresser. */
+const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
+  c.valeurs.some(x => x.v === String(n).trim()));
 
 /** Les champs retenus comme critères, dans l'ordre où la console les range. */
 function clesCriteres(){
@@ -2518,22 +2406,16 @@ function ouvreCriteres(){
 }
 
 const dansSecteurs = o => !state.secteurs.size || state.secteurs.has(o.sect);
-/* Plusieurs thématiques retenues élargissent, elles ne restreignent pas : on
-   les additionne comme les secteurs, et un exposant qui en porte une seule des
-   trois cochées répond. Restreindre reviendrait à demander l'exposant qui fait
-   tout, et il n'existe pas. */
-const dansThemes = o => !state.themes.size ||
-  (o.themes || []).some(t => state.themes.has(String(t).trim()));
 
-/** Quelque chose retranche-t-il de la liste ? Le mot-clé, un secteur, une
- *  thématique, un critère : tous se cumulent, aucun ne prime. */
+/** Quelque chose retranche-t-il de la liste ? Le mot-clé, un secteur, un
+ *  critère : tous se cumulent, aucun ne prime. */
 const filtre = () => Boolean(state.qn) || state.secteurs.size > 0 ||
-  state.themes.size > 0 || state.crit.size > 0;
+  state.crit.size > 0;
 
 function visible(o){
   if (!filtre()) return true;
   if (o.kind === "zone") return false;
-  return dansSecteurs(o) && dansThemes(o) && dansCriteres(o) &&
+  return dansSecteurs(o) && dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
 
@@ -2566,8 +2448,8 @@ function appliqueFiltre(){
 function liste(){
   const box = $("list");
   const q = state.qn;
-  // un secteur, une thématique ou un critère retenus débordent le pavillon
-  // affiché, comme un mot-clé
+  // un secteur ou un critère retenus débordent le pavillon affiché, comme un
+  // mot-clé
   const tout = filtre();
   /* Les sociétés hébergées rejoignent la liste dès qu'on cherche une société,
      et non un emplacement : par son nom, par ce qu'elle vient faire là, ou par
@@ -2576,7 +2458,7 @@ function liste(){
      cherche. Un secteur, lui, n'est porté que par l'emplacement. Sans rien de
      tout cela, la liste reste le sommaire des emplacements, et son compte celui
      qu'annonce l'en-tête. */
-  const parSociete = Boolean(q) || state.themes.size > 0 || state.crit.size > 0;
+  const parSociete = Boolean(q) || state.crit.size > 0;
   const portee = parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands;
   const vus = portee.filter(visible).sort((a, b) =>
     (a.p - b.p) ||
@@ -3145,11 +3027,18 @@ function ouvre(o, rect, canal, iSoc){
       : "") +
     /* Les thématiques disent ce que l'exposant vient faire là, quand la
        nomenclature dit ce qu'il vend : elles se suivent, et un salon qui n'en
-       tient pas ne reçoit pas la clé du tout. */
+       tient pas ne reçoit pas la clé du tout.
+
+       Chacune mène aux exposants qui la partagent — mais seulement là où
+       l'exploitant en a fait un critère : ailleurs, rien ne saurait dresser la
+       liste promise, et une thématique qui ne mène nulle part vaut mieux en
+       texte qu'en lien mort. */
     ok("thematiques", soc.themes && soc.themes.length
       ? f("Thématiques", soc.themes
-          .map(n => '<button type="button" class="ligne theme" data-t="' +
-            esc(String(n)) + '">' + esc(String(n)) + '</button>').join(""))
+          .map(n => themeFiltrable(n)
+            ? '<button type="button" class="ligne theme" data-t="' +
+              esc(String(n)) + '">' + esc(String(n)) + '</button>'
+            : '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
       : "") +
     /* Les champs que ce salon-ci s'est ajoutés, dans l'ordre où la console les
        range, et après ce que toutes les fiches ont en commun : ils lui sont
@@ -3439,7 +3328,7 @@ let montreTiroir = () => {};
     if (!etroit()) return;
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
     const h = prise.offsetHeight + part(".search") + part(".secteurs") +
-              part(".themes") + part(".actifs") + part(".count");
+              part(".actifs") + part(".count");
     if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
   }
 

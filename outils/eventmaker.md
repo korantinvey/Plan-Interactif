@@ -253,25 +253,25 @@ Trois entrées, la même liste au bout.
 
 - **Le mot-clé.** Les thématiques rejoignent le nom, le numéro, l'enseigne et le
   secteur dans la chaîne que la recherche balaie. Taper « robotique » répond,
-  sans avoir à savoir que c'est un rangement et non une raison sociale.
-- **La bande de puces**, sous celle des secteurs, sur le modèle de celle-ci :
-  multiple, cumulée avec le mot-clé et avec les secteurs, et débordant le
-  pavillon affiché comme eux. Elle ne paraît que sur les salons qui tiennent
-  des thématiques, c'est-à-dire là où l'exploitant a désigné le champ. Chaque
-  puce porte son compte : les libellés d'un même salon se ressemblent —
-  « Solutions transverses », « Solutions métier » — et savoir qu'une thématique
-  ne range que deux exposants évite de la retenir pour rien. Au-delà de dix, la
-  bande se replie sur deux lignes, un bouton donnant la suite ; en tiroir, sur
-  téléphone, elle redevient une ligne qui défile, comme les secteurs — et le
-  bord par lequel il reste quelque chose s'estompe sous une flèche, faute de
-  quoi une puce coupée net au bord de l'écran se lit comme un défaut de cadrage
-  et non comme une invitation à pousser du doigt. Le fondu seul ne suffisait
-  pas : il dit qu'on n'a pas tout vu, il ne dit pas comment voir le reste, et
-  la flèche le dit et le fait — une pression avance d'un écran. Arrivé au bout,
-  plus rien ne s'efface, et la flèche s'en va.
+  sans avoir à savoir que c'est un rangement et non une raison sociale. Elles y
+  entrent qu'elles soient un critère ou non : dès lors qu'elles paraissent sur
+  la fiche, ce qu'on y lit doit se retrouver en le tapant.
+- **La fenêtre des critères de recherche**, où elles sont un critère comme la
+  ville ou la nomenclature — mêmes valeurs relevées dans les fiches, même
+  compte par valeur, même tamis quand elles sont nombreuses, même puce sous la
+  recherche une fois retenues. Elles ont eu un temps leur bande de puces sous
+  la recherche : un salon en range parfois trente, ce qui prenait la place de
+  deux lignes de résultats, et les rangeait à part de filtres qui font le même
+  travail. C'est donc un réglage de la console — *Fiche détail*, colonne
+  *critère* — au même titre que les autres. Le secteur, lui, garde sa bande :
+  elle est d'abord la légende des couleurs du plan, et il n'y a rien à colorier
+  dans une fenêtre de filtres.
 - **La fiche.** Chaque thématique y est une prise vers les exposants qui la
-  partagent : on repart alors à neuf, mot-clé et secteurs effacés, sinon la
-  liste répondrait à une question qu'on ne pose plus.
+  partagent : on repart alors à neuf, mot-clé, secteurs et autres critères
+  effacés, sinon la liste répondrait à une question qu'on ne pose plus. La prise
+  n'existe que là où l'exploitant a fait des thématiques un critère — ailleurs
+  rien ne saurait dresser la liste promise, et une thématique qui ne mène nulle
+  part vaut mieux en texte qu'en lien mort.
 
 Deux choses qui n'allaient pas de soi.
 
@@ -284,13 +284,9 @@ autre, et c'est pourtant là qu'on va. Chaque hébergée est confrontée seule a
 filtre : mot-clé et thématique doivent désigner la même, sans quoi un stand
 s'allumerait pour deux moitiés de réponse portées par deux sociétés.
 
-**Plusieurs thématiques retenues élargissent**, elles ne restreignent pas. On
-les additionne comme les secteurs : demander l'exposant qui fait tout à la fois
-ne rendrait personne.
-
-Rien à colorier sur le plan, en revanche : la bande des secteurs est aussi une
-légende, celle des thématiques n'est qu'un filtre — une même société en porte
-plusieurs, et un stand n'a qu'une couleur.
+**Plusieurs thématiques retenues élargissent**, elles ne restreignent pas —
+c'est la règle des critères, et elle leur va : demander l'exposant qui fait tout
+à la fois ne rendrait personne. Deux critères différents, eux, se cumulent bien.
 
 ## Deux pièges
 
