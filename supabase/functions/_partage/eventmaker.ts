@@ -13,7 +13,8 @@
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
 import {
-  DEFAUTS, PREFIXE_PERSO, lit, ou, separeValeurs, valeurPerso, vrai,
+  DEFAUTS, PREFIXE_PERSO, lit, noteValeurs, ou, separeValeurs, valeurPerso, vrai,
+  VALEURS_MAX,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -68,10 +69,6 @@ const DE_FRONT = 6;
    l'organisateur et donc propres au salon, et les champs natifs de l'invité,
    identiques partout. L'ordre les sépare dans la liste de la console. */
 const GROUPES = ["Champ personnalisé", "Fiche invité · champ standard"];
-
-/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
-   mais du texte libre : en proposer la liste n'aiderait personne. */
-const VALEURS_MAX = 8;
 
 /* « Inscrit » dans l'interface Eventmaker. Une fiche en attente, refusée ou
    désinscrite ne doit pas paraître sur le plan public. */
@@ -674,9 +671,7 @@ class Releve {
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
        déclenchent. Au-delà de VALEURS_MAX, le champ est du texte libre : la
        liste ne servirait plus à rien, et pèserait. */
-    if (d.valeurs.length <= VALEURS_MAX && !d.valeurs.includes(ex) && ex.length <= 60) {
-      d.valeurs.push(ex);
-    }
+    noteValeurs(d.valeurs, ex);
     this.vus.set(cle, d);
   }
 

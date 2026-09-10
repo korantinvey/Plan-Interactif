@@ -1912,6 +1912,19 @@ function intituleSuite(v, detectes) {
 }
 
 /**
+ * Les valeurs d'un champ à choix, une par entrée, points-virgules défaits.
+ *
+ * Ni Klipso ni Eventmaker ne rendent une liste : ils joignent les valeurs
+ * d'un champ à choix multiple dans une seule chaîne — « Nouveaux exposants;
+ * Exposants internationaux ». Prise entière, elle ferait une valeur à cocher
+ * de plus par combinaison, et aucune ne désignerait ce que l'exploitant vise.
+ */
+const separeValeurs = (v) => [].concat(v)
+  .filter((x) => x !== null && x !== undefined)
+  .flatMap((x) => String(x).split(";"))
+  .map((x) => x.trim()).filter(Boolean);
+
+/**
  * La liste déroulante des champs d'origine d'une cible, et ce qu'elle vaut.
  *
  * Le réglage s'enregistre à chaque changement, comme les cases de la même
@@ -2053,10 +2066,13 @@ function champOrigine(src, cible, apres, ouiNon) {
     }
     zoneValeurs.hidden = false;
 
-    const retenues = ((correspondance(courant(), src).valeurs || {})[cible] || [])
-      .map(String);
+    /* Séparées ici aussi, et pas seulement au relevé : un salon réglé avant ce
+       découpage porte encore des valeurs entières, et n'attend pas la
+       prochaine synchronisation pour se laisser cocher. */
+    const retenues = separeValeurs(
+      (correspondance(courant(), src).valeurs || {})[cible] || []);
     const d = detectes.find((x) => x.cle === sel.value);
-    const relevees = (d && d.valeurs) || [];
+    const relevees = separeValeurs((d && d.valeurs) || []);
     /* Les valeurs déjà retenues restent proposées même si le relevé ne les
        connaît pas : saisies à la main, ou relevées avant que la
        synchronisation ne garde les valeurs distinctes. Les effacer d'un
@@ -2111,19 +2127,21 @@ function champOrigine(src, cible, apres, ouiNon) {
     ajout.onkeydown = (ev) => {
       if (ev.key !== "Enter") return;
       ev.preventDefault();
-      const v = ajout.value.trim();
-      if (!v || retenues.indexOf(v) >= 0 || offertes.indexOf(v) >= 0) {
-        ajout.value = "";
-        return;
-      }
-      retenues.push(v);
-      offertes.push(v);
+      /* Une saisie recopiée depuis une fiche porte parfois la chaîne entière :
+         elle vaut alors autant de valeurs qu'elle en joint. */
+      const saisies = separeValeurs(ajout.value)
+        .filter((v) => offertes.indexOf(v) < 0);
+      ajout.value = "";
+      if (!saisies.length) return;
+      saisies.forEach((v) => {
+        retenues.push(v);
+        offertes.push(v);
+        const l = puce(v);
+        l.querySelector("input").checked = true;
+      });
       const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
       valeurs[cible] = [...retenues];
       enregistre({ valeurs });
-      ajout.value = "";
-      const l = puce(v);
-      l.querySelector("input").checked = true;
       zoneValeurs.appendChild(ajout);
       rappel();
     };

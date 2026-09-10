@@ -18,7 +18,7 @@ import {
 } from "../_partage/eventmaker.ts";
 import {
   DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
-  decoupe, lit, ou, valeursOui, valeurPerso, vrai,
+  decoupe, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai, VALEURS_MAX,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -119,10 +119,6 @@ const fournisseur = (evt: Record<string, any>, domaine: string) =>
 /* Vingt-cinq fiches suffisent à savoir quels champs un salon renseigne
    réellement : au-delà on relit les mêmes. */
 const ECHANTILLON = 25;
-
-/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
-   mais du texte libre : en proposer la liste n'aiderait personne. */
-const VALEURS_MAX = 8;
 
 /** Une valeur qu'on peut montrer en exemple : ni objet, ni vide. */
 const exemple = (v: unknown): string | null => {
@@ -226,9 +222,10 @@ async function champsKlipso(g: Gaia) {
         if (!e.exemple) e.exemple = ex;
         /* Les valeurs distinctes disent si le champ est une liste de choix.
            C'est parmi elles que l'exploitant désignera celles qui déclenchent
-           « Nouvel exposant » ou « Exclu de la liste ». */
-        const l = e.valeurs as string[];
-        if (l.length <= VALEURS_MAX && !l.includes(ex)) l.push(ex);
+           « Nouvel exposant » ou « Exclu de la liste ». Elles se relèvent sur
+           la valeur brute, et non sur l'exemple : celui-ci est tronqué, et un
+           champ à choix multiple y perdrait ses dernières valeurs. */
+        noteValeurs(e.valeurs as string[], v);
         vus.set(cle, e);
       }
     }
