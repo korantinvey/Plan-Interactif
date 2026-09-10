@@ -1247,6 +1247,21 @@ const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
 
+/* Les intitulés du corps de la fiche. Ils vivent dans une table plutôt qu'en
+   toutes lettres à leur ligne parce qu'ils s'écrivent à deux endroits : sur la
+   fiche, et dans l'aperçu des modèles du panneau d'apparence. Un aperçu qui ne
+   nommerait pas les champs comme la fiche ne montrerait pas la fiche. */
+const LIBELLE_CORPS = {
+  raison: "Raison sociale", secteur: "Secteur", adresse: "Adresse",
+  ville: "Ville", pays: "Pays", niveaux: "Niveaux", telephone: "Téléphone",
+  site: "Site web", facebook: "Facebook", linkedin: "LinkedIn",
+  instagram: "Instagram", nomenclature: "Nomenclature", thematiques: "Thématiques",
+};
+
+/** L'intitulé d'un champ du corps — un champ propre au salon porte le sien. */
+const libelleCorps = cle => cle.indexOf(PREFIXE_PERSO) === 0
+  ? libelleCritere(cle) : (LIBELLE_CORPS[cle] || cle);
+
 /**
  * L'ordre réglé par l'exploitant, complété de ce qu'il ne connaît pas encore.
  *
@@ -1607,31 +1622,31 @@ function ouvre(o, rect, canal, iSoc){
   const corps = {};
   // la raison sociale n'apprend rien quand elle est déjà le titre
   corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f("Raison sociale", esc(soc.plan)) : "");
+    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f("Secteur", o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f("Adresse", soc.adr ? esc(soc.adr) : ""));
+  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
+  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f("Ville", soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f("Pays", soc.pays ? esc(soc.pays) : "", "court"));
+  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
+  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f("Niveaux", o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f("Téléphone", soc.tel
+  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court"));
-  corps.site = ok("site", f("Site web", lien(soc.site)));
-  corps.facebook = ok("facebook", f("Facebook", lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f("LinkedIn", lien(soc.li)));
-  corps.instagram = ok("instagram", f("Instagram", lien(soc.ig)));
+  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
+  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
+  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
+  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f("Nomenclature", soc.nomencl
+    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
         .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
     : "");
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
@@ -1643,7 +1658,7 @@ function ouvre(o, rect, canal, iSoc){
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
   corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f("Thématiques", soc.themes
+    ? f(LIBELLE_CORPS.thematiques, soc.themes
         .map(n => themeFiltrable(n)
           ? '<button type="button" class="ligne theme" data-t="' +
             esc(String(n)) + '">' + esc(String(n)) + '</button>'
