@@ -154,6 +154,55 @@ function majAdresse() {
   history.replaceState(null, "", url);
 }
 
+/**
+ * Ce que la barre du haut dit du salon ouvert, et ce qu'elle en commande.
+ *
+ * Ces boutons vivaient en tête de fiche, sur une seconde rangée. Ils décrivent
+ * pourtant le même salon que la liste déroulante voisine : les réunir fait un
+ * seul endroit où commander, et une ligne au lieu de deux.
+ */
+function majBarre() {
+  const e = courant();
+  const badge = $("etatEvt");
+  badge.hidden = !e;
+  if (e) {
+    badge.className = "etat " + e.etat;
+    badge.textContent = e.etat === "publie" ? "Publié" : "Brouillon";
+  }
+  // sans salon ouvert, les commandes qui le visent n'ont pas d'objet ; celles
+  // de la console — les comptes, le projet — restent, elles, atteignables
+  document.querySelectorAll('.menu-pan [data-portee="salon"]').forEach((b) => {
+    b.hidden = !e;
+  });
+  $("sepActions").hidden = !e;
+  $("lienPublic").hidden = !e;
+  $("lienAdmin").hidden = !e;
+  if (!e) return;
+
+  majLiens(e);
+  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
+  $("btnEtat").onclick = async () => {
+    e.etat = e.etat === "publie" ? "brouillon" : "publie";
+    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
+    catch (err) { signale(err.message, true); }
+  };
+  $("btnSources").onclick = () => ouvreSources(() => dessine());
+  // dupliquer, c'est créer un salon : réservé à l'administrateur, comme
+  // « Nouveau ». La base le refuserait de toute façon, mais un bouton qui
+  // n'aboutit jamais est un bouton de trop.
+  $("btnDupliquer").hidden = MOI?.role !== "admin";
+  $("btnDupliquer").onclick = () => dupliquer(e);
+  $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
+    "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
+    "définitivement perdus.", "Supprimer", async () => {
+      try {
+        await rest("evenement?id=eq." + e.id, { method: "DELETE" });
+        selection = null;
+        await charge();
+      } catch (err) { signale(err.message, true); }
+    });
+}
+
 function dessineChoix() {
   const sel = $("choixEvt");
   // rien à choisir : la liste vide n'aurait rien à dire que la fiche ne dise
@@ -215,54 +264,6 @@ function dessineFiche() {
     return;
   }
   f.innerHTML = "";
-
-  /* Deux sorties vers le plan restent à découvert — ce sont elles qu'on
-     cherche en ouvrant la console. Le reste se déplie : publier, dupliquer et
-     supprimer n'ont pas à peser autant que « Plan public », et sept boutons de
-     même poids sur une ligne ne se hiérarchisaient plus. */
-  const entete = document.createElement("div");
-  entete.className = "entete";
-  entete.innerHTML = '<div class="ent-txt"><h2></h2>' +
-    '<span class="etat ' + e.etat + '">' + (e.etat === "publie" ? "Publié" : "Brouillon") + '</span></div>' +
-    '<div class="droite">' +
-    '<a class="btn petit" id="lienPublic" target="_blank" rel="noopener">Plan public' +
-    '<span class="ext" aria-hidden="true">↗</span></a>' +
-    '<a class="btn petit" id="lienAdmin" target="_blank" rel="noopener">Plan · administration' +
-    '<span class="ext" aria-hidden="true">↗</span></a>' +
-    '<details class="menu"><summary class="btn petit">Actions</summary>' +
-    '<div class="menu-pan">' +
-    '<a class="mitem" id="lienRapport">Rapport d\'utilisation</a>' +
-    '<button class="mitem" id="btnSources">Sources de données</button>' +
-    '<button class="mitem" id="btnEtat"></button>' +
-    '<button class="mitem" id="btnDupliquer">Dupliquer l\'événement</button>' +
-    '<hr>' +
-    '<button class="mitem danger" id="btnSupprimer">Supprimer l\'événement</button>' +
-    '</div></details></div>';
-  entete.querySelector("h2").textContent = e.nom;
-  f.appendChild(entete);
-
-  majLiens(e);
-  $("btnEtat").textContent = e.etat === "publie" ? "Repasser en brouillon" : "Publier l'événement";
-  $("btnEtat").onclick = async () => {
-    e.etat = e.etat === "publie" ? "brouillon" : "publie";
-    try { await majEvenement(e.id, { etat: e.etat }); dessine(); }
-    catch (err) { signale(err.message, true); }
-  };
-  $("btnSources").onclick = () => ouvreSources(() => dessine());
-  // dupliquer, c'est créer un salon : réservé à l'administrateur, comme
-  // « Nouveau ». La base le refuserait de toute façon, mais un bouton qui
-  // n'aboutit jamais est un bouton de trop.
-  $("btnDupliquer").hidden = MOI?.role !== "admin";
-  $("btnDupliquer").onclick = () => dupliquer(e);
-  $("btnSupprimer").onclick = () => confirme("Supprimer l'événement ?",
-    "« " + e.nom + " », ses pavillons, son apparence et ses dessins seront " +
-    "définitivement perdus.", "Supprimer", async () => {
-      try {
-        await rest("evenement?id=eq." + e.id, { method: "DELETE" });
-        selection = null;
-        await charge();
-      } catch (err) { signale(err.message, true); }
-    });
 
   const b1 = bloc("Identité");
   const g1 = grille();
@@ -2320,11 +2321,15 @@ $("btnRecharger").onclick = async () => {
   }
 };
 
+/* Un relevé de ce que la console a en main — les salons et leurs pavillons —
+   copié dans le presse-papiers. Rien ne s'enregistre : cela sert à joindre un
+   état à un signalement, pas à sauvegarder quoi que ce soit. */
 $("btnExport").onclick = (ev) => {
+  const b = ev.currentTarget;
   const txt = JSON.stringify({ evenements: EVTS, plans: PLANS }, null, 2);
   navigator.clipboard?.writeText(txt).then(
-    () => { ev.target.textContent = "Copié"; setTimeout(() => ev.target.textContent = "Exporter", 1700); },
-    () => { ev.target.textContent = "Échec"; });
+    () => { b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier les données (JSON)", 1700); },
+    () => { b.textContent = "Échec de la copie"; });
 };
 $("btnProjet").onclick = () => ecranConfig();
 
@@ -2675,6 +2680,7 @@ function dessine() {
   $("btnComptes").hidden = !patron;
   $("btnNouveau").hidden = !patron;
   dessineChoix();
+  majBarre();
   dessineFiche();
   majAdresse();
 }

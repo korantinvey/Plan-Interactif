@@ -70,6 +70,11 @@ button{cursor:pointer;background:none;border:none}
   background:var(--surface);border-bottom:1px solid var(--line);z-index:5}
 .topbar h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px;margin:0;
   letter-spacing:-.02em;white-space:nowrap}
+/* La barre porte tout ce qui commande : le salon ouvert, ses sorties vers le
+   plan, et le menu. Elle se replie sur deux rangs quand l'écran ne suit plus,
+   mais le titre s'efface avant — c'est la liste déroulante qui nomme la page. */
+.topbar{flex-wrap:wrap;row-gap:8px}
+@media (max-width:1080px){.app > .topbar h1{display:none}}
 /* Les deux pages choisissent leur salon dans la barre du haut. */
 .topbar select{padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);max-width:34vw}
@@ -116,7 +121,10 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .etat.brouillon{background:var(--ambre-soft);color:var(--ambre)}
 .etat::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* ---------- la fiche du salon ---------- */
+/* ---------- la fiche du salon ----------
+   L'en-tête ci-dessous n'est plus celui de la console — ses commandes sont
+   remontées dans la barre — mais celui du rapport, qui garde son titre et son
+   bouton « Voir le plan ». */
 .fiche{overflow-y:auto;padding:24px 26px 64px;min-width:0}
 /* Une colonne de lecture. Sur un grand écran, la fiche s'étirait jusqu'au bord :
    un champ « identifiant d'URL » large de neuf cents pixels n'aide personne, et
@@ -450,6 +458,12 @@ tr.eteint td{opacity:.45}
 /* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
    troisième onglet, la liste d'ordre et son aperçu côte à côte. */
 .mfen:has(table.champs){width:min(1040px,100%)}
+/* Une fenêtre à onglets s'accroche par le haut. « Zone organisateur » tient en
+   trois lignes quand « Stand » en compte trente : centrée, la fenêtre sautait
+   d'un onglet à l'autre, et les onglets eux-mêmes se dérobaient sous le curseur
+   qui venait de cliquer. Accrochée, seul le bas suit le contenu — lui figer
+   aussi la hauteur aurait laissé six cents pixels de vide sous trois lignes. */
+.modale:has(.onglets){align-items:start;padding-top:5vh}
 /* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
    de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
 /* Les comptes : l'annuaire aligne quatre colonnes, la fiche aligne ses champs
