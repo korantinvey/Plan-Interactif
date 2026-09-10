@@ -127,6 +127,29 @@ button{cursor:pointer;background:none;border:none}
 /* Sans coloriage du plan, la pastille promettrait une couleur qu'on n'y
    trouve pas : le filtre reste, le repère de couleur s'efface. */
 .sans-secteurs .secteurs .chip i{display:none}
+/* Les thématiques : la même bande de puces que les secteurs, sans pastille de
+   couleur — elles ne colorient pas le plan — et repliée sur deux lignes quand
+   le salon en range beaucoup, un bouton en donnant alors la suite. */
+.themes{padding:10px 16px;border-bottom:1px solid var(--line)}
+.themes .chips{display:flex;flex-wrap:wrap;gap:6px}
+/* Deux lignes de puces : la hauteur est celle du contenu, coupée net. Un dégradé
+   dirait mieux qu'il en reste, mais il faudrait le teinter dans les deux
+   thèmes ; le bouton le dit avec un nombre, ce qui est plus sûr. */
+.themes .chips.replie{max-height:62px;overflow:hidden}
+.themes .chip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
+  padding:5px 10px;font-size:12px;color:var(--ink-2);white-space:nowrap;
+  background:var(--surface-2);border:1px solid transparent;border-radius:999px}
+.themes .chip:hover{border-color:var(--line-strong)}
+/* La règle ci-dessus pose un display : sans cela, « hidden » ne cacherait plus
+   le bouton de dépliage sur les salons qui n'ont que peu de thématiques. */
+.themes .chip[hidden]{display:none}
+.themes .chip[aria-pressed="true"]{background:var(--accent-soft);
+  border-color:var(--accent);color:var(--ink)}
+/* Le compte range la thématique dans le salon : deux exposants ou soixante, on
+   ne la retient pas pour les mêmes raisons. */
+.themes .chip .nb{color:var(--ink-3);font-variant-numeric:tabular-nums}
+.themes .chip[aria-pressed="true"] .nb{color:var(--ink-2)}
+.themes .plus{margin-top:6px;color:var(--accent);background:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
@@ -562,6 +585,11 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
    de trois caractères ; les libellés sont des phrases. */
 .field .v .ligne{display:block}
 .field .v .ligne + .ligne{margin-top:3px}
+/* Une thématique de la fiche mène aux exposants qui la partagent : elle se
+   souligne au survol pour le dire, mais garde la graisse et l'alignement des
+   autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
+.field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
+.field .v .ligne.theme:hover{text-decoration:underline}
 /* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
    c'est par elle qu'on se repère, et un filet de la couleur de son type. */
 .prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
@@ -1020,6 +1048,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* En tiroir, la hauteur se paie sur le plan : la bande redevient une seule
      ligne qui défile, et ce qu'elle montre déborde par le côté. */
   .secteurs{flex-wrap:nowrap;overflow-x:auto}
+  /* Les thématiques suivent, et n'ont alors plus rien à déplier : tout est
+     atteignable en poussant la bande du doigt, et le bouton ne dirait qu'un
+     nombre qu'on a déjà sous les yeux. */
+  .themes .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .themes .chips::-webkit-scrollbar{display:none}
+  .themes .chips.replie{max-height:none;overflow-y:hidden}
+  .themes .plus{display:none}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
     touch-action:none;cursor:grab}
@@ -1170,6 +1205,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </div>
     </div>
     <div class="secteurs" id="secteurs" role="group" aria-label="Filtrer par secteur" hidden></div>
+    <div class="themes" id="themes" hidden>
+      <div class="chips" id="themesChips" role="group" aria-label="Filtrer par thématique"></div>
+      <button class="chip plus" id="themesPlus" type="button" aria-expanded="false" hidden></button>
+    </div>
     <div class="count"><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
   </aside>
