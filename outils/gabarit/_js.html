@@ -423,6 +423,8 @@ function libelles(){
      avec lui. */
   const groupe = (o, h) => h
     ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      // une zone mise en avant depuis le cartouche garde son nom lisible
+      (phareZone(o) ? " phare" : "") +
       '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
     : "";
 
@@ -1965,9 +1967,12 @@ function ouvre(o, rect, canal, iSoc){
   fermeParcours(); fermeItineraire();
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
-  // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
-  $("dKind").textContent = zone ? "" : "Stand";
-  $("dKind").hidden = zone;
+  /* « Zone organisateur » n'apprenait rien : la forme et la couleur le disent.
+     Le type, lui, apprend quelque chose — c'est même tout ce qu'une zone dit
+     de sa fonction, et ce qui la fait répondre au cartouche. */
+  const genre = zone ? typeZone(o) : null;
+  $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
+  $("dKind").hidden = zone && !genre;
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;

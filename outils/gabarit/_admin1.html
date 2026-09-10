@@ -1151,6 +1151,17 @@ function champsZone(hote, o){
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
 
+  /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
+     visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
+     salon ne dit — « Atmosphère Mobilité » ne se devine pas. */
+  const type = champZone(hote, "Type", document.createElement("select"),
+    "Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au " +
+    "bas du plan : le visiteur y retrouve d'un geste toutes les zones du même " +
+    "type. Sans type, la zone reste sur le plan comme aujourd'hui.");
+  type.innerHTML = TYPES_ZONE.map(t =>
+    '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
+  type.value = (typeZone(o) || {}).v || "";
+
   const riche = editeurRiche(o.description || "");
   champZone(hote, "Description", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
@@ -1163,7 +1174,8 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, description: riche.lit(), lien: lienZ.value });
+  return () => ({ libelle: libelle.value, type: type.value,
+                  description: riche.lit(), lien: lienZ.value });
 }
 
 /* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :
@@ -1365,6 +1377,8 @@ function ficheZone(o){
 async function enregistreZone(o, v){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
+  const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
@@ -1374,6 +1388,7 @@ async function enregistreZone(o, v){
       } },
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
+        if (genre) fiche.type = genre;
         if (description) fiche.description = description;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
@@ -1387,9 +1402,12 @@ async function enregistreZone(o, v){
   o.nom = nom || o.origine || null;
   o.description = description;
   o.lien = adresse;
+  o.type = genre;
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche
   o.rech = String(o.nom || "").toLowerCase();
   libelles(); liste();
+  // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
+  cartouchePoi();
   // la fiche ouverte sur cette zone montre déjà l'ancienne version
   if (state.sel === o.id) ouvre(o, null);
 }

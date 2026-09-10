@@ -623,10 +623,24 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
    un liseré, un halo et un battement. Faire pulser l'opacité du repère
    lui-même le rendait invisible une fois sur deux — c'est l'inverse de
    l'effet recherché. */
-html.poi-actif #stands,html.poi-actif #zones,html.poi-actif #labels,
+html.poi-actif #stands,
 html.poi-actif #couches .cal,
+/* Les zones et leurs libellés s'effacent un par un et non par calque entier :
+   depuis qu'une zone typée répond au cartouche, ce calque-là porte à la fois
+   ce qu'on met en avant et ce qu'on met en retrait. */
+html.poi-actif #zones g:not(.phare),
+html.poi-actif #labels .lbl:not(.phare),
 html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
+/* Une zone ne peut pas battre comme un repère : celui-ci est une pastille de
+   quatre mètres qu'on grossit sans gêner personne, une zone tient parfois le
+   quart du hall et grandirait par-dessus ses voisines. C'est donc sa présence
+   qui bat, et non sa taille — « opacity », comme « transform », est animée par
+   le compositeur sans repeindre le plan. Le liseré, lui, reste posé : c'est ce
+   qui la désigne quand le battement la traverse. */
+html.poi-actif #zones g.phare path{stroke-width:2.4;stroke-dasharray:none}
+#zones g.phare{animation:pulseZone 1.6s ease-in-out infinite}
+@keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.5}}
 /* Le battement passe par « transform », et non par « filter ».
    Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
    délègue pas au compositeur, si bien que le navigateur recalculait les styles
@@ -642,7 +656,7 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   animation:pulsePoi 1.4s ease-in-out infinite}
 @keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){
-  .dcal .repere.phare{animation:none}
+  .dcal .repere.phare,#zones g.phare{animation:none}
 }
 @media (max-width:760px){.poi{max-width:88%;bottom:12px}}
 
@@ -1800,9 +1814,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .champZ{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
 .champZ .tZ{font-size:11px;font-weight:600;letter-spacing:.05em;
   text-transform:uppercase;color:var(--ink-2)}
-.champZ input{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
+.champZ input,.champZ select{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
-.champZ input:focus{border-color:var(--accent);outline:none}
+.champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
 .piedZ{display:flex;align-items:center;gap:10px;margin-top:2px}
 /* Enregistrer n'est pas un réglage parmi d'autres : ici, rien ne part tant

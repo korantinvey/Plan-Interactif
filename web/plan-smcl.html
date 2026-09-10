@@ -628,10 +628,24 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
    un liseré, un halo et un battement. Faire pulser l'opacité du repère
    lui-même le rendait invisible une fois sur deux — c'est l'inverse de
    l'effet recherché. */
-html.poi-actif #stands,html.poi-actif #zones,html.poi-actif #labels,
+html.poi-actif #stands,
 html.poi-actif #couches .cal,
+/* Les zones et leurs libellés s'effacent un par un et non par calque entier :
+   depuis qu'une zone typée répond au cartouche, ce calque-là porte à la fois
+   ce qu'on met en avant et ce qu'on met en retrait. */
+html.poi-actif #zones g:not(.phare),
+html.poi-actif #labels .lbl:not(.phare),
 html.poi-actif .dcal .forme:not(.phare){opacity:.55}
 .dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
+/* Une zone ne peut pas battre comme un repère : celui-ci est une pastille de
+   quatre mètres qu'on grossit sans gêner personne, une zone tient parfois le
+   quart du hall et grandirait par-dessus ses voisines. C'est donc sa présence
+   qui bat, et non sa taille — « opacity », comme « transform », est animée par
+   le compositeur sans repeindre le plan. Le liseré, lui, reste posé : c'est ce
+   qui la désigne quand le battement la traverse. */
+html.poi-actif #zones g.phare path{stroke-width:2.4;stroke-dasharray:none}
+#zones g.phare{animation:pulseZone 1.6s ease-in-out infinite}
+@keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.5}}
 /* Le battement passe par « transform », et non par « filter ».
    Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
    délègue pas au compositeur, si bien que le navigateur recalculait les styles
@@ -647,7 +661,7 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.55}
   animation:pulsePoi 1.4s ease-in-out infinite}
 @keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){
-  .dcal .repere.phare{animation:none}
+  .dcal .repere.phare,#zones g.phare{animation:none}
 }
 @media (max-width:760px){.poi{max-width:88%;bottom:12px}}
 
@@ -1805,9 +1819,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .champZ{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
 .champZ .tZ{font-size:11px;font-weight:600;letter-spacing:.05em;
   text-transform:uppercase;color:var(--ink-2)}
-.champZ input{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
+.champZ input,.champZ select{width:100%;padding:8px 10px;font-size:14px;color:var(--ink);
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
-.champZ input:focus{border-color:var(--accent);outline:none}
+.champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
 .piedZ{display:flex;align-items:center;gap:10px;margin-top:2px}
 /* Enregistrer n'est pas un réglage parmi d'autres : ici, rien ne part tant
@@ -2860,6 +2874,8 @@ function libelles(){
      avec lui. */
   const groupe = (o, h) => h
     ? '<g class="lbl' + (o.id === libSel ? " pick" : "") +
+      // une zone mise en avant depuis le cartouche garde son nom lisible
+      (phareZone(o) ? " phare" : "") +
       '" data-lbl="' + esc(o.id) + '">' + h + '</g>'
     : "";
 
@@ -4402,9 +4418,12 @@ function ouvre(o, rect, canal, iSoc){
   fermeParcours(); fermeItineraire();
   const t = zone ? "zone" : "stand";
   const ok = (cle, v) => montre(t, cle) ? v : "";
-  // « Zone organisateur » n'apprenait rien : la forme et la couleur le disent
-  $("dKind").textContent = zone ? "" : "Stand";
-  $("dKind").hidden = zone;
+  /* « Zone organisateur » n'apprenait rien : la forme et la couleur le disent.
+     Le type, lui, apprend quelque chose — c'est même tout ce qu'une zone dit
+     de sa fonction, et ce qui la fait répondre au cartouche. */
+  const genre = zone ? typeZone(o) : null;
+  $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
+  $("dKind").hidden = zone && !genre;
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
@@ -6141,6 +6160,17 @@ function champsZone(hote, o){
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
 
+  /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
+     visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
+     salon ne dit — « Atmosphère Mobilité » ne se devine pas. */
+  const type = champZone(hote, "Type", document.createElement("select"),
+    "Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au " +
+    "bas du plan : le visiteur y retrouve d'un geste toutes les zones du même " +
+    "type. Sans type, la zone reste sur le plan comme aujourd'hui.");
+  type.innerHTML = TYPES_ZONE.map(t =>
+    '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
+  type.value = (typeZone(o) || {}).v || "";
+
   const riche = editeurRiche(o.description || "");
   champZone(hote, "Description", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
@@ -6153,7 +6183,8 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, description: riche.lit(), lien: lienZ.value });
+  return () => ({ libelle: libelle.value, type: type.value,
+                  description: riche.lit(), lien: lienZ.value });
 }
 
 /* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :
@@ -6355,6 +6386,8 @@ function ficheZone(o){
 async function enregistreZone(o, v){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
+  const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
@@ -6364,6 +6397,7 @@ async function enregistreZone(o, v){
       } },
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
+        if (genre) fiche.type = genre;
         if (description) fiche.description = description;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
@@ -6377,9 +6411,12 @@ async function enregistreZone(o, v){
   o.nom = nom || o.origine || null;
   o.description = description;
   o.lien = adresse;
+  o.type = genre;
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche
   o.rech = String(o.nom || "").toLowerCase();
   libelles(); liste();
+  // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
+  cartouchePoi();
   // la fiche ouverte sur cette zone montre déjà l'ancienne version
   if (state.sel === o.id) ouvre(o, null);
 }
@@ -7104,6 +7141,32 @@ const TYPES_REPERE = [
 ];
 const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
 
+/**
+ * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
+ *
+ * Un visiteur qui cherche où déjeuner, où déposer son manteau ou où se tient
+ * la prochaine conférence ne cherche pas un nom : il cherche une fonction. La
+ * source n'en dit rien — une zone n'a qu'un contour et parfois un intitulé,
+ * « Atmosphère Mobilité » ou « LA SERRE », d'où l'on ne devine pas ce qu'on y
+ * fait — et c'est l'exploitant qui la donne, zone par zone, depuis sa fiche.
+ *
+ * Le type ne change rien au dessin du plan : il ouvre l'entrée du cartouche
+ * des points d'intérêt, d'où l'on retrouve d'un geste toutes les zones qui le
+ * portent. Ce sont donc les pictogrammes des repères qui le figurent — un
+ * visiteur ne distingue pas ce que l'exploitant a dessiné de ce que le salon a
+ * fourni, et n'a aucune raison de le faire.
+ */
+const TYPES_ZONE = [
+  { v: "",             nom: "Sans type" },
+  { v: "restauration", nom: "Restauration", picto: "restauration" },
+  { v: "conferences",  nom: "Conférences",  picto: "reunion" },
+  { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
+  { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+];
+
+/** Le type d'une zone, s'il lui en a été donné un. */
+const typeZone = (z) => TYPES_ZONE.find(t => t.v && z && t.v === z.type) || null;
+
 /* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
    plus qu'un, une porte de hall étant les deux à la fois. */
 const PICTO_ALIAS = { sortie: "entree" };
@@ -7366,6 +7429,12 @@ function rafraichitStandsDessines(){
  * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
  * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
  * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ *
+ * Les zones organisateur auxquelles l'exploitant a donné un type y entrent de
+ * la même façon, et sous la même clé : ce qui s'appelle « Restauration » d'un
+ * côté et de l'autre est la même chose pour qui cherche à déjeuner, et deux
+ * pastilles identiques n'auraient rien appris. Ce que l'une a été dessinée et
+ * l'autre fournie par le salon ne regarde pas le visiteur.
  */
 let poiChoisi = null;
 
@@ -7373,16 +7442,37 @@ function cartouchePoi(){
   const z = $("poi");
   if (!z) return;
   const parNom = new Map();
+  const entree = (nom, picto) => {
+    if (!parNom.has(nom)) parNom.set(nom, { n: 0, picto: picto || null });
+    const e = parNom.get(nom);
+    // le premier qui en porte un le donne : un repère sans pictogramme et une
+    // zone typée sous le même nom ne doivent pas faire une pastille muette
+    if (!e.picto && picto) e.picto = picto;
+    return e;
+  };
+
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      const cle = f.txt.trim();
-      if (!parNom.has(cle)) parNom.set(cle, { n: 0, picto: pictoForme(f) });
-      parNom.get(cle).n++;
+      entree(f.txt.trim(), pictoForme(f)).n++;
     }
   }
+  /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
+     plan, ne comptent pas : le cartouche promettrait une restauration que le
+     visiteur ne trouverait nulle part. */
+  if (conf("data:zones").visible !== false){
+    for (const zo of P().zones){
+      const t = typeZone(zo);
+      if (t && !zo.masquee) entree(t.nom, t.picto).n++;
+    }
+  }
+
   z.hidden = parNom.size === 0;
+  /* Le pavillon d'à côté n'a pas les mêmes points d'intérêt : ce qui n'y est
+     plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
+     sans que rien n'y soit mis en avant. */
+  if (poiChoisi && !parNom.has(poiChoisi)) poiChoisi = null;
   if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
@@ -7499,13 +7589,25 @@ function mesureCartouche(){
   document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
-/** Met en avant les repères du type choisi. */
+/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois. */
+const phareRepere = (f) => Boolean(poiChoisi && f && String(f.txt || "").trim() === poiChoisi);
+const phareZone = (o) => Boolean(poiChoisi && o && o.kind === "zone" &&
+  (typeZone(o) || {}).nom === poiChoisi);
+
+/** Met en avant les repères et les zones du point d'intérêt choisi. */
 function eclairePoi(){
   $("couches").querySelectorAll(".dcal .repere").forEach(g => {
     const f = formeParId(g.dataset.f);
-    const on = poiChoisi && f && String(f.f.txt || "").trim() === poiChoisi;
-    g.classList.toggle("phare", !!on);
+    g.classList.toggle("phare", phareRepere(f && f.f));
   });
+  $("zones").querySelectorAll("g").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.id))));
+  /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
+     retrait avec le reste du plan aurait effacé la seule chose qui distingue
+     deux restaurations. Il se réécrit à chaque déplacement de la vue, et
+     reprend donc sa marque dans « libelles() ». */
+  $("labels").querySelectorAll(".lbl").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }
 

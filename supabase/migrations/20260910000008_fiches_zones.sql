@@ -9,8 +9,17 @@
 -- D'où cette table de fiches, indexée par identifiant de zone comme les noms
 -- et les masquages :
 --
---   { "z2c32b37a": { "description": "<p>Ouvert de 9h à 19h.</p>",
+--   { "z2c32b37a": { "type": "restauration",
+--                    "description": "<p>Ouvert de 9h à 19h.</p>",
 --                    "lien": "https://exemple.fr/agora" } }
+--
+-- Le type dit à quoi la zone sert — restauration, conférences, vestiaire,
+-- accueil — là où l'intitulé du salon ne le dit pas : « Atmosphère Mobilité »
+-- ne se devine pas. Il ouvre l'entrée correspondante dans le cartouche des
+-- points d'intérêt du plan, d'où le visiteur retrouve d'un geste toutes les
+-- zones du même type. La page ne connaît qu'une poignée de valeurs et ignore
+-- ce qu'elle ne reconnaît pas : la colonne ne les contraint donc pas, comme
+-- elle ne contraint pas le reste de la fiche.
 --
 -- La description est saisie dans un éditeur de texte : elle porte donc du
 -- balisage, restreint à ce qui se met en forme — paragraphes, gras, italique,
@@ -28,4 +37,4 @@ alter table evenement
   add column if not exists zones_fiches jsonb not null default '{}'::jsonb;
 
 comment on column evenement.zones_fiches is
-  'Fiches de zones organisateur saisies par l''exploitant — description et lien — indexées par identifiant de zone. Appliquées à la lecture.';
+  'Fiches de zones organisateur saisies par l''exploitant — type, description et lien — indexées par identifiant de zone. Appliquées à la lecture.';
