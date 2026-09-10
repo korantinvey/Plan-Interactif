@@ -17,7 +17,8 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  CIBLES, DEFAUTS, champs as champsCible, decoupe, lit, ou, valeursOui, vrai,
+  DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
+  decoupe, lit, ou, valeursOui, valeurPerso, vrai,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -298,14 +299,21 @@ Deno.serve(async (req) => {
        posé sur le plan, et il reste le seul recours pour un emplacement que
        l'autre source ne connaît pas. */
     const srcStands = fournisseur(evt, "stands");
+    /* Les champs que ce salon-ci s'est ajoutés. Ils se règlent et se lisent
+       comme les autres cibles : tout ce qui parcourt les cibles doit donc voir
+       les deux listes réunies, faute de quoi un champ personnalisé ne serait
+       ni demandé à l'API, ni proposé dans la console. */
+    const persos = champsPerso(evt.fiche);
+    const ciblesK = cibles("klipso", evt.fiche);
+    const ciblesEm = cibles("eventmaker", evt.fiche);
     const cibleK = (c: string) => champsCible(evt.correspondances, "klipso", c);
     const valeurK = (c: string) => valeursOui(evt.correspondances, "klipso", c);
     const champsEm = Object.fromEntries(
-      (CIBLES.eventmaker ?? []).map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
+      ciblesEm.map((c) => [c.cle, champsCible(evt.correspondances, "eventmaker", c.cle)]));
     /* Un champ à choix ne répond pas par oui ou non : l'exploitant désigne
        celles de ses valeurs qui déclenchent. */
     const valeursEm = Object.fromEntries(
-      (CIBLES.eventmaker ?? []).map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
+      ciblesEm.map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
@@ -397,7 +405,8 @@ Deno.serve(async (req) => {
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
         const em = new Eventmaker({
-          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+          champs: champsEm, valeurs: valeursEm, perso: persos });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -450,7 +459,8 @@ Deno.serve(async (req) => {
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
         const em = new Eventmaker({
-          jeton: Deno.env.get("EVENTMAKER_TOKEN")!, champs: champsEm, valeurs: valeursEm });
+          jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+          champs: champsEm, valeurs: valeursEm, perso: persos });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         try {
@@ -499,6 +509,21 @@ Deno.serve(async (req) => {
          quelle que soit la source des exposants — le plan, lui, vient toujours
          de Klipso. */
       const choixSect = await libellesChoix(g, "Stand", CHAMP_SECTEUR);
+      /* Un champ personnalisé peut être un champ « choix » comme la
+         nomenclature : il ne porte alors qu'un code, et la fiche afficherait
+         « FEP26_GAM102 » là où l'exploitant attend « Prêt-à-porter ». Sa
+         codification se demande ici, un appel par champ et pour tout
+         l'événement. Un champ de texte libre n'en a pas : la table reste vide
+         et la valeur passe telle quelle. */
+      const choixPerso: Record<string, Record<string, string>> = {};
+      if (srcStands === "klipso") {
+        for (const c of persos) {
+          const { origine, nom } = decoupe(cibleK(PREFIXE_PERSO + c.cle)[0] ?? "");
+          if (!nom) continue;
+          const t = await libellesChoix(g, origine === "stand" ? "Stand" : "DossierExp", nom);
+          if (Object.keys(t.libelles).length) choixPerso[c.cle] = t.libelles;
+        }
+      }
 
       /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
        *  salon — « FEP26_NOM10201 » ne dit rien de plus que « NOM10201 ». */
@@ -513,6 +538,26 @@ Deno.serve(async (req) => {
       const secteur = (v: unknown): string | null => {
         const c = ou(v);
         return c ? lisible(choixSect.libelles, c) : null;
+      };
+
+      /**
+       * Les champs que ce salon s'est ajoutés, pour une fiche.
+       *
+       * `lire` dit d'où vient la valeur — le dossier Klipso ou la fiche
+       * Eventmaker — parce que le reste ne change pas : même liste de champs,
+       * même nettoyage, même codification. Rien de vide ne descend :
+       * l'instantané est servi au public.
+       */
+      const champsDuSalon = (lire: (cle: string) => unknown) => {
+        const out: Record<string, string | string[]> = {};
+        for (const c of persos) {
+          const v = valeurPerso(lire(c.cle));
+          if (v === null) continue;
+          const table = choixPerso[c.cle];
+          out[c.cle] = !table ? v
+            : Array.isArray(v) ? v.map((x) => lisible(table, x)) : lisible(table, v);
+        }
+        return out;
       };
 
       let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
@@ -579,7 +624,7 @@ Deno.serve(async (req) => {
           "StandFictif", "x_CouleurPlan", CHAMP_SECTEUR,
         ]);
         const champsDossier = new Set(["Id", "AvancementImplantation", "Categorie"]);
-        for (const c of CIBLES.klipso) {
+        for (const c of ciblesK) {
           for (const nom of champsCible(evt.correspondances, "klipso", c.cle)) {
             const { origine, nom: n } = decoupe(nom);
             (origine === "stand" ? champsStand : champsDossier).add(n);
@@ -693,6 +738,14 @@ Deno.serve(async (req) => {
              c'est ce qui rend un plan colorié par secteurs lisible. */
           const sect = secteur(s[CHAMP_SECTEUR]);
 
+          /* Les champs propres au salon. Ils suivent la société, pas
+             l'emplacement : c'est sa fiche qui les porte, et un stand dont
+             l'exposant n'est pas retenu n'en montre aucun. */
+          const perso = !ok ? {} : champsDuSalon((cle) =>
+            expoEm ? em!.perso[cle]
+              : lit(cibleK(PREFIXE_PERSO + cle), origines,
+                    Boolean(persos.find((c) => c.cle === cle)?.multiple)));
+
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
             code,
@@ -723,6 +776,9 @@ Deno.serve(async (req) => {
                l'instantané est servi au public, il n'a pas à porter des
                « null » par centaines. */
             ...(sect ? { sect } : {}),
+            /* Un salon qui ne s'est ajouté aucun champ ne porte pas la clé :
+               elle serait un objet vide sur chacun de ses stands. */
+            ...(Object.keys(perso).length ? { perso } : {}),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
             niveaux: s.NbNiveau,
@@ -916,7 +972,7 @@ Deno.serve(async (req) => {
         const connus = new Set(detectes.map((d) => String(d.cle)));
         const defauts = DEFAUTS[srcStands] ?? {};
         const propose: Record<string, string[]> = {};
-        for (const c of CIBLES[srcStands] ?? []) {
+        for (const c of cibles(srcStands, evt.fiche)) {
           propose[c.cle] = (defauts[c.cle] ?? []).filter((n) => connus.has(n));
         }
         const { data: frais } = await db.from("evenement")
@@ -1004,6 +1060,9 @@ function hebergee(x: ExposantEm): Record<string, unknown> {
   if (x.nomencl.length) o.nomencl = x.nomencl;
   if (x.themes.length) o.themes = x.themes;
   if (x.neuf) o.neuf = true;
+  // les champs propres au salon suivent la société hébergée comme les autres :
+  // c'est bien sa fiche à elle qui les porte
+  if (Object.keys(x.perso).length) o.perso = x.perso;
   return o;
 }
 

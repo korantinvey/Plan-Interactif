@@ -465,6 +465,11 @@ function ligneSource(dom, libelle, offerts, aide) {
  *           la valeur vient du plan, pas d'une fiche d'exposant.
  *   fixe    dit d'où vient la valeur quand il n'y a pas de champ à choisir.
  *   source  restreint la ligne à un fournisseur. Absente, elle vaut pour tous.
+ *   critere autorise la ligne à servir de critère de recherche sur le plan.
+ *           Toutes ne s'y prêtent pas : un numéro de téléphone ou une adresse
+ *           ne se choisissent pas dans une liste, et le secteur comme les
+ *           thématiques ont déjà leur bande de puces — un second filtre pour
+ *           eux ferait double emploi.
  */
 const LIGNES_FICHE = {
   stand: [
@@ -490,24 +495,28 @@ const LIGNES_FICHE = {
     { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
       suit: "adresse",
       aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
-    { cle: "ville", cible: "ville", libelle: "Ville" },
-    { cle: "pays", cible: "pays", libelle: "Pays" },
+    { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
+    { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
     { cle: "telephone", cible: "telephone", libelle: "Téléphone société" },
     { cle: "site", cible: "site", libelle: "Site web" },
     { cle: "facebook", cible: "facebook", libelle: "Facebook" },
     { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
     { cle: "instagram", cible: "instagram", libelle: "Instagram" },
     { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
+      critere: true,
       aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
     /* Klipso n'a pas de thématiques : ses rubriques passent par la
        nomenclature, et proposer une ligne que rien n'alimenterait ferait
        chercher un champ qui n'existe pas. */
+    /* Pas de case « critère » : les thématiques ont leur propre bande de puces
+       sous la recherche du plan, comme les secteurs. */
     { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
       source: "eventmaker",
       aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
         "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
         "à l'exemple, certains salons n'y portent que des codes." },
     { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant", ouiNon: true,
+      critere: true,
       aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
         "salons qui distinguent leurs nouveaux venus." },
     /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
@@ -632,6 +641,14 @@ function resumeFiche(e) {
   const bloc = correspondance(e, src);
   const associes = Object.keys(bloc.champs || {}).length;
   const mots = [parts.length ? "Masqué — " + parts.join(" · ") : "Tout affiché"];
+  /* Deux réglages qui ne se voient pas dans la liste des champs masqués : les
+     champs que le salon s'est ajoutés, et ceux qu'il propose à la recherche. */
+  const nPerso = champsPersos(e).length;
+  if (nPerso) mots.push(nPerso + " champ" + (nPerso > 1 ? "s" : "") + " propre" +
+    (nPerso > 1 ? "s" : "") + " au salon");
+  const nCrit = Object.keys(criteres(e)).length;
+  mots.push(nCrit ? nCrit + " critère" + (nCrit > 1 ? "s" : "") + " de recherche"
+    : "aucun critère de recherche");
   if (src !== "aucun") {
     mots.push(associes
       ? associes + " champ" + (associes > 1 ? "s" : "") + " associé" +
@@ -673,6 +690,162 @@ function caseFiche(type, cle, libelle, aide, apres) {
     }
   };
   return l;
+}
+
+/* ------------------------------------------------------------------
+   Champs propres au salon
+
+   Les cibles de la fiche sont les mêmes partout, et c'est bien ainsi : une
+   enseigne, une ville, un site web se retrouvent d'un salon à l'autre. Mais
+   chaque salon a un champ que les autres n'ont pas — « Gamme de produits »,
+   « Franchise depuis », « Pays d'origine de l'enseigne » — dont personne
+   d'autre n'a l'usage. L'ajouter au code revenait à l'ajouter à tous les
+   salons pour qu'un seul s'en serve.
+
+   Un champ créé ici n'appartient donc qu'à son événement : son libellé vit
+   dans la fiche, son champ d'origine dans la correspondance, comme n'importe
+   quelle cible. Le préfixe le met hors d'atteinte d'une cible du code.
+   ------------------------------------------------------------------ */
+const PREFIXE_PERSO = "perso:";
+
+const champsPersos = (e) => {
+  const l = e.fiche && e.fiche.perso;
+  return Array.isArray(l) ? l : [];
+};
+
+/** Les cibles retenues comme critères de recherche, jamais nul. */
+const criteres = (e) => (e.fiche && e.fiche.criteres) || {};
+
+/** Écrit la fiche d'un trait, et la remet en place si le service refuse. */
+async function ecritFiche(e, part) {
+  const avant = e.fiche;
+  e.fiche = { ...(e.fiche || {}), ...part };
+  try { await majEvenement(e.id, { fiche: e.fiche }); }
+  catch (err) { e.fiche = avant; signale(err.message, true); }
+}
+
+/**
+ * La case « critère de recherche ».
+ *
+ * Elle ne décide pas de l'affichage mais de la recherche : un champ retenu
+ * ici devient un filtre proposé au visiteur, et ses valeurs entrent dans ce
+ * que la recherche plein texte balaie. Non cochée par défaut — un plan qui
+ * offrirait douze filtres d'office ne se lirait plus.
+ */
+function caseCritere(cle, apres) {
+  const e = courant();
+  const l = document.createElement("label");
+  l.className = "case";
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  const i = l.querySelector("input");
+  i.checked = criteres(e)[cle] === true;
+  i.setAttribute("aria-label", "Proposer ce champ dans les critères de recherche");
+  i.onchange = async () => {
+    const c = { ...criteres(e) };
+    if (i.checked) c[cle] = true; else delete c[cle];
+    await ecritFiche(e, { criteres: c });
+    i.checked = criteres(courant())[cle] === true;
+    if (apres) apres(i.checked);
+  };
+  return l;
+}
+
+/** Une clé technique tirée du libellé, unique dans l'événement. */
+function clePerso(e, libelle) {
+  const base = slugifie(libelle) || "champ";
+  const pris = new Set(champsPersos(e).map((c) => c.cle));
+  if (!pris.has(base)) return base;
+  for (let n = 2; ; n++) if (!pris.has(base + "-" + n)) return base + "-" + n;
+}
+
+/** Crée un champ propre à ce salon, puis redessine la fenêtre. */
+function ajouteChampPerso(redessine) {
+  const e = courant();
+  demande("Nouveau champ", "Intitulé du champ, tel que la fiche l'affichera",
+    "", async (libelle) => {
+      const perso = champsPersos(e).concat([{ cle: clePerso(e, libelle), libelle }]);
+      await ecritFiche(e, { perso });
+      redessine();
+    });
+}
+
+/** Renomme un champ : seul l'intitulé change, la clé et le réglage restent. */
+function renommeChampPerso(cle, redessine) {
+  const e = courant();
+  const actuel = champsPersos(e).find((c) => c.cle === cle);
+  demande("Renommer le champ", "Intitulé", actuel ? actuel.libelle : "",
+    async (libelle) => {
+      const perso = champsPersos(e).map((c) => c.cle === cle ? { ...c, libelle } : c);
+      await ecritFiche(e, { perso });
+      redessine();
+    });
+}
+
+/**
+ * Retire un champ, et tout ce qui parlait de lui.
+ *
+ * Le laisser dans la correspondance ferait demander à l'API un champ que plus
+ * rien n'affiche, et le laisser dans les critères offrirait au visiteur un
+ * filtre sans valeurs.
+ */
+function retireChampPerso(cle, libelle, redessine) {
+  const e = courant();
+  const cible = PREFIXE_PERSO + cle;
+  confirme("Retirer « " + libelle + " » ?",
+    "Le champ, son origine et son réglage de recherche sont effacés. Les " +
+    "valeurs déjà synchronisées disparaîtront de la fiche à la prochaine " +
+    "synchronisation.", "Retirer", async () => {
+      const stand = { ...((e.fiche || {}).stand || {}) };
+      const crit = { ...criteres(e) };
+      delete stand[cible];
+      delete crit[cible];
+      await ecritFiche(e, {
+        perso: champsPersos(e).filter((c) => c.cle !== cle),
+        stand, criteres: crit,
+      });
+      /* La correspondance se nettoie de son côté : elle est rangée par
+         fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
+      const corr = { ...(e.correspondances || {}) };
+      let touche = false;
+      Object.keys(corr).forEach((src) => {
+        const bloc = { ...(corr[src] || {}) };
+        ["champs", "valeurs"].forEach((k) => {
+          if (!bloc[k] || bloc[k][cible] === undefined) return;
+          bloc[k] = { ...bloc[k] };
+          delete bloc[k][cible];
+          touche = true;
+        });
+        corr[src] = bloc;
+      });
+      if (touche) {
+        e.correspondances = corr;
+        try { await majEvenement(e.id, { correspondances: corr }); }
+        catch (err) { signale(err.message, true); }
+      }
+      redessine();
+    });
+}
+
+/**
+ * Les lignes du cadre des champs propres au salon.
+ *
+ * Mêmes lignes que les autres cadres — une case d'affichage, un champ
+ * d'origine, un critère — plus de quoi renommer et retirer : ces champs-là
+ * n'existent que parce qu'on les a créés.
+ */
+function lignesPerso(e, redessine) {
+  return champsPersos(e).map((c) => ({
+    cle: PREFIXE_PERSO + c.cle,
+    cible: PREFIXE_PERSO + c.cle,
+    libelle: c.libelle,
+    critere: true,
+    outils: [
+      { titre: "Renommer", texte: "\u270E",
+        action: () => renommeChampPerso(c.cle, redessine) },
+      { titre: "Retirer", texte: "\u00D7", genre: "danger",
+        action: () => retireChampPerso(c.cle, c.libelle, redessine) },
+    ],
+  }));
 }
 
 /**
@@ -985,12 +1158,44 @@ function ouvreFiche(apres) {
         const rattachement = def.cle !== "exposant" ? null
           : (LIGNES_RATTACHEMENT[src] || []);
         pan.appendChild(cadreFiche(def, [
-          tableauChamps(duCadre, type, src, true),
+          tableauChamps(duCadre, type, src, true, def.cle === "exposant"),
           rattachement && rattachement.length ? sousTitre("Ce qui ne s'affiche pas") : null,
           rattachement && rattachement.length
             ? tableauChamps(rattachement, type, src, false) : null,
         ]));
       });
+
+      /* Les champs que ce salon s'est ajoutés, dans un cadre à eux : ils ne
+         viennent pas d'une liste que le code tient, et ce sont les seuls
+         qu'on puisse renommer ou retirer. */
+      const redessine = () => ouvreFiche(apres);
+      const perso = lignesPerso(e, redessine);
+      pan.appendChild(cadreFiche(
+        { titre: "Champs propres à ce salon", domaine: "stands",
+          aide: "Un champ que ce salon est seul à tenir. Il se règle comme les " +
+            "autres — un champ d'origine, une case pour l'afficher, une case " +
+            "pour en faire un critère de recherche — et n'existe que pour cet " +
+            "événement." },
+        [
+          perso.length ? tableauChamps(perso, type, src, true, true) : null,
+          (() => {
+            const pied = document.createElement("div");
+            pied.className = "pied-perso";
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "btn petit";
+            b.textContent = "Ajouter un champ";
+            b.onclick = () => ajouteChampPerso(redessine);
+            pied.appendChild(b);
+            if (!perso.length) {
+              const p = document.createElement("span");
+              p.className = "aide";
+              p.textContent = "Aucun champ propre à ce salon pour le moment.";
+              pied.appendChild(p);
+            }
+            return pied;
+          })(),
+        ]));
     });
 
     corps.appendChild(barre);
@@ -1028,11 +1233,12 @@ const sousTitre = (txt) => {
  * de stand par lequel une fiche retrouve son emplacement, l'exclusion du
  * catalogue. Les seconds n'ont rien à cocher.
  */
-function tableauChamps(lignes, type, src, avecCases) {
+function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
   const t = document.createElement("table");
   t.className = "champs";
   t.innerHTML = "<thead><tr>" + (avecCases ? "<th>Afficher</th>" : "") +
-    "<th>Sur la fiche</th><th>Champ d'origine</th></tr></thead>";
+    "<th>Sur la fiche</th><th>Champ d'origine</th>" +
+    (avecCriteres ? "<th>Critère</th>" : "") + "</tr></thead>";
   const tb = document.createElement("tbody");
 
   /* Une ligne peut n'avoir pas de case à elle et suivre celle d'une autre :
@@ -1045,13 +1251,27 @@ function tableauChamps(lignes, type, src, avecCases) {
     const tr = document.createElement("tr");
     tr.innerHTML = (avecCases ? '<td class="montre"></td>' : "") +
       '<td class="n"><span class="lib"></span><span class="aide"></span></td>' +
-      "<td></td>";
+      '<td class="orig"></td>' + (avecCriteres ? '<td class="critere"></td>' : "");
     tr.querySelector(".lib").textContent = l.libelle;
     if (l.aide) tr.querySelector(".aide").textContent = l.aide;
 
+    /* Renommer et retirer vivent à côté de l'intitulé : c'est de lui qu'ils
+       parlent, et un champ créé à la main est le seul à en avoir. */
+    (l.outils || []).forEach((o) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "outil" + (o.genre ? " " + o.genre : "");
+      b.title = o.titre;
+      b.setAttribute("aria-label", o.titre + " " + l.libelle);
+      b.textContent = o.texte;
+      b.onclick = o.action;
+      // dans l'intitulé et non après lui : ils tiennent sur sa ligne
+      tr.querySelector(".lib").appendChild(b);
+    });
+
     /* Le champ d'origine d'abord : c'est lui que la case va montrer ou
        cacher, il doit donc exister avant elle. */
-    const cellule = tr.lastElementChild;
+    const cellule = tr.querySelector("td.orig");
     let choix = null;
     if (l.cible) {
       choix = champOrigine(src, l.cible, (genre) => { tr.dataset.etat = genre; },
@@ -1071,15 +1291,39 @@ function tableauChamps(lignes, type, src, avecCases) {
     /* Un champ que la fiche ne montre pas n'a pas de source à choisir : la
        liste disparaît plutôt que de rester là, grisée, à occuper une ligne
        pour rien. Le réglage, lui, n'est pas effacé — il revient tel quel en
-       recochant. */
+       recochant.
+
+       Sauf s'il sert de critère de recherche : il est alors lu sans paraître,
+       et cacher son origine reviendrait à en interdire le réglage. */
+    let montreOn = true, critereOn = criteres(courant())[l.cle] === true;
     const bascule = (montre) => {
-      tr.classList.toggle("source-inerte", !montre);
+      if (montre !== undefined) montreOn = montre;
+      const sert = montreOn || critereOn;
+      tr.classList.toggle("source-inerte", !sert);
       if (!choix) return;
-      choix.hote.hidden = !montre;
+      choix.hote.hidden = !sert;
       // la barre de couleur dit d'où vient un champ : sans champ, elle ne dit
       // plus rien
-      if (montre) choix.dis(); else delete tr.dataset.etat;
+      if (sert) choix.dis(); else delete tr.dataset.etat;
     };
+
+    /* La case du critère ne décide pas de l'affichage mais de la recherche :
+       un champ peut filtrer sans paraître sur la fiche — un code interne, une
+       famille de produits — et l'inverse est vrai tout autant. */
+    if (avecCriteres && l.critere && l.cle) {
+      const cc = tr.querySelector(".critere");
+      cc.appendChild(caseCritere(l.cle, (on) => {
+        critereOn = on;
+        bascule();
+      }));
+      /* En colonne empilée — un téléphone — les en-têtes du tableau
+         disparaissent : la case dirait « oui » à une question qu'on ne lit
+         plus. L'étiquette ne paraît que là. */
+      const etiq = document.createElement("span");
+      etiq.className = "etiq";
+      etiq.textContent = "Critère de recherche";
+      cc.appendChild(etiq);
+    }
 
     if (avecCases) {
       const c = tr.querySelector(".montre");

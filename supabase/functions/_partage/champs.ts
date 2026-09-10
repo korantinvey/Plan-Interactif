@@ -263,3 +263,94 @@ export function lit(
   }
   return multiple ? valeurs : null;
 }
+
+/* ------------------------------------------------------------------
+   Champs personnalisés
+
+   Les cibles ci-dessus sont celles que la fiche sait montrer, et elles ne
+   bougent pas d'un salon à l'autre. Un salon a pourtant toujours un champ que
+   les autres n'ont pas — « Gamme de produits », « Pays d'origine de
+   l'enseigne », « Franchise depuis » — dont personne d'autre n'a l'usage.
+   Jusqu'ici il fallait l'ajouter au code, donc à tous les salons, pour qu'un
+   seul s'en serve.
+
+   Un champ personnalisé vit donc à côté de l'événement qui l'a créé : son
+   libellé dans `fiche.perso`, avec les autres décisions d'affichage, et le
+   champ d'origine qui l'alimente dans `correspondances`, comme n'importe
+   quelle cible. Le préfixe le met hors d'atteinte d'une cible du code : une
+   cible nommée « gamme » plus tard ne se confondrait pas avec le champ
+   personnalisé d'un salon qui porte déjà ce nom.
+   ------------------------------------------------------------------ */
+
+export const PREFIXE_PERSO = "perso:";
+
+/** Un champ personnalisé, tel que la console le définit. */
+export interface ChampPerso {
+  cle: string;
+  libelle: string;
+  /** Un champ à valeurs multiples se cumule au lieu de se relayer. */
+  multiple?: boolean;
+}
+
+/**
+ * Les champs personnalisés d'un événement, nettoyés.
+ *
+ * La console les écrit, mais la synchronisation ne lui fait pas confiance :
+ * une entrée sans clé ni libellé ne désigne rien, et deux entrées de même clé
+ * s'écraseraient l'une l'autre à l'écriture de la fiche.
+ */
+export function champsPerso(fiche: unknown): ChampPerso[] {
+  const liste = (fiche as Record<string, any>)?.perso;
+  if (!Array.isArray(liste)) return [];
+  const vus = new Set<string>();
+  const out: ChampPerso[] = [];
+  for (const x of liste) {
+    const cle = String(x?.cle ?? "").trim();
+    if (!cle || vus.has(cle)) continue;
+    vus.add(cle);
+    out.push({
+      cle,
+      libelle: String(x?.libelle ?? "").trim() || cle,
+      ...(x?.multiple ? { multiple: true } : {}),
+    });
+  }
+  return out;
+}
+
+/**
+ * Les cibles d'un fournisseur, celles du code et celles du salon.
+ *
+ * Tout ce qui parcourt les cibles — les champs à demander à l'API, la
+ * proposition d'après le dernier relevé, la configuration du client
+ * Eventmaker — doit voir les deux : un champ personnalisé se règle et se lit
+ * exactement comme les autres, c'est tout son intérêt.
+ */
+export function cibles(fournisseur: string, fiche: unknown): Cible[] {
+  return [
+    ...(CIBLES[fournisseur] ?? []),
+    ...champsPerso(fiche).map((c) => ({
+      cle: PREFIXE_PERSO + c.cle,
+      libelle: c.libelle,
+      multiple: c.multiple,
+    })),
+  ];
+}
+
+/**
+ * La valeur d'un champ personnalisé, telle que l'instantané la portera.
+ *
+ * Une liste reste une liste — c'est par elle qu'un critère de recherche offre
+ * plusieurs valeurs — et le reste devient du texte. Rien de vide ne descend :
+ * l'instantané est servi au public, il n'a pas à porter des chaînes vides par
+ * centaines.
+ */
+export function valeurPerso(v: unknown): string | string[] | null {
+  if (Array.isArray(v)) {
+    const l = v.map((x) => String(x ?? "").trim()).filter(Boolean);
+    return l.length ? l : null;
+  }
+  if (v === null || v === undefined || typeof v === "object") return null;
+  if (typeof v === "boolean") return v ? "oui" : null;
+  const s = String(v).trim();
+  return s || null;
+}
