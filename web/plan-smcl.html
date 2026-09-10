@@ -299,14 +299,20 @@ html.sans-parcours #marques .parc{display:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
 
-#labels text{pointer-events:none;text-anchor:middle;fill:var(--c-lab-stand,var(--ink-2));
+/* Deux endroits écrivent le même libellé : « #labels », qui porte ceux du
+   plan, et « .lab » — le libellé qu'un stand dessiné garde dans sa propre
+   forme, faute de pouvoir compter sur l'ordre des couches. Les règles valent
+   pour les deux, et le second sélecteur passe par « .dcal » pour l'emporter
+   sur l'habillage du calque, qui teinte tout ce qu'il porte. */
+#labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
+  fill:var(--c-lab-stand,var(--ink-2));
   font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
+#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
-#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
 /* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
    la page, comme la pastille des nouveaux venus sur la fiche : c'est une
    distinction, pas une alerte, et le plan a déjà le langage des zones. */
@@ -320,8 +326,10 @@ html.sans-parcours #marques .parc{display:none}
 #labels text.coexN{fill:var(--accent);font-weight:700}
 #labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Le réglage qui masque les libellés de stand emporte la pastille : elle en
-   fait partie, et la laisser flotter seule ne se comprendrait pas. */
-.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
+   fait partie, et la laisser flotter seule ne se comprendrait pas. Il emporte
+   aussi ceux des stands dessinés : ce sont des libellés de stand. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
+.sans-lab-stand .dcal .lab{display:none}
 .sans-lab-zone #labels text.zn{display:none}
 
 /* --- calques de dessin --- */
@@ -351,6 +359,26 @@ html.sans-parcours #marques .parc{display:none}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
+   lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
+   la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
+   Le sélecteur porte « html » pour tenir devant celui du rôle « circulation »,
+   plus spécifique, qui repeindrait le découpage en allée. */
+html .dcal .forme.sdes path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
+  stroke-width:1;stroke-dasharray:none;fill-opacity:1}
+html .dcal .forme.sdes[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+/* Rattaché — « lie », comme une image liée — il répond au pointeur par son
+   tracé, y compris sur la page publique où le mode édition n'existe pas.
+   Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
+.dcal .forme.sdes.lie path{pointer-events:all}
+html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+/* Le liseré de la sélection reste sur la forme : « #marques » recopie les
+   tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
+html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+.dcal .forme.sdes:focus{outline:none}
+html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -372,9 +400,9 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
-/* Huit outils ne tiennent plus sur une rangée : la grille les range par
-   quatre, plutôt que de laisser le dernier déborder de la palette. */
-.outilsBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+/* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
+   plutôt que de laisser les derniers déborder de la palette. */
+.outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:13px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
@@ -404,6 +432,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
+   n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
+.outils #standSoc{display:none}
+.outils.mode-stand #standSoc{display:block}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
@@ -1726,6 +1758,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+        <button data-o="stand" title="Stand — matérialiser un exposant ou un co-exposant sur son emplacement">&#9707;</button>
       </div>
       <div id="contourReg">
         <label class="elemChamp"><span>Arrondi</span>
@@ -1736,6 +1769,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
+      <input id="standSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+        placeholder="Exposant à matérialiser">
+      <datalist id="listeSoc"></datalist>
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
@@ -1757,6 +1793,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
+        <input id="elemSoc" list="listeSoc" spellcheck="false" hidden
+          placeholder="Exposant — numéro ou nom">
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
@@ -1891,6 +1929,10 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
    pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
    recherche seule consulte. */
 let HEBERGES = [];
+/* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
+   héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
+   n'a pas à balayer la liste pour savoir si le filtre les retient. */
+let PAR_HEBERGE = new Map();
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins.
@@ -2012,6 +2054,7 @@ function indexe(d){
                 " " + texteCriteres(h)).toLowerCase();
       return h;
     })));
+  PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
   indexeCriteres();
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -2241,25 +2284,42 @@ function libelles(){
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
-    const ps = place(s), as = ancre(s);
-    const w = ps[0], h = ps[1];
-
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-    const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-    const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-    const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
-    if (!codeLisible && !nomLisible) continue;
-
-    const c = sel ? " sel" : "";
-    const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
-    const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = as[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-    if (codeLisible)
-      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+    const ps = place(s);
+    out += libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM);
   }
+
   l.innerHTML = out;
+  /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
+     non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
+     nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
+     appel au même endroit. */
+  poseLibellesDessines(pxParM);
+}
+
+/**
+ * Le libellé d'un emplacement : le nom de l'enseigne, son numéro dessous.
+ *
+ * Il s'écrit pour deux choses que rien d'autre ne rapproche — le stand rendu
+ * par la synchronisation, qui tient son ancrage et sa place de la source, et
+ * le stand dessiné à la main, qui les tient de son rectangle. Le rendu doit
+ * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
+ * forme quelconque.
+ */
+function libelleEmplacement(s, as, w, h, sel, pxParM){
+  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
+  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+  const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
+  const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
+  if (!codeLisible && !nomLisible) return "";
+
+  const c = sel ? " sel" : "";
+  const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
+  const hCode = codeLisible ? fc * 1.25 : 0;
+  let y = as[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+  return out;
 }
 
 /* ============================================================
@@ -2402,9 +2462,13 @@ function pastilleSecteur(nom){
  */
 function coloreSecteurs(){
   /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
-     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire. */
+     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire.
+
+     Les stands dessinés à la main la reçoivent aussi : ils découpent un
+     emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
+     secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
-  document.querySelectorAll("#stands g").forEach(g => {
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? o.sect : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
@@ -2863,11 +2927,27 @@ function visibleSurPlan(o){
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
+/**
+ * Ce qu'un stand dessiné suit : le filtre de la société qu'il désigne, et non
+ * celui de l'emplacement. Une hébergée écartée par un critère doit s'éteindre
+ * quand bien même son hôte reste allumé — c'est justement pour la distinguer
+ * de lui qu'on l'a dessinée.
+ */
+function visibleSociete(o, i){
+  if (!(i >= 0)) return visibleSurPlan(o);
+  const h = PAR_HEBERGE.get(o.id + "#" + i);
+  return h ? visible(h) : visibleSurPlan(o);
+}
+
 function appliqueFiltre(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+  });
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
   libelles(); liste();
 }
@@ -3044,12 +3124,27 @@ function anime(rect, sens){
       easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
   if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
 }
-const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+/* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
+   ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
+   veut allumer, cadrer et animer. */
+function noeud(id){
+  const q = '[data-id="' + CSS.escape(id) + '"]';
+  return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
+}
 
-/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
-   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
-   dessinée — c'est ce qui les sépare. */
-const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+/* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
+   l'exploitant a posé dessus, ou le découpage qu'il y a dessiné. Le logo seul
+   fait un chemin à part — les deux autres sont le plan tel qu'on le voit. */
+function canalPlan(cible){
+  if (!cible || !cible.dataset.f) return "plan";
+  const c = formeParId(cible.dataset.f);
+  return c && c.f.t === "image" ? "image" : "plan";
+}
+
+/** Le rang de la société désignée par un nœud du plan, s'il en désigne une :
+ *  un stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
+const rangSociete = (el) =>
+  el && el.dataset.soc !== undefined ? Number(el.dataset.soc) : undefined;
 
 /**
  * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
@@ -3068,6 +3163,7 @@ function select(id, recentrer, canal, iSoc){
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   dessineMarques();
+  marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
@@ -3627,6 +3723,7 @@ function ferme(){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
+  marqueStandsDessines();
   liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
@@ -3744,7 +3841,7 @@ svg.addEventListener("pointerup", e => {
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible));
+    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -3769,7 +3866,8 @@ svg.addEventListener("keydown", e => {
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
       return;
     }
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
+    if (!viseItineraire(g.dataset.id))
+      select(g.dataset.id, false, canalPlan(g), rangSociete(g));
   }
 });
 document.addEventListener("keydown", e => {
@@ -5056,12 +5154,18 @@ function cheminArrondi(pts, r, ferme){
   return d + (ferme ? "Z" : "");
 }
 
+/* Rectangle, image, stand dessiné : trois formes que deux coins opposés
+   suffisent à tenir. Le tracé, les poignées et le redimensionnement les
+   traitent donc ensemble. */
+const estCadre = (f) => f.t === "rect" || f.t === "image" || f.t === "stand";
+
 function cheminForme(f){
-  if (f.t === "rect" || f.t === "image"){
+  if (estCadre(f)){
     const [a, b] = f.pts;
     const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
     const w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
-    if (f.t === "rect" && f.r > 0)
+    // une image porte son propre cadrage : l'arrondir rognerait le visuel
+    if (f.t !== "image" && f.r > 0)
       return cheminArrondi([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], f.r, true);
     return "M" + x + " " + y + "h" + w + "v" + h + "h" + (-w) + "Z";
   }
@@ -5092,6 +5196,8 @@ function dessineDessins(){
         '" preserveAspectRatio="xMidYMid meet"/></g>'
       : f.t === "repere"
       ? traceRepere(f)
+      : f.t === "stand"
+      ? traceStandDessine(f)
       : f.t === "texte"
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
@@ -5101,6 +5207,9 @@ function dessineDessins(){
   }
   ordonneDom();
   cartouchePoi();
+  /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
+     fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
+  rafraichitStandsDessines();
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -5432,6 +5541,169 @@ function traceRepere(f){
     '" font-size="' + t.toFixed(2) + '">' + esc(nom) + '</text></g>';
 }
 
+/* ------------------------------------------------------------
+   Les stands dessinés à la main
+   ------------------------------------------------------------
+   La synchronisation ne rend qu'une forme par dossier : un stand loué à
+   plusieurs n'en a donc qu'une, et les sociétés qui s'y installent n'existent
+   que dans une liste. Sur le plan elles ne sont nulle part, et le visiteur qui
+   cherche l'une d'elles lit le nom d'une autre peint sur la cloison.
+
+   L'exploitant les matérialise donc lui-même : il découpe le stand en autant
+   de rectangles qu'il y a d'enseignes, et rattache chacun à la société qu'il
+   désigne. Ce n'est pas un dessin de plus — la forme se lit comme un stand,
+   même aplat et même libellé, s'ouvre au clic sur la fiche complète de sa
+   société, et renvoie l'itinéraire vers le stand qui la porte : on ne marche
+   pas jusqu'à un co-exposant, on marche jusqu'à son hôte.
+   ------------------------------------------------------------ */
+
+/** L'étiquette sous laquelle une société se désigne : « G55 — SMC2 ». */
+const etiquetteSociete = (code, nom) => [code, nom].filter(Boolean).join(" — ");
+
+/** Le nom d'une société tel qu'il s'écrit sur le plan — vide s'il n'y en a
+ *  pas, là où la fiche se rabat sur « Sans nom ». */
+const nomSurLePlan = (soc) => soc.nom || soc.plan || "";
+
+/**
+ * Ce qu'un stand dessiné désigne : l'emplacement, le rang de la société, la
+ * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
+ * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
+ *
+ * On ne se rabat pas alors sur le titulaire : ce serait donner à une enseigne
+ * la place d'une autre. La forme reste sur le plan, muette et sans clic, et le
+ * panneau d'édition invite à la rattacher de nouveau.
+ */
+function societeDeForme(f){
+  if (!f || f.t !== "stand" || !f.stand) return null;
+  const o = parId.get(f.stand);
+  if (!o || o.kind !== "stand") return null;
+  const i = Number.isInteger(f.soc) ? f.soc : -1;
+  const soc = i < 0 ? o : (o.coex || [])[i];
+  return soc ? { o: o, i: i, soc: soc } : null;
+}
+
+/** Les sociétés du pavillon courant, titulaires et hébergées mêlées : c'est
+ *  parmi elles que se choisit ce qu'un stand dessiné matérialise. */
+function societesDuPlan(){
+  const out = [];
+  P().stands.forEach(s => societes(s).forEach(x => {
+    const nom = nomSurLePlan(x.soc);
+    if (!s.code && !nom) return;
+    out.push({ o: s, i: x.i, soc: x.soc,
+               etiquette: etiquetteSociete(s.code, nom) || s.id });
+  }));
+  return out;
+}
+
+function remplitListeSocietes(){
+  const l = $("listeSoc");
+  if (!l) return;
+  l.innerHTML = societesDuPlan()
+    .map(x => '<option value="' + esc(x.etiquette) + '">').join("");
+}
+
+/** Retrouve la société désignée par ce qui a été saisi. */
+function societeSaisie(txt){
+  const v = String(txt || "").trim().toLowerCase();
+  if (!v) return null;
+  const l = societesDuPlan();
+  return l.find(x => x.etiquette.toLowerCase() === v)
+      || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
+      || null;
+}
+
+/**
+ * Un stand dessiné, tracé comme le stand qu'il découpe.
+ *
+ * Il porte l'identifiant de son hôte et le rang de la société qu'on vient y
+ * voir : le reste de la page n'a alors rien de nouveau à apprendre — le clic,
+ * la sélection, la fiche et l'itinéraire lisent déjà ces deux-là.
+ */
+function traceStandDessine(f){
+  const l = societeDeForme(f);
+  const sel = l && l.o.id === state.sel && l.i === state.selSoc;
+  const nom = l ? nomSurLePlan(l.soc) : "";
+  return '<g class="forme sdes' + (f.id === formeSel ? " pick" : "") +
+    (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + f.id + '"' +
+    (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
+         '" tabindex="0" role="button" aria-label="' +
+         esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
+    '><path d="' + cheminForme(f) + '"/><g class="lab"></g></g>';
+}
+
+/**
+ * Le libellé d'un stand dessiné : le nom de sa société, le numéro de
+ * l'emplacement dessous — exactement ce qu'un stand du plan écrit.
+ *
+ * Il vit dans la forme et non dans « #labels », où vivent ceux du plan. Un
+ * calque de dessin peut être empilé par-dessus le calque des textes, et son
+ * aplat recouvrait alors le nom qu'il était censé porter. Attaché à sa forme,
+ * le libellé la suit jusque dans l'ordre des couches.
+ *
+ * Il se relit à chaque changement de vue, comme les autres : c'est la taille
+ * du texte à l'écran qui décide s'il est lisible ou s'il vaut mieux se taire.
+ */
+function texteStandDessine(f, pxParM){
+  const l = societeDeForme(f);
+  if (!l) return "";
+  const nom = nomSurLePlan(l.soc);
+  if (!nom && !l.o.code) return "";
+  const b = boite(f);
+  const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  const sel = l.o.id === state.sel && l.i === state.selSoc;
+  if (!sel && (!visibleSociete(l.o, l.i) ||
+               cx < view.x - 25 || cx > view.x + view.w + 25 ||
+               cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
+                            b[2] - b[0], b[3] - b[1], sel, pxParM);
+}
+
+/** Les libellés de tous les stands dessinés du pavillon, posés dans leurs
+ *  formes. Le pavillon en compte quelques dizaines au plus : on les relit
+ *  tous plutôt que de tenir à jour ce qui a bougé. */
+function poseLibellesDessines(pxParM){
+  const z = $("couches");
+  for (const cal of mesCalques()){
+    for (const f of cal.formes){
+      if (f.t !== "stand") continue;
+      const lab = z.querySelector('.sdes[data-f="' + CSS.escape(f.id) + '"] .lab');
+      if (lab) lab.innerHTML = texteStandDessine(f, pxParM);
+    }
+  }
+}
+
+/**
+ * La sélection des stands dessinés, posée sans retracer les calques : relire
+ * un calque réanalyse ses images, ce qui est cher pour un liseré qui change à
+ * chaque clic. La classe se pose donc à la main, comme le fait déjà la
+ * sélection d'édition.
+ */
+function marqueStandsDessines(){
+  $("couches").querySelectorAll(".dcal .sdes").forEach(g => {
+    g.classList.toggle("sel", g.dataset.id === state.sel &&
+                              Number(g.dataset.soc) === state.selSoc);
+  });
+}
+
+/**
+ * Ce qu'un stand dessiné reçoit une fois tracé : la teinte de son secteur, le
+ * fondu que le filtre pose sur ce qu'il écarte, et son libellé.
+ *
+ * Rien de tout cela ne tient dans le gabarit de la forme : les deux premiers
+ * se lisent dans les réglages du salon, le troisième dans la vue courante — et
+ * le premier montage a lieu avant qu'il y en ait une.
+ */
+function rafraichitStandsDessines(){
+  if (!DATA || !view) return;
+  coloreSecteurs();
+  $("couches").querySelectorAll(".dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
+  });
+  const r = svg.getBoundingClientRect();
+  poseLibellesDessines((r.width || 1) / view.w);
+}
+
 /**
  * Cartouche des points d'intérêt.
  *
@@ -5677,7 +5949,7 @@ function dessinPointerDown(e){
   // sans cela le navigateur démarre une sélection de texte et le
   // relâchement du pointeur ne revient jamais
   e.preventDefault();
-  if (outil === "rect" || outil === "image"){
+  if (outil === "rect" || outil === "image" || outil === "stand"){
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
   }
   const p = versPlan(e.clientX, e.clientY);
@@ -5699,6 +5971,20 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
+  /* Un stand dessiné ne vaut que par la société qu'il désigne : sans elle on
+     poserait un rectangle muet, invisible pour le visiteur puisqu'il n'ouvre
+     aucune fiche. On demande donc l'exposant avant le tracé, comme on demande
+     son libellé à un repère. */
+  if (outil === "stand"){
+    const l = societeSaisie($("standSoc").value);
+    if (!l){
+      $("outilsAide").textContent = "Choisissez d'abord l'exposant à matérialiser.";
+      $("standSoc").focus(); $("standSoc").select();
+      return true;
+    }
+    enCours = { t: "stand", pts: [p, p], stand: l.o.id, soc: l.i };
+    return true;
+  }
   if (outil === "image"){
     if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
     enCours = { t: "image", pts: [p, p] };
@@ -5731,7 +6017,7 @@ function dessinPointerMove(e){
   if (editionPointerMove(e)) return true;
   if (!enCours) return false;
   const p = versPlan(e.clientX, e.clientY);
-  if (enCours.t === "rect" || enCours.t === "image"){
+  if (estCadre(enCours)){
     enCours.pts[1] = p;
     if (enCours.t === "image"){    // on respecte les proportions de l'image
       const l = enCours.pts[1][0] - enCours.pts[0][0];
@@ -5758,7 +6044,7 @@ function dessinPointerUp(e){
   if (e && e.pointerId != null){
     try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   }
-  if (enCours.t === "rect" || enCours.t === "image"){
+  if (estCadre(enCours)){
     const a = enCours.pts[0], b = enCours.pts[1];
     if (Math.abs(b[0] - a[0]) > .3 && Math.abs(b[1] - a[1]) > .3){
       if (enCours.t === "image"){
@@ -5767,6 +6053,9 @@ function dessinPointerUp(e){
         enCours.src = imageEnAttente.src;
       }
       ajouteForme(enCours);
+      /* Un stand loué à cinq se découpe en cinq : on enchaîne, et le champ
+         redit lequel vient d'être posé plutôt que de se vider en silence. */
+      if (enCours.t === "stand") enchaineStand(enCours);
     }
     enCours = null; apercu(null);
   }
@@ -5792,6 +6081,7 @@ function aide(){
               ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
               texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
               repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
+              stand: "Choisissez l'exposant, puis cliquez-glissez sur sa part du stand.",
               image: imageEnAttente ? "Glissez sur le plan pour poser une autre copie."
                                     : "Choisissez une image, ou déposez le fichier sur le plan.",
               _: "" };
@@ -5812,11 +6102,25 @@ function choisitOutil(o){
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-contour", o === "contour");
   b.classList.toggle("mode-repere", o === "repere");
+  b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
   if (o === "repere") $("repereTexte").focus();
+  if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   aide();
 }
+
+/** Le stand posé nomme sa société, et rend la main pour la suivante. */
+function enchaineStand(f){
+  const l = societeDeForme(f);
+  const ch = $("standSoc");
+  if (l && $("outilsAide"))
+    $("outilsAide").textContent = "« " +
+      (nomSurLePlan(l.soc) || ("Stand " + (l.o.code || "")).trim()) +
+      " » matérialisé. Choisissez l'exposant suivant.";
+  if (ch){ ch.focus(); ch.select(); }
+}
+
 $("outils").querySelectorAll(".outilsBtns button")
   .forEach(b => b.onclick = () => choisitOutil(b.dataset.o));
 $("annuleDernier").onclick = annule;
@@ -5848,6 +6152,10 @@ $("elemLienAjout").onchange = (e) => {
 // partielle ne désigne aucun stand et effacerait le lien
 $("elemStand").onchange = appliqueLiaison;
 $("elemStand").onblur = appliqueLiaison;
+/* Le stand dessiné se rattache de même : à la sortie du champ, et non à
+   chaque frappe — « SM » ne désigne personne et effacerait le lien. */
+$("elemSoc").onchange = appliqueSociete;
+$("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
@@ -5992,12 +6300,12 @@ function boite(f){
 /* Le curseur annonce ce que fera la poignée. Sur un rectangle les coins
    sont diagonaux ; sur un polygone chaque sommet se déplace librement. */
 function curseurPoignee(f, i){
-  if (f.t === "rect" || f.t === "image") return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
+  if (estCadre(f)) return ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i];
   return "move";
 }
 
 function poignees(f){
-  if (f.t === "rect" || f.t === "image"){
+  if (estCadre(f)){
     const b = boite(f);
     return [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
   }
@@ -6047,7 +6355,8 @@ function majElement(){
   z.hidden = false;
   const f = cible.f;
   const NOMS = { rect: "Rectangle", poly: "Polygone", ligne: "Ligne",
-                 texte: "Texte", image: "Image", repere: "Repère" };
+                 texte: "Texte", image: "Image", repere: "Repère",
+                 stand: "Stand dessiné" };
   $("elemType").textContent = NOMS[f.t] || f.t;
   // un repère porte lui aussi un libellé et une taille
   const estTexte = f.t === "texte" || f.t === "repere";
@@ -6062,7 +6371,8 @@ function majElement(){
      posé d'équerre s'adoucit sans être redessiné, et un rectangle de réserve
      se fond dans un plan aux angles ronds. Il ne déplace aucun sommet — le
      calcul d'itinéraire, qui les lit, ne bouge pas d'un pouce. */
-  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne";
+  const arrondissable = f.t === "poly" || f.t === "rect" || f.t === "ligne" ||
+                        f.t === "stand";
   const br = $("elemRayonBloc");
   if (br){
     br.hidden = !arrondissable;
@@ -6098,6 +6408,19 @@ function majElement(){
       remplitListeStands();
       const s = f.stand && parId.get(f.stand);
       ch.value = s ? etiquetteStand(s) : "";
+    }
+  }
+
+  /* Un stand dessiné, lui, désigne une société et non un emplacement : c'est
+     tout l'objet du découpage, deux enseignes se partageant le même numéro. */
+  const cs = $("elemSoc");
+  if (cs){
+    const estStandDessine = f.t === "stand";
+    cs.hidden = !estStandDessine;
+    if (estStandDessine){
+      remplitListeSocietes();
+      const l = societeDeForme(f);
+      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
     }
   }
 }
@@ -6263,6 +6586,29 @@ function appliqueLiaison(){
   enregistreDessins(); dessineDessins(); dessinePoignees();
 }
 
+/**
+ * Rattacher un stand dessiné à une société, ou l'en détacher.
+ *
+ * Détaché, il reste sur le plan — il a été tracé, on ne l'efface pas dans le
+ * dos de qui vient de mal saisir un nom — mais il n'ouvre plus rien et perd
+ * son libellé : le plan dit ainsi qu'il attend encore son exposant.
+ */
+function appliqueSociete(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "stand") return;
+  const ch = $("elemSoc");
+  const l = societeSaisie(ch.value);
+  memorise();
+  if (l){
+    cible.f.stand = l.o.id; cible.f.soc = l.i;
+    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+  } else {
+    delete cible.f.stand; delete cible.f.soc;
+    ch.value = "";
+  }
+  enregistreDessins(); dessineDessins(); dessinePoignees();
+}
+
 function appliqueTexte(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || (cible.f.t !== "texte" && cible.f.t !== "repere")) return;
@@ -6364,7 +6710,7 @@ function editionPointerMove(e){
 
   if (geste.type === "deplace"){
     f.pts = geste.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
-  } else if (f.t === "rect" || f.t === "image"){
+  } else if (estCadre(f)){
     // la poignée opposée reste fixe ; l'image garde ses proportions
     const b = [Math.min(geste.pts[0][0], geste.pts[1][0]), Math.min(geste.pts[0][1], geste.pts[1][1]),
                Math.max(geste.pts[0][0], geste.pts[1][0]), Math.max(geste.pts[0][1], geste.pts[1][1])];
@@ -7537,14 +7883,17 @@ const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
  * L'oublier alors faisait traverser un local par le trajet, ce qui est un
  * bogue plus grand que le détour inexpliqué qu'on cherchait à éviter.
  * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
- * délimiter une circulation.
+ * délimiter une circulation. Un stand dessiné en a une, comme le rectangle
+ * dont il est un cas particulier : posé hors de l'emplacement qu'il découpe,
+ * il barre le passage aussi sûrement qu'une cloison.
  */
 function formesRole(p, role){
   const l = [];
   for (const c of calquesDe(p)){
     if (roleIti(c) !== role) continue;
     for (const f of c.formes || []){
-      if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
+      if (f.t === "rect" || f.t === "poly" || f.t === "stand")
+        l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && role !== "circulation")
         l.push({ d: cheminForme(f), trait: true });
     }

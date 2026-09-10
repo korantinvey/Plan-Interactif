@@ -25,6 +25,10 @@ let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = ne
    pas vivre dans « TOUS », que la carte indexe. Elles ont leur liste, que la
    recherche seule consulte. */
 let HEBERGES = [];
+/* Les mêmes, retrouvables par le couple qui les désigne — le stand qui les
+   héberge, leur rang dedans. C'est ainsi qu'un stand dessiné les nomme, et il
+   n'a pas à balayer la liste pour savoir si le filtre les retient. */
+let PAR_HEBERGE = new Map();
 /* `q` est ce que le visiteur a tapé, `qn` la forme sur laquelle on compare —
    rognée et abaissée. La normaliser une fois par frappe plutôt qu'une fois
    par objet, c'est la même chose en mille fois moins.
@@ -146,6 +150,7 @@ function indexe(d){
                 " " + texteCriteres(h)).toLowerCase();
       return h;
     })));
+  PAR_HEBERGE = new Map(HEBERGES.map(x => [x.id + "#" + x.i, x]));
   indexeCriteres();
   /* Le programme d'une zone se lit pavillon par pavillon, mais un parcours de
      visite mêle les trois : la conférence retenue hier peut se tenir ailleurs
@@ -375,25 +380,42 @@ function libelles(){
        ouverte : c'est lui qui loue l'emplacement, et c'est ce nom-là qui est
        peint sur la cloison. Les sociétés qu'il héberge se comptent à côté. */
     if (!s.code && !s.nom) continue;
-    const ps = place(s), as = ancre(s);
-    const w = ps[0], h = ps[1];
-
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-    const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-    const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
-    const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
-    if (!codeLisible && !nomLisible) continue;
-
-    const c = sel ? " sel" : "";
-    const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
-    const hCode = codeLisible ? fc * 1.25 : 0;
-    let y = as[1] - (hNom + hCode) / 2;
-    if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
-    if (codeLisible)
-      out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+    const ps = place(s);
+    out += libelleEmplacement(s, ancre(s), ps[0], ps[1], sel, pxParM);
   }
+
   l.innerHTML = out;
+  /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
+     non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
+     nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
+     appel au même endroit. */
+  poseLibellesDessines(pxParM);
+}
+
+/**
+ * Le libellé d'un emplacement : le nom de l'enseigne, son numéro dessous.
+ *
+ * Il s'écrit pour deux choses que rien d'autre ne rapproche — le stand rendu
+ * par la synchronisation, qui tient son ancrage et sa place de la source, et
+ * le stand dessiné à la main, qui les tient de son rectangle. Le rendu doit
+ * être le même : c'est tout l'intérêt de dessiner un stand plutôt qu'une
+ * forme quelconque.
+ */
+function libelleEmplacement(s, as, w, h, sel, pxParM){
+  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const nomLisible = nom && (sel || nom.f * pxParM >= 4.5);
+  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+  const fc = s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0;
+  const codeLisible = fc && (sel || fc * pxParM >= (nomLisible ? 5 : 6));
+  if (!codeLisible && !nomLisible) return "";
+
+  const c = sel ? " sel" : "";
+  const hNom = nomLisible ? nom.lignes.length * nom.f * 1.18 : 0;
+  const hCode = codeLisible ? fc * 1.25 : 0;
+  let y = as[1] - (hNom + hCode) / 2, out = "";
+  if (nomLisible){ out += lignesSvg(nom.lignes, nom.f, as[0], y + hNom / 2, "nm" + c); y += hNom; }
+  if (codeLisible) out += ligneCode(s, as[0], y + fc * .92, fc, w * .9, c);
+  return out;
 }
 
 /* ============================================================
@@ -536,9 +558,13 @@ function pastilleSecteur(nom){
  */
 function coloreSecteurs(){
   /* Le coloriage éteint, le stand perd sa marque de secteur : la feuille de
-     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire. */
+     style n'a plus de teinte à poser, sans qu'on ait à la lui interdire.
+
+     Les stands dessinés à la main la reçoivent aussi : ils découpent un
+     emplacement, et un découpage qui ne prendrait pas sa couleur trouerait le
+     secteur d'un blanc que rien n'expliquerait. */
   const on = secteursMontres();
-  document.querySelectorAll("#stands g").forEach(g => {
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
     const o = parId.get(g.dataset.id);
     const nom = on && o ? o.sect : null;
     const h = nom ? SECTEURS.get(nom) : undefined;
@@ -997,11 +1023,27 @@ function visibleSurPlan(o){
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
+/**
+ * Ce qu'un stand dessiné suit : le filtre de la société qu'il désigne, et non
+ * celui de l'emplacement. Une hébergée écartée par un critère doit s'éteindre
+ * quand bien même son hôte reste allumé — c'est justement pour la distinguer
+ * de lui qu'on l'a dessinée.
+ */
+function visibleSociete(o, i){
+  if (!(i >= 0)) return visibleSurPlan(o);
+  const h = PAR_HEBERGE.get(o.id + "#" + i);
+  return h ? visible(h) : visibleSurPlan(o);
+}
+
 function appliqueFiltre(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSurPlan(o));
+  });
+  document.querySelectorAll("#couches .dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
   libelles(); liste();
 }
@@ -1178,12 +1220,27 @@ function anime(rect, sens){
       easing: sens > 0 ? "cubic-bezier(.16,.84,.3,1)" : "cubic-bezier(.4,0,.75,.2)" });
   if (sens < 0) anim.finished.then(() => p.classList.remove("open"), () => {});
 }
-const noeud = id => svg.querySelector('[data-id="' + CSS.escape(id) + '"]');
+/* La forme de l'emplacement, et non ce qu'un calque a posé dessus : un logo
+   ou un stand dessiné porte le même identifiant, et c'est bien le stand qu'on
+   veut allumer, cadrer et animer. */
+function noeud(id){
+  const q = '[data-id="' + CSS.escape(id) + '"]';
+  return svg.querySelector("#zones " + q + ", #stands " + q) || svg.querySelector(q);
+}
 
-/* Deux façons d'atteindre un stand depuis le plan : sa forme, ou le logo que
-   l'exploitant a posé dessus. Seule la seconde porte un identifiant de forme
-   dessinée — c'est ce qui les sépare. */
-const canalPlan = (cible) => cible && cible.dataset.f ? "image" : "plan";
+/* Trois façons d'atteindre un stand depuis le plan : sa forme, le logo que
+   l'exploitant a posé dessus, ou le découpage qu'il y a dessiné. Le logo seul
+   fait un chemin à part — les deux autres sont le plan tel qu'on le voit. */
+function canalPlan(cible){
+  if (!cible || !cible.dataset.f) return "plan";
+  const c = formeParId(cible.dataset.f);
+  return c && c.f.t === "image" ? "image" : "plan";
+}
+
+/** Le rang de la société désignée par un nœud du plan, s'il en désigne une :
+ *  un stand dessiné nomme la sienne, une forme d'emplacement ne le fait pas. */
+const rangSociete = (el) =>
+  el && el.dataset.soc !== undefined ? Number(el.dataset.soc) : undefined;
 
 /**
  * `iSoc` désigne la société qu'on vient voir sur un stand partagé. Absent, la
@@ -1202,6 +1259,7 @@ function select(id, recentrer, canal, iSoc){
   state.selSoc = iSoc === undefined ? -1 : iSoc;
   const n = noeud(id); if (n) n.classList.add("sel");
   dessineMarques();
+  marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
   ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
@@ -1761,6 +1819,7 @@ function ferme(){
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
+  marqueStandsDessines();
   liste(); libelles(); $("voile").classList.remove("on");
   if (ouvert) anime(id && noeud(id) ? noeud(id).getBoundingClientRect() : null, -1);
 }
@@ -1878,7 +1937,7 @@ svg.addEventListener("pointerup", e => {
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible));
+    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -1903,7 +1962,8 @@ svg.addEventListener("keydown", e => {
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
       return;
     }
-    if (!viseItineraire(g.dataset.id)) select(g.dataset.id, false, canalPlan(g));
+    if (!viseItineraire(g.dataset.id))
+      select(g.dataset.id, false, canalPlan(g), rangSociete(g));
   }
 });
 document.addEventListener("keydown", e => {

@@ -294,14 +294,20 @@ html.sans-parcours #marques .parc{display:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
 
-#labels text{pointer-events:none;text-anchor:middle;fill:var(--c-lab-stand,var(--ink-2));
+/* Deux endroits écrivent le même libellé : « #labels », qui porte ceux du
+   plan, et « .lab » — le libellé qu'un stand dessiné garde dans sa propre
+   forme, faute de pouvoir compter sur l'ordre des couches. Les règles valent
+   pour les deux, et le second sélecteur passe par « .dcal » pour l'emporter
+   sur l'habillage du calque, qui teinte tout ce qu'il porte. */
+#labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
+  fill:var(--c-lab-stand,var(--ink-2));
   font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
+#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
 #labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
-#labels text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
 /* Le compte des sociétés hébergées, à côté du numéro. Il reprend l'accent de
    la page, comme la pastille des nouveaux venus sur la fiche : c'est une
    distinction, pas une alerte, et le plan a déjà le langage des zones. */
@@ -315,8 +321,10 @@ html.sans-parcours #marques .parc{display:none}
 #labels text.coexN{fill:var(--accent);font-weight:700}
 #labels text.coexN.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Le réglage qui masque les libellés de stand emporte la pastille : elle en
-   fait partie, et la laisser flotter seule ne se comprendrait pas. */
-.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast{display:none}
+   fait partie, et la laisser flotter seule ne se comprendrait pas. Il emporte
+   aussi ceux des stands dessinés : ce sont des libellés de stand. */
+.sans-lab-stand #labels text:not(.zn),.sans-lab-stand #labels .coexPast,
+.sans-lab-stand .dcal .lab{display:none}
 .sans-lab-zone #labels text.zn{display:none}
 
 /* --- calques de dessin --- */
@@ -346,6 +354,26 @@ html.sans-parcours #marques .parc{display:none}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
+   lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
+   la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
+   Le sélecteur porte « html » pour tenir devant celui du rôle « circulation »,
+   plus spécifique, qui repeindrait le découpage en allée. */
+html .dcal .forme.sdes path{fill:var(--c-stand,var(--stand));stroke:var(--stand-line);
+  stroke-width:1;stroke-dasharray:none;fill-opacity:1}
+html .dcal .forme.sdes[data-sect] path{fill:var(--sect-c,hsl(var(--sect-h) var(--sect-s) var(--sect-l)))}
+/* Rattaché — « lie », comme une image liée — il répond au pointeur par son
+   tracé, y compris sur la page publique où le mode édition n'existe pas.
+   Détaché, il attend son exposant : rien à ouvrir, donc rien à cliquer. */
+.dcal .forme.sdes.lie path{pointer-events:all}
+html .dcal .forme.sdes.lie:hover path{fill:var(--accent-soft)}
+/* Le liseré de la sélection reste sur la forme : « #marques » recopie les
+   tracés des couches de données, et un stand dessiné n'en est pas une. Il n'a
+   pas de cloison mitoyenne à ménager — il est posé sur son hôte. */
+html .dcal .forme.sdes.sel path{fill:var(--c-sel,var(--accent-soft));
+  stroke:var(--c-sel-trait,var(--accent));stroke-width:3}
+.dcal .forme.sdes:focus{outline:none}
+html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .dcal .forme.neuve{animation:halo .5s ease-out 2}
 .dcal .forme.neuve path,.dcal .forme.neuve image,.dcal .forme.neuve text{
   outline:2px solid var(--accent);outline-offset:3px}
@@ -367,9 +395,9 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
-/* Huit outils ne tiennent plus sur une rangée : la grille les range par
-   quatre, plutôt que de laisser le dernier déborder de la palette. */
-.outilsBtns{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+/* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
+   plutôt que de laisser les derniers déborder de la palette. */
+.outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:28px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:13px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
@@ -399,6 +427,10 @@ html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
+   n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
+.outils #standSoc{display:none}
+.outils.mode-stand #standSoc{display:block}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
@@ -1721,6 +1753,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <button data-o="texte" title="Texte">T</button>
         <button data-o="image" title="Image">&#9634;&#8598;</button>
         <button data-o="repere" title="Repère — WC, entrée, accueil…">&#9873;</button>
+        <button data-o="stand" title="Stand — matérialiser un exposant ou un co-exposant sur son emplacement">&#9707;</button>
       </div>
       <div id="contourReg">
         <label class="elemChamp"><span>Arrondi</span>
@@ -1731,6 +1764,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
+      <input id="standSoc" list="listeSoc" spellcheck="false" autocomplete="off"
+        placeholder="Exposant à matérialiser">
+      <datalist id="listeSoc"></datalist>
       <input type="file" id="fichierImage" accept="image/*" hidden>
       <button class="choix" id="choisirImage">Choisir une image…</button>
       <div id="vignette" hidden></div>
@@ -1752,6 +1788,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
+        <input id="elemSoc" list="listeSoc" spellcheck="false" hidden
+          placeholder="Exposant — numéro ou nom">
       </div>
       <div class="outilsPied">
         <span id="outilsAide"></span>
