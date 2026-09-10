@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2090 l. → admin-plans.html
+### `_console-js.html` — 2097 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -92,9 +92,9 @@ Fonctions :
 `ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1280 · `ouvreFiche` 1309
 `sousTitre` 1454 · `tableauChamps` 1469 · `encode` 1612 · `decode` 1614
 `correspondance` 1619 · `sansPrefixe` 1622 · `courte` 1623 · `intitule` 1638
-`intituleSuite` 1650 · `separeValeurs` 1664 · `champOrigine` 1676 · `majLiens` 1898
-`majIntegration` 1925 · `majMsgSync` 1932 · `synchronise` 1946 · `dupliquer` 1989
-`videEcran` 2063 · `dessine` 2068 · `demarre` 2078
+`intituleSuite` 1650 · `separeValeurs` 1664 · `champOrigine` 1676 · `majLiens` 1905
+`majIntegration` 1932 · `majMsgSync` 1939 · `synchronise` 1953 · `dupliquer` 1996
+`videEcran` 2070 · `dessine` 2075 · `demarre` 2085
 
 Éléments :
 
