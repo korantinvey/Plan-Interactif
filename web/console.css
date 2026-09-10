@@ -225,6 +225,46 @@ table.champs .outil.danger:hover{color:var(--rouge);border-color:var(--rouge)}
    place qu'elle prendra plutôt que de la masquer. */
 .ordre-ligne.tire{opacity:.4;background:var(--surface-2)}
 .ordre-ligne.tire .outil{visibility:hidden}
+
+/* L'aperçu de la fiche, à droite de la liste. Une liste d'intitulés ne dit pas
+   ce qu'on obtient : la fiche se redessine à côté, aux mêmes largeurs que sur
+   le plan — 340 px — pour que ce qu'on y lit vaille pour ce que le visiteur
+   verra. Elle se colle en haut, la liste étant la plus longue des deux. */
+.ordre-deux{display:grid;grid-template-columns:minmax(0,1fr) 300px;
+  gap:20px;align-items:start}
+.apercu-cadre{position:sticky;top:0}
+.apercu-cadre > .eyebrow{display:block;margin-bottom:7px}
+.apercu-cadre > .aide{margin:8px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+.apercu-fiche{border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface);overflow:hidden}
+.af-hd{padding:14px 15px 12px;border-bottom:1px solid var(--line)}
+.af-bads{display:flex;gap:6px;align-items:center}
+.af-bad{display:inline-flex;font-size:11px;padding:3px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-2)}
+/* Comme sur le plan : la pastille des nouveaux venus reprend l'accent de la
+   page, et son texte la fonte du corps — un numéro se lit en mono, une mention
+   se lit comme une phrase. */
+.af-bad.neuf{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.af-hd h4{font-family:"Archivo",sans-serif;font-size:17px;letter-spacing:-.02em;
+  margin:8px 0 5px;text-wrap:balance}
+.af-code{margin:0;font-size:12px;color:var(--ink-3)}
+.af-bd{padding:14px 15px;display:flex;flex-direction:column;gap:13px;
+  max-height:34vh;overflow-y:auto}
+.af-champ{display:flex;flex-direction:column;gap:3px}
+.af-champ .v{font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
+.af-champ .v .ligne{display:block}
+.af-champ .v .ligne + .ligne{margin-top:3px}
+/* Un champ retenu que le relevé ne renseigne pas : le taire ferait croire
+   qu'on l'a retiré de la fiche. */
+.af-vide{color:var(--ink-3);font-style:italic;font-size:12.5px;margin:0}
+
+/* Sous la barre des 900 px la fenêtre n'a plus de quoi tenir deux colonnes :
+   l'aperçu passe sous la liste plutôt que de l'étrangler. */
+@media (max-width:900px){
+  .ordre-deux{grid-template-columns:minmax(0,1fr)}
+  .apercu-cadre{position:static}
+  .apercu-fiche{max-width:340px}
+}
 .pied-perso{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
   padding:10px 0 6px}
 .pied-perso .aide{font-size:11.5px;color:var(--ink-3)}
@@ -362,7 +402,9 @@ tr.eteint td{opacity:.45}
 /* La correspondance des champs aligne un libellé, une liste déroulante et un
    exemple de valeur : 440 px les écrasent tous les trois. La fenêtre s'élargit
    quand elle porte ce tableau, et elle seule. */
-.mfen:has(table.champs){width:min(860px,100%)}
+/* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
+   troisième onglet, la liste d'ordre et son aperçu côte à côte. */
+.mfen:has(table.champs){width:min(1040px,100%)}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}

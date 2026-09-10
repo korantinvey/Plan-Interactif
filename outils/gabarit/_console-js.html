@@ -497,7 +497,11 @@ const LIGNES_FICHE = {
       aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
     { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
     { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
-    { cle: "telephone", cible: "telephone", libelle: "Téléphone société" },
+    /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
+       téléphone à montrer et n'a pas à dire lequel. L'aperçu suit la fiche :
+       c'est ce que le visiteur lira. */
+    { cle: "telephone", cible: "telephone", libelle: "Téléphone société",
+      surFiche: "Téléphone" },
     { cle: "site", cible: "site", libelle: "Site web" },
     { cle: "facebook", cible: "facebook", libelle: "Facebook" },
     { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
@@ -909,6 +913,163 @@ function libelleCorps(e, cle) {
   return l ? l.libelle : cle;
 }
 
+/* ------------------------------------------------------------------
+   Aperçu de la fiche
+
+   Une liste de quinze intitulés ne dit pas ce qu'on obtient : on règle un ordre
+   sans voir la fiche, et il fallait ouvrir le plan public pour juger. L'aperçu
+   la redessine à côté, avec les champs retenus, dans l'ordre réglé.
+
+   Les valeurs sont celles du relevé de la dernière synchronisation — les mêmes
+   qui s'affichent dans les listes de champs d'origine. Elles viennent donc des
+   fiches du salon, et pas d'un exposant inventé : un mauvais champ associé se
+   voit à sa valeur, ce qui est la moitié de ce qu'on vient vérifier ici.
+   ------------------------------------------------------------------ */
+
+/* De quoi remplir une ligne que le relevé ne renseigne pas — un champ qui
+   vient du plan et non d'une fiche, ou une synchronisation pas encore lancée.
+   L'aperçu montre alors la forme de la valeur, à défaut de la valeur. */
+const EXEMPLES_FICHE = {
+  nom: "Maison Perrin", code: "A12", niveaux: "2", secteur: "Restauration",
+  raison: "Perrin & Cie SAS", adresse: "12 rue des Lilas", ville: "Nantes",
+  pays: "France", telephone: "02 40 00 00 00", site: "perrin.fr",
+  facebook: "facebook.com/perrin", linkedin: "linkedin.com/company/perrin",
+  instagram: "instagram.com/perrin",
+  nomenclature: "Équipement de cuisine", thematiques: "Circuits courts",
+};
+
+/**
+ * Les champs d'origine qu'une cible lit, réglés ou non.
+ *
+ * Trois états, et l'aperçu doit les distinguer : un réglage à la main l'emporte
+ * sur tout, « aucun » compris — c'est un choix, et il rend la ligne vide ; à
+ * défaut, la proposition du relevé, qui est ce que la synchronisation ferait ;
+ * à défaut encore, le champ par défaut du fournisseur.
+ */
+function champsLus(bloc, cible) {
+  const regle = (bloc.champs || {})[cible];
+  if (regle !== undefined) return [].concat(regle).filter(Boolean);
+  const propose = bloc.propose && bloc.propose[cible];
+  if (propose && propose.length) return [].concat(propose).filter(Boolean);
+  return [].concat((bloc.defauts || {})[cible] || []).filter(Boolean);
+}
+
+/**
+ * Une valeur d'exemple pour une cible, telle que les fiches la portent.
+ *
+ * La nomenclature cumule ses champs quand les autres s'arrêtent au premier
+ * renseigné : l'aperçu suit la même règle, sans quoi il montrerait une seule
+ * rubrique là où la fiche en aligne quatre.
+ */
+function exempleCible(bloc, cible) {
+  const detectes = bloc.detectes || [];
+  const exemples = champsLus(bloc, cible)
+    .map((c) => (detectes.find((d) => d.cle === c) || {}).exemple)
+    .filter(Boolean).map(String);
+  if (!exemples.length) return "";
+  return cible === "nomenclature" ? exemples.join(";") : exemples[0];
+}
+
+/**
+ * Ce qu'une ligne de l'aperçu porte, et pourquoi elle ne porte rien.
+ *
+ * Trois cas se ressemblent à l'écran et ne veulent pas dire la même chose. Un
+ * champ qui ne vient d'aucune fiche — le secteur, les niveaux, que le plan
+ * porte — n'a rien à relever : la valeur d'exemple montre alors la forme, et
+ * c'est tout ce qu'on peut en dire. Un champ dont l'exploitant a choisi
+ * « aucun » est vide par décision, et lui prêter une valeur inventée
+ * masquerait précisément ce qu'il vient de régler. Un champ associé mais que
+ * le relevé ne renseigne pas est vide par accident, et c'est ce qu'il faut
+ * lire — tant qu'une synchronisation a eu lieu, faute de quoi rien n'a encore
+ * été lu et la forme reprend ses droits.
+ */
+function valeurApercu(bloc, cle) {
+  /* La cible porte le nom de la clé, pour un champ propre au salon comme pour
+     les autres. */
+  const ligne = LIGNES_FICHE.stand.find((l) => l.cle === cle);
+  const duPlan = cle.indexOf(PREFIXE_PERSO) !== 0 && !(ligne && ligne.cible);
+  if (duPlan) return { valeur: EXEMPLES_FICHE[cle] || "", faute: "sans valeur" };
+
+  let brut = exempleCible(bloc, cle);
+  // le code postal rejoint l'adresse sur la même ligne, comme sur une enveloppe
+  if (cle === "adresse") {
+    brut = [brut, exempleCible(bloc, "codePostal")].filter(Boolean).join(" ");
+  }
+  if (brut) return { valeur: brut, faute: "" };
+  if ((bloc.champs || {})[cle] === "") {
+    return { valeur: "", faute: "aucun champ associé" };
+  }
+  return bloc.detecteLe
+    ? { valeur: "", faute: "vide sur les fiches lues" }
+    : { valeur: EXEMPLES_FICHE[cle] || "", faute: "pas encore synchronisé" };
+}
+
+/**
+ * La fiche telle que le visiteur la recevra.
+ *
+ * Le balisage reprend celui du plan — même en-tête, mêmes champs, même
+ * `eyebrow` sur les intitulés — parce qu'un aperçu qui ne ressemble pas à ce
+ * qu'il annonce ne sert qu'à se rassurer.
+ */
+function dessineApercu(hote, e, src, cles) {
+  const bloc = correspondance(e, src);
+  const regle = (e.fiche || {}).stand || {};
+  const parait = (cle) => regle[cle] !== false;
+  hote.textContent = "";
+
+  const tete = document.createElement("div");
+  tete.className = "af-hd";
+  const nom = exempleCible(bloc, "nom") || EXEMPLES_FICHE.nom;
+  tete.innerHTML = '<div class="af-bads"><span class="af-bad mono"></span>' +
+    '<span class="af-bad neuf">Nouveau</span></div>' +
+    '<h4></h4><p class="af-code"></p>';
+  tete.querySelector(".af-bad").textContent = "Stand";
+  // la pastille ne paraît que là où le salon distingue ses nouveaux venus
+  tete.querySelector(".neuf").hidden = !parait("nouveau") ||
+    !champsLus(bloc, "nouveau").length;
+  tete.querySelector("h4").textContent = nom;
+  tete.querySelector(".af-code").textContent = "Pavillon 1" +
+    (parait("code") ? " · " + EXEMPLES_FICHE.code : "");
+  hote.appendChild(tete);
+
+  const corps = document.createElement("div");
+  corps.className = "af-bd";
+  cles.forEach((cle) => {
+    if (!parait(cle)) return;
+    const { valeur, faute } = valeurApercu(bloc, cle);
+    const f = document.createElement("div");
+    f.className = "af-champ";
+    f.innerHTML = '<span class="eyebrow"></span><span class="v"></span>';
+    const l = LIGNES_FICHE.stand.find((x) => x.cle === cle);
+    f.querySelector(".eyebrow").textContent = (l && l.surFiche) || libelleCorps(e, cle);
+    const v = f.querySelector(".v");
+    if (!valeur) {
+      /* Rien à montrer : le dire plutôt que de sauter la ligne, sans quoi on
+         croirait le champ retiré de la fiche. */
+      v.className = "v af-vide";
+      v.textContent = faute;
+    } else {
+      /* Le point-virgule sépare les valeurs d'un champ à choix : la fiche les
+         montre l'une sous l'autre, l'aperçu aussi. */
+      const l = separeValeurs(valeur);
+      l.forEach((x) => {
+        const s = document.createElement("span");
+        s.className = "ligne";
+        s.textContent = x;
+        v.appendChild(s);
+      });
+    }
+    corps.appendChild(f);
+  });
+  if (!corps.children.length) {
+    const p = document.createElement("p");
+    p.className = "af-vide";
+    p.textContent = "Aucun champ affiché : la fiche se réduira à son en-tête.";
+    corps.appendChild(p);
+  }
+  hote.appendChild(corps);
+}
+
 /**
  * Le panneau de l'ordre d'affichage.
  *
@@ -936,8 +1097,26 @@ function panneauOrdre(e, src) {
     "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
   hote.appendChild(aide);
 
+  const deux = document.createElement("div");
+  deux.className = "ordre-deux";
+  hote.appendChild(deux);
+
   const liste = document.createElement("div");
   liste.className = "ordre-liste";
+  deux.appendChild(liste);
+
+  /* L'aperçu se colle en haut : la liste est plus longue que lui, et le
+     laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
+     qu'on range. */
+  const cadre = document.createElement("div");
+  cadre.className = "apercu-cadre";
+  cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
+    '<div class="apercu-fiche"></div><p class="aide"></p>';
+  cadre.querySelector("p").textContent = "Les valeurs viennent du relevé de la " +
+    "dernière synchronisation. Sur téléphone, les champs qui tiennent en un " +
+    "mot se rangent deux par deux.";
+  const apercu = cadre.querySelector(".apercu-fiche");
+  deux.appendChild(cadre);
 
   /** Enregistre l'ordre courant, et reprend ce qui l'est vraiment si on refuse. */
   const enregistre = async (focus) => {
@@ -971,6 +1150,9 @@ function panneauOrdre(e, src) {
       b[0].disabled = i === 0;
       b[1].disabled = i === n - 1;
     });
+    // l'aperçu suit le glissé plutôt que d'attendre le lâcher : c'est lui
+    // qu'on regarde en déplaçant, pas la liste
+    dessineApercu(apercu, e, src, [...liste.children].map((d) => d.dataset.cle));
   };
 
   /**
@@ -1061,7 +1243,13 @@ function panneauOrdre(e, src) {
     }
   };
 
-  hote.appendChild(liste);
+  /* On revient ici après avoir coché ou décoché dans l'onglet Stand : l'aperçu
+     doit s'en apercevoir, sans quoi il montrerait un champ qu'on vient de
+     retirer. */
+  hote.rafraichit = () => {
+    ordre = ordreEffectif(e, clesCorps(e, src));
+    rendu();
+  };
 
   rendu();
   return hote;
@@ -1334,6 +1522,11 @@ function ouvreFiche(apres) {
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         panneaux.forEach((x, j) => { x.hidden = j !== i; });
+        /* Un panneau qui dépend des autres se refait en reparaissant : l'aperçu
+           de l'ordre montre les champs cochés dans l'onglet Stand, qui ont pu
+           changer pendant qu'il était caché. */
+        const pan = panneaux[i].firstChild;
+        if (pan && pan.rafraichit) pan.rafraichit();
       };
       barre.appendChild(b);
       boutons.push(b);

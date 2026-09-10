@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2097 l. → admin-plans.html
+### `_console-js.html` — 2290 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -84,26 +84,27 @@ Fonctions :
 `fluxFonction` 17 · `barreAvancement` 56 · `fonction` 79 · `slugifie` 95 · `courant` 99
 `charge` 101 · `chargePlans` 108 · `majEvenement` 113 · `dessineRail` 124 · `champ` 150
 `dessineFiche` 175 · `fournisseurUtilise` 383 · `source` 387 · `champCle` 392
-`ligneSource` 427 · `origineConferences` 532 · `resumeProvenance` 597 · `resumeSalles` 614
-`resumeFiche` 625 · `caseFiche` 668 · `champsPersos` 711 · `criteres` 717 · `ecritFiche` 720
-`caseCritere` 735 · `clePerso` 754 · `ajouteChampPerso` 762 · `renommeChampPerso` 773
-`retireChampPerso` 791 · `lignesPerso` 839 · `clesCorps` 874 · `ordreEffectif` 888
-`libelleCorps` 903 · `panneauOrdre` 926 · `ligneReglage` 1075 · `ouvreProvenance` 1088
-`ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1280 · `ouvreFiche` 1309
-`sousTitre` 1454 · `tableauChamps` 1469 · `encode` 1612 · `decode` 1614
-`correspondance` 1619 · `sansPrefixe` 1622 · `courte` 1623 · `intitule` 1638
-`intituleSuite` 1650 · `separeValeurs` 1664 · `champOrigine` 1676 · `majLiens` 1905
-`majIntegration` 1932 · `majMsgSync` 1939 · `synchronise` 1953 · `dupliquer` 1996
-`videEcran` 2070 · `dessine` 2075 · `demarre` 2085
+`ligneSource` 427 · `origineConferences` 536 · `resumeProvenance` 601 · `resumeSalles` 618
+`resumeFiche` 629 · `caseFiche` 672 · `champsPersos` 715 · `criteres` 721 · `ecritFiche` 724
+`caseCritere` 739 · `clePerso` 758 · `ajouteChampPerso` 766 · `renommeChampPerso` 777
+`retireChampPerso` 795 · `lignesPerso` 843 · `clesCorps` 878 · `ordreEffectif` 892
+`libelleCorps` 907 · `champsLus` 949 · `exempleCible` 964 · `valeurApercu` 986
+`dessineApercu` 1014 · `panneauOrdre` 1087 · `ligneReglage` 1263 · `ouvreProvenance` 1276
+`ouvreSources` 1299 · `ouvreSalles` 1355 · `cadreFiche` 1468 · `ouvreFiche` 1497
+`sousTitre` 1647 · `tableauChamps` 1662 · `encode` 1805 · `decode` 1807
+`correspondance` 1812 · `sansPrefixe` 1815 · `courte` 1816 · `intitule` 1831
+`intituleSuite` 1843 · `separeValeurs` 1857 · `champOrigine` 1869 · `majLiens` 2098
+`majIntegration` 2125 · `majMsgSync` 2132 · `synchronise` 2146 · `dupliquer` 2189
+`videEcran` 2263 · `dessine` 2268 · `demarre` 2278
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 451 l. → console.css
+### `_console.css` — 493 l. → console.css
 
-- l.395 · Page de rapport
+- l.437 · Page de rapport
 
 ### `_dessin.html` — 870 l. → plan-admin.html, plan-smcl.html, plan.html
 
