@@ -594,6 +594,31 @@ function apercuDuo(cle, vu){
  * une planche d'aperçus — empilé sous le premier, il l'aurait poussé hors de
  * l'écran.
  */
+/**
+ * Passer d'un volet à l'autre sans que la fenêtre saute.
+ *
+ * Les volets n'ont pas la même hauteur — trois cases d'un côté, une planche
+ * d'aperçus de l'autre — et la fenêtre en changeait d'un coup. Son haut est
+ * déjà tenu par la feuille de style, qui l'accroche en haut plutôt que de la
+ * centrer ; reste sa hauteur, qui se rend d'un pas à l'autre au lieu d'y
+ * sauter.
+ *
+ * Les deux hauteurs se mesurent de part et d'autre du changement — « auto » ne
+ * s'interpole pas, il faut donc deux nombres — et l'animation est posée sur la
+ * fenêtre elle-même : le corps défile déjà pour son compte, il absorbe sans
+ * broncher d'être quelques dizaines de pixels trop court le temps du geste.
+ */
+function glisseFenetre(change){
+  const fen = $("modale").querySelector(".mfen");
+  if (!fen || REDUIT){ change(); return; }
+  const avant = fen.offsetHeight;
+  change();
+  const apres = fen.offsetHeight;
+  if (avant === apres) return;
+  fen.animate([{ height: avant + "px" }, { height: apres + "px" }],
+              { duration: 190, easing: "ease-out" });
+}
+
 function ouvreReglages(ouvrir){
   ouvreModale("Réglages du plan", corps => {
     const barre = document.createElement("div");
@@ -617,8 +642,10 @@ function ouvreReglages(ouvrir){
       b.onclick = () => {
         // une fiche de zone laissée dans l'onglet d'à côté s'enregistre en le quittant
         verseFicheZone();
-        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
-        volets.forEach((x, j) => { x.hidden = j !== i; });
+        glisseFenetre(() => {
+          boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
+          volets.forEach((x, j) => { x.hidden = j !== i; });
+        });
       };
       barre.appendChild(b);
       boutons.push(b);

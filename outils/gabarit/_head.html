@@ -302,6 +302,12 @@ button{cursor:pointer;background:none;border:none}
    le garde */
 #marques .sel.zn{stroke-dasharray:5 4}
 html.sans-parcours #marques .parc{display:none}
+/* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
+   plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force
+   au milieu d'un hall effacé — on les prenait pour ce que le cartouche venait
+   de désigner. Le temps d'une mise en avant, ils s'effacent tout à fait : ce
+   qu'on a retenu se retrouve en refermant le cartouche. */
+html.poi-actif #marques .parc{display:none}
 .stand:hover path,.zone:hover path{fill:var(--accent-soft)}
 /* La sélection ne tient pas dans une seule couleur : un aplat, et le liseré
    qui le borde. L'exploitant n'en choisit qu'une — l'aplat, celle qu'on voit —
@@ -678,6 +684,19 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 #zones g.phare{filter:drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 7px var(--accent));
   animation:pulseZone 1.5s ease-in-out infinite}
 @keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.58}}
+/* Le nom de la zone est écrit dans la couche des libellés, pas dans la zone :
+   il ne bat donc pas avec elle, et restait d'une seule couleur sur un aplat qui
+   passe du plein au pâle — noyé dans la teinte à un bout du battement.
+
+   Il bat maintenant lui aussi, de l'encre à l'accent, et se détache du fond
+   quoi qu'il arrive : le halo clair posé derrière les lettres le tient sur
+   l'aplat le plus vif comme sur le plus effacé. C'est la même parade que sur la
+   carte de chaleur, à la même mesure — « .15em », qui suit la taille du texte
+   plutôt que le zoom. */
+#labels .lbl.phare text{fill:#0F1316;paint-order:stroke;stroke:rgba(255,255,255,.85);
+  stroke-width:.15em;stroke-linejoin:round;stroke-linecap:round;
+  animation:titrePhare 1.5s ease-in-out infinite}
+@keyframes titrePhare{0%,100%{fill:#0F1316}50%{fill:var(--accent)}}
 /* Le battement passe par « transform », et non par « filter ».
    Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
    délègue pas au compositeur, si bien que le navigateur recalculait les styles
@@ -693,7 +712,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
   animation:pulsePoi 1.4s ease-in-out infinite}
 @keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 @media (prefers-reduced-motion:reduce){
-  .dcal .repere.phare,#zones g.phare{animation:none}
+  .dcal .repere.phare,#zones g.phare,#labels .lbl.phare text{animation:none}
 }
 @media (max-width:760px){.poi{max-width:88%;bottom:12px}}
 
@@ -1967,7 +1986,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .zonesReg{grid-template-columns:minmax(0,1fr)}
   .listeZ{max-height:26dvh}
 }
-.modale[data-genre="large"] .mfen{width:min(760px,100%)}
+/* Une fenêtre à onglets ne garde pas la même hauteur d'un volet à l'autre :
+   centrée, elle remontait et redescendait à chaque clic, et la barre d'onglets
+   fuyait sous le curseur qui venait de la viser. Elle s'accroche donc par le
+   haut, à distance fixe du bord : c'est le bas qui bouge, là où l'on ne
+   regarde pas — et « glisseFenetre » y mène en glissant. */
+.modale[data-genre="large"]{align-items:start;padding-block-start:min(7vh,54px)}
+.modale[data-genre="large"] .mfen{width:min(760px,100%);
+  /* le haut mange sa part de l'écran : la hauteur maximale la lui rend, sans
+     quoi le pied de la fenêtre sortirait par le bas sur un écran court */
+  max-height:calc(100dvh - min(7vh,54px) - 20px)}
 .reglages{margin-top:10px}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
