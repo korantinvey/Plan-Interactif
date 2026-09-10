@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 1996 l. → admin-plans.html
+### `_console-js.html` — 2072 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -88,22 +88,22 @@ Fonctions :
 `resumeFiche` 625 · `caseFiche` 668 · `champsPersos` 711 · `criteres` 717 · `ecritFiche` 720
 `caseCritere` 735 · `clePerso` 754 · `ajouteChampPerso` 762 · `renommeChampPerso` 773
 `retireChampPerso` 791 · `lignesPerso` 839 · `clesCorps` 874 · `ordreEffectif` 888
-`libelleCorps` 903 · `cadreOrdre` 920 · `ligneReglage` 1000 · `ouvreProvenance` 1013
-`ouvreSources` 1036 · `ouvreSalles` 1092 · `cadreFiche` 1205 · `ouvreFiche` 1234
-`sousTitre` 1378 · `tableauChamps` 1393 · `encode` 1536 · `decode` 1538
-`correspondance` 1543 · `sansPrefixe` 1546 · `courte` 1547 · `intitule` 1562
-`intituleSuite` 1574 · `champOrigine` 1587 · `majLiens` 1804 · `majIntegration` 1831
-`majMsgSync` 1838 · `synchronise` 1852 · `dupliquer` 1895 · `videEcran` 1969
-`dessine` 1974 · `demarre` 1984
+`libelleCorps` 903 · `panneauOrdre` 926 · `ligneReglage` 1075 · `ouvreProvenance` 1088
+`ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1280 · `ouvreFiche` 1309
+`sousTitre` 1454 · `tableauChamps` 1469 · `encode` 1612 · `decode` 1614
+`correspondance` 1619 · `sansPrefixe` 1622 · `courte` 1623 · `intitule` 1638
+`intituleSuite` 1650 · `champOrigine` 1663 · `majLiens` 1880 · `majIntegration` 1907
+`majMsgSync` 1914 · `synchronise` 1928 · `dupliquer` 1971 · `videEcran` 2045
+`dessine` 2050 · `demarre` 2060
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 437 l. → console.css
+### `_console.css` — 451 l. → console.css
 
-- l.381 · Page de rapport
+- l.395 · Page de rapport
 
 ### `_dessin.html` — 870 l. → plan-admin.html, plan-smcl.html, plan.html
 

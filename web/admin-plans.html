@@ -1244,43 +1244,114 @@ function libelleCorps(e, cle) {
 }
 
 /**
- * La liste ordonnable.
+ * Le panneau de l'ordre d'affichage.
  *
- * Elle se redessine sur place plutôt que de rouvrir la fenêtre : remonter un
- * champ de six rangs demande six clics, et rouvrir à chacun d'eux ramènerait
- * l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient d'actionner
- * reprend le focus, pour que le clic suivant tombe au même endroit.
+ * Deux façons de déplacer un champ, et il en faut deux : la poignée, qu'on
+ * attrape pour traverser la liste d'un geste, et les flèches, qui restent le
+ * seul chemin au clavier — et le seul au doigt, le glisser-déposer du
+ * navigateur ignorant le tactile.
+ *
+ * La liste se redessine sur place plutôt que de rouvrir la fenêtre : remonter
+ * un champ de six rangs demande six clics, et rouvrir à chacun d'eux
+ * ramènerait l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient
+ * d'actionner reprend le focus, pour que le clic suivant tombe au même
+ * endroit.
  */
-function cadreOrdre(e, src) {
+function panneauOrdre(e, src) {
   const hote = document.createElement("div");
   let ordre = ordreEffectif(e, clesCorps(e, src));
 
-  const deplace = async (i, pas, cle) => {
-    const suite = ordre.slice();
-    suite.splice(i + pas, 0, suite.splice(i, 1)[0]);
-    ordre = suite;
-    const focus = { cle, sens: pas < 0 ? 0 : 1 };
-    rendu(focus);
-    await ecritFiche(e, { ordre: suite });
-    // le service a pu refuser : la liste reprend alors ce qui est enregistré
+  const aide = document.createElement("p");
+  aide.className = "aide";
+  aide.textContent = "L'ordre dans lequel la fiche déroule ses champs, de haut " +
+    "en bas : ce que le visiteur vient lire en premier n'est pas le même d'un " +
+    "salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des " +
+    "flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le " +
+    "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
+  hote.appendChild(aide);
+
+  const liste = document.createElement("div");
+  liste.className = "ordre-liste";
+
+  /** Enregistre l'ordre courant, et reprend ce qui l'est vraiment si on refuse. */
+  const enregistre = async (focus) => {
+    await ecritFiche(e, { ordre: ordre.slice() });
     ordre = ordreEffectif(e, clesCorps(e, src));
     rendu(focus);
   };
 
+  /* Le rang se relit dans la liste plutôt que de venir du dessin : un glissé
+     l'a peut-être changé depuis, et l'enregistrement qui suit n'a pas encore
+     rendu la main. */
+  const deplace = (cle, pas) => {
+    const i = ordre.indexOf(cle);
+    if (i < 0 || i + pas < 0 || i + pas >= ordre.length) return;
+    ordre = ordre.slice();
+    ordre.splice(i + pas, 0, ordre.splice(i, 1)[0]);
+    const focus = { cle, sens: pas < 0 ? 0 : 1 };
+    rendu(focus);
+    enregistre(focus);
+  };
+
+  /* Le rang est écrit sur chaque ligne : pendant le glissé il change à chaque
+     ligne franchie, et le laisser mentir jusqu'au lâcher ferait douter de ce
+     qu'on est en train de faire. Les flèches de bout de liste suivent, sans
+     quoi la première garderait un « monter » actif au milieu de la liste. */
+  const renumerote = () => {
+    const n = liste.children.length;
+    [...liste.children].forEach((d, i) => {
+      d.querySelector(".rang").textContent = String(i + 1);
+      const b = d.querySelectorAll("button");
+      b[0].disabled = i === 0;
+      b[1].disabled = i === n - 1;
+    });
+  };
+
+  /**
+   * La ligne devant laquelle déposer, d'après la hauteur du pointeur.
+   *
+   * On compare au milieu de chaque ligne, et non à son bord : le bord ferait
+   * basculer l'insertion dès qu'on l'effleure, et la liste tremblerait sous le
+   * curseur au lieu de suivre. « null » veut dire la fin de la liste.
+   */
+  const voisinApres = (y) => [...liste.querySelectorAll(".ordre-ligne:not(.tire)")]
+    .find((d) => {
+      const r = d.getBoundingClientRect();
+      return y < r.top + r.height / 2;
+    }) || null;
+
+  liste.addEventListener("dragover", (ev) => {
+    const tire = liste.querySelector(".tire");
+    if (!tire) return;
+    // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
+    ev.preventDefault();
+    const apres = voisinApres(ev.clientY);
+    if (apres === tire.nextSibling || apres === tire) return;
+    liste.insertBefore(tire, apres);
+    renumerote();
+  });
+
   const rendu = (focus) => {
-    hote.textContent = "";
-    const liste = document.createElement("div");
-    liste.className = "ordre-liste";
+    liste.textContent = "";
     ordre.forEach((cle, i) => {
       const d = document.createElement("div");
       d.className = "ordre-ligne";
       d.dataset.cle = cle;
-      d.innerHTML = '<span class="rang"></span><span class="lib"></span>' +
+      d.draggable = true;
+      d.innerHTML = '<span class="poignee" aria-hidden="true">⠿</span>' +
+        '<span class="rang"></span><span class="lib"></span>' +
+        '<span class="etiq"></span>' +
         '<button type="button" class="outil">▲</button>' +
         '<button type="button" class="outil">▼</button>';
       d.querySelector(".rang").textContent = String(i + 1);
       const libelle = libelleCorps(e, cle);
       d.querySelector(".lib").textContent = libelle;
+      /* Deux champs peuvent porter le même intitulé — un salon qui s'ajoute sa
+         « Ville » à côté de celle de la fiche société — et rien d'autre ici ne
+         les distinguerait. */
+      if (cle.indexOf(PREFIXE_PERSO) === 0) {
+        d.querySelector(".etiq").textContent = "propre au salon";
+      }
       /* Un champ masqué garde sa place : le remonter aujourd'hui pour
          l'afficher demain doit rester possible, et le retirer d'ici ferait
          sauter un rang sans qu'on sache lequel ni pourquoi. */
@@ -1289,38 +1360,42 @@ function cadreOrdre(e, src) {
         d.title = "Masqué : ce champ ne paraît pas sur la fiche.";
       }
       const b = d.querySelectorAll("button");
-      [["Monter", -1, 0], ["Descendre", 1, ordre.length - 1]].forEach(
-        ([titre, pas, bord], n) => {
-          b[n].title = titre;
-          b[n].setAttribute("aria-label", titre + " " + libelle);
-          b[n].disabled = i === bord;
-          b[n].onclick = () => deplace(i, pas, cle);
-        });
+      // l'état des deux flèches en bout de liste est posé par « renumerote »
+      [["Monter", -1], ["Descendre", 1]].forEach(([titre, pas], n) => {
+        b[n].title = titre;
+        b[n].setAttribute("aria-label", titre + " " + libelle);
+        b[n].onclick = () => deplace(cle, pas);
+      });
+
+      d.ondragstart = (ev) => {
+        /* Firefox n'ouvre pas de glissé sans donnée transportée, et le texte
+           déposé ailleurs vaut mieux que la clé technique. */
+        ev.dataTransfer.setData("text/plain", libelle);
+        ev.dataTransfer.effectAllowed = "move";
+        // la classe se pose au tour suivant : posée tout de suite, elle
+        // entrerait dans l'image que le navigateur vient de prendre de la ligne
+        setTimeout(() => d.classList.add("tire"), 0);
+      };
+      d.ondragend = () => {
+        d.classList.remove("tire");
+        const suite = [...liste.children].map((x) => x.dataset.cle);
+        // un glissé qui n'a rien déplacé n'a rien à enregistrer
+        if (suite.join("|") === ordre.join("|")) return;
+        ordre = suite;
+        enregistre();
+      };
       liste.appendChild(d);
     });
-    hote.appendChild(liste);
-
-    const pied = document.createElement("div");
-    pied.className = "pied-perso";
-    const r = document.createElement("button");
-    r.type = "button";
-    r.className = "btn petit";
-    r.textContent = "Rétablir l'ordre d'origine";
-    r.disabled = !(((e.fiche || {}).ordre) || []).length;
-    r.onclick = async () => {
-      await ecritFiche(e, { ordre: [] });
-      ordre = ordreEffectif(e, clesCorps(e, src));
-      rendu();
-    };
-    pied.appendChild(r);
-    hote.appendChild(pied);
+    renumerote();
 
     if (focus) {
-      const b = hote.querySelector('.ordre-ligne[data-cle="' + focus.cle +
+      const b = liste.querySelector('.ordre-ligne[data-cle="' + focus.cle +
         '"] button:nth-of-type(' + (focus.sens + 1) + ')');
       if (b && !b.disabled) b.focus();
     }
   };
+
+  hote.appendChild(liste);
 
   rendu();
   return hote;
@@ -1581,23 +1656,29 @@ function ouvreFiche(apres) {
     barre.className = "onglets";
     const boutons = [], panneaux = [];
 
-    [["stand", "Stand"], ["zone", "Zone organisateur"]].forEach(([type, titre], i) => {
+    /* Un onglet de la fenêtre : son bouton, son panneau, et la bascule qui les
+       relie. Les trois ne se remplissent pas de la même façon — l'un d'eux
+       s'arrête plus tôt — d'où la fabrique à part. */
+    const ongletFiche = (titre) => {
+      const i = boutons.length;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
       b.setAttribute("aria-pressed", String(i === 0));
-      barre.appendChild(b);
-      boutons.push(b);
-
-      const pan = document.createElement("div");
-      pan.hidden = i > 0;
-      panneaux.push(pan);
-      /* La bascule se pose avant tout le reste : les deux onglets ne se
-         remplissent pas de la même façon, et l'un d'eux s'arrête plus tôt. */
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         panneaux.forEach((x, j) => { x.hidden = j !== i; });
       };
+      barre.appendChild(b);
+      boutons.push(b);
+      const pan = document.createElement("div");
+      pan.hidden = i > 0;
+      panneaux.push(pan);
+      return pan;
+    };
+
+    [["stand", "Stand"], ["zone", "Zone organisateur"]].forEach(([type, titre]) => {
+      const pan = ongletFiche(titre);
 
       /* Une zone n'a pas de fiche d'exposant derrière elle : rien à associer,
          donc pas de tableau — la liste de cases suffit, et c'est celle que la
@@ -1676,18 +1757,13 @@ function ouvreFiche(apres) {
             return pied;
           })(),
         ]));
-
-      /* L'ordre de lecture vient en dernier, et c'est sa place : il ne se
-         règle qu'une fois qu'on sait ce que la fiche montre. */
-      pan.appendChild(cadreFiche(
-        { titre: "Ordre d'affichage", domaine: "stands",
-          aide: "L'ordre dans lequel la fiche déroule ses champs, de haut en " +
-            "bas. Ce que le visiteur vient lire en premier n'est pas le même " +
-            "d'un salon à l'autre. L'en-tête — l'enseigne, le pavillon, le " +
-            "numéro de stand — et le volet des conférences ne se déplacent " +
-            "pas : ils ne font pas partie du corps." },
-        [cadreOrdre(e, src)]));
     });
+
+    /* L'ordre de lecture a son onglet : il porte sur la fiche entière et non
+       sur l'un de ses cadres, et le chercher au bas de quarante lignes de
+       réglages revenait à ne pas le trouver. Il vient après les deux autres —
+       on ne range les champs qu'une fois qu'on sait lesquels paraissent. */
+    ongletFiche("Ordre d'affichage").appendChild(panneauOrdre(e, src));
 
     corps.appendChild(barre);
     panneaux.forEach((x) => corps.appendChild(x));
