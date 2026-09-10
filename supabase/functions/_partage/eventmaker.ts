@@ -12,7 +12,9 @@
  *     le nom et le courriel, mais sur l'invité correspondant, dont les champs
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
-import { DEFAUTS, PREFIXE_PERSO, lit, ou, valeurPerso, vrai } from "./champs.ts";
+import {
+  DEFAUTS, PREFIXE_PERSO, lit, ou, separeValeurs, valeurPerso, vrai,
+} from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
 export interface ConfigEm {
@@ -527,8 +529,11 @@ export class Eventmaker {
         facebook: v("facebook"),
         linkedin: v("linkedin"),
         instagram: v("instagram"),
-        nomencl: separe(this.valeur(g, m, "nomenclature", true) as unknown[]),
-        themes: separe(this.valeur(g, m, "thematiques", true) as unknown[]),
+        /* Une cible multiple ne descend pas en liste : Eventmaker joint ses
+           valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 » —, et
+           c'est la règle commune à tous les champs à choix qui la défait. */
+        nomencl: separeValeurs(this.valeur(g, m, "nomenclature", true)),
+        themes: separeValeurs(this.valeur(g, m, "thematiques", true)),
         perso: this.perso(g, m),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
@@ -700,22 +705,6 @@ function champs(meta: unknown): Record<string, string> {
     if (typeof n === "string" && typeof v === "string" && v.trim()) out[n] = v.trim();
   }
   return out;
-}
-
-/**
- * Les valeurs d'une cible multiple, une par entrée.
- *
- * Un champ personnalisé à choix multiple ne descend pas en liste : Eventmaker
- * joint ses valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 ».
- * Sans le défaire, la fiche afficherait la ligne entière comme une seule
- * rubrique. Aucune valeur de catalogue ne porte de point-virgule, la séparation
- * ne coupe donc rien qui tienne ensemble.
- */
-function separe(valeurs: unknown[]): string[] {
-  return valeurs
-    .flatMap((v) => String(v).split(";"))
-    .map((x) => x.trim())
-    .filter(Boolean);
 }
 
 /** Une conférence telle que le plan en a besoin. */

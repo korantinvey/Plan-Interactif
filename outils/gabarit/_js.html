@@ -655,6 +655,10 @@ const CLE_THEMES = "thematiques";
 const themeFiltrable = (n) => CRITERES.some(c => c.cle === CLE_THEMES &&
   c.valeurs.some(x => x.v === String(n).trim()));
 
+/* Sur le plan d'administration, un critère encore vide se montre et s'explique ;
+   sur le plan public, il n'existe pas. */
+const PLAN_ADMIN = document.documentElement.dataset.role === "admin";
+
 /** Les champs retenus comme critères, dans l'ordre où la console les range. */
 function clesCriteres(){
   const r = (DATA && DATA.fiche && DATA.fiche.criteres) || {};
@@ -669,7 +673,24 @@ function libelleCritere(cle){
   return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
 }
 
-/** Les valeurs d'une fiche pour un critère, toujours une liste de textes. */
+/** Les valeurs d'un champ à choix, une par entrée, points-virgules défaits. */
+const separeValeurs = v => [].concat(v)
+  .filter(x => x !== null && x !== undefined)
+  .flatMap(x => String(x).split(";"))
+  .map(x => x.trim()).filter(Boolean);
+
+/**
+ * Les valeurs d'une fiche pour un critère, toujours une liste de textes.
+ *
+ * Un champ à choix multiple ne descend pas en liste : la source joint ses
+ * valeurs par un point-virgule — « Devenir master-franchisé;Adhérent FFF ».
+ * Prise telle quelle, la chaîne entière ferait une valeur à part, et un
+ * exposant qui en porte deux ne se retrouverait avec personne : il y aurait
+ * autant de valeurs à cocher que de combinaisons. On les sépare donc ici
+ * aussi, et pas seulement à la synchronisation — les fiches déjà relevées
+ * portent encore la chaîne entière, et n'attendent pas le prochain passage
+ * pour se laisser filtrer.
+ */
 function valeursCritere(o, cle){
   const brut = cle.indexOf(PREFIXE_PERSO) === 0
     ? (o.perso || {})[cle.slice(PREFIXE_PERSO.length)]
@@ -678,9 +699,9 @@ function valeursCritere(o, cle){
   /* Une liste peut porter des trous — une société hébergée sans ville en a un
      là où les autres ont la leur — et « undefined » deviendrait une valeur à
      cocher si on la traduisait en texte avant de l'écarter. */
-  return [].concat(brut).filter(v => v !== null && v !== undefined)
-    .map(v => String(v).trim()).filter(Boolean);
+  return separeValeurs(brut);
 }
+
 
 /** Tout ce qu'une fiche porte de critères, pour la recherche plein texte. */
 function texteCriteres(o){
@@ -702,13 +723,17 @@ function indexeCriteres(){
     const n = new Map();
     fiches.forEach(o => valeursCritere(o, cle)
       .forEach(v => n.set(v, (n.get(v) || 0) + 1)));
+    const valeurs = [...n].sort((a, b) => (b[1] - a[1]) || COLLATION.compare(a[0], b[0]))
+      .map(([v, k]) => ({ v, n: k }));
     return {
       cle, libelle: libelleCritere(cle), ouiNon: OUI_NON[cle] === true,
-      valeurs: [...n].sort((a, b) => (b[1] - a[1]) || COLLATION.compare(a[0], b[0]))
-        .map(([v, k]) => ({ v, n: k })),
+      valeurs, vide: !valeurs.length,
     };
-  // un critère que rien ne renseigne ne s'offre pas : il ne rendrait rien
-  }).filter(c => c.valeurs.length);
+  /* Un critère que rien ne renseigne ne rendrait rien : le visiteur ne le voit
+     pas. L'exploitant, lui, le voit et lit pourquoi — sans quoi un champ tout
+     juste réglé semble n'avoir servi à rien, alors qu'il attend seulement la
+     synchronisation qui relèvera ses valeurs. */
+  }).filter(c => !c.vide || PLAN_ADMIN);
   /* Un critère retenu avant un rechargement peut avoir disparu du réglage, ou
      n'avoir plus aucune valeur : il resterait sinon à retrancher des fiches
      sans que rien ne le montre. */
@@ -757,6 +782,9 @@ function majCriteres(){
   const btn = $("btnFiltres"), barre = $("actifs");
   if (!btn || !barre) return;
   btn.hidden = !CRITERES.length;
+  // un panneau qui n'offrirait que des critères vides n'a rien à filtrer : il
+  // ne s'ouvre que pour dire ce qui manque, et le bouton le dit aussi
+  btn.classList.toggle("vide", CRITERES.every(c => c.vide));
   const n = nCriteres();
   const jeton = $("nFiltres");
   jeton.hidden = !n;
@@ -831,15 +859,32 @@ function ouvreCriteres(){
       const retenu = h.querySelector(".r");
       const disRetenu = () => {
         const n = (state.crit.get(c.cle) || new Set()).size;
-        retenu.textContent = !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
+        retenu.textContent = c.vide ? "aucune valeur relevée"
+          : !n ? c.ouiNon ? "" : c.valeurs.length + " valeurs"
           : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
         retenu.dataset.on = String(n > 0);
+        retenu.dataset.manque = String(Boolean(c.vide));
       };
       disRetenu();
       g.appendChild(h);
 
       const puces = document.createElement("div");
       puces.className = "puces-crit";
+
+      /* Rien à cocher, mais quelque chose à dire : le champ est bien réglé
+         comme critère, ses valeurs se relèvent sur les fiches, et aucune n'y
+         a été trouvée. */
+      if (c.vide){
+        g.open = true;
+        const rien = document.createElement("p");
+        rien.className = "vide-crit";
+        rien.textContent = "Aucune valeur sur les fiches. Vérifiez le champ " +
+          "d'origine de ce champ dans la console, puis lancez une " +
+          "synchronisation : les valeurs proposées ici viennent d'elle.";
+        g.appendChild(rien);
+        corps.appendChild(g);
+        return;
+      }
 
       /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
          et deux puces « oui » et « non » diraient deux fois la même chose. */
@@ -1537,7 +1582,9 @@ function ouvre(o, rect, canal, iSoc){
     ((!zone && DATA.fiche && DATA.fiche.perso) || []).map(c => {
       const v = ((soc.perso || {})[c.cle]);
       if (v === undefined || v === null || v === "") return "";
-      const l = [].concat(v).map(String).filter(Boolean);
+      // le point-virgule sépare les valeurs d'un champ à choix : la fiche les
+      // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
+      const l = separeValeurs(v);
       if (!l.length) return "";
       return ok(PREFIXE_PERSO + c.cle, f(esc(c.libelle), l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
