@@ -410,9 +410,31 @@ tr.eteint td{opacity:.45}
 .mfen:has(table.champs){width:min(1040px,100%)}
 /* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
    de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
-.mfen:has(.compte){width:min(760px,100%)}
-/* Le formulaire d'invitation la porte aussi : la largeur est ainsi arrêtée au
-   premier tracé, avant que la liste des comptes soit revenue du réseau. */
+/* Les comptes : l'annuaire aligne quatre colonnes, la fiche aligne ses champs
+   par deux. 440 px écrasent les deux. La marque est portée par un élément tracé
+   dès l'ouverture, sans quoi la fenêtre s'ouvrirait étroite puis sauterait à sa
+   largeur quand la liste revient du réseau. */
+.mfen:has(.compte),.mfen:has(table.comptes){width:min(760px,100%)}
+
+/* L'annuaire des comptes. Une ligne par personne : ce qui l'identifie à
+   gauche, son profil à droite, et le bouton qui ouvre sa fiche. Rien ne s'y
+   règle — c'est une liste où l'on cherche quelqu'un. */
+table.comptes{width:100%;border-collapse:collapse;font-size:12.5px}
+table.comptes th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--ink-3);padding:0 8px 8px;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+table.comptes td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.comptes td.n{color:var(--ink);font-weight:600}
+table.comptes td.mail{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3);overflow-wrap:anywhere}
+table.comptes td.act{text-align:right;white-space:nowrap;width:1%}
+table.comptes .prov + .prov{margin-left:5px}
+/* Une invitation partie mais jamais ouverte : le compte existe et ne sert pas
+   encore. La barre le dit sans qu'on ait à lire la colonne du profil. */
+table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--ambre)}
+/* Sur écran étroit, le tableau défile plutôt que d'écraser ses colonnes : une
+   adresse coupée en trois lignes ne se lit pas. */
+.table-defile{overflow-x:auto}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
@@ -420,7 +442,7 @@ tr.eteint td{opacity:.45}
 .mcorps{padding:15px 18px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:12px}
 .mcorps p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
-  border-top:1px solid var(--line)}
+  border-top:1px solid var(--line);flex-wrap:wrap}
 
 @media (max-width:900px){
   /* la colonne unique doit elle aussi pouvoir rétrécir sous son contenu */

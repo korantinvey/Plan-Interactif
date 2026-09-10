@@ -3,9 +3,10 @@
  *
  *   POST /comptes
  *   { "action": "liste" }
- *   { "action": "invite",   "email": "…", "nom": "…", "role": "organisateur",
- *     "evenements": ["…"], "retour": "https://…/motdepasse" }
- *   { "action": "maj",      "id": "…", "nom": "…", "role": "…", "evenements": [...] }
+ *   { "action": "invite",   "email": "…", "nom": "…", "prenom": "…",
+ *     "role": "organisateur", "evenements": ["…"], "retour": "https://…/motdepasse" }
+ *   { "action": "maj",      "id": "…", "nom": "…", "prenom": "…", "role": "…",
+ *     "evenements": [...] }
  *   { "action": "relance",  "id": "…", "retour": "https://…/motdepasse" }
  *   { "action": "supprime", "id": "…" }
  *
@@ -119,7 +120,7 @@ Deno.serve(async (req) => {
     /* ---------------------------------------------------------- liste */
     if (action === "liste") {
       const { data: profils, error } = await db
-        .from("profil").select("id,email,nom,role,cree_le").order("cree_le");
+        .from("profil").select("id,email,nom,prenom,role,cree_le").order("cree_le");
       if (error) throw new Error(error.message);
       const { data: liens } = await db.from("acces").select("profil_id,evenement_id");
 
@@ -145,11 +146,12 @@ Deno.serve(async (req) => {
       if (!email || email.indexOf("@") < 1) return repond({ erreur: "Adresse invalide." }, 400);
       const role = ROLES.includes(String(corps.role)) ? String(corps.role) : "organisateur";
       const nom = String(corps.nom ?? "").trim().slice(0, 120) || null;
+      const prenom = String(corps.prenom ?? "").trim().slice(0, 120) || null;
       const retour = retourValide(corps.retour);
 
       const { data, error } = await db.auth.admin.inviteUserByEmail(email, {
         redirectTo: retour ?? undefined,
-        data: { nom, role },
+        data: { nom, prenom, role },
       });
       if (error) return repond({ erreur: error.message }, 400);
       const id = data.user.id;
@@ -157,7 +159,8 @@ Deno.serve(async (req) => {
       /* Le déclencheur a posé le profil ; on écrit ensuite ce que le
          déclencheur ne pouvait pas savoir seul — et on le réaffirme, parce
          qu'un tout premier compte naît administrateur quoi qu'on demande. */
-      await db.from("profil").update({ nom, role, email, modifie_le: new Date().toISOString() })
+      await db.from("profil")
+        .update({ nom, prenom, role, email, modifie_le: new Date().toISOString() })
         .eq("id", id);
       await ecritAcces(id, corps.evenements);
       return repond({ ok: true, id });
@@ -169,6 +172,9 @@ Deno.serve(async (req) => {
       if (!id) return repond({ erreur: "Compte manquant." }, 400);
       const champs: Record<string, unknown> = { modifie_le: new Date().toISOString() };
       if (corps.nom !== undefined) champs.nom = String(corps.nom ?? "").trim().slice(0, 120) || null;
+      if (corps.prenom !== undefined) {
+        champs.prenom = String(corps.prenom ?? "").trim().slice(0, 120) || null;
+      }
       if (corps.role !== undefined) {
         if (!ROLES.includes(String(corps.role))) return repond({ erreur: "Rôle inconnu." }, 400);
         /* Se retirer soi-même l'administration fermerait la porte de

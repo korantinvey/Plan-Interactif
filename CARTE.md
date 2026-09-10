@@ -80,7 +80,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnComptes` · `#btnImport` · `#btnExport` · `#btnTheme`
 `#btnRecharger` · `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2615 l. → admin-plans.html
+### `_console-js.html` — 2638 l. → admin-plans.html
 
 - l.328 · Provenance des données
 - l.455 · Contenu de la fiche détail
@@ -101,17 +101,18 @@ Fonctions :
 `correspondance` 1827 · `sansPrefixe` 1830 · `courte` 1831 · `intitule` 1846
 `intituleSuite` 1858 · `separeValeurs` 1872 · `champOrigine` 1884 · `majLiens` 2113
 `majIntegration` 2140 · `majMsgSync` 2147 · `synchronise` 2161 · `dupliquer` 2204
-`litMonProfil` 2289 · `RETOUR_MDP` 2300 · `ouvreComptes` 2302 · `videEcran` 2583
-`dessine` 2588 · `demarre` 2603
+`litMonProfil` 2293 · `RETOUR_MDP` 2304 · `litComptes` 2306 · `ligneMessage` 2315
+`casesSalons` 2325 · `ouvreComptes` 2355 · `ouvreFicheCompte` 2447 · `videEcran` 2606
+`dessine` 2611 · `demarre` 2626
 
 Éléments :
 
 `#lienPublic` · `#lienAdmin` · `#lienRapport` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
 `#btnSupprimer` · `#btnSync` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 501 l. → console.css
+### `_console.css` — 523 l. → console.css
 
-- l.445 · Page de rapport
+- l.467 · Page de rapport
 
 ### `_dessin.html` — 1062 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -409,6 +410,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000002_ordre_fiche.sql` — —
 - `20260910000003_zones_masquees.sql` — evenement
 - `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
+- `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 
 ## Le reste
 
