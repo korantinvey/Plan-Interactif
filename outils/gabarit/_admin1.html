@@ -217,6 +217,11 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/** Ce salon héberge-t-il des sociétés sur le stand d'une autre ? La question
+ *  se pose sur les trois pavillons : un seul stand partagé suffit. */
+const salonPartage = () => (DATA?.plans || [])
+  .some(p => (p.stands || []).some(s => (s.coex || []).length));
+
 /**
  * Réglages généraux du plan.
  *
@@ -265,6 +270,31 @@ function ouvreReglages(){
         if (ADMIN) construitPanneau();
       };
       bloc.appendChild(l);
+    }
+
+    /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
+       a : sur un salon d'un exposant par emplacement, ces deux cases ne
+       promettraient qu'un plan déjà tel quel. */
+    if (salonPartage()){
+      [{ cle: "_coexNombre",
+         libelle: "Compter les co-exposants sur le plan",
+         // le compte fait partie du libellé du stand : il se redessine avec lui
+         apres: () => libelles() },
+       { cle: "_coexChoix",
+         libelle: "Demander quel exposant d'un stand partagé on vient voir" }
+      ].forEach(r => {
+        const l = document.createElement("label");
+        l.innerHTML = '<input type="checkbox"><span></span>';
+        l.querySelector("span").textContent = r.libelle;
+        const c = l.querySelector("input");
+        c.checked = conf(r.cle).visible !== false;
+        c.onchange = e => {
+          conf(r.cle).visible = e.target.checked;
+          enregistreConf();
+          if (r.apres) r.apres();
+        };
+        bloc.appendChild(l);
+      });
     }
 
     corps.appendChild(bloc);

@@ -237,6 +237,19 @@ function lignesSvg(lignes, f, x, yCentre, cls){
 }
 
 /**
+ * Ce que le plan dit des stands partagés, et que l'exploitant peut retirer.
+ *
+ * Deux réglages, parce que les deux gênes ne sont pas la même : la pastille
+ * charge le plan d'un chiffre de plus, la fenêtre de choix ajoute un clic
+ * avant toute fiche. Un salon où deux stands seulement sont partagés veut
+ * souvent se passer de la seconde sans renoncer à la première.
+ *
+ * Rien retiré par défaut : un réglage absent laisse le salon tel qu'il était.
+ */
+const coexComptes = () => conf("_coexNombre").visible !== false;
+const coexChoisit = () => conf("_coexChoix").visible !== false;
+
+/**
  * La ligne du numéro de stand, et le compte des sociétés qu'il héberge.
  *
  * Un stand partagé garde le nom de son titulaire — c'est le sien, c'est lui
@@ -254,7 +267,7 @@ function ligneCode(s, xc, yBase, f, wMax, cls){
   const texte = (x, c, txt) =>
     '<text class="' + c + '" x="' + x.toFixed(2) + '" y="' + yBase.toFixed(2) +
     '" font-size="' + f.toFixed(2) + '">' + esc(txt) + '</text>';
-  const n = (s.coex || []).length;
+  const n = coexComptes() ? (s.coex || []).length : 0;
   const wCode = largeur(s.code, P_CODE) * f;
   const compte = "+" + n;
   const marge = f * .34, ecart = f * .42;
@@ -1537,7 +1550,12 @@ function choisitExposant(o, rect, canal){
 function ouvre(o, rect, canal, iSoc){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
-  if (heberges.length && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
+     l'emplacement, et c'est son nom qui est peint sur la cloison. Les sociétés
+     qu'il héberge restent atteignables par la liste : le réglage allège le
+     plan, il ne retire personne du salon. */
+  const plusieurs = heberges.length > 0 && coexChoisit();
+  if (plusieurs && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
@@ -1562,8 +1580,8 @@ function ouvre(o, rect, canal, iSoc){
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
-  part.hidden = !heberges.length;
-  if (heberges.length){
+  part.hidden = !plusieurs;
+  if (plusieurs){
     part.textContent = (heberges.length + 1) + " exposants ici";
     part.onclick = () => choisitExposant(o, null, canal);
   }
