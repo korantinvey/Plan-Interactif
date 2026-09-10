@@ -200,11 +200,15 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
-.row{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;width:100%;text-align:left;
+.row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--accent-soft)}
-.row .code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;padding:3px 0;
+/* Le numéro tient sur une ligne : c'est un tout, et l'empiler en deux morceaux
+   le donnait à lire comme deux numéros. La case s'élargit plutôt, jusqu'au
+   plafond que `caseNumero` lui fixe. */
+.row .code{font-family:"IBM Plex Mono",monospace;font-size:var(--caseF,11.5px);font-weight:500;
+  padding:3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
 .row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
 /* Une zone et une conférence n'ont pas de numéro : leur case dit la sorte. En
@@ -226,7 +230,14 @@ button{cursor:pointer;background:none;border:none}
 .row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
-.stage{position:relative;overflow:hidden;background:var(--ground)}
+/* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
+   bord droit : la scène a donc toujours de quoi défiler. Or `hidden` cache la
+   barre sans interdire le défilement par programme — mettre le curseur dans un
+   tiroir encore en transition, donc hors champ, faisait glisser toute la scène
+   pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
+   tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
+   refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -569,7 +580,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
 .calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
-.panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
+.panel .ajout{width:100%;margin-top:12px;padding:6px;border:1px dashed var(--line-strong);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -1172,8 +1183,11 @@ button.expo:hover{background:var(--line)}
   font-family:"Fraunces",Georgia,serif;font-style:italic;font-size:12.5px}
 .liste-magazine .row{padding:11px 16px}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
-  background:none;padding:2px 9px 2px 0;text-align:left;color:var(--ink-3);
-  font-family:"Fraunces",Georgia,serif;font-size:14px;font-weight:600;letter-spacing:0}
+  background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
+  font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
+  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
+     s'y rapporte, plutôt que de la déborder sur un salon aux numéros longs. */
+  font-size:calc(var(--caseF,11.5px) * 1.15)}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
 .liste-magazine .row .s{font-style:italic}
@@ -1299,10 +1313,14 @@ button.expo:hover{background:var(--line)}
    entière : tracé sur le cadre qui défile, il serait resté en place et aurait
    quitté l'écran dès la deuxième page de résultats. Seule la première ligne
    porte le dégradé qui l'allume, comme sur la fiche. */
-.liste-chrono .row::after{content:"";position:absolute;left:68px;top:0;bottom:0;width:2px;
-  background:var(--line)}
+.liste-chrono .row::after{content:"";position:absolute;top:0;bottom:0;width:2px;
+  left:calc(16px + var(--caseL,48px) + 4px);background:var(--line)}
 .liste-chrono .row:first-child::after{background:linear-gradient(var(--accent),var(--line))}
-.liste-chrono .row::before{content:"";position:absolute;left:63px;top:50%;z-index:1;
+/* Le rail court dans la gouttière, entre la case du numéro et le nom : sa
+   position se déduit donc de la case, dont la largeur se règle sur le plus
+   long numéro du salon. Figée à 48 px, elle traversait les numéros doubles. */
+.liste-chrono .row::before{content:"";position:absolute;top:50%;z-index:1;
+  left:calc(16px + var(--caseL,48px) - 1px);
   width:12px;height:12px;margin-top:-6px;border-radius:50%;
   background:var(--surface);border:2px solid var(--line-strong)}
 .liste-chrono .row:hover::before{border-color:var(--accent)}
@@ -1615,6 +1633,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher
    devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
 .apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+/* Ce que le salon fournit et ce que l'exploitant a dessiné se suivent dans la
+   même pile : un trait et un intertitre disent où l'une finit et l'autre
+   commence. Le premier de la liste vient sous le bouton de réorganisation, qui
+   le sépare déjà — inutile d'y ajouter un trait. */
+.panel .secpile{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.panel .reorg + .secpile{margin-top:0;padding-top:0;border-top:none}
 .apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
@@ -3458,6 +3482,44 @@ const PLAFOND_SORTE = 500;
 const CASE_SORTE = { zone: "Zone", conf: "Conf" };
 
 /**
+ * Ce que la case affiche.
+ *
+ * Deux emplacements réunis arrivent séparés par un tiret entouré d'espaces —
+ * « D70 - E71 ». Ces espaces sont les seuls endroits où le numéro accepte de
+ * se couper : dans une case étroite, il s'y coupait, et la liste alignait des
+ * numéros en deux morceaux empilés. Le tiret dit déjà la réunion, les espaces
+ * n'y ajoutent rien.
+ */
+const codeCase = (o) => CASE_SORTE[o.kind] ||
+  String(o.code || "").replace(/\s*([-–—\/])\s*/g, "$1").trim() || "—";
+
+/**
+ * La case du numéro, de même largeur sur toutes les lignes.
+ *
+ * Une case taillée ligne à ligne mettrait les noms en escalier ; la case fixe
+ * qu'elle remplace coupait les numéros doubles. C'est donc le plus long numéro
+ * du salon qui la règle — et non le plus long des résultats affichés, qui
+ * ferait sauter la colonne des noms à chaque frappe.
+ *
+ * Un plafond garde au nom la place qui lui revient sur un téléphone : passé
+ * lui, c'est la police du numéro qui cède, plutôt que la case. Elle a son
+ * propre plancher, sans quoi un numéro aberrant — il en arrive — rendrait
+ * illisibles les huit cents autres pour tenir tout entier.
+ */
+const CASE_MIN = 48, CASE_MAX = 92, CASE_CADRE = 10, CASE_POLICE = 11.5;
+function caseNumero(){
+  let w = 0;
+  for (const o of TOUS)
+    if (o.kind === "stand" && o.code) w = Math.max(w, largeur(codeCase(o), P_CODE));
+  w *= CASE_POLICE;
+  const place = CASE_MAX - CASE_CADRE;
+  return {
+    l: Math.round(Math.min(Math.max(w + CASE_CADRE, CASE_MIN), CASE_MAX)),
+    f: w > place ? Math.max(9, CASE_POLICE * place / w) : CASE_POLICE,
+  };
+}
+
+/**
  * Ce que la seconde ligne ajoute : pour une conférence, quand et où.
  *
  * Un titre seul ne distingue pas deux sessions d'un programme qui en compte
@@ -3514,6 +3576,10 @@ function liste(){
     return n <= PLAFOND_SORTE;
   });
 
+  const boite = caseNumero();
+  box.style.setProperty("--caseL", boite.l + "px");
+  box.style.setProperty("--caseF", boite.f.toFixed(2) + "px");
+
   box.innerHTML = montres.length ? montres.map(o => {
     const heberge = o.kind === "coex";
     /* La liste ne porte que ce qui aide à retrouver quelqu'un : son numéro de
@@ -3530,7 +3596,7 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang +
       // une conférence n'est pas un objet du plan : rien ne peut la désigner
       '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
-      '<span class="code">' + esc(CASE_SORTE[o.kind] || o.code || "—") + '</span>' +
+      '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
@@ -4478,7 +4544,7 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (e.key === "Escape"){
-    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
@@ -5115,7 +5181,7 @@ function lignesApercu(stand){
   const i = Math.max(0, voisins.indexOf(stand));
   const debut = Math.min(Math.max(0, i - 2), Math.max(0, voisins.length - 8));
   return voisins.slice(debut, debut + 8).map(o =>
-    ({ code: o.code || "—", nom: o.nom, courant: o === stand }));
+    ({ code: codeCase(o), nom: o.nom, courant: o === stand }));
 }
 
 /**
@@ -5839,6 +5905,11 @@ function modePlacementLibelles(on){
      referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
   if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
   if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
+  /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
+     touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
+     rallume ou s'éteint donc ici, une fois pour tous, plutôt que dans chacun. */
+  const crayon = document.querySelector("#pile .rlib");
+  if (crayon) crayon.setAttribute("aria-pressed", PLACE_LIBELLES);
   majPaletteLibelle();
   libelles();
 }
@@ -5908,14 +5979,7 @@ function libellePointerUp(e){
   return true;
 }
 
-/* Sortir par la croix doit décocher la case du panneau, qui dit le contraire :
-   on le relit. La case elle-même n'en a pas besoin — elle vient d'être
-   cochée — et le refaire remplacerait le nœud en pleine gestion de son
-   propre événement. */
-if ($("libFerme")) $("libFerme").onclick = () => {
-  modePlacementLibelles(false);
-  construitPanneau();
-};
+if ($("libFerme")) $("libFerme").onclick = () => modePlacementLibelles(false);
 if ($("libAuto")) $("libAuto").onclick = libelleAutomatique;
 if ($("libTaille")){
   $("libTaille").oninput = e => {
@@ -7149,6 +7213,12 @@ $("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
+  /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
+     peuvent pas être allumés ensemble : leurs glissers viseraient le même
+     pointeur. Entrer dans le placement des libellés referme déjà le dessin ;
+     l'inverse manquait, et le crayon des textes serait resté allumé pour un
+     mode qu'on venait de quitter. */
+  if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
   formeSel = null;
   termineTrace(false);
   montreAimants(null);
@@ -7159,7 +7229,9 @@ function activeCalque(id){
   rafraichitApercu();
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
-  document.querySelectorAll("#pile .calq").forEach(d => {
+  /* Les lignes des calques de dessin seules : le crayon des textes porte le
+     même bouton sans être un calque, et se règle de son côté. */
+  document.querySelectorAll("#pile .calq[data-dcal]").forEach(d => {
     const actif = d.dataset.dcal === calqueActif;
     d.classList.toggle("actif", actif);
     const cr = d.querySelector(".ren");
@@ -8291,7 +8363,25 @@ function deplaceCouche(k, dir){
 
 /* ============================================================
    Panneau : une seule liste, tous types confondus
+
+   Deux natures s'y mêlent pourtant, et rien ne les distinguait : ce que le
+   salon fournit — habillage Klipso, zones, stands, textes — et ce que
+   l'exploitant a dessiné lui-même. Les premières se refont à chaque
+   synchronisation, les secondes sont son travail : on ne les supprime pas du
+   même cœur léger. Un intertitre ouvre donc chaque suite d'une même nature.
+   Il suit l'ordre plutôt qu'il ne l'impose — un calque de dessin glissé sous
+   les stands reste où on l'a mis, et gagne son propre intertitre là.
    ============================================================ */
+const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
+const nature = x => x.t === "dessin" ? "dessin" : "salon";
+
+function intertitre(hote, cle){
+  const t = document.createElement("span");
+  t.className = "eyebrow secpile";
+  t.textContent = NATURES[cle];
+  hote.appendChild(t);
+}
+
 function construitPanneau(){
   const hote = $("pile");
   hote.innerHTML = "";
@@ -8302,7 +8392,17 @@ function construitPanneau(){
   hote.appendChild(reorg);
   const liste = pile().slice().reverse();   // premier plan en tête
 
+  /* Un intertitre ne vaut que s'il sépare : tant que le salon n'a pas de
+     calque dessiné, la pile est d'une seule nature et se passe de titre. */
+  const melange = liste.some(x => nature(x) === "dessin") &&
+                  liste.some(x => nature(x) === "salon");
+  let natureCourante = null;
+
   liste.forEach((x, i) => {
+    if (melange && nature(x) !== natureCourante){
+      natureCourante = nature(x);
+      intertitre(hote, natureCourante);
+    }
     const d = document.createElement("div");
     d.className = "calq" + (x.t === "dessin" ? " perso" : "") +
                   (x.t === "dessin" && x.ref.id === calqueActif ? " actif" : "");
@@ -8313,6 +8413,10 @@ function construitPanneau(){
     d.innerHTML = '<label><input type="checkbox"' + coche + '><span></span></label>' +
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
+      /* avant la pastille, et non après comme le crayon d'un calque de dessin :
+         les couleurs des couches de données forment une colonne, et un bouton
+         glissé entre elles la romprait */
+      (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
       (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
@@ -8388,6 +8492,18 @@ function construitPanneau(){
       };
     }
 
+    /* Le crayon des textes ouvre le placement des libellés à la main, comme
+       celui d'un calque de dessin ouvre ses outils : deux façons de retoucher
+       ce qu'une couche pose sur le plan, donc le même bouton au même endroit.
+       Une case à cocher le disait aussi, mais en ligne séparée sous la couche,
+       où elle se lisait comme un réglage du salon — alors que c'est un mode de
+       travail, qui ne se retient pas d'une visite à l'autre. */
+    if (x.k === "data:labels"){
+      const cr = d.querySelector(".rlib");
+      cr.setAttribute("aria-pressed", PLACE_LIBELLES);
+      cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!PLACE_LIBELLES); };
+    }
+
     hote.appendChild(d);
 
     /* sous-calques de l'habillage : couleur et visibilité, pas d'ordre */
@@ -8403,12 +8519,10 @@ function construitPanneau(){
        quoi ce serait une couleur qui ne peint rien. */
     if (x.k === "data:stands" && secteursMontres())
       SECTEURS.forEach((h, nom) => rangSecteur(hote, nom));
-    /* les deux couleurs de texte se règlent sous la couche Textes, et avec
-       elles le placement à la main de chaque libellé */
+    /* les deux couleurs de texte se règlent sous la couche Textes */
     if (x.k === "data:labels"){
       rangSous(hote, "labStand", "Textes des stands", () => jeton("--ink"), () => styleData("labStand"));
       rangSous(hote, "labZone", "Textes des zones", () => jeton("--zone"), () => styleData("labZone"));
-      rangPlacement(hote);
     }
   });
 
@@ -8518,25 +8632,6 @@ function rangSous(hote, cle, libelle, defaut, applique){
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
                        enregistreConf(); applique(); };
-  hote.appendChild(d);
-}
-
-/**
- * La case qui ouvre le placement des libellés à la main.
- *
- * Elle vit sous la couche des textes parce que c'est elle qu'on retouche, à
- * côté de sa couleur et de sa visibilité. Ce n'est pas un réglage du salon
- * mais un mode de travail : elle ne se retient pas, et se relève décochée à
- * chaque ouverture du panneau.
- */
-function rangPlacement(hote){
-  const d = document.createElement("div");
-  d.className = "calq sous";
-  d.innerHTML = '<label><input type="checkbox"><span></span></label>';
-  d.querySelector("label span").textContent = "Placer les libellés à la main";
-  const c = d.querySelector("input");
-  c.checked = PLACE_LIBELLES;
-  c.onchange = e => modePlacementLibelles(e.target.checked);
   hote.appendChild(d);
 }
 
@@ -11527,7 +11622,10 @@ function versItineraireDe(pt){
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();
   if (ITI.a) relance();
-  else { montreResultat(); $("iDepart").focus(); }
+  /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
+     la transition, et un focus ordinaire ferait défiler la scène pour l'y
+     amener. On demande le curseur, pas le déplacement. */
+  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {

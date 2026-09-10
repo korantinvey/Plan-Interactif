@@ -11,7 +11,7 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1261 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1259 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.903 · 10. Mode administration
@@ -33,9 +33,9 @@ Fonctions :
 `enregistreNomZone` 1003 · `basculeAffichageZone` 1032 · `marqueZonesMasquees` 1049
 `ecritTableZones` 1064 · `cleLibelle` 1110 · `empreinteLibelle` 1126
 `placementLibelle` 1134 · `posePlacement` 1144 · `libelleAutomatique` 1161
-`modePlacementLibelles` 1170 · `majPaletteLibelle` 1182 · `choisitLibelle` 1199
-`pousseLibelle` 1206 · `libellePointerDown` 1214 · `libellePointerMove` 1229
-`libellePointerUp` 1238
+`modePlacementLibelles` 1170 · `majPaletteLibelle` 1187 · `choisitLibelle` 1204
+`pousseLibelle` 1211 · `libellePointerDown` 1219 · `libellePointerMove` 1234
+`libellePointerUp` 1243
 
 Éléments :
 
@@ -135,7 +135,7 @@ Fonctions :
 
 - l.523 · Page de rapport
 
-### `_dessin.html` — 1340 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1348 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -155,8 +155,8 @@ Fonctions :
 `eclairePoi` 862 · `signale` 873 · `calquePourImage` 887 · `poseImage` 900
 `importeImage` 913 · `dessinPointerDown` 964 · `dessinPointerMove` 1038
 `dessinPointerUp` 1076 · `termineTrace` 1112 · `aide` 1122 · `choisitOutil` 1147
-`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1267 · `creeCalque` 1298
-`demandeNom` 1311 · `renommeCalque` 1330
+`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1275 · `creeCalque` 1306
+`demandeNom` 1319 · `renommeCalque` 1338
 
 Éléments :
 
@@ -175,7 +175,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2290 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2314 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -207,7 +207,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2406 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2409 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -249,17 +249,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2376 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2418 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.333 · 3. Rendu du pavillon courant
 - l.400 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.518 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1266 · 6. Vue
-- l.1365 · 7. Sélection et fiche
-- l.2021 · 8. Interactions du plan
-- l.2222 · Le tiroir de la liste — écrans étroits
+- l.1308 · 6. Vue
+- l.1407 · 7. Sélection et fiche
+- l.2063 · 8. Interactions du plan
+- l.2264 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -276,14 +276,15 @@ Fonctions :
 `videCriteres` 905 · `nCriteres` 912 · `majCriteres` 921 · `ouvreCriteres` 979
 `filtre` 1092 · `critParSociete` 1096 · `visible` 1104 · `releveHotes` 1115
 `visibleSurPlan` 1123 · `visibleSociete` 1133 · `appliqueFiltre` 1139 · `rangSorte` 1158
-`sousLigne` 1178 · `liste` 1188 · `appliqueVue` 1269 · `rafraichitVue` 1290 · `poseVue` 1302
-`masque` 1320 · `fit` 1340 · `zoom` 1352 · `echelle` 1357 · `ETROIT` 1371 · `anime` 1373
-`noeud` 1397 · `canalPlan` 1407 · `rangSociete` 1415 · `select` 1424 · `centre` 1445
-`centrePoint` 1449 · `montre` 1464 · `libelleCorps` 1493 · `ordreCorps` 1505
-`momentLocal` 1542 · `programme` 1565 · `jourLong` 1598 · `ficheConf` 1609 · `lien` 1703
-`ecarteClicFantome` 1720 · `nomSociete` 1729 · `societes` 1742 · `choisitExposant` 1753
-`ouvre` 1789 · `ferme` 1995 · `onglet` 2011 · `milieu` 2041 · `commencePince` 2047
-`suitPince` 2061 · `mesureTiroir` 2233 · `montreTiroir` 2236
+`codeCase` 1179 · `caseNumero` 1196 · `sousLigne` 1216 · `liste` 1226 · `appliqueVue` 1311
+`rafraichitVue` 1332 · `poseVue` 1344 · `masque` 1362 · `fit` 1382 · `zoom` 1394
+`echelle` 1399 · `ETROIT` 1413 · `anime` 1415 · `noeud` 1439 · `canalPlan` 1449
+`rangSociete` 1457 · `select` 1466 · `centre` 1487 · `centrePoint` 1491 · `montre` 1506
+`libelleCorps` 1535 · `ordreCorps` 1547 · `momentLocal` 1584 · `programme` 1607
+`jourLong` 1640 · `ficheConf` 1651 · `lien` 1745 · `ecarteClicFantome` 1762
+`nomSociete` 1771 · `societes` 1784 · `choisitExposant` 1795 · `ouvre` 1831 · `ferme` 2037
+`onglet` 2053 · `milieu` 2083 · `commencePince` 2089 · `suitPince` 2103
+`mesureTiroir` 2275 · `montreTiroir` 2278
 
 Éléments :
 
@@ -333,17 +334,17 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 312 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 335 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.196 · Repères
+- l.238 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 210 · `ligneCouleur` 235 · `rangSecteur` 255
-`rangSous` 267 · `rangPlacement` 297 · `defautCouleur` 308
+`nature` 69 · `intertitre` 71 · `construitPanneau` 78 · `sectionSelection` 252
+`ligneCouleur` 277 · `rangSecteur` 297 · `rangSous` 309 · `defautCouleur` 331
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

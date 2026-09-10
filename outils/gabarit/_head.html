@@ -200,11 +200,15 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
-.row{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;width:100%;text-align:left;
+.row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
 .row[aria-current="true"]{background:var(--accent-soft)}
-.row .code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;padding:3px 0;
+/* Le numéro tient sur une ligne : c'est un tout, et l'empiler en deux morceaux
+   le donnait à lire comme deux numéros. La case s'élargit plutôt, jusqu'au
+   plafond que `caseNumero` lui fixe. */
+.row .code{font-family:"IBM Plex Mono",monospace;font-size:var(--caseF,11.5px);font-weight:500;
+  padding:3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   text-align:center;border:1px solid var(--line-strong);border-radius:2px;color:var(--ink-2)}
 .row[aria-current="true"] .code{border-color:var(--accent);color:var(--accent)}
 /* Une zone et une conférence n'ont pas de numéro : leur case dit la sorte. En
@@ -226,7 +230,14 @@ button{cursor:pointer;background:none;border:none}
 .row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
-.stage{position:relative;overflow:hidden;background:var(--ground)}
+/* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
+   bord droit : la scène a donc toujours de quoi défiler. Or `hidden` cache la
+   barre sans interdire le défilement par programme — mettre le curseur dans un
+   tiroir encore en transition, donc hors champ, faisait glisser toute la scène
+   pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
+   tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
+   refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -569,7 +580,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
 .calq.actif{background:var(--accent-soft);border-radius:3px;margin:0 -4px;padding:2px 4px}
-.panel .ajout{width:100%;margin-top:6px;padding:6px;border:1px dashed var(--line-strong);
+.panel .ajout{width:100%;margin-top:12px;padding:6px;border:1px dashed var(--line-strong);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .panel .ajout:hover{border-color:var(--accent);color:var(--accent)}
 
@@ -1172,8 +1183,11 @@ button.expo:hover{background:var(--line)}
   font-family:"Fraunces",Georgia,serif;font-style:italic;font-size:12.5px}
 .liste-magazine .row{padding:11px 16px}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
-  background:none;padding:2px 9px 2px 0;text-align:left;color:var(--ink-3);
-  font-family:"Fraunces",Georgia,serif;font-size:14px;font-weight:600;letter-spacing:0}
+  background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
+  font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
+  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
+     s'y rapporte, plutôt que de la déborder sur un salon aux numéros longs. */
+  font-size:calc(var(--caseF,11.5px) * 1.15)}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
 .liste-magazine .row .s{font-style:italic}
@@ -1299,10 +1313,14 @@ button.expo:hover{background:var(--line)}
    entière : tracé sur le cadre qui défile, il serait resté en place et aurait
    quitté l'écran dès la deuxième page de résultats. Seule la première ligne
    porte le dégradé qui l'allume, comme sur la fiche. */
-.liste-chrono .row::after{content:"";position:absolute;left:68px;top:0;bottom:0;width:2px;
-  background:var(--line)}
+.liste-chrono .row::after{content:"";position:absolute;top:0;bottom:0;width:2px;
+  left:calc(16px + var(--caseL,48px) + 4px);background:var(--line)}
 .liste-chrono .row:first-child::after{background:linear-gradient(var(--accent),var(--line))}
-.liste-chrono .row::before{content:"";position:absolute;left:63px;top:50%;z-index:1;
+/* Le rail court dans la gouttière, entre la case du numéro et le nom : sa
+   position se déduit donc de la case, dont la largeur se règle sur le plus
+   long numéro du salon. Figée à 48 px, elle traversait les numéros doubles. */
+.liste-chrono .row::before{content:"";position:absolute;top:50%;z-index:1;
+  left:calc(16px + var(--caseL,48px) - 1px);
   width:12px;height:12px;margin-top:-6px;border-radius:50%;
   background:var(--surface);border:2px solid var(--line-strong)}
 .liste-chrono .row:hover::before{border-color:var(--accent)}
@@ -1615,6 +1633,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher
    devant lui, et rien à ouvrir : le curseur ne promet donc rien. */
 .apart{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+/* Ce que le salon fournit et ce que l'exploitant a dessiné se suivent dans la
+   même pile : un trait et un intertitre disent où l'une finit et l'autre
+   commence. Le premier de la liste vient sous le bouton de réorganisation, qui
+   le sépare déjà — inutile d'y ajouter un trait. */
+.panel .secpile{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.panel .reorg + .secpile{margin-top:0;padding-top:0;border-top:none}
 .apart .calq label{cursor:default}
 .calq.sous{padding-left:15px}
 .calq.sous label{font-size:12px;color:var(--ink-2)}
