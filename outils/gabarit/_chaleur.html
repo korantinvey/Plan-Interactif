@@ -1,0 +1,328 @@
+
+/* ============================================================
+   14. Carte de chaleur — la fréquentation posée sur le plan
+
+   Le rapport d'utilisation dit combien de fiches ont été ouvertes ; il ne dit
+   pas lesquelles. C'est pourtant l'autre moitié de la question, et la seule
+   qui se reporte sur le plan de l'année suivante : quel emplacement a retenu,
+   quelle travée personne n'a regardée. Les compteurs le savent — une ligne par
+   (stand, jour, canal) — mais neuf cents lignes de tableau ne se lisent pas.
+   Sur le plan, si : c'est justement la forme que l'organisateur connaît.
+
+   Elle ne vit qu'en administration. La fréquentation est une donnée
+   d'exploitation, et la base la borne au compte qui a accès au salon —
+   `audience_cibles` est en « security invoker », la page n'y ajoute rien.
+
+   Ce qu'elle montre, et ce qu'elle ne montre pas : des consultations de fiche,
+   pas des visiteurs uniques — les compter demanderait de retenir les paires
+   (stand, visiteur), soit le volume que les compteurs ont précisément
+   supprimé. Les zones organisateur n'y figurent pas : la page ne les compte
+   pas davantage, une zone n'est pas un exposant.
+   ============================================================ */
+const CHAL_PERIODES = [["7", "7 j"], ["30", "30 j"], ["90", "90 j"], ["tout", "Tout"]];
+
+/* Ce que la base a rendu pour la période en cours, et si l'on peint. Le second
+   drapeau dit aussi quand *cesser* de peindre : sans lui, la page publique
+   balaierait ses neuf cents stands à chaque montage pour n'y rien retirer. */
+let CHALEUR = null, chalOuvert = false, chalPose = false, chalJours = "30";
+
+const nbChal = (n) => Number(n || 0).toLocaleString("fr-FR");
+
+/**
+ * Du bleu au rouge, en passant par le violet.
+ *
+ * Le chemin compte autant que les deux bouts. Un dégradé qui traverse le vert
+ * et le jaune — l'arc-en-ciel des cartes de chaleur — n'ordonne rien : ses
+ * teintes se lisent comme des catégories, et son jaune paraît plus clair que
+ * ses deux extrémités, si bien que le milieu de l'échelle saute aux yeux plus
+ * que son maximum. Ici seule la teinte tourne, du bleu au rouge, tandis que la
+ * clarté avance d'un bout à l'autre : le rang se lit même sans distinguer les
+ * couleurs, et survit à une impression en gris.
+ *
+ * Comme pour les secteurs, la saturation et la clarté viennent du thème et non
+ * du code : le libellé du stand s'écrit à l'encre du texte, et une rampe
+ * unique le rendrait illisible sur l'un des deux fonds.
+ */
+function rampeChaleur(){
+  const v = (n, d) => { const x = parseFloat(jeton(n)); return isNaN(x) ? d : x; };
+  return { s0: v("--chal-s0", 42), s1: v("--chal-s1", 72),
+           l0: v("--chal-l0", 90), l1: v("--chal-l1", 60) };
+}
+
+/* La rampe est relevée une fois par peinture et passée aux neuf cents stands :
+   la redemander à la feuille de style pour chacun d'eux coûtait quatre lectures
+   du style calculé par emplacement, à chaque changement de pavillon. */
+function tonChaleur(t, r){
+  const u = Math.max(0, Math.min(1, t));
+  const { s0, s1, l0, l1 } = r || rampeChaleur();
+  return hslHex(225 + u * 130, s0 + u * (s1 - s0), l0 + u * (l1 - l0));
+}
+
+/**
+ * La place d'un stand sur l'échelle.
+ *
+ * Rapportée au maximum, elle n'aurait rien montré : sur un salon la fiche la
+ * plus ouverte l'est dix à cent fois plus que la médiane, et tout le reste du
+ * plan serait resté du même bleu. Le logarithme rend ces écarts lisibles sans
+ * changer l'ordre. Il compresse, donc il faut le dire : le cartouche porte les
+ * nombres aux bornes et au milieu de la bande, et non des pourcentages.
+ */
+const rangChaleur = (n, max) => max > 0 ? Math.log1p(n) / Math.log1p(max) : 0;
+
+/** L'inverse : le nombre de consultations qu'une position de la bande vaut. */
+const valeurChaleur = (u, max) => Math.round(Math.expm1(u * Math.log1p(max)));
+
+/* ------------------------------------------------------------------
+   Lecture
+   ------------------------------------------------------------------ */
+/**
+ * Les compteurs du salon ouvert, pour la période retenue.
+ *
+ * Le plan connaît son salon par son slug, la base par son identifiant : le
+ * premier appel fait le lien, comme la publication de la configuration. On le
+ * retient — il ne change pas tant qu'on regarde le même salon.
+ */
+let _evtChaleur = null;
+async function chargeChaleur(){
+  const acces = accesBase();
+  if (!acces) throw new Error("session absente, reconnectez-vous");
+  if (!_evtChaleur){
+    const evt = await base(acces,
+      "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+    if (!evt.length) throw new Error("événement introuvable");
+    _evtChaleur = evt[0].id;
+  }
+  const r = await base(acces, "rpc/audience_cibles", {
+    method: "POST",
+    body: JSON.stringify({
+      p_evenement: _evtChaleur,
+      p_jours: chalJours === "tout" ? null : Number(chalJours),
+      p_genre: "fiche_stand",
+    }),
+  });
+  const cibles = r?.cibles || [];
+  const par = new Map(cibles.map(c => [c.id, Number(c.n) || 0]));
+  CHALEUR = {
+    par: par,
+    max: cibles.length ? Number(cibles[0].n) || 0 : 0,
+    total: Number(r?.total) || 0,
+    depuis: r?.depuis || null,
+    cibles: cibles,
+  };
+}
+
+/* ------------------------------------------------------------------
+   Le plan
+   ------------------------------------------------------------------ */
+/**
+ * La teinte posée sur le groupe du stand, comme celle du secteur : la feuille
+ * de style la lit de là et garde la main sur le survol et la sélection, qui
+ * doivent l'emporter. Les stands dessinés à la main la reçoivent aussi — ils
+ * découpent un emplacement, et un découpage resté blanc trouerait la carte.
+ *
+ * Appelée depuis `coloreSecteurs`, seul endroit que traversent tous les
+ * chemins qui rebâtissent les stands : changement de pavillon, montage du
+ * fond, rafraîchissement des découpages.
+ */
+function coloreChaleur(){
+  const on = chalOuvert && CHALEUR;
+  if (!on && !chalPose) return;      // rien n'a jamais été peint : rien à effacer
+  chalPose = !!on;
+  const rampe = on ? rampeChaleur() : null;
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
+    const titre = g.querySelector(":scope > title.chal");
+    if (!on){
+      g.removeAttribute("data-chaleur");
+      g.style.removeProperty("--chal-c");
+      if (titre) titre.remove();
+      return;
+    }
+    const n = CHALEUR.par.get(g.dataset.id) || 0;
+    g.setAttribute("data-chaleur", "");
+    g.style.setProperty("--chal-c", tonChaleur(rangChaleur(n, CHALEUR.max), rampe));
+    /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
+       se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
+       relance a besoin du nombre, pas de la nuance. */
+    const t = titre || g.insertBefore(
+      document.createElementNS("http://www.w3.org/2000/svg", "title"), g.firstChild);
+    t.setAttribute("class", "chal");
+    const o = parId.get(g.dataset.id);
+    t.textContent = (o && (o.nom || o.code) ? (o.code ? o.code + " — " : "") +
+      (o.nom || "emplacement") + " · " : "") +
+      nbChal(n) + (n > 1 ? " consultations" : " consultation");
+  });
+}
+
+/* ------------------------------------------------------------------
+   Le cartouche
+   ------------------------------------------------------------------ */
+/** Construit une fois, à la première ouverture : la page publique n'en a pas. */
+function cartoucheChaleur(){
+  let c = $("chaleur");
+  if (c) return c;
+  c = document.createElement("div");
+  c.className = "chalbar";
+  c.id = "chaleur";
+  c.hidden = true;
+  c.innerHTML =
+    '<div class="chalTete"><span class="eyebrow">Fréquentation par stand</span>' +
+    '<button type="button" id="chalFerme" title="Fermer" aria-label="Fermer la carte de chaleur">&times;</button></div>' +
+    '<div class="chalPer" id="chalPer" role="group" aria-label="Période"></div>' +
+    '<div class="chalEch" id="chalEch" hidden><i></i>' +
+    '<div class="bornes"><span>0</span><span></span><span></span></div></div>' +
+    '<p class="chalEtat" id="chalEtat"></p>' +
+    '<ol class="chalTop" id="chalTop"></ol>';
+  $("stage").appendChild(c);
+
+  $("chalFerme").onclick = () => fermeChaleur();
+  const per = $("chalPer");
+  CHAL_PERIODES.forEach(([cle, lib]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = lib;
+    b.dataset.per = cle;
+    b.setAttribute("aria-pressed", String(cle === chalJours));
+    b.onclick = () => {
+      if (chalJours === cle) return;
+      chalJours = cle;
+      per.querySelectorAll("button").forEach(x =>
+        x.setAttribute("aria-pressed", String(x.dataset.per === chalJours)));
+      rafraichitChaleur();
+    };
+    per.appendChild(b);
+  });
+  return c;
+}
+
+function ecritEtatChaleur(txt, erreur){
+  const p = $("chalEtat");
+  if (!p) return;
+  p.textContent = txt;
+  p.classList.toggle("err", !!erreur);
+}
+
+/** La bande de couleurs, et les nombres qu'elle vaut. */
+function dessineEchelleChaleur(){
+  const e = $("chalEch");
+  e.hidden = CHALEUR.max <= 0;
+  if (e.hidden) return;
+  const rampe = rampeChaleur();
+  const arrets = [0, .25, .5, .75, 1].map(u => tonChaleur(u, rampe)).join(",");
+  e.querySelector("i").style.background = "linear-gradient(90deg," + arrets + ")";
+  const b = e.querySelectorAll(".bornes span");
+  b[1].textContent = nbChal(valeurChaleur(.5, CHALEUR.max));
+  b[2].textContent = nbChal(CHALEUR.max);
+}
+
+/**
+ * Le palmarès, sous la bande.
+ *
+ * La couleur répond à « où » ; elle répond mal à « lesquels » — dix stands
+ * voisins tous rouges se ressemblent, et le premier ne se distingue pas du
+ * dixième. Le rang le dit, et le clic y mène : c'est de là qu'on part pour
+ * rappeler un exposant ou relouer l'emplacement d'à côté.
+ */
+function dessineTopChaleur(){
+  const ol = $("chalTop");
+  ol.innerHTML = "";
+  CHALEUR.cibles.slice(0, 10).forEach((c, i) => {
+    const o = parId.get(c.id);
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span class="rang"></span><span class="code"></span>' +
+                  '<span class="nom"></span><span class="n"></span>';
+    b.querySelector(".rang").textContent = (i + 1) + ".";
+    b.querySelector(".code").textContent = c.code || "";
+    b.querySelector(".nom").textContent = c.nom || "Sans nom";
+    b.querySelector(".n").textContent = nbChal(c.n);
+    /* Une cible que le salon ne porte plus — stand retiré depuis, exposant
+       parti — garde ses consultations mais n'a plus de forme à montrer. On la
+       laisse au palmarès, la taire fausserait le total, et on retire le clic
+       plutôt que de le laisser ne rien faire. */
+    if (o){
+      b.title = "Voir sur le plan";
+      b.onclick = () => select(c.id, true);
+    } else {
+      b.disabled = true;
+      b.title = "Cet emplacement n'est plus au plan.";
+    }
+    li.appendChild(b);
+    ol.appendChild(li);
+  });
+}
+
+/** Ce que la période a donné, en une phrase. */
+function phraseChaleur(){
+  const quand = chalJours === "tout" ? "depuis le début"
+              : "sur les " + chalJours + " derniers jours";
+  if (!CHALEUR.total){
+    return CHALEUR.depuis
+      ? "Aucune fiche ouverte " + quand + "."
+      : "Aucune consultation de fiche enregistrée pour ce salon : " +
+        "les compteurs par stand n'ont encore rien reçu.";
+  }
+  return nbChal(CHALEUR.total) + " fiche" + (CHALEUR.total > 1 ? "s" : "") +
+    " d'exposant ouverte" + (CHALEUR.total > 1 ? "s" : "") + " " + quand + ", " +
+    "sur " + nbChal(CHALEUR.par.size) + " emplacement" + (CHALEUR.par.size > 1 ? "s" : "") +
+    ". Consultations, non visiteurs uniques ; les zones organisateur ne sont pas comptées." +
+    (CHALEUR.depuis ? " Comptage par stand depuis le " +
+      new Date(CHALEUR.depuis + "T00:00:00").toLocaleDateString("fr-FR") + "." : "");
+}
+
+async function rafraichitChaleur(){
+  ecritEtatChaleur("Lecture des compteurs…");
+  try {
+    await chargeChaleur();
+  } catch (e) {
+    CHALEUR = null;
+    coloreChaleur();
+    $("chalEch").hidden = true;
+    $("chalTop").innerHTML = "";
+    ecritEtatChaleur("Fréquentation indisponible : " + e.message, true);
+    return;
+  }
+  coloreChaleur();
+  dessineEchelleChaleur();
+  dessineTopChaleur();
+  ecritEtatChaleur(phraseChaleur());
+}
+
+/* ------------------------------------------------------------------
+   Ouverture et fermeture
+   ------------------------------------------------------------------ */
+function fermeChaleur(){
+  if (!chalOuvert) return;
+  chalOuvert = false;
+  const c = $("chaleur");
+  if (c) c.hidden = true;
+  const b = $("btnChaleur");
+  if (b) b.setAttribute("aria-pressed", "false");
+  coloreChaleur();
+}
+
+/* Le thème peut basculer alors que la carte est ouverte : les rangs ne
+   changent pas, les tons si. */
+function retonneChaleur(){
+  if (!chalOuvert || !CHALEUR) return;
+  coloreChaleur();
+  dessineEchelleChaleur();
+}
+try {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", retonneChaleur);
+} catch (e) {}
+
+function basculeChaleur(){
+  if (chalOuvert) return fermeChaleur();
+  chalOuvert = true;
+  const b = $("btnChaleur");
+  if (b) b.setAttribute("aria-pressed", "true");
+  cartoucheChaleur().hidden = false;
+  /* Sur un écran étroit les deux panneaux d'administration se posent dans le
+     même coin, au-dessus du tiroir : on n'en montre qu'un. */
+  if (ETROIT() && $("panel").classList.contains("open")){
+    $("panel").classList.remove("open");
+    if ($("btnLayers")) $("btnLayers").setAttribute("aria-pressed", "false");
+  }
+  rafraichitChaleur();
+}

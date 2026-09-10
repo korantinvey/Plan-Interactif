@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1162 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1169 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.804 · 10. Mode administration
-- l.870 · Renommer une zone organisateur
-- l.922 · Masquer une zone organisateur
-- l.990 · Placer un libellé à la main
+- l.877 · Renommer une zone organisateur
+- l.929 · Masquer une zone organisateur
+- l.997 · Placer un libellé à la main
 
 Fonctions :
 
@@ -29,12 +29,12 @@ Fonctions :
 `contenuApercu` 414 · `apercuFiche` 437 · `ouvreReglages` 499 · `voletPlan` 530
 `nomDuTon` 657 · `voletApparence` 661 · `enregistreConf` 754 · `rgbHex` 760 · `hexa` 767
 `luminance` 771 · `ecarte` 785 · `joli` 800 · `retireAdmin` 817 · `activeAdmin` 830
-`renommeZone` 880 · `enregistreNomZone` 904 · `basculeAffichageZone` 933
-`marqueZonesMasquees` 950 · `ecritTableZones` 965 · `cleLibelle` 1011
-`empreinteLibelle` 1027 · `placementLibelle` 1035 · `posePlacement` 1045
-`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1083
-`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
-`libellePointerMove` 1130 · `libellePointerUp` 1139
+`renommeZone` 887 · `enregistreNomZone` 911 · `basculeAffichageZone` 940
+`marqueZonesMasquees` 957 · `ecritTableZones` 972 · `cleLibelle` 1018
+`empreinteLibelle` 1034 · `placementLibelle` 1042 · `posePlacement` 1052
+`libelleAutomatique` 1069 · `modePlacementLibelles` 1078 · `majPaletteLibelle` 1090
+`choisitLibelle` 1107 · `pousseLibelle` 1114 · `libellePointerDown` 1122
+`libellePointerMove` 1137 · `libellePointerUp` 1146
 
 Éléments :
 
@@ -73,6 +73,21 @@ Fonctions :
 Éléments :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
+
+### `_chaleur.html` — 328 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.2 · 14. Carte de chaleur — la fréquentation posée sur le plan
+
+Fonctions :
+
+`nbChal` 29 · `rampeChaleur` 46 · `tonChaleur` 55 · `rangChaleur` 70 · `valeurChaleur` 73
+`chargeChaleur` 86 · `coloreChaleur` 127 · `cartoucheChaleur` 160 · `ecritEtatChaleur` 197
+`dessineEchelleChaleur` 205 · `dessineTopChaleur` 225 · `phraseChaleur` 256
+`rafraichitChaleur` 273 · `fermeChaleur` 294 · `retonneChaleur` 306 · `basculeChaleur` 315
+
+Éléments :
+
+`#chalFerme` · `#chalPer` · `#chalEch` · `#chalEtat` · `#chalTop`
 
 ### `_config.js` — 15 l. → config.js
 
@@ -174,17 +189,17 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2003 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2066 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
 `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones` · `#btnItineraire`
-`#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#side`
-`#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
-`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#btnParcours` · `#nParcours` · `#btnChaleur` · `#btnLayers` · `#btnReglages` · `#btnTheme`
+`#side` · `#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt`
+`#list` · `#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn`
+`#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt`
+`#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti`
+`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
 `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
 `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
@@ -248,17 +263,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2418 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2426 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.333 · 3. Rendu du pavillon courant
 - l.400 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.518 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1308 · 6. Vue
-- l.1407 · 7. Sélection et fiche
-- l.2063 · 8. Interactions du plan
-- l.2264 · Le tiroir de la liste — écrans étroits
+- l.1314 · 6. Vue
+- l.1413 · 7. Sélection et fiche
+- l.2069 · 8. Interactions du plan
+- l.2270 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -269,21 +284,21 @@ Fonctions :
 `libelleForce` 476 · `libelleZone` 479 · `libelleEmplacement` 498 · `indexeSecteurs` 539
 `secteursMontres` 552 · `couleurConf` 556 · `hslHex` 560 · `couleurSecteur` 578
 `BANDES` 597 · `majFondus` 605 · `pastilleSecteur` 643 · `coloreSecteurs` 656
-`appliqueSecteurs` 693 · `filtreTheme` 710 · `themeFiltrable` 786 · `clesCriteres` 802
-`libelleCritere` 809 · `separeValeurs` 817 · `valeursCritere` 834 · `texteCriteres` 847
-`indexeCriteres` 860 · `dansCriteres` 887 · `critereActif` 895 · `basculeCritere` 897
-`videCriteres` 905 · `nCriteres` 912 · `majCriteres` 921 · `ouvreCriteres` 979
-`filtre` 1092 · `critParSociete` 1096 · `visible` 1104 · `releveHotes` 1115
-`visibleSurPlan` 1123 · `visibleSociete` 1133 · `appliqueFiltre` 1139 · `rangSorte` 1158
-`codeCase` 1179 · `caseNumero` 1196 · `sousLigne` 1216 · `liste` 1226 · `appliqueVue` 1311
-`rafraichitVue` 1332 · `poseVue` 1344 · `masque` 1362 · `fit` 1382 · `zoom` 1394
-`echelle` 1399 · `ETROIT` 1413 · `anime` 1415 · `noeud` 1439 · `canalPlan` 1449
-`rangSociete` 1457 · `select` 1466 · `centre` 1487 · `centrePoint` 1491 · `montre` 1506
-`libelleCorps` 1535 · `ordreCorps` 1547 · `momentLocal` 1584 · `programme` 1607
-`jourLong` 1640 · `ficheConf` 1651 · `lien` 1745 · `ecarteClicFantome` 1762
-`nomSociete` 1771 · `societes` 1784 · `choisitExposant` 1795 · `ouvre` 1831 · `ferme` 2037
-`onglet` 2053 · `milieu` 2083 · `commencePince` 2089 · `suitPince` 2103
-`mesureTiroir` 2275 · `montreTiroir` 2278
+`appliqueSecteurs` 699 · `filtreTheme` 716 · `themeFiltrable` 792 · `clesCriteres` 808
+`libelleCritere` 815 · `separeValeurs` 823 · `valeursCritere` 840 · `texteCriteres` 853
+`indexeCriteres` 866 · `dansCriteres` 893 · `critereActif` 901 · `basculeCritere` 903
+`videCriteres` 911 · `nCriteres` 918 · `majCriteres` 927 · `ouvreCriteres` 985
+`filtre` 1098 · `critParSociete` 1102 · `visible` 1110 · `releveHotes` 1121
+`visibleSurPlan` 1129 · `visibleSociete` 1139 · `appliqueFiltre` 1145 · `rangSorte` 1164
+`codeCase` 1185 · `caseNumero` 1202 · `sousLigne` 1222 · `liste` 1232 · `appliqueVue` 1317
+`rafraichitVue` 1338 · `poseVue` 1350 · `masque` 1368 · `fit` 1388 · `zoom` 1400
+`echelle` 1405 · `ETROIT` 1419 · `anime` 1421 · `noeud` 1445 · `canalPlan` 1455
+`rangSociete` 1463 · `select` 1472 · `centre` 1493 · `centrePoint` 1497 · `montre` 1512
+`libelleCorps` 1541 · `ordreCorps` 1553 · `momentLocal` 1590 · `programme` 1613
+`jourLong` 1646 · `ficheConf` 1657 · `lien` 1751 · `ecarteClicFantome` 1768
+`nomSociete` 1777 · `societes` 1790 · `choisitExposant` 1801 · `ouvre` 1837 · `ferme` 2043
+`onglet` 2059 · `milieu` 2089 · `commencePince` 2095 · `suitPince` 2109
+`mesureTiroir` 2281 · `montreTiroir` 2284
 
 Éléments :
 
@@ -445,6 +460,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 - `20260910000006_ferme_lecture_anon.sql` — —
 - `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
+- `20260910000008_audience.sql` — fn audience_cibles
 
 ## Le reste
 

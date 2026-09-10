@@ -815,7 +815,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "btnChaleur"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -838,10 +838,17 @@ function activeAdmin(){
     b.onclick = () => {
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
+      // même coin, au-dessus du tiroir : un seul panneau sur un écran étroit
+      if (o && ETROIT()) fermeChaleur();
     };
   }
   const r = $("btnReglages");
   if (r){ r.hidden = false; r.onclick = ouvreReglages; }
+  /* La fréquentation se lit sur le plan lui-même, et non depuis la console :
+     c'est ici qu'on redessine les allées, et c'est ici qu'il faut savoir
+     lesquelles ont servi. */
+  const ch = $("btnChaleur");
+  if (ch){ ch.hidden = false; ch.onclick = basculeChaleur; }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste

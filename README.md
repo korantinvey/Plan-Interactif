@@ -816,7 +816,45 @@ synchronisation, dit ce qui existe et donne les libellés que le rapport affiche
 Un canal inconnu, en revanche, n'emporte pas son geste : la fiche a bien été
 ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 
-La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel.
+La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel, et
+par `audience_cibles()` pour le détail par stand.
+
+### La carte de chaleur
+
+Le rapport dit combien de fiches ont été ouvertes ; il ne dit pas lesquelles.
+C'est l'autre moitié de la question, et la seule qui se reporte sur le plan de
+l'année suivante : quel emplacement a retenu, quelle travée personne n'a
+regardée. `compteur_cible` le sait — une ligne par (stand, jour, canal) — mais
+neuf cents lignes de tableau ne se lisent pas. Sur le plan, si.
+
+Elle s'ouvre depuis **la page d'administration du plan**, par l'icône de flamme
+de la barre du haut, à côté des calques. Les emplacements se colorent alors du
+bleu — pas ou peu de consultations — au rouge, et le cartouche donne la période
+(sept, trente, quatre-vingt-dix jours, ou depuis le début), l'échelle et les dix
+premiers, cliquables pour aller les voir sur le plan. Le survol d'un stand donne
+son chiffre exact. Rien ne s'enregistre : c'est une lecture, pas un réglage, et
+la publication de la configuration ne l'emporte pas.
+
+Trois choses qu'il faut savoir avant d'en tirer une conclusion :
+
+- Ce sont des **consultations de fiche**, pas des visiteurs uniques. Compter les
+  seconds demanderait de retenir les paires (stand, visiteur), soit exactement le
+  volume que les compteurs ont supprimé — et c'est aussi le nombre que l'exposant
+  comprend.
+- Les **zones organisateur ne sont pas comptées** : la page ne les mesure pas
+  davantage, une zone n'est pas un exposant. Elles gardent leur teinte.
+- L'échelle est **logarithmique**. Rapportée au maximum, elle n'aurait rien
+  montré : la fiche la plus ouverte l'est dix à cent fois plus que la médiane, et
+  tout le reste du plan serait resté du même bleu. Le cartouche porte donc des
+  nombres à ses bornes et en son milieu, jamais des pourcentages.
+
+Le dégradé ne traverse ni le vert ni le jaune : l'arc-en-ciel des cartes de
+chaleur n'ordonne rien, ses teintes se lisent comme des catégories et son jaune
+paraît plus clair que ses deux bouts. Ici seule la teinte tourne, du bleu au
+rouge par le violet, tandis que la clarté avance d'un bout à l'autre — le rang se
+lit même sans distinguer les couleurs. Saturation et clarté viennent du thème,
+comme celles des secteurs, sans quoi le libellé du stand deviendrait illisible
+sur l'un des deux fonds.
 
 ## Comptes et profils
 
