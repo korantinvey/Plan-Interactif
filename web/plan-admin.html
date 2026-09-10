@@ -6222,14 +6222,30 @@ function cherche(g, depart, arrivee){
  *
  * Rend -1 pour les cases hors de la nappe, ou qu'aucune allée ne relie.
  */
-function distancesDepuis(g, depart){
+function distancesDepuis(g, depart){ return distancesMulti(g, [depart]).d; }
+
+/**
+ * Le même balayage, mais depuis plusieurs cases à la fois.
+ *
+ * Un stand n'a pas une entrée mais autant que de faces libres, et la plus
+ * courte des deux extrémités ne se sait qu'une fois les deux essayées. Partir
+ * de toutes les arrivées d'un coup donne, pour chaque départ possible, la
+ * distance à la plus proche d'entre elles — le meilleur couple sort d'un seul
+ * balayage, là où seize A* le paieraient au prix fort.
+ *
+ * `src` retient de laquelle chaque case est le plus proche : c'est ce qui
+ * permet de retrouver la porte à l'autre bout.
+ */
+function distancesMulti(g, departs){
   const n = g.w * g.h;
   const d = new Int32Array(n).fill(-1);
-  if (depart < 0 || !g.nappe[depart]) return d;
+  const src = new Int32Array(n).fill(-1);
   const file = new Int32Array(n);
   let tete = 0, queue = 0;
-  file[queue++] = depart;
-  d[depart] = 0;
+  departs.forEach((c, k) => {
+    if (c < 0 || !g.nappe[c] || d[c] >= 0) return;
+    d[c] = 0; src[c] = k; file[queue++] = c;
+  });
   while (tete < queue){
     const i = file[tete++], cx = i % g.w, cy = (i - cx) / g.w;
     for (let v = 0; v < 4; v++){
@@ -6237,11 +6253,11 @@ function distancesDepuis(g, depart){
       if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
       const j = ny * g.w + nx;
       if (d[j] >= 0 || !g.nappe[j]) continue;
-      d[j] = d[i] + 1;
+      d[j] = d[i] + 1; src[j] = src[i];
       file[queue++] = j;
     }
   }
-  return d;
+  return { d: d, src: src };
 }
 
 /* ------------------------------------------------------------
@@ -6450,25 +6466,98 @@ function faceDeSortie(p, obj, ancre){
 }
 
 /**
+ * Par où l'on entre dans un emplacement, et par où l'on en sort.
+ *
+ * On s'accrochait au centre du stand : l'anneau rendait la première allée
+ * rencontrée en s'écartant du milieu, c'est-à-dire la face la plus proche du
+ * barycentre — pas celle par laquelle on arrive. Un stand plus large que
+ * profond, abordé par l'allée qui longe son petit côté, se voyait ainsi
+ * entrer par le haut, quitte à contourner tout l'emplacement pour cela.
+ *
+ * On énumère donc les entrées plutôt qu'on n'en devine une : le milieu de
+ * chaque face non mitoyenne — c'est là qu'un visiteur franchit un stand
+ * ouvert — décalé d'un pas dans l'allée pour tomber hors du dégagement. Le
+ * choix entre elles ne se fait pas ici : il revient au trajet, qui garde la
+ * plus courte (`troncon`).
+ *
+ * Un emplacement sans face libre — enclavé, ou dont le dégagement mange le
+ * seul passage — retombe sur l'accroche depuis son centre, qui sait relâcher
+ * la règle plutôt que de rendre la main.
+ */
+function accesDe(g, p, obj, xy){
+  const d = obj && obj.d;
+  const out = [];
+  const vus = new Set();
+  if (p && d){
+    const pas = PAS_GRILLE + (g.pmr ? DEGAGEMENT_PMR : DEGAGEMENT);
+    for (const f of facesLibres(p, obj)){
+      const c = accroche(g, [f.mid[0] + f.u[0] * pas, f.mid[1] + f.u[1] * pas], d);
+      if (c >= 0 && g.nappe[c] && !vus.has(c)){ vus.add(c); out.push(c); }
+    }
+  }
+  if (!out.length){
+    const c = accroche(g, xy, d);
+    if (c >= 0) out.push(c);
+  }
+  return out;
+}
+
+/* Combien de couples d'entrées on trace avant de trancher. Le balayage les
+   classe sur la longueur d'allée seule ; l'A*, lui, paie aussi les virages et
+   le milieu de l'allée, et peut préférer un détour droit à un zigzag plus
+   court. Les deux ne s'accordent donc pas toujours, et le premier couple
+   n'est pas toujours celui qui rend le trait le plus court. Trois suffisent :
+   au-delà, on retrace des façades que le balayage a déjà mises loin derrière. */
+const ESSAIS_ACCES = 3;
+
+/**
+ * Les couples entrée-sortie à essayer, du plus prometteur au moins.
+ *
+ * Tracer chaque entrée contre chaque sortie ferait jusqu'à seize A* pour un
+ * seul tronçon. Un balayage depuis toutes les sorties à la fois donne, pour
+ * chaque entrée, la distance à la plus proche d'entre elles — et laquelle :
+ * le classement des couples se lit alors d'un seul parcours du pavillon, et
+ * l'A* n'est payé que sur les premiers.
+ */
+function couplesAcces(g, A, B){
+  if (A.length === 1 && B.length === 1) return [[A[0], B[0]]];
+  const bal = distancesMulti(g, B);
+  return A
+    .filter(c => c >= 0 && bal.d[c] >= 0)
+    .sort((x, y) => bal.d[x] - bal.d[y])
+    .slice(0, ESSAIS_ACCES)
+    .map(c => [c, B[bal.src[c]]]);
+}
+
+/**
  * Un tronçon dans un pavillon, de point à point.
  *
  * Les vrais points sont raccrochés aux extrémités : le trait doit partir du
  * stand, pas de l'allée devant lui, sinon il paraît commencer à côté.
+ *
+ * Des couples d'entrées proposés on garde celui dont le trait, une fois tracé
+ * et les amorces posées, est le plus court : c'est la seule mesure qui soit
+ * celle du visiteur.
  */
 function troncon(p, pmr, depart, arrivee, objD, objA){
   const g = grille(p, pmr);
   const dD = objD && objD.d, dA = objA && objA.d;
-  const a = accroche(g, depart, dD), b = accroche(g, arrivee, dA);
-  if (a < 0 || b < 0) return null;
-  const suite = cherche(g, a, b);
-  if (!suite) return null;
-  const chemin = reduit(g, suite);
-  const envers = chemin.slice().reverse();
-  const pts = nettoie([depart.slice()]
-    .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
-            amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
-            [arrivee.slice()]));
-  return { genre: "marche", p: p.i, pts: pts, m: longueurDehors(pts, dD, dA) };
+  const A = accesDe(g, p, objD, depart), B = accesDe(g, p, objA, arrivee);
+  if (!A.length || !B.length) return null;
+  let mieux = null;
+  for (const [a, b] of couplesAcces(g, A, B)){
+    const suite = cherche(g, a, b);
+    if (!suite) continue;
+    const chemin = reduit(g, suite);
+    const envers = chemin.slice().reverse();
+    const pts = nettoie([depart.slice()]
+      .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
+              amorce(envers, arrivee, faceDeSortie(p, objA, envers[0])),
+              [arrivee.slice()]));
+    const m = longueurDehors(pts, dD, dA);
+    if (!mieux || m < mieux.m) mieux = { genre: "marche", p: p.i, pts: pts, m: m };
+  }
+  return mieux;
 }
 
 /* ------------------------------------------------------------
