@@ -200,15 +200,19 @@ const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
 /**
  * Les formes d'un pavillon portant un rôle donné.
  *
- * Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
- * voit à l'écran, et contourner un obstacle invisible passerait pour un bogue.
+ * La visibilité du calque n'entre pas en compte, à la différence des repères :
+ * un mur reste un mur quand on l'éteint. Un calque de rôle ne décrit pas ce
+ * qu'on montre mais le terrain — les sanitaires, la rampe, les allées — et
+ * l'exploitant l'éteint précisément parce que le visiteur n'a pas à le voir.
+ * L'oublier alors faisait traverser un local par le trajet, ce qui est un
+ * bogue plus grand que le détour inexpliqué qu'on cherchait à éviter.
  * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
  * délimiter une circulation.
  */
 function formesRole(p, role){
   const l = [];
   for (const c of calquesDe(p)){
-    if (c.visible === false || roleIti(c) !== role) continue;
+    if (roleIti(c) !== role) continue;
     for (const f of c.formes || []){
       if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && role !== "circulation")

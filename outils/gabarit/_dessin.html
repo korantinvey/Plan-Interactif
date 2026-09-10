@@ -980,6 +980,12 @@ const AIDE_ROLE = {
     "au bord est retiré tout seul.",
 };
 
+/* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
+   retire de l'écran sans le retirer du calcul. C'est ce qu'on attend d'un mur,
+   et c'est assez surprenant pour être écrit sous la liste. */
+const AIDE_ROLE_MASQUE = " Masquer le calque ne change rien au calcul : " +
+  "le dessin disparaît de l'écran, pas du terrain.";
+
 function montreRoleIti(c){
   const sel = $("roleIti");
   if (!sel) return;
@@ -990,7 +996,7 @@ function montreRoleIti(c){
       '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
   const r = c ? roleIti(c) : "";
   sel.value = r;
-  $("roleAide").textContent = AIDE_ROLE[r] || "";
+  $("roleAide").textContent = (AIDE_ROLE[r] || "") + (r ? AIDE_ROLE_MASQUE : "");
 }
 
 $("roleIti").onchange = e => {

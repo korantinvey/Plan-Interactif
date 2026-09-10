@@ -5756,6 +5756,12 @@ const AIDE_ROLE = {
     "au bord est retiré tout seul.",
 };
 
+/* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
+   retire de l'écran sans le retirer du calcul. C'est ce qu'on attend d'un mur,
+   et c'est assez surprenant pour être écrit sous la liste. */
+const AIDE_ROLE_MASQUE = " Masquer le calque ne change rien au calcul : " +
+  "le dessin disparaît de l'écran, pas du terrain.";
+
 function montreRoleIti(c){
   const sel = $("roleIti");
   if (!sel) return;
@@ -5766,7 +5772,7 @@ function montreRoleIti(c){
       '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
   const r = c ? roleIti(c) : "";
   sel.value = r;
-  $("roleAide").textContent = AIDE_ROLE[r] || "";
+  $("roleAide").textContent = (AIDE_ROLE[r] || "") + (r ? AIDE_ROLE_MASQUE : "");
 }
 
 $("roleIti").onchange = e => {
@@ -6349,11 +6355,14 @@ function construitPanneau(){
     nom.textContent = x.nom;
 
     /* Un calque qui sert aux itinéraires ne se distingue pas à l'écran : le
-       rappeler ici évite de le chercher, ou de l'oublier. */
+       rappeler ici évite de le chercher, ou de l'oublier. La coche d'à côté
+       n'éteint que l'affichage — le calcul, lui, continue d'en tenir compte,
+       et rien d'autre ne le dirait. */
     if (x.t === "dessin" && roleIti(x.ref)){
       const b = document.createElement("i");
       b.className = "rle";
       b.textContent = nomRoleIti(roleIti(x.ref));
+      b.title = "Ce calque compte dans les itinéraires, même masqué.";
       nom.after(b);
     }
 
@@ -7392,15 +7401,19 @@ const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
 /**
  * Les formes d'un pavillon portant un rôle donné.
  *
- * Un calque masqué ne compte pas : le trajet doit s'expliquer par ce qu'on
- * voit à l'écran, et contourner un obstacle invisible passerait pour un bogue.
+ * La visibilité du calque n'entre pas en compte, à la différence des repères :
+ * un mur reste un mur quand on l'éteint. Un calque de rôle ne décrit pas ce
+ * qu'on montre mais le terrain — les sanitaires, la rampe, les allées — et
+ * l'exploitant l'éteint précisément parce que le visiteur n'a pas à le voir.
+ * L'oublier alors faisait traverser un local par le trajet, ce qui est un
+ * bogue plus grand que le détour inexpliqué qu'on cherchait à éviter.
  * Une ligne n'a pas de surface — elle barre par son trait, et ne saurait
  * délimiter une circulation.
  */
 function formesRole(p, role){
   const l = [];
   for (const c of calquesDe(p)){
-    if (c.visible === false || roleIti(c) !== role) continue;
+    if (roleIti(c) !== role) continue;
     for (const f of c.formes || []){
       if (f.t === "rect" || f.t === "poly") l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && role !== "circulation")
