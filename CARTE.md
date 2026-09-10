@@ -174,7 +174,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2006 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2010 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -248,17 +248,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2376 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2418 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.333 · 3. Rendu du pavillon courant
 - l.400 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.518 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1266 · 6. Vue
-- l.1365 · 7. Sélection et fiche
-- l.2021 · 8. Interactions du plan
-- l.2222 · Le tiroir de la liste — écrans étroits
+- l.1308 · 6. Vue
+- l.1407 · 7. Sélection et fiche
+- l.2063 · 8. Interactions du plan
+- l.2264 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -275,14 +275,15 @@ Fonctions :
 `videCriteres` 905 · `nCriteres` 912 · `majCriteres` 921 · `ouvreCriteres` 979
 `filtre` 1092 · `critParSociete` 1096 · `visible` 1104 · `releveHotes` 1115
 `visibleSurPlan` 1123 · `visibleSociete` 1133 · `appliqueFiltre` 1139 · `rangSorte` 1158
-`sousLigne` 1178 · `liste` 1188 · `appliqueVue` 1269 · `rafraichitVue` 1290 · `poseVue` 1302
-`masque` 1320 · `fit` 1340 · `zoom` 1352 · `echelle` 1357 · `ETROIT` 1371 · `anime` 1373
-`noeud` 1397 · `canalPlan` 1407 · `rangSociete` 1415 · `select` 1424 · `centre` 1445
-`centrePoint` 1449 · `montre` 1464 · `libelleCorps` 1493 · `ordreCorps` 1505
-`momentLocal` 1542 · `programme` 1565 · `jourLong` 1598 · `ficheConf` 1609 · `lien` 1703
-`ecarteClicFantome` 1720 · `nomSociete` 1729 · `societes` 1742 · `choisitExposant` 1753
-`ouvre` 1789 · `ferme` 1995 · `onglet` 2011 · `milieu` 2041 · `commencePince` 2047
-`suitPince` 2061 · `mesureTiroir` 2233 · `montreTiroir` 2236
+`codeCase` 1179 · `caseNumero` 1196 · `sousLigne` 1216 · `liste` 1226 · `appliqueVue` 1311
+`rafraichitVue` 1332 · `poseVue` 1344 · `masque` 1362 · `fit` 1382 · `zoom` 1394
+`echelle` 1399 · `ETROIT` 1413 · `anime` 1415 · `noeud` 1439 · `canalPlan` 1449
+`rangSociete` 1457 · `select` 1466 · `centre` 1487 · `centrePoint` 1491 · `montre` 1506
+`libelleCorps` 1535 · `ordreCorps` 1547 · `momentLocal` 1584 · `programme` 1607
+`jourLong` 1640 · `ficheConf` 1651 · `lien` 1745 · `ecarteClicFantome` 1762
+`nomSociete` 1771 · `societes` 1784 · `choisitExposant` 1795 · `ouvre` 1831 · `ferme` 2037
+`onglet` 2053 · `milieu` 2083 · `commencePince` 2089 · `suitPince` 2103
+`mesureTiroir` 2275 · `montreTiroir` 2278
 
 Éléments :
 
@@ -415,10 +416,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 160 · `ampute` 183 · `masquesDe` 212
 `masquesDuPlan` 221
 
-### `supabase/functions/sync-evenement/index.ts` — 1102 l.
+### `supabase/functions/sync-evenement/index.ts` — 1095 l.
 
-`cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 152
-`champsKlipso` 173 · `hebergee` 1060 · `nettoieUrl` 1078 · `groupeTextes` 1088
+`cors` 41 · `client` 79 · `gaia` 86 · `libellesChoix` 97 · `fournisseur` 122 · `range` 158
+`champsKlipso` 179 · `hebergee` 1053 · `nettoieUrl` 1071 · `groupeTextes` 1081
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -443,6 +444,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260910000004_comptes.sql` — profil, acces, fn est_admin, fn acces_salon, fn profil_a_la_creation, fn profil_suit_adresse
 - `20260910000005_prenom.sql` — profil, fn profil_a_la_creation
 - `20260910000006_ferme_lecture_anon.sql` — —
+- `20260910000007_role_non_declare.sql` — fn profil_a_la_creation
 
 ## Le reste
 
