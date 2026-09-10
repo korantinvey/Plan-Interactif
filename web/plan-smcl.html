@@ -4596,8 +4596,15 @@ function ouvre(o, rect, canal, iSoc){
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
-  $("dCode").textContent = pl.libelle +
-    (ok("code", o.code) ? " · " + o.code : "");
+  /* Le pavillon situe la fiche — sauf quand il ne dit rien de plus : un salon
+     qui tient sur un seul plan le nomme souvent comme lui-même, et le nom du
+     salon est déjà en tête de la page. La pastille disparaît alors avec lui
+     s'il n'y a pas de numéro derrière : une zone n'en a jamais. */
+  const pav = String(pl.libelle || "").trim().toLowerCase() ===
+              String(DATA.evenement || "").trim().toLowerCase() ? "" : pl.libelle;
+  const num = ok("code", o.code) ? String(o.code) : "";
+  $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
+  $("dCode").hidden = !$("dCode").textContent;
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
      pour un filigrane, et une zone n'a pas de numéro du tout. */
