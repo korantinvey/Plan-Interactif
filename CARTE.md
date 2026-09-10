@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 2072 l. → admin-plans.html
+### `_console-js.html` — 2090 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -92,9 +92,9 @@ Fonctions :
 `ouvreSources` 1111 · `ouvreSalles` 1167 · `cadreFiche` 1280 · `ouvreFiche` 1309
 `sousTitre` 1454 · `tableauChamps` 1469 · `encode` 1612 · `decode` 1614
 `correspondance` 1619 · `sansPrefixe` 1622 · `courte` 1623 · `intitule` 1638
-`intituleSuite` 1650 · `champOrigine` 1663 · `majLiens` 1880 · `majIntegration` 1907
-`majMsgSync` 1914 · `synchronise` 1928 · `dupliquer` 1971 · `videEcran` 2045
-`dessine` 2050 · `demarre` 2060
+`intituleSuite` 1650 · `separeValeurs` 1664 · `champOrigine` 1676 · `majLiens` 1898
+`majIntegration` 1925 · `majMsgSync` 1932 · `synchronise` 1946 · `dupliquer` 1989
+`videEcran` 2063 · `dessine` 2068 · `demarre` 2078
 
 Éléments :
 
@@ -324,13 +324,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 371 l.
+### `supabase/functions/_partage/champs.ts` — 406 l.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 734 l.
+### `supabase/functions/_partage/eventmaker.ts` — 729 l.
 
-`grapheJson` 147 · `enParallele` 600 · `texteSeul` 620 · `champs` 699
+`grapheJson` 144 · `enParallele` 597 · `texteSeul` 617 · `champs` 694
 
 ### `supabase/functions/_partage/gaia.ts` — 224 l.
 
@@ -356,10 +356,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 48 · `db` 65 · `masquesDe` 84 · `masquesDuPlan` 93
 
-### `supabase/functions/sync-evenement/index.ts` — 1094 l.
+### `supabase/functions/sync-evenement/index.ts` — 1091 l.
 
-`cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 156
-`champsKlipso` 177 · `hebergee` 1052 · `nettoieUrl` 1070 · `groupeTextes` 1080
+`cors` 35 · `client` 73 · `gaia` 80 · `libellesChoix` 91 · `fournisseur` 116 · `range` 152
+`champsKlipso` 173 · `hebergee` 1049 · `nettoieUrl` 1067 · `groupeTextes` 1077
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

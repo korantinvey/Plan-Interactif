@@ -208,11 +208,18 @@ const aplani = (v: unknown): string =>
  */
 export const vrai = (v: unknown, attendues?: string[] | null): boolean => {
   if (v === null || v === undefined || typeof v === "object") return false;
-  const t = aplani(v);
   if (attendues && attendues.length) {
-    return t !== "" && attendues.some((a) => aplani(a) === t);
+    /* Un champ à choix multiple ne porte pas une valeur mais plusieurs, jointes
+       dans une seule chaîne par un point-virgule — « Nouveaux exposants;
+       Exposants internationaux ». Comparée entière, elle ne reconnaîtrait que
+       l'exposant qui n'a qu'une seule catégorie ; la comparaison se fait donc
+       valeur par valeur, et des deux côtés — une valeur retenue avant ce
+       découpage porte encore la chaîne entière. */
+    const portees = separeValeurs(v).map(aplani);
+    const veut = separeValeurs(attendues).map(aplani);
+    return portees.some((x) => veut.includes(x));
   }
-  return v === true || ACCORDS.has(t);
+  return v === true || ACCORDS.has(aplani(v));
 };
 
 /**
@@ -351,6 +358,34 @@ export function separeValeurs(v: unknown): string[] {
     .flatMap((x) => String(x ?? "").split(";"))
     .map((x) => x.trim())
     .filter(Boolean);
+}
+
+/* Au-delà de huit valeurs distinctes, un champ n'est plus une liste de choix
+   mais du texte libre : en proposer la liste n'aiderait personne. */
+export const VALEURS_MAX = 8;
+
+/* Une valeur trop longue n'est pas un choix mais une phrase : la proposer à
+   cocher encombrerait la fenêtre sans rien désigner d'utile. */
+const VALEUR_LONGUE = 60;
+
+/**
+ * Range dans un relevé les valeurs distinctes qu'une fiche porte sur un champ.
+ *
+ * Les valeurs se séparent avant d'être comptées : sans quoi un champ à choix
+ * multiple montre autant d'entrées que de combinaisons cochées — « Nouveaux
+ * exposants;Exposants internationaux » en est une, « Exposants
+ * internationaux » une autre — et dépasse le seuil du texte libre alors qu'il
+ * n'offre que trois choix.
+ *
+ * Une de plus que le seuil est retenue à dessein : c'est elle qui dira à
+ * l'appelant que le champ est du texte libre, et qu'il faut lâcher la liste.
+ */
+export function noteValeurs(liste: string[], v: unknown): void {
+  for (const val of separeValeurs(v)) {
+    if (liste.length > VALEURS_MAX) return;
+    if (val.length > VALEUR_LONGUE || liste.includes(val)) continue;
+    liste.push(val);
+  }
 }
 
 /**
