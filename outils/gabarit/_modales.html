@@ -10,7 +10,23 @@
  * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
  * demande une réponse avant de rendre la main.
  */
+/* Ce qu'une fenêtre laisse en train de se faire.
+ *
+ * Une saisie qui n'a pas de bouton d'enregistrement — on ne « valide » pas une
+ * fiche qu'on est en train d'écrire, on la quitte — doit partir avec la fenêtre
+ * quelle que soit la porte : la croix, le pied, le voile, « Échap », ou une
+ * autre fenêtre qui prend la place. Toutes passent par ici ; le crochet est
+ * posé par qui remplit la fenêtre, et ne joue qu'une fois. */
+let avantFermeture = null;
+
+function verseModale(){
+  const f = avantFermeture;
+  avantFermeture = null;
+  if (f) f();
+}
+
 function ouvreModale(titre, remplitCorps, boutons, genre){
+  verseModale();
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
   $("mTitre").textContent = titre;
@@ -26,7 +42,7 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   });
   $("modale").classList.add("open");
 }
-function fermeModale(){ $("modale").classList.remove("open"); }
+function fermeModale(){ verseModale(); $("modale").classList.remove("open"); }
 $("mFermer").onclick = fermeModale;
 $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
 addEventListener("keydown", e => {

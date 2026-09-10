@@ -602,21 +602,28 @@ function ouvreReglages(ouvrir){
     const boutons = [], volets = [];
     /* Le volet à ouvrir peut être nommé : la remise à zéro des compteurs passe
        par une fenêtre de confirmation, qui prend la place de celle-ci, et
-       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet. */
+       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet.
+       Un nom, et rien d'autre : branchée telle quelle sur un bouton, la
+       fonction recevrait l'événement de clic, qui ne désigne aucun volet et
+       les fermait tous. */
+    const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
     const volet = (titre) => {
       const i = boutons.length;
-      const actif = ouvrir ? titre === ouvrir : i === 0;
+      const actif = nomme ? titre === nomme : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
       b.setAttribute("aria-pressed", String(actif));
       b.onclick = () => {
+        // une fiche de zone laissée dans l'onglet d'à côté s'enregistre en le quittant
+        verseFicheZone();
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         volets.forEach((x, j) => { x.hidden = j !== i; });
       };
       barre.appendChild(b);
       boutons.push(b);
       const v = document.createElement("div");
+      v.className = "voletReg";
       v.hidden = !actif;
       corps.appendChild(v);
       volets.push(v);
@@ -631,6 +638,10 @@ function ouvreReglages(ouvrir){
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
     voletMesure(volet(NOM_VOLET_MESURE));
+    /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
+       sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
+       plutôt que sur le vide. */
+    if (!boutons.some(b => b.getAttribute("aria-pressed") === "true")) boutons[0].onclick();
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -695,6 +706,8 @@ function voletZones(hote){
   };
 
   const choisit = (z) => {
+    // ce qu'on quitte part maintenant : la fiche qu'on ouvre prend sa place
+    verseFicheZone();
     rangs.forEach((b, id) => b.setAttribute("aria-pressed", String(id === z.id)));
     detail.innerHTML = "";
     ficheZoneEnPlace(detail, z, () => ecritRang(z));
@@ -717,9 +730,10 @@ function voletZones(hote){
 /**
  * La fiche d'une zone, posée dans les réglages plutôt que dans une fenêtre.
  *
- * Elle enregistre pour elle-même, sans le pied de la fenêtre : celui-ci ferme
- * les réglages, et l'on vient ici pour en remplir plusieurs. L'état de
- * l'enregistrement se dit donc à côté du bouton.
+ * Elle n'a pas de bouton : on remplit les zones l'une après l'autre, et un
+ * bouton par fiche ferait dix validations pour un même travail. Elle part donc
+ * quand on la quitte — pour une autre zone, un autre onglet, ou la sortie — et
+ * la ligne d'état dit ce qu'il en est advenu tant qu'on la voit encore.
  */
 function ficheZoneEnPlace(hote, o, apres){
   const ou = document.createElement("p");
@@ -730,31 +744,11 @@ function ficheZoneEnPlace(hote, o, apres){
 
   const valeurs = champsZone(hote, o);
 
-  const pied = document.createElement("div");
-  pied.className = "piedZ";
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "btn fort";
-  b.textContent = "Enregistrer";
-  const etat = document.createElement("span");
-  etat.className = "etatZ";
-  b.onclick = async () => {
-    b.disabled = true;
-    etat.textContent = "Enregistrement…";
-    etat.dataset.mal = "false";
-    try {
-      await enregistreZone(o, valeurs());
-      etat.textContent = "Enregistré.";
-      if (apres) apres();
-    } catch (e) {
-      etat.textContent = "Échec : " + e.message;
-      etat.dataset.mal = "true";
-    }
-    b.disabled = false;
-  };
-  pied.appendChild(b);
-  pied.appendChild(etat);
-  hote.appendChild(pied);
+  const etat = document.createElement("p");
+  etat.className = "etatZ seul";
+  etat.textContent = "Ce que vous écrivez est enregistré en quittant la fiche.";
+  hote.appendChild(etat);
+  suitFicheZone(o, valeurs, etat, apres);
 }
 
 /** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
@@ -1074,7 +1068,11 @@ function activeAdmin(){
     };
   }
   const r = $("btnReglages");
-  if (r){ r.hidden = false; r.onclick = ouvreReglages; }
+  /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
+     argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun
+     onglet ne s'appelant « [object PointerEvent] », la fenêtre s'ouvrait sur
+     rien : ni onglet actif, ni contenu. */
+  if (r){ r.hidden = false; r.onclick = () => ouvreReglages(); }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
@@ -1359,18 +1357,61 @@ function editeurRiche(html){
   };
 }
 
+/* La fiche de zone en cours de saisie, et ce qu'elle valait en arrivant.
+ *
+ * Elle n'a pas de bouton d'enregistrement : on ne valide pas une fiche qu'on
+ * est en train d'écrire, on la quitte — en passant à une autre zone, à un autre
+ * onglet, ou en fermant la fenêtre par où l'on veut. Reste à savoir ce qui a
+ * changé, sinon chaque zone seulement regardée serait réécrite : d'où l'état
+ * de départ, relevé par le même chemin que celui qu'on comparera. */
+let ficheZoneEnCours = null;
+
+const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.type === b.type && a.description === b.description && a.lien === b.lien);
+
+/** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
+function suitFicheZone(o, valeurs, etat, apres){
+  ficheZoneEnCours = { o, valeurs, etat, apres, depart: valeurs() };
+  /* La fenêtre peut se fermer de quatre façons, et par une cinquième quand une
+     autre prend sa place : toutes passent par « verseModale ». */
+  avantFermeture = () => { verseFicheZone(); ficheZoneEnCours = null; };
+}
+
+/** Enregistre la fiche ouverte, si et seulement si elle a changé. */
+function verseFicheZone(){
+  const f = ficheZoneEnCours;
+  if (!f) return;
+  const v = f.valeurs();
+  if (memeFicheZone(v, f.depart)) return;
+  /* Ce qui part devient l'état de départ tout de suite : la fenêtre se ferme
+     avant que la base ait répondu, et deux sorties ne doivent pas envoyer deux
+     fois la même chose. Un échec le remet en jeu. */
+  const depart = f.depart;
+  f.depart = v;
+  if (f.etat){ f.etat.textContent = "Enregistrement…"; f.etat.dataset.mal = "false"; }
+  enregistreZone(f.o, v, depart).then(() => {
+    if (f.etat) f.etat.textContent = "Enregistré.";
+    if (f.apres) f.apres();
+  }).catch(e => {
+    if (f.etat){ f.etat.textContent = "Échec : " + e.message; f.etat.dataset.mal = "true"; }
+    /* Fenêtre fermée, la ligne d'état est partie avec elle : l'échec se dit
+       alors sur le plan, seul endroit encore sous les yeux. */
+    if (!$("modale").classList.contains("open"))
+      annonce("Enregistrement de la zone impossible : " + e.message, true);
+    // ce qui n'est pas passé reste à écrire : la prochaine sortie réessaiera
+    if (f.depart === v) f.depart = null;
+  });
+}
+
 /** La fiche d'une zone, ouverte du crayon posé sur la fiche du plan. */
 function ficheZone(o){
-  let valeurs;
   ouvreModale(o.nom || "Zone sans nom", corps => {
-    valeurs = champsZone(corps, o);
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Enregistrer", genre: "primaire", action: () => {
-        enregistreZone(o, valeurs())
-          .catch(e => annonce("Enregistrement impossible : " + e.message, true));
-      } },
-  ], "large");
+    const valeurs = champsZone(corps, o);
+    const etat = document.createElement("p");
+    etat.className = "etatZ seul";
+    corps.appendChild(etat);
+    suitFicheZone(o, valeurs, etat);
+  }, [{ libelle: "Fermer" }], "large");
 }
 
 /**
@@ -1381,8 +1422,14 @@ function ficheZone(o){
  * fiche — mais ils se saisissent ensemble : ils partent donc en une seule
  * écriture, sans quoi un enregistrement à moitié passé laisserait le nom
  * changé et la description perdue.
+ *
+ * « depart » dit ce que la fiche valait en s'ouvrant. Le champ du libellé
+ * arrive rempli du nom en place, qui vient souvent de la source : l'écrire
+ * sans y avoir touché le figerait en nom choisi, et une zone renommée chez
+ * l'organisateur garderait ici son ancien nom pour toujours. Un champ qu'on
+ * n'a pas touché ne touche donc pas à sa colonne.
  */
-async function enregistreZone(o, v){
+async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
@@ -1390,10 +1437,11 @@ async function enregistreZone(o, v){
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
+  const renomme = !depart || String(depart.libelle || "").trim() !== nom;
   const tables = await ecritTablesZones([
-    { colonne: "zones", secours: DATA.nomsZones, change: t => {
+    ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
-      } },
+      } }] : []),
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
         if (genre) fiche.type = genre;
@@ -1403,11 +1451,13 @@ async function enregistreZone(o, v){
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
   ]);
-  DATA.nomsZones = tables.zones;
+  if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
-  // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
-  if (o.origine === undefined) o.origine = o.nom;
-  o.nom = nom || o.origine || null;
+  if (renomme){
+    // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
+    if (o.origine === undefined) o.origine = o.nom;
+    o.nom = nom || o.origine || null;
+  }
   o.description = description;
   o.lien = adresse;
   o.type = genre;

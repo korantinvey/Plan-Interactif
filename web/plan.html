@@ -654,24 +654,39 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
    un liseré, un halo et un battement. Faire pulser l'opacité du repère
    lui-même le rendait invisible une fois sur deux — c'est l'inverse de
    l'effet recherché. */
-html.poi-actif #stands,
-html.poi-actif #couches .cal,
-/* Les zones et leurs libellés s'effacent un par un et non par calque entier :
+/* Le retrait est franc : à demi effacé, le plan se lisait encore, et l'œil
+   hésitait entre ce qu'on lui montrait et tout le reste. Assez pour que le
+   hall reste reconnaissable, trop peu pour qu'on y cherche un nom.
+
+   Les zones et leurs libellés s'effacent un par un et non par calque entier :
    depuis qu'une zone typée répond au cartouche, ce calque-là porte à la fois
    ce qu'on met en avant et ce qu'on met en retrait. */
+html.poi-actif #stands,
+html.poi-actif #couches .cal,
 html.poi-actif #zones g:not(.phare),
 html.poi-actif #labels .lbl:not(.phare),
-html.poi-actif .dcal .forme:not(.phare){opacity:.55}
+html.poi-actif .dcal .forme:not(.phare){opacity:.16}
 .dcal .repere.phare > rect{stroke:var(--surface);stroke-width:.5;paint-order:stroke}
 /* Une zone ne peut pas battre comme un repère : celui-ci est une pastille de
    quatre mètres qu'on grossit sans gêner personne, une zone tient parfois le
    quart du hall et grandirait par-dessus ses voisines. C'est donc sa présence
    qui bat, et non sa taille — « opacity », comme « transform », est animée par
-   le compositeur sans repeindre le plan. Le liseré, lui, reste posé : c'est ce
-   qui la désigne quand le battement la traverse. */
-html.poi-actif #zones g.phare path{stroke-width:2.4;stroke-dasharray:none}
-#zones g.phare{animation:pulseZone 1.6s ease-in-out infinite}
-@keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.5}}
+   le compositeur sans repeindre le plan.
+
+   Elle gagne en même temps sa pleine teinte et un liseré d'accent : sur un plan
+   passé au blanc, une zone à demi transparente ne ressortait pas de ce qu'elle
+   recouvre. Le liseré continu la distingue aussi des zones ordinaires, que le
+   trait discontinu marque. */
+html.poi-actif #zones g.phare path{fill-opacity:.92;
+  stroke:var(--accent);stroke-width:3;stroke-dasharray:none}
+/* Le halo est un « drop-shadow » posé une fois — c'est l'animer qui coûtait le
+   repaint du plan entier, pas le porter — et c'est l'opacité du groupe, seule
+   animée, qui le fait battre avec la zone. Deux passes plutôt qu'une : la
+   première cerne, la seconde diffuse. Les longueurs sont en unités du plan,
+   c'est-à-dire en mètres : le halo garde donc sa proportion au zoom. */
+#zones g.phare{filter:drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 7px var(--accent));
+  animation:pulseZone 1.5s ease-in-out infinite}
+@keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.58}}
 /* Le battement passe par « transform », et non par « filter ».
    Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
    délègue pas au compositeur, si bien que le navigateur recalculait les styles
@@ -682,7 +697,7 @@ html.poi-actif #zones g.phare path{stroke-width:2.4;stroke-dasharray:none}
    « opacity » sont les deux propriétés que le compositeur anime seul, sans
    rien repeindre ; le halo reste donc posé une fois pour toutes, et c'est la
    taille du repère qui bat. */
-.dcal .repere.phare{filter:drop-shadow(0 0 1.6px var(--accent));
+.dcal .repere.phare{filter:drop-shadow(0 0 1.2px var(--accent)) drop-shadow(0 0 3.5px var(--accent));
   transform-box:fill-box;transform-origin:center;
   animation:pulsePoi 1.4s ease-in-out infinite}
 @keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
@@ -1803,9 +1818,23 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
-  color:var(--ink-2)}
+  color:var(--ink-2);transition:background-color .18s ease,color .18s ease}
 .ongReg button:hover{color:var(--ink)}
 .ongReg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+/* Changer d'onglet remplaçait un panneau par un autre d'un seul coup, et sur
+   la hauteur de ces fenêtres — une planche d'aperçus, une liste de zones — on
+   ne voyait pas ce qui avait bougé. Le volet qui paraît monte donc d'un pas.
+   Une animation, et non une transition : le panneau sortant est retiré du flux
+   par « hidden », et deux volets en fondu croisé demanderaient de tenir les
+   deux hauteurs à la fois. Elle repart à chaque fois que le volet redevient
+   visible — un élément en « display:none » n'anime rien, et reprend au
+   début quand il reparaît. */
+.voletReg{animation:entreVolet .18s ease-out}
+@keyframes entreVolet{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .voletReg{animation:none}
+  .ongReg button{transition:none}
+}
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
    dernière pastille ouvre le nuancier du système pour ceux qui ont un
@@ -1900,15 +1929,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
-.piedZ{display:flex;align-items:center;gap:10px;margin-top:2px}
-/* Enregistrer n'est pas un réglage parmi d'autres : ici, rien ne part tant
-   qu'on ne l'a pas demandé — une description se rédige, et s'enregistrer à
-   chaque frappe la publierait en cours de phrase. */
-.piedZ .btn.fort{color:#fff;background:var(--accent);border-color:var(--accent);
-  font-weight:500}
-.piedZ .btn.fort:hover{opacity:.9}
-.piedZ .btn[disabled]{opacity:.5}
+/* La fiche n'a pas de bouton : elle s'enregistre quand on la quitte. Reste à
+   le dire, et à dire ensuite ce qu'il en est advenu — au même endroit, pour que
+   la ligne ne fasse pas sauter la mise en page en changeant de texte. */
 .etatZ{font-size:12px;color:var(--ink-3)}
+.etatZ.seul{margin:2px 0 0}
 .etatZ[data-mal="true"]{color:#C2372B}
 
 /* L'éditeur de la description. Sa barre ne propose que ce que la fiche sait
@@ -5722,21 +5747,28 @@ function ouvreReglages(ouvrir){
     const boutons = [], volets = [];
     /* Le volet à ouvrir peut être nommé : la remise à zéro des compteurs passe
        par une fenêtre de confirmation, qui prend la place de celle-ci, et
-       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet. */
+       « Annuler » doit ramener là d'où l'on vient plutôt qu'au premier onglet.
+       Un nom, et rien d'autre : branchée telle quelle sur un bouton, la
+       fonction recevrait l'événement de clic, qui ne désigne aucun volet et
+       les fermait tous. */
+    const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
     const volet = (titre) => {
       const i = boutons.length;
-      const actif = ouvrir ? titre === ouvrir : i === 0;
+      const actif = nomme ? titre === nomme : i === 0;
       const b = document.createElement("button");
       b.type = "button";
       b.textContent = titre;
       b.setAttribute("aria-pressed", String(actif));
       b.onclick = () => {
+        // une fiche de zone laissée dans l'onglet d'à côté s'enregistre en le quittant
+        verseFicheZone();
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         volets.forEach((x, j) => { x.hidden = j !== i; });
       };
       barre.appendChild(b);
       boutons.push(b);
       const v = document.createElement("div");
+      v.className = "voletReg";
       v.hidden = !actif;
       corps.appendChild(v);
       volets.push(v);
@@ -5751,6 +5783,10 @@ function ouvreReglages(ouvrir){
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
     voletMesure(volet(NOM_VOLET_MESURE));
+    /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
+       sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
+       plutôt que sur le vide. */
+    if (!boutons.some(b => b.getAttribute("aria-pressed") === "true")) boutons[0].onclick();
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -5815,6 +5851,8 @@ function voletZones(hote){
   };
 
   const choisit = (z) => {
+    // ce qu'on quitte part maintenant : la fiche qu'on ouvre prend sa place
+    verseFicheZone();
     rangs.forEach((b, id) => b.setAttribute("aria-pressed", String(id === z.id)));
     detail.innerHTML = "";
     ficheZoneEnPlace(detail, z, () => ecritRang(z));
@@ -5837,9 +5875,10 @@ function voletZones(hote){
 /**
  * La fiche d'une zone, posée dans les réglages plutôt que dans une fenêtre.
  *
- * Elle enregistre pour elle-même, sans le pied de la fenêtre : celui-ci ferme
- * les réglages, et l'on vient ici pour en remplir plusieurs. L'état de
- * l'enregistrement se dit donc à côté du bouton.
+ * Elle n'a pas de bouton : on remplit les zones l'une après l'autre, et un
+ * bouton par fiche ferait dix validations pour un même travail. Elle part donc
+ * quand on la quitte — pour une autre zone, un autre onglet, ou la sortie — et
+ * la ligne d'état dit ce qu'il en est advenu tant qu'on la voit encore.
  */
 function ficheZoneEnPlace(hote, o, apres){
   const ou = document.createElement("p");
@@ -5850,31 +5889,11 @@ function ficheZoneEnPlace(hote, o, apres){
 
   const valeurs = champsZone(hote, o);
 
-  const pied = document.createElement("div");
-  pied.className = "piedZ";
-  const b = document.createElement("button");
-  b.type = "button";
-  b.className = "btn fort";
-  b.textContent = "Enregistrer";
-  const etat = document.createElement("span");
-  etat.className = "etatZ";
-  b.onclick = async () => {
-    b.disabled = true;
-    etat.textContent = "Enregistrement…";
-    etat.dataset.mal = "false";
-    try {
-      await enregistreZone(o, valeurs());
-      etat.textContent = "Enregistré.";
-      if (apres) apres();
-    } catch (e) {
-      etat.textContent = "Échec : " + e.message;
-      etat.dataset.mal = "true";
-    }
-    b.disabled = false;
-  };
-  pied.appendChild(b);
-  pied.appendChild(etat);
-  hote.appendChild(pied);
+  const etat = document.createElement("p");
+  etat.className = "etatZ seul";
+  etat.textContent = "Ce que vous écrivez est enregistré en quittant la fiche.";
+  hote.appendChild(etat);
+  suitFicheZone(o, valeurs, etat, apres);
 }
 
 /** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
@@ -6194,7 +6213,11 @@ function activeAdmin(){
     };
   }
   const r = $("btnReglages");
-  if (r){ r.hidden = false; r.onclick = ouvreReglages; }
+  /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
+     argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun
+     onglet ne s'appelant « [object PointerEvent] », la fenêtre s'ouvrait sur
+     rien : ni onglet actif, ni contenu. */
+  if (r){ r.hidden = false; r.onclick = () => ouvreReglages(); }
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
@@ -6479,18 +6502,61 @@ function editeurRiche(html){
   };
 }
 
+/* La fiche de zone en cours de saisie, et ce qu'elle valait en arrivant.
+ *
+ * Elle n'a pas de bouton d'enregistrement : on ne valide pas une fiche qu'on
+ * est en train d'écrire, on la quitte — en passant à une autre zone, à un autre
+ * onglet, ou en fermant la fenêtre par où l'on veut. Reste à savoir ce qui a
+ * changé, sinon chaque zone seulement regardée serait réécrite : d'où l'état
+ * de départ, relevé par le même chemin que celui qu'on comparera. */
+let ficheZoneEnCours = null;
+
+const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.type === b.type && a.description === b.description && a.lien === b.lien);
+
+/** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
+function suitFicheZone(o, valeurs, etat, apres){
+  ficheZoneEnCours = { o, valeurs, etat, apres, depart: valeurs() };
+  /* La fenêtre peut se fermer de quatre façons, et par une cinquième quand une
+     autre prend sa place : toutes passent par « verseModale ». */
+  avantFermeture = () => { verseFicheZone(); ficheZoneEnCours = null; };
+}
+
+/** Enregistre la fiche ouverte, si et seulement si elle a changé. */
+function verseFicheZone(){
+  const f = ficheZoneEnCours;
+  if (!f) return;
+  const v = f.valeurs();
+  if (memeFicheZone(v, f.depart)) return;
+  /* Ce qui part devient l'état de départ tout de suite : la fenêtre se ferme
+     avant que la base ait répondu, et deux sorties ne doivent pas envoyer deux
+     fois la même chose. Un échec le remet en jeu. */
+  const depart = f.depart;
+  f.depart = v;
+  if (f.etat){ f.etat.textContent = "Enregistrement…"; f.etat.dataset.mal = "false"; }
+  enregistreZone(f.o, v, depart).then(() => {
+    if (f.etat) f.etat.textContent = "Enregistré.";
+    if (f.apres) f.apres();
+  }).catch(e => {
+    if (f.etat){ f.etat.textContent = "Échec : " + e.message; f.etat.dataset.mal = "true"; }
+    /* Fenêtre fermée, la ligne d'état est partie avec elle : l'échec se dit
+       alors sur le plan, seul endroit encore sous les yeux. */
+    if (!$("modale").classList.contains("open"))
+      annonce("Enregistrement de la zone impossible : " + e.message, true);
+    // ce qui n'est pas passé reste à écrire : la prochaine sortie réessaiera
+    if (f.depart === v) f.depart = null;
+  });
+}
+
 /** La fiche d'une zone, ouverte du crayon posé sur la fiche du plan. */
 function ficheZone(o){
-  let valeurs;
   ouvreModale(o.nom || "Zone sans nom", corps => {
-    valeurs = champsZone(corps, o);
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Enregistrer", genre: "primaire", action: () => {
-        enregistreZone(o, valeurs())
-          .catch(e => annonce("Enregistrement impossible : " + e.message, true));
-      } },
-  ], "large");
+    const valeurs = champsZone(corps, o);
+    const etat = document.createElement("p");
+    etat.className = "etatZ seul";
+    corps.appendChild(etat);
+    suitFicheZone(o, valeurs, etat);
+  }, [{ libelle: "Fermer" }], "large");
 }
 
 /**
@@ -6501,8 +6567,14 @@ function ficheZone(o){
  * fiche — mais ils se saisissent ensemble : ils partent donc en une seule
  * écriture, sans quoi un enregistrement à moitié passé laisserait le nom
  * changé et la description perdue.
+ *
+ * « depart » dit ce que la fiche valait en s'ouvrant. Le champ du libellé
+ * arrive rempli du nom en place, qui vient souvent de la source : l'écrire
+ * sans y avoir touché le figerait en nom choisi, et une zone renommée chez
+ * l'organisateur garderait ici son ancien nom pour toujours. Un champ qu'on
+ * n'a pas touché ne touche donc pas à sa colonne.
  */
-async function enregistreZone(o, v){
+async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
@@ -6510,10 +6582,11 @@ async function enregistreZone(o, v){
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
+  const renomme = !depart || String(depart.libelle || "").trim() !== nom;
   const tables = await ecritTablesZones([
-    { colonne: "zones", secours: DATA.nomsZones, change: t => {
+    ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
-      } },
+      } }] : []),
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
         if (genre) fiche.type = genre;
@@ -6523,11 +6596,13 @@ async function enregistreZone(o, v){
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
   ]);
-  DATA.nomsZones = tables.zones;
+  if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
-  // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
-  if (o.origine === undefined) o.origine = o.nom;
-  o.nom = nom || o.origine || null;
+  if (renomme){
+    // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
+    if (o.origine === undefined) o.origine = o.nom;
+    o.nom = nom || o.origine || null;
+  }
   o.description = description;
   o.lien = adresse;
   o.type = genre;
@@ -9690,7 +9765,23 @@ async function pousseConfiguration(bouton){
  * Sans lui, elle est au milieu, sur fond grisé — ce qu'il faut quand elle
  * demande une réponse avant de rendre la main.
  */
+/* Ce qu'une fenêtre laisse en train de se faire.
+ *
+ * Une saisie qui n'a pas de bouton d'enregistrement — on ne « valide » pas une
+ * fiche qu'on est en train d'écrire, on la quitte — doit partir avec la fenêtre
+ * quelle que soit la porte : la croix, le pied, le voile, « Échap », ou une
+ * autre fenêtre qui prend la place. Toutes passent par ici ; le crochet est
+ * posé par qui remplit la fenêtre, et ne joue qu'une fois. */
+let avantFermeture = null;
+
+function verseModale(){
+  const f = avantFermeture;
+  avantFermeture = null;
+  if (f) f();
+}
+
 function ouvreModale(titre, remplitCorps, boutons, genre){
+  verseModale();
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
   $("mTitre").textContent = titre;
@@ -9706,7 +9797,7 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   });
   $("modale").classList.add("open");
 }
-function fermeModale(){ $("modale").classList.remove("open"); }
+function fermeModale(){ verseModale(); $("modale").classList.remove("open"); }
 $("mFermer").onclick = fermeModale;
 $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
 addEventListener("keydown", e => {

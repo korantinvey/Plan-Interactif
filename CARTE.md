@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1677 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1727 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1037 · 10. Mode administration
-- l.1103 · La fiche d'une zone organisateur
-- l.1424 · Masquer une zone organisateur
-- l.1507 · Placer un libellé à la main
+- l.1031 · 10. Mode administration
+- l.1101 · La fiche d'une zone organisateur
+- l.1474 · Masquer une zone organisateur
+- l.1557 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,16 +27,17 @@ Fonctions :
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
 `modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
 `lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
-`apercuDuo` 578 · `ouvreReglages` 597 · `voletZones` 650 · `ficheZoneEnPlace` 724
-`voletPlan` 762 · `nomDuTon` 889 · `voletApparence` 893 · `enregistreConf` 987
-`rgbHex` 993 · `hexa` 1000 · `luminance` 1004 · `ecarte` 1018 · `joli` 1033
-`retireAdmin` 1050 · `activeAdmin` 1063 · `champZone` 1129 · `champsZone` 1154
-`editeurRiche` 1216 · `ficheZone` 1363 · `enregistreZone` 1385 · `basculeAffichageZone` 1435
-`marqueZonesMasquees` 1452 · `ecritTablesZones` 1472 · `ecritTableZones` 1503
-`cleLibelle` 1528 · `empreinteLibelle` 1544 · `placementLibelle` 1552 · `posePlacement` 1562
-`libelleAutomatique` 1579 · `modePlacementLibelles` 1588 · `majPaletteLibelle` 1605
-`choisitLibelle` 1622 · `pousseLibelle` 1629 · `libellePointerDown` 1637
-`libellePointerMove` 1652 · `libellePointerUp` 1661
+`apercuDuo` 578 · `ouvreReglages` 597 · `voletZones` 661 · `ficheZoneEnPlace` 738
+`voletPlan` 756 · `nomDuTon` 883 · `voletApparence` 887 · `enregistreConf` 981
+`rgbHex` 987 · `hexa` 994 · `luminance` 998 · `ecarte` 1012 · `joli` 1027
+`retireAdmin` 1044 · `activeAdmin` 1057 · `champZone` 1127 · `champsZone` 1152
+`editeurRiche` 1214 · `memeFicheZone` 1369 · `suitFicheZone` 1373 · `verseFicheZone` 1381
+`ficheZone` 1407 · `enregistreZone` 1432 · `basculeAffichageZone` 1485
+`marqueZonesMasquees` 1502 · `ecritTablesZones` 1522 · `ecritTableZones` 1553
+`cleLibelle` 1578 · `empreinteLibelle` 1594 · `placementLibelle` 1602 · `posePlacement` 1612
+`libelleAutomatique` 1629 · `modePlacementLibelles` 1638 · `majPaletteLibelle` 1655
+`choisitLibelle` 1672 · `pousseLibelle` 1679 · `libellePointerDown` 1687
+`libellePointerMove` 1702 · `libellePointerUp` 1711
 
 Éléments :
 
@@ -195,7 +196,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2547 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2572 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -319,14 +320,14 @@ Fonctions :
 
 `jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 111
 
-### `_modales.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_modales.html` — 161 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
 Fonctions :
 
-`ouvreModale` 13 · `fermeModale` 29 · `confirme` 36 · `deplaceVers` 54 · `versExtremite` 66
-`remplitOrdre` 74 · `ouvreOrdre` 136
+`verseModale` 22 · `ouvreModale` 28 · `fermeModale` 45 · `confirme` 52 · `deplaceVers` 70
+`versExtremite` 82 · `remplitOrdre` 90 · `ouvreOrdre` 152
 
 ### `_motdepasse.html` — 242 l. → motdepasse.html
 
