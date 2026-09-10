@@ -1749,13 +1749,20 @@ function champOrigine(src, cible, apres, ouiNon) {
     const dit = document.createElement("span");
     dit.className = "mini";
     zoneValeurs.appendChild(dit);
+    /* Un champ dont on connaît un exemple mais aucune valeur vient d'un relevé
+       plus vieux que la façon de les garder : le dire avec sa date épargne
+       d'attendre une liste qu'une synchronisation lancée depuis remplirait. */
+    const dateReleve = bloc.detecteLe
+      ? new Date(bloc.detecteLe).toLocaleString("fr-FR",
+        { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+      : null;
     const rappel = () => {
       dit.textContent = retenues.length
         ? "vaut oui quand la valeur est :"
         : offertes.length
           ? "aucune valeur retenue : rien ne sera signalé"
-          : "valeurs inconnues : la prochaine synchronisation les relèvera, " +
-            "ou saisissez-en une ici";
+          : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
+            " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
       dit.dataset.genre = retenues.length ? "" : "manque";
     };
     rappel();
