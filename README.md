@@ -171,7 +171,12 @@ Côté visiteur, rien n'est offert d'office. **Les valeurs proposées viennent d
 fiches**, jamais d'une liste tenue à part : un filtre qui proposerait une ville
 où personne n'expose ne rendrait que des listes vides. Elles portent le nombre de
 fiches qu'elles retiennent, et se rangent de la plus portée à la moins portée.
-Un critère que rien ne renseigne ne paraît pas.
+
+Un critère que rien ne renseigne ne paraît donc pas — sauf sur le **plan
+d'administration**, où il se montre et dit pourquoi : les valeurs se relèvent à
+la synchronisation, et un champ tout juste réglé n'en a encore aucune. Sans
+cela, un champ créé, associé et coché semblerait n'avoir servi à rien alors
+qu'il attend seulement le prochain passage.
 
 Sur le plan, les critères tiennent derrière **un seul bouton**, à côté de la
 recherche : dépliés, ils prendraient sur un téléphone la place du plan. La
