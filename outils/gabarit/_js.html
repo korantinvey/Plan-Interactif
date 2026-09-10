@@ -2236,7 +2236,7 @@ document.addEventListener("keydown", e => {
     return;
   }
   if (e.key === "Escape"){
-    if (PLACE_LIBELLES){ modePlacementLibelles(false); construitPanneau(); return; }
+    if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }

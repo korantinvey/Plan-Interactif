@@ -1223,6 +1223,12 @@ $("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
   calqueActif = calqueActif === id ? null : id;
+  /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
+     peuvent pas être allumés ensemble : leurs glissers viseraient le même
+     pointeur. Entrer dans le placement des libellés referme déjà le dessin ;
+     l'inverse manquait, et le crayon des textes serait resté allumé pour un
+     mode qu'on venait de quitter. */
+  if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
   formeSel = null;
   termineTrace(false);
   montreAimants(null);
@@ -1233,7 +1239,9 @@ function activeCalque(id){
   rafraichitApercu();
   dessineDessins();   // la couche active redevient cliquable
   dessinePoignees(); majElement();
-  document.querySelectorAll("#pile .calq").forEach(d => {
+  /* Les lignes des calques de dessin seules : le crayon des textes porte le
+     même bouton sans être un calque, et se règle de son côté. */
+  document.querySelectorAll("#pile .calq[data-dcal]").forEach(d => {
     const actif = d.dataset.dcal === calqueActif;
     d.classList.toggle("actif", actif);
     const cr = d.querySelector(".ren");

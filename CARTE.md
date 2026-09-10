@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1162 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1259 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.804 · 10. Mode administration
-- l.870 · Renommer une zone organisateur
-- l.922 · Masquer une zone organisateur
-- l.990 · Placer un libellé à la main
+- l.903 · 10. Mode administration
+- l.969 · Renommer une zone organisateur
+- l.1021 · Masquer une zone organisateur
+- l.1089 · Placer un libellé à la main
 
 Fonctions :
 
@@ -25,16 +25,17 @@ Fonctions :
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
 `styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 189 · `minutesVisite` 217
 `salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
-`modeleFiche` 317 · `appliqueFiche` 324 · `texteCorps` 381 · `standApercu` 396
-`contenuApercu` 414 · `apercuFiche` 437 · `ouvreReglages` 499 · `voletPlan` 530
-`nomDuTon` 657 · `voletApparence` 661 · `enregistreConf` 754 · `rgbHex` 760 · `hexa` 767
-`luminance` 771 · `ecarte` 785 · `joli` 800 · `retireAdmin` 817 · `activeAdmin` 830
-`renommeZone` 880 · `enregistreNomZone` 904 · `basculeAffichageZone` 933
-`marqueZonesMasquees` 950 · `ecritTableZones` 965 · `cleLibelle` 1011
-`empreinteLibelle` 1027 · `placementLibelle` 1035 · `posePlacement` 1045
-`libelleAutomatique` 1062 · `modePlacementLibelles` 1071 · `majPaletteLibelle` 1083
-`choisitLibelle` 1100 · `pousseLibelle` 1107 · `libellePointerDown` 1115
-`libellePointerMove` 1130 · `libellePointerUp` 1139
+`modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
+`lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
+`apercuDuo` 578 · `ouvreReglages` 597 · `voletPlan` 628 · `nomDuTon` 755
+`voletApparence` 759 · `enregistreConf` 853 · `rgbHex` 859 · `hexa` 866 · `luminance` 870
+`ecarte` 884 · `joli` 899 · `retireAdmin` 916 · `activeAdmin` 929 · `renommeZone` 979
+`enregistreNomZone` 1003 · `basculeAffichageZone` 1032 · `marqueZonesMasquees` 1049
+`ecritTableZones` 1064 · `cleLibelle` 1110 · `empreinteLibelle` 1126
+`placementLibelle` 1134 · `posePlacement` 1144 · `libelleAutomatique` 1161
+`modePlacementLibelles` 1170 · `majPaletteLibelle` 1187 · `choisitLibelle` 1204
+`pousseLibelle` 1211 · `libellePointerDown` 1219 · `libellePointerMove` 1234
+`libellePointerUp` 1243
 
 Éléments :
 
@@ -150,7 +151,7 @@ Fonctions :
 
 - l.523 · Page de rapport
 
-### `_dessin.html` — 1340 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1348 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -170,8 +171,8 @@ Fonctions :
 `eclairePoi` 862 · `signale` 873 · `calquePourImage` 887 · `poseImage` 900
 `importeImage` 913 · `dessinPointerDown` 964 · `dessinPointerMove` 1038
 `dessinPointerUp` 1076 · `termineTrace` 1112 · `aide` 1122 · `choisitOutil` 1147
-`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1267 · `creeCalque` 1298
-`demandeNom` 1311 · `renommeCalque` 1330
+`enchaineStand` 1170 · `activeCalque` 1224 · `montreRoleIti` 1275 · `creeCalque` 1306
+`demandeNom` 1319 · `renommeCalque` 1338
 
 Éléments :
 
@@ -190,7 +191,7 @@ Fonctions :
 `appliqueTexte` 340 · `appliqueRayon` 350 · `appliquePicto` 360 · `supprimeForme` 378
 `editionPointerDown` 388 · `editionPointerMove` 433 · `editionPointerUp` 485
 
-### `_head.html` — 2089 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2426 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -222,7 +223,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2406 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2409 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -349,17 +350,18 @@ Fonctions :
 `jourCourt` 217 · `rangParcours` 221 · `groupeParcours` 237 · `remplitParcours` 246
 `ouvreParcours` 308 · `fermeParcours` 320
 
-### `_pile.html` — 316 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 351 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.200 · Repères
+- l.254 · Repères
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`construitPanneau` 60 · `sectionSelection` 214 · `ligneCouleur` 239 · `rangSecteur` 259
-`rangSous` 271 · `rangPlacement` 301 · `defautCouleur` 312
+`nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
+`sectionSelection` 268 · `ligneCouleur` 293 · `rangSecteur` 313 · `rangSous` 325
+`defautCouleur` 347
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

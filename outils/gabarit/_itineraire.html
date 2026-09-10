@@ -2338,7 +2338,10 @@ function versItineraireDe(pt){
   if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
   ouvreItineraire();
   if (ITI.a) relance();
-  else { montreResultat(); $("iDepart").focus(); }
+  /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
+     la transition, et un focus ordinaire ferait défiler la scène pour l'y
+     amener. On demande le curseur, pas le déplacement. */
+  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {
