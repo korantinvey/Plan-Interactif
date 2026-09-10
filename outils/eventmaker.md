@@ -263,9 +263,12 @@ Trois entrées, la même liste au bout.
   la recherche : un salon en range parfois trente, ce qui prenait la place de
   deux lignes de résultats, et les rangeait à part de filtres qui font le même
   travail. C'est donc un réglage de la console — *Fiche détail*, colonne
-  *critère* — au même titre que les autres. Le secteur, lui, garde sa bande :
-  elle est d'abord la légende des couleurs du plan, et il n'y a rien à colorier
-  dans une fenêtre de filtres.
+  *critère* — au même titre que les autres. Le secteur les y a rejointes
+  depuis, sa pastille de couleur avec lui : elle n'y est plus une décoration,
+  mais ce qui rattache le nom qu'on coche aux stands qu'on voit sur le plan,
+  dont le critère est désormais la seule légende. Il ne se coche pas, lui : il
+  ne vient d'aucun champ de fiche mais du plan, où il est là ou n'est pas, et
+  c'est le réglage des couleurs qui l'éteint des deux côtés à la fois.
 - **La fiche.** Chaque thématique y est une prise vers les exposants qui la
   partagent : on repart alors à neuf, mot-clé, secteurs et autres critères
   effacés, sinon la liste répondrait à une question qu'on ne pose plus. La prise
