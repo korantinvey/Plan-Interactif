@@ -23,6 +23,7 @@
     <span class="statut" id="statut" role="status" aria-live="polite"></span>
     <div class="droite">
       <a class="btn petit" id="lienConsole" href="admin-plans">Console</a>
+      <button class="btn petit" id="btnExcel" title="Un classeur : une ligne par exposant, une colonne par provenance">Export Excel</button>
       <button class="btn petit" id="btnRecharger">Actualiser</button>
       <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -377,6 +378,240 @@ $("btnTheme").onclick = () => {
 };
 
 /* ============================================================
+   Classeur — écrire un vrai fichier Excel, sans bibliothèque
+
+   L'organisateur veut rendre des comptes à ses exposants, et il le fait dans
+   un tableur : c'est là qu'il trie, filtre, et colle la ligne d'un exposant
+   dans le courriel qu'il lui envoie. Un CSV l'aurait servi à moitié — Excel y
+   devine le séparateur de travers une fois sur deux, selon la langue du poste,
+   et un nombre s'y lit comme du texte.
+
+   Pourquoi rien n'est chargé d'ailleurs : la console est servie telle quelle
+   par Cloudflare, sans étape de construction ; une dépendance ajoutée ici
+   serait un script tiers de plus dans une page d'administration. Or un `.xlsx`
+   est une archive ZIP de quelques fichiers XML, et une archive sans
+   compression n'a besoin que d'un CRC32. Cela tient en deux cents lignes,
+   qu'on relit, plutôt qu'en trois cents kilo-octets qu'on ne relit pas.
+
+   Ce qu'il sait faire, et rien de plus : une feuille, une ligne d'en-têtes en
+   gras et figée, des colonnes larges à la demande, du texte et des nombres.
+   ============================================================ */
+
+/**
+ * CRC32, table précalculée.
+ *
+ * Le calcul bit à bit suffirait, mais l'archive fait le mégaoctet sur un gros
+ * salon : huit millions de tours de boucle se sentent sur un poste modeste, et
+ * la table les divise par huit pour deux cent cinquante-six entiers.
+ */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++){
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1));
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/**
+ * Une archive ZIP, entrées rangées sans compression.
+ *
+ * Déflater économiserait les trois quarts du fichier — un classeur XML se
+ * comprime très bien — mais demanderait `CompressionStream`, donc un chemin de
+ * repli pour les navigateurs qui ne l'ont pas, donc deux codes à maintenir
+ * pour un fichier qu'on ouvre et qu'on jette. Un mégaoctet enregistré depuis
+ * la console de son propre salon ne coûte rien à personne.
+ */
+function archiveZip(fichiers){
+  const enc = new TextEncoder();
+  const d = new Date();
+  const heureDos = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dateDos = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+
+  const p16 = (t, n) => t.push(n & 255, (n >> 8) & 255);
+  const p32 = (t, n) => t.push(n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255);
+
+  const morceaux = [], index = [];
+  let pos = 0;
+  for (const f of fichiers){
+    const nom = enc.encode(f.nom), data = enc.encode(f.texte);
+    const somme = crc32(data);
+    const tete = [];
+    p32(tete, 0x04034b50);
+    p16(tete, 20);            // version minimale : rangé sans compression
+    p16(tete, 0x0800);        // noms en UTF-8
+    p16(tete, 0);             // méthode : rangé
+    p16(tete, heureDos); p16(tete, dateDos);
+    p32(tete, somme); p32(tete, data.length); p32(tete, data.length);
+    p16(tete, nom.length); p16(tete, 0);
+    morceaux.push(new Uint8Array(tete), nom, data);
+    index.push({ nom: nom, somme: somme, taille: data.length, pos: pos });
+    pos += tete.length + nom.length + data.length;
+  }
+
+  const centre = [];
+  for (const e of index){
+    p32(centre, 0x02014b50);
+    p16(centre, 20); p16(centre, 20);
+    p16(centre, 0x0800); p16(centre, 0);
+    p16(centre, heureDos); p16(centre, dateDos);
+    p32(centre, e.somme); p32(centre, e.taille); p32(centre, e.taille);
+    p16(centre, e.nom.length); p16(centre, 0); p16(centre, 0);
+    p16(centre, 0); p16(centre, 0); p32(centre, 0);
+    p32(centre, e.pos);
+    centre.push(...e.nom);
+  }
+  const fin = [];
+  p32(fin, 0x06054b50);
+  p16(fin, 0); p16(fin, 0);
+  p16(fin, index.length); p16(fin, index.length);
+  p32(fin, centre.length); p32(fin, pos);
+  p16(fin, 0);
+
+  morceaux.push(new Uint8Array(centre), new Uint8Array(fin));
+  return new Blob(morceaux, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+/* ------------------------------------------------------------------
+   Le classeur
+   ------------------------------------------------------------------ */
+/* Un nom d'exposant vient d'un fournisseur, et rien n'y interdit un caractère
+   de commande. XML 1.0 les refuse : Excel n'ouvrirait pas le fichier, et
+   l'erreur ne dirait pas pourquoi. On les retire avant d'échapper le reste. */
+const texteXml = (v) => esc(String(v == null ? "" : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, ""));
+
+/** « A », « B », … « AA » : la référence d'une colonne, à partir de 1. */
+function colonneXl(n){
+  let s = "";
+  while (n > 0){ const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - r - 1) / 26; }
+  return s;
+}
+
+/* Le squelette d'un classeur d'une feuille. Rien n'y varie que la feuille
+   elle-même : ces quatre parties sont les mêmes d'un export à l'autre. */
+const XL_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const XL_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const XL_NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+const XL_PARTS = (feuille, titre) => [
+  { nom: "[Content_Types].xml", texte: XL_DECL +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+    '</Types>' },
+  { nom: "_rels/.rels", texte: XL_DECL +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="' + XL_NS_REL + '/officeDocument" Target="xl/workbook.xml"/>' +
+    '</Relationships>' },
+  { nom: "xl/workbook.xml", texte: XL_DECL +
+    '<workbook xmlns="' + XL_NS + '" xmlns:r="' + XL_NS_REL + '">' +
+    '<sheets><sheet name="' + texteXml(titre) + '" sheetId="1" r:id="rId1"/></sheets>' +
+    '</workbook>' },
+  { nom: "xl/_rels/workbook.xml.rels", texte: XL_DECL +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="' + XL_NS_REL + '/worksheet" Target="worksheets/sheet1.xml"/>' +
+    '<Relationship Id="rId2" Type="' + XL_NS_REL + '/styles" Target="styles.xml"/>' +
+    '</Relationships>' },
+  /* Deux styles : ordinaire, et gras pour la ligne d'en-têtes. Les listes de
+     polices, remplissages et bordures ne servent à rien ici, mais Excel refuse
+     un classeur dont la feuille de styles n'en porte aucune. */
+  { nom: "xl/styles.xml", texte: XL_DECL +
+    '<styleSheet xmlns="' + XL_NS + '">' +
+    '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="2"><fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill></fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>' },
+  { nom: "xl/worksheets/sheet1.xml", texte: feuille },
+];
+
+/**
+ * Une feuille, à partir de colonnes et de lignes.
+ *
+ *   colonnes : [{ titre, largeur }]  — la largeur est en caractères
+ *   lignes   : [[valeur, …]]         — nombre ou texte, dans l'ordre des colonnes
+ *
+ * Les textes sont écrits en clair dans la cellule plutôt que renvoyés à une
+ * table de chaînes partagées : celle-ci économiserait la place sur des valeurs
+ * répétées, et il n'y en a pas ici — un nom d'exposant ne paraît qu'une fois.
+ *
+ * Une cellule vide est omise, pas écrite vide : c'est ce qu'attend le format,
+ * et cela retire un tiers du fichier sur un salon où la plupart des canaux
+ * sont à zéro.
+ */
+function feuilleXl(colonnes, lignes){
+  const derniere = colonneXl(colonnes.length);
+  const cellule = (col, rang, v, style) => {
+    if (v === "" || v == null) return "";
+    const r = ' r="' + colonneXl(col) + rang + '"' + (style ? ' s="' + style + '"' : "");
+    return typeof v === "number" && isFinite(v)
+      ? "<c" + r + "><v>" + v + "</v></c>"
+      : '<c' + r + ' t="inlineStr"><is><t xml:space="preserve">' + texteXml(v) + "</t></is></c>";
+  };
+  const corps = [
+    "<row r=\"1\">" + colonnes.map((c, i) => cellule(i + 1, 1, c.titre, 1)).join("") + "</row>",
+  ];
+  lignes.forEach((l, i) => {
+    corps.push('<row r="' + (i + 2) + '">' +
+      colonnes.map((c, j) => cellule(j + 1, i + 2, l[j])).join("") + "</row>");
+  });
+  const etendue = "A1:" + derniere + (lignes.length + 1);
+  return XL_DECL +
+    '<worksheet xmlns="' + XL_NS + '">' +
+    '<dimension ref="' + etendue + '"/>' +
+    /* L'en-tête reste à l'écran : un salon aligne neuf cents lignes, et sans
+       cela on ne sait plus au bout de trente ce que compte la colonne G. */
+    '<sheetViews><sheetView workbookViewId="0">' +
+    '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' +
+    "</sheetView></sheetViews>" +
+    '<sheetFormatPr defaultRowHeight="15"/>' +
+    "<cols>" + colonnes.map((c, i) =>
+      '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' +
+      (c.largeur || 12) + '" customWidth="1"/>').join("") + "</cols>" +
+    "<sheetData>" + corps.join("") + "</sheetData>" +
+    // les filtres posés d'avance : c'est le premier geste de qui reçoit ce fichier
+    '<autoFilter ref="' + etendue + '"/>' +
+    "</worksheet>";
+}
+
+/** Le classeur complet, prêt à enregistrer. */
+const classeurXl = (titre, colonnes, lignes) =>
+  archiveZip(XL_PARTS(feuilleXl(colonnes, lignes), titre));
+
+/**
+ * Proposer un fichier à l'enregistrement.
+ *
+ * L'adresse temporaire est révoquée après coup : sans cela le classeur — un
+ * mégaoctet — resterait en mémoire tant que l'onglet vit, et la console reste
+ * ouverte la journée. Le délai laisse au navigateur le temps de lire l'adresse
+ * avant qu'elle ne disparaisse.
+ */
+function enregistreFichier(blob, nom){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nom;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 20000);
+}
+
+/* ============================================================
    Rapport d'utilisation
 
    Un salon se juge sur ce qu'il a servi. La console dit ce que le plan
@@ -619,6 +854,105 @@ function dessineRapport() {
   f.appendChild(b4);
 }
 
+/* ------------------------------------------------------------------
+   Export par exposant
+
+   Les chiffres du haut disent ce qu'a fait le salon ; celui-ci dit ce qu'a
+   recueilli chaque exposant, un par ligne. C'est le tableau qu'on n'affiche
+   pas — neuf cents lignes sur quatorze colonnes ne se lisent pas dans une page
+   — et qu'on donne à trier, filtrer et découper dans un tableur.
+
+   Il se charge au clic, pas au chargement de la page : c'est un appel de
+   plusieurs centaines de kilo-octets, et la plupart des consultations du
+   rapport n'en veulent pas.
+   ------------------------------------------------------------------ */
+/** Ce qui encadre le détail par canal. */
+const COL_TETE = [
+  { titre: "Emplacement", largeur: 14, lit: (r) => r.code || "" },
+  { titre: "Exposant", largeur: 38, lit: (r) => r.nom || "" },
+  { titre: "Fiches ouvertes", largeur: 16, lit: (r) => r.fiche },
+];
+const COL_PIED = [
+  { titre: "Itinéraires calculés", largeur: 20, lit: (r) => r.itineraires },
+  { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => r.parcours },
+  { titre: "Total interactions", largeur: 18, lit: (r) => r.total },
+];
+
+/**
+ * Les colonnes, canaux compris.
+ *
+ * Les canaux connus paraissent tous, même vides — une colonne « clic sur un
+ * logo » à zéro renseigne, elle dit qu'aucun logo n'a été posé — et dans le
+ * même ordre qu'à l'écran. Un canal inconnu de cette page, ajouté depuis, prend
+ * la suite sous son nom brut plutôt que de disparaître de la somme.
+ */
+function colonnesExport(lignes) {
+  const canaux = CANAUX_STAND.concat([AUTRE]);
+  const inconnus = new Set();
+  lignes.forEach((r) => Object.keys(r.canaux || {}).forEach((c) => {
+    if (!canaux.some((x) => x[0] === c)) inconnus.add(c);
+  }));
+  [...inconnus].sort().forEach((c) => canaux.push([c, c]));
+  return COL_TETE.concat(
+    canaux.map(([cle, lib]) => ({
+      titre: "Ouvertures · " + lib.charAt(0).toLowerCase() + lib.slice(1),
+      largeur: Math.min(36, Math.max(15, lib.length + 13)),
+      lit: (r) => (r.canaux || {})[cle] || 0,
+    })),
+    COL_PIED);
+}
+
+/* Le nom porte le salon et la période : deux exports de suite dans le même
+   dossier ne doivent ni se recouvrir ni se confondre une fois détachés de la
+   page qui les a produits. */
+function nomFichierExport(e) {
+  return ("utilisation-" + (e?.slug || "salon") +
+    "-" + (periode === "tout" ? "tout" : periode + "j") +
+    "-" + new Date().toISOString().slice(0, 10) + ".xlsx")
+    .replace(/[^A-Za-z0-9._-]+/g, "-");
+}
+
+/* Le nom de la feuille redit la période : le fichier voyage seul, souvent
+   jusqu'à l'exposant, et rien d'autre à l'intérieur ne dirait ce qu'il couvre.
+   Excel refuse au-delà de trente et un caractères, et refuse `[]:*?/\`. */
+function nomFeuilleExport() {
+  const lib = (PERIODES.find((p) => p[0] === periode) || [])[1] || "";
+  return ("Exposants (" + lib.charAt(0).toLowerCase() + lib.slice(1) + ")")
+    .replace(/[\[\]:*?\/\\]/g, " ").slice(0, 31);
+}
+
+let _export = false;
+async function exporteExposants() {
+  if (_export || !selection) return;
+  const b = $("btnExcel"), e = courant(), libelle = b.textContent;
+  _export = true;
+  b.disabled = true;
+  b.textContent = "Préparation…";
+  try {
+    const lignes = (await rest("rpc/rapport_exposants", {
+      method: "POST",
+      body: JSON.stringify({ p_evenement: selection, p_debut: debutPeriode(), p_fin: null }),
+    })) || [];
+    /* Aucun exposant n'est un renseignement, pas une panne : le salon n'a
+       jamais été synchronisé, et c'est ce qu'il faut dire. */
+    if (!lignes.length) {
+      signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
+      return;
+    }
+    const cols = colonnesExport(lignes);
+    enregistreFichier(
+      classeurXl(nomFeuilleExport(), cols, lignes.map((r) => cols.map((c) => c.lit(r)))),
+      nomFichierExport(e));
+    signale(nb(lignes.length) + " exposants exportés.");
+  } catch (err) {
+    signale(err.message, true);
+  } finally {
+    _export = false;
+    b.disabled = false;
+    b.textContent = libelle;
+  }
+}
+
 function dessineBarre() {
   const s = $("choixEvt");
   s.innerHTML = EVTS.map((e) =>
@@ -635,6 +969,7 @@ function dessineBarre() {
       '<option value="' + x[0] + '">' + x[1] + '</option>').join("");
   }
   p.value = periode;
+  $("btnExcel").disabled = !(SESSION && selection);
 }
 
 /* ------------------------------------------------------------------
@@ -673,6 +1008,7 @@ $("choixEvt").onchange = (e) => {
 };
 $("choixPeriode").onchange = (e) => { periode = e.target.value; rafraichit(); };
 $("btnRecharger").onclick = () => rafraichit();
+$("btnExcel").onclick = () => exporteExposants();
 
 async function demarre() {
   try {

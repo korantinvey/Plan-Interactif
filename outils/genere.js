@@ -79,15 +79,16 @@ fs.writeFileSync(W + "index.html",
    Ils partagent leur socle : accès au projet, fenêtres, connexion, thème.
    Chacun n'écrit ensuite que ce qui lui est propre. */
 const socle = fs.readFileSync(D + "/gabarit/_console-base.html", "utf8");
-const assemble = (tete, corps) =>
+const assemble = (tete, ...corps) =>
   fs.readFileSync(D + "/gabarit/" + tete, "utf8") + socle +
-  fs.readFileSync(D + "/gabarit/" + corps, "utf8");
+  corps.map((c) => fs.readFileSync(D + "/gabarit/" + c, "utf8")).join("");
 
 fs.writeFileSync(W + "admin-plans.html",
   page(assemble("_console-head.html", "_console-js.html")));
 
+// le classeur passe avant : le rapport s'en sert, et c'est lui qui ferme le script
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("_rapport-head.html", "_rapport-js.html")));
+  page(assemble("_rapport-head.html", "_classeur.html", "_rapport-js.html")));
 
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul

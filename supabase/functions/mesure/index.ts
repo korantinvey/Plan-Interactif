@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       slug?: string;
       visiteur?: string;
       session?: string;
-      gestes?: { genre?: string; canal?: string; cible?: string }[];
+      gestes?: { genre?: string; canal?: string; cible?: string; objet?: string }[];
     } | null;
     if (!corps) return refus("Corps illisible.");
 
@@ -91,13 +91,18 @@ Deno.serve(async (req) => {
     /* Les identifiants de cible sont plus longs qu'un jeton — un identifiant de
        conférence vient d'Eventmaker et n'a pas de forme imposée — mais ils
        restent bornés, et la base écarte de toute façon ceux qu'elle ne connaît
-       pas pour cet événement. */
+       pas pour cet événement.
+
+       `objet` dit ce que la cible désigne, et n'accompagne que les gestes dont
+       l'objet ne se devine pas — un itinéraire, un ajout au programme. La base
+       le déduit du genre pour les autres. */
     const gestes = (Array.isArray(corps.gestes) ? corps.gestes : [])
       .slice(0, PAQUET_MAX)
       .map((g) => ({
         genre: jeton(g?.genre, 20),
         canal: jeton(g?.canal, 20),
         cible: jeton(g?.cible, 64),
+        objet: jeton(g?.objet, 20),
       }))
       .filter((g) => g.genre);
     // rien à écrire n'est pas une erreur : la page a pu envoyer un paquet

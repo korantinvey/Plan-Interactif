@@ -103,16 +103,23 @@ function envoieMesures(dernier){
  *
  *   mesure("fiche_stand", "plan", o.id)   une fiche d'exposant, ouverte du plan
  *   mesure("recherche")                   une recherche menée à son terme
+ *   mesure("itineraire", "", o.id, "fiche_stand")   la route jusqu'à ce stand
+ *
+ * `objet` dit ce que la cible désigne, et ne se donne que là où le genre ne le
+ * dit pas déjà : une fiche ouverte désigne l'objet qui porte son nom, un
+ * itinéraire ou un ajout au programme peut viser un stand comme une
+ * conférence. Le serveur le déduit du genre quand il manque.
  *
  * Le vocabulaire est celui des compteurs ; le serveur écarte ce qu'il ne
  * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
  * cible que l'événement ne porte pas est écartée de même.
  */
-function mesure(genre, canal, cible){
+function mesure(genre, canal, cible, objet){
   if (!MESURE_ACTIVE) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
   if (cible) g.cible = cible;
+  if (cible && objet) g.objet = objet;
   _gestes.push(g);
   if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
   clearTimeout(_envoiDiffere);

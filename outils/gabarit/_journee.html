@@ -867,7 +867,9 @@ function lanceJournee(choix){
   $("pResume").textContent = "calcul…";
   $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
   /* Organiser une journée, c'est calculer une vingtaine d'itinéraires : cela
-     se compte avec eux, faute d'un genre à soi en base. */
+     se compte avec eux, faute d'un genre à soi en base. Sans cible pour
+     autant : les rattacher aux stands traversés ferait passer pour vingt
+     demandes de visiteurs ce qui n'est qu'un clic sur « ma journée ». */
   mesure("itineraire");
   setTimeout(() => {
     try {

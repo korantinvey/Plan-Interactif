@@ -8559,8 +8559,14 @@ function basculeParcours(genre, id){
   enregistreParcours();
   rafraichitParcours();
   /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
-     visiteur en train de composer sa journée. */
-  mesure("parcours");
+     visiteur en train de composer sa journée, et le total des gestes les
+     compte tous les deux.
+
+     Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
+     visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
+     retiré » ne veut rien dire. */
+  mesure("parcours", "", i < 0 ? k : "",
+         genre === "conf" ? "fiche_conf" : "fiche_stand");
 }
 
 /* ------------------------------------------------------------
@@ -10919,7 +10925,15 @@ function relance(){
      lettre du champ d'arrivée relance le même trajet : il ne compte qu'une
      fois. */
   const empreinte = ITI.a.cle + ">" + ITI.b.cle + (ITI.pmr ? " pmr" : "");
-  if (empreinte !== _dernierTrajet){ _dernierTrajet = empreinte; mesure("itineraire"); }
+  if (empreinte !== _dernierTrajet){
+    _dernierTrajet = empreinte;
+    /* Ce que l'exposant veut savoir, c'est combien de visiteurs ont demandé la
+       route jusqu'à lui : le trajet se rattache donc à son arrivée, jamais à
+       son départ. Une zone organisateur n'est pas un exposant, un repère non
+       plus — dans les deux cas le geste se compte, sans cible. */
+    const but = ITI.b.obj;
+    mesure("itineraire", "", but && but.kind === "stand" ? but.id : "", "fiche_stand");
+  }
   attente = setTimeout(() => {
     attente = null;
     try {
@@ -12133,7 +12147,9 @@ function lanceJournee(choix){
   $("pResume").textContent = "calcul…";
   $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
   /* Organiser une journée, c'est calculer une vingtaine d'itinéraires : cela
-     se compte avec eux, faute d'un genre à soi en base. */
+     se compte avec eux, faute d'un genre à soi en base. Sans cible pour
+     autant : les rattacher aux stands traversés ferait passer pour vingt
+     demandes de visiteurs ce qui n'est qu'un clic sur « ma journée ». */
   mesure("itineraire");
   setTimeout(() => {
     try {
@@ -12262,16 +12278,23 @@ function envoieMesures(dernier){
  *
  *   mesure("fiche_stand", "plan", o.id)   une fiche d'exposant, ouverte du plan
  *   mesure("recherche")                   une recherche menée à son terme
+ *   mesure("itineraire", "", o.id, "fiche_stand")   la route jusqu'à ce stand
+ *
+ * `objet` dit ce que la cible désigne, et ne se donne que là où le genre ne le
+ * dit pas déjà : une fiche ouverte désigne l'objet qui porte son nom, un
+ * itinéraire ou un ajout au programme peut viser un stand comme une
+ * conférence. Le serveur le déduit du genre quand il manque.
  *
  * Le vocabulaire est celui des compteurs ; le serveur écarte ce qu'il ne
  * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
  * cible que l'événement ne porte pas est écartée de même.
  */
-function mesure(genre, canal, cible){
+function mesure(genre, canal, cible, objet){
   if (!MESURE_ACTIVE) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
   if (cible) g.cible = cible;
+  if (cible && objet) g.objet = objet;
   _gestes.push(g);
   if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
   clearTimeout(_envoiDiffere);
