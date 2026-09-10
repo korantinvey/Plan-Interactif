@@ -314,15 +314,14 @@ html.sans-parcours #marques .parc{display:none}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
 .dcal.editable{pointer-events:auto}
-/* En mode sélection, tous les calques de dessin répondent, pas seulement celui
-   qu'on modifie : cliquer une forme d'un autre calque l'active. Sans cela, une
-   image posée sur un calque inactif restait sourde et rien ne le disait. */
-html.mode-edition .dcal{pointer-events:auto}
-html.mode-edition .dcal path,html.mode-edition .dcal image,
-html.mode-edition .dcal text,html.mode-edition .dcal rect{pointer-events:all}
+/* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
+   calques restent sourds : leur clic appartient à la vue, sans quoi un geste
+   destiné au plan emportait un dessin voisin. L'image liée à un stand fait
+   exception plus haut — elle ouvre sa fiche, comme pour un visiteur. */
 /* une forme en contour seul doit rester attrapable par son intérieur */
-.dcal.editable path,.dcal.editable image,.dcal.editable text{pointer-events:all}
-.dcal .forme{cursor:pointer}
+.dcal.editable path,.dcal.editable image,
+.dcal.editable text,.dcal.editable rect{pointer-events:all}
+.dcal.editable .forme{cursor:pointer}
 .dcal.editable .forme.pick{cursor:move}
 @keyframes halo{0%{opacity:.15}35%{opacity:1}100%{opacity:1}}
 /* Une forme déclarée infranchissable pour les PMR ne change rien pour le
