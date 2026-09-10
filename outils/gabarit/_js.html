@@ -741,7 +741,24 @@ function libelleCritere(cle){
   return (c && c.libelle) || cle.slice(PREFIXE_PERSO.length);
 }
 
-/** Les valeurs d'une fiche pour un critère, toujours une liste de textes. */
+/** Les valeurs d'un champ à choix, une par entrée, points-virgules défaits. */
+const separeValeurs = v => [].concat(v)
+  .filter(x => x !== null && x !== undefined)
+  .flatMap(x => String(x).split(";"))
+  .map(x => x.trim()).filter(Boolean);
+
+/**
+ * Les valeurs d'une fiche pour un critère, toujours une liste de textes.
+ *
+ * Un champ à choix multiple ne descend pas en liste : la source joint ses
+ * valeurs par un point-virgule — « Devenir master-franchisé;Adhérent FFF ».
+ * Prise telle quelle, la chaîne entière ferait une valeur à part, et un
+ * exposant qui en porte deux ne se retrouverait avec personne : il y aurait
+ * autant de valeurs à cocher que de combinaisons. On les sépare donc ici
+ * aussi, et pas seulement à la synchronisation — les fiches déjà relevées
+ * portent encore la chaîne entière, et n'attendent pas le prochain passage
+ * pour se laisser filtrer.
+ */
 function valeursCritere(o, cle){
   const brut = cle.indexOf(PREFIXE_PERSO) === 0
     ? (o.perso || {})[cle.slice(PREFIXE_PERSO.length)]
@@ -750,9 +767,9 @@ function valeursCritere(o, cle){
   /* Une liste peut porter des trous — une société hébergée sans ville en a un
      là où les autres ont la leur — et « undefined » deviendrait une valeur à
      cocher si on la traduisait en texte avant de l'écarter. */
-  return [].concat(brut).filter(v => v !== null && v !== undefined)
-    .map(v => String(v).trim()).filter(Boolean);
+  return separeValeurs(brut);
 }
+
 
 /** Tout ce qu'une fiche porte de critères, pour la recherche plein texte. */
 function texteCriteres(o){
@@ -1632,7 +1649,9 @@ function ouvre(o, rect, canal, iSoc){
     ((!zone && DATA.fiche && DATA.fiche.perso) || []).map(c => {
       const v = ((soc.perso || {})[c.cle]);
       if (v === undefined || v === null || v === "") return "";
-      const l = [].concat(v).map(String).filter(Boolean);
+      // le point-virgule sépare les valeurs d'un champ à choix : la fiche les
+      // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
+      const l = separeValeurs(v);
       if (!l.length) return "";
       return ok(PREFIXE_PERSO + c.cle, f(esc(c.libelle), l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")

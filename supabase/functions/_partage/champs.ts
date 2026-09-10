@@ -337,20 +337,35 @@ export function cibles(fournisseur: string, fiche: unknown): Cible[] {
 }
 
 /**
+ * Les valeurs d'un champ à choix multiple, séparées.
+ *
+ * Ni Klipso ni Eventmaker ne rendent une liste : ils rendent une chaîne où les
+ * valeurs se suivent, séparées par un point-virgule — « Devenir
+ * master-franchisé;Adhérent FFF ». Prise telle quelle, la chaîne entière
+ * devient une valeur à part entière, et un exposant qui en porte deux ne se
+ * retrouve avec personne : autant de valeurs distinctes que de combinaisons.
+ * C'est la même règle pour les thématiques et la nomenclature.
+ */
+export function separeValeurs(v: unknown): string[] {
+  return ([] as unknown[]).concat(v ?? [])
+    .flatMap((x) => String(x ?? "").split(";"))
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+/**
  * La valeur d'un champ personnalisé, telle que l'instantané la portera.
  *
- * Une liste reste une liste — c'est par elle qu'un critère de recherche offre
- * plusieurs valeurs — et le reste devient du texte. Rien de vide ne descend :
- * l'instantané est servi au public, il n'a pas à porter des chaînes vides par
- * centaines.
+ * Plusieurs valeurs restent une liste — c'est par elle qu'un critère de
+ * recherche les offre une à une — et une seule redevient du texte, que la
+ * fiche affiche sur sa ligne. Rien de vide ne descend : l'instantané est servi
+ * au public, il n'a pas à porter des chaînes vides par centaines.
  */
 export function valeurPerso(v: unknown): string | string[] | null {
-  if (Array.isArray(v)) {
-    const l = v.map((x) => String(x ?? "").trim()).filter(Boolean);
-    return l.length ? l : null;
-  }
-  if (v === null || v === undefined || typeof v === "object") return null;
   if (typeof v === "boolean") return v ? "oui" : null;
-  const s = String(v).trim();
-  return s || null;
+  if (v !== null && v !== undefined && !Array.isArray(v) && typeof v === "object") {
+    return null;
+  }
+  const l = separeValeurs(v);
+  return !l.length ? null : l.length === 1 ? l[0] : l;
 }

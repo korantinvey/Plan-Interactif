@@ -1175,7 +1175,9 @@ function ouvreFiche(apres) {
           aide: "Un champ que ce salon est seul à tenir. Il se règle comme les " +
             "autres — un champ d'origine, une case pour l'afficher, une case " +
             "pour en faire un critère de recherche — et n'existe que pour cet " +
-            "événement." },
+            "événement. Un champ à choix multiple se sépare tout seul : la " +
+            "source joint ses valeurs par un point-virgule, et chacune compte " +
+            "pour elle-même." },
         [
           perso.length ? tableauChamps(perso, type, src, true, true) : null,
           (() => {

@@ -74,7 +74,7 @@ Fonctions :
 `#sousTitre` · `#statut` · `#btnImport` · `#btnExport` · `#btnTheme` · `#btnRecharger`
 `#btnNouveau` · `#listeEvts` · `#fiche`
 
-### `_console-js.html` — 1839 l. → admin-plans.html
+### `_console-js.html` — 1841 l. → admin-plans.html
 
 - l.321 · Provenance des données
 - l.448 · Contenu de la fiche détail
@@ -89,11 +89,11 @@ Fonctions :
 `caseCritere` 735 · `clePerso` 754 · `ajouteChampPerso` 762 · `renommeChampPerso` 773
 `retireChampPerso` 791 · `lignesPerso` 836 · `ligneReglage` 856 · `ouvreProvenance` 869
 `ouvreSources` 892 · `ouvreSalles` 948 · `cadreFiche` 1061 · `ouvreFiche` 1090
-`sousTitre` 1221 · `tableauChamps` 1236 · `encode` 1379 · `decode` 1381
-`correspondance` 1386 · `sansPrefixe` 1389 · `courte` 1390 · `intitule` 1405
-`intituleSuite` 1417 · `champOrigine` 1430 · `majLiens` 1647 · `majIntegration` 1674
-`majMsgSync` 1681 · `synchronise` 1695 · `dupliquer` 1738 · `videEcran` 1812
-`dessine` 1817 · `demarre` 1827
+`sousTitre` 1223 · `tableauChamps` 1238 · `encode` 1381 · `decode` 1383
+`correspondance` 1388 · `sansPrefixe` 1391 · `courte` 1392 · `intitule` 1407
+`intituleSuite` 1419 · `champOrigine` 1432 · `majLiens` 1649 · `majIntegration` 1676
+`majMsgSync` 1683 · `synchronise` 1697 · `dupliquer` 1740 · `videEcran` 1814
+`dessine` 1819 · `demarre` 1829
 
 Éléments :
 
@@ -207,17 +207,17 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2039 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2058 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.45 · 1. Index global — la recherche porte sur tous les pavillons
 - l.186 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.277 · 3. Rendu du pavillon courant
 - l.340 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.396 · 5. Recherche et secteurs — sans mot-clé ni secteur retenu on reste sur le
-- l.1092 · 6. Vue
-- l.1191 · 7. Sélection et fiche
-- l.1717 · 8. Interactions du plan
-- l.1888 · Le tiroir de la liste — écrans étroits
+- l.1109 · 6. Vue
+- l.1208 · 7. Sélection et fiche
+- l.1736 · 8. Interactions du plan
+- l.1907 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -228,18 +228,18 @@ Fonctions :
 `BANDES` 475 · `majFondus` 483 · `chipsSecteurs` 517 · `coloreSecteurs` 541
 `appliqueSecteurs` 568 · `indexeThemes` 596 · `chipsThemes` 614 · `appliqueThemes` 645
 `basculeTheme` 653 · `filtreTheme` 666 · `clesCriteres` 731 · `libelleCritere` 737
-`valeursCritere` 745 · `texteCriteres` 758 · `indexeCriteres` 771 · `dansCriteres` 798
-`critereActif` 806 · `basculeCritere` 808 · `videCriteres` 816 · `nCriteres` 823
-`majCriteres` 832 · `ouvreCriteres` 889 · `dansSecteurs` 995 · `dansThemes` 1000
-`filtre` 1005 · `visible` 1008 · `releveHotes` 1020 · `visibleSurPlan` 1028
-`appliqueFiltre` 1032 · `liste` 1041 · `appliqueVue` 1095 · `rafraichitVue` 1116
-`poseVue` 1128 · `masque` 1146 · `fit` 1166 · `zoom` 1178 · `echelle` 1183 · `ETROIT` 1197
-`anime` 1199 · `noeud` 1216 · `canalPlan` 1221 · `select` 1229 · `centre` 1249
-`centrePoint` 1253 · `montre` 1268 · `momentLocal` 1294 · `programme` 1317 · `jourLong` 1347
-`ficheConf` 1358 · `lien` 1452 · `ecarteClicFantome` 1469 · `nomSociete` 1478
-`societes` 1491 · `choisitExposant` 1502 · `ouvre` 1538 · `ferme` 1697 · `onglet` 1707
-`milieu` 1737 · `commencePince` 1743 · `suitPince` 1757 · `mesureTiroir` 1899
-`montreTiroir` 1902
+`separeValeurs` 745 · `valeursCritere` 762 · `texteCriteres` 775 · `indexeCriteres` 788
+`dansCriteres` 815 · `critereActif` 823 · `basculeCritere` 825 · `videCriteres` 833
+`nCriteres` 840 · `majCriteres` 849 · `ouvreCriteres` 906 · `dansSecteurs` 1012
+`dansThemes` 1017 · `filtre` 1022 · `visible` 1025 · `releveHotes` 1037
+`visibleSurPlan` 1045 · `appliqueFiltre` 1049 · `liste` 1058 · `appliqueVue` 1112
+`rafraichitVue` 1133 · `poseVue` 1145 · `masque` 1163 · `fit` 1183 · `zoom` 1195
+`echelle` 1200 · `ETROIT` 1214 · `anime` 1216 · `noeud` 1233 · `canalPlan` 1238
+`select` 1246 · `centre` 1266 · `centrePoint` 1270 · `montre` 1285 · `momentLocal` 1311
+`programme` 1334 · `jourLong` 1364 · `ficheConf` 1375 · `lien` 1469
+`ecarteClicFantome` 1486 · `nomSociete` 1495 · `societes` 1508 · `choisitExposant` 1519
+`ouvre` 1555 · `ferme` 1716 · `onglet` 1726 · `milieu` 1756 · `commencePince` 1762
+`suitPince` 1776 · `mesureTiroir` 1918 · `montreTiroir` 1921
 
 Éléments :
 
@@ -325,13 +325,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 356 l.
+### `supabase/functions/_partage/champs.ts` — 371 l.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 745 l.
+### `supabase/functions/_partage/eventmaker.ts` — 734 l.
 
-`grapheJson` 145 · `enParallele` 595 · `texteSeul` 615 · `champs` 694 · `separe` 714
+`grapheJson` 147 · `enParallele` 600 · `texteSeul` 620 · `champs` 699
 
 ### `supabase/functions/_partage/gaia.ts` — 224 l.
 
