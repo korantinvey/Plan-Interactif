@@ -2141,7 +2141,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .panel .reset{font-size:12px;color:var(--ink-3);text-decoration:underline}
 /* Publier n'est pas un réglage parmi d'autres : c'est le geste qui rend le
    travail visible aux visiteurs. Il se distingue des liens qui l'entourent. */
-.panel .reset.fort{display:block;width:100%;margin-bottom:8px;padding:7px 10px;
+.panel .reset.fort{display:block;width:100%;padding:7px 10px;
   text-decoration:none;text-align:center;color:#fff;background:var(--accent);
   border-radius:var(--radius);font-weight:500}
 .panel .reset.fort:hover{opacity:.9;color:#fff}
@@ -6302,16 +6302,12 @@ function activeAdmin(){
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
      à l'autre, faute de mieux. Maintenant qu'elle se publie, ils n'ajoutent
-     qu'un chemin de plus pour arriver au même endroit. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>' +
-                    '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>';
+     qu'un chemin de plus pour arriver au même endroit. Rétablir les valeurs
+     d'origine est parti pour l'inverse : un clic effaçait sans confirmation
+     tout le travail de calques et de libellés, pour un besoin qui ne se
+     présente jamais. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>';
   $("panel").appendChild(barre);
-  $("razConf").onclick = () => {
-    CONF = JSON.parse(JSON.stringify(DEFAUTS));
-    try { localStorage.removeItem(CLE_CONF); } catch (e) {}
-    // les placements de libellés vivent dans CONF : ils repartent avec elle
-    appliqueApparence(); libelles(); construitPanneau();
-  };
   $("pousseConf").onclick = e => pousseConfiguration(e.target);
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a

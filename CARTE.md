@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1765 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1761 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.1069 · 10. Mode administration
-- l.1139 · La fiche d'une zone organisateur
-- l.1512 · Masquer une zone organisateur
-- l.1595 · Placer un libellé à la main
+- l.1135 · La fiche d'une zone organisateur
+- l.1508 · Masquer une zone organisateur
+- l.1591 · Placer un libellé à la main
 
 Fonctions :
 
@@ -30,18 +30,18 @@ Fonctions :
 `apercuDuo` 589 · `glisseFenetre` 622 · `ouvreReglages` 633 · `voletZones` 699
 `ficheZoneEnPlace` 776 · `voletPlan` 794 · `nomDuTon` 921 · `voletApparence` 925
 `enregistreConf` 1019 · `rgbHex` 1025 · `hexa` 1032 · `luminance` 1036 · `ecarte` 1050
-`joli` 1065 · `retireAdmin` 1082 · `activeAdmin` 1095 · `champZone` 1165 · `champsZone` 1190
-`editeurRiche` 1252 · `memeFicheZone` 1407 · `suitFicheZone` 1411 · `verseFicheZone` 1419
-`ficheZone` 1445 · `enregistreZone` 1470 · `basculeAffichageZone` 1523
-`marqueZonesMasquees` 1540 · `ecritTablesZones` 1560 · `ecritTableZones` 1591
-`cleLibelle` 1616 · `empreinteLibelle` 1632 · `placementLibelle` 1640 · `posePlacement` 1650
-`libelleAutomatique` 1667 · `modePlacementLibelles` 1676 · `majPaletteLibelle` 1693
-`choisitLibelle` 1710 · `pousseLibelle` 1717 · `libellePointerDown` 1725
-`libellePointerMove` 1740 · `libellePointerUp` 1749
+`joli` 1065 · `retireAdmin` 1082 · `activeAdmin` 1095 · `champZone` 1161 · `champsZone` 1186
+`editeurRiche` 1248 · `memeFicheZone` 1403 · `suitFicheZone` 1407 · `verseFicheZone` 1415
+`ficheZone` 1441 · `enregistreZone` 1466 · `basculeAffichageZone` 1519
+`marqueZonesMasquees` 1536 · `ecritTablesZones` 1556 · `ecritTableZones` 1587
+`cleLibelle` 1612 · `empreinteLibelle` 1628 · `placementLibelle` 1636 · `posePlacement` 1646
+`libelleAutomatique` 1663 · `modePlacementLibelles` 1672 · `majPaletteLibelle` 1689
+`choisitLibelle` 1706 · `pousseLibelle` 1713 · `libellePointerDown` 1721
+`libellePointerMove` 1736 · `libellePointerUp` 1745
 
 Éléments :
 
-`#pousseConf` · `#razConf`
+`#pousseConf`
 
 ### `_admin2.html` — 141 l. → plan-admin.html, plan-smcl.html, plan.html
 
