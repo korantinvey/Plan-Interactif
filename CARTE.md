@@ -11,33 +11,33 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1754 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1765 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1058 · 10. Mode administration
-- l.1128 · La fiche d'une zone organisateur
-- l.1501 · Masquer une zone organisateur
-- l.1584 · Placer un libellé à la main
+- l.1069 · 10. Mode administration
+- l.1139 · La fiche d'une zone organisateur
+- l.1512 · Masquer une zone organisateur
+- l.1595 · Placer un libellé à la main
 
 Fonctions :
 
 `cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 62 · `jeton` 63 · `sousCle` 64
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
-`styleData` 123 · `appliqueApparence` 129 · `appliqueCommandes` 189 · `minutesVisite` 217
-`salonPartage` 224 · `trio` 237 · `melange` 247 · `themeSombre` 255 · `appliqueAccent` 269
-`modeleRetenu` 320 · `appliqueModele` 333 · `texteCorps` 402 · `standApercu` 417
-`lignesApercu` 437 · `contenuApercu` 463 · `apercuFiche` 496 · `apercuListe` 556
-`apercuDuo` 578 · `glisseFenetre` 611 · `ouvreReglages` 622 · `voletZones` 688
-`ficheZoneEnPlace` 765 · `voletPlan` 783 · `nomDuTon` 910 · `voletApparence` 914
-`enregistreConf` 1008 · `rgbHex` 1014 · `hexa` 1021 · `luminance` 1025 · `ecarte` 1039
-`joli` 1054 · `retireAdmin` 1071 · `activeAdmin` 1084 · `champZone` 1154 · `champsZone` 1179
-`editeurRiche` 1241 · `memeFicheZone` 1396 · `suitFicheZone` 1400 · `verseFicheZone` 1408
-`ficheZone` 1434 · `enregistreZone` 1459 · `basculeAffichageZone` 1512
-`marqueZonesMasquees` 1529 · `ecritTablesZones` 1549 · `ecritTableZones` 1580
-`cleLibelle` 1605 · `empreinteLibelle` 1621 · `placementLibelle` 1629 · `posePlacement` 1639
-`libelleAutomatique` 1656 · `modePlacementLibelles` 1665 · `majPaletteLibelle` 1682
-`choisitLibelle` 1699 · `pousseLibelle` 1706 · `libellePointerDown` 1714
-`libellePointerMove` 1729 · `libellePointerUp` 1738
+`styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 200 · `minutesVisite` 228
+`salonPartage` 235 · `trio` 248 · `melange` 258 · `themeSombre` 266 · `appliqueAccent` 280
+`modeleRetenu` 331 · `appliqueModele` 344 · `texteCorps` 413 · `standApercu` 428
+`lignesApercu` 448 · `contenuApercu` 474 · `apercuFiche` 507 · `apercuListe` 567
+`apercuDuo` 589 · `glisseFenetre` 622 · `ouvreReglages` 633 · `voletZones` 699
+`ficheZoneEnPlace` 776 · `voletPlan` 794 · `nomDuTon` 921 · `voletApparence` 925
+`enregistreConf` 1019 · `rgbHex` 1025 · `hexa` 1032 · `luminance` 1036 · `ecarte` 1050
+`joli` 1065 · `retireAdmin` 1082 · `activeAdmin` 1095 · `champZone` 1165 · `champsZone` 1190
+`editeurRiche` 1252 · `memeFicheZone` 1407 · `suitFicheZone` 1411 · `verseFicheZone` 1419
+`ficheZone` 1445 · `enregistreZone` 1470 · `basculeAffichageZone` 1523
+`marqueZonesMasquees` 1540 · `ecritTablesZones` 1560 · `ecritTableZones` 1591
+`cleLibelle` 1616 · `empreinteLibelle` 1632 · `placementLibelle` 1640 · `posePlacement` 1650
+`libelleAutomatique` 1667 · `modePlacementLibelles` 1676 · `majPaletteLibelle` 1693
+`choisitLibelle` 1710 · `pousseLibelle` 1717 · `libellePointerDown` 1725
+`libellePointerMove` 1740 · `libellePointerUp` 1749
 
 Éléments :
 
@@ -214,7 +214,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2600 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2608 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -374,7 +374,7 @@ Fonctions :
 `jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
 `ouvreParcours` 314 · `fermeParcours` 326
 
-### `_pile.html` — 356 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 372 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
@@ -384,8 +384,8 @@ Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
 `nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
-`sectionSelection` 273 · `ligneCouleur` 298 · `rangSecteur` 318 · `rangSous` 330
-`defautCouleur` 352
+`sectionSelection` 275 · `ligneCouleur` 314 · `rangSecteur` 334 · `rangSous` 346
+`defautCouleur` 368
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 

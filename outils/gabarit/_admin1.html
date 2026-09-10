@@ -45,7 +45,7 @@ function reglagesDuSalon(source){
     if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
     const general = k[0] === "_" || k.indexOf("data:") === 0 ||
                     k === "labStand" || k === "labZone" || k === "selection" ||
-                    k === "parcours";
+                    k === "parcours" || k === "poi";
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
@@ -118,6 +118,17 @@ function appliqueCouleursData(){
      se règle à part de la sélection — les deux marques se croisent sur le même
      plan, et se confondraient si l'exploitant ne pouvait les écarter. */
   pose(conf("parcours").couleur, "--c-parc");
+  /* Les points d'intérêt. Une seule couleur pour le cartouche et pour ce
+     qu'il met en avant : ce sont les deux bouts du même geste — on touche
+     « Restauration » en bas de l'écran, et les restaurations s'allument sur le
+     plan. Deux teintes n'auraient fait que rompre le lien.
+
+     L'encre du bouton retenu s'en déduit, comme celle des boutons d'accent :
+     du blanc sur un bleu, du noir sur un or. */
+  const poi = conf("poi").couleur;
+  pose(poi, "--c-poi");
+  pose(poi && trio(poi) && (luminance(trio(poi)) > 0.42 ? "#0E1113" : "#FFFFFF"),
+       "--c-poi-ink");
 }
 
 function styleData(cle){

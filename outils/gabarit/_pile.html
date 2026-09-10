@@ -269,6 +269,8 @@ function construitPanneau(){
    s'en déduit, et « appliqueCouleursData » s'en charge. Le parcours n'a que
    son liseré, et il se règle à part — les deux marques se croisent sur le
    même plan, souvent sur le même stand, et l'accent d'origine les confond.
+   Les points d'intérêt s'y ajoutent pour la même raison : leur mise en avant
+   passe par-dessus tout le reste, y compris un stand déjà sélectionné.
    ============================================================ */
 function sectionSelection(hote){
   const bloc = document.createElement("div");
@@ -288,6 +290,20 @@ function sectionSelection(hote){
     const p = conf("parcours");
     bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
       (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  }
+
+  /* Les points d'intérêt, comme les deux autres : une marque que le plan pose
+     par-dessus ce qu'il montre, et non une couche. Une seule couleur pour les
+     deux bouts du geste — la pastille retenue dans le cartouche, et le contour
+     comme le texte de ce qu'elle allume — sans quoi on cherche laquelle des
+     deux on vient de toucher.
+
+     La ligne suit le cartouche : un plan sans repère ni zone typée n'en montre
+     pas, et la couleur ne peindrait rien. */
+  if ($("poi") && !$("poi").hidden){
+    const i = conf("poi");
+    bloc.appendChild(ligneCouleur("Points d'intérêt", i.couleur || jeton("--accent"),
+      (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
 }

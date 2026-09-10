@@ -641,7 +641,13 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
   font-size:12px;cursor:pointer}
 .poiBtn:hover{border-color:var(--line-strong);color:var(--ink)}
-.poiBtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+/* La couleur des points d'intérêt se règle à part de l'accent : le
+   cartouche et la mise en avant vont ensemble, et l'exploitant qui veut
+   distinguer « où déjeuner » du reste du plan ne peut pas le faire en
+   déplaçant la couleur principale, qui peint la moitié de l'écran. Sans
+   réglage, c'est l'accent — le plan d'origine ne bouge pas. */
+.poiBtn[aria-pressed="true"]{background:var(--c-poi,var(--accent));
+  border-color:var(--c-poi,var(--accent));color:var(--c-poi-ink,#fff)}
 .poiBtn i{font-style:normal;font-size:10.5px;opacity:.7}
 /* « .stage svg » impose 100 % à tout SVG du plan : il faut une règle plus
    précise pour que le pictogramme du cartouche garde sa taille. */
@@ -675,13 +681,14 @@ html.poi-actif .dcal .forme:not(.phare){opacity:.16}
    recouvre. Le liseré continu la distingue aussi des zones ordinaires, que le
    trait discontinu marque. */
 html.poi-actif #zones g.phare path{fill-opacity:.92;
-  stroke:var(--accent);stroke-width:3;stroke-dasharray:none}
+  stroke:var(--c-poi,var(--accent));stroke-width:3;stroke-dasharray:none}
 /* Le halo est un « drop-shadow » posé une fois — c'est l'animer qui coûtait le
    repaint du plan entier, pas le porter — et c'est l'opacité du groupe, seule
    animée, qui le fait battre avec la zone. Deux passes plutôt qu'une : la
    première cerne, la seconde diffuse. Les longueurs sont en unités du plan,
    c'est-à-dire en mètres : le halo garde donc sa proportion au zoom. */
-#zones g.phare{filter:drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 7px var(--accent));
+#zones g.phare{filter:drop-shadow(0 0 2px var(--c-poi,var(--accent)))
+    drop-shadow(0 0 7px var(--c-poi,var(--accent)));
   animation:pulseZone 1.5s ease-in-out infinite}
 @keyframes pulseZone{0%,100%{opacity:1}50%{opacity:.58}}
 /* Le nom de la zone est écrit dans la couche des libellés, pas dans la zone :
@@ -696,7 +703,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 #labels .lbl.phare text{fill:#0F1316;paint-order:stroke;stroke:rgba(255,255,255,.85);
   stroke-width:.15em;stroke-linejoin:round;stroke-linecap:round;
   animation:titrePhare 1.5s ease-in-out infinite}
-@keyframes titrePhare{0%,100%{fill:#0F1316}50%{fill:var(--accent)}}
+@keyframes titrePhare{0%,100%{fill:#0F1316}50%{fill:var(--c-poi,var(--accent))}}
 /* Le battement passe par « transform », et non par « filter ».
    Le halo battait en animant le flou d'un « drop-shadow » : un filtre ne se
    délègue pas au compositeur, si bien que le navigateur recalculait les styles
@@ -707,7 +714,8 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    « opacity » sont les deux propriétés que le compositeur anime seul, sans
    rien repeindre ; le halo reste donc posé une fois pour toutes, et c'est la
    taille du repère qui bat. */
-.dcal .repere.phare{filter:drop-shadow(0 0 1.2px var(--accent)) drop-shadow(0 0 3.5px var(--accent));
+.dcal .repere.phare{filter:drop-shadow(0 0 1.2px var(--c-poi,var(--accent)))
+    drop-shadow(0 0 3.5px var(--c-poi,var(--accent)));
   transform-box:fill-box;transform-origin:center;
   animation:pulsePoi 1.4s ease-in-out infinite}
 @keyframes pulsePoi{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
