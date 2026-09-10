@@ -411,6 +411,8 @@ tr.eteint td{opacity:.45}
 /* Les comptes : la fenêtre en montre plusieurs à la fois, chacun avec la liste
    de ses salons. Plus étroite, cette liste passerait à la ligne pour rien. */
 .mfen:has(.compte){width:min(760px,100%)}
+/* Le formulaire d'invitation la porte aussi : la largeur est ainsi arrêtée au
+   premier tracé, avant que la liste des comptes soit revenue du réseau. */
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h3{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}

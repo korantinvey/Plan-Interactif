@@ -2846,7 +2846,11 @@ function ouvreComptes() {
   /* ------------------------------------------------------- l'invitation */
   function ficheInvitation() {
     const cadre = document.createElement("div");
-    cadre.className = "cadre";
+    /* La même marque que les fiches de compte, et pour une raison qui n'est pas
+       cosmétique : c'est elle qui élargit la fenêtre. Les comptes viennent du
+       réseau, ce cadre est là dès le premier tracé — sans lui, la fenêtre
+       s'ouvrait étroite puis sautait à sa largeur en cours de chargement. */
+    cadre.className = "cadre compte";
     const hd = document.createElement("div");
     hd.className = "cadre-hd";
     hd.innerHTML = "<span class='eyebrow'>Inviter quelqu'un</span>";
