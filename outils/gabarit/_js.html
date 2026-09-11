@@ -464,14 +464,14 @@ function montePlan(){
 }
 
 function onglets(){
-  /* Un seul pavillon ne se choisit pas. L'onglet ne servait alors qu'à répéter
-     un nom — souvent celui du salon, tel que Klipso l'écrit sur son unique
-     plan — et à prendre au titre la place qui lui manquait sur un téléphone. */
+  /* Un salon d'un seul pavillon n'a rien à choisir : l'onglet unique ne ferait
+     que répéter le titre — souvent mot pour mot, Klipso nommant son plan
+     unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
   const seul = DATA.plans.length < 2;
   $("halls").hidden = seul;
   // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
   document.documentElement.classList.toggle("un-pavillon", seul);
-  if (seul){ $("halls").innerHTML = ""; return; }
+  if (seul) { $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
     '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '"' +
     ' title="' + esc(p.libelle) + '">' +

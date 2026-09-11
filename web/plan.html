@@ -121,9 +121,6 @@ button{cursor:pointer;background:none;border:none}
 .stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
   font-variant-numeric:tabular-nums;line-height:1.2}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
-/* `display:flex` l'emporterait sur l'attribut : un seul pavillon doit pouvoir
-   se taire pour de bon. */
-.halls[hidden]{display:none}
 .halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
 .halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .halls button .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);margin-left:6px}
@@ -1694,6 +1691,210 @@ button.expo:hover{background:var(--line)}
 .liste-nu .row[aria-current="true"] :is(.nm,.code){color:var(--accent)}
 
 /* ------------------------------------------------------------
+   Modèles de bandeau
+
+   Il restait une pièce au rendu d'origine pendant que tout le reste changeait
+   d'habit : la barre du haut. Un salon habillé en « Verre » posait son bloc de
+   couleur sur la liste et sur les trois tiroirs, et gardait au-dessus une
+   barre blanche bordée de gris — la seule chose qui traverse l'écran de part
+   en part, et la première qu'on voit. Le modèle s'y arrête donc aussi.
+
+   Même méthode qu'ailleurs : on redéfinit les jetons sur le bandeau — le
+   titre, les pavillons, les compteurs et les boutons d'outil les lisent déjà,
+   et suivent sans qu'on les nomme — puis on n'écrit à la main que ce qui fait
+   la signature du modèle. « Sobre » n'a pas de classe : c'est la barre telle
+   que la feuille la dessine.
+
+   Deux pièces ne se déduisent pas des jetons et reviennent modèle par modèle :
+   la pastille du parcours, écrite en blanc sur l'accent — invisible là où
+   l'accent devient blanc — et le menu du compte, qui descend hors du bandeau
+   sur le plan et ne peut donc pas se contenter d'un fond translucide.
+   ------------------------------------------------------------ */
+
+/* Grille — le filet d'encre qui sépare deux lignes de liste devient le trait
+   qui pose la barre sur le plan, et le pavillon retenu se lit en négatif. */
+.bandeau-grille{--radius:0;border-bottom:2px solid var(--ink)}
+.bandeau-grille .brand h1{text-transform:uppercase;letter-spacing:0}
+.bandeau-grille .halls{background:none;padding:0;gap:0;border:1px solid var(--ink)}
+.bandeau-grille .halls button{border-radius:0;font-family:"Archivo",sans-serif;font-weight:600}
+.bandeau-grille .halls button[aria-pressed="true"]{background:var(--ink);color:var(--surface);
+  box-shadow:none}
+.bandeau-grille .halls button[aria-pressed="true"] .n{color:var(--surface)}
+.bandeau-grille :is(.iconbtn,.compte > summary){border-radius:0;border-color:var(--ink);
+  color:var(--ink)}
+.bandeau-grille .iconbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);
+  color:var(--surface)}
+
+/* Console — la régie commence en haut de l'écran : phosphore, chasse fixe, et
+   l'invite qui précède le nom du salon comme elle précède le compteur. */
+.bandeau-console{color:var(--ink);
+  --nuit:#04070A;--rouge:#FF8B7E;
+  --surface:color-mix(in srgb,var(--accent-base) 9%,var(--nuit));
+  --surface-2:color-mix(in srgb,var(--accent-base) 16%,var(--nuit));
+  --line:color-mix(in srgb,var(--accent-base) 26%,var(--nuit));
+  --line-strong:color-mix(in srgb,var(--accent-base) 42%,var(--nuit));
+  --ink:color-mix(in srgb,var(--accent-clair) 80%,#FFFFFF);
+  --ink-2:color-mix(in srgb,var(--accent-clair) 72%,var(--nuit));
+  --ink-3:color-mix(in srgb,var(--accent-clair) 48%,var(--nuit));
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,var(--nuit));
+  --accent-ink:var(--nuit);--radius:0;
+  border-bottom-style:dashed;
+  background-image:repeating-linear-gradient(180deg,
+    color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
+.bandeau-console :is(.brand h1,.brand .sub,.halls button){font-family:"IBM Plex Mono",monospace}
+.bandeau-console .brand h1{font-weight:500;letter-spacing:-.01em}
+.bandeau-console .brand h1::before{content:"› ";color:var(--accent)}
+.bandeau-console .halls button[aria-pressed="true"]{background:var(--surface-2);color:var(--accent);
+  box-shadow:none}
+.bandeau-console :is(.iconbtn,.compte > summary){border-radius:0}
+
+/* Billet — le bandeau d'accent que la recherche prend en tête de liste court
+   ici sur toute la largeur : c'est la souche du billet, et le plan ce qu'on
+   en détache. */
+.bandeau-billet{background-color:var(--accent);border-bottom:none;color:var(--accent-ink);
+  --ink:var(--accent-ink);
+  /* Le rouge du retrait se pose ici sur l'accent, et non sur une surface : il
+     se tire donc de l'encre qui tient dessus, claire ou sombre selon le ton. */
+  --rouge:color-mix(in srgb,var(--accent-ink) 58%,#E2483A);
+  --ink-2:color-mix(in srgb,var(--accent-ink) 82%,transparent);
+  --ink-3:color-mix(in srgb,var(--accent-ink) 70%,transparent);
+  --surface:rgba(255,255,255,.2);--surface-2:rgba(255,255,255,.16);
+  --line:transparent;--line-strong:rgba(255,255,255,.4)}
+.bandeau-billet :is(.halls,.halls button,.iconbtn,.compte > summary){border-radius:999px}
+.bandeau-billet .halls button[aria-pressed="true"]{background:var(--accent-ink);color:var(--accent);
+  box-shadow:none}
+.bandeau-billet .halls button[aria-pressed="true"] .n{color:var(--accent);opacity:.7}
+.bandeau-billet .iconbtn{background:rgba(255,255,255,.2);border-color:transparent;
+  color:var(--accent-ink)}
+.bandeau-billet .iconbtn:hover{border-color:transparent;color:var(--accent-ink)}
+.bandeau-billet .iconbtn[aria-pressed="true"]{background:var(--accent-ink);color:var(--accent)}
+.bandeau-billet .compte > summary{background:rgba(255,255,255,.2);color:var(--accent-ink)}
+.bandeau-billet .compteur{background:var(--accent-ink);color:var(--accent);border-color:transparent}
+.bandeau-billet .compte-pan{background:var(--accent);border:1px solid rgba(255,255,255,.4)}
+
+/* Magazine — l'ours du catalogue : le titre en serif, un filet plein pour
+   toute séparation, et le pavillon ouvert souligné plutôt que peint. */
+.bandeau-magazine{border-bottom:2px solid var(--ink)}
+.bandeau-magazine .brand h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:20px;
+  letter-spacing:-.01em}
+.bandeau-magazine .brand .sub{font-family:"Fraunces",Georgia,serif;font-style:italic;
+  font-size:12.5px}
+.bandeau-magazine .halls{background:none;padding:3px 0;gap:12px}
+.bandeau-magazine .halls button{padding:5px 0;border-radius:0;font-family:"Fraunces",Georgia,serif;
+  font-size:14px}
+.bandeau-magazine .halls button[aria-pressed="true"]{background:none;color:var(--ink);
+  box-shadow:inset 0 -2px 0 var(--accent)}
+.bandeau-magazine .stats b{font-family:"Fraunces",Georgia,serif;font-size:17px}
+.bandeau-magazine :is(.iconbtn,.compte > summary){border-radius:0}
+
+/* Brut — le même papier, le même noir et la même ombre dure que la liste : la
+   barre est une pièce découpée et posée, pas une teinte du thème. */
+.bandeau-brut{color:var(--ink);
+  --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
+  --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
+  --accent:var(--accent-base);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 15%,#FFFDF5);
+  --radius:0;border-bottom:3px solid #111}
+.bandeau-brut .brand h1{font-weight:700;text-transform:uppercase}
+.bandeau-brut .halls{background:none;padding:0;gap:6px}
+.bandeau-brut .halls button{background:#FFFDF5;border:2px solid #111;border-radius:0;
+  font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.bandeau-brut .halls button[aria-pressed="true"]{background:var(--accent-base);
+  color:var(--accent-ink);box-shadow:none}
+.bandeau-brut .halls button[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.8}
+.bandeau-brut :is(.iconbtn,.compte > summary){border:2px solid #111;border-radius:0;color:#111;
+  background:#FFFDF5;box-shadow:2px 2px 0 #111}
+.bandeau-brut .iconbtn[aria-pressed="true"]{background:var(--accent-base);border-color:#111;
+  color:var(--accent-ink)}
+
+/* Verre — la barre cesse d'être une feuille posée au-dessus du plan : elle
+   devient le haut du même bloc de couleur que la liste et les tiroirs. Le
+   dégradé file de gauche à droite, la barre étant large et basse là où le
+   panneau est haut et étroit. */
+.bandeau-verre{color:var(--ink);--rouge:#FFB3A8;
+  --surface:rgba(255,255,255,.14);--surface-2:rgba(255,255,255,.14);
+  --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
+  --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
+  --accent:#FFFFFF;--accent-soft:rgba(255,255,255,.22);--accent-ink:var(--accent-fort);
+  border-bottom-color:rgba(255,255,255,.28);
+  background-image:linear-gradient(100deg,var(--accent-clair) 0%,
+    var(--accent-base) 42%,var(--accent-fort) 100%)}
+.bandeau-verre .brand h1{font-weight:700;letter-spacing:-.025em}
+.bandeau-verre :is(.halls,.halls button,.iconbtn,.compte > summary){border-radius:999px}
+.bandeau-verre .halls button[aria-pressed="true"]{background:#fff;color:var(--accent-fort);
+  box-shadow:none}
+.bandeau-verre .halls button[aria-pressed="true"] .n{color:var(--accent-fort);opacity:.7}
+.bandeau-verre .iconbtn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);
+  color:#fff}
+.bandeau-verre .iconbtn:hover{border-color:rgba(255,255,255,.45);color:#fff}
+.bandeau-verre .iconbtn[aria-pressed="true"]{background:#fff;border-color:transparent;
+  color:var(--accent-fort)}
+.bandeau-verre .compte > summary{background:rgba(255,255,255,.22);color:#fff}
+.bandeau-verre .compteur{background:#fff;color:var(--accent-fort);border-color:transparent}
+/* Le menu descend du bandeau sur le plan : un carreau translucide y laisserait
+   passer les stands. Il reprend donc le fond du dégradé, en aplat. */
+.bandeau-verre .compte-pan{background:var(--accent-fort);
+  border-color:rgba(255,255,255,.28)}
+
+/* Kraft — le même carton, la même machine à écrire, et la perforation pour
+   séparer la barre du plan. */
+.bandeau-kraft{color:var(--ink);
+  --papier:#E7DBC2;
+  --surface:var(--papier);--surface-2:#DBCEB0;--line:#C3B18C;--line-strong:#A9946A;
+  --ink:#3B3022;--ink-2:#6B5B3F;--ink-3:#7A6849;
+  --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
+  --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
+  border-bottom:1px dashed var(--line-strong);
+  background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
+.bandeau-kraft :is(.brand h1,.brand .sub,.halls button,.stats,.stats b){
+  font-family:"Courier Prime",monospace}
+.bandeau-kraft .brand h1{font-weight:700;text-transform:uppercase;letter-spacing:.01em}
+.bandeau-kraft .halls button{font-weight:700}
+.bandeau-kraft .halls button[aria-pressed="true"]{background:var(--papier);
+  box-shadow:inset 0 0 0 1px var(--line-strong)}
+
+/* Signalétique — la barre de direction du hall : fond sombre, capitales, et le
+   bandeau d'accent posé dessous comme sous un panneau de sortie. */
+.bandeau-signal{color:var(--ink);--rouge:#FF8B7E;
+  --surface:#12171B;--surface-2:#1A2128;--line:#232B32;--line-strong:#3A444D;
+  --ink:#F2F5F7;--ink-2:#B7C0C7;--ink-3:#8A959E;
+  --accent:var(--accent-clair);
+  --accent-soft:color-mix(in srgb,var(--accent-base) 30%,#12171B);
+  --radius:2px;border-bottom:4px solid var(--accent-base)}
+.bandeau-signal .brand h1{text-transform:uppercase;letter-spacing:.02em}
+.bandeau-signal .halls button{font-weight:700;font-size:11px;letter-spacing:.04em;
+  text-transform:uppercase}
+.bandeau-signal .halls button[aria-pressed="true"]{background:var(--accent-base);
+  color:var(--accent-ink);box-shadow:none}
+.bandeau-signal .halls button[aria-pressed="true"] .n{color:var(--accent-ink);opacity:.75}
+.bandeau-signal .iconbtn[aria-pressed="true"]{background:var(--accent-base);
+  border-color:var(--accent-base);color:var(--accent-ink)}
+
+/* Chronologie — le rail passe sous la barre, allumé du côté d'où l'on part,
+   et les pavillons deviennent les jalons de cette ligne. */
+.bandeau-chrono{border-bottom-color:transparent;
+  background-image:linear-gradient(90deg,var(--accent),var(--line) 42%);
+  background-repeat:no-repeat;background-size:100% 2px;background-position:0 100%}
+.bandeau-chrono .halls{background:none;padding:3px 0;gap:8px}
+.bandeau-chrono :is(.halls button,.iconbtn,.compte > summary){border-radius:999px}
+.bandeau-chrono .halls button[aria-pressed="true"]{background:var(--accent-soft);
+  color:var(--accent);box-shadow:none}
+
+/* Nu — ni aplat, ni cadre, ni filet : le nom du salon et ses outils tiennent
+   par la typographie seule, comme les lignes de la liste. */
+.bandeau-nu{border-bottom-color:transparent}
+.bandeau-nu .brand h1{font-weight:600;letter-spacing:-.02em}
+.bandeau-nu .halls{background:none;padding:3px 0;gap:16px}
+.bandeau-nu .halls button{padding:5px 0}
+.bandeau-nu .halls button[aria-pressed="true"]{background:none;box-shadow:none;color:var(--accent);
+  text-decoration:underline;text-underline-offset:5px}
+.bandeau-nu :is(.iconbtn,.compte > summary){border-color:transparent;background:none}
+.bandeau-nu .iconbtn:hover{border-color:transparent;color:var(--accent)}
+.bandeau-nu .iconbtn[aria-pressed="true"]{background:none;border-color:transparent;
+  color:var(--accent)}
+
+/* ------------------------------------------------------------
    Parcours de visite
 
    Le visiteur retient des exposants et des conférences en circulant, puis
@@ -2823,7 +3024,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 </style>
 
 <div class="app">
-  <header class="topbar">
+  <header class="topbar" id="bandeau">
     <div class="brand">
       <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
            celui d'un salon annoncerait le mauvais pendant tout le
@@ -3599,14 +3800,14 @@ function montePlan(){
 }
 
 function onglets(){
-  /* Un seul pavillon ne se choisit pas. L'onglet ne servait alors qu'à répéter
-     un nom — souvent celui du salon, tel que Klipso l'écrit sur son unique
-     plan — et à prendre au titre la place qui lui manquait sur un téléphone. */
+  /* Un salon d'un seul pavillon n'a rien à choisir : l'onglet unique ne ferait
+     que répéter le titre — souvent mot pour mot, Klipso nommant son plan
+     unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
   const seul = DATA.plans.length < 2;
   $("halls").hidden = seul;
   // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
   document.documentElement.classList.toggle("un-pavillon", seul);
-  if (seul){ $("halls").innerHTML = ""; return; }
+  if (seul) { $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
     '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '"' +
     ' title="' + esc(p.libelle) + '">' +
@@ -6687,14 +6888,14 @@ function appliqueFond(){
   else racine.style.removeProperty("--c-fond");
 }
 
-/* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
-   exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
-   dans la même police et les mêmes couleurs : on ne choisit pas l'allure d'un
-   panneau sans choisir celle des autres, sous peine de quatre salons côte à
-   côte. Les trois derniers occupent d'ailleurs la même bande de l'écran, et
-   s'ouvrent l'un depuis l'autre. Le premier modèle n'a de classe nulle part :
-   c'est le plan tel que la feuille de style le dessine, et le point de départ
-   de tous les autres. */
+/* Les habillages du plan. Chacun tient en cinq pièces — le bandeau du haut,
+   la liste des exposants, la fiche détail, le parcours de visite et
+   l'itinéraire — taillées dans la même police et les mêmes couleurs : on ne
+   choisit pas l'allure de l'une sans choisir celle des autres, sous peine de
+   cinq salons côte à côte. Les trois dernières occupent d'ailleurs la même
+   bande de l'écran, et s'ouvrent l'une depuis l'autre. Le premier modèle n'a
+   de classe nulle part : c'est le plan tel que la feuille de style le dessine,
+   et le point de départ de tous les autres. */
 const MODELES = [
   { cle: "sobre", nom: "Sobre",
     resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
@@ -6783,15 +6984,16 @@ function posePoliceLibelles(cle){
 }
 
 /**
- * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
- * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
- * pour tous — le modèle est un accord, et l'exploitant qui choisit « Kraft »
- * choisit le carton partout.
+ * Pose l'habillage retenu sur les cinq pièces de l'écran : la fiche détail, le
+ * parcours de visite, l'itinéraire, la liste des exposants et le bandeau du
+ * haut. Un seul geste pour tous — le modèle est un accord, et l'exploitant qui
+ * choisit « Kraft » choisit le carton partout.
  *
  * Les trois tiroirs de droite portent le même préfixe : ils sont bâtis des
  * mêmes pièces — en-tête, pastilles, boutons — et un modèle écrit une fois
  * les habille tous les trois. La liste garde le sien, elle n'a ni en-tête ni
- * pastille et se dessine autrement.
+ * pastille et se dessine autrement ; le bandeau aussi, qui n'a ni l'une ni
+ * l'autre et traverse l'écran de part en part.
  *
  * Une seule classe à la fois par panneau : les modèles se recouvrent, et deux
  * ensemble ne veulent rien dire.
@@ -6802,6 +7004,7 @@ function appliqueModele(){
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  pose($("bandeau"), "bandeau-");
   posePoliceLibelles(cle);
 }
 
@@ -7403,8 +7606,9 @@ function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
-    "l'allure de tous les panneaux à la fois : la liste des exposants, la " +
-    "fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire.";
+    "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
+    "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
+    "l'itinéraire.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
