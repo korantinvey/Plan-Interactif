@@ -824,7 +824,8 @@ function vaAuRepere(id, p){
   const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
   const xy = cible.f.pts[0];
   if (!ETROIT()) centrePoint(xy);
-  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  // la pastille est mesurée là où le trajet la mènera, non là où il la trouve
+  ouvrePoi(id, rectVisee(n));
   if (ETROIT()) centrePoint(xy);
 }
 

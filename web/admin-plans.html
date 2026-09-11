@@ -1055,7 +1055,7 @@ async function fluxFonction(nom, corps, surLigne, trace) {
  * et il arrive à la dernière ligne.
  */
 function fenetreAvancement(titre, etiquette) {
-  let etapes = [], vivante = true, plafond = 0;
+  let etapes = [], vivante = true, plafond = 0, annoncees = false;
   const compte = new Map();
   let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte, chrono;
   const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
@@ -1099,7 +1099,7 @@ function fenetreAvancement(titre, etiquette) {
        serveur… », on ne sait pas si c'est le réseau, la fonction ou un tampon
        qui fait attendre. Ce message-là tranche entre le premier et les deux
        autres. */
-    if (o.evt === "reponse" && quoi && !etapes.length) {
+    if (o.evt === "reponse" && quoi && !annoncees) {
       quoi.textContent = "Réponse reçue — en attente de la première étape…";
     }
   };
@@ -1132,7 +1132,7 @@ function fenetreAvancement(titre, etiquette) {
       '<p class="sync-ecarte" hidden></p>' +
       '<div class="sync-cours"><span class="sync-quoi"></span>' +
         '<span class="sync-compte mono"></span></div>' +
-      '<div class="sync-sous" data-etat="attente"><span></span></div>' +
+      '<div class="sync-sous" data-etat="battant"><span></span></div>' +
       '<dl class="sync-chiffres"></dl>' +
       '<p class="sync-bilan"></p>';
     c.appendChild(d);
@@ -1205,18 +1205,28 @@ function fenetreAvancement(titre, etiquette) {
     const p = l.reduce((a, e) => a + e.frac, 0) / (l.length || 1) * 100;
     plafond = Math.max(plafond, Math.min(100, p));
     pctTxt.textContent = Math.round(plafond) + " %";
+    /* Tant qu'aucune étape n'a bougé, le curseur se tient au point de départ.
+       Une barre entièrement grise et un écran figé se ressemblent trop : c'est
+       ce point allumé, avec le chronomètre et la sous-barre qui bat, qui dit
+       qu'on attend le serveur et non qu'on a planté. */
+    rail.dataset.etat = l.some((e) => e.etat !== "attente") ? "" : "connexion";
   }
 
   return {
     /** Le relevé de ce que le flux a rendu, et de quand. */
     trace,
 
-    /** La liste des étapes, telle que le serveur l'annonce. */
-    ouvre(liste) {
+    /**
+     * La liste des étapes. `pressenties` distingue celle que la console a
+     * devinée pour ne pas ouvrir sur une barre vide de celle que le serveur
+     * annonce, qui seule fait foi et remplace la première.
+     */
+    ouvre(liste, pressenties) {
       etapes = liste.map((e) => ({
         cle: e.cle, libelle: e.libelle, source: e.source,
         poids: Math.max(0, Number(e.poids ?? 1) || 0), frac: 0, etat: "attente", det: "",
       }));
+      if (!pressenties) annoncees = true;
       construitRail();
       rafraichit();
     },
@@ -3584,6 +3594,35 @@ function majMsgSync(e) {
 /* ------------------------------------------------------------------
    Synchronisation
    ------------------------------------------------------------------ */
+
+/**
+ * Les étapes telles qu'on les attend, avant que le serveur ne les annonce.
+ *
+ * La fenêtre s'ouvre au clic, mais la première ligne du flux ne vient qu'après
+ * la connexion, le contrôle des droits et deux lectures en base. Sans cette
+ * prévision, on regarderait une barre vide pendant tout ce temps — et une
+ * barre vide se lit comme un blocage.
+ *
+ * Elle se calcule ici comme là-bas, et à partir des mêmes éléments : les
+ * sources réglées sur le salon, et les emplacements du dernier passage, que la
+ * console a déjà en mémoire pour les afficher. Les deux listes coïncident donc
+ * en pratique ; si elles divergeaient, c'est celle du serveur qui ferait foi,
+ * puisqu'elle remplace celle-ci dès son arrivée.
+ */
+function etapesPressenties(e) {
+  const emplacements =
+    (PLANS[e.id] || []).reduce((a, p) => a + (p.nb_stands || 0), 0) || 300;
+  const stands = source(e, "stands"), conf = source(e, "conferences");
+  return [
+    { cle: "exposants", libelle: "Exposants", source: stands,
+      poids: stands === "eventmaker" ? emplacements : 20 },
+    { cle: "conferences", libelle: "Conférences", source: conf,
+      poids: conf === "eventmaker" ? Math.round(emplacements / 4) : 0 },
+    { cle: "plan", libelle: "Plan", source: source(e, "plan"), poids: emplacements },
+    { cle: "produits", libelle: "Produits", source: source(e, "produits"), poids: 0 },
+  ];
+}
+
 async function synchronise(e) {
   const b = $("btnSync");
   if (b) b.disabled = true;
@@ -3591,6 +3630,7 @@ async function synchronise(e) {
      flux : entre le clic et la réponse du serveur il s'écoule quelques
      secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
   const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
+  vue.ouvre(etapesPressenties(e), true);
   let enCours = null;
   signale("Synchronisation en cours…");
   try {

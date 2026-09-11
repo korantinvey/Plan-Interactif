@@ -377,9 +377,12 @@ html.poi-actif #marques .parc{display:none}
    sur l'habillage du calque, qui teinte tout ce qu'il porte. */
 #labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
   fill:var(--c-lab-stand,var(--ink-2));
-  font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
-#labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+  font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
+  font-weight:var(--graisse-lab-code,500)}
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+#labels text.zn{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
@@ -435,7 +438,9 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-linejoin:round;stroke-linecap:round}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
-.dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
+.dcal text{fill:currentColor;text-anchor:middle;
+  font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600)}
 .dcal.editable{pointer-events:auto}
 /* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
    calques restent sourds : leur clic appartient à la vue, sans quoi un geste
@@ -1409,9 +1414,10 @@ button.expo:hover{background:var(--line)}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
   background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
   font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
-  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
-     s'y tient, plutôt que de la déborder sur un salon aux numéros longs — un
-     serif un peu plus large que la chasse fixe se rattrape à l'approche. */
+  /* La case se taille sur la police du modèle — celle-ci — et sur son corps :
+     le chiffre d'appel s'y tient, plutôt que de la déborder sur un salon aux
+     numéros longs. L'approche resserre ce que le serif prend de plus que la
+     chasse fixe, sans quoi la colonne des noms partirait vers la droite. */
   font-size:var(--caseF,11.5px);letter-spacing:-.02em}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
