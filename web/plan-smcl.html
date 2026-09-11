@@ -4480,15 +4480,60 @@ function glisseVersVise(){
     const but = vise;
     view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
              w: view.w + (but.w - view.w) * k, h: view.h + (but.h - view.h) * k };
-    // assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
-    // se retrient enfin — c'est la fin du geste
-    if (Math.abs(but.w - view.w) < but.w * .002){
+    /* Assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
+       se retrient enfin — c'est la fin du geste.
+
+       Les quatre nombres comptent, et non la seule largeur. Un cran de molette
+       la fait toujours varier, si bien qu'elle suffisait à dire où l'on en
+       était ; aller sur un point du plan ne la change pas forcément — on s'y
+       déplace sans s'en approcher — et le trajet s'arrêtait alors à sa
+       première image, juste avant de commencer. */
+    const reste = Math.max(Math.abs(but.x - view.x), Math.abs(but.y - view.y),
+                           Math.abs(but.w - view.w), Math.abs(but.h - view.h));
+    if (reste < but.w * .002){
       view = but; vise = null; poseVue(); return;
     }
     appliqueVue(); echelle();
     imageZoom = requestAnimationFrame(pas);
   };
   imageZoom = requestAnimationFrame(pas);
+}
+
+/**
+ * Viser une vue, et y aller en glissant.
+ *
+ * Le seul chemin pour déplacer la vue autrement que d'un coup : le zoom par
+ * crans s'en sert, le centrage sur un stand ou sur un repère aussi. Qui refuse
+ * les animations s'y pose tout de suite — « poseVue » arrête au passage le
+ * trajet qui serait en cours.
+ */
+function glisseVers(but){
+  if (REDUIT){ view = but; poseVue(); return; }
+  vise = but;
+  glisseVersVise();
+}
+
+/**
+ * Où un nœud du plan se trouvera quand la vue aura fini son trajet.
+ *
+ * La fiche s'ouvre en s'étirant depuis la forme qu'on a choisie, et il faut
+ * pour cela sa place à l'écran. Elle l'avait tant que le centrage se faisait
+ * d'un coup : la forme était déjà arrivée. Elle glisse maintenant, et la
+ * mesurer en chemin ferait partir la fiche d'un point de passage — le plus
+ * souvent hors du cadre, la forme venant à peine d'y entrer.
+ *
+ * La vue visée est donc posée le temps de la mesure, puis retirée. Deux
+ * écritures de « viewBox » de plus, et la géométrie est celle du navigateur
+ * plutôt qu'un calcul refait à la main pour chaque sorte de forme.
+ */
+function rectVisee(n){
+  if (!n) return null;
+  if (!vise) return n.getBoundingClientRect();
+  const avant = view;
+  view = vise; appliqueVue();
+  const r = n.getBoundingClientRect();
+  view = avant; appliqueVue();
+  return r;
 }
 
 /**
@@ -4503,11 +4548,8 @@ function glisseVersVise(){
 function zoom(f, fx, fy){
   const base = vise || view;
   const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
-  vise = { x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
-           w: nw, h: base.h * k };
-  // qui refuse les animations refuse celle-ci : on se pose tout de suite
-  if (REDUIT){ view = vise; vise = null; poseVue(); return; }
-  glisseVersVise();
+  glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
+               w: nw, h: base.h * k });
 }
 function echelle(){
   const r = svg.getBoundingClientRect();
@@ -4590,11 +4632,12 @@ function select(id, recentrer, canal, iSoc){
   marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
+  ouvre(o, rectVisee(n), canal, iSoc);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
-     sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
-     car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
+     sur une géométrie déjà périmée. Sur grand écran on cadre avant : le
+     centrage pose la vue visée, dont « rectVisee » a besoin pour dire d'où la
+     fiche doit s'étirer. */
   if (recentrer && ETROIT()) centre(o);
 }
 const centre = (o) => centrePoint(o.c);
@@ -4602,14 +4645,23 @@ const centre = (o) => centrePoint(o.c);
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
-  const w = Math.min(view.w, 55), h = w * (view.h / view.w);
+  /* Le trajet part de la vue qu'on vise quand il y en a une : un centrage
+     demandé pendant qu'un cran de molette finit de glisser s'enchaîne sur son
+     arrivée, et non sur le point de passage où il l'a trouvé. */
+  const base = vise || view;
+  const w = Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la remonte au milieu de ce qui reste visible — d'après la
      hauteur réellement masquée, et non une proportion supposée. */
   const r = svg.getBoundingClientRect();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
-  poseVue();
+  /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
+     du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
+     il fallait retrouver dans quel coin du salon on venait d'être posé. Le
+     trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
+     point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
+     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
+  glisseVers({ x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
@@ -8790,7 +8842,8 @@ function vaAuRepere(id, p){
   const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
   const xy = cible.f.pts[0];
   if (!ETROIT()) centrePoint(xy);
-  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  // la pastille est mesurée là où le trajet la mènera, non là où il la trouve
+  ouvrePoi(id, rectVisee(n));
   if (ETROIT()) centrePoint(xy);
 }
 

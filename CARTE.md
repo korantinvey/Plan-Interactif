@@ -169,7 +169,7 @@ Fonctions :
 
 - l.622 · Page de rapport
 
-### `_dessin.html` — 1504 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1505 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -186,13 +186,13 @@ Fonctions :
 `remplitListeSocietes` 625 · `societeSaisie` 633 · `traceStandDessine` 649
 `texteStandDessine` 673 · `poseLibellesDessines` 691 · `decoupeStand` 712
 `marqueStandsDessines` 724 · `rafraichitStandsDessines` 739 · `oublieReperes` 769
-`reperesCherchables` 771 · `vaAuRepere` 820 · `cartouchePoi` 846 · `ouvrePoi` 928
-`mesureCartouche` 999 · `phareRepere` 1006 · `phareZone` 1007 · `eclairePoi` 1011
-`signale` 1029 · `calquePourImage` 1043 · `poseImage` 1056 · `importeImage` 1069
-`dessinPointerDown` 1120 · `dessinPointerMove` 1194 · `dessinPointerUp` 1232
-`termineTrace` 1268 · `aide` 1278 · `choisitOutil` 1303 · `enchaineStand` 1326
-`activeCalque` 1380 · `montreRoleIti` 1431 · `creeCalque` 1462 · `demandeNom` 1475
-`renommeCalque` 1494
+`reperesCherchables` 771 · `vaAuRepere` 820 · `cartouchePoi` 847 · `ouvrePoi` 929
+`mesureCartouche` 1000 · `phareRepere` 1007 · `phareZone` 1008 · `eclairePoi` 1012
+`signale` 1030 · `calquePourImage` 1044 · `poseImage` 1057 · `importeImage` 1070
+`dessinPointerDown` 1121 · `dessinPointerMove` 1195 · `dessinPointerUp` 1233
+`termineTrace` 1269 · `aide` 1279 · `choisitOutil` 1304 · `enchaineStand` 1327
+`activeCalque` 1381 · `montreRoleIti` 1432 · `creeCalque` 1463 · `demandeNom` 1476
+`renommeCalque` 1495
 
 Éléments :
 
@@ -295,7 +295,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2876 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2928 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.238 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -303,9 +303,9 @@ Fonctions :
 - l.415 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.535 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1362 · 6. Vue
-- l.1546 · 7. Sélection et fiche
-- l.2513 · 8. Interactions du plan
-- l.2722 · Le tiroir de la liste — écrans étroits
+- l.1588 · 7. Sélection et fiche
+- l.2565 · 8. Interactions du plan
+- l.2774 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -324,16 +324,16 @@ Fonctions :
 `releveHotes` 1152 · `visibleSurPlan` 1160 · `visibleSociete` 1170 · `appliqueFiltre` 1176
 `rangSorte` 1196 · `codeCase` 1218 · `caseNumero` 1235 · `sousLigne` 1255 · `liste` 1269
 `appliqueVue` 1365 · `rafraichitVue` 1386 · `poseVue` 1398 · `masque` 1417
-`masqueDroite` 1449 · `fit` 1460 · `stoppeZoom` 1490 · `glisseVersVise` 1495 · `zoom` 1529
-`echelle` 1538 · `ETROIT` 1552 · `anime` 1554 · `noeud` 1578 · `canalPlan` 1588
-`rangSociete` 1596 · `select` 1605 · `centre` 1626 · `centrePoint` 1630 · `montre` 1645
-`libelleCorps` 1678 · `ordreCorps` 1690 · `momentLocal` 1727 · `programme` 1750
-`jourLong` 1783 · `ficheConf` 1794 · `lien` 1888 · `adresseSure` 1903 · `adresseImage` 1930
-`imageSure` 1943 · `assainitRiche` 1972 · `enBlocs` 2012 · `rangeRiche` 2025
-`ecarteClicFantome` 2053 · `nomSociete` 2062 · `societes` 2075 · `choisitExposant` 2086
-`poseMarque` 2124 · `poseCode` 2174 · `rangeMarque` 2205 · `ouvre` 2245 · `ferme` 2487
-`onglet` 2503 · `milieu` 2533 · `commencePince` 2539 · `suitPince` 2553
-`mesureTiroir` 2733 · `montreTiroir` 2736
+`masqueDroite` 1449 · `fit` 1460 · `stoppeZoom` 1490 · `glisseVersVise` 1495
+`glisseVers` 1536 · `rectVisee` 1555 · `zoom` 1574 · `echelle` 1580 · `ETROIT` 1594
+`anime` 1596 · `noeud` 1620 · `canalPlan` 1630 · `rangSociete` 1638 · `select` 1647
+`centre` 1669 · `centrePoint` 1673 · `montre` 1697 · `libelleCorps` 1730 · `ordreCorps` 1742
+`momentLocal` 1779 · `programme` 1802 · `jourLong` 1835 · `ficheConf` 1846 · `lien` 1940
+`adresseSure` 1955 · `adresseImage` 1982 · `imageSure` 1995 · `assainitRiche` 2024
+`enBlocs` 2064 · `rangeRiche` 2077 · `ecarteClicFantome` 2105 · `nomSociete` 2114
+`societes` 2127 · `choisitExposant` 2138 · `poseMarque` 2176 · `poseCode` 2226
+`rangeMarque` 2257 · `ouvre` 2297 · `ferme` 2539 · `onglet` 2555 · `milieu` 2585
+`commencePince` 2591 · `suitPince` 2605 · `mesureTiroir` 2785 · `montreTiroir` 2788
 
 Éléments :
 
