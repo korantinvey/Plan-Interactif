@@ -88,6 +88,13 @@ if (window.PLAN_CONFIG && !CFG) CFG = window.PLAN_CONFIG;
 
 /* ------------------------------------------------------------------
    Appels
+
+   Un jeton d'accès ne vaut qu'une heure ; la console, elle, reste ouverte la
+   journée. Celui que la connexion posait périmait donc sur place, et tout ce
+   qui partait ensuite revenait refusé : la table déconnectait sans prévenir,
+   et les fonctions n'affichaient qu'« Erreur 401 » — au milieu d'une
+   invitation, le mot ne dit rien de ce qu'il faut faire. Le jeton de
+   renouvellement arrivait pourtant avec lui à la connexion, et dormait.
    ------------------------------------------------------------------ */
 function entetes(json) {
   const h = { "apikey": CFG.anonKey };
@@ -96,11 +103,75 @@ function entetes(json) {
   return h;
 }
 
-async function rest(chemin, options = {}) {
-  const r = await fetch(CFG.url + "/rest/v1/" + chemin, {
+/** La charge utile d'un jeton. Elle se lit sans le serveur — seule la
+ *  signature demande sa clé, et c'est lui qui la vérifiera à chaque appel. */
+function contenuJeton(jeton) {
+  try {
+    const p = String(jeton || "").split(".")[1];
+    if (!p) return null;
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch (e) { return null; }
+}
+
+/** Secondes restantes au jeton. Illisible, on le suppose bon : le serveur
+ *  tranchera, et son refus déclenchera le renouvellement. */
+function resteJeton() {
+  const exp = contenuJeton(SESSION?.access_token)?.exp;
+  return typeof exp === "number" ? exp - Date.now() / 1000 : Infinity;
+}
+
+/* Un renouvellement à la fois. La console lance ses appels de front — le
+   profil, les salons, les plans — et un jeton de renouvellement ne sert qu'une
+   fois : trois échanges simultanés en perdraient deux, et la session avec. */
+let renouvellement = null;
+
+function renouvelle() {
+  if (!SESSION?.refresh_token) return Promise.resolve(false);
+  if (!renouvellement) {
+    renouvellement = (async () => {
+      try {
+        const r = await fetch(CFG.url + "/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: SESSION.refresh_token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j?.access_token) return false;
+        SESSION = j;
+        // un stockage refusé ne doit pas coûter la session en cours
+        try { localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION)); } catch (e) {}
+        return true;
+      } catch (e) {
+        // une coupure du réseau n'est pas une session finie : on ne déconnecte pas
+        return false;
+      } finally {
+        renouvellement = null;
+      }
+    })();
+  }
+  return renouvellement;
+}
+
+/**
+ * Un appel au projet, jeton frais en main : échangé avant de partir s'il
+ * touche à sa fin, échangé puis l'appel refait s'il est refusé malgré tout.
+ *
+ * Le 403 reste où il est : c'est un droit qui manque, pas un jeton qui se
+ * périme, et le renouveler ne le donnerait pas.
+ */
+async function appel(url, options = {}) {
+  const envoie = () => fetch(url, {
     ...options,
     headers: { ...entetes(!!options.body), ...(options.headers || {}) },
   });
+  if (SESSION?.access_token && resteJeton() < 60) await renouvelle();
+  const r = await envoie();
+  if (r.status !== 401 || !SESSION?.refresh_token) return r;
+  return (await renouvelle()) ? envoie() : r;
+}
+
+async function rest(chemin, options = {}) {
+  const r = await appel(CFG.url + "/rest/v1/" + chemin, options);
   if (r.status === 401 || r.status === 403) {
     deconnecte("Session expirée, reconnectez-vous.");
     throw new Error("Non autorisé.");
@@ -387,19 +458,9 @@ const PAGE_MDP = BASE_PAGES + "motdepasse";
  *
  * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
  * un aller-retour à chaque chargement pour une donnée que le navigateur tient
- * en main. Seule la charge utile est lue : la signature, elle, n'est vérifiable
- * que par le serveur, qui le fera à chaque requête.
+ * en main.
  */
-function idCompte() {
-  const jeton = SESSION?.access_token;
-  if (!jeton) return null;
-  try {
-    const p = jeton.split(".")[1];
-    if (!p) return null;
-    const brut = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(brut).sub || null;
-  } catch (e) { return null; }
-}
+const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
 
 /* ------------------------------------------------------------------
    Thème
@@ -802,6 +863,26 @@ let EVTS = [], selection = null, PLANS = {};
 
 
 /**
+ * Ce qu'il faut dire d'une fonction qui refuse.
+ *
+ * Deux refus portent le même numéro sans venir du même endroit. La fonction
+ * s'explique dans `erreur` ; la passerelle, elle, écarte les jetons qu'elle
+ * juge périmés avant même de l'appeler, et nomme son champ autrement. Faute de
+ * lire les deux, un « Erreur 401 » nu tenait lieu d'explication — et la
+ * session, elle, restait ouverte sur un jeton qui ne valait plus rien.
+ */
+async function refus(r) {
+  const j = await r.json().catch(() => ({}));
+  /* Le jeton a déjà été renouvelé puis réessayé par `appel` : un 401 qui
+     arrive jusqu'ici est une session bel et bien finie. */
+  if (r.status === 401) {
+    deconnecte("Session expirée, reconnectez-vous.");
+    return "Session expirée.";
+  }
+  return j.erreur || j.message || j.msg || "Erreur " + r.status;
+}
+
+/**
  * Appel d'une fonction qui rend compte au fil de l'eau.
  *
  * La réponse est un flux de lignes JSON plutôt qu'un objet unique : une
@@ -810,16 +891,12 @@ let EVTS = [], selection = null, PLANS = {};
  * la dernière — celle qui porte le résultat.
  */
 async function fluxFonction(nom, corps, surLigne) {
-  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
+  const r = await appel(CFG.url + "/functions/v1/" + nom, {
     method: "POST",
-    headers: entetes(true),
     body: JSON.stringify(corps),
   });
   // un refus arrive avant le flux, sous forme d'objet unique
-  if (!r.ok || !r.body) {
-    const j = await r.json().catch(() => ({}));
-    throw new Error(j.erreur || "Erreur " + r.status);
-  }
+  if (!r.ok || !r.body) throw new Error(await refus(r));
 
   const lecteur = r.body.getReader();
   const dec = new TextDecoder();
@@ -872,14 +949,12 @@ function barreAvancement(hote, etapes) {
 }
 
 async function fonction(nom, corps) {
-  const r = await fetch(CFG.url + "/functions/v1/" + nom, {
+  const r = await appel(CFG.url + "/functions/v1/" + nom, {
     method: "POST",
-    headers: entetes(true),
     body: JSON.stringify(corps),
   });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.erreur || "Erreur " + r.status);
-  return j;
+  if (!r.ok) throw new Error(await refus(r));
+  return await r.json().catch(() => ({}));
 }
 
 
