@@ -4554,6 +4554,35 @@ function choisitExposant(o, rect, canal){
 }
 
 /**
+ * La pastille de situation, et le filigrane que les modèles de fiche lisent
+ * sous elle.
+ *
+ * Le pavillon ne situe la fiche que s'il y en a plusieurs : sur un salon qui
+ * tient sur un seul plan, il ne distingue rien, il porte souvent le nom du
+ * salon — déjà en tête de la page — et l'onglet des pavillons le nomme de
+ * toute façon. Il tombe aussi quand il redit ce nom-là, fût-ce parmi d'autres.
+ * La pastille disparaît avec lui s'il ne reste aucun numéro derrière : une
+ * zone n'en a jamais, un repère non plus.
+ *
+ * Elle vit ici parce que deux fiches l'écrivent — celle d'un stand ou d'une
+ * zone, et celle d'un repère (`ouvrePoi`, _dessin.html). La seconde la
+ * recopiait, et un second écrivain oublie une remise à zéro par champ ajouté :
+ * le filigrane gardait le numéro du stand consulté juste avant, et la pastille
+ * restait invisible pour avoir été cachée par la fiche d'une zone.
+ */
+function poseCode(pl, num, filigrane){
+  const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
+                  String(DATA.evenement || "").trim().toLowerCase();
+  const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
+  $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
+  $("dCode").hidden = !$("dCode").textContent;
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et ni une zone ni un repère n'ont de numéro. */
+  $("dCode").parentNode.dataset.code = filigrane || "";
+}
+
+/**
  * La fiche d'un stand ou d'une zone.
  *
  * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
@@ -4591,22 +4620,8 @@ function ouvre(o, rect, canal, iSoc){
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
-  /* Le pavillon ne situe la fiche que s'il y en a plusieurs : sur un salon qui
-     tient sur un seul plan, il ne distingue rien, il porte souvent le nom du
-     salon — déjà en tête de la page — et l'onglet des pavillons le nomme de
-     toute façon. Il tombe aussi quand il redit ce nom-là, fût-ce parmi
-     d'autres. La pastille disparaît avec lui s'il ne reste aucun numéro
-     derrière : une zone n'en a jamais. */
-  const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
-                  String(DATA.evenement || "").trim().toLowerCase();
-  const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
-  const num = ok("code", o.code) ? String(o.code) : "";
-  $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
-  $("dCode").hidden = !$("dCode").textContent;
-  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
-     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
-     pour un filigrane, et une zone n'a pas de numéro du tout. */
-  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
+  poseCode(pl, ok("code", o.code) ? String(o.code) : "",
+           !zone && o.code ? String(o.code) : "");
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
@@ -7804,9 +7819,14 @@ function ouvrePoi(id, rect){
   $("dKind").hidden = false;
   $("dKind").textContent = type ? nomTypeRepere(type) : "Repère";
   $("dName").textContent = dit || (type ? nomTypeRepere(type) : "Repère");
-  $("dCode").textContent = p.libelle;
+  /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
+     la fiche portait celui du stand consulté juste avant. */
+  poseCode(p, "", "");
   $("dNeuf").hidden = true;
   $("dPartage").hidden = true;
+  /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
+     visible, elle basculait encore la visibilité de la zone d'avant. */
+  if ($("dVis")) $("dVis").hidden = true;
   /* Un repère ne se retient pas dans un parcours : on ne visite pas un
      escalier, on le prend. */
   const sig = $("dMarque");

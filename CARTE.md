@@ -106,16 +106,16 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 354 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 343 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `verseModale` 71 · `ouvreModale` 77
-`fermeModale` 93 · `demande` 101 · `confirme` 123 · `ecranConfig` 134 · `normaliseUrl` 170
-`ecranConnexion` 189 · `deconnecte` 252 · `signale` 263 · `bloc` 284 · `grille` 302
-`idCompte` 332
+`$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `ouvreModale` 65 · `fermeModale` 80
+`demande` 90 · `confirme` 112 · `ecranConfig` 123 · `normaliseUrl` 159
+`ecranConnexion` 178 · `deconnecte` 241 · `signale` 252 · `bloc` 273 · `grille` 291
+`idCompte` 321
 
 Éléments :
 
