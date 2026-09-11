@@ -296,19 +296,7 @@ button{cursor:pointer;background:none;border:none}
    n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
    de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
    donc que la règle ne le touche pas. */
-/* L'enveloppe qui porte la vue pendant un geste. Elle n'est pas du SVG, et
-   c'est tout l'intérêt : transformer le <svg> lui-même — ou n'importe lequel
-   de ses groupes — remet le plan en page à chaque image, quatre-vingts
-   millisecondes ; transformer un div au-dessus de lui ne recalcule rien. Voir
-   « transforme » dans le module de la vue. */
-.vue{position:absolute;inset:0;transform-origin:0 0}
-/* Promue le temps du geste seulement : garder sept mille éléments sur une
-   couche composite permanente se paie en mémoire, et en netteté du texte. */
-.vue.bouge{will-change:transform}
-/* Même portée qu'avant l'enveloppe — « > svg » pour ne pas atteindre les <svg>
-   imbriqués, et une classe pour que « .stage svg.dragging » l'emporte encore
-   sur le curseur posé ici. */
-.vue > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -337,6 +325,7 @@ button{cursor:pointer;background:none;border:none}
 
    « display:none » et non « visibility », qui laisserait la mise en page —
    donc la dépense — intacte. */
+#plan.fige text{display:none}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -403,7 +392,7 @@ html.poi-actif #marques .parc{display:none}
 
 /* le contour de focus par défaut dessine un gros rectangle noir autour du
    groupe SVG : on le remplace par un renforcement du tracé du stand */
-.vue > svg{-webkit-tap-highlight-color:transparent}
+.stage > svg{-webkit-tap-highlight-color:transparent}
 .stand:focus,.zone:focus{outline:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -2901,15 +2890,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   </aside>
 
   <main class="stage" id="stage">
-    <div class="vue" id="vue">
-      <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
-        <g id="couches">
-          <g id="zones"></g>
-          <g id="stands"></g>
-          <g id="labels"></g>
-        </g>
-      </svg>
-    </div>
+    <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
+      <g id="couches">
+        <g id="zones"></g>
+        <g id="stands"></g>
+        <g id="labels"></g>
+      </g>
+    </svg>
 
     <div class="zoombar">
       <button id="zIn" aria-label="Zoom avant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
