@@ -44,6 +44,13 @@ const cors = (req: Request) => {
   return {
     "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
     "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+    /* Sans cela, une page d'une autre origine ne lit du flux que le type de
+       contenu : l'encodage, celui qui dirait si un relais a recomprimé la
+       réponse, lui reste caché. C'est justement lui que le journal de la
+       fenêtre d'avancement relève. Rien de sensible ne s'y trouve — ce sont
+       les en-têtes de notre propre réponse. */
+    "Access-Control-Expose-Headers":
+      "content-type, content-encoding, cache-control, x-accel-buffering, date",
     "Vary": "Origin",
   };
 };
@@ -76,6 +83,29 @@ const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
 
 // Annotations techniques posées sur le plan : ce ne sont pas des noms de zone.
 const TECHNIQUE = /\bkW\b|Hauteur \d|Coffret|Mur inclinable/i;
+
+/* La ligne vide qui termine un événement côté serveur. Écrite ainsi plutôt
+   qu'avec deux « \n » littéraux : le fichier traverse des outils qui
+   réécrivent les échappements, et ce détail-là ne pardonne pas. */
+const SAUT = String.fromCharCode(10);
+const BLANC = SAUT + SAUT;
+
+/**
+ * Du remplissage que le compresseur ne peut pas réduire.
+ *
+ * C'est tout l'objet : un tampon de relais se vide au compte des octets qui en
+ * sortent, et des espaces gzippés n'en font aucun. Rendu en commentaire SSE,
+ * ce que le client saute sans le lire.
+ */
+function bourre(octets: number): string {
+  let out = "";
+  const tampon = new Uint8Array(768);
+  while (out.length < octets) {
+    crypto.getRandomValues(tampon);
+    out += btoa(String.fromCharCode(...tampon));
+  }
+  return ": " + out.slice(0, octets) + BLANC;
+}
 
 const client = () =>
   createClient(
@@ -466,9 +496,21 @@ Deno.serve(async (req) => {
     const flux = new ReadableStream({
       async start(ctrl) {
         const enc = new TextEncoder();
-        const emet = (o: Record<string, unknown>) => {
-          ctrl.enqueue(enc.encode(JSON.stringify(o) + String.fromCharCode(10)));
+        /* Le flux est servi en « événements côté serveur ». Le client ne s'en
+           sert pas comme tel — il lit la réponse ligne à ligne, avec `fetch` —
+           mais c'est le seul type de contenu que les relais de la chaîne
+           savent devoir laisser passer sans le retenir. En `x-ndjson`, la
+           réponse entière arrivait d'un bloc à la fin : la fenêtre restait sur
+           « Connexion au serveur… » pendant toute la synchronisation, puis
+           affichait le bilan. */
+        let ouvert = true;
+        const pousse = (txt: string) => {
+          if (!ouvert) return;
+          // le client a pu fermer l'onglet : une file close n'est pas une erreur
+          try { ctrl.enqueue(enc.encode(txt)); } catch (_) { ouvert = false; }
         };
+        const emet = (o: Record<string, unknown>) =>
+          pousse("data: " + JSON.stringify(o) + BLANC);
         const etape = (cle: string, etat: string, info?: unknown) =>
           emet({ etape: cle, etat, ...(info === undefined ? {} : { info }) });
         /* Où l'on en est *dans* l'étape : combien d'éléments sur combien, et
@@ -490,19 +532,22 @@ Deno.serve(async (req) => {
         // le poids d'une étape, corrigé dès qu'elle sait ce qu'elle avait à faire
         const pese = (cle: string, poids: number) => emet({ etape: cle, poids });
 
-        /* Deux mille octets de rien, avant toute chose.
+        /* Huit mille octets illisibles, avant toute chose, puis un filet
+           régulier tant que ça dure.
 
-           Un relais qui tient un tampon d'entrée ne pousse rien tant qu'il
-           n'a pas de quoi le remplir : les premières lignes du flux, qui font
-           quelques centaines d'octets, y restaient jusqu'à ce que la fin de la
-           synchronisation les chasse — et la barre d'avancement paraissait une
-           fois le travail fait. Ce remplissage force le premier envoi. Le
-           client l'ignore : c'est une ligne qui ne parle d'aucune étape.
+           Un relais qui tient un tampon d'entrée ne pousse rien tant qu'il n'a
+           pas de quoi le remplir. Le remplissage doit être incompressible : la
+           première version de cette amorce était faite d'espaces, qui une fois
+           gzippés ne pesaient plus rien et ne remplissaient donc aucun tampon.
+           Du hasard, lui, traverse le compresseur sans maigrir.
 
-           Ce n'est pas la même précaution que l'en-tête `no-transform` : celui
-           -là interdit de recomprimer, celui-ci de retenir. Les deux défauts
-           se ressemblent de l'extérieur et ne se corrigent pas au même endroit. */
-        emet({ amorce: " ".repeat(2048) });
+           Le battement sert la même cause dans la durée : la lecture des
+           fiches ou l'allègement d'un calque tiennent la ligne muette pendant
+           des dizaines de secondes, et un tampon à moitié plein le reste
+           jusqu'à la fin. Ce sont des commentaires SSE — deux points en tête —
+           que le client saute sans les lire. */
+        pousse(bourre(8192));
+        const battement = setInterval(() => pousse(bourre(512)), 2000);
         emet({ etapes: ETAPES });
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
@@ -1198,21 +1243,23 @@ Deno.serve(async (req) => {
               .eq("id", corps.evenementId);
           } catch (_) { /* la trace ne doit pas masquer l'erreur d'origine */ }
         } finally {
-          ctrl.close();
+          clearInterval(battement);
+          ouvert = false;
+          try { ctrl.close(); } catch (_) { /* déjà close : rien à fermer */ }
         }
       },
     });
 
-    /* `no-transform` interdit aux relais de recomprimer la réponse, et
-       `X-Accel-Buffering` dit la même chose à ceux de la famille nginx, qui
-       ignorent le premier. Gzippé, un flux de lignes courtes reste coincé dans
-       le tampon du compresseur et n'arrive qu'à la toute fin : la barre
-       d'avancement paraissait alors une fois la synchronisation faite. */
+    /* Trois façons de dire la même chose à trois relais qui n'écoutent pas la
+       même : le type de contenu, qu'ils reconnaissent tous comme un flux à ne
+       pas retenir ; `no-transform`, qui leur interdit de recomprimer ;
+       `X-Accel-Buffering`, que seule la famille nginx lit. */
     return new Response(flux, {
       headers: {
         ...CORS,
-        "Content-Type": "application/x-ndjson",
-        "Cache-Control": "no-store, no-transform",
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, no-transform",
+        "Connection": "keep-alive",
         "X-Accel-Buffering": "no",
       },
     });

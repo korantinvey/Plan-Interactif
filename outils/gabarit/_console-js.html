@@ -34,10 +34,21 @@ async function refus(r) {
  * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
  * la dernière — celle qui porte le résultat.
  */
-async function fluxFonction(nom, corps, surLigne) {
-  const r = await appel(CFG.url + "/functions/v1/" + nom, {
-    method: "POST",
-    body: JSON.stringify(corps),
+async function fluxFonction(nom, corps, surLigne, trace) {
+  const dit = trace || (() => {});
+  const url = CFG.url + "/functions/v1/" + nom;
+  dit({ evt: "appel", url });
+  const r = await appel(url, { method: "POST", body: JSON.stringify(corps) });
+  /* Ce que le serveur a répondu, et surtout par quel chemin : un flux retenu
+     par un relais et un serveur lent se ressemblent trait pour trait de
+     l'extérieur. Les en-têtes qui les distinguent — l'encodage surtout — ne se
+     lisent d'une autre origine que si la fonction les expose, ce qu'elle
+     fait. */
+  dit({
+    evt: "reponse", statut: r.status,
+    entetes: ["content-type", "content-encoding", "cache-control",
+              "x-accel-buffering", "date"]
+      .reduce((o, c) => ({ ...o, [c]: r.headers.get(c) }), {}),
   });
   // un refus arrive avant le flux, sous forme d'objet unique
   if (!r.ok || !r.body) throw new Error(await refus(r));
@@ -48,15 +59,28 @@ async function fluxFonction(nom, corps, surLigne) {
   let reste = "", dernier = null;
   for (;;) {
     const { done, value } = await lecteur.read();
-    if (done) break;
+    if (done) { dit({ evt: "flux-fini" }); break; }
+    /* Le poids de chaque tronçon, et l'instant où il arrive. C'est là que se
+       lit un tampon : une synchronisation servie au fil de l'eau rend des
+       dizaines de tronçons étalés sur une minute, une réponse retenue n'en
+       rend qu'un, à la fin. */
+    dit({ evt: "troncon", octets: value.length });
     reste += dec.decode(value, { stream: true });
     let i;
     while ((i = reste.indexOf(FIN)) >= 0) {
       const ligne = reste.slice(0, i).trim();
       reste = reste.slice(i + 1);
-      if (!ligne) continue;
+      // le remplissage du flux est un commentaire : deux points en tête
+      if (!ligne || ligne[0] === ":") continue;
+      /* On accepte les deux habillages. Les pages et les fonctions ne se
+         déploient pas ensemble — Cloudflare suit le dépôt, Supabase a son
+         propre workflow — et pendant quelques minutes une page neuve parle à
+         l'ancienne fonction, ou l'inverse. */
+      const utile = ligne.slice(0, 5) === "data:" ? ligne.slice(5).trim() : ligne;
+      if (!utile) continue;
       let o;
-      try { o = JSON.parse(ligne); } catch (e) { continue; }
+      try { o = JSON.parse(utile); } catch (e) { continue; }
+      dit({ evt: "ligne", ligne: o });
       if (o.erreur) throw new Error(o.erreur);
       surLigne(o);
       if (o.ok) dernier = o;
@@ -92,11 +116,56 @@ async function fluxFonction(nom, corps, surLigne) {
  * La fenêtre ne se ferme pas d'elle-même : le bilan est ce qu'on vient y lire,
  * et il arrive à la dernière ligne.
  */
-function fenetreAvancement(titre) {
+function fenetreAvancement(titre, etiquette) {
   let etapes = [], vivante = true, plafond = 0;
   const compte = new Map();
   let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
   const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
+
+  /* Le journal de la synchronisation, du clic à la dernière ligne.
+
+     Il ne garde pas seulement ce que le serveur a dit, mais quand chaque chose
+     est arrivée et en combien de tronçons : c'est la seule façon de
+     distinguer, après coup, un serveur lent d'un relais qui retient. Il sert
+     donc au diagnostic d'un défaut d'affichage autant qu'à celui d'une
+     synchronisation ratée.
+
+     Il vit dans la page et nulle part ailleurs : on ne l'envoie à personne, on
+     le télécharge. */
+  const t0 = performance.now();
+  const journal = {
+    salon: etiquette || titre,
+    ouvertLe: new Date().toISOString(),
+    page: location.href,
+    navigateur: navigator.userAgent,
+    lignes: [],
+  };
+  const trace = (o) => {
+    journal.lignes.push({ ms: Math.round(performance.now() - t0), ...o });
+    /* La réponse reçue mérite d'être dite : tant qu'on lit « Connexion au
+       serveur… », on ne sait pas si c'est le réseau, la fonction ou un tampon
+       qui fait attendre. Ce message-là tranche entre le premier et les deux
+       autres. */
+    if (o.evt === "reponse" && quoi && !etapes.length) {
+      quoi.textContent = "Réponse reçue — en attente de la première étape…";
+    }
+  };
+
+  function telechargeJournal() {
+    const nomFichier = "synchro-" +
+      String(etiquette || "salon").toLowerCase().normalize("NFD")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + "-" +
+      new Date().toISOString().slice(0, 19).replace(/[:T-]/g, "") + ".json";
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(
+      new Blob([JSON.stringify(journal, null, 2)], { type: "application/json" }));
+    lien.download = nomFichier;
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    // révoquer tout de suite annulerait le téléchargement en cours
+    setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+  }
 
   ouvreModale(titre, (c) => {
     const d = document.createElement("div");
@@ -124,7 +193,14 @@ function fenetreAvancement(titre) {
     bilan = d.querySelector(".sync-bilan");
     ecarte = d.querySelector(".sync-ecarte");
     quoi.textContent = "Connexion au serveur…";
-  }, [{ libelle: "Fermer", genre: "primaire" }], () => { vivante = false; });
+  }, [
+    /* Le journal se télécharge aussi pendant que ça tourne, et pas seulement
+       à la fin : une synchronisation qui reste muette est justement celle dont
+       on voudrait le relevé, et attendre une fin qui ne vient pas le rendrait
+       inatteignable. */
+    { libelle: "Journal", action: () => { telechargeJournal(); return false; } },
+    { libelle: "Fermer", genre: "primaire" },
+  ], () => { vivante = false; });
   verrouilleModale(true);
 
   // Les étapes qui ont un segment : celles que la synchronisation reprend.
@@ -177,6 +253,9 @@ function fenetreAvancement(titre) {
   }
 
   return {
+    /** Le relevé de ce que le flux a rendu, et de quand. */
+    trace,
+
     /** La liste des étapes, telle que le serveur l'annonce. */
     ouvre(liste) {
       etapes = liste.map((e) => ({
@@ -261,6 +340,7 @@ function fenetreAvancement(titre) {
       // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
       // une autre a pu prendre sa place pendant que la synchronisation tournait
       if (vivante) verrouilleModale(false);
+      trace({ evt: "fin", issue: issue || "ok", message });
       if (!bilan) return;
       const panne = issue === "echec";
       bilan.className = "sync-bilan " + (issue || "ok");
@@ -2553,7 +2633,7 @@ async function synchronise(e) {
   /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
      flux : entre le clic et la réponse du serveur il s'écoule quelques
      secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
-  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"));
+  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
   let enCours = null;
   signale("Synchronisation en cours…");
   try {
@@ -2564,7 +2644,7 @@ async function synchronise(e) {
         if (o.etat === "encours") enCours = o.etape;
         vue.pas(o);
       }
-    });
+    }, vue.trace);
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);

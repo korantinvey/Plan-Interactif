@@ -134,32 +134,32 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3040 l. → admin-plans.html
+### `_console-js.html` — 3120 l. → admin-plans.html
 
-- l.573 · Provenance des données
-- l.700 · Contenu de la fiche détail
+- l.653 · Provenance des données
+- l.780 · Contenu de la fiche détail
 
 Fonctions :
 
-`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 95 · `fonction` 285 · `slugifie` 299
-`courant` 303 · `charge` 305 · `chargePlans` 320 · `majEvenement` 325 · `selonAdresse` 345
-`majAdresse` 353 · `majBarre` 368 · `dessineChoix` 410 · `champ` 430 · `dessineFiche` 455
-`fournisseurUtilise` 635 · `source` 639 · `champCle` 644 · `ligneSource` 679
-`origineConferences` 814 · `resumeProvenance` 879 · `resumeSalles` 896 · `resumeFiche` 907
-`caseFiche` 950 · `champsPersos` 993 · `criteres` 999 · `ecritFiche` 1002
-`caseCritere` 1017 · `clePerso` 1036 · `ajouteChampPerso` 1044 · `renommeChampPerso` 1055
-`retireChampPerso` 1073 · `lignesPerso` 1121 · `clesCorps` 1156 · `ordreEffectif` 1170
-`libelleCorps` 1185 · `champsLus` 1227 · `exempleCible` 1242 · `valeurApercu` 1264
-`dessineApercu` 1292 · `panneauOrdre` 1376 · `ligneOutil` 1558 · `ligneReglage` 1574
-`ouvreProvenance` 1586 · `ouvreSources` 1609 · `ouvreSalles` 1665 · `cadreFiche` 1780
-`ouvreFiche` 1809 · `sousTitre` 1959 · `tableauChamps` 1974 · `encode` 2117 · `decode` 2119
-`correspondance` 2124 · `sansPrefixe` 2127 · `courte` 2128 · `intitule` 2143
-`intituleSuite` 2155 · `separeValeurs` 2169 · `aplani` 2190 · `memeStyle` 2200
-`autreFace` 2218 · `champOrigine` 2234 · `majLiens` 2501 · `majIntegration` 2528
-`majMsgSync` 2535 · `synchronise` 2550 · `dupliquer` 2600 · `litMonProfil` 2698
-`RETOUR_MDP` 2709 · `litComptes` 2711 · `ligneMessage` 2720 · `casesSalons` 2730
-`ouvreComptes` 2760 · `ouvreFicheCompte` 2852 · `videEcran` 3011 · `dessine` 3016
-`demarre` 3028
+`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 365 · `slugifie` 379
+`courant` 383 · `charge` 385 · `chargePlans` 400 · `majEvenement` 405 · `selonAdresse` 425
+`majAdresse` 433 · `majBarre` 448 · `dessineChoix` 490 · `champ` 510 · `dessineFiche` 535
+`fournisseurUtilise` 715 · `source` 719 · `champCle` 724 · `ligneSource` 759
+`origineConferences` 894 · `resumeProvenance` 959 · `resumeSalles` 976 · `resumeFiche` 987
+`caseFiche` 1030 · `champsPersos` 1073 · `criteres` 1079 · `ecritFiche` 1082
+`caseCritere` 1097 · `clePerso` 1116 · `ajouteChampPerso` 1124 · `renommeChampPerso` 1135
+`retireChampPerso` 1153 · `lignesPerso` 1201 · `clesCorps` 1236 · `ordreEffectif` 1250
+`libelleCorps` 1265 · `champsLus` 1307 · `exempleCible` 1322 · `valeurApercu` 1344
+`dessineApercu` 1372 · `panneauOrdre` 1456 · `ligneOutil` 1638 · `ligneReglage` 1654
+`ouvreProvenance` 1666 · `ouvreSources` 1689 · `ouvreSalles` 1745 · `cadreFiche` 1860
+`ouvreFiche` 1889 · `sousTitre` 2039 · `tableauChamps` 2054 · `encode` 2197 · `decode` 2199
+`correspondance` 2204 · `sansPrefixe` 2207 · `courte` 2208 · `intitule` 2223
+`intituleSuite` 2235 · `separeValeurs` 2249 · `aplani` 2270 · `memeStyle` 2280
+`autreFace` 2298 · `champOrigine` 2314 · `majLiens` 2581 · `majIntegration` 2608
+`majMsgSync` 2615 · `synchronise` 2630 · `dupliquer` 2680 · `litMonProfil` 2778
+`RETOUR_MDP` 2789 · `litComptes` 2791 · `ligneMessage` 2800 · `casesSalons` 2810
+`ouvreComptes` 2840 · `ouvreFicheCompte` 2932 · `videEcran` 3091 · `dessine` 3096
+`demarre` 3108
 
 Éléments :
 
@@ -467,10 +467,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 163 · `ampute` 186 · `masquesDe` 226
 `masquesDuPlan` 246
 
-### `supabase/functions/sync-evenement/index.ts` — 1283 l.
+### `supabase/functions/sync-evenement/index.ts` — 1330 l.
 
-`cors` 42 · `client` 80 · `gaia` 87 · `libellesChoix` 98 · `fournisseur` 123 · `range` 159
-`champsKlipso` 180 · `hebergee` 1240 · `nettoieUrl` 1259 · `groupeTextes` 1269
+`cors` 42 · `bourre` 100 · `client` 110 · `gaia` 117 · `libellesChoix` 128
+`fournisseur` 153 · `range` 189 · `champsKlipso` 210 · `hebergee` 1287 · `nettoieUrl` 1306
+`groupeTextes` 1316
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
