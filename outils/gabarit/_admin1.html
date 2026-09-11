@@ -298,12 +298,14 @@ function appliqueAccent(){
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
 
-/* Les habillages du plan. Chacun tient en deux moitiés — la liste des
-   exposants et la fiche détail — taillées dans la même police et les mêmes
-   couleurs : on ne choisit pas l'allure d'un panneau sans choisir celle de
-   l'autre, sous peine de deux salons côte à côte. Le premier n'a de classe
-   ni d'un côté ni de l'autre : c'est le plan tel que la feuille de style le
-   dessine, et le point de départ de tous les autres. */
+/* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
+   exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
+   dans la même police et les mêmes couleurs : on ne choisit pas l'allure d'un
+   panneau sans choisir celle des autres, sous peine de quatre salons côte à
+   côte. Les trois derniers occupent d'ailleurs la même bande de l'écran, et
+   s'ouvrent l'un depuis l'autre. Le premier modèle n'a de classe nulle part :
+   c'est le plan tel que la feuille de style le dessine, et le point de départ
+   de tous les autres. */
 const MODELES = [
   { cle: "sobre", nom: "Sobre",
     resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
@@ -334,18 +336,24 @@ const modeleRetenu = () => {
 };
 
 /**
- * Pose l'habillage retenu sur ses deux moitiés : la fiche détail et la liste
- * des exposants. Un seul geste pour les deux — le modèle est un accord, et
- * l'exploitant qui choisit « Kraft » choisit le carton partout.
+ * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
+ * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
+ * pour tous — le modèle est un accord, et l'exploitant qui choisit « Kraft »
+ * choisit le carton partout.
  *
- * Une seule classe à la fois de chaque côté : les modèles se recouvrent, et
- * deux ensemble ne veulent rien dire.
+ * Les trois tiroirs de droite portent le même préfixe : ils sont bâtis des
+ * mêmes pièces — en-tête, pastilles, boutons — et un modèle écrit une fois
+ * les habille tous les trois. La liste garde le sien, elle n'a ni en-tête ni
+ * pastille et se dessine autrement.
+ *
+ * Une seule classe à la fois par panneau : les modèles se recouvrent, et deux
+ * ensemble ne veulent rien dire.
  */
 function appliqueModele(){
   const cle = modeleRetenu();
   const pose = (el, prefixe) => el && MODELES.forEach(m =>
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
-  pose($("detail"), "modele-");
+  ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
 }
 
@@ -921,13 +929,14 @@ const TONS = [
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
 /** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  deux panneaux — la liste des exposants et la fiche détail. */
+ *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
+ *  visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
-    "l'allure des deux panneaux à la fois : la liste des exposants et la " +
-    "fiche qui s'ouvre sur un stand.";
+    "l'allure de tous les panneaux à la fois : la liste des exposants, la " +
+    "fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
