@@ -45,6 +45,8 @@ const enregistreDessins = () => {
   oublieLiaisons();
   // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
   oublieAimants();
+  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
+  oublieReperes();
   rafraichitApercu();
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
@@ -743,6 +745,72 @@ function rafraichitStandsDessines(){
   });
   const r = svg.getBoundingClientRect();
   poseLibellesDessines((r.width || 1) / view.w);
+}
+
+/**
+ * Les repères, en objets de recherche.
+ *
+ * Un visiteur qui tape « vestiaire » ou « parking » cherche un endroit du
+ * salon, exactement comme il tape le nom d'une enseigne. Le cartouche du bas
+ * les récapitule déjà, mais il faut savoir qu'il existe et le parcourir des
+ * yeux : la recherche y mène en trois lettres.
+ *
+ * Ils sont relevés sur les trois pavillons, comme les stands : le sanitaire
+ * le plus proche n'est pas forcément dans celui qu'on regarde. Un calque
+ * éteint n'en donne aucun — ses repères ne sont pas sur le plan, et la liste
+ * promettrait un escalier que le visiteur ne trouverait pas.
+ *
+ * Le relevé se retient : la recherche le redemande à chaque frappe, et les
+ * dessins ne changent qu'entre deux gestes d'édition. « oublieReperes » le
+ * jette, aux mêmes endroits que les grilles d'itinéraire.
+ */
+let REPERES = null;
+
+function oublieReperes(){ REPERES = null; }
+
+function reperesCherchables(){
+  if (REPERES) return REPERES;
+  REPERES = [];
+  (DATA?.plans || []).forEach((p, i) => {
+    (DESSINS[p.id] || []).forEach(cal => {
+      if (cal.visible === false) return;
+      (cal.formes || []).forEach(f => {
+        if (f.t !== "repere") return;
+        const nom = nomRepere(f);
+        /* Le type ne compte que s'il ajoute quelque chose au libellé, et il
+           compte alors pour les deux : ce qu'on tape et ce que la ligne
+           montre. « Hall Sud » gagne à s'annoncer comme une entrée ; un repère
+           sans libellé s'appelle déjà « WC » et n'a rien à gagner d'un « WC »
+           en dessous, ni d'un second dans sa chaîne de recherche. Une chaîne
+           vide, elle, est un choix — « sans pictogramme » — et ne nomme rien
+           qu'on irait taper. */
+        const picto = pictoForme(f);
+        const type = picto ? nomTypeRepere(picto) : "";
+        const ajout = type === nom ? "" : type;
+        REPERES.push({
+          kind: "poi", id: f.id, p: i, nom: nom, type: ajout,
+          rech: (nom + " " + ajout).toLowerCase(),
+        });
+      });
+    });
+  });
+  return REPERES;
+}
+
+/**
+ * Un repère ouvert depuis la liste des résultats.
+ *
+ * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
+ * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
+ * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
+ * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
+ * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
+ * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ */
+function vaAuRepere(id, p){
+  changePlan(p);
+  const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
 }
 
 /**
