@@ -1412,6 +1412,16 @@ const LIGNES_FICHE = {
       aide: "Le titre de la fiche : toujours affiché." },
     { cle: "raison", cible: "raison", libelle: "Raison sociale",
       aide: "Quand elle diffère de l'enseigne." },
+    /* Le seul champ de la fiche qui ne soit pas du texte. Il vaut pour les deux
+       fournisseurs : Eventmaker le porte d'office sur l'avatar de la fiche,
+       Klipso n'a rien qui s'en approche mais un salon peut tenir une adresse
+       d'image dans un champ à lui. */
+    { cle: "logo", cible: "logo", libelle: "Logo",
+      aide: "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est " +
+        "« avatar » qu'il faut désigner : « avatar_medium » et " +
+        "« avatar_thumb » sont recadrés au carré et coupent les bords d'un " +
+        "logo en largeur — et sur une fiche sans logo, ils rendent les " +
+        "initiales de la personne inscrite." },
     { cle: "adresse", cible: "adresse", libelle: "Adresse" },
     { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
       suit: "adresse",
@@ -1971,6 +1981,17 @@ function dessineApercu(hote, e, src, cles) {
 
   const corps = document.createElement("div");
   corps.className = "af-bd";
+  /* Le logo vient en tête du corps, et l'aperçu montre sa place plutôt que
+     l'image : le relevé abrège ses valeurs à soixante caractères, quand une
+     adresse d'image en fait le double — ce serait une adresse tronquée. Le
+     cadre disparaît là où aucun champ ne l'alimente, comme la pastille des
+     nouveaux venus. */
+  if (parait("logo") && champsLus(bloc, "logo").length) {
+    const l = document.createElement("span");
+    l.className = "af-logo";
+    l.textContent = "Logo";
+    corps.appendChild(l);
+  }
   cles.forEach((cle) => {
     if (!parait(cle)) return;
     const { valeur, faute } = valeurApercu(bloc, cle);
