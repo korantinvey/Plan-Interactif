@@ -779,16 +779,37 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 
    La hauteur est celle d'une vignette qu'on regarde, et non d'une puce posée
    à côté d'un mot : un logo se lit, et le premier essai, haut comme deux
-   lignes de titre, ne le donnait pas à lire. Conséquence assumée du côté de
-   la ligne du nom — un logo en largeur y prend désormais toute la place, et se
-   range donc sous le nom plutôt qu'à côté. */
-.detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
+   lignes de titre, ne le donnait pas à lire. Un logo en largeur ne tient donc
+   plus à côté d'un nom un peu long — il rejoint alors la ligne du numéro, où
+   la page le pose et le borne, faute pour la feuille de connaître la longueur
+   d'un numéro de stand. */
+.detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
   max-width:min(300px,100%);max-height:72px;margin:0}
-.detail-hd .logoZone[hidden]{display:none}
-.detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
-  text-wrap:balance;padding-right:26px}
+/* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
+   replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
+   guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
+   « hidden » faire son office quel que soit l'ordre de la feuille. */
+.detail-hd .hdNom > .logoZone:not([hidden]){display:block}
+/* Sur celle du numéro, elle suit les pastilles dans le fil du texte, alignée
+   sur leur milieu : la ligne s'ouvre à sa hauteur plutôt que de s'en ajouter
+   une. */
+.detail-hd .hdBadges > .logoZone:not([hidden]){display:inline-block;
+  vertical-align:middle;margin-left:10px}
+/* La taille du nom vit en variable sur l'en-tête, et non sur le titre : le
+   numéro de stand s'y accorde, et il n'est pas dans le titre. Chaque modèle de
+   fiche redéfinit la variable au lieu de la taille — sur le titre seul, le
+   numéro n'en aurait rien su. */
+.detail-hd{--titre:19px}
+.detail-hd h2{font-family:"Archivo",sans-serif;font-size:var(--titre);letter-spacing:-.02em;
+  margin:8px 0 6px;text-wrap:balance;padding-right:26px}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+/* Le numéro de stand se lit de loin : c'est par lui qu'on se repère sur le
+   plan, et onze pixels le rendaient plus discret que la mention qui
+   l'accompagne. Il vaut quatre cinquièmes du nom, sur tous les modèles — d'où
+   le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
+   des pastilles modèle par modèle. */
+.detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8)}
 /* Un nouvel exposant se signale à côté de son emplacement. La pastille reprend
    l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
    une alerte, et une teinte de plus ferait un troisième langage sur le plan
@@ -979,7 +1000,8 @@ button.expo:hover{background:var(--line)}
    renvoyait dans le fil du texte, par-dessus l'intitulé. */
 .modele-grille .detail-hd > *:not(.hdActs,.close){position:relative;z-index:1}
 .modele-grille .detail-hd :is(.hdActs,.close){z-index:2}
-.modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+.modele-grille .detail-hd{--titre:22px}
+.modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.1}
 .modele-grille .detail-hd .eyebrow{color:var(--accent-ink);opacity:.65}
 .modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--accent-ink);
@@ -1016,7 +1038,8 @@ button.expo:hover{background:var(--line)}
   background-image:repeating-linear-gradient(180deg,
     color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
 .modele-console .detail-hd{border-bottom-style:dashed}
-.modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;
+.modele-console .detail-hd{--titre:17px}
+.modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;
   letter-spacing:-.01em}
 .modele-console .detail-hd h2::before{content:"▍";color:var(--accent);margin-right:7px}
 .modele-console .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.1em}
@@ -1036,7 +1059,7 @@ button.expo:hover{background:var(--line)}
    laissait cent dix-huit pixels de vide à droite. Elle porte sur la ligne
    entière, marque comprise : sur le seul titre, la marque serait allée se
    ranger sous le numéro. */
-.modele-billet .detail-hd[data-code]:not([data-code=""]) .hdNom{padding-right:118px}
+.modele-billet .detail-hd[data-code]:not([data-code=""]) :is(.hdNom,.hdBadges){padding-right:118px}
 .modele-billet .detail-hd .eyebrow{color:var(--accent-ink);opacity:.72}
 .modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
@@ -1064,7 +1087,8 @@ button.expo:hover{background:var(--line)}
    renvoyait dans le fil du texte, par-dessus l'intitulé. */
 .modele-magazine .detail-hd > *:not(.hdActs,.close){position:relative;z-index:1}
 .modele-magazine .detail-hd :is(.hdActs,.close){z-index:2}
-.modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;
+.modele-magazine .detail-hd{--titre:30px}
+.modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;
   line-height:1.06;letter-spacing:-.02em;margin:14px 0 12px}
 .modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
 .modele-magazine .detail-hd .badge{background:none;padding:0;font-family:"Fraunces",Georgia,serif;
@@ -1094,7 +1118,8 @@ button.expo:hover{background:var(--line)}
   --radius:0;border-left:3px solid #111}
 .modele-brut .detail-hd{background:var(--accent-base);border-bottom:3px solid #111;
   color:var(--accent-ink)}
-.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+.modele-brut .detail-hd{--titre:22px}
+.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.08}
 .modele-brut .detail-hd .eyebrow{color:var(--accent-ink);opacity:.75}
 .modele-brut .marque,.modele-brut .close,.modele-brut .crayon{border:2px solid #111;border-radius:0;
@@ -1146,7 +1171,8 @@ button.expo:hover{background:var(--line)}
   --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
   --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
   background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
-.modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;font-size:19px;
+.modele-kraft .detail-hd{--titre:19px}
+.modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;
   text-transform:uppercase;letter-spacing:.01em}
 .modele-kraft .eyebrow{font-family:"Courier Prime",monospace;letter-spacing:.16em}
 .modele-kraft .field .v{font-family:"Courier Prime",monospace;font-size:13px}
@@ -1175,7 +1201,8 @@ button.expo:hover{background:var(--line)}
   --radius:2px}
 .modele-signal .detail-hd{background:var(--accent-base);
   border-bottom:4px solid var(--accent-fort);color:var(--accent-ink)}
-.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:20px;
+.modele-signal .detail-hd{--titre:20px}
+.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.12}
 .modele-signal .detail-hd h2::before{content:"→ ";font-weight:500}
 .modele-signal .detail-hd .eyebrow{color:var(--accent-ink);opacity:.78}
@@ -1223,7 +1250,8 @@ button.expo:hover{background:var(--line)}
 .modele-nu{box-shadow:none;border-left-color:transparent}
 .modele-nu .detail-hd{border-bottom:none;padding:30px 24px 4px}
 .modele-nu .detail-hd .eyebrow{display:none}
-.modele-nu .detail-hd h2{font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.06;
+.modele-nu .detail-hd{--titre:28px}
+.modele-nu .detail-hd h2{font-weight:700;letter-spacing:-.035em;line-height:1.06;
   margin:0 0 12px}
 .modele-nu .detail-hd .badge{background:none;padding:0;color:var(--ink-3);font-size:12.5px}
 .modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;margin-left:12px}
@@ -2275,6 +2303,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h2{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
+/* La fenêtre a son propre titre, et sa règle passait devant celle de la fiche
+   dans l'aperçu des modèles — qui vit dans une fenêtre. Le nom y prenait seize
+   pixels quel que soit le modèle, et le numéro, qui suit la variable, cessait
+   de lui être proportionnel. L'aperçu doit montrer la fiche, pas la fenêtre. */
+.mfen .detail-hd h2{font-size:var(--titre)}
 .mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 4px}
 .mfen header button:hover{color:var(--ink)}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
@@ -2490,7 +2523,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail.open{transform:translateY(0);pointer-events:auto}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
-  .detail-hd h2{font-size:17px;margin:6px 0 5px}
+  .detail-hd{--titre:17px}
+  .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
      discrète, pour laisser la place à ce qu'on est venu lire. */
   .detail-hd .logoZone{max-height:56px;max-width:min(240px,100%)}
@@ -2780,7 +2814,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
           <img class="logoZone" id="dLogo" alt="" hidden>
         </div>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
+        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -4866,8 +4900,60 @@ function poseCode(pl, num, filigrane){
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
      pour un filigrane, et ni une zone ni un repère n'ont de numéro. */
-  $("dCode").parentNode.dataset.code = filigrane || "";
+  // la pastille vit désormais dans un bloc à elle : c'est l'en-tête qu'on vise
+  $("dCode").closest(".detail-hd").dataset.code = filigrane || "";
 }
+
+/**
+ * Où se range la marque de la fiche.
+ *
+ * Le flex sait replier une ligne, il ne sait pas changer de ligne d'accueil :
+ * une marque qui ne tient pas à côté du nom se retrouvait seule sur une ligne
+ * à elle, entre le nom et le numéro, et coûtait une bande pour ne rien dire de
+ * plus. Elle rejoint donc la ligne du numéro, derrière lui.
+ *
+ * Ce qui tient n'est pas calculé, il est demandé : la marque est posée à côté
+ * du nom, on regarde où le navigateur l'a mise, et on la déménage si elle est
+ * tombée dessous. Le pli dépend de la fonte, du modèle de fiche et de la
+ * largeur du panneau — trois choses qu'un calcul aurait fallu refaire à chaque
+ * fois qu'elles changent.
+ *
+ * Sur la ligne du numéro, sa largeur est bornée à ce qui reste : sans borne
+ * elle repartirait à la ligne, et le déménagement n'aurait fait que déplacer
+ * la bande perdue.
+ */
+function rangeMarque(){
+  const marque = $("dLogo");
+  if (!marque || marque.hidden) return;
+  const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
+  const titre = nom && nom.querySelector("h2");
+  if (!titre || !bas) return;
+  // remise à l'essai avant de mesurer : la fiche d'avant a pu la déménager
+  marque.style.maxWidth = "";
+  if (marque.parentNode !== nom) nom.appendChild(marque);
+  // elle tient à côté du nom dès que les deux boîtes se croisent en hauteur
+  if (marque.getBoundingClientRect().top < titre.getBoundingClientRect().bottom - 2) return;
+
+  bas.appendChild(marque);
+  /* Ce qui reste sur la ligne du numéro : du bord droit de la dernière
+     pastille au bord intérieur du bloc — celui-ci recule là où un modèle de
+     fiche réserve la place d'un numéro géant. */
+  const r = bas.getBoundingClientRect(), st = getComputedStyle(bas);
+  const pastilles = [...bas.children].filter(e => e !== marque && !e.hidden);
+  const derniere = pastilles[pastilles.length - 1];
+  const gauche = derniere ? derniere.getBoundingClientRect().right
+                          : r.left + (parseFloat(st.paddingLeft) || 0);
+  const droite = r.right - (parseFloat(st.paddingRight) || 0);
+  // réduite à un trait elle ne se lit plus : mieux vaut alors la laisser passer
+  marque.style.maxWidth = Math.max(90, droite - gauche - 10) + "px";
+}
+
+/* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
+   suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
+   large. Une image seule à mesurer, on ne diffère pas. */
+addEventListener("resize", () => {
+  if ($("detail") && $("detail").classList.contains("open")) rangeMarque();
+});
 
 /**
  * La fiche d'un stand ou d'une zone.
@@ -4926,6 +5012,9 @@ function ouvre(o, rect, canal, iSoc){
        Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
        ligne les couvre tous les deux. */
     marque.onerror = () => { marque.hidden = true; };
+    /* Tant qu'on ne connaît pas ses dimensions, on ne sait pas où elle tient :
+       le rangement attend donc qu'elle soit chargée. */
+    marque.onload = rangeMarque;
     marque.hidden = !blason;
     /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
        montrerait la marque de la précédente le temps que la sienne arrive. */
@@ -4933,6 +5022,8 @@ function ouvre(o, rect, canal, iSoc){
       marque.src = blason;
       // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
       if (marque.complete && !marque.naturalWidth) marque.hidden = true;
+      // déjà chargée — la même d'une fiche à l'autre : « load » ne se rejoue pas
+      else if (marque.complete) rangeMarque();
     } else marque.removeAttribute("src");
   }
   const pl = DATA.plans[o.p] || P();
@@ -6065,9 +6156,12 @@ function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
-      '<span class="badge">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
-      (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '<span class="eyebrow">Stand</span>' +
+      '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
+      '<div class="hdBadges">' +
+        '<span class="badge code">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +
       '<div class="acts"><span class="btn">Centrer sur le plan</span>' +

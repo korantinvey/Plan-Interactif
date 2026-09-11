@@ -2007,8 +2007,60 @@ function poseCode(pl, num, filigrane){
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
      pour un filigrane, et ni une zone ni un repère n'ont de numéro. */
-  $("dCode").parentNode.dataset.code = filigrane || "";
+  // la pastille vit désormais dans un bloc à elle : c'est l'en-tête qu'on vise
+  $("dCode").closest(".detail-hd").dataset.code = filigrane || "";
 }
+
+/**
+ * Où se range la marque de la fiche.
+ *
+ * Le flex sait replier une ligne, il ne sait pas changer de ligne d'accueil :
+ * une marque qui ne tient pas à côté du nom se retrouvait seule sur une ligne
+ * à elle, entre le nom et le numéro, et coûtait une bande pour ne rien dire de
+ * plus. Elle rejoint donc la ligne du numéro, derrière lui.
+ *
+ * Ce qui tient n'est pas calculé, il est demandé : la marque est posée à côté
+ * du nom, on regarde où le navigateur l'a mise, et on la déménage si elle est
+ * tombée dessous. Le pli dépend de la fonte, du modèle de fiche et de la
+ * largeur du panneau — trois choses qu'un calcul aurait fallu refaire à chaque
+ * fois qu'elles changent.
+ *
+ * Sur la ligne du numéro, sa largeur est bornée à ce qui reste : sans borne
+ * elle repartirait à la ligne, et le déménagement n'aurait fait que déplacer
+ * la bande perdue.
+ */
+function rangeMarque(){
+  const marque = $("dLogo");
+  if (!marque || marque.hidden) return;
+  const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
+  const titre = nom && nom.querySelector("h2");
+  if (!titre || !bas) return;
+  // remise à l'essai avant de mesurer : la fiche d'avant a pu la déménager
+  marque.style.maxWidth = "";
+  if (marque.parentNode !== nom) nom.appendChild(marque);
+  // elle tient à côté du nom dès que les deux boîtes se croisent en hauteur
+  if (marque.getBoundingClientRect().top < titre.getBoundingClientRect().bottom - 2) return;
+
+  bas.appendChild(marque);
+  /* Ce qui reste sur la ligne du numéro : du bord droit de la dernière
+     pastille au bord intérieur du bloc — celui-ci recule là où un modèle de
+     fiche réserve la place d'un numéro géant. */
+  const r = bas.getBoundingClientRect(), st = getComputedStyle(bas);
+  const pastilles = [...bas.children].filter(e => e !== marque && !e.hidden);
+  const derniere = pastilles[pastilles.length - 1];
+  const gauche = derniere ? derniere.getBoundingClientRect().right
+                          : r.left + (parseFloat(st.paddingLeft) || 0);
+  const droite = r.right - (parseFloat(st.paddingRight) || 0);
+  // réduite à un trait elle ne se lit plus : mieux vaut alors la laisser passer
+  marque.style.maxWidth = Math.max(90, droite - gauche - 10) + "px";
+}
+
+/* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
+   suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
+   large. Une image seule à mesurer, on ne diffère pas. */
+addEventListener("resize", () => {
+  if ($("detail") && $("detail").classList.contains("open")) rangeMarque();
+});
 
 /**
  * La fiche d'un stand ou d'une zone.
@@ -2067,6 +2119,9 @@ function ouvre(o, rect, canal, iSoc){
        Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
        ligne les couvre tous les deux. */
     marque.onerror = () => { marque.hidden = true; };
+    /* Tant qu'on ne connaît pas ses dimensions, on ne sait pas où elle tient :
+       le rangement attend donc qu'elle soit chargée. */
+    marque.onload = rangeMarque;
     marque.hidden = !blason;
     /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
        montrerait la marque de la précédente le temps que la sienne arrive. */
@@ -2074,6 +2129,8 @@ function ouvre(o, rect, canal, iSoc){
       marque.src = blason;
       // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
       if (marque.complete && !marque.naturalWidth) marque.hidden = true;
+      // déjà chargée — la même d'une fiche à l'autre : « load » ne se rejoue pas
+      else if (marque.complete) rangeMarque();
     } else marque.removeAttribute("src");
   }
   const pl = DATA.plans[o.p] || P();

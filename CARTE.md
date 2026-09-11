@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1915 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1918 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1078 · 10. Mode administration
-- l.1144 · La fiche d'une zone organisateur
-- l.1662 · Masquer une zone organisateur
-- l.1745 · Placer un libellé à la main
+- l.1081 · 10. Mode administration
+- l.1147 · La fiche d'une zone organisateur
+- l.1665 · Masquer une zone organisateur
+- l.1748 · Placer un libellé à la main
 
 Fonctions :
 
@@ -26,19 +26,19 @@ Fonctions :
 `styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 200 · `minutesVisite` 228
 `salonPartage` 235 · `trio` 248 · `melange` 258 · `themeSombre` 266 · `appliqueAccent` 280
 `modeleRetenu` 333 · `appliqueModele` 352 · `texteCorps` 421 · `standApercu` 436
-`lignesApercu` 456 · `contenuApercu` 482 · `apercuFiche` 515 · `apercuListe` 575
-`apercuDuo` 597 · `glisseFenetre` 630 · `ouvreReglages` 641 · `voletZones` 707
-`ficheZoneEnPlace` 784 · `voletPlan` 802 · `nomDuTon` 929 · `voletApparence` 934
-`enregistreConf` 1028 · `rgbHex` 1034 · `hexa` 1041 · `luminance` 1045 · `ecarte` 1059
-`joli` 1074 · `retireAdmin` 1091 · `activeAdmin` 1104 · `champZone` 1170 · `champsZone` 1195
-`reduitLogo` 1258 · `champLogo` 1299 · `editeurRiche` 1396 · `memeFicheZone` 1551
-`suitFicheZone` 1556 · `verseFicheZone` 1564 · `ficheZone` 1590 · `enregistreZone` 1615
-`basculeAffichageZone` 1673 · `marqueZonesMasquees` 1690 · `ecritTablesZones` 1710
-`ecritTableZones` 1741 · `cleLibelle` 1766 · `empreinteLibelle` 1782
-`placementLibelle` 1790 · `posePlacement` 1800 · `libelleAutomatique` 1817
-`modePlacementLibelles` 1826 · `majPaletteLibelle` 1843 · `choisitLibelle` 1860
-`pousseLibelle` 1867 · `libellePointerDown` 1875 · `libellePointerMove` 1890
-`libellePointerUp` 1899
+`lignesApercu` 456 · `contenuApercu` 482 · `apercuFiche` 515 · `apercuListe` 578
+`apercuDuo` 600 · `glisseFenetre` 633 · `ouvreReglages` 644 · `voletZones` 710
+`ficheZoneEnPlace` 787 · `voletPlan` 805 · `nomDuTon` 932 · `voletApparence` 937
+`enregistreConf` 1031 · `rgbHex` 1037 · `hexa` 1044 · `luminance` 1048 · `ecarte` 1062
+`joli` 1077 · `retireAdmin` 1094 · `activeAdmin` 1107 · `champZone` 1173 · `champsZone` 1198
+`reduitLogo` 1261 · `champLogo` 1302 · `editeurRiche` 1399 · `memeFicheZone` 1554
+`suitFicheZone` 1559 · `verseFicheZone` 1567 · `ficheZone` 1593 · `enregistreZone` 1618
+`basculeAffichageZone` 1676 · `marqueZonesMasquees` 1693 · `ecritTablesZones` 1713
+`ecritTableZones` 1744 · `cleLibelle` 1769 · `empreinteLibelle` 1785
+`placementLibelle` 1793 · `posePlacement` 1803 · `libelleAutomatique` 1820
+`modePlacementLibelles` 1829 · `majPaletteLibelle` 1846 · `choisitLibelle` 1863
+`pousseLibelle` 1870 · `libellePointerDown` 1878 · `libellePointerMove` 1893
+`libellePointerUp` 1902
 
 Éléments :
 
@@ -216,7 +216,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2850 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2884 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -235,12 +235,12 @@ Fonctions :
 `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
 `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
 `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dLogo` · `#dCode` · `#dNeuf` · `#dVis`
-`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
-`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
-`#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
-`#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
-`#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
+`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dNeuf`
+`#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody`
+`#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps`
+`#jCorps` · `#pPied` · `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour`
+`#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg`
+`#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_index.html` — 30 l. → index.html
 
@@ -290,7 +290,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2655 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2712 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -299,8 +299,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2300 · 8. Interactions du plan
-- l.2501 · Le tiroir de la liste — écrans étroits
+- l.2357 · 8. Interactions du plan
+- l.2558 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -325,8 +325,9 @@ Fonctions :
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `adresseImage` 1799
 `imageSure` 1812 · `assainitRiche` 1841 · `enBlocs` 1881 · `rangeRiche` 1894
 `ecarteClicFantome` 1922 · `nomSociete` 1931 · `societes` 1944 · `choisitExposant` 1955
-`poseCode` 2001 · `ouvre` 2020 · `ferme` 2274 · `onglet` 2290 · `milieu` 2320
-`commencePince` 2326 · `suitPince` 2340 · `mesureTiroir` 2512 · `montreTiroir` 2515
+`poseCode` 2001 · `rangeMarque` 2032 · `ouvre` 2072 · `ferme` 2331 · `onglet` 2347
+`milieu` 2377 · `commencePince` 2383 · `suitPince` 2397 · `mesureTiroir` 2569
+`montreTiroir` 2572
 
 Éléments :
 
