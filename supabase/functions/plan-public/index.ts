@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches, salles",
+      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches, salles",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -427,6 +427,10 @@ Deno.serve(async (req) => {
     const sortie = {
       evenement: evt.nom,
       slug: evt.slug,
+      /* L'icône de l'onglet, déposée dans la console. Elle part au visiteur
+         comme à l'exploitant : les deux pages du plan la posent. Nulle tant
+         que rien n'a été déposé — la page n'en pose alors aucune. */
+      favicon: evt.favicon ?? null,
       genereLe: evt.derniere_sync,
       // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
       fiche: evt.fiche ?? {},

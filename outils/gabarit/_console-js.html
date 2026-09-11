@@ -561,6 +561,153 @@ function champ(cle, libelle, aide, attrs) {
 }
 
 
+/* ------------------------------------------------------------------
+   Icône de l'onglet
+
+   Les paliers de réduction, du plus généreux au plus maigre : on descend tant
+   que le résultat dépasse le poids retenu. Cent vingt-huit pixels suffisent
+   partout — l'onglet en montre seize, la barre des favoris trente-deux, le
+   raccourci d'un écran d'accueil rarement plus de cent vingt.
+
+   Le poids se compte en caractères du data-URI, non en octets du fichier
+   d'origine : c'est lui qui part avec le plan, chez chaque visiteur, et il
+   pèse un tiers de plus que l'image — quatre caractères de base64 pour trois
+   octets, d'où le diviseur de l'affichage.
+   ------------------------------------------------------------------ */
+const PALIERS_ICONE = [128, 96, 64, 48];
+const POIDS_ICONE = 22000;
+
+/**
+ * L'icône, redessinée en png quel que soit le fichier déposé.
+ *
+ * Le png et non le webp, à l'inverse du logo d'une zone : le second pèse moins,
+ * mais l'avantage ne se voit pas sur une image de cette taille, et le premier
+ * est le seul format que tous les navigateurs acceptent dans « link rel=icon ».
+ * Le svg passe par le même canevas et en ressort matriciel — c'est voulu : il
+ * porte du script, et les pages du plan ne reconnaissent à l'affichage que les
+ * formats qu'on fabrique ici.
+ *
+ * Les proportions sont gardées : un logo large écrasé dans un carré ne se
+ * reconnaît plus, et le navigateur sait loger une image qui n'est pas carrée.
+ */
+function reduitIcone(fichier) {
+  return new Promise((tenu, rompu) => {
+    if (!fichier || String(fichier.type).indexOf("image/") !== 0) {
+      return rompu(new Error("ce fichier n'est pas une image"));
+    }
+    const fr = new FileReader();
+    fr.onerror = () => rompu(new Error("fichier illisible"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rompu(new Error("image illisible"));
+      img.onload = () => {
+        // un svg sans dimensions intrinsèques se dessine à rien : on lui en prête
+        const l0 = img.naturalWidth || 128, h0 = img.naturalHeight || 128;
+        for (const max of PALIERS_ICONE) {
+          const k = Math.min(1, max / Math.max(l0, h0));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(l0 * k));
+          c.height = Math.max(1, Math.round(h0 * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const src = c.toDataURL("image/png");
+          if (src.length <= POIDS_ICONE) return tenu(src);
+        }
+        rompu(new Error("image trop lourde, même réduite — une icône, pas une photo"));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(fichier);
+  });
+}
+
+/**
+ * Le champ de l'icône : la choisir, la voir, la retirer.
+ *
+ * Il s'écrit au moment du choix, et non à la sortie de la fiche comme les
+ * champs de texte voisins : déposer une image est déjà un geste achevé, et
+ * rien ne s'y saisit à moitié. Le retrait part de même, et rend l'onglet à
+ * l'icône du navigateur.
+ *
+ * La vignette est aussi la cible du glisser-déposer — c'est le geste qu'on
+ * fait devant elle, et il évite la boîte de dialogue du système.
+ */
+function champFavicon() {
+  const e = courant();
+  const l = document.createElement("div");
+  l.className = "champ-fic";
+  l.innerHTML = '<span></span>' +
+    '<div class="iconeZ"><div class="vue"></div>' +
+    '<div class="actes"><button type="button" class="btn petit"></button>' +
+    '<button type="button" class="btn petit oter">Retirer</button>' +
+    '<span class="dit"></span></div>' +
+    '<input type="file" accept="image/*" hidden></div>' +
+    '<span class="aide"></span>';
+  l.querySelector("span").textContent = "Icône de l'onglet";
+  l.querySelector(".aide").textContent =
+    "Elle paraît dans l'onglet du plan public comme dans celui de " +
+    "l'administration, à côté du nom du salon. Réduite puis enregistrée avec " +
+    "l'événement, elle part avec le plan sans dépendre d'un fichier hébergé " +
+    "ailleurs. Un carré se reconnaît mieux à seize pixels qu'un logo en " +
+    "longueur. Glissez-la sur la vignette, ou choisissez-la.";
+
+  const vue = l.querySelector(".vue");
+  const choisir = l.querySelector(".actes button");
+  const oter = l.querySelector(".oter");
+  const dit = l.querySelector(".dit");
+  const fichier = l.querySelector("input");
+
+  const peint = (mot) => {
+    vue.innerHTML = e.favicon ? '<img alt="">' : '<span>Aucune</span>';
+    if (e.favicon) vue.querySelector("img").src = e.favicon;
+    choisir.textContent = e.favicon ? "Remplacer…" : "Choisir un fichier…";
+    oter.hidden = !e.favicon;
+    dit.dataset.mal = "false";
+    dit.textContent = mot !== undefined ? mot
+      : e.favicon ? Math.round(e.favicon.length / 1365) + " Ko" : "";
+  };
+
+  const ecrit = async (src) => {
+    const avant = e.favicon;
+    e.favicon = src;
+    peint(src ? "Enregistrement…" : "Retrait…");
+    try {
+      await majEvenement(e.id, { favicon: src || null });
+      peint();
+    } catch (err) {
+      // l'écran doit montrer ce que la base tient, pas ce qu'on a tenté
+      e.favicon = avant;
+      peint();
+      signale(err.message, true);
+    }
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitIcone(f).then(ecrit).catch((err) => {
+      dit.textContent = "Échec : " + err.message;
+      dit.dataset.mal = "true";
+    });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  oter.onclick = () => ecrit("");
+  vue.addEventListener("dragover", (ev) => {
+    ev.preventDefault();
+    vue.dataset.survol = "1";
+  });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", (ev) => {
+    ev.preventDefault();
+    delete vue.dataset.survol;
+    prend(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]);
+  });
+
+  peint();
+  return l;
+}
+
 function dessineFiche() {
   const e = courant();
   const f = $("fiche");
@@ -582,6 +729,7 @@ function dessineFiche() {
   const g1 = grille();
   g1.appendChild(champ("nom", "Nom de l'événement"));
   g1.appendChild(champ("slug", "Identifiant d'URL", "Sert d'adresse publique du plan."));
+  g1.appendChild(champFavicon());
   b1.appendChild(g1);
   f.appendChild(b1);
 

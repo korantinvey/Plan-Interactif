@@ -432,6 +432,28 @@ label .aide.alerte{color:var(--rouge)}
    basculer la source, et un champ en retrait ne doit pas être un champ mort */
 .source-inerte input,.source-inerte select{opacity:1}
 label.large{grid-column:1/-1}
+/* Le champ de l'icône. Ce n'est pas un « label » : le contrôle est une paire
+   de boutons, et l'intitulé cliquable aurait déclenché le premier. Il en garde
+   la forme — intitulé, contrôle, aide — pour tenir la ligne de la grille avec
+   les champs de texte voisins.
+
+   La vignette est aussi la cible du glisser-déposer, d'où le trait discontinu :
+   il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
+.champ-fic{display:flex;flex-direction:column;gap:4px;font-size:12px;
+  color:var(--ink-2);min-width:0}
+.champ-fic .aide{font-size:11px;color:var(--ink-3);line-height:1.45}
+.iconeZ{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 1px}
+.iconeZ .vue{flex:none;display:flex;align-items:center;justify-content:center;
+  width:58px;height:58px;padding:5px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2);overflow:hidden}
+.iconeZ .vue[data-survol]{border-color:var(--accent);background:var(--accent-soft)}
+.iconeZ .vue img{max-width:100%;max-height:100%;object-fit:contain}
+.iconeZ .vue span{font-size:10.5px;line-height:1.3;text-align:center;color:var(--ink-3)}
+.iconeZ .actes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+/* Le poids tel qu'il partira, et l'échec quand l'image n'a pas pu être lue :
+   la même ligne, pour que rien ne saute en passant de l'un à l'autre. */
+.iconeZ .dit{font-size:11.5px;color:var(--ink-3)}
+.iconeZ .dit[data-mal="true"]{color:var(--rouge)}
 textarea{resize:vertical;min-height:72px;font-family:"IBM Plex Mono",monospace;font-size:11.5px}
 
 table{width:100%;border-collapse:collapse;font-size:13px}

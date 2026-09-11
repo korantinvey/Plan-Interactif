@@ -3286,6 +3286,7 @@ function indexe(d){
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
+  poseFavicon(DATA.favicon);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
@@ -3348,6 +3349,33 @@ function rangeConferences(){
     c.situee = Boolean(ou);
     if (ou) c.p = ou.p;
   });
+}
+
+/**
+ * L'icône de l'onglet, telle que la console l'a déposée.
+ *
+ * Elle arrive avec les données et non dans l'en-tête de la page : celle-ci est
+ * fabriquée une fois pour tous les salons, et ne peut donc rien savoir de
+ * celui qu'on ouvre. L'onglet reste blanc le temps de l'appel, comme le titre
+ * l'est aussi — c'est le même chargement qui les remplit tous les deux.
+ *
+ * Rien n'est posé faute d'icône : le navigateur garde la sienne, ce qui est
+ * aussi ce qu'on veut quand l'exploitant vient de la retirer. Et l'image est
+ * relue avant d'être posée, comme le logo d'une zone : elle a fait le même
+ * chemin — saisie chez un exploitant authentifié, rangée en base, resservie
+ * par l'API à tous les visiteurs.
+ */
+function poseFavicon(src){
+  const img = imageSure(src);
+  if (!img) return;
+  let l = document.querySelector('link[rel="icon"]');
+  if (!l){
+    l = document.createElement("link");
+    l.rel = "icon";
+    document.head.appendChild(l);
+  }
+  l.type = img.slice(5, img.indexOf(";"));
+  l.href = img;
 }
 
 /* ============================================================
