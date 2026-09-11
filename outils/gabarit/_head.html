@@ -108,6 +108,28 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
 
+/* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
+   administration — la page publique n'a pas de session à montrer, et
+   `retireAdmin` le retire du document. Le panneau se décrit ici en entier :
+   cette page ne charge pas `console.css`, où vivent les menus de la console. */
+.compte{position:relative}
+.compte > summary{list-style:none;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;user-select:none;
+  background:var(--accent-soft);color:var(--accent);border:1px solid transparent;
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.03em;text-transform:uppercase}
+.compte > summary::-webkit-details-marker{display:none}
+.compte > summary:hover,.compte[open] > summary{border-color:var(--accent)}
+.compte-pan{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:220px;
+  padding:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.compte-pan .qui{padding:7px 10px 9px;font-size:12.5px;color:var(--ink-2);
+  overflow-wrap:anywhere;border-bottom:1px solid var(--line);margin-bottom:5px}
+.compte-pan button{display:block;width:100%;text-align:left;padding:8px 10px;
+  font-size:13px;border-radius:var(--radius);color:var(--ink);white-space:nowrap}
+.compte-pan button:hover{background:var(--surface-2)}
+.compte-pan button.sortie{color:var(--rouge)}
+
 .side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
 
 /* La poignée du tiroir : sur écran étroit la liste se hisse par-dessus le
@@ -244,7 +266,11 @@ button{cursor:pointer;background:none;border:none}
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
+/* Le fond du plan se règle : le gris du thème convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
+   jeton reste absent et le fond de la page reprend la main. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -762,7 +788,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
 .detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
   column-gap:12px;row-gap:2px;padding-right:26px}
-.detail-hd .hdNom h2{padding-right:0}
+.detail-hd .hdNom h2{padding-right:0;margin-right:auto}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
@@ -775,17 +801,24 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    la page le pose et le borne, faute pour la feuille de connaître la longueur
    d'un numéro de stand. */
 .detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
-  max-width:min(300px,100%);max-height:72px;margin:0}
+  max-width:min(300px,100%);max-height:72px}
 /* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
    replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
    guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
-   « hidden » faire son office quel que soit l'ordre de la feuille. */
-.detail-hd .hdNom > .logoZone:not([hidden]){display:block}
-/* Sur celle du numéro, elle suit les pastilles dans le fil du texte, alignée
+   « hidden » faire son office quel que soit l'ordre de la feuille.
+
+   Elle s'y pose au milieu de ce que le nom laisse, plutôt que collée contre lui
+   avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
+   accroché au titre. Le centrage tient à deux marges automatiques — celle que
+   le nom porte à sa droite, celle que la marque porte à la sienne — qui se
+   partagent à parts égales ce qui reste de la ligne. */
+.detail-hd .hdNom > .logoZone:not([hidden]){display:block;margin:0 auto 0 0}
+/* Sur la ligne du numéro, elle suit les pastilles dans le fil du texte, alignée
    sur leur milieu : la ligne s'ouvre à sa hauteur plutôt que de s'en ajouter
-   une. */
+   une. Pas de marge automatique ici — elle se range derrière le numéro, et non
+   au milieu de ce qu'il laisse. */
 .detail-hd .hdBadges > .logoZone:not([hidden]){display:inline-block;
-  vertical-align:middle;margin-left:10px}
+  vertical-align:middle;margin:0 0 0 10px}
 /* La taille du nom vit en variable sur l'en-tête, et non sur le titre : le
    numéro de stand s'y accorde, et il n'est pas dans le titre. Chaque modèle de
    fiche redéfinit la variable au lieu de la taille — sur le titre seul, le
@@ -1745,6 +1778,11 @@ button.expo:hover{background:var(--line)}
   background:var(--accent-soft);border-radius:var(--radius)}
 .iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
 .iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
+   sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
+   aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
+.iVider{align-self:flex-start;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.iVider:hover{color:var(--rouge)}
 .iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
 .iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:var(--rouge)}
 .iEtapes{display:flex;flex-direction:column;gap:7px}
@@ -2114,6 +2152,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border:none;opacity:0;cursor:pointer}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -2624,6 +2670,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
+      <!-- L'exploitant connecté, et par où sortir. Le thème le rejoint ici en
+           administration : deux commandes du même réglage côte à côte dans la
+           barre ne diraient pas laquelle écoute. -->
+      <details class="compte" id="menuCompte" hidden>
+        <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
+        <div class="compte-pan">
+          <div class="qui" id="compteMail">—</div>
+          <button id="btnThemeCompte">Thème sombre</button>
+          <button class="sortie" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
     </div>
   </header>
 
@@ -2876,8 +2933,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
           les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
         <div class="iResultat" id="iResultat"></div>
+        <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
       </div>
-      <div class="pPied"><button class="vider" id="videItineraire">Effacer l'itinéraire</button></div>
     </section>
   </main>
 </div>

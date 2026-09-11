@@ -247,6 +247,7 @@ function construitPanneau(){
   if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
+  sectionFond(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
@@ -306,6 +307,77 @@ function sectionSelection(hote){
       (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
+}
+
+/* ============================================================
+   Fond du plan
+   Le gris qui entoure le bâtiment n'est ni un calque ni un repère : rien ne
+   s'y dessine, et il ne marque aucun stand. C'est l'aplat sur lequel tout le
+   reste se pose, et le seul que le plan imposait — d'où sa place ici, au bas
+   du panneau, juste avant la publication qui l'emporte chez les visiteurs.
+
+   Un nuancier plutôt qu'un simple sélecteur, comme pour la couleur
+   principale : on cherche la teinte d'un salon, pas une nuance à
+   l'hexadécimal près. Les tons proposés sont tous clairs — le plan se dessine
+   à l'encre sombre sur des stands blancs, et un fond soutenu les efface. À
+   qui tient une charte plus tranchée, la dernière pastille ouvre le nuancier
+   du système.
+   ============================================================ */
+const FONDS = [
+  ["#FFFFFF", "Blanc"], ["#FAF7F0", "Ivoire"], ["#F1F0EA", "Coquille"],
+  ["#E3E7EA", "Gris perle"], ["#E4EDE6", "Vert d'eau"], ["#E3EAF6", "Bleu pâle"],
+  ["#F5E9DB", "Sable"],
+];
+
+function sectionFond(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart fondp";
+  bloc.innerHTML = '<div class="tete"><span class="eyebrow">Fond du plan</span>' +
+    '<button type="button" class="reset">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const nuancier = bloc.querySelector(".nuancier");
+  const c = conf("_fond");
+
+  /* La pastille retenue se cerne, et le retour à l'origine ne s'offre que s'il
+     y a quelque chose à défaire : proposé sur un plan resté gris, il annonce
+     un réglage là où il n'y en a pas. */
+  const majPastilles = () => {
+    const v = (c.couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    bloc.querySelector(".reset").hidden = !v;
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
+  };
+  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+
+  FONDS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
+     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
+     publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+
+  bloc.querySelector(".reset").onclick = () => {
+    delete c.couleur;
+    enregistreConf(); appliqueFond(); majPastilles();
+  };
+  hote.appendChild(bloc);
+  majPastilles();
 }
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,

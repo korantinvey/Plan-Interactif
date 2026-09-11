@@ -108,6 +108,28 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
 
+/* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
+   administration — la page publique n'a pas de session à montrer, et
+   `retireAdmin` le retire du document. Le panneau se décrit ici en entier :
+   cette page ne charge pas `console.css`, où vivent les menus de la console. */
+.compte{position:relative}
+.compte > summary{list-style:none;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;user-select:none;
+  background:var(--accent-soft);color:var(--accent);border:1px solid transparent;
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.03em;text-transform:uppercase}
+.compte > summary::-webkit-details-marker{display:none}
+.compte > summary:hover,.compte[open] > summary{border-color:var(--accent)}
+.compte-pan{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:220px;
+  padding:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.compte-pan .qui{padding:7px 10px 9px;font-size:12.5px;color:var(--ink-2);
+  overflow-wrap:anywhere;border-bottom:1px solid var(--line);margin-bottom:5px}
+.compte-pan button{display:block;width:100%;text-align:left;padding:8px 10px;
+  font-size:13px;border-radius:var(--radius);color:var(--ink);white-space:nowrap}
+.compte-pan button:hover{background:var(--surface-2)}
+.compte-pan button.sortie{color:var(--rouge)}
+
 .side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
 
 /* La poignée du tiroir : sur écran étroit la liste se hisse par-dessus le
@@ -244,7 +266,11 @@ button{cursor:pointer;background:none;border:none}
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
+/* Le fond du plan se règle : le gris du thème convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
+   jeton reste absent et le fond de la page reprend la main. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -762,7 +788,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
 .detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
   column-gap:12px;row-gap:2px;padding-right:26px}
-.detail-hd .hdNom h2{padding-right:0}
+.detail-hd .hdNom h2{padding-right:0;margin-right:auto}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
@@ -775,17 +801,24 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    la page le pose et le borne, faute pour la feuille de connaître la longueur
    d'un numéro de stand. */
 .detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
-  max-width:min(300px,100%);max-height:72px;margin:0}
+  max-width:min(300px,100%);max-height:72px}
 /* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
    replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
    guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
-   « hidden » faire son office quel que soit l'ordre de la feuille. */
-.detail-hd .hdNom > .logoZone:not([hidden]){display:block}
-/* Sur celle du numéro, elle suit les pastilles dans le fil du texte, alignée
+   « hidden » faire son office quel que soit l'ordre de la feuille.
+
+   Elle s'y pose au milieu de ce que le nom laisse, plutôt que collée contre lui
+   avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
+   accroché au titre. Le centrage tient à deux marges automatiques — celle que
+   le nom porte à sa droite, celle que la marque porte à la sienne — qui se
+   partagent à parts égales ce qui reste de la ligne. */
+.detail-hd .hdNom > .logoZone:not([hidden]){display:block;margin:0 auto 0 0}
+/* Sur la ligne du numéro, elle suit les pastilles dans le fil du texte, alignée
    sur leur milieu : la ligne s'ouvre à sa hauteur plutôt que de s'en ajouter
-   une. */
+   une. Pas de marge automatique ici — elle se range derrière le numéro, et non
+   au milieu de ce qu'il laisse. */
 .detail-hd .hdBadges > .logoZone:not([hidden]){display:inline-block;
-  vertical-align:middle;margin-left:10px}
+  vertical-align:middle;margin:0 0 0 10px}
 /* La taille du nom vit en variable sur l'en-tête, et non sur le titre : le
    numéro de stand s'y accorde, et il n'est pas dans le titre. Chaque modèle de
    fiche redéfinit la variable au lieu de la taille — sur le titre seul, le
@@ -1745,6 +1778,11 @@ button.expo:hover{background:var(--line)}
   background:var(--accent-soft);border-radius:var(--radius)}
 .iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
 .iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
+   sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
+   aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
+.iVider{align-self:flex-start;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.iVider:hover{color:var(--rouge)}
 .iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
 .iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:var(--rouge)}
 .iEtapes{display:flex;flex-direction:column;gap:7px}
@@ -2114,6 +2152,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border:none;opacity:0;cursor:pointer}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -2624,6 +2670,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
+      <!-- L'exploitant connecté, et par où sortir. Le thème le rejoint ici en
+           administration : deux commandes du même réglage côte à côte dans la
+           barre ne diraient pas laquelle écoute. -->
+      <details class="compte" id="menuCompte" hidden>
+        <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
+        <div class="compte-pan">
+          <div class="qui" id="compteMail">—</div>
+          <button id="btnThemeCompte">Thème sombre</button>
+          <button class="sortie" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
     </div>
   </header>
 
@@ -2876,8 +2933,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
           les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
         <div class="iResultat" id="iResultat"></div>
+        <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
       </div>
-      <div class="pPied"><button class="vider" id="videItineraire">Effacer l'itinéraire</button></div>
     </section>
   </main>
 </div>
@@ -4271,6 +4328,29 @@ function masque(){
   return Math.max(0, Math.min(r.height * .6, bas));
 }
 
+/**
+ * Largeur, en pixels, de ce que le volet de droite cache du plan.
+ *
+ * Sur un écran large la fiche, le parcours et l'itinéraire ne partagent pas la
+ * place : ils se posent par-dessus le plan, le long du bord droit. Cadrer sur
+ * la largeur entière pousse donc le bord droit du tracé sous le volet — et
+ * c'est là que se trouve l'arrivée d'un itinéraire demandé depuis une fiche.
+ *
+ * On mesure la largeur au repos plutôt que la position à l'écran : le volet
+ * arrive en glissant, et un cadrage demandé pendant la transition mesurerait
+ * un volet encore à moitié dehors.
+ */
+function masqueDroite(){
+  if (ETROIT()) return 0;
+  const r = svg.getBoundingClientRect();
+  let cote = 0;
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    const v = $(id);
+    if (v && v.classList.contains("open")) cote = Math.max(cote, v.offsetWidth);
+  });
+  return Math.max(0, Math.min(r.width * .6, cote));
+}
+
 function fit(){
   const r = svg.getBoundingClientRect();
   const cache = masque();
@@ -4866,6 +4946,48 @@ function choisitExposant(o, rect, canal){
 }
 
 /**
+ * La marque en tête de fiche : le logo d'une enseigne, ou celui que
+ * l'exploitant a déposé sur une zone. Une fiche sans marque n'en montre aucune.
+ *
+ * Elle vit ici pour la même raison que `poseCode` : deux fiches écrivent cette
+ * image — celle d'un stand ou d'une zone, et celle d'un repère, qui n'en a
+ * jamais et doit donc l'effacer. La seconde ne le faisait pas, et la marque du
+ * stand d'avant restait en tête de la fiche d'un escalier.
+ */
+function poseMarque(blason){
+  const marque = $("dLogo");
+  if (!marque) return;
+  /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
+     s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
+     Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
+     ligne les couvre tous les deux. */
+  marque.onerror = () => { marque.hidden = true; };
+  if (!blason){
+    marque.hidden = true;
+    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
+       montrerait la marque de la précédente le temps que la sienne arrive. */
+    marque.removeAttribute("src");
+    return;
+  }
+  /* Changer `src` ne retire pas l'image déjà peinte : le navigateur garde la
+     précédente à l'écran jusqu'à ce que la nouvelle soit décodée. La fiche
+     qu'on vient d'ouvrir portait donc la marque de celle d'avant pendant tout
+     le trajet — invisible sur un bureau, très visible sur le réseau d'un
+     salon. On la cache donc le temps du trajet, et `onload` la ramène. */
+  if (marque.getAttribute("src") !== blason){
+    marque.hidden = true;
+    marque.src = blason;
+  }
+  /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
+     l'image tenue : le rangement suit donc l'apparition, jamais avant. */
+  marque.onload = () => { marque.hidden = false; rangeMarque(); };
+  /* Une image déjà tenue par le cache est complète dès l'affectation et ne
+     donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
+     celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
+  if (marque.complete) marque.hidden = !marque.naturalWidth;
+}
+
+/**
  * La pastille de situation, et le filigrane que les modèles de fiche lisent
  * sous elle.
  *
@@ -4995,28 +5117,7 @@ function ouvre(o, rect, canal, iSoc){
      sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
      ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
      Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
-  const blason = ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo));
-  const marque = $("dLogo");
-  if (marque){
-    /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
-       s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
-       Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
-       ligne les couvre tous les deux. */
-    marque.onerror = () => { marque.hidden = true; };
-    /* Tant qu'on ne connaît pas ses dimensions, on ne sait pas où elle tient :
-       le rangement attend donc qu'elle soit chargée. */
-    marque.onload = rangeMarque;
-    marque.hidden = !blason;
-    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
-       montrerait la marque de la précédente le temps que la sienne arrive. */
-    if (blason){
-      marque.src = blason;
-      // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
-      if (marque.complete && !marque.naturalWidth) marque.hidden = true;
-      // déjà chargée — la même d'une fiche à l'autre : « load » ne se rejoue pas
-      else if (marque.complete) rangeMarque();
-    } else marque.removeAttribute("src");
-  }
+  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "");
@@ -5205,6 +5306,10 @@ function ouvre(o, rect, canal, iSoc){
       vis.onclick = () => basculeAffichageZone(o);
     }
   }
+  /* La marque se range une fois l'en-tête entièrement écrit : c'est la largeur
+     des pastilles qui décide de la sienne, et elles viennent d'être posées.
+     Une image encore en vol se rangera à son tour, à son « load ». */
+  rangeMarque();
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
@@ -5751,6 +5856,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -5892,6 +5998,22 @@ function appliqueAccent(){
 }
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
 
 /* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
    exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
@@ -6687,7 +6809,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -6711,6 +6833,15 @@ function activeAdmin(){
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
     };
+  }
+  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
+     côté : il porte le même réglage dans son panneau, et deux commandes d'une
+     même chose dans la même barre ne disent pas laquelle écoute. */
+  const c = $("menuCompte");
+  if (c){
+    c.hidden = false;
+    const th = $("btnTheme");
+    if (th) th.hidden = true;
   }
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
@@ -8373,6 +8504,9 @@ function ouvrePoi(id, rect){
   /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
      la fiche portait celui du stand consulté juste avant. */
   poseCode(p, "", "");
+  /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
+     d'un escalier gardait la marque du stand consulté juste avant. */
+  poseMarque("");
   $("dNeuf").hidden = true;
   $("dPartage").hidden = true;
   /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
@@ -10147,6 +10281,7 @@ function construitPanneau(){
   if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
+  sectionFond(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
@@ -10206,6 +10341,77 @@ function sectionSelection(hote){
       (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
+}
+
+/* ============================================================
+   Fond du plan
+   Le gris qui entoure le bâtiment n'est ni un calque ni un repère : rien ne
+   s'y dessine, et il ne marque aucun stand. C'est l'aplat sur lequel tout le
+   reste se pose, et le seul que le plan imposait — d'où sa place ici, au bas
+   du panneau, juste avant la publication qui l'emporte chez les visiteurs.
+
+   Un nuancier plutôt qu'un simple sélecteur, comme pour la couleur
+   principale : on cherche la teinte d'un salon, pas une nuance à
+   l'hexadécimal près. Les tons proposés sont tous clairs — le plan se dessine
+   à l'encre sombre sur des stands blancs, et un fond soutenu les efface. À
+   qui tient une charte plus tranchée, la dernière pastille ouvre le nuancier
+   du système.
+   ============================================================ */
+const FONDS = [
+  ["#FFFFFF", "Blanc"], ["#FAF7F0", "Ivoire"], ["#F1F0EA", "Coquille"],
+  ["#E3E7EA", "Gris perle"], ["#E4EDE6", "Vert d'eau"], ["#E3EAF6", "Bleu pâle"],
+  ["#F5E9DB", "Sable"],
+];
+
+function sectionFond(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart fondp";
+  bloc.innerHTML = '<div class="tete"><span class="eyebrow">Fond du plan</span>' +
+    '<button type="button" class="reset">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const nuancier = bloc.querySelector(".nuancier");
+  const c = conf("_fond");
+
+  /* La pastille retenue se cerne, et le retour à l'origine ne s'offre que s'il
+     y a quelque chose à défaire : proposé sur un plan resté gris, il annonce
+     un réglage là où il n'y en a pas. */
+  const majPastilles = () => {
+    const v = (c.couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    bloc.querySelector(".reset").hidden = !v;
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
+  };
+  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+
+  FONDS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
+     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
+     publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+
+  bloc.querySelector(".reset").onclick = () => {
+    delete c.couleur;
+    enregistreConf(); appliqueFond(); majPastilles();
+  };
+  hote.appendChild(bloc);
+  majPastilles();
 }
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
@@ -12866,7 +13072,15 @@ function rafraichitBouts(){
   g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
 }
 
-/** Cadre la vue sur le tracé du pavillon affiché. */
+/**
+ * Cadre la vue sur le tracé du pavillon affiché.
+ *
+ * Le trajet se lit à côté de son bilan, jamais dessous : le volet du bas sur un
+ * téléphone, celui de droite sur un écran large, sont retirés du cadre avant de
+ * calculer l'échelle, puis le tracé se centre dans la bande qui reste. Sans
+ * cela, l'arrivée — le point qu'on est venu chercher — se range derrière le
+ * volet qui l'annonce.
+ */
 function cadreItineraire(){
   const marches = marchesIci();
   if (!marches.length || !view) return;
@@ -12876,12 +13090,13 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = svg.getBoundingClientRect();
-  const cache = masque();
+  const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
+  const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
-  const k = Math.max(w / (r.width || 1), h / hUtile);
-  view = { x: (x0 + x1) / 2 - (k * r.width) / 2,
+  const k = Math.max(w / lUtile, h / hUtile);
+  view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
            y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
@@ -12968,7 +13183,9 @@ function valideSaisie(r){
 function effaceItineraire(){
   ITI.a = ITI.b = null;
   ROUTE = TRACE = null;
-  visee = null;
+  /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
+     il appelle la même visée. */
+  visee = ETROIT() ? null : "a";
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
@@ -13151,18 +13368,6 @@ function montreResultat(etat){
     z.appendChild(l);
     (ROUTE.avertis || []).forEach(t => dit("iAlerte", t));
   }
-
-  // rien de tracé dans ce pavillon : il n'y a rien à cadrer
-  if (marchesIci().length){
-    const acts = document.createElement("div");
-    acts.className = "acts";
-    const b = document.createElement("button");
-    b.className = "btn";
-    b.textContent = "Cadrer sur le trajet";
-    b.onclick = cadreItineraire;
-    acts.appendChild(b);
-    z.appendChild(acts);
-  }
 }
 
 /* ------------------------------------------------------------
@@ -13172,7 +13377,10 @@ function montreResultat(etat){
  * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
  * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
  * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
- * le champ au lieu d'ouvrir une fiche.
+ * le champ au lieu d'ouvrir une fiche. C'est le geste ordinaire, et non le
+ * détour : l'ouverture du tiroir l'arme sur le premier champ vide (voir
+ * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
+ * revenir après coup.
  *
  * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
  * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
@@ -13185,8 +13393,10 @@ function bandeauVisee(){
   const b = $("viseur");
   if (b){
     b.hidden = !visee;
+    /* La visée n'est plus le geste du seul téléphone : le bandeau s'adresse
+       aussi bien au doigt qu'au curseur. */
     if (visee) $("viseurTxt").textContent =
-      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+      "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
@@ -13262,6 +13472,15 @@ function ouvreItineraire(){
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
+  /* Un itinéraire se désigne plus vite qu'il ne se tape : la visée est donc
+     armée sur le premier champ vide dès l'ouverture, départ puis arrivée, sans
+     passer par la cible. Le clavier reste à portée — cliquer dans un champ y
+     renonce. Sur un téléphone, où le tiroir recouvre le plan qu'on viserait,
+     viser suppose de le refermer : on attend que le visiteur le demande. */
+  if (!ETROIT()){
+    visee = !ITI.a ? "a" : !ITI.b ? "b" : null;
+    bandeauVisee();
+  }
 }
 function fermeItineraire(){
   const t = $("itineraire");
@@ -13284,8 +13503,9 @@ function versItineraireDe(pt){
   if (ITI.a) relance();
   /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
      la transition, et un focus ordinaire ferait défiler la scène pour l'y
-     amener. On demande le curseur, pas le déplacement. */
-  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
+     amener. On demande le curseur, pas le déplacement — et seulement là où
+     l'ouverture n'a pas armé la visée, que le curseur annulerait aussitôt. */
+  else { montreResultat(); if (!visee) $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {

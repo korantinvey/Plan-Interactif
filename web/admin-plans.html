@@ -51,9 +51,22 @@
           <button class="mitem" id="btnExport">Copier les données (JSON)</button>
         </div>
       </details>
-      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      </button>
+      <!-- Le compte, sous les initiales de son adresse. Le thème y descend :
+           il se règle une fois, et occupait la barre en permanence pour cela.
+           La sortie, elle, n'avait aucun bouton — on fermait l'onglet, et la
+           session restait ouverte sur le poste. -->
+      <details class="menu compte">
+        <summary class="avatar" id="btnCompte" title="Compte" aria-label="Compte"><span id="initiales">··</span></summary>
+        <div class="menu-pan">
+          <div class="mtete">
+            <span class="eyebrow">Connecté</span>
+            <span id="compteMail">—</span>
+          </div>
+          <hr>
+          <button class="mitem" id="btnTheme">Thème sombre</button>
+          <button class="mitem danger" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
     </div>
   </header>
 
@@ -208,6 +221,7 @@ function verseModale() {
 
 function ouvreModale(titre, remplit, boutons, apres) {
   verseModale();
+  modaleVerrou = false;
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -222,13 +236,26 @@ function ouvreModale(titre, remplit, boutons, apres) {
   });
   $("modale").classList.add("open");
 }
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
 const fermeModale = () => {
+  modaleVerrou = false;
   $("modale").classList.remove("open");
   verseModale();
 };
 $("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
 
 function demande(titre, libelle, valeur, suite) {
   let champ;
@@ -453,6 +480,20 @@ const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
    Cloudflare, comme les autres. */
 const PAGE_MDP = BASE_PAGES + "motdepasse";
 
+/* Même repli que sur la racine, pour le cas où le « Site URL » du projet
+   désigne la console : un jeton de mot de passe n'a rien à faire ici, et
+   l'écran de connexion serait une impasse pour celui qui l'apporte. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const type = h.get("type") || q.get("type") || "";
+  const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
+    (type === "recovery" || type === "invite" || type === "signup");
+  if (jeton || h.get("error_description") || q.get("error_description")) {
+    location.replace(PAGE_MDP + location.search + location.hash);
+  }
+})();
+
 /**
  * L'identifiant du compte connecté, lu dans le jeton.
  *
@@ -467,13 +508,54 @@ const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
    ------------------------------------------------------------------ */
 const CLE_THEME = "console-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
+
+/* Sans réglage enregistré, le thème est celui du système : c'est lui qu'il
+   faut interroger pour savoir vers quoi bascule le bouton. */
+const themeSombre = () => {
   const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+$("btnTheme").onclick = () => {
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
 };
+
+/* ------------------------------------------------------------------
+   Compte
+   ------------------------------------------------------------------ */
+/**
+ * Les initiales de l'adresse : « korantin.vey@… » donne « KV », « alexandra@… »
+ * donne « AL ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà.
+ */
+function initialesDe(mail) {
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
+
+/* Le panneau se remplit à l'ouverture, jamais au chargement : la session peut
+   arriver après — on vient de se connecter — et l'ouverture est le seul moment
+   où l'on est sûr d'avoir quelque chose de juste à montrer. */
+const menuCompte = document.querySelector("details.menu.compte");
+if (menuCompte) {
+  menuCompte.addEventListener("toggle", () => {
+    if (!menuCompte.open) return;
+    const mail = contenuJeton(SESSION?.access_token)?.email || "";
+    $("initiales").textContent = mail ? initialesDe(mail) : "··";
+    $("compteMail").textContent = mail || "session inconnue";
+    // le libellé annonce où l'on va, pas où l'on est
+    $("btnTheme").textContent = themeSombre() ? "Thème clair" : "Thème sombre";
+  });
+  $("btnSortir").onclick = () => {
+    menuCompte.open = false;
+    deconnecte();
+  };
+}
 
 /* ============================================================
    Classeur — écrire un vrai fichier Excel, sans bibliothèque
@@ -922,29 +1004,219 @@ async function fluxFonction(nom, corps, surLigne) {
 }
 
 /**
- * Barre d'avancement à étapes. Les étapes sont annoncées par le serveur, non
- * devinées ici : lui seul sait ce qu'il va réellement faire.
+ * La fenêtre qui rend compte d'une synchronisation.
+ *
+ * Elle montre trois choses, et pas une de plus : où l'on en est dans
+ * l'ensemble, où l'on en est dans l'étape qui tourne, et ce qui a été compté.
+ * La barre du haut est jalonnée d'une étape à l'autre — un jalon par étape,
+ * régulièrement espacés — parce qu'une barre nue dit qu'on attend sans dire
+ * quoi ; la sous-barre suit les éléments de l'étape en cours ; le tableau en
+ * dessous garde les chiffres, qui sont ce qu'on vient vérifier.
+ *
+ * Les jalons sont à intervalle égal, et leur part n'est pas chiffrée. Posés à
+ * la part que le nombre d'éléments valait à chaque étape, ils tombaient à des
+ * endroits — 46 %, 57 % — qui donnaient à lire une précision qui n'existe pas :
+ * ce sont des estimations, pas une promesse de durée. Une étape vaut une
+ * étape ; ce qui se compte vraiment se compte dans l'étape, sur la sous-barre
+ * et dans le tableau.
+ *
+ * Les étapes sont annoncées par le serveur, non devinées ici : lui seul sait
+ * ce qu'il va réellement faire. Le poids qu'il leur donne — leur nombre
+ * d'éléments, estimé d'après la dernière synchronisation puis corrigé — ne
+ * décide plus de la largeur d'un segment ; il sert de repère à l'avancement
+ * d'une étape dont on ignore le total, et un poids nul dit qu'elle n'est pas
+ * reprise du tout.
+ *
+ * La fenêtre ne se ferme pas d'elle-même : le bilan est ce qu'on vient y lire,
+ * et il arrive à la dernière ligne.
  */
-function barreAvancement(hote, etapes) {
-  hote.innerHTML = "";
-  const b = document.createElement("div");
-  b.className = "avance";
-  etapes.forEach((e) => {
+function fenetreAvancement(titre) {
+  let etapes = [], vivante = true, plafond = 0;
+  const compte = new Map();
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
+  const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
+
+  ouvreModale(titre, (c) => {
     const d = document.createElement("div");
-    d.className = "pas";
-    d.dataset.cle = e.cle;
-    d.dataset.etat = "attente";
-    d.innerHTML = '<span class="jauge"></span><span class="lib"></span><span class="det"></span>';
-    d.querySelector(".lib").textContent = e.libelle;
-    if (e.source && e.source !== "klipso") d.querySelector(".det").textContent = e.source;
-    b.appendChild(d);
-  });
-  hote.appendChild(b);
-  return (cle, etat, info) => {
-    const d = b.querySelector('.pas[data-cle="' + CSS.escape(cle) + '"]');
-    if (!d) return;
-    d.dataset.etat = etat;
-    if (info !== undefined) d.querySelector(".det").textContent = info;
+    d.className = "sync";
+    d.innerHTML =
+      '<div class="sync-tete"><span class="eyebrow">Avancement</span>' +
+        '<span class="sync-pct mono">0 %</span></div>' +
+      '<div class="sync-noms"></div>' +
+      '<div class="sync-rail"><span class="sync-depart"></span></div>' +
+      '<p class="sync-ecarte" hidden></p>' +
+      '<div class="sync-cours"><span class="sync-quoi"></span>' +
+        '<span class="sync-compte mono"></span></div>' +
+      '<div class="sync-sous" data-etat="attente"><span></span></div>' +
+      '<dl class="sync-chiffres"></dl>' +
+      '<p class="sync-bilan"></p>';
+    c.appendChild(d);
+    rail = d.querySelector(".sync-rail");
+    noms = d.querySelector(".sync-noms");
+    pctTxt = d.querySelector(".sync-pct");
+    quoi = d.querySelector(".sync-quoi");
+    compteTxt = d.querySelector(".sync-compte");
+    sous = d.querySelector(".sync-sous");
+    sousJauge = sous.querySelector("span");
+    dl = d.querySelector(".sync-chiffres");
+    bilan = d.querySelector(".sync-bilan");
+    ecarte = d.querySelector(".sync-ecarte");
+    quoi.textContent = "Connexion au serveur…";
+  }, [{ libelle: "Fermer", genre: "primaire" }], () => { vivante = false; });
+  verrouilleModale(true);
+
+  // Les étapes qui ont un segment : celles que la synchronisation reprend.
+  const vues = () => etapes.filter((e) => e.poids > 0);
+
+  /* Un segment par étape, tous de même largeur, et un jalon au bout de chacun.
+     Une étape non reprise n'a pas de segment : elle en occuperait un sans
+     jamais rien y faire avancer. Elle est nommée sous la barre, pour qu'on la
+     sache écartée et non oubliée. */
+  function construitRail() {
+    if (!rail) return;
+    rail.innerHTML = '<span class="sync-depart"></span>';
+    noms.innerHTML = "";
+    vues().forEach((e) => {
+      e.seg = document.createElement("div");
+      e.seg.className = "sync-seg";
+      e.seg.innerHTML =
+        '<span class="sync-piste"><span></span></span><span class="sync-point"></span>';
+      rail.appendChild(e.seg);
+
+      e.nom = document.createElement("div");
+      e.nom.className = "sync-nom";
+      e.nom.textContent = e.libelle;
+      e.nom.title = e.libelle + (e.source && e.source !== "aucun" ? " — " + e.source : "");
+      noms.appendChild(e.nom);
+    });
+    const hors = etapes.filter((e) => e.poids <= 0);
+    ecarte.hidden = !hors.length;
+    ecarte.textContent = hors.length
+      ? "Non repris : " + hors.map((e) => e.libelle + (e.det ? " (" + e.det + ")" : "")).join(" · ")
+      : "";
+  }
+
+  function rafraichit() {
+    if (!rail) return;
+    vues().forEach((e) => {
+      if (!e.seg) return;
+      e.seg.dataset.etat = e.etat;
+      e.nom.dataset.etat = e.etat;
+      e.seg.querySelector(".sync-piste > span").style.width =
+        Math.round(e.frac * 100) + "%";
+    });
+    /* Le pourcentage et le remplissage disent la même chose, et c'est la
+       condition pour qu'on les croie : les segments étant égaux, la part faite
+       est la moyenne de ce que chaque étape a avancé. */
+    const l = vues();
+    const p = l.reduce((a, e) => a + e.frac, 0) / (l.length || 1) * 100;
+    plafond = Math.max(plafond, Math.min(100, p));
+    pctTxt.textContent = Math.round(plafond) + " %";
+  }
+
+  return {
+    /** La liste des étapes, telle que le serveur l'annonce. */
+    ouvre(liste) {
+      etapes = liste.map((e) => ({
+        cle: e.cle, libelle: e.libelle, source: e.source,
+        poids: Math.max(0, Number(e.poids ?? 1) || 0), frac: 0, etat: "attente", det: "",
+      }));
+      construitRail();
+      rafraichit();
+    },
+
+    /** Une ligne du flux qui parle d'une étape : son état, son poids, son avancement. */
+    pas(o) {
+      const e = etapes.find((x) => x.cle === o.etape);
+      if (!e) return;
+      let refaire = false;
+      if (o.poids !== undefined) {
+        e.poids = Math.max(0, Number(o.poids) || 0);
+        refaire = true;
+      }
+      if (o.info !== undefined) e.det = String(o.info);
+      if (o.fait !== undefined) {
+        /* Sans total connu — les catégories Eventmaker ne disent pas combien
+           de fiches elles portent — l'estimation d'après la dernière
+           synchronisation tient lieu de repère. Plafonnée, elle ne prétend
+           jamais avoir fini. */
+        const f = o.total
+          ? Math.min(1, o.fait / o.total)
+          : Math.min(0.95, e.poids ? o.fait / e.poids : 0);
+        e.frac = Math.max(e.frac, f);
+      }
+      if (o.etat) {
+        e.etat = o.etat;
+        if (o.etat === "fait") e.frac = 1;
+        if (o.etat === "ignoree") {
+          e.frac = 1;
+          if (e.poids > 0) { e.poids = 0; refaire = true; }
+        }
+      }
+      if (o.etat === "encours" && quoi) {
+        quoi.textContent = e.libelle + " · " + (o.detail || e.det || "en cours");
+        const u = o.unite ? " " + o.unite : "";
+        /* Un pavillon entamé compte pour le premier, pas pour zéro : la part
+           est fractionnaire — c'est elle qui remplit la sous-barre — mais le
+           décompte se lit en éléments entiers. */
+        compteTxt.textContent = o.fait === undefined ? ""
+          : o.total ? Math.ceil(o.fait).toLocaleString("fr-FR") + " / " + nb(o.total) + u
+          : o.fait ? nb(o.fait) + u : "";
+        const bat = o.fait !== undefined && !o.total;
+        sous.dataset.etat = bat ? "battant" : "chiffre";
+        sousJauge.style.width = bat ? "100%"
+          : Math.round((o.total ? Math.min(1, o.fait / o.total) : 0) * 100) + "%";
+      }
+      if (refaire) construitRail();
+      rafraichit();
+    },
+
+    /** Les compteurs, qui s'écrasent par leur nom et ne font qu'une ligne chacun. */
+    chiffres(o) {
+      Object.entries(o || {}).forEach(([k, v]) => compte.set(k, v));
+      if (!dl) return;
+      dl.innerHTML = "";
+      compte.forEach((v, k) => {
+        const l = document.createElement("div");
+        l.innerHTML = "<dt></dt><dd></dd>";
+        l.querySelector("dt").textContent = k;
+        l.querySelector("dd").textContent = nb(v);
+        dl.appendChild(l);
+      });
+    },
+
+    /**
+     * Le mot de la fin, et la fenêtre rendue à qui voudra la fermer.
+     *
+     * Trois fins, et non deux : une synchronisation peut aboutir en laissant
+     * un défaut derrière elle — une nomenclature restée en codes — et la dire
+     * « interrompue » serait faux, la taire le serait autant.
+     *   "ok"     tout est passé
+     *   "alerte" c'est fait, mais quelque chose est à regarder
+     *   "echec"  on s'est arrêté en chemin
+     */
+    fini(message, issue) {
+      // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
+      // une autre a pu prendre sa place pendant que la synchronisation tournait
+      if (vivante) verrouilleModale(false);
+      if (!bilan) return;
+      const panne = issue === "echec";
+      bilan.className = "sync-bilan " + (issue || "ok");
+      bilan.textContent = message;
+      /* Sur échec la sous-barre s'efface au lieu de se figer : battante, elle
+         restait pleine et se lisait comme une étape réussie, quand le jalon
+         rouge au-dessus disait le contraire. Ce qu'elle comptait est de toute
+         façon resté dans le tableau. */
+      sous.hidden = panne;
+      sous.dataset.etat = "fini";
+      quoi.textContent = panne ? "Interrompu" : "Terminé";
+      compteTxt.textContent = "";
+      if (!panne) {
+        sousJauge.style.width = "100%";
+        plafond = 100;
+        pctTxt.textContent = "100 %";
+      }
+    },
   };
 }
 
@@ -1166,9 +1438,6 @@ function dessineFiche() {
   bsync.textContent = "Synchroniser maintenant";
   bd.appendChild(ligneOutil("Synchronisation", '<span id="msgSync"></span>', [rythme, bsync]));
 
-  const zoneAv = document.createElement("div");
-  zoneAv.id = "avancement";
-  bd.appendChild(zoneAv);
   f.appendChild(bd);
   majMsgSync(e);
   $("btnSync").onclick = () => synchronise(e);
@@ -2840,6 +3109,59 @@ const separeValeurs = (v) => [].concat(v)
   .flatMap((x) => String(x).split(";"))
   .map((x) => x.trim()).filter(Boolean);
 
+/* Les accords que la synchronisation reconnaît d'elle-même, quand aucune
+   valeur n'a été retenue. La liste est celle de `champs.ts` : la console ne
+   peut pas l'importer, elle la recopie — et les deux se corrigent ensemble,
+   sans quoi la fenêtre annoncerait l'inverse de ce qui se passe. */
+const ACCORDS = ["true", "1", "oui", "o", "yes", "y", "vrai", "x", "on", "✓", "✔"];
+
+/* Les deux faces d'un oui/non, telles que les sources les écrivent. La
+   synchronisation n'a que faire de la seconde colonne — un « non » et une
+   valeur quelconque ne déclenchent rien ni l'un ni l'autre — mais ici elle
+   compte : c'est en ne voyant que « false » qu'on sait que « true » existe. */
+const FACES = [
+  ["true", "false"], ["vrai", "faux"], ["oui", "non"], ["yes", "no"],
+  ["1", "0"], ["o", "n"], ["y", "n"], ["on", "off"],
+];
+
+/** Une valeur comparée sans égard à la casse ni aux espaces, comme au serveur. */
+const aplani = (v) => String(v === null || v === undefined ? "" : v).trim().toLowerCase();
+
+/**
+ * L'écriture du voisin : « FALSE » appelle « TRUE », « Non » appelle « Oui ».
+ *
+ * La valeur déduite est cochée telle quelle et comparée telle quelle à ce que
+ * portent les fiches : la comparaison ignore la casse, mais l'exploitant, lui,
+ * relit ce qu'il a coché — une face écrite autrement que sa voisine se lirait
+ * comme une valeur d'ailleurs.
+ */
+function memeStyle(modele, mot) {
+  const m = String(modele || "");
+  if (m && m === m.toUpperCase() && m !== m.toLowerCase()) return mot.toUpperCase();
+  if (m && m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase()) {
+    return mot[0].toUpperCase() + mot.slice(1);
+  }
+  return mot;
+}
+
+/**
+ * L'autre face d'un oui/non dont les fiches ne montrent qu'un côté.
+ *
+ * Un salon où personne n'est encore exclu porte « false » sur toutes ses
+ * fiches : le relevé n'a donc que « false » à proposer, et l'exploitant n'a
+ * rien à cocher — alors que c'est « true » qu'il vise. La face manquante se
+ * déduit du couple, et se propose signalée : elle existe, elle n'est
+ * simplement portée par personne pour l'instant.
+ */
+function autreFace(valeurs) {
+  const vues = valeurs.map(aplani);
+  if (!vues.length) return [];
+  const paire = FACES.find((f) => vues.every((v) => f.indexOf(v) >= 0));
+  if (!paire) return [];
+  return paire.filter((f) => vues.indexOf(f) < 0)
+    .map((f) => memeStyle(valeurs[0], f));
+}
+
 /**
  * La liste déroulante des champs d'origine d'une cible, et ce qu'elle vaut.
  *
@@ -2965,9 +3287,10 @@ function champOrigine(src, cible, apres, ouiNon) {
      Un champ à choix ne répond pas par oui ou non : « anciennete » vaut
      « Nouveau Client », « Client N-1 » ou « Retour », et c'est à l'exploitant
      de dire lesquelles comptent — un salon signalera les retours, un autre
-     non. Les valeurs proposées sont celles que la synchronisation a vues sur
-     ce champ ; un champ de texte libre n'en a pas, et retombe alors sur le
-     oui/non usuel. */
+     non. Les valeurs proposées sont celles que le champ peut prendre : celles
+     que la synchronisation a vues, celles que la source déclare sans qu'aucune
+     fiche ne les porte, et la face manquante d'un oui/non. Un champ de texte
+     libre n'en a aucune, et retombe alors sur le oui/non usuel. */
   const zoneValeurs = document.createElement("div");
   zoneValeurs.className = "valeurs";
   if (ouiNon) hote.appendChild(zoneValeurs);
@@ -2989,12 +3312,36 @@ function champOrigine(src, cible, apres, ouiNon) {
       (correspondance(courant(), src).valeurs || {})[cible] || []);
     const d = detectes.find((x) => x.cle === sel.value);
     const relevees = separeValeurs((d && d.valeurs) || []);
-    /* Les valeurs déjà retenues restent proposées même si le relevé ne les
-       connaît pas : saisies à la main, ou relevées avant que la
-       synchronisation ne garde les valeurs distinctes. Les effacer d'un
-       affichage reviendrait à les effacer tout court. */
-    const offertes = [...relevees];
-    retenues.forEach((v) => { if (offertes.indexOf(v) < 0) offertes.push(v); });
+    // la codification du champ, quand la source en déclare une : code → libellé
+    const choix = (d && d.choix) || {};
+    /* Le relevé a bien lu ce champ, mais ses valeurs ne se ressemblent pas
+       assez pour faire une liste : une raison sociale, une date. Le dire
+       épargne d'attendre une synchronisation qui n'en relèverait pas plus. */
+    const libre = !!(d && d.libre);
+
+    /* Quatre provenances pour une même liste, et l'ordre les range : ce que
+       les fiches portent, ce que la source déclare sans que rien ne le porte,
+       la face manquante d'un oui/non, puis ce que l'exploitant a retenu — car
+       une valeur retenue reste proposée même si le relevé l'ignore : saisie à
+       la main, ou relevée avant que la synchronisation ne garde les valeurs
+       distinctes. L'effacer de l'affichage reviendrait à l'effacer tout court.
+
+       Tout ce qui n'a été vu sur aucune fiche est marqué : la valeur est
+       cochable, mais l'exploitant doit savoir que personne ne la porte —
+       c'est parfois le signe qu'il vise le mauvais champ. */
+    const offertes = [];
+    const offre = (v, hors) => {
+      if (!v || offertes.some((o) => o.v === v)) return;
+      offertes.push({ v, hors });
+    };
+    relevees.forEach((v) => offre(v, false));
+    Object.keys(choix).forEach((v) => offre(v, true));
+    autreFace(relevees).forEach((v) => offre(v, true));
+    retenues.forEach((v) => offre(v, true));
+    /* Sans valeur retenue, la synchronisation s'en remet aux accords usuels :
+       un champ qui peut en porter un signale donc déjà, et le dire en rouge
+       comme un réglage manquant serait un faux appel au secours. */
+    const accords = offertes.map((o) => o.v).filter((v) => ACCORDS.indexOf(aplani(v)) >= 0);
 
     const dit = document.createElement("span");
     dit.className = "mini";
@@ -3009,19 +3356,32 @@ function champOrigine(src, cible, apres, ouiNon) {
     const rappel = () => {
       dit.textContent = retenues.length
         ? "vaut oui quand la valeur est :"
-        : offertes.length
-          ? "aucune valeur retenue : rien ne sera signalé"
-          : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
-            " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
-      dit.dataset.genre = retenues.length ? "" : "manque";
+        : accords.length
+          ? "aucune valeur retenue : « " + accords.join(" », « ") + " » " +
+            (accords.length > 1 ? "valent" : "vaut") + " oui d'office"
+          : offertes.length
+            ? "aucune valeur retenue : rien ne sera signalé"
+            : libre
+              ? "trop de valeurs différentes pour en proposer la liste : " +
+                "saisissez celle qui compte"
+              : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
+                " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
+      dit.dataset.genre = retenues.length || accords.length ? "" : "manque";
     };
     rappel();
 
-    const puce = (v) => {
+    /* Le libellé plutôt que le code quand la codification en donne un : un
+       champ à choix Klipso ne porte que « FEP26_GAM102 », et c'est
+       « Prêt-à-porter » que l'exploitant cherche. Le code reste sous la
+       souris — c'est lui qui sera comparé aux fiches. */
+    const puce = (v, hors) => {
       const l = document.createElement("label");
       l.className = "puce";
+      if (hors) l.dataset.hors = "1";
       l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = v;
+      l.querySelector("span").textContent = choix[v] || v;
+      l.title = (choix[v] ? v + " — " : "") +
+        (hors ? "portée par aucune des fiches relevées" : "relevée sur les fiches");
       const i = l.querySelector("input");
       i.checked = retenues.indexOf(v) >= 0;
       i.onchange = () => {
@@ -3036,7 +3396,7 @@ function champOrigine(src, cible, apres, ouiNon) {
       zoneValeurs.appendChild(l);
       return l;
     };
-    offertes.forEach(puce);
+    offertes.forEach((o) => puce(o.v, o.hors));
 
     /* De quoi désigner une valeur que le relevé ignore. Il n'en a pas toujours
        une liste : un salon synchronisé avant que la synchronisation ne les
@@ -3053,13 +3413,13 @@ function champOrigine(src, cible, apres, ouiNon) {
       /* Une saisie recopiée depuis une fiche porte parfois la chaîne entière :
          elle vaut alors autant de valeurs qu'elle en joint. */
       const saisies = separeValeurs(ajout.value)
-        .filter((v) => offertes.indexOf(v) < 0);
+        .filter((v) => !offertes.some((o) => o.v === v));
       ajout.value = "";
       if (!saisies.length) return;
       saisies.forEach((v) => {
         retenues.push(v);
-        offertes.push(v);
-        const l = puce(v);
+        offertes.push({ v, hors: true });
+        const l = puce(v, true);
         l.querySelector("input").checked = true;
       });
       const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };
@@ -3127,16 +3487,20 @@ function majMsgSync(e) {
    ------------------------------------------------------------------ */
 async function synchronise(e) {
   const b = $("btnSync");
-  b.disabled = true;
-  const zone = $("avancement");
-  let maj = null, enCours = null;
+  if (b) b.disabled = true;
+  /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
+     flux : entre le clic et la réponse du serveur il s'écoule quelques
+     secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
+  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"));
+  let enCours = null;
   signale("Synchronisation en cours…");
   try {
     const j = await fluxFonction("sync-evenement", { evenementId: e.id }, (o) => {
-      if (o.etapes && zone) maj = barreAvancement(zone, o.etapes);
-      else if (o.etape && maj) {
+      if (o.etapes) vue.ouvre(o.etapes);
+      else if (o.chiffres) vue.chiffres(o.chiffres);
+      else if (o.etape) {
         if (o.etat === "encours") enCours = o.etape;
-        maj(o.etape, o.etat, o.info);
+        vue.pas(o);
       }
     });
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
@@ -3156,12 +3520,15 @@ async function synchronise(e) {
     const suite = n.erreur
       ? " Nomenclature en codes : " + n.erreur
       : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
-    signale(pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
-      total + " emplacements" + app + "." + suite, !!n.erreur);
+    const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
+      total + " emplacements" + app + "." + suite;
+    vue.fini(mot, n.erreur ? "alerte" : "ok");
+    signale(mot, !!n.erreur);
     await charge();
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
-    if (maj && enCours) maj(enCours, "echec", err.message);
+    if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
+    vue.fini(err.message, "echec");
     signale(err.message, true);
   } finally {
     if ($("btnSync")) $("btnSync").disabled = false;

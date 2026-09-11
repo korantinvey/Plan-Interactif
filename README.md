@@ -126,14 +126,43 @@ de faux.
 Sur un **champ à choix**, aucune valeur n'est un oui, et c'est pourtant l'une
 d'elles qui désigne les nouveaux venus. Franchise Expo 2026 range ainsi ses
 577 exposants sur `anciennete` : 363 « Client N-1 », 176 « Nouveau Client »,
-35 « Retour ». La ligne offre donc, sous le champ, les valeurs que la
-synchronisation a vues ; on coche celles qui comptent. Plusieurs peuvent
-compter à la fois — un salon tiendra « Retour » pour un retour à signaler, un
-autre non. Aucune cochée, rien n'est signalé, et la ligne le dit.
+35 « Retour ». La ligne offre donc, sous le champ, ce que le champ peut valoir ;
+on coche celles qui comptent. Plusieurs peuvent compter à la fois — un salon
+tiendra « Retour » pour un retour à signaler, un autre non. Aucune cochée, ce
+sont les accords ci-dessus qui reprennent la main : la ligne nomme celui que le
+champ peut porter, ou dit que rien ne sera signalé quand il n'y en a aucun.
 
-Un champ qui porte plus de huit valeurs distinctes est du texte libre : sa liste
-n'est pas proposée. Un salon synchronisé avant que le relevé ne garde les
-valeurs distinctes n'en a pas non plus. Dans les deux cas la ligne le dit, et
+**Ce que le champ peut valoir n'est pas ce que les fiches portent**, et la
+distinction se paie : côté Klipso les valeurs se relèvent sur vingt-cinq fiches,
+où une valeur rare n'a aucune chance de figurer, et un salon où personne n'est
+encore exclu porte `false` sur toutes ses fiches sans que `true` cesse d'exister.
+Trois provenances remplissent donc la ligne, et le trait discontinu marque tout
+ce qu'aucune fiche relevée ne porte :
+
+- les valeurs **relevées** — toutes les fiches côté Eventmaker, qui sont lues de
+  toute façon, un échantillon côté Klipso ;
+- la **codification déclarée** par Klipso pour ce champ, demandée en un appel
+  par entité au relevé des champs. Elle donne la liste entière et son libellé :
+  la case porte « Prêt-à-porter » là où la fiche ne porte que `FEP26_GAM102`,
+  le code restant sous la souris puisque c'est lui qui sera comparé ;
+- l'**autre face** d'un oui/non, déduite du couple — `true`/`false`,
+  `oui`/`non`, `1`/`0`, `on`/`off` et leurs écritures — et proposée dans
+  l'orthographe de celle qu'on a vue.
+
+**Ce qui sépare une liste d'un texte libre, c'est la répétition et non le
+nombre.** Huit valeurs distinctes ou moins, c'est une liste sans discussion.
+Au-delà, on regarde si les valeurs reviennent : un salon qui range ses exposants
+en quatorze catégories les répète sur trois cents fiches, quand trois cents
+raisons sociales ne se répètent jamais. Le seuil des huit appliqué seul écartait
+les deux — un champ à quatorze catégories n'offrait rien à cocher, et la ligne
+annonçait des « valeurs inconnues » qu'aucune synchronisation n'aurait relevées.
+Un champ écarté dit maintenant qu'il l'a été, au lieu de se faire passer pour un
+relevé muet.
+
+Quarante valeurs restent le plafond de ce qui s'affiche, relevées ou déclarées :
+la nomenclature d'un salon en compte deux cents, et deux cents cases ne se
+lisent pas. Un salon synchronisé avant que le relevé ne garde les valeurs
+distinctes n'a rien à proposer non plus. Dans tous ces cas la ligne le dit, et
 laisse saisir la valeur à la main plutôt que de faire attendre le prochain
 passage. « Exclu de la liste » se règle exactement de la même façon.
 
@@ -1278,9 +1307,17 @@ affecté n'en lit aucun — mais il n'a rien à faire dans l'annuaire.
 
 Deux autres réglages conditionnent les invitations et les mots de passe oubliés :
 
-- **Authentication → URL Configuration** : ajouter `https://<domaine>/motdepasse`
-  aux *Redirect URLs*. Sans elle, le lien reçu par courriel retombe sur la page
-  d'accueil du projet et le mot de passe ne peut pas être posé.
+- **Authentication → URL Configuration** : deux champs, et les deux comptent.
+  *Site URL* doit porter l'adresse de service (`https://<domaine>`) ; elle vaut
+  `http://localhost:3000` sur un projet neuf. Les *Redirect URLs* doivent
+  contenir `https://<domaine>/motdepasse` — ajouter `https://<domaine>/**`
+  évite d'y revenir à chaque page.
+
+  C'est le réglage qui se remarque le plus tard : Supabase n'annonce pas qu'il
+  écarte une adresse de retour absente de la liste, il la remplace par *Site
+  URL*. Un lien d'invitation ou de mot de passe oublié pointant vers
+  `localhost` ne vient donc jamais du code — il dit que le domaine manque dans
+  ces deux champs.
 - **Authentication → Emails** : le service d'envoi intégré de Supabase est
   limité à quelques messages par heure et n'est pas prévu pour la production.
   Dès qu'on invite de vrais organisateurs, brancher un **SMTP** à soi

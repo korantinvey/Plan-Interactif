@@ -56,7 +56,15 @@ const service = () =>
 const ROLES = ["admin", "organisateur"];
 
 /** Une adresse de retour venue du navigateur ne vaut que si elle désigne une
- *  origine déclarée : c'est elle qui recevra le jeton du lien. */
+ *  origine déclarée : c'est elle qui recevra le jeton du lien.
+ *
+ *  Une adresse écartée ne se rattrape pas plus loin : privé de `redirectTo`,
+ *  Supabase replie le lien sur le « Site URL » du projet — « localhost » tant
+ *  qu'on ne l'a pas réglé — et la panne n'apparaît que dans la boîte de
+ *  l'invité, des heures plus tard. On refuse donc l'envoi sur-le-champ. */
+const RETOUR_REFUSE = "Adresse de retour non autorisée : ajoutez cette origine " +
+  "à ORIGINES_AUTORISEES.";
+
 function retourValide(brut: unknown): string | null {
   const v = String(brut ?? "").trim();
   if (!v) return null;
@@ -148,6 +156,7 @@ Deno.serve(async (req) => {
       const nom = String(corps.nom ?? "").trim().slice(0, 120) || null;
       const prenom = String(corps.prenom ?? "").trim().slice(0, 120) || null;
       const retour = retourValide(corps.retour);
+      if (corps.retour && !retour) return repond({ erreur: RETOUR_REFUSE }, 400);
 
       const { data, error } = await db.auth.admin.inviteUserByEmail(email, {
         redirectTo: retour ?? undefined,
@@ -201,6 +210,7 @@ Deno.serve(async (req) => {
         .from("profil").select("email").eq("id", id).maybeSingle();
       if (!cible?.email) return repond({ erreur: "Compte introuvable." }, 404);
       const retour = retourValide(corps.retour);
+      if (corps.retour && !retour) return repond({ erreur: RETOUR_REFUSE }, 400);
 
       const anon = createClient(
         Deno.env.get("SUPABASE_URL")!,

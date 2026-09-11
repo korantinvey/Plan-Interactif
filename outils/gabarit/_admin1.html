@@ -156,6 +156,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -297,6 +298,22 @@ function appliqueAccent(){
 }
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
 
 /* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
    exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
@@ -1092,7 +1109,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -1116,6 +1133,15 @@ function activeAdmin(){
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
     };
+  }
+  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
+     côté : il porte le même réglage dans son panneau, et deux commandes d'une
+     même chose dans la même barre ne disent pas laquelle écoute. */
+  const c = $("menuCompte");
+  if (c){
+    c.hidden = false;
+    const th = $("btnTheme");
+    if (th) th.hidden = true;
   }
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier

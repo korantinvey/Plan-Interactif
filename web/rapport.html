@@ -182,6 +182,7 @@ function verseModale() {
 
 function ouvreModale(titre, remplit, boutons, apres) {
   verseModale();
+  modaleVerrou = false;
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -196,13 +197,26 @@ function ouvreModale(titre, remplit, boutons, apres) {
   });
   $("modale").classList.add("open");
 }
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
 const fermeModale = () => {
+  modaleVerrou = false;
   $("modale").classList.remove("open");
   verseModale();
 };
 $("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
 
 function demande(titre, libelle, valeur, suite) {
   let champ;
@@ -427,6 +441,20 @@ const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
    Cloudflare, comme les autres. */
 const PAGE_MDP = BASE_PAGES + "motdepasse";
 
+/* Même repli que sur la racine, pour le cas où le « Site URL » du projet
+   désigne la console : un jeton de mot de passe n'a rien à faire ici, et
+   l'écran de connexion serait une impasse pour celui qui l'apporte. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const type = h.get("type") || q.get("type") || "";
+  const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
+    (type === "recovery" || type === "invite" || type === "signup");
+  if (jeton || h.get("error_description") || q.get("error_description")) {
+    location.replace(PAGE_MDP + location.search + location.hash);
+  }
+})();
+
 /**
  * L'identifiant du compte connecté, lu dans le jeton.
  *
@@ -441,13 +469,54 @@ const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
    ------------------------------------------------------------------ */
 const CLE_THEME = "console-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
+
+/* Sans réglage enregistré, le thème est celui du système : c'est lui qu'il
+   faut interroger pour savoir vers quoi bascule le bouton. */
+const themeSombre = () => {
   const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+$("btnTheme").onclick = () => {
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
 };
+
+/* ------------------------------------------------------------------
+   Compte
+   ------------------------------------------------------------------ */
+/**
+ * Les initiales de l'adresse : « korantin.vey@… » donne « KV », « alexandra@… »
+ * donne « AL ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà.
+ */
+function initialesDe(mail) {
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
+
+/* Le panneau se remplit à l'ouverture, jamais au chargement : la session peut
+   arriver après — on vient de se connecter — et l'ouverture est le seul moment
+   où l'on est sûr d'avoir quelque chose de juste à montrer. */
+const menuCompte = document.querySelector("details.menu.compte");
+if (menuCompte) {
+  menuCompte.addEventListener("toggle", () => {
+    if (!menuCompte.open) return;
+    const mail = contenuJeton(SESSION?.access_token)?.email || "";
+    $("initiales").textContent = mail ? initialesDe(mail) : "··";
+    $("compteMail").textContent = mail || "session inconnue";
+    // le libellé annonce où l'on va, pas où l'on est
+    $("btnTheme").textContent = themeSombre() ? "Thème clair" : "Thème sombre";
+  });
+  $("btnSortir").onclick = () => {
+    menuCompte.open = false;
+    deconnecte();
+  };
+}
 
 /* ============================================================
    Classeur — écrire un vrai fichier Excel, sans bibliothèque

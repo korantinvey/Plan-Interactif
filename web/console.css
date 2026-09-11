@@ -159,6 +159,26 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 .mitem.danger:hover{background:var(--rouge-soft)}
 .menu-pan hr{width:100%;border:none;border-top:1px solid var(--line);margin:5px 0}
 
+/* Le compte : une pastille aux initiales. Pas de flèche — un rond isolé en
+   bout de barre s'ouvre sans qu'on ait à le dire —, et la couleur d'accent
+   posée en fond doux plutôt qu'en aplat, seule façon d'y garder un texte
+   lisible sur les deux thèmes. */
+.avatar{width:28px;height:28px;border-radius:50%;
+  cursor:pointer;user-select:none;background:var(--accent-soft);color:var(--accent);
+  border:1px solid transparent;font-family:"Archivo",sans-serif;font-size:11px;
+  font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.avatar:hover{border-color:var(--accent)}
+/* La mise en place appartient à ce sélecteur-ci, et non à `.avatar` : le
+   voisin `.menu > summary` est plus spécifique, et son `inline-flex` sans
+   justification laissait les initiales collées au bord gauche du rond. */
+.menu.compte > summary{display:grid;place-items:center;gap:0}
+.menu.compte > summary::after{display:none}
+.menu.compte[open] > summary{background:var(--accent-soft);border-color:var(--accent)}
+/* L'adresse connectée, en tête du panneau : deux comptes ouverts dans deux
+   onglets se ressemblent trop pour qu'on devine lequel on va déconnecter. */
+.mtete{padding:7px 10px 9px;display:grid;gap:2px}
+.mtete span:last-child{font-size:13px;color:var(--ink);overflow-wrap:anywhere}
+
 .bloc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-bloc);
   padding:15px 18px 17px;margin-bottom:16px}
 /* L'intitulé du bloc, et à droite ce qui se compte d'un coup d'œil — combien de
@@ -326,6 +346,12 @@ label.puce input{width:13px;height:13px;margin:0;padding:0;
   accent-color:var(--accent);cursor:pointer}
 label.puce:has(input:checked){background:var(--accent-soft);border-color:var(--accent);
   color:var(--accent);font-weight:600}
+/* Une valeur que le relevé n'a vue sur aucune fiche : déclarée par la source,
+   ou l'autre face d'un oui/non dont toutes les fiches portent la même. Elle se
+   coche comme les autres — le trait discontinu dit seulement que personne ne
+   la porte, ce qui est parfois le signe d'un champ mal visé. */
+label.puce[data-hors]{border-style:dashed;color:var(--ink-3)}
+label.puce[data-hors]:has(input:checked){border-style:solid;color:var(--accent)}
 /* De quoi désigner une valeur que le relevé ignore : un salon synchronisé
    avant qu'il ne garde les valeurs distinctes n'en a aucune à proposer. */
 input.ajout-valeur{width:auto;min-width:110px;flex:0 1 150px;padding:3px 9px;
@@ -427,23 +453,76 @@ tr.eteint td{opacity:.45}
 .astuce{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin:0}
 .astuce code{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
   background:var(--surface-2);padding:1px 5px;border-radius:3px}
-/* Barre d'avancement : une colonne par étape, sa jauge au-dessus. La couleur
-   distingue ce qui est fait, ce qui tourne, et ce qui n'est pas repris. */
-.avance{display:flex;gap:10px;margin-top:14px}
-.pas{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
-.pas .jauge{height:3px;border-radius:2px;background:var(--line);transition:background .25s}
-.pas .lib{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pas .det{font-size:11px;color:var(--ink-3);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pas[data-etat="encours"] .jauge{background:var(--accent);animation:pulse 1.1s ease-in-out infinite}
-.pas[data-etat="encours"] .lib{color:var(--accent)}
-.pas[data-etat="fait"] .jauge{background:var(--vert,#3F7D58)}
-.pas[data-etat="fait"] .lib{color:var(--ink)}
-.pas[data-etat="ignoree"]{opacity:.5}
-.pas[data-etat="echec"] .jauge{background:var(--rouge)}
-.pas[data-etat="echec"] .lib,.pas[data-etat="echec"] .det{color:var(--rouge)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-@media (prefers-reduced-motion:reduce){.pas .jauge{animation:none}}
-@media (max-width:560px){.avance{flex-wrap:wrap}.pas{flex:1 1 45%}}
+/* ---------- fenêtre d'avancement d'une synchronisation ----------
+
+   La barre générale est jalonnée : un segment par étape, tous de même
+   largeur, et un point à la fin de chacun. Les largeurs viennent de `flex` et
+   non d'un pourcentage calculé — c'est la mise en page qui place les jalons,
+   et le dernier tombe pile au bord droit sans qu'aucun décalage n'ait à être
+   deviné. */
+.sync{display:flex;flex-direction:column}
+.sync-tete{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
+.sync-pct{font-size:15px;font-weight:600;color:var(--accent)}
+
+.sync-rail{display:flex;align-items:center}
+.sync-depart{width:8px;height:8px;border-radius:50%;background:var(--line-strong);flex:none}
+.sync-seg{flex:1 1 0;display:flex;align-items:center;min-width:18px}
+.sync-piste{flex:1;height:4px;background:var(--line);overflow:hidden}
+.sync-piste>span{display:block;height:100%;width:0;background:var(--accent);
+  transition:width .35s ease}
+.sync-point{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+.sync-seg[data-etat="fait"] .sync-piste>span,
+.sync-seg[data-etat="fait"] .sync-point{background:var(--vert)}
+.sync-seg[data-etat="encours"] .sync-point{background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft)}
+.sync-seg[data-etat="echec"] .sync-piste>span,
+.sync-seg[data-etat="echec"] .sync-point{background:var(--rouge)}
+
+/* Le nom d'une étape ouvre son segment, calé à gauche : chacun ne tient que
+   dans sa propre part, où il s'abrège au besoin, plutôt que de se cogner à son
+   voisin. Le décalage de tête vaut le point de départ, faute de quoi la rangée
+   glisserait d'autant. */
+.sync-noms{display:flex;padding-left:8px;margin-bottom:6px}
+.sync-nom{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;font-size:11.5px;font-weight:500;color:var(--ink-3);
+  padding-right:8px}
+.sync-nom[data-etat="encours"]{color:var(--accent);font-weight:600}
+.sync-nom[data-etat="fait"]{color:var(--ink-2)}
+.sync-nom[data-etat="echec"]{color:var(--rouge)}
+.sync-ecarte{font-size:11.5px;color:var(--ink-3);margin:13px 0 0}
+
+.sync-cours{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-top:20px;font-size:13px}
+.sync-quoi{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-compte{flex:none;font-size:12px;color:var(--ink-3)}
+.sync-sous{height:6px;margin-top:7px;border-radius:3px;background:var(--surface-2);
+  border:1px solid var(--line);overflow:hidden}
+.sync-sous>span{display:block;height:100%;width:0;background:var(--accent);
+  transition:width .35s ease}
+/* Le compte monte sans qu'on sache jusqu'où : la barre bat au lieu de se
+   remplir, plutôt que de promettre une fin qu'elle ignore. */
+.sync-sous[data-etat="battant"]>span{width:100%;transition:none;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  animation:glisse 1.4s linear infinite}
+@keyframes glisse{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+/* Finie, la sous-barre prend le vert des jalons faits : bleue au milieu d'une
+   ligne verte, elle laissait croire qu'il restait quelque chose à attendre. */
+.sync-sous[data-etat="fini"]>span{background:var(--vert)}
+
+.sync-chiffres{margin:18px 0 0;display:flex;flex-direction:column;
+  border-top:1px solid var(--line)}
+.sync-chiffres>div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.sync-chiffres dt{color:var(--ink-3);min-width:0}
+.sync-chiffres dd{margin:0;font-weight:600;font-size:12px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.sync-bilan{font-size:12.5px;line-height:1.55;margin:14px 0 0;color:var(--ink-2)}
+.sync-bilan.ok{color:var(--vert)}
+.sync-bilan.alerte{color:var(--ambre)}
+.sync-bilan.echec{color:var(--rouge)}
+@media (prefers-reduced-motion:reduce){
+  .sync-sous[data-etat="battant"]>span{animation:none;background:var(--accent);opacity:.45}
+}
 .etat-ligne{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-3);
   margin-top:10px;flex-wrap:wrap}
 .etat-ligne .err{color:var(--rouge)}
@@ -465,6 +544,9 @@ tr.eteint td{opacity:.45}
 /* La fenêtre de la fiche porte les tableaux de correspondance et, dans son
    troisième onglet, la liste d'ordre et son aperçu côte à côte. */
 .mfen:has(table.champs){width:min(1040px,100%)}
+/* Trois ou quatre libellés de jalon côte à côte, chacun sous son point :
+   440 px les réduisaient tous à trois lettres et des points de suspension. */
+.mfen:has(.sync){width:min(580px,100%)}
 /* Une fenêtre à onglets s'accroche par le haut. « Zone organisateur » tient en
    trois lignes quand « Stand » en compte trente : centrée, la fenêtre sautait
    d'un onglet à l'autre, et les onglets eux-mêmes se dérobaient sous le curseur

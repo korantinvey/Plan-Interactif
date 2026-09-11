@@ -395,12 +395,18 @@ export function separeValeurs(v: unknown): string[] {
    mais du texte libre : en proposer la liste n'aiderait personne. */
 export const VALEURS_MAX = 8;
 
+/* Une liste déclarée par la source, elle, est une liste de choix — le doute
+   que tranche le seuil ci-dessus n'existe pas pour elle. Il en faut un autre
+   tout de même : la nomenclature d'un salon compte deux cents entrées, et deux
+   cents cases à cocher ne se lisent pas plus qu'elles ne se rangent. */
+export const CHOIX_MAX = 40;
+
 /* Une valeur trop longue n'est pas un choix mais une phrase : la proposer à
    cocher encombrerait la fenêtre sans rien désigner d'utile. */
 const VALEUR_LONGUE = 60;
 
 /**
- * Range dans un relevé les valeurs distinctes qu'une fiche porte sur un champ.
+ * Compte dans un relevé les valeurs qu'une fiche porte sur un champ.
  *
  * Les valeurs se séparent avant d'être comptées : sans quoi un champ à choix
  * multiple montre autant d'entrées que de combinaisons cochées — « Nouveaux
@@ -408,15 +414,46 @@ const VALEUR_LONGUE = 60;
  * internationaux » une autre — et dépasse le seuil du texte libre alors qu'il
  * n'offre que trois choix.
  *
- * Une de plus que le seuil est retenue à dessein : c'est elle qui dira à
- * l'appelant que le champ est du texte libre, et qu'il faut lâcher la liste.
+ * Un compte, et pas une liste : c'est la répétition qui dira si le champ est
+ * une liste de choix ou du texte libre, et le nombre de valeurs distinctes n'y
+ * suffit pas — voir `valeursRelevees`. Les clés s'arrêtent tout de même une au
+ * delà du plafond : un champ de texte libre ferait sinon grossir le relevé
+ * d'autant d'entrées qu'il y a de fiches.
  */
-export function noteValeurs(liste: string[], v: unknown): void {
+export function noteValeurs(compte: Map<string, number>, v: unknown): void {
   for (const val of separeValeurs(v)) {
-    if (liste.length > VALEURS_MAX) return;
-    if (val.length > VALEUR_LONGUE || liste.includes(val)) continue;
-    liste.push(val);
+    if (val.length > VALEUR_LONGUE) continue;
+    const vu = compte.get(val);
+    if (vu !== undefined) compte.set(val, vu + 1);
+    else if (compte.size <= CHOIX_MAX) compte.set(val, 1);
   }
+}
+
+/**
+ * Ce qu'un relevé retient du compte : les valeurs du champ, ou rien du tout
+ * quand c'est du texte libre — et de quoi dire lequel des deux.
+ *
+ * Huit valeurs distinctes ou moins, c'est une liste de choix sans discussion.
+ * Au-delà, c'est la répétition qui tranche et non le nombre : un salon range
+ * ses exposants en vingt catégories, et l'exploitant doit pouvoir les cocher ;
+ * trois cents raisons sociales ne se répètent jamais, et n'ont rien à
+ * proposer. Le seuil des huit, seul, écartait les deux — et la ligne annonçait
+ * alors des « valeurs inconnues » que la synchronisation suivante n'aurait pas
+ * plus relevées.
+ */
+export function valeursRelevees(
+  compte: Map<string, number>,
+): { valeurs: string[]; libre: boolean } {
+  const distinctes = [...compte.keys()];
+  if (!distinctes.length) return { valeurs: [], libre: false };
+  if (distinctes.length <= VALEURS_MAX) return { valeurs: distinctes, libre: false };
+  if (distinctes.length > CHOIX_MAX) return { valeurs: [], libre: true };
+  // une valeur qu'aucune autre fiche ne reprend est propre à sa fiche : un nom,
+  // une date. Un champ qui n'en porte que de celles-là ne range rien.
+  const revues = [...compte.values()].filter((n) => n > 1).length;
+  return revues * 2 >= distinctes.length
+    ? { valeurs: distinctes, libre: false }
+    : { valeurs: [], libre: true };
 }
 
 /**
