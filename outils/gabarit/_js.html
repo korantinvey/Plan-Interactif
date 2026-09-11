@@ -1489,7 +1489,7 @@ if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(scene);
    coupe — ni « transform » CSS sur le <svg>, ni sur un de ses groupes, avec ou
    sans « will-change » : Chrome recalcule dès que l'échelle du SVG bouge.
 
-   Transformer l'porteVue, qui n'est pas du SVG, ne recalcule rien : le
+   Transformer le porteur de vue, qui n'est pas du SVG, ne recalcule rien : le
    compositeur étire ce qui est déjà peint. Zéro à une milliseconde. C'est donc
    ce qu'on fait pendant un geste, et la « viewBox » ne se réécrit qu'à l'arrêt.
 

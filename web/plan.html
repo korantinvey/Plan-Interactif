@@ -896,13 +896,39 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
    des pastilles modèle par modèle. */
 .detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8)}
-/* Un nouvel exposant se signale à côté de son emplacement. La pastille reprend
+/* La ligne du type — « Stand », « Zone » — porte aussi la mention des nouveaux
+   venus : c'est la première ligne qu'on lit, avant même le nom, et la pastille
+   y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
+   La réserve de droite est celle du coin des actions, marque et croix : sans
+   elle, une pastille un peu longue passait dessous. Quand la place manque, le
+   flex la renvoie sous le libellé plutôt que de la comprimer.
+
+   La pastille ne se range pas contre le libellé : ses marges automatiques la
+   posent au milieu de ce qui reste entre lui et le coin des actions — collée
+   au mot « Stand », elle s'en faisait lire comme la suite. L'écart de la ligne
+   lui garde de l'air même quand le milieu n'existe plus, sur un écran étroit
+   ou sous le tampon penché du modèle kraft. */
+.detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:14px;row-gap:4px;padding-right:62px}
+.detail-hd .hdTete .badge.neuf{margin-inline:auto}
+/* Un nouvel exposant se signale au-dessus de son nom. La pastille reprend
    l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
    une alerte, et une teinte de plus ferait un troisième langage sur le plan
    après celui des zones. Le texte est de la fonte du corps — un numéro de stand
    se lit en mono, une mention se lit comme une phrase. */
 .badge.neuf{background:var(--accent-soft);color:var(--accent);font-family:inherit;
-  font-weight:600;margin-left:6px}
+  font-weight:600;align-items:center}
+/* Le pictogramme qui précède la mention. Il ne vaut pas pour lui-même : une
+   étincelle seule se lit « promotion », et c'est la phrase à côté qui la dit
+   « nouvel exposant ». Il tient dans la feuille de style et non dans le
+   balisage — chaque modèle a le sien, et la fiche comme la vignette d'aperçu
+   des réglages le prennent du même endroit, la classe du modèle, sans qu'une
+   ligne de script ait à le poser. Un masque plutôt qu'une image : il se peint
+   de la couleur de la pastille, celle que chaque modèle lui a donnée, et un
+   tampon kraft n'a pas à emporter son encre. */
+.badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
+.badge.neuf::before{content:"";flex:none;width:12px;height:12px;background:currentColor;
+  -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
 /* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
    un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
    plusieurs — et le clic n'est que la suite logique. */
@@ -1096,7 +1122,8 @@ button.expo:hover{background:var(--line)}
   color:var(--accent-base);font-weight:600}
 /* Le nouvel exposant ne peut pas reprendre la couleur du salon : il la porte
    déjà sous lui. C'est l'encre des filets qui le marque. */
-.modele-grille .detail-hd .badge.neuf{background:var(--ink);color:var(--surface)}
+.modele-grille .detail-hd .badge.neuf{background:var(--ink);color:var(--surface);
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6'%3E%3Cpath d='M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6'/%3E%3C/svg%3E")}
 .modele-grille .detail-bd{gap:0}
 .modele-grille .field{padding:11px 0;border-bottom:1px solid var(--ink);gap:5px}
 .modele-grille .field .eyebrow{color:var(--ink);font-weight:700}
@@ -1131,6 +1158,9 @@ button.expo:hover{background:var(--line)}
 .modele-console .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.1em}
 .modele-console .field .eyebrow::before{content:"$ ";color:var(--accent)}
 .modele-console .field .v{font-size:13px}
+/* L'invite et son curseur : sur ce modèle, ce qui est neuf s'annonce comme
+   une commande de plus. */
+.modele-console .detail-hd .badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='square'%3E%3Cpath d='M4.5 7.5 9 12l-4.5 4.5M12.5 17.5h7'/%3E%3C/svg%3E")}
 .modele-console .btn{color:var(--accent)}
 .modele-console .acts .btn:first-child{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 
@@ -1153,7 +1183,8 @@ button.expo:hover{background:var(--line)}
 .modele-billet .marque,.modele-billet .close,.modele-billet .crayon{color:var(--accent-ink);
   border-color:rgba(255,255,255,.4);background:none}
 .modele-billet .detail-hd .badge{background:rgba(255,255,255,.2);color:var(--accent-ink)}
-.modele-billet .detail-hd .badge.neuf{background:var(--accent-ink);color:var(--accent)}
+.modele-billet .detail-hd .badge.neuf{background:var(--accent-ink);color:var(--accent);
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2a2 2 0 0 1-.6-1.4V4.5A2 2 0 0 1 4.8 2.5h7.4c.5 0 1 .2 1.4.6l7 7a2 2 0 0 1 0 2.8Z'/%3E%3Ccircle cx='7.6' cy='7.6' r='1.4' fill='black' stroke='none'/%3E%3C/svg%3E")}
 .modele-billet .detail-bd{border-top:2px dashed var(--line-strong);padding-top:20px}
 .modele-billet .field .v{font-family:"IBM Plex Mono",monospace;font-size:13px}
 .modele-billet .btn{border-radius:999px;padding:8px 14px}
@@ -1179,7 +1210,8 @@ button.expo:hover{background:var(--line)}
 .modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
 .modele-magazine .detail-hd .badge{background:none;padding:0;font-family:"Fraunces",Georgia,serif;
   font-style:italic;font-size:13px;color:var(--ink-2)}
-.modele-magazine .detail-hd .badge.neuf{background:none;color:var(--accent);margin-left:12px}
+.modele-magazine .detail-hd .badge.neuf{background:none;color:var(--accent);
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12.0 2.0C12.0 9.6 14.4 12.0 22.0 12.0C14.4 12.0 12.0 14.4 12.0 22.0C12.0 14.4 9.6 12.0 2.0 12.0C9.6 12.0 12.0 9.6 12.0 2.0Z'/%3E%3C/svg%3E")}
 .modele-magazine .detail-bd{padding:4px 22px 24px;gap:18px}
 .modele-magazine .detail-bd::before{content:"";display:block;flex:none;grid-column:1/-1;
   width:52px;height:3px;background:var(--ink)}
@@ -1212,7 +1244,8 @@ button.expo:hover{background:var(--line)}
   color:#111;background:#FFFDF5}
 .modele-brut .detail-hd .badge{background:#111;color:#FFFDF5;border-radius:0;font-weight:600}
 .modele-brut .detail-hd .badge.neuf{background:#FFFDF5;color:#111;border:2px solid #111;
-  text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  text-transform:uppercase;font-size:10px;letter-spacing:.05em;
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12.0 0.5L14.1 6.8L20.1 3.9L17.2 9.9L23.5 12.0L17.2 14.1L20.1 20.1L14.1 17.2L12.0 23.5L9.9 17.2L3.9 20.1L6.8 14.1L0.5 12.0L6.8 9.9L3.9 3.9L9.9 6.8Z'/%3E%3C/svg%3E")}
 .modele-brut .field .eyebrow{align-self:flex-start;background:#111;color:#FFFDF5;padding:3px 7px}
 .modele-brut .prog .conf{background:var(--accent-soft);border:2px solid #111;
   border-left:7px solid var(--accent-base);border-radius:0}
@@ -1236,7 +1269,8 @@ button.expo:hover{background:var(--line)}
 .modele-verre .detail-hd{border-bottom-color:rgba(255,255,255,.22)}
 .modele-verre .detail-hd h2{font-weight:700;letter-spacing:-.025em}
 .modele-verre .marque,.modele-verre .close,.modele-verre .crayon{background:rgba(255,255,255,.14)}
-.modele-verre .detail-hd .badge.neuf{background:#fff;color:var(--accent-fort)}
+.modele-verre .detail-hd .badge.neuf{background:#fff;color:var(--accent-fort);
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='8.6'/%3E%3Cpath d='M12 7.6v8.8M7.6 12h8.8'/%3E%3C/svg%3E")}
 .modele-verre .detail-bd{gap:9px}
 .modele-verre .field{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);
   border-radius:13px;padding:11px 14px;gap:4px}
@@ -1266,7 +1300,8 @@ button.expo:hover{background:var(--line)}
   background:none;border:1px solid var(--line-strong);color:var(--ink-2)}
 .modele-kraft .detail-hd .badge.neuf{background:none;border:2px solid var(--encre);color:var(--encre);
   border-radius:2px;font-family:"Courier Prime",monospace;font-weight:700;text-transform:uppercase;
-  letter-spacing:.08em;transform:rotate(-5deg);margin-left:10px}
+  letter-spacing:.08em;transform:rotate(-5deg);
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 2l2.5 6.6 7 .3-5.5 4.4 1.9 6.8L12 16.2 6.1 20.1 8 13.3 2.5 8.9l7-.3Z'/%3E%3C/svg%3E")}
 .modele-kraft .prog .conf{background:rgba(255,252,244,.55);border-left:3px solid var(--encre);border-radius:0}
 .modele-kraft .btn{border:1px dashed var(--line-strong);border-radius:0;
   font-family:"Courier Prime",monospace;font-weight:700}
@@ -1296,7 +1331,8 @@ button.expo:hover{background:var(--line)}
   border-color:color-mix(in srgb,var(--accent-ink) 40%,transparent);background:none}
 .modele-signal .detail-hd .badge{background:var(--accent-ink);color:var(--accent-base);font-weight:600}
 .modele-signal .detail-hd .badge.neuf{background:var(--accent-clair);color:var(--accent-ink);
-  text-transform:uppercase;font-size:10px;letter-spacing:.06em}
+  text-transform:uppercase;font-size:10px;letter-spacing:.06em;
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3'%3E%3Cpath d='M4 5.5 10.5 12 4 18.5M12.5 5.5 19 12l-6.5 6.5'/%3E%3C/svg%3E")}
 .modele-signal .detail-bd{gap:0}
 .modele-signal .field{padding:11px 0;border-bottom:1px solid var(--line);gap:4px}
 .modele-signal .field.court .v{text-transform:uppercase;letter-spacing:.03em;font-weight:600}
@@ -1311,6 +1347,9 @@ button.expo:hover{background:var(--line)}
    range en colonne pour leur laisser la vedette. */
 .modele-chrono .detail-hd{border-bottom:none}
 .modele-chrono .detail-hd h2{font-weight:700;letter-spacing:-.025em}
+/* Le jalon du rail, repris de la ligne de temps : le dernier arrivé sur la
+   frise du salon. */
+.modele-chrono .detail-hd .badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='12' r='7.6' fill='none' stroke='black' stroke-width='2.4'/%3E%3Ccircle cx='12' cy='12' r='2.9'/%3E%3C/svg%3E")}
 .modele-chrono .detail-bd{gap:11px}
 .modele-chrono .field{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:baseline}
 .modele-chrono .field .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.05em;text-align:right}
@@ -1340,7 +1379,8 @@ button.expo:hover{background:var(--line)}
 .modele-nu .detail-hd h2{font-weight:700;letter-spacing:-.035em;line-height:1.06;
   margin:0 0 12px}
 .modele-nu .detail-hd .badge{background:none;padding:0;color:var(--ink-3);font-size:12.5px}
-.modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;margin-left:12px}
+.modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;
+  --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12.0 1.5L15.0 9.0L22.5 12.0L15.0 15.0L12.0 22.5L9.0 15.0L1.5 12.0L9.0 9.0Z'/%3E%3C/svg%3E")}
 .modele-nu .detail-bd{padding:14px 24px 26px;gap:9px}
 .modele-nu .field .eyebrow{display:none}
 .modele-nu .field .v{color:var(--ink-2)}
@@ -2307,6 +2347,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Les salles du programme, dans la fiche de la zone : une coche par salle, et
+   sous elle ce qu'il en est déjà — trouvée par la synchronisation, choisie à
+   la main, partie dans une autre zone, ou encore nulle part. La liste est
+   celle du programme entier, d'où le défilement : c'est de là qu'on voit ce
+   qui reste à situer. */
+.sallesZ{display:flex;flex-direction:column;max-height:32dvh;overflow-y:auto;
+  padding:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.sallesZ label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:1px 9px;align-items:baseline;padding:6px 7px;border-radius:var(--radius);
+  cursor:pointer}
+.sallesZ label:hover{background:var(--accent-soft)}
+/* La coche n'est pas un champ de saisie : la largeur pleine des autres champs
+   de la fiche l'étirerait sur toute la ligne. */
+.champZ .sallesZ input{width:auto;margin:0;padding:0}
+.sallesZ .nS{font-size:13.5px;color:var(--ink)}
+.sallesZ .cS{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+.sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
+.sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
+.sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
 /* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
    vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
    il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
@@ -2602,14 +2663,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
   /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
      bas comme elles l'étaient, il les recouvrait. */
-  .zoombar{bottom:calc(var(--replie,150px) + 14px)}
+  .zoombar{bottom:calc(var(--replie,150px) + 14px);transition:opacity .2s ease}
   /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
      large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
      de repères : l'échelle reprend alors sa place. */
-  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px)}
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px);
+    transition:opacity .2s ease}
   /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
   .sans-zoom .scalebar{left:14px}
-  .poi{bottom:calc(var(--replie,150px) + 12px)}
+  .poi{bottom:calc(var(--replie,150px) + 12px);transition:opacity .2s ease}
+  /* Le cartouche, l'échelle et les boutons de zoom sont posés au-dessus du
+     tiroir replié. Le tiroir qui monte passe dessous sans les emporter : ils
+     restaient devant la liste à désigner un plan devenu invisible. Ils
+     s'effacent le temps qu'elle occupe la place, et reviennent avec le plan.
+     Effacés plutôt que retirés : « display:none » remettrait leur hauteur
+     mesurée à zéro, et l'échelle redescendrait sur le cartouche au retour. */
+  html[data-tiroir="demi"] .poi,
+  html[data-tiroir="plein"] .poi,
+  html[data-tiroir="demi"] .zoombar,
+  html[data-tiroir="plein"] .zoombar,
+  html[data-tiroir="demi"] .scalebar,
+  html[data-tiroir="plein"] .scalebar{opacity:0;pointer-events:none}
   /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
      se borne des deux côtés, sinon elle remonte sous lui. */
   .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
@@ -2948,13 +3022,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
-        <span class="eyebrow" id="dKind"></span>
+        <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
             title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
           <img class="logoZone" id="dLogo" alt="" hidden>
         </div>
-        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
+        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -3097,13 +3171,6 @@ function indexe(d){
     p.stands = p.stands || [];
     p.fond = p.fond || [];
     p.conferences = p.conferences || [];
-    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
-    p.parZone = new Map();
-    p.conferences.forEach(c => {
-      if (!c.zone) return;
-      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
-      p.parZone.get(c.zone).push(c);
-    });
     /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
        être ailleurs que sa salle — et qui reste son seul point d'accroche quand
        la salle n'est rattachée à aucune zone. */
@@ -3115,8 +3182,7 @@ function indexe(d){
         p.parStand.get(e.stand).push(c);
       });
     });
-    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
+    p.parStand.forEach(l => l.sort(chronoConf));
     /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
        la trouver : « accueil », « restauration », « village start-up » sont des
        endroits du salon au même titre qu'un stand. */
@@ -3237,17 +3303,6 @@ function indexe(d){
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
-       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
-       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
-       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
-       porterait sa ligne serait un hasard de synchronisation : elle se cherche
-       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
-       fait. */
-    const ou = (c.zone && parId.get(String(c.zone))) ||
-               tenue.map(e => parId.get(e.stand)).find(Boolean);
-    c.situee = Boolean(ou);
-    if (ou) c.p = ou.p;
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
@@ -3256,6 +3311,7 @@ function indexe(d){
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
+  rangeConferences();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -3263,12 +3319,96 @@ function indexe(d){
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
+  poseFavicon(DATA.favicon);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
+}
+
+/* Une conférence se lit dans l'ordre où elle se tient : l'heure locale d'abord,
+   qui est celle qu'affiche la page, et l'heure absolue à défaut. */
+const chronoConf = (a, b) => String(a.debutLocal || a.debut || "")
+  .localeCompare(String(b.debutLocal || b.debut || ""));
+
+/**
+ * Ranger les conférences là où on les lit : au programme de la zone qui les
+ * abrite, et dans le pavillon où l'on ira les chercher.
+ *
+ * À part de l'indexation parce que cela se refait sans recharger : le
+ * rattachement d'une salle à une zone se choisit dans les réglages du plan, et
+ * paraît aussitôt — comme le nom d'une zone.
+ *
+ * Ce rattachement l'emporte sur celui que porte l'instantané. C'est la règle
+ * que le service applique déjà en servant le plan ; elle est reprise ici pour
+ * que le choix se voie avant même d'avoir rechargé. La table des salles n'est
+ * servie qu'à l'administration : le visiteur reçoit des conférences déjà
+ * rattachées, et n'a rien à réappliquer.
+ *
+ * Une salle rattachée à une zone d'un autre pavillon n'entre au programme de
+ * personne : la conférence n'est pas remontée là-bas, et la prochaine
+ * synchronisation l'y portera. Elle se retrouve d'ici là par son exposant.
+ */
+function rangeConferences(){
+  const parSalle = new Map();
+  Object.keys(DATA.salles || {}).forEach(k => {
+    const s = DATA.salles[k];
+    if (s && s.nom) parSalle.set(s.nom, s.zone || null);
+  });
+  DATA.plans.forEach(p => {
+    const siennes = new Set(p.zones.map(z => z.id));
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (parSalle.has(c.salle)) c.zone = parSalle.get(c.salle);
+      if (!c.zone || !siennes.has(c.zone)) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort(chronoConf));
+  });
+  /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+     remontée par tous ceux qui la touchent — mais à celui où on la trouve : la
+     zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni l'une
+     ni l'autre, elle n'est encore située nulle part et le pavillon que
+     porterait sa ligne serait un hasard de synchronisation : elle se cherche et
+     se lit, elle ne se rattache à rien tant qu'on ne l'a pas fait. */
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+  });
+}
+
+/**
+ * L'icône de l'onglet, telle que la console l'a déposée.
+ *
+ * Elle arrive avec les données et non dans l'en-tête de la page : celle-ci est
+ * fabriquée une fois pour tous les salons, et ne peut donc rien savoir de
+ * celui qu'on ouvre. L'onglet reste blanc le temps de l'appel, comme le titre
+ * l'est aussi — c'est le même chargement qui les remplit tous les deux.
+ *
+ * Rien n'est posé faute d'icône : le navigateur garde la sienne, ce qui est
+ * aussi ce qu'on veut quand l'exploitant vient de la retirer. Et l'image est
+ * relue avant d'être posée, comme le logo d'une zone : elle a fait le même
+ * chemin — saisie chez un exploitant authentifié, rangée en base, resservie
+ * par l'API à tous les visiteurs.
+ */
+function poseFavicon(src){
+  const img = imageSure(src);
+  if (!img) return;
+  let l = document.querySelector('link[rel="icon"]');
+  if (!l){
+    l = document.createElement("link");
+    l.rel = "icon";
+    document.head.appendChild(l);
+  }
+  l.type = img.slice(5, img.indexOf(";"));
+  l.href = img;
 }
 
 /* ============================================================
@@ -4456,7 +4596,7 @@ if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(scene);
    coupe — ni « transform » CSS sur le <svg>, ni sur un de ses groupes, avec ou
    sans « will-change » : Chrome recalcule dès que l'échelle du SVG bouge.
 
-   Transformer l'porteVue, qui n'est pas du SVG, ne recalcule rien : le
+   Transformer le porteur de vue, qui n'est pas du SVG, ne recalcule rien : le
    compositeur étire ce qui est déjà peint. Zéro à une milliseconde. C'est donc
    ce qu'on fait pendant un geste, et la « viewBox » ne se réécrit qu'à l'arrêt.
 
@@ -5848,6 +5988,9 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
+     du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
+  oublieChoixPoi(d.cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
@@ -5885,7 +6028,9 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée et la mise en avant
+    // doivent y répondre pareil
+    oublieChoixPoi(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
@@ -6008,8 +6153,16 @@ let montreTiroir = () => {};
   const cran = () => tiroir.dataset.cran || "replie";
   function pose(nom){
     tiroir.dataset.cran = nom;
+    annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
+
+  /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
+     commandes de zoom, l'échelle — est ancré sur la hauteur repliée du tiroir.
+     Le tiroir qui monte passe donc dessous sans les déplacer, et ils restaient
+     à désigner un plan qu'on ne voyait plus. Le cran vit sur la racine pour que
+     la feuille de style les atteigne depuis l'autre bout de la page. */
+  const annonce = nom => { document.documentElement.dataset.tiroir = nom; };
   const replie = () => pose("replie");
   /* Une pression fait le tour des crans : on les atteint tous sans rien
      connaître du glissement, et on revient au plan par la même touche. */
@@ -6045,10 +6198,24 @@ let montreTiroir = () => {};
   const suit = e =>
     Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
 
+  /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
+  function proche(vu){
+    let choix = CRANS[0], ecart = Infinity;
+    for (const c of CRANS){
+      const d = Math.abs(hauteur(c) - vu);
+      if (d < ecart){ ecart = d; choix = c; }
+    }
+    return choix;
+  }
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
+    const vu = suit(e);
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
+    /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
+       s'arrêterait, sans attendre qu'il lâche. */
+    annonce(proche(vu));
   });
 
   function relache(e){
@@ -6056,14 +6223,8 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    if (aGlisse){
-      let choix = CRANS[0], ecart = Infinity;
-      for (const c of CRANS){
-        const d = Math.abs(hauteur(c) - vu);
-        if (d < ecart){ ecart = d; choix = c; }
-      }
-      pose(choix);
-    }
+    // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
+    pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
@@ -6852,11 +7013,12 @@ function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span>' +
+      '<div class="hdTete"><span class="eyebrow">Stand</span>' +
+        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '</div>' +
       '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
       '<div class="hdBadges">' +
         '<span class="badge code">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
-        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
       '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +
@@ -7539,6 +7701,8 @@ function champsZone(hote, o){
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
+  const salles = champSalles(hote, o);
+
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
@@ -7554,7 +7718,84 @@ function champsZone(hote, o){
   lienZ.value = o.lien || "";
 
   return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value });
+                  description: riche.lit(), lien: lienZ.value,
+                  salles: salles ? salles() : null });
+}
+
+/**
+ * Les salles de conférence que cette zone abrite.
+ *
+ * Une salle du programme s'appelle « Agora (P160) » : le code entre
+ * parenthèses est un emplacement du plan, et la synchronisation retrouve la
+ * zone qui le contient — dix fois sur onze sur Franchise Expo. La onzième
+ * porte un code absent du plan, et rien ne le devinera : elle se désigne ici,
+ * à la main, sur la zone qui l'accueille.
+ *
+ * Tout le programme est montré, et pas seulement ce qui revient déjà à cette
+ * zone : c'est de là qu'on voit ce qui n'est encore nulle part. La liste est
+ * courte — une dizaine de salles pour un salon qui en a.
+ *
+ * Une salle n'est que dans une zone à la fois : la cocher ici la retire de là
+ * où elle était, ce que sa ligne disait avant qu'on ne la coche.
+ */
+function champSalles(hote, o){
+  const salles = DATA.salles || {};
+  /* Sans nom, une salle ne se distingue pas de la suivante ; l'ordre est celui
+     du programme, et il ne bouge pas quand on coche — une liste qui se
+     réordonne sous le doigt fait cocher la voisine. */
+  const ids = Object.keys(salles).sort((a, b) =>
+    String(salles[a].nom || "").localeCompare(String(salles[b].nom || ""), "fr"));
+  // sans programme, il n'y a rien à rattacher : le champ n'aurait qu'un vide
+  if (!ids.length) return null;
+
+  const liste = document.createElement("div");
+  liste.className = "sallesZ";
+  const coches = new Map();
+
+  ids.forEach(id => {
+    const s = salles[id];
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span class="nS"></span>' +
+                  '<span class="cS"></span><span class="eS"></span>';
+    const c = l.querySelector("input");
+    c.checked = s.zone === o.id;
+    l.querySelector(".nS").textContent = s.nom || id;
+    l.querySelector(".cS").textContent = s.code || "";
+    const etat = l.querySelector(".eS");
+    /* Ce que la ligne dit d'elle-même : d'où vient ce qui est coché, et où est
+       partie une salle qui ne l'est pas. « Trouvée automatiquement » se lit de
+       la proposition et non de la marque « manuel » : une salle qu'on a cochée
+       là où la synchronisation la mettait est au même endroit qu'elle. */
+    const dis = () => {
+      const ailleurs = !c.checked && s.zone && s.zone !== o.id;
+      etat.textContent = c.checked
+        ? (s.auto === o.id ? "trouvée automatiquement" : "choisie à la main")
+        : ailleurs ? "rattachée à " + nomDeZone(s.zone)
+        : "à situer";
+      etat.dataset.genre = c.checked ? (s.auto === o.id ? "auto" : "manuel")
+        : ailleurs ? "libre" : "manque";
+    };
+    dis();
+    c.onchange = dis;
+    coches.set(id, c);
+    liste.appendChild(l);
+  });
+
+  champZone(hote, "Salles de conférence", liste,
+    "Le programme du salon, salle par salle. Cochez celles qui se tiennent " +
+    "dans cette zone : leurs conférences paraissent aussitôt sur sa fiche. " +
+    "Un rattachement choisi ici n'est plus modifié par les synchronisations " +
+    "suivantes.");
+  return () => ids.filter(id => coches.get(id).checked);
+}
+
+/** Le nom d'une zone, pour le dire ailleurs que sur elle-même. */
+function nomDeZone(id){
+  const z = parId.get(id);
+  // une zone que le plan n'a plus : le rattachement lui survit, et le dire
+  // vaut mieux que de laisser croire à une zone qu'on pourrait aller voir
+  if (!z) return "une zone absente du plan";
+  return z.nom || "une zone sans nom";
 }
 
 
@@ -7876,9 +8117,11 @@ function editeurRiche(html){
  * de départ, relevé par le même chemin que celui qu'on comparera. */
 let ficheZoneEnCours = null;
 
+/* Les salles cochées se comparent telles quelles : ce sont deux listes des
+   mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
-  a.logo === b.logo);
+  a.logo === b.logo && String(a.salles) === String(b.salles));
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 function suitFicheZone(o, valeurs, etat, apres){
@@ -7952,6 +8195,30 @@ async function enregistreZone(o, v, depart){
      qui n'est pas une image fabriquée ici n'a rien à faire dans la colonne. */
   const blason = imageSure(v.logo);
   const renomme = !depart || String(depart.libelle || "").trim() !== nom;
+  /* Les salles cochées. Leur colonne n'est pas indexée par zone mais par
+     salle, et c'est la zone qu'on y écrit — d'où le détour. On n'y touche que
+     si une coche a bougé : une description corrigée ne doit pas réécrire un
+     rattachement qu'un autre poste vient de changer. */
+  const salles = Array.isArray(v.salles) ? v.salles : null;
+  const rattache = salles && (!depart || String(depart.salles) !== String(salles));
+  const rattacheSalles = (t) => Object.keys(t).forEach(id => {
+    const s = t[id];
+    const ici = salles.indexOf(id) >= 0;
+    // une salle qui est déjà où on la veut n'a pas à être réécrite : le choix
+    // d'une zone ne touche pas au rattachement des salles des autres
+    if (!s || ici === (s.zone === o.id)) return;
+    s.zone = ici ? o.id : null;
+    /* « manuel » protège du prochain rattachement automatique. Retirer d'ici
+       une salle que la synchronisation y avait posée est un choix comme un
+       autre : sans cette marque, elle y reviendrait à la synchronisation
+       suivante. */
+    s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
+  });
+  /* La fiche de la zone suivante s'ouvre avant que la base ait répondu, et le
+     plan se redessine dans la foulée : tous deux doivent lire le rattachement
+     qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
+     et « rattacheSalles » ne fait rien deux fois. */
+  if (rattache){ rattacheSalles(DATA.salles); rangeConferences(); }
   const tables = await ecritTablesZones([
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
@@ -7965,9 +8232,16 @@ async function enregistreZone(o, v, depart){
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
+    ...(rattache
+      ? [{ colonne: "salles", secours: DATA.salles, change: rattacheSalles }]
+      : []),
   ]);
   if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
+  /* Le programme d'une zone se lit d'un index rangé au chargement : la salle
+     qu'on vient de lui rattacher n'y est pas, et attendre la synchronisation
+     pour la voir arriver ferait douter du clic. */
+  if (tables.salles){ DATA.salles = tables.salles; rangeConferences(); }
   if (renomme){
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;
@@ -9259,6 +9533,29 @@ function eclairePoi(){
   $("labels").querySelectorAll(".lbl").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
+}
+
+/**
+ * Le retrait ne survit pas au geste qui l'ignore.
+ *
+ * Le cartouche met une famille de repères en avant et recule tout le reste à
+ * seize pour cent. Ce retrait est une réponse à une question posée — « où
+ * mange-t-on ? » — et il n'a plus rien à dire dès que le visiteur en pose une
+ * autre. Or rien sur le plan ne le levait : ouvrir la fiche d'un stand éteint,
+ * ou taper le fond pour refermer, laissaient le plan délavé et la pastille
+ * allumée. Il fallait retrouver celle-ci dans le cartouche et la rappuyer, ce
+ * que personne ne devine.
+ *
+ * Un repère ou une zone déjà mis en avant font exception : les ouvrir, c'est
+ * se servir de la mise en avant, pas en sortir. On reconnaît les uns et les
+ * autres à la marque qu'« eclairePoi » leur a posée — la même qui les tient
+ * en pleine lumière.
+ */
+function oublieChoixPoi(cible){
+  if (!poiChoisi) return;
+  if (cible && cible.classList.contains("phare")) return;
+  poiChoisi = null;
+  cartouchePoi();
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
