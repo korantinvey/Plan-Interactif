@@ -1057,8 +1057,20 @@ async function fluxFonction(nom, corps, surLigne, trace) {
 function fenetreAvancement(titre, etiquette) {
   let etapes = [], vivante = true, plafond = 0;
   const compte = new Map();
-  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte, chrono;
   const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
+
+  /* Le temps écoulé depuis le clic, affiché en clair.
+
+     Une attente ne se raconte pas : « c'est long » ne dit pas si l'on a
+     patienté six secondes ou soixante, et c'est pourtant là-dessus que se
+     tranche un serveur lent d'une réponse retenue en chemin. Le chronomètre
+     rend cette différence lisible sans ouvrir le journal. */
+  const duree = (ms) => {
+    const s = Math.floor(ms / 1000);
+    return s < 60 ? s + " s"
+      : Math.floor(s / 60) + " min " + String(s % 60).padStart(2, "0") + " s";
+  };
 
   /* Le journal de la synchronisation, du clic à la dernière ligne.
 
@@ -1071,6 +1083,9 @@ function fenetreAvancement(titre, etiquette) {
      Il vit dans la page et nulle part ailleurs : on ne l'envoie à personne, on
      le télécharge. */
   const t0 = performance.now();
+  const horloge = setInterval(() => {
+    if (chrono) chrono.textContent = duree(performance.now() - t0);
+  }, 500);
   const journal = {
     salon: etiquette || titre,
     ouvertLe: new Date().toISOString(),
@@ -1110,6 +1125,7 @@ function fenetreAvancement(titre, etiquette) {
     d.className = "sync";
     d.innerHTML =
       '<div class="sync-tete"><span class="eyebrow">Avancement</span>' +
+        '<span class="sync-chrono mono">0 s</span>' +
         '<span class="sync-pct mono">0 %</span></div>' +
       '<div class="sync-noms"></div>' +
       '<div class="sync-rail"><span class="sync-depart"></span></div>' +
@@ -1130,6 +1146,7 @@ function fenetreAvancement(titre, etiquette) {
     dl = d.querySelector(".sync-chiffres");
     bilan = d.querySelector(".sync-bilan");
     ecarte = d.querySelector(".sync-ecarte");
+    chrono = d.querySelector(".sync-chrono");
     quoi.textContent = "Connexion au serveur…";
   }, [
     /* Le journal se télécharge aussi pendant que ça tourne, et pas seulement
@@ -1138,7 +1155,7 @@ function fenetreAvancement(titre, etiquette) {
        inatteignable. */
     { libelle: "Journal", action: () => { telechargeJournal(); return false; } },
     { libelle: "Fermer", genre: "primaire" },
-  ], () => { vivante = false; });
+  ], () => { vivante = false; clearInterval(horloge); });
   verrouilleModale(true);
 
   // Les étapes qui ont un segment : celles que la synchronisation reprend.
@@ -1278,6 +1295,8 @@ function fenetreAvancement(titre, etiquette) {
       // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
       // une autre a pu prendre sa place pendant que la synchronisation tournait
       if (vivante) verrouilleModale(false);
+      clearInterval(horloge);
+      if (chrono) chrono.textContent = duree(performance.now() - t0);
       trace({ evt: "fin", issue: issue || "ok", message });
       if (!bilan) return;
       const panne = issue === "echec";
