@@ -561,6 +561,153 @@ function champ(cle, libelle, aide, attrs) {
 }
 
 
+/* ------------------------------------------------------------------
+   Icône de l'onglet
+
+   Les paliers de réduction, du plus généreux au plus maigre : on descend tant
+   que le résultat dépasse le poids retenu. Cent vingt-huit pixels suffisent
+   partout — l'onglet en montre seize, la barre des favoris trente-deux, le
+   raccourci d'un écran d'accueil rarement plus de cent vingt.
+
+   Le poids se compte en caractères du data-URI, non en octets du fichier
+   d'origine : c'est lui qui part avec le plan, chez chaque visiteur, et il
+   pèse un tiers de plus que l'image — quatre caractères de base64 pour trois
+   octets, d'où le diviseur de l'affichage.
+   ------------------------------------------------------------------ */
+const PALIERS_ICONE = [128, 96, 64, 48];
+const POIDS_ICONE = 22000;
+
+/**
+ * L'icône, redessinée en png quel que soit le fichier déposé.
+ *
+ * Le png et non le webp, à l'inverse du logo d'une zone : le second pèse moins,
+ * mais l'avantage ne se voit pas sur une image de cette taille, et le premier
+ * est le seul format que tous les navigateurs acceptent dans « link rel=icon ».
+ * Le svg passe par le même canevas et en ressort matriciel — c'est voulu : il
+ * porte du script, et les pages du plan ne reconnaissent à l'affichage que les
+ * formats qu'on fabrique ici.
+ *
+ * Les proportions sont gardées : un logo large écrasé dans un carré ne se
+ * reconnaît plus, et le navigateur sait loger une image qui n'est pas carrée.
+ */
+function reduitIcone(fichier) {
+  return new Promise((tenu, rompu) => {
+    if (!fichier || String(fichier.type).indexOf("image/") !== 0) {
+      return rompu(new Error("ce fichier n'est pas une image"));
+    }
+    const fr = new FileReader();
+    fr.onerror = () => rompu(new Error("fichier illisible"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rompu(new Error("image illisible"));
+      img.onload = () => {
+        // un svg sans dimensions intrinsèques se dessine à rien : on lui en prête
+        const l0 = img.naturalWidth || 128, h0 = img.naturalHeight || 128;
+        for (const max of PALIERS_ICONE) {
+          const k = Math.min(1, max / Math.max(l0, h0));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(l0 * k));
+          c.height = Math.max(1, Math.round(h0 * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const src = c.toDataURL("image/png");
+          if (src.length <= POIDS_ICONE) return tenu(src);
+        }
+        rompu(new Error("image trop lourde, même réduite — une icône, pas une photo"));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(fichier);
+  });
+}
+
+/**
+ * Le champ de l'icône : la choisir, la voir, la retirer.
+ *
+ * Il s'écrit au moment du choix, et non à la sortie de la fiche comme les
+ * champs de texte voisins : déposer une image est déjà un geste achevé, et
+ * rien ne s'y saisit à moitié. Le retrait part de même, et rend l'onglet à
+ * l'icône du navigateur.
+ *
+ * La vignette est aussi la cible du glisser-déposer — c'est le geste qu'on
+ * fait devant elle, et il évite la boîte de dialogue du système.
+ */
+function champFavicon() {
+  const e = courant();
+  const l = document.createElement("div");
+  l.className = "champ-fic";
+  l.innerHTML = '<span></span>' +
+    '<div class="iconeZ"><div class="vue"></div>' +
+    '<div class="actes"><button type="button" class="btn petit"></button>' +
+    '<button type="button" class="btn petit oter">Retirer</button>' +
+    '<span class="dit"></span></div>' +
+    '<input type="file" accept="image/*" hidden></div>' +
+    '<span class="aide"></span>';
+  l.querySelector("span").textContent = "Icône de l'onglet";
+  l.querySelector(".aide").textContent =
+    "Elle paraît dans l'onglet du plan public comme dans celui de " +
+    "l'administration, à côté du nom du salon. Réduite puis enregistrée avec " +
+    "l'événement, elle part avec le plan sans dépendre d'un fichier hébergé " +
+    "ailleurs. Un carré se reconnaît mieux à seize pixels qu'un logo en " +
+    "longueur. Glissez-la sur la vignette, ou choisissez-la.";
+
+  const vue = l.querySelector(".vue");
+  const choisir = l.querySelector(".actes button");
+  const oter = l.querySelector(".oter");
+  const dit = l.querySelector(".dit");
+  const fichier = l.querySelector("input");
+
+  const peint = (mot) => {
+    vue.innerHTML = e.favicon ? '<img alt="">' : '<span>Aucune</span>';
+    if (e.favicon) vue.querySelector("img").src = e.favicon;
+    choisir.textContent = e.favicon ? "Remplacer…" : "Choisir un fichier…";
+    oter.hidden = !e.favicon;
+    dit.dataset.mal = "false";
+    dit.textContent = mot !== undefined ? mot
+      : e.favicon ? Math.round(e.favicon.length / 1365) + " Ko" : "";
+  };
+
+  const ecrit = async (src) => {
+    const avant = e.favicon;
+    e.favicon = src;
+    peint(src ? "Enregistrement…" : "Retrait…");
+    try {
+      await majEvenement(e.id, { favicon: src || null });
+      peint();
+    } catch (err) {
+      // l'écran doit montrer ce que la base tient, pas ce qu'on a tenté
+      e.favicon = avant;
+      peint();
+      signale(err.message, true);
+    }
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitIcone(f).then(ecrit).catch((err) => {
+      dit.textContent = "Échec : " + err.message;
+      dit.dataset.mal = "true";
+    });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  oter.onclick = () => ecrit("");
+  vue.addEventListener("dragover", (ev) => {
+    ev.preventDefault();
+    vue.dataset.survol = "1";
+  });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", (ev) => {
+    ev.preventDefault();
+    delete vue.dataset.survol;
+    prend(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]);
+  });
+
+  peint();
+  return l;
+}
+
 function dessineFiche() {
   const e = courant();
   const f = $("fiche");
@@ -582,6 +729,7 @@ function dessineFiche() {
   const g1 = grille();
   g1.appendChild(champ("nom", "Nom de l'événement"));
   g1.appendChild(champ("slug", "Identifiant d'URL", "Sert d'adresse publique du plan."));
+  g1.appendChild(champFavicon());
   b1.appendChild(g1);
   f.appendChild(b1);
 
@@ -592,7 +740,6 @@ function dessineFiche() {
   bd.appendChild(ligneReglage("Provenance des données", () => resumeProvenance(e),
     ouvreProvenance));
   bd.appendChild(ligneReglage("Fiche détail", () => resumeFiche(e), ouvreFiche));
-  bd.appendChild(ligneReglage("Salles de conférence", () => resumeSalles(e), ouvreSalles));
 
   const rythme = document.createElement("select");
   rythme.setAttribute("aria-label", "Rythme de rafraîchissement");
@@ -1000,17 +1147,6 @@ function resumeProvenance(e) {
     .map((f) => f.nom);
   if (manque.length) autres.push("raccordement " + manque.join(", ") + " incomplet");
   return autres.length ? autres.join(" · ") : "Klipso pour tout";
-}
-
-function resumeSalles(e) {
-  const s = e.salles || {};
-  const ids = Object.keys(s);
-  if (!ids.length) return "Aucune salle connue";
-  const situees = ids.filter((i) => s[i].zone).length;
-  const manuelles = ids.filter((i) => s[i].manuel).length;
-  return situees + " / " + ids.length + " situées" +
-    (manuelles ? " · " + manuelles + " à la main" : "") +
-    (situees < ids.length ? " · " + (ids.length - situees) + " à situer" : "");
 }
 
 function resumeFiche(e) {
@@ -1758,125 +1894,6 @@ function ouvreSources(apres) {
     corps.appendChild(barre);
     panneaux.forEach((x) => corps.appendChild(x));
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
-}
-
-/**
- * Salles de conférence et zones organisateur.
- *
- * Une salle Eventmaker s'appelle « Agora (P160) ». Le code entre parenthèses
- * est un emplacement du plan, et la synchronisation retrouve la zone qui le
- * contient — dix fois sur onze. Le reste se désigne ici, à la main : un code
- * absent du plan ne se devine pas.
- *
- * Un rattachement manuel est marqué comme tel et n'est plus jamais écrasé par
- * la synchronisation, qui continue pourtant de proposer ce qu'elle trouve.
- */
-async function ouvreSalles(apres) {
-  const e = courant();
-  const salles = JSON.parse(JSON.stringify(e.salles || {}));
-  const ids = Object.keys(salles);
-
-  // les zones du plan, pour les proposer au choix
-  let zones = [];
-  try {
-    const pl = await rest("plan?select=id&evenement_id=eq." + e.id);
-    if (pl.length) {
-      const inst = await rest("instantane?select=charge&plan_id=in.(" +
-        pl.map((x) => x.id).join(",") + ")");
-      /* Les noms saisis à la main vivent sur l'événement, pas dans
-         l'instantané : ils s'appliquent à la lecture — c'est ce que fait
-         plan-public pour le visiteur. Sans cela, une zone fraîchement
-         baptisée depuis le plan se proposerait encore « Zone sans nom »,
-         et le rattachement se choisirait à l'aveugle. On relit la colonne
-         plutôt que de se fier à la liste chargée au démarrage : le
-         renommage a pu survenir depuis, depuis un autre poste. */
-      let noms = e.zones || {};
-      try {
-        const frais = await rest("evenement?select=zones&id=eq." + e.id);
-        if (frais.length) { noms = frais[0].zones || {}; e.zones = noms; }
-      } catch (err) { /* la liste chargée fera l'affaire */ }
-      zones = inst.flatMap((i) => (i.charge?.zones || [])
-        .map((z) => ({ id: z.id, nom: noms[z.id] || z.nom })));
-    }
-  } catch (err) { signale(err.message, true); }
-  const parZone = Object.fromEntries(zones.map((z) => [z.id, z]));
-  const nomZone = (id) => {
-    const z = parZone[id];
-    if (!z) return id ? id + " (absente du plan)" : "";
-    /* La surface de la zone ne distingue rien qu'un nom ne dise mieux, et
-       n'intéresse pas plus ici qu'ailleurs : la zone se nomme, un point. */
-    return z.nom || "Zone sans nom";
-  };
-
-  ouvreModale("Salles de conférence", (corps) => {
-    if (!ids.length) {
-      const p = document.createElement("p");
-      p.textContent = "Aucune salle connue. Synchronisez l'événement avec " +
-        "Conférences réglé sur Eventmaker.";
-      corps.appendChild(p);
-      return;
-    }
-
-    const t = document.createElement("table");
-    t.className = "salles";
-    t.innerHTML = "<thead><tr><th>Salle</th><th>Code</th><th>Zone organisateur</th></tr></thead>";
-    const corpsT = document.createElement("tbody");
-
-    ids.sort((a, b) => String(salles[a].nom || "").localeCompare(String(salles[b].nom || ""), "fr"))
-      .forEach((id) => {
-        const s = salles[id];
-        const tr = document.createElement("tr");
-        tr.innerHTML = "<td class=\"n\"></td><td class=\"c\"></td><td></td>";
-        tr.querySelector(".n").textContent = s.nom || id;
-        tr.querySelector(".c").textContent = s.code || "—";
-
-        const sel = document.createElement("select");
-        sel.innerHTML = '<option value="">— non située —</option>' +
-          zones.map((z) => '<option value="' + z.id + '">' + esc(nomZone(z.id)) + '</option>').join("");
-        sel.value = s.zone || "";
-        tr.lastElementChild.appendChild(sel);
-
-        const etat = document.createElement("span");
-        etat.className = "etat-salle";
-        const dis = () => {
-          etat.textContent = !s.zone
-            ? (s.auto ? "proposition ignorée" : "à situer")
-            : s.manuel ? "choisi à la main"
-            : "trouvé automatiquement";
-          etat.dataset.genre = !s.zone ? "manque" : s.manuel ? "manuel" : "auto";
-          tr.dataset.etat = etat.dataset.genre;
-        };
-        dis();
-        tr.lastElementChild.appendChild(etat);
-
-        sel.onchange = () => {
-          s.zone = sel.value || null;
-          // ne redevient automatique que si l'on retrouve exactement la
-          // proposition de la synchronisation
-          s.manuel = Boolean(s.zone) && s.zone !== s.auto;
-          dis();
-        };
-        corpsT.appendChild(tr);
-      });
-
-    t.appendChild(corpsT);
-    corps.appendChild(t);
-
-    const note = document.createElement("p");
-    note.className = "aide";
-    const situees = ids.filter((i) => salles[i].zone).length;
-    note.textContent = situees + " salle" + (situees > 1 ? "s" : "") + " sur " + ids.length +
-      " située" + (situees > 1 ? "s" : "") + ". Un rattachement choisi à la main " +
-      "n'est plus modifié par les synchronisations suivantes.";
-    corps.appendChild(note);
-  }, [
-    { libelle: "Annuler" },
-    { libelle: "Enregistrer", genre: "primaire", action: () => {
-      majEvenement(e.id, { salles })
-        .then(() => { e.salles = salles; signale("Rattachements enregistrés."); })
-        .catch((err) => signale(err.message, true));
-    } },
-  ], apres);
 }
 
 /**

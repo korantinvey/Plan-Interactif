@@ -205,22 +205,19 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 /* Le rattachement est une part du cadre de l'exposant, pas un cadre à lui. */
 .eyebrow.sous-titre{display:block;margin:16px 0 7px}
 
-/* Tableaux de réglage — les salles, la correspondance des champs : une ligne
-   par entrée, une liste déroulante à droite, l'état lisible d'un coup d'œil.
-   La barre de gauche dit d'où vient ce qui est retenu. */
-table.salles,table.champs{width:100%;border-collapse:collapse;font-size:12.5px}
-table.salles th,table.champs th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
+/* Le tableau de la correspondance des champs : une ligne par entrée, une
+   liste déroulante à droite, l'état lisible d'un coup d'œil. La barre de
+   gauche dit d'où vient ce qui est retenu. */
+table.champs{width:100%;border-collapse:collapse;font-size:12.5px}
+table.champs th{text-align:left;font-weight:500;font-size:11px;letter-spacing:.04em;
   text-transform:uppercase;color:var(--ink-3);padding:0 8px 8px;border-bottom:1px solid var(--line)}
-table.salles td,table.champs td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
-table.salles tr[data-etat="manque"] td:first-child,
+table.champs td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
 table.champs tr[data-etat="manque"] td:first-child{box-shadow:inset 2px 0 var(--rouge)}
-table.salles tr[data-etat="manuel"] td:first-child,
 table.champs tr[data-etat="manuel"] td:first-child{box-shadow:inset 2px 0 var(--accent)}
-table.salles tr[data-etat="auto"] td:first-child,
 table.champs tr[data-etat="auto"] td:first-child{box-shadow:inset 2px 0 var(--vert)}
-table.salles td.n,table.champs td.n{color:var(--ink);max-width:230px}
-table.salles td.c,table.champs td.c{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);white-space:nowrap}
-table.salles select,table.champs select{width:100%;padding:5px 7px;background:var(--surface-2);
+table.champs td.n{color:var(--ink);max-width:230px}
+table.champs td.c{font-family:"IBM Plex Mono",monospace;color:var(--ink-3);white-space:nowrap}
+table.champs select{width:100%;padding:5px 7px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 /* Chaque champ s'y annonce avec un exemple de sa valeur : c'est long, et c'est
    ce qui fait choisir. La colonne prend donc toute la largeur restante, et le
@@ -373,10 +370,9 @@ table.champs td.n .lib{display:block}
 table.champs td.n .aide{display:block;margin-top:3px;font-size:11px;
   color:var(--ink-3);line-height:1.4;white-space:normal}
 @media (max-width:620px){
-  table.salles thead,table.champs thead{display:none}
-  table.salles tr,table.champs tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
-  table.salles td,table.champs td{display:block;border:none;padding:2px 0}
-  table.salles tr[data-etat] td:first-child,
+  table.champs thead{display:none}
+  table.champs tr{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
+  table.champs td{display:block;border:none;padding:2px 0}
   table.champs tr[data-etat] td:first-child{box-shadow:none}
   /* Les colonnes empilées ne sont plus des colonnes : leur largeur de tableau
      y étrangle le texte, et « Numéro de stand » se coupait en deux. */
@@ -436,6 +432,28 @@ label .aide.alerte{color:var(--rouge)}
    basculer la source, et un champ en retrait ne doit pas être un champ mort */
 .source-inerte input,.source-inerte select{opacity:1}
 label.large{grid-column:1/-1}
+/* Le champ de l'icône. Ce n'est pas un « label » : le contrôle est une paire
+   de boutons, et l'intitulé cliquable aurait déclenché le premier. Il en garde
+   la forme — intitulé, contrôle, aide — pour tenir la ligne de la grille avec
+   les champs de texte voisins.
+
+   La vignette est aussi la cible du glisser-déposer, d'où le trait discontinu :
+   il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
+.champ-fic{display:flex;flex-direction:column;gap:4px;font-size:12px;
+  color:var(--ink-2);min-width:0}
+.champ-fic .aide{font-size:11px;color:var(--ink-3);line-height:1.45}
+.iconeZ{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 1px}
+.iconeZ .vue{flex:none;display:flex;align-items:center;justify-content:center;
+  width:58px;height:58px;padding:5px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2);overflow:hidden}
+.iconeZ .vue[data-survol]{border-color:var(--accent);background:var(--accent-soft)}
+.iconeZ .vue img{max-width:100%;max-height:100%;object-fit:contain}
+.iconeZ .vue span{font-size:10.5px;line-height:1.3;text-align:center;color:var(--ink-3)}
+.iconeZ .actes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+/* Le poids tel qu'il partira, et l'échec quand l'image n'a pas pu être lue :
+   la même ligne, pour que rien ne saute en passant de l'un à l'autre. */
+.iconeZ .dit{font-size:11.5px;color:var(--ink-3)}
+.iconeZ .dit[data-mal="true"]{color:var(--rouge)}
 textarea{resize:vertical;min-height:72px;font-family:"IBM Plex Mono",monospace;font-size:11.5px}
 
 table{width:100%;border-collapse:collapse;font-size:13px}

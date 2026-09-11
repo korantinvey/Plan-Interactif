@@ -64,13 +64,6 @@ function indexe(d){
     p.stands = p.stands || [];
     p.fond = p.fond || [];
     p.conferences = p.conferences || [];
-    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
-    p.parZone = new Map();
-    p.conferences.forEach(c => {
-      if (!c.zone) return;
-      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
-      p.parZone.get(c.zone).push(c);
-    });
     /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
        être ailleurs que sa salle — et qui reste son seul point d'accroche quand
        la salle n'est rattachée à aucune zone. */
@@ -82,8 +75,7 @@ function indexe(d){
         p.parStand.get(e.stand).push(c);
       });
     });
-    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
+    p.parStand.forEach(l => l.sort(chronoConf));
     /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
        la trouver : « accueil », « restauration », « village start-up » sont des
        endroits du salon au même titre qu'un stand. */
@@ -204,17 +196,6 @@ function indexe(d){
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
-       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
-       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
-       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
-       porterait sa ligne serait un hasard de synchronisation : elle se cherche
-       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
-       fait. */
-    const ou = (c.zone && parId.get(String(c.zone))) ||
-               tenue.map(e => parId.get(e.stand)).find(Boolean);
-    c.situee = Boolean(ou);
-    if (ou) c.p = ou.p;
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
@@ -223,6 +204,7 @@ function indexe(d){
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
+  rangeConferences();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -230,12 +212,96 @@ function indexe(d){
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
+  poseFavicon(DATA.favicon);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
+}
+
+/* Une conférence se lit dans l'ordre où elle se tient : l'heure locale d'abord,
+   qui est celle qu'affiche la page, et l'heure absolue à défaut. */
+const chronoConf = (a, b) => String(a.debutLocal || a.debut || "")
+  .localeCompare(String(b.debutLocal || b.debut || ""));
+
+/**
+ * Ranger les conférences là où on les lit : au programme de la zone qui les
+ * abrite, et dans le pavillon où l'on ira les chercher.
+ *
+ * À part de l'indexation parce que cela se refait sans recharger : le
+ * rattachement d'une salle à une zone se choisit dans les réglages du plan, et
+ * paraît aussitôt — comme le nom d'une zone.
+ *
+ * Ce rattachement l'emporte sur celui que porte l'instantané. C'est la règle
+ * que le service applique déjà en servant le plan ; elle est reprise ici pour
+ * que le choix se voie avant même d'avoir rechargé. La table des salles n'est
+ * servie qu'à l'administration : le visiteur reçoit des conférences déjà
+ * rattachées, et n'a rien à réappliquer.
+ *
+ * Une salle rattachée à une zone d'un autre pavillon n'entre au programme de
+ * personne : la conférence n'est pas remontée là-bas, et la prochaine
+ * synchronisation l'y portera. Elle se retrouve d'ici là par son exposant.
+ */
+function rangeConferences(){
+  const parSalle = new Map();
+  Object.keys(DATA.salles || {}).forEach(k => {
+    const s = DATA.salles[k];
+    if (s && s.nom) parSalle.set(s.nom, s.zone || null);
+  });
+  DATA.plans.forEach(p => {
+    const siennes = new Set(p.zones.map(z => z.id));
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (parSalle.has(c.salle)) c.zone = parSalle.get(c.salle);
+      if (!c.zone || !siennes.has(c.zone)) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort(chronoConf));
+  });
+  /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+     remontée par tous ceux qui la touchent — mais à celui où on la trouve : la
+     zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni l'une
+     ni l'autre, elle n'est encore située nulle part et le pavillon que
+     porterait sa ligne serait un hasard de synchronisation : elle se cherche et
+     se lit, elle ne se rattache à rien tant qu'on ne l'a pas fait. */
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+  });
+}
+
+/**
+ * L'icône de l'onglet, telle que la console l'a déposée.
+ *
+ * Elle arrive avec les données et non dans l'en-tête de la page : celle-ci est
+ * fabriquée une fois pour tous les salons, et ne peut donc rien savoir de
+ * celui qu'on ouvre. L'onglet reste blanc le temps de l'appel, comme le titre
+ * l'est aussi — c'est le même chargement qui les remplit tous les deux.
+ *
+ * Rien n'est posé faute d'icône : le navigateur garde la sienne, ce qui est
+ * aussi ce qu'on veut quand l'exploitant vient de la retirer. Et l'image est
+ * relue avant d'être posée, comme le logo d'une zone : elle a fait le même
+ * chemin — saisie chez un exploitant authentifié, rangée en base, resservie
+ * par l'API à tous les visiteurs.
+ */
+function poseFavicon(src){
+  const img = imageSure(src);
+  if (!img) return;
+  let l = document.querySelector('link[rel="icon"]');
+  if (!l){
+    l = document.createElement("link");
+    l.rel = "icon";
+    document.head.appendChild(l);
+  }
+  l.type = img.slice(5, img.indexOf(";"));
+  l.href = img;
 }
 
 /* ============================================================
@@ -2815,6 +2881,9 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
+     du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
+  oublieChoixPoi(d.cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
@@ -2852,7 +2921,9 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée et la mise en avant
+    // doivent y répondre pareil
+    oublieChoixPoi(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
@@ -2975,8 +3046,16 @@ let montreTiroir = () => {};
   const cran = () => tiroir.dataset.cran || "replie";
   function pose(nom){
     tiroir.dataset.cran = nom;
+    annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
+
+  /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
+     commandes de zoom, l'échelle — est ancré sur la hauteur repliée du tiroir.
+     Le tiroir qui monte passe donc dessous sans les déplacer, et ils restaient
+     à désigner un plan qu'on ne voyait plus. Le cran vit sur la racine pour que
+     la feuille de style les atteigne depuis l'autre bout de la page. */
+  const annonce = nom => { document.documentElement.dataset.tiroir = nom; };
   const replie = () => pose("replie");
   /* Une pression fait le tour des crans : on les atteint tous sans rien
      connaître du glissement, et on revient au plan par la même touche. */
@@ -3012,10 +3091,24 @@ let montreTiroir = () => {};
   const suit = e =>
     Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
 
+  /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
+  function proche(vu){
+    let choix = CRANS[0], ecart = Infinity;
+    for (const c of CRANS){
+      const d = Math.abs(hauteur(c) - vu);
+      if (d < ecart){ ecart = d; choix = c; }
+    }
+    return choix;
+  }
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
+    const vu = suit(e);
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
+    /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
+       s'arrêterait, sans attendre qu'il lâche. */
+    annonce(proche(vu));
   });
 
   function relache(e){
@@ -3023,14 +3116,8 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    if (aGlisse){
-      let choix = CRANS[0], ecart = Infinity;
-      for (const c of CRANS){
-        const d = Math.abs(hauteur(c) - vu);
-        if (d < ecart){ ecart = d; choix = c; }
-      }
-      pose(choix);
-    }
+    // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
+    pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
