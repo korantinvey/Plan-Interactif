@@ -107,16 +107,17 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 354 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 415 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `verseModale` 71 · `ouvreModale` 77
-`fermeModale` 93 · `demande` 101 · `confirme` 123 · `ecranConfig` 134 · `normaliseUrl` 170
-`ecranConnexion` 189 · `deconnecte` 252 · `signale` 263 · `bloc` 284 · `grille` 302
-`idCompte` 332
+`$` 16 · `esc` 17 · `entetes` 38 · `contenuJeton` 47 · `resteJeton` 57 · `renouvelle` 67
+`appel` 101 · `rest` 112 · `verseModale` 142 · `ouvreModale` 148 · `fermeModale` 164
+`demande` 172 · `confirme` 194 · `ecranConfig` 205 · `normaliseUrl` 241
+`ecranConnexion` 260 · `deconnecte` 323 · `signale` 334 · `bloc` 355 · `grille` 373
+`idCompte` 402
 
 Éléments :
 
@@ -131,31 +132,31 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2741 l. → admin-plans.html
+### `_console-js.html` — 2755 l. → admin-plans.html
 
-- l.372 · Provenance des données
-- l.499 · Contenu de la fiche détail
+- l.386 · Provenance des données
+- l.513 · Contenu de la fiche détail
 
 Fonctions :
 
-`fluxFonction` 17 · `barreAvancement` 56 · `fonction` 79 · `slugifie` 95 · `courant` 99
-`charge` 101 · `chargePlans` 116 · `majEvenement` 121 · `selonAdresse` 141
-`majAdresse` 149 · `majBarre` 164 · `dessineChoix` 206 · `champ` 226 · `dessineFiche` 251
-`fournisseurUtilise` 434 · `source` 438 · `champCle` 443 · `ligneSource` 478
-`origineConferences` 613 · `resumeProvenance` 678 · `resumeSalles` 695 · `resumeFiche` 706
-`caseFiche` 749 · `champsPersos` 792 · `criteres` 798 · `ecritFiche` 801 · `caseCritere` 816
-`clePerso` 835 · `ajouteChampPerso` 843 · `renommeChampPerso` 854 · `retireChampPerso` 872
-`lignesPerso` 920 · `clesCorps` 955 · `ordreEffectif` 969 · `libelleCorps` 984
-`champsLus` 1026 · `exempleCible` 1041 · `valeurApercu` 1063 · `dessineApercu` 1091
-`panneauOrdre` 1175 · `ligneOutil` 1357 · `ligneReglage` 1373 · `ouvreProvenance` 1385
-`ouvreSources` 1408 · `ouvreSalles` 1464 · `cadreFiche` 1579 · `ouvreFiche` 1608
-`sousTitre` 1758 · `tableauChamps` 1773 · `encode` 1916 · `decode` 1918
-`correspondance` 1923 · `sansPrefixe` 1926 · `courte` 1927 · `intitule` 1942
-`intituleSuite` 1954 · `separeValeurs` 1968 · `champOrigine` 1980 · `majLiens` 2209
-`majIntegration` 2236 · `majMsgSync` 2243 · `synchronise` 2258 · `dupliquer` 2301
-`litMonProfil` 2399 · `RETOUR_MDP` 2410 · `litComptes` 2412 · `ligneMessage` 2421
-`casesSalons` 2431 · `ouvreComptes` 2461 · `ouvreFicheCompte` 2553 · `videEcran` 2712
-`dessine` 2717 · `demarre` 2729
+`refus` 18 · `fluxFonction` 37 · `barreAvancement` 72 · `fonction` 95 · `slugifie` 109
+`courant` 113 · `charge` 115 · `chargePlans` 130 · `majEvenement` 135 · `selonAdresse` 155
+`majAdresse` 163 · `majBarre` 178 · `dessineChoix` 220 · `champ` 240 · `dessineFiche` 265
+`fournisseurUtilise` 448 · `source` 452 · `champCle` 457 · `ligneSource` 492
+`origineConferences` 627 · `resumeProvenance` 692 · `resumeSalles` 709 · `resumeFiche` 720
+`caseFiche` 763 · `champsPersos` 806 · `criteres` 812 · `ecritFiche` 815 · `caseCritere` 830
+`clePerso` 849 · `ajouteChampPerso` 857 · `renommeChampPerso` 868 · `retireChampPerso` 886
+`lignesPerso` 934 · `clesCorps` 969 · `ordreEffectif` 983 · `libelleCorps` 998
+`champsLus` 1040 · `exempleCible` 1055 · `valeurApercu` 1077 · `dessineApercu` 1105
+`panneauOrdre` 1189 · `ligneOutil` 1371 · `ligneReglage` 1387 · `ouvreProvenance` 1399
+`ouvreSources` 1422 · `ouvreSalles` 1478 · `cadreFiche` 1593 · `ouvreFiche` 1622
+`sousTitre` 1772 · `tableauChamps` 1787 · `encode` 1930 · `decode` 1932
+`correspondance` 1937 · `sansPrefixe` 1940 · `courte` 1941 · `intitule` 1956
+`intituleSuite` 1968 · `separeValeurs` 1982 · `champOrigine` 1994 · `majLiens` 2223
+`majIntegration` 2250 · `majMsgSync` 2257 · `synchronise` 2272 · `dupliquer` 2315
+`litMonProfil` 2413 · `RETOUR_MDP` 2424 · `litComptes` 2426 · `ligneMessage` 2435
+`casesSalons` 2445 · `ouvreComptes` 2475 · `ouvreFicheCompte` 2567 · `videEcran` 2726
+`dessine` 2731 · `demarre` 2743
 
 Éléments :
 
