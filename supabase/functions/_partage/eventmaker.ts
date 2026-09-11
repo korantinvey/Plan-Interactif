@@ -463,7 +463,18 @@ export class Eventmaker {
    * exposant, et son inscription est effective. Le reste n'est que le moyen d'y
    * arriver sans télécharger le salon entier.
    */
-  async exposants(id: string, connues: string[] = [], codes: string[] = []): Promise<{
+  async exposants(
+    id: string,
+    connues: string[] = [],
+    codes: string[] = [],
+    /* Combien de fiches ont été lues jusqu'ici. Rendu page par page et non à
+       la fin : la lecture dure une demi-minute sur un gros salon, et c'est
+       elle qui fait attendre — une barre qui ne bouge pas pendant ce temps se
+       lit comme une panne. Le total, lui, reste inconnu : on ne sait qu'une
+       catégorie est épuisée qu'en recevant une page plus courte que les
+       autres. */
+    surAvance?: (lus: number) => void,
+  ): Promise<{
     parDossier: Map<string, ExposantEm>;
     parStand: Map<string, ExposantEm>;
     tousParStand: Map<string, ExposantEm[]>;
@@ -490,6 +501,7 @@ export class Eventmaker {
     // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
     // les pages restent séquentielles — on ne sait pas combien il y en a
     // avant d'en recevoir une plus courte que les autres.
+    let recues = 0;
     const paquets = await enParallele(cats, DE_FRONT, async (cat) => {
       const tout: Record<string, any>[] = [];
       for (let page = 1; ; page++) {
@@ -498,6 +510,8 @@ export class Eventmaker {
           { per_page: PAR_PAGE, page, guest_metadata: "true", "category[]": cat._id },
         );
         tout.push(...l);
+        recues += l.length;
+        surAvance?.(recues);
         if (l.length < PAR_PAGE) return tout;
       }
     });
