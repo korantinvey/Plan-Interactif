@@ -170,7 +170,7 @@ Fonctions :
 
 - l.644 · Page de rapport
 
-### `_dessin.html` — 1498 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1521 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -189,11 +189,11 @@ Fonctions :
 `marqueStandsDessines` 724 · `rafraichitStandsDessines` 739 · `oublieReperes` 769
 `reperesCherchables` 771 · `vaAuRepere` 815 · `cartouchePoi` 836 · `ouvrePoi` 921
 `mesureCartouche` 993 · `phareRepere` 1000 · `phareZone` 1001 · `eclairePoi` 1005
-`signale` 1023 · `calquePourImage` 1037 · `poseImage` 1050 · `importeImage` 1063
-`dessinPointerDown` 1114 · `dessinPointerMove` 1188 · `dessinPointerUp` 1226
-`termineTrace` 1262 · `aide` 1272 · `choisitOutil` 1297 · `enchaineStand` 1320
-`activeCalque` 1374 · `montreRoleIti` 1425 · `creeCalque` 1456 · `demandeNom` 1469
-`renommeCalque` 1488
+`oublieChoixPoi` 1037 · `signale` 1046 · `calquePourImage` 1060 · `poseImage` 1073
+`importeImage` 1086 · `dessinPointerDown` 1137 · `dessinPointerMove` 1211
+`dessinPointerUp` 1249 · `termineTrace` 1285 · `aide` 1295 · `choisitOutil` 1320
+`enchaineStand` 1343 · `activeCalque` 1397 · `montreRoleIti` 1448 · `creeCalque` 1479
+`demandeNom` 1492 · `renommeCalque` 1511
 
 Éléments :
 
@@ -296,7 +296,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 3059 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 3064 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.266 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -306,7 +306,7 @@ Fonctions :
 - l.1419 · 6. Vue
 - l.1689 · 7. Sélection et fiche
 - l.2683 · 8. Interactions du plan
-- l.2905 · Le tiroir de la liste — écrans étroits
+- l.2910 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -335,8 +335,8 @@ Fonctions :
 `assainitRiche` 2131 · `enBlocs` 2171 · `rangeRiche` 2184 · `ecarteClicFantome` 2212
 `nomSociete` 2221 · `societes` 2234 · `choisitExposant` 2245 · `poseMarque` 2283
 `poseCode` 2333 · `rangeMarque` 2364 · `ouvre` 2410 · `ferme` 2657 · `onglet` 2673
-`milieu` 2703 · `commencePince` 2709 · `suitPince` 2723 · `mesureTiroir` 2916
-`montreTiroir` 2919
+`milieu` 2703 · `commencePince` 2709 · `suitPince` 2723 · `mesureTiroir` 2921
+`montreTiroir` 2924
 
 Éléments :
 

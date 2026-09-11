@@ -5837,6 +5837,9 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
+     du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
+  oublieChoixPoi(d.cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
@@ -5874,7 +5877,9 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée et la mise en avant
+    // doivent y répondre pareil
+    oublieChoixPoi(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
@@ -9249,6 +9254,29 @@ function eclairePoi(){
   $("labels").querySelectorAll(".lbl").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
+}
+
+/**
+ * Le retrait ne survit pas au geste qui l'ignore.
+ *
+ * Le cartouche met une famille de repères en avant et recule tout le reste à
+ * seize pour cent. Ce retrait est une réponse à une question posée — « où
+ * mange-t-on ? » — et il n'a plus rien à dire dès que le visiteur en pose une
+ * autre. Or rien sur le plan ne le levait : ouvrir la fiche d'un stand éteint,
+ * ou taper le fond pour refermer, laissaient le plan délavé et la pastille
+ * allumée. Il fallait retrouver celle-ci dans le cartouche et la rappuyer, ce
+ * que personne ne devine.
+ *
+ * Un repère ou une zone déjà mis en avant font exception : les ouvrir, c'est
+ * se servir de la mise en avant, pas en sortir. On reconnaît les uns et les
+ * autres à la marque qu'« eclairePoi » leur a posée — la même qui les tient
+ * en pleine lumière.
+ */
+function oublieChoixPoi(cible){
+  if (!poiChoisi) return;
+  if (cible && cible.classList.contains("phare")) return;
+  poiChoisi = null;
+  cartouchePoi();
 }
 
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
