@@ -2033,6 +2033,18 @@ function ouvre(o, rect, canal, iSoc){
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
+  /* Le logo que l'exploitant a déposé sur la zone. Il vit dans l'en-tête, avec
+     le type et le nom : c'est une marque, elle se lit avec ce qu'elle nomme et
+     non parmi les champs. Relu avant d'être posé, comme la description — il
+     vient du même endroit, et finit dans la même fiche. L'adresse est retirée
+     avec lui, sinon la zone suivante montrerait la marque de la précédente le
+     temps que la sienne arrive. */
+  const blason = zone ? ok("logo", imageSure(o.logo)) : "";
+  const marque = $("dLogo");
+  if (marque){
+    marque.hidden = !blason;
+    if (blason) marque.src = blason; else marque.removeAttribute("src");
+  }
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "");
@@ -2148,20 +2160,12 @@ function ouvre(o, rect, canal, iSoc){
         : "")
     : "";
   corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
-  /* Le logo, déposé par l'exploitant avec le reste de la fiche. Il n'a pas
-     d'intitulé au-dessus de lui : une image se reconnaît sans qu'on la nomme,
-     et le nom de la zone est déjà en tête. Il est relu comme la description —
-     il vient du même endroit, et finit dans la même fiche. */
-  const blason = zone ? imageSure(o.logo) : "";
-  corps.logo = blason
-    ? ok("logo", '<div class="logoZone"><img src="' + esc(blason) + '" alt=""></div>')
-    : "";
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
-     range des champs d'exposant, qu'elle n'a pas, et les siens se lisent dans
-     le seul ordre qui leur convienne — de quoi la reconnaître, ce qu'elle est,
-     puis où en savoir plus. */
+     range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
+     dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
+     plus. */
   const infos = zone
-    ? corps.logo + corps.description + corps.lien
+    ? corps.description + corps.lien
     : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
         .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il

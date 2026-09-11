@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1914 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1915 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.1078 · 10. Mode administration
 - l.1144 · La fiche d'une zone organisateur
-- l.1661 · Masquer une zone organisateur
-- l.1744 · Placer un libellé à la main
+- l.1662 · Masquer une zone organisateur
+- l.1745 · Placer un libellé à la main
 
 Fonctions :
 
@@ -31,14 +31,14 @@ Fonctions :
 `ficheZoneEnPlace` 784 · `voletPlan` 802 · `nomDuTon` 929 · `voletApparence` 934
 `enregistreConf` 1028 · `rgbHex` 1034 · `hexa` 1041 · `luminance` 1045 · `ecarte` 1059
 `joli` 1074 · `retireAdmin` 1091 · `activeAdmin` 1104 · `champZone` 1170 · `champsZone` 1195
-`reduitLogo` 1258 · `champLogo` 1299 · `editeurRiche` 1395 · `memeFicheZone` 1550
-`suitFicheZone` 1555 · `verseFicheZone` 1563 · `ficheZone` 1589 · `enregistreZone` 1614
-`basculeAffichageZone` 1672 · `marqueZonesMasquees` 1689 · `ecritTablesZones` 1709
-`ecritTableZones` 1740 · `cleLibelle` 1765 · `empreinteLibelle` 1781
-`placementLibelle` 1789 · `posePlacement` 1799 · `libelleAutomatique` 1816
-`modePlacementLibelles` 1825 · `majPaletteLibelle` 1842 · `choisitLibelle` 1859
-`pousseLibelle` 1866 · `libellePointerDown` 1874 · `libellePointerMove` 1889
-`libellePointerUp` 1898
+`reduitLogo` 1258 · `champLogo` 1299 · `editeurRiche` 1396 · `memeFicheZone` 1551
+`suitFicheZone` 1556 · `verseFicheZone` 1564 · `ficheZone` 1590 · `enregistreZone` 1615
+`basculeAffichageZone` 1673 · `marqueZonesMasquees` 1690 · `ecritTablesZones` 1710
+`ecritTableZones` 1741 · `cleLibelle` 1766 · `empreinteLibelle` 1782
+`placementLibelle` 1790 · `posePlacement` 1800 · `libelleAutomatique` 1817
+`modePlacementLibelles` 1826 · `majPaletteLibelle` 1843 · `choisitLibelle` 1860
+`pousseLibelle` 1867 · `libellePointerDown` 1875 · `libellePointerMove` 1890
+`libellePointerUp` 1899
 
 Éléments :
 
@@ -215,7 +215,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2833 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2831 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -234,8 +234,8 @@ Fonctions :
 `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
 `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
 `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dVis` · `#dPartage`
-`#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
+`#closeDetail` · `#dLogo` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dVis`
+`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
 `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
 `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
@@ -289,7 +289,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2620 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2624 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -298,8 +298,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2265 · 8. Interactions du plan
-- l.2466 · Le tiroir de la liste — écrans étroits
+- l.2269 · 8. Interactions du plan
+- l.2470 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -324,8 +324,8 @@ Fonctions :
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `imageSure` 1798
 `assainitRiche` 1827 · `enBlocs` 1867 · `rangeRiche` 1880 · `ecarteClicFantome` 1908
 `nomSociete` 1917 · `societes` 1930 · `choisitExposant` 1941 · `poseCode` 1987
-`ouvre` 2006 · `ferme` 2239 · `onglet` 2255 · `milieu` 2285 · `commencePince` 2291
-`suitPince` 2305 · `mesureTiroir` 2477 · `montreTiroir` 2480
+`ouvre` 2006 · `ferme` 2243 · `onglet` 2259 · `milieu` 2289 · `commencePince` 2295
+`suitPince` 2309 · `mesureTiroir` 2481 · `montreTiroir` 2484
 
 Éléments :
 
