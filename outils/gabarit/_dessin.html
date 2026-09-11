@@ -803,14 +803,19 @@ function reperesCherchables(){
  * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
  * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
  * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
- * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
- * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
- * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ * plan et va chercher le fond du pavillon qu'on n'avait pas encore ouvert. Le
+ * montage recrée les calques de dessin, d'où la pastille est relue après lui —
+ * pour que la fiche s'anime depuis elle, et non depuis rien.
+ *
+ * Le dernier argument demande que le plan vienne sur le repère ; la fiche s'en
+ * charge une fois posée. Sans lui elle s'ouvrait sur un escalier que rien ne
+ * montrait, et il restait à trouver le bouton « Centrer sur le plan » pour voir
+ * où il est — le clic dans la liste disait pourtant déjà qu'on y allait.
  */
 function vaAuRepere(id, p){
   changePlan(p);
-  const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
-  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  ouvrePoi(id, $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]'),
+           true);
 }
 
 /**
@@ -908,9 +913,12 @@ function cartouchePoi(){
  *
  * La fiche est celle des stands, remplie autrement : elle partage la même
  * bande que le parcours et l'itinéraire, et deux fiches ouvertes en même
- * temps ne se liraient pas.
+ * temps ne se liraient pas. Elle en reprend donc le contrat : « depuis » est
+ * la pastille d'où la fiche s'étire — le nœud, mesuré à la fin — et
+ * « recentrer » demande que le plan vienne sur le repère, ce qui n'a de sens
+ * qu'une fois la fiche posée, seule à savoir ce qu'elle masque.
  */
-function ouvrePoi(id, rect){
+function ouvrePoi(id, depuis, recentrer){
   const cible = formeParId(id);
   if (!cible || cible.f.t !== "repere") return;
   const f = cible.f, p = P();
@@ -968,7 +976,8 @@ function ouvrePoi(id, rect){
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
-  anime(rect, 1);
+  if (recentrer) centrePoint(f.pts[0]);
+  anime(rectVisee(depuis), 1);
 }
 
 /**

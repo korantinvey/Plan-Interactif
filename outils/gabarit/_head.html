@@ -30,6 +30,15 @@
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
+  /* La pile du sans, écrite une fois. Elle l'était à deux endroits — la page
+     entière d'un côté, les libellés du plan de l'autre — et les deux ne
+     disaient pas la même chose : « Segoe UI, system-ui » ici, rien là. Tant
+     qu'Instrument Sans arrive, personne ne s'en aperçoit ; dès qu'il manque —
+     un salon derrière un filtre, un hall sans réseau, une page publiée qui
+     n'appelle rien au dehors — l'interface passait à la police du système et
+     le plan à celle du navigateur. Deux polices sur un écran, pour le même
+     nom d'exposant lu deux fois. */
+  --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -62,7 +71,7 @@
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
+  font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
@@ -171,9 +180,19 @@ button{cursor:pointer;background:none;border:none}
 .actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
 .actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
-.search :is(input,.champ){width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
+.search :is(input,.champ){width:100%;padding:9px 30px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* La croix qui défait la recherche. Celle du navigateur ne se montre qu'au
+   survol, jamais sur un téléphone, et s'efface sur les modèles qui peignent le
+   champ : un plan éteint par une recherche vaine se rallumait lettre à lettre.
+   On garde donc la nôtre, et on retire la sienne pour n'en avoir qu'une. */
+.vide-q{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;padding:0;display:flex;align-items:center;
+  justify-content:center;border:0;background:none;border-radius:999px;
+  color:var(--ink-3);font-size:17px;line-height:1}
+.vide-q:hover{color:var(--ink)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
 /* Le champ de la vignette des modèles. Un <input> ne peut pas vivre dans le
    bouton qui choisit le modèle — pas plus qu'un bouton n'en contient un autre
    — et l'habillage se joue pourtant sur la boîte de recherche : elle est donc
@@ -244,7 +263,7 @@ button{cursor:pointer;background:none;border:none}
    lettres, et sans le cadre — celui-ci cite un numéro peint sur une cloison,
    et l'emprunter pour un mot ferait lire « Zone » comme un emplacement. */
 .row[data-sorte="zone"] .code,.row[data-sorte="conf"] .code{
-  font-family:"Instrument Sans",sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;
+  font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.04em;
   text-transform:uppercase;border-color:transparent;background:var(--surface-2);color:var(--ink-3)}
 .row.l .code{opacity:.5}
 /* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
@@ -288,7 +307,7 @@ button{cursor:pointer;background:none;border:none}
    en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
    trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
    se peint, il ne se contourne pas. */
-#couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
+#couches .cal text{fill:currentColor;stroke:none;font-family:var(--sans)}
 
 /* Le plan se tait pendant qu'on zoome.
 
@@ -385,9 +404,12 @@ html.poi-actif #marques .parc{display:none}
    sur l'habillage du calque, qui teinte tout ce qu'il porte. */
 #labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
   fill:var(--c-lab-stand,var(--ink-2));
-  font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
-#labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+  font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
+  font-weight:var(--graisse-lab-code,500)}
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+#labels text.zn{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
@@ -443,7 +465,9 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-linejoin:round;stroke-linecap:round}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
-.dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
+.dcal text{fill:currentColor;text-anchor:middle;
+  font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600)}
 .dcal.editable{pointer-events:auto}
 /* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
    calques restent sourds : leur clic appartient à la vue, sans quoi un geste
@@ -1340,7 +1364,7 @@ button.expo:hover{background:var(--line)}
   color:var(--accent-ink)}
 .liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--ink);
   color:var(--ink)}
-.liste-grille .search-field svg{color:var(--ink-3)}
+.liste-grille .search-field :is(svg,.vide-q){color:var(--ink-3)}
 .liste-grille .crit-btn{background:var(--surface);border-color:var(--ink);color:var(--ink)}
 .liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
   font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
@@ -1395,7 +1419,7 @@ button.expo:hover{background:var(--line)}
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-billet .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-billet .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-billet .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-billet .crit-btn{background:rgba(255,255,255,.2);border-color:transparent;
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .count{border-bottom:2px dashed var(--line-strong);
@@ -1417,9 +1441,10 @@ button.expo:hover{background:var(--line)}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
   background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
   font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
-  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
-     s'y tient, plutôt que de la déborder sur un salon aux numéros longs — un
-     serif un peu plus large que la chasse fixe se rattrape à l'approche. */
+  /* La case se taille sur la police du modèle — celle-ci — et sur son corps :
+     le chiffre d'appel s'y tient, plutôt que de la déborder sur un salon aux
+     numéros longs. L'approche resserre ce que le serif prend de plus que la
+     chasse fixe, sans quoi la colonne des noms partirait vers la droite. */
   font-size:var(--caseF,11.5px);letter-spacing:-.02em}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
@@ -1439,7 +1464,7 @@ button.expo:hover{background:var(--line)}
   --radius:0;border-right:3px solid #111}
 .liste-brut .search{background:var(--accent-base);border-bottom:3px solid #111}
 .liste-brut .search :is(input,.champ){background:#FFFDF5;border:2px solid #111;color:#111}
-.liste-brut .search-field svg{color:#111}
+.liste-brut .search-field :is(svg,.vide-q){color:#111}
 .liste-brut .crit-btn{background:#FFFDF5;border:2px solid #111;color:#111}
 .liste-brut .count{border-bottom:3px solid #111;color:#111;font-size:10.5px;font-weight:700;
   letter-spacing:.05em;text-transform:uppercase}
@@ -1523,7 +1548,7 @@ button.expo:hover{background:var(--line)}
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
 .liste-signal .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-signal .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-signal .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-signal .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-signal .crit-btn{color:var(--accent-ink);
   background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
@@ -2731,6 +2756,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div class="search-field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
+        <!-- Défaire la recherche d'une pression : sans mot-clé la liste et le
+             plan reviennent entiers, et c'est le geste qu'on cherche quand on
+             ne trouve rien. Elle ne paraît qu'une fois le champ rempli. -->
+        <button class="vide-q" id="videQ" type="button" hidden
+          title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
       <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
            sur un téléphone la place du plan. Il n'existe que si l'exploitant a
