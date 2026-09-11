@@ -132,7 +132,7 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2839 l. → admin-plans.html
+### `_console-js.html` — 2846 l. → admin-plans.html
 
 - l.386 · Provenance des données
 - l.513 · Contenu de la fiche détail
@@ -153,11 +153,11 @@ Fonctions :
 `sousTitre` 1772 · `tableauChamps` 1787 · `encode` 1930 · `decode` 1932
 `correspondance` 1937 · `sansPrefixe` 1940 · `courte` 1941 · `intitule` 1956
 `intituleSuite` 1968 · `separeValeurs` 1982 · `aplani` 2003 · `memeStyle` 2013
-`autreFace` 2031 · `champOrigine` 2047 · `majLiens` 2307 · `majIntegration` 2334
-`majMsgSync` 2341 · `synchronise` 2356 · `dupliquer` 2399 · `litMonProfil` 2497
-`RETOUR_MDP` 2508 · `litComptes` 2510 · `ligneMessage` 2519 · `casesSalons` 2529
-`ouvreComptes` 2559 · `ouvreFicheCompte` 2651 · `videEcran` 2810 · `dessine` 2815
-`demarre` 2827
+`autreFace` 2031 · `champOrigine` 2047 · `majLiens` 2314 · `majIntegration` 2341
+`majMsgSync` 2348 · `synchronise` 2363 · `dupliquer` 2406 · `litMonProfil` 2504
+`RETOUR_MDP` 2515 · `litComptes` 2517 · `ligneMessage` 2526 · `casesSalons` 2536
+`ouvreComptes` 2566 · `ouvreFicheCompte` 2658 · `videEcran` 2817 · `dessine` 2822
+`demarre` 2834
 
 Éléments :
 
@@ -428,13 +428,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 443 l.
+### `supabase/functions/_partage/champs.ts` — 474 l.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 733 l.
+### `supabase/functions/_partage/eventmaker.ts` — 739 l.
 
-`grapheJson` 147 · `enParallele` 601 · `texteSeul` 621 · `champs` 698
+`grapheJson` 147 · `enParallele` 601 · `texteSeul` 621 · `champs` 704
 
 ### `supabase/functions/_partage/gaia.ts` — 286 l.
 
@@ -461,10 +461,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 163 · `ampute` 186 · `masquesDe` 226
 `masquesDuPlan` 246
 
-### `supabase/functions/sync-evenement/index.ts` — 1146 l.
+### `supabase/functions/sync-evenement/index.ts` — 1156 l.
 
 `cors` 42 · `client` 80 · `gaia` 87 · `libellesChoix` 98 · `fournisseur` 123 · `range` 159
-`champsKlipso` 180 · `hebergee` 1103 · `nettoieUrl` 1122 · `groupeTextes` 1132
+`champsKlipso` 180 · `hebergee` 1113 · `nettoieUrl` 1132 · `groupeTextes` 1142
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

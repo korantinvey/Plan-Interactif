@@ -149,11 +149,19 @@ ce qu'aucune fiche relevée ne porte :
   `oui`/`non`, `1`/`0`, `on`/`off` et leurs écritures — et proposée dans
   l'orthographe de celle qu'on a vue.
 
-Un champ qui porte plus de huit valeurs distinctes est du texte libre : sa liste
-n'est pas proposée. Une codification déclarée échappe à ce seuil — elle est une
-liste de choix, le doute n'existe pas pour elle — mais s'arrête à quarante
-entrées : la nomenclature d'un salon en compte deux cents, et deux cents cases
-ne se lisent pas. Un salon synchronisé avant que le relevé ne garde les valeurs
+**Ce qui sépare une liste d'un texte libre, c'est la répétition et non le
+nombre.** Huit valeurs distinctes ou moins, c'est une liste sans discussion.
+Au-delà, on regarde si les valeurs reviennent : un salon qui range ses exposants
+en quatorze catégories les répète sur trois cents fiches, quand trois cents
+raisons sociales ne se répètent jamais. Le seuil des huit appliqué seul écartait
+les deux — un champ à quatorze catégories n'offrait rien à cocher, et la ligne
+annonçait des « valeurs inconnues » qu'aucune synchronisation n'aurait relevées.
+Un champ écarté dit maintenant qu'il l'a été, au lieu de se faire passer pour un
+relevé muet.
+
+Quarante valeurs restent le plafond de ce qui s'affiche, relevées ou déclarées :
+la nomenclature d'un salon en compte deux cents, et deux cents cases ne se
+lisent pas. Un salon synchronisé avant que le relevé ne garde les valeurs
 distinctes n'a rien à proposer non plus. Dans tous ces cas la ligne le dit, et
 laisse saisir la valeur à la main plutôt que de faire attendre le prochain
 passage. « Exclu de la liste » se règle exactement de la même façon.

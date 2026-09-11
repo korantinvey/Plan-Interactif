@@ -2189,6 +2189,10 @@ function champOrigine(src, cible, apres, ouiNon) {
     const relevees = separeValeurs((d && d.valeurs) || []);
     // la codification du champ, quand la source en déclare une : code → libellé
     const choix = (d && d.choix) || {};
+    /* Le relevé a bien lu ce champ, mais ses valeurs ne se ressemblent pas
+       assez pour faire une liste : une raison sociale, une date. Le dire
+       épargne d'attendre une synchronisation qui n'en relèverait pas plus. */
+    const libre = !!(d && d.libre);
 
     /* Quatre provenances pour une même liste, et l'ordre les range : ce que
        les fiches portent, ce que la source déclare sans que rien ne le porte,
@@ -2232,8 +2236,11 @@ function champOrigine(src, cible, apres, ouiNon) {
             (accords.length > 1 ? "valent" : "vaut") + " oui d'office"
           : offertes.length
             ? "aucune valeur retenue : rien ne sera signalé"
-            : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
-              " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
+            : libre
+              ? "trop de valeurs différentes pour en proposer la liste : " +
+                "saisissez celle qui compte"
+              : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
+                " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
       dit.dataset.genre = retenues.length || accords.length ? "" : "manque";
     };
     rappel();

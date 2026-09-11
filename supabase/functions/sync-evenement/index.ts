@@ -25,7 +25,7 @@ import {
 import {
   CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
   decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai,
-  VALEURS_MAX,
+  valeursRelevees,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -186,6 +186,10 @@ async function champsKlipso(g: Gaia) {
     ["Stand", "stand:"],
   ];
   const vus = new Map<string, Record<string, unknown>>();
+  /* Les valeurs comptées à part : c'est leur répétition qui distinguera une
+     liste de choix d'un champ de texte libre, et le relevé ne garde que le
+     verdict. */
+  const comptes = new Map<string, Map<string, number>>();
   /* Les champs à choix, rangés par la codification qu'ils déclarent — c'est
      par elle qu'on saura tout ce qu'ils peuvent valoir. Plusieurs champs
      partagent parfois la même, d'où la liste de clés. */
@@ -245,15 +249,21 @@ async function champsKlipso(g: Gaia) {
            « Nouvel exposant » ou « Exclu de la liste ». Elles se relèvent sur
            la valeur brute, et non sur l'exemple : celui-ci est tronqué, et un
            champ à choix multiple y perdrait ses dernières valeurs. */
-        noteValeurs(e.valeurs as string[], v);
+        const compte = comptes.get(cle) ?? new Map<string, number>();
+        noteValeurs(compte, v);
+        comptes.set(cle, compte);
         vus.set(cle, e);
       }
     }
   } catch (_) { /* l'échantillon manque, le schéma suffit */ }
 
-  // au-delà du seuil, le champ est du texte libre : sa liste n'aiderait pas
+  /* Le verdict, champ par champ : sa liste de valeurs, ou le fait qu'il est du
+     texte libre — ce que la console dit autrement qu'un relevé resté muet. */
   for (const d of vus.values()) {
-    if ((d.valeurs as string[]).length > VALEURS_MAX) d.valeurs = [];
+    const { valeurs, libre } = valeursRelevees(
+      comptes.get(String(d.cle)) ?? new Map<string, number>());
+    d.valeurs = valeurs;
+    if (libre) d.libre = true;
   }
 
   /* Ce qu'un champ à choix PEUT valoir, et pas seulement ce que l'échantillon

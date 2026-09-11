@@ -14,7 +14,7 @@
  */
 import {
   DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, separeValeurs,
-  valeurPerso, vrai, VALEURS_MAX,
+  valeurPerso, valeursRelevees, vrai,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -475,7 +475,7 @@ export class Eventmaker {
     retenus: number;
     ecartesNonInscrits: number;
     champs: { cle: string; libelle: string; groupe: string; exemple: string;
-               valeurs: string[] }[];
+               valeurs: string[]; libre?: boolean }[];
   }> {
     const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
@@ -647,7 +647,12 @@ function texteSeul(html: unknown): string | null {
 class Releve {
   private vus = new Map<
     string,
-    { cle: string; libelle: string; groupe: string; exemple: string; valeurs: string[] }
+    {
+      cle: string; libelle: string; groupe: string; exemple: string;
+      /* Un compte et non une liste : c'est la répétition des valeurs qui dira
+         si le champ range les fiches ou s'il porte du texte libre. */
+      compte: Map<string, number>;
+    }
   >();
 
   /** Une fiche de plus. */
@@ -668,14 +673,13 @@ class Releve {
     const d = this.vus.get(cle) ?? {
       cle, libelle, groupe,
       exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
-      valeurs: [] as string[],
+      compte: new Map<string, number>(),
     };
     /* Les valeurs distinctes, et pas seulement la première : c'est à elles
        qu'on reconnaît un champ à choix — « Nouveau Client », « Client N-1 »,
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
-       déclenchent. Au-delà de VALEURS_MAX, le champ est du texte libre : la
-       liste ne servirait plus à rien, et pèserait. */
-    noteValeurs(d.valeurs, ex);
+       déclenchent. */
+    noteValeurs(d.compte, ex);
     this.vus.set(cle, d);
   }
 
@@ -683,12 +687,14 @@ class Releve {
      nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
      natifs de la fiche d'invité, eux, sont les mêmes partout. */
   liste() {
-    /* Un champ qui a dépassé le seuil est du texte libre : on lâche sa liste
-       plutôt que d'en proposer un échantillon arbitraire. */
-    for (const d of this.vus.values()) {
-      if (d.valeurs.length > VALEURS_MAX) d.valeurs = [];
-    }
-    return [...this.vus.values()].sort((a, b) =>
+    /* Un champ de texte libre lâche sa liste plutôt que d'en proposer un
+       échantillon arbitraire — mais il le dit, sans quoi la console l'annonce
+       comme un relevé muet et fait attendre une synchronisation qui ne
+       relèverait pas davantage. */
+    return [...this.vus.values()].map(({ compte, ...d }) => {
+      const { valeurs, libre } = valeursRelevees(compte);
+      return libre ? { ...d, valeurs, libre } : { ...d, valeurs };
+    }).sort((a, b) =>
       GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
       a.cle.localeCompare(b.cle, "fr"));
   }
