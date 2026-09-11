@@ -1278,9 +1278,17 @@ affecté n'en lit aucun — mais il n'a rien à faire dans l'annuaire.
 
 Deux autres réglages conditionnent les invitations et les mots de passe oubliés :
 
-- **Authentication → URL Configuration** : ajouter `https://<domaine>/motdepasse`
-  aux *Redirect URLs*. Sans elle, le lien reçu par courriel retombe sur la page
-  d'accueil du projet et le mot de passe ne peut pas être posé.
+- **Authentication → URL Configuration** : deux champs, et les deux comptent.
+  *Site URL* doit porter l'adresse de service (`https://<domaine>`) ; elle vaut
+  `http://localhost:3000` sur un projet neuf. Les *Redirect URLs* doivent
+  contenir `https://<domaine>/motdepasse` — ajouter `https://<domaine>/**`
+  évite d'y revenir à chaque page.
+
+  C'est le réglage qui se remarque le plus tard : Supabase n'annonce pas qu'il
+  écarte une adresse de retour absente de la liste, il la remplace par *Site
+  URL*. Un lien d'invitation ou de mot de passe oublié pointant vers
+  `localhost` ne vient donc jamais du code — il dit que le domaine manque dans
+  ces deux champs.
 - **Authentication → Emails** : le service d'envoi intégré de Supabase est
   limité à quelques messages par heure et n'est pas prévu pour la production.
   Dès qu'on invite de vrais organisateurs, brancher un **SMTP** à soi
