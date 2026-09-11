@@ -280,6 +280,13 @@ table.champs .outil.danger:hover{color:var(--rouge);border-color:var(--rouge)}
    page, et son texte la fonte du corps — un numéro se lit en mono, une mention
    se lit comme une phrase. */
 .af-bad.neuf{background:var(--accent-soft);color:var(--accent);font-weight:600}
+/* La place du logo, et non le logo : le relevé abrège ses valeurs à soixante
+   caractères, quand une adresse d'image en fait le double. Le cadre en
+   pointillé dit où elle ira sans prétendre la montrer. */
+.af-logo{display:flex;align-items:center;justify-content:center;
+  height:44px;padding:0 10px;
+  border:1px dashed var(--line-strong);border-radius:4px;
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
 .af-hd h4{font-family:"Archivo",sans-serif;font-size:17px;letter-spacing:-.02em;
   margin:8px 0 5px;text-wrap:balance}
 .af-code{margin:0;font-size:12px;color:var(--ink-3)}

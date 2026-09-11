@@ -131,7 +131,7 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2720 l. → admin-plans.html
+### `_console-js.html` — 2741 l. → admin-plans.html
 
 - l.372 · Provenance des données
 - l.499 · Contenu de la fiche détail
@@ -142,28 +142,28 @@ Fonctions :
 `charge` 101 · `chargePlans` 116 · `majEvenement` 121 · `selonAdresse` 141
 `majAdresse` 149 · `majBarre` 164 · `dessineChoix` 206 · `champ` 226 · `dessineFiche` 251
 `fournisseurUtilise` 434 · `source` 438 · `champCle` 443 · `ligneSource` 478
-`origineConferences` 603 · `resumeProvenance` 668 · `resumeSalles` 685 · `resumeFiche` 696
-`caseFiche` 739 · `champsPersos` 782 · `criteres` 788 · `ecritFiche` 791 · `caseCritere` 806
-`clePerso` 825 · `ajouteChampPerso` 833 · `renommeChampPerso` 844 · `retireChampPerso` 862
-`lignesPerso` 910 · `clesCorps` 945 · `ordreEffectif` 959 · `libelleCorps` 974
-`champsLus` 1016 · `exempleCible` 1031 · `valeurApercu` 1053 · `dessineApercu` 1081
-`panneauOrdre` 1154 · `ligneOutil` 1336 · `ligneReglage` 1352 · `ouvreProvenance` 1364
-`ouvreSources` 1387 · `ouvreSalles` 1443 · `cadreFiche` 1558 · `ouvreFiche` 1587
-`sousTitre` 1737 · `tableauChamps` 1752 · `encode` 1895 · `decode` 1897
-`correspondance` 1902 · `sansPrefixe` 1905 · `courte` 1906 · `intitule` 1921
-`intituleSuite` 1933 · `separeValeurs` 1947 · `champOrigine` 1959 · `majLiens` 2188
-`majIntegration` 2215 · `majMsgSync` 2222 · `synchronise` 2237 · `dupliquer` 2280
-`litMonProfil` 2378 · `RETOUR_MDP` 2389 · `litComptes` 2391 · `ligneMessage` 2400
-`casesSalons` 2410 · `ouvreComptes` 2440 · `ouvreFicheCompte` 2532 · `videEcran` 2691
-`dessine` 2696 · `demarre` 2708
+`origineConferences` 613 · `resumeProvenance` 678 · `resumeSalles` 695 · `resumeFiche` 706
+`caseFiche` 749 · `champsPersos` 792 · `criteres` 798 · `ecritFiche` 801 · `caseCritere` 816
+`clePerso` 835 · `ajouteChampPerso` 843 · `renommeChampPerso` 854 · `retireChampPerso` 872
+`lignesPerso` 920 · `clesCorps` 955 · `ordreEffectif` 969 · `libelleCorps` 984
+`champsLus` 1026 · `exempleCible` 1041 · `valeurApercu` 1063 · `dessineApercu` 1091
+`panneauOrdre` 1175 · `ligneOutil` 1357 · `ligneReglage` 1373 · `ouvreProvenance` 1385
+`ouvreSources` 1408 · `ouvreSalles` 1464 · `cadreFiche` 1579 · `ouvreFiche` 1608
+`sousTitre` 1758 · `tableauChamps` 1773 · `encode` 1916 · `decode` 1918
+`correspondance` 1923 · `sansPrefixe` 1926 · `courte` 1927 · `intitule` 1942
+`intituleSuite` 1954 · `separeValeurs` 1968 · `champOrigine` 1980 · `majLiens` 2209
+`majIntegration` 2236 · `majMsgSync` 2243 · `synchronise` 2258 · `dupliquer` 2301
+`litMonProfil` 2399 · `RETOUR_MDP` 2410 · `litComptes` 2412 · `ligneMessage` 2421
+`casesSalons` 2431 · `ouvreComptes` 2461 · `ouvreFicheCompte` 2553 · `videEcran` 2712
+`dessine` 2717 · `demarre` 2729
 
 Éléments :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 577 l. → console.css
+### `_console.css` — 584 l. → console.css
 
-- l.523 · Page de rapport
+- l.530 · Page de rapport
 
 ### `_dessin.html` — 1418 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -215,7 +215,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2831 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2832 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -289,7 +289,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2624 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2655 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -298,8 +298,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2269 · 8. Interactions du plan
-- l.2470 · Le tiroir de la liste — écrans étroits
+- l.2300 · 8. Interactions du plan
+- l.2501 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -321,11 +321,11 @@ Fonctions :
 `echelle` 1407 · `ETROIT` 1421 · `anime` 1423 · `noeud` 1447 · `canalPlan` 1457
 `rangSociete` 1465 · `select` 1474 · `centre` 1495 · `centrePoint` 1499 · `montre` 1514
 `libelleCorps` 1547 · `ordreCorps` 1559 · `momentLocal` 1596 · `programme` 1619
-`jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `imageSure` 1798
-`assainitRiche` 1827 · `enBlocs` 1867 · `rangeRiche` 1880 · `ecarteClicFantome` 1908
-`nomSociete` 1917 · `societes` 1930 · `choisitExposant` 1941 · `poseCode` 1987
-`ouvre` 2006 · `ferme` 2243 · `onglet` 2259 · `milieu` 2289 · `commencePince` 2295
-`suitPince` 2309 · `mesureTiroir` 2481 · `montreTiroir` 2484
+`jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `adresseImage` 1799
+`imageSure` 1812 · `assainitRiche` 1841 · `enBlocs` 1881 · `rangeRiche` 1894
+`ecarteClicFantome` 1922 · `nomSociete` 1931 · `societes` 1944 · `choisitExposant` 1955
+`poseCode` 2001 · `ouvre` 2020 · `ferme` 2274 · `onglet` 2290 · `milieu` 2320
+`commencePince` 2326 · `suitPince` 2340 · `mesureTiroir` 2512 · `montreTiroir` 2515
 
 Éléments :
 
@@ -426,13 +426,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 406 l.
+### `supabase/functions/_partage/champs.ts` — 437 l.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 729 l.
+### `supabase/functions/_partage/eventmaker.ts` — 733 l.
 
-`grapheJson` 144 · `enParallele` 597 · `texteSeul` 617 · `champs` 694
+`grapheJson` 147 · `enParallele` 601 · `texteSeul` 621 · `champs` 698
 
 ### `supabase/functions/_partage/gaia.ts` — 224 l.
 
@@ -454,15 +454,15 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 508 l.
+### `supabase/functions/plan-public/index.ts` — 509 l.
 
-`cors` 49 · `db` 83 · `salon` 96 · `retraits` 162 · `ampute` 185 · `masquesDe` 225
-`masquesDuPlan` 245
+`cors` 49 · `db` 83 · `salon` 96 · `retraits` 163 · `ampute` 186 · `masquesDe` 226
+`masquesDuPlan` 246
 
-### `supabase/functions/sync-evenement/index.ts` — 1095 l.
+### `supabase/functions/sync-evenement/index.ts` — 1110 l.
 
-`cors` 41 · `client` 79 · `gaia` 86 · `libellesChoix` 97 · `fournisseur` 122 · `range` 158
-`champsKlipso` 179 · `hebergee` 1053 · `nettoieUrl` 1071 · `groupeTextes` 1081
+`cors` 42 · `client` 80 · `gaia` 87 · `libellesChoix` 98 · `fournisseur` 123 · `range` 159
+`champsKlipso` 180 · `hebergee` 1067 · `nettoieUrl` 1086 · `groupeTextes` 1096
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

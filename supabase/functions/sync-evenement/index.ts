@@ -24,7 +24,8 @@ import {
 } from "../_partage/eventmaker.ts";
 import {
   DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
-  decoupe, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai, VALEURS_MAX,
+  decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai,
+  VALEURS_MAX,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -733,6 +734,13 @@ Deno.serve(async (req) => {
               fb: val("facebook"), li: val("linkedin"), ig: val("instagram"),
             };
 
+          /* Le logo suit la société, comme les contacts. Côté Klipso rien ne
+             le porte d'office : la cible reste vide tant que l'exploitant n'a
+             pas désigné le champ de son salon qui tient une adresse d'image. */
+          const logo = !ok ? null
+            : expoEm ? (em ? em.logo : null)
+            : imageDistante(lit(cibleK("logo"), origines));
+
           /* Le secteur est une propriété de l'emplacement, pas de la société qui
              l'occupe : un stand encore libre appartient déjà au sien. Il ne
              dépend donc ni de l'appariement, ni de la source des exposants — et
@@ -753,6 +761,12 @@ Deno.serve(async (req) => {
             plan: (expoEm ? em?.raison : null) ?? val("raison"),
             nom: !ok ? null : expoEm ? em!.nom : val("nom"),
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
+            /* Le logo en tête de fiche. La clé ne descend pas quand il n'y en
+               a pas : l'instantané est servi au public, et une adresse absente
+               n'a pas à peser sur chaque stand. Rien n'est recopié ni
+               redimensionné — la page charge l'image chez la source, et c'est
+               une fiche ouverte à la fois. */
+            ...((ok && logo) ? { logo } : {}),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(lit(cibleK("nomenclature"), origines, true)),
             /* Les thématiques n'existent que côté Eventmaker, et seulement sur
@@ -1053,7 +1067,8 @@ Deno.serve(async (req) => {
 function hebergee(x: ExposantEm): Record<string, unknown> {
   const o: Record<string, unknown> = { nom: x.nom };
   const champs: [string, unknown][] = [
-    ["plan", x.raison], ["site", nettoieUrl(x.site)], ["adr", x.adresse], ["ville", x.ville],
+    ["plan", x.raison], ["logo", x.logo], ["site", nettoieUrl(x.site)],
+    ["adr", x.adresse], ["ville", x.ville],
     ["pays", x.pays], ["tel", x.tel], ["fb", x.facebook],
     ["li", x.linkedin], ["ig", x.instagram],
   ];

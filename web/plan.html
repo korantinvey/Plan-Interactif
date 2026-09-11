@@ -761,12 +761,13 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    icône. */
 .detail-hd h2 .crayon{margin-left:6px;font-weight:400;letter-spacing:normal}
 .detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
-/* Le logo d'une zone : une marque, posée en tête de l'en-tête, avant le type
-   et le nom qu'elle accompagne. Sans cadre ni fond — l'image porte le sien
-   quand elle en a un, et un blanc plaqué sur l'en-tête coloré d'un modèle y
-   faisait une étiquette rapportée. Contenu plutôt que découpé : un logo
-   tronqué n'est plus le logo. La largeur laisse sa place au coin des actions,
-   qui flotte au-dessus de l'en-tête. */
+/* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
+   source : une marque, posée en tête de l'en-tête, avant le type et le nom
+   qu'elle accompagne. Sans cadre ni fond — l'image porte le sien quand elle en
+   a un, et un blanc plaqué sur l'en-tête coloré d'un modèle y faisait une
+   étiquette rapportée. Contenu plutôt que découpé : un logo tronqué n'est plus
+   le logo. La largeur laisse sa place au coin des actions, qui flotte au-dessus
+   de l'en-tête. */
 .detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
   max-width:min(190px,calc(100% - 70px));max-height:54px;margin:0 0 10px}
 .detail-hd .logoZone[hidden]{display:none}
@@ -4628,6 +4629,20 @@ function adresseSure(v){
 const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
 
 /**
+ * Le logo d'une société, relu avant d'être affiché.
+ *
+ * Celui-ci n'est pas déposé mais lu chez la source — l'avatar d'une fiche
+ * Eventmaker — et c'est donc une adresse, quand celui d'une zone est une image
+ * embarquée. La synchronisation applique déjà la règle ; la page ne s'en remet
+ * pas à elle pour autant : « data: » et « javascript: » sont des adresses
+ * valides, et cette fiche-là est posée chez tous les visiteurs.
+ */
+function adresseImage(v){
+  const u = String(v == null ? "" : v).trim().replace(/[\u0000-\u001F]/g, "");
+  return /^https?:\/\//i.test(u) ? u : "";
+}
+
+/**
  * Le logo d'une zone, relu avant d'être affiché.
  *
  * Il suit le chemin de la description — saisi par un exploitant authentifié,
@@ -4873,17 +4888,34 @@ function ouvre(o, rect, canal, iSoc){
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
-  /* Le logo que l'exploitant a déposé sur la zone. Il vit dans l'en-tête, avec
-     le type et le nom : c'est une marque, elle se lit avec ce qu'elle nomme et
-     non parmi les champs. Relu avant d'être posé, comme la description — il
-     vient du même endroit, et finit dans la même fiche. L'adresse est retirée
-     avec lui, sinon la zone suivante montrerait la marque de la précédente le
-     temps que la sienne arrive. */
-  const blason = zone ? ok("logo", imageSure(o.logo)) : "";
+  /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
+     lit avec ce qu'elle nomme et non parmi les champs. Sans intitulé au-dessus
+     d'elle — une image se reconnaît sans qu'on la nomme.
+
+     Deux origines, une seule place. Sur une zone, c'est ce que l'exploitant y a
+     déposé, qui voyage dans la fiche et se relit comme la description — il
+     vient du même endroit, et finit au même endroit. Sur un stand, c'est le
+     logo de l'enseigne lu chez la source, et il suit la société qu'on regarde
+     plutôt que l'emplacement : sur un stand partagé, chaque hébergée montre le
+     sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
+     ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
+     Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
+  const blason = ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo));
   const marque = $("dLogo");
   if (marque){
+    /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
+       s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
+       Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
+       ligne les couvre tous les deux. */
+    marque.onerror = () => { marque.hidden = true; };
     marque.hidden = !blason;
-    if (blason) marque.src = blason; else marque.removeAttribute("src");
+    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
+       montrerait la marque de la précédente le temps que la sienne arrive. */
+    if (blason){
+      marque.src = blason;
+      // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
+      if (marque.complete && !marque.naturalWidth) marque.hidden = true;
+    } else marque.removeAttribute("src");
   }
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
