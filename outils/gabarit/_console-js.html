@@ -71,16 +71,23 @@ async function fluxFonction(nom, corps, surLigne) {
  * Elle montre trois choses, et pas une de plus : où l'on en est dans
  * l'ensemble, où l'on en est dans l'étape qui tourne, et ce qui a été compté.
  * La barre du haut est jalonnée d'une étape à l'autre — un jalon par étape,
- * posé à la part qu'elle occupe — parce qu'une barre nue dit qu'on attend sans
- * dire quoi ; la sous-barre suit les éléments de l'étape en cours ; le tableau
- * en dessous garde les chiffres, qui sont ce qu'on vient vérifier.
+ * régulièrement espacés — parce qu'une barre nue dit qu'on attend sans dire
+ * quoi ; la sous-barre suit les éléments de l'étape en cours ; le tableau en
+ * dessous garde les chiffres, qui sont ce qu'on vient vérifier.
  *
- * Les étapes et leur poids sont annoncés par le serveur, non devinés ici : lui
- * seul sait ce qu'il va réellement faire. Le poids d'une étape, c'est son
- * nombre d'éléments ; il arrive estimé d'après la dernière synchronisation
- * puis corrigé en cours de route, et la barre générale pourrait alors reculer
- * — ce qu'on ne lui laisse jamais faire, un avancement qui redescend se lisant
- * comme une panne.
+ * Les jalons sont à intervalle égal, et leur part n'est pas chiffrée. Posés à
+ * la part que le nombre d'éléments valait à chaque étape, ils tombaient à des
+ * endroits — 46 %, 57 % — qui donnaient à lire une précision qui n'existe pas :
+ * ce sont des estimations, pas une promesse de durée. Une étape vaut une
+ * étape ; ce qui se compte vraiment se compte dans l'étape, sur la sous-barre
+ * et dans le tableau.
+ *
+ * Les étapes sont annoncées par le serveur, non devinées ici : lui seul sait
+ * ce qu'il va réellement faire. Le poids qu'il leur donne — leur nombre
+ * d'éléments, estimé d'après la dernière synchronisation puis corrigé — ne
+ * décide plus de la largeur d'un segment ; il sert de repère à l'avancement
+ * d'une étape dont on ignore le total, et un poids nul dit qu'elle n'est pas
+ * reprise du tout.
  *
  * La fenêtre ne se ferme pas d'elle-même : le bilan est ce qu'on vient y lire,
  * et il arrive à la dernière ligne.
@@ -88,7 +95,7 @@ async function fluxFonction(nom, corps, surLigne) {
 function fenetreAvancement(titre) {
   let etapes = [], vivante = true, plafond = 0;
   const compte = new Map();
-  let rail, noms, libs, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
   const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
 
   ouvreModale(titre, (c) => {
@@ -99,7 +106,6 @@ function fenetreAvancement(titre) {
         '<span class="sync-pct mono">0 %</span></div>' +
       '<div class="sync-noms"></div>' +
       '<div class="sync-rail"><span class="sync-depart"></span></div>' +
-      '<div class="sync-libs"></div>' +
       '<p class="sync-ecarte" hidden></p>' +
       '<div class="sync-cours"><span class="sync-quoi"></span>' +
         '<span class="sync-compte mono"></span></div>' +
@@ -109,7 +115,6 @@ function fenetreAvancement(titre) {
     c.appendChild(d);
     rail = d.querySelector(".sync-rail");
     noms = d.querySelector(".sync-noms");
-    libs = d.querySelector(".sync-libs");
     pctTxt = d.querySelector(".sync-pct");
     quoi = d.querySelector(".sync-quoi");
     compteTxt = d.querySelector(".sync-compte");
@@ -122,42 +127,29 @@ function fenetreAvancement(titre) {
   }, [{ libelle: "Fermer", genre: "primaire" }], () => { vivante = false; });
   verrouilleModale(true);
 
+  // Les étapes qui ont un segment : celles que la synchronisation reprend.
   const vues = () => etapes.filter((e) => e.poids > 0);
-  const somme = () => vues().reduce((a, e) => a + e.poids, 0) || 1;
 
-  /* Les jalons ne sont pas répartis à intervalle égal : chacun se tient à la
-     part que son étape occupe, et c'est tout l'intérêt — voir d'un coup d'œil
-     que le plan vaut les trois quarts du travail. Une étape non reprise n'y
-     figure pas ; deux jalons au même endroit ne font qu'un point illisible.
-     Elle est nommée sous la barre, pour qu'on la sache écartée et non oubliée. */
+  /* Un segment par étape, tous de même largeur, et un jalon au bout de chacun.
+     Une étape non reprise n'a pas de segment : elle en occuperait un sans
+     jamais rien y faire avancer. Elle est nommée sous la barre, pour qu'on la
+     sache écartée et non oubliée. */
   function construitRail() {
     if (!rail) return;
     rail.innerHTML = '<span class="sync-depart"></span>';
     noms.innerHTML = "";
-    libs.innerHTML = "";
-    const s = somme();
-    let cumul = 0;
     vues().forEach((e) => {
-      cumul += e.poids;
       e.seg = document.createElement("div");
       e.seg.className = "sync-seg";
-      e.seg.style.flexGrow = e.poids;
       e.seg.innerHTML =
         '<span class="sync-piste"><span></span></span><span class="sync-point"></span>';
       rail.appendChild(e.seg);
 
       e.nom = document.createElement("div");
       e.nom.className = "sync-nom";
-      e.nom.style.flexGrow = e.poids;
       e.nom.textContent = e.libelle;
       e.nom.title = e.libelle + (e.source && e.source !== "aucun" ? " — " + e.source : "");
       noms.appendChild(e.nom);
-
-      e.lib = document.createElement("div");
-      e.lib.className = "sync-lib mono";
-      e.lib.style.flexGrow = e.poids;
-      e.lib.textContent = Math.round(cumul / s * 100) + " %";
-      libs.appendChild(e.lib);
     });
     const hors = etapes.filter((e) => e.poids <= 0);
     ecarte.hidden = !hors.length;
@@ -175,7 +167,11 @@ function fenetreAvancement(titre) {
       e.seg.querySelector(".sync-piste > span").style.width =
         Math.round(e.frac * 100) + "%";
     });
-    const p = vues().reduce((a, e) => a + e.poids * e.frac, 0) / somme() * 100;
+    /* Le pourcentage et le remplissage disent la même chose, et c'est la
+       condition pour qu'on les croie : les segments étant égaux, la part faite
+       est la moyenne de ce que chaque étape a avancé. */
+    const l = vues();
+    const p = l.reduce((a, e) => a + e.frac, 0) / (l.length || 1) * 100;
     plafond = Math.max(plafond, Math.min(100, p));
     pctTxt.textContent = Math.round(plafond) + " %";
   }

@@ -435,11 +435,11 @@ tr.eteint td{opacity:.45}
   background:var(--surface-2);padding:1px 5px;border-radius:3px}
 /* ---------- fenêtre d'avancement d'une synchronisation ----------
 
-   La barre générale est jalonnée : un segment par étape, large de ce que
-   l'étape pèse, et un point à sa fin. Les largeurs viennent donc de
-   `flex-grow` et non d'un pourcentage calculé — c'est la mise en page qui
-   place les jalons, et le dernier libellé tombe pile au bord droit sans
-   qu'aucun décalage n'ait à être deviné. */
+   La barre générale est jalonnée : un segment par étape, tous de même
+   largeur, et un point à la fin de chacun. Les largeurs viennent de `flex` et
+   non d'un pourcentage calculé — c'est la mise en page qui place les jalons,
+   et le dernier tombe pile au bord droit sans qu'aucun décalage n'ait à être
+   deviné. */
 .sync{display:flex;flex-direction:column}
 .sync-tete{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px}
 .sync-pct{font-size:15px;font-weight:600;color:var(--accent)}
@@ -458,24 +458,18 @@ tr.eteint td{opacity:.45}
 .sync-seg[data-etat="echec"] .sync-piste>span,
 .sync-seg[data-etat="echec"] .sync-point{background:var(--rouge)}
 
-/* Deux rangées de libellés autour de la barre, et elles ne se lisent pas de
-   la même façon : le nom d'une étape ouvre son segment, calé à gauche, tandis
-   que le pourcentage se lit au jalon qui la ferme, donc à droite. Empilés du
-   même côté, « Exposants » et « Conférences » se touchaient dès que l'un des
-   deux segments se resserrait ; de part et d'autre, chacun n'a plus à tenir
-   que dans sa propre part, où il s'abrège au besoin. Le décalage de tête vaut
-   le point de départ, faute de quoi les deux rangées glisseraient d'autant. */
-.sync-noms,.sync-libs{display:flex;padding-left:8px}
-.sync-noms{margin-bottom:6px}
-.sync-libs{margin-top:6px}
-.sync-nom,.sync-lib{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;font-size:11.5px;color:var(--ink-3)}
-.sync-nom{padding-right:8px;font-weight:500}
-.sync-lib{text-align:right;font-size:10.5px;opacity:.75;padding-left:8px}
+/* Le nom d'une étape ouvre son segment, calé à gauche : chacun ne tient que
+   dans sa propre part, où il s'abrège au besoin, plutôt que de se cogner à son
+   voisin. Le décalage de tête vaut le point de départ, faute de quoi la rangée
+   glisserait d'autant. */
+.sync-noms{display:flex;padding-left:8px;margin-bottom:6px}
+.sync-nom{flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;font-size:11.5px;font-weight:500;color:var(--ink-3);
+  padding-right:8px}
 .sync-nom[data-etat="encours"]{color:var(--accent);font-weight:600}
 .sync-nom[data-etat="fait"]{color:var(--ink-2)}
 .sync-nom[data-etat="echec"]{color:var(--rouge)}
-.sync-ecarte{font-size:11.5px;color:var(--ink-3);margin:10px 0 0}
+.sync-ecarte{font-size:11.5px;color:var(--ink-3);margin:13px 0 0}
 
 .sync-cours{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
   margin-top:20px;font-size:13px}
