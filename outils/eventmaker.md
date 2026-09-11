@@ -205,6 +205,75 @@ n'en invente pas.
 Ce raisonnement vaut pour **un plan Klipso et des exposants Eventmaker**, et
 pour cette combinaison seule : c'est elle qui met le dossier des deux côtés.
 
+## Le logo d'un exposant
+
+Il n'est pas un champ personnalisé, pour une fois : c'est **l'avatar de la fiche
+d'invité**, natif d'Eventmaker et nommé pareil partout. Sur une fiche de
+société, ce que l'organisateur y dépose est le logo de l'enseigne.
+
+```
+GET /api/v1/events/{id}/guests/{guestId}.json
+  avatar         l'image déposée, telle quelle          ← la seule utilisable
+  avatar_medium  la même, recadrée en 350 × 350
+  avatar_thumb   la même, recadrée en 128 × 128
+```
+
+Le remplissage est bon, et régulier : **572 fiches d'exposants sur 576** en
+portent une sur Franchise Expo Paris 2026, et dix-huit des vingt et un salons du
+compte en ont — SIDO, Lyon Cyber Expo, Open Source Experience, C!Print, SHOP!,
+LUXE PACK. Deux n'en ont aucune, et c'est leur état, non une panne : personne
+n'y a déposé de logo. La cible garde donc `invite:avatar` pour défaut.
+
+Les adresses sont publiques — un S3 chez `mobicheckin-assets`, servi sans jeton :
+la page les charge directement, sans relais ni recopie.
+
+### Les deux variantes carrées ne valent rien ici
+
+Elles ont l'air d'être ce qu'on cherche — plus légères, de taille connue — et
+elles sont deux pièges superposés.
+
+**Elles recadrent au carré, elles n'ajustent pas.** Le logo « Collabora Office »,
+1772 × 667, revient en 128 × 128 amputé de ses bords : on y lit « Colla » sur une
+ligne et « Offic » sous elle. Or un logo d'enseigne est large plus souvent que
+carré, et c'est le nom qu'on ampute. L'original, lui, n'est pas borné : il va du
+carré de 250 pixels au panorama de 1920 × 1081, et c'est la page qui le range
+dans une boîte fixe, entier.
+
+**Sur une fiche sans logo, elles ne sont pas vides.** `avatar` vaut alors `null`,
+mais les deux autres désignent une image fabriquée à la volée par
+`ui-avatars.com` : les initiales de la personne inscrite, sur une pastille de
+couleur. « TR » en tête de la fiche d'une enseigne ne dit rien d'elle, et vaut
+moins que pas d'image du tout. `imageDistante()` les écarte donc par leur
+domaine, quelle que soit la variante désignée — mais c'est bien `avatar` qu'il
+faut désigner, et l'aide de la console le dit à l'endroit où l'on choisit.
+
+### Ce que la page en fait
+
+Le logo paraît **en tête du corps de la fiche détail**, et nulle part ailleurs.
+Ce n'est pas une économie de mise en page mais de poids : les 573 logos de
+Franchise Expo pèsent **70 Mo** — 28 ko à la médiane, 4,7 Mo pour le plus lourd
+— et une liste de cinq cents exposants les demanderait tous. Une fiche n'en
+charge qu'un, à son ouverture, chez la source. Rien n'est recopié ni
+redimensionné : il n'y a pas de relais d'images dans ce dépôt, et en ajouter un
+pour trois cents kilo-octets par fiche ouverte serait payer cher un confort.
+
+Il partage le cadre du **logo d'une zone organisateur**, arrivé en même temps
+par un autre chemin — celui-là est déposé par l'exploitant et voyage dans la
+fiche, en data-URI. Deux origines, une seule façon de l'afficher : le même
+`.logoZone`, à fond clair parce qu'un logo est le plus souvent sombre sur
+transparent et s'effacerait en thème sombre, et l'image s'y range entière,
+`contain` et non recadrée — précisément ce que les variantes carrées
+d'Eventmaker ne savent pas faire.
+
+Ce qui les sépare tient en une ligne : une image embarquée ne manque jamais à
+l'appel, une adresse si. Celle qui ne répond plus efface son cadre avec elle, et
+reste effacée quand on rouvre la fiche — une vignette brisée en tête de fiche se
+remarque plus qu'un logo absent.
+
+Un co-exposant porte le sien, comme il porte ses thématiques : c'est sa fiche à
+elle qu'on regarde, et le stand affiche le logo de la société choisie, non celui
+du titulaire.
+
 ## Les thématiques d'un exposant
 
 Elles n'ont pas de champ à elles : comme la nomenclature, ce sont des champs
