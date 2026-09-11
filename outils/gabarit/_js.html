@@ -464,6 +464,11 @@ function montePlan(){
 }
 
 function onglets(){
+  /* Un salon d'un seul pavillon n'a rien à choisir : l'onglet unique ne ferait
+     que répéter le titre, et sur un écran étroit il lui prend sa largeur. */
+  const seul = DATA.plans.length < 2;
+  $("halls").hidden = seul;
+  if (seul) { $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
     '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
