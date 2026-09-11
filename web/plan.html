@@ -4272,6 +4272,7 @@ function rafraichitVue(){
 
 /** À la fin d'un geste, ou pour un saut de vue : tout, sans attendre. */
 function poseVue(){
+  stoppeZoom();
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libelles();
@@ -4344,10 +4345,71 @@ function fit(){
            w: k * r.width, h: k * r.height };
   poseVue();
 }
-function zoom(f, cx, cy){
-  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, view.w * f)), k = nw / view.w;
-  view = { x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w: nw, h: view.h * k };
-  rafraichitVue();
+/* Le zoom par crans, et la saccade qu'il donnait.
+
+   Une molette envoie des crans, un pavé tactile une pluie de petits
+   mouvements. Appliquer à chacun le même facteur fixe ratait les deux : la
+   souris sautait de dix-huit pour cent d'un coup, sans rien entre les deux
+   images ; le pavé, qui envoie plusieurs événements par image, les
+   multipliait entre eux — le plan bondissait au lieu de glisser.
+
+   Deux corrections, donc, et elles vont ensemble. Le facteur suit l'ampleur
+   du geste au lieu d'être constant (voir l'écouteur « wheel »), et la vue
+   qu'on vise se distingue de celle qu'on montre : un cran pousse la première,
+   chaque image rapproche la seconde d'une fraction de ce qui les sépare.
+
+   L'interpolation porte sur les quatre nombres à la fois et reste linéaire :
+   le point visé se retrouve alors exactement sous le curseur à chaque image
+   du trajet, et non seulement à l'arrivée. */
+let vise = null, imageZoom = null;
+
+function stoppeZoom(){
+  if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
+  vise = null;
+}
+
+function glisseVersVise(){
+  if (imageZoom) return;
+  let precedent = performance.now();
+  const pas = maintenant => {
+    imageZoom = null;
+    if (!vise) return;
+    /* Le rapprochement se compte en millisecondes, non en images : sans quoi
+       un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
+    const dt = Math.min(64, maintenant - precedent) || 16;
+    precedent = maintenant;
+    const k = 1 - Math.pow(.5, dt / 45);
+    const but = vise;
+    view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
+             w: view.w + (but.w - view.w) * k, h: view.h + (but.h - view.h) * k };
+    // assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
+    // se retrient enfin — c'est la fin du geste
+    if (Math.abs(but.w - view.w) < but.w * .002){
+      view = but; vise = null; poseVue(); return;
+    }
+    appliqueVue(); echelle();
+    imageZoom = requestAnimationFrame(pas);
+  };
+  imageZoom = requestAnimationFrame(pas);
+}
+
+/**
+ * Zoom d'un facteur `f` autour d'un point du cadre donné en fraction de sa
+ * largeur et de sa hauteur — `.5, .5` pour le centre, la position du curseur
+ * pour la molette.
+ *
+ * Les crans s'enchaînent sur la vue visée, non sur la vue affichée : deux
+ * tours de molette rapides comptent double, sans que le second reparte du
+ * trajet que le premier n'avait pas fini de parcourir.
+ */
+function zoom(f, fx, fy){
+  const base = vise || view;
+  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
+  vise = { x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
+           w: nw, h: base.h * k };
+  // qui refuse les animations refuse celle-ci : on se pose tout de suite
+  if (REDUIT){ view = vise; vise = null; poseVue(); return; }
+  glisseVersVise();
 }
 function echelle(){
   const r = svg.getBoundingClientRect();
@@ -5322,6 +5384,9 @@ function suitPince(){
 
 svg.addEventListener("pointerdown", e => {
   dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
+  // la main posée l'emporte sur la molette : un glissement qui finissait sa
+  // course tirerait la vue sous le doigt qui vient de la saisir
+  stoppeZoom();
   /* Un « pointerup » se perd parfois — la main sort de l'écran, le navigateur
      passe la main à un geste système. Le doigt restait alors inscrit, et
      l'appui suivant passait pour le second d'un pincement : plus rien ne
@@ -5386,9 +5451,14 @@ svg.addEventListener("pointercancel", e => {
 svg.addEventListener("wheel", e => {
   e.preventDefault();
   const r = svg.getBoundingClientRect();
-  zoom(e.deltaY > 0 ? 1.18 : .85,
-       view.x + (e.clientX - r.left) / r.width * view.w,
-       view.y + (e.clientY - r.top) / r.height * view.h);
+  /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
+     pages — et un pavé tactile envoie des dixièmes de cran là où une molette
+     en envoie un entier. On ramène tout en pixels, puis on en fait un facteur
+     exponentiel : deux petits mouvements valent alors exactement un grand,
+     et un tour de molette garde les dix-huit pour cent qu'il avait. */
+  const px = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? r.height : 1);
+  zoom(Math.exp(Math.max(-400, Math.min(400, px)) / 600),
+       (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
 }, { passive: false });
 svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
@@ -5447,8 +5517,8 @@ document.addEventListener("keydown", e => {
 });
 
 $("btnFiltres").onclick = ouvreCriteres;
-$("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
-$("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
+$("zIn").onclick = () => zoom(.75, .5, .5);
+$("zOut").onclick = () => zoom(1.33, .5, .5);
 $("zFit").onclick = fit;
 /* Une recherche n'est pas une frappe. On attend que la main s'arrête, et on
    ne compte pas deux fois le même mot-clé — retirer une lettre puis la
