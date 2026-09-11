@@ -813,7 +813,29 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 @media (prefers-reduced-motion:reduce){
   .dcal .repere.phare,#zones g.phare,#labels .lbl.phare text{animation:none}
 }
-@media (max-width:760px){.poi{max-width:88%;bottom:12px}}
+/* Sur un écran étroit, le cartouche passait à la ligne dès trois familles de
+   repères : une pastille seule sous deux autres, et le plan perdait la hauteur
+   de la ligne en trop au moment où il en a le moins. Il tient donc sur une
+   seule ligne, quitte à déborder — ce qui dépasse se fait glisser du doigt,
+   comme les pavillons de la barre du haut, qui cèdent de la même façon. La
+   barre de défilement est masquée : elle aurait mangé, sous les pastilles, le
+   tiers de ce qu'on venait de gagner.
+
+   « justify-content » repasse au début : centré, un contenu plus large que son
+   cadre déborde des deux côtés et le premier bouton devient inatteignable.
+   Tant que tout tient, le cartouche reste centré par ses marges automatiques —
+   sa largeur épouse son contenu — et rien ne change à l'œil. */
+@media (max-width:760px){
+  .poi{max-width:calc(100% - 24px);bottom:12px;
+    flex-wrap:nowrap;justify-content:flex-start;
+    overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+    gap:5px;padding:6px 8px}
+  .poi::-webkit-scrollbar{display:none}
+  /* Sans cela les pastilles se compriment au lieu de déborder : le libellé s'y
+     coupait en deux lignes, et le cartouche regagnait la hauteur qu'on venait
+     de lui retirer. */
+  .poiBtn{flex:none;white-space:nowrap}
+}
 
 .scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
   font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
