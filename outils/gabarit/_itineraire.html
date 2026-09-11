@@ -1868,7 +1868,7 @@ const marchesIci = () => (TRACE ? TRACE.etapes : [])
 /** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
  *  exprimé en mètres d'après le zoom du moment. */
 function rayonBout(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return Math.max(.4, view.w / (r.width || 1) * 6);
 }
 
@@ -1947,7 +1947,7 @@ function cadreItineraire(){
     x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);

@@ -36,7 +36,7 @@ function montreCote(txt, p){
     el.id = "cote";
     svg.appendChild(el);
   }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);          // un pixel d'écran, en mètres
   el.setAttribute("font-size", +(13 * u).toFixed(3));
   el.setAttribute("x", +(p[0] + 12 * u).toFixed(2));
@@ -207,7 +207,7 @@ function montreAimants(coins, opts){
   let g = $("aimantsVus");
   const efface = () => { if (g) g.remove(); AIMANTS_VUS = ""; };
   if (!coins || !coins.length || !aimantsActifs() || o.alt){ efface(); return; }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);        // un pixel d'écran, en mètres
   /* Une portée comptée en pixels et non en mètres : ce qu'on montre, c'est le
      voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on

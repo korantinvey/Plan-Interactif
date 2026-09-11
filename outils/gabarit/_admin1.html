@@ -451,6 +451,64 @@ const modeleRetenu = () => {
   return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
+/* La police des libellés du plan, modèle par modèle.
+
+   Un modèle est un accord typographique, et le plan en fait partie : un salon
+   habillé en « Kraft » gardait ses enseignes composées en grotesque au milieu
+   de son carton, et le « Magazine » son sommaire en serif à côté d'un plan
+   qui n'en avait rien. Chaque ligne reprend donc la police que le modèle pose
+   déjà sur le nom et sur le numéro de ses lignes de liste — celui du plan est
+   le même nom, écrit sur la cloison plutôt que dans la marge.
+
+   Les onze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
+   la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
+   côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
+   choix. */
+const P_SANS = '"Instrument Sans", "Segoe UI", system-ui, sans-serif',
+      P_CHASSE = '"IBM Plex Mono", monospace',
+      P_GROTESQUE = '"Archivo", sans-serif', P_SERIF = '"Fraunces", Georgia, serif',
+      P_MACHINE = '"Courier Prime", monospace';
+const POLICES_LIBELLE = {
+  sobre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  grille:   { nom: ["600", P_GROTESQUE], code: ["600", P_CHASSE] },
+  console:  { nom: ["500", P_CHASSE],    code: ["500", P_CHASSE] },
+  billet:   { nom: ["600", P_SANS],      code: ["600", P_CHASSE] },
+  magazine: { nom: ["600", P_SERIF],     code: ["600", P_SERIF] },
+  brut:     { nom: ["700", P_SANS],      code: ["700", P_CHASSE] },
+  verre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  kraft:    { nom: ["700", P_MACHINE],   code: ["700", P_MACHINE] },
+  signal:   { nom: ["700", P_SANS],      code: ["600", P_CHASSE] },
+  chrono:   { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+};
+
+/**
+ * Pose la police du modèle sur les libellés du plan.
+ *
+ * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
+ * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
+ * nom à la place dont il dispose, mesurent P_NOM et P_CODE. Les séparer
+ * donnerait un nom calculé pour une police et rendu dans une autre — plus
+ * large que son stand, ou perdu au milieu.
+ *
+ * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
+ * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
+ * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
+ * que la case du numéro se taille elle aussi sur P_CODE.
+ */
+function posePoliceLibelles(cle){
+  const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
+  const change = P_NOM !== p.nom || P_CODE !== p.code;
+  P_NOM = p.nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", p.nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  racine.style.setProperty("--police-lab-code", p.code[1]);
+  racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  // les repères et les stands tracés à la main portent leur libellé dans leur
+  // propre forme : ils se retracent, ils ne se restylent pas
+  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+}
+
 /**
  * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
  * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
@@ -471,6 +529,7 @@ function appliqueModele(){
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  posePoliceLibelles(cle);
 }
 
 /* ------------------------------------------------------------------

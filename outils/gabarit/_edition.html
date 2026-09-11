@@ -48,7 +48,7 @@ function dessinePoignees(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
   const f = cible.f;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const t = Math.max(.15, view.w / (r.width || 1) * 5);   // demi-côté, en mètres
   const b = boite(f);
   const marge = t;
