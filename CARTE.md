@@ -169,7 +169,7 @@ Fonctions :
 
 - l.622 · Page de rapport
 
-### `_dessin.html` — 1505 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1498 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -186,13 +186,13 @@ Fonctions :
 `remplitListeSocietes` 625 · `societeSaisie` 633 · `traceStandDessine` 649
 `texteStandDessine` 673 · `poseLibellesDessines` 691 · `decoupeStand` 712
 `marqueStandsDessines` 724 · `rafraichitStandsDessines` 739 · `oublieReperes` 769
-`reperesCherchables` 771 · `vaAuRepere` 820 · `cartouchePoi` 847 · `ouvrePoi` 929
-`mesureCartouche` 1000 · `phareRepere` 1007 · `phareZone` 1008 · `eclairePoi` 1012
-`signale` 1030 · `calquePourImage` 1044 · `poseImage` 1057 · `importeImage` 1070
-`dessinPointerDown` 1121 · `dessinPointerMove` 1195 · `dessinPointerUp` 1233
-`termineTrace` 1269 · `aide` 1279 · `choisitOutil` 1304 · `enchaineStand` 1327
-`activeCalque` 1381 · `montreRoleIti` 1432 · `creeCalque` 1463 · `demandeNom` 1476
-`renommeCalque` 1495
+`reperesCherchables` 771 · `vaAuRepere` 815 · `cartouchePoi` 836 · `ouvrePoi` 921
+`mesureCartouche` 993 · `phareRepere` 1000 · `phareZone` 1001 · `eclairePoi` 1005
+`signale` 1023 · `calquePourImage` 1037 · `poseImage` 1050 · `importeImage` 1063
+`dessinPointerDown` 1114 · `dessinPointerMove` 1188 · `dessinPointerUp` 1226
+`termineTrace` 1262 · `aide` 1272 · `choisitOutil` 1297 · `enchaineStand` 1320
+`activeCalque` 1374 · `montreRoleIti` 1425 · `creeCalque` 1456 · `demandeNom` 1469
+`renommeCalque` 1488
 
 Éléments :
 
@@ -295,7 +295,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2968 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2985 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.238 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -304,8 +304,8 @@ Fonctions :
 - l.535 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1391 · 6. Vue
 - l.1617 · 7. Sélection et fiche
-- l.2594 · 8. Interactions du plan
-- l.2814 · Le tiroir de la liste — écrans étroits
+- l.2611 · 8. Interactions du plan
+- l.2831 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -327,14 +327,14 @@ Fonctions :
 `rafraichitVue` 1415 · `poseVue` 1427 · `masque` 1446 · `masqueDroite` 1478 · `fit` 1489
 `stoppeZoom` 1519 · `glisseVersVise` 1524 · `glisseVers` 1565 · `rectVisee` 1584
 `zoom` 1603 · `echelle` 1609 · `ETROIT` 1623 · `anime` 1625 · `noeud` 1649
-`canalPlan` 1659 · `rangSociete` 1667 · `select` 1676 · `centre` 1698 · `centrePoint` 1702
-`montre` 1726 · `libelleCorps` 1759 · `ordreCorps` 1771 · `momentLocal` 1808
-`programme` 1831 · `jourLong` 1864 · `ficheConf` 1875 · `lien` 1969 · `adresseSure` 1984
-`adresseImage` 2011 · `imageSure` 2024 · `assainitRiche` 2053 · `enBlocs` 2093
-`rangeRiche` 2106 · `ecarteClicFantome` 2134 · `nomSociete` 2143 · `societes` 2156
-`choisitExposant` 2167 · `poseMarque` 2205 · `poseCode` 2255 · `rangeMarque` 2286
-`ouvre` 2326 · `ferme` 2568 · `onglet` 2584 · `milieu` 2614 · `commencePince` 2620
-`suitPince` 2634 · `mesureTiroir` 2825 · `montreTiroir` 2828
+`canalPlan` 1659 · `rangSociete` 1667 · `select` 1676 · `centre` 1695 · `centrePoint` 1699
+`montre` 1732 · `libelleCorps` 1765 · `ordreCorps` 1777 · `momentLocal` 1814
+`programme` 1837 · `jourLong` 1870 · `ficheConf` 1881 · `lien` 1975 · `adresseSure` 1990
+`adresseImage` 2017 · `imageSure` 2030 · `assainitRiche` 2059 · `enBlocs` 2099
+`rangeRiche` 2112 · `ecarteClicFantome` 2140 · `nomSociete` 2149 · `societes` 2162
+`choisitExposant` 2173 · `poseMarque` 2211 · `poseCode` 2261 · `rangeMarque` 2292
+`ouvre` 2338 · `ferme` 2585 · `onglet` 2601 · `milieu` 2631 · `commencePince` 2637
+`suitPince` 2651 · `mesureTiroir` 2842 · `montreTiroir` 2845
 
 Éléments :
 
