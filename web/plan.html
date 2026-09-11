@@ -110,7 +110,12 @@ button{cursor:pointer;background:none;border:none}
 .brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
-@media (max-width:1150px){.stats{display:none}}
+/* Les compteurs portaient seuls le `margin-left:auto` qui repoussait le bout
+   de barre vers la droite. Sous 1150 px ils disparaissent, et les pavillons
+   s'effacent aussi quand le salon n'a qu'un plan : plus personne ne
+   poussait, et les pictos venaient se coller au titre au milieu de la
+   barre. L'outil reprend la marge dès que les compteurs la lâchent. */
+@media (max-width:1150px){.stats{display:none}.tools{margin-left:auto}}
 .stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
   font-variant-numeric:tabular-nums;line-height:1.2}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
@@ -2829,6 +2834,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      donc à eux de céder la place en premier : ils restent atteignables au
      doigt, là où un titre tronqué à trois lettres ne se retrouve pas. */
   .brand{flex:0 1 auto;max-width:40%}
+  /* Sans pavillons — un salon d'un seul plan — personne ne réclame ces 60 %
+     restants : les rendre au titre évite un nom coupé à côté d'un vide. */
+  .topbar:has(#halls[hidden]) .brand{max-width:none}
   .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
