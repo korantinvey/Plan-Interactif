@@ -114,7 +114,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | tracé des calques de dessin | `_dessin.html` |
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
-| ordre des calques, pile | `_pile.html` |
+| ordre des calques, pile, couleur du fond du plan | `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |

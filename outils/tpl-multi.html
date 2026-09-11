@@ -244,7 +244,11 @@ button{cursor:pointer;background:none;border:none}
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
+/* Le fond du plan se règle : le gris du thème convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
+   jeton reste absent et le fond de la page reprend la main. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -752,6 +756,43 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    icône. */
 .detail-hd h2 .crayon{margin-left:6px;font-weight:400;letter-spacing:normal}
 .detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
+/* Le nom d'une fiche et la marque qui l'accompagne tiennent sur une ligne, et
+   se séparent en deux quand le nom prend toute la place : c'est le seul
+   arbitrage à rendre, et le retour à la ligne du flex le rend tout seul — il
+   décide sur la largeur naturelle du nom, avant de la comprimer. Un nom court
+   garde donc son logo à côté de lui, un nom long le passe en dessous.
+
+   La réserve de droite quitte le titre pour la ligne entière : elle tient le
+   texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
+.detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:12px;row-gap:2px;padding-right:26px}
+.detail-hd .hdNom h2{padding-right:0;margin-right:auto}
+/* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
+   source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
+   blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
+   rapportée. Contenu plutôt que découpé — un logo tronqué n'est plus le logo.
+
+   La hauteur est celle d'une vignette qu'on regarde, et non d'une puce posée
+   à côté d'un mot : un logo se lit, et le premier essai, haut comme deux
+   lignes de titre, ne le donnait pas à lire. Conséquence assumée du côté de
+   la ligne du nom — un logo en largeur y prend désormais toute la place, et se
+   range donc sous le nom plutôt qu'à côté.
+
+   Le logo se pose au milieu de ce que le nom laisse, plutôt que collé contre
+   lui avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
+   accroché au titre.
+
+   Le centrage tient à deux marges automatiques — celle que le nom porte à sa
+   droite, celle que le logo porte à la sienne — qui se partagent à parts égales
+   ce qui reste de la ligne, et en laissent donc autant de chaque côté de
+   l'image. Elles disent aussi le bon comportement dans l'autre cas, sans qu'on
+   ait à le décrire : quand le nom est assez long pour renvoyer le logo à la
+   ligne suivante, sa marge de droite reste seule sur cette ligne, prend tout
+   l'espace d'un coup, et le logo s'y range à gauche — sous le nom, aligné avec
+   l'intitulé et le code comme le reste de l'en-tête. */
+.detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
+  max-width:min(300px,100%);max-height:72px;margin:0 auto 0 0}
+.detail-hd .logoZone[hidden]{display:none}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
   text-wrap:balance;padding-right:26px}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
@@ -865,17 +906,6 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .field .v .riche p{margin:0 0 .55em}
 .field .v .riche ul,.field .v .riche ol{margin:0 0 .55em;padding-left:1.25em}
 .field .v .riche li{margin:0 0 .2em}
-/* Le logo d'une zone, en tête de sa fiche. Sans intitulé au-dessus : une image
-   se reconnaît sans qu'on la nomme, et le nom de la zone est juste avant.
-   Contenu plutôt que découpé — un logo tronqué n'est plus le logo. */
-.logoZone{display:flex;align-items:center;justify-content:center;padding:12px;
-  border:1px solid var(--line);border-radius:var(--radius);
-  /* Un logo est presque toujours transparent, et le plus souvent sombre : posé
-     sur le fond de la fiche, il s'effacerait en thème sombre. Ce fond-ci ne
-     suit donc pas le thème — c'est le seul endroit de la page où l'on préfère
-     l'image lisible à la teinte assortie. */
-  background:#FFF}
-.logoZone img{max-width:100%;max-height:96px;width:auto;height:auto;object-fit:contain}
 /* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
    c'est par elle qu'on se repère, et un filet de la couleur de son type. */
 .prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
@@ -1010,9 +1040,11 @@ button.expo:hover{background:var(--line)}
 .modele-billet .detail-hd{background:var(--accent);border-bottom:none}
 .modele-billet .detail-hd h2{color:var(--accent-ink)}
 /* La place du numéro ne se réserve que là où il y en a un : une zone n'en
-   porte pas, le parcours et l'itinéraire non plus, et le titre y laissait
-   cent dix-huit pixels de vide à droite. */
-.modele-billet .detail-hd[data-code]:not([data-code=""]) h2{padding-right:118px}
+   porte pas, le parcours et l'itinéraire non plus, et la ligne du nom y
+   laissait cent dix-huit pixels de vide à droite. Elle porte sur la ligne
+   entière, marque comprise : sur le seul titre, la marque serait allée se
+   ranger sous le numéro. */
+.modele-billet .detail-hd[data-code]:not([data-code=""]) .hdNom{padding-right:118px}
 .modele-billet .detail-hd .eyebrow{color:var(--accent-ink);opacity:.72}
 .modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
@@ -2071,6 +2103,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border:none;opacity:0;cursor:pointer}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -2467,6 +2507,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd h2{font-size:17px;margin:6px 0 5px}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
+     discrète, pour laisser la place à ce qu'on est venu lire. */
+  .detail-hd .logoZone{max-height:56px;max-width:min(240px,100%)}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
@@ -2476,12 +2519,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      largeur entière. */
   .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
     gap:11px 14px;align-content:start}
-  .detail-bd .field,.detail-bd .acts,.detail-bd .logoZone{grid-column:1/-1;min-width:0}
+  .detail-bd .field,.detail-bd .acts{grid-column:1/-1;min-width:0}
   .detail-bd .field.court{grid-column:auto}
-  /* La fiche n'a plus qu'une demi-hauteur d'écran : le logo s'y fait plus
-     discret, sans quoi il prendrait à lui seul le tiers de ce qu'on voit. */
-  .logoZone{padding:9px}
-  .logoZone img{max-height:64px}
   /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
      sa colonne au lieu de revenir à la ligne. */
   .field .v{font-size:13.5px;overflow-wrap:anywhere}
@@ -2752,8 +2791,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
         <span class="eyebrow" id="dKind"></span>
-        <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
-          title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
+        <div class="hdNom">
+          <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
+            title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
+          <img class="logoZone" id="dLogo" alt="" hidden>
+        </div>
         <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
@@ -4815,6 +4857,46 @@ function choisitExposant(o, rect, canal){
 }
 
 /**
+ * La marque en tête de fiche : le logo d'une enseigne, ou celui que
+ * l'exploitant a déposé sur une zone. Une fiche sans marque n'en montre aucune.
+ *
+ * Elle vit ici pour la même raison que `poseCode` : deux fiches écrivent cette
+ * image — celle d'un stand ou d'une zone, et celle d'un repère, qui n'en a
+ * jamais et doit donc l'effacer. La seconde ne le faisait pas, et la marque du
+ * stand d'avant restait en tête de la fiche d'un escalier.
+ */
+function poseMarque(blason){
+  const marque = $("dLogo");
+  if (!marque) return;
+  /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
+     s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
+     Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
+     ligne les couvre tous les deux. */
+  marque.onerror = () => { marque.hidden = true; };
+  if (!blason){
+    marque.hidden = true;
+    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
+       montrerait la marque de la précédente le temps que la sienne arrive. */
+    marque.removeAttribute("src");
+    return;
+  }
+  /* Changer `src` ne retire pas l'image déjà peinte : le navigateur garde la
+     précédente à l'écran jusqu'à ce que la nouvelle soit décodée. La fiche
+     qu'on vient d'ouvrir portait donc la marque de celle d'avant pendant tout
+     le trajet — invisible sur un bureau, très visible sur le réseau d'un
+     salon. On la cache donc le temps du trajet, et `onload` la ramène. */
+  if (marque.getAttribute("src") !== blason){
+    marque.hidden = true;
+    marque.src = blason;
+  }
+  marque.onload = () => { marque.hidden = false; };
+  /* Une image déjà tenue par le cache est complète dès l'affectation et ne
+     donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
+     celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
+  if (marque.complete) marque.hidden = !marque.naturalWidth;
+}
+
+/**
  * La pastille de situation, et le filigrane que les modèles de fiche lisent
  * sous elle.
  *
@@ -4880,6 +4962,19 @@ function ouvre(o, rect, canal, iSoc){
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
+  /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
+     lit avec ce qu'elle nomme et non parmi les champs. Sans intitulé au-dessus
+     d'elle — une image se reconnaît sans qu'on la nomme.
+
+     Deux origines, une seule place. Sur une zone, c'est ce que l'exploitant y a
+     déposé, qui voyage dans la fiche et se relit comme la description — il
+     vient du même endroit, et finit au même endroit. Sur un stand, c'est le
+     logo de l'enseigne lu chez la source, et il suit la société qu'on regarde
+     plutôt que l'emplacement : sur un stand partagé, chaque hébergée montre le
+     sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
+     ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
+     Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
+  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "");
@@ -4995,32 +5090,13 @@ function ouvre(o, rect, canal, iSoc){
         : "")
     : "";
   corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
-  /* Le logo, sans intitulé au-dessus de lui : une image se reconnaît sans
-     qu'on la nomme, et le nom est déjà en tête de la fiche.
-
-     Deux origines, un seul cadre. Sur une zone, c'est ce que l'exploitant y a
-     déposé, qui voyage dans la fiche et se relit comme la description — il
-     vient du même endroit, et finit au même endroit. Sur un stand, c'est le
-     logo de l'enseigne lu chez la source, et il suit la société qu'on regarde
-     plutôt que l'emplacement : sur un stand partagé, chaque hébergée montre le
-     sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
-     ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
-     Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
-  const blason = zone ? imageSure(o.logo) : adresseImage(soc.logo);
-  corps.logo = blason
-    ? ok("logo", '<div class="logoZone"><img src="' + esc(blason) + '" alt=""></div>')
-    : "";
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
-     range des champs d'exposant, qu'elle n'a pas, et les siens se lisent dans
-     le seul ordre qui leur convienne — de quoi la reconnaître, ce qu'elle est,
-     puis où en savoir plus.
-
-     Le logo échappe à l'ordre sur un stand aussi : ce n'est pas un champ parmi
-     les autres mais ce qui fait reconnaître l'enseigne, et l'ordre réglé ne
-     porte que sur ce qui se lit. */
+     range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
+     dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
+     plus. */
   const infos = zone
-    ? corps.logo + corps.description + corps.lien
-    : corps.logo + ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
+    ? corps.description + corps.lien
+    : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
         .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
@@ -5042,16 +5118,6 @@ function ouvre(o, rect, canal, iSoc){
     bloc2("cConf", "dPaneConf", confs) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
-  /* Un logo lu chez la source peut n'y être plus : l'image qui ne se charge
-     pas s'efface avec son cadre, plutôt que de laisser une vignette brisée en
-     tête de fiche. Celui d'une zone voyage dans la fiche et ne connaît pas ce
-     sort ; la même ligne les couvre tous les deux. */
-  $("dBody").querySelectorAll(".logoZone img").forEach(img => {
-    const efface = () => { const b = img.closest(".logoZone"); if (b) b.remove(); };
-    img.onerror = efface;
-    // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
-    if (img.complete && !img.naturalWidth) efface();
-  });
   /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
      de la fiche de l'exposant qui la tient : ce n'est pas le même chemin. */
   const canalConf = zone ? "salle" : "exposant";
@@ -5643,6 +5709,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -5784,6 +5851,22 @@ function appliqueAccent(){
 }
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
 
 /* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
    exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
@@ -6845,7 +6928,8 @@ function champLogo(hote, o){
 
   peint();
   champZone(hote, "Logo", cadre,
-    "L'image paraît en tête de la fiche, au-dessus de la description. Elle est " +
+    "L'image paraît dans l'en-tête de la fiche, au-dessus du type et du nom. " +
+    "Elle est " +
     "réduite puis enregistrée dans la fiche : elle part avec le plan, sans " +
     "dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou " +
     "choisissez-la.");
@@ -8261,6 +8345,9 @@ function ouvrePoi(id, rect){
   /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
      la fiche portait celui du stand consulté juste avant. */
   poseCode(p, "", "");
+  /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
+     d'un escalier gardait la marque du stand consulté juste avant. */
+  poseMarque("");
   $("dNeuf").hidden = true;
   $("dPartage").hidden = true;
   /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
@@ -10035,6 +10122,7 @@ function construitPanneau(){
   if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
+  sectionFond(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
@@ -10094,6 +10182,77 @@ function sectionSelection(hote){
       (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
+}
+
+/* ============================================================
+   Fond du plan
+   Le gris qui entoure le bâtiment n'est ni un calque ni un repère : rien ne
+   s'y dessine, et il ne marque aucun stand. C'est l'aplat sur lequel tout le
+   reste se pose, et le seul que le plan imposait — d'où sa place ici, au bas
+   du panneau, juste avant la publication qui l'emporte chez les visiteurs.
+
+   Un nuancier plutôt qu'un simple sélecteur, comme pour la couleur
+   principale : on cherche la teinte d'un salon, pas une nuance à
+   l'hexadécimal près. Les tons proposés sont tous clairs — le plan se dessine
+   à l'encre sombre sur des stands blancs, et un fond soutenu les efface. À
+   qui tient une charte plus tranchée, la dernière pastille ouvre le nuancier
+   du système.
+   ============================================================ */
+const FONDS = [
+  ["#FFFFFF", "Blanc"], ["#FAF7F0", "Ivoire"], ["#F1F0EA", "Coquille"],
+  ["#E3E7EA", "Gris perle"], ["#E4EDE6", "Vert d'eau"], ["#E3EAF6", "Bleu pâle"],
+  ["#F5E9DB", "Sable"],
+];
+
+function sectionFond(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart fondp";
+  bloc.innerHTML = '<div class="tete"><span class="eyebrow">Fond du plan</span>' +
+    '<button type="button" class="reset">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const nuancier = bloc.querySelector(".nuancier");
+  const c = conf("_fond");
+
+  /* La pastille retenue se cerne, et le retour à l'origine ne s'offre que s'il
+     y a quelque chose à défaire : proposé sur un plan resté gris, il annonce
+     un réglage là où il n'y en a pas. */
+  const majPastilles = () => {
+    const v = (c.couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    bloc.querySelector(".reset").hidden = !v;
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
+  };
+  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+
+  FONDS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
+     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
+     publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+
+  bloc.querySelector(".reset").onclick = () => {
+    delete c.couleur;
+    enregistreConf(); appliqueFond(); majPastilles();
+  };
+  hote.appendChild(bloc);
+  majPastilles();
 }
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,

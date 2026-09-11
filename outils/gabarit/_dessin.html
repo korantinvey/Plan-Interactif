@@ -860,6 +860,9 @@ function ouvrePoi(id, rect){
   /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
      la fiche portait celui du stand consulté juste avant. */
   poseCode(p, "", "");
+  /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
+     d'un escalier gardait la marque du stand consulté juste avant. */
+  poseMarque("");
   $("dNeuf").hidden = true;
   $("dPartage").hidden = true;
   /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
