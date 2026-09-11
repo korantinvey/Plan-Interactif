@@ -2631,14 +2631,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
   /* Les commandes du plan se posent au-dessus du tiroir replié : ancrées en
      bas comme elles l'étaient, il les recouvrait. */
-  .zoombar{bottom:calc(var(--replie,150px) + 14px)}
+  .zoombar{bottom:calc(var(--replie,150px) + 14px);transition:opacity .2s ease}
   /* L'échelle passe au-dessus du cartouche, qui sur un écran étroit est assez
      large pour la traverser. Sa hauteur est mesurée, et vaut zéro en l'absence
      de repères : l'échelle reprend alors sa place. */
-  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px)}
+  .scalebar{bottom:calc(var(--replie,164px) + var(--cartouche,0px) + 18px);
+    transition:opacity .2s ease}
   /* sans les boutons de zoom à contourner, l'échelle retrouve la marge */
   .sans-zoom .scalebar{left:14px}
-  .poi{bottom:calc(var(--replie,150px) + 12px)}
+  .poi{bottom:calc(var(--replie,150px) + 12px);transition:opacity .2s ease}
+  /* Le cartouche, l'échelle et les boutons de zoom sont posés au-dessus du
+     tiroir replié. Le tiroir qui monte passe dessous sans les emporter : ils
+     restaient devant la liste à désigner un plan devenu invisible. Ils
+     s'effacent le temps qu'elle occupe la place, et reviennent avec le plan.
+     Effacés plutôt que retirés : « display:none » remettrait leur hauteur
+     mesurée à zéro, et l'échelle redescendrait sur le cartouche au retour. */
+  html[data-tiroir="demi"] .poi,
+  html[data-tiroir="plein"] .poi,
+  html[data-tiroir="demi"] .zoombar,
+  html[data-tiroir="plein"] .zoombar,
+  html[data-tiroir="demi"] .scalebar,
+  html[data-tiroir="plein"] .scalebar{opacity:0;pointer-events:none}
   /* En tiroir, la pile est ancrée en bas et le cartouche en haut : sa hauteur
      se borne des deux côtés, sinon elle remonte sous lui. */
   .panel{top:auto;bottom:calc(var(--replie,150px) + 12px);right:12px;
@@ -6006,8 +6019,16 @@ let montreTiroir = () => {};
   const cran = () => tiroir.dataset.cran || "replie";
   function pose(nom){
     tiroir.dataset.cran = nom;
+    annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
+
+  /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
+     commandes de zoom, l'échelle — est ancré sur la hauteur repliée du tiroir.
+     Le tiroir qui monte passe donc dessous sans les déplacer, et ils restaient
+     à désigner un plan qu'on ne voyait plus. Le cran vit sur la racine pour que
+     la feuille de style les atteigne depuis l'autre bout de la page. */
+  const annonce = nom => { document.documentElement.dataset.tiroir = nom; };
   const replie = () => pose("replie");
   /* Une pression fait le tour des crans : on les atteint tous sans rien
      connaître du glissement, et on revient au plan par la même touche. */
@@ -6043,10 +6064,24 @@ let montreTiroir = () => {};
   const suit = e =>
     Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
 
+  /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
+  function proche(vu){
+    let choix = CRANS[0], ecart = Infinity;
+    for (const c of CRANS){
+      const d = Math.abs(hauteur(c) - vu);
+      if (d < ecart){ ecart = d; choix = c; }
+    }
+    return choix;
+  }
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
+    const vu = suit(e);
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
+    /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
+       s'arrêterait, sans attendre qu'il lâche. */
+    annonce(proche(vu));
   });
 
   function relache(e){
@@ -6054,14 +6089,8 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    if (aGlisse){
-      let choix = CRANS[0], ecart = Infinity;
-      for (const c of CRANS){
-        const d = Math.abs(hauteur(c) - vu);
-        if (d < ecart){ ecart = d; choix = c; }
-      }
-      pose(choix);
-    }
+    // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
+    pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
