@@ -253,7 +253,11 @@ button{cursor:pointer;background:none;border:none}
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
+/* Le fond du plan se règle : le gris du thème convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
+   jeton reste absent et le fond de la page reprend la main. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -2095,6 +2099,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border:none;opacity:0;cursor:pointer}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -5669,6 +5681,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -5810,6 +5823,22 @@ function appliqueAccent(){
 }
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
 
 /* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
    exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
@@ -10062,6 +10091,7 @@ function construitPanneau(){
   if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
+  sectionFond(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
@@ -10121,6 +10151,77 @@ function sectionSelection(hote){
       (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
+}
+
+/* ============================================================
+   Fond du plan
+   Le gris qui entoure le bâtiment n'est ni un calque ni un repère : rien ne
+   s'y dessine, et il ne marque aucun stand. C'est l'aplat sur lequel tout le
+   reste se pose, et le seul que le plan imposait — d'où sa place ici, au bas
+   du panneau, juste avant la publication qui l'emporte chez les visiteurs.
+
+   Un nuancier plutôt qu'un simple sélecteur, comme pour la couleur
+   principale : on cherche la teinte d'un salon, pas une nuance à
+   l'hexadécimal près. Les tons proposés sont tous clairs — le plan se dessine
+   à l'encre sombre sur des stands blancs, et un fond soutenu les efface. À
+   qui tient une charte plus tranchée, la dernière pastille ouvre le nuancier
+   du système.
+   ============================================================ */
+const FONDS = [
+  ["#FFFFFF", "Blanc"], ["#FAF7F0", "Ivoire"], ["#F1F0EA", "Coquille"],
+  ["#E3E7EA", "Gris perle"], ["#E4EDE6", "Vert d'eau"], ["#E3EAF6", "Bleu pâle"],
+  ["#F5E9DB", "Sable"],
+];
+
+function sectionFond(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart fondp";
+  bloc.innerHTML = '<div class="tete"><span class="eyebrow">Fond du plan</span>' +
+    '<button type="button" class="reset">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const nuancier = bloc.querySelector(".nuancier");
+  const c = conf("_fond");
+
+  /* La pastille retenue se cerne, et le retour à l'origine ne s'offre que s'il
+     y a quelque chose à défaire : proposé sur un plan resté gris, il annonce
+     un réglage là où il n'y en a pas. */
+  const majPastilles = () => {
+    const v = (c.couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    bloc.querySelector(".reset").hidden = !v;
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
+  };
+  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+
+  FONDS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
+     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
+     publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+
+  bloc.querySelector(".reset").onclick = () => {
+    delete c.couleur;
+    enregistreConf(); appliqueFond(); majPastilles();
+  };
+  hote.appendChild(bloc);
+  majPastilles();
 }
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,

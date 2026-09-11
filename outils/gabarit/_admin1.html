@@ -156,6 +156,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -297,6 +298,22 @@ function appliqueAccent(){
 }
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
 
 /* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
    exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés

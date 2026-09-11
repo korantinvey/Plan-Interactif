@@ -244,7 +244,11 @@ button{cursor:pointer;background:none;border:none}
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--ground)}
+/* Le fond du plan se règle : le gris du thème convient à la plupart des
+   salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
+   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
+   jeton reste absent et le fond de la page reprend la main. */
+.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -2086,6 +2090,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border:none;opacity:0;cursor:pointer}
 .nuancier .perso span{position:relative;width:11px;height:11px;border-radius:50%;
   background:var(--surface);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* Le même nuancier dans le panneau des calques, où il n'a pas la largeur d'une
+   fenêtre de réglages : les pastilles se serrent au lieu de pousser le panneau
+   par-dessus le plan qu'on est en train de repeindre. Le titre et le retour à
+   l'origine tiennent sur une ligne, comme la tête du nuancier d'accent. */
+.fondp .tete{display:flex;align-items:baseline;gap:10px}
+.fondp .tete .eyebrow{margin-bottom:0}
+.fondp .tete .reset{margin-left:auto}
+.fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
