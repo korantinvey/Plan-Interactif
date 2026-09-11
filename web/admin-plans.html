@@ -221,6 +221,7 @@ function verseModale() {
 
 function ouvreModale(titre, remplit, boutons, apres) {
   verseModale();
+  modaleVerrou = false;
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -235,13 +236,26 @@ function ouvreModale(titre, remplit, boutons, apres) {
   });
   $("modale").classList.add("open");
 }
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
 const fermeModale = () => {
+  modaleVerrou = false;
   $("modale").classList.remove("open");
   verseModale();
 };
 $("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
 
 function demande(titre, libelle, valeur, suite) {
   let champ;
@@ -958,10 +972,21 @@ async function refus(r) {
  * est. On lit ligne à ligne, on prévient l'appelant de chacune, et on renvoie
  * la dernière — celle qui porte le résultat.
  */
-async function fluxFonction(nom, corps, surLigne) {
-  const r = await appel(CFG.url + "/functions/v1/" + nom, {
-    method: "POST",
-    body: JSON.stringify(corps),
+async function fluxFonction(nom, corps, surLigne, trace) {
+  const dit = trace || (() => {});
+  const url = CFG.url + "/functions/v1/" + nom;
+  dit({ evt: "appel", url });
+  const r = await appel(url, { method: "POST", body: JSON.stringify(corps) });
+  /* Ce que le serveur a répondu, et surtout par quel chemin : un flux retenu
+     par un relais et un serveur lent se ressemblent trait pour trait de
+     l'extérieur. Les en-têtes qui les distinguent — l'encodage surtout — ne se
+     lisent d'une autre origine que si la fonction les expose, ce qu'elle
+     fait. */
+  dit({
+    evt: "reponse", statut: r.status,
+    entetes: ["content-type", "content-encoding", "cache-control",
+              "x-accel-buffering", "date"]
+      .reduce((o, c) => ({ ...o, [c]: r.headers.get(c) }), {}),
   });
   // un refus arrive avant le flux, sous forme d'objet unique
   if (!r.ok || !r.body) throw new Error(await refus(r));
@@ -972,15 +997,28 @@ async function fluxFonction(nom, corps, surLigne) {
   let reste = "", dernier = null;
   for (;;) {
     const { done, value } = await lecteur.read();
-    if (done) break;
+    if (done) { dit({ evt: "flux-fini" }); break; }
+    /* Le poids de chaque tronçon, et l'instant où il arrive. C'est là que se
+       lit un tampon : une synchronisation servie au fil de l'eau rend des
+       dizaines de tronçons étalés sur une minute, une réponse retenue n'en
+       rend qu'un, à la fin. */
+    dit({ evt: "troncon", octets: value.length });
     reste += dec.decode(value, { stream: true });
     let i;
     while ((i = reste.indexOf(FIN)) >= 0) {
       const ligne = reste.slice(0, i).trim();
       reste = reste.slice(i + 1);
-      if (!ligne) continue;
+      // le remplissage du flux est un commentaire : deux points en tête
+      if (!ligne || ligne[0] === ":") continue;
+      /* On accepte les deux habillages. Les pages et les fonctions ne se
+         déploient pas ensemble — Cloudflare suit le dépôt, Supabase a son
+         propre workflow — et pendant quelques minutes une page neuve parle à
+         l'ancienne fonction, ou l'inverse. */
+      const utile = ligne.slice(0, 5) === "data:" ? ligne.slice(5).trim() : ligne;
+      if (!utile) continue;
       let o;
-      try { o = JSON.parse(ligne); } catch (e) { continue; }
+      try { o = JSON.parse(utile); } catch (e) { continue; }
+      dit({ evt: "ligne", ligne: o });
       if (o.erreur) throw new Error(o.erreur);
       surLigne(o);
       if (o.ok) dernier = o;
@@ -990,29 +1028,275 @@ async function fluxFonction(nom, corps, surLigne) {
 }
 
 /**
- * Barre d'avancement à étapes. Les étapes sont annoncées par le serveur, non
- * devinées ici : lui seul sait ce qu'il va réellement faire.
+ * La fenêtre qui rend compte d'une synchronisation.
+ *
+ * Elle montre trois choses, et pas une de plus : où l'on en est dans
+ * l'ensemble, où l'on en est dans l'étape qui tourne, et ce qui a été compté.
+ * La barre du haut est jalonnée d'une étape à l'autre — un jalon par étape,
+ * régulièrement espacés — parce qu'une barre nue dit qu'on attend sans dire
+ * quoi ; la sous-barre suit les éléments de l'étape en cours ; le tableau en
+ * dessous garde les chiffres, qui sont ce qu'on vient vérifier.
+ *
+ * Les jalons sont à intervalle égal, et leur part n'est pas chiffrée. Posés à
+ * la part que le nombre d'éléments valait à chaque étape, ils tombaient à des
+ * endroits — 46 %, 57 % — qui donnaient à lire une précision qui n'existe pas :
+ * ce sont des estimations, pas une promesse de durée. Une étape vaut une
+ * étape ; ce qui se compte vraiment se compte dans l'étape, sur la sous-barre
+ * et dans le tableau.
+ *
+ * Les étapes sont annoncées par le serveur, non devinées ici : lui seul sait
+ * ce qu'il va réellement faire. Le poids qu'il leur donne — leur nombre
+ * d'éléments, estimé d'après la dernière synchronisation puis corrigé — ne
+ * décide plus de la largeur d'un segment ; il sert de repère à l'avancement
+ * d'une étape dont on ignore le total, et un poids nul dit qu'elle n'est pas
+ * reprise du tout.
+ *
+ * La fenêtre ne se ferme pas d'elle-même : le bilan est ce qu'on vient y lire,
+ * et il arrive à la dernière ligne.
  */
-function barreAvancement(hote, etapes) {
-  hote.innerHTML = "";
-  const b = document.createElement("div");
-  b.className = "avance";
-  etapes.forEach((e) => {
+function fenetreAvancement(titre, etiquette) {
+  let etapes = [], vivante = true, plafond = 0;
+  const compte = new Map();
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte;
+  const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
+
+  /* Le journal de la synchronisation, du clic à la dernière ligne.
+
+     Il ne garde pas seulement ce que le serveur a dit, mais quand chaque chose
+     est arrivée et en combien de tronçons : c'est la seule façon de
+     distinguer, après coup, un serveur lent d'un relais qui retient. Il sert
+     donc au diagnostic d'un défaut d'affichage autant qu'à celui d'une
+     synchronisation ratée.
+
+     Il vit dans la page et nulle part ailleurs : on ne l'envoie à personne, on
+     le télécharge. */
+  const t0 = performance.now();
+  const journal = {
+    salon: etiquette || titre,
+    ouvertLe: new Date().toISOString(),
+    page: location.href,
+    navigateur: navigator.userAgent,
+    lignes: [],
+  };
+  const trace = (o) => {
+    journal.lignes.push({ ms: Math.round(performance.now() - t0), ...o });
+    /* La réponse reçue mérite d'être dite : tant qu'on lit « Connexion au
+       serveur… », on ne sait pas si c'est le réseau, la fonction ou un tampon
+       qui fait attendre. Ce message-là tranche entre le premier et les deux
+       autres. */
+    if (o.evt === "reponse" && quoi && !etapes.length) {
+      quoi.textContent = "Réponse reçue — en attente de la première étape…";
+    }
+  };
+
+  function telechargeJournal() {
+    const nomFichier = "synchro-" +
+      String(etiquette || "salon").toLowerCase().normalize("NFD")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + "-" +
+      new Date().toISOString().slice(0, 19).replace(/[:T-]/g, "") + ".json";
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(
+      new Blob([JSON.stringify(journal, null, 2)], { type: "application/json" }));
+    lien.download = nomFichier;
+    document.body.appendChild(lien);
+    lien.click();
+    lien.remove();
+    // révoquer tout de suite annulerait le téléchargement en cours
+    setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+  }
+
+  ouvreModale(titre, (c) => {
     const d = document.createElement("div");
-    d.className = "pas";
-    d.dataset.cle = e.cle;
-    d.dataset.etat = "attente";
-    d.innerHTML = '<span class="jauge"></span><span class="lib"></span><span class="det"></span>';
-    d.querySelector(".lib").textContent = e.libelle;
-    if (e.source && e.source !== "klipso") d.querySelector(".det").textContent = e.source;
-    b.appendChild(d);
-  });
-  hote.appendChild(b);
-  return (cle, etat, info) => {
-    const d = b.querySelector('.pas[data-cle="' + CSS.escape(cle) + '"]');
-    if (!d) return;
-    d.dataset.etat = etat;
-    if (info !== undefined) d.querySelector(".det").textContent = info;
+    d.className = "sync";
+    d.innerHTML =
+      '<div class="sync-tete"><span class="eyebrow">Avancement</span>' +
+        '<span class="sync-pct mono">0 %</span></div>' +
+      '<div class="sync-noms"></div>' +
+      '<div class="sync-rail"><span class="sync-depart"></span></div>' +
+      '<p class="sync-ecarte" hidden></p>' +
+      '<div class="sync-cours"><span class="sync-quoi"></span>' +
+        '<span class="sync-compte mono"></span></div>' +
+      '<div class="sync-sous" data-etat="attente"><span></span></div>' +
+      '<dl class="sync-chiffres"></dl>' +
+      '<p class="sync-bilan"></p>';
+    c.appendChild(d);
+    rail = d.querySelector(".sync-rail");
+    noms = d.querySelector(".sync-noms");
+    pctTxt = d.querySelector(".sync-pct");
+    quoi = d.querySelector(".sync-quoi");
+    compteTxt = d.querySelector(".sync-compte");
+    sous = d.querySelector(".sync-sous");
+    sousJauge = sous.querySelector("span");
+    dl = d.querySelector(".sync-chiffres");
+    bilan = d.querySelector(".sync-bilan");
+    ecarte = d.querySelector(".sync-ecarte");
+    quoi.textContent = "Connexion au serveur…";
+  }, [
+    /* Le journal se télécharge aussi pendant que ça tourne, et pas seulement
+       à la fin : une synchronisation qui reste muette est justement celle dont
+       on voudrait le relevé, et attendre une fin qui ne vient pas le rendrait
+       inatteignable. */
+    { libelle: "Journal", action: () => { telechargeJournal(); return false; } },
+    { libelle: "Fermer", genre: "primaire" },
+  ], () => { vivante = false; });
+  verrouilleModale(true);
+
+  // Les étapes qui ont un segment : celles que la synchronisation reprend.
+  const vues = () => etapes.filter((e) => e.poids > 0);
+
+  /* Un segment par étape, tous de même largeur, et un jalon au bout de chacun.
+     Une étape non reprise n'a pas de segment : elle en occuperait un sans
+     jamais rien y faire avancer. Elle est nommée sous la barre, pour qu'on la
+     sache écartée et non oubliée. */
+  function construitRail() {
+    if (!rail) return;
+    rail.innerHTML = '<span class="sync-depart"></span>';
+    noms.innerHTML = "";
+    vues().forEach((e) => {
+      e.seg = document.createElement("div");
+      e.seg.className = "sync-seg";
+      e.seg.innerHTML =
+        '<span class="sync-piste"><span></span></span><span class="sync-point"></span>';
+      rail.appendChild(e.seg);
+
+      e.nom = document.createElement("div");
+      e.nom.className = "sync-nom";
+      e.nom.textContent = e.libelle;
+      e.nom.title = e.libelle + (e.source && e.source !== "aucun" ? " — " + e.source : "");
+      noms.appendChild(e.nom);
+    });
+    const hors = etapes.filter((e) => e.poids <= 0);
+    ecarte.hidden = !hors.length;
+    ecarte.textContent = hors.length
+      ? "Non repris : " + hors.map((e) => e.libelle + (e.det ? " (" + e.det + ")" : "")).join(" · ")
+      : "";
+  }
+
+  function rafraichit() {
+    if (!rail) return;
+    vues().forEach((e) => {
+      if (!e.seg) return;
+      e.seg.dataset.etat = e.etat;
+      e.nom.dataset.etat = e.etat;
+      e.seg.querySelector(".sync-piste > span").style.width =
+        Math.round(e.frac * 100) + "%";
+    });
+    /* Le pourcentage et le remplissage disent la même chose, et c'est la
+       condition pour qu'on les croie : les segments étant égaux, la part faite
+       est la moyenne de ce que chaque étape a avancé. */
+    const l = vues();
+    const p = l.reduce((a, e) => a + e.frac, 0) / (l.length || 1) * 100;
+    plafond = Math.max(plafond, Math.min(100, p));
+    pctTxt.textContent = Math.round(plafond) + " %";
+  }
+
+  return {
+    /** Le relevé de ce que le flux a rendu, et de quand. */
+    trace,
+
+    /** La liste des étapes, telle que le serveur l'annonce. */
+    ouvre(liste) {
+      etapes = liste.map((e) => ({
+        cle: e.cle, libelle: e.libelle, source: e.source,
+        poids: Math.max(0, Number(e.poids ?? 1) || 0), frac: 0, etat: "attente", det: "",
+      }));
+      construitRail();
+      rafraichit();
+    },
+
+    /** Une ligne du flux qui parle d'une étape : son état, son poids, son avancement. */
+    pas(o) {
+      const e = etapes.find((x) => x.cle === o.etape);
+      if (!e) return;
+      let refaire = false;
+      if (o.poids !== undefined) {
+        e.poids = Math.max(0, Number(o.poids) || 0);
+        refaire = true;
+      }
+      if (o.info !== undefined) e.det = String(o.info);
+      if (o.fait !== undefined) {
+        /* Sans total connu — les catégories Eventmaker ne disent pas combien
+           de fiches elles portent — l'estimation d'après la dernière
+           synchronisation tient lieu de repère. Plafonnée, elle ne prétend
+           jamais avoir fini. */
+        const f = o.total
+          ? Math.min(1, o.fait / o.total)
+          : Math.min(0.95, e.poids ? o.fait / e.poids : 0);
+        e.frac = Math.max(e.frac, f);
+      }
+      if (o.etat) {
+        e.etat = o.etat;
+        if (o.etat === "fait") e.frac = 1;
+        if (o.etat === "ignoree") {
+          e.frac = 1;
+          if (e.poids > 0) { e.poids = 0; refaire = true; }
+        }
+      }
+      if (o.etat === "encours" && quoi) {
+        quoi.textContent = e.libelle + " · " + (o.detail || e.det || "en cours");
+        const u = o.unite ? " " + o.unite : "";
+        /* Un pavillon entamé compte pour le premier, pas pour zéro : la part
+           est fractionnaire — c'est elle qui remplit la sous-barre — mais le
+           décompte se lit en éléments entiers. */
+        compteTxt.textContent = o.fait === undefined ? ""
+          : o.total ? Math.ceil(o.fait).toLocaleString("fr-FR") + " / " + nb(o.total) + u
+          : o.fait ? nb(o.fait) + u : "";
+        const bat = o.fait !== undefined && !o.total;
+        sous.dataset.etat = bat ? "battant" : "chiffre";
+        sousJauge.style.width = bat ? "100%"
+          : Math.round((o.total ? Math.min(1, o.fait / o.total) : 0) * 100) + "%";
+      }
+      if (refaire) construitRail();
+      rafraichit();
+    },
+
+    /** Les compteurs, qui s'écrasent par leur nom et ne font qu'une ligne chacun. */
+    chiffres(o) {
+      Object.entries(o || {}).forEach(([k, v]) => compte.set(k, v));
+      if (!dl) return;
+      dl.innerHTML = "";
+      compte.forEach((v, k) => {
+        const l = document.createElement("div");
+        l.innerHTML = "<dt></dt><dd></dd>";
+        l.querySelector("dt").textContent = k;
+        l.querySelector("dd").textContent = nb(v);
+        dl.appendChild(l);
+      });
+    },
+
+    /**
+     * Le mot de la fin, et la fenêtre rendue à qui voudra la fermer.
+     *
+     * Trois fins, et non deux : une synchronisation peut aboutir en laissant
+     * un défaut derrière elle — une nomenclature restée en codes — et la dire
+     * « interrompue » serait faux, la taire le serait autant.
+     *   "ok"     tout est passé
+     *   "alerte" c'est fait, mais quelque chose est à regarder
+     *   "echec"  on s'est arrêté en chemin
+     */
+    fini(message, issue) {
+      // ne déverrouiller que si c'est toujours cette fenêtre-ci qui est ouverte :
+      // une autre a pu prendre sa place pendant que la synchronisation tournait
+      if (vivante) verrouilleModale(false);
+      trace({ evt: "fin", issue: issue || "ok", message });
+      if (!bilan) return;
+      const panne = issue === "echec";
+      bilan.className = "sync-bilan " + (issue || "ok");
+      bilan.textContent = message;
+      /* Sur échec la sous-barre s'efface au lieu de se figer : battante, elle
+         restait pleine et se lisait comme une étape réussie, quand le jalon
+         rouge au-dessus disait le contraire. Ce qu'elle comptait est de toute
+         façon resté dans le tableau. */
+      sous.hidden = panne;
+      sous.dataset.etat = "fini";
+      quoi.textContent = panne ? "Interrompu" : "Terminé";
+      compteTxt.textContent = "";
+      if (!panne) {
+        sousJauge.style.width = "100%";
+        plafond = 100;
+        pctTxt.textContent = "100 %";
+      }
+    },
   };
 }
 
@@ -1234,9 +1518,6 @@ function dessineFiche() {
   bsync.textContent = "Synchroniser maintenant";
   bd.appendChild(ligneOutil("Synchronisation", '<span id="msgSync"></span>', [rythme, bsync]));
 
-  const zoneAv = document.createElement("div");
-  zoneAv.id = "avancement";
-  bd.appendChild(zoneAv);
   f.appendChild(bd);
   majMsgSync(e);
   $("btnSync").onclick = () => synchronise(e);
@@ -3286,18 +3567,22 @@ function majMsgSync(e) {
    ------------------------------------------------------------------ */
 async function synchronise(e) {
   const b = $("btnSync");
-  b.disabled = true;
-  const zone = $("avancement");
-  let maj = null, enCours = null;
+  if (b) b.disabled = true;
+  /* La fenêtre s'ouvre avant le premier octet, et non à la première ligne du
+     flux : entre le clic et la réponse du serveur il s'écoule quelques
+     secondes, et un bouton grisé ne dit pas qu'il se passe quelque chose. */
+  const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
+  let enCours = null;
   signale("Synchronisation en cours…");
   try {
     const j = await fluxFonction("sync-evenement", { evenementId: e.id }, (o) => {
-      if (o.etapes && zone) maj = barreAvancement(zone, o.etapes);
-      else if (o.etape && maj) {
+      if (o.etapes) vue.ouvre(o.etapes);
+      else if (o.chiffres) vue.chiffres(o.chiffres);
+      else if (o.etape) {
         if (o.etat === "encours") enCours = o.etape;
-        maj(o.etape, o.etat, o.info);
+        vue.pas(o);
       }
-    });
+    }, vue.trace);
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
@@ -3315,12 +3600,15 @@ async function synchronise(e) {
     const suite = n.erreur
       ? " Nomenclature en codes : " + n.erreur
       : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
-    signale(pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
-      total + " emplacements" + app + "." + suite, !!n.erreur);
+    const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
+      total + " emplacements" + app + "." + suite;
+    vue.fini(mot, n.erreur ? "alerte" : "ok");
+    signale(mot, !!n.erreur);
     await charge();
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
-    if (maj && enCours) maj(enCours, "echec", err.message);
+    if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
+    vue.fini(err.message, "echec");
     signale(err.message, true);
   } finally {
     if ($("btnSync")) $("btnSync").disabled = false;
