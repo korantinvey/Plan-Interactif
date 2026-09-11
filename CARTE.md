@@ -11,34 +11,34 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1914 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1932 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1078 · 10. Mode administration
-- l.1144 · La fiche d'une zone organisateur
-- l.1661 · Masquer une zone organisateur
-- l.1744 · Placer un libellé à la main
+- l.1095 · 10. Mode administration
+- l.1161 · La fiche d'une zone organisateur
+- l.1679 · Masquer une zone organisateur
+- l.1762 · Placer un libellé à la main
 
 Fonctions :
 
 `cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 62 · `jeton` 63 · `sousCle` 64
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
-`styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 200 · `minutesVisite` 228
-`salonPartage` 235 · `trio` 248 · `melange` 258 · `themeSombre` 266 · `appliqueAccent` 280
-`modeleRetenu` 333 · `appliqueModele` 352 · `texteCorps` 421 · `standApercu` 436
-`lignesApercu` 456 · `contenuApercu` 482 · `apercuFiche` 515 · `apercuListe` 575
-`apercuDuo` 597 · `glisseFenetre` 630 · `ouvreReglages` 641 · `voletZones` 707
-`ficheZoneEnPlace` 784 · `voletPlan` 802 · `nomDuTon` 929 · `voletApparence` 934
-`enregistreConf` 1028 · `rgbHex` 1034 · `hexa` 1041 · `luminance` 1045 · `ecarte` 1059
-`joli` 1074 · `retireAdmin` 1091 · `activeAdmin` 1104 · `champZone` 1170 · `champsZone` 1195
-`reduitLogo` 1258 · `champLogo` 1299 · `editeurRiche` 1395 · `memeFicheZone` 1550
-`suitFicheZone` 1555 · `verseFicheZone` 1563 · `ficheZone` 1589 · `enregistreZone` 1614
-`basculeAffichageZone` 1672 · `marqueZonesMasquees` 1689 · `ecritTablesZones` 1709
-`ecritTableZones` 1740 · `cleLibelle` 1765 · `empreinteLibelle` 1781
-`placementLibelle` 1789 · `posePlacement` 1799 · `libelleAutomatique` 1816
-`modePlacementLibelles` 1825 · `majPaletteLibelle` 1842 · `choisitLibelle` 1859
-`pousseLibelle` 1866 · `libellePointerDown` 1874 · `libellePointerMove` 1889
-`libellePointerUp` 1898
+`styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 201 · `minutesVisite` 229
+`salonPartage` 236 · `trio` 249 · `melange` 259 · `themeSombre` 267 · `appliqueAccent` 281
+`appliqueFond` 312 · `modeleRetenu` 350 · `appliqueModele` 369 · `texteCorps` 438
+`standApercu` 453 · `lignesApercu` 473 · `contenuApercu` 499 · `apercuFiche` 532
+`apercuListe` 592 · `apercuDuo` 614 · `glisseFenetre` 647 · `ouvreReglages` 658
+`voletZones` 724 · `ficheZoneEnPlace` 801 · `voletPlan` 819 · `nomDuTon` 946
+`voletApparence` 951 · `enregistreConf` 1045 · `rgbHex` 1051 · `hexa` 1058
+`luminance` 1062 · `ecarte` 1076 · `joli` 1091 · `retireAdmin` 1108 · `activeAdmin` 1121
+`champZone` 1187 · `champsZone` 1212 · `reduitLogo` 1275 · `champLogo` 1316
+`editeurRiche` 1413 · `memeFicheZone` 1568 · `suitFicheZone` 1573 · `verseFicheZone` 1581
+`ficheZone` 1607 · `enregistreZone` 1632 · `basculeAffichageZone` 1690
+`marqueZonesMasquees` 1707 · `ecritTablesZones` 1727 · `ecritTableZones` 1758
+`cleLibelle` 1783 · `empreinteLibelle` 1799 · `placementLibelle` 1807 · `posePlacement` 1817
+`libelleAutomatique` 1834 · `modePlacementLibelles` 1843 · `majPaletteLibelle` 1860
+`choisitLibelle` 1877 · `pousseLibelle` 1884 · `libellePointerDown` 1892
+`libellePointerMove` 1907 · `libellePointerUp` 1916
 
 Éléments :
 
@@ -167,7 +167,7 @@ Fonctions :
 
 - l.536 · Page de rapport
 
-### `_dessin.html` — 1418 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1421 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -184,12 +184,12 @@ Fonctions :
 `remplitListeSocietes` 623 · `societeSaisie` 631 · `traceStandDessine` 647
 `texteStandDessine` 671 · `poseLibellesDessines` 689 · `decoupeStand` 710
 `marqueStandsDessines` 722 · `rafraichitStandsDessines` 737 · `cartouchePoi` 763
-`ouvrePoi` 845 · `mesureCartouche` 913 · `phareRepere` 920 · `phareZone` 921
-`eclairePoi` 925 · `signale` 943 · `calquePourImage` 957 · `poseImage` 970
-`importeImage` 983 · `dessinPointerDown` 1034 · `dessinPointerMove` 1108
-`dessinPointerUp` 1146 · `termineTrace` 1182 · `aide` 1192 · `choisitOutil` 1217
-`enchaineStand` 1240 · `activeCalque` 1294 · `montreRoleIti` 1345 · `creeCalque` 1376
-`demandeNom` 1389 · `renommeCalque` 1408
+`ouvrePoi` 845 · `mesureCartouche` 916 · `phareRepere` 923 · `phareZone` 924
+`eclairePoi` 928 · `signale` 946 · `calquePourImage` 960 · `poseImage` 973
+`importeImage` 986 · `dessinPointerDown` 1037 · `dessinPointerMove` 1111
+`dessinPointerUp` 1149 · `termineTrace` 1185 · `aide` 1195 · `choisitOutil` 1220
+`enchaineStand` 1243 · `activeCalque` 1297 · `montreRoleIti` 1348 · `creeCalque` 1379
+`demandeNom` 1392 · `renommeCalque` 1411
 
 Éléments :
 
@@ -217,7 +217,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2833 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2875 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -236,8 +236,8 @@ Fonctions :
 `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
 `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
 `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dVis` · `#dPartage`
-`#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
+`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dLogo` · `#dCode` · `#dNeuf` · `#dVis`
+`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
 `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
 `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
@@ -291,7 +291,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2655 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2679 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -300,8 +300,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2300 · 8. Interactions du plan
-- l.2501 · Le tiroir de la liste — écrans étroits
+- l.2324 · 8. Interactions du plan
+- l.2525 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -326,8 +326,9 @@ Fonctions :
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `adresseImage` 1799
 `imageSure` 1812 · `assainitRiche` 1841 · `enBlocs` 1881 · `rangeRiche` 1894
 `ecarteClicFantome` 1922 · `nomSociete` 1931 · `societes` 1944 · `choisitExposant` 1955
-`poseCode` 2001 · `ouvre` 2020 · `ferme` 2274 · `onglet` 2290 · `milieu` 2320
-`commencePince` 2326 · `suitPince` 2340 · `mesureTiroir` 2512 · `montreTiroir` 2515
+`poseMarque` 1993 · `poseCode` 2041 · `ouvre` 2060 · `ferme` 2298 · `onglet` 2314
+`milieu` 2344 · `commencePince` 2350 · `suitPince` 2364 · `mesureTiroir` 2536
+`montreTiroir` 2539
 
 Éléments :
 
@@ -377,18 +378,19 @@ Fonctions :
 `jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
 `ouvreParcours` 314 · `fermeParcours` 326
 
-### `_pile.html` — 372 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 444 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.259 · Repères
+- l.260 · Repères
+- l.312 · Fond du plan
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
 `nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
-`sectionSelection` 275 · `ligneCouleur` 314 · `rangSecteur` 334 · `rangSous` 346
-`defautCouleur` 368
+`sectionSelection` 276 · `sectionFond` 332 · `ligneCouleur` 386 · `rangSecteur` 406
+`rangSous` 418 · `defautCouleur` 440
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
