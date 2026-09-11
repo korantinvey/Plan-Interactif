@@ -2336,6 +2336,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Les salles du programme, dans la fiche de la zone : une coche par salle, et
+   sous elle ce qu'il en est déjà — trouvée par la synchronisation, choisie à
+   la main, partie dans une autre zone, ou encore nulle part. La liste est
+   celle du programme entier, d'où le défilement : c'est de là qu'on voit ce
+   qui reste à situer. */
+.sallesZ{display:flex;flex-direction:column;max-height:32dvh;overflow-y:auto;
+  padding:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.sallesZ label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:1px 9px;align-items:baseline;padding:6px 7px;border-radius:var(--radius);
+  cursor:pointer}
+.sallesZ label:hover{background:var(--accent-soft)}
+/* La coche n'est pas un champ de saisie : la largeur pleine des autres champs
+   de la fiche l'étirerait sur toute la ligne. */
+.champZ .sallesZ input{width:auto;margin:0;padding:0}
+.sallesZ .nS{font-size:13.5px;color:var(--ink)}
+.sallesZ .cS{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+.sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
+.sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
+.sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
 /* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
    vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
    il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
@@ -3134,13 +3155,6 @@ function indexe(d){
     p.stands = p.stands || [];
     p.fond = p.fond || [];
     p.conferences = p.conferences || [];
-    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
-    p.parZone = new Map();
-    p.conferences.forEach(c => {
-      if (!c.zone) return;
-      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
-      p.parZone.get(c.zone).push(c);
-    });
     /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
        être ailleurs que sa salle — et qui reste son seul point d'accroche quand
        la salle n'est rattachée à aucune zone. */
@@ -3152,8 +3166,7 @@ function indexe(d){
         p.parStand.get(e.stand).push(c);
       });
     });
-    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
+    p.parStand.forEach(l => l.sort(chronoConf));
     /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
        la trouver : « accueil », « restauration », « village start-up » sont des
        endroits du salon au même titre qu'un stand. */
@@ -3274,17 +3287,6 @@ function indexe(d){
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
-       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
-       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
-       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
-       porterait sa ligne serait un hasard de synchronisation : elle se cherche
-       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
-       fait. */
-    const ou = (c.zone && parId.get(String(c.zone))) ||
-               tenue.map(e => parId.get(e.stand)).find(Boolean);
-    c.situee = Boolean(ou);
-    if (ou) c.p = ou.p;
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
@@ -3293,6 +3295,7 @@ function indexe(d){
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
+  rangeConferences();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -3307,6 +3310,62 @@ function indexe(d){
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
+}
+
+/* Une conférence se lit dans l'ordre où elle se tient : l'heure locale d'abord,
+   qui est celle qu'affiche la page, et l'heure absolue à défaut. */
+const chronoConf = (a, b) => String(a.debutLocal || a.debut || "")
+  .localeCompare(String(b.debutLocal || b.debut || ""));
+
+/**
+ * Ranger les conférences là où on les lit : au programme de la zone qui les
+ * abrite, et dans le pavillon où l'on ira les chercher.
+ *
+ * À part de l'indexation parce que cela se refait sans recharger : le
+ * rattachement d'une salle à une zone se choisit dans les réglages du plan, et
+ * paraît aussitôt — comme le nom d'une zone.
+ *
+ * Ce rattachement l'emporte sur celui que porte l'instantané. C'est la règle
+ * que le service applique déjà en servant le plan ; elle est reprise ici pour
+ * que le choix se voie avant même d'avoir rechargé. La table des salles n'est
+ * servie qu'à l'administration : le visiteur reçoit des conférences déjà
+ * rattachées, et n'a rien à réappliquer.
+ *
+ * Une salle rattachée à une zone d'un autre pavillon n'entre au programme de
+ * personne : la conférence n'est pas remontée là-bas, et la prochaine
+ * synchronisation l'y portera. Elle se retrouve d'ici là par son exposant.
+ */
+function rangeConferences(){
+  const parSalle = new Map();
+  Object.keys(DATA.salles || {}).forEach(k => {
+    const s = DATA.salles[k];
+    if (s && s.nom) parSalle.set(s.nom, s.zone || null);
+  });
+  DATA.plans.forEach(p => {
+    const siennes = new Set(p.zones.map(z => z.id));
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (parSalle.has(c.salle)) c.zone = parSalle.get(c.salle);
+      if (!c.zone || !siennes.has(c.zone)) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort(chronoConf));
+  });
+  /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+     remontée par tous ceux qui la touchent — mais à celui où on la trouve : la
+     zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni l'une
+     ni l'autre, elle n'est encore située nulle part et le pavillon que
+     porterait sa ligne serait un hasard de synchronisation : elle se cherche et
+     se lit, elle ne se rattache à rien tant qu'on ne l'a pas fait. */
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+  });
 }
 
 /**
@@ -7567,6 +7626,8 @@ function champsZone(hote, o){
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
+  const salles = champSalles(hote, o);
+
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
@@ -7582,7 +7643,84 @@ function champsZone(hote, o){
   lienZ.value = o.lien || "";
 
   return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value });
+                  description: riche.lit(), lien: lienZ.value,
+                  salles: salles ? salles() : null });
+}
+
+/**
+ * Les salles de conférence que cette zone abrite.
+ *
+ * Une salle du programme s'appelle « Agora (P160) » : le code entre
+ * parenthèses est un emplacement du plan, et la synchronisation retrouve la
+ * zone qui le contient — dix fois sur onze sur Franchise Expo. La onzième
+ * porte un code absent du plan, et rien ne le devinera : elle se désigne ici,
+ * à la main, sur la zone qui l'accueille.
+ *
+ * Tout le programme est montré, et pas seulement ce qui revient déjà à cette
+ * zone : c'est de là qu'on voit ce qui n'est encore nulle part. La liste est
+ * courte — une dizaine de salles pour un salon qui en a.
+ *
+ * Une salle n'est que dans une zone à la fois : la cocher ici la retire de là
+ * où elle était, ce que sa ligne disait avant qu'on ne la coche.
+ */
+function champSalles(hote, o){
+  const salles = DATA.salles || {};
+  /* Sans nom, une salle ne se distingue pas de la suivante ; l'ordre est celui
+     du programme, et il ne bouge pas quand on coche — une liste qui se
+     réordonne sous le doigt fait cocher la voisine. */
+  const ids = Object.keys(salles).sort((a, b) =>
+    String(salles[a].nom || "").localeCompare(String(salles[b].nom || ""), "fr"));
+  // sans programme, il n'y a rien à rattacher : le champ n'aurait qu'un vide
+  if (!ids.length) return null;
+
+  const liste = document.createElement("div");
+  liste.className = "sallesZ";
+  const coches = new Map();
+
+  ids.forEach(id => {
+    const s = salles[id];
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span class="nS"></span>' +
+                  '<span class="cS"></span><span class="eS"></span>';
+    const c = l.querySelector("input");
+    c.checked = s.zone === o.id;
+    l.querySelector(".nS").textContent = s.nom || id;
+    l.querySelector(".cS").textContent = s.code || "";
+    const etat = l.querySelector(".eS");
+    /* Ce que la ligne dit d'elle-même : d'où vient ce qui est coché, et où est
+       partie une salle qui ne l'est pas. « Trouvée automatiquement » se lit de
+       la proposition et non de la marque « manuel » : une salle qu'on a cochée
+       là où la synchronisation la mettait est au même endroit qu'elle. */
+    const dis = () => {
+      const ailleurs = !c.checked && s.zone && s.zone !== o.id;
+      etat.textContent = c.checked
+        ? (s.auto === o.id ? "trouvée automatiquement" : "choisie à la main")
+        : ailleurs ? "rattachée à " + nomDeZone(s.zone)
+        : "à situer";
+      etat.dataset.genre = c.checked ? (s.auto === o.id ? "auto" : "manuel")
+        : ailleurs ? "libre" : "manque";
+    };
+    dis();
+    c.onchange = dis;
+    coches.set(id, c);
+    liste.appendChild(l);
+  });
+
+  champZone(hote, "Salles de conférence", liste,
+    "Le programme du salon, salle par salle. Cochez celles qui se tiennent " +
+    "dans cette zone : leurs conférences paraissent aussitôt sur sa fiche. " +
+    "Un rattachement choisi ici n'est plus modifié par les synchronisations " +
+    "suivantes.");
+  return () => ids.filter(id => coches.get(id).checked);
+}
+
+/** Le nom d'une zone, pour le dire ailleurs que sur elle-même. */
+function nomDeZone(id){
+  const z = parId.get(id);
+  // une zone que le plan n'a plus : le rattachement lui survit, et le dire
+  // vaut mieux que de laisser croire à une zone qu'on pourrait aller voir
+  if (!z) return "une zone absente du plan";
+  return z.nom || "une zone sans nom";
 }
 
 
@@ -7904,9 +8042,11 @@ function editeurRiche(html){
  * de départ, relevé par le même chemin que celui qu'on comparera. */
 let ficheZoneEnCours = null;
 
+/* Les salles cochées se comparent telles quelles : ce sont deux listes des
+   mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
-  a.logo === b.logo);
+  a.logo === b.logo && String(a.salles) === String(b.salles));
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 function suitFicheZone(o, valeurs, etat, apres){
@@ -7980,6 +8120,30 @@ async function enregistreZone(o, v, depart){
      qui n'est pas une image fabriquée ici n'a rien à faire dans la colonne. */
   const blason = imageSure(v.logo);
   const renomme = !depart || String(depart.libelle || "").trim() !== nom;
+  /* Les salles cochées. Leur colonne n'est pas indexée par zone mais par
+     salle, et c'est la zone qu'on y écrit — d'où le détour. On n'y touche que
+     si une coche a bougé : une description corrigée ne doit pas réécrire un
+     rattachement qu'un autre poste vient de changer. */
+  const salles = Array.isArray(v.salles) ? v.salles : null;
+  const rattache = salles && (!depart || String(depart.salles) !== String(salles));
+  const rattacheSalles = (t) => Object.keys(t).forEach(id => {
+    const s = t[id];
+    const ici = salles.indexOf(id) >= 0;
+    // une salle qui est déjà où on la veut n'a pas à être réécrite : le choix
+    // d'une zone ne touche pas au rattachement des salles des autres
+    if (!s || ici === (s.zone === o.id)) return;
+    s.zone = ici ? o.id : null;
+    /* « manuel » protège du prochain rattachement automatique. Retirer d'ici
+       une salle que la synchronisation y avait posée est un choix comme un
+       autre : sans cette marque, elle y reviendrait à la synchronisation
+       suivante. */
+    s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
+  });
+  /* La fiche de la zone suivante s'ouvre avant que la base ait répondu, et le
+     plan se redessine dans la foulée : tous deux doivent lire le rattachement
+     qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
+     et « rattacheSalles » ne fait rien deux fois. */
+  if (rattache){ rattacheSalles(DATA.salles); rangeConferences(); }
   const tables = await ecritTablesZones([
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
@@ -7993,9 +8157,16 @@ async function enregistreZone(o, v, depart){
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
+    ...(rattache
+      ? [{ colonne: "salles", secours: DATA.salles, change: rattacheSalles }]
+      : []),
   ]);
   if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
+  /* Le programme d'une zone se lit d'un index rangé au chargement : la salle
+     qu'on vient de lui rattacher n'y est pas, et attendre la synchronisation
+     pour la voir arriver ferait douter du clic. */
+  if (tables.salles){ DATA.salles = tables.salles; rangeConferences(); }
   if (renomme){
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;

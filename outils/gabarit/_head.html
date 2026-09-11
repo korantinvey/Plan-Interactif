@@ -2327,6 +2327,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Les salles du programme, dans la fiche de la zone : une coche par salle, et
+   sous elle ce qu'il en est déjà — trouvée par la synchronisation, choisie à
+   la main, partie dans une autre zone, ou encore nulle part. La liste est
+   celle du programme entier, d'où le défilement : c'est de là qu'on voit ce
+   qui reste à situer. */
+.sallesZ{display:flex;flex-direction:column;max-height:32dvh;overflow-y:auto;
+  padding:4px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.sallesZ label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:1px 9px;align-items:baseline;padding:6px 7px;border-radius:var(--radius);
+  cursor:pointer}
+.sallesZ label:hover{background:var(--accent-soft)}
+/* La coche n'est pas un champ de saisie : la largeur pleine des autres champs
+   de la fiche l'étirerait sur toute la ligne. */
+.champZ .sallesZ input{width:auto;margin:0;padding:0}
+.sallesZ .nS{font-size:13.5px;color:var(--ink)}
+.sallesZ .cS{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+.sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
+.sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
+.sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
 /* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
    vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
    il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */

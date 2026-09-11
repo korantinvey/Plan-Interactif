@@ -111,6 +111,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
 | tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
+| fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
 | déplacer, redimensionner une forme existante | `_edition.html` |

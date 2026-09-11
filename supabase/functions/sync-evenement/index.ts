@@ -1027,7 +1027,7 @@ Deno.serve(async (req) => {
            un emplacement du plan, posé comme texte : on retrouve sa position,
            puis la zone qui la contient. Dix salles sur onze aboutissent ainsi
            sur Franchise Expo ; la onzième porte un code absent du plan et se
-           rattache à la main depuis la console. */
+           rattache à la main, sur la fiche de la zone qui l'accueille. */
         const conferences: Record<string, unknown>[] = [];
         if (confEm) {
           const parCode = new Map<string, { x: number; y: number }>();
@@ -1066,8 +1066,8 @@ Deno.serve(async (req) => {
 
                Sans zone ni exposant, elle n'a d'attache nulle part : on la
                remonte partout pour qu'elle existe avant d'être située, la
-               console la rattachera. La page, qui range par zone et par stand,
-               ne l'affiche d'ici là nulle part. */
+               fiche de la zone la rattachera. La page, qui range par zone et
+               par stand, ne l'affiche d'ici là nulle part. */
             /* On ne garde d'un exposant que le stand qu'il occupe ici : sur un
                autre pavillon, la même conférence citera l'autre stand. */
             const cites = exposantsConf.get(c.id) ?? [];
