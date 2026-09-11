@@ -30,6 +30,15 @@
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
+  /* La pile du sans, écrite une fois. Elle l'était à deux endroits — la page
+     entière d'un côté, les libellés du plan de l'autre — et les deux ne
+     disaient pas la même chose : « Segoe UI, system-ui » ici, rien là. Tant
+     qu'Instrument Sans arrive, personne ne s'en aperçoit ; dès qu'il manque —
+     un salon derrière un filtre, un hall sans réseau, une page publiée qui
+     n'appelle rien au dehors — l'interface passait à la police du système et
+     le plan à celle du navigateur. Deux polices sur un écran, pour le même
+     nom d'exposant lu deux fois. */
+  --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -62,7 +71,7 @@
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
+  font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
@@ -254,7 +263,7 @@ button{cursor:pointer;background:none;border:none}
    lettres, et sans le cadre — celui-ci cite un numéro peint sur une cloison,
    et l'emprunter pour un mot ferait lire « Zone » comme un emplacement. */
 .row[data-sorte="zone"] .code,.row[data-sorte="conf"] .code{
-  font-family:"Instrument Sans",sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;
+  font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.04em;
   text-transform:uppercase;border-color:transparent;background:var(--surface-2);color:var(--ink-3)}
 .row.l .code{opacity:.5}
 /* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
@@ -298,7 +307,7 @@ button{cursor:pointer;background:none;border:none}
    en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
    trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
    se peint, il ne se contourne pas. */
-#couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
+#couches .cal text{fill:currentColor;stroke:none;font-family:var(--sans)}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -379,9 +388,9 @@ html.poi-actif #marques .parc{display:none}
   fill:var(--c-lab-stand,var(--ink-2));
   font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
   font-weight:var(--graisse-lab-code,500)}
-#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,var(--sans));
   font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
-#labels text.zn{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+#labels text.zn{font-family:var(--police-lab-nom,var(--sans));
   font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
@@ -439,7 +448,7 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
   stroke-linejoin:round;stroke-linecap:round}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
 .dcal text{fill:currentColor;text-anchor:middle;
-  font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-family:var(--police-lab-nom,var(--sans));
   font-weight:var(--graisse-lab-nom,600)}
 .dcal.editable{pointer-events:auto}
 /* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
@@ -3246,7 +3255,7 @@ const COLLATION = new Intl.Collator("fr", { numeric: true });
    sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
    sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
    qu'il devait remplir. */
-let P_NOM = ["600", '"Instrument Sans", sans-serif'];
+let P_NOM = ["600", '"Instrument Sans", "Segoe UI", system-ui, sans-serif'];
 let P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
 function decoupe(txt, n){
@@ -6432,7 +6441,8 @@ const modeleRetenu = () => {
    la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
    côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
    choix. */
-const P_SANS = '"Instrument Sans", sans-serif', P_CHASSE = '"IBM Plex Mono", monospace',
+const P_SANS = '"Instrument Sans", "Segoe UI", system-ui, sans-serif',
+      P_CHASSE = '"IBM Plex Mono", monospace',
       P_GROTESQUE = '"Archivo", sans-serif', P_SERIF = '"Fraunces", Georgia, serif',
       P_MACHINE = '"Courier Prime", monospace';
 const POLICES_LIBELLE = {
