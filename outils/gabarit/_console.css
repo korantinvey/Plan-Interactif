@@ -468,7 +468,11 @@ tr.eteint td{opacity:.45}
 .sync-pct{font-size:15px;font-weight:600;color:var(--accent)}
 
 .sync-rail{display:flex;align-items:center}
-.sync-depart{width:8px;height:8px;border-radius:50%;background:var(--line-strong);flex:none}
+.sync-depart{width:8px;height:8px;border-radius:50%;background:var(--line-strong);flex:none;
+  transition:background .25s, box-shadow .25s}
+/* Le curseur au point de départ, tant qu'aucune étape n'a commencé. */
+.sync-rail[data-etat="connexion"] .sync-depart{background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft)}
 .sync-seg{flex:1 1 0;display:flex;align-items:center;min-width:18px}
 .sync-piste{flex:1;height:4px;background:var(--line);overflow:hidden}
 .sync-piste>span{display:block;height:100%;width:0;background:var(--accent);
