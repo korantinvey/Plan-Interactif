@@ -1018,6 +1018,29 @@ function eclairePoi(){
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }
 
+/**
+ * Le retrait ne survit pas au geste qui l'ignore.
+ *
+ * Le cartouche met une famille de repères en avant et recule tout le reste à
+ * seize pour cent. Ce retrait est une réponse à une question posée — « où
+ * mange-t-on ? » — et il n'a plus rien à dire dès que le visiteur en pose une
+ * autre. Or rien sur le plan ne le levait : ouvrir la fiche d'un stand éteint,
+ * ou taper le fond pour refermer, laissaient le plan délavé et la pastille
+ * allumée. Il fallait retrouver celle-ci dans le cartouche et la rappuyer, ce
+ * que personne ne devine.
+ *
+ * Un repère ou une zone déjà mis en avant font exception : les ouvrir, c'est
+ * se servir de la mise en avant, pas en sortir. On reconnaît les uns et les
+ * autres à la marque qu'« eclairePoi » leur a posée — la même qui les tient
+ * en pleine lumière.
+ */
+function oublieChoixPoi(cible){
+  if (!poiChoisi) return;
+  if (cible && cible.classList.contains("phare")) return;
+  poiChoisi = null;
+  cartouchePoi();
+}
+
 /* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
    cherche, et on croit qu'il reste un bouton à valider. */
 function signale(id){
