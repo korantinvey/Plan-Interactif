@@ -376,9 +376,12 @@ html.poi-actif #marques .parc{display:none}
    sur l'habillage du calque, qui teinte tout ce qu'il porte. */
 #labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
   fill:var(--c-lab-stand,var(--ink-2));
-  font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
-#labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+  font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
+  font-weight:var(--graisse-lab-code,500)}
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+#labels text.zn{font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
@@ -434,7 +437,9 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-linejoin:round;stroke-linecap:round}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
-.dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
+.dcal text{fill:currentColor;text-anchor:middle;
+  font-family:var(--police-lab-nom,"Instrument Sans",sans-serif);
+  font-weight:var(--graisse-lab-nom,600)}
 .dcal.editable{pointer-events:auto}
 /* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
    calques restent sourds : leur clic appartient à la vue, sans quoi un geste
@@ -1386,9 +1391,10 @@ button.expo:hover{background:var(--line)}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
   background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
   font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
-  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
-     s'y tient, plutôt que de la déborder sur un salon aux numéros longs — un
-     serif un peu plus large que la chasse fixe se rattrape à l'approche. */
+  /* La case se taille sur la police du modèle — celle-ci — et sur son corps :
+     le chiffre d'appel s'y tient, plutôt que de la déborder sur un salon aux
+     numéros longs. L'approche resserre ce que le serif prend de plus que la
+     chasse fixe, sans quoi la colonne des noms partirait vers la droite. */
   font-size:var(--caseF,11.5px);letter-spacing:-.02em}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
@@ -3050,6 +3056,13 @@ function indexe(d){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
+     police : reposée maintenant, elle vaut dès le premier tracé. Attendre
+     « appliqueApparence » la mettait une fois de trop en retard — les stands
+     et les repères dessinés à la main sont tracés juste avant, et se
+     seraient taillés sur la police d'origine. */
+  posePoliceLibelles(modeleRetenu());
+
   /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
      ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
      ne décrit plus rien. */
@@ -3164,8 +3177,14 @@ function largeur(txt, police){
    milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
 const COLLATION = new Intl.Collator("fr", { numeric: true });
 
-const P_NOM = ["600", '"Instrument Sans", sans-serif'];
-const P_CODE = ["500", '"IBM Plex Mono", monospace'];
+/* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
+   de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
+   modèle d'habillage les remplace, et `posePoliceLibelles` les repose. Ce
+   sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
+   sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
+   qu'il devait remplir. */
+let P_NOM = ["600", '"Instrument Sans", sans-serif'];
+let P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
 function decoupe(txt, n){
   if (n === 1) return [txt];
@@ -5970,6 +5989,63 @@ const modeleRetenu = () => {
   return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
+/* La police des libellés du plan, modèle par modèle.
+
+   Un modèle est un accord typographique, et le plan en fait partie : un salon
+   habillé en « Kraft » gardait ses enseignes composées en grotesque au milieu
+   de son carton, et le « Magazine » son sommaire en serif à côté d'un plan
+   qui n'en avait rien. Chaque ligne reprend donc la police que le modèle pose
+   déjà sur le nom et sur le numéro de ses lignes de liste — celui du plan est
+   le même nom, écrit sur la cloison plutôt que dans la marge.
+
+   Les onze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
+   la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
+   côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
+   choix. */
+const P_SANS = '"Instrument Sans", sans-serif', P_CHASSE = '"IBM Plex Mono", monospace',
+      P_GROTESQUE = '"Archivo", sans-serif', P_SERIF = '"Fraunces", Georgia, serif',
+      P_MACHINE = '"Courier Prime", monospace';
+const POLICES_LIBELLE = {
+  sobre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  grille:   { nom: ["600", P_GROTESQUE], code: ["600", P_CHASSE] },
+  console:  { nom: ["500", P_CHASSE],    code: ["500", P_CHASSE] },
+  billet:   { nom: ["600", P_SANS],      code: ["600", P_CHASSE] },
+  magazine: { nom: ["600", P_SERIF],     code: ["600", P_SERIF] },
+  brut:     { nom: ["700", P_SANS],      code: ["700", P_CHASSE] },
+  verre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  kraft:    { nom: ["700", P_MACHINE],   code: ["700", P_MACHINE] },
+  signal:   { nom: ["700", P_SANS],      code: ["600", P_CHASSE] },
+  chrono:   { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+};
+
+/**
+ * Pose la police du modèle sur les libellés du plan.
+ *
+ * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
+ * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
+ * nom à la place dont il dispose, mesurent P_NOM et P_CODE. Les séparer
+ * donnerait un nom calculé pour une police et rendu dans une autre — plus
+ * large que son stand, ou perdu au milieu.
+ *
+ * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
+ * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
+ * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
+ * que la case du numéro se taille elle aussi sur P_CODE.
+ */
+function posePoliceLibelles(cle){
+  const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
+  const change = P_NOM !== p.nom || P_CODE !== p.code;
+  P_NOM = p.nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", p.nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  racine.style.setProperty("--police-lab-code", p.code[1]);
+  racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  // les repères et les stands tracés à la main portent leur libellé dans leur
+  // propre forme : ils se retracent, ils ne se restylent pas
+  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+}
+
 /**
  * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
  * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
@@ -5990,6 +6066,7 @@ function appliqueModele(){
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  posePoliceLibelles(cle);
 }
 
 /* ------------------------------------------------------------------
