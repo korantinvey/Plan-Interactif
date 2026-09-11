@@ -169,7 +169,7 @@ Fonctions :
 
 - l.612 · Page de rapport
 
-### `_dessin.html` — 1489 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1504 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -186,13 +186,13 @@ Fonctions :
 `remplitListeSocietes` 625 · `societeSaisie` 633 · `traceStandDessine` 649
 `texteStandDessine` 673 · `poseLibellesDessines` 691 · `decoupeStand` 712
 `marqueStandsDessines` 724 · `rafraichitStandsDessines` 739 · `oublieReperes` 769
-`reperesCherchables` 771 · `vaAuRepere` 810 · `cartouchePoi` 831 · `ouvrePoi` 913
-`mesureCartouche` 984 · `phareRepere` 991 · `phareZone` 992 · `eclairePoi` 996
-`signale` 1014 · `calquePourImage` 1028 · `poseImage` 1041 · `importeImage` 1054
-`dessinPointerDown` 1105 · `dessinPointerMove` 1179 · `dessinPointerUp` 1217
-`termineTrace` 1253 · `aide` 1263 · `choisitOutil` 1288 · `enchaineStand` 1311
-`activeCalque` 1365 · `montreRoleIti` 1416 · `creeCalque` 1447 · `demandeNom` 1460
-`renommeCalque` 1479
+`reperesCherchables` 771 · `vaAuRepere` 820 · `cartouchePoi` 846 · `ouvrePoi` 928
+`mesureCartouche` 999 · `phareRepere` 1006 · `phareZone` 1007 · `eclairePoi` 1011
+`signale` 1029 · `calquePourImage` 1043 · `poseImage` 1056 · `importeImage` 1069
+`dessinPointerDown` 1120 · `dessinPointerMove` 1194 · `dessinPointerUp` 1232
+`termineTrace` 1268 · `aide` 1278 · `choisitOutil` 1303 · `enchaineStand` 1326
+`activeCalque` 1380 · `montreRoleIti` 1431 · `creeCalque` 1462 · `demandeNom` 1475
+`renommeCalque` 1494
 
 Éléments :
 

@@ -8696,14 +8696,29 @@ function reperesCherchables(){
  * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
  * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
  * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
- * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
- * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
- * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ * plan et va chercher le fond du pavillon qu'on n'avait pas encore ouvert. Le
+ * montage recrée les calques de dessin, d'où la pastille est relue après lui —
+ * pour que la fiche s'anime depuis elle, et non depuis rien.
+ *
+ * Puis le plan vient sur le repère, comme il vient sur un stand qu'on choisit
+ * dans la liste : sans cela, la fiche s'ouvrait sur un escalier que rien ne
+ * montrait, et il restait à trouver le bouton « Centrer sur le plan » pour
+ * voir où il est — le clic dans la liste disait pourtant déjà qu'on y allait.
+ *
+ * L'ordre des deux gestes n'est pas le même selon l'écran, et c'est celui de
+ * « select » : sur grand écran on cadre avant d'ouvrir, l'animation de la
+ * fiche partant de la pastille telle qu'elle est cadrée ; sur mobile c'est la
+ * fiche qui décide de la hauteur masquée, et cadrer avant elle viserait à côté.
  */
 function vaAuRepere(id, p){
   changePlan(p);
+  const cible = formeParId(id);
+  if (!cible || cible.f.t !== "repere") return;
   const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  const xy = cible.f.pts[0];
+  if (!ETROIT()) centrePoint(xy);
   ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  if (ETROIT()) centrePoint(xy);
 }
 
 /**
