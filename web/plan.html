@@ -189,9 +189,19 @@ button{cursor:pointer;background:none;border:none}
 .actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
 .actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
-.search :is(input,.champ){width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
+.search :is(input,.champ){width:100%;padding:9px 30px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* La croix qui défait la recherche. Celle du navigateur ne se montre qu'au
+   survol, jamais sur un téléphone, et s'efface sur les modèles qui peignent le
+   champ : un plan éteint par une recherche vaine se rallumait lettre à lettre.
+   On garde donc la nôtre, et on retire la sienne pour n'en avoir qu'une. */
+.vide-q{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;padding:0;display:flex;align-items:center;
+  justify-content:center;border:0;background:none;border-radius:999px;
+  color:var(--ink-3);font-size:17px;line-height:1}
+.vide-q:hover{color:var(--ink)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
 /* Le champ de la vignette des modèles. Un <input> ne peut pas vivre dans le
    bouton qui choisit le modèle — pas plus qu'un bouton n'en contient un autre
    — et l'habillage se joue pourtant sur la boîte de recherche : elle est donc
@@ -1345,7 +1355,7 @@ button.expo:hover{background:var(--line)}
   color:var(--accent-ink)}
 .liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--ink);
   color:var(--ink)}
-.liste-grille .search-field svg{color:var(--ink-3)}
+.liste-grille .search-field :is(svg,.vide-q){color:var(--ink-3)}
 .liste-grille .crit-btn{background:var(--surface);border-color:var(--ink);color:var(--ink)}
 .liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
   font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
@@ -1400,7 +1410,7 @@ button.expo:hover{background:var(--line)}
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-billet .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-billet .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-billet .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-billet .crit-btn{background:rgba(255,255,255,.2);border-color:transparent;
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .count{border-bottom:2px dashed var(--line-strong);
@@ -1445,7 +1455,7 @@ button.expo:hover{background:var(--line)}
   --radius:0;border-right:3px solid #111}
 .liste-brut .search{background:var(--accent-base);border-bottom:3px solid #111}
 .liste-brut .search :is(input,.champ){background:#FFFDF5;border:2px solid #111;color:#111}
-.liste-brut .search-field svg{color:#111}
+.liste-brut .search-field :is(svg,.vide-q){color:#111}
 .liste-brut .crit-btn{background:#FFFDF5;border:2px solid #111;color:#111}
 .liste-brut .count{border-bottom:3px solid #111;color:#111;font-size:10.5px;font-weight:700;
   letter-spacing:.05em;text-transform:uppercase}
@@ -1529,7 +1539,7 @@ button.expo:hover{background:var(--line)}
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
 .liste-signal .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-signal .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-signal .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-signal .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-signal .crit-btn{color:var(--accent-ink);
   background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
@@ -2737,6 +2747,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div class="search-field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
+        <!-- Défaire la recherche d'une pression : sans mot-clé la liste et le
+             plan reviennent entiers, et c'est le geste qu'on cherche quand on
+             ne trouve rien. Elle ne paraît qu'une fois le champ rempli. -->
+        <button class="vide-q" id="videQ" type="button" hidden
+          title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
       <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
            sur un téléphone la place du plan. Il n'existe que si l'exploitant a
@@ -3723,6 +3738,7 @@ function filtreTheme(n){
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
+  majVideQ();
   ferme();
   majCriteres();
   appliqueFiltre();
@@ -3915,6 +3931,34 @@ function basculeCritere(cle, v){
 function videCriteres(){
   state.crit.clear();
   majCriteres();
+  appliqueFiltre();
+}
+
+/** La croix du champ ne sert qu'à défaire : elle ne paraît qu'une fois qu'il y
+ *  a quelque chose à défaire. */
+function majVideQ(){
+  const b = $("videQ");
+  if (b) b.hidden = !state.q;
+}
+
+/**
+ * Reprendre le plan entier, sans effacer le mot-clé lettre à lettre.
+ *
+ * Une recherche sans résultat éteint la liste et le plan à la fois : il faut
+ * pouvoir la défaire d'un geste. Les critères retenus, eux, restent — ils ont
+ * leurs propres puces pour cela, et les retirer avec le mot-clé effacerait une
+ * question qu'on n'a pas posée.
+ */
+function videRecherche(){
+  state.q = ""; state.qn = "";
+  const champ = $("q");
+  if (champ){
+    champ.value = "";
+    /* Sur un téléphone, rendre la main au champ relèverait le clavier sur le
+       plan qu'on vient justement de vouloir revoir. */
+    if (!ETROIT()) champ.focus();
+  }
+  majVideQ();
   appliqueFiltre();
 }
 
@@ -4493,15 +4537,60 @@ function glisseVersVise(){
     const but = vise;
     view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
              w: view.w + (but.w - view.w) * k, h: view.h + (but.h - view.h) * k };
-    // assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
-    // se retrient enfin — c'est la fin du geste
-    if (Math.abs(but.w - view.w) < but.w * .002){
+    /* Assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
+       se retrient enfin — c'est la fin du geste.
+
+       Les quatre nombres comptent, et non la seule largeur. Un cran de molette
+       la fait toujours varier, si bien qu'elle suffisait à dire où l'on en
+       était ; aller sur un point du plan ne la change pas forcément — on s'y
+       déplace sans s'en approcher — et le trajet s'arrêtait alors à sa
+       première image, juste avant de commencer. */
+    const reste = Math.max(Math.abs(but.x - view.x), Math.abs(but.y - view.y),
+                           Math.abs(but.w - view.w), Math.abs(but.h - view.h));
+    if (reste < but.w * .002){
       view = but; vise = null; poseVue(); return;
     }
     appliqueVue(); echelle();
     imageZoom = requestAnimationFrame(pas);
   };
   imageZoom = requestAnimationFrame(pas);
+}
+
+/**
+ * Viser une vue, et y aller en glissant.
+ *
+ * Le seul chemin pour déplacer la vue autrement que d'un coup : le zoom par
+ * crans s'en sert, le centrage sur un stand ou sur un repère aussi. Qui refuse
+ * les animations s'y pose tout de suite — « poseVue » arrête au passage le
+ * trajet qui serait en cours.
+ */
+function glisseVers(but){
+  if (REDUIT){ view = but; poseVue(); return; }
+  vise = but;
+  glisseVersVise();
+}
+
+/**
+ * Où un nœud du plan se trouvera quand la vue aura fini son trajet.
+ *
+ * La fiche s'ouvre en s'étirant depuis la forme qu'on a choisie, et il faut
+ * pour cela sa place à l'écran. Elle l'avait tant que le centrage se faisait
+ * d'un coup : la forme était déjà arrivée. Elle glisse maintenant, et la
+ * mesurer en chemin ferait partir la fiche d'un point de passage — le plus
+ * souvent hors du cadre, la forme venant à peine d'y entrer.
+ *
+ * La vue visée est donc posée le temps de la mesure, puis retirée. Deux
+ * écritures de « viewBox » de plus, et la géométrie est celle du navigateur
+ * plutôt qu'un calcul refait à la main pour chaque sorte de forme.
+ */
+function rectVisee(n){
+  if (!n) return null;
+  if (!vise) return n.getBoundingClientRect();
+  const avant = view;
+  view = vise; appliqueVue();
+  const r = n.getBoundingClientRect();
+  view = avant; appliqueVue();
+  return r;
 }
 
 /**
@@ -4516,11 +4605,8 @@ function glisseVersVise(){
 function zoom(f, fx, fy){
   const base = vise || view;
   const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
-  vise = { x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
-           w: nw, h: base.h * k };
-  // qui refuse les animations refuse celle-ci : on se pose tout de suite
-  if (REDUIT){ view = vise; vise = null; poseVue(); return; }
-  glisseVersVise();
+  glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
+               w: nw, h: base.h * k });
 }
 function echelle(){
   const r = svg.getBoundingClientRect();
@@ -4603,11 +4689,12 @@ function select(id, recentrer, canal, iSoc){
   marqueStandsDessines();
   if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
+  ouvre(o, rectVisee(n), canal, iSoc);
   /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
      décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
-     sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
-     car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
+     sur une géométrie déjà périmée. Sur grand écran on cadre avant : le
+     centrage pose la vue visée, dont « rectVisee » a besoin pour dire d'où la
+     fiche doit s'étirer. */
   if (recentrer && ETROIT()) centre(o);
 }
 const centre = (o) => centrePoint(o.c);
@@ -4615,14 +4702,23 @@ const centre = (o) => centrePoint(o.c);
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
-  const w = Math.min(view.w, 55), h = w * (view.h / view.w);
+  /* Le trajet part de la vue qu'on vise quand il y en a une : un centrage
+     demandé pendant qu'un cran de molette finit de glisser s'enchaîne sur son
+     arrivée, et non sur le point de passage où il l'a trouvé. */
+  const base = vise || view;
+  const w = Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la remonte au milieu de ce qui reste visible — d'après la
      hauteur réellement masquée, et non une proportion supposée. */
   const r = svg.getBoundingClientRect();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
-  poseVue();
+  /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
+     du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
+     il fallait retrouver dans quel coin du salon on venait d'être posé. Le
+     trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
+     point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
+     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
+  glisseVers({ x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
@@ -5696,6 +5792,7 @@ let _rechAttente = null, _rechDerniere = "";
 $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
+  majVideQ();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
@@ -5704,6 +5801,16 @@ $("q").addEventListener("input", e => {
     _rechDerniere = q;
     mesure("recherche");
   }, 900);
+});
+
+$("videQ").onclick = videRecherche;
+/* Échap dans le champ défait la recherche, et rien d'autre : la même touche
+   ferme la fiche et le tiroir plus loin, et les trois d'un coup emporteraient
+   ce qu'on regardait. Le champ vide, elle repart vers eux. */
+$("q").addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !state.q) return;
+  e.stopPropagation();
+  videRecherche();
 });
 
 /* ============================================================
@@ -8804,7 +8911,8 @@ function vaAuRepere(id, p){
   const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
   const xy = cible.f.pts[0];
   if (!ETROIT()) centrePoint(xy);
-  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  // la pastille est mesurée là où le trajet la mènera, non là où il la trouve
+  ouvrePoi(id, rectVisee(n));
   if (ETROIT()) centrePoint(xy);
 }
 
