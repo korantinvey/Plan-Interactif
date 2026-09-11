@@ -420,16 +420,48 @@ Deno.serve(async (req) => {
        donc un flux de lignes JSON : la première annonce les étapes, les
        suivantes disent laquelle est en cours, la dernière porte le résultat.
 
+       Les étapes sont annoncées dans l'ordre où elles tournent, et non dans
+       celui où on les nommerait : les exposants se lisent avant le plan, qui
+       s'en sert pour nommer ses emplacements.
+
        Les étapes que cette synchronisation ne sait pas encore faire sont
        annoncées « ignorée » plutôt que tues : l'exploitant les a réglées, il
        doit voir qu'elles ne sont pas reprises.
        ------------------------------------------------------------------ */
+
+    /* Ce que pèse chaque étape, et donc la part de barre qui lui revient.
+
+       Le poids d'une étape, c'est son nombre d'éléments : reprendre quatre
+       cents emplacements ne vaut pas relever trois champs. Ce nombre-là ne se
+       connaît qu'une fois l'étape faite — on part donc de celui de la dernière
+       synchronisation, que la table `plan` a gardé, et chaque étape corrige le
+       sien dès qu'elle sait. Un tout premier passage n'a rien à lire : la
+       valeur de repli vaut alors un salon moyen.
+
+       Une étape non reprise pèse zéro, faute de quoi la barre s'arrêterait aux
+       trois quarts sur un salon qui n'a ni conférences ni produits. */
+    const { data: dejaLa } = await db.from("plan")
+      .select("nb_stands").eq("evenement_id", evt.id);
+    const emplacements =
+      (dejaLa ?? []).reduce((a, p) => a + (p.nb_stands ?? 0), 0) || 300;
+    const srcConf = fournisseur(evt, "conferences");
+    const POIDS: Record<string, number> = {
+      /* Klipso rend les exposants avec les stands : l'étape ne fait alors que
+         relever les champs, deux appels. Eventmaker, lui, parcourt des
+         centaines de fiches — à peu près autant que d'emplacements. */
+      exposants: srcStands === "eventmaker" ? emplacements : 20,
+      conferences: srcConf === "eventmaker" ? Math.round(emplacements / 4) : 0,
+      plan: emplacements,
+      produits: 0,
+    };
     const ETAPES = [
-      { cle: "plan", libelle: "Plan", domaine: "plan" },
       { cle: "exposants", libelle: "Exposants", domaine: "stands" },
       { cle: "conferences", libelle: "Conférences", domaine: "conferences" },
+      { cle: "plan", libelle: "Plan", domaine: "plan" },
       { cle: "produits", libelle: "Produits", domaine: "produits" },
-    ].map((e) => ({ ...e, source: fournisseur(evt, e.domaine) }));
+    ].map((e) => ({
+      ...e, source: fournisseur(evt, e.domaine), poids: POIDS[e.cle] ?? 1,
+    }));
 
     const flux = new ReadableStream({
       async start(ctrl) {
@@ -439,7 +471,38 @@ Deno.serve(async (req) => {
         };
         const etape = (cle: string, etat: string, info?: unknown) =>
           emet({ etape: cle, etat, ...(info === undefined ? {} : { info }) });
+        /* Où l'on en est *dans* l'étape : combien d'éléments sur combien, et
+           lequel. Le total peut manquer — on ne sait pas d'avance combien de
+           fiches une catégorie Eventmaker porte — et la sous-barre bat alors
+           au lieu de se remplir, plutôt que de promettre une fin. */
+        const avance = (cle: string, fait: number, total: number | null,
+                        detail?: string, unite?: string) =>
+          emet({
+            etape: cle, etat: "encours", fait,
+            ...(total === null ? {} : { total }),
+            ...(detail === undefined ? {} : { detail }),
+            ...(unite === undefined ? {} : { unite }),
+          });
+        /* Ce qui a été compté jusqu'ici, sous le nom que la fenêtre affichera.
+           Les lignes s'écrasent par leur clé : une même mesure reprise à
+           chaque pavillon ne fait qu'une ligne, qui monte. */
+        const chiffres = (o: Record<string, number>) => emet({ chiffres: o });
+        // le poids d'une étape, corrigé dès qu'elle sait ce qu'elle avait à faire
+        const pese = (cle: string, poids: number) => emet({ etape: cle, poids });
 
+        /* Deux mille octets de rien, avant toute chose.
+
+           Un relais qui tient un tampon d'entrée ne pousse rien tant qu'il
+           n'a pas de quoi le remplir : les premières lignes du flux, qui font
+           quelques centaines d'octets, y restaient jusqu'à ce que la fin de la
+           synchronisation les chasse — et la barre d'avancement paraissait une
+           fois le travail fait. Ce remplissage force le premier envoi. Le
+           client l'ignore : c'est une ligne qui ne parle d'aucune étape.
+
+           Ce n'est pas la même précaution que l'en-tête `no-transform` : celui
+           -là interdit de recomprimer, celui-ci de retenir. Les deux défauts
+           se ressemblent de l'extérieur et ne se corrigent pas au même endroit. */
+        emet({ amorce: " ".repeat(2048) });
         emet({ etapes: ETAPES });
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
@@ -452,6 +515,7 @@ Deno.serve(async (req) => {
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
+        avance("exposants", 0, null, "Recherche des catégories d'invités");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
           champs: champsEm, valeurs: valeursEm, perso: persos });
@@ -470,7 +534,9 @@ Deno.serve(async (req) => {
           .flatMap((i) => ((i.charge as any)?.stands ?? []) as Record<string, unknown>[])
           .map((st) => String(st.code ?? "")).filter(Boolean);
 
-        const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
+        const r = await em.exposants(
+          String((evt.cles ?? {}).eventmaker), connues, codes,
+          (lus) => avance("exposants", lus, null, "Lecture des fiches", "fiches"));
         expoEm = {
           parDossier: r.parDossier,
           parStand: r.parStand,
@@ -485,6 +551,14 @@ Deno.serve(async (req) => {
           exposants: r.retenus,
           nonInscrits: r.ecartesNonInscrits,
         };
+        // Le compte réel remplace l'estimation : la part de barre que
+        // l'étape occupait était celle d'un salon supposé, la voici mesurée.
+        pese("exposants", r.lus || 1);
+        chiffres({
+          "Fiches lues": r.lus,
+          "Exposants retenus": r.retenus,
+          ...(r.ecartesNonInscrits ? { "Écartés — non inscrits": r.ecartesNonInscrits } : {}),
+        });
         etape("exposants", "encours", r.retenus + " exposants lus");
 
         // On retient ce qu'on vient d'apprendre. Écriture ciblée : le reste de
@@ -506,11 +580,19 @@ Deno.serve(async (req) => {
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
+        avance("conferences", 0, null, "Lecture du programme");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
           champs: champsEm, valeurs: valeursEm, perso: persos });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
+        pese("conferences", confEm.length || 1);
+        /* Les conférences sont lues ; reste à savoir qui les tient, et le
+           graphe ne dit pas d'avance combien de sessions il rendra. Le compte
+           s'affiche donc sans total, et l'étape n'est pas donnée pour finie
+           tant qu'elle ne l'est pas. */
+        avance("conferences", confEm.length, null,
+          "Rattachement des exposants", "conférences");
         try {
           const detail = await em.evenement(idEm);
           if (detail?.timezone) fuseau = String(detail.timezone);
@@ -524,6 +606,10 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error("rattachement des exposants aux conférences :", e);
         }
+        chiffres({
+          "Conférences": confEm.length,
+          ...(exposantsConf.size ? { "Conférences tenues par un exposant": exposantsConf.size } : {}),
+        });
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
       }
@@ -543,6 +629,7 @@ Deno.serve(async (req) => {
       }
 
       etape("plan", "encours");
+      avance("plan", 0, null, "Codification des champs à choix");
 
       /* Les champs « choix » ne portent qu'un code — « FEP26_NOM10201 » — dont
          le libellé vit dans le service « codification ». On les résout ici, une
@@ -614,8 +701,16 @@ Deno.serve(async (req) => {
       if (corps.idPlan) plans = plans.filter((p) => p.Id === corps.idPlan);
       if (!plans.length) return emet({ erreur: "Aucun pavillon à traiter." });
 
+      /* La part de l'étape déjà faite se compte en pavillons, fraction
+         comprise : un pavillon commencé n'est ni fini ni à faire, et c'est
+         justement pendant qu'on l'ouvre — douze calques de plusieurs
+         mégaoctets — que la barre resterait immobile le plus longtemps. */
+      let faits = 0;
       for (const plan of plans) {
+        const part = (f: number, quoi: string) =>
+          avance("plan", faits + f, plans.length, quoi, "pavillons");
         etape("plan", "encours", String(plan.Libelle ?? ""));
+        part(0.03, "Pavillon « " + String(plan.Libelle ?? "") + " »");
         /* --- le pavillon --- */
         const { data: ligne } = await db.from("plan").upsert({
           evenement_id: evt.id,
@@ -634,6 +729,7 @@ Deno.serve(async (req) => {
           filter: egal("IdPlan", plan.Id),
         }, "Ordre");
 
+        let iCalque = 0;
         const textesZone: { x: number; y: number; txt: string }[] = [];
         // Tous les textes du plan, tous calques confondus : c'est parmi eux que
         // se trouvent les numéros d'emplacement — « P160 » — qui désignent les
@@ -641,6 +737,8 @@ Deno.serve(async (req) => {
         // d'un salon à l'autre, on ne peut donc pas le nommer.
         const tousTextes: { x: number; y: number; txt: string }[] = [];
         for (const c of calques) {
+          part(0.05 + 0.45 * (iCalque++ / (calques.length || 1)),
+            "Calque « " + (NOMS[c.Libelle] ?? c.Libelle) + " »");
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
           const lus = textes(brut);
@@ -679,6 +777,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        part(0.52, "Emplacements");
         const bruts = await g.tout<Record<string, any>>("Stand", {
           fields: [...champsStand],
           entities: {
@@ -850,6 +949,7 @@ Deno.serve(async (req) => {
         }
 
         /* --- zones de dessin --- */
+        part(0.78, "Zones organisateur");
         const grappes = groupeTextes(textesZone);
         const zonesBrutes = await g.tout<Record<string, any>>("ZoneDessin", {
           fields: ["_AllFields"],
@@ -945,6 +1045,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        part(0.92, "Enregistrement du pavillon");
         const emp = emprise([...stands, ...zones]);
         await db.from("plan").update({
           emprise: emp,
@@ -995,8 +1096,24 @@ Deno.serve(async (req) => {
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
+        faits++;
+        /* Les compteurs montent pavillon par pavillon plutôt qu'à la fin :
+           sur un salon à plusieurs pavillons, c'est la seule preuve visible
+           que le travail avance et non qu'il tourne à vide. */
+        const cumul = (c: string) =>
+          resume.reduce((a, p) => a + Number((p as Record<string, unknown>)[c] ?? 0), 0);
+        chiffres({
+          "Emplacements": cumul("stands"),
+          "Emplacements nommés": cumul("exposants"),
+          ...(expoEm ? { "Emplacements appariés": cumul("apparies") } : {}),
+          ...(cumul("coexposants") ? { "Co-exposants": cumul("coexposants") } : {}),
+          "Zones organisateur": cumul("zones"),
+        });
+        avance("plan", faits, plans.length, "Pavillon terminé", "pavillons");
       }
 
+      pese("plan",
+        resume.reduce((a, p) => a + Number(p.stands ?? 0), 0) || 1);
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
@@ -1086,8 +1203,18 @@ Deno.serve(async (req) => {
       },
     });
 
+    /* `no-transform` interdit aux relais de recomprimer la réponse, et
+       `X-Accel-Buffering` dit la même chose à ceux de la famille nginx, qui
+       ignorent le premier. Gzippé, un flux de lignes courtes reste coincé dans
+       le tampon du compresseur et n'arrive qu'à la toute fin : la barre
+       d'avancement paraissait alors une fois la synchronisation faite. */
     return new Response(flux, {
-      headers: { ...CORS, "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+      headers: {
+        ...CORS,
+        "Content-Type": "application/x-ndjson",
+        "Cache-Control": "no-store, no-transform",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
