@@ -843,7 +843,14 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
    des pastilles modèle par modèle. */
 .detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8)}
-/* Un nouvel exposant se signale à côté de son emplacement. La pastille reprend
+/* La ligne du type — « Stand », « Zone » — porte aussi la mention des nouveaux
+   venus : c'est la première ligne qu'on lit, avant même le nom, et la pastille
+   y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
+   La réserve de droite est celle du coin des actions, marque et croix : sans
+   elle, une pastille un peu longue passait dessous. Quand la place manque, le
+   flex la renvoie sous le libellé plutôt que de la comprimer. */
+.detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;row-gap:4px;padding-right:62px}
+/* Un nouvel exposant se signale au-dessus de son nom. La pastille reprend
    l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
    une alerte, et une teinte de plus ferait un troisième langage sur le plan
    après celui des zones. Le texte est de la fonte du corps — un numéro de stand
@@ -2912,13 +2919,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
-        <span class="eyebrow" id="dKind"></span>
+        <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
             title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
           <img class="logoZone" id="dLogo" alt="" hidden>
         </div>
-        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
+        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -6527,11 +6534,12 @@ function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span>' +
+      '<div class="hdTete"><span class="eyebrow">Stand</span>' +
+        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '</div>' +
       '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
       '<div class="hdBadges">' +
         '<span class="badge code">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
-        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
       '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +

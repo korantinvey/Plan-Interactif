@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2059 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2060 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1213 · 10. Mode administration
-- l.1288 · La fiche d'une zone organisateur
-- l.1806 · Masquer une zone organisateur
-- l.1889 · Placer un libellé à la main
+- l.1214 · 10. Mode administration
+- l.1289 · La fiche d'une zone organisateur
+- l.1807 · Masquer une zone organisateur
+- l.1890 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,19 +27,19 @@ Fonctions :
 `voletRecherche` 274 · `minutesVisite` 328 · `salonPartage` 335 · `trio` 348 · `melange` 358
 `themeSombre` 366 · `appliqueAccent` 380 · `appliqueFond` 411 · `modeleRetenu` 449
 `appliqueModele` 468 · `texteCorps` 537 · `standApercu` 552 · `lignesApercu` 572
-`contenuApercu` 598 · `apercuFiche` 631 · `apercuListe` 694 · `apercuDuo` 716
-`glisseFenetre` 749 · `ouvreReglages` 760 · `voletZones` 842 · `ficheZoneEnPlace` 919
-`voletPlan` 937 · `nomDuTon` 1064 · `voletApparence` 1069 · `enregistreConf` 1163
-`rgbHex` 1169 · `hexa` 1176 · `luminance` 1180 · `ecarte` 1194 · `joli` 1209
-`retireAdmin` 1226 · `activeAdmin` 1239 · `champZone` 1314 · `champsZone` 1339
-`reduitLogo` 1402 · `champLogo` 1443 · `editeurRiche` 1540 · `memeFicheZone` 1695
-`suitFicheZone` 1700 · `verseFicheZone` 1708 · `ficheZone` 1734 · `enregistreZone` 1759
-`basculeAffichageZone` 1817 · `marqueZonesMasquees` 1834 · `ecritTablesZones` 1854
-`ecritTableZones` 1885 · `cleLibelle` 1910 · `empreinteLibelle` 1926
-`placementLibelle` 1934 · `posePlacement` 1944 · `libelleAutomatique` 1961
-`modePlacementLibelles` 1970 · `majPaletteLibelle` 1987 · `choisitLibelle` 2004
-`pousseLibelle` 2011 · `libellePointerDown` 2019 · `libellePointerMove` 2034
-`libellePointerUp` 2043
+`contenuApercu` 598 · `apercuFiche` 631 · `apercuListe` 695 · `apercuDuo` 717
+`glisseFenetre` 750 · `ouvreReglages` 761 · `voletZones` 843 · `ficheZoneEnPlace` 920
+`voletPlan` 938 · `nomDuTon` 1065 · `voletApparence` 1070 · `enregistreConf` 1164
+`rgbHex` 1170 · `hexa` 1177 · `luminance` 1181 · `ecarte` 1195 · `joli` 1210
+`retireAdmin` 1227 · `activeAdmin` 1240 · `champZone` 1315 · `champsZone` 1340
+`reduitLogo` 1403 · `champLogo` 1444 · `editeurRiche` 1541 · `memeFicheZone` 1696
+`suitFicheZone` 1701 · `verseFicheZone` 1709 · `ficheZone` 1735 · `enregistreZone` 1760
+`basculeAffichageZone` 1818 · `marqueZonesMasquees` 1835 · `ecritTablesZones` 1855
+`ecritTableZones` 1886 · `cleLibelle` 1911 · `empreinteLibelle` 1927
+`placementLibelle` 1935 · `posePlacement` 1945 · `libelleAutomatique` 1962
+`modePlacementLibelles` 1971 · `majPaletteLibelle` 1988 · `choisitLibelle` 2005
+`pousseLibelle` 2012 · `libellePointerDown` 2020 · `libellePointerMove` 2035
+`libellePointerUp` 2044
 
 Éléments :
 
@@ -220,7 +220,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2988 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2995 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -240,7 +240,7 @@ Fonctions :
 `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
 `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
 `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dNeuf`
+`#closeDetail` · `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
 `#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody`
 `#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps`
 `#jCorps` · `#pPied` · `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour`
