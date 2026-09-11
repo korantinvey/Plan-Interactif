@@ -796,29 +796,44 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 
    La hauteur est celle d'une vignette qu'on regarde, et non d'une puce posée
    à côté d'un mot : un logo se lit, et le premier essai, haut comme deux
-   lignes de titre, ne le donnait pas à lire. Conséquence assumée du côté de
-   la ligne du nom — un logo en largeur y prend désormais toute la place, et se
-   range donc sous le nom plutôt qu'à côté.
+   lignes de titre, ne le donnait pas à lire. Un logo en largeur ne tient donc
+   plus à côté d'un nom un peu long — il rejoint alors la ligne du numéro, où
+   la page le pose et le borne, faute pour la feuille de connaître la longueur
+   d'un numéro de stand. */
+.detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
+  max-width:min(300px,100%);max-height:72px}
+/* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
+   replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
+   guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
+   « hidden » faire son office quel que soit l'ordre de la feuille.
 
-   Le logo se pose au milieu de ce que le nom laisse, plutôt que collé contre
-   lui avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
-   accroché au titre.
-
-   Le centrage tient à deux marges automatiques — celle que le nom porte à sa
-   droite, celle que le logo porte à la sienne — qui se partagent à parts égales
-   ce qui reste de la ligne, et en laissent donc autant de chaque côté de
-   l'image. Elles disent aussi le bon comportement dans l'autre cas, sans qu'on
-   ait à le décrire : quand le nom est assez long pour renvoyer le logo à la
-   ligne suivante, sa marge de droite reste seule sur cette ligne, prend tout
-   l'espace d'un coup, et le logo s'y range à gauche — sous le nom, aligné avec
-   l'intitulé et le code comme le reste de l'en-tête. */
-.detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
-  max-width:min(300px,100%);max-height:72px;margin:0 auto 0 0}
-.detail-hd .logoZone[hidden]{display:none}
-.detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
-  text-wrap:balance;padding-right:26px}
+   Elle s'y pose au milieu de ce que le nom laisse, plutôt que collée contre lui
+   avec un vide à droite : un nom court lui donnait l'air d'un mot de plus
+   accroché au titre. Le centrage tient à deux marges automatiques — celle que
+   le nom porte à sa droite, celle que la marque porte à la sienne — qui se
+   partagent à parts égales ce qui reste de la ligne. */
+.detail-hd .hdNom > .logoZone:not([hidden]){display:block;margin:0 auto 0 0}
+/* Sur la ligne du numéro, elle suit les pastilles dans le fil du texte, alignée
+   sur leur milieu : la ligne s'ouvre à sa hauteur plutôt que de s'en ajouter
+   une. Pas de marge automatique ici — elle se range derrière le numéro, et non
+   au milieu de ce qu'il laisse. */
+.detail-hd .hdBadges > .logoZone:not([hidden]){display:inline-block;
+  vertical-align:middle;margin:0 0 0 10px}
+/* La taille du nom vit en variable sur l'en-tête, et non sur le titre : le
+   numéro de stand s'y accorde, et il n'est pas dans le titre. Chaque modèle de
+   fiche redéfinit la variable au lieu de la taille — sur le titre seul, le
+   numéro n'en aurait rien su. */
+.detail-hd{--titre:19px}
+.detail-hd h2{font-family:"Archivo",sans-serif;font-size:var(--titre);letter-spacing:-.02em;
+  margin:8px 0 6px;text-wrap:balance;padding-right:26px}
 .badge{display:inline-flex;gap:6px;font-size:11px;padding:3px 8px;border-radius:999px;
   background:var(--surface-2);color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+/* Le numéro de stand se lit de loin : c'est par lui qu'on se repère sur le
+   plan, et onze pixels le rendaient plus discret que la mention qui
+   l'accompagne. Il vaut quatre cinquièmes du nom, sur tous les modèles — d'où
+   le poids de ce sélecteur, qui doit passer devant ceux qui règlent la taille
+   des pastilles modèle par modèle. */
+.detail-hd .hdBadges .badge.code{font-size:calc(var(--titre) * .8)}
 /* Un nouvel exposant se signale à côté de son emplacement. La pastille reprend
    l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
    une alerte, et une teinte de plus ferait un troisième langage sur le plan
@@ -1009,7 +1024,8 @@ button.expo:hover{background:var(--line)}
    renvoyait dans le fil du texte, par-dessus l'intitulé. */
 .modele-grille .detail-hd > *:not(.hdActs,.close){position:relative;z-index:1}
 .modele-grille .detail-hd :is(.hdActs,.close){z-index:2}
-.modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+.modele-grille .detail-hd{--titre:22px}
+.modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.1}
 .modele-grille .detail-hd .eyebrow{color:var(--accent-ink);opacity:.65}
 .modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--accent-ink);
@@ -1046,7 +1062,8 @@ button.expo:hover{background:var(--line)}
   background-image:repeating-linear-gradient(180deg,
     color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
 .modele-console .detail-hd{border-bottom-style:dashed}
-.modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;
+.modele-console .detail-hd{--titre:17px}
+.modele-console .detail-hd h2{font-family:"IBM Plex Mono",monospace;font-weight:600;
   letter-spacing:-.01em}
 .modele-console .detail-hd h2::before{content:"▍";color:var(--accent);margin-right:7px}
 .modele-console .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.1em}
@@ -1066,7 +1083,7 @@ button.expo:hover{background:var(--line)}
    laissait cent dix-huit pixels de vide à droite. Elle porte sur la ligne
    entière, marque comprise : sur le seul titre, la marque serait allée se
    ranger sous le numéro. */
-.modele-billet .detail-hd[data-code]:not([data-code=""]) .hdNom{padding-right:118px}
+.modele-billet .detail-hd[data-code]:not([data-code=""]) :is(.hdNom,.hdBadges){padding-right:118px}
 .modele-billet .detail-hd .eyebrow{color:var(--accent-ink);opacity:.72}
 .modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
@@ -1094,7 +1111,8 @@ button.expo:hover{background:var(--line)}
    renvoyait dans le fil du texte, par-dessus l'intitulé. */
 .modele-magazine .detail-hd > *:not(.hdActs,.close){position:relative;z-index:1}
 .modele-magazine .detail-hd :is(.hdActs,.close){z-index:2}
-.modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:30px;
+.modele-magazine .detail-hd{--titre:30px}
+.modele-magazine .detail-hd h2{font-family:"Fraunces",Georgia,serif;font-weight:600;
   line-height:1.06;letter-spacing:-.02em;margin:14px 0 12px}
 .modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
 .modele-magazine .detail-hd .badge{background:none;padding:0;font-family:"Fraunces",Georgia,serif;
@@ -1124,7 +1142,8 @@ button.expo:hover{background:var(--line)}
   --radius:0;border-left:3px solid #111}
 .modele-brut .detail-hd{background:var(--accent-base);border-bottom:3px solid #111;
   color:var(--accent-ink)}
-.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:22px;
+.modele-brut .detail-hd{--titre:22px}
+.modele-brut .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.08}
 .modele-brut .detail-hd .eyebrow{color:var(--accent-ink);opacity:.75}
 .modele-brut .marque,.modele-brut .close,.modele-brut .crayon{border:2px solid #111;border-radius:0;
@@ -1176,7 +1195,8 @@ button.expo:hover{background:var(--line)}
   --encre:color-mix(in srgb,var(--accent-fort) 86%,#3B3022);
   --accent:var(--encre);--accent-soft:#D3CBB1;--accent-ink:#F6F1E3;--radius:2px;
   background-image:repeating-linear-gradient(180deg,rgba(120,95,60,.055) 0 1px,transparent 1px 5px)}
-.modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;font-size:19px;
+.modele-kraft .detail-hd{--titre:19px}
+.modele-kraft .detail-hd h2{font-family:"Courier Prime",monospace;font-weight:700;
   text-transform:uppercase;letter-spacing:.01em}
 .modele-kraft .eyebrow{font-family:"Courier Prime",monospace;letter-spacing:.16em}
 .modele-kraft .field .v{font-family:"Courier Prime",monospace;font-size:13px}
@@ -1205,7 +1225,8 @@ button.expo:hover{background:var(--line)}
   --radius:2px}
 .modele-signal .detail-hd{background:var(--accent-base);
   border-bottom:4px solid var(--accent-fort);color:var(--accent-ink)}
-.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;font-size:20px;
+.modele-signal .detail-hd{--titre:20px}
+.modele-signal .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.12}
 .modele-signal .detail-hd h2::before{content:"→ ";font-weight:500}
 .modele-signal .detail-hd .eyebrow{color:var(--accent-ink);opacity:.78}
@@ -1253,7 +1274,8 @@ button.expo:hover{background:var(--line)}
 .modele-nu{box-shadow:none;border-left-color:transparent}
 .modele-nu .detail-hd{border-bottom:none;padding:30px 24px 4px}
 .modele-nu .detail-hd .eyebrow{display:none}
-.modele-nu .detail-hd h2{font-size:28px;font-weight:700;letter-spacing:-.035em;line-height:1.06;
+.modele-nu .detail-hd{--titre:28px}
+.modele-nu .detail-hd h2{font-weight:700;letter-spacing:-.035em;line-height:1.06;
   margin:0 0 12px}
 .modele-nu .detail-hd .badge{background:none;padding:0;color:var(--ink-3);font-size:12.5px}
 .modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;margin-left:12px}
@@ -2085,9 +2107,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
-/* Les réglages tiennent en deux volets : ce que le plan montre, et de quoi il
-   a l'air. Séparés par des onglets plutôt qu'empilés — le second est une
-   planche d'aperçus, et poussait le premier hors de l'écran. */
+/* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
+   remonte, de quoi le plan a l'air, ses zones, sa mesure. Séparés par des
+   onglets plutôt qu'empilés — l'apparence est une planche d'aperçus, et
+   poussait tout le reste hors de l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2107,6 +2130,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 @media (prefers-reduced-motion:reduce){
   .voletReg{animation:none}
   .ongReg button{transition:none}
+}
+/* Les onglets étaient quatre, ils sont cinq : sur un téléphone, « Apparence »
+   et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
+   resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
+   ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
+   leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
+   autres gardent du vide. */
+@media (max-width:640px){
+  .ongReg{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+  .ongReg::-webkit-scrollbar{display:none}
+  .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
 }
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
@@ -2289,6 +2323,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
 .reglages input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+/* Ce qu'une case promet, en une ligne. « Produits » ou « Points d'intérêt »
+   ne se devinent pas depuis leur intitulé, et un réglage qu'on ne comprend
+   pas ne se touche pas. L'alignement reprend la case et son écart, pour que
+   l'aide parte sous l'intitulé et non sous la coche. */
+.reglages .aideR{margin:-5px 0 7px 25px;font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Une sorte que rien n'alimente garde son rang, éteinte : l'exploitant qui
+   cherche « Produits » doit lire pourquoi la case ne répond pas, plutôt que
+   de se demander où elle est passée. */
+.reglages label.eteint{cursor:default}
+.reglages label.eteint span{color:var(--ink-3)}
 .cc{width:24px;height:18px;padding:0;border:1px solid var(--line-strong);border-radius:3px;
   background:none;cursor:pointer;flex:none}
 .cc::-webkit-color-swatch-wrapper{padding:1px}
@@ -2318,6 +2362,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
   padding:15px 18px 12px;border-bottom:1px solid var(--line)}
 .mfen h2{font-family:"Archivo",sans-serif;font-size:16px;margin:0;letter-spacing:-.01em}
+/* La fenêtre a son propre titre, et sa règle passait devant celle de la fiche
+   dans l'aperçu des modèles — qui vit dans une fenêtre. Le nom y prenait seize
+   pixels quel que soit le modèle, et le numéro, qui suit la variable, cessait
+   de lui être proportionnel. L'aperçu doit montrer la fiche, pas la fenêtre. */
+.mfen .detail-hd h2{font-size:var(--titre)}
 .mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 4px}
 .mfen header button:hover{color:var(--ink)}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
@@ -2533,7 +2582,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail.open{transform:translateY(0);pointer-events:auto}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
-  .detail-hd h2{font-size:17px;margin:6px 0 5px}
+  .detail-hd{--titre:17px}
+  .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
      discrète, pour laisser la place à ce qu'on est venu lire. */
   .detail-hd .logoZone{max-height:56px;max-width:min(240px,100%)}
@@ -2834,7 +2884,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
           <img class="logoZone" id="dLogo" alt="" hidden>
         </div>
-        <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
+        <div class="hdBadges" id="dBadges"><span class="badge code" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button></div>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>
         <button type="button" class="ong" id="dOngInfo" role="tab"
@@ -3051,6 +3101,8 @@ function indexe(d){
      ne décrit plus rien. */
   oublieGrilles();
   oublieLiaisons();
+  // et le relevé des repères, que la recherche interroge
+  oublieReperes();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
@@ -4017,6 +4069,15 @@ const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 const critParSociete = () =>
   [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
+/* Sous quel réglage de l'onglet « Recherche » chaque sorte se range. Une
+   hébergée suit les stands : c'est un exposant comme un autre, et l'exploitant
+   qui montre les stands ne s'attend pas à devoir cocher les deux. */
+const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
+                          conf: "conferences", poi: "poi" };
+
+/** L'exploitant laisse-t-il la recherche remonter cet objet ? */
+const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
+
 /* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
    décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
    d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
@@ -4024,6 +4085,11 @@ const critParSociete = () =>
    par « gamme de produits » cherche des exposants. */
 function visible(o){
   if (!filtre()) return true;
+  /* Ce que l'exploitant a retiré de la recherche ne répond pas — ni dans la
+     liste, ni sur le plan, qui n'est que l'autre face du même résultat. Le
+     sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
+     pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
+  if (!cherchable(o)) return false;
   return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
@@ -4071,11 +4137,12 @@ function appliqueFiltre(){
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
-   dix : les stands passent devant, puis les endroits du salon, puis le
-   programme — le plus nombreux, et le moins souvent visé. Une hébergée se range
-   avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
-   pavillon : trois sortes entremêlées par pavillon ne se lisaient plus. */
-const RANGS = { stand: 0, coex: 0, zone: 1, conf: 2 };
+   dix : les stands passent devant, puis les endroits du salon — les zones que
+   le salon fournit, puis les repères qu'on y a dessinés — et le programme
+   ferme la marche, le plus nombreux et le moins souvent visé. Une hébergée se
+   range avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
+   pavillon : quatre sortes entremêlées par pavillon ne se lisaient plus. */
+const RANGS = { stand: 0, coex: 0, zone: 1, poi: 2, conf: 3 };
 const rangSorte = (o) => RANGS[o.kind] || 0;
 
 /** Combien de lignes d'une même sorte la liste veut bien poser. Au-delà, on
@@ -4083,10 +4150,11 @@ const rangSorte = (o) => RANGS[o.kind] || 0;
  *  et le compte au-dessus le dit. */
 const PLAFOND_SORTE = 500;
 
-/* Le premier bloc d'une ligne porte le numéro de stand ; une zone et une
-   conférence n'en ont pas, et laisser la case vide effaçait justement ce qui
-   les distingue d'un stand sans numéro. Elle dit alors la sorte. */
-const CASE_SORTE = { zone: "Zone", conf: "Conf" };
+/* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
+   conférence et un repère n'en ont pas, et laisser la case vide effaçait
+   justement ce qui les distingue d'un stand sans numéro. Elle dit alors la
+   sorte. */
+const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
 
 /**
  * Ce que la case affiche.
@@ -4135,6 +4203,10 @@ function caseNumero(){
  * toutes lettres.
  */
 function sousLigne(o){
+  /* Un repère dit ce qu'il est, quand son libellé ne le dit pas déjà : entre
+     deux lignes « Hall Sud » et « Hall Nord », savoir qu'il s'agit d'entrées
+     est ce qui les rattache à ce qu'on cherchait. */
+  if (o.kind === "poi") return o.type || "";
   if (o.kind !== "conf") return "";
   const d = momentLocal(o.debutLocal, DATA.fuseau) || momentLocal(o.debut, DATA.fuseau);
   const quand = d
@@ -4162,7 +4234,10 @@ function liste(){
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
   const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
-    .concat(q ? CONFERENCES : []);
+    .concat(q ? CONFERENCES : [])
+    /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
+       un critère décrit une société, et un escalier n'en est pas une. */
+    .concat(q ? reperesCherchables() : []);
   const vus = portee.filter(visible).sort((a, b) =>
     (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
@@ -4193,16 +4268,21 @@ function liste(){
        stand et son nom. La surface louée et les angles ouverts regardent la
        commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const conf = o.kind === "conf";
+    /* Ni une conférence ni un repère n'est un emplacement : la sélection du
+       plan ne les désigne pas, et le clic ne passe pas par « select ». */
+    const emplacement = !conf && o.kind !== "poi";
     // une conférence que rien ne situe encore n'est dans aucun pavillon : celui
     // qui l'a remontée n'en dit rien au visiteur
     const badge = o.p !== state.plan && !(conf && !o.situee)
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
     const sous = sousLigne(o);
+    /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
+       c'est une forme dessinée, pas un objet du plan — et son identifiant seul
+       ne dirait pas où aller le chercher. */
     return '<button class="row" data-id="' + esc(o.id) +
-      '" data-sorte="' + o.kind + '" data-soc="' + rang +
-      // une conférence n'est pas un objet du plan : rien ne peut la désigner
-      '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
+      '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
+      '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
@@ -4221,6 +4301,9 @@ function liste(){
      salle sur le plan. */
   box.querySelectorAll(".row").forEach(b => b.onclick = () => {
     if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
+    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
+    // emplacement, et « select » n'aurait rien à cadrer
+    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
     select(b.dataset.id, true, parSociete ? "recherche" : "liste",
            Number(b.dataset.soc));
   });
@@ -5012,7 +5095,9 @@ function poseMarque(blason){
     marque.hidden = true;
     marque.src = blason;
   }
-  marque.onload = () => { marque.hidden = false; };
+  /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
+     l'image tenue : le rangement suit donc l'apparition, jamais avant. */
+  marque.onload = () => { marque.hidden = false; rangeMarque(); };
   /* Une image déjà tenue par le cache est complète dès l'affectation et ne
      donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
      celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
@@ -5045,8 +5130,60 @@ function poseCode(pl, num, filigrane){
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
      pour un filigrane, et ni une zone ni un repère n'ont de numéro. */
-  $("dCode").parentNode.dataset.code = filigrane || "";
+  // la pastille vit désormais dans un bloc à elle : c'est l'en-tête qu'on vise
+  $("dCode").closest(".detail-hd").dataset.code = filigrane || "";
 }
+
+/**
+ * Où se range la marque de la fiche.
+ *
+ * Le flex sait replier une ligne, il ne sait pas changer de ligne d'accueil :
+ * une marque qui ne tient pas à côté du nom se retrouvait seule sur une ligne
+ * à elle, entre le nom et le numéro, et coûtait une bande pour ne rien dire de
+ * plus. Elle rejoint donc la ligne du numéro, derrière lui.
+ *
+ * Ce qui tient n'est pas calculé, il est demandé : la marque est posée à côté
+ * du nom, on regarde où le navigateur l'a mise, et on la déménage si elle est
+ * tombée dessous. Le pli dépend de la fonte, du modèle de fiche et de la
+ * largeur du panneau — trois choses qu'un calcul aurait fallu refaire à chaque
+ * fois qu'elles changent.
+ *
+ * Sur la ligne du numéro, sa largeur est bornée à ce qui reste : sans borne
+ * elle repartirait à la ligne, et le déménagement n'aurait fait que déplacer
+ * la bande perdue.
+ */
+function rangeMarque(){
+  const marque = $("dLogo");
+  if (!marque || marque.hidden) return;
+  const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
+  const titre = nom && nom.querySelector("h2");
+  if (!titre || !bas) return;
+  // remise à l'essai avant de mesurer : la fiche d'avant a pu la déménager
+  marque.style.maxWidth = "";
+  if (marque.parentNode !== nom) nom.appendChild(marque);
+  // elle tient à côté du nom dès que les deux boîtes se croisent en hauteur
+  if (marque.getBoundingClientRect().top < titre.getBoundingClientRect().bottom - 2) return;
+
+  bas.appendChild(marque);
+  /* Ce qui reste sur la ligne du numéro : du bord droit de la dernière
+     pastille au bord intérieur du bloc — celui-ci recule là où un modèle de
+     fiche réserve la place d'un numéro géant. */
+  const r = bas.getBoundingClientRect(), st = getComputedStyle(bas);
+  const pastilles = [...bas.children].filter(e => e !== marque && !e.hidden);
+  const derniere = pastilles[pastilles.length - 1];
+  const gauche = derniere ? derniere.getBoundingClientRect().right
+                          : r.left + (parseFloat(st.paddingLeft) || 0);
+  const droite = r.right - (parseFloat(st.paddingRight) || 0);
+  // réduite à un trait elle ne se lit plus : mieux vaut alors la laisser passer
+  marque.style.maxWidth = Math.max(90, droite - gauche - 10) + "px";
+}
+
+/* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
+   suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
+   large. Une image seule à mesurer, on ne diffère pas. */
+addEventListener("resize", () => {
+  if ($("detail") && $("detail").classList.contains("open")) rangeMarque();
+});
 
 /**
  * La fiche d'un stand ou d'une zone.
@@ -5286,6 +5423,10 @@ function ouvre(o, rect, canal, iSoc){
       vis.onclick = () => basculeAffichageZone(o);
     }
   }
+  /* La marque se range une fois l'en-tête entièrement écrit : c'est la largeur
+     des pastilles qui décide de la sienne, et elles viennent d'être posées.
+     Une image encore en vol se rangera à son tour, à son « load ». */
+  rangeMarque();
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
@@ -5896,6 +6037,105 @@ function appliqueCommandes(){
 }
 
 /**
+ * Ce que la recherche a le droit de remonter.
+ *
+ * Le champ de recherche balaie tout ce que le salon porte, et cela ne convient
+ * pas à tous les salons. Un congrès dont le programme compte trois cents
+ * sessions les voit répondre au premier mot courant venu, et noyer les stands
+ * qu'on était venu chercher ; un salon de trente exposants veut au contraire
+ * qu'un mot ramène tout ce qui s'y rapporte. Rien dans les données ne dit
+ * lequel des deux on administre — d'où le réglage, sorte par sorte.
+ *
+ * Il ne touche qu'à la recherche. Sans mot-clé ni critère, la liste n'est pas
+ * un résultat mais le sommaire des emplacements du pavillon : l'y soumettre
+ * aurait laissé une colonne blanche à qui décoche « Stands ».
+ *
+ * Chaque sorte dit aussi ce qu'elle alimente — « Produits » et « Points
+ * d'intérêt » ne se devinent pas depuis leur intitulé — et, quand rien ne
+ * l'alimente, pourquoi sa case ne répond pas.
+ */
+const SORTES_RECHERCHE = [
+  { cle: "stands", libelle: "Stands et exposants",
+    aide: "Le nom d'une enseigne, son numéro d'emplacement, son secteur, " +
+      "ses thématiques, et les sociétés hébergées sur un stand partagé.",
+    dispo: () => TOUS.some(o => o.kind === "stand"),
+    absent: "Ce salon ne porte aucun emplacement." },
+  { cle: "zones", libelle: "Zones organisateur",
+    aide: "Accueil, restauration, village start-up — les endroits que le " +
+      "salon fournit avec son plan.",
+    dispo: () => TOUS.some(o => o.kind === "zone"),
+    absent: "Ce salon ne porte aucune zone organisateur." },
+  { cle: "conferences", libelle: "Conférences",
+    aide: "Le titre d'une session, sa salle, son thème, et l'exposant qui " +
+      "la tient — souvent le seul nom dont on se souvienne.",
+    dispo: () => CONFERENCES.length > 0,
+    absent: "Le programme n'est pas synchronisé : sa source se règle depuis " +
+      "la console, dans « Source des données »." },
+  /* Les produits se règlent déjà dans la console — « Produits », source au
+     choix — mais la synchronisation les annonce « pas encore repris » et le
+     plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
+     a réglé cette source doit lire ici pourquoi la recherche n'en remonte
+     rien, plutôt que de chercher une case absente. Elle s'allumera le jour où
+     la synchronisation les rapportera. */
+  { cle: "produits", libelle: "Produits",
+    aide: "Ce que les exposants présentent, nommé produit par produit.",
+    dispo: () => (DATA?.plans || []).some(p => (p.produits || []).length),
+    absent: "Les produits ne sont pas encore repris par la synchronisation, " +
+      "quelle que soit la source réglée dans la console." },
+  { cle: "poi", libelle: "Points d'intérêt",
+    aide: "Les repères posés sur le plan : entrées, WC, escaliers, parkings, " +
+      "vestiaires. Le cartouche du bas les récapitule de son côté, que cette " +
+      "case soit cochée ou non.",
+    dispo: () => reperesCherchables().length > 0,
+    absent: "Aucun repère n'est posé sur les plans de ce salon : ils se " +
+      "dessinent depuis la boîte à outils." },
+];
+
+/** Une sorte remonte-t-elle dans la recherche ? Oui par défaut : un réglage
+ *  absent ne doit rien retirer à un salon déjà en place. */
+const chercheSorte = (cle) => conf("_rech")[cle] !== false;
+
+/** Le volet « Recherche » : les sortes d'éléments que le champ remonte. */
+function voletRecherche(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que le champ de recherche remonte. Le sommaire du " +
+    "pavillon n'en dépend pas : sans mot-clé, la liste reste celle de ses " +
+    "emplacements. Publiez la configuration pour que le changement parvienne " +
+    "aux visiteurs.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  SORTES_RECHERCHE.forEach(s => {
+    const dispo = s.dispo();
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = s.libelle;
+    if (!dispo) l.classList.add("eteint");
+    const c = l.querySelector("input");
+    c.checked = chercheSorte(s.cle);
+    /* Éteinte, et non décochée : la case montre ce qui est réglé, et le
+       réglage vaudra le jour où quelque chose l'alimentera. La décocher
+       d'office effacerait un choix que l'exploitant a fait. */
+    c.disabled = !dispo;
+    c.onchange = e => {
+      conf("_rech")[s.cle] = e.target.checked;
+      enregistreConf();
+      /* La liste affichée derrière la fenêtre est peut-être un résultat de
+         recherche : elle obéit sur-le-champ, c'est le seul retour visible. */
+      liste();
+    };
+    bloc.appendChild(l);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = dispo ? s.aide : s.absent;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
+}
+
+/**
  * Combien de temps on passe sur un stand.
  *
  * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
@@ -6253,9 +6493,12 @@ function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
-      '<span class="badge">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
-      (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '<span class="eyebrow">Stand</span>' +
+      '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
+      '<div class="hdBadges">' +
+        '<span class="badge code">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +
       '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
@@ -6352,6 +6595,17 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
+    /* Cinq onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+       qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
+       restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
+       ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
+       défile aussi pour son compte, et le centrage la remontait d'un cran.
+
+       À l'image suivante, et non tout de suite : le corps de la fenêtre est
+       rempli avant qu'elle ne s'ouvre, et un élément en « display:none » n'a
+       aucune position à ramener. */
+    const ramene = (b) => requestAnimationFrame(() =>
+      b.scrollIntoView({ block: "nearest", inline: "nearest" }));
     const volet = (titre) => {
       const i = boutons.length;
       const actif = nomme ? titre === nomme : i === 0;
@@ -6366,6 +6620,7 @@ function ouvreReglages(ouvrir){
           boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
           volets.forEach((x, j) => { x.hidden = j !== i; });
         });
+        ramene(b);
       };
       barre.appendChild(b);
       boutons.push(b);
@@ -6377,6 +6632,9 @@ function ouvreReglages(ouvrir){
       return v;
     };
     voletPlan(volet("Plan"));
+    /* « Recherche » suit « Plan » : les deux parlent de ce que le visiteur
+       obtient, quand « Apparence » ne parle que de l'allure. */
+    voletRecherche(volet("Recherche"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
@@ -6388,7 +6646,8 @@ function ouvreReglages(ouvrir){
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
        plutôt que sur le vide. */
-    if (!boutons.some(b => b.getAttribute("aria-pressed") === "true")) boutons[0].onclick();
+    const actif = boutons.find(b => b.getAttribute("aria-pressed") === "true");
+    if (actif) ramene(actif); else boutons[0].onclick();
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -7670,6 +7929,8 @@ const enregistreDessins = () => {
   oublieLiaisons();
   // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
   oublieAimants();
+  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
+  oublieReperes();
   rafraichitApercu();
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
@@ -8368,6 +8629,72 @@ function rafraichitStandsDessines(){
   });
   const r = svg.getBoundingClientRect();
   poseLibellesDessines((r.width || 1) / view.w);
+}
+
+/**
+ * Les repères, en objets de recherche.
+ *
+ * Un visiteur qui tape « vestiaire » ou « parking » cherche un endroit du
+ * salon, exactement comme il tape le nom d'une enseigne. Le cartouche du bas
+ * les récapitule déjà, mais il faut savoir qu'il existe et le parcourir des
+ * yeux : la recherche y mène en trois lettres.
+ *
+ * Ils sont relevés sur les trois pavillons, comme les stands : le sanitaire
+ * le plus proche n'est pas forcément dans celui qu'on regarde. Un calque
+ * éteint n'en donne aucun — ses repères ne sont pas sur le plan, et la liste
+ * promettrait un escalier que le visiteur ne trouverait pas.
+ *
+ * Le relevé se retient : la recherche le redemande à chaque frappe, et les
+ * dessins ne changent qu'entre deux gestes d'édition. « oublieReperes » le
+ * jette, aux mêmes endroits que les grilles d'itinéraire.
+ */
+let REPERES = null;
+
+function oublieReperes(){ REPERES = null; }
+
+function reperesCherchables(){
+  if (REPERES) return REPERES;
+  REPERES = [];
+  (DATA?.plans || []).forEach((p, i) => {
+    (DESSINS[p.id] || []).forEach(cal => {
+      if (cal.visible === false) return;
+      (cal.formes || []).forEach(f => {
+        if (f.t !== "repere") return;
+        const nom = nomRepere(f);
+        /* Le type ne compte que s'il ajoute quelque chose au libellé, et il
+           compte alors pour les deux : ce qu'on tape et ce que la ligne
+           montre. « Hall Sud » gagne à s'annoncer comme une entrée ; un repère
+           sans libellé s'appelle déjà « WC » et n'a rien à gagner d'un « WC »
+           en dessous, ni d'un second dans sa chaîne de recherche. Une chaîne
+           vide, elle, est un choix — « sans pictogramme » — et ne nomme rien
+           qu'on irait taper. */
+        const picto = pictoForme(f);
+        const type = picto ? nomTypeRepere(picto) : "";
+        const ajout = type === nom ? "" : type;
+        REPERES.push({
+          kind: "poi", id: f.id, p: i, nom: nom, type: ajout,
+          rech: (nom + " " + ajout).toLowerCase(),
+        });
+      });
+    });
+  });
+  return REPERES;
+}
+
+/**
+ * Un repère ouvert depuis la liste des résultats.
+ *
+ * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
+ * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
+ * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
+ * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
+ * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
+ * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ */
+function vaAuRepere(id, p){
+  changePlan(p);
+  const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
 }
 
 /**
