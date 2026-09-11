@@ -240,6 +240,8 @@ ecrit(
   "- `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.",
   "- `outils/carte.js` — produit ce fichier.",
   "- `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.",
+  "- `outils/controle.js` — analyse le script de chaque page construite, en module",
+  "  ES : une redéclaration y est une erreur, là où un `<script>` la tolère.",
   "- `outils/migration.js` — crée une migration horodatée à la seconde.",
   "- `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —",
   "  outils hors ligne de récupération et de préparation des plans (clé Klipso requise).",

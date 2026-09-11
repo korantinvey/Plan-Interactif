@@ -857,9 +857,14 @@ function ouvrePoi(id, rect){
   $("dKind").hidden = false;
   $("dKind").textContent = type ? nomTypeRepere(type) : "Repère";
   $("dName").textContent = dit || (type ? nomTypeRepere(type) : "Repère");
-  $("dCode").textContent = p.libelle;
+  /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
+     la fiche portait celui du stand consulté juste avant. */
+  poseCode(p, "", "");
   $("dNeuf").hidden = true;
   $("dPartage").hidden = true;
+  /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
+     visible, elle basculait encore la visibilité de la zone d'avant. */
+  if ($("dVis")) $("dVis").hidden = true;
   /* Un repère ne se retient pas dans un parcours : on ne visite pas un
      escalier, on le prend. */
   const sig = $("dMarque");

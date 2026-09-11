@@ -210,11 +210,33 @@ function ampute(
  *
  * Un réglage absent montre, comme la page l'entend elle aussi : un salon dont
  * l'apparence n'a jamais été publiée continue donc de recevoir tout son fond.
+ *
+ * La liste des calques n'est pas un ornement. `apparence.reglages` est un
+ * dictionnaire plat où cohabitent cinq vocabulaires — calques, sous-calques,
+ * couches de données (`data:stands`), réglages d'écran (`_zoom`, `_echelle`),
+ * placements de libellés (`_lab:…`) — et tous portent le même `{visible}`.
+ * Sans de quoi les distinguer, éteindre l'échelle passait pour un masquage :
+ * le filtrage n'en souffrait pas, aucun calque ne s'appelant `_echelle`, mais
+ * `versionFond` repliait la clé dans l'empreinte du fond. Le réglage le plus
+ * anodin changeait alors l'adresse d'un dessin inchangé, et chaque visiteur
+ * retéléchargeait un à deux mégaoctets identiques — souvent au bout du réseau
+ * d'un salon.
  */
-function masquesDe(reglages: unknown): Record<string, boolean> {
+function masquesDe(
+  reglages: unknown,
+  calques: { cle: unknown }[],
+): Record<string, boolean> {
+  const noms = new Set(calques.map((c) => String(c.cle)));
+  /* « calque/sous-calque », mais un nom de calque peut lui-même porter une
+     barre oblique : la clé est retenue dès qu'une de ses têtes nomme un
+     calque. Même règle que la page, `reglagesDuSalon` (_admin1.html). */
+  const dUnCalque = (cle: string) =>
+    noms.has(cle) ||
+    cle.split("/").some((_, i, t) => i > 0 && noms.has(t.slice(0, i).join("/")));
+
   const masques: Record<string, boolean> = {};
   for (const [cle, r] of Object.entries((reglages ?? {}) as Record<string, { visible?: boolean }>)) {
-    if (r && r.visible === false) masques[cle] = true;
+    if (r && r.visible === false && dUnCalque(cle)) masques[cle] = true;
   }
   return masques;
 }
@@ -223,13 +245,14 @@ function masquesDe(reglages: unknown): Record<string, boolean> {
 async function masquesDuPlan(
   sb: ReturnType<typeof db>,
   planId: string,
+  calques: { cle: unknown }[],
 ): Promise<Record<string, boolean>> {
   const { data } = await sb
     .from("apparence")
     .select("reglages")
     .eq("plan_id", planId)
     .maybeSingle();
-  return masquesDe(data?.reglages);
+  return masquesDe(data?.reglages, calques);
 }
 
 Deno.serve(async (req) => {
@@ -315,7 +338,7 @@ Deno.serve(async (req) => {
          reçoit le fond entier : c'est à partir de là qu'il choisit. Le
          masquage entre dans la version que porte l'adresse, sans quoi le
          navigateur resservirait le découpage d'avant. */
-      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id);
+      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id, cal ?? []);
       const retenus = (cal ?? [])
         .filter((c) => !masques[String(c.cle)])
         .map((c) => ({
@@ -381,7 +404,7 @@ Deno.serve(async (req) => {
         p.id,
         await versionFond(
           parCalque[p.id] ?? [],
-          identifie ? null : masquesDe(parApparence[p.id]?.reglages),
+          identifie ? null : masquesDe(parApparence[p.id]?.reglages, parCalque[p.id] ?? []),
         ),
       );
     }

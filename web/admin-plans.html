@@ -123,7 +123,20 @@ async function rest(chemin, options = {}) {
 // Échap. D'où un rappel porté par la fermeture plutôt que par le bouton.
 let apresModale = null;
 
+/* Le rappel ne joue qu'une fois, et il joue toujours : une fenêtre remplacée
+   par une autre — « Inviter quelqu'un » qui pose la fiche par-dessus la liste —
+   n'est pas fermée, mais ce qu'elle tenait doit quand même être rendu. Écraser
+   le rappel au lieu de le jouer laissait `hote` pointer sur un corps de fenêtre
+   déjà réemployé, et la liste des comptes, en arrivant, effaçait le formulaire
+   d'invitation en cours de saisie. */
+function verseModale() {
+  const f = apresModale;
+  apresModale = null;
+  if (f) f();
+}
+
 function ouvreModale(titre, remplit, boutons, apres) {
+  verseModale();
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -140,9 +153,7 @@ function ouvreModale(titre, remplit, boutons, apres) {
 }
 const fermeModale = () => {
   $("modale").classList.remove("open");
-  const f = apresModale;
-  apresModale = null;
-  if (f) f();
+  verseModale();
 };
 $("mFermer").onclick = fermeModale;
 $("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });

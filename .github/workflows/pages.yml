@@ -41,10 +41,11 @@ jobs:
       - name: Reconstruire les pages
         run: npm run construire
 
-      # `assemble.js` extrait le script du gabarit dans outils/chk.js : une
-      # erreur de syntaxe y devient visible avant d'atteindre un navigateur.
-      - name: Contrôler la syntaxe du gabarit
-        run: node --check outils/chk.js
+      # Contrôle le JavaScript de toutes les pages construites, analysé en
+      # module ES : plus sévère qu'un `<script>` classique, elle refuse les
+      # redéclarations — la collision que l'espace de noms unique rend possible.
+      - name: Contrôler la syntaxe des pages
+        run: node outils/controle.js
 
       - name: Valider la reconstruction
         if: github.event_name == 'push'
