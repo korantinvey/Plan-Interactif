@@ -134,40 +134,40 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3139 l. → admin-plans.html
+### `_console-js.html` — 3179 l. → admin-plans.html
 
-- l.672 · Provenance des données
-- l.799 · Contenu de la fiche détail
+- l.682 · Provenance des données
+- l.809 · Contenu de la fiche détail
 
 Fonctions :
 
-`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 384 · `slugifie` 398
-`courant` 402 · `charge` 404 · `chargePlans` 419 · `majEvenement` 424 · `selonAdresse` 444
-`majAdresse` 452 · `majBarre` 467 · `dessineChoix` 509 · `champ` 529 · `dessineFiche` 554
-`fournisseurUtilise` 734 · `source` 738 · `champCle` 743 · `ligneSource` 778
-`origineConferences` 913 · `resumeProvenance` 978 · `resumeSalles` 995 · `resumeFiche` 1006
-`caseFiche` 1049 · `champsPersos` 1092 · `criteres` 1098 · `ecritFiche` 1101
-`caseCritere` 1116 · `clePerso` 1135 · `ajouteChampPerso` 1143 · `renommeChampPerso` 1154
-`retireChampPerso` 1172 · `lignesPerso` 1220 · `clesCorps` 1255 · `ordreEffectif` 1269
-`libelleCorps` 1284 · `champsLus` 1326 · `exempleCible` 1341 · `valeurApercu` 1363
-`dessineApercu` 1391 · `panneauOrdre` 1475 · `ligneOutil` 1657 · `ligneReglage` 1673
-`ouvreProvenance` 1685 · `ouvreSources` 1708 · `ouvreSalles` 1764 · `cadreFiche` 1879
-`ouvreFiche` 1908 · `sousTitre` 2058 · `tableauChamps` 2073 · `encode` 2216 · `decode` 2218
-`correspondance` 2223 · `sansPrefixe` 2226 · `courte` 2227 · `intitule` 2242
-`intituleSuite` 2254 · `separeValeurs` 2268 · `aplani` 2289 · `memeStyle` 2299
-`autreFace` 2317 · `champOrigine` 2333 · `majLiens` 2600 · `majIntegration` 2627
-`majMsgSync` 2634 · `synchronise` 2649 · `dupliquer` 2699 · `litMonProfil` 2797
-`RETOUR_MDP` 2808 · `litComptes` 2810 · `ligneMessage` 2819 · `casesSalons` 2829
-`ouvreComptes` 2859 · `ouvreFicheCompte` 2951 · `videEcran` 3110 · `dessine` 3115
-`demarre` 3127
+`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 394 · `slugifie` 408
+`courant` 412 · `charge` 414 · `chargePlans` 429 · `majEvenement` 434 · `selonAdresse` 454
+`majAdresse` 462 · `majBarre` 477 · `dessineChoix` 519 · `champ` 539 · `dessineFiche` 564
+`fournisseurUtilise` 744 · `source` 748 · `champCle` 753 · `ligneSource` 788
+`origineConferences` 923 · `resumeProvenance` 988 · `resumeSalles` 1005 · `resumeFiche` 1016
+`caseFiche` 1059 · `champsPersos` 1102 · `criteres` 1108 · `ecritFiche` 1111
+`caseCritere` 1126 · `clePerso` 1145 · `ajouteChampPerso` 1153 · `renommeChampPerso` 1164
+`retireChampPerso` 1182 · `lignesPerso` 1230 · `clesCorps` 1265 · `ordreEffectif` 1279
+`libelleCorps` 1294 · `champsLus` 1336 · `exempleCible` 1351 · `valeurApercu` 1373
+`dessineApercu` 1401 · `panneauOrdre` 1485 · `ligneOutil` 1667 · `ligneReglage` 1683
+`ouvreProvenance` 1695 · `ouvreSources` 1718 · `ouvreSalles` 1774 · `cadreFiche` 1889
+`ouvreFiche` 1918 · `sousTitre` 2068 · `tableauChamps` 2083 · `encode` 2226 · `decode` 2228
+`correspondance` 2233 · `sansPrefixe` 2236 · `courte` 2237 · `intitule` 2252
+`intituleSuite` 2264 · `separeValeurs` 2278 · `aplani` 2299 · `memeStyle` 2309
+`autreFace` 2327 · `champOrigine` 2343 · `majLiens` 2610 · `majIntegration` 2637
+`majMsgSync` 2644 · `etapesPressenties` 2674 · `synchronise` 2688 · `dupliquer` 2739
+`litMonProfil` 2837 · `RETOUR_MDP` 2848 · `litComptes` 2850 · `ligneMessage` 2859
+`casesSalons` 2869 · `ouvreComptes` 2899 · `ouvreFicheCompte` 2991 · `videEcran` 3150
+`dessine` 3155 · `demarre` 3167
 
 Éléments :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 672 l. → console.css
+### `_console.css` — 676 l. → console.css
 
-- l.618 · Page de rapport
+- l.622 · Page de rapport
 
 ### `_dessin.html` — 1504 l. → plan-admin.html, plan-smcl.html, plan.html
 
