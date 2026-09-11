@@ -1685,15 +1685,12 @@ function select(id, recentrer, canal, iSoc){
   const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
   dessineMarques();
   marqueStandsDessines();
-  if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, rectVisee(n), canal, iSoc);
-  /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
-     décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
-     sur une géométrie déjà périmée. Sur grand écran on cadre avant : le
-     centrage pose la vue visée, dont « rectVisee » a besoin pour dire d'où la
-     fiche doit s'étirer. */
-  if (recentrer && ETROIT()) centre(o);
+  /* Le cadrage est passé dans « ouvre » plutôt que de l'encadrer ici : il
+     demandait deux ordres — après la fiche sur un téléphone, avant elle sur un
+     grand écran — et l'un des deux cadrait toujours sur une géométrie qu'il ne
+     connaissait pas encore. */
+  ouvre(o, n, canal, iSoc, recentrer);
 }
 const centre = (o) => centrePoint(o.c);
 
@@ -1706,17 +1703,26 @@ function centrePoint(xy){
   const base = vise || view;
   const w = Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
-     fiche. On la remonte au milieu de ce qui reste visible — d'après la
-     hauteur réellement masquée, et non une proportion supposée. */
+     fiche. On la pose au milieu de ce qui reste visible — d'après ce qui est
+     réellement masqué, et non une proportion supposée.
+
+     Les deux côtés comptent, et c'est ce qui manquait : la hauteur du tiroir
+     en bas sur un téléphone, la largeur de la fiche à droite sur un grand
+     écran. Faute du second, un cadre de mille pixels posait le stand à six
+     cent soixante-cinq — c'est-à-dire pile sous la fiche, qui commence à six
+     cent soixante. On arrivait sur ce qu'on venait voir, et il était caché.
+     Ces deux mesures ne valent qu'une fois la fiche posée : c'est « ouvre »
+     qui appelle le cadrage, et non l'inverse. */
   const r = svg.getBoundingClientRect();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
+  const decaleX = r.width ? (w * masqueDroite()) / (2 * r.width) : 0;
   /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
      du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
      il fallait retrouver dans quel coin du salon on venait d'être posé. Le
      trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
      point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
      pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
-  glisseVers({ x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h });
+  glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
@@ -2164,7 +2170,7 @@ function societes(o){
  * alors qu'un stand de restauration en héberge jusqu'à onze. On demande donc
  * qui l'on vient voir, plutôt que de le supposer.
  */
-function choisitExposant(o, rect, canal){
+function choisitExposant(o, depuis, canal, recentrer){
   const tous = societes(o);
   ouvreModale(("Stand " + (o.code || "")).trim(), corps => {
     const p = document.createElement("p");
@@ -2183,7 +2189,7 @@ function choisitExposant(o, rect, canal){
         // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
         // plan, lui, ne bouge pas — il nomme le titulaire quoi qu'on lise
         state.selSoc = x.i; liste();
-        ouvre(o, rect, canal, x.i);
+        ouvre(o, depuis, canal, x.i, recentrer);
       };
       li.appendChild(b);
       ul.appendChild(li);
@@ -2322,8 +2328,14 @@ addEventListener("resize", () => {
  * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
  * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
  * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
+ *
+ * `depuis` est la forme du plan d'où la fiche s'étire — le nœud, et non sa
+ * place à l'écran : celle-ci ne se mesure qu'à la fin, quand la fiche est
+ * posée et le plan cadré. `recentrer` dit s'il faut amener le plan sur
+ * l'emplacement ; c'est ici que cela se fait, et pas plus tôt, la fiche étant
+ * seule à savoir ce qu'elle masque.
  */
-function ouvre(o, rect, canal, iSoc){
+function ouvre(o, depuis, canal, iSoc, recentrer){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
   /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
@@ -2331,7 +2343,7 @@ function ouvre(o, rect, canal, iSoc){
      qu'il héberge restent atteignables par la liste : le réglage allège le
      plan, il ne retire personne du salon. */
   const plusieurs = heberges.length > 0 && coexChoisit();
-  if (plusieurs && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  if (plusieurs && iSoc === undefined){ choisitExposant(o, depuis, canal, recentrer); return; }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
@@ -2375,7 +2387,7 @@ function ouvre(o, rect, canal, iSoc){
   part.hidden = !plusieurs;
   if (plusieurs){
     part.textContent = (heberges.length + 1) + " exposants ici";
-    part.onclick = () => choisitExposant(o, null, canal);
+    part.onclick = () => choisitExposant(o, null, canal, false);
   }
   /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
@@ -2561,7 +2573,12 @@ function ouvre(o, rect, canal, iSoc){
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
-  anime(rect, 1);
+  /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
+     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
+     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
+     ordre pour les deux écrans, là où il en fallait un par écran. */
+  if (recentrer) centre(o);
+  anime(rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
@@ -2697,7 +2714,7 @@ svg.addEventListener("pointerup", e => {
        mais il a un nom, et c'est ce qu'on vient lui demander. */
     if (!d.cible.dataset.id){
       if (visePoi(d.cible.dataset.poi)) return;
-      ouvrePoi(d.cible.dataset.poi, d.cible.getBoundingClientRect());
+      ouvrePoi(d.cible.dataset.poi, d.cible);
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
@@ -2729,7 +2746,7 @@ svg.addEventListener("keydown", e => {
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
     if (!g.dataset.id){
-      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
+      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
     }
     if (!viseItineraire(g.dataset.id))
