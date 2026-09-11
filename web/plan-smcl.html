@@ -2888,7 +2888,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     </div>
-    <div class="count"><span id="countTxt">—</span></div>
+    <!-- Le compte ne paraît qu'en recherche : hors recherche la liste est le
+         sommaire du pavillon, et n'a pas de résultat à annoncer. -->
+    <div class="count" id="count" hidden><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
   </aside>
 
@@ -4501,8 +4503,20 @@ function liste(){
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
+  /* Sans mot-clé ni critère, la liste n'est pas un résultat mais le sommaire
+     du pavillon : « 404 résultats · Franchise Expo Paris » répond alors à une
+     question que personne n'a posée, et redit le salon que l'en-tête nomme
+     déjà. Le compte ne paraît donc qu'une fois la recherche commencée — et
+     celle-ci portant sur tout le salon, il n'a plus qu'une portée à dire. */
+  const compte = $("count");
+  if (compte.hidden === tout){
+    compte.hidden = !tout;
+    // le compte fait partie de ce qui dépasse du tiroir replié : sa disparition
+    // comme son retour changent la hauteur à laquelle s'ancrent les commandes
+    mesureTiroir();
+  }
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (tout ? " · tous pavillons" : " · " + P().libelle);
+    " · tous pavillons";
 
   /* Le plafond se compte par sorte, et non sur la liste entière : les stands
      passant devant, une recherche large le remplissait à eux seuls et les
@@ -16166,6 +16180,9 @@ function annonce(txt, erreur){
   l.innerHTML = '<div class="empty"></div>';
   l.querySelector(".empty").textContent = txt;
   if (erreur) l.querySelector(".empty").style.color = "var(--rouge, #C2372B)";
+  /* La ligne du compte se tait hors recherche ; l'état du chargement y passe
+     quand même, c'est là qu'on le lit. */
+  $("count").hidden = false;
   $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
   // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
   if (erreur) $("titre").classList.remove("attente");

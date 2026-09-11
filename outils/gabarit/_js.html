@@ -1389,8 +1389,20 @@ function liste(){
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
+  /* Sans mot-clé ni critère, la liste n'est pas un résultat mais le sommaire
+     du pavillon : « 404 résultats · Franchise Expo Paris » répond alors à une
+     question que personne n'a posée, et redit le salon que l'en-tête nomme
+     déjà. Le compte ne paraît donc qu'une fois la recherche commencée — et
+     celle-ci portant sur tout le salon, il n'a plus qu'une portée à dire. */
+  const compte = $("count");
+  if (compte.hidden === tout){
+    compte.hidden = !tout;
+    // le compte fait partie de ce qui dépasse du tiroir replié : sa disparition
+    // comme son retour changent la hauteur à laquelle s'ancrent les commandes
+    mesureTiroir();
+  }
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (tout ? " · tous pavillons" : " · " + P().libelle);
+    " · tous pavillons";
 
   /* Le plafond se compte par sorte, et non sur la liste entière : les stands
      passant devant, une recherche large le remplissait à eux seuls et les
