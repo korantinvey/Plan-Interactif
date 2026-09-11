@@ -23,7 +23,7 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
+  CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
   decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai,
   VALEURS_MAX,
 } from "../_partage/champs.ts";
@@ -186,8 +186,14 @@ async function champsKlipso(g: Gaia) {
     ["Stand", "stand:"],
   ];
   const vus = new Map<string, Record<string, unknown>>();
+  /* Les champs à choix, rangés par la codification qu'ils déclarent — c'est
+     par elle qu'on saura tout ce qu'ils peuvent valoir. Plusieurs champs
+     partagent parfois la même, d'où la liste de clés. */
+  const aCodifier = new Map<string, Map<string, string[]>>();
   for (const [entite, prefixe] of groupes) {
-    let props: { cle: string; libelle: string }[] = [];
+    let props: {
+      cle: string; libelle: string; codification: string | null;
+    }[] = [];
     try { props = await g.proprietes(entite); } catch (_) { /* schéma muet */ }
     for (const p of props) {
       const cle = prefixe + p.cle;
@@ -196,6 +202,13 @@ async function champsKlipso(g: Gaia) {
         cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null,
         valeurs: [] as string[],
       });
+      const point = (p.codification ?? "").indexOf(".");
+      if (point < 0) continue;
+      const ent = p.codification!.slice(0, point);
+      const prop = p.codification!.slice(point + 1);
+      const parProp = aCodifier.get(ent) ?? new Map<string, string[]>();
+      parProp.set(prop, [...(parProp.get(prop) ?? []), cle]);
+      aCodifier.set(ent, parProp);
     }
   }
 
@@ -241,6 +254,29 @@ async function champsKlipso(g: Gaia) {
   // au-delà du seuil, le champ est du texte libre : sa liste n'aiderait pas
   for (const d of vus.values()) {
     if ((d.valeurs as string[]).length > VALEURS_MAX) d.valeurs = [];
+  }
+
+  /* Ce qu'un champ à choix PEUT valoir, et pas seulement ce que l'échantillon
+     a montré. Vingt-cinq fiches ne portent pas toutes les valeurs d'une liste :
+     une valeur que trois exposants sur mille portent n'y est presque jamais, et
+     l'exploitant qui veut la désigner n'a rien à cocher. La codification, elle,
+     les déclare toutes — avec leur libellé, que le code seul ne dit pas.
+
+     Un appel par entité de codification, et l'échec de l'une n'emporte pas les
+     autres : sans sa liste déclarée, un champ retombe sur ses valeurs relevées,
+     comme avant. */
+  for (const [entite, parProp] of aCodifier) {
+    let tables: Record<string, Record<string, string>> = {};
+    try { tables = await g.codifications(entite, [...parProp.keys()]); }
+    catch (e) { console.error("codifications de " + entite + " :", e); continue; }
+    for (const [prop, cles] of parProp) {
+      const table = tables[prop];
+      if (!table || Object.keys(table).length > CHOIX_MAX) continue;
+      for (const cle of cles) {
+        const d = vus.get(cle);
+        if (d) d.choix = table;
+      }
+    }
   }
   return range([...vus.values()], GROUPES_KLIPSO);
 }

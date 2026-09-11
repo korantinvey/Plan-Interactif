@@ -1984,6 +1984,59 @@ const separeValeurs = (v) => [].concat(v)
   .flatMap((x) => String(x).split(";"))
   .map((x) => x.trim()).filter(Boolean);
 
+/* Les accords que la synchronisation reconnaît d'elle-même, quand aucune
+   valeur n'a été retenue. La liste est celle de `champs.ts` : la console ne
+   peut pas l'importer, elle la recopie — et les deux se corrigent ensemble,
+   sans quoi la fenêtre annoncerait l'inverse de ce qui se passe. */
+const ACCORDS = ["true", "1", "oui", "o", "yes", "y", "vrai", "x", "on", "✓", "✔"];
+
+/* Les deux faces d'un oui/non, telles que les sources les écrivent. La
+   synchronisation n'a que faire de la seconde colonne — un « non » et une
+   valeur quelconque ne déclenchent rien ni l'un ni l'autre — mais ici elle
+   compte : c'est en ne voyant que « false » qu'on sait que « true » existe. */
+const FACES = [
+  ["true", "false"], ["vrai", "faux"], ["oui", "non"], ["yes", "no"],
+  ["1", "0"], ["o", "n"], ["y", "n"], ["on", "off"],
+];
+
+/** Une valeur comparée sans égard à la casse ni aux espaces, comme au serveur. */
+const aplani = (v) => String(v === null || v === undefined ? "" : v).trim().toLowerCase();
+
+/**
+ * L'écriture du voisin : « FALSE » appelle « TRUE », « Non » appelle « Oui ».
+ *
+ * La valeur déduite est cochée telle quelle et comparée telle quelle à ce que
+ * portent les fiches : la comparaison ignore la casse, mais l'exploitant, lui,
+ * relit ce qu'il a coché — une face écrite autrement que sa voisine se lirait
+ * comme une valeur d'ailleurs.
+ */
+function memeStyle(modele, mot) {
+  const m = String(modele || "");
+  if (m && m === m.toUpperCase() && m !== m.toLowerCase()) return mot.toUpperCase();
+  if (m && m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase()) {
+    return mot[0].toUpperCase() + mot.slice(1);
+  }
+  return mot;
+}
+
+/**
+ * L'autre face d'un oui/non dont les fiches ne montrent qu'un côté.
+ *
+ * Un salon où personne n'est encore exclu porte « false » sur toutes ses
+ * fiches : le relevé n'a donc que « false » à proposer, et l'exploitant n'a
+ * rien à cocher — alors que c'est « true » qu'il vise. La face manquante se
+ * déduit du couple, et se propose signalée : elle existe, elle n'est
+ * simplement portée par personne pour l'instant.
+ */
+function autreFace(valeurs) {
+  const vues = valeurs.map(aplani);
+  if (!vues.length) return [];
+  const paire = FACES.find((f) => vues.every((v) => f.indexOf(v) >= 0));
+  if (!paire) return [];
+  return paire.filter((f) => vues.indexOf(f) < 0)
+    .map((f) => memeStyle(valeurs[0], f));
+}
+
 /**
  * La liste déroulante des champs d'origine d'une cible, et ce qu'elle vaut.
  *
@@ -2109,9 +2162,10 @@ function champOrigine(src, cible, apres, ouiNon) {
      Un champ à choix ne répond pas par oui ou non : « anciennete » vaut
      « Nouveau Client », « Client N-1 » ou « Retour », et c'est à l'exploitant
      de dire lesquelles comptent — un salon signalera les retours, un autre
-     non. Les valeurs proposées sont celles que la synchronisation a vues sur
-     ce champ ; un champ de texte libre n'en a pas, et retombe alors sur le
-     oui/non usuel. */
+     non. Les valeurs proposées sont celles que le champ peut prendre : celles
+     que la synchronisation a vues, celles que la source déclare sans qu'aucune
+     fiche ne les porte, et la face manquante d'un oui/non. Un champ de texte
+     libre n'en a aucune, et retombe alors sur le oui/non usuel. */
   const zoneValeurs = document.createElement("div");
   zoneValeurs.className = "valeurs";
   if (ouiNon) hote.appendChild(zoneValeurs);
@@ -2133,12 +2187,32 @@ function champOrigine(src, cible, apres, ouiNon) {
       (correspondance(courant(), src).valeurs || {})[cible] || []);
     const d = detectes.find((x) => x.cle === sel.value);
     const relevees = separeValeurs((d && d.valeurs) || []);
-    /* Les valeurs déjà retenues restent proposées même si le relevé ne les
-       connaît pas : saisies à la main, ou relevées avant que la
-       synchronisation ne garde les valeurs distinctes. Les effacer d'un
-       affichage reviendrait à les effacer tout court. */
-    const offertes = [...relevees];
-    retenues.forEach((v) => { if (offertes.indexOf(v) < 0) offertes.push(v); });
+    // la codification du champ, quand la source en déclare une : code → libellé
+    const choix = (d && d.choix) || {};
+
+    /* Quatre provenances pour une même liste, et l'ordre les range : ce que
+       les fiches portent, ce que la source déclare sans que rien ne le porte,
+       la face manquante d'un oui/non, puis ce que l'exploitant a retenu — car
+       une valeur retenue reste proposée même si le relevé l'ignore : saisie à
+       la main, ou relevée avant que la synchronisation ne garde les valeurs
+       distinctes. L'effacer de l'affichage reviendrait à l'effacer tout court.
+
+       Tout ce qui n'a été vu sur aucune fiche est marqué : la valeur est
+       cochable, mais l'exploitant doit savoir que personne ne la porte —
+       c'est parfois le signe qu'il vise le mauvais champ. */
+    const offertes = [];
+    const offre = (v, hors) => {
+      if (!v || offertes.some((o) => o.v === v)) return;
+      offertes.push({ v, hors });
+    };
+    relevees.forEach((v) => offre(v, false));
+    Object.keys(choix).forEach((v) => offre(v, true));
+    autreFace(relevees).forEach((v) => offre(v, true));
+    retenues.forEach((v) => offre(v, true));
+    /* Sans valeur retenue, la synchronisation s'en remet aux accords usuels :
+       un champ qui peut en porter un signale donc déjà, et le dire en rouge
+       comme un réglage manquant serait un faux appel au secours. */
+    const accords = offertes.map((o) => o.v).filter((v) => ACCORDS.indexOf(aplani(v)) >= 0);
 
     const dit = document.createElement("span");
     dit.className = "mini";
@@ -2153,19 +2227,29 @@ function champOrigine(src, cible, apres, ouiNon) {
     const rappel = () => {
       dit.textContent = retenues.length
         ? "vaut oui quand la valeur est :"
-        : offertes.length
-          ? "aucune valeur retenue : rien ne sera signalé"
-          : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
-            " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
-      dit.dataset.genre = retenues.length ? "" : "manque";
+        : accords.length
+          ? "aucune valeur retenue : « " + accords.join(" », « ") + " » " +
+            (accords.length > 1 ? "valent" : "vaut") + " oui d'office"
+          : offertes.length
+            ? "aucune valeur retenue : rien ne sera signalé"
+            : "valeurs inconnues" + (dateReleve ? " au relevé du " + dateReleve : "") +
+              " : la prochaine synchronisation les relèvera, ou saisissez-en une ici";
+      dit.dataset.genre = retenues.length || accords.length ? "" : "manque";
     };
     rappel();
 
-    const puce = (v) => {
+    /* Le libellé plutôt que le code quand la codification en donne un : un
+       champ à choix Klipso ne porte que « FEP26_GAM102 », et c'est
+       « Prêt-à-porter » que l'exploitant cherche. Le code reste sous la
+       souris — c'est lui qui sera comparé aux fiches. */
+    const puce = (v, hors) => {
       const l = document.createElement("label");
       l.className = "puce";
+      if (hors) l.dataset.hors = "1";
       l.innerHTML = '<input type="checkbox"><span></span>';
-      l.querySelector("span").textContent = v;
+      l.querySelector("span").textContent = choix[v] || v;
+      l.title = (choix[v] ? v + " — " : "") +
+        (hors ? "portée par aucune des fiches relevées" : "relevée sur les fiches");
       const i = l.querySelector("input");
       i.checked = retenues.indexOf(v) >= 0;
       i.onchange = () => {
@@ -2180,7 +2264,7 @@ function champOrigine(src, cible, apres, ouiNon) {
       zoneValeurs.appendChild(l);
       return l;
     };
-    offertes.forEach(puce);
+    offertes.forEach((o) => puce(o.v, o.hors));
 
     /* De quoi désigner une valeur que le relevé ignore. Il n'en a pas toujours
        une liste : un salon synchronisé avant que la synchronisation ne les
@@ -2197,13 +2281,13 @@ function champOrigine(src, cible, apres, ouiNon) {
       /* Une saisie recopiée depuis une fiche porte parfois la chaîne entière :
          elle vaut alors autant de valeurs qu'elle en joint. */
       const saisies = separeValeurs(ajout.value)
-        .filter((v) => offertes.indexOf(v) < 0);
+        .filter((v) => !offertes.some((o) => o.v === v));
       ajout.value = "";
       if (!saisies.length) return;
       saisies.forEach((v) => {
         retenues.push(v);
-        offertes.push(v);
-        const l = puce(v);
+        offertes.push({ v, hors: true });
+        const l = puce(v, true);
         l.querySelector("input").checked = true;
       });
       const valeurs = { ...(correspondance(courant(), src).valeurs || {}) };

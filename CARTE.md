@@ -132,7 +132,7 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
 `#fiche`
 
-### `_console-js.html` — 2755 l. → admin-plans.html
+### `_console-js.html` — 2839 l. → admin-plans.html
 
 - l.386 · Provenance des données
 - l.513 · Contenu de la fiche détail
@@ -152,19 +152,20 @@ Fonctions :
 `ouvreSources` 1422 · `ouvreSalles` 1478 · `cadreFiche` 1593 · `ouvreFiche` 1622
 `sousTitre` 1772 · `tableauChamps` 1787 · `encode` 1930 · `decode` 1932
 `correspondance` 1937 · `sansPrefixe` 1940 · `courte` 1941 · `intitule` 1956
-`intituleSuite` 1968 · `separeValeurs` 1982 · `champOrigine` 1994 · `majLiens` 2223
-`majIntegration` 2250 · `majMsgSync` 2257 · `synchronise` 2272 · `dupliquer` 2315
-`litMonProfil` 2413 · `RETOUR_MDP` 2424 · `litComptes` 2426 · `ligneMessage` 2435
-`casesSalons` 2445 · `ouvreComptes` 2475 · `ouvreFicheCompte` 2567 · `videEcran` 2726
-`dessine` 2731 · `demarre` 2743
+`intituleSuite` 1968 · `separeValeurs` 1982 · `aplani` 2003 · `memeStyle` 2013
+`autreFace` 2031 · `champOrigine` 2047 · `majLiens` 2307 · `majIntegration` 2334
+`majMsgSync` 2341 · `synchronise` 2356 · `dupliquer` 2399 · `litMonProfil` 2497
+`RETOUR_MDP` 2508 · `litComptes` 2510 · `ligneMessage` 2519 · `casesSalons` 2529
+`ouvreComptes` 2559 · `ouvreFicheCompte` 2651 · `videEcran` 2810 · `dessine` 2815
+`demarre` 2827
 
 Éléments :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 584 l. → console.css
+### `_console.css` — 590 l. → console.css
 
-- l.530 · Page de rapport
+- l.536 · Page de rapport
 
 ### `_dessin.html` — 1418 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -427,7 +428,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 437 l.
+### `supabase/functions/_partage/champs.ts` — 443 l.
 
 (aucune fonction de premier niveau)
 
@@ -435,9 +436,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `grapheJson` 147 · `enParallele` 601 · `texteSeul` 621 · `champs` 698
 
-### `supabase/functions/_partage/gaia.ts` — 224 l.
+### `supabase/functions/_partage/gaia.ts` — 286 l.
 
-`aplatit` 195
+`aplatit` 247
 
 ### `supabase/functions/_partage/geometrie.ts` — 163 l.
 
@@ -460,10 +461,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 163 · `ampute` 186 · `masquesDe` 226
 `masquesDuPlan` 246
 
-### `supabase/functions/sync-evenement/index.ts` — 1110 l.
+### `supabase/functions/sync-evenement/index.ts` — 1146 l.
 
 `cors` 42 · `client` 80 · `gaia` 87 · `libellesChoix` 98 · `fournisseur` 123 · `range` 159
-`champsKlipso` 180 · `hebergee` 1067 · `nettoieUrl` 1086 · `groupeTextes` 1096
+`champsKlipso` 180 · `hebergee` 1103 · `nettoieUrl` 1122 · `groupeTextes` 1132
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

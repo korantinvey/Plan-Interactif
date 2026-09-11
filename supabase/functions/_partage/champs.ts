@@ -395,6 +395,12 @@ export function separeValeurs(v: unknown): string[] {
    mais du texte libre : en proposer la liste n'aiderait personne. */
 export const VALEURS_MAX = 8;
 
+/* Une liste déclarée par la source, elle, est une liste de choix — le doute
+   que tranche le seuil ci-dessus n'existe pas pour elle. Il en faut un autre
+   tout de même : la nomenclature d'un salon compte deux cents entrées, et deux
+   cents cases à cocher ne se lisent pas plus qu'elles ne se rangent. */
+export const CHOIX_MAX = 40;
+
 /* Une valeur trop longue n'est pas un choix mais une phrase : la proposer à
    cocher encombrerait la fenêtre sans rien désigner d'utile. */
 const VALEUR_LONGUE = 60;

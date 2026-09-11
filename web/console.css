@@ -326,6 +326,12 @@ label.puce input{width:13px;height:13px;margin:0;padding:0;
   accent-color:var(--accent);cursor:pointer}
 label.puce:has(input:checked){background:var(--accent-soft);border-color:var(--accent);
   color:var(--accent);font-weight:600}
+/* Une valeur que le relevé n'a vue sur aucune fiche : déclarée par la source,
+   ou l'autre face d'un oui/non dont toutes les fiches portent la même. Elle se
+   coche comme les autres — le trait discontinu dit seulement que personne ne
+   la porte, ce qui est parfois le signe d'un champ mal visé. */
+label.puce[data-hors]{border-style:dashed;color:var(--ink-3)}
+label.puce[data-hors]:has(input:checked){border-style:solid;color:var(--accent)}
 /* De quoi désigner une valeur que le relevé ignore : un salon synchronisé
    avant qu'il ne garde les valeurs distinctes n'en a aucune à proposer. */
 input.ajout-valeur{width:auto;min-width:110px;flex:0 1 150px;padding:3px 9px;
