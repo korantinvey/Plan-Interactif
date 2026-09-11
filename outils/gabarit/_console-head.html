@@ -46,9 +46,22 @@
           <button class="mitem" id="btnExport">Copier les données (JSON)</button>
         </div>
       </details>
-      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      </button>
+      <!-- Le compte, sous les initiales de son adresse. Le thème y descend :
+           il se règle une fois, et occupait la barre en permanence pour cela.
+           La sortie, elle, n'avait aucun bouton — on fermait l'onglet, et la
+           session restait ouverte sur le poste. -->
+      <details class="menu compte">
+        <summary class="avatar" id="btnCompte" title="Compte" aria-label="Compte"><span id="initiales">··</span></summary>
+        <div class="menu-pan">
+          <div class="mtete">
+            <span class="eyebrow">Connecté</span>
+            <span id="compteMail">—</span>
+          </div>
+          <hr>
+          <button class="mitem" id="btnTheme">Thème sombre</button>
+          <button class="mitem danger" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
     </div>
   </header>
 

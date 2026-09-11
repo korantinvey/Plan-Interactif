@@ -441,13 +441,54 @@ const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
    ------------------------------------------------------------------ */
 const CLE_THEME = "console-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
+
+/* Sans réglage enregistré, le thème est celui du système : c'est lui qu'il
+   faut interroger pour savoir vers quoi bascule le bouton. */
+const themeSombre = () => {
   const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+$("btnTheme").onclick = () => {
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
 };
+
+/* ------------------------------------------------------------------
+   Compte
+   ------------------------------------------------------------------ */
+/**
+ * Les initiales de l'adresse : « korantin.vey@… » donne « KV », « alexandra@… »
+ * donne « AL ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà.
+ */
+function initialesDe(mail) {
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
+
+/* Le panneau se remplit à l'ouverture, jamais au chargement : la session peut
+   arriver après — on vient de se connecter — et l'ouverture est le seul moment
+   où l'on est sûr d'avoir quelque chose de juste à montrer. */
+const menuCompte = document.querySelector("details.menu.compte");
+if (menuCompte) {
+  menuCompte.addEventListener("toggle", () => {
+    if (!menuCompte.open) return;
+    const mail = contenuJeton(SESSION?.access_token)?.email || "";
+    $("initiales").textContent = mail ? initialesDe(mail) : "··";
+    $("compteMail").textContent = mail || "session inconnue";
+    // le libellé annonce où l'on va, pas où l'on est
+    $("btnTheme").textContent = themeSombre() ? "Thème clair" : "Thème sombre";
+  });
+  $("btnSortir").onclick = () => {
+    menuCompte.open = false;
+    deconnecte();
+  };
+}
 
 /* ============================================================
    Classeur — écrire un vrai fichier Excel, sans bibliothèque
