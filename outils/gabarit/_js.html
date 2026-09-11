@@ -2984,8 +2984,16 @@ let montreTiroir = () => {};
   const cran = () => tiroir.dataset.cran || "replie";
   function pose(nom){
     tiroir.dataset.cran = nom;
+    annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
+
+  /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
+     commandes de zoom, l'échelle — est ancré sur la hauteur repliée du tiroir.
+     Le tiroir qui monte passe donc dessous sans les déplacer, et ils restaient
+     à désigner un plan qu'on ne voyait plus. Le cran vit sur la racine pour que
+     la feuille de style les atteigne depuis l'autre bout de la page. */
+  const annonce = nom => { document.documentElement.dataset.tiroir = nom; };
   const replie = () => pose("replie");
   /* Une pression fait le tour des crans : on les atteint tous sans rien
      connaître du glissement, et on revient au plan par la même touche. */
@@ -3021,10 +3029,24 @@ let montreTiroir = () => {};
   const suit = e =>
     Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
 
+  /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
+  function proche(vu){
+    let choix = CRANS[0], ecart = Infinity;
+    for (const c of CRANS){
+      const d = Math.abs(hauteur(c) - vu);
+      if (d < ecart){ ecart = d; choix = c; }
+    }
+    return choix;
+  }
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
+    const vu = suit(e);
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
+    /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
+       s'arrêterait, sans attendre qu'il lâche. */
+    annonce(proche(vu));
   });
 
   function relache(e){
@@ -3032,14 +3054,8 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    if (aGlisse){
-      let choix = CRANS[0], ecart = Infinity;
-      for (const c of CRANS){
-        const d = Math.abs(hauteur(c) - vu);
-        if (d < ecart){ ecart = d; choix = c; }
-      }
-      pose(choix);
-    }
+    // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
+    pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
