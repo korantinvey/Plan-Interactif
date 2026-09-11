@@ -147,6 +147,7 @@ function verseModale() {
 
 function ouvreModale(titre, remplit, boutons, apres) {
   verseModale();
+  modaleVerrou = false;
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -161,13 +162,26 @@ function ouvreModale(titre, remplit, boutons, apres) {
   });
   $("modale").classList.add("open");
 }
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
 const fermeModale = () => {
+  modaleVerrou = false;
   $("modale").classList.remove("open");
   verseModale();
 };
 $("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
 
 function demande(titre, libelle, valeur, suite) {
   let champ;
