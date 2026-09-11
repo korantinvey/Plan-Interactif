@@ -133,6 +133,13 @@ function indexe(d){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
+     police : reposée maintenant, elle vaut dès le premier tracé. Attendre
+     « appliqueApparence » la mettait une fois de trop en retard — les stands
+     et les repères dessinés à la main sont tracés juste avant, et se
+     seraient taillés sur la police d'origine. */
+  posePoliceLibelles(modeleRetenu());
+
   /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
      ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
      ne décrit plus rien. */
@@ -249,8 +256,14 @@ function largeur(txt, police){
    milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
 const COLLATION = new Intl.Collator("fr", { numeric: true });
 
-const P_NOM = ["600", '"Instrument Sans", sans-serif'];
-const P_CODE = ["500", '"IBM Plex Mono", monospace'];
+/* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
+   de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
+   modèle d'habillage les remplace, et `posePoliceLibelles` les repose. Ce
+   sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
+   sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
+   qu'il devait remplir. */
+let P_NOM = ["600", '"Instrument Sans", sans-serif'];
+let P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
 function decoupe(txt, n){
   if (n === 1) return [txt];
