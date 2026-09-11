@@ -113,6 +113,28 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
 
+/* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
+   administration — la page publique n'a pas de session à montrer, et
+   `retireAdmin` le retire du document. Le panneau se décrit ici en entier :
+   cette page ne charge pas `console.css`, où vivent les menus de la console. */
+.compte{position:relative}
+.compte > summary{list-style:none;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;cursor:pointer;user-select:none;
+  background:var(--accent-soft);color:var(--accent);border:1px solid transparent;
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.03em;text-transform:uppercase}
+.compte > summary::-webkit-details-marker{display:none}
+.compte > summary:hover,.compte[open] > summary{border-color:var(--accent)}
+.compte-pan{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:220px;
+  padding:5px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.compte-pan .qui{padding:7px 10px 9px;font-size:12.5px;color:var(--ink-2);
+  overflow-wrap:anywhere;border-bottom:1px solid var(--line);margin-bottom:5px}
+.compte-pan button{display:block;width:100%;text-align:left;padding:8px 10px;
+  font-size:13px;border-radius:var(--radius);color:var(--ink);white-space:nowrap}
+.compte-pan button:hover{background:var(--surface-2)}
+.compte-pan button.sortie{color:var(--rouge)}
+
 .side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
 
 /* La poignée du tiroir : sur écran étroit la liste se hisse par-dessus le
@@ -1739,6 +1761,11 @@ button.expo:hover{background:var(--line)}
   background:var(--accent-soft);border-radius:var(--radius)}
 .iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
 .iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
+   sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
+   aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
+.iVider{align-self:flex-start;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.iVider:hover{color:var(--rouge)}
 .iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
 .iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:var(--rouge)}
 .iEtapes{display:flex;flex-direction:column;gap:7px}
@@ -2620,6 +2647,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
+      <!-- L'exploitant connecté, et par où sortir. Le thème le rejoint ici en
+           administration : deux commandes du même réglage côte à côte dans la
+           barre ne diraient pas laquelle écoute. -->
+      <details class="compte" id="menuCompte" hidden>
+        <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
+        <div class="compte-pan">
+          <div class="qui" id="compteMail">—</div>
+          <button id="btnThemeCompte">Thème sombre</button>
+          <button class="sortie" id="btnSortir">Se déconnecter</button>
+        </div>
+      </details>
     </div>
   </header>
 
@@ -2872,8 +2910,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
           les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
         <div class="iResultat" id="iResultat"></div>
+        <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
       </div>
-      <div class="pPied"><button class="vider" id="videItineraire">Effacer l'itinéraire</button></div>
     </section>
   </main>
 </div>
@@ -4265,6 +4303,29 @@ function masque(){
   }
   // au-delà, il ne resterait plus assez de plan pour que le cadrage ait un sens
   return Math.max(0, Math.min(r.height * .6, bas));
+}
+
+/**
+ * Largeur, en pixels, de ce que le volet de droite cache du plan.
+ *
+ * Sur un écran large la fiche, le parcours et l'itinéraire ne partagent pas la
+ * place : ils se posent par-dessus le plan, le long du bord droit. Cadrer sur
+ * la largeur entière pousse donc le bord droit du tracé sous le volet — et
+ * c'est là que se trouve l'arrivée d'un itinéraire demandé depuis une fiche.
+ *
+ * On mesure la largeur au repos plutôt que la position à l'écran : le volet
+ * arrive en glissant, et un cadrage demandé pendant la transition mesurerait
+ * un volet encore à moitié dehors.
+ */
+function masqueDroite(){
+  if (ETROIT()) return 0;
+  const r = svg.getBoundingClientRect();
+  let cote = 0;
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    const v = $(id);
+    if (v && v.classList.contains("open")) cote = Math.max(cote, v.offsetWidth);
+  });
+  return Math.max(0, Math.min(r.width * .6, cote));
 }
 
 function fit(){
@@ -6664,7 +6725,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -6688,6 +6749,15 @@ function activeAdmin(){
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
     };
+  }
+  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
+     côté : il porte le même réglage dans son panneau, et deux commandes d'une
+     même chose dans la même barre ne disent pas laquelle écoute. */
+  const c = $("menuCompte");
+  if (c){
+    c.hidden = false;
+    const th = $("btnTheme");
+    if (th) th.hidden = true;
   }
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
@@ -12918,7 +12988,15 @@ function rafraichitBouts(){
   g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
 }
 
-/** Cadre la vue sur le tracé du pavillon affiché. */
+/**
+ * Cadre la vue sur le tracé du pavillon affiché.
+ *
+ * Le trajet se lit à côté de son bilan, jamais dessous : le volet du bas sur un
+ * téléphone, celui de droite sur un écran large, sont retirés du cadre avant de
+ * calculer l'échelle, puis le tracé se centre dans la bande qui reste. Sans
+ * cela, l'arrivée — le point qu'on est venu chercher — se range derrière le
+ * volet qui l'annonce.
+ */
 function cadreItineraire(){
   const marches = marchesIci();
   if (!marches.length || !view) return;
@@ -12928,12 +13006,13 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = svg.getBoundingClientRect();
-  const cache = masque();
+  const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
+  const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
-  const k = Math.max(w / (r.width || 1), h / hUtile);
-  view = { x: (x0 + x1) / 2 - (k * r.width) / 2,
+  const k = Math.max(w / lUtile, h / hUtile);
+  view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
            y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
@@ -13020,7 +13099,9 @@ function valideSaisie(r){
 function effaceItineraire(){
   ITI.a = ITI.b = null;
   ROUTE = TRACE = null;
-  visee = null;
+  /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
+     il appelle la même visée. */
+  visee = ETROIT() ? null : "a";
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
@@ -13203,18 +13284,6 @@ function montreResultat(etat){
     z.appendChild(l);
     (ROUTE.avertis || []).forEach(t => dit("iAlerte", t));
   }
-
-  // rien de tracé dans ce pavillon : il n'y a rien à cadrer
-  if (marchesIci().length){
-    const acts = document.createElement("div");
-    acts.className = "acts";
-    const b = document.createElement("button");
-    b.className = "btn";
-    b.textContent = "Cadrer sur le trajet";
-    b.onclick = cadreItineraire;
-    acts.appendChild(b);
-    z.appendChild(acts);
-  }
 }
 
 /* ------------------------------------------------------------
@@ -13224,7 +13293,10 @@ function montreResultat(etat){
  * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
  * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
  * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
- * le champ au lieu d'ouvrir une fiche.
+ * le champ au lieu d'ouvrir une fiche. C'est le geste ordinaire, et non le
+ * détour : l'ouverture du tiroir l'arme sur le premier champ vide (voir
+ * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
+ * revenir après coup.
  *
  * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
  * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
@@ -13237,8 +13309,10 @@ function bandeauVisee(){
   const b = $("viseur");
   if (b){
     b.hidden = !visee;
+    /* La visée n'est plus le geste du seul téléphone : le bandeau s'adresse
+       aussi bien au doigt qu'au curseur. */
     if (visee) $("viseurTxt").textContent =
-      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+      "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
@@ -13314,6 +13388,15 @@ function ouvreItineraire(){
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
+  /* Un itinéraire se désigne plus vite qu'il ne se tape : la visée est donc
+     armée sur le premier champ vide dès l'ouverture, départ puis arrivée, sans
+     passer par la cible. Le clavier reste à portée — cliquer dans un champ y
+     renonce. Sur un téléphone, où le tiroir recouvre le plan qu'on viserait,
+     viser suppose de le refermer : on attend que le visiteur le demande. */
+  if (!ETROIT()){
+    visee = !ITI.a ? "a" : !ITI.b ? "b" : null;
+    bandeauVisee();
+  }
 }
 function fermeItineraire(){
   const t = $("itineraire");
@@ -13336,8 +13419,9 @@ function versItineraireDe(pt){
   if (ITI.a) relance();
   /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
      la transition, et un focus ordinaire ferait défiler la scène pour l'y
-     amener. On demande le curseur, pas le déplacement. */
-  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
+     amener. On demande le curseur, pas le déplacement — et seulement là où
+     l'ouverture n'a pas armé la visée, que le curseur annulerait aussitôt. */
+  else { montreResultat(); if (!visee) $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {
@@ -15297,6 +15381,7 @@ function ecranAcces(message){
       localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
       voile.remove();
       activeAdmin();
+      poseCompte();
       charge();
     } catch (e) {
       $("accesMsg").textContent = e.message;
@@ -15306,10 +15391,72 @@ function ecranAcces(message){
   $("aMdp").onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); tente(); } };
 }
 
+/* ------------------------------------------------------------------
+   Le compte, une fois la porte franchie
+   ------------------------------------------------------------------ */
+/** L'adresse est dans le jeton — la demander au serveur serait un aller-retour
+ *  de plus pour une donnée que le navigateur tient déjà en main. */
+function mailDuJeton(session){
+  try {
+    const p = String(session?.access_token || "").split(".")[1];
+    if (!p) return "";
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))).email || "";
+  } catch (e) { return ""; }
+}
+
+/** « korantin.vey@… » donne « KV » ; à défaut, les deux premières lettres. */
+function initialesDe(mail){
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "\u00b7\u00b7").toUpperCase();
+}
+
+const themeSombreA = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+function poseCompte(){
+  const menu = $("menuCompte");
+  if (!menu) return;
+  const mail = mailDuJeton(litLocal(CLE_SESSION_A));
+  $("avatarCompte").textContent = mail ? initialesDe(mail) : "\u00b7\u00b7";
+  $("compteMail").textContent = mail || "session inconnue";
+
+  // le libellé annonce où l'on va, pas où l'on est
+  menu.addEventListener("toggle", () => {
+    if (menu.open) $("btnThemeCompte").textContent = themeSombreA() ? "Thème clair" : "Thème sombre";
+  });
+
+  /* Le thème reste réglé par le bouton d'origine, caché mais en place : lui
+     seul sait rallumer la couleur d'accent du thème ouvert. */
+  $("btnThemeCompte").onclick = () => { $("btnTheme").click(); menu.open = false; };
+
+  /* Sortir, c'est effacer la session du poste — la même que celle de la
+     console, qui se retrouvera donc déconnectée elle aussi — puis recharger :
+     la page repasse alors d'elle-même par son écran d'accès. */
+  $("btnSortir").onclick = () => {
+    try { localStorage.removeItem(CLE_SESSION_A); } catch (e) {}
+    location.reload();
+  };
+}
+
+/* Un clic ailleurs, ou Échap, referme le panneau : rien d'autre ne dirait
+   comment s'en défaire une fois ouvert au-dessus du plan. */
+document.addEventListener("click", (ev) => {
+  const m = $("menuCompte");
+  if (m && m.open && !m.contains(ev.target)) m.open = false;
+});
+document.addEventListener("keydown", (ev) => {
+  const m = $("menuCompte");
+  if (ev.key === "Escape" && m && m.open) m.open = false;
+});
+
 (async () => {
   const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
-  if (await sessionValide(cfg, session)){ activeAdmin(); charge(); }
+  if (await sessionValide(cfg, session)){ activeAdmin(); poseCompte(); charge(); }
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
 })();
 

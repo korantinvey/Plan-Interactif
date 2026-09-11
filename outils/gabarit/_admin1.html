@@ -1106,7 +1106,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -1130,6 +1130,15 @@ function activeAdmin(){
       const o = $("panel").classList.toggle("open");
       b.setAttribute("aria-pressed", o);
     };
+  }
+  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
+     côté : il porte le même réglage dans son panneau, et deux commandes d'une
+     même chose dans la même barre ne disent pas laquelle écoute. */
+  const c = $("menuCompte");
+  if (c){
+    c.hidden = false;
+    const th = $("btnTheme");
+    if (th) th.hidden = true;
   }
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier

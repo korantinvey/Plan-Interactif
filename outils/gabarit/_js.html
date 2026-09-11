@@ -1387,6 +1387,29 @@ function masque(){
   return Math.max(0, Math.min(r.height * .6, bas));
 }
 
+/**
+ * Largeur, en pixels, de ce que le volet de droite cache du plan.
+ *
+ * Sur un écran large la fiche, le parcours et l'itinéraire ne partagent pas la
+ * place : ils se posent par-dessus le plan, le long du bord droit. Cadrer sur
+ * la largeur entière pousse donc le bord droit du tracé sous le volet — et
+ * c'est là que se trouve l'arrivée d'un itinéraire demandé depuis une fiche.
+ *
+ * On mesure la largeur au repos plutôt que la position à l'écran : le volet
+ * arrive en glissant, et un cadrage demandé pendant la transition mesurerait
+ * un volet encore à moitié dehors.
+ */
+function masqueDroite(){
+  if (ETROIT()) return 0;
+  const r = svg.getBoundingClientRect();
+  let cote = 0;
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    const v = $(id);
+    if (v && v.classList.contains("open")) cote = Math.max(cote, v.offsetWidth);
+  });
+  return Math.max(0, Math.min(r.width * .6, cote));
+}
+
 function fit(){
   const r = svg.getBoundingClientRect();
   const cache = masque();
