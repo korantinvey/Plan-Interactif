@@ -427,6 +427,20 @@ const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
    Cloudflare, comme les autres. */
 const PAGE_MDP = BASE_PAGES + "motdepasse";
 
+/* Même repli que sur la racine, pour le cas où le « Site URL » du projet
+   désigne la console : un jeton de mot de passe n'a rien à faire ici, et
+   l'écran de connexion serait une impasse pour celui qui l'apporte. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const type = h.get("type") || q.get("type") || "";
+  const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
+    (type === "recovery" || type === "invite" || type === "signup");
+  if (jeton || h.get("error_description") || q.get("error_description")) {
+    location.replace(PAGE_MDP + location.search + location.hash);
+  }
+})();
+
 /**
  * L'identifiant du compte connecté, lu dans le jeton.
  *
