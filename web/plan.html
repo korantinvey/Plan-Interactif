@@ -1765,6 +1765,11 @@ button.expo:hover{background:var(--line)}
   background:var(--accent-soft);border-radius:var(--radius)}
 .iBilan b{font-family:"Archivo",sans-serif;font-size:20px;letter-spacing:-.02em}
 .iBilan span{font-size:12.5px;color:var(--ink-2)}
+/* Effacer, c'est défaire les deux champs juste au-dessus : le lien se range
+   sous le bilan qu'il annule, et non au pied d'un volet que le trajet laisse
+   aux trois quarts vide — il y tombait si bas qu'on le cherchait. */
+.iVider{align-self:flex-start;font-size:12px;color:var(--ink-3);text-decoration:underline}
+.iVider:hover{color:var(--rouge)}
 .iNote{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.6}
 .iAlerte{margin:0;font-size:12.5px;line-height:1.6;color:var(--rouge)}
 .iEtapes{display:flex;flex-direction:column;gap:7px}
@@ -2931,8 +2936,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
           les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
         <div class="iResultat" id="iResultat"></div>
+        <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
       </div>
-      <div class="pPied"><button class="vider" id="videItineraire">Effacer l'itinéraire</button></div>
     </section>
   </main>
 </div>
