@@ -1778,6 +1778,28 @@ function adresseSure(v){
   return "";
 }
 
+/* Ce qu'un logo de zone a le droit d'être : une image que la page a fabriquée
+   elle-même, et rien d'autre.
+
+   Le « svg » n'y figure pas, et c'est délibéré : il porte du script, que le
+   navigateur exécute dès qu'on le pose autrement que dans une image. Le
+   convertisseur n'en produit de toute façon jamais — il rend ce que la toile
+   sait écrire, webp là où c'est possible, png partout. */
+const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+/**
+ * Le logo d'une zone, relu avant d'être affiché.
+ *
+ * Il suit le chemin de la description — saisi par un exploitant authentifié,
+ * enregistré en base, renvoyé par l'API, posé dans la fiche de tous les
+ * visiteurs — et mérite donc la même méfiance : ce n'est pas parce qu'il est
+ * arrivé par l'éditeur qu'il en vient.
+ */
+function imageSure(v){
+  const u = String(v == null ? "" : v).trim();
+  return IMAGE_SURE.test(u) ? u : "";
+}
+
 /* Ce qu'une description écrite dans l'éditeur a le droit de contenir, et sous
    quel nom elle le garde : de la mise en forme, rien d'autre. Les balises que
    les navigateurs produisent pour dire la même chose — « b », « i », « div » —
@@ -2126,12 +2148,20 @@ function ouvre(o, rect, canal, iSoc){
         : "")
     : "";
   corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
+  /* Le logo, déposé par l'exploitant avec le reste de la fiche. Il n'a pas
+     d'intitulé au-dessus de lui : une image se reconnaît sans qu'on la nomme,
+     et le nom de la zone est déjà en tête. Il est relu comme la description —
+     il vient du même endroit, et finit dans la même fiche. */
+  const blason = zone ? imageSure(o.logo) : "";
+  corps.logo = blason
+    ? ok("logo", '<div class="logoZone"><img src="' + esc(blason) + '" alt=""></div>')
+    : "";
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
-     range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
-     dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
-     plus. */
+     range des champs d'exposant, qu'elle n'a pas, et les siens se lisent dans
+     le seul ordre qui leur convienne — de quoi la reconnaître, ce qu'elle est,
+     puis où en savoir plus. */
   const infos = zone
-    ? corps.description + corps.lien
+    ? corps.logo + corps.description + corps.lien
     : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
         .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il

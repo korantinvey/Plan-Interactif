@@ -1,0 +1,34 @@
+-- Logo des zones organisateur
+--
+-- Pourquoi : une zone n'a que ce que l'exploitant lui écrit, et un espace de
+-- restauration, une agora, un village de marques portent presque toujours une
+-- identité visuelle que le nom seul ne rend pas. La fiche gagne donc un logo,
+-- déposé depuis les réglages du plan avec le reste — libellé, type,
+-- description, lien — et rangé dans la même colonne :
+--
+--   { "z2c32b37a": { "type": "restauration",
+--                    "logo": "data:image/webp;base64,UklGRh…",
+--                    "description": "<p>Ouvert de 9h à 19h.</p>",
+--                    "lien": "https://exemple.fr/agora" } }
+--
+-- L'image est enregistrée dans la fiche, et non déposée sur un hébergement de
+-- fichiers. C'est déjà ainsi que voyagent les images du dessin : une page
+-- publiée ne peut charger aucune ressource externe, et un lien vers un fichier
+-- ailleurs meurt le jour où l'ailleurs change. Le prix est le poids, payé par
+-- chaque visiteur du plan — d'où une réduction avant l'enregistrement, à
+-- quatre cent quatre-vingts pixels et quatre-vingt-dix kilo-octets au plus,
+-- au-delà desquels la page refuse le fichier.
+--
+-- Le format n'est jamais celui du fichier choisi : la page le redessine en
+-- webp, ou en png là où le navigateur ne sait pas écrire le premier. Les deux
+-- gardent la transparence qu'un logo a presque toujours ; le svg, lui, ne
+-- survit pas au passage, et c'est voulu — il porte du script, et la page ne
+-- reconnaît à l'affichage que les trois formats qu'elle fabrique elle-même.
+--
+-- La colonne ne change pas de forme et ne contraint toujours rien : elle
+-- accueille une clé de plus, que les fiches déjà écrites n'ont pas et qui leur
+-- manque sans conséquence. Seul son commentaire est à reprendre, pour que ce
+-- qu'elle contient se lise depuis la base.
+
+comment on column evenement.zones_fiches is
+  'Fiches de zones organisateur saisies par l''exploitant — type, logo, description et lien — indexées par identifiant de zone. Le logo est une image réduite en data-URI, enregistrée avec la fiche. Appliquées à la lecture.';

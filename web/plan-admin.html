@@ -870,6 +870,17 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .field .v .riche p{margin:0 0 .55em}
 .field .v .riche ul,.field .v .riche ol{margin:0 0 .55em;padding-left:1.25em}
 .field .v .riche li{margin:0 0 .2em}
+/* Le logo d'une zone, en tête de sa fiche. Sans intitulé au-dessus : une image
+   se reconnaît sans qu'on la nomme, et le nom de la zone est juste avant.
+   Contenu plutôt que découpé — un logo tronqué n'est plus le logo. */
+.logoZone{display:flex;align-items:center;justify-content:center;padding:12px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  /* Un logo est presque toujours transparent, et le plus souvent sombre : posé
+     sur le fond de la fiche, il s'effacerait en thème sombre. Ce fond-ci ne
+     suit donc pas le thème — c'est le seul endroit de la page où l'on préfère
+     l'image lisible à la teinte assortie. */
+  background:#FFF}
+.logoZone img{max-width:100%;max-height:96px;width:auto;height:auto;object-fit:contain}
 /* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
    c'est par elle qu'on se repère, et un filet de la couleur de son type. */
 .prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
@@ -2137,6 +2148,24 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
+   vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
+   il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
+.champZ .logoZ{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.champZ .logoZ .vue{flex:none;display:flex;align-items:center;justify-content:center;
+  width:106px;height:74px;padding:6px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2);overflow:hidden}
+.champZ .logoZ .vue[data-survol]{border-color:var(--accent);background:var(--accent-soft)}
+.champZ .logoZ .vue img{max-width:100%;max-height:100%;object-fit:contain}
+.champZ .logoZ .vue span{font-size:11.5px;line-height:1.4;text-align:center;color:var(--ink-3)}
+.champZ .logoZ .actes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.champZ .logoZ .actes button{padding:6px 11px;font-size:12.5px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.champZ .logoZ .actes button:hover{border-color:var(--line-strong);color:var(--ink)}
+/* Le poids du logo tel qu'il partira, et l'échec quand il n'a pas pu être lu :
+   la même ligne, pour que rien ne saute en passant de l'un à l'autre. */
+.ditZ{font-size:12px;color:var(--ink-3)}
+.ditZ[data-mal="true"]{color:#C2372B}
 /* La fiche n'a pas de bouton : elle s'enregistre quand on la quitte. Reste à
    le dire, et à dire ensuite ce qu'il en est advenu — au même endroit, pour que
    la ligne ne fasse pas sauter la mise en page en changeant de texte. */
@@ -2452,8 +2481,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      largeur entière. */
   .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
     gap:11px 14px;align-content:start}
-  .detail-bd .field,.detail-bd .acts{grid-column:1/-1;min-width:0}
+  .detail-bd .field,.detail-bd .acts,.detail-bd .logoZone{grid-column:1/-1;min-width:0}
   .detail-bd .field.court{grid-column:auto}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : le logo s'y fait plus
+     discret, sans quoi il prendrait à lui seul le tiers de ce qu'on voit. */
+  .logoZone{padding:9px}
+  .logoZone img{max-height:64px}
   /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
      sa colonne au lieu de revenir à la ligne. */
   .field .v{font-size:13.5px;overflow-wrap:anywhere}
@@ -4583,6 +4616,28 @@ function adresseSure(v){
   return "";
 }
 
+/* Ce qu'un logo de zone a le droit d'être : une image que la page a fabriquée
+   elle-même, et rien d'autre.
+
+   Le « svg » n'y figure pas, et c'est délibéré : il porte du script, que le
+   navigateur exécute dès qu'on le pose autrement que dans une image. Le
+   convertisseur n'en produit de toute façon jamais — il rend ce que la toile
+   sait écrire, webp là où c'est possible, png partout. */
+const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+/**
+ * Le logo d'une zone, relu avant d'être affiché.
+ *
+ * Il suit le chemin de la description — saisi par un exploitant authentifié,
+ * enregistré en base, renvoyé par l'API, posé dans la fiche de tous les
+ * visiteurs — et mérite donc la même méfiance : ce n'est pas parce qu'il est
+ * arrivé par l'éditeur qu'il en vient.
+ */
+function imageSure(v){
+  const u = String(v == null ? "" : v).trim();
+  return IMAGE_SURE.test(u) ? u : "";
+}
+
 /* Ce qu'une description écrite dans l'éditeur a le droit de contenir, et sous
    quel nom elle le garde : de la mise en forme, rien d'autre. Les balises que
    les navigateurs produisent pour dire la même chose — « b », « i », « div » —
@@ -4931,12 +4986,20 @@ function ouvre(o, rect, canal, iSoc){
         : "")
     : "";
   corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
+  /* Le logo, déposé par l'exploitant avec le reste de la fiche. Il n'a pas
+     d'intitulé au-dessus de lui : une image se reconnaît sans qu'on la nomme,
+     et le nom de la zone est déjà en tête. Il est relu comme la description —
+     il vient du même endroit, et finit dans la même fiche. */
+  const blason = zone ? imageSure(o.logo) : "";
+  corps.logo = blason
+    ? ok("logo", '<div class="logoZone"><img src="' + esc(blason) + '" alt=""></div>')
+    : "";
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
-     range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
-     dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
-     plus. */
+     range des champs d'exposant, qu'elle n'a pas, et les siens se lisent dans
+     le seul ordre qui leur convienne — de quoi la reconnaître, ce qu'elle est,
+     puis où en savoir plus. */
   const infos = zone
-    ? corps.description + corps.lien
+    ? corps.logo + corps.description + corps.lien
     : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
         .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
@@ -6135,7 +6198,7 @@ function voletZones(hote){
     n.textContent = z.nom || "Zone sans nom";
     b.appendChild(n);
     const dit = [];
-    if (z.description || z.lien) dit.push("fiche");
+    if (z.description || z.lien || z.logo) dit.push("fiche");
     if (z.masquee) dit.push("masquée");
     if (dit.length){
       const e = document.createElement("span");
@@ -6580,7 +6643,7 @@ function champZone(hote, titre, dedans, aide){
 }
 
 /**
- * Les trois champs d'une zone, posés dans « hote ».
+ * Les champs d'une zone, posés dans « hote ».
  *
  * Rend de quoi les relire au moment d'enregistrer, plutôt que d'écrire à
  * chaque frappe : une description se rédige, et la sauver en cours de phrase
@@ -6605,6 +6668,8 @@ function champsZone(hote, o){
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
+  const logo = champLogo(hote, o);
+
   const riche = editeurRiche(o.description || "");
   champZone(hote, "Description", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
@@ -6617,8 +6682,144 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value,
+  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
                   description: riche.lit(), lien: lienZ.value });
+}
+
+
+/* Les tailles successives auxquelles on tente de ramener un logo, de la plus
+   confortable à la plus modeste : on garde la première qui tient dans le poids
+   qu'on s'autorise. Le logo paraît à peu près 240 points de large sur la
+   fiche ; 480 pixels le gardent net sur un écran qui en double la densité.
+
+   Le poids n'est pas une coquetterie : la fiche part avec le plan, à chaque
+   visiteur et pour chaque zone. Cent kilo-octets par logo, sur les vingt-deux
+   zones d'un salon comme Franchise Expo, sont déjà deux mégaoctets de plan. */
+const PALIERS_LOGO = [[480, .85], [480, .7], [380, .7], [300, .62], [220, .6]];
+const POIDS_LOGO = 92000;
+
+/**
+ * Le fichier choisi, ramené à ce qu'une fiche affiche.
+ *
+ * Le logo est enregistré dans la fiche elle-même, en data-URI, et non déposé
+ * sur un hébergement de fichiers : c'est déjà ainsi que voyagent les images du
+ * dessin, une page publiée ne peut charger aucune ressource externe, et un lien
+ * vers un fichier ailleurs meurt le jour où l'ailleurs change. Le prix est le
+ * poids, payé par chaque visiteur : d'où la réduction, et le refus au-delà.
+ *
+ * Le format d'arrivée ne dépend pas de celui du fichier : webp là où le
+ * navigateur sait l'écrire, png ailleurs — il y répond en png sans rien dire,
+ * et le résultat reste affichable. Les deux gardent la transparence, qu'un logo
+ * a presque toujours et qu'un jpeg aurait remplie de blanc.
+ */
+function reduitLogo(fichier){
+  return new Promise((tenu, rompu) => {
+    if (!fichier || String(fichier.type).indexOf("image/") !== 0)
+      return rompu(new Error("ce fichier n'est pas une image"));
+    const fr = new FileReader();
+    fr.onerror = () => rompu(new Error("fichier illisible"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rompu(new Error("image illisible"));
+      img.onload = () => {
+        /* Un svg sans dimensions intrinsèques se dessine à rien : on lui en
+           prête plutôt que de rendre une image vide. */
+        const l0 = img.naturalWidth || 480, h0 = img.naturalHeight || 480;
+        for (const [max, q] of PALIERS_LOGO){
+          const k = Math.min(1, max / Math.max(l0, h0));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(l0 * k));
+          c.height = Math.max(1, Math.round(h0 * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const src = c.toDataURL("image/webp", q);
+          if (src.length <= POIDS_LOGO) return tenu(src);
+        }
+        rompu(new Error("image trop lourde, même réduite — un logo, pas une photo"));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(fichier);
+  });
+}
+
+/**
+ * Le champ du logo : le choisir, le voir, le retirer.
+ *
+ * Il se lit comme les autres champs de la fiche — on le remplit, on quitte, il
+ * part — d'où la même forme : ce qu'il rend est relu à la sortie, et non écrit
+ * au moment du choix. Une image posée puis retirée sans quitter la fiche n'aura
+ * donc rien écrit du tout.
+ *
+ * La vignette est aussi la cible du glisser-déposer : c'est le geste qu'on fait
+ * devant elle, et il évite la boîte de dialogue du système.
+ */
+function champLogo(hote, o){
+  let logo = imageSure(o.logo);
+
+  const cadre = document.createElement("div");
+  cadre.className = "logoZ";
+  const vue = document.createElement("div");
+  vue.className = "vue";
+  const actes = document.createElement("div");
+  actes.className = "actes";
+  const choisir = document.createElement("button");
+  choisir.type = "button";
+  const oter = document.createElement("button");
+  oter.type = "button";
+  oter.textContent = "Retirer";
+  const dit = document.createElement("span");
+  dit.className = "ditZ";
+  const fichier = document.createElement("input");
+  fichier.type = "file";
+  fichier.accept = "image/*";
+  fichier.hidden = true;
+  actes.appendChild(choisir);
+  actes.appendChild(oter);
+  actes.appendChild(dit);
+  cadre.appendChild(vue);
+  cadre.appendChild(actes);
+  cadre.appendChild(fichier);
+
+  /* Le poids annoncé est celui du data-URI, non celui du fichier d'origine :
+     c'est lui qui part chez le visiteur, et il pèse un tiers de plus — quatre
+     caractères de base64 pour trois octets, d'où le diviseur. */
+  const peint = (mot) => {
+    vue.innerHTML = logo ? '<img alt="">' : '<span>Aucun logo</span>';
+    if (logo) vue.querySelector("img").src = logo;
+    choisir.textContent = logo ? "Remplacer…" : "Choisir un fichier…";
+    oter.hidden = !logo;
+    dit.dataset.mal = "false";
+    dit.textContent = mot !== undefined ? mot
+      : logo ? Math.round(logo.length / 1365) + " Ko" : "";
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitLogo(f).then(src => { logo = src; peint(); }).catch(e => {
+      dit.textContent = "Échec : " + e.message;
+      dit.dataset.mal = "true";
+    });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  oter.onclick = () => { logo = ""; peint(); };
+  vue.addEventListener("dragover", e => { e.preventDefault(); vue.dataset.survol = "1"; });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", e => {
+    e.preventDefault();
+    delete vue.dataset.survol;
+    prend(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+
+  peint();
+  champZone(hote, "Logo", cadre,
+    "L'image paraît en tête de la fiche, au-dessus de la description. Elle est " +
+    "réduite puis enregistrée dans la fiche : elle part avec le plan, sans " +
+    "dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou " +
+    "choisissez-la.");
+  return () => logo;
 }
 
 /* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :
@@ -6804,7 +7005,8 @@ function editeurRiche(html){
 let ficheZoneEnCours = null;
 
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
-  a.type === b.type && a.description === b.description && a.lien === b.lien);
+  a.type === b.type && a.description === b.description && a.lien === b.lien &&
+  a.logo === b.logo);
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 function suitFicheZone(o, valeurs, etat, apres){
@@ -6874,6 +7076,9 @@ async function enregistreZone(o, v, depart){
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
+  /* Le logo est relu avant de partir comme il le sera avant de paraître : ce
+     qui n'est pas une image fabriquée ici n'a rien à faire dans la colonne. */
+  const blason = imageSure(v.logo);
   const renomme = !depart || String(depart.libelle || "").trim() !== nom;
   const tables = await ecritTablesZones([
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
@@ -6882,6 +7087,7 @@ async function enregistreZone(o, v, depart){
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
         if (genre) fiche.type = genre;
+        if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
@@ -6897,6 +7103,7 @@ async function enregistreZone(o, v, depart){
   }
   o.description = description;
   o.lien = adresse;
+  o.logo = blason;
   o.type = genre;
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche
   o.rech = String(o.nom || "").toLowerCase();

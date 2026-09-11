@@ -865,6 +865,17 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .field .v .riche p{margin:0 0 .55em}
 .field .v .riche ul,.field .v .riche ol{margin:0 0 .55em;padding-left:1.25em}
 .field .v .riche li{margin:0 0 .2em}
+/* Le logo d'une zone, en tête de sa fiche. Sans intitulé au-dessus : une image
+   se reconnaît sans qu'on la nomme, et le nom de la zone est juste avant.
+   Contenu plutôt que découpé — un logo tronqué n'est plus le logo. */
+.logoZone{display:flex;align-items:center;justify-content:center;padding:12px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  /* Un logo est presque toujours transparent, et le plus souvent sombre : posé
+     sur le fond de la fiche, il s'effacerait en thème sombre. Ce fond-ci ne
+     suit donc pas le thème — c'est le seul endroit de la page où l'on préfère
+     l'image lisible à la teinte assortie. */
+  background:#FFF}
+.logoZone img{max-width:100%;max-height:96px;width:auto;height:auto;object-fit:contain}
 /* Programme d'une zone : une vignette par conférence, l'heure d'abord puisque
    c'est par elle qu'on se repère, et un filet de la couleur de son type. */
 .prog{display:flex;flex-direction:column;gap:7px;margin-top:2px}
@@ -2132,6 +2143,24 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .champZ input:focus,.champZ select:focus{border-color:var(--accent);outline:none}
 .champZ .aideZ{font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
+   vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
+   il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
+.champZ .logoZ{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.champZ .logoZ .vue{flex:none;display:flex;align-items:center;justify-content:center;
+  width:106px;height:74px;padding:6px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2);overflow:hidden}
+.champZ .logoZ .vue[data-survol]{border-color:var(--accent);background:var(--accent-soft)}
+.champZ .logoZ .vue img{max-width:100%;max-height:100%;object-fit:contain}
+.champZ .logoZ .vue span{font-size:11.5px;line-height:1.4;text-align:center;color:var(--ink-3)}
+.champZ .logoZ .actes{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.champZ .logoZ .actes button{padding:6px 11px;font-size:12.5px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius)}
+.champZ .logoZ .actes button:hover{border-color:var(--line-strong);color:var(--ink)}
+/* Le poids du logo tel qu'il partira, et l'échec quand il n'a pas pu être lu :
+   la même ligne, pour que rien ne saute en passant de l'un à l'autre. */
+.ditZ{font-size:12px;color:var(--ink-3)}
+.ditZ[data-mal="true"]{color:#C2372B}
 /* La fiche n'a pas de bouton : elle s'enregistre quand on la quitte. Reste à
    le dire, et à dire ensuite ce qu'il en est advenu — au même endroit, pour que
    la ligne ne fasse pas sauter la mise en page en changeant de texte. */
@@ -2447,8 +2476,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      largeur entière. */
   .detail-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
     gap:11px 14px;align-content:start}
-  .detail-bd .field,.detail-bd .acts{grid-column:1/-1;min-width:0}
+  .detail-bd .field,.detail-bd .acts,.detail-bd .logoZone{grid-column:1/-1;min-width:0}
   .detail-bd .field.court{grid-column:auto}
+  /* La fiche n'a plus qu'une demi-hauteur d'écran : le logo s'y fait plus
+     discret, sans quoi il prendrait à lui seul le tiers de ce qu'on voit. */
+  .logoZone{padding:9px}
+  .logoZone img{max-height:64px}
   /* Une adresse web n'a pas de césure naturelle : sans cela elle déborde de
      sa colonne au lieu de revenir à la ligne. */
   .field .v{font-size:13.5px;overflow-wrap:anywhere}

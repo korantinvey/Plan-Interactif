@@ -481,6 +481,7 @@ Deno.serve(async (req) => {
                 ...(choisi ? { nom: choisi } : {}),
                 ...(masquee ? { masquee: true } : {}),
                 ...(fiche.type ? { type: fiche.type } : {}),
+                ...(fiche.logo ? { logo: fiche.logo } : {}),
                 ...(fiche.description ? { description: fiche.description } : {}),
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
