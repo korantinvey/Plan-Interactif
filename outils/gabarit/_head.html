@@ -766,10 +766,15 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
-   rapportée. Contenu plutôt que découpé — un logo tronqué n'est plus le logo —
-   et haut comme deux lignes de titre, pour accompagner le nom sans le dominer. */
+   rapportée. Contenu plutôt que découpé — un logo tronqué n'est plus le logo.
+
+   La hauteur est celle d'une vignette qu'on regarde, et non d'une puce posée
+   à côté d'un mot : un logo se lit, et le premier essai, haut comme deux
+   lignes de titre, ne le donnait pas à lire. Conséquence assumée du côté de
+   la ligne du nom — un logo en largeur y prend désormais toute la place, et se
+   range donc sous le nom plutôt qu'à côté. */
 .detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
-  max-width:min(150px,100%);max-height:36px;margin:0}
+  max-width:min(300px,100%);max-height:72px;margin:0}
 .detail-hd .logoZone[hidden]{display:none}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
   text-wrap:balance;padding-right:26px}
@@ -2479,7 +2484,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail-hd h2{font-size:17px;margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
      discrète, pour laisser la place à ce qu'on est venu lire. */
-  .detail-hd .logoZone{max-height:28px;max-width:min(120px,100%)}
+  .detail-hd .logoZone{max-height:56px;max-width:min(240px,100%)}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
