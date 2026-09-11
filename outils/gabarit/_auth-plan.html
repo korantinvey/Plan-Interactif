@@ -102,6 +102,7 @@ function ecranAcces(message){
       localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
       voile.remove();
       activeAdmin();
+      poseCompte();
       charge();
     } catch (e) {
       $("accesMsg").textContent = e.message;
@@ -111,9 +112,71 @@ function ecranAcces(message){
   $("aMdp").onkeydown = (e) => { if (e.key === "Enter"){ e.preventDefault(); tente(); } };
 }
 
+/* ------------------------------------------------------------------
+   Le compte, une fois la porte franchie
+   ------------------------------------------------------------------ */
+/** L'adresse est dans le jeton — la demander au serveur serait un aller-retour
+ *  de plus pour une donnée que le navigateur tient déjà en main. */
+function mailDuJeton(session){
+  try {
+    const p = String(session?.access_token || "").split(".")[1];
+    if (!p) return "";
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))).email || "";
+  } catch (e) { return ""; }
+}
+
+/** « korantin.vey@… » donne « KV » ; à défaut, les deux premières lettres. */
+function initialesDe(mail){
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "\u00b7\u00b7").toUpperCase();
+}
+
+const themeSombreA = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+function poseCompte(){
+  const menu = $("menuCompte");
+  if (!menu) return;
+  const mail = mailDuJeton(litLocal(CLE_SESSION_A));
+  $("avatarCompte").textContent = mail ? initialesDe(mail) : "\u00b7\u00b7";
+  $("compteMail").textContent = mail || "session inconnue";
+
+  // le libellé annonce où l'on va, pas où l'on est
+  menu.addEventListener("toggle", () => {
+    if (menu.open) $("btnThemeCompte").textContent = themeSombreA() ? "Thème clair" : "Thème sombre";
+  });
+
+  /* Le thème reste réglé par le bouton d'origine, caché mais en place : lui
+     seul sait rallumer la couleur d'accent du thème ouvert. */
+  $("btnThemeCompte").onclick = () => { $("btnTheme").click(); menu.open = false; };
+
+  /* Sortir, c'est effacer la session du poste — la même que celle de la
+     console, qui se retrouvera donc déconnectée elle aussi — puis recharger :
+     la page repasse alors d'elle-même par son écran d'accès. */
+  $("btnSortir").onclick = () => {
+    try { localStorage.removeItem(CLE_SESSION_A); } catch (e) {}
+    location.reload();
+  };
+}
+
+/* Un clic ailleurs, ou Échap, referme le panneau : rien d'autre ne dirait
+   comment s'en défaire une fois ouvert au-dessus du plan. */
+document.addEventListener("click", (ev) => {
+  const m = $("menuCompte");
+  if (m && m.open && !m.contains(ev.target)) m.open = false;
+});
+document.addEventListener("keydown", (ev) => {
+  const m = $("menuCompte");
+  if (ev.key === "Escape" && m && m.open) m.open = false;
+});
+
 (async () => {
   const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
-  if (await sessionValide(cfg, session)){ activeAdmin(); charge(); }
+  if (await sessionValide(cfg, session)){ activeAdmin(); poseCompte(); charge(); }
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
 })();
