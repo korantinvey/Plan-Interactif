@@ -2781,6 +2781,9 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
+     du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
+  oublieChoixPoi(d.cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
@@ -2818,7 +2821,9 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée et la mise en avant
+    // doivent y répondre pareil
+    oublieChoixPoi(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
