@@ -35,6 +35,15 @@
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
+  /* La pile du sans, écrite une fois. Elle l'était à deux endroits — la page
+     entière d'un côté, les libellés du plan de l'autre — et les deux ne
+     disaient pas la même chose : « Segoe UI, system-ui » ici, rien là. Tant
+     qu'Instrument Sans arrive, personne ne s'en aperçoit ; dès qu'il manque —
+     un salon derrière un filtre, un hall sans réseau, une page publiée qui
+     n'appelle rien au dehors — l'interface passait à la police du système et
+     le plan à celle du navigateur. Deux polices sur un écran, pour le même
+     nom d'exposant lu deux fois. */
+  --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -67,7 +76,7 @@
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
+  font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
@@ -176,9 +185,19 @@ button{cursor:pointer;background:none;border:none}
 .actifs .vider{background:var(--surface-2);border-color:transparent;color:var(--ink-3)}
 .actifs .vider:hover{border-color:var(--line-strong);color:var(--ink)}
 .search-field svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-3)}
-.search :is(input,.champ){width:100%;padding:9px 10px 9px 32px;background:var(--surface-2);
+.search :is(input,.champ){width:100%;padding:9px 30px 9px 32px;background:var(--surface-2);
   border:1px solid transparent;border-radius:var(--radius)}
 .search input:focus{border-color:var(--accent);background:var(--surface);outline:none}
+/* La croix qui défait la recherche. Celle du navigateur ne se montre qu'au
+   survol, jamais sur un téléphone, et s'efface sur les modèles qui peignent le
+   champ : un plan éteint par une recherche vaine se rallumait lettre à lettre.
+   On garde donc la nôtre, et on retire la sienne pour n'en avoir qu'une. */
+.vide-q{position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:26px;height:26px;padding:0;display:flex;align-items:center;
+  justify-content:center;border:0;background:none;border-radius:999px;
+  color:var(--ink-3);font-size:17px;line-height:1}
+.vide-q:hover{color:var(--ink)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
 /* Le champ de la vignette des modèles. Un <input> ne peut pas vivre dans le
    bouton qui choisit le modèle — pas plus qu'un bouton n'en contient un autre
    — et l'habillage se joue pourtant sur la boîte de recherche : elle est donc
@@ -249,7 +268,7 @@ button{cursor:pointer;background:none;border:none}
    lettres, et sans le cadre — celui-ci cite un numéro peint sur une cloison,
    et l'emprunter pour un mot ferait lire « Zone » comme un emplacement. */
 .row[data-sorte="zone"] .code,.row[data-sorte="conf"] .code{
-  font-family:"Instrument Sans",sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;
+  font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.04em;
   text-transform:uppercase;border-color:transparent;background:var(--surface-2);color:var(--ink-3)}
 .row.l .code{opacity:.5}
 /* Le second bloc d'une ligne doit pouvoir rétrécir sous la largeur de son
@@ -293,7 +312,25 @@ button{cursor:pointer;background:none;border:none}
    en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
    trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
    se peint, il ne se contourne pas. */
-#couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
+#couches .cal text{fill:currentColor;stroke:none;font-family:var(--sans)}
+
+/* Le plan se tait pendant qu'on zoome.
+
+   Changer l'échelle de la « viewBox » oblige le navigateur à remettre en page
+   tout le SVG, et le texte y coûte tout : mille deux cent soixante-quatre
+   « text », remesurés glyphe par glyphe à chaque image, quatre-vingt-huit
+   millisecondes — dont quatre-vingts pour eux seuls. Onze images par seconde,
+   là où il en faut soixante : c'était toute la saccade.
+
+   Les textes se retirent donc le temps du geste. Le reste du plan — formes,
+   couleurs, sélection — suit le zoom en temps réel, pour huit millisecondes.
+   La plupart sont d'ailleurs ceux des calques importés du DAO, cotes d'allées
+   et numérotation, illisibles en plein mouvement ; et les libellés de l'appli
+   attendaient déjà la fin du geste pour se retrier.
+
+   « display:none » et non « visibility », qui laisserait la mise en page —
+   donc la dépense — intacte. */
+#plan.fige text{display:none}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -372,9 +409,12 @@ html.poi-actif #marques .parc{display:none}
    sur l'habillage du calque, qui teinte tout ce qu'il porte. */
 #labels text,.dcal .lab text{pointer-events:none;text-anchor:middle;
   fill:var(--c-lab-stand,var(--ink-2));
-  font-family:"IBM Plex Mono",monospace;font-weight:500}
-#labels text.nm,.dcal .lab text.nm{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-stand,var(--ink))}
-#labels text.zn{font-family:"Instrument Sans",sans-serif;font-weight:600;fill:var(--c-lab-zone,var(--zone))}
+  font-family:var(--police-lab-code,"IBM Plex Mono",monospace);
+  font-weight:var(--graisse-lab-code,500)}
+#labels text.nm,.dcal .lab text.nm{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-stand,var(--ink))}
+#labels text.zn{font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
    stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
@@ -430,7 +470,9 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
   stroke-linejoin:round;stroke-linecap:round}
 .dcal.plein path{fill:currentColor;fill-opacity:.25}
-.dcal text{fill:currentColor;font-family:"Instrument Sans",sans-serif;font-weight:600;text-anchor:middle}
+.dcal text{fill:currentColor;text-anchor:middle;
+  font-family:var(--police-lab-nom,var(--sans));
+  font-weight:var(--graisse-lab-nom,600)}
 .dcal.editable{pointer-events:auto}
 /* Seuls les tracés du calque ouvert répondent au pointeur. Ceux des autres
    calques restent sourds : leur clic appartient à la vue, sans quoi un geste
@@ -1367,7 +1409,7 @@ button.expo:hover{background:var(--line)}
   color:var(--accent-ink)}
 .liste-grille .search :is(input,.champ){background:var(--surface);border-color:var(--ink);
   color:var(--ink)}
-.liste-grille .search-field svg{color:var(--ink-3)}
+.liste-grille .search-field :is(svg,.vide-q){color:var(--ink-3)}
 .liste-grille .crit-btn{background:var(--surface);border-color:var(--ink);color:var(--ink)}
 .liste-grille .count{border-bottom:2px solid var(--ink);color:var(--ink);
   font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
@@ -1422,7 +1464,7 @@ button.expo:hover{background:var(--line)}
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-billet .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-billet .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-billet .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-billet .crit-btn{background:rgba(255,255,255,.2);border-color:transparent;
   border-radius:999px;color:var(--accent-ink)}
 .liste-billet .count{border-bottom:2px dashed var(--line-strong);
@@ -1444,9 +1486,10 @@ button.expo:hover{background:var(--line)}
 .liste-magazine .row .code{border:none;border-right:1px solid var(--line);border-radius:0;
   background:none;padding:2px 7px 2px 0;text-align:left;color:var(--ink-3);
   font-family:"Fraunces",Georgia,serif;font-weight:600;letter-spacing:0;
-  /* La case est taillée sur la chasse fixe et son corps : le chiffre d'appel
-     s'y tient, plutôt que de la déborder sur un salon aux numéros longs — un
-     serif un peu plus large que la chasse fixe se rattrape à l'approche. */
+  /* La case se taille sur la police du modèle — celle-ci — et sur son corps :
+     le chiffre d'appel s'y tient, plutôt que de la déborder sur un salon aux
+     numéros longs. L'approche resserre ce que le serif prend de plus que la
+     chasse fixe, sans quoi la colonne des noms partirait vers la droite. */
   font-size:var(--caseF,11.5px);letter-spacing:-.02em}
 .liste-magazine .row .nm{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:15px;
   line-height:1.15;letter-spacing:-.01em}
@@ -1466,7 +1509,7 @@ button.expo:hover{background:var(--line)}
   --radius:0;border-right:3px solid #111}
 .liste-brut .search{background:var(--accent-base);border-bottom:3px solid #111}
 .liste-brut .search :is(input,.champ){background:#FFFDF5;border:2px solid #111;color:#111}
-.liste-brut .search-field svg{color:#111}
+.liste-brut .search-field :is(svg,.vide-q){color:#111}
 .liste-brut .crit-btn{background:#FFFDF5;border:2px solid #111;color:#111}
 .liste-brut .count{border-bottom:3px solid #111;color:#111;font-size:10.5px;font-weight:700;
   letter-spacing:.05em;text-transform:uppercase}
@@ -1550,7 +1593,7 @@ button.expo:hover{background:var(--line)}
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
 .liste-signal .search input::placeholder{color:var(--accent-ink);opacity:.7}
 .liste-signal .search .champ{color:var(--accent-ink);opacity:.75}
-.liste-signal .search-field svg{color:var(--accent-ink);opacity:.8}
+.liste-signal .search-field :is(svg,.vide-q){color:var(--accent-ink);opacity:.8}
 .liste-signal .crit-btn{color:var(--accent-ink);
   background:color-mix(in srgb,var(--accent-ink) 18%,transparent);
   border-color:color-mix(in srgb,var(--accent-ink) 34%,transparent)}
@@ -2758,6 +2801,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div class="search-field">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Exposant, stand…" autocomplete="off">
+        <!-- Défaire la recherche d'une pression : sans mot-clé la liste et le
+             plan reviennent entiers, et c'est le geste qu'on cherche quand on
+             ne trouve rien. Elle ne paraît qu'une fois le champ rempli. -->
+        <button class="vide-q" id="videQ" type="button" hidden
+          title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
       <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
            sur un téléphone la place du plan. Il n'existe que si l'exploitant a
@@ -3141,6 +3189,13 @@ function indexe(d){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
+     police : reposée maintenant, elle vaut dès le premier tracé. Attendre
+     « appliqueApparence » la mettait une fois de trop en retard — les stands
+     et les repères dessinés à la main sont tracés juste avant, et se
+     seraient taillés sur la police d'origine. */
+  posePoliceLibelles(modeleRetenu());
+
   /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
      ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
      ne décrit plus rien. */
@@ -3257,8 +3312,14 @@ function largeur(txt, police){
    milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
 const COLLATION = new Intl.Collator("fr", { numeric: true });
 
-const P_NOM = ["600", '"Instrument Sans", sans-serif'];
-const P_CODE = ["500", '"IBM Plex Mono", monospace'];
+/* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
+   de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
+   modèle d'habillage les remplace, et `posePoliceLibelles` les repose. Ce
+   sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
+   sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
+   qu'il devait remplir. */
+let P_NOM = ["600", '"Instrument Sans", "Segoe UI", system-ui, sans-serif'];
+let P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
 function decoupe(txt, n){
   if (n === 1) return [txt];
@@ -3420,7 +3481,7 @@ const place = o => o.lb || o.bb;
 
 function libelles(){
   const l = $("labels"), p = P();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
@@ -3731,6 +3792,7 @@ function filtreTheme(n){
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
+  majVideQ();
   ferme();
   majCriteres();
   appliqueFiltre();
@@ -3923,6 +3985,34 @@ function basculeCritere(cle, v){
 function videCriteres(){
   state.crit.clear();
   majCriteres();
+  appliqueFiltre();
+}
+
+/** La croix du champ ne sert qu'à défaire : elle ne paraît qu'une fois qu'il y
+ *  a quelque chose à défaire. */
+function majVideQ(){
+  const b = $("videQ");
+  if (b) b.hidden = !state.q;
+}
+
+/**
+ * Reprendre le plan entier, sans effacer le mot-clé lettre à lettre.
+ *
+ * Une recherche sans résultat éteint la liste et le plan à la fois : il faut
+ * pouvoir la défaire d'un geste. Les critères retenus, eux, restent — ils ont
+ * leurs propres puces pour cela, et les retirer avec le mot-clé effacerait une
+ * question qu'on n'a pas posée.
+ */
+function videRecherche(){
+  state.q = ""; state.qn = "";
+  const champ = $("q");
+  if (champ){
+    champ.value = "";
+    /* Sur un téléphone, rendre la main au champ relèverait le clavier sur le
+       plan qu'on vient justement de vouloir revoir. */
+    if (!ETROIT()) champ.focus();
+  }
+  majVideQ();
   appliqueFiltre();
 }
 
@@ -4357,6 +4447,45 @@ function liste(){
 /* ============================================================
    6. Vue
    ============================================================ */
+/* Mesurer le cadre force le navigateur à remettre en page tout le SVG — sept
+   mille éléments — et on le mesurait juste après avoir posé la « viewBox »,
+   qui vient précisément de tout salir : quatre-vingt-cinq millisecondes, à
+   chaque image, pour lire une largeur qui n'avait pas bougé. Car le cadre ne
+   dépend pas de la « viewBox » : c'est le CSS qui le pose.
+
+   On le mesure donc une fois, et on l'oublie quand la mise en page change.
+   Un « ResizeObserver » couvre tout ce qui peut le changer, d'où qu'il vienne,
+   sans rien mesurer lui-même ; le « resize » de la fenêtre s'y ajoute parce
+   qu'il se déclenche avant lui, et que le recadrage qui l'écoute mesurerait
+   sinon l'ancien cadre. */
+let _cadre = null;
+const cadrePlan = () => _cadre || (_cadre = svg.getBoundingClientRect());
+const oublieCadre = () => { _cadre = null; };
+addEventListener("resize", oublieCadre);
+addEventListener("scroll", oublieCadre, true);
+if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
+
+/* Pendant un changement d'échelle, le plan se passe de ses textes : eux seuls
+   coûtent quatre-vingts des quatre-vingt-huit millisecondes que réclame la
+   remise en page du SVG à chaque image (voir « #plan.fige » dans la feuille de
+   style). Le geste fini, « poseVue » les rend — recalculés une seule fois. */
+/* Le dégel a un filet. Un geste finit normalement par « poseVue », qui rend
+   les textes en même temps qu'il retrie les libellés ; mais tous les chemins
+   n'y mènent pas — un doigt posé sur le plan pendant qu'une glissade finit sa
+   course, un « pointercancel » du système. Le plan resterait muet. La minuterie
+   est donc réarmée à chaque image du geste : elle ne se déclenche jamais tant
+   qu'il dure, et toujours quand il s'interrompt sans se poser. */
+let filetTextes = null;
+function figeTextes(){
+  svg.classList.add("fige");
+  clearTimeout(filetTextes);
+  filetTextes = setTimeout(rendTextes, 300);
+}
+function rendTextes(){
+  clearTimeout(filetTextes); filetTextes = null;
+  svg.classList.remove("fige");
+}
+
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
@@ -4411,7 +4540,7 @@ function poseVue(){
  */
 function masque(){
   if (!ETROIT()) return 0;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const fiche = $("detail"), tiroir = $("side");
   const ficheOuverte = !!fiche && fiche.classList.contains("open");
   let bas = ficheOuverte ? fiche.offsetHeight : 0;
@@ -4443,7 +4572,7 @@ function masque(){
  */
 function masqueDroite(){
   if (ETROIT()) return 0;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   let cote = 0;
   ["detail", "parcours", "itineraire"].forEach(id => {
     const v = $(id);
@@ -4453,7 +4582,7 @@ function masqueDroite(){
 }
 
 function fit(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque();
   const hUtile = Math.max(60, r.height - cache);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
@@ -4485,6 +4614,7 @@ let vise = null, imageZoom = null;
 function stoppeZoom(){
   if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
   vise = null;
+  rendTextes();
 }
 
 function glisseVersVise(){
@@ -4497,19 +4627,68 @@ function glisseVersVise(){
        un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
     const dt = Math.min(64, maintenant - precedent) || 16;
     precedent = maintenant;
+    figeTextes();
     const k = 1 - Math.pow(.5, dt / 45);
     const but = vise;
     view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
              w: view.w + (but.w - view.w) * k, h: view.h + (but.h - view.h) * k };
-    // assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
-    // se retrient enfin — c'est la fin du geste
-    if (Math.abs(but.w - view.w) < but.w * .002){
+    /* Assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
+       se retrient enfin — c'est la fin du geste.
+
+       Les quatre nombres comptent, et non la seule largeur. Un cran de molette
+       la fait toujours varier, si bien qu'elle suffisait à dire où l'on en
+       était ; aller sur un point du plan ne la change pas forcément — on s'y
+       déplace sans s'en approcher — et le trajet s'arrêtait alors à sa
+       première image, juste avant de commencer. */
+    const reste = Math.max(Math.abs(but.x - view.x), Math.abs(but.y - view.y),
+                           Math.abs(but.w - view.w), Math.abs(but.h - view.h));
+    if (reste < but.w * .002){
       view = but; vise = null; poseVue(); return;
     }
     appliqueVue(); echelle();
     imageZoom = requestAnimationFrame(pas);
   };
   imageZoom = requestAnimationFrame(pas);
+}
+
+/**
+ * Viser une vue, et y aller en glissant.
+ *
+ * Le seul chemin pour déplacer la vue autrement que d'un coup : le zoom par
+ * crans s'en sert, le centrage sur un stand ou sur un repère aussi. Qui refuse
+ * les animations s'y pose tout de suite — « poseVue » arrête au passage le
+ * trajet qui serait en cours.
+ */
+function glisseVers(but){
+  if (REDUIT){ view = but; poseVue(); return; }
+  vise = but;
+  /* Le trajet change l'échelle — un cran de molette, un centrage qui
+     rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
+  figeTextes();
+  glisseVersVise();
+}
+
+/**
+ * Où un nœud du plan se trouvera quand la vue aura fini son trajet.
+ *
+ * La fiche s'ouvre en s'étirant depuis la forme qu'on a choisie, et il faut
+ * pour cela sa place à l'écran. Elle l'avait tant que le centrage se faisait
+ * d'un coup : la forme était déjà arrivée. Elle glisse maintenant, et la
+ * mesurer en chemin ferait partir la fiche d'un point de passage — le plus
+ * souvent hors du cadre, la forme venant à peine d'y entrer.
+ *
+ * La vue visée est donc posée le temps de la mesure, puis retirée. Deux
+ * écritures de « viewBox » de plus, et la géométrie est celle du navigateur
+ * plutôt qu'un calcul refait à la main pour chaque sorte de forme.
+ */
+function rectVisee(n){
+  if (!n) return null;
+  if (!vise) return n.getBoundingClientRect();
+  const avant = view;
+  view = vise; appliqueVue();
+  const r = n.getBoundingClientRect();
+  view = avant; appliqueVue();
+  return r;
 }
 
 /**
@@ -4524,14 +4703,11 @@ function glisseVersVise(){
 function zoom(f, fx, fy){
   const base = vise || view;
   const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
-  vise = { x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
-           w: nw, h: base.h * k };
-  // qui refuse les animations refuse celle-ci : on se pose tout de suite
-  if (REDUIT){ view = vise; vise = null; poseVue(); return; }
-  glisseVersVise();
+  glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
+               w: nw, h: base.h * k });
 }
 function echelle(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const mParPx = view.w / (r.width || 1);
   const pas = [1, 2, 5, 10, 20, 50, 100, 200].find(p => p >= mParPx * 90) || 200;
   $("scaleBar").style.width = (pas / mParPx) + "px";
@@ -4609,28 +4785,44 @@ function select(id, recentrer, canal, iSoc){
   const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
   dessineMarques();
   marqueStandsDessines();
-  if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
-  /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
-     décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
-     sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
-     car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
-  if (recentrer && ETROIT()) centre(o);
+  /* Le cadrage est passé dans « ouvre » plutôt que de l'encadrer ici : il
+     demandait deux ordres — après la fiche sur un téléphone, avant elle sur un
+     grand écran — et l'un des deux cadrait toujours sur une géométrie qu'il ne
+     connaissait pas encore. */
+  ouvre(o, n, canal, iSoc, recentrer);
 }
 const centre = (o) => centrePoint(o.c);
 
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
-  const w = Math.min(view.w, 55), h = w * (view.h / view.w);
+  /* Le trajet part de la vue qu'on vise quand il y en a une : un centrage
+     demandé pendant qu'un cran de molette finit de glisser s'enchaîne sur son
+     arrivée, et non sur le point de passage où il l'a trouvé. */
+  const base = vise || view;
+  const w = Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
-     fiche. On la remonte au milieu de ce qui reste visible — d'après la
-     hauteur réellement masquée, et non une proportion supposée. */
-  const r = svg.getBoundingClientRect();
+     fiche. On la pose au milieu de ce qui reste visible — d'après ce qui est
+     réellement masqué, et non une proportion supposée.
+
+     Les deux côtés comptent, et c'est ce qui manquait : la hauteur du tiroir
+     en bas sur un téléphone, la largeur de la fiche à droite sur un grand
+     écran. Faute du second, un cadre de mille pixels posait le stand à six
+     cent soixante-cinq — c'est-à-dire pile sous la fiche, qui commence à six
+     cent soixante. On arrivait sur ce qu'on venait voir, et il était caché.
+     Ces deux mesures ne valent qu'une fois la fiche posée : c'est « ouvre »
+     qui appelle le cadrage, et non l'inverse. */
+  const r = cadrePlan();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
-  poseVue();
+  const decaleX = r.width ? (w * masqueDroite()) / (2 * r.width) : 0;
+  /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
+     du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
+     il fallait retrouver dans quel coin du salon on venait d'être posé. Le
+     trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
+     point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
+     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
+  glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
@@ -5078,7 +5270,7 @@ function societes(o){
  * alors qu'un stand de restauration en héberge jusqu'à onze. On demande donc
  * qui l'on vient voir, plutôt que de le supposer.
  */
-function choisitExposant(o, rect, canal){
+function choisitExposant(o, depuis, canal, recentrer){
   const tous = societes(o);
   ouvreModale(("Stand " + (o.code || "")).trim(), corps => {
     const p = document.createElement("p");
@@ -5097,7 +5289,7 @@ function choisitExposant(o, rect, canal){
         // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
         // plan, lui, ne bouge pas — il nomme le titulaire quoi qu'on lise
         state.selSoc = x.i; liste();
-        ouvre(o, rect, canal, x.i);
+        ouvre(o, depuis, canal, x.i, recentrer);
       };
       li.appendChild(b);
       ul.appendChild(li);
@@ -5236,8 +5428,14 @@ addEventListener("resize", () => {
  * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
  * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
  * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
+ *
+ * `depuis` est la forme du plan d'où la fiche s'étire — le nœud, et non sa
+ * place à l'écran : celle-ci ne se mesure qu'à la fin, quand la fiche est
+ * posée et le plan cadré. `recentrer` dit s'il faut amener le plan sur
+ * l'emplacement ; c'est ici que cela se fait, et pas plus tôt, la fiche étant
+ * seule à savoir ce qu'elle masque.
  */
-function ouvre(o, rect, canal, iSoc){
+function ouvre(o, depuis, canal, iSoc, recentrer){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
   /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
@@ -5245,7 +5443,7 @@ function ouvre(o, rect, canal, iSoc){
      qu'il héberge restent atteignables par la liste : le réglage allège le
      plan, il ne retire personne du salon. */
   const plusieurs = heberges.length > 0 && coexChoisit();
-  if (plusieurs && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  if (plusieurs && iSoc === undefined){ choisitExposant(o, depuis, canal, recentrer); return; }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
@@ -5289,7 +5487,7 @@ function ouvre(o, rect, canal, iSoc){
   part.hidden = !plusieurs;
   if (plusieurs){
     part.textContent = (heberges.length + 1) + " exposants ici";
-    part.onclick = () => choisitExposant(o, null, canal);
+    part.onclick = () => choisitExposant(o, null, canal, false);
   }
   /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
@@ -5475,7 +5673,12 @@ function ouvre(o, rect, canal, iSoc){
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
-  anime(rect, 1);
+  /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
+     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
+     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
+     ordre pour les deux écrans, là où il en fallait un par écran. */
+  if (recentrer) centre(o);
+  anime(rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
@@ -5533,7 +5736,7 @@ const milieu = () => {
 
 function commencePince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   pince = {
     d: Math.max(1, m.d),
     w: view.w, h: view.h,
@@ -5547,7 +5750,9 @@ function commencePince(){
 
 function suitPince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
+  // le pincement change l'échelle : mêmes économies que la molette
+  figeTextes();
   const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -5586,7 +5791,7 @@ svg.addEventListener("pointermove", e => {
   if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
-  const r = svg.getBoundingClientRect(), k = view.w / r.width;
+  const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
@@ -5611,7 +5816,7 @@ svg.addEventListener("pointerup", e => {
        mais il a un nom, et c'est ce qu'on vient lui demander. */
     if (!d.cible.dataset.id){
       if (visePoi(d.cible.dataset.poi)) return;
-      ouvrePoi(d.cible.dataset.poi, d.cible.getBoundingClientRect());
+      ouvrePoi(d.cible.dataset.poi, d.cible);
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
@@ -5627,7 +5832,7 @@ svg.addEventListener("pointercancel", e => {
 });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
      pages — et un pavé tactile envoie des dixièmes de cran là où une molette
      en envoie un entier. On ramène tout en pixels, puis on en fait un facteur
@@ -5643,7 +5848,7 @@ svg.addEventListener("keydown", e => {
     e.preventDefault();
     // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
     if (!g.dataset.id){
-      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
+      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
     }
     if (!viseItineraire(g.dataset.id))
@@ -5704,6 +5909,7 @@ let _rechAttente = null, _rechDerniere = "";
 $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
+  majVideQ();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
@@ -5712,6 +5918,16 @@ $("q").addEventListener("input", e => {
     _rechDerniere = q;
     mesure("recherche");
   }, 900);
+});
+
+$("videQ").onclick = videRecherche;
+/* Échap dans le champ défait la recherche, et rien d'autre : la même touche
+   ferme la fiche et le tiroir plus loin, et les trois d'un coup emporteraient
+   ce qu'on regardait. Le champ vide, elle repart vers eux. */
+$("q").addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !state.q) return;
+  e.stopPropagation();
+  videRecherche();
 });
 
 /* ============================================================
@@ -6321,6 +6537,64 @@ const modeleRetenu = () => {
   return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
+/* La police des libellés du plan, modèle par modèle.
+
+   Un modèle est un accord typographique, et le plan en fait partie : un salon
+   habillé en « Kraft » gardait ses enseignes composées en grotesque au milieu
+   de son carton, et le « Magazine » son sommaire en serif à côté d'un plan
+   qui n'en avait rien. Chaque ligne reprend donc la police que le modèle pose
+   déjà sur le nom et sur le numéro de ses lignes de liste — celui du plan est
+   le même nom, écrit sur la cloison plutôt que dans la marge.
+
+   Les onze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
+   la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
+   côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
+   choix. */
+const P_SANS = '"Instrument Sans", "Segoe UI", system-ui, sans-serif',
+      P_CHASSE = '"IBM Plex Mono", monospace',
+      P_GROTESQUE = '"Archivo", sans-serif', P_SERIF = '"Fraunces", Georgia, serif',
+      P_MACHINE = '"Courier Prime", monospace';
+const POLICES_LIBELLE = {
+  sobre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  grille:   { nom: ["600", P_GROTESQUE], code: ["600", P_CHASSE] },
+  console:  { nom: ["500", P_CHASSE],    code: ["500", P_CHASSE] },
+  billet:   { nom: ["600", P_SANS],      code: ["600", P_CHASSE] },
+  magazine: { nom: ["600", P_SERIF],     code: ["600", P_SERIF] },
+  brut:     { nom: ["700", P_SANS],      code: ["700", P_CHASSE] },
+  verre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  kraft:    { nom: ["700", P_MACHINE],   code: ["700", P_MACHINE] },
+  signal:   { nom: ["700", P_SANS],      code: ["600", P_CHASSE] },
+  chrono:   { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+};
+
+/**
+ * Pose la police du modèle sur les libellés du plan.
+ *
+ * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
+ * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
+ * nom à la place dont il dispose, mesurent P_NOM et P_CODE. Les séparer
+ * donnerait un nom calculé pour une police et rendu dans une autre — plus
+ * large que son stand, ou perdu au milieu.
+ *
+ * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
+ * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
+ * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
+ * que la case du numéro se taille elle aussi sur P_CODE.
+ */
+function posePoliceLibelles(cle){
+  const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
+  const change = P_NOM !== p.nom || P_CODE !== p.code;
+  P_NOM = p.nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", p.nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  racine.style.setProperty("--police-lab-code", p.code[1]);
+  racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  // les repères et les stands tracés à la main portent leur libellé dans leur
+  // propre forme : ils se retracent, ils ne se restylent pas
+  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+}
+
 /**
  * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
  * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
@@ -6341,6 +6615,7 @@ function appliqueModele(){
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  posePoliceLibelles(cle);
 }
 
 /* ------------------------------------------------------------------
@@ -8145,7 +8420,7 @@ function dessineDessins(){
 
 /* --- conversion écran → repère du plan --- */
 function versPlan(clientX, clientY){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
            +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
 }
@@ -8187,7 +8462,7 @@ function apercuGuide(d){
 
 /** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
 function toleranceTrace(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return r.width ? view.w / r.width * 12 : .3;
 }
 
@@ -8673,7 +8948,7 @@ function rafraichitStandsDessines(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   poseLibellesDessines((r.width || 1) / view.w);
 }
 
@@ -8733,14 +9008,19 @@ function reperesCherchables(){
  * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
  * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
  * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
- * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
- * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
- * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ * plan et va chercher le fond du pavillon qu'on n'avait pas encore ouvert. Le
+ * montage recrée les calques de dessin, d'où la pastille est relue après lui —
+ * pour que la fiche s'anime depuis elle, et non depuis rien.
+ *
+ * Le dernier argument demande que le plan vienne sur le repère ; la fiche s'en
+ * charge une fois posée. Sans lui elle s'ouvrait sur un escalier que rien ne
+ * montrait, et il restait à trouver le bouton « Centrer sur le plan » pour voir
+ * où il est — le clic dans la liste disait pourtant déjà qu'on y allait.
  */
 function vaAuRepere(id, p){
   changePlan(p);
-  const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
-  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
+  ouvrePoi(id, $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]'),
+           true);
 }
 
 /**
@@ -8838,9 +9118,12 @@ function cartouchePoi(){
  *
  * La fiche est celle des stands, remplie autrement : elle partage la même
  * bande que le parcours et l'itinéraire, et deux fiches ouvertes en même
- * temps ne se liraient pas.
+ * temps ne se liraient pas. Elle en reprend donc le contrat : « depuis » est
+ * la pastille d'où la fiche s'étire — le nœud, mesuré à la fin — et
+ * « recentrer » demande que le plan vienne sur le repère, ce qui n'a de sens
+ * qu'une fois la fiche posée, seule à savoir ce qu'elle masque.
  */
-function ouvrePoi(id, rect){
+function ouvrePoi(id, depuis, recentrer){
   const cible = formeParId(id);
   if (!cible || cible.f.t !== "repere") return;
   const f = cible.f, p = P();
@@ -8898,7 +9181,8 @@ function ouvrePoi(id, rect){
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
-  anime(rect, 1);
+  if (recentrer) centrePoint(f.pts[0]);
+  anime(rectVisee(depuis), 1);
 }
 
 /**
@@ -9467,7 +9751,7 @@ function dessinePoignees(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
   const f = cible.f;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const t = Math.max(.15, view.w / (r.width || 1) * 5);   // demi-côté, en mètres
   const b = boite(f);
   const marge = t;
@@ -9950,7 +10234,7 @@ function montreCote(txt, p){
     el.id = "cote";
     svg.appendChild(el);
   }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);          // un pixel d'écran, en mètres
   el.setAttribute("font-size", +(13 * u).toFixed(3));
   el.setAttribute("x", +(p[0] + 12 * u).toFixed(2));
@@ -10121,7 +10405,7 @@ function montreAimants(coins, opts){
   let g = $("aimantsVus");
   const efface = () => { if (g) g.remove(); AIMANTS_VUS = ""; };
   if (!coins || !coins.length || !aimantsActifs() || o.alt){ efface(); return; }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);        // un pixel d'écran, en mètres
   /* Une portée comptée en pixels et non en mètres : ce qu'on montre, c'est le
      voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on
@@ -13364,7 +13648,7 @@ const marchesIci = () => (TRACE ? TRACE.etapes : [])
 /** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
  *  exprimé en mètres d'après le zoom du moment. */
 function rayonBout(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return Math.max(.4, view.w / (r.width || 1) * 6);
 }
 
@@ -13443,7 +13727,7 @@ function cadreItineraire(){
     x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);
