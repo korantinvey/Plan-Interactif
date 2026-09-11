@@ -4,6 +4,7 @@
   "description": "Plans de salon interactifs alimentés par Klipso",
   "scripts": {
     "construire": "node outils/assemble.js && node outils/genere.js && node outils/carte.js",
+    "controle": "node outils/controle.js",
     "verifie": "node outils/verifie.js",
     "typage": "npx --yes deno@2 check supabase/functions/*/index.ts supabase/functions/_partage/*.ts",
     "essai": "node outils/serve.js",

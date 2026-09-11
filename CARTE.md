@@ -106,16 +106,16 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 343 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 354 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
 Fonctions :
 
-`$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `ouvreModale` 65 · `fermeModale` 80
-`demande` 90 · `confirme` 112 · `ecranConfig` 123 · `normaliseUrl` 159
-`ecranConnexion` 178 · `deconnecte` 241 · `signale` 252 · `bloc` 273 · `grille` 291
-`idCompte` 321
+`$` 16 · `esc` 17 · `entetes` 31 · `rest` 38 · `verseModale` 71 · `ouvreModale` 77
+`fermeModale` 93 · `demande` 101 · `confirme` 123 · `ecranConfig` 134 · `normaliseUrl` 170
+`ecranConnexion` 189 · `deconnecte` 252 · `signale` 263 · `bloc` 284 · `grille` 302
+`idCompte` 332
 
 Éléments :
 
@@ -164,7 +164,7 @@ Fonctions :
 
 - l.523 · Page de rapport
 
-### `_dessin.html` — 1413 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1418 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -181,12 +181,12 @@ Fonctions :
 `remplitListeSocietes` 623 · `societeSaisie` 631 · `traceStandDessine` 647
 `texteStandDessine` 671 · `poseLibellesDessines` 689 · `decoupeStand` 710
 `marqueStandsDessines` 722 · `rafraichitStandsDessines` 737 · `cartouchePoi` 763
-`ouvrePoi` 845 · `mesureCartouche` 908 · `phareRepere` 915 · `phareZone` 916
-`eclairePoi` 920 · `signale` 938 · `calquePourImage` 952 · `poseImage` 965
-`importeImage` 978 · `dessinPointerDown` 1029 · `dessinPointerMove` 1103
-`dessinPointerUp` 1141 · `termineTrace` 1177 · `aide` 1187 · `choisitOutil` 1212
-`enchaineStand` 1235 · `activeCalque` 1289 · `montreRoleIti` 1340 · `creeCalque` 1371
-`demandeNom` 1384 · `renommeCalque` 1403
+`ouvrePoi` 845 · `mesureCartouche` 913 · `phareRepere` 920 · `phareZone` 921
+`eclairePoi` 925 · `signale` 943 · `calquePourImage` 957 · `poseImage` 970
+`importeImage` 983 · `dessinPointerDown` 1034 · `dessinPointerMove` 1108
+`dessinPointerUp` 1146 · `termineTrace` 1182 · `aide` 1192 · `choisitOutil` 1217
+`enchaineStand` 1240 · `activeCalque` 1294 · `montreRoleIti` 1345 · `creeCalque` 1376
+`demandeNom` 1389 · `renommeCalque` 1408
 
 Éléments :
 
@@ -288,7 +288,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2575 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2590 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -297,8 +297,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2220 · 8. Interactions du plan
-- l.2421 · Le tiroir de la liste — écrans étroits
+- l.2235 · 8. Interactions du plan
+- l.2436 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -322,9 +322,9 @@ Fonctions :
 `libelleCorps` 1547 · `ordreCorps` 1559 · `momentLocal` 1596 · `programme` 1619
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `assainitRiche` 1805
 `enBlocs` 1845 · `rangeRiche` 1858 · `ecarteClicFantome` 1886 · `nomSociete` 1895
-`societes` 1908 · `choisitExposant` 1919 · `ouvre` 1955 · `ferme` 2194 · `onglet` 2210
-`milieu` 2240 · `commencePince` 2246 · `suitPince` 2260 · `mesureTiroir` 2432
-`montreTiroir` 2435
+`societes` 1908 · `choisitExposant` 1919 · `poseCode` 1965 · `ouvre` 1984 · `ferme` 2209
+`onglet` 2225 · `milieu` 2255 · `commencePince` 2261 · `suitPince` 2275
+`mesureTiroir` 2447 · `montreTiroir` 2450
 
 Éléments :
 
@@ -453,10 +453,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 484 l.
+### `supabase/functions/plan-public/index.ts` — 507 l.
 
-`cors` 49 · `db` 83 · `salon` 96 · `retraits` 162 · `ampute` 185 · `masquesDe` 214
-`masquesDuPlan` 223
+`cors` 49 · `db` 83 · `salon` 96 · `retraits` 162 · `ampute` 185 · `masquesDe` 225
+`masquesDuPlan` 245
 
 ### `supabase/functions/sync-evenement/index.ts` — 1095 l.
 
@@ -501,6 +501,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/carte.js` — produit ce fichier.
 - `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.
+- `outils/controle.js` — analyse le script de chaque page construite, en module
+  ES : une redéclaration y est une erreur, là où un `<script>` la tolère.
 - `outils/migration.js` — crée une migration horodatée à la seconde.
 - `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —
   outils hors ligne de récupération et de préparation des plans (clé Klipso requise).
