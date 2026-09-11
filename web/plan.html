@@ -761,15 +761,24 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    icône. */
 .detail-hd h2 .crayon{margin-left:6px;font-weight:400;letter-spacing:normal}
 .detail-hd .close{position:absolute;top:14px;right:14px;color:var(--ink-3);font-size:18px;line-height:1;padding:4px}
+/* Le nom d'une fiche et la marque qui l'accompagne tiennent sur une ligne, et
+   se séparent en deux quand le nom prend toute la place : c'est le seul
+   arbitrage à rendre, et le retour à la ligne du flex le rend tout seul — il
+   décide sur la largeur naturelle du nom, avant de la comprimer. Un nom court
+   garde donc son logo à côté de lui, un nom long le passe en dessous.
+
+   La réserve de droite quitte le titre pour la ligne entière : elle tient le
+   texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
+.detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:12px;row-gap:2px;padding-right:26px}
+.detail-hd .hdNom h2{padding-right:0}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
-   source : une marque, posée en tête de l'en-tête, avant le type et le nom
-   qu'elle accompagne. Sans cadre ni fond — l'image porte le sien quand elle en
-   a un, et un blanc plaqué sur l'en-tête coloré d'un modèle y faisait une
-   étiquette rapportée. Contenu plutôt que découpé : un logo tronqué n'est plus
-   le logo. La largeur laisse sa place au coin des actions, qui flotte au-dessus
-   de l'en-tête. */
+   source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
+   blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
+   rapportée. Contenu plutôt que découpé — un logo tronqué n'est plus le logo —
+   et haut comme deux lignes de titre, pour accompagner le nom sans le dominer. */
 .detail-hd .logoZone{display:block;width:auto;height:auto;object-fit:contain;
-  max-width:min(190px,calc(100% - 70px));max-height:54px;margin:0 0 10px}
+  max-width:min(150px,100%);max-height:36px;margin:0}
 .detail-hd .logoZone[hidden]{display:none}
 .detail-hd h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:-.02em;margin:8px 0 6px;
   text-wrap:balance;padding-right:26px}
@@ -1018,9 +1027,11 @@ button.expo:hover{background:var(--line)}
 .modele-billet .detail-hd{background:var(--accent);border-bottom:none}
 .modele-billet .detail-hd h2{color:var(--accent-ink)}
 /* La place du numéro ne se réserve que là où il y en a un : une zone n'en
-   porte pas, le parcours et l'itinéraire non plus, et le titre y laissait
-   cent dix-huit pixels de vide à droite. */
-.modele-billet .detail-hd[data-code]:not([data-code=""]) h2{padding-right:118px}
+   porte pas, le parcours et l'itinéraire non plus, et la ligne du nom y
+   laissait cent dix-huit pixels de vide à droite. Elle porte sur la ligne
+   entière, marque comprise : sur le seul titre, la marque serait allée se
+   ranger sous le numéro. */
+.modele-billet .detail-hd[data-code]:not([data-code=""]) .hdNom{padding-right:118px}
 .modele-billet .detail-hd .eyebrow{color:var(--accent-ink);opacity:.72}
 .modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
@@ -2477,7 +2488,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail-hd h2{font-size:17px;margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
      discrète, pour laisser la place à ce qu'on est venu lire. */
-  .detail-hd .logoZone{max-height:38px;margin-bottom:8px}
+  .detail-hd .logoZone{max-height:28px;max-width:min(120px,100%)}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les
@@ -2758,10 +2769,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
-        <img class="logoZone" id="dLogo" alt="" hidden>
         <span class="eyebrow" id="dKind"></span>
-        <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
-          title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
+        <div class="hdNom">
+          <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
+            title="Modifier la fiche" aria-label="Modifier la fiche">&#9998;</button></h2>
+          <img class="logoZone" id="dLogo" alt="" hidden>
+        </div>
         <span class="badge" id="dCode"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span><button class="badge bascule" id="dVis" hidden aria-pressed="true"></button><button class="badge part" id="dPartage" hidden></button>
       </div>
       <div class="onglets" id="dOnglets" role="tablist" hidden>

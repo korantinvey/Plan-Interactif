@@ -216,7 +216,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2832 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2845 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -235,7 +235,7 @@ Fonctions :
 `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
 `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
 `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
-`#closeDetail` · `#dLogo` · `#dKind` · `#dName` · `#dRen` · `#dCode` · `#dNeuf` · `#dVis`
+`#closeDetail` · `#dKind` · `#dName` · `#dRen` · `#dLogo` · `#dCode` · `#dNeuf` · `#dVis`
 `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps` · `#jCorps` · `#pPied`
 `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire`
