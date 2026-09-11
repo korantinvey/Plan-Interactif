@@ -166,7 +166,7 @@ Fonctions :
 
 - l.530 · Page de rapport
 
-### `_dessin.html` — 1418 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1421 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -183,12 +183,12 @@ Fonctions :
 `remplitListeSocietes` 623 · `societeSaisie` 631 · `traceStandDessine` 647
 `texteStandDessine` 671 · `poseLibellesDessines` 689 · `decoupeStand` 710
 `marqueStandsDessines` 722 · `rafraichitStandsDessines` 737 · `cartouchePoi` 763
-`ouvrePoi` 845 · `mesureCartouche` 913 · `phareRepere` 920 · `phareZone` 921
-`eclairePoi` 925 · `signale` 943 · `calquePourImage` 957 · `poseImage` 970
-`importeImage` 983 · `dessinPointerDown` 1034 · `dessinPointerMove` 1108
-`dessinPointerUp` 1146 · `termineTrace` 1182 · `aide` 1192 · `choisitOutil` 1217
-`enchaineStand` 1240 · `activeCalque` 1294 · `montreRoleIti` 1345 · `creeCalque` 1376
-`demandeNom` 1389 · `renommeCalque` 1408
+`ouvrePoi` 845 · `mesureCartouche` 916 · `phareRepere` 923 · `phareZone` 924
+`eclairePoi` 928 · `signale` 946 · `calquePourImage` 960 · `poseImage` 973
+`importeImage` 986 · `dessinPointerDown` 1037 · `dessinPointerMove` 1111
+`dessinPointerUp` 1149 · `termineTrace` 1185 · `aide` 1195 · `choisitOutil` 1220
+`enchaineStand` 1243 · `activeCalque` 1297 · `montreRoleIti` 1348 · `creeCalque` 1379
+`demandeNom` 1392 · `renommeCalque` 1411
 
 Éléments :
 
@@ -290,7 +290,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2655 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2679 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -299,8 +299,8 @@ Fonctions :
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
 - l.1415 · 7. Sélection et fiche
-- l.2300 · 8. Interactions du plan
-- l.2501 · Le tiroir de la liste — écrans étroits
+- l.2324 · 8. Interactions du plan
+- l.2525 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -325,8 +325,9 @@ Fonctions :
 `jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `adresseImage` 1799
 `imageSure` 1812 · `assainitRiche` 1841 · `enBlocs` 1881 · `rangeRiche` 1894
 `ecarteClicFantome` 1922 · `nomSociete` 1931 · `societes` 1944 · `choisitExposant` 1955
-`poseCode` 2001 · `ouvre` 2020 · `ferme` 2274 · `onglet` 2290 · `milieu` 2320
-`commencePince` 2326 · `suitPince` 2340 · `mesureTiroir` 2512 · `montreTiroir` 2515
+`poseMarque` 1993 · `poseCode` 2041 · `ouvre` 2060 · `ferme` 2298 · `onglet` 2314
+`milieu` 2344 · `commencePince` 2350 · `suitPince` 2364 · `mesureTiroir` 2536
+`montreTiroir` 2539
 
 Éléments :
 

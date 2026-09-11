@@ -1982,6 +1982,46 @@ function choisitExposant(o, rect, canal){
 }
 
 /**
+ * La marque en tête de fiche : le logo d'une enseigne, ou celui que
+ * l'exploitant a déposé sur une zone. Une fiche sans marque n'en montre aucune.
+ *
+ * Elle vit ici pour la même raison que `poseCode` : deux fiches écrivent cette
+ * image — celle d'un stand ou d'une zone, et celle d'un repère, qui n'en a
+ * jamais et doit donc l'effacer. La seconde ne le faisait pas, et la marque du
+ * stand d'avant restait en tête de la fiche d'un escalier.
+ */
+function poseMarque(blason){
+  const marque = $("dLogo");
+  if (!marque) return;
+  /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
+     s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
+     Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
+     ligne les couvre tous les deux. */
+  marque.onerror = () => { marque.hidden = true; };
+  if (!blason){
+    marque.hidden = true;
+    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
+       montrerait la marque de la précédente le temps que la sienne arrive. */
+    marque.removeAttribute("src");
+    return;
+  }
+  /* Changer `src` ne retire pas l'image déjà peinte : le navigateur garde la
+     précédente à l'écran jusqu'à ce que la nouvelle soit décodée. La fiche
+     qu'on vient d'ouvrir portait donc la marque de celle d'avant pendant tout
+     le trajet — invisible sur un bureau, très visible sur le réseau d'un
+     salon. On la cache donc le temps du trajet, et `onload` la ramène. */
+  if (marque.getAttribute("src") !== blason){
+    marque.hidden = true;
+    marque.src = blason;
+  }
+  marque.onload = () => { marque.hidden = false; };
+  /* Une image déjà tenue par le cache est complète dès l'affectation et ne
+     donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
+     celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
+  if (marque.complete) marque.hidden = !marque.naturalWidth;
+}
+
+/**
  * La pastille de situation, et le filigrane que les modèles de fiche lisent
  * sous elle.
  *
@@ -2059,23 +2099,7 @@ function ouvre(o, rect, canal, iSoc){
      sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
      ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
      Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
-  const blason = ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo));
-  const marque = $("dLogo");
-  if (marque){
-    /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
-       s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
-       Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
-       ligne les couvre tous les deux. */
-    marque.onerror = () => { marque.hidden = true; };
-    marque.hidden = !blason;
-    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
-       montrerait la marque de la précédente le temps que la sienne arrive. */
-    if (blason){
-      marque.src = blason;
-      // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
-      if (marque.complete && !marque.naturalWidth) marque.hidden = true;
-    } else marque.removeAttribute("src");
-  }
+  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "");
