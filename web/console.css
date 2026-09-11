@@ -163,11 +163,15 @@ a.btn.inactif{opacity:.45;pointer-events:none}
    bout de barre s'ouvre sans qu'on ait à le dire —, et la couleur d'accent
    posée en fond doux plutôt qu'en aplat, seule façon d'y garder un texte
    lisible sur les deux thèmes. */
-.avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+.avatar{width:28px;height:28px;border-radius:50%;
   cursor:pointer;user-select:none;background:var(--accent-soft);color:var(--accent);
   border:1px solid transparent;font-family:"Archivo",sans-serif;font-size:11px;
   font-weight:700;letter-spacing:.03em;text-transform:uppercase}
 .avatar:hover{border-color:var(--accent)}
+/* La mise en place appartient à ce sélecteur-ci, et non à `.avatar` : le
+   voisin `.menu > summary` est plus spécifique, et son `inline-flex` sans
+   justification laissait les initiales collées au bord gauche du rond. */
+.menu.compte > summary{display:grid;place-items:center;gap:0}
 .menu.compte > summary::after{display:none}
 .menu.compte[open] > summary{background:var(--accent-soft);border-color:var(--accent)}
 /* L'adresse connectée, en tête du panneau : deux comptes ouverts dans deux
