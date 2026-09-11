@@ -464,8 +464,17 @@ function montePlan(){
 }
 
 function onglets(){
+  /* Un seul pavillon ne se choisit pas. L'onglet ne servait alors qu'à répéter
+     un nom — souvent celui du salon, tel que Klipso l'écrit sur son unique
+     plan — et à prendre au titre la place qui lui manquait sur un téléphone. */
+  const seul = DATA.plans.length < 2;
+  $("halls").hidden = seul;
+  // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
+  document.documentElement.classList.toggle("un-pavillon", seul);
+  if (seul){ $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
-    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '">' +
+    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '"' +
+    ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
 }

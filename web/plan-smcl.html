@@ -100,16 +100,26 @@ button{cursor:pointer;background:none;border:none}
    cartouche recouvrait la recherche et que le bouton « ajuster » passait
    dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
 .app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px}
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 18px;height:60px;
+/* La barre se mesure à son contenu au lieu de le rogner : un nom de salon
+   long — « Franchise Expo Paris 2027 » — passe à la ligne et la barre grandit
+   d'autant. Tronqué, il ne disait plus quel salon on regardait, et c'est la
+   seule chose que cette barre ait à dire. */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:8px 18px;min-height:60px;
   background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
-.brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;white-space:nowrap}
+.brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
+  line-height:1.18;overflow-wrap:anywhere}
 .brand h1.attente{color:var(--ink-3)}
 .brand .sub{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .stats{display:flex;gap:18px;margin-left:auto;font-size:12px;color:var(--ink-3)}
-@media (max-width:1150px){.stats{display:none}}
+/* Les compteurs partis, c'est aux outils de tenir le bout de la barre :
+   sans quoi ils se rangeaient contre le titre, au milieu du vide. */
+@media (max-width:1150px){.stats{display:none}.tools{margin-left:auto}}
 .stats b{display:block;font-family:"IBM Plex Mono",monospace;font-size:15px;font-weight:600;color:var(--ink);
   font-variant-numeric:tabular-nums;line-height:1.2}
 .halls{display:flex;gap:2px;background:var(--surface-2);padding:3px;border-radius:var(--radius)}
+/* `display:flex` l'emporterait sur l'attribut : un seul pavillon doit pouvoir
+   se taire pour de bon. */
+.halls[hidden]{display:none}
 .halls button{padding:5px 13px;border-radius:2px;font-size:13px;font-weight:500;color:var(--ink-2);white-space:nowrap}
 .halls button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
 .halls button .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);margin-left:6px}
@@ -2616,11 +2626,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .topbar,.brand{min-width:0}
   .topbar{gap:10px}
-  .brand h1{overflow:hidden;text-overflow:ellipsis}
+  /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
+     long, donc autant de hauteur laissée au plan. */
+  .brand h1{font-size:15px}
   /* Les pavillons défilent latéralement plutôt que de pousser les murs. C'est
      donc à eux de céder la place en premier : ils restent atteignables au
-     doigt, là où un titre tronqué à trois lettres ne se retrouve pas. */
+     doigt, là où un titre rogné ne se retrouve pas. Le titre, lui, passe à la
+     ligne dans la part qui lui revient — il s'y arrêtait sur « Franchise Expo
+     Paris 20 ». */
   .brand{flex:0 1 auto;max-width:40%}
+  /* Sans onglets, ce partage n'a plus lieu d'être : le nom prend la barre et
+     tient souvent sur une ligne, là où 40 % l'auraient plié en trois. */
+  html.un-pavillon .brand{flex:1 1 auto;max-width:none}
   .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
@@ -3578,8 +3595,17 @@ function montePlan(){
 }
 
 function onglets(){
+  /* Un seul pavillon ne se choisit pas. L'onglet ne servait alors qu'à répéter
+     un nom — souvent celui du salon, tel que Klipso l'écrit sur son unique
+     plan — et à prendre au titre la place qui lui manquait sur un téléphone. */
+  const seul = DATA.plans.length < 2;
+  $("halls").hidden = seul;
+  // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
+  document.documentElement.classList.toggle("un-pavillon", seul);
+  if (seul){ $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
-    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '">' +
+    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '"' +
+    ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
 }
