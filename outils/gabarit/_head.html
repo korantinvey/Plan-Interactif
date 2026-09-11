@@ -290,6 +290,24 @@ button{cursor:pointer;background:none;border:none}
    se peint, il ne se contourne pas. */
 #couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
 
+/* Le plan se tait pendant qu'on zoome.
+
+   Changer l'échelle de la « viewBox » oblige le navigateur à remettre en page
+   tout le SVG, et le texte y coûte tout : mille deux cent soixante-quatre
+   « text », remesurés glyphe par glyphe à chaque image, quatre-vingt-huit
+   millisecondes — dont quatre-vingts pour eux seuls. Onze images par seconde,
+   là où il en faut soixante : c'était toute la saccade.
+
+   Les textes se retirent donc le temps du geste. Le reste du plan — formes,
+   couleurs, sélection — suit le zoom en temps réel, pour huit millisecondes.
+   La plupart sont d'ailleurs ceux des calques importés du DAO, cotes d'allées
+   et numérotation, illisibles en plein mouvement ; et les libellés de l'appli
+   attendaient déjà la fin du geste pour se retrier.
+
+   « display:none » et non « visibility », qui laisserait la mise en page —
+   donc la dépense — intacte. */
+#plan.fige text{display:none}
+
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui

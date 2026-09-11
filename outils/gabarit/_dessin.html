@@ -215,7 +215,7 @@ function dessineDessins(){
 
 /* --- conversion écran → repère du plan --- */
 function versPlan(clientX, clientY){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
            +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
 }
@@ -257,7 +257,7 @@ function apercuGuide(d){
 
 /** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
 function toleranceTrace(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return r.width ? view.w / r.width * 12 : .3;
 }
 
@@ -743,7 +743,7 @@ function rafraichitStandsDessines(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   poseLibellesDessines((r.width || 1) / view.w);
 }
 

@@ -299,6 +299,24 @@ button{cursor:pointer;background:none;border:none}
    se peint, il ne se contourne pas. */
 #couches .cal text{fill:currentColor;stroke:none;font-family:"Instrument Sans",sans-serif}
 
+/* Le plan se tait pendant qu'on zoome.
+
+   Changer l'échelle de la « viewBox » oblige le navigateur à remettre en page
+   tout le SVG, et le texte y coûte tout : mille deux cent soixante-quatre
+   « text », remesurés glyphe par glyphe à chaque image, quatre-vingt-huit
+   millisecondes — dont quatre-vingts pour eux seuls. Onze images par seconde,
+   là où il en faut soixante : c'était toute la saccade.
+
+   Les textes se retirent donc le temps du geste. Le reste du plan — formes,
+   couleurs, sélection — suit le zoom en temps réel, pour huit millisecondes.
+   La plupart sont d'ailleurs ceux des calques importés du DAO, cotes d'allées
+   et numérotation, illisibles en plein mouvement ; et les libellés de l'appli
+   attendaient déjà la fin du geste pour se retrier.
+
+   « display:none » et non « visibility », qui laisserait la mise en page —
+   donc la dépense — intacte. */
+#plan.fige text{display:none}
+
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
@@ -3384,7 +3402,7 @@ const place = o => o.lb || o.bb;
 
 function libelles(){
   const l = $("labels"), p = P();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
@@ -4321,6 +4339,45 @@ function liste(){
 /* ============================================================
    6. Vue
    ============================================================ */
+/* Mesurer le cadre force le navigateur à remettre en page tout le SVG — sept
+   mille éléments — et on le mesurait juste après avoir posé la « viewBox »,
+   qui vient précisément de tout salir : quatre-vingt-cinq millisecondes, à
+   chaque image, pour lire une largeur qui n'avait pas bougé. Car le cadre ne
+   dépend pas de la « viewBox » : c'est le CSS qui le pose.
+
+   On le mesure donc une fois, et on l'oublie quand la mise en page change.
+   Un « ResizeObserver » couvre tout ce qui peut le changer, d'où qu'il vienne,
+   sans rien mesurer lui-même ; le « resize » de la fenêtre s'y ajoute parce
+   qu'il se déclenche avant lui, et que le recadrage qui l'écoute mesurerait
+   sinon l'ancien cadre. */
+let _cadre = null;
+const cadrePlan = () => _cadre || (_cadre = svg.getBoundingClientRect());
+const oublieCadre = () => { _cadre = null; };
+addEventListener("resize", oublieCadre);
+addEventListener("scroll", oublieCadre, true);
+if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
+
+/* Pendant un changement d'échelle, le plan se passe de ses textes : eux seuls
+   coûtent quatre-vingts des quatre-vingt-huit millisecondes que réclame la
+   remise en page du SVG à chaque image (voir « #plan.fige » dans la feuille de
+   style). Le geste fini, « poseVue » les rend — recalculés une seule fois. */
+/* Le dégel a un filet. Un geste finit normalement par « poseVue », qui rend
+   les textes en même temps qu'il retrie les libellés ; mais tous les chemins
+   n'y mènent pas — un doigt posé sur le plan pendant qu'une glissade finit sa
+   course, un « pointercancel » du système. Le plan resterait muet. La minuterie
+   est donc réarmée à chaque image du geste : elle ne se déclenche jamais tant
+   qu'il dure, et toujours quand il s'interrompt sans se poser. */
+let filetTextes = null;
+function figeTextes(){
+  svg.classList.add("fige");
+  clearTimeout(filetTextes);
+  filetTextes = setTimeout(rendTextes, 300);
+}
+function rendTextes(){
+  clearTimeout(filetTextes); filetTextes = null;
+  svg.classList.remove("fige");
+}
+
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
@@ -4375,7 +4432,7 @@ function poseVue(){
  */
 function masque(){
   if (!ETROIT()) return 0;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const fiche = $("detail"), tiroir = $("side");
   const ficheOuverte = !!fiche && fiche.classList.contains("open");
   let bas = ficheOuverte ? fiche.offsetHeight : 0;
@@ -4407,7 +4464,7 @@ function masque(){
  */
 function masqueDroite(){
   if (ETROIT()) return 0;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   let cote = 0;
   ["detail", "parcours", "itineraire"].forEach(id => {
     const v = $(id);
@@ -4417,7 +4474,7 @@ function masqueDroite(){
 }
 
 function fit(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque();
   const hUtile = Math.max(60, r.height - cache);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
@@ -4449,6 +4506,7 @@ let vise = null, imageZoom = null;
 function stoppeZoom(){
   if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
   vise = null;
+  rendTextes();
 }
 
 function glisseVersVise(){
@@ -4461,6 +4519,7 @@ function glisseVersVise(){
        un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
     const dt = Math.min(64, maintenant - precedent) || 16;
     precedent = maintenant;
+    figeTextes();
     const k = 1 - Math.pow(.5, dt / 45);
     const but = vise;
     view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
@@ -4492,10 +4551,11 @@ function zoom(f, fx, fy){
            w: nw, h: base.h * k };
   // qui refuse les animations refuse celle-ci : on se pose tout de suite
   if (REDUIT){ view = vise; vise = null; poseVue(); return; }
+  figeTextes();
   glisseVersVise();
 }
 function echelle(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const mParPx = view.w / (r.width || 1);
   const pas = [1, 2, 5, 10, 20, 50, 100, 200].find(p => p >= mParPx * 90) || 200;
   $("scaleBar").style.width = (pas / mParPx) + "px";
@@ -4591,7 +4651,7 @@ function centrePoint(xy){
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
      fiche. On la remonte au milieu de ce qui reste visible — d'après la
      hauteur réellement masquée, et non une proportion supposée. */
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
   view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
   poseVue();
@@ -5497,7 +5557,7 @@ const milieu = () => {
 
 function commencePince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   pince = {
     d: Math.max(1, m.d),
     w: view.w, h: view.h,
@@ -5511,7 +5571,9 @@ function commencePince(){
 
 function suitPince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
+  // le pincement change l'échelle : mêmes économies que la molette
+  figeTextes();
   const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -5550,7 +5612,7 @@ svg.addEventListener("pointermove", e => {
   if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
-  const r = svg.getBoundingClientRect(), k = view.w / r.width;
+  const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
@@ -5591,7 +5653,7 @@ svg.addEventListener("pointercancel", e => {
 });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
      pages — et un pavé tactile envoie des dixièmes de cran là où une molette
      en envoie un entier. On ramène tout en pixels, puis on en fait un facteur
@@ -8108,7 +8170,7 @@ function dessineDessins(){
 
 /* --- conversion écran → repère du plan --- */
 function versPlan(clientX, clientY){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
            +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
 }
@@ -8150,7 +8212,7 @@ function apercuGuide(d){
 
 /** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
 function toleranceTrace(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return r.width ? view.w / r.width * 12 : .3;
 }
 
@@ -8636,7 +8698,7 @@ function rafraichitStandsDessines(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   poseLibellesDessines((r.width || 1) / view.w);
 }
 
@@ -9430,7 +9492,7 @@ function dessinePoignees(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || !ADMIN || outil !== "main" || !calqueActif){ g.innerHTML = ""; return; }
   const f = cible.f;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const t = Math.max(.15, view.w / (r.width || 1) * 5);   // demi-côté, en mètres
   const b = boite(f);
   const marge = t;
@@ -9913,7 +9975,7 @@ function montreCote(txt, p){
     el.id = "cote";
     svg.appendChild(el);
   }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);          // un pixel d'écran, en mètres
   el.setAttribute("font-size", +(13 * u).toFixed(3));
   el.setAttribute("x", +(p[0] + 12 * u).toFixed(2));
@@ -10084,7 +10146,7 @@ function montreAimants(coins, opts){
   let g = $("aimantsVus");
   const efface = () => { if (g) g.remove(); AIMANTS_VUS = ""; };
   if (!coins || !coins.length || !aimantsActifs() || o.alt){ efface(); return; }
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const u = view.w / (r.width || 1);        // un pixel d'écran, en mètres
   /* Une portée comptée en pixels et non en mètres : ce qu'on montre, c'est le
      voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on
@@ -13327,7 +13389,7 @@ const marchesIci = () => (TRACE ? TRACE.etapes : [])
 /** Rayon des pastilles de départ et d'arrivée : constant à l'écran, donc
  *  exprimé en mètres d'après le zoom du moment. */
 function rayonBout(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   return Math.max(.4, view.w / (r.width || 1) * 6);
 }
 
@@ -13406,7 +13468,7 @@ function cadreItineraire(){
     x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]);
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);
