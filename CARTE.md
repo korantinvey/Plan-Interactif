@@ -108,7 +108,7 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 456 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 470 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -118,7 +118,7 @@ Fonctions :
 `appel` 101 · `rest` 112 · `verseModale` 142 · `ouvreModale` 148 · `fermeModale` 164
 `demande` 172 · `confirme` 194 · `ecranConfig` 205 · `normaliseUrl` 241
 `ecranConnexion` 260 · `deconnecte` 323 · `signale` 334 · `bloc` 355 · `grille` 373
-`idCompte` 402 · `themeSombre` 412 · `initialesDe` 432
+`idCompte` 416 · `themeSombre` 426 · `initialesDe` 446
 
 Éléments :
 
@@ -164,9 +164,9 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 606 l. → console.css
+### `_console.css` — 610 l. → console.css
 
-- l.552 · Page de rapport
+- l.556 · Page de rapport
 
 ### `_dessin.html` — 1421 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -245,7 +245,7 @@ Fonctions :
 `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange`
 `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
-### `_index.html` — 30 l. → index.html
+### `_index.html` — 45 l. → index.html
 
 Éléments :
 
