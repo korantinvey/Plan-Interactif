@@ -301,7 +301,19 @@ button{cursor:pointer;background:none;border:none}
    n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
    de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
    donc que la règle ne le touche pas. */
-.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* L'enveloppe qui porte la vue pendant un geste. Elle n'est pas du SVG, et
+   c'est tout l'intérêt : transformer le <svg> lui-même — ou n'importe lequel
+   de ses groupes — remet le plan en page à chaque image, quatre-vingts
+   millisecondes ; transformer un div au-dessus de lui ne recalcule rien. Voir
+   « transforme » dans le module de la vue. */
+.vue{position:absolute;inset:0;transform-origin:0 0}
+/* Promue le temps du geste seulement : garder sept mille éléments sur une
+   couche composite permanente se paie en mémoire, et en netteté du texte. */
+.vue.bouge{will-change:transform}
+/* Même portée qu'avant l'enveloppe — « > svg » pour ne pas atteindre les <svg>
+   imbriqués, et une classe pour que « .stage svg.dragging » l'emporte encore
+   sur le curseur posé ici. */
+.vue > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -330,7 +342,6 @@ button{cursor:pointer;background:none;border:none}
 
    « display:none » et non « visibility », qui laisserait la mise en page —
    donc la dépense — intacte. */
-#plan.fige text{display:none}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -397,7 +408,7 @@ html.poi-actif #marques .parc{display:none}
 
 /* le contour de focus par défaut dessine un gros rectangle noir autour du
    groupe SVG : on le remplace par un renforcement du tracé du stand */
-.stage > svg{-webkit-tap-highlight-color:transparent}
+.vue > svg{-webkit-tap-highlight-color:transparent}
 .stand:focus,.zone:focus{outline:none}
 .stand:focus-visible,.zone:focus-visible{outline:none}
 .stand:focus-visible path,.zone:focus-visible path{stroke:var(--accent);stroke-width:3}
@@ -2797,13 +2808,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   </aside>
 
   <main class="stage" id="stage">
-    <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
-      <g id="couches">
-        <g id="zones"></g>
-        <g id="stands"></g>
-        <g id="labels"></g>
-      </g>
-    </svg>
+    <div class="vue" id="vue">
+      <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
+        <g id="couches">
+          <g id="zones"></g>
+          <g id="stands"></g>
+          <g id="labels"></g>
+        </g>
+      </svg>
+    </div>
 
     <div class="zoombar">
       <button id="zIn" aria-label="Zoom avant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -3027,6 +3040,9 @@ if (!document.querySelector('meta[name="viewport"]')){
 
 const $ = id => document.getElementById(id);
 const svg = $("plan");
+/* La scène ne bouge jamais : c'est elle qu'on mesure. Le porteur de vue, lui,
+   se transforme le temps d'un geste. Voir le module de la vue. */
+const scene = $("stage"), porteVue = $("vue");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
   c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -4419,39 +4435,85 @@ function liste(){
    qu'il se déclenche avant lui, et que le recadrage qui l'écoute mesurerait
    sinon l'ancien cadre. */
 let _cadre = null;
-const cadrePlan = () => _cadre || (_cadre = svg.getBoundingClientRect());
+/* On mesure la scène et non le plan : le porteur de vue se transforme pendant
+   un geste, et le rectangle du plan à l'écran suivrait l'étirement. La scène,
+   elle, ne bouge jamais — c'est le cadre au sens où tout le module l'entend. */
+const cadrePlan = () => _cadre || (_cadre = scene.getBoundingClientRect());
 const oublieCadre = () => { _cadre = null; };
 addEventListener("resize", oublieCadre);
 addEventListener("scroll", oublieCadre, true);
-if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
+if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(scene);
 
-/* Pendant un changement d'échelle, le plan se passe de ses textes : eux seuls
-   coûtent quatre-vingts des quatre-vingt-huit millisecondes que réclame la
-   remise en page du SVG à chaque image (voir « #plan.fige » dans la feuille de
-   style). Le geste fini, « poseVue » les rend — recalculés une seule fois. */
-/* Le dégel a un filet. Un geste finit normalement par « poseVue », qui rend
-   les textes en même temps qu'il retrie les libellés ; mais tous les chemins
-   n'y mènent pas — un doigt posé sur le plan pendant qu'une glissade finit sa
-   course, un « pointercancel » du système. Le plan resterait muet. La minuterie
-   est donc réarmée à chaque image du geste : elle ne se déclenche jamais tant
-   qu'il dure, et toujours quand il s'interrompt sans se poser. */
-let filetTextes = null;
-function figeTextes(){
-  svg.classList.add("fige");
-  clearTimeout(filetTextes);
-  filetTextes = setTimeout(rendTextes, 300);
-}
-function rendTextes(){
-  clearTimeout(filetTextes); filetTextes = null;
-  svg.classList.remove("fige");
-}
+/* Deux façons de montrer la vue, et tout l'écart de coût tient entre elles.
 
+   Réécrire la « viewBox » remet le SVG en page : quatre-vingts millisecondes
+   pour sept mille éléments, dont l'essentiel à remesurer glyphe par glyphe les
+   mille deux cent soixante-quatre textes. Onze images par seconde. Et rien n'y
+   coupe — ni « transform » CSS sur le <svg>, ni sur un de ses groupes, avec ou
+   sans « will-change » : Chrome recalcule dès que l'échelle du SVG bouge.
+
+   Transformer l'porteVue, qui n'est pas du SVG, ne recalcule rien : le
+   compositeur étire ce qui est déjà peint. Zéro à une milliseconde. C'est donc
+   ce qu'on fait pendant un geste, et la « viewBox » ne se réécrit qu'à l'arrêt.
+
+   Le prix de l'étirement, et pourquoi il est borné. Ce qu'on montre est une
+   image, et elle a deux défauts, de nature différente.
+
+   Elle s'adoucit en agrandissant : un défaut de netteté, qu'on tolère jusqu'à
+   1,6 fois. Et elle dénude les bords en rapetissant ou en glissant, parce que
+   le SVG n'a peint que ce qu'il voyait : là, c'est du fond nu qui paraît. Ce
+   second défaut ne se devine pas à partir de l'échelle seule — un zoom arrière
+   pris près d'un bord n'en découvre qu'un, un déplacement en découvre un autre
+   — alors on ne le devine pas : on mesure de combien le peint manque au cadre,
+   et on repose la « viewBox » dès qu'il en manque plus d'un douzième.
+
+   Reposer en cours de geste coûte une image chère ; ces bornes en font une de
+   loin en loin, là où tout reposer en faisait une à chaque fois.
+
+   Ce qui s'étire aussi, le temps du geste : l'épaisseur des traits réglée en
+   « non-scaling-stroke », et le rayon des pastilles d'itinéraire. Chaque pose
+   les remet d'aplomb, et les bornes tiennent l'écart sous le seuil du visible. */
+const ECART_GRANDIT = 1.6, BORD_NU = 1 / 12;
+
+/** La vue effectivement écrite dans la « viewBox ». */
+let vuePosee = null;
+
+/** La façon chère, et la seule qui reparte d'une image nette. */
 const appliqueVue = () => {
+  porteVue.style.transform = "";
+  porteVue.classList.remove("bouge");
+  vuePosee = { x: view.x, y: view.y, w: view.w, h: view.h };
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
 };
+
+/**
+ * La façon gratuite : montrer `view` en étirant ce qui est peint pour
+ * `vuePosee`, sans rien recalculer. Repose la « viewBox » quand l'écart
+ * dépasse ce que l'œil accepte.
+ */
+function transforme(){
+  if (!vuePosee){ appliqueVue(); return; }
+  const r = cadrePlan();
+  const k = vuePosee.w / view.w;
+  const tx = (vuePosee.x - view.x) / view.w * r.width;
+  const ty = (vuePosee.y - view.y) / view.h * r.height;
+  /* Le peint occupe, à l'écran, de `t` à `t + k · côté`. Ce qui manque au
+     cadre de chaque côté, rapporté à sa taille — négatif quand il déborde,
+     c'est-à-dire quand il couvre. */
+  const nu = Math.max(tx, r.width - (tx + k * r.width)) / r.width;
+  const nuY = Math.max(ty, r.height - (ty + k * r.height)) / r.height;
+  if (k > ECART_GRANDIT || Math.max(nu, nuY) > BORD_NU){ appliqueVue(); prevoitPose(); return; }
+  porteVue.classList.add("bouge");
+  porteVue.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + k + ")";
+  /* Toute image montrée en étirant appelle une pose — c'est elle qui retrie les
+     libellés, et c'est le seul endroit où l'on soit sûr de passer. Un geste
+     interrompu sans se poser — un doigt arrêtant une glissade, un
+     « pointercancel » — laisserait sinon les libellés de l'avant-dernière vue. */
+  prevoitPose();
+}
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
    objets du pavillon et mesure chaque texte pour décider s'il tient et s'il
@@ -4471,16 +4533,32 @@ function rafraichitVue(){
   if (!imageDemandee){
     imageDemandee = requestAnimationFrame(() => {
       imageDemandee = null;
-      appliqueVue(); echelle();
+      transforme(); echelle();
     });
   }
   clearTimeout(libellesEnAttente);
   libellesEnAttente = setTimeout(() => { libellesEnAttente = null; libelles(); }, 150);
 }
 
+/* La pose est la seule opération chère qui reste — et elle arrivait bien trop
+   souvent. Un cran de molette est un petit pas : la glissade l'avait rattrapé
+   en une ou deux images, se posait, et réécrivait la « viewBox ». Vingt-cinq
+   crans faisaient vingt-cinq poses, c'est-à-dire exactement ce qu'on venait
+   d'éviter.
+
+   Or vingt-cinq crans en deux secondes, c'est un geste, pas vingt-cinq. On
+   attend donc que la main s'arrête : chaque arrivée réarme le délai, et la
+   pose n'a lieu qu'une fois, quand plus rien ne vient. */
+let posePrevue = null;
+function prevoitPose(){
+  clearTimeout(posePrevue);
+  posePrevue = setTimeout(() => { posePrevue = null; poseVue(); }, 120);
+}
+
 /** À la fin d'un geste, ou pour un saut de vue : tout, sans attendre. */
 function poseVue(){
   stoppeZoom();
+  clearTimeout(posePrevue); posePrevue = null;
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libelles();
@@ -4574,7 +4652,6 @@ let vise = null, imageZoom = null;
 function stoppeZoom(){
   if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
   vise = null;
-  rendTextes();
 }
 
 function glisseVersVise(){
@@ -4587,7 +4664,6 @@ function glisseVersVise(){
        un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
     const dt = Math.min(64, maintenant - precedent) || 16;
     precedent = maintenant;
-    figeTextes();
     const k = 1 - Math.pow(.5, dt / 45);
     const but = vise;
     view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
@@ -4603,9 +4679,13 @@ function glisseVersVise(){
     const reste = Math.max(Math.abs(but.x - view.x), Math.abs(but.y - view.y),
                            Math.abs(but.w - view.w), Math.abs(but.h - view.h));
     if (reste < but.w * .002){
-      view = but; vise = null; poseVue(); return;
+      /* Arrivé — mais pas forcément fini : le cran suivant peut venir. On
+         montre la vue visée sans la poser, et on laisse le délai décider. */
+      view = but; vise = null;
+      transforme(); echelle();
+      return;
     }
-    appliqueVue(); echelle();
+    transforme(); echelle();
     imageZoom = requestAnimationFrame(pas);
   };
   imageZoom = requestAnimationFrame(pas);
@@ -4622,9 +4702,6 @@ function glisseVersVise(){
 function glisseVers(but){
   if (REDUIT){ view = but; poseVue(); return; }
   vise = but;
-  /* Le trajet change l'échelle — un cran de molette, un centrage qui
-     rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
-  figeTextes();
   glisseVersVise();
 }
 
@@ -5711,8 +5788,6 @@ function commencePince(){
 function suitPince(){
   const m = milieu();
   const r = cadrePlan();
-  // le pincement change l'échelle : mêmes économies que la molette
-  figeTextes();
   const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
