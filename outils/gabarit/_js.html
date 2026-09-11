@@ -61,13 +61,6 @@ function indexe(d){
     p.stands = p.stands || [];
     p.fond = p.fond || [];
     p.conferences = p.conferences || [];
-    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
-    p.parZone = new Map();
-    p.conferences.forEach(c => {
-      if (!c.zone) return;
-      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
-      p.parZone.get(c.zone).push(c);
-    });
     /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
        être ailleurs que sa salle — et qui reste son seul point d'accroche quand
        la salle n'est rattachée à aucune zone. */
@@ -79,8 +72,7 @@ function indexe(d){
         p.parStand.get(e.stand).push(c);
       });
     });
-    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
+    p.parStand.forEach(l => l.sort(chronoConf));
     /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
        la trouver : « accueil », « restauration », « village start-up » sont des
        endroits du salon au même titre qu'un stand. */
@@ -201,17 +193,6 @@ function indexe(d){
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
-       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
-       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
-       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
-       porterait sa ligne serait un hasard de synchronisation : elle se cherche
-       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
-       fait. */
-    const ou = (c.zone && parId.get(String(c.zone))) ||
-               tenue.map(e => parId.get(e.stand)).find(Boolean);
-    c.situee = Boolean(ou);
-    if (ou) c.p = ou.p;
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
@@ -220,6 +201,7 @@ function indexe(d){
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
+  rangeConferences();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -233,6 +215,62 @@ function indexe(d){
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
+}
+
+/* Une conférence se lit dans l'ordre où elle se tient : l'heure locale d'abord,
+   qui est celle qu'affiche la page, et l'heure absolue à défaut. */
+const chronoConf = (a, b) => String(a.debutLocal || a.debut || "")
+  .localeCompare(String(b.debutLocal || b.debut || ""));
+
+/**
+ * Ranger les conférences là où on les lit : au programme de la zone qui les
+ * abrite, et dans le pavillon où l'on ira les chercher.
+ *
+ * À part de l'indexation parce que cela se refait sans recharger : le
+ * rattachement d'une salle à une zone se choisit dans les réglages du plan, et
+ * paraît aussitôt — comme le nom d'une zone.
+ *
+ * Ce rattachement l'emporte sur celui que porte l'instantané. C'est la règle
+ * que le service applique déjà en servant le plan ; elle est reprise ici pour
+ * que le choix se voie avant même d'avoir rechargé. La table des salles n'est
+ * servie qu'à l'administration : le visiteur reçoit des conférences déjà
+ * rattachées, et n'a rien à réappliquer.
+ *
+ * Une salle rattachée à une zone d'un autre pavillon n'entre au programme de
+ * personne : la conférence n'est pas remontée là-bas, et la prochaine
+ * synchronisation l'y portera. Elle se retrouve d'ici là par son exposant.
+ */
+function rangeConferences(){
+  const parSalle = new Map();
+  Object.keys(DATA.salles || {}).forEach(k => {
+    const s = DATA.salles[k];
+    if (s && s.nom) parSalle.set(s.nom, s.zone || null);
+  });
+  DATA.plans.forEach(p => {
+    const siennes = new Set(p.zones.map(z => z.id));
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (parSalle.has(c.salle)) c.zone = parSalle.get(c.salle);
+      if (!c.zone || !siennes.has(c.zone)) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort(chronoConf));
+  });
+  /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+     remontée par tous ceux qui la touchent — mais à celui où on la trouve : la
+     zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni l'une
+     ni l'autre, elle n'est encore située nulle part et le pavillon que
+     porterait sa ligne serait un hasard de synchronisation : elle se cherche et
+     se lit, elle ne se rattache à rien tant qu'on ne l'a pas fait. */
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+  });
 }
 
 /* ============================================================

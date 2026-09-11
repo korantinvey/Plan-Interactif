@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches",
+      "id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches, salles",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -395,6 +395,20 @@ Deno.serve(async (req) => {
     // le même pour tout le salon : il ne dépend que de son réglage de fiche
     const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
 
+    /* La zone de chaque salle, par son nom — c'est ce qu'une conférence porte
+       de sa salle. Une salle connue mais rattachée à rien y figure aussi, avec
+       « null » : le rattachement que l'instantané porte encore a été défait
+       depuis, et le laisser vivre montrerait un programme sous une zone dont
+       l'exploitant l'a retiré. */
+    const parSalle = new Map<string, string | null>();
+    for (
+      const s of Object.values(
+        (evt.salles ?? {}) as Record<string, { nom?: string; zone?: string }>,
+      )
+    ) {
+      if (s?.nom) parSalle.set(s.nom, s.zone ?? null);
+    }
+
     /* La version du fond de chaque pavillon, calculée sur ce qui sera servi :
        les empreintes des dessins, et — pour un visiteur seul — le masquage qui
        décide de ce qu'on lui envoie. Le même jeu de masques que celui du second
@@ -428,9 +442,19 @@ Deno.serve(async (req) => {
          visiteur les a déjà, posées sur chaque zone — la table ne lui
          apprendrait rien de plus. */
       fichesZones: identifie ? (evt.zones_fiches ?? {}) : {},
+      /* Les salles du programme et la zone qui les abrite : l'administration
+         les rattache une par une depuis la fiche de la zone, et repart de cette
+         table pour la réécrire sans perdre les autres. Le visiteur reçoit des
+         conférences déjà rattachées, plus bas — la table ne lui apprendrait
+         rien. */
+      salles: identifie ? (evt.salles ?? {}) : {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
+        const zonesDuPlan = new Set(
+          ((charge.zones ?? []) as Record<string, unknown>[])
+            .map((z) => String(z.id)),
+        );
         return {
           id: p.id_klipso,
           libelle: p.libelle,
@@ -487,7 +511,23 @@ Deno.serve(async (req) => {
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),
-          conferences: charge.conferences ?? [],
+          /* Le rattachement d'une salle s'applique ici, comme le nom d'une
+             zone : il se choisit depuis les réglages du plan et doit paraître
+             sans attendre la prochaine synchronisation, qui seule l'a inscrit
+             dans l'instantané.
+
+             Une salle rattachée à une zone d'un autre pavillon fait exception :
+             la conférence n'est pas remontée là-bas, et la garder ici la
+             rangerait sous une zone que ce pavillon n'a pas. Elle se retrouve
+             par son exposant jusqu'à la synchronisation suivante, qui la
+             portera où il faut. */
+          conferences: ((charge.conferences ?? []) as Record<string, unknown>[])
+            .map((c) => {
+              const salle = String(c.salle ?? "");
+              if (!parSalle.has(salle)) return c;
+              const zone = parSalle.get(salle);
+              return { ...c, zone: zone && zonesDuPlan.has(zone) ? zone : null };
+            }),
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }
             : { pile: [], reglages: {} },
