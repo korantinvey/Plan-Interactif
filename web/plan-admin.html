@@ -4267,6 +4267,29 @@ function masque(){
   return Math.max(0, Math.min(r.height * .6, bas));
 }
 
+/**
+ * Largeur, en pixels, de ce que le volet de droite cache du plan.
+ *
+ * Sur un écran large la fiche, le parcours et l'itinéraire ne partagent pas la
+ * place : ils se posent par-dessus le plan, le long du bord droit. Cadrer sur
+ * la largeur entière pousse donc le bord droit du tracé sous le volet — et
+ * c'est là que se trouve l'arrivée d'un itinéraire demandé depuis une fiche.
+ *
+ * On mesure la largeur au repos plutôt que la position à l'écran : le volet
+ * arrive en glissant, et un cadrage demandé pendant la transition mesurerait
+ * un volet encore à moitié dehors.
+ */
+function masqueDroite(){
+  if (ETROIT()) return 0;
+  const r = svg.getBoundingClientRect();
+  let cote = 0;
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    const v = $(id);
+    if (v && v.classList.contains("open")) cote = Math.max(cote, v.offsetWidth);
+  });
+  return Math.max(0, Math.min(r.width * .6, cote));
+}
+
 function fit(){
   const r = svg.getBoundingClientRect();
   const cache = masque();
@@ -12918,7 +12941,15 @@ function rafraichitBouts(){
   g.querySelectorAll(".iNum").forEach(t => t.setAttribute("font-size", (r * 1.6).toFixed(2)));
 }
 
-/** Cadre la vue sur le tracé du pavillon affiché. */
+/**
+ * Cadre la vue sur le tracé du pavillon affiché.
+ *
+ * Le trajet se lit à côté de son bilan, jamais dessous : le volet du bas sur un
+ * téléphone, celui de droite sur un écran large, sont retirés du cadre avant de
+ * calculer l'échelle, puis le tracé se centre dans la bande qui reste. Sans
+ * cela, l'arrivée — le point qu'on est venu chercher — se range derrière le
+ * volet qui l'annonce.
+ */
 function cadreItineraire(){
   const marches = marchesIci();
   if (!marches.length || !view) return;
@@ -12928,12 +12959,13 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = svg.getBoundingClientRect();
-  const cache = masque();
+  const cache = masque(), cacheD = masqueDroite();
   const hUtile = Math.max(60, r.height - cache);
+  const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
-  const k = Math.max(w / (r.width || 1), h / hUtile);
-  view = { x: (x0 + x1) / 2 - (k * r.width) / 2,
+  const k = Math.max(w / lUtile, h / hUtile);
+  view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
            y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
@@ -13020,7 +13052,9 @@ function valideSaisie(r){
 function effaceItineraire(){
   ITI.a = ITI.b = null;
   ROUTE = TRACE = null;
-  visee = null;
+  /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
+     il appelle la même visée. */
+  visee = ETROIT() ? null : "a";
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
@@ -13203,18 +13237,6 @@ function montreResultat(etat){
     z.appendChild(l);
     (ROUTE.avertis || []).forEach(t => dit("iAlerte", t));
   }
-
-  // rien de tracé dans ce pavillon : il n'y a rien à cadrer
-  if (marchesIci().length){
-    const acts = document.createElement("div");
-    acts.className = "acts";
-    const b = document.createElement("button");
-    b.className = "btn";
-    b.textContent = "Cadrer sur le trajet";
-    b.onclick = cadreItineraire;
-    acts.appendChild(b);
-    z.appendChild(acts);
-  }
 }
 
 /* ------------------------------------------------------------
@@ -13224,7 +13246,10 @@ function montreResultat(etat){
  * Taper un nom suppose qu'on le connaisse. Or on voit souvent sa destination
  * avant de savoir comment elle s'appelle — « le grand stand à l'angle, là ».
  * Le viseur laisse la désigner du doigt : le clic suivant sur le plan remplit
- * le champ au lieu d'ouvrir une fiche.
+ * le champ au lieu d'ouvrir une fiche. C'est le geste ordinaire, et non le
+ * détour : l'ouverture du tiroir l'arme sur le premier champ vide (voir
+ * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
+ * revenir après coup.
  *
  * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
  * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
@@ -13237,8 +13262,10 @@ function bandeauVisee(){
   const b = $("viseur");
   if (b){
     b.hidden = !visee;
+    /* La visée n'est plus le geste du seul téléphone : le bandeau s'adresse
+       aussi bien au doigt qu'au curseur. */
     if (visee) $("viseurTxt").textContent =
-      "Touchez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+      "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
@@ -13314,6 +13341,15 @@ function ouvreItineraire(){
   $("itineraire").classList.add("open");
   $("btnItineraire").setAttribute("aria-pressed", "true");
   montreResultat();
+  /* Un itinéraire se désigne plus vite qu'il ne se tape : la visée est donc
+     armée sur le premier champ vide dès l'ouverture, départ puis arrivée, sans
+     passer par la cible. Le clavier reste à portée — cliquer dans un champ y
+     renonce. Sur un téléphone, où le tiroir recouvre le plan qu'on viserait,
+     viser suppose de le refermer : on attend que le visiteur le demande. */
+  if (!ETROIT()){
+    visee = !ITI.a ? "a" : !ITI.b ? "b" : null;
+    bandeauVisee();
+  }
 }
 function fermeItineraire(){
   const t = $("itineraire");
@@ -13336,8 +13372,9 @@ function versItineraireDe(pt){
   if (ITI.a) relance();
   /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
      la transition, et un focus ordinaire ferait défiler la scène pour l'y
-     amener. On demande le curseur, pas le déplacement. */
-  else { montreResultat(); $("iDepart").focus({ preventScroll: true }); }
+     amener. On demande le curseur, pas le déplacement — et seulement là où
+     l'ouverture n'a pas armé la visée, que le curseur annulerait aussitôt. */
+  else { montreResultat(); if (!visee) $("iDepart").focus({ preventScroll: true }); }
 }
 
 ["a", "b"].forEach(r => {

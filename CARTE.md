@@ -249,7 +249,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2417 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2431 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -271,13 +271,13 @@ Fonctions :
 `sortiesDe` 1558 · `plansRelies` 1566 · `balayage` 1590 · `distanceDepuis` 1604
 `cheminLiaisons` 1631 · `routeParLiaisons` 1715 · `routeEntre` 1751 · `calculeRoute` 1790
 `couleurNappe` 1816 · `rafraichitApercu` 1822 · `marchesIci` 1865 · `rayonBout` 1870
-`dessineItineraire` 1875 · `rafraichitBouts` 1919 · `cadreItineraire` 1934 · `champIti` 1957
-`ecritDistance` 1961 · `ecritDuree` 1969 · `fermeSugg` 1974 · `montreSugg` 1981
-`choisitPoint` 2013 · `valideSaisie` 2022 · `effaceItineraire` 2032 · `relance` 2052
-`phraseLiaison` 2103 · `montreResultat` 2117 · `bandeauVisee` 2248 · `armeVisee` 2260
-`finVisee` 2268 · `viseItineraire` 2280 · `visePoi` 2286 · `visePoint` 2292
-`ouvreItineraire` 2313 · `fermeItineraire` 2330 · `versItineraire` 2340
-`versItineraireDe` 2343
+`dessineItineraire` 1875 · `rafraichitBouts` 1919 · `cadreItineraire` 1942 · `champIti` 1966
+`ecritDistance` 1970 · `ecritDuree` 1978 · `fermeSugg` 1983 · `montreSugg` 1990
+`choisitPoint` 2022 · `valideSaisie` 2031 · `effaceItineraire` 2041 · `relance` 2063
+`phraseLiaison` 2114 · `montreResultat` 2128 · `bandeauVisee` 2250 · `armeVisee` 2264
+`finVisee` 2272 · `viseItineraire` 2284 · `visePoi` 2290 · `visePoint` 2296
+`ouvreItineraire` 2317 · `fermeItineraire` 2343 · `versItineraire` 2353
+`versItineraireDe` 2356
 
 ### `_journee.html` — 895 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -291,7 +291,7 @@ Fonctions :
 `arretJournee` 540 · `remplitJournee` 565 · `appliqueVueParcours` 703 · `traceJournee` 729
 `montreJournee` 737 · `perimeJournee` 750 · `ouvreOrganisation` 759 · `lanceJournee` 860
 
-### `_js.html` — 2679 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 2702 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.229 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -299,9 +299,9 @@ Fonctions :
 - l.400 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.520 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1316 · 6. Vue
-- l.1415 · 7. Sélection et fiche
-- l.2324 · 8. Interactions du plan
-- l.2525 · Le tiroir de la liste — écrans étroits
+- l.1438 · 7. Sélection et fiche
+- l.2347 · 8. Interactions du plan
+- l.2548 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -319,16 +319,16 @@ Fonctions :
 `filtre` 1100 · `critParSociete` 1104 · `visible` 1112 · `releveHotes` 1123
 `visibleSurPlan` 1131 · `visibleSociete` 1141 · `appliqueFiltre` 1147 · `rangSorte` 1166
 `codeCase` 1187 · `caseNumero` 1204 · `sousLigne` 1224 · `liste` 1234 · `appliqueVue` 1319
-`rafraichitVue` 1340 · `poseVue` 1352 · `masque` 1370 · `fit` 1390 · `zoom` 1402
-`echelle` 1407 · `ETROIT` 1421 · `anime` 1423 · `noeud` 1447 · `canalPlan` 1457
-`rangSociete` 1465 · `select` 1474 · `centre` 1495 · `centrePoint` 1499 · `montre` 1514
-`libelleCorps` 1547 · `ordreCorps` 1559 · `momentLocal` 1596 · `programme` 1619
-`jourLong` 1652 · `ficheConf` 1663 · `lien` 1757 · `adresseSure` 1772 · `adresseImage` 1799
-`imageSure` 1812 · `assainitRiche` 1841 · `enBlocs` 1881 · `rangeRiche` 1894
-`ecarteClicFantome` 1922 · `nomSociete` 1931 · `societes` 1944 · `choisitExposant` 1955
-`poseMarque` 1993 · `poseCode` 2041 · `ouvre` 2060 · `ferme` 2298 · `onglet` 2314
-`milieu` 2344 · `commencePince` 2350 · `suitPince` 2364 · `mesureTiroir` 2536
-`montreTiroir` 2539
+`rafraichitVue` 1340 · `poseVue` 1352 · `masque` 1370 · `masqueDroite` 1402 · `fit` 1413
+`zoom` 1425 · `echelle` 1430 · `ETROIT` 1444 · `anime` 1446 · `noeud` 1470
+`canalPlan` 1480 · `rangSociete` 1488 · `select` 1497 · `centre` 1518 · `centrePoint` 1522
+`montre` 1537 · `libelleCorps` 1570 · `ordreCorps` 1582 · `momentLocal` 1619
+`programme` 1642 · `jourLong` 1675 · `ficheConf` 1686 · `lien` 1780 · `adresseSure` 1795
+`adresseImage` 1822 · `imageSure` 1835 · `assainitRiche` 1864 · `enBlocs` 1904
+`rangeRiche` 1917 · `ecarteClicFantome` 1945 · `nomSociete` 1954 · `societes` 1967
+`choisitExposant` 1978 · `poseMarque` 2016 · `poseCode` 2064 · `ouvre` 2083 · `ferme` 2321
+`onglet` 2337 · `milieu` 2367 · `commencePince` 2373 · `suitPince` 2387
+`mesureTiroir` 2559 · `montreTiroir` 2562
 
 Éléments :
 
