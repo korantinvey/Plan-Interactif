@@ -2112,9 +2112,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
-/* Les réglages tiennent en deux volets : ce que le plan montre, et de quoi il
-   a l'air. Séparés par des onglets plutôt qu'empilés — le second est une
-   planche d'aperçus, et poussait le premier hors de l'écran. */
+/* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
+   remonte, de quoi le plan a l'air, ses zones, sa mesure. Séparés par des
+   onglets plutôt qu'empilés — l'apparence est une planche d'aperçus, et
+   poussait tout le reste hors de l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2134,6 +2135,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 @media (prefers-reduced-motion:reduce){
   .voletReg{animation:none}
   .ongReg button{transition:none}
+}
+/* Les onglets étaient quatre, ils sont cinq : sur un téléphone, « Apparence »
+   et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
+   resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
+   ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
+   leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
+   autres gardent du vide. */
+@media (max-width:640px){
+  .ongReg{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+  .ongReg::-webkit-scrollbar{display:none}
+  .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
 }
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
@@ -2316,6 +2328,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
 .reglages input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+/* Ce qu'une case promet, en une ligne. « Produits » ou « Points d'intérêt »
+   ne se devinent pas depuis leur intitulé, et un réglage qu'on ne comprend
+   pas ne se touche pas. L'alignement reprend la case et son écart, pour que
+   l'aide parte sous l'intitulé et non sous la coche. */
+.reglages .aideR{margin:-5px 0 7px 25px;font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Une sorte que rien n'alimente garde son rang, éteinte : l'exploitant qui
+   cherche « Produits » doit lire pourquoi la case ne répond pas, plutôt que
+   de se demander où elle est passée. */
+.reglages label.eteint{cursor:default}
+.reglages label.eteint span{color:var(--ink-3)}
 .cc{width:24px;height:18px;padding:0;border:1px solid var(--line-strong);border-radius:3px;
   background:none;cursor:pointer;flex:none}
 .cc::-webkit-color-swatch-wrapper{padding:1px}
@@ -3084,6 +3106,8 @@ function indexe(d){
      ne décrit plus rien. */
   oublieGrilles();
   oublieLiaisons();
+  // et le relevé des repères, que la recherche interroge
+  oublieReperes();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
@@ -4050,6 +4074,15 @@ const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 const critParSociete = () =>
   [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
+/* Sous quel réglage de l'onglet « Recherche » chaque sorte se range. Une
+   hébergée suit les stands : c'est un exposant comme un autre, et l'exploitant
+   qui montre les stands ne s'attend pas à devoir cocher les deux. */
+const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
+                          conf: "conferences", poi: "poi" };
+
+/** L'exploitant laisse-t-il la recherche remonter cet objet ? */
+const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
+
 /* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
    décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
    d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
@@ -4057,6 +4090,11 @@ const critParSociete = () =>
    par « gamme de produits » cherche des exposants. */
 function visible(o){
   if (!filtre()) return true;
+  /* Ce que l'exploitant a retiré de la recherche ne répond pas — ni dans la
+     liste, ni sur le plan, qui n'est que l'autre face du même résultat. Le
+     sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
+     pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
+  if (!cherchable(o)) return false;
   return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
@@ -4104,11 +4142,12 @@ function appliqueFiltre(){
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
-   dix : les stands passent devant, puis les endroits du salon, puis le
-   programme — le plus nombreux, et le moins souvent visé. Une hébergée se range
-   avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
-   pavillon : trois sortes entremêlées par pavillon ne se lisaient plus. */
-const RANGS = { stand: 0, coex: 0, zone: 1, conf: 2 };
+   dix : les stands passent devant, puis les endroits du salon — les zones que
+   le salon fournit, puis les repères qu'on y a dessinés — et le programme
+   ferme la marche, le plus nombreux et le moins souvent visé. Une hébergée se
+   range avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
+   pavillon : quatre sortes entremêlées par pavillon ne se lisaient plus. */
+const RANGS = { stand: 0, coex: 0, zone: 1, poi: 2, conf: 3 };
 const rangSorte = (o) => RANGS[o.kind] || 0;
 
 /** Combien de lignes d'une même sorte la liste veut bien poser. Au-delà, on
@@ -4116,10 +4155,11 @@ const rangSorte = (o) => RANGS[o.kind] || 0;
  *  et le compte au-dessus le dit. */
 const PLAFOND_SORTE = 500;
 
-/* Le premier bloc d'une ligne porte le numéro de stand ; une zone et une
-   conférence n'en ont pas, et laisser la case vide effaçait justement ce qui
-   les distingue d'un stand sans numéro. Elle dit alors la sorte. */
-const CASE_SORTE = { zone: "Zone", conf: "Conf" };
+/* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
+   conférence et un repère n'en ont pas, et laisser la case vide effaçait
+   justement ce qui les distingue d'un stand sans numéro. Elle dit alors la
+   sorte. */
+const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
 
 /**
  * Ce que la case affiche.
@@ -4168,6 +4208,10 @@ function caseNumero(){
  * toutes lettres.
  */
 function sousLigne(o){
+  /* Un repère dit ce qu'il est, quand son libellé ne le dit pas déjà : entre
+     deux lignes « Hall Sud » et « Hall Nord », savoir qu'il s'agit d'entrées
+     est ce qui les rattache à ce qu'on cherchait. */
+  if (o.kind === "poi") return o.type || "";
   if (o.kind !== "conf") return "";
   const d = momentLocal(o.debutLocal, DATA.fuseau) || momentLocal(o.debut, DATA.fuseau);
   const quand = d
@@ -4195,7 +4239,10 @@ function liste(){
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
   const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
-    .concat(q ? CONFERENCES : []);
+    .concat(q ? CONFERENCES : [])
+    /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
+       un critère décrit une société, et un escalier n'en est pas une. */
+    .concat(q ? reperesCherchables() : []);
   const vus = portee.filter(visible).sort((a, b) =>
     (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
@@ -4226,16 +4273,21 @@ function liste(){
        stand et son nom. La surface louée et les angles ouverts regardent la
        commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const conf = o.kind === "conf";
+    /* Ni une conférence ni un repère n'est un emplacement : la sélection du
+       plan ne les désigne pas, et le clic ne passe pas par « select ». */
+    const emplacement = !conf && o.kind !== "poi";
     // une conférence que rien ne situe encore n'est dans aucun pavillon : celui
     // qui l'a remontée n'en dit rien au visiteur
     const badge = o.p !== state.plan && !(conf && !o.situee)
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
     const sous = sousLigne(o);
+    /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
+       c'est une forme dessinée, pas un objet du plan — et son identifiant seul
+       ne dirait pas où aller le chercher. */
     return '<button class="row" data-id="' + esc(o.id) +
-      '" data-sorte="' + o.kind + '" data-soc="' + rang +
-      // une conférence n'est pas un objet du plan : rien ne peut la désigner
-      '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
+      '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
+      '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
@@ -4254,6 +4306,9 @@ function liste(){
      salle sur le plan. */
   box.querySelectorAll(".row").forEach(b => b.onclick = () => {
     if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
+    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
+    // emplacement, et « select » n'aurait rien à cadrer
+    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
     select(b.dataset.id, true, parSociete ? "recherche" : "liste",
            Number(b.dataset.soc));
   });
@@ -5917,6 +5972,105 @@ function appliqueCommandes(){
 }
 
 /**
+ * Ce que la recherche a le droit de remonter.
+ *
+ * Le champ de recherche balaie tout ce que le salon porte, et cela ne convient
+ * pas à tous les salons. Un congrès dont le programme compte trois cents
+ * sessions les voit répondre au premier mot courant venu, et noyer les stands
+ * qu'on était venu chercher ; un salon de trente exposants veut au contraire
+ * qu'un mot ramène tout ce qui s'y rapporte. Rien dans les données ne dit
+ * lequel des deux on administre — d'où le réglage, sorte par sorte.
+ *
+ * Il ne touche qu'à la recherche. Sans mot-clé ni critère, la liste n'est pas
+ * un résultat mais le sommaire des emplacements du pavillon : l'y soumettre
+ * aurait laissé une colonne blanche à qui décoche « Stands ».
+ *
+ * Chaque sorte dit aussi ce qu'elle alimente — « Produits » et « Points
+ * d'intérêt » ne se devinent pas depuis leur intitulé — et, quand rien ne
+ * l'alimente, pourquoi sa case ne répond pas.
+ */
+const SORTES_RECHERCHE = [
+  { cle: "stands", libelle: "Stands et exposants",
+    aide: "Le nom d'une enseigne, son numéro d'emplacement, son secteur, " +
+      "ses thématiques, et les sociétés hébergées sur un stand partagé.",
+    dispo: () => TOUS.some(o => o.kind === "stand"),
+    absent: "Ce salon ne porte aucun emplacement." },
+  { cle: "zones", libelle: "Zones organisateur",
+    aide: "Accueil, restauration, village start-up — les endroits que le " +
+      "salon fournit avec son plan.",
+    dispo: () => TOUS.some(o => o.kind === "zone"),
+    absent: "Ce salon ne porte aucune zone organisateur." },
+  { cle: "conferences", libelle: "Conférences",
+    aide: "Le titre d'une session, sa salle, son thème, et l'exposant qui " +
+      "la tient — souvent le seul nom dont on se souvienne.",
+    dispo: () => CONFERENCES.length > 0,
+    absent: "Le programme n'est pas synchronisé : sa source se règle depuis " +
+      "la console, dans « Source des données »." },
+  /* Les produits se règlent déjà dans la console — « Produits », source au
+     choix — mais la synchronisation les annonce « pas encore repris » et le
+     plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
+     a réglé cette source doit lire ici pourquoi la recherche n'en remonte
+     rien, plutôt que de chercher une case absente. Elle s'allumera le jour où
+     la synchronisation les rapportera. */
+  { cle: "produits", libelle: "Produits",
+    aide: "Ce que les exposants présentent, nommé produit par produit.",
+    dispo: () => (DATA?.plans || []).some(p => (p.produits || []).length),
+    absent: "Les produits ne sont pas encore repris par la synchronisation, " +
+      "quelle que soit la source réglée dans la console." },
+  { cle: "poi", libelle: "Points d'intérêt",
+    aide: "Les repères posés sur le plan : entrées, WC, escaliers, parkings, " +
+      "vestiaires. Le cartouche du bas les récapitule de son côté, que cette " +
+      "case soit cochée ou non.",
+    dispo: () => reperesCherchables().length > 0,
+    absent: "Aucun repère n'est posé sur les plans de ce salon : ils se " +
+      "dessinent depuis la boîte à outils." },
+];
+
+/** Une sorte remonte-t-elle dans la recherche ? Oui par défaut : un réglage
+ *  absent ne doit rien retirer à un salon déjà en place. */
+const chercheSorte = (cle) => conf("_rech")[cle] !== false;
+
+/** Le volet « Recherche » : les sortes d'éléments que le champ remonte. */
+function voletRecherche(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que le champ de recherche remonte. Le sommaire du " +
+    "pavillon n'en dépend pas : sans mot-clé, la liste reste celle de ses " +
+    "emplacements. Publiez la configuration pour que le changement parvienne " +
+    "aux visiteurs.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  SORTES_RECHERCHE.forEach(s => {
+    const dispo = s.dispo();
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = s.libelle;
+    if (!dispo) l.classList.add("eteint");
+    const c = l.querySelector("input");
+    c.checked = chercheSorte(s.cle);
+    /* Éteinte, et non décochée : la case montre ce qui est réglé, et le
+       réglage vaudra le jour où quelque chose l'alimentera. La décocher
+       d'office effacerait un choix que l'exploitant a fait. */
+    c.disabled = !dispo;
+    c.onchange = e => {
+      conf("_rech")[s.cle] = e.target.checked;
+      enregistreConf();
+      /* La liste affichée derrière la fenêtre est peut-être un résultat de
+         recherche : elle obéit sur-le-champ, c'est le seul retour visible. */
+      liste();
+    };
+    bloc.appendChild(l);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = dispo ? s.aide : s.absent;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
+}
+
+/**
  * Combien de temps on passe sur un stand.
  *
  * Ce n'est pas un réglage d'affichage : c'est ce qui décide combien de
@@ -6376,6 +6530,17 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
+    /* Cinq onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+       qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
+       restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
+       ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
+       défile aussi pour son compte, et le centrage la remontait d'un cran.
+
+       À l'image suivante, et non tout de suite : le corps de la fenêtre est
+       rempli avant qu'elle ne s'ouvre, et un élément en « display:none » n'a
+       aucune position à ramener. */
+    const ramene = (b) => requestAnimationFrame(() =>
+      b.scrollIntoView({ block: "nearest", inline: "nearest" }));
     const volet = (titre) => {
       const i = boutons.length;
       const actif = nomme ? titre === nomme : i === 0;
@@ -6390,6 +6555,7 @@ function ouvreReglages(ouvrir){
           boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
           volets.forEach((x, j) => { x.hidden = j !== i; });
         });
+        ramene(b);
       };
       barre.appendChild(b);
       boutons.push(b);
@@ -6401,6 +6567,9 @@ function ouvreReglages(ouvrir){
       return v;
     };
     voletPlan(volet("Plan"));
+    /* « Recherche » suit « Plan » : les deux parlent de ce que le visiteur
+       obtient, quand « Apparence » ne parle que de l'allure. */
+    voletRecherche(volet("Recherche"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
@@ -6412,7 +6581,8 @@ function ouvreReglages(ouvrir){
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
        plutôt que sur le vide. */
-    if (!boutons.some(b => b.getAttribute("aria-pressed") === "true")) boutons[0].onclick();
+    const actif = boutons.find(b => b.getAttribute("aria-pressed") === "true");
+    if (actif) ramene(actif); else boutons[0].onclick();
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -7694,6 +7864,8 @@ const enregistreDessins = () => {
   oublieLiaisons();
   // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
   oublieAimants();
+  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
+  oublieReperes();
   rafraichitApercu();
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
@@ -8392,6 +8564,72 @@ function rafraichitStandsDessines(){
   });
   const r = svg.getBoundingClientRect();
   poseLibellesDessines((r.width || 1) / view.w);
+}
+
+/**
+ * Les repères, en objets de recherche.
+ *
+ * Un visiteur qui tape « vestiaire » ou « parking » cherche un endroit du
+ * salon, exactement comme il tape le nom d'une enseigne. Le cartouche du bas
+ * les récapitule déjà, mais il faut savoir qu'il existe et le parcourir des
+ * yeux : la recherche y mène en trois lettres.
+ *
+ * Ils sont relevés sur les trois pavillons, comme les stands : le sanitaire
+ * le plus proche n'est pas forcément dans celui qu'on regarde. Un calque
+ * éteint n'en donne aucun — ses repères ne sont pas sur le plan, et la liste
+ * promettrait un escalier que le visiteur ne trouverait pas.
+ *
+ * Le relevé se retient : la recherche le redemande à chaque frappe, et les
+ * dessins ne changent qu'entre deux gestes d'édition. « oublieReperes » le
+ * jette, aux mêmes endroits que les grilles d'itinéraire.
+ */
+let REPERES = null;
+
+function oublieReperes(){ REPERES = null; }
+
+function reperesCherchables(){
+  if (REPERES) return REPERES;
+  REPERES = [];
+  (DATA?.plans || []).forEach((p, i) => {
+    (DESSINS[p.id] || []).forEach(cal => {
+      if (cal.visible === false) return;
+      (cal.formes || []).forEach(f => {
+        if (f.t !== "repere") return;
+        const nom = nomRepere(f);
+        /* Le type ne compte que s'il ajoute quelque chose au libellé, et il
+           compte alors pour les deux : ce qu'on tape et ce que la ligne
+           montre. « Hall Sud » gagne à s'annoncer comme une entrée ; un repère
+           sans libellé s'appelle déjà « WC » et n'a rien à gagner d'un « WC »
+           en dessous, ni d'un second dans sa chaîne de recherche. Une chaîne
+           vide, elle, est un choix — « sans pictogramme » — et ne nomme rien
+           qu'on irait taper. */
+        const picto = pictoForme(f);
+        const type = picto ? nomTypeRepere(picto) : "";
+        const ajout = type === nom ? "" : type;
+        REPERES.push({
+          kind: "poi", id: f.id, p: i, nom: nom, type: ajout,
+          rech: (nom + " " + ajout).toLowerCase(),
+        });
+      });
+    });
+  });
+  return REPERES;
+}
+
+/**
+ * Un repère ouvert depuis la liste des résultats.
+ *
+ * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
+ * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
+ * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
+ * plan, cadre, et va chercher le fond du pavillon qu'on n'avait pas encore
+ * ouvert. Le montage recrée les calques de dessin, d'où la pastille est relue
+ * après lui — pour que la fiche s'anime depuis elle, et non depuis rien.
+ */
+function vaAuRepere(id, p){
+  changePlan(p);
+  const n = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  ouvrePoi(id, n ? n.getBoundingClientRect() : null);
 }
 
 /**
