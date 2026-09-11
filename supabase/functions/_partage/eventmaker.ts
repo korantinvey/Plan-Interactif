@@ -13,8 +13,8 @@
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
 import {
-  DEFAUTS, PREFIXE_PERSO, lit, noteValeurs, ou, separeValeurs, valeurPerso, vrai,
-  VALEURS_MAX,
+  DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, separeValeurs,
+  valeurPerso, vrai, VALEURS_MAX,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -88,6 +88,9 @@ export interface ExposantEm {
   dossier: string;
   nom: string | null;
   raison: string | null;
+  /* L'avatar de la fiche d'invité : sur une fiche de société, c'est le logo de
+     l'enseigne que l'organisateur y a déposé. */
+  logo: string | null;
   site: string | null;
   adresse: string | null;
   ville: string | null;
@@ -516,6 +519,7 @@ export class Eventmaker {
         dossier,
         nom: v("nom"),
         raison: v("raison"),
+        logo: imageDistante(this.valeur(g, m, "logo")),
         site: v("site"),
         // le code postal n'a pas de champ à lui sur la fiche : il tient sur
         // la même ligne que la voie, comme sur une enveloppe

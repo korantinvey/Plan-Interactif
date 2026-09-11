@@ -91,6 +91,29 @@ fiche mais y pose une pastille, à côté du pavillon et du numéro de stand. Le
 champ qui la déclenche n'existe que sur les salons qui distinguent leurs
 nouveaux venus — ailleurs la cible reste vide et rien ne paraît.
 
+**« Logo »** n'apporte pas de texte non plus : elle pose en tête de fiche
+l'image que porte la fiche de l'exposant. Côté Eventmaker, c'est l'avatar de
+l'invité — là où les organisateurs déposent le logo de l'enseigne : dix-huit
+des vingt et un salons du compte en tiennent, et Franchise Expo Paris 2026 en
+a sur 572 de ses 576 fiches d'exposants.
+
+Trois variantes en descendent, et une seule convient : `avatar`, l'image
+déposée. `avatar_medium` et `avatar_thumb` sont recadrées au carré — le logo
+« Collabora Office », large de 1772 pixels sur 667, y devient « Colla /
+Offic » — et, sur une fiche sans logo, ne sont pas vides pour autant : elles
+désignent une image fabriquée à la volée, les initiales de la personne
+inscrite sur une pastille de couleur. La synchronisation écarte celles-là, mais
+c'est bien `avatar` qu'il faut désigner.
+
+L'image se charge chez la source, à l'ouverture d'une fiche et pas avant :
+c'est ce qui la garde dans la fiche et hors de la liste des exposants, où les
+cinq cents logos d'un salon pèsent soixante-dix mégaoctets quand une fiche
+seule en charge vingt-huit kilo-octets — la médiane. Elle vient en tête du
+corps, dans le même cadre à fond clair que le logo d'une zone organisateur et
+pour la même raison : un logo est le plus souvent sombre sur transparent, et
+s'effacerait en thème sombre. L'adresse qui ne répond plus efface son cadre
+avec elle.
+
 Deux façons de dire oui, parce que les sources n'en offrent qu'une chacune.
 
 Sur un **champ oui/non**, c'est l'accord qui s'énumère : valent oui `oui`, `o`,

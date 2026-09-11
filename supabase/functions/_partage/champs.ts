@@ -40,6 +40,11 @@ const AFFICHAGE: Cible[] = [
   { cle: "nom", libelle: "Enseigne", aide: "Le titre de la fiche." },
   { cle: "raison", libelle: "Raison sociale",
     aide: "Affichée seulement si elle diffère de l'enseigne." },
+  { cle: "logo", libelle: "Logo",
+    aide: "L'image de la fiche. Sur Eventmaker c'est l'avatar de l'invité, où " +
+      "les organisateurs déposent le logo de l'enseigne — désignez « avatar » " +
+      "et non « avatar_medium » ni « avatar_thumb », recadrés au carré, qui " +
+      "coupent les bords d'un logo en largeur." },
   { cle: "site", libelle: "Site web" },
   { cle: "adresse", libelle: "Adresse" },
   { cle: "codePostal", libelle: "Code postal",
@@ -128,6 +133,10 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
     coexposant: ["num_stand"],
     nom: ["enseigne", "invite:company_name"],
     raison: ["company_name_2"],
+    /* L'avatar est un champ natif de l'invité, porté par tous les salons :
+       ce que l'organisateur y dépose sur une fiche de société, c'est son
+       logo. Dix-huit des vingt et un salons du compte en ont. */
+    logo: ["invite:avatar"],
     site: ["company_website"],
     adresse: ["invite:address", "address_2"],
     codePostal: ["invite:postal_code"],
@@ -247,6 +256,28 @@ export const ou = (...v: unknown[]): string | null => {
   }
   return null;
 };
+
+/* Une fiche Eventmaker sans avatar n'a pas pour autant les mains vides : ses
+   variantes « medium » et « thumb » désignent alors une image fabriquée à la
+   volée par ui-avatars.com — les initiales de la personne inscrite sur une
+   pastille de couleur. « TR » en tête de la fiche d'une enseigne ne dit rien
+   d'elle, et vaut moins que pas d'image du tout. */
+const IMAGE_FABRIQUEE = /^https?:\/\/([\w-]+\.)*ui-avatars\.com\//i;
+
+/**
+ * Une adresse d'image, ou rien.
+ *
+ * Le champ qui porte le logo est désigné par l'exploitant, et rien ne garantit
+ * qu'il porte une adresse : un champ mal désigné poserait une image brisée en
+ * tête de chaque fiche du salon. Contrairement à un site web, on ne complète
+ * donc pas ce qui n'en a pas l'air — une adresse s'affiche, le reste ne
+ * descend pas.
+ */
+export function imageDistante(v: unknown): string | null {
+  // les adresses saisies à la main contiennent parfois des slashes échappés
+  const s = String(v ?? "").trim().replace(/\\/g, "");
+  return /^https?:\/\//i.test(s) && !IMAGE_FABRIQUEE.test(s) ? s : null;
+}
 
 /**
  * Lit une cible dans un jeu de sources, chacune désignée par son préfixe.

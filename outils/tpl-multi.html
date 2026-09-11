@@ -4621,6 +4621,20 @@ function adresseSure(v){
 const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
 
 /**
+ * Le logo d'une société, relu avant d'être affiché.
+ *
+ * Celui-ci n'est pas déposé mais lu chez la source — l'avatar d'une fiche
+ * Eventmaker — et c'est donc une adresse, quand celui d'une zone est une image
+ * embarquée. La synchronisation applique déjà la règle ; la page ne s'en remet
+ * pas à elle pour autant : « data: » et « javascript: » sont des adresses
+ * valides, et cette fiche-là est posée chez tous les visiteurs.
+ */
+function adresseImage(v){
+  const u = String(v == null ? "" : v).trim().replace(/[\u0000-\u001F]/g, "");
+  return /^https?:\/\//i.test(u) ? u : "";
+}
+
+/**
  * Le logo d'une zone, relu avant d'être affiché.
  *
  * Il suit le chemin de la description — saisi par un exploitant authentifié,
@@ -4981,21 +4995,32 @@ function ouvre(o, rect, canal, iSoc){
         : "")
     : "";
   corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
-  /* Le logo, déposé par l'exploitant avec le reste de la fiche. Il n'a pas
-     d'intitulé au-dessus de lui : une image se reconnaît sans qu'on la nomme,
-     et le nom de la zone est déjà en tête. Il est relu comme la description —
-     il vient du même endroit, et finit dans la même fiche. */
-  const blason = zone ? imageSure(o.logo) : "";
+  /* Le logo, sans intitulé au-dessus de lui : une image se reconnaît sans
+     qu'on la nomme, et le nom est déjà en tête de la fiche.
+
+     Deux origines, un seul cadre. Sur une zone, c'est ce que l'exploitant y a
+     déposé, qui voyage dans la fiche et se relit comme la description — il
+     vient du même endroit, et finit au même endroit. Sur un stand, c'est le
+     logo de l'enseigne lu chez la source, et il suit la société qu'on regarde
+     plutôt que l'emplacement : sur un stand partagé, chaque hébergée montre le
+     sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
+     ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
+     Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
+  const blason = zone ? imageSure(o.logo) : adresseImage(soc.logo);
   corps.logo = blason
     ? ok("logo", '<div class="logoZone"><img src="' + esc(blason) + '" alt=""></div>')
     : "";
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
      range des champs d'exposant, qu'elle n'a pas, et les siens se lisent dans
      le seul ordre qui leur convienne — de quoi la reconnaître, ce qu'elle est,
-     puis où en savoir plus. */
+     puis où en savoir plus.
+
+     Le logo échappe à l'ordre sur un stand aussi : ce n'est pas un champ parmi
+     les autres mais ce qui fait reconnaître l'enseigne, et l'ordre réglé ne
+     porte que sur ce qui se lit. */
   const infos = zone
     ? corps.logo + corps.description + corps.lien
-    : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
+    : corps.logo + ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
         .map(c => corps[c] || "").join("");
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
@@ -5017,6 +5042,16 @@ function ouvre(o, rect, canal, iSoc){
     bloc2("cConf", "dPaneConf", confs) +
     '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
     '<button class="btn itin" id="dItin">Itinéraire</button></div>';
+  /* Un logo lu chez la source peut n'y être plus : l'image qui ne se charge
+     pas s'efface avec son cadre, plutôt que de laisser une vignette brisée en
+     tête de fiche. Celui d'une zone voyage dans la fiche et ne connaît pas ce
+     sort ; la même ligne les couvre tous les deux. */
+  $("dBody").querySelectorAll(".logoZone img").forEach(img => {
+    const efface = () => { const b = img.closest(".logoZone"); if (b) b.remove(); };
+    img.onerror = efface;
+    // déjà tentée et déjà manquée : l'événement, lui, ne se rejouera pas
+    if (img.complete && !img.naturalWidth) efface();
+  });
   /* Une conférence ouverte d'ici vient soit du programme d'une salle, soit
      de la fiche de l'exposant qui la tient : ce n'est pas le même chemin. */
   const canalConf = zone ? "salle" : "exposant";

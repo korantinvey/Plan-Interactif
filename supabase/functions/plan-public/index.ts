@@ -131,6 +131,7 @@ const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
  * fiche — ou comme critère, d'où la réserve de `retraits()`.
  */
 const CHAMPS_FICHE: Record<string, string> = {
+  logo: "logo",
   adresse: "adr",
   ville: "ville",
   pays: "pays",
