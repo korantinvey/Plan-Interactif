@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 1932 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 1941 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.1095 · 10. Mode administration
-- l.1161 · La fiche d'une zone organisateur
-- l.1679 · Masquer une zone organisateur
-- l.1762 · Placer un libellé à la main
+- l.1170 · La fiche d'une zone organisateur
+- l.1688 · Masquer une zone organisateur
+- l.1771 · Placer un libellé à la main
 
 Fonctions :
 
@@ -31,14 +31,14 @@ Fonctions :
 `voletZones` 724 · `ficheZoneEnPlace` 801 · `voletPlan` 819 · `nomDuTon` 946
 `voletApparence` 951 · `enregistreConf` 1045 · `rgbHex` 1051 · `hexa` 1058
 `luminance` 1062 · `ecarte` 1076 · `joli` 1091 · `retireAdmin` 1108 · `activeAdmin` 1121
-`champZone` 1187 · `champsZone` 1212 · `reduitLogo` 1275 · `champLogo` 1316
-`editeurRiche` 1413 · `memeFicheZone` 1568 · `suitFicheZone` 1573 · `verseFicheZone` 1581
-`ficheZone` 1607 · `enregistreZone` 1632 · `basculeAffichageZone` 1690
-`marqueZonesMasquees` 1707 · `ecritTablesZones` 1727 · `ecritTableZones` 1758
-`cleLibelle` 1783 · `empreinteLibelle` 1799 · `placementLibelle` 1807 · `posePlacement` 1817
-`libelleAutomatique` 1834 · `modePlacementLibelles` 1843 · `majPaletteLibelle` 1860
-`choisitLibelle` 1877 · `pousseLibelle` 1884 · `libellePointerDown` 1892
-`libellePointerMove` 1907 · `libellePointerUp` 1916
+`champZone` 1196 · `champsZone` 1221 · `reduitLogo` 1284 · `champLogo` 1325
+`editeurRiche` 1422 · `memeFicheZone` 1577 · `suitFicheZone` 1582 · `verseFicheZone` 1590
+`ficheZone` 1616 · `enregistreZone` 1641 · `basculeAffichageZone` 1699
+`marqueZonesMasquees` 1716 · `ecritTablesZones` 1736 · `ecritTableZones` 1767
+`cleLibelle` 1792 · `empreinteLibelle` 1808 · `placementLibelle` 1816 · `posePlacement` 1826
+`libelleAutomatique` 1843 · `modePlacementLibelles` 1852 · `majPaletteLibelle` 1869
+`choisitLibelle` 1886 · `pousseLibelle` 1893 · `libellePointerDown` 1901
+`libellePointerMove` 1916 · `libellePointerUp` 1925
 
 Éléments :
 
@@ -65,14 +65,15 @@ Fonctions :
 `aimante` 348 · `retientTaille` 362 · `reprendTaille` 376 · `dupliqueForme` 397
 `pousseForme` 422 · `ecritDimensions` 438 · `appliqueDimension` 457
 
-### `_auth-plan.html` — 119 l. → plan-admin.html
+### `_auth-plan.html` — 182 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
-`ecranAcces` 45
+`ecranAcces` 45 · `mailDuJeton` 120 · `initialesDe` 129 · `themeSombreA` 136
+`poseCompte` 141
 
 Éléments :
 
@@ -107,7 +108,7 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 415 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 456 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -117,20 +118,20 @@ Fonctions :
 `appel` 101 · `rest` 112 · `verseModale` 142 · `ouvreModale` 148 · `fermeModale` 164
 `demande` 172 · `confirme` 194 · `ecranConfig` 205 · `normaliseUrl` 241
 `ecranConnexion` 260 · `deconnecte` 323 · `signale` 334 · `bloc` 355 · `grille` 373
-`idCompte` 402
+`idCompte` 402 · `themeSombre` 412 · `initialesDe` 432
 
 Éléments :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 56 l. → admin-plans.html
+### `_console-head.html` — 69 l. → admin-plans.html
 
 Éléments :
 
 `#choixEvt` · `#etatEvt` · `#btnRecharger` · `#btnNouveau` · `#statut` · `#lienPublic`
 `#lienAdmin` · `#lienRapport` · `#btnExcel` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
-`#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnTheme`
-`#fiche`
+`#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
+`#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
 ### `_console-js.html` — 2846 l. → admin-plans.html
 
@@ -163,9 +164,9 @@ Fonctions :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 590 l. → console.css
+### `_console.css` — 606 l. → console.css
 
-- l.536 · Page de rapport
+- l.552 · Page de rapport
 
 ### `_dessin.html` — 1421 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -217,16 +218,17 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 2875 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 2908 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
 `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones` · `#btnItineraire`
-`#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#side`
-`#poignee` · `#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
-`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#menuCompte`
+`#avatarCompte` · `#compteMail` · `#btnThemeCompte` · `#btnSortir` · `#side` · `#poignee`
+`#q` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#countTxt` · `#list` · `#stage` · `#plan`
+`#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar`
+`#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#outils`
+`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
 `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
 `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
