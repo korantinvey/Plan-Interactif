@@ -107,6 +107,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | intention | où |
 |---|---|
 | recherche, index des exposants, liste | `_js.html` § 1 et 5 |
+| sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
 | tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |

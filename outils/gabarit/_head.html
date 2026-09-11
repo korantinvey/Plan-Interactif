@@ -2107,9 +2107,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
-/* Les réglages tiennent en deux volets : ce que le plan montre, et de quoi il
-   a l'air. Séparés par des onglets plutôt qu'empilés — le second est une
-   planche d'aperçus, et poussait le premier hors de l'écran. */
+/* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
+   remonte, de quoi le plan a l'air, ses zones, sa mesure. Séparés par des
+   onglets plutôt qu'empilés — l'apparence est une planche d'aperçus, et
+   poussait tout le reste hors de l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2129,6 +2130,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 @media (prefers-reduced-motion:reduce){
   .voletReg{animation:none}
   .ongReg button{transition:none}
+}
+/* Les onglets étaient quatre, ils sont cinq : sur un téléphone, « Apparence »
+   et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
+   resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
+   ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
+   leur « flex:1 » : à largeur égale, le plus long serait coupé quand les
+   autres gardent du vide. */
+@media (max-width:640px){
+  .ongReg{overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity}
+  .ongReg::-webkit-scrollbar{display:none}
+  .ongReg button{flex:none;padding:8px 10px;font-size:12.5px;scroll-snap-align:center}
 }
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
@@ -2311,6 +2323,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglages label{display:flex;align-items:center;gap:9px;font-size:14px;
   cursor:pointer;padding:7px 0}
 .reglages input{width:16px;height:16px;flex:none;accent-color:var(--accent)}
+/* Ce qu'une case promet, en une ligne. « Produits » ou « Points d'intérêt »
+   ne se devinent pas depuis leur intitulé, et un réglage qu'on ne comprend
+   pas ne se touche pas. L'alignement reprend la case et son écart, pour que
+   l'aide parte sous l'intitulé et non sous la coche. */
+.reglages .aideR{margin:-5px 0 7px 25px;font-size:12px;line-height:1.5;color:var(--ink-3)}
+/* Une sorte que rien n'alimente garde son rang, éteinte : l'exploitant qui
+   cherche « Produits » doit lire pourquoi la case ne répond pas, plutôt que
+   de se demander où elle est passée. */
+.reglages label.eteint{cursor:default}
+.reglages label.eteint span{color:var(--ink-3)}
 .cc{width:24px;height:18px;padding:0;border:1px solid var(--line-strong);border-radius:3px;
   background:none;cursor:pointer;flex:none}
 .cc::-webkit-color-swatch-wrapper{padding:1px}

@@ -138,6 +138,8 @@ function indexe(d){
      ne décrit plus rien. */
   oublieGrilles();
   oublieLiaisons();
+  // et le relevé des repères, que la recherche interroge
+  oublieReperes();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
@@ -1104,6 +1106,15 @@ const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 const critParSociete = () =>
   [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
+/* Sous quel réglage de l'onglet « Recherche » chaque sorte se range. Une
+   hébergée suit les stands : c'est un exposant comme un autre, et l'exploitant
+   qui montre les stands ne s'attend pas à devoir cocher les deux. */
+const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
+                          conf: "conferences", poi: "poi" };
+
+/** L'exploitant laisse-t-il la recherche remonter cet objet ? */
+const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
+
 /* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
    décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
    d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
@@ -1111,6 +1122,11 @@ const critParSociete = () =>
    par « gamme de produits » cherche des exposants. */
 function visible(o){
   if (!filtre()) return true;
+  /* Ce que l'exploitant a retiré de la recherche ne répond pas — ni dans la
+     liste, ni sur le plan, qui n'est que l'autre face du même résultat. Le
+     sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
+     pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
+  if (!cherchable(o)) return false;
   return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
@@ -1158,11 +1174,12 @@ function appliqueFiltre(){
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
-   dix : les stands passent devant, puis les endroits du salon, puis le
-   programme — le plus nombreux, et le moins souvent visé. Une hébergée se range
-   avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
-   pavillon : trois sortes entremêlées par pavillon ne se lisaient plus. */
-const RANGS = { stand: 0, coex: 0, zone: 1, conf: 2 };
+   dix : les stands passent devant, puis les endroits du salon — les zones que
+   le salon fournit, puis les repères qu'on y a dessinés — et le programme
+   ferme la marche, le plus nombreux et le moins souvent visé. Une hébergée se
+   range avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
+   pavillon : quatre sortes entremêlées par pavillon ne se lisaient plus. */
+const RANGS = { stand: 0, coex: 0, zone: 1, poi: 2, conf: 3 };
 const rangSorte = (o) => RANGS[o.kind] || 0;
 
 /** Combien de lignes d'une même sorte la liste veut bien poser. Au-delà, on
@@ -1170,10 +1187,11 @@ const rangSorte = (o) => RANGS[o.kind] || 0;
  *  et le compte au-dessus le dit. */
 const PLAFOND_SORTE = 500;
 
-/* Le premier bloc d'une ligne porte le numéro de stand ; une zone et une
-   conférence n'en ont pas, et laisser la case vide effaçait justement ce qui
-   les distingue d'un stand sans numéro. Elle dit alors la sorte. */
-const CASE_SORTE = { zone: "Zone", conf: "Conf" };
+/* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
+   conférence et un repère n'en ont pas, et laisser la case vide effaçait
+   justement ce qui les distingue d'un stand sans numéro. Elle dit alors la
+   sorte. */
+const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
 
 /**
  * Ce que la case affiche.
@@ -1222,6 +1240,10 @@ function caseNumero(){
  * toutes lettres.
  */
 function sousLigne(o){
+  /* Un repère dit ce qu'il est, quand son libellé ne le dit pas déjà : entre
+     deux lignes « Hall Sud » et « Hall Nord », savoir qu'il s'agit d'entrées
+     est ce qui les rattache à ce qu'on cherchait. */
+  if (o.kind === "poi") return o.type || "";
   if (o.kind !== "conf") return "";
   const d = momentLocal(o.debutLocal, DATA.fuseau) || momentLocal(o.debut, DATA.fuseau);
   const quand = d
@@ -1249,7 +1271,10 @@ function liste(){
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
   const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
-    .concat(q ? CONFERENCES : []);
+    .concat(q ? CONFERENCES : [])
+    /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
+       un critère décrit une société, et un escalier n'en est pas une. */
+    .concat(q ? reperesCherchables() : []);
   const vus = portee.filter(visible).sort((a, b) =>
     (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
@@ -1280,16 +1305,21 @@ function liste(){
        stand et son nom. La surface louée et les angles ouverts regardent la
        commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const conf = o.kind === "conf";
+    /* Ni une conférence ni un repère n'est un emplacement : la sélection du
+       plan ne les désigne pas, et le clic ne passe pas par « select ». */
+    const emplacement = !conf && o.kind !== "poi";
     // une conférence que rien ne situe encore n'est dans aucun pavillon : celui
     // qui l'a remontée n'en dit rien au visiteur
     const badge = o.p !== state.plan && !(conf && !o.situee)
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
     const sous = sousLigne(o);
+    /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
+       c'est une forme dessinée, pas un objet du plan — et son identifiant seul
+       ne dirait pas où aller le chercher. */
     return '<button class="row" data-id="' + esc(o.id) +
-      '" data-sorte="' + o.kind + '" data-soc="' + rang +
-      // une conférence n'est pas un objet du plan : rien ne peut la désigner
-      '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
+      '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
+      '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
@@ -1308,6 +1338,9 @@ function liste(){
      salle sur le plan. */
   box.querySelectorAll(".row").forEach(b => b.onclick = () => {
     if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
+    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
+    // emplacement, et « select » n'aurait rien à cadrer
+    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
     select(b.dataset.id, true, parSociete ? "recherche" : "liste",
            Number(b.dataset.soc));
   });
