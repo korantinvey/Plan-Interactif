@@ -844,15 +844,23 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    y annonce l'exposant au lieu de commenter son numéro, deux lignes plus bas.
    La réserve de droite est celle du coin des actions, marque et croix : sans
    elle, une pastille un peu longue passait dessous. Quand la place manque, le
-   flex la renvoie sous le libellé plutôt que de la comprimer. */
-.detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;row-gap:4px;padding-right:62px}
+   flex la renvoie sous le libellé plutôt que de la comprimer.
+
+   La pastille ne se range pas contre le libellé : ses marges automatiques la
+   posent au milieu de ce qui reste entre lui et le coin des actions — collée
+   au mot « Stand », elle s'en faisait lire comme la suite. L'écart de la ligne
+   lui garde de l'air même quand le milieu n'existe plus, sur un écran étroit
+   ou sous le tampon penché du modèle kraft. */
+.detail-hd .hdTete{display:flex;flex-wrap:wrap;align-items:center;
+  column-gap:14px;row-gap:4px;padding-right:62px}
+.detail-hd .hdTete .badge.neuf{margin-inline:auto}
 /* Un nouvel exposant se signale au-dessus de son nom. La pastille reprend
    l'accent de la page plutôt qu'une couleur à elle : c'est une distinction, pas
    une alerte, et une teinte de plus ferait un troisième langage sur le plan
    après celui des zones. Le texte est de la fonte du corps — un numéro de stand
    se lit en mono, une mention se lit comme une phrase. */
 .badge.neuf{background:var(--accent-soft);color:var(--accent);font-family:inherit;
-  font-weight:600;margin-left:6px;align-items:center}
+  font-weight:600;align-items:center}
 /* Le pictogramme qui précède la mention. Il ne vaut pas pour lui-même : une
    étincelle seule se lit « promotion », et c'est la phrase à côté qui la dit
    « nouvel exposant ». Il tient dans la feuille de style et non dans le
@@ -1145,7 +1153,7 @@ button.expo:hover{background:var(--line)}
 .modele-magazine .detail-hd .eyebrow{letter-spacing:.32em}
 .modele-magazine .detail-hd .badge{background:none;padding:0;font-family:"Fraunces",Georgia,serif;
   font-style:italic;font-size:13px;color:var(--ink-2)}
-.modele-magazine .detail-hd .badge.neuf{background:none;color:var(--accent);margin-left:12px;
+.modele-magazine .detail-hd .badge.neuf{background:none;color:var(--accent);
   --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12.0 2.0C12.0 9.6 14.4 12.0 22.0 12.0C14.4 12.0 12.0 14.4 12.0 22.0C12.0 14.4 9.6 12.0 2.0 12.0C9.6 12.0 12.0 9.6 12.0 2.0Z'/%3E%3C/svg%3E")}
 .modele-magazine .detail-bd{padding:4px 22px 24px;gap:18px}
 .modele-magazine .detail-bd::before{content:"";display:block;flex:none;grid-column:1/-1;
@@ -1235,7 +1243,7 @@ button.expo:hover{background:var(--line)}
   background:none;border:1px solid var(--line-strong);color:var(--ink-2)}
 .modele-kraft .detail-hd .badge.neuf{background:none;border:2px solid var(--encre);color:var(--encre);
   border-radius:2px;font-family:"Courier Prime",monospace;font-weight:700;text-transform:uppercase;
-  letter-spacing:.08em;transform:rotate(-5deg);margin-left:10px;
+  letter-spacing:.08em;transform:rotate(-5deg);
   --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12 2l2.5 6.6 7 .3-5.5 4.4 1.9 6.8L12 16.2 6.1 20.1 8 13.3 2.5 8.9l7-.3Z'/%3E%3C/svg%3E")}
 .modele-kraft .prog .conf{background:rgba(255,252,244,.55);border-left:3px solid var(--encre);border-radius:0}
 .modele-kraft .btn{border:1px dashed var(--line-strong);border-radius:0;
@@ -1314,7 +1322,7 @@ button.expo:hover{background:var(--line)}
 .modele-nu .detail-hd h2{font-weight:700;letter-spacing:-.035em;line-height:1.06;
   margin:0 0 12px}
 .modele-nu .detail-hd .badge{background:none;padding:0;color:var(--ink-3);font-size:12.5px}
-.modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;margin-left:12px;
+.modele-nu .detail-hd .badge.neuf{background:none;color:var(--accent);padding:0;
   --picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M12.0 1.5L15.0 9.0L22.5 12.0L15.0 15.0L12.0 22.5L9.0 15.0L1.5 12.0L9.0 9.0Z'/%3E%3C/svg%3E")}
 .modele-nu .detail-bd{padding:14px 24px 26px;gap:9px}
 .modele-nu .field .eyebrow{display:none}
