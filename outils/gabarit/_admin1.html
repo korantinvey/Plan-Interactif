@@ -414,14 +414,14 @@ function appliqueFond(){
   else racine.style.removeProperty("--c-fond");
 }
 
-/* Les habillages du plan. Chacun tient en quatre panneaux — la liste des
-   exposants, la fiche détail, le parcours de visite et l'itinéraire — taillés
-   dans la même police et les mêmes couleurs : on ne choisit pas l'allure d'un
-   panneau sans choisir celle des autres, sous peine de quatre salons côte à
-   côte. Les trois derniers occupent d'ailleurs la même bande de l'écran, et
-   s'ouvrent l'un depuis l'autre. Le premier modèle n'a de classe nulle part :
-   c'est le plan tel que la feuille de style le dessine, et le point de départ
-   de tous les autres. */
+/* Les habillages du plan. Chacun tient en cinq pièces — le bandeau du haut,
+   la liste des exposants, la fiche détail, le parcours de visite et
+   l'itinéraire — taillées dans la même police et les mêmes couleurs : on ne
+   choisit pas l'allure de l'une sans choisir celle des autres, sous peine de
+   cinq salons côte à côte. Les trois dernières occupent d'ailleurs la même
+   bande de l'écran, et s'ouvrent l'une depuis l'autre. Le premier modèle n'a
+   de classe nulle part : c'est le plan tel que la feuille de style le dessine,
+   et le point de départ de tous les autres. */
 const MODELES = [
   { cle: "sobre", nom: "Sobre",
     resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
@@ -510,15 +510,16 @@ function posePoliceLibelles(cle){
 }
 
 /**
- * Pose l'habillage retenu sur ses quatre panneaux : la fiche détail, le
- * parcours de visite, l'itinéraire et la liste des exposants. Un seul geste
- * pour tous — le modèle est un accord, et l'exploitant qui choisit « Kraft »
- * choisit le carton partout.
+ * Pose l'habillage retenu sur les cinq pièces de l'écran : la fiche détail, le
+ * parcours de visite, l'itinéraire, la liste des exposants et le bandeau du
+ * haut. Un seul geste pour tous — le modèle est un accord, et l'exploitant qui
+ * choisit « Kraft » choisit le carton partout.
  *
  * Les trois tiroirs de droite portent le même préfixe : ils sont bâtis des
  * mêmes pièces — en-tête, pastilles, boutons — et un modèle écrit une fois
  * les habille tous les trois. La liste garde le sien, elle n'a ni en-tête ni
- * pastille et se dessine autrement.
+ * pastille et se dessine autrement ; le bandeau aussi, qui n'a ni l'une ni
+ * l'autre et traverse l'écran de part en part.
  *
  * Une seule classe à la fois par panneau : les modèles se recouvrent, et deux
  * ensemble ne veulent rien dire.
@@ -529,6 +530,7 @@ function appliqueModele(){
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  pose($("bandeau"), "bandeau-");
   posePoliceLibelles(cle);
 }
 
@@ -1130,8 +1132,9 @@ function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
-    "l'allure de tous les panneaux à la fois : la liste des exposants, la " +
-    "fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire.";
+    "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
+    "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
+    "l'itinéraire.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");

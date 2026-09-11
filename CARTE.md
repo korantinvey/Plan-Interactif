@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2231 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2234 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1273 · 10. Mode administration
-- l.1348 · La fiche d'une zone organisateur
-- l.1978 · Masquer une zone organisateur
-- l.2061 · Placer un libellé à la main
+- l.1276 · 10. Mode administration
+- l.1351 · La fiche d'une zone organisateur
+- l.1981 · Masquer une zone organisateur
+- l.2064 · Placer un libellé à la main
 
 Fonctions :
 
@@ -26,20 +26,20 @@ Fonctions :
 `styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 201 · `chercheSorte` 271
 `voletRecherche` 274 · `minutesVisite` 328 · `salonPartage` 335 · `trio` 348 · `melange` 358
 `themeSombre` 366 · `appliqueAccent` 380 · `appliqueFond` 411 · `modeleRetenu` 449
-`posePoliceLibelles` 499 · `appliqueModele` 526 · `texteCorps` 596 · `standApercu` 611
-`lignesApercu` 631 · `contenuApercu` 657 · `apercuFiche` 690 · `apercuListe` 754
-`apercuDuo` 776 · `glisseFenetre` 809 · `ouvreReglages` 820 · `voletZones` 902
-`ficheZoneEnPlace` 979 · `voletPlan` 997 · `nomDuTon` 1124 · `voletApparence` 1129
-`enregistreConf` 1223 · `rgbHex` 1229 · `hexa` 1236 · `luminance` 1240 · `ecarte` 1254
-`joli` 1269 · `retireAdmin` 1286 · `activeAdmin` 1299 · `champZone` 1374 · `champsZone` 1399
-`champSalles` 1455 · `nomDeZone` 1507 · `reduitLogo` 1541 · `champLogo` 1582
-`editeurRiche` 1679 · `memeFicheZone` 1836 · `suitFicheZone` 1841 · `verseFicheZone` 1849
-`ficheZone` 1875 · `enregistreZone` 1900 · `basculeAffichageZone` 1989
-`marqueZonesMasquees` 2006 · `ecritTablesZones` 2026 · `ecritTableZones` 2057
-`cleLibelle` 2082 · `empreinteLibelle` 2098 · `placementLibelle` 2106 · `posePlacement` 2116
-`libelleAutomatique` 2133 · `modePlacementLibelles` 2142 · `majPaletteLibelle` 2159
-`choisitLibelle` 2176 · `pousseLibelle` 2183 · `libellePointerDown` 2191
-`libellePointerMove` 2206 · `libellePointerUp` 2215
+`posePoliceLibelles` 499 · `appliqueModele` 527 · `texteCorps` 598 · `standApercu` 613
+`lignesApercu` 633 · `contenuApercu` 659 · `apercuFiche` 692 · `apercuListe` 756
+`apercuDuo` 778 · `glisseFenetre` 811 · `ouvreReglages` 822 · `voletZones` 904
+`ficheZoneEnPlace` 981 · `voletPlan` 999 · `nomDuTon` 1126 · `voletApparence` 1131
+`enregistreConf` 1226 · `rgbHex` 1232 · `hexa` 1239 · `luminance` 1243 · `ecarte` 1257
+`joli` 1272 · `retireAdmin` 1289 · `activeAdmin` 1302 · `champZone` 1377 · `champsZone` 1402
+`champSalles` 1458 · `nomDeZone` 1510 · `reduitLogo` 1544 · `champLogo` 1585
+`editeurRiche` 1682 · `memeFicheZone` 1839 · `suitFicheZone` 1844 · `verseFicheZone` 1852
+`ficheZone` 1878 · `enregistreZone` 1903 · `basculeAffichageZone` 1992
+`marqueZonesMasquees` 2009 · `ecritTablesZones` 2029 · `ecritTableZones` 2060
+`cleLibelle` 2085 · `empreinteLibelle` 2101 · `placementLibelle` 2109 · `posePlacement` 2119
+`libelleAutomatique` 2136 · `modePlacementLibelles` 2145 · `majPaletteLibelle` 2162
+`choisitLibelle` 2179 · `pousseLibelle` 2186 · `libellePointerDown` 2194
+`libellePointerMove` 2209 · `libellePointerUp` 2218
 
 Éléments :
 
@@ -220,26 +220,26 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 3109 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3313 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
-`#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones` · `#btnItineraire`
-`#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages` · `#btnTheme` · `#menuCompte`
-`#avatarCompte` · `#compteMail` · `#btnThemeCompte` · `#btnSortir` · `#side` · `#poignee`
-`#q` · `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
-`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
-`#contourAimant` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
-`#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
-`#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
-`#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
-`#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemStand`
-`#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
-`#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
-`#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
+`#bandeau` · `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones`
+`#btnItineraire` · `#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages`
+`#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail` · `#btnThemeCompte`
+`#btnSortir` · `#side` · `#poignee` · `#q` · `#videQ` · `#btnFiltres` · `#nFiltres`
+`#actifs` · `#count` · `#countTxt` · `#list` · `#stage` · `#plan` · `#couches` · `#zones`
+`#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi`
+`#viseur` · `#viseurTxt` · `#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils`
+`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas`
+`#contourReg` · `#contourRayon` · `#contourAimant` · `#texteADessiner` · `#repereType`
+`#repereTexte` · `#standSoc` · `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette`
+`#elemSel` · `#elemType` · `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens`
+`#elemLiensListe` · `#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur`
+`#elemHauteur` · `#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon`
+`#elemStand` · `#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg`
+`#libNom` · `#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre`
+`#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
 `#closeDetail` · `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
 `#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody`
 `#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps`
