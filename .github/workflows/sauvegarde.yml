@@ -1,0 +1,101 @@
+# Emporte chaque nuit la part de la base que rien ne régénère.
+#
+# Tout ce que contient la base ne se vaut pas. Les pavillons, les calques
+# d'habillage et leurs SVG, les instantanés de stands : une synchronisation
+# Klipso les refait en une heure, et ils pèsent des dizaines de mégaoctets. Le
+# reste n'existe qu'ici — les dessins de l'exploitant, l'apparence qu'il a
+# réglée, les salles, les comptes, et l'historique d'usage, qui est du passé et
+# ne se rejoue pas. C'est cette part-là qu'on emporte, et elle tient dans
+# quelques centaines de kilo-octets.
+#
+# Le fichier part en artefact GitHub plutôt qu'en base ou dans le dépôt : une
+# sauvegarde rangée dans le système qu'elle protège ne couvre ni un projet
+# supprimé ni une erreur vieille de trois semaines, et des données de production
+# n'ont rien à faire dans l'historique du dépôt.
+#
+# Le schéma, lui, n'est pas sauvegardé : il est dans `supabase/migrations/`,
+# rejouable, et c'est justement à quoi servent les migrations. Restaurer, c'est
+# donc appliquer les migrations sur une base neuve, puis y verser ce fichier :
+#
+#   gunzip -c donnees-AAAA-MM-JJ.sql.gz | psql "<chaîne de connexion>"
+#
+# Les identifiants de connexion (schéma « auth ») restent chez Supabase : les
+# profils et les droits sont ici, les mots de passe non. Après un sinistre
+# total, les comptes se recréent par invitation, et retrouvent leurs accès.
+name: Sauvegarde
+
+on:
+  schedule:
+    # 02:17 UTC, soit un peu après 3 h ou 4 h à Paris selon la saison. Une heure
+    # creuse, et une minute qui n'est pas « pile » : GitHub décale les tâches
+    # lancées en même temps que tout le monde.
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+# Deux sauvegardes de front liraient la même base pour rien.
+concurrency:
+  group: sauvegarde
+  cancel-in-progress: false
+
+jobs:
+  sauvegarder:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Même référence que le déploiement : le sous-domaine de l'API, public.
+      REFERENCE: ${{ vars.SUPABASE_PROJECT_REF || 'jylkfskotuafptaxujao' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Dater la sauvegarde
+        id: jour
+        run: echo "jour=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # `--schema public` laisse de côté les schémas de la plateforme, dont
+      # « auth » ; les deux exclusions retirent ce que Klipso sait refaire.
+      - name: Exporter les données irremplaçables
+        run: >-
+          mkdir -p sauvegarde &&
+          npx --no-install supabase db dump
+          --project-ref "$REFERENCE"
+          --password "$MOT_DE_PASSE"
+          --data-only
+          --use-copy
+          --schema public
+          --exclude public.calque,public.instantane
+          --file "sauvegarde/donnees-${{ steps.jour.outputs.jour }}.sql"
+        env:
+          MOT_DE_PASSE: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # Une sauvegarde qu'on ne regarde pas n'en est pas une. Un export qui
+      # « réussit » en ne rendant qu'un en-tête est le cas qu'on ne voit jamais
+      # venir : on exige donc les tables qui portent le travail de l'exploitant,
+      # et l'absence de l'une d'elles fait échouer la tâche, qui se signale.
+      - name: Vérifier que la sauvegarde porte quelque chose
+        run: |
+          f="sauvegarde/donnees-${{ steps.jour.outputs.jour }}.sql"
+          for table in evenement plan apparence calque_dessin profil acces; do
+            grep -q "COPY \"public\".\"$table\"" "$f" ||
+              { echo "::error::table « $table » absente de la sauvegarde"; exit 1; }
+          done
+          taille=$(wc -c < "$f")
+          echo "Sauvegarde : $taille octets."
+          [ "$taille" -gt 2048 ] ||
+            { echo "::error::sauvegarde anormalement courte"; exit 1; }
+          gzip -9 "$f"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sauvegarde-${{ steps.jour.outputs.jour }}
+          path: sauvegarde/
+          # Le maximum que GitHub accorde. Au-delà, il faudrait un stockage à
+          # soi — et une clé de plus à garder.
+          retention-days: 90
+          if-no-files-found: error

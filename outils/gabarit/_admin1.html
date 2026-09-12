@@ -2037,11 +2037,20 @@ function activeAdmin(){
      tout le travail de calques et de libellés, pour un besoin qui ne se
      présente jamais.
 
-     Ce qui reste dit où en est l'enregistrement — il se fait tout seul — et
-     permet de le relancer quand il a échoué. « majAttente » l'habille. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>';
+     La sauvegarde emportée, elle, revient — mais pour l'autre raison. Ce n'est
+     pas un moyen de transport : c'est le seul exemplaire qui ne dépende ni de
+     la base ni de ce navigateur, et le jour où les deux ont dit des choses
+     différentes, c'est un fichier tenu à part qui a permis de trancher.
+
+     Le premier bouton dit où en est l'enregistrement — il se fait tout seul —
+     et permet de le relancer quand il a échoué. « majAttente » l'habille. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>' +
+    '<button class="reset" id="sauveConf">Télécharger une sauvegarde</button>' +
+    '<button class="reset" id="restaureConf">Restaurer une sauvegarde…</button>' +
+    '<input type="file" id="fichierConf" accept="application/json,.json" hidden>';
   $("panel").appendChild(barre);
   $("pousseConf").onclick = () => pousseConfiguration();
+  brancheSauvegarde();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
      alors pas été construit — montePlan() n'en bâtit qu'en administration —

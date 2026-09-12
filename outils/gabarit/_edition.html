@@ -382,7 +382,8 @@ function appliqueTrait(){
 }
 
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
- *  vaut pour l'itinéraire — une porte, un escalier à contourner en fauteuil. */
+ *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
+ *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
 function appliquePicto(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "repere") return;
@@ -392,9 +393,6 @@ function appliquePicto(){
      ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
      ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
   enregistreDessins();
-  /* Le pavage des allées tient compte des escaliers et des escalators : en
-     désigner un, ou cesser de le faire, change les trajets accessibles. */
-  oublieGrilles();
   /* Devenir un escalier, ou cesser de l'être, ouvre ou ferme le panneau des
      passages : le panneau se relit donc, comme après tout changement de ce
      qu'un repère est. */
