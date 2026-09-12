@@ -618,7 +618,8 @@ function standApercu(cles){
     const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
     if (n > score){
       score = n; mieux = o;
-      pavillon = pl.libelle || ""; hall = pl.hall || "";
+      // le hall tient au stand, pas au pavillon : un plan peut en couvrir deux
+      pavillon = pl.libelle || ""; hall = o.hall || "";
     }
   }));
   return { stand: mieux, pavillon, hall, neuf };

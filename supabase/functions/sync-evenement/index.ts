@@ -77,6 +77,17 @@ const NOMS: Record<string, string> = {
    pour lui, ni ici ni dans la console. */
 const CHAMP_SECTEUR = "SecteurExp";
 
+/* Le hall de l'emplacement. Il tient au stand et non au pavillon : un plan
+   peut couvrir deux halls, et le « HallExp » du plan ne rend alors que celui
+   du premier — c'est ainsi qu'il a d'abord été lu, et c'était faux.
+
+   Comme le secteur, c'est un champ « choix » : le stand n'en porte que le
+   code — « FEP27_H1 » — et le libellé vit dans la codification. Et comme lui,
+   GAIA le nomme pareil partout, il n'y a donc rien à régler dans la console.
+   On vérifie tout de même que le schéma le déclare avant de le demander : un
+   champ inexistant fait échouer l'appel entier. */
+const CHAMP_HALL = "HallExp";
+
 // Les calques de texte que le rendu recalcule lui-même : conservés, mais c'est
 // d'eux qu'on tire les noms de zones tant que x_LibZOD n'est pas renseigné.
 const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
@@ -689,6 +700,15 @@ Deno.serve(async (req) => {
          quelle que soit la source des exposants — le plan, lui, vient toujours
          de Klipso. */
       const choixSect = await libellesChoix(g, "Stand", CHAMP_SECTEUR);
+      /* Le hall se lit comme le secteur, à une précaution près : tous les
+         salons n'en tiennent pas, et demander un champ que le schéma ne
+         déclare pas ferait échouer la lecture des stands. On regarde donc
+         d'abord s'il existe — les métadonnées sont déjà en mémoire, cela ne
+         coûte pas un appel de plus. */
+      const aHall = (await g.proprietes("Stand")).some((x) => x.cle === CHAMP_HALL);
+      const choixHall = aHall
+        ? await libellesChoix(g, "Stand", CHAMP_HALL)
+        : { libelles: {}, chemin: null, erreur: null };
       /* Un champ personnalisé peut être un champ « choix » comme la
          nomenclature : il ne porte alors qu'un code, et la fiche afficherait
          « FEP26_GAM102 » là où l'exploitant attend « Prêt-à-porter ». Sa
@@ -718,6 +738,12 @@ Deno.serve(async (req) => {
       const secteur = (v: unknown): string | null => {
         const c = ou(v);
         return c ? lisible(choixSect.libelles, c) : null;
+      };
+      /* Le hall décrit l'emplacement, comme le secteur : il reste au stand,
+         quelle que soit la société qu'on y regarde. */
+      const hall = (v: unknown): string | null => {
+        const c = ou(v);
+        return c ? lisible(choixHall.libelles, c) : null;
       };
 
       /**
@@ -813,6 +839,7 @@ Deno.serve(async (req) => {
           "Allee", "NoStand", "Allee2", "NoStand2", "NbAngles", "NbNiveau",
           "Longueur", "Largeur", "SurfaceBrute", "EtatCommercialisation",
           "StandFictif", "x_CouleurPlan", CHAMP_SECTEUR,
+          ...(aHall ? [CHAMP_HALL] : []),
         ]);
         const champsDossier = new Set(["Id", "AvancementImplantation", "Categorie"]);
         for (const c of ciblesK) {
@@ -936,6 +963,9 @@ Deno.serve(async (req) => {
              dépend donc ni de l'appariement, ni de la source des exposants — et
              c'est ce qui rend un plan colorié par secteurs lisible. */
           const sect = secteur(s[CHAMP_SECTEUR]);
+          /* Le hall aussi tient à l'emplacement. Un même plan peut en couvrir
+             deux : c'est le stand qui dit lequel, jamais le pavillon. */
+          const salle = hall(s[CHAMP_HALL]);
 
           /* Les champs propres au salon. Ils suivent la société, pas
              l'emplacement : c'est sa fiche qui les porte, et un stand dont
@@ -981,6 +1011,10 @@ Deno.serve(async (req) => {
                l'instantané est servi au public, il n'a pas à porter des
                « null » par centaines. */
             ...(sect ? { sect } : {}),
+            /* La clé ne descend pas quand le salon ne tient pas de halls :
+               l'instantané est servi au public, il n'a pas à porter des nuls
+               par centaines. */
+            ...(salle ? { hall: salle } : {}),
             /* Un salon qui ne s'est ajouté aucun champ ne porte pas la clé :
                elle serait un objet vide sur chacun de ses stands. */
             ...(Object.keys(perso).length ? { perso } : {}),
@@ -1232,6 +1266,15 @@ Deno.serve(async (req) => {
           libelles: Object.keys(choixSect.libelles).length,
           chemin: choixSect.chemin,
           erreur: choixSect.erreur,
+        },
+        /* Le compte des halls dit la même chose que celui des secteurs : un
+           plan rempli de codes passerait sinon pour un plan correct. « Non
+           déclaré » n'est pas une panne — beaucoup de salons n'ont qu'un hall
+           et ne tiennent pas le champ. */
+        halls: {
+          libelles: Object.keys(choixHall.libelles).length,
+          chemin: choixHall.chemin,
+          erreur: aHall ? choixHall.erreur : "champ non déclaré par le schéma",
         },
         ...(resumeEm ? { eventmaker: resumeEm } : {}),
       });
