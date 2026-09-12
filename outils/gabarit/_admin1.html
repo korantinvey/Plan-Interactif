@@ -841,7 +841,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Cinq onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Six onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -881,6 +881,10 @@ function ouvreReglages(ouvrir){
     /* « Recherche » suit « Plan » : les deux parlent de ce que le visiteur
        obtient, quand « Apparence » ne parle que de l'allure. */
     voletRecherche(volet("Recherche"));
+    /* La suggestion suit la recherche pour la même raison : elle parle de ce
+       que le visiteur obtient, et elle se lit dans la foulée des critères,
+       qu'elle emprunte. */
+    voletSuggestion(volet(NOM_VOLET_SUGGESTION));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */

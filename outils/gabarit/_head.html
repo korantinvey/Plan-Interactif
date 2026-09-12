@@ -2001,6 +2001,24 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La proposition qui ferme le tiroir.
+   Elle ne se déguise pas en rang du parcours : ce qui est dessous a été retenu,
+   ce qui est ici ne l'est pas encore. D'où le fond d'accent et le trait
+   discontinu — la même carte, pas encore épinglée. Le rang qu'elle porte, lui,
+   reprend l'allure des autres : c'est le même exposant, ouvert du même geste. */
+.pSugg{display:flex;flex-direction:column;gap:7px;padding:11px 12px;
+  border:1px dashed var(--line-strong);border-radius:var(--radius);
+  background:var(--accent-soft)}
+.pSugg .sTete{display:flex;align-items:center;gap:8px}
+.pSugg .sTete .eyebrow{flex:1;min-width:0}
+.pSugg .sEcarte{flex:none;width:22px;height:22px;color:var(--ink-3);font-size:15px;
+  line-height:1}
+.pSugg .sEcarte:hover{color:var(--ink)}
+.pSugg .sMotif{margin:0;font-size:12px;line-height:1.5;color:var(--ink-2)}
+/* Le fond du rang vient du panneau, pas du tiroir : posé sur l'accent, le gris
+   de « surface-2 » s'y serait fondu. */
+.pSugg .pRang .pOuvre{background:var(--surface)}
+.pSugg .pRang .pOuvre:hover{background:var(--surface-2)}
 /* ------------------------------------------------------------
    La journée organisée
 
@@ -2614,6 +2632,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
 .sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
 .sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
+/* Le seuil se chiffre entre deux champs qui se choisissent : sa règle de
+   séparation le détache de ce qui précède, rien ne le détachait de ce qui
+   suit. */
+.voletSugg .reglage-nb + .champZ{margin-top:16px}
+/* Les valeurs d'un critère, dans les réglages de la suggestion : ce qu'on
+   propose en face de chacune, et combien d'exposants la portent. Le nombre est
+   ce qui dit si une valeur pèse — une ville à trois exposants ne déclenchera
+   presque jamais. La liste défile pour elle seule : un salon rangé par ville en
+   compte cent, et le reste du volet doit rester atteignable. */
+.suggVals{display:flex;flex-direction:column;gap:5px;max-height:34dvh;overflow-y:auto;
+  padding:6px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.suggVals .rang{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto;
+  gap:3px 10px;align-items:center;padding:5px 6px;border-radius:var(--radius)}
+.suggVals .rang:hover{background:var(--accent-soft)}
+.suggVals .nV{font-size:13px;color:var(--ink);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.suggVals .vV{font-size:12.5px;color:var(--ink-2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+/* Une valeur que personne n'a encore consultée ne propose rien : elle le dit en
+   italique, comme une absence et non comme un nom. */
+.suggVals .vV.rien{color:var(--ink-3);font-style:italic}
+.suggVals .cV{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+/* Les champs de la fiche prennent toute la largeur ; ici ils tiennent dans une
+   colonne, et la taille de leur texte doit rester celle de la ligne. */
+.champZ .suggVals select{width:100%;padding:5px 7px;font-size:12.5px}
+@media (max-width:640px){
+  .suggVals .rang{grid-template-columns:minmax(0,1fr) auto}
+  .suggVals .vV,.champZ .suggVals select{grid-column:1/-1}
+}
 /* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
    vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
    il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
