@@ -433,11 +433,26 @@ un rang mort.
 ## Compléter une visite — la suggestion
 
 Un visiteur qui retient quatre enseignes du même secteur ne compose pas une liste
-au hasard : il cherche quelque chose, et sa liste le dit avant lui. Le bas du
-tiroir du parcours lui propose alors **un exposant de plus**, en disant pourquoi
-— « *« Agroalimentaire » revient 4 fois dans votre liste (secteur)* » — avec le
-signet pour l'ajouter et la croix pour ne plus le voir. Le refus vaut le temps de
-la page : il porte sur l'instant, pas sur l'exposant.
+au hasard : il cherche quelque chose, et sa liste le dit avant lui. Le plan lui
+propose alors **un exposant de plus**, en disant d'où vient la proposition avant
+de dire où elle mène :
+
+> Vous avez ajouté 4 exposants du secteur « Agroalimentaire » à votre liste.
+> Vous pourriez être intéressé par l'exposant CLUB CAFE.
+
+Suit le nom, son emplacement, le signet pour l'ajouter et la croix pour ne plus
+le voir. Le refus vaut le temps de la page : il porte sur l'instant, pas sur
+l'exposant.
+
+Le critère que le plan connaît d'avance porte son article — « du secteur », « de
+la ville », « du pays ». Un champ que le salon s'est ajouté n'en a pas : rien ne
+dit le genre de « Famille » ni d'« Univers », et ceux-là se disent « marqués
+« X » », qui va avec tout.
+
+**Un exposant déjà dans la liste n'est jamais proposé** — il ne la compléterait
+pas. Pas plus qu'un exposant écarté d'un revers de main, ou démonté depuis le
+dernier relevé. Quand la valeur n'a plus personne à offrir, c'est la valeur
+suivante de la liste qui est examinée.
 
 La fonction est éteinte d'origine et se règle dans « Réglages du plan », onglet
 **« Suggestion »** :
@@ -447,6 +462,10 @@ La fonction est éteinte d'origine et se règle dans « Réglages du plan », on
   thématiques, ou un champ que le salon s'est ajouté ;
 - **le seuil** — combien d'exposants d'une même valeur doivent figurer dans le
   parcours avant qu'on en propose un autre, de 2 à 12 (3 d'origine) ;
+- **la présentation** — *discrète*, la proposition attend au bas du tiroir du
+  parcours, là où le visiteur va de lui-même ; *au premier plan*, elle s'ouvre
+  **en plus** dans une fenêtre dès que le seuil réglé est atteint, quel qu'il
+  soit. La fenêtre ne remplace pas le tiroir, elle s'y ajoute ;
 - **l'exposant proposé**, de deux provenances :
   - **le plus consulté du salon** dans cette valeur, relevé dans les compteurs
     d'usage ;
@@ -457,6 +476,42 @@ La fonction est éteinte d'origine et se règle dans « Réglages du plan », on
 Seules les valeurs qu'**au moins trois exposants** portent sont réglables : à
 deux, il faudrait que le visiteur les retienne tous pour atteindre le seuil, et
 il ne resterait plus personne à proposer.
+
+### La fenêtre au premier plan, et ce qui la retient
+
+Elle interrompt — c'est tout son intérêt, et tout son risque. Trois règles la
+tiennent, et ce sont elles qui font la différence entre un coup de pouce et une
+réclame :
+
+- **sur un ajout, jamais à l'ouverture.** C'est le geste d'ajouter un exposant
+  qui peut faire atteindre le seuil ; rouvrir le plan sur une liste retenue la
+  veille n'en est pas un, et accueillir le visiteur par une fenêtre qu'il n'a
+  pas demandée serait autre chose que compléter sa visite ;
+- **une fois par proposition.** Le couple valeur + exposant est retenu le temps
+  de la page. Revenue à chaque ajout, la fenêtre se ferait fermer sans être lue ;
+- **jamais par-dessus une autre fenêtre.** Celle qui est ouverte a été demandée,
+  elle : un réglage en cours de saisie, une confirmation à donner.
+
+### Est-ce que ça sert ? — la mesure
+
+Un exposant proposé se lit et s'ajoute comme n'importe quel autre : ses fiches
+et ses ajouts se comptaient donc sans se distinguer de ceux qu'on est allé
+chercher soi-même, et l'on ne pouvait pas répondre à la seule question qui
+décide de garder la fonction ou de l'éteindre.
+
+Le vocabulaire des compteurs porte donc un canal de plus, `suggestion`, et deux
+chiffres le rendent :
+
+- **les fiches ouvertes depuis la proposition** — une barre « Proposé pour
+  compléter une visite » dans le rapport d'utilisation, une colonne du même nom
+  dans l'export par exposant ;
+- **les ajouts au parcours venus de la proposition** — colonne « Ajouts depuis
+  une suggestion » de l'export, à côté du total des ajouts et non déduite de lui.
+
+Les deux gestes de la carte les portent, du tiroir comme de la fenêtre : ouvrir
+la fiche, et toucher le signet. Rien à reprendre dans ce qui est déjà
+enregistré — aucun geste passé ne portait ce canal, et les compteurs d'hier
+gardent exactement leur sens.
 
 ### Ce qui ne sort pas du salon, et ce qui n'y entre pas
 

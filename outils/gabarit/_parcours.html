@@ -47,7 +47,15 @@ function enregistreParcours(){
   try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
 }
 
-function basculeParcours(genre, id){
+/**
+ * Retenir un rang, ou le retirer.
+ *
+ * `canal` dit d'où vient le geste, et ne sert qu'à la mesure : un ajout venu
+ * d'une proposition ne se compte pas comme un ajout qu'on est allé chercher
+ * soi-même — c'est même le seul chiffre qui dise si proposer sert à quelque
+ * chose. Absent, le geste compte comme avant, sans provenance.
+ */
+function basculeParcours(genre, id, canal){
   const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
   // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
   if (i < 0) l.push(k); else l.splice(i, 1);
@@ -60,8 +68,13 @@ function basculeParcours(genre, id){
      Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
      visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
      retiré » ne veut rien dire. */
-  mesure("parcours", "", i < 0 ? k : "",
+  mesure("parcours", canal || "", i < 0 ? k : "",
          genre === "conf" ? "fiche_conf" : "fiche_stand");
+  /* Un ajout peut faire basculer la proposition au premier plan : c'est ici
+     qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
+     lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
+     par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
+  if (i < 0 && genre === "stand") fenetreSuggestion();
 }
 
 /* ------------------------------------------------------------
@@ -93,13 +106,14 @@ function rafraichitMarque(el){
   if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
 }
 
-/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. */
-function brancheParcours(hote){
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. `canal` suit
+ *  jusqu'à la mesure, pour les fragments qu'on n'est pas allé chercher. */
+function brancheParcours(hote, canal){
   hote.querySelectorAll("[data-mg]").forEach(el => {
     rafraichitMarque(el);
     el.onclick = ev => {
       ev.stopPropagation();
-      basculeParcours(el.dataset.mg, el.dataset.mi);
+      basculeParcours(el.dataset.mg, el.dataset.mi, canal);
     };
   });
 }
@@ -354,6 +368,7 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
     /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
        repart de zéro, les refus avec elle. */
     SUGG_ECARTES.clear();
+    SUGG_MONTREES.clear();
     enregistreParcours();
     appliqueVueParcours();
   });
