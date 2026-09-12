@@ -179,6 +179,34 @@ function cheminForme(f){
   }
   return cheminArrondi(f.pts, f.r || 0, f.t !== "ligne");
 }
+/* --- épaisseur et style du trait ---
+   Le trait des calques ne grossit pas avec le zoom : son épaisseur se compte
+   en pixels d'écran, et l'espacement des points avec elle. Rien n'est écrit
+   tant que la forme ne demande rien — la feuille de style garde alors la main,
+   et le pointillé qui signale un rôle d'itinéraire pendant l'édition reste
+   lisible sur les tracés qu'on n'a pas réglés. */
+const EPAISSEUR_TRAIT = 2;
+
+function styleTrait(f){
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  const css = [];
+  if (ep !== EPAISSEUR_TRAIT) css.push("stroke-width:" + ep);
+  /* Des points ronds plutôt que des tirets : les bouts arrondis du trait les
+     dessinent d'eux-mêmes dès que la portion tracée est quasi nulle. */
+  if (f.pointille) css.push("stroke-dasharray:.01 " + +(ep * 2.2).toFixed(2));
+  return css.length ? ' style="' + css.join(";") + '"' : "";
+}
+
+/** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
+ *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
+ *  calque, aujourd'hui comme le jour où il changera d'allure. */
+function poseTrait(f){
+  const e = $("traitEpaisseur"), s = $("traitStyle");
+  const ep = e ? parseFloat(e.value) : NaN;
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) f.ep = ep;
+  if (s && s.value === "pointille") f.pointille = true;
+}
+
 function dessineDessins(){
   const c = $("couches");
   c.querySelectorAll(".dcal").forEach(g => g.remove());
@@ -210,7 +238,7 @@ function dessineDessins(){
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
       : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><path d="' + cheminForme(f) + '"/></g>').join("");
+        '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/></g>').join("");
     c.appendChild(g);
   }
   ordonneDom();
@@ -1298,6 +1326,8 @@ function termineTrace(valider){
   const mini = enCours.t === "ligne" ? 2 : 3;
   // l'arrondi se lit à la validation : on peut le régler le tracé commencé
   if (outil === "contour" && rayonContour() > 0) enCours.r = rayonContour();
+  // l'épaisseur et le style se lisent de même, à la fin du tracé
+  if (outil === "ligne" && enCours.t === "ligne") poseTrait(enCours);
   if (valider && enCours.pts.length >= mini) ajouteForme(enCours);
   enCours = null; apercu(null); apercuGuide(null); montreCote(null);
   montreAimants(null); aide();
@@ -1341,6 +1371,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-contour", o === "contour");
+  b.classList.toggle("mode-ligne", o === "ligne");
   b.classList.toggle("mode-repere", o === "repere");
   b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
@@ -1384,6 +1415,10 @@ $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
 if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
+/* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
+   trait sur le plan, pas dans une liste déroulante. */
+if ($("elemEpaisseur")) $("elemEpaisseur").onchange = appliqueTrait;
+if ($("elemStyle")) $("elemStyle").onchange = appliqueTrait;
 /* La largeur et la hauteur au clavier : c'est le seul moyen d'obtenir deux
    fois la même, et de rattraper un stand tracé à peu près. */
 if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
@@ -1501,6 +1536,11 @@ const AIDE_ROLE = {
   circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
     "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
     "au bord est retiré tout seul.",
+  "circulation-pmr": "Ce qui est dessiné ici ne s'ouvre qu'en itinéraire accessible, " +
+    "et reste fermé aux autres : le couloir qui mène à l'ascenseur, la rampe qui " +
+    "contourne les marches. Faites-le mordre d'un bon mètre sur l'allée qu'il rejoint, " +
+    "sans quoi il débouche sur un mur — cette morsure se ferme aux autres comme le " +
+    "reste, ne barrez donc pas l'allée en travers.",
 };
 
 /* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
