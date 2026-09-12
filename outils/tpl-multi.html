@@ -9194,10 +9194,14 @@ function ajouteForme(f){
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
-  /* Une porte de hall n'est ni une entrée ni une sortie : c'est les deux,
-     et le visiteur qui la cherche cherche par où passer. Le battant de
-     Material reçoit donc une double flèche à la place de la sienne. */
+  /* Une porte de hall est le plus souvent les deux à la fois — on y entre le
+     matin, on en ressort le soir — et le visiteur qui la cherche cherche par
+     où passer : le battant de Material reçoit donc une double flèche à la
+     place de la sienne. Les salons qui séparent les deux flux gardent les
+     deux battants d'origine, une flèche chacun. */
   entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
+  entree_seule: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
+  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
   accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
   info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
   restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
@@ -9287,6 +9291,8 @@ const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || n
 const TYPES_REPERE = [
   { v: "",             nom: "Sans pictogramme" },
   { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "entree_seule", nom: "Entrée" },
+  { v: "sortie",       nom: "Sortie" },
   { v: "wc",           nom: "WC" },
   { v: "accueil",      nom: "Accueil" },
   { v: "info",         nom: "Information" },
@@ -9330,19 +9336,34 @@ const TYPES_ZONE = [
 /** Le type d'une zone, s'il lui en a été donné un. */
 const typeZone = (z) => TYPES_ZONE.find(t => t.v && z && t.v === z.type) || null;
 
-/* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
-   plus qu'un, une porte de hall étant les deux à la fois. */
-const PICTO_ALIAS = { sortie: "entree" };
-
 /**
  * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
  * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
  * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
  */
 function pictoForme(f){
-  const p = f.picto === undefined ? pictoDe(f.txt) : f.picto;
-  return PICTO_ALIAS[p] || p;
+  return f.picto === undefined ? pictoDe(f.txt) : f.picto;
 }
+
+/**
+ * Les trois portes, et ce qu'on en fait.
+ *
+ * Une porte de hall sert le plus souvent dans les deux sens, et c'est
+ * « Entrée/Sortie » qui la dit. Certains salons séparent pourtant les flux —
+ * on entre par le parvis, on ressort côté parking — et le trajet qui l'ignore
+ * fait sortir le visiteur par où personne ne sort. D'où les deux types à sens
+ * unique, et ces trois lectures : ce qui est une porte, ce par quoi on entre,
+ * ce par quoi on sort.
+ *
+ * Un libellé, lui, ne dit jamais le sens : « Sortie » sur un repère d'avant
+ * les types reste une porte des deux côtés, faute de savoir si l'on y entre.
+ * Seul le type choisi dans la liste tranche — y compris celui d'un repère
+ * désigné « Sortie » avant la fusion des deux pictogrammes, qui retrouve ici
+ * ce que l'exploitant en avait dit.
+ */
+const estPorte     = (p) => p === "entree" || p === "entree_seule" || p === "sortie";
+const ouvreEntrant = (p) => p === "entree" || p === "entree_seule";
+const ouvreSortant = (p) => p === "entree" || p === "sortie";
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
@@ -14175,15 +14196,18 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
- *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
-function portesDe(p){
-  return reperesDe(p).filter(f => pictoForme(f) === "entree");
+/** Les portes d'un pavillon, dans le sens où on les franchit : « entrant »
+ *  ne retient que ce par quoi on entre, « sortant » que ce par quoi on sort,
+ *  et sans précision toutes celles qui en sont une. */
+function portesDe(p, sens){
+  const ouvre = sens === "entrant" ? ouvreEntrant
+              : sens === "sortant" ? ouvreSortant : estPorte;
+  return reperesDe(p).filter(f => ouvre(pictoForme(f)));
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
 function versPorte(p, pmr, xy, entrant, chez){
-  const portes = portesDe(p);
+  const portes = portesDe(p, entrant ? "entrant" : "sortant");
   if (!portes.length) return null;
   /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
      peut être derrière une rangée de stands. On ne calcule cependant pas
@@ -14228,12 +14252,18 @@ const TYPES_LIAISON = {
      marcher en plus pour éviter ce passage. Une porte ne se paie presque
      rien ; un ascenseur s'attend, et deux étages à pied lui restent parfois
      préférables. La durée, elle, s'ajoute à celle de la marche. */
-  entree:    { nom: "porte",     art: "la porte",     accessible: true,  cout: 15, min: 1 },
-  escalier:  { nom: "escalier",  art: "l'escalier",   accessible: false, cout: 30, min: 1 },
-  escalator: { nom: "escalator", art: "l'escalator",  accessible: false, cout: 25, min: 1 },
+  entree:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  /* Une porte à sens unique se relie comme les autres : le sens qu'elle porte
+     vaut pour le visiteur qui cherche le hall, pas pour la liaison que
+     l'exploitant a déclarée d'un plan à l'autre — s'il l'a déclarée, c'est
+     qu'on y passe. */
+  entree_seule: { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  sortie:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  escalier:     { nom: "escalier", art: "l'escalier", accessible: false, cout: 30, min: 1 },
+  escalator:    { nom: "escalator", art: "l'escalator", accessible: false, cout: 25, min: 1 },
   /* Le seul passage vertical qu'un fauteuil emprunte : sans lui, un étage
      relié par ses seuls escaliers est simplement hors d'atteinte. */
-  ascenseur: { nom: "ascenseur", art: "l'ascenseur",  accessible: true,  cout: 45, min: 2 },
+  ascenseur:    { nom: "ascenseur", art: "l'ascenseur", accessible: true, cout: 45, min: 2 },
 };
 
 /** Ce qu'un repère vaut comme passage, ou rien s'il n'en est pas un. */
@@ -14365,7 +14395,7 @@ function passagesDe(p, pmr){
 /** Par où l'on quitte un plan : ses portes, et les passages déclarés — un
  *  étage se quitte par son escalier, et non par la porte du hall d'en bas. */
 function sortiesDe(p, pmr){
-  const l = portesDe(p);
+  const l = portesDe(p, "sortant");
   for (const f of passagesDe(p, pmr)) if (l.indexOf(f) < 0) l.push(f);
   return l;
 }
@@ -14925,7 +14955,7 @@ function phraseLiaison(e){
   /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
      trajet dont les mètres ne rendent pas compte. */
   const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
-  if (e.type === "entree")
+  if (estPorte(e.type))
     return { t: "Changement de pavillon",
              s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
                 e.vers + " par « " + e.nomVers + " »." + duree };
@@ -15336,13 +15366,14 @@ function pointConf(c){
 }
 
 /**
- * Les départs qu'on propose : les portes, et rien d'autre.
+ * Les départs qu'on propose : les portes par où l'on entre, et rien d'autre.
  *
  * La liste offrait tous les repères du salon, entrées en tête. On y lisait
  * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
  * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
  * sur un téléphone. La question posée est « par où vous entrez » : seules les
- * portes y répondent.
+ * portes y répondent, et parmi elles, celles qui ne sont pas des sorties
+ * seules.
  *
  * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
  * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
@@ -15350,7 +15381,7 @@ function pointConf(c){
  */
 function departsProposes(){
   const l = [];
-  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
   const vus = new Map();
   l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
   const rang = new Map();
@@ -16004,6 +16035,9 @@ function ouvreOrganisation(){
   const departs = departsProposes();
 
   let champHeure = null, champJour = null, champDepart = null;
+  /* Une porte unique ne se demande pas, elle se prend : la question n'aurait
+     qu'une réponse, et la poser ferait croire qu'il y en a d'autres. */
+  const departImpose = departs.length === 1 ? departs[0] : null;
 
   ouvreModale("Organiser ma journée", corps => {
     const p = document.createElement("p");
@@ -16043,7 +16077,7 @@ function ouvreOrganisation(){
       bloc("Jour de visite", champJour);
     }
 
-    if (departs.length){
+    if (departs.length > 1){
       champDepart = document.createElement("select");
       const vide = document.createElement("option");
       vide.value = "";
@@ -16059,6 +16093,15 @@ function ouvreOrganisation(){
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
+    } else if (departImpose){
+      /* On dit quand même d'où l'on part : le visiteur retrouve le premier
+         pas de sa journée là où il l'attend, sans avoir à le choisir. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "La journée commencera à « " + departImpose.nom +
+        (DATA.plans.length > 1 ? " » (" + departImpose.detail + ")" : " »") +
+        ", la seule entrée repérée.";
+      form.appendChild(n);
     } else {
       /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
          absence se remarquerait plus que sa réponse. On dit d'où l'on partira
@@ -16082,10 +16125,14 @@ function ouvreOrganisation(){
       try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
       const cle = champJour ? champJour.value : (jours.length ? jours[0].cle : "");
       const j = jours.find(x => x.cle === cle);
-      const id = champDepart ? champDepart.value : "";
+      /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
+         choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
+      const choix = champDepart ? champDepart.value : null;
+      const depart = choix === null ? departImpose
+                   : choix === "" ? null : departs[+choix];
       lanceJournee({
         arrivee: min, jour: cle, jourNom: j ? j.nom : "",
-        depart: id === "" ? null : departs[+id],
+        depart: depart,
       });
     } },
   ]);
