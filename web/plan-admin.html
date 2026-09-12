@@ -12146,8 +12146,66 @@ document.addEventListener("visibilitychange", () => {
 });
 addEventListener("pagehide", presse);
 
+/* ------------------------------------------------------------
+   Le jeton, et son renouvellement
+
+   Un jeton d'accès Supabase vit une heure. Personne ne travaille une heure sur
+   un plan : on l'ouvre le matin, on y revient dans la journée. Passé ce délai
+   la base refusait tout, et chaque appelant le disait à sa façon — le bouton
+   d'enregistrement tournait en rond sur son « réessayer », la carte de chaleur
+   et le classement de la suggestion rendaient un « JWT expired » brut à qui
+   n'avait rien demandé. La session était pourtant récupérable : la console
+   range à côté du jeton qui expire celui qui permet d'en obtenir un neuf.
+
+   L'échange se fait donc ici, au seul endroit par lequel passent tous les
+   appels à la base, comme la console le fait du sien.
+   ------------------------------------------------------------ */
+const RESTE_JETON = 60;   // secondes en deçà desquelles on échange avant de partir
+
+/** Ce qu'il reste à un jeton. Illisible, on le suppose bon : le serveur
+ *  tranchera, et son refus déclenchera l'échange. */
+function resteSession(jeton){
+  try {
+    const p = String(jeton || "").split(".")[1];
+    const exp = p && JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))).exp;
+    return typeof exp === "number" ? exp - Date.now() / 1000 : Infinity;
+  } catch (e) { return Infinity; }
+}
+
+/* Un échange à la fois : un jeton de renouvellement ne sert qu'une fois, et la
+   publication écrit pavillon par pavillon — trois échanges lancés de front en
+   perdraient deux, et la session avec. */
+let echange = null;
+
+/** Échange le jeton de renouvellement contre une session neuve, rangée là où
+ *  la console la range : c'est le même casier, et les deux pages doivent y
+ *  lire la même chose. Rend la session, ou rien si elle est bel et bien finie. */
+function renouvelleSession(acces){
+  if (!acces.ses.refresh_token) return Promise.resolve(null);
+  if (!echange){
+    echange = (async () => {
+      try {
+        const r = await fetch(acces.cfg.url + "/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { "apikey": acces.cfg.anonKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: acces.ses.refresh_token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j?.access_token) return null;
+        // un stockage refusé ne doit pas coûter la session en cours
+        try { localStorage.setItem("console-session", JSON.stringify(j)); } catch (e) {}
+        return j;
+      } catch (e) {
+        // une coupure du réseau n'est pas une session finie : on ne déconnecte pas
+        return null;
+      } finally { echange = null; }
+    })();
+  }
+  return echange;
+}
+
 async function base(acces, chemin, options = {}){
-  const r = await fetch(acces.cfg.url + "/rest/v1/" + chemin, {
+  const envoie = () => fetch(acces.cfg.url + "/rest/v1/" + chemin, {
     ...options,
     headers: {
       "apikey": acces.cfg.anonKey,
@@ -12156,7 +12214,28 @@ async function base(acces, chemin, options = {}){
       ...(options.headers || {}),
     },
   });
+  /* La session neuve est reposée dans « acces », que l'appelant garde d'une
+     écriture à l'autre : les pavillons suivants partent avec le jeton frais, et
+     la purge du cache aussi. */
+  const echangeContre = async () => {
+    const neuve = await renouvelleSession(acces);
+    if (neuve) acces.ses = neuve;
+    return !!neuve;
+  };
+
+  if (resteSession(acces.ses.access_token) < RESTE_JETON) await echangeContre();
+  let r = await envoie();
+  /* Et refusé malgré tout — une horloge en retard, un jeton révoqué ailleurs —
+     on échange puis on refait l'appel. Le 403 reste où il est : c'est un droit
+     qui manque, pas un jeton qui se périme, et le renouveler ne le donnerait
+     pas. */
+  if (r.status === 401 && await echangeContre()) r = await envoie();
+
   const txt = await r.text();
+  /* Une session que même l'échange ne rattrape plus se dit en toutes lettres :
+     le corps de la réponse parle de JWT, ce qui ne veut rien dire pour qui
+     voulait seulement enregistrer son plan. */
+  if (r.status === 401) throw new Error("session expirée, reconnectez-vous");
   if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
   return txt ? JSON.parse(txt) : null;
 }
