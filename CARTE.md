@@ -399,16 +399,16 @@ Fonctions :
 `sectionSelection` 276 · `sectionFond` 332 · `ligneCouleur` 386 · `rangSecteur` 406
 `rangSous` 418 · `defautCouleur` 440
 
-### `_pousse.html` — 302 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 332 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · Enregistrer la configuration
 
 Fonctions :
 
-`accesBase` 51 · `autoDispo` 63 · `enRetard` 66 · `etatCourant` 79 · `majAttente` 90
-`ditEtat` 100 · `programmeEnvoi` 107 · `programmePublication` 121 · `rattrapeRetard` 128
-`envoie` 133 · `presse` 146 · `base` 154 · `identifiants` 174 · `reglagesSeuls` 189
-`pousseConfiguration` 201
+`accesBase` 57 · `autoDispo` 69 · `enRetard` 72 · `etatCourant` 85 · `majAttente` 96
+`ditEtat` 106 · `programmeEnvoi` 113 · `programmePublication` 127 · `rattrapeRetard` 134
+`envoie` 139 · `presse` 152 · `base` 160 · `identifiants` 180 · `reglagesSeuls` 195
+`oublieCache` 206 · `pousseConfiguration` 225
 
 ### `_rapport-head.html` — 30 l. → rapport.html
 
@@ -468,7 +468,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `cors` 38 · `jeton` 52 · `client` 55
 
-### `supabase/functions/plan-public/index.ts` — 553 l.
+### `supabase/functions/plan-public/index.ts` — 557 l.
 
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 163 · `ampute` 186 · `masquesDe` 226
 `masquesDuPlan` 246
@@ -513,8 +513,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 168 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `meta` 49 · `gardable` 62 · `range` 67 · `rafraichit` 74 · `mesure` 85
+- `src/index.mjs` — 233 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 61 · `amontPour` 70 · `cleDe` 78 · `meta` 81 · `gardable` 94 · `range` 99 `rafraichit` 106 · `oublie` 133 · `mesure` 155
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/carte.js` — produit ce fichier.

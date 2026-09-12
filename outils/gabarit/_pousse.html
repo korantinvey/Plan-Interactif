@@ -31,6 +31,12 @@ const REPOS = 1200;
    loin plutôt que d'insister : le travail est sur le poste, il attend. */
 const REPOS_ECHEC = 20000;
 
+/* Le relais garde le plan public dix minutes, et sert encore l'ancienne copie
+   le temps de refaire la nouvelle : la base avait la configuration, les
+   visiteurs pas encore. On lui demande donc d'oublier, au même endroit que
+   celui où il sert le plan — déduit de son adresse plutôt qu'écrit deux fois. */
+const OUBLI = API ? API.replace(/\/[^/]*$/, "/oublie") : "";
+
 let minuteur = null;      // envoi programmé, pas encore parti
 let publication = false;  // envoi en cours
 let rejoue = false;       // une modification est arrivée pendant l'envoi
@@ -191,6 +197,24 @@ function reglagesSeuls(){
 }
 
 /**
+ * Demande au relais d'oublier le plan public de ce salon.
+ *
+ * Sans réponse attendue : un relais absent — page servie autrement, essai en
+ * local — ou muet ne remet pas en cause un enregistrement qui, lui, a abouti.
+ * Et ce n'est qu'un cache : au pire les visiteurs attendent le délai d'avant.
+ */
+function oublieCache(acces){
+  if (!OUBLI || !DATA?.slug) return;
+  fetch(OUBLI + "?slug=" + encodeURIComponent(DATA.slug), {
+    method: "POST",
+    headers: {
+      "apikey": acces.cfg.anonKey,
+      "Authorization": "Bearer " + acces.ses.access_token,
+    },
+  }).catch(() => {});
+}
+
+/**
  * Envoie la configuration en base.
  *
  * `auto` distingue l'envoi programmé du clic : l'un se tait et n'écrit que ce
@@ -278,6 +302,12 @@ async function pousseConfiguration(auto){
 
     revisionEnvoyee = cible;
     publication = false;
+    /* La base a la configuration ; le relais garde encore l'ancienne version du
+       plan public. On le lui dit tout de suite, sans quoi l'administration et le
+       plan public ne montreraient pas la même chose — et c'est le plan public
+       qui compte. Avant de signaler un pavillon manquant : ce qui est écrit est
+       écrit, et doit partir aux visiteurs. */
+    oublieCache(acces);
     if (inconnus) throw new Error(inconnus +
       (inconnus > 1 ? " pavillons sont absents" : " pavillon est absent") +
       " de la base : lancez une synchronisation depuis la console.");

@@ -270,7 +270,7 @@ surveiller :
 
 | ce qu'il affiche | ce que cela veut dire |
 |---|---|
-| Configuration enregistrée | la base a tout ; les visiteurs le voient |
+| Configuration enregistrée | la base a tout ; les visiteurs le voient au rechargement suivant |
 | Enregistrement… | le dernier geste part, ou attend son tour |
 | Enregistrer — réessayer | l'envoi a échoué ; il se retente seul toutes les vingt secondes, et un clic le relance tout de suite |
 
@@ -279,6 +279,28 @@ dessins n'ont pas été reçus restent marqués, et le chargement suivant les
 repousse de lui-même — là encore sans rien demander. Fermer l'onglet juste après
 un réglage ne le perd pas non plus : l'envoi part sans attendre la fin du délai
 dès que la page passe à l'arrière-plan.
+
+### Et le plan public, lui, suit
+
+Enregistrer ne suffit pas : le plan public n'est pas lu dans la base à chaque
+visite, il est servi par le Worker depuis son stockage KV, et cette copie ne se
+périmait que d'elle-même — dix minutes de fraîcheur, puis une copie dépassée
+encore servie le temps d'en refaire une. L'administration pouvait donc dire
+« enregistrée » un quart d'heure avant que les visiteurs voient quoi que ce
+soit, et personne ne savait à partir de quand regarder.
+
+La page le dit donc au Worker en finissant : `POST /api/oublie?slug=…`, qui
+efface ce qu'il gardait de ce salon. La visite suivante relit la base et
+repeuple le cache. Oublier ne coûte qu'une lecture de plus, mais demande une
+session de ce projet — sinon ce chemin serait un moyen de vider le cache en
+boucle. Le fond de plan n'a rien à oublier : son adresse porte une version, et
+l'apparence entre dans son calcul.
+
+Reste la part du navigateur du visiteur, qu'on ne peut pas effacer à distance :
+elle est courte — trente secondes, une minute de grâce en cas de panne — parce
+qu'un navigateur qui revient retombe sur le Worker, qui répond de son stockage
+sans toucher la base. Compter donc **moins d'une minute** entre le geste et le
+plan public, et un rechargement.
 
 Deux conséquences à connaître. **Il n'y a plus d'essai sans publication** : une
 couleur changée part aux visiteurs, il faut la changer à nouveau pour revenir en
