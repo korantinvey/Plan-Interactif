@@ -23,8 +23,9 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm,
 } from "../_partage/eventmaker.ts";
 import {
-  DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
-  decoupe, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai, VALEURS_MAX,
+  CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
+  decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai,
+  valeursRelevees,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -43,6 +44,13 @@ const cors = (req: Request) => {
   return {
     "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
     "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+    /* Sans cela, une page d'une autre origine ne lit du flux que le type de
+       contenu : l'encodage, celui qui dirait si un relais a recomprimé la
+       réponse, lui reste caché. C'est justement lui que le journal de la
+       fenêtre d'avancement relève. Rien de sensible ne s'y trouve — ce sont
+       les en-têtes de notre propre réponse. */
+    "Access-Control-Expose-Headers":
+      "content-type, content-encoding, cache-control, x-accel-buffering, date",
     "Vary": "Origin",
   };
 };
@@ -75,6 +83,29 @@ const CALQUES_TEXTE = ["INFOPRO_TEXTE_ZONES_ORGA", "INFOPRO_NOM_ZONE_IG"];
 
 // Annotations techniques posées sur le plan : ce ne sont pas des noms de zone.
 const TECHNIQUE = /\bkW\b|Hauteur \d|Coffret|Mur inclinable/i;
+
+/* La ligne vide qui termine un événement côté serveur. Écrite ainsi plutôt
+   qu'avec deux « \n » littéraux : le fichier traverse des outils qui
+   réécrivent les échappements, et ce détail-là ne pardonne pas. */
+const SAUT = String.fromCharCode(10);
+const BLANC = SAUT + SAUT;
+
+/**
+ * Du remplissage que le compresseur ne peut pas réduire.
+ *
+ * C'est tout l'objet : un tampon de relais se vide au compte des octets qui en
+ * sortent, et des espaces gzippés n'en font aucun. Rendu en commentaire SSE,
+ * ce que le client saute sans le lire.
+ */
+function bourre(octets: number): string {
+  let out = "";
+  const tampon = new Uint8Array(768);
+  while (out.length < octets) {
+    crypto.getRandomValues(tampon);
+    out += btoa(String.fromCharCode(...tampon));
+  }
+  return ": " + out.slice(0, octets) + BLANC;
+}
 
 const client = () =>
   createClient(
@@ -185,8 +216,18 @@ async function champsKlipso(g: Gaia) {
     ["Stand", "stand:"],
   ];
   const vus = new Map<string, Record<string, unknown>>();
+  /* Les valeurs comptées à part : c'est leur répétition qui distinguera une
+     liste de choix d'un champ de texte libre, et le relevé ne garde que le
+     verdict. */
+  const comptes = new Map<string, Map<string, number>>();
+  /* Les champs à choix, rangés par la codification qu'ils déclarent — c'est
+     par elle qu'on saura tout ce qu'ils peuvent valoir. Plusieurs champs
+     partagent parfois la même, d'où la liste de clés. */
+  const aCodifier = new Map<string, Map<string, string[]>>();
   for (const [entite, prefixe] of groupes) {
-    let props: { cle: string; libelle: string }[] = [];
+    let props: {
+      cle: string; libelle: string; codification: string | null;
+    }[] = [];
     try { props = await g.proprietes(entite); } catch (_) { /* schéma muet */ }
     for (const p of props) {
       const cle = prefixe + p.cle;
@@ -195,6 +236,13 @@ async function champsKlipso(g: Gaia) {
         cle, libelle: p.libelle, groupe: groupeKlipso(cle), exemple: null,
         valeurs: [] as string[],
       });
+      const point = (p.codification ?? "").indexOf(".");
+      if (point < 0) continue;
+      const ent = p.codification!.slice(0, point);
+      const prop = p.codification!.slice(point + 1);
+      const parProp = aCodifier.get(ent) ?? new Map<string, string[]>();
+      parProp.set(prop, [...(parProp.get(prop) ?? []), cle]);
+      aCodifier.set(ent, parProp);
     }
   }
 
@@ -231,15 +279,44 @@ async function champsKlipso(g: Gaia) {
            « Nouvel exposant » ou « Exclu de la liste ». Elles se relèvent sur
            la valeur brute, et non sur l'exemple : celui-ci est tronqué, et un
            champ à choix multiple y perdrait ses dernières valeurs. */
-        noteValeurs(e.valeurs as string[], v);
+        const compte = comptes.get(cle) ?? new Map<string, number>();
+        noteValeurs(compte, v);
+        comptes.set(cle, compte);
         vus.set(cle, e);
       }
     }
   } catch (_) { /* l'échantillon manque, le schéma suffit */ }
 
-  // au-delà du seuil, le champ est du texte libre : sa liste n'aiderait pas
+  /* Le verdict, champ par champ : sa liste de valeurs, ou le fait qu'il est du
+     texte libre — ce que la console dit autrement qu'un relevé resté muet. */
   for (const d of vus.values()) {
-    if ((d.valeurs as string[]).length > VALEURS_MAX) d.valeurs = [];
+    const { valeurs, libre } = valeursRelevees(
+      comptes.get(String(d.cle)) ?? new Map<string, number>());
+    d.valeurs = valeurs;
+    if (libre) d.libre = true;
+  }
+
+  /* Ce qu'un champ à choix PEUT valoir, et pas seulement ce que l'échantillon
+     a montré. Vingt-cinq fiches ne portent pas toutes les valeurs d'une liste :
+     une valeur que trois exposants sur mille portent n'y est presque jamais, et
+     l'exploitant qui veut la désigner n'a rien à cocher. La codification, elle,
+     les déclare toutes — avec leur libellé, que le code seul ne dit pas.
+
+     Un appel par entité de codification, et l'échec de l'une n'emporte pas les
+     autres : sans sa liste déclarée, un champ retombe sur ses valeurs relevées,
+     comme avant. */
+  for (const [entite, parProp] of aCodifier) {
+    let tables: Record<string, Record<string, string>> = {};
+    try { tables = await g.codifications(entite, [...parProp.keys()]); }
+    catch (e) { console.error("codifications de " + entite + " :", e); continue; }
+    for (const [prop, cles] of parProp) {
+      const table = tables[prop];
+      if (!table || Object.keys(table).length > CHOIX_MAX) continue;
+      for (const cle of cles) {
+        const d = vus.get(cle);
+        if (d) d.choix = table;
+      }
+    }
   }
   return range([...vus.values()], GROUPES_KLIPSO);
 }
@@ -373,26 +450,104 @@ Deno.serve(async (req) => {
        donc un flux de lignes JSON : la première annonce les étapes, les
        suivantes disent laquelle est en cours, la dernière porte le résultat.
 
+       Les étapes sont annoncées dans l'ordre où elles tournent, et non dans
+       celui où on les nommerait : les exposants se lisent avant le plan, qui
+       s'en sert pour nommer ses emplacements.
+
        Les étapes que cette synchronisation ne sait pas encore faire sont
        annoncées « ignorée » plutôt que tues : l'exploitant les a réglées, il
        doit voir qu'elles ne sont pas reprises.
        ------------------------------------------------------------------ */
+
+    /* Ce que pèse chaque étape, et donc la part de barre qui lui revient.
+
+       Le poids d'une étape, c'est son nombre d'éléments : reprendre quatre
+       cents emplacements ne vaut pas relever trois champs. Ce nombre-là ne se
+       connaît qu'une fois l'étape faite — on part donc de celui de la dernière
+       synchronisation, que la table `plan` a gardé, et chaque étape corrige le
+       sien dès qu'elle sait. Un tout premier passage n'a rien à lire : la
+       valeur de repli vaut alors un salon moyen.
+
+       Une étape non reprise pèse zéro, faute de quoi la barre s'arrêterait aux
+       trois quarts sur un salon qui n'a ni conférences ni produits. */
+    const { data: dejaLa } = await db.from("plan")
+      .select("nb_stands").eq("evenement_id", evt.id);
+    const emplacements =
+      (dejaLa ?? []).reduce((a, p) => a + (p.nb_stands ?? 0), 0) || 300;
+    const srcConf = fournisseur(evt, "conferences");
+    const POIDS: Record<string, number> = {
+      /* Klipso rend les exposants avec les stands : l'étape ne fait alors que
+         relever les champs, deux appels. Eventmaker, lui, parcourt des
+         centaines de fiches — à peu près autant que d'emplacements. */
+      exposants: srcStands === "eventmaker" ? emplacements : 20,
+      conferences: srcConf === "eventmaker" ? Math.round(emplacements / 4) : 0,
+      plan: emplacements,
+      produits: 0,
+    };
     const ETAPES = [
-      { cle: "plan", libelle: "Plan", domaine: "plan" },
       { cle: "exposants", libelle: "Exposants", domaine: "stands" },
       { cle: "conferences", libelle: "Conférences", domaine: "conferences" },
+      { cle: "plan", libelle: "Plan", domaine: "plan" },
       { cle: "produits", libelle: "Produits", domaine: "produits" },
-    ].map((e) => ({ ...e, source: fournisseur(evt, e.domaine) }));
+    ].map((e) => ({
+      ...e, source: fournisseur(evt, e.domaine), poids: POIDS[e.cle] ?? 1,
+    }));
 
     const flux = new ReadableStream({
       async start(ctrl) {
         const enc = new TextEncoder();
-        const emet = (o: Record<string, unknown>) => {
-          ctrl.enqueue(enc.encode(JSON.stringify(o) + String.fromCharCode(10)));
+        /* Le flux est servi en « événements côté serveur ». Le client ne s'en
+           sert pas comme tel — il lit la réponse ligne à ligne, avec `fetch` —
+           mais c'est le seul type de contenu que les relais de la chaîne
+           savent devoir laisser passer sans le retenir. En `x-ndjson`, la
+           réponse entière arrivait d'un bloc à la fin : la fenêtre restait sur
+           « Connexion au serveur… » pendant toute la synchronisation, puis
+           affichait le bilan. */
+        let ouvert = true;
+        const pousse = (txt: string) => {
+          if (!ouvert) return;
+          // le client a pu fermer l'onglet : une file close n'est pas une erreur
+          try { ctrl.enqueue(enc.encode(txt)); } catch (_) { ouvert = false; }
         };
+        const emet = (o: Record<string, unknown>) =>
+          pousse("data: " + JSON.stringify(o) + BLANC);
         const etape = (cle: string, etat: string, info?: unknown) =>
           emet({ etape: cle, etat, ...(info === undefined ? {} : { info }) });
+        /* Où l'on en est *dans* l'étape : combien d'éléments sur combien, et
+           lequel. Le total peut manquer — on ne sait pas d'avance combien de
+           fiches une catégorie Eventmaker porte — et la sous-barre bat alors
+           au lieu de se remplir, plutôt que de promettre une fin. */
+        const avance = (cle: string, fait: number, total: number | null,
+                        detail?: string, unite?: string) =>
+          emet({
+            etape: cle, etat: "encours", fait,
+            ...(total === null ? {} : { total }),
+            ...(detail === undefined ? {} : { detail }),
+            ...(unite === undefined ? {} : { unite }),
+          });
+        /* Ce qui a été compté jusqu'ici, sous le nom que la fenêtre affichera.
+           Les lignes s'écrasent par leur clé : une même mesure reprise à
+           chaque pavillon ne fait qu'une ligne, qui monte. */
+        const chiffres = (o: Record<string, number>) => emet({ chiffres: o });
+        // le poids d'une étape, corrigé dès qu'elle sait ce qu'elle avait à faire
+        const pese = (cle: string, poids: number) => emet({ etape: cle, poids });
 
+        /* Huit mille octets illisibles, avant toute chose, puis un filet
+           régulier tant que ça dure.
+
+           Un relais qui tient un tampon d'entrée ne pousse rien tant qu'il n'a
+           pas de quoi le remplir. Le remplissage doit être incompressible : la
+           première version de cette amorce était faite d'espaces, qui une fois
+           gzippés ne pesaient plus rien et ne remplissaient donc aucun tampon.
+           Du hasard, lui, traverse le compresseur sans maigrir.
+
+           Le battement sert la même cause dans la durée : la lecture des
+           fiches ou l'allègement d'un calque tiennent la ligne muette pendant
+           des dizaines de secondes, et un tampon à moitié plein le reste
+           jusqu'à la fin. Ce sont des commentaires SSE — deux points en tête —
+           que le client saute sans les lire. */
+        pousse(bourre(8192));
+        const battement = setInterval(() => pousse(bourre(512)), 2000);
         emet({ etapes: ETAPES });
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
@@ -405,6 +560,7 @@ Deno.serve(async (req) => {
          fiches à parcourir — d'où sa place dans le flux. */
       etape("exposants", "encours");
       if (srcStands === "eventmaker") {
+        avance("exposants", 0, null, "Recherche des catégories d'invités");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
           champs: champsEm, valeurs: valeursEm, perso: persos });
@@ -423,7 +579,9 @@ Deno.serve(async (req) => {
           .flatMap((i) => ((i.charge as any)?.stands ?? []) as Record<string, unknown>[])
           .map((st) => String(st.code ?? "")).filter(Boolean);
 
-        const r = await em.exposants(String((evt.cles ?? {}).eventmaker), connues, codes);
+        const r = await em.exposants(
+          String((evt.cles ?? {}).eventmaker), connues, codes,
+          (lus) => avance("exposants", lus, null, "Lecture des fiches", "fiches"));
         expoEm = {
           parDossier: r.parDossier,
           parStand: r.parStand,
@@ -438,6 +596,14 @@ Deno.serve(async (req) => {
           exposants: r.retenus,
           nonInscrits: r.ecartesNonInscrits,
         };
+        // Le compte réel remplace l'estimation : la part de barre que
+        // l'étape occupait était celle d'un salon supposé, la voici mesurée.
+        pese("exposants", r.lus || 1);
+        chiffres({
+          "Fiches lues": r.lus,
+          "Exposants retenus": r.retenus,
+          ...(r.ecartesNonInscrits ? { "Écartés — non inscrits": r.ecartesNonInscrits } : {}),
+        });
         etape("exposants", "encours", r.retenus + " exposants lus");
 
         // On retient ce qu'on vient d'apprendre. Écriture ciblée : le reste de
@@ -459,11 +625,19 @@ Deno.serve(async (req) => {
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
+        avance("conferences", 0, null, "Lecture du programme");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
           champs: champsEm, valeurs: valeursEm, perso: persos });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
+        pese("conferences", confEm.length || 1);
+        /* Les conférences sont lues ; reste à savoir qui les tient, et le
+           graphe ne dit pas d'avance combien de sessions il rendra. Le compte
+           s'affiche donc sans total, et l'étape n'est pas donnée pour finie
+           tant qu'elle ne l'est pas. */
+        avance("conferences", confEm.length, null,
+          "Rattachement des exposants", "conférences");
         try {
           const detail = await em.evenement(idEm);
           if (detail?.timezone) fuseau = String(detail.timezone);
@@ -477,6 +651,10 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error("rattachement des exposants aux conférences :", e);
         }
+        chiffres({
+          "Conférences": confEm.length,
+          ...(exposantsConf.size ? { "Conférences tenues par un exposant": exposantsConf.size } : {}),
+        });
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
       }
@@ -496,6 +674,7 @@ Deno.serve(async (req) => {
       }
 
       etape("plan", "encours");
+      avance("plan", 0, null, "Codification des champs à choix");
 
       /* Les champs « choix » ne portent qu'un code — « FEP26_NOM10201 » — dont
          le libellé vit dans le service « codification ». On les résout ici, une
@@ -567,8 +746,16 @@ Deno.serve(async (req) => {
       if (corps.idPlan) plans = plans.filter((p) => p.Id === corps.idPlan);
       if (!plans.length) return emet({ erreur: "Aucun pavillon à traiter." });
 
+      /* La part de l'étape déjà faite se compte en pavillons, fraction
+         comprise : un pavillon commencé n'est ni fini ni à faire, et c'est
+         justement pendant qu'on l'ouvre — douze calques de plusieurs
+         mégaoctets — que la barre resterait immobile le plus longtemps. */
+      let faits = 0;
       for (const plan of plans) {
+        const part = (f: number, quoi: string) =>
+          avance("plan", faits + f, plans.length, quoi, "pavillons");
         etape("plan", "encours", String(plan.Libelle ?? ""));
+        part(0.03, "Pavillon « " + String(plan.Libelle ?? "") + " »");
         /* --- le pavillon --- */
         const { data: ligne } = await db.from("plan").upsert({
           evenement_id: evt.id,
@@ -587,6 +774,7 @@ Deno.serve(async (req) => {
           filter: egal("IdPlan", plan.Id),
         }, "Ordre");
 
+        let iCalque = 0;
         const textesZone: { x: number; y: number; txt: string }[] = [];
         // Tous les textes du plan, tous calques confondus : c'est parmi eux que
         // se trouvent les numéros d'emplacement — « P160 » — qui désignent les
@@ -594,6 +782,8 @@ Deno.serve(async (req) => {
         // d'un salon à l'autre, on ne peut donc pas le nommer.
         const tousTextes: { x: number; y: number; txt: string }[] = [];
         for (const c of calques) {
+          part(0.05 + 0.45 * (iCalque++ / (calques.length || 1)),
+            "Calque « " + (NOMS[c.Libelle] ?? c.Libelle) + " »");
           if (!c.SVG?.idMedia) continue;
           const brut = await g.media(c.SVG.idMedia);
           const lus = textes(brut);
@@ -632,6 +822,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        part(0.52, "Emplacements");
         const bruts = await g.tout<Record<string, any>>("Stand", {
           fields: [...champsStand],
           entities: {
@@ -733,6 +924,13 @@ Deno.serve(async (req) => {
               fb: val("facebook"), li: val("linkedin"), ig: val("instagram"),
             };
 
+          /* Le logo suit la société, comme les contacts. Côté Klipso rien ne
+             le porte d'office : la cible reste vide tant que l'exploitant n'a
+             pas désigné le champ de son salon qui tient une adresse d'image. */
+          const logo = !ok ? null
+            : expoEm ? (em ? em.logo : null)
+            : imageDistante(lit(cibleK("logo"), origines));
+
           /* Le secteur est une propriété de l'emplacement, pas de la société qui
              l'occupe : un stand encore libre appartient déjà au sien. Il ne
              dépend donc ni de l'appariement, ni de la source des exposants — et
@@ -753,6 +951,12 @@ Deno.serve(async (req) => {
             plan: (expoEm ? em?.raison : null) ?? val("raison"),
             nom: !ok ? null : expoEm ? em!.nom : val("nom"),
             site: !ok ? null : nettoieUrl(expoEm ? em!.site : val("site")),
+            /* Le logo en tête de fiche. La clé ne descend pas quand il n'y en
+               a pas : l'instantané est servi au public, et une adresse absente
+               n'a pas à peser sur chaque stand. Rien n'est recopié ni
+               redimensionné — la page charge l'image chez la source, et c'est
+               une fiche ouverte à la fois. */
+            ...((ok && logo) ? { logo } : {}),
             nomencl: !ok ? null : expoEm ? (em!.nomencl.length ? em!.nomencl : null)
                                          : nomenclature(lit(cibleK("nomenclature"), origines, true)),
             /* Les thématiques n'existent que côté Eventmaker, et seulement sur
@@ -790,6 +994,7 @@ Deno.serve(async (req) => {
         }
 
         /* --- zones de dessin --- */
+        part(0.78, "Zones organisateur");
         const grappes = groupeTextes(textesZone);
         const zonesBrutes = await g.tout<Record<string, any>>("ZoneDessin", {
           fields: ["_AllFields"],
@@ -822,7 +1027,7 @@ Deno.serve(async (req) => {
            un emplacement du plan, posé comme texte : on retrouve sa position,
            puis la zone qui la contient. Dix salles sur onze aboutissent ainsi
            sur Franchise Expo ; la onzième porte un code absent du plan et se
-           rattache à la main depuis la console. */
+           rattache à la main, sur la fiche de la zone qui l'accueille. */
         const conferences: Record<string, unknown>[] = [];
         if (confEm) {
           const parCode = new Map<string, { x: number; y: number }>();
@@ -861,8 +1066,8 @@ Deno.serve(async (req) => {
 
                Sans zone ni exposant, elle n'a d'attache nulle part : on la
                remonte partout pour qu'elle existe avant d'être située, la
-               console la rattachera. La page, qui range par zone et par stand,
-               ne l'affiche d'ici là nulle part. */
+               fiche de la zone la rattachera. La page, qui range par zone et
+               par stand, ne l'affiche d'ici là nulle part. */
             /* On ne garde d'un exposant que le stand qu'il occupe ici : sur un
                autre pavillon, la même conférence citera l'autre stand. */
             const cites = exposantsConf.get(c.id) ?? [];
@@ -885,6 +1090,7 @@ Deno.serve(async (req) => {
           }
         }
 
+        part(0.92, "Enregistrement du pavillon");
         const emp = emprise([...stands, ...zones]);
         await db.from("plan").update({
           emprise: emp,
@@ -935,8 +1141,24 @@ Deno.serve(async (req) => {
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
+        faits++;
+        /* Les compteurs montent pavillon par pavillon plutôt qu'à la fin :
+           sur un salon à plusieurs pavillons, c'est la seule preuve visible
+           que le travail avance et non qu'il tourne à vide. */
+        const cumul = (c: string) =>
+          resume.reduce((a, p) => a + Number((p as Record<string, unknown>)[c] ?? 0), 0);
+        chiffres({
+          "Emplacements": cumul("stands"),
+          "Emplacements nommés": cumul("exposants"),
+          ...(expoEm ? { "Emplacements appariés": cumul("apparies") } : {}),
+          ...(cumul("coexposants") ? { "Co-exposants": cumul("coexposants") } : {}),
+          "Zones organisateur": cumul("zones"),
+        });
+        avance("plan", faits, plans.length, "Pavillon terminé", "pavillons");
       }
 
+      pese("plan",
+        resume.reduce((a, p) => a + Number(p.stands ?? 0), 0) || 1);
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
@@ -1021,13 +1243,25 @@ Deno.serve(async (req) => {
               .eq("id", corps.evenementId);
           } catch (_) { /* la trace ne doit pas masquer l'erreur d'origine */ }
         } finally {
-          ctrl.close();
+          clearInterval(battement);
+          ouvert = false;
+          try { ctrl.close(); } catch (_) { /* déjà close : rien à fermer */ }
         }
       },
     });
 
+    /* Trois façons de dire la même chose à trois relais qui n'écoutent pas la
+       même : le type de contenu, qu'ils reconnaissent tous comme un flux à ne
+       pas retenir ; `no-transform`, qui leur interdit de recomprimer ;
+       `X-Accel-Buffering`, que seule la famille nginx lit. */
     return new Response(flux, {
-      headers: { ...CORS, "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+      headers: {
+        ...CORS,
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -1053,7 +1287,8 @@ Deno.serve(async (req) => {
 function hebergee(x: ExposantEm): Record<string, unknown> {
   const o: Record<string, unknown> = { nom: x.nom };
   const champs: [string, unknown][] = [
-    ["plan", x.raison], ["site", nettoieUrl(x.site)], ["adr", x.adresse], ["ville", x.ville],
+    ["plan", x.raison], ["logo", x.logo], ["site", nettoieUrl(x.site)],
+    ["adr", x.adresse], ["ville", x.ville],
     ["pays", x.pays], ["tel", x.tel], ["fb", x.facebook],
     ["li", x.linkedin], ["ig", x.instagram],
   ];

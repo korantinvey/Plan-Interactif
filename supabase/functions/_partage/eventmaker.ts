@@ -13,8 +13,8 @@
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
 import {
-  DEFAUTS, PREFIXE_PERSO, lit, noteValeurs, ou, separeValeurs, valeurPerso, vrai,
-  VALEURS_MAX,
+  DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, separeValeurs,
+  valeurPerso, valeursRelevees, vrai,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -88,6 +88,9 @@ export interface ExposantEm {
   dossier: string;
   nom: string | null;
   raison: string | null;
+  /* L'avatar de la fiche d'invité : sur une fiche de société, c'est le logo de
+     l'enseigne que l'organisateur y a déposé. */
+  logo: string | null;
   site: string | null;
   adresse: string | null;
   ville: string | null;
@@ -460,7 +463,18 @@ export class Eventmaker {
    * exposant, et son inscription est effective. Le reste n'est que le moyen d'y
    * arriver sans télécharger le salon entier.
    */
-  async exposants(id: string, connues: string[] = [], codes: string[] = []): Promise<{
+  async exposants(
+    id: string,
+    connues: string[] = [],
+    codes: string[] = [],
+    /* Combien de fiches ont été lues jusqu'ici. Rendu page par page et non à
+       la fin : la lecture dure une demi-minute sur un gros salon, et c'est
+       elle qui fait attendre — une barre qui ne bouge pas pendant ce temps se
+       lit comme une panne. Le total, lui, reste inconnu : on ne sait qu'une
+       catégorie est épuisée qu'en recevant une page plus courte que les
+       autres. */
+    surAvance?: (lus: number) => void,
+  ): Promise<{
     parDossier: Map<string, ExposantEm>;
     parStand: Map<string, ExposantEm>;
     tousParStand: Map<string, ExposantEm[]>;
@@ -472,7 +486,7 @@ export class Eventmaker {
     retenus: number;
     ecartesNonInscrits: number;
     champs: { cle: string; libelle: string; groupe: string; exemple: string;
-               valeurs: string[] }[];
+               valeurs: string[]; libre?: boolean }[];
   }> {
     const parDossier = new Map<string, ExposantEm>();
     const parStand = new Map<string, ExposantEm>();
@@ -487,6 +501,7 @@ export class Eventmaker {
     // Les catégories sont indépendantes : on les lit de front. À l'intérieur,
     // les pages restent séquentielles — on ne sait pas combien il y en a
     // avant d'en recevoir une plus courte que les autres.
+    let recues = 0;
     const paquets = await enParallele(cats, DE_FRONT, async (cat) => {
       const tout: Record<string, any>[] = [];
       for (let page = 1; ; page++) {
@@ -495,6 +510,8 @@ export class Eventmaker {
           { per_page: PAR_PAGE, page, guest_metadata: "true", "category[]": cat._id },
         );
         tout.push(...l);
+        recues += l.length;
+        surAvance?.(recues);
         if (l.length < PAR_PAGE) return tout;
       }
     });
@@ -516,6 +533,7 @@ export class Eventmaker {
         dossier,
         nom: v("nom"),
         raison: v("raison"),
+        logo: imageDistante(this.valeur(g, m, "logo")),
         site: v("site"),
         // le code postal n'a pas de champ à lui sur la fiche : il tient sur
         // la même ligne que la voie, comme sur une enveloppe
@@ -643,7 +661,12 @@ function texteSeul(html: unknown): string | null {
 class Releve {
   private vus = new Map<
     string,
-    { cle: string; libelle: string; groupe: string; exemple: string; valeurs: string[] }
+    {
+      cle: string; libelle: string; groupe: string; exemple: string;
+      /* Un compte et non une liste : c'est la répétition des valeurs qui dira
+         si le champ range les fiches ou s'il porte du texte libre. */
+      compte: Map<string, number>;
+    }
   >();
 
   /** Une fiche de plus. */
@@ -664,14 +687,13 @@ class Releve {
     const d = this.vus.get(cle) ?? {
       cle, libelle, groupe,
       exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
-      valeurs: [] as string[],
+      compte: new Map<string, number>(),
     };
     /* Les valeurs distinctes, et pas seulement la première : c'est à elles
        qu'on reconnaît un champ à choix — « Nouveau Client », « Client N-1 »,
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
-       déclenchent. Au-delà de VALEURS_MAX, le champ est du texte libre : la
-       liste ne servirait plus à rien, et pèserait. */
-    noteValeurs(d.valeurs, ex);
+       déclenchent. */
+    noteValeurs(d.compte, ex);
     this.vus.set(cle, d);
   }
 
@@ -679,12 +701,14 @@ class Releve {
      nomme, donc les seuls qui diffèrent d'un salon à l'autre. Les champs
      natifs de la fiche d'invité, eux, sont les mêmes partout. */
   liste() {
-    /* Un champ qui a dépassé le seuil est du texte libre : on lâche sa liste
-       plutôt que d'en proposer un échantillon arbitraire. */
-    for (const d of this.vus.values()) {
-      if (d.valeurs.length > VALEURS_MAX) d.valeurs = [];
-    }
-    return [...this.vus.values()].sort((a, b) =>
+    /* Un champ de texte libre lâche sa liste plutôt que d'en proposer un
+       échantillon arbitraire — mais il le dit, sans quoi la console l'annonce
+       comme un relevé muet et fait attendre une synchronisation qui ne
+       relèverait pas davantage. */
+    return [...this.vus.values()].map(({ compte, ...d }) => {
+      const { valeurs, libre } = valeursRelevees(compte);
+      return libre ? { ...d, valeurs, libre } : { ...d, valeurs };
+    }).sort((a, b) =>
       GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
       a.cle.localeCompare(b.cle, "fr"));
   }

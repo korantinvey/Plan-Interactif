@@ -40,6 +40,11 @@ const AFFICHAGE: Cible[] = [
   { cle: "nom", libelle: "Enseigne", aide: "Le titre de la fiche." },
   { cle: "raison", libelle: "Raison sociale",
     aide: "Affichée seulement si elle diffère de l'enseigne." },
+  { cle: "logo", libelle: "Logo",
+    aide: "L'image de la fiche. Sur Eventmaker c'est l'avatar de l'invité, où " +
+      "les organisateurs déposent le logo de l'enseigne — désignez « avatar » " +
+      "et non « avatar_medium » ni « avatar_thumb », recadrés au carré, qui " +
+      "coupent les bords d'un logo en largeur." },
   { cle: "site", libelle: "Site web" },
   { cle: "adresse", libelle: "Adresse" },
   { cle: "codePostal", libelle: "Code postal",
@@ -128,6 +133,10 @@ export const DEFAUTS: Record<string, Record<string, string[]>> = {
     coexposant: ["num_stand"],
     nom: ["enseigne", "invite:company_name"],
     raison: ["company_name_2"],
+    /* L'avatar est un champ natif de l'invité, porté par tous les salons :
+       ce que l'organisateur y dépose sur une fiche de société, c'est son
+       logo. Dix-huit des vingt et un salons du compte en ont. */
+    logo: ["invite:avatar"],
     site: ["company_website"],
     adresse: ["invite:address", "address_2"],
     codePostal: ["invite:postal_code"],
@@ -248,6 +257,28 @@ export const ou = (...v: unknown[]): string | null => {
   return null;
 };
 
+/* Une fiche Eventmaker sans avatar n'a pas pour autant les mains vides : ses
+   variantes « medium » et « thumb » désignent alors une image fabriquée à la
+   volée par ui-avatars.com — les initiales de la personne inscrite sur une
+   pastille de couleur. « TR » en tête de la fiche d'une enseigne ne dit rien
+   d'elle, et vaut moins que pas d'image du tout. */
+const IMAGE_FABRIQUEE = /^https?:\/\/([\w-]+\.)*ui-avatars\.com\//i;
+
+/**
+ * Une adresse d'image, ou rien.
+ *
+ * Le champ qui porte le logo est désigné par l'exploitant, et rien ne garantit
+ * qu'il porte une adresse : un champ mal désigné poserait une image brisée en
+ * tête de chaque fiche du salon. Contrairement à un site web, on ne complète
+ * donc pas ce qui n'en a pas l'air — une adresse s'affiche, le reste ne
+ * descend pas.
+ */
+export function imageDistante(v: unknown): string | null {
+  // les adresses saisies à la main contiennent parfois des slashes échappés
+  const s = String(v ?? "").trim().replace(/\\/g, "");
+  return /^https?:\/\//i.test(s) && !IMAGE_FABRIQUEE.test(s) ? s : null;
+}
+
 /**
  * Lit une cible dans un jeu de sources, chacune désignée par son préfixe.
  *
@@ -364,12 +395,18 @@ export function separeValeurs(v: unknown): string[] {
    mais du texte libre : en proposer la liste n'aiderait personne. */
 export const VALEURS_MAX = 8;
 
+/* Une liste déclarée par la source, elle, est une liste de choix — le doute
+   que tranche le seuil ci-dessus n'existe pas pour elle. Il en faut un autre
+   tout de même : la nomenclature d'un salon compte deux cents entrées, et deux
+   cents cases à cocher ne se lisent pas plus qu'elles ne se rangent. */
+export const CHOIX_MAX = 40;
+
 /* Une valeur trop longue n'est pas un choix mais une phrase : la proposer à
    cocher encombrerait la fenêtre sans rien désigner d'utile. */
 const VALEUR_LONGUE = 60;
 
 /**
- * Range dans un relevé les valeurs distinctes qu'une fiche porte sur un champ.
+ * Compte dans un relevé les valeurs qu'une fiche porte sur un champ.
  *
  * Les valeurs se séparent avant d'être comptées : sans quoi un champ à choix
  * multiple montre autant d'entrées que de combinaisons cochées — « Nouveaux
@@ -377,15 +414,46 @@ const VALEUR_LONGUE = 60;
  * internationaux » une autre — et dépasse le seuil du texte libre alors qu'il
  * n'offre que trois choix.
  *
- * Une de plus que le seuil est retenue à dessein : c'est elle qui dira à
- * l'appelant que le champ est du texte libre, et qu'il faut lâcher la liste.
+ * Un compte, et pas une liste : c'est la répétition qui dira si le champ est
+ * une liste de choix ou du texte libre, et le nombre de valeurs distinctes n'y
+ * suffit pas — voir `valeursRelevees`. Les clés s'arrêtent tout de même une au
+ * delà du plafond : un champ de texte libre ferait sinon grossir le relevé
+ * d'autant d'entrées qu'il y a de fiches.
  */
-export function noteValeurs(liste: string[], v: unknown): void {
+export function noteValeurs(compte: Map<string, number>, v: unknown): void {
   for (const val of separeValeurs(v)) {
-    if (liste.length > VALEURS_MAX) return;
-    if (val.length > VALEUR_LONGUE || liste.includes(val)) continue;
-    liste.push(val);
+    if (val.length > VALEUR_LONGUE) continue;
+    const vu = compte.get(val);
+    if (vu !== undefined) compte.set(val, vu + 1);
+    else if (compte.size <= CHOIX_MAX) compte.set(val, 1);
   }
+}
+
+/**
+ * Ce qu'un relevé retient du compte : les valeurs du champ, ou rien du tout
+ * quand c'est du texte libre — et de quoi dire lequel des deux.
+ *
+ * Huit valeurs distinctes ou moins, c'est une liste de choix sans discussion.
+ * Au-delà, c'est la répétition qui tranche et non le nombre : un salon range
+ * ses exposants en vingt catégories, et l'exploitant doit pouvoir les cocher ;
+ * trois cents raisons sociales ne se répètent jamais, et n'ont rien à
+ * proposer. Le seuil des huit, seul, écartait les deux — et la ligne annonçait
+ * alors des « valeurs inconnues » que la synchronisation suivante n'aurait pas
+ * plus relevées.
+ */
+export function valeursRelevees(
+  compte: Map<string, number>,
+): { valeurs: string[]; libre: boolean } {
+  const distinctes = [...compte.keys()];
+  if (!distinctes.length) return { valeurs: [], libre: false };
+  if (distinctes.length <= VALEURS_MAX) return { valeurs: distinctes, libre: false };
+  if (distinctes.length > CHOIX_MAX) return { valeurs: [], libre: true };
+  // une valeur qu'aucune autre fiche ne reprend est propre à sa fiche : un nom,
+  // une date. Un champ qui n'en porte que de celles-là ne range rien.
+  const revues = [...compte.values()].filter((n) => n > 1).length;
+  return revues * 2 >= distinctes.length
+    ? { valeurs: distinctes, libre: false }
+    : { valeurs: [], libre: true };
 }
 
 /**

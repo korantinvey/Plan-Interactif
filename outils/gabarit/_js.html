@@ -61,13 +61,6 @@ function indexe(d){
     p.stands = p.stands || [];
     p.fond = p.fond || [];
     p.conferences = p.conferences || [];
-    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
-    p.parZone = new Map();
-    p.conferences.forEach(c => {
-      if (!c.zone) return;
-      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
-      p.parZone.get(c.zone).push(c);
-    });
     /* Une conférence tient aussi à l'exposant qui l'anime, dont le stand peut
        être ailleurs que sa salle — et qui reste son seul point d'accroche quand
        la salle n'est rattachée à aucune zone. */
@@ -79,8 +72,7 @@ function indexe(d){
         p.parStand.get(e.stand).push(c);
       });
     });
-    [p.parZone, p.parStand].forEach(m => m.forEach(l => l.sort((a, b) =>
-      String(a.debutLocal || a.debut || "").localeCompare(String(b.debutLocal || b.debut || "")))));
+    p.parStand.forEach(l => l.sort(chronoConf));
     /* Une zone organisateur n'a que son nom, et c'est bien lui qu'on tape pour
        la trouver : « accueil », « restauration », « village start-up » sont des
        endroits du salon au même titre qu'un stand. */
@@ -133,11 +125,20 @@ function indexe(d){
       DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
     }
   });
+  /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
+     police : reposée maintenant, elle vaut dès le premier tracé. Attendre
+     « appliqueApparence » la mettait une fois de trop en retard — les stands
+     et les repères dessinés à la main sont tracés juste avant, et se
+     seraient taillés sur la police d'origine. */
+  posePoliceLibelles(modeleRetenu());
+
   /* Les dessins viennent de changer sous les pieds du calcul d'itinéraire :
      ce qu'il en avait retenu — les allées, les passages d'un plan à l'autre —
      ne décrit plus rien. */
   oublieGrilles();
   oublieLiaisons();
+  // et le relevé des repères, que la recherche interroge
+  oublieReperes();
 
   TOUS = DATA.plans.flatMap(p => [...p.zones, ...p.stands]);
   parId = new Map(TOUS.map(o => [o.id, o]));
@@ -192,17 +193,6 @@ function indexe(d){
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
-       remontée par tous ceux qui la touchent — mais à celui où on la trouve :
-       la zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni
-       l'une ni l'autre, elle n'est encore située nulle part et le pavillon que
-       porterait sa ligne serait un hasard de synchronisation : elle se cherche
-       et se lit, elle ne se rattache à rien tant que la console ne l'a pas
-       fait. */
-    const ou = (c.zone && parId.get(String(c.zone))) ||
-               tenue.map(e => parId.get(e.stand)).find(Boolean);
-    c.situee = Boolean(ou);
-    if (ou) c.p = ou.p;
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
@@ -211,6 +201,7 @@ function indexe(d){
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
+  rangeConferences();
 
   const nom = DATA.evenement || "Plan du salon";
   $("titre").textContent = nom;
@@ -218,12 +209,96 @@ function indexe(d){
   // l'onglet porte le nom de l'événement chargé, pas celui du premier salon
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
+  poseFavicon(DATA.favicon);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +
     HEBERGES.filter(o => o.nom).length;
   $("nZones").textContent = TOUS.filter(o => o.kind === "zone").length;
   chargeParcours();
+}
+
+/* Une conférence se lit dans l'ordre où elle se tient : l'heure locale d'abord,
+   qui est celle qu'affiche la page, et l'heure absolue à défaut. */
+const chronoConf = (a, b) => String(a.debutLocal || a.debut || "")
+  .localeCompare(String(b.debutLocal || b.debut || ""));
+
+/**
+ * Ranger les conférences là où on les lit : au programme de la zone qui les
+ * abrite, et dans le pavillon où l'on ira les chercher.
+ *
+ * À part de l'indexation parce que cela se refait sans recharger : le
+ * rattachement d'une salle à une zone se choisit dans les réglages du plan, et
+ * paraît aussitôt — comme le nom d'une zone.
+ *
+ * Ce rattachement l'emporte sur celui que porte l'instantané. C'est la règle
+ * que le service applique déjà en servant le plan ; elle est reprise ici pour
+ * que le choix se voie avant même d'avoir rechargé. La table des salles n'est
+ * servie qu'à l'administration : le visiteur reçoit des conférences déjà
+ * rattachées, et n'a rien à réappliquer.
+ *
+ * Une salle rattachée à une zone d'un autre pavillon n'entre au programme de
+ * personne : la conférence n'est pas remontée là-bas, et la prochaine
+ * synchronisation l'y portera. Elle se retrouve d'ici là par son exposant.
+ */
+function rangeConferences(){
+  const parSalle = new Map();
+  Object.keys(DATA.salles || {}).forEach(k => {
+    const s = DATA.salles[k];
+    if (s && s.nom) parSalle.set(s.nom, s.zone || null);
+  });
+  DATA.plans.forEach(p => {
+    const siennes = new Set(p.zones.map(z => z.id));
+    // le programme d'une zone se lit d'un coup, et il est déjà chronologique
+    p.parZone = new Map();
+    p.conferences.forEach(c => {
+      if (parSalle.has(c.salle)) c.zone = parSalle.get(c.salle);
+      if (!c.zone || !siennes.has(c.zone)) return;
+      if (!p.parZone.has(c.zone)) p.parZone.set(c.zone, []);
+      p.parZone.get(c.zone).push(c);
+    });
+    p.parZone.forEach(l => l.sort(chronoConf));
+  });
+  /* Une conférence n'appartient pas au pavillon qui l'a remontée — elle est
+     remontée par tous ceux qui la touchent — mais à celui où on la trouve : la
+     zone de sa salle, ou à défaut le stand de celui qui l'anime. Sans ni l'une
+     ni l'autre, elle n'est encore située nulle part et le pavillon que
+     porterait sa ligne serait un hasard de synchronisation : elle se cherche et
+     se lit, elle ne se rattache à rien tant qu'on ne l'a pas fait. */
+  CONFERENCES.forEach(c => {
+    const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const ou = (c.zone && parId.get(String(c.zone))) ||
+               tenue.map(e => parId.get(e.stand)).find(Boolean);
+    c.situee = Boolean(ou);
+    if (ou) c.p = ou.p;
+  });
+}
+
+/**
+ * L'icône de l'onglet, telle que la console l'a déposée.
+ *
+ * Elle arrive avec les données et non dans l'en-tête de la page : celle-ci est
+ * fabriquée une fois pour tous les salons, et ne peut donc rien savoir de
+ * celui qu'on ouvre. L'onglet reste blanc le temps de l'appel, comme le titre
+ * l'est aussi — c'est le même chargement qui les remplit tous les deux.
+ *
+ * Rien n'est posé faute d'icône : le navigateur garde la sienne, ce qui est
+ * aussi ce qu'on veut quand l'exploitant vient de la retirer. Et l'image est
+ * relue avant d'être posée, comme le logo d'une zone : elle a fait le même
+ * chemin — saisie chez un exploitant authentifié, rangée en base, resservie
+ * par l'API à tous les visiteurs.
+ */
+function poseFavicon(src){
+  const img = imageSure(src);
+  if (!img) return;
+  let l = document.querySelector('link[rel="icon"]');
+  if (!l){
+    l = document.createElement("link");
+    l.rel = "icon";
+    document.head.appendChild(l);
+  }
+  l.type = img.slice(5, img.indexOf(";"));
+  l.href = img;
 }
 
 /* ============================================================
@@ -247,8 +322,14 @@ function largeur(txt, police){
    milliers de comparaisons d'un tri, c'est lui qu'on paie, pas le tri. */
 const COLLATION = new Intl.Collator("fr", { numeric: true });
 
-const P_NOM = ["600", '"Instrument Sans", sans-serif'];
-const P_CODE = ["500", '"IBM Plex Mono", monospace'];
+/* La graisse et la police dans lesquelles le plan écrit ses libellés : le nom
+   de l'enseigne, le numéro de l'emplacement. Elles ne sont pas figées — le
+   modèle d'habillage les remplace, et `posePoliceLibelles` les repose. Ce
+   sont celles-là qu'il faut mesurer, jamais celles d'origine : un nom taillé
+   sur une chasse fixe déborde d'un serif, et se perd au milieu d'un stand
+   qu'il devait remplir. */
+let P_NOM = ["600", '"Instrument Sans", "Segoe UI", system-ui, sans-serif'];
+let P_CODE = ["500", '"IBM Plex Mono", monospace'];
 
 function decoupe(txt, n){
   if (n === 1) return [txt];
@@ -383,8 +464,17 @@ function montePlan(){
 }
 
 function onglets(){
+  /* Un salon d'un seul pavillon n'a rien à choisir : l'onglet unique ne ferait
+     que répéter le titre — souvent mot pour mot, Klipso nommant son plan
+     unique comme le salon — et sur un écran étroit il lui prend sa largeur. */
+  const seul = DATA.plans.length < 2;
+  $("halls").hidden = seul;
+  // la barre s'arrange autrement quand elle n'a plus d'onglets à loger
+  document.documentElement.classList.toggle("un-pavillon", seul);
+  if (seul) { $("halls").innerHTML = ""; return; }
   $("halls").innerHTML = DATA.plans.map((p, i) =>
-    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '">' +
+    '<button data-p="' + i + '" aria-pressed="' + (i === state.plan) + '"' +
+    ' title="' + esc(p.libelle) + '">' +
     esc(p.libelle) + '<span class="n">' + p.stands.length + '</span></button>').join("");
   $("halls").querySelectorAll("button").forEach(b => b.onclick = () => changePlan(+b.dataset.p));
 }
@@ -410,7 +500,7 @@ const place = o => o.lb || o.bb;
 
 function libelles(){
   const l = $("labels"), p = P();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
   const dansVue = o => o.c[0] > view.x - 25 && o.c[0] < view.x + view.w + 25 &&
                        o.c[1] > view.y - 25 && o.c[1] < view.y + view.h + 25;
@@ -721,6 +811,7 @@ function filtreTheme(n){
   state.crit.set(CLE_THEMES, new Set([n]));
   state.q = ""; state.qn = "";
   if ($("q")) $("q").value = "";
+  majVideQ();
   ferme();
   majCriteres();
   appliqueFiltre();
@@ -916,6 +1007,34 @@ function videCriteres(){
   appliqueFiltre();
 }
 
+/** La croix du champ ne sert qu'à défaire : elle ne paraît qu'une fois qu'il y
+ *  a quelque chose à défaire. */
+function majVideQ(){
+  const b = $("videQ");
+  if (b) b.hidden = !state.q;
+}
+
+/**
+ * Reprendre le plan entier, sans effacer le mot-clé lettre à lettre.
+ *
+ * Une recherche sans résultat éteint la liste et le plan à la fois : il faut
+ * pouvoir la défaire d'un geste. Les critères retenus, eux, restent — ils ont
+ * leurs propres puces pour cela, et les retirer avec le mot-clé effacerait une
+ * question qu'on n'a pas posée.
+ */
+function videRecherche(){
+  state.q = ""; state.qn = "";
+  const champ = $("q");
+  if (champ){
+    champ.value = "";
+    /* Sur un téléphone, rendre la main au champ relèverait le clavier sur le
+       plan qu'on vient justement de vouloir revoir. */
+    if (!ETROIT()) champ.focus();
+  }
+  majVideQ();
+  appliqueFiltre();
+}
+
 /** Le nombre de valeurs retenues, tous critères confondus. */
 const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
 
@@ -1104,6 +1223,15 @@ const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 const critParSociete = () =>
   [...state.crit.keys()].some(k => !CRITERES_EMPLACEMENT.has(k));
 
+/* Sous quel réglage de l'onglet « Recherche » chaque sorte se range. Une
+   hébergée suit les stands : c'est un exposant comme un autre, et l'exploitant
+   qui montre les stands ne s'attend pas à devoir cocher les deux. */
+const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
+                          conf: "conferences", poi: "poi" };
+
+/** L'exploitant laisse-t-il la recherche remonter cet objet ? */
+const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
+
 /* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
    décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
    d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
@@ -1111,6 +1239,11 @@ const critParSociete = () =>
    par « gamme de produits » cherche des exposants. */
 function visible(o){
   if (!filtre()) return true;
+  /* Ce que l'exploitant a retiré de la recherche ne répond pas — ni dans la
+     liste, ni sur le plan, qui n'est que l'autre face du même résultat. Le
+     sommaire du pavillon n'est pas concerné : sans mot-clé ni critère il n'y a
+     pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
+  if (!cherchable(o)) return false;
   return dansCriteres(o) &&
     (!state.qn || (o.rech || "").includes(state.qn));
 }
@@ -1158,11 +1291,12 @@ function appliqueFiltre(){
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
-   dix : les stands passent devant, puis les endroits du salon, puis le
-   programme — le plus nombreux, et le moins souvent visé. Une hébergée se range
-   avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
-   pavillon : trois sortes entremêlées par pavillon ne se lisaient plus. */
-const RANGS = { stand: 0, coex: 0, zone: 1, conf: 2 };
+   dix : les stands passent devant, puis les endroits du salon — les zones que
+   le salon fournit, puis les repères qu'on y a dessinés — et le programme
+   ferme la marche, le plus nombreux et le moins souvent visé. Une hébergée se
+   range avec les stands, c'est un exposant comme un autre. Ce rang prime sur le
+   pavillon : quatre sortes entremêlées par pavillon ne se lisaient plus. */
+const RANGS = { stand: 0, coex: 0, zone: 1, poi: 2, conf: 3 };
 const rangSorte = (o) => RANGS[o.kind] || 0;
 
 /** Combien de lignes d'une même sorte la liste veut bien poser. Au-delà, on
@@ -1170,10 +1304,11 @@ const rangSorte = (o) => RANGS[o.kind] || 0;
  *  et le compte au-dessus le dit. */
 const PLAFOND_SORTE = 500;
 
-/* Le premier bloc d'une ligne porte le numéro de stand ; une zone et une
-   conférence n'en ont pas, et laisser la case vide effaçait justement ce qui
-   les distingue d'un stand sans numéro. Elle dit alors la sorte. */
-const CASE_SORTE = { zone: "Zone", conf: "Conf" };
+/* Le premier bloc d'une ligne porte le numéro de stand ; une zone, une
+   conférence et un repère n'en ont pas, et laisser la case vide effaçait
+   justement ce qui les distingue d'un stand sans numéro. Elle dit alors la
+   sorte. */
+const CASE_SORTE = { zone: "Zone", conf: "Conf", poi: "Repère" };
 
 /**
  * Ce que la case affiche.
@@ -1222,6 +1357,10 @@ function caseNumero(){
  * toutes lettres.
  */
 function sousLigne(o){
+  /* Un repère dit ce qu'il est, quand son libellé ne le dit pas déjà : entre
+     deux lignes « Hall Sud » et « Hall Nord », savoir qu'il s'agit d'entrées
+     est ce qui les rattache à ce qu'on cherchait. */
+  if (o.kind === "poi") return o.type || "";
   if (o.kind !== "conf") return "";
   const d = momentLocal(o.debutLocal, DATA.fuseau) || momentLocal(o.debut, DATA.fuseau);
   const quand = d
@@ -1249,15 +1388,30 @@ function liste(){
      emplacements : ajouter là trois cents sessions noierait les stands qu'on
      est venu parcourir. */
   const portee = (parSociete ? TOUS.concat(HEBERGES) : tout ? TOUS : P().stands)
-    .concat(q ? CONFERENCES : []);
+    .concat(q ? CONFERENCES : [])
+    /* Les repères rejoignent la liste comme le programme, sur un mot-clé seul :
+       un critère décrit une société, et un escalier n'en est pas une. */
+    .concat(q ? reperesCherchables() : []);
   const vus = portee.filter(visible).sort((a, b) =>
     (rangSorte(a) - rangSorte(b)) ||
     (a.p - b.p) ||
     ((a.nom ? 0 : 1) - (b.nom ? 0 : 1)) ||
     COLLATION.compare(String(a.nom || a.code || ""), String(b.nom || b.code || "")));
 
+  /* Sans mot-clé ni critère, la liste n'est pas un résultat mais le sommaire
+     du pavillon : « 404 résultats · Franchise Expo Paris » répond alors à une
+     question que personne n'a posée, et redit le salon que l'en-tête nomme
+     déjà. Le compte ne paraît donc qu'une fois la recherche commencée — et
+     celle-ci portant sur tout le salon, il n'a plus qu'une portée à dire. */
+  const compte = $("count");
+  if (compte.hidden === tout){
+    compte.hidden = !tout;
+    // le compte fait partie de ce qui dépasse du tiroir replié : sa disparition
+    // comme son retour changent la hauteur à laquelle s'ancrent les commandes
+    mesureTiroir();
+  }
   $("countTxt").textContent = vus.length + (vus.length > 1 ? " résultats" : " résultat") +
-    (tout ? " · tous pavillons" : " · " + P().libelle);
+    " · tous pavillons";
 
   /* Le plafond se compte par sorte, et non sur la liste entière : les stands
      passant devant, une recherche large le remplissait à eux seuls et les
@@ -1280,16 +1434,21 @@ function liste(){
        stand et son nom. La surface louée et les angles ouverts regardent la
        commercialisation, jamais le visiteur : ils ne s'affichent nulle part. */
     const conf = o.kind === "conf";
+    /* Ni une conférence ni un repère n'est un emplacement : la sélection du
+       plan ne les désigne pas, et le clic ne passe pas par « select ». */
+    const emplacement = !conf && o.kind !== "poi";
     // une conférence que rien ne situe encore n'est dans aucun pavillon : celui
     // qui l'a remontée n'en dit rien au visiteur
     const badge = o.p !== state.plan && !(conf && !o.situee)
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
     const sous = sousLigne(o);
+    /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
+       c'est une forme dessinée, pas un objet du plan — et son identifiant seul
+       ne dirait pas où aller le chercher. */
     return '<button class="row" data-id="' + esc(o.id) +
-      '" data-sorte="' + o.kind + '" data-soc="' + rang +
-      // une conférence n'est pas un objet du plan : rien ne peut la désigner
-      '" aria-current="' + (!conf && state.sel === o.id && state.selSoc === rang) + '">' +
+      '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
+      '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
       '<span><span class="nm">' + esc(o.nom || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
@@ -1308,6 +1467,9 @@ function liste(){
      salle sur le plan. */
   box.querySelectorAll(".row").forEach(b => b.onclick = () => {
     if (b.dataset.sorte === "conf"){ ficheConf(b.dataset.id, "recherche"); return; }
+    // un repère s'ouvre sur son plan, et depuis sa pastille : ce n'est pas un
+    // emplacement, et « select » n'aurait rien à cadrer
+    if (b.dataset.sorte === "poi"){ vaAuRepere(b.dataset.id, +b.dataset.p); return; }
     select(b.dataset.id, true, parSociete ? "recherche" : "liste",
            Number(b.dataset.soc));
   });
@@ -1316,6 +1478,45 @@ function liste(){
 /* ============================================================
    6. Vue
    ============================================================ */
+/* Mesurer le cadre force le navigateur à remettre en page tout le SVG — sept
+   mille éléments — et on le mesurait juste après avoir posé la « viewBox »,
+   qui vient précisément de tout salir : quatre-vingt-cinq millisecondes, à
+   chaque image, pour lire une largeur qui n'avait pas bougé. Car le cadre ne
+   dépend pas de la « viewBox » : c'est le CSS qui le pose.
+
+   On le mesure donc une fois, et on l'oublie quand la mise en page change.
+   Un « ResizeObserver » couvre tout ce qui peut le changer, d'où qu'il vienne,
+   sans rien mesurer lui-même ; le « resize » de la fenêtre s'y ajoute parce
+   qu'il se déclenche avant lui, et que le recadrage qui l'écoute mesurerait
+   sinon l'ancien cadre. */
+let _cadre = null;
+const cadrePlan = () => _cadre || (_cadre = svg.getBoundingClientRect());
+const oublieCadre = () => { _cadre = null; };
+addEventListener("resize", oublieCadre);
+addEventListener("scroll", oublieCadre, true);
+if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
+
+/* Pendant un changement d'échelle, le plan se passe de ses textes : eux seuls
+   coûtent quatre-vingts des quatre-vingt-huit millisecondes que réclame la
+   remise en page du SVG à chaque image (voir « #plan.fige » dans la feuille de
+   style). Le geste fini, « poseVue » les rend — recalculés une seule fois. */
+/* Le dégel a un filet. Un geste finit normalement par « poseVue », qui rend
+   les textes en même temps qu'il retrie les libellés ; mais tous les chemins
+   n'y mènent pas — un doigt posé sur le plan pendant qu'une glissade finit sa
+   course, un « pointercancel » du système. Le plan resterait muet. La minuterie
+   est donc réarmée à chaque image du geste : elle ne se déclenche jamais tant
+   qu'il dure, et toujours quand il s'interrompt sans se poser. */
+let filetTextes = null;
+function figeTextes(){
+  svg.classList.add("fige");
+  clearTimeout(filetTextes);
+  filetTextes = setTimeout(rendTextes, 300);
+}
+function rendTextes(){
+  clearTimeout(filetTextes); filetTextes = null;
+  svg.classList.remove("fige");
+}
+
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   if (typeof dessinePoignees === "function") dessinePoignees();
@@ -1350,6 +1551,7 @@ function rafraichitVue(){
 
 /** À la fin d'un geste, ou pour un saut de vue : tout, sans attendre. */
 function poseVue(){
+  stoppeZoom();
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libelles();
@@ -1369,7 +1571,7 @@ function poseVue(){
  */
 function masque(){
   if (!ETROIT()) return 0;
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const fiche = $("detail"), tiroir = $("side");
   const ficheOuverte = !!fiche && fiche.classList.contains("open");
   let bas = ficheOuverte ? fiche.offsetHeight : 0;
@@ -1387,8 +1589,31 @@ function masque(){
   return Math.max(0, Math.min(r.height * .6, bas));
 }
 
+/**
+ * Largeur, en pixels, de ce que le volet de droite cache du plan.
+ *
+ * Sur un écran large la fiche, le parcours et l'itinéraire ne partagent pas la
+ * place : ils se posent par-dessus le plan, le long du bord droit. Cadrer sur
+ * la largeur entière pousse donc le bord droit du tracé sous le volet — et
+ * c'est là que se trouve l'arrivée d'un itinéraire demandé depuis une fiche.
+ *
+ * On mesure la largeur au repos plutôt que la position à l'écran : le volet
+ * arrive en glissant, et un cadrage demandé pendant la transition mesurerait
+ * un volet encore à moitié dehors.
+ */
+function masqueDroite(){
+  if (ETROIT()) return 0;
+  const r = cadrePlan();
+  let cote = 0;
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    const v = $(id);
+    if (v && v.classList.contains("open")) cote = Math.max(cote, v.offsetWidth);
+  });
+  return Math.max(0, Math.min(r.width * .6, cote));
+}
+
 function fit(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const cache = masque();
   const hUtile = Math.max(60, r.height - cache);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
@@ -1399,13 +1624,121 @@ function fit(){
            w: k * r.width, h: k * r.height };
   poseVue();
 }
-function zoom(f, cx, cy){
-  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, view.w * f)), k = nw / view.w;
-  view = { x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w: nw, h: view.h * k };
-  rafraichitVue();
+/* Le zoom par crans, et la saccade qu'il donnait.
+
+   Une molette envoie des crans, un pavé tactile une pluie de petits
+   mouvements. Appliquer à chacun le même facteur fixe ratait les deux : la
+   souris sautait de dix-huit pour cent d'un coup, sans rien entre les deux
+   images ; le pavé, qui envoie plusieurs événements par image, les
+   multipliait entre eux — le plan bondissait au lieu de glisser.
+
+   Deux corrections, donc, et elles vont ensemble. Le facteur suit l'ampleur
+   du geste au lieu d'être constant (voir l'écouteur « wheel »), et la vue
+   qu'on vise se distingue de celle qu'on montre : un cran pousse la première,
+   chaque image rapproche la seconde d'une fraction de ce qui les sépare.
+
+   L'interpolation porte sur les quatre nombres à la fois et reste linéaire :
+   le point visé se retrouve alors exactement sous le curseur à chaque image
+   du trajet, et non seulement à l'arrivée. */
+let vise = null, imageZoom = null;
+
+function stoppeZoom(){
+  if (imageZoom){ cancelAnimationFrame(imageZoom); imageZoom = null; }
+  vise = null;
+  rendTextes();
+}
+
+function glisseVersVise(){
+  if (imageZoom) return;
+  let precedent = performance.now();
+  const pas = maintenant => {
+    imageZoom = null;
+    if (!vise) return;
+    /* Le rapprochement se compte en millisecondes, non en images : sans quoi
+       un écran à 120 Hz arriverait deux fois plus vite qu'un écran à 60. */
+    const dt = Math.min(64, maintenant - precedent) || 16;
+    precedent = maintenant;
+    figeTextes();
+    const k = 1 - Math.pow(.5, dt / 45);
+    const but = vise;
+    view = { x: view.x + (but.x - view.x) * k, y: view.y + (but.y - view.y) * k,
+             w: view.w + (but.w - view.w) * k, h: view.h + (but.h - view.h) * k };
+    /* Assez près pour que l'œil n'y voie rien : on s'y pose, et les libellés
+       se retrient enfin — c'est la fin du geste.
+
+       Les quatre nombres comptent, et non la seule largeur. Un cran de molette
+       la fait toujours varier, si bien qu'elle suffisait à dire où l'on en
+       était ; aller sur un point du plan ne la change pas forcément — on s'y
+       déplace sans s'en approcher — et le trajet s'arrêtait alors à sa
+       première image, juste avant de commencer. */
+    const reste = Math.max(Math.abs(but.x - view.x), Math.abs(but.y - view.y),
+                           Math.abs(but.w - view.w), Math.abs(but.h - view.h));
+    if (reste < but.w * .002){
+      view = but; vise = null; poseVue(); return;
+    }
+    appliqueVue(); echelle();
+    imageZoom = requestAnimationFrame(pas);
+  };
+  imageZoom = requestAnimationFrame(pas);
+}
+
+/**
+ * Viser une vue, et y aller en glissant.
+ *
+ * Le seul chemin pour déplacer la vue autrement que d'un coup : le zoom par
+ * crans s'en sert, le centrage sur un stand ou sur un repère aussi. Qui refuse
+ * les animations s'y pose tout de suite — « poseVue » arrête au passage le
+ * trajet qui serait en cours.
+ */
+function glisseVers(but){
+  if (REDUIT){ view = but; poseVue(); return; }
+  vise = but;
+  /* Le trajet change l'échelle — un cran de molette, un centrage qui
+     rapproche — et c'est ce qui coûte : le plan se tait le temps qu'il dure. */
+  figeTextes();
+  glisseVersVise();
+}
+
+/**
+ * Où un nœud du plan se trouvera quand la vue aura fini son trajet.
+ *
+ * La fiche s'ouvre en s'étirant depuis la forme qu'on a choisie, et il faut
+ * pour cela sa place à l'écran. Elle l'avait tant que le centrage se faisait
+ * d'un coup : la forme était déjà arrivée. Elle glisse maintenant, et la
+ * mesurer en chemin ferait partir la fiche d'un point de passage — le plus
+ * souvent hors du cadre, la forme venant à peine d'y entrer.
+ *
+ * La vue visée est donc posée le temps de la mesure, puis retirée. Deux
+ * écritures de « viewBox » de plus, et la géométrie est celle du navigateur
+ * plutôt qu'un calcul refait à la main pour chaque sorte de forme.
+ */
+function rectVisee(n){
+  if (!n) return null;
+  if (!vise) return n.getBoundingClientRect();
+  const avant = view;
+  view = vise; appliqueVue();
+  const r = n.getBoundingClientRect();
+  view = avant; appliqueVue();
+  return r;
+}
+
+/**
+ * Zoom d'un facteur `f` autour d'un point du cadre donné en fraction de sa
+ * largeur et de sa hauteur — `.5, .5` pour le centre, la position du curseur
+ * pour la molette.
+ *
+ * Les crans s'enchaînent sur la vue visée, non sur la vue affichée : deux
+ * tours de molette rapides comptent double, sans que le second reparte du
+ * trajet que le premier n'avait pas fini de parcourir.
+ */
+function zoom(f, fx, fy){
+  const base = vise || view;
+  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
+  glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
+               w: nw, h: base.h * k });
 }
 function echelle(){
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   const mParPx = view.w / (r.width || 1);
   const pas = [1, 2, 5, 10, 20, 50, 100, 200].find(p => p >= mParPx * 90) || 200;
   $("scaleBar").style.width = (pas / mParPx) + "px";
@@ -1483,28 +1816,44 @@ function select(id, recentrer, canal, iSoc){
   const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
   dessineMarques();
   marqueStandsDessines();
-  if (recentrer && !ETROIT()) centre(o);
   liste(); libelles();
-  ouvre(o, n ? n.getBoundingClientRect() : null, canal, iSoc);
-  /* Sur mobile on ne cadre qu'une fois la fiche ouverte : c'est elle qui
-     décide de la hauteur masquée, et la mesurer avant reviendrait à cadrer
-     sur une géométrie déjà périmée. Sur grand écran l'ordre inverse tient,
-     car l'animation de la fiche part de la forme telle qu'elle est cadrée. */
-  if (recentrer && ETROIT()) centre(o);
+  /* Le cadrage est passé dans « ouvre » plutôt que de l'encadrer ici : il
+     demandait deux ordres — après la fiche sur un téléphone, avant elle sur un
+     grand écran — et l'un des deux cadrait toujours sur une géométrie qu'il ne
+     connaissait pas encore. */
+  ouvre(o, n, canal, iSoc, recentrer);
 }
 const centre = (o) => centrePoint(o.c);
 
 /* Un repère n'est pas un objet du plan et n'a pas de centre à lui : il n'a
    qu'un point. C'est tout ce qu'il faut pour cadrer. */
 function centrePoint(xy){
-  const w = Math.min(view.w, 55), h = w * (view.h / view.w);
+  /* Le trajet part de la vue qu'on vise quand il y en a une : un centrage
+     demandé pendant qu'un cran de molette finit de glisser s'enchaîne sur son
+     arrivée, et non sur le point de passage où il l'a trouvé. */
+  const base = vise || view;
+  const w = Math.min(base.w, 55), h = w * (base.h / base.w);
   /* Centrer au milieu du cadre placerait la cible derrière le tiroir ou la
-     fiche. On la remonte au milieu de ce qui reste visible — d'après la
-     hauteur réellement masquée, et non une proportion supposée. */
-  const r = svg.getBoundingClientRect();
+     fiche. On la pose au milieu de ce qui reste visible — d'après ce qui est
+     réellement masqué, et non une proportion supposée.
+
+     Les deux côtés comptent, et c'est ce qui manquait : la hauteur du tiroir
+     en bas sur un téléphone, la largeur de la fiche à droite sur un grand
+     écran. Faute du second, un cadre de mille pixels posait le stand à six
+     cent soixante-cinq — c'est-à-dire pile sous la fiche, qui commence à six
+     cent soixante. On arrivait sur ce qu'on venait voir, et il était caché.
+     Ces deux mesures ne valent qu'une fois la fiche posée : c'est « ouvre »
+     qui appelle le cadrage, et non l'inverse. */
+  const r = cadrePlan();
   const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
-  view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
-  poseVue();
+  const decaleX = r.width ? (w * masqueDroite()) / (2 * r.width) : 0;
+  /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
+     du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
+     il fallait retrouver dans quel coin du salon on venait d'être posé. Le
+     trajet le dit de lui-même, et le zoom qu'il resserre au passage montre le
+     point s'approcher. L'ajustement au pavillon reste un bond, lui : il n'y a
+     pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
+  glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
 /* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
    règle générale, et pour la raison qui la fonde. Un champ absent du réglage
@@ -1790,6 +2139,42 @@ function adresseSure(v){
   return "";
 }
 
+/* Ce qu'un logo de zone a le droit d'être : une image que la page a fabriquée
+   elle-même, et rien d'autre.
+
+   Le « svg » n'y figure pas, et c'est délibéré : il porte du script, que le
+   navigateur exécute dès qu'on le pose autrement que dans une image. Le
+   convertisseur n'en produit de toute façon jamais — il rend ce que la toile
+   sait écrire, webp là où c'est possible, png partout. */
+const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
+
+/**
+ * Le logo d'une société, relu avant d'être affiché.
+ *
+ * Celui-ci n'est pas déposé mais lu chez la source — l'avatar d'une fiche
+ * Eventmaker — et c'est donc une adresse, quand celui d'une zone est une image
+ * embarquée. La synchronisation applique déjà la règle ; la page ne s'en remet
+ * pas à elle pour autant : « data: » et « javascript: » sont des adresses
+ * valides, et cette fiche-là est posée chez tous les visiteurs.
+ */
+function adresseImage(v){
+  const u = String(v == null ? "" : v).trim().replace(/[\u0000-\u001F]/g, "");
+  return /^https?:\/\//i.test(u) ? u : "";
+}
+
+/**
+ * Le logo d'une zone, relu avant d'être affiché.
+ *
+ * Il suit le chemin de la description — saisi par un exploitant authentifié,
+ * enregistré en base, renvoyé par l'API, posé dans la fiche de tous les
+ * visiteurs — et mérite donc la même méfiance : ce n'est pas parce qu'il est
+ * arrivé par l'éditeur qu'il en vient.
+ */
+function imageSure(v){
+  const u = String(v == null ? "" : v).trim();
+  return IMAGE_SURE.test(u) ? u : "";
+}
+
 /* Ce qu'une description écrite dans l'éditeur a le droit de contenir, et sous
    quel nom elle le garde : de la mise en forme, rien d'autre. Les balises que
    les navigateurs produisent pour dire la même chose — « b », « i », « div » —
@@ -1928,7 +2313,7 @@ function societes(o){
  * alors qu'un stand de restauration en héberge jusqu'à onze. On demande donc
  * qui l'on vient voir, plutôt que de le supposer.
  */
-function choisitExposant(o, rect, canal){
+function choisitExposant(o, depuis, canal, recentrer){
   const tous = societes(o);
   ouvreModale(("Stand " + (o.code || "")).trim(), corps => {
     const p = document.createElement("p");
@@ -1947,7 +2332,7 @@ function choisitExposant(o, rect, canal){
         // la liste marque la société ouverte, d'où qu'on l'ait choisie ; le
         // plan, lui, ne bouge pas — il nomme le titulaire quoi qu'on lise
         state.selSoc = x.i; liste();
-        ouvre(o, rect, canal, x.i);
+        ouvre(o, depuis, canal, x.i, recentrer);
       };
       li.appendChild(b);
       ul.appendChild(li);
@@ -1958,13 +2343,150 @@ function choisitExposant(o, rect, canal){
 }
 
 /**
+ * La marque en tête de fiche : le logo d'une enseigne, ou celui que
+ * l'exploitant a déposé sur une zone. Une fiche sans marque n'en montre aucune.
+ *
+ * Elle vit ici pour la même raison que `poseCode` : deux fiches écrivent cette
+ * image — celle d'un stand ou d'une zone, et celle d'un repère, qui n'en a
+ * jamais et doit donc l'effacer. La seconde ne le faisait pas, et la marque du
+ * stand d'avant restait en tête de la fiche d'un escalier.
+ */
+function poseMarque(blason){
+  const marque = $("dLogo");
+  if (!marque) return;
+  /* Un logo lu chez la source peut n'y être plus : celui qui ne se charge pas
+     s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
+     Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
+     ligne les couvre tous les deux. */
+  marque.onerror = () => { marque.hidden = true; };
+  if (!blason){
+    marque.hidden = true;
+    /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
+       montrerait la marque de la précédente le temps que la sienne arrive. */
+    marque.removeAttribute("src");
+    return;
+  }
+  /* Changer `src` ne retire pas l'image déjà peinte : le navigateur garde la
+     précédente à l'écran jusqu'à ce que la nouvelle soit décodée. La fiche
+     qu'on vient d'ouvrir portait donc la marque de celle d'avant pendant tout
+     le trajet — invisible sur un bureau, très visible sur le réseau d'un
+     salon. On la cache donc le temps du trajet, et `onload` la ramène. */
+  if (marque.getAttribute("src") !== blason){
+    marque.hidden = true;
+    marque.src = blason;
+  }
+  /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
+     l'image tenue : le rangement suit donc l'apparition, jamais avant. */
+  marque.onload = () => { marque.hidden = false; rangeMarque(); };
+  /* Une image déjà tenue par le cache est complète dès l'affectation et ne
+     donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
+     celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
+  if (marque.complete) marque.hidden = !marque.naturalWidth;
+}
+
+/**
+ * La pastille de situation, et le filigrane que les modèles de fiche lisent
+ * sous elle.
+ *
+ * Le pavillon ne situe la fiche que s'il y en a plusieurs : sur un salon qui
+ * tient sur un seul plan, il ne distingue rien, il porte souvent le nom du
+ * salon — déjà en tête de la page — et l'onglet des pavillons le nomme de
+ * toute façon. Il tombe aussi quand il redit ce nom-là, fût-ce parmi d'autres.
+ * La pastille disparaît avec lui s'il ne reste aucun numéro derrière : une
+ * zone n'en a jamais, un repère non plus.
+ *
+ * Elle vit ici parce que deux fiches l'écrivent — celle d'un stand ou d'une
+ * zone, et celle d'un repère (`ouvrePoi`, _dessin.html). La seconde la
+ * recopiait, et un second écrivain oublie une remise à zéro par champ ajouté :
+ * le filigrane gardait le numéro du stand consulté juste avant, et la pastille
+ * restait invisible pour avoir été cachée par la fiche d'une zone.
+ */
+function poseCode(pl, num, filigrane){
+  const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
+                  String(DATA.evenement || "").trim().toLowerCase();
+  const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
+  /* Le hall est affecté au pavillon, donc à tout ce qui s'y trouve. Il se
+     glisse entre le pavillon et le numéro : c'est l'ordre dans lequel on
+     cherche un stand sur place — le hall, puis l'allée.
+
+     Il ne tombe pas, lui, quand le salon n'a qu'un pavillon : le pavillon ne
+     distingue alors rien, tandis que le hall reste la porte par laquelle on
+     entre. Il reste au contraire muet tant qu'on ne l'a pas coché. */
+  const hall = montre("stand", "hall") ? (pl.hall || "") : "";
+  $("dCode").textContent = [pav, hall, num].filter(Boolean).join(" · ");
+  $("dCode").hidden = !$("dCode").textContent;
+  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
+     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
+     pour un filigrane, et ni une zone ni un repère n'ont de numéro. */
+  // la pastille vit désormais dans un bloc à elle : c'est l'en-tête qu'on vise
+  $("dCode").closest(".detail-hd").dataset.code = filigrane || "";
+}
+
+/**
+ * Où se range la marque de la fiche.
+ *
+ * Le flex sait replier une ligne, il ne sait pas changer de ligne d'accueil :
+ * une marque qui ne tient pas à côté du nom se retrouvait seule sur une ligne
+ * à elle, entre le nom et le numéro, et coûtait une bande pour ne rien dire de
+ * plus. Elle rejoint donc la ligne du numéro, derrière lui.
+ *
+ * Ce qui tient n'est pas calculé, il est demandé : la marque est posée à côté
+ * du nom, on regarde où le navigateur l'a mise, et on la déménage si elle est
+ * tombée dessous. Le pli dépend de la fonte, du modèle de fiche et de la
+ * largeur du panneau — trois choses qu'un calcul aurait fallu refaire à chaque
+ * fois qu'elles changent.
+ *
+ * Sur la ligne du numéro, sa largeur est bornée à ce qui reste : sans borne
+ * elle repartirait à la ligne, et le déménagement n'aurait fait que déplacer
+ * la bande perdue.
+ */
+function rangeMarque(){
+  const marque = $("dLogo");
+  if (!marque || marque.hidden) return;
+  const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
+  const titre = nom && nom.querySelector("h2");
+  if (!titre || !bas) return;
+  // remise à l'essai avant de mesurer : la fiche d'avant a pu la déménager
+  marque.style.maxWidth = "";
+  if (marque.parentNode !== nom) nom.appendChild(marque);
+  // elle tient à côté du nom dès que les deux boîtes se croisent en hauteur
+  if (marque.getBoundingClientRect().top < titre.getBoundingClientRect().bottom - 2) return;
+
+  bas.appendChild(marque);
+  /* Ce qui reste sur la ligne du numéro : du bord droit de la dernière
+     pastille au bord intérieur du bloc — celui-ci recule là où un modèle de
+     fiche réserve la place d'un numéro géant. */
+  const r = bas.getBoundingClientRect(), st = getComputedStyle(bas);
+  const pastilles = [...bas.children].filter(e => e !== marque && !e.hidden);
+  const derniere = pastilles[pastilles.length - 1];
+  const gauche = derniere ? derniere.getBoundingClientRect().right
+                          : r.left + (parseFloat(st.paddingLeft) || 0);
+  const droite = r.right - (parseFloat(st.paddingRight) || 0);
+  // réduite à un trait elle ne se lit plus : mieux vaut alors la laisser passer
+  marque.style.maxWidth = Math.max(90, droite - gauche - 10) + "px";
+}
+
+/* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
+   suit : une marque rangée sous le numéro à l'étroit remonte à côté du nom au
+   large. Une image seule à mesurer, on ne diffère pas. */
+addEventListener("resize", () => {
+  if ($("detail") && $("detail").classList.contains("open")) rangeMarque();
+});
+
+/**
  * La fiche d'un stand ou d'une zone.
  *
  * `iSoc` désigne la société regardée sur un stand partagé : absent, on demande
  * laquelle ; -1, le titulaire ; sinon le rang du co-exposant. L'emplacement,
  * lui, ne change pas — c'est le même stand qu'on regarde par deux entrées.
+ *
+ * `depuis` est la forme du plan d'où la fiche s'étire — le nœud, et non sa
+ * place à l'écran : celle-ci ne se mesure qu'à la fin, quand la fiche est
+ * posée et le plan cadré. `recentrer` dit s'il faut amener le plan sur
+ * l'emplacement ; c'est ici que cela se fait, et pas plus tôt, la fiche étant
+ * seule à savoir ce qu'elle masque.
  */
-function ouvre(o, rect, canal, iSoc){
+function ouvre(o, depuis, canal, iSoc, recentrer){
   const zone = o.kind === "zone";
   const heberges = (!zone && o.coex) || [];
   /* Le choix retiré, le stand mène droit à son titulaire — c'est lui qui loue
@@ -1972,7 +2494,7 @@ function ouvre(o, rect, canal, iSoc){
      qu'il héberge restent atteignables par la liste : le réglage allège le
      plan, il ne retire personne du salon. */
   const plusieurs = heberges.length > 0 && coexChoisit();
-  if (plusieurs && iSoc === undefined){ choisitExposant(o, rect, canal); return; }
+  if (plusieurs && iSoc === undefined){ choisitExposant(o, depuis, canal, recentrer); return; }
   /* Un stand sans co-exposant n'a pas de rang à passer : il n'en a qu'un, et
      c'est le titulaire. Le ramener ici évite d'avoir à distinguer « absent »
      de « titulaire » dans tout ce qui suit. */
@@ -1994,24 +2516,29 @@ function ouvre(o, rect, canal, iSoc){
   const titre = soc.nom || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
+  /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
+     lit avec ce qu'elle nomme et non parmi les champs. Sans intitulé au-dessus
+     d'elle — une image se reconnaît sans qu'on la nomme.
+
+     Deux origines, une seule place. Sur une zone, c'est ce que l'exploitant y a
+     déposé, qui voyage dans la fiche et se relit comme la description — il
+     vient du même endroit, et finit au même endroit. Sur un stand, c'est le
+     logo de l'enseigne lu chez la source, et il suit la société qu'on regarde
+     plutôt que l'emplacement : sur un stand partagé, chaque hébergée montre le
+     sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
+     ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
+     Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
+  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
-  /* Le hall est affecté au pavillon, donc au stand qui s'y trouve : Klipso le
-     porte sur le plan, et tous les salons ne le renseignent pas. Il se glisse
-     entre le pavillon et le numéro, parce que c'est l'ordre dans lequel on
-     cherche un stand sur place — le hall, puis l'allée. */
-  $("dCode").textContent = [pl.libelle, ok("hall", pl.hall), ok("code", o.code)]
-    .filter(Boolean).join(" · ");
-  /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
-     sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
-     pour un filigrane, et une zone n'a pas de numéro du tout. */
-  $("dCode").parentNode.dataset.code = !zone && o.code ? String(o.code) : "";
+  poseCode(pl, ok("code", o.code) ? String(o.code) : "",
+           !zone && o.code ? String(o.code) : "");
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
   part.hidden = !plusieurs;
   if (plusieurs){
     part.textContent = (heberges.length + 1) + " exposants ici";
-    part.onclick = () => choisitExposant(o, null, canal);
+    part.onclick = () => choisitExposant(o, null, canal, false);
   }
   /* La pastille des nouveaux venus. Elle ne paraît que si la synchronisation
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
@@ -2190,10 +2717,19 @@ function ouvre(o, rect, canal, iSoc){
       vis.onclick = () => basculeAffichageZone(o);
     }
   }
+  /* La marque se range une fois l'en-tête entièrement écrit : c'est la largeur
+     des pastilles qui décide de la sienne, et elles viennent d'être posées.
+     Une image encore en vol se rangera à son tour, à son « load ». */
+  rangeMarque();
   $("detail").classList.add("open");
   $("voile").classList.add("on");
   ecarteClicFantome();
-  anime(rect, 1);
+  /* Le plan vient sur l'emplacement maintenant, et non avant d'ouvrir : la
+     fiche est posée, et sa largeur — une ou deux colonnes, on ne le sait
+     qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
+     ordre pour les deux écrans, là où il en fallait un par écran. */
+  if (recentrer) centre(o);
+  anime(rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
@@ -2251,7 +2787,7 @@ const milieu = () => {
 
 function commencePince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
   pince = {
     d: Math.max(1, m.d),
     w: view.w, h: view.h,
@@ -2265,7 +2801,9 @@ function commencePince(){
 
 function suitPince(){
   const m = milieu();
-  const r = svg.getBoundingClientRect();
+  const r = cadrePlan();
+  // le pincement change l'échelle : mêmes économies que la molette
+  figeTextes();
   const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -2279,6 +2817,9 @@ function suitPince(){
 
 svg.addEventListener("pointerdown", e => {
   dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
+  // la main posée l'emporte sur la molette : un glissement qui finissait sa
+  // course tirerait la vue sous le doigt qui vient de la saisir
+  stoppeZoom();
   /* Un « pointerup » se perd parfois — la main sort de l'écran, le navigateur
      passe la main à un geste système. Le doigt restait alors inscrit, et
      l'appui suivant passait pour le second d'un pincement : plus rien ne
@@ -2301,7 +2842,7 @@ svg.addEventListener("pointermove", e => {
   if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
-  const r = svg.getBoundingClientRect(), k = view.w / r.width;
+  const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
@@ -2319,6 +2860,9 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
+     du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
+  oublieChoixPoi(d.cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (d.cible){
@@ -2326,7 +2870,7 @@ svg.addEventListener("pointerup", e => {
        mais il a un nom, et c'est ce qu'on vient lui demander. */
     if (!d.cible.dataset.id){
       if (visePoi(d.cible.dataset.poi)) return;
-      ouvrePoi(d.cible.dataset.poi, d.cible.getBoundingClientRect());
+      ouvrePoi(d.cible.dataset.poi, d.cible);
       return;
     }
     if (viseItineraire(d.cible.dataset.id)) return;
@@ -2342,18 +2886,25 @@ svg.addEventListener("pointercancel", e => {
 });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
-  const r = svg.getBoundingClientRect();
-  zoom(e.deltaY > 0 ? 1.18 : .85,
-       view.x + (e.clientX - r.left) / r.width * view.w,
-       view.y + (e.clientY - r.top) / r.height * view.h);
+  const r = cadrePlan();
+  /* Les navigateurs ne comptent pas dans la même unité — pixels, lignes ou
+     pages — et un pavé tactile envoie des dixièmes de cran là où une molette
+     en envoie un entier. On ramène tout en pixels, puis on en fait un facteur
+     exponentiel : deux petits mouvements valent alors exactement un grand,
+     et un tour de molette garde les dix-huit pour cent qu'il avait. */
+  const px = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? r.height : 1);
+  zoom(Math.exp(Math.max(-400, Math.min(400, px)) / 600),
+       (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
 }, { passive: false });
 svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée doit y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée et la mise en avant
+    // doivent y répondre pareil
+    oublieChoixPoi(g);
     if (!g.dataset.id){
-      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g.getBoundingClientRect());
+      if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
     }
     if (!viseItineraire(g.dataset.id))
@@ -2400,12 +2951,15 @@ document.addEventListener("keydown", e => {
     ferme();
     if ($("panel")) $("panel").classList.remove("open");
   }
-  if (e.key === "Enter" && e.target.id !== "q" && e.target.id !== "texteADessiner") termineTrace(true);
+  /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
+     outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
+     défairait la forme à l'instant posée. */
+  if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
 });
 
 $("btnFiltres").onclick = ouvreCriteres;
-$("zIn").onclick = () => zoom(.75, view.x + view.w / 2, view.y + view.h / 2);
-$("zOut").onclick = () => zoom(1.33, view.x + view.w / 2, view.y + view.h / 2);
+$("zIn").onclick = () => zoom(.75, .5, .5);
+$("zOut").onclick = () => zoom(1.33, .5, .5);
 $("zFit").onclick = fit;
 /* Une recherche n'est pas une frappe. On attend que la main s'arrête, et on
    ne compte pas deux fois le même mot-clé — retirer une lettre puis la
@@ -2414,6 +2968,7 @@ let _rechAttente = null, _rechDerniere = "";
 $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
+  majVideQ();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
@@ -2422,6 +2977,16 @@ $("q").addEventListener("input", e => {
     _rechDerniere = q;
     mesure("recherche");
   }, 900);
+});
+
+$("videQ").onclick = videRecherche;
+/* Échap dans le champ défait la recherche, et rien d'autre : la même touche
+   ferme la fiche et le tiroir plus loin, et les trois d'un coup emporteraient
+   ce qu'on regardait. Le champ vide, elle repart vers eux. */
+$("q").addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !state.q) return;
+  e.stopPropagation();
+  videRecherche();
 });
 
 /* ============================================================
@@ -2463,8 +3028,16 @@ let montreTiroir = () => {};
   const cran = () => tiroir.dataset.cran || "replie";
   function pose(nom){
     tiroir.dataset.cran = nom;
+    annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
+
+  /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
+     commandes de zoom, l'échelle — est ancré sur la hauteur repliée du tiroir.
+     Le tiroir qui monte passe donc dessous sans les déplacer, et ils restaient
+     à désigner un plan qu'on ne voyait plus. Le cran vit sur la racine pour que
+     la feuille de style les atteigne depuis l'autre bout de la page. */
+  const annonce = nom => { document.documentElement.dataset.tiroir = nom; };
   const replie = () => pose("replie");
   /* Une pression fait le tour des crans : on les atteint tous sans rien
      connaître du glissement, et on revient au plan par la même touche. */
@@ -2500,10 +3073,24 @@ let montreTiroir = () => {};
   const suit = e =>
     Math.min(hauteur("plein"), Math.max(hauteur("replie"), depart.vu - (e.clientY - depart.y)));
 
+  /** Le cran dont la hauteur visible est la plus proche de celle atteinte. */
+  function proche(vu){
+    let choix = CRANS[0], ecart = Infinity;
+    for (const c of CRANS){
+      const d = Math.abs(hauteur(c) - vu);
+      if (d < ecart){ ecart = d; choix = c; }
+    }
+    return choix;
+  }
+
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - suit(e)) + "px)";
+    const vu = suit(e);
+    tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
+    /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
+       s'arrêterait, sans attendre qu'il lâche. */
+    annonce(proche(vu));
   });
 
   function relache(e){
@@ -2511,14 +3098,8 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
-    if (aGlisse){
-      let choix = CRANS[0], ecart = Infinity;
-      for (const c of CRANS){
-        const d = Math.abs(hauteur(c) - vu);
-        if (d < ecart){ ecart = d; choix = c; }
-      }
-      pose(choix);
-    }
+    // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
+    pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
   prise.addEventListener("pointerup", relache);

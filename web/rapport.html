@@ -62,6 +62,13 @@ if (window.PLAN_CONFIG && !CFG) CFG = window.PLAN_CONFIG;
 
 /* ------------------------------------------------------------------
    Appels
+
+   Un jeton d'accès ne vaut qu'une heure ; la console, elle, reste ouverte la
+   journée. Celui que la connexion posait périmait donc sur place, et tout ce
+   qui partait ensuite revenait refusé : la table déconnectait sans prévenir,
+   et les fonctions n'affichaient qu'« Erreur 401 » — au milieu d'une
+   invitation, le mot ne dit rien de ce qu'il faut faire. Le jeton de
+   renouvellement arrivait pourtant avec lui à la connexion, et dormait.
    ------------------------------------------------------------------ */
 function entetes(json) {
   const h = { "apikey": CFG.anonKey };
@@ -70,11 +77,75 @@ function entetes(json) {
   return h;
 }
 
-async function rest(chemin, options = {}) {
-  const r = await fetch(CFG.url + "/rest/v1/" + chemin, {
+/** La charge utile d'un jeton. Elle se lit sans le serveur — seule la
+ *  signature demande sa clé, et c'est lui qui la vérifiera à chaque appel. */
+function contenuJeton(jeton) {
+  try {
+    const p = String(jeton || "").split(".")[1];
+    if (!p) return null;
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch (e) { return null; }
+}
+
+/** Secondes restantes au jeton. Illisible, on le suppose bon : le serveur
+ *  tranchera, et son refus déclenchera le renouvellement. */
+function resteJeton() {
+  const exp = contenuJeton(SESSION?.access_token)?.exp;
+  return typeof exp === "number" ? exp - Date.now() / 1000 : Infinity;
+}
+
+/* Un renouvellement à la fois. La console lance ses appels de front — le
+   profil, les salons, les plans — et un jeton de renouvellement ne sert qu'une
+   fois : trois échanges simultanés en perdraient deux, et la session avec. */
+let renouvellement = null;
+
+function renouvelle() {
+  if (!SESSION?.refresh_token) return Promise.resolve(false);
+  if (!renouvellement) {
+    renouvellement = (async () => {
+      try {
+        const r = await fetch(CFG.url + "/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { "apikey": CFG.anonKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: SESSION.refresh_token }),
+        });
+        const j = await r.json().catch(() => null);
+        if (!r.ok || !j?.access_token) return false;
+        SESSION = j;
+        // un stockage refusé ne doit pas coûter la session en cours
+        try { localStorage.setItem(CLE_SESSION, JSON.stringify(SESSION)); } catch (e) {}
+        return true;
+      } catch (e) {
+        // une coupure du réseau n'est pas une session finie : on ne déconnecte pas
+        return false;
+      } finally {
+        renouvellement = null;
+      }
+    })();
+  }
+  return renouvellement;
+}
+
+/**
+ * Un appel au projet, jeton frais en main : échangé avant de partir s'il
+ * touche à sa fin, échangé puis l'appel refait s'il est refusé malgré tout.
+ *
+ * Le 403 reste où il est : c'est un droit qui manque, pas un jeton qui se
+ * périme, et le renouveler ne le donnerait pas.
+ */
+async function appel(url, options = {}) {
+  const envoie = () => fetch(url, {
     ...options,
     headers: { ...entetes(!!options.body), ...(options.headers || {}) },
   });
+  if (SESSION?.access_token && resteJeton() < 60) await renouvelle();
+  const r = await envoie();
+  if (r.status !== 401 || !SESSION?.refresh_token) return r;
+  return (await renouvelle()) ? envoie() : r;
+}
+
+async function rest(chemin, options = {}) {
+  const r = await appel(CFG.url + "/rest/v1/" + chemin, options);
   if (r.status === 401 || r.status === 403) {
     deconnecte("Session expirée, reconnectez-vous.");
     throw new Error("Non autorisé.");
@@ -97,7 +168,21 @@ async function rest(chemin, options = {}) {
 // Échap. D'où un rappel porté par la fermeture plutôt que par le bouton.
 let apresModale = null;
 
+/* Le rappel ne joue qu'une fois, et il joue toujours : une fenêtre remplacée
+   par une autre — « Inviter quelqu'un » qui pose la fiche par-dessus la liste —
+   n'est pas fermée, mais ce qu'elle tenait doit quand même être rendu. Écraser
+   le rappel au lieu de le jouer laissait `hote` pointer sur un corps de fenêtre
+   déjà réemployé, et la liste des comptes, en arrivant, effaçait le formulaire
+   d'invitation en cours de saisie. */
+function verseModale() {
+  const f = apresModale;
+  apresModale = null;
+  if (f) f();
+}
+
 function ouvreModale(titre, remplit, boutons, apres) {
+  verseModale();
+  modaleVerrou = false;
   apresModale = apres || null;
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
@@ -112,15 +197,26 @@ function ouvreModale(titre, remplit, boutons, apres) {
   });
   $("modale").classList.add("open");
 }
+/* Une fenêtre qui rend compte d'un travail en cours ne se ferme pas d'un clic
+   à côté ni d'une touche Échap : la synchronisation, elle, continuerait sans
+   personne pour la suivre, et son compte rendu serait perdu. Verrouillée, elle
+   ne cède qu'à la croix et au bouton — deux gestes qu'on ne fait pas par
+   mégarde. */
+let modaleVerrou = false;
+const verrouilleModale = (oui) => { modaleVerrou = !!oui; };
+
 const fermeModale = () => {
+  modaleVerrou = false;
   $("modale").classList.remove("open");
-  const f = apresModale;
-  apresModale = null;
-  if (f) f();
+  verseModale();
 };
 $("mFermer").onclick = fermeModale;
-$("modale").addEventListener("click", (e) => { if (e.target === $("modale")) fermeModale(); });
-addEventListener("keydown", (e) => { if (e.key === "Escape") fermeModale(); });
+$("modale").addEventListener("click", (e) => {
+  if (e.target === $("modale") && !modaleVerrou) fermeModale();
+});
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !modaleVerrou) fermeModale();
+});
 
 function demande(titre, libelle, valeur, suite) {
   let champ;
@@ -345,37 +441,82 @@ const BASE_PAGES = location.origin + location.pathname.replace(/[^/]*$/, "");
    Cloudflare, comme les autres. */
 const PAGE_MDP = BASE_PAGES + "motdepasse";
 
+/* Même repli que sur la racine, pour le cas où le « Site URL » du projet
+   désigne la console : un jeton de mot de passe n'a rien à faire ici, et
+   l'écran de connexion serait une impasse pour celui qui l'apporte. */
+(() => {
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
+  const type = h.get("type") || q.get("type") || "";
+  const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
+    (type === "recovery" || type === "invite" || type === "signup");
+  if (jeton || h.get("error_description") || q.get("error_description")) {
+    location.replace(PAGE_MDP + location.search + location.hash);
+  }
+})();
+
 /**
  * L'identifiant du compte connecté, lu dans le jeton.
  *
  * Il y est déjà — c'est le champ `sub` — et le demander au serveur coûterait
  * un aller-retour à chaque chargement pour une donnée que le navigateur tient
- * en main. Seule la charge utile est lue : la signature, elle, n'est vérifiable
- * que par le serveur, qui le fera à chaque requête.
+ * en main.
  */
-function idCompte() {
-  const jeton = SESSION?.access_token;
-  if (!jeton) return null;
-  try {
-    const p = jeton.split(".")[1];
-    if (!p) return null;
-    const brut = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(brut).sub || null;
-  } catch (e) { return null; }
-}
+const idCompte = () => contenuJeton(SESSION?.access_token)?.sub || null;
 
 /* ------------------------------------------------------------------
    Thème
    ------------------------------------------------------------------ */
 const CLE_THEME = "console-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
+
+/* Sans réglage enregistré, le thème est celui du système : c'est lui qu'il
+   faut interroger pour savoir vers quoi bascule le bouton. */
+const themeSombre = () => {
   const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+};
+
+$("btnTheme").onclick = () => {
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
 };
+
+/* ------------------------------------------------------------------
+   Compte
+   ------------------------------------------------------------------ */
+/**
+ * Les initiales de l'adresse : « korantin.vey@… » donne « KV », « alexandra@… »
+ * donne « AL ». Le profil porte bien un nom, mais il arrive après le premier
+ * dessin de la barre, et parfois pas du tout — l'adresse, elle, est dans le
+ * jeton qu'on tient déjà.
+ */
+function initialesDe(mail) {
+  const local = String(mail || "").split("@")[0];
+  const mots = local.split(/[.\-_+]+/).filter(Boolean);
+  if (mots.length >= 2) return (mots[0][0] + mots[1][0]).toUpperCase();
+  return (local.slice(0, 2) || "··").toUpperCase();
+}
+
+/* Le panneau se remplit à l'ouverture, jamais au chargement : la session peut
+   arriver après — on vient de se connecter — et l'ouverture est le seul moment
+   où l'on est sûr d'avoir quelque chose de juste à montrer. */
+const menuCompte = document.querySelector("details.menu.compte");
+if (menuCompte) {
+  menuCompte.addEventListener("toggle", () => {
+    if (!menuCompte.open) return;
+    const mail = contenuJeton(SESSION?.access_token)?.email || "";
+    $("initiales").textContent = mail ? initialesDe(mail) : "··";
+    $("compteMail").textContent = mail || "session inconnue";
+    // le libellé annonce où l'on va, pas où l'on est
+    $("btnTheme").textContent = themeSombre() ? "Thème clair" : "Thème sombre";
+  });
+  $("btnSortir").onclick = () => {
+    menuCompte.open = false;
+    deconnecte();
+  };
+}
 
 /* ============================================================
    Classeur — écrire un vrai fichier Excel, sans bibliothèque

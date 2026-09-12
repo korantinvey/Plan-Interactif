@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches",
+      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches, salles",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -131,6 +131,7 @@ const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
  * fiche — ou comme critère, d'où la réserve de `retraits()`.
  */
 const CHAMPS_FICHE: Record<string, string> = {
+  logo: "logo",
   adresse: "adr",
   ville: "ville",
   pays: "pays",
@@ -210,11 +211,33 @@ function ampute(
  *
  * Un réglage absent montre, comme la page l'entend elle aussi : un salon dont
  * l'apparence n'a jamais été publiée continue donc de recevoir tout son fond.
+ *
+ * La liste des calques n'est pas un ornement. `apparence.reglages` est un
+ * dictionnaire plat où cohabitent cinq vocabulaires — calques, sous-calques,
+ * couches de données (`data:stands`), réglages d'écran (`_zoom`, `_echelle`),
+ * placements de libellés (`_lab:…`) — et tous portent le même `{visible}`.
+ * Sans de quoi les distinguer, éteindre l'échelle passait pour un masquage :
+ * le filtrage n'en souffrait pas, aucun calque ne s'appelant `_echelle`, mais
+ * `versionFond` repliait la clé dans l'empreinte du fond. Le réglage le plus
+ * anodin changeait alors l'adresse d'un dessin inchangé, et chaque visiteur
+ * retéléchargeait un à deux mégaoctets identiques — souvent au bout du réseau
+ * d'un salon.
  */
-function masquesDe(reglages: unknown): Record<string, boolean> {
+function masquesDe(
+  reglages: unknown,
+  calques: { cle: unknown }[],
+): Record<string, boolean> {
+  const noms = new Set(calques.map((c) => String(c.cle)));
+  /* « calque/sous-calque », mais un nom de calque peut lui-même porter une
+     barre oblique : la clé est retenue dès qu'une de ses têtes nomme un
+     calque. Même règle que la page, `reglagesDuSalon` (_admin1.html). */
+  const dUnCalque = (cle: string) =>
+    noms.has(cle) ||
+    cle.split("/").some((_, i, t) => i > 0 && noms.has(t.slice(0, i).join("/")));
+
   const masques: Record<string, boolean> = {};
   for (const [cle, r] of Object.entries((reglages ?? {}) as Record<string, { visible?: boolean }>)) {
-    if (r && r.visible === false) masques[cle] = true;
+    if (r && r.visible === false && dUnCalque(cle)) masques[cle] = true;
   }
   return masques;
 }
@@ -223,13 +246,14 @@ function masquesDe(reglages: unknown): Record<string, boolean> {
 async function masquesDuPlan(
   sb: ReturnType<typeof db>,
   planId: string,
+  calques: { cle: unknown }[],
 ): Promise<Record<string, boolean>> {
   const { data } = await sb
     .from("apparence")
     .select("reglages")
     .eq("plan_id", planId)
     .maybeSingle();
-  return masquesDe(data?.reglages);
+  return masquesDe(data?.reglages, calques);
 }
 
 Deno.serve(async (req) => {
@@ -243,14 +267,18 @@ Deno.serve(async (req) => {
   // Un fond porte sa version dans l'adresse : il peut être gardé indéfiniment.
   const versionne = Boolean(new URL(req.url).searchParams.get("v"));
 
-  const repond = (corps: unknown, code = 200, cache = 60) =>
+  const repond = (corps: unknown, code = 200, cache = 30) =>
     new Response(JSON.stringify(corps), {
       status: code,
       headers: {
         ...CORS,
         "Content-Type": "application/json",
-        // le contenu public ne bouge qu'à la synchronisation : on autorise le
-        // cache, avec un délai de grâce large en cas d'indisponibilité
+        /* Le relais garde cette réponse pour tout le monde, et l'oublie dès que
+           l'administration enregistre : le navigateur d'un visiteur, lui, ne
+           peut rien oublier sur commande. Sa part de cache est donc courte — il
+           revient au relais, qui répond de son stockage sans toucher la base,
+           ce qui ne coûte presque rien. Une minute de grâce couvre une panne
+           sans figer le plan pour un quart d'heure. */
         "Cache-Control": code !== 200
           ? "no-store"
           // le contenu versionné est immuable, mais reste privé à l'exploitant
@@ -259,7 +287,7 @@ Deno.serve(async (req) => {
           ? `${identifie ? "private" : "public"}, max-age=31536000, immutable`
           : identifie
           ? "private, no-store"
-          : `public, max-age=${cache}, stale-while-revalidate=600`,
+          : `public, max-age=${cache}, stale-while-revalidate=60`,
       },
     });
 
@@ -315,7 +343,7 @@ Deno.serve(async (req) => {
          reçoit le fond entier : c'est à partir de là qu'il choisit. Le
          masquage entre dans la version que porte l'adresse, sans quoi le
          navigateur resservirait le découpage d'avant. */
-      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id);
+      const masques = identifie ? {} : await masquesDuPlan(sb, pl.id, cal ?? []);
       const retenus = (cal ?? [])
         .filter((c) => !masques[String(c.cle)])
         .map((c) => ({
@@ -371,6 +399,20 @@ Deno.serve(async (req) => {
     // le même pour tout le salon : il ne dépend que de son réglage de fiche
     const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
 
+    /* La zone de chaque salle, par son nom — c'est ce qu'une conférence porte
+       de sa salle. Une salle connue mais rattachée à rien y figure aussi, avec
+       « null » : le rattachement que l'instantané porte encore a été défait
+       depuis, et le laisser vivre montrerait un programme sous une zone dont
+       l'exploitant l'a retiré. */
+    const parSalle = new Map<string, string | null>();
+    for (
+      const s of Object.values(
+        (evt.salles ?? {}) as Record<string, { nom?: string; zone?: string }>,
+      )
+    ) {
+      if (s?.nom) parSalle.set(s.nom, s.zone ?? null);
+    }
+
     /* La version du fond de chaque pavillon, calculée sur ce qui sera servi :
        les empreintes des dessins, et — pour un visiteur seul — le masquage qui
        décide de ce qu'on lui envoie. Le même jeu de masques que celui du second
@@ -381,7 +423,7 @@ Deno.serve(async (req) => {
         p.id,
         await versionFond(
           parCalque[p.id] ?? [],
-          identifie ? null : masquesDe(parApparence[p.id]?.reglages),
+          identifie ? null : masquesDe(parApparence[p.id]?.reglages, parCalque[p.id] ?? []),
         ),
       );
     }
@@ -389,6 +431,10 @@ Deno.serve(async (req) => {
     const sortie = {
       evenement: evt.nom,
       slug: evt.slug,
+      /* L'icône de l'onglet, déposée dans la console. Elle part au visiteur
+         comme à l'exploitant : les deux pages du plan la posent. Nulle tant
+         que rien n'a été déposé — la page n'en pose alors aucune. */
+      favicon: evt.favicon ?? null,
       genereLe: evt.derniere_sync,
       // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
       fiche: evt.fiche ?? {},
@@ -404,9 +450,19 @@ Deno.serve(async (req) => {
          visiteur les a déjà, posées sur chaque zone — la table ne lui
          apprendrait rien de plus. */
       fichesZones: identifie ? (evt.zones_fiches ?? {}) : {},
+      /* Les salles du programme et la zone qui les abrite : l'administration
+         les rattache une par une depuis la fiche de la zone, et repart de cette
+         table pour la réécrire sans perdre les autres. Le visiteur reçoit des
+         conférences déjà rattachées, plus bas — la table ne lui apprendrait
+         rien. */
+      salles: identifie ? (evt.salles ?? {}) : {},
       plans: plans.map((p) => {
         const inst = parInstantane[p.id];
         const charge = (inst?.charge ?? {}) as Record<string, unknown>;
+        const zonesDuPlan = new Set(
+          ((charge.zones ?? []) as Record<string, unknown>[])
+            .map((z) => String(z.id)),
+        );
         return {
           id: p.id_klipso,
           libelle: p.libelle,
@@ -458,11 +514,28 @@ Deno.serve(async (req) => {
                 ...(choisi ? { nom: choisi } : {}),
                 ...(masquee ? { masquee: true } : {}),
                 ...(fiche.type ? { type: fiche.type } : {}),
+                ...(fiche.logo ? { logo: fiche.logo } : {}),
                 ...(fiche.description ? { description: fiche.description } : {}),
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),
-          conferences: charge.conferences ?? [],
+          /* Le rattachement d'une salle s'applique ici, comme le nom d'une
+             zone : il se choisit depuis les réglages du plan et doit paraître
+             sans attendre la prochaine synchronisation, qui seule l'a inscrit
+             dans l'instantané.
+
+             Une salle rattachée à une zone d'un autre pavillon fait exception :
+             la conférence n'est pas remontée là-bas, et la garder ici la
+             rangerait sous une zone que ce pavillon n'a pas. Elle se retrouve
+             par son exposant jusqu'à la synchronisation suivante, qui la
+             portera où il faut. */
+          conferences: ((charge.conferences ?? []) as Record<string, unknown>[])
+            .map((c) => {
+              const salle = String(c.salle ?? "");
+              if (!parSalle.has(salle)) return c;
+              const zone = parSalle.get(salle);
+              return { ...c, zone: zone && zonesDuPlan.has(zone) ? zone : null };
+            }),
           apparence: parApparence[p.id]
             ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }
             : { pile: [], reglages: {} },

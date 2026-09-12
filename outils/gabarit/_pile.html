@@ -81,6 +81,17 @@ function boutonAjout(hote){
   hote.appendChild(plus);
 }
 
+/* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
+   plutôt que deux boutons qui se remplacent. Son intitulé dit ce que le clic
+   fera, et non l'état où l'on est — c'est ce qu'on cherche en le survolant. */
+function boutonVerrou(c){
+  const ferme = verrouille(c);
+  return '<button class="verr" aria-pressed="' + ferme + '" title="' +
+    (ferme ? "Déverrouiller le calque"
+           : "Verrouiller le calque : ni dessin, ni suppression") +
+    '">' + pictoVerrou(ferme) + '</button>';
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -125,7 +136,11 @@ function construitPanneau(){
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
+         on lit la ligne de gauche à droite — ce qui protège avant ce qui
+         modifie. */
+      (x.t === "dessin" ? boutonVerrou(x.ref) +
+                          '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -175,7 +190,10 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus";
+      const vr = verrouille(x.ref);
+      nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
+                     : "Cliquez pour dessiner dessus";
+      d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -184,6 +202,13 @@ function construitPanneau(){
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
+      /* Verrouillé, le calque n'ouvre plus ses outils et ne se supprime plus :
+         les deux boutons s'éteignent, plutôt que de mener à un refus qu'il
+         faudrait expliquer une fois le geste fait. */
+      [cr, d.querySelector(".sup")].forEach(b => {
+        b.disabled = vr;
+        if (vr) b.title = "Calque verrouillé";
+      });
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",
@@ -247,6 +272,7 @@ function construitPanneau(){
   if (dernierDessin < 0) boutonAjout(hote);
 
   sectionSelection(hote);
+  sectionFond(hote);
 
   /* Réglages généraux — ils ne portent sur aucun calque, d'où le trait qui les
      sépare de la pile. Comme le reste de CONF, ils partent aux visiteurs à la
@@ -269,6 +295,8 @@ function construitPanneau(){
    s'en déduit, et « appliqueCouleursData » s'en charge. Le parcours n'a que
    son liseré, et il se règle à part — les deux marques se croisent sur le
    même plan, souvent sur le même stand, et l'accent d'origine les confond.
+   Les points d'intérêt s'y ajoutent pour la même raison : leur mise en avant
+   passe par-dessus tout le reste, y compris un stand déjà sélectionné.
    ============================================================ */
 function sectionSelection(hote){
   const bloc = document.createElement("div");
@@ -289,7 +317,92 @@ function sectionSelection(hote){
     bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
       (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
   }
+
+  /* Les points d'intérêt, comme les deux autres : une marque que le plan pose
+     par-dessus ce qu'il montre, et non une couche. Une seule couleur pour les
+     deux bouts du geste — la pastille retenue dans le cartouche, et le contour
+     comme le texte de ce qu'elle allume — sans quoi on cherche laquelle des
+     deux on vient de toucher.
+
+     La ligne suit le cartouche : un plan sans repère ni zone typée n'en montre
+     pas, et la couleur ne peindrait rien. */
+  if ($("poi") && !$("poi").hidden){
+    const i = conf("poi");
+    bloc.appendChild(ligneCouleur("Points d'intérêt", i.couleur || jeton("--accent"),
+      (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+  }
   hote.appendChild(bloc);
+}
+
+/* ============================================================
+   Fond du plan
+   Le gris qui entoure le bâtiment n'est ni un calque ni un repère : rien ne
+   s'y dessine, et il ne marque aucun stand. C'est l'aplat sur lequel tout le
+   reste se pose, et le seul que le plan imposait — d'où sa place ici, au bas
+   du panneau, juste avant la publication qui l'emporte chez les visiteurs.
+
+   Un nuancier plutôt qu'un simple sélecteur, comme pour la couleur
+   principale : on cherche la teinte d'un salon, pas une nuance à
+   l'hexadécimal près. Les tons proposés sont tous clairs — le plan se dessine
+   à l'encre sombre sur des stands blancs, et un fond soutenu les efface. À
+   qui tient une charte plus tranchée, la dernière pastille ouvre le nuancier
+   du système.
+   ============================================================ */
+const FONDS = [
+  ["#FFFFFF", "Blanc"], ["#FAF7F0", "Ivoire"], ["#F1F0EA", "Coquille"],
+  ["#E3E7EA", "Gris perle"], ["#E4EDE6", "Vert d'eau"], ["#E3EAF6", "Bleu pâle"],
+  ["#F5E9DB", "Sable"],
+];
+
+function sectionFond(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "apart fondp";
+  bloc.innerHTML = '<div class="tete"><span class="eyebrow">Fond du plan</span>' +
+    '<button type="button" class="reset">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const nuancier = bloc.querySelector(".nuancier");
+  const c = conf("_fond");
+
+  /* La pastille retenue se cerne, et le retour à l'origine ne s'offre que s'il
+     y a quelque chose à défaire : proposé sur un plan resté gris, il annonce
+     un réglage là où il n'y en a pas. */
+  const majPastilles = () => {
+    const v = (c.couleur || "").toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    bloc.querySelector(".reset").hidden = !v;
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
+  };
+  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+
+  FONDS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => choisit(ton);
+    nuancier.appendChild(b);
+  });
+  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
+     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
+     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
+     publication reste un geste à part. */
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  nuancier.appendChild(libre);
+
+  bloc.querySelector(".reset").onclick = () => {
+    delete c.couleur;
+    enregistreConf(); appliqueFond(); majPastilles();
+  };
+  hote.appendChild(bloc);
+  majPastilles();
 }
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,

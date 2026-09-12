@@ -114,7 +114,12 @@ export class Gaia {
    * le schéma les nomme.
    */
   async proprietes(entite: string): Promise<
-    { cle: string; libelle: string; type: string | null }[]
+    {
+      cle: string;
+      libelle: string;
+      type: string | null;
+      codification: string | null;
+    }[]
   > {
     const meta = await this.metadonnees();
     const props = meta?.[entite]?.properties ?? {};
@@ -126,6 +131,14 @@ export class Gaia {
         cle,
         libelle: typeof lib === "string" && lib ? lib : cle,
         type: d?.type ?? d?.dataType ?? null,
+        /* Le chemin tel qu'il est déclaré, et rien de deviné : c'est lui qui
+           dit qu'une propriété est une liste de choix, et lui seul permet d'en
+           proposer toutes les valeurs — même celles qu'aucune fiche ne porte.
+           Un chemin supposé ferait passer un champ de texte libre pour une
+           liste, et la demande entière serait refusée avec lui. */
+        codification: typeof d?.codificationPath === "string" && d.codificationPath
+          ? d.codificationPath
+          : null,
       };
     }).sort((a, b) => a.cle.localeCompare(b.cle, "fr"));
   }
@@ -160,20 +173,59 @@ export class Gaia {
     if (point < 0) throw new Error(`Chemin de codification illisible : ${chemin}`);
     const entite = chemin.slice(0, point);
     const propriete = chemin.slice(point + 1);
+    const table: Record<string, string> = {};
+    const data = await this.demande(entite, [propriete]);
+    aplatit(data?.[propriete], table, langue);
+    return table;
+  }
 
+  /**
+   * Les valeurs déclarées de plusieurs propriétés d'une même entité, d'un appel.
+   *
+   * Là où `codification` sert à retrouver le libellé d'un code rencontré, on
+   * énumère ici ce qu'un champ peut valoir : la console le propose à cocher, y
+   * compris ce qu'aucune fiche ne porte — une valeur qui ne sert qu'à trois
+   * exposants sur mille ne figure dans aucun échantillon, et un salon où
+   * personne n'est encore exclu n'en porte aucune.
+   *
+   * La demande nomme autant de propriétés qu'on veut, et la console en veut
+   * beaucoup : une par appel en ferait deux cents. Une propriété qui n'est pas
+   * une liste de choix n'a pas sa place dedans — le service refuserait la
+   * réponse entière, celle des autres comprise — d'où les seuls chemins que le
+   * schéma déclare.
+   */
+  async codifications(
+    entite: string,
+    proprietes: string[],
+    langue = "fr",
+  ): Promise<Record<string, Record<string, string>>> {
+    const out: Record<string, Record<string, string>> = {};
+    if (!proprietes.length) return out;
+    const data = await this.demande(entite, proprietes);
+    for (const propriete of proprietes) {
+      const table: Record<string, string> = {};
+      const valeurs: Record<string, string> = {};
+      aplatit(data?.[propriete], table, langue, undefined, valeurs);
+      if (Object.keys(valeurs).length) out[propriete] = valeurs;
+    }
+    return out;
+  }
+
+  /** L'arbre que le service rend pour les propriétés demandées. */
+  private async demande(
+    entite: string,
+    proprietes: string[],
+  ): Promise<Record<string, unknown>> {
     const r = await fetch(`${this.base}/codification/get`, {
       method: "POST",
       headers: await this.entetes(),
-      body: JSON.stringify({ [entite]: [propriete] }),
+      body: JSON.stringify({ [entite]: proprietes }),
     });
     const j = await r.json();
     if (!j.isValid) {
       throw new Error(j.error?.[0]?.message ?? "Codification refusée par GAIA.");
     }
-
-    const table: Record<string, string> = {};
-    aplatit(j.data?.[entite]?.[propriete], table, langue);
-    return table;
+    return (j.data?.[entite] ?? {}) as Record<string, unknown>;
   }
 
   /** Un média (les SVG d'habillage) est renvoyé tel quel, pas en JSON. */
@@ -197,6 +249,7 @@ function aplatit(
   table: Record<string, string>,
   langue: string,
   code?: string,
+  principaux?: Record<string, string>,
 ): void {
   if (!noeud || typeof noeud !== "object") return;
   const n = noeud as Record<string, any>;
@@ -209,9 +262,18 @@ function aplatit(
   // la clé de l'objet : on accepte les deux
   if (cle && cle !== code && typeof lib === "string" && lib) table[cle] = lib;
 
+  /* Un seul code par valeur, pour qui veut les énumérer plutôt que retrouver un
+     libellé : la table range certaines deux fois, à dessein, et une valeur
+     proposée deux fois se cocherait deux fois. La clé de l'objet l'emporte —
+     c'est elle que les fiches portent — et l'identifiant ne sert qu'à défaut. */
+  const principal = code ?? cle;
+  if (principaux && principal && typeof lib === "string" && lib) {
+    principaux[principal] = lib;
+  }
+
   for (const [k, v] of Object.entries(n)) {
     if (k === "label" || k === "id") continue;
-    aplatit(v, table, langue, k);
+    aplatit(v, table, langue, k, principaux);
   }
 }
 

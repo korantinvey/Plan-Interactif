@@ -45,7 +45,7 @@ function reglagesDuSalon(source){
     if (k.indexOf("_pile:") === 0) return;          // rangé par pavillon, à part
     const general = k[0] === "_" || k.indexOf("data:") === 0 ||
                     k === "labStand" || k === "labZone" || k === "selection" ||
-                    k === "parcours";
+                    k === "parcours" || k === "poi";
     /* Une couleur de secteur nomme un secteur de ce salon-ci : elle se retient
        comme un calque, au nom près. Celle d'un salon voisin ne désigne rien
        ici, et n'a rien à faire dans ce qu'on publie. */
@@ -118,6 +118,17 @@ function appliqueCouleursData(){
      se règle à part de la sélection — les deux marques se croisent sur le même
      plan, et se confondraient si l'exploitant ne pouvait les écarter. */
   pose(conf("parcours").couleur, "--c-parc");
+  /* Les points d'intérêt. Une seule couleur pour le cartouche et pour ce
+     qu'il met en avant : ce sont les deux bouts du même geste — on touche
+     « Restauration » en bas de l'écran, et les restaurations s'allument sur le
+     plan. Deux teintes n'auraient fait que rompre le lien.
+
+     L'encre du bouton retenu s'en déduit, comme celle des boutons d'accent :
+     du blanc sur un bleu, du noir sur un or. */
+  const poi = conf("poi").couleur;
+  pose(poi, "--c-poi");
+  pose(poi && trio(poi) && (luminance(trio(poi)) > 0.42 ? "#0E1113" : "#FFFFFF"),
+       "--c-poi-ink");
 }
 
 function styleData(cle){
@@ -145,6 +156,7 @@ function appliqueApparence(){
   appliqueCommandes();
   appliqueSecteurs();
   appliqueAccent();
+  appliqueFond();
   appliqueModele();
 }
 
@@ -197,6 +209,105 @@ function appliqueCommandes(){
   // bouton pour se refermer
   if (conf("_parcours").visible === false) fermeParcours();
   if (conf("_itineraire").visible === false) fermeItineraire();
+}
+
+/**
+ * Ce que la recherche a le droit de remonter.
+ *
+ * Le champ de recherche balaie tout ce que le salon porte, et cela ne convient
+ * pas à tous les salons. Un congrès dont le programme compte trois cents
+ * sessions les voit répondre au premier mot courant venu, et noyer les stands
+ * qu'on était venu chercher ; un salon de trente exposants veut au contraire
+ * qu'un mot ramène tout ce qui s'y rapporte. Rien dans les données ne dit
+ * lequel des deux on administre — d'où le réglage, sorte par sorte.
+ *
+ * Il ne touche qu'à la recherche. Sans mot-clé ni critère, la liste n'est pas
+ * un résultat mais le sommaire des emplacements du pavillon : l'y soumettre
+ * aurait laissé une colonne blanche à qui décoche « Stands ».
+ *
+ * Chaque sorte dit aussi ce qu'elle alimente — « Produits » et « Points
+ * d'intérêt » ne se devinent pas depuis leur intitulé — et, quand rien ne
+ * l'alimente, pourquoi sa case ne répond pas.
+ */
+const SORTES_RECHERCHE = [
+  { cle: "stands", libelle: "Stands et exposants",
+    aide: "Le nom d'une enseigne, son numéro d'emplacement, son secteur, " +
+      "ses thématiques, et les sociétés hébergées sur un stand partagé.",
+    dispo: () => TOUS.some(o => o.kind === "stand"),
+    absent: "Ce salon ne porte aucun emplacement." },
+  { cle: "zones", libelle: "Zones organisateur",
+    aide: "Accueil, restauration, village start-up — les endroits que le " +
+      "salon fournit avec son plan.",
+    dispo: () => TOUS.some(o => o.kind === "zone"),
+    absent: "Ce salon ne porte aucune zone organisateur." },
+  { cle: "conferences", libelle: "Conférences",
+    aide: "Le titre d'une session, sa salle, son thème, et l'exposant qui " +
+      "la tient — souvent le seul nom dont on se souvienne.",
+    dispo: () => CONFERENCES.length > 0,
+    absent: "Le programme n'est pas synchronisé : sa source se règle depuis " +
+      "la console, dans « Source des données »." },
+  /* Les produits se règlent déjà dans la console — « Produits », source au
+     choix — mais la synchronisation les annonce « pas encore repris » et le
+     plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
+     a réglé cette source doit lire ici pourquoi la recherche n'en remonte
+     rien, plutôt que de chercher une case absente. Elle s'allumera le jour où
+     la synchronisation les rapportera. */
+  { cle: "produits", libelle: "Produits",
+    aide: "Ce que les exposants présentent, nommé produit par produit.",
+    dispo: () => (DATA?.plans || []).some(p => (p.produits || []).length),
+    absent: "Les produits ne sont pas encore repris par la synchronisation, " +
+      "quelle que soit la source réglée dans la console." },
+  { cle: "poi", libelle: "Points d'intérêt",
+    aide: "Les repères posés sur le plan : entrées, WC, escaliers, parkings, " +
+      "vestiaires. Le cartouche du bas les récapitule de son côté, que cette " +
+      "case soit cochée ou non.",
+    dispo: () => reperesCherchables().length > 0,
+    absent: "Aucun repère n'est posé sur les plans de ce salon : ils se " +
+      "dessinent depuis la boîte à outils." },
+];
+
+/** Une sorte remonte-t-elle dans la recherche ? Oui par défaut : un réglage
+ *  absent ne doit rien retirer à un salon déjà en place. */
+const chercheSorte = (cle) => conf("_rech")[cle] !== false;
+
+/** Le volet « Recherche » : les sortes d'éléments que le champ remonte. */
+function voletRecherche(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce que le champ de recherche remonte. Le sommaire du " +
+    "pavillon n'en dépend pas : sans mot-clé, la liste reste celle de ses " +
+    "emplacements. Publiez la configuration pour que le changement parvienne " +
+    "aux visiteurs.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  SORTES_RECHERCHE.forEach(s => {
+    const dispo = s.dispo();
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = s.libelle;
+    if (!dispo) l.classList.add("eteint");
+    const c = l.querySelector("input");
+    c.checked = chercheSorte(s.cle);
+    /* Éteinte, et non décochée : la case montre ce qui est réglé, et le
+       réglage vaudra le jour où quelque chose l'alimentera. La décocher
+       d'office effacerait un choix que l'exploitant a fait. */
+    c.disabled = !dispo;
+    c.onchange = e => {
+      conf("_rech")[s.cle] = e.target.checked;
+      enregistreConf();
+      /* La liste affichée derrière la fenêtre est peut-être un résultat de
+         recherche : elle obéit sur-le-champ, c'est le seul retour visible. */
+      liste();
+    };
+    bloc.appendChild(l);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = dispo ? s.aide : s.absent;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
 }
 
 /**
@@ -287,12 +398,30 @@ function appliqueAccent(){
 /* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
 
-/* Les habillages du plan. Chacun tient en deux moitiés — la liste des
-   exposants et la fiche détail — taillées dans la même police et les mêmes
-   couleurs : on ne choisit pas l'allure d'un panneau sans choisir celle de
-   l'autre, sous peine de deux salons côte à côte. Le premier n'a de classe
-   ni d'un côté ni de l'autre : c'est le plan tel que la feuille de style le
-   dessine, et le point de départ de tous les autres. */
+/**
+ * Le fond du plan — le gris qui entoure le bâtiment.
+ *
+ * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
+ * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
+ * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
+ * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
+ * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
+ * le gris de chaque thème.
+ */
+function appliqueFond(){
+  const v = conf("_fond").couleur;
+  if (trio(v)) racine.style.setProperty("--c-fond", v);
+  else racine.style.removeProperty("--c-fond");
+}
+
+/* Les habillages du plan. Chacun tient en cinq pièces — le bandeau du haut,
+   la liste des exposants, la fiche détail, le parcours de visite et
+   l'itinéraire — taillées dans la même police et les mêmes couleurs : on ne
+   choisit pas l'allure de l'une sans choisir celle des autres, sous peine de
+   cinq salons côte à côte. Les trois dernières occupent d'ailleurs la même
+   bande de l'écran, et s'ouvrent l'une depuis l'autre. Le premier modèle n'a
+   de classe nulle part : c'est le plan tel que la feuille de style le dessine,
+   et le point de départ de tous les autres. */
 const MODELES = [
   { cle: "sobre", nom: "Sobre",
     resume: "Le rendu d'origine : un seul rythme, de la liste à la fiche." },
@@ -322,20 +451,87 @@ const modeleRetenu = () => {
   return MODELES.some(m => m.cle === c) ? c : "sobre";
 };
 
+/* La police des libellés du plan, modèle par modèle.
+
+   Un modèle est un accord typographique, et le plan en fait partie : un salon
+   habillé en « Kraft » gardait ses enseignes composées en grotesque au milieu
+   de son carton, et le « Magazine » son sommaire en serif à côté d'un plan
+   qui n'en avait rien. Chaque ligne reprend donc la police que le modèle pose
+   déjà sur le nom et sur le numéro de ses lignes de liste — celui du plan est
+   le même nom, écrit sur la cloison plutôt que dans la marge.
+
+   Les onze sont nommés, y compris ceux qui gardent le rendu d'origine : c'est
+   la table qu'on relit pour vérifier qu'un modèle dit la même chose des deux
+   côtés, et un modèle absent s'y verrait comme un oubli plutôt que comme un
+   choix. */
+const P_SANS = '"Instrument Sans", "Segoe UI", system-ui, sans-serif',
+      P_CHASSE = '"IBM Plex Mono", monospace',
+      P_GROTESQUE = '"Archivo", sans-serif', P_SERIF = '"Fraunces", Georgia, serif',
+      P_MACHINE = '"Courier Prime", monospace';
+const POLICES_LIBELLE = {
+  sobre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  grille:   { nom: ["600", P_GROTESQUE], code: ["600", P_CHASSE] },
+  console:  { nom: ["500", P_CHASSE],    code: ["500", P_CHASSE] },
+  billet:   { nom: ["600", P_SANS],      code: ["600", P_CHASSE] },
+  magazine: { nom: ["600", P_SERIF],     code: ["600", P_SERIF] },
+  brut:     { nom: ["700", P_SANS],      code: ["700", P_CHASSE] },
+  verre:    { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  kraft:    { nom: ["700", P_MACHINE],   code: ["700", P_MACHINE] },
+  signal:   { nom: ["700", P_SANS],      code: ["600", P_CHASSE] },
+  chrono:   { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+  nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
+};
+
 /**
- * Pose l'habillage retenu sur ses deux moitiés : la fiche détail et la liste
- * des exposants. Un seul geste pour les deux — le modèle est un accord, et
- * l'exploitant qui choisit « Kraft » choisit le carton partout.
+ * Pose la police du modèle sur les libellés du plan.
  *
- * Une seule classe à la fois de chaque côté : les modèles se recouvrent, et
- * deux ensemble ne veulent rien dire.
+ * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
+ * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
+ * nom à la place dont il dispose, mesurent P_NOM et P_CODE. Les séparer
+ * donnerait un nom calculé pour une police et rendu dans une autre — plus
+ * large que son stand, ou perdu au milieu.
+ *
+ * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
+ * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
+ * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
+ * que la case du numéro se taille elle aussi sur P_CODE.
+ */
+function posePoliceLibelles(cle){
+  const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
+  const change = P_NOM !== p.nom || P_CODE !== p.code;
+  P_NOM = p.nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", p.nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  racine.style.setProperty("--police-lab-code", p.code[1]);
+  racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  // les repères et les stands tracés à la main portent leur libellé dans leur
+  // propre forme : ils se retracent, ils ne se restylent pas
+  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+}
+
+/**
+ * Pose l'habillage retenu sur les cinq pièces de l'écran : la fiche détail, le
+ * parcours de visite, l'itinéraire, la liste des exposants et le bandeau du
+ * haut. Un seul geste pour tous — le modèle est un accord, et l'exploitant qui
+ * choisit « Kraft » choisit le carton partout.
+ *
+ * Les trois tiroirs de droite portent le même préfixe : ils sont bâtis des
+ * mêmes pièces — en-tête, pastilles, boutons — et un modèle écrit une fois
+ * les habille tous les trois. La liste garde le sien, elle n'a ni en-tête ni
+ * pastille et se dessine autrement ; le bandeau aussi, qui n'a ni l'une ni
+ * l'autre et traverse l'écran de part en part.
+ *
+ * Une seule classe à la fois par panneau : les modèles se recouvrent, et deux
+ * ensemble ne veulent rien dire.
  */
 function appliqueModele(){
   const cle = modeleRetenu();
   const pose = (el, prefixe) => el && MODELES.forEach(m =>
     el.classList.toggle(prefixe + m.cle, m.cle === cle));
-  pose($("detail"), "modele-");
+  ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
+  pose($("bandeau"), "bandeau-");
+  posePoliceLibelles(cle);
 }
 
 /* ------------------------------------------------------------------
@@ -540,10 +736,14 @@ function apercuFiche(cle, vu){
       '<div class="hdActs"><span class="marque">' +
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
-      '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
-      '<span class="badge">' +
-      esc([vu.pavillon, vu.hall, code].filter(Boolean).join(" · ")) + '</span>' +
-      (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '<div class="hdTete"><span class="eyebrow">Stand</span>' +
+        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+      '</div>' +
+      '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
+      '<div class="hdBadges">' +
+        '<span class="badge code">' +
+        esc([vu.pavillon, vu.hall, code].filter(Boolean).join(" · ")) + '</span>' +
+      '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +
       '<div class="acts"><span class="btn">Centrer sur le plan</span>' +
@@ -640,6 +840,17 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
+    /* Cinq onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+       qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
+       restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
+       ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
+       défile aussi pour son compte, et le centrage la remontait d'un cran.
+
+       À l'image suivante, et non tout de suite : le corps de la fenêtre est
+       rempli avant qu'elle ne s'ouvre, et un élément en « display:none » n'a
+       aucune position à ramener. */
+    const ramene = (b) => requestAnimationFrame(() =>
+      b.scrollIntoView({ block: "nearest", inline: "nearest" }));
     const volet = (titre) => {
       const i = boutons.length;
       const actif = nomme ? titre === nomme : i === 0;
@@ -654,6 +865,7 @@ function ouvreReglages(ouvrir){
           boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
           volets.forEach((x, j) => { x.hidden = j !== i; });
         });
+        ramene(b);
       };
       barre.appendChild(b);
       boutons.push(b);
@@ -665,6 +877,9 @@ function ouvreReglages(ouvrir){
       return v;
     };
     voletPlan(volet("Plan"));
+    /* « Recherche » suit « Plan » : les deux parlent de ce que le visiteur
+       obtient, quand « Apparence » ne parle que de l'allure. */
+    voletRecherche(volet("Recherche"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
@@ -676,7 +891,8 @@ function ouvreReglages(ouvrir){
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
        plutôt que sur le vide. */
-    if (!boutons.some(b => b.getAttribute("aria-pressed") === "true")) boutons[0].onclick();
+    const actif = boutons.find(b => b.getAttribute("aria-pressed") === "true");
+    if (actif) ramene(actif); else boutons[0].onclick();
   }, [{ libelle: "Fermer" }], "large");
 }
 
@@ -730,7 +946,7 @@ function voletZones(hote){
     n.textContent = z.nom || "Zone sans nom";
     b.appendChild(n);
     const dit = [];
-    if (z.description || z.lien) dit.push("fiche");
+    if (z.description || z.lien || z.logo) dit.push("fiche");
     if (z.masquee) dit.push("masquée");
     if (dit.length){
       const e = document.createElement("span");
@@ -918,13 +1134,15 @@ const TONS = [
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
 /** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  deux panneaux — la liste des exposants et la fiche détail. */
+ *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
+ *  visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
-    "l'allure des deux panneaux à la fois : la liste des exposants et la " +
-    "fiche qui s'ouvre sur un stand.";
+    "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
+    "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
+    "l'itinéraire.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -1011,10 +1229,11 @@ function voletApparence(hote){
   hote.appendChild(grille);
 }
 
-/** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
- *  remontés vers la base. */
+/** Les réglages d'apparence se posent sur le poste, puis montent en base
+ *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  programmePublication();
 };
 
 /** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
@@ -1077,7 +1296,7 @@ let ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -1102,6 +1321,15 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
+  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
+     côté : il porte le même réglage dans son panneau, et deux commandes d'une
+     même chose dans la même barre ne disent pas laquelle écoute. */
+  const c = $("menuCompte");
+  if (c){
+    c.hidden = false;
+    const th = $("btnTheme");
+    if (th) th.hidden = true;
+  }
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
      argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun
@@ -1111,18 +1339,17 @@ function activeAdmin(){
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
-     à l'autre, faute de mieux. Maintenant qu'elle se publie, ils n'ajoutent
-     qu'un chemin de plus pour arriver au même endroit. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>' +
-                    '<button class="reset" id="razConf">Rétablir les valeurs d\'origine</button>';
+     à l'autre, faute de mieux. Maintenant qu'elle s'enregistre, ils n'ajoutent
+     qu'un chemin de plus pour arriver au même endroit. Rétablir les valeurs
+     d'origine est parti pour l'inverse : un clic effaçait sans confirmation
+     tout le travail de calques et de libellés, pour un besoin qui ne se
+     présente jamais.
+
+     Ce qui reste dit où en est l'enregistrement — il se fait tout seul — et
+     permet de le relancer quand il a échoué. « majAttente » l'habille. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>';
   $("panel").appendChild(barre);
-  $("razConf").onclick = () => {
-    CONF = JSON.parse(JSON.stringify(DEFAUTS));
-    try { localStorage.removeItem(CLE_CONF); } catch (e) {}
-    // les placements de libellés vivent dans CONF : ils repartent avec elle
-    appliqueApparence(); libelles(); construitPanneau();
-  };
-  $("pousseConf").onclick = e => pousseConfiguration(e.target);
+  $("pousseConf").onclick = () => pousseConfiguration();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
      alors pas été construit — montePlan() n'en bâtit qu'en administration —
@@ -1178,7 +1405,7 @@ function champZone(hote, titre, dedans, aide){
 }
 
 /**
- * Les trois champs d'une zone, posés dans « hote ».
+ * Les champs d'une zone, posés dans « hote ».
  *
  * Rend de quoi les relire au moment d'enregistrer, plutôt que d'écrire à
  * chaque frappe : une description se rédige, et la sauver en cours de phrase
@@ -1203,6 +1430,10 @@ function champsZone(hote, o){
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
+  const salles = champSalles(hote, o);
+
+  const logo = champLogo(hote, o);
+
   const riche = editeurRiche(o.description || "");
   champZone(hote, "Description", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
@@ -1215,8 +1446,222 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value,
-                  description: riche.lit(), lien: lienZ.value });
+  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
+                  description: riche.lit(), lien: lienZ.value,
+                  salles: salles ? salles() : null });
+}
+
+/**
+ * Les salles de conférence que cette zone abrite.
+ *
+ * Une salle du programme s'appelle « Agora (P160) » : le code entre
+ * parenthèses est un emplacement du plan, et la synchronisation retrouve la
+ * zone qui le contient — dix fois sur onze sur Franchise Expo. La onzième
+ * porte un code absent du plan, et rien ne le devinera : elle se désigne ici,
+ * à la main, sur la zone qui l'accueille.
+ *
+ * Tout le programme est montré, et pas seulement ce qui revient déjà à cette
+ * zone : c'est de là qu'on voit ce qui n'est encore nulle part. La liste est
+ * courte — une dizaine de salles pour un salon qui en a.
+ *
+ * Une salle n'est que dans une zone à la fois : la cocher ici la retire de là
+ * où elle était, ce que sa ligne disait avant qu'on ne la coche.
+ */
+function champSalles(hote, o){
+  const salles = DATA.salles || {};
+  /* Sans nom, une salle ne se distingue pas de la suivante ; l'ordre est celui
+     du programme, et il ne bouge pas quand on coche — une liste qui se
+     réordonne sous le doigt fait cocher la voisine. */
+  const ids = Object.keys(salles).sort((a, b) =>
+    String(salles[a].nom || "").localeCompare(String(salles[b].nom || ""), "fr"));
+  // sans programme, il n'y a rien à rattacher : le champ n'aurait qu'un vide
+  if (!ids.length) return null;
+
+  const liste = document.createElement("div");
+  liste.className = "sallesZ";
+  const coches = new Map();
+
+  ids.forEach(id => {
+    const s = salles[id];
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span class="nS"></span>' +
+                  '<span class="cS"></span><span class="eS"></span>';
+    const c = l.querySelector("input");
+    c.checked = s.zone === o.id;
+    l.querySelector(".nS").textContent = s.nom || id;
+    l.querySelector(".cS").textContent = s.code || "";
+    const etat = l.querySelector(".eS");
+    /* Ce que la ligne dit d'elle-même : d'où vient ce qui est coché, et où est
+       partie une salle qui ne l'est pas. « Trouvée automatiquement » se lit de
+       la proposition et non de la marque « manuel » : une salle qu'on a cochée
+       là où la synchronisation la mettait est au même endroit qu'elle. */
+    const dis = () => {
+      const ailleurs = !c.checked && s.zone && s.zone !== o.id;
+      etat.textContent = c.checked
+        ? (s.auto === o.id ? "trouvée automatiquement" : "choisie à la main")
+        : ailleurs ? "rattachée à " + nomDeZone(s.zone)
+        : "à situer";
+      etat.dataset.genre = c.checked ? (s.auto === o.id ? "auto" : "manuel")
+        : ailleurs ? "libre" : "manque";
+    };
+    dis();
+    c.onchange = dis;
+    coches.set(id, c);
+    liste.appendChild(l);
+  });
+
+  champZone(hote, "Salles de conférence", liste,
+    "Le programme du salon, salle par salle. Cochez celles qui se tiennent " +
+    "dans cette zone : leurs conférences paraissent aussitôt sur sa fiche. " +
+    "Un rattachement choisi ici n'est plus modifié par les synchronisations " +
+    "suivantes.");
+  return () => ids.filter(id => coches.get(id).checked);
+}
+
+/** Le nom d'une zone, pour le dire ailleurs que sur elle-même. */
+function nomDeZone(id){
+  const z = parId.get(id);
+  // une zone que le plan n'a plus : le rattachement lui survit, et le dire
+  // vaut mieux que de laisser croire à une zone qu'on pourrait aller voir
+  if (!z) return "une zone absente du plan";
+  return z.nom || "une zone sans nom";
+}
+
+
+/* Les tailles successives auxquelles on tente de ramener un logo, de la plus
+   confortable à la plus modeste : on garde la première qui tient dans le poids
+   qu'on s'autorise. Le logo paraît à peu près 240 points de large sur la
+   fiche ; 480 pixels le gardent net sur un écran qui en double la densité.
+
+   Le poids n'est pas une coquetterie : la fiche part avec le plan, à chaque
+   visiteur et pour chaque zone. Cent kilo-octets par logo, sur les vingt-deux
+   zones d'un salon comme Franchise Expo, sont déjà deux mégaoctets de plan. */
+const PALIERS_LOGO = [[480, .85], [480, .7], [380, .7], [300, .62], [220, .6]];
+const POIDS_LOGO = 92000;
+
+/**
+ * Le fichier choisi, ramené à ce qu'une fiche affiche.
+ *
+ * Le logo est enregistré dans la fiche elle-même, en data-URI, et non déposé
+ * sur un hébergement de fichiers : c'est déjà ainsi que voyagent les images du
+ * dessin, une page publiée ne peut charger aucune ressource externe, et un lien
+ * vers un fichier ailleurs meurt le jour où l'ailleurs change. Le prix est le
+ * poids, payé par chaque visiteur : d'où la réduction, et le refus au-delà.
+ *
+ * Le format d'arrivée ne dépend pas de celui du fichier : webp là où le
+ * navigateur sait l'écrire, png ailleurs — il y répond en png sans rien dire,
+ * et le résultat reste affichable. Les deux gardent la transparence, qu'un logo
+ * a presque toujours et qu'un jpeg aurait remplie de blanc.
+ */
+function reduitLogo(fichier){
+  return new Promise((tenu, rompu) => {
+    if (!fichier || String(fichier.type).indexOf("image/") !== 0)
+      return rompu(new Error("ce fichier n'est pas une image"));
+    const fr = new FileReader();
+    fr.onerror = () => rompu(new Error("fichier illisible"));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rompu(new Error("image illisible"));
+      img.onload = () => {
+        /* Un svg sans dimensions intrinsèques se dessine à rien : on lui en
+           prête plutôt que de rendre une image vide. */
+        const l0 = img.naturalWidth || 480, h0 = img.naturalHeight || 480;
+        for (const [max, q] of PALIERS_LOGO){
+          const k = Math.min(1, max / Math.max(l0, h0));
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(l0 * k));
+          c.height = Math.max(1, Math.round(h0 * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const src = c.toDataURL("image/webp", q);
+          if (src.length <= POIDS_LOGO) return tenu(src);
+        }
+        rompu(new Error("image trop lourde, même réduite — un logo, pas une photo"));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(fichier);
+  });
+}
+
+/**
+ * Le champ du logo : le choisir, le voir, le retirer.
+ *
+ * Il se lit comme les autres champs de la fiche — on le remplit, on quitte, il
+ * part — d'où la même forme : ce qu'il rend est relu à la sortie, et non écrit
+ * au moment du choix. Une image posée puis retirée sans quitter la fiche n'aura
+ * donc rien écrit du tout.
+ *
+ * La vignette est aussi la cible du glisser-déposer : c'est le geste qu'on fait
+ * devant elle, et il évite la boîte de dialogue du système.
+ */
+function champLogo(hote, o){
+  let logo = imageSure(o.logo);
+
+  const cadre = document.createElement("div");
+  cadre.className = "logoZ";
+  const vue = document.createElement("div");
+  vue.className = "vue";
+  const actes = document.createElement("div");
+  actes.className = "actes";
+  const choisir = document.createElement("button");
+  choisir.type = "button";
+  const oter = document.createElement("button");
+  oter.type = "button";
+  oter.textContent = "Retirer";
+  const dit = document.createElement("span");
+  dit.className = "ditZ";
+  const fichier = document.createElement("input");
+  fichier.type = "file";
+  fichier.accept = "image/*";
+  fichier.hidden = true;
+  actes.appendChild(choisir);
+  actes.appendChild(oter);
+  actes.appendChild(dit);
+  cadre.appendChild(vue);
+  cadre.appendChild(actes);
+  cadre.appendChild(fichier);
+
+  /* Le poids annoncé est celui du data-URI, non celui du fichier d'origine :
+     c'est lui qui part chez le visiteur, et il pèse un tiers de plus — quatre
+     caractères de base64 pour trois octets, d'où le diviseur. */
+  const peint = (mot) => {
+    vue.innerHTML = logo ? '<img alt="">' : '<span>Aucun logo</span>';
+    if (logo) vue.querySelector("img").src = logo;
+    choisir.textContent = logo ? "Remplacer…" : "Choisir un fichier…";
+    oter.hidden = !logo;
+    dit.dataset.mal = "false";
+    dit.textContent = mot !== undefined ? mot
+      : logo ? Math.round(logo.length / 1365) + " Ko" : "";
+  };
+
+  const prend = (f) => {
+    if (!f) return;
+    peint("Lecture…");
+    reduitLogo(f).then(src => { logo = src; peint(); }).catch(e => {
+      dit.textContent = "Échec : " + e.message;
+      dit.dataset.mal = "true";
+    });
+  };
+
+  choisir.onclick = () => fichier.click();
+  fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
+  oter.onclick = () => { logo = ""; peint(); };
+  vue.addEventListener("dragover", e => { e.preventDefault(); vue.dataset.survol = "1"; });
+  vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
+  vue.addEventListener("drop", e => {
+    e.preventDefault();
+    delete vue.dataset.survol;
+    prend(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+  });
+
+  peint();
+  champZone(hote, "Logo", cadre,
+    "L'image paraît dans l'en-tête de la fiche, au-dessus du type et du nom. " +
+    "Elle est " +
+    "réduite puis enregistrée dans la fiche : elle part avec le plan, sans " +
+    "dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou " +
+    "choisissez-la.");
+  return () => logo;
 }
 
 /* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :
@@ -1401,8 +1846,11 @@ function editeurRiche(html){
  * de départ, relevé par le même chemin que celui qu'on comparera. */
 let ficheZoneEnCours = null;
 
+/* Les salles cochées se comparent telles quelles : ce sont deux listes des
+   mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
-  a.type === b.type && a.description === b.description && a.lien === b.lien);
+  a.type === b.type && a.description === b.description && a.lien === b.lien &&
+  a.logo === b.logo && String(a.salles) === String(b.salles));
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 function suitFicheZone(o, valeurs, etat, apres){
@@ -1472,7 +1920,34 @@ async function enregistreZone(o, v, depart){
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
   // n'aurait qu'un lien mort à montrer
   const adresse = adresseSure(v.lien);
+  /* Le logo est relu avant de partir comme il le sera avant de paraître : ce
+     qui n'est pas une image fabriquée ici n'a rien à faire dans la colonne. */
+  const blason = imageSure(v.logo);
   const renomme = !depart || String(depart.libelle || "").trim() !== nom;
+  /* Les salles cochées. Leur colonne n'est pas indexée par zone mais par
+     salle, et c'est la zone qu'on y écrit — d'où le détour. On n'y touche que
+     si une coche a bougé : une description corrigée ne doit pas réécrire un
+     rattachement qu'un autre poste vient de changer. */
+  const salles = Array.isArray(v.salles) ? v.salles : null;
+  const rattache = salles && (!depart || String(depart.salles) !== String(salles));
+  const rattacheSalles = (t) => Object.keys(t).forEach(id => {
+    const s = t[id];
+    const ici = salles.indexOf(id) >= 0;
+    // une salle qui est déjà où on la veut n'a pas à être réécrite : le choix
+    // d'une zone ne touche pas au rattachement des salles des autres
+    if (!s || ici === (s.zone === o.id)) return;
+    s.zone = ici ? o.id : null;
+    /* « manuel » protège du prochain rattachement automatique. Retirer d'ici
+       une salle que la synchronisation y avait posée est un choix comme un
+       autre : sans cette marque, elle y reviendrait à la synchronisation
+       suivante. */
+    s.manuel = ici ? s.zone !== s.auto : Boolean(s.auto);
+  });
+  /* La fiche de la zone suivante s'ouvre avant que la base ait répondu, et le
+     plan se redessine dans la foulée : tous deux doivent lire le rattachement
+     qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
+     et « rattacheSalles » ne fait rien deux fois. */
+  if (rattache){ rattacheSalles(DATA.salles); rangeConferences(); }
   const tables = await ecritTablesZones([
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
@@ -1480,14 +1955,22 @@ async function enregistreZone(o, v, depart){
     { colonne: "zones_fiches", secours: DATA.fichesZones, change: t => {
         const fiche = {};
         if (genre) fiche.type = genre;
+        if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
       } },
+    ...(rattache
+      ? [{ colonne: "salles", secours: DATA.salles, change: rattacheSalles }]
+      : []),
   ]);
   if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
+  /* Le programme d'une zone se lit d'un index rangé au chargement : la salle
+     qu'on vient de lui rattacher n'y est pas, et attendre la synchronisation
+     pour la voir arriver ferait douter du clic. */
+  if (tables.salles){ DATA.salles = tables.salles; rangeConferences(); }
   if (renomme){
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;
@@ -1495,6 +1978,7 @@ async function enregistreZone(o, v, depart){
   }
   o.description = description;
   o.lien = adresse;
+  o.logo = blason;
   o.type = genre;
   // le nom se lit aussi sur le plan et dans la liste, où on le cherche
   o.rech = String(o.nom || "").toLowerCase();

@@ -9,6 +9,11 @@
  * vérification vaut pour `CARTE.md`, l'index des sources : un index en retard
  * envoie chercher au mauvais endroit, ce qui est pire que pas d'index.
  *
+ * La construction faite, la syntaxe des pages est contrôlée ici plutôt qu'en
+ * intégration seulement : c'est ce script que le dépôt désigne comme le geste
+ * d'avant-validation, et un défaut qui n'apparaît qu'après la poussée est
+ * trouvé trop tard.
+ *
  *   node outils/verifie.js
  */
 const { execFileSync } = require("child_process");
@@ -26,6 +31,13 @@ try {
   lance("carte.js");
 } catch (e) {
   console.error("La construction a échoué :\n" + (e.stdout || e.message).toString());
+  process.exit(1);
+}
+
+try {
+  lance("controle.js");
+} catch (e) {
+  console.error((e.stdout || "").toString() + (e.stderr || e.message).toString());
   process.exit(1);
 }
 

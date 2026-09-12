@@ -19,13 +19,25 @@
  *     devienne pas un proxy ouvert ;
  *   — sans stockage KV attaché, tout continue de fonctionner, sans cache.
  *
+ * À quoi s'ajoute une porte de sortie : `/api/oublie` fait oublier ce qu'on
+ * garde d'un salon. Sans elle, une configuration enregistrée depuis
+ * l'administration n'atteignait les visiteurs qu'au bout du délai de fraîcheur.
+ *
  * Le même chemin sert aux mesures d'utilisation, en sens inverse : la page
  * pousse ses gestes, le Worker les passe à la fonction, sans rien garder.
  */
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
+/* Oublier n'est pas anonyme : on vérifie la session auprès du même projet que
+   celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
+   changement de projet n'ait qu'un seul endroit à changer. */
+const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
 const PARAMS = ["slug", "fond", "v"];
+
+/* Un slug nomme un salon : des minuscules, des chiffres, des traits. Le
+   contrôle n'est pas décoratif — la clé de cache se construit avec. */
+const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 /* Un paquet de mesures pèse quelques centaines d'octets. Au-delà, ce n'est
    plus une visite qu'on décrit : on refuse sans même relayer. */
@@ -44,6 +56,26 @@ const TTL_FOND = 2592000;
    chacune rejoue les sept requêtes. La garde couvre du même coup une panne en
    amont : mieux vaut un plan d'hier qu'une page vide. */
 const GARDE = 86400;
+
+/** Une réponse de service, jamais gardée. */
+const dit = (corps, code) =>
+  new Response(JSON.stringify(corps), {
+    status: code,
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+  });
+
+/** L'adresse en amont, réduite aux paramètres attendus : c'est elle qui donne
+ *  la clé de cache, et les deux chemins qui s'en servent — servir et oublier —
+ *  doivent la construire pareil, sans quoi l'oubli manquerait sa cible. */
+function amontPour(parametres) {
+  const u = new URL(AMONT);
+  for (const p of PARAMS) {
+    const v = parametres.get(p);
+    if (v !== null) u.searchParams.set(p, v);
+  }
+  return u;
+}
+const cleDe = (amont) => "v1" + amont.search;
 
 /** Ce que l'on garde à côté de la valeur : de quoi reconstituer la réponse. */
 const meta = (r, frais) => ({
@@ -81,6 +113,44 @@ function rafraichit(cache, cle, adresse, entetes) {
     .finally(() => _enVol.delete(cle));
 }
 
+/**
+ * Oublier ce qu'on garde d'un salon.
+ *
+ * L'exploitant enregistre sa configuration, et les visiteurs continuaient de
+ * recevoir l'ancienne : l'entrée gardée ne se périmait que d'elle-même, et la
+ * première visite d'après recevait encore la copie dépassée pendant qu'elle se
+ * refaisait derrière. Le plan public retardait donc d'un bon quart d'heure sur
+ * l'écran d'administration, sans que rien ne le dise — et depuis que
+ * l'enregistrement se fait tout seul, plus personne ne pouvait deviner à partir
+ * de quand regarder.
+ *
+ * La page le demande donc en finissant d'enregistrer. Oublier ne coûte qu'une
+ * lecture de plus à la prochaine visite : c'est sans danger, mais pas anonyme
+ * pour autant — il faut présenter une session de ce projet, sans quoi ce chemin
+ * serait un moyen de vider le cache en boucle. Le fond de plan n'est pas
+ * concerné : son adresse porte sa version, et l'apparence entre dedans.
+ */
+async function oublie(requete, env) {
+  if (requete.method !== "POST") {
+    return new Response("Méthode non permise", { status: 405 });
+  }
+  const slug = new URL(requete.url).searchParams.get("slug") || "";
+  if (!SLUG.test(slug)) return dit({ erreur: "Paramètre slug absent ou invalide." }, 400);
+
+  const jeton = requete.headers.get("Authorization");
+  const apikey = requete.headers.get("apikey");
+  if (!jeton || !apikey) return dit({ erreur: "Session absente." }, 401);
+  const qui = await fetch(AUTH, { headers: { "Authorization": jeton, apikey } })
+    .catch(() => null);
+  if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
+
+  if (env.CACHE) {
+    await env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug }))))
+      .catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
+  }
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
 /** Relais des mesures : un aller simple, sans identité et sans cache. */
 async function mesure(requete) {
   if (requete.method !== "POST") {
@@ -107,28 +177,23 @@ export default {
        rien à configurer si le domaine change. Elles ne sont ni lues ni mises
        en cache — elles ne font que passer. */
     if (url.pathname === "/api/mesure") return mesure(requete);
+    // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
+    if (url.pathname === "/api/oublie") return oublie(requete, env);
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
     if (requete.method !== "GET" && requete.method !== "HEAD") {
       return new Response("Méthode non permise", { status: 405 });
     }
 
-    const amont = new URL(AMONT);
-    for (const p of PARAMS) {
-      const v = url.searchParams.get(p);
-      if (v !== null) amont.searchParams.set(p, v);
-    }
+    const amont = amontPour(url.searchParams);
     if (!amont.searchParams.get("slug")) {
-      return new Response(JSON.stringify({ erreur: "Paramètre slug manquant." }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      });
+      return dit({ erreur: "Paramètre slug manquant." }, 400);
     }
 
     const jeton = requete.headers.get("Authorization");
     const cache = jeton ? null : env.CACHE;      // une identité contourne le cache
     // la clé ne retient que les paramètres attendus : deux adresses qui ne
     // diffèrent que par un paramètre parasite partagent la même entrée
-    const cle = "v1" + amont.search;
+    const cle = cleDe(amont);
     const fond = Boolean(amont.searchParams.get("fond"));
 
     const entetes = new Headers();
