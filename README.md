@@ -546,6 +546,36 @@ premier jour.
 Retirer le parcours de visite retire la suggestion avec lui : il n'y a plus ni
 liste à compléter ni tiroir où poser la proposition, et l'onglet le signale.
 
+### Les fenêtres portent l'habillage, sauf les outils
+
+La fenêtre modale restait au fond neutre pendant que le bandeau, la liste, la
+fiche, le parcours et l'itinéraire portaient la couleur du salon. C'est pourtant
+là que le visiteur coche ses critères de recherche, lit le programme d'une
+conférence, choisit une société sur un stand partagé, fait organiser sa journée,
+confirme un vidage de parcours et reçoit la proposition qui complète sa visite.
+Elle porte donc le modèle comme les tiroirs — sur la fenêtre et non sur le voile
+qui la porte, celui-ci devant rester le gris sombre qui met le plan en retrait.
+
+Restent neutres les **fenêtres d'exploitation**, que leur genre nomme :
+`large` pour les réglages du plan et la fiche d'une zone, `outil` pour la remise
+à zéro des compteurs, l'ordre des calques et le nom d'un calque. Ce sont les
+outils de l'exploitant, et deux d'entre elles ne pourraient pas porter
+d'habillage sans mentir :
+
+- les **réglages** montrent les onze habillages en vignettes, et l'on ne compare
+  pas onze habillages depuis une fenêtre qui en porte déjà un : celles dont le
+  modèle ne redéfinit pas son propre fond laisseraient voir celui de la fenêtre
+  au travers ;
+- la **remise à zéro** écrit son avertissement en rouge, d'un rouge qui ne
+  s'accorde à aucun fond puisqu'il ne vient d'aucun jeton. Sur un habillage
+  coloré il devenait illisible — et c'est le seul écran du plan où quelque chose
+  se perd sans retour.
+
+Le fond de la fenêtre se pose en `background-color` et non en `background` :
+plusieurs modèles y déposent un dégradé ou une trame, et la forme courte, écrite
+après eux dans la feuille, les effacerait. Même ornière que sur le parcours et
+l'itinéraire.
+
 ## L'itinéraire d'un stand à l'autre
 
 Un bouton de la barre du haut, et un bouton « Itinéraire » sur chaque fiche,
