@@ -464,11 +464,11 @@ Fonctions :
 `nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 228 · `poseSuggestion` 263
 `fenetreSuggestion` 276 · `relevePalmares` 310 · `etiquetteSugg` 330 · `voletSuggestion` 340
 
-### `_sw.js` — 168 l. → sw.js
+### `_sw.js` — 165 l. → sw.js
 
 Fonctions :
 
-`range` 64 · `dabordCache` 71 · `dabordReseau` 82 · `revalide` 100 · `navigation` 121
+`range` 72 · `dabordCache` 82 · `dabordReseau` 102 · `navigation` 119
 
 ## Dans `web/`, mais que la construction ne produit pas
 

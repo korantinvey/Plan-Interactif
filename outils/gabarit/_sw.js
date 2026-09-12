@@ -13,8 +13,16 @@
  * Précharger aurait retéléchargé le mégaoctet de la page au moment même où le
  * visiteur venait de le recevoir.
  *
- * Trois règles, qui reprennent celles du relais (`src/index.mjs`) parce que
- * c'est le même document qui passe :
+ * Le principe tient en une ligne : **le réseau d'abord, partout**, et la copie
+ * gardée seulement quand il manque. N'y échappe que ce dont l'adresse porte la
+ * version — le fond de plan, les polices — qui ne peut pas être périmé. Rien
+ * de ce qui est servi n'est donc plus vieux qu'avant ; ce service n'ajoute
+ * qu'un secours. Servir d'abord la copie aurait été plus rapide d'un ou deux
+ * dixièmes, au prix d'un rechargement de retard sur chaque mise en ligne —
+ * une console repeinte par la feuille de style de la veille, par exemple.
+ *
+ * Trois règles ensuite, qui reprennent celles du relais (`src/index.mjs`)
+ * parce que c'est le même document qui passe :
  *   — une demande porteuse d'une identité n'est ni lue ni écrite dans le
  *     cache : elle peut rendre un brouillon, qui n'appartient qu'à son
  *     exploitant, et le poste peut être partagé ;
@@ -61,64 +69,54 @@ self.addEventListener("activate", (e) => {
 });
 
 /** Range une copie de la réponse, sans faire attendre celle qui repart. */
-function range(requete, reponse) {
+function range(e, requete, reponse) {
   const copie = reponse.clone();   // avant tout `await` : le corps ne se lit qu'une fois
-  caches.open(CACHE).then((c) => c.put(requete, copie)).catch(() => {});
+  /* Le service peut être arrêté sitôt la réponse rendue : sans cette retenue,
+     l'écriture serait interrompue avant d'avoir rien rangé — et le secours
+     manquerait justement à la visite d'après. */
+  e.waitUntil(caches.open(CACHE).then((c) => c.put(requete, copie)).catch(() => {}));
   return reponse;
 }
 
 /** Ce qui ne change jamais sous une même adresse : gardé d'abord, demandé après. */
-async function dabordCache(requete) {
+async function dabordCache(e, requete) {
   const garde = await caches.match(requete);
   if (garde) return garde;
   const reponse = await fetch(requete);
   // une réponse opaque — une police, demandée sans contrôle d'origine — ne dit
   // pas si elle a abouti ; elle se garde quand même, c'est tout ce qu'on aura
-  if (reponse.ok || reponse.type === "opaque") range(requete, reponse);
+  if (reponse.ok || reponse.type === "opaque") range(e, requete, reponse);
   return reponse;
 }
 
-/** Ce qui peut changer : demandé d'abord, et la copie gardée sert de secours. */
-async function dabordReseau(requete) {
+/**
+ * Tout le reste : demandé d'abord, et la copie gardée ne sert qu'en secours.
+ *
+ * Une mise en ligne arrive donc au premier chargement qui suit, comme avant ce
+ * service. Rendre la copie d'abord aurait valu un rechargement de retard à
+ * chaque fichier — la feuille de style de la console repeignant la console
+ * d'après, le plan d'hier servi sous les données d'aujourd'hui. Ce que coûte ce
+ * choix, une requête conditionnelle que le cache du navigateur rend presque
+ * gratuite, est ce qu'on payait déjà.
+ */
+async function dabordReseau(e, requete, cle) {
   try {
     const reponse = await fetch(requete);
-    if (reponse.ok) range(requete, reponse);
+    if (reponse.ok) range(e, cle || requete, reponse);
     return reponse;
   } catch (panne) {
-    const garde = await caches.match(requete);
+    const garde = await caches.match(cle || requete);
     if (garde) return garde;
     throw panne;
   }
 }
 
 /**
- * Le reste des fichiers de la page : rendus depuis le cache, et renouvelés
- * derrière. L'affichage ne dépend donc plus du réseau, et la construction
- * suivante arrive au rechargement d'après — ce qui suffit pour une feuille de
- * style ou une icône, et n'est pas vrai des pages, servies plus haut.
+ * Une page demandée. Même règle que le reste — le réseau d'abord — mais deux
+ * choses lui sont propres : la clé sous laquelle on la range, et la page de
+ * secours quand il n'y a décidément rien à montrer.
  */
-function revalide(e) {
-  const requete = e.request;
-  const frais = fetch(requete)
-    .then((reponse) => (reponse.ok ? range(requete, reponse) : reponse))
-    .catch(() => null);
-  // le service peut être arrêté sitôt la réponse rendue : sans cette retenue,
-  // le renouvellement serait interrompu avant d'avoir rien écrit
-  e.waitUntil(frais);
-  return caches.match(requete).then((garde) => garde || frais.then((r) => r || Response.error()));
-}
-
-/**
- * Une page demandée : le réseau d'abord, toujours.
- *
- * C'est le contraire de ce que fait le reste, et pour une raison précise : une
- * page de ce dépôt porte tout son code. La servir depuis le cache, c'est
- * exécuter la construction d'hier sur les données d'aujourd'hui — et, en
- * administration, laisser un exploitant enregistrer avec un écran périmé. Le
- * cache HTTP du navigateur rend de toute façon ce trajet gratuit tant que la
- * page n'a pas changé.
- */
-async function navigation(requete) {
+async function navigation(e, requete) {
   /* Rangée sous son chemin nu, sans ce que l'adresse transporte. Une page sert
      tous les salons — `?plan=` désigne celui qu'elle ira chercher, jamais un
      autre fichier — et en garder une copie par salon revenait à garder dix
@@ -127,13 +125,10 @@ async function navigation(requete) {
      resté, sur un poste parfois partagé. */
   const cle = new Request(new URL(requete.url).pathname);
   try {
-    const reponse = await fetch(requete);
-    if (reponse.ok) range(cle, reponse);
-    return reponse;
+    return await dabordReseau(e, requete, cle);
   } catch (panne) {
-    return (await caches.match(cle)) ||
-           (await caches.match(HORS_LIGNE)) ||
-           Response.error();
+    // ni réseau ni copie : reste la page mise de côté à l'installation
+    return (await caches.match(HORS_LIGNE)) || Response.error();
   }
 }
 
@@ -153,16 +148,18 @@ self.addEventListener("fetch", (e) => {
          le plus jalousement. Le plan lui-même change à chaque synchronisation :
          on le redemande, et la copie gardée ne sert que si le réseau manque. */
       e.respondWith(adresse.searchParams.get("fond")
-        ? dabordCache(requete)
-        : dabordReseau(requete));
+        ? dabordCache(e, requete)
+        : dabordReseau(e, requete));
       return;
     }
     // les mesures et l'oubli du cache ne font que passer
     if (adresse.pathname.startsWith("/api/")) return;
 
-    e.respondWith(requete.mode === "navigate" ? navigation(requete) : revalide(e));
+    e.respondWith(requete.mode === "navigate"
+      ? navigation(e, requete)
+      : dabordReseau(e, requete));
     return;
   }
 
-  if (POLICES.includes(adresse.origin)) e.respondWith(dabordCache(requete));
+  if (POLICES.includes(adresse.origin)) e.respondWith(dabordCache(e, requete));
 });
