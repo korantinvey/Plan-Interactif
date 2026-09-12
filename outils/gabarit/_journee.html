@@ -96,13 +96,14 @@ function pointConf(c){
 }
 
 /**
- * Les départs qu'on propose : les portes, et rien d'autre.
+ * Les départs qu'on propose : les portes par où l'on entre, et rien d'autre.
  *
  * La liste offrait tous les repères du salon, entrées en tête. On y lisait
  * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
  * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
  * sur un téléphone. La question posée est « par où vous entrez » : seules les
- * portes y répondent.
+ * portes y répondent, et parmi elles, celles qui ne sont pas des sorties
+ * seules.
  *
  * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
  * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
@@ -110,7 +111,7 @@ function pointConf(c){
  */
 function departsProposes(){
   const l = [];
-  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
   const vus = new Map();
   l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
   const rang = new Map();
@@ -764,6 +765,9 @@ function ouvreOrganisation(){
   const departs = departsProposes();
 
   let champHeure = null, champJour = null, champDepart = null;
+  /* Une porte unique ne se demande pas, elle se prend : la question n'aurait
+     qu'une réponse, et la poser ferait croire qu'il y en a d'autres. */
+  const departImpose = departs.length === 1 ? departs[0] : null;
 
   ouvreModale("Organiser ma journée", corps => {
     const p = document.createElement("p");
@@ -803,7 +807,7 @@ function ouvreOrganisation(){
       bloc("Jour de visite", champJour);
     }
 
-    if (departs.length){
+    if (departs.length > 1){
       champDepart = document.createElement("select");
       const vide = document.createElement("option");
       vide.value = "";
@@ -819,6 +823,15 @@ function ouvreOrganisation(){
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
+    } else if (departImpose){
+      /* On dit quand même d'où l'on part : le visiteur retrouve le premier
+         pas de sa journée là où il l'attend, sans avoir à le choisir. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "La journée commencera à « " + departImpose.nom +
+        (DATA.plans.length > 1 ? " » (" + departImpose.detail + ")" : " »") +
+        ", la seule entrée repérée.";
+      form.appendChild(n);
     } else {
       /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
          absence se remarquerait plus que sa réponse. On dit d'où l'on partira
@@ -842,10 +855,14 @@ function ouvreOrganisation(){
       try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
       const cle = champJour ? champJour.value : (jours.length ? jours[0].cle : "");
       const j = jours.find(x => x.cle === cle);
-      const id = champDepart ? champDepart.value : "";
+      /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
+         choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
+      const choix = champDepart ? champDepart.value : null;
+      const depart = choix === null ? departImpose
+                   : choix === "" ? null : departs[+choix];
       lanceJournee({
         arrivee: min, jour: cle, jourNom: j ? j.nom : "",
-        depart: id === "" ? null : departs[+id],
+        depart: depart,
       });
     } },
   ]);

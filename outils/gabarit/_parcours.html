@@ -309,6 +309,10 @@ function remplitParcours(){
       ouvre: () => select(o.id, true, "parcours"),
     }));
   }
+
+  /* Et, au bas de ce qu'on a retenu, ce qui pourrait le compléter : la
+     proposition vient après la liste parce qu'elle en découle. */
+  poseSuggestion(hote);
 }
 
 function ouvreParcours(){
@@ -347,6 +351,9 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
       dessineItineraire();
     }
     JOURNEE = null; vueJournee = false;
+    /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
+       repart de zéro, les refus avec elle. */
+    SUGG_ECARTES.clear();
     enregistreParcours();
     appliqueVueParcours();
   });

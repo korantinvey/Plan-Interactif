@@ -2001,6 +2001,24 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La proposition qui ferme le tiroir.
+   Elle ne se déguise pas en rang du parcours : ce qui est dessous a été retenu,
+   ce qui est ici ne l'est pas encore. D'où le fond d'accent et le trait
+   discontinu — la même carte, pas encore épinglée. Le rang qu'elle porte, lui,
+   reprend l'allure des autres : c'est le même exposant, ouvert du même geste. */
+.pSugg{display:flex;flex-direction:column;gap:7px;padding:11px 12px;
+  border:1px dashed var(--line-strong);border-radius:var(--radius);
+  background:var(--accent-soft)}
+.pSugg .sTete{display:flex;align-items:center;gap:8px}
+.pSugg .sTete .eyebrow{flex:1;min-width:0}
+.pSugg .sEcarte{flex:none;width:22px;height:22px;color:var(--ink-3);font-size:15px;
+  line-height:1}
+.pSugg .sEcarte:hover{color:var(--ink)}
+.pSugg .sMotif{margin:0;font-size:12px;line-height:1.5;color:var(--ink-2)}
+/* Le fond du rang vient du panneau, pas du tiroir : posé sur l'accent, le gris
+   de « surface-2 » s'y serait fondu. */
+.pSugg .pRang .pOuvre{background:var(--surface)}
+.pSugg .pRang .pOuvre:hover{background:var(--surface-2)}
 /* ------------------------------------------------------------
    La journée organisée
 
@@ -2457,9 +2475,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
-   remonte, comment la fiche se range, de quoi le plan a l'air, ses zones, sa
-   mesure. Séparés par des onglets plutôt qu'empilés — l'apparence est une
-   planche d'aperçus, et poussait tout le reste hors de l'écran. */
+   remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
+   l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
+   l'apparence est une planche d'aperçus, et poussait tout le reste hors de
+   l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2480,7 +2499,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .voletReg{animation:none}
   .ongReg button{transition:none}
 }
-/* Les onglets étaient quatre, ils sont six : sur un téléphone, « Apparence »
+/* Les onglets étaient quatre, ils sont sept : sur un téléphone, « Apparence »
    et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
    resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
    ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
@@ -2685,6 +2704,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .sallesZ .eS{grid-column:2/-1;font-size:11px;color:var(--ink-3)}
 .sallesZ .eS[data-genre="manque"]{color:var(--rouge)}
 .sallesZ .eS[data-genre="manuel"]{color:var(--accent)}
+/* Le seuil se chiffre entre deux champs qui se choisissent : sa règle de
+   séparation le détache de ce qui précède, rien ne le détachait de ce qui
+   suit. */
+.voletSugg .reglage-nb + .champZ{margin-top:16px}
+/* Les valeurs d'un critère, dans les réglages de la suggestion : ce qu'on
+   propose en face de chacune, et combien d'exposants la portent. Le nombre est
+   ce qui dit si une valeur pèse — une ville à trois exposants ne déclenchera
+   presque jamais. La liste défile pour elle seule : un salon rangé par ville en
+   compte cent, et le reste du volet doit rester atteignable. */
+.suggVals{display:flex;flex-direction:column;gap:5px;max-height:34dvh;overflow-y:auto;
+  padding:6px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.suggVals .rang{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) auto;
+  gap:3px 10px;align-items:center;padding:5px 6px;border-radius:var(--radius)}
+.suggVals .rang:hover{background:var(--accent-soft)}
+.suggVals .nV{font-size:13px;color:var(--ink);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.suggVals .vV{font-size:12.5px;color:var(--ink-2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+/* Une valeur que personne n'a encore consultée ne propose rien : elle le dit en
+   italique, comme une absence et non comme un nom. */
+.suggVals .vV.rien{color:var(--ink-3);font-style:italic}
+.suggVals .cV{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:nowrap}
+/* Les champs de la fiche prennent toute la largeur ; ici ils tiennent dans une
+   colonne, et la taille de leur texte doit rester celle de la ligne. */
+.champZ .suggVals select{width:100%;padding:5px 7px;font-size:12.5px}
+@media (max-width:640px){
+  .suggVals .rang{grid-template-columns:minmax(0,1fr) auto}
+  .suggVals .vV,.champZ .suggVals select{grid-column:1/-1}
+}
 /* Le champ du logo : la vignette à gauche, ce qu'on en fait à droite. La
    vignette est aussi la cible du glisser-déposer, d'où le trait discontinu —
    il dit qu'on peut y déposer quelque chose avant qu'on ait rien à y voir. */
@@ -3929,6 +3979,9 @@ function montePlan(){
   { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
+  // est à reposer dessus, sans quoi le pavillon paraît entier
+  marqueRetrait();
   appliqueApparence();
   marqueParcours();
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
@@ -4291,6 +4344,7 @@ function filtreTheme(n){
   majVideQ();
   ferme();
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
   // sur téléphone la liste est repliée : le filtre n'aurait rien à montrer
   montreTiroir();
@@ -4475,12 +4529,14 @@ function basculeCritere(cle, v){
   if (l.has(v)) l.delete(v); else l.add(v);
   if (l.size) state.crit.set(cle, l); else state.crit.delete(cle);
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
 }
 
 function videCriteres(){
   state.crit.clear();
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
 }
 
@@ -4509,6 +4565,7 @@ function videRecherche(){
     if (!ETROIT()) champ.focus();
   }
   majVideQ();
+  reposeRetrait();
   appliqueFiltre();
 }
 
@@ -4695,6 +4752,26 @@ function ouvreCriteres(){
  *  cumulent, aucun ne prime. */
 const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 
+/* Le retrait du plan, et le geste qui l'en sort.
+
+   Chercher éteint sur le plan ce qui ne répond pas : la liste et le plan sont
+   les deux faces du même résultat. Mais on se sert du plan pendant qu'on
+   cherche — pour situer ce qu'on a trouvé, et pour regarder ce qu'il y a
+   autour. Ce voisin-là était éteint, et l'ouvrir laissait le hall délavé
+   autour de sa fiche : on ne voyait plus l'endroit qu'on venait justement
+   d'ouvrir.
+
+   Un clic sur ce que la recherche n'a pas retenu lève donc le retrait. Le
+   mot-clé, les critères et la liste ne bougent pas : c'est le plan qu'on
+   reprend, pas la question qu'on retire — et revenir au menu de recherche la
+   repose. */
+let retraitLeve = false;
+
+/** Reposer le retrait. Les fonctions qui changent le filtre l'appellent avant
+ *  de le réappliquer : une question qu'on modifie est une question qu'on
+ *  repose. */
+const reposeRetrait = () => { retraitLeve = false; };
+
 /* Un critère qui parle de la société fait paraître les hébergées ; le secteur,
    qui parle de l'emplacement, non. */
 const critParSociete = () =>
@@ -4739,6 +4816,7 @@ const releveHotes = () => {
  * hébergent une société retenue.
  */
 function visibleSurPlan(o){
+  if (retraitLeve) return true;
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
@@ -4749,12 +4827,22 @@ function visibleSurPlan(o){
  * de lui qu'on l'a dessinée.
  */
 function visibleSociete(o, i){
+  if (retraitLeve) return true;
   if (!(i >= 0)) return visibleSurPlan(o);
   const h = PAR_HEBERGE.get(o.id + "#" + i);
   return h ? visible(h) : visibleSurPlan(o);
 }
 
-function appliqueFiltre(){
+/**
+ * Le retrait posé sur ce qui est dessiné.
+ *
+ * À part du reste parce que le montage d'un pavillon le redemande : les
+ * groupes de « #stands » et « #zones » y sont réécrits d'un bloc, sans la
+ * marque qu'ils portaient. Un résultat ouvert dans un autre pavillon arrivait
+ * donc sur un plan entier, où rien ne disait plus ce que la recherche avait
+ * retenu — et où le doigt n'avait plus de quoi la reprendre.
+ */
+function marqueRetrait(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
@@ -4764,7 +4852,33 @@ function appliqueFiltre(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
+}
+
+function appliqueFiltre(){
+  marqueRetrait();
   libelles(); liste();
+}
+
+/**
+ * Le retrait ne survit pas au clic qui l'ignore.
+ *
+ * Ce qui est resté allumé fait exception : l'ouvrir, c'est se servir du
+ * résultat, pas en sortir. On reconnaît l'un de l'autre à la marque que
+ * « marqueRetrait » leur a posée — celle-là même qui les éteint.
+ */
+function oublieRetrait(cible){
+  if (retraitLeve || !filtre() || !cible) return;
+  if (!cible.classList.contains("dim")) return;
+  retraitLeve = true;
+  appliqueFiltre();
+}
+
+/** Toute reprise du menu de recherche repose le retrait : la question est
+ *  rouverte, et le plan redit ce qu'elle retient. */
+function reprendRecherche(){
+  if (!retraitLeve) return;
+  reposeRetrait();
+  appliqueFiltre();
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
@@ -6399,6 +6513,57 @@ svg.addEventListener("pointermove", e => {
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
+/* ------------------------------------------------------------------
+   Le doigt vise plus large que la souris.
+
+   Un stand que la recherche éclaire est parfois un rectangle de quelques
+   pixels dans un hall dézoomé : le doigt le couvre entier et tombe à côté une
+   fois sur deux — sur le fond, ou sur le voisin éteint. Le résultat se voit,
+   et ne s'ouvre pas : c'est le geste même auquel la recherche appelle qui
+   échoue.
+
+   Ce qu'elle a retenu déborde donc de sa forme, et lui seul, de juste ce qu'il
+   faut pour atteindre la taille d'un doigt. La marge disparaît dès que la forme
+   est assez grande, c'est-à-dire dès qu'on a zoomé : elle n'existe que là où
+   la précision est impossible, et ne prend jamais la place d'une cible qu'on
+   pouvait viser. Le voisin éteint reste ainsi ouvrable — et c'est lui qui lève
+   le retrait.
+
+   Les boîtes sont lues sur le rendu plutôt que calculées : stands du salon,
+   zones et stands dessinés s'y présentent tous pareil, chacun à l'échelle où
+   il est vu. Les repères n'y entrent pas : rien ne les met en retrait, et les
+   élargir tous reviendrait à les préférer au reste pendant toute recherche.
+   ------------------------------------------------------------------ */
+/* La plus petite cible qu'un doigt atteint sans s'y reprendre. Bien en dessous
+   des quarante-huit points que recommandent les systèmes : la marge est prise
+   sur les stands voisins, qu'il faut pouvoir ouvrir aussi — c'est le rattrapage
+   d'un geste imprécis, pas un bouton qu'on dessine. */
+const DOIGT = 32;
+/* Au-delà, la recherche n'a rien resserré — ses résultats couvrent le hall, et
+   leurs marges se chevauchent plus qu'elles n'aident. */
+const MAX_ELARGIS = 150;
+
+function cibleElargie(x, y){
+  if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
+  const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
+    " #couches .dcal .sdes[data-id]:not(.dim)");
+  if (!allumes.length || allumes.length > MAX_ELARGIS) return null;
+  let choix = null, mieux = Infinity;
+  allumes.forEach(g => {
+    const b = g.getBoundingClientRect();
+    const mx = (DOIGT - b.width) / 2, my = (DOIGT - b.height) / 2;
+    if (mx <= 0 && my <= 0) return;              // déjà à portée du doigt
+    const dx = Math.max(b.left - Math.max(mx, 0) - x, x - b.right - Math.max(mx, 0));
+    const dy = Math.max(b.top - Math.max(my, 0) - y, y - b.bottom - Math.max(my, 0));
+    if (dx > 0 || dy > 0) return;                // hors de la boîte élargie
+    // entre deux marges qui se recouvrent, la plus profonde : c'est celle dont
+    // on est le plus près du centre
+    const d = Math.max(dx, dy);
+    if (d < mieux){ mieux = d; choix = g; }
+  });
+  return choix;
+}
+
 /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
    au pointerdown et on tranche au pointerup. */
 svg.addEventListener("pointerup", e => {
@@ -6412,21 +6577,28 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
+     sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
+     recherche dont ils débordent la marge, s'il y en a un. */
+  const cible = d.cible && !d.cible.classList.contains("dim")
+    ? d.cible : (cibleElargie(d.x, d.y) || d.cible);
   /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
      du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
-  oublieChoixPoi(d.cible);
+  oublieChoixPoi(cible);
+  // et de même le retrait de la recherche, qu'un objet éteint fait tomber
+  oublieRetrait(cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
-  if (d.cible){
+  if (cible){
     /* Un repère n'est pas un objet du plan : il n'a pas de fiche d'exposant,
        mais il a un nom, et c'est ce qu'on vient lui demander. */
-    if (!d.cible.dataset.id){
-      if (visePoi(d.cible.dataset.poi)) return;
-      ouvrePoi(d.cible.dataset.poi, d.cible);
+    if (!cible.dataset.id){
+      if (visePoi(cible.dataset.poi)) return;
+      ouvrePoi(cible.dataset.poi, cible);
       return;
     }
-    if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
+    if (viseItineraire(cible.dataset.id)) return;
+    select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -6452,9 +6624,10 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée et la mise en avant
-    // doivent y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée, la mise en avant et le
+    // retrait doivent y répondre pareil
     oublieChoixPoi(g);
+    oublieRetrait(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
@@ -6521,6 +6694,7 @@ $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
   majVideQ();
+  reposeRetrait();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
@@ -6540,6 +6714,18 @@ $("q").addEventListener("keydown", e => {
   e.stopPropagation();
   videRecherche();
 });
+
+/* Revenir au menu de recherche repose le retrait du plan : le champ, le bouton
+   des critères, les puces de ce qui est retenu, la liste, la poignée du tiroir.
+   Le geste d'avant l'avait levé pour regarder le hall ; celui-ci rouvre la
+   question, et le plan redit ce qu'elle retient.
+
+   Un écouteur sur le panneau entier plutôt qu'un par commande : les puces et
+   les lignes de la liste naissent et meurent à chaque frappe, et aucune n'aurait
+   gardé le sien. Le clavier compte autant que le doigt — on revient au champ
+   par tabulation. */
+["pointerdown", "focusin"].forEach(t =>
+  $("side").addEventListener(t, reprendRecherche));
 
 /* ============================================================
    Le tiroir de la liste — écrans étroits
@@ -7562,7 +7748,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Six onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Sept onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -7602,12 +7788,17 @@ function ouvreReglages(ouvrir){
       volets.push(v);
       return v;
     };
-      voletPlan(volet("Plan"));
-    /* « Recherche » et « Fiche » suivent « Plan » : les trois parlent de ce que
-       le visiteur obtient, quand « Apparence » ne parle que de l'allure. Le
-       rangement de la fiche vient en dernier des trois — on ne range les champs
-       qu'une fois qu'on sait lesquels paraissent. */
+    voletPlan(volet("Plan"));
+    /* « Recherche » suit « Plan » : les deux parlent de ce que le visiteur
+       obtient, quand « Apparence » ne parle que de l'allure. */
     voletRecherche(volet("Recherche"));
+    /* La suggestion suit la recherche pour la même raison : elle parle de ce
+       que le visiteur obtient, et elle se lit dans la foulée des critères,
+       qu'elle emprunte. */
+    voletSuggestion(volet(NOM_VOLET_SUGGESTION));
+    /* « Fiche » ferme la série de ce que le visiteur obtient : on ne range les
+       champs qu'une fois qu'on sait lesquels paraissent, et son aperçu emprunte
+       l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
@@ -9878,10 +10069,14 @@ function ajouteForme(f){
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
-  /* Une porte de hall n'est ni une entrée ni une sortie : c'est les deux,
-     et le visiteur qui la cherche cherche par où passer. Le battant de
-     Material reçoit donc une double flèche à la place de la sienne. */
+  /* Une porte de hall est le plus souvent les deux à la fois — on y entre le
+     matin, on en ressort le soir — et le visiteur qui la cherche cherche par
+     où passer : le battant de Material reçoit donc une double flèche à la
+     place de la sienne. Les salons qui séparent les deux flux gardent les
+     deux battants d'origine, une flèche chacun. */
   entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
+  entree_seule: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
+  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
   accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
   info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
   restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
@@ -9967,25 +10162,32 @@ const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || n
  * Un repère posé avant cette séparation n'a que son libellé : on continue de
  * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
  * s'écrit dès qu'on y touche.
+ *
+ * La liste se lit dans l'ordre alphabétique : dix-sept lignes se parcourent à
+ * l'œil, et c'est le seul ordre où l'on sait d'avance où regarder. Le tri est
+ * fait ici plutôt que laissé à la main, pour qu'un type de plus se range de
+ * lui-même. « Sans pictogramme » reste en tête, hors du tri : ce n'est pas un
+ * type mais l'absence de choix, et c'est là que `nomTypeRepere` se replie.
  */
-const TYPES_REPERE = [
-  { v: "",             nom: "Sans pictogramme" },
-  { v: "entree",       nom: "Entrée/Sortie" },
-  { v: "wc",           nom: "WC" },
-  { v: "accueil",      nom: "Accueil" },
-  { v: "info",         nom: "Information" },
-  { v: "restauration", nom: "Restauration" },
-  { v: "cafe",         nom: "Café" },
-  { v: "vestiaire",    nom: "Vestiaire" },
-  { v: "ascenseur",    nom: "Ascenseur" },
-  { v: "escalier",     nom: "Escalier" },
-  { v: "escalator",    nom: "Escalator" },
-  { v: "secours",      nom: "Secours" },
+const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "pmr",          nom: "Accessibilité" },
-  { v: "parking",      nom: "Parking" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "cafe",         nom: "Café" },
   { v: "distributeur", nom: "Distributeur" },
+  { v: "entree_seule", nom: "Entrée" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "info",         nom: "Information" },
+  { v: "parking",      nom: "Parking" },
+  { v: "restauration", nom: "Restauration" },
   { v: "reunion",      nom: "Salle de réunion" },
-];
+  { v: "secours",      nom: "Secours" },
+  { v: "sortie",       nom: "Sortie" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "wc",           nom: "WC" },
+].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
 const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
 
 /**
@@ -10014,19 +10216,34 @@ const TYPES_ZONE = [
 /** Le type d'une zone, s'il lui en a été donné un. */
 const typeZone = (z) => TYPES_ZONE.find(t => t.v && z && t.v === z.type) || null;
 
-/* « Entrée » et « Sortie » ont longtemps fait deux pictogrammes ; ils n'en font
-   plus qu'un, une porte de hall étant les deux à la fois. */
-const PICTO_ALIAS = { sortie: "entree" };
-
 /**
  * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
  * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
  * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
  */
 function pictoForme(f){
-  const p = f.picto === undefined ? pictoDe(f.txt) : f.picto;
-  return PICTO_ALIAS[p] || p;
+  return f.picto === undefined ? pictoDe(f.txt) : f.picto;
 }
+
+/**
+ * Les trois portes, et ce qu'on en fait.
+ *
+ * Une porte de hall sert le plus souvent dans les deux sens, et c'est
+ * « Entrée/Sortie » qui la dit. Certains salons séparent pourtant les flux —
+ * on entre par le parvis, on ressort côté parking — et le trajet qui l'ignore
+ * fait sortir le visiteur par où personne ne sort. D'où les deux types à sens
+ * unique, et ces trois lectures : ce qui est une porte, ce par quoi on entre,
+ * ce par quoi on sort.
+ *
+ * Un libellé, lui, ne dit jamais le sens : « Sortie » sur un repère d'avant
+ * les types reste une porte des deux côtés, faute de savoir si l'on y entre.
+ * Seul le type choisi dans la liste tranche — y compris celui d'un repère
+ * désigné « Sortie » avant la fusion des deux pictogrammes, qui retrouve ici
+ * ce que l'exploitant en avait dit.
+ */
+const estPorte     = (p) => p === "entree" || p === "entree_seule" || p === "sortie";
+const ouvreEntrant = (p) => p === "entree" || p === "entree_seule";
+const ouvreSortant = (p) => p === "entree" || p === "sortie";
 
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
@@ -10345,8 +10562,15 @@ function vaAuRepere(id, p){
  * Cartouche des points d'intérêt.
  *
  * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
- * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
- * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ * entrées — et se cherchent à l'œil. Le cartouche les récapitule ; en choisir
+ * un met en avant tous ceux qui lui ressemblent, où qu'ils soient.
+ *
+ * Une pastille tient au couple libellé + type, et non au seul libellé. Un
+ * hall nomme volontiers « Entrée » les deux portes qu'il a, puis dit de l'une
+ * qu'elle est une sortie : sous le seul libellé, les deux ne faisaient qu'une
+ * pastille — le visiteur qui demandait l'entrée se voyait montrer la porte par
+ * où l'on ne rentre pas. Deux pastilles sous le même libellé ajoutent alors ce
+ * qui les sépare, sauf à celle que son libellé dit déjà.
  *
  * Les zones organisateur auxquelles l'exploitant a donné un type y entrent de
  * la même façon, et sous la même clé : ce qui s'appelle « Restauration » d'un
@@ -10356,24 +10580,25 @@ function vaAuRepere(id, p){
  */
 let poiChoisi = null;
 
+/* Un libellé qui ne porte qu'un seul type : ce que rejoint alors ce qu'on a
+   laissé sans pictogramme, pour que la zone « Restauration » et le repère qui
+   la nomme ne fassent pas deux pastilles, dont une muette. Rempli par
+   « cartouchePoi », relu par la clé et par la mise en avant. */
+let PICTO_SEUL = new Map();
+
+/** Ce qui fait une pastille : ce que la chose s'appelle, et ce qu'elle est. */
+const clePoi = (nom, picto) => nom + "\u0000" + (picto || PICTO_SEUL.get(nom) || "");
+
 function cartouchePoi(){
   const z = $("poi");
   if (!z) return;
-  const parNom = new Map();
-  const entree = (nom, picto) => {
-    if (!parNom.has(nom)) parNom.set(nom, { n: 0, picto: picto || null });
-    const e = parNom.get(nom);
-    // le premier qui en porte un le donne : un repère sans pictogramme et une
-    // zone typée sous le même nom ne doivent pas faire une pastille muette
-    if (!e.picto && picto) e.picto = picto;
-    return e;
-  };
+  const tout = [];
 
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      entree(f.txt.trim(), pictoForme(f)).n++;
+      tout.push({ nom: f.txt.trim(), picto: pictoForme(f) || "" });
     }
   }
   /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
@@ -10382,25 +10607,52 @@ function cartouchePoi(){
   if (conf("data:zones").visible !== false){
     for (const zo of P().zones){
       const t = typeZone(zo);
-      if (t && !zo.masquee) entree(t.nom, t.picto).n++;
+      if (t && !zo.masquee) tout.push({ nom: t.nom, picto: t.picto || "" });
     }
   }
 
-  z.hidden = parNom.size === 0;
+  const types = new Map();
+  tout.forEach(o => {
+    if (!o.picto) return;
+    if (!types.has(o.nom)) types.set(o.nom, new Set());
+    types.get(o.nom).add(o.picto);
+  });
+  PICTO_SEUL = new Map();
+  types.forEach((t, nom) => { if (t.size === 1) PICTO_SEUL.set(nom, [...t][0]); });
+
+  const parCle = new Map();
+  tout.forEach(o => {
+    const cle = clePoi(o.nom, o.picto);
+    const picto = o.picto || PICTO_SEUL.get(o.nom) || null;
+    if (!parCle.has(cle)) parCle.set(cle, { nom: o.nom, picto: picto, n: 0 });
+    parCle.get(cle).n++;
+  });
+
+  /* Ce qu'une pastille annonce : son libellé, et ce qu'elle est quand une
+     voisine porte le même libellé sans être la même chose. */
+  const homonymes = new Map();
+  parCle.forEach(o => homonymes.set(o.nom, (homonymes.get(o.nom) || 0) + 1));
+  const libellePoi = (o) => {
+    const type = o.picto ? nomTypeRepere(o.picto) : "";
+    return homonymes.get(o.nom) > 1 && type && type !== o.nom
+      ? o.nom + " · " + type : o.nom;
+  };
+
+  z.hidden = parCle.size === 0;
   /* Le pavillon d'à côté n'a pas les mêmes points d'intérêt : ce qui n'y est
      plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
      sans que rien n'y soit mis en avant. */
-  if (poiChoisi && !parNom.has(poiChoisi)) poiChoisi = null;
+  if (poiChoisi && !parCle.has(poiChoisi)) poiChoisi = null;
   if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
-  [...parNom.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0], "fr"))
-    .forEach(([nom, o]) => {
+  [...parCle.entries()]
+    .sort((a, b) => libellePoi(a[1]).localeCompare(libellePoi(b[1]), "fr"))
+    .forEach(([cle, o]) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "poiBtn";
-      b.setAttribute("aria-pressed", nom === poiChoisi);
+      b.setAttribute("aria-pressed", cle === poiChoisi);
       const g = PICTOS[o.picto];
       // largeur et hauteur en attributs : un <svg> sans dimension explicite
       // s'étale à la place disponible, et le cartouche y perdait sa mise en page
@@ -10408,10 +10660,10 @@ function cartouchePoi(){
         ? '<svg class="poiPicto" width="17" height="17" viewBox="' + g.vb +
           '" aria-hidden="true">' + g.d + '</svg>'
         : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
-      b.querySelector("span").textContent = nom;
+      b.querySelector("span").textContent = libellePoi(o);
       b.onclick = () => {
-        const choisit = poiChoisi !== nom;
-        poiChoisi = choisit ? nom : null;
+        const choisit = poiChoisi !== cle;
+        poiChoisi = choisit ? cle : null;
         /* Les repères d'un même type sont dispersés dans le hall. Les mettre
            en avant sans reculer ne montrerait que ceux déjà à l'écran, et
            l'exploitant conclurait qu'il n'y en a pas d'autres. On revient donc
@@ -10519,10 +10771,15 @@ function mesureCartouche(){
   document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
-/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois. */
-const phareRepere = (f) => Boolean(poiChoisi && f && String(f.txt || "").trim() === poiChoisi);
-const phareZone = (o) => Boolean(poiChoisi && o && o.kind === "zone" &&
-  (typeZone(o) || {}).nom === poiChoisi);
+/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois,
+ *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
+ *  sortie avec l'entrée qui porte son nom. */
+const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
+  clePoi(String(f.txt).trim(), pictoForme(f) || "") === poiChoisi);
+const phareZone = (o) => {
+  const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
+  return Boolean(t && clePoi(t.nom, t.picto || "") === poiChoisi);
+};
 
 /** Met en avant les repères et les zones du point d'intérêt choisi. */
 function eclairePoi(){
@@ -13387,6 +13644,10 @@ function remplitParcours(){
       ouvre: () => select(o.id, true, "parcours"),
     }));
   }
+
+  /* Et, au bas de ce qu'on a retenu, ce qui pourrait le compléter : la
+     proposition vient après la liste parce qu'elle en découle. */
+  poseSuggestion(hote);
 }
 
 function ouvreParcours(){
@@ -13425,6 +13686,9 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
       dessineItineraire();
     }
     JOURNEE = null; vueJournee = false;
+    /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
+       repart de zéro, les refus avec elle. */
+    SUGG_ECARTES.clear();
     enregistreParcours();
     appliqueVueParcours();
   });
@@ -14859,15 +15123,18 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
- *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
-function portesDe(p){
-  return reperesDe(p).filter(f => pictoForme(f) === "entree");
+/** Les portes d'un pavillon, dans le sens où on les franchit : « entrant »
+ *  ne retient que ce par quoi on entre, « sortant » que ce par quoi on sort,
+ *  et sans précision toutes celles qui en sont une. */
+function portesDe(p, sens){
+  const ouvre = sens === "entrant" ? ouvreEntrant
+              : sens === "sortant" ? ouvreSortant : estPorte;
+  return reperesDe(p).filter(f => ouvre(pictoForme(f)));
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
 function versPorte(p, pmr, xy, entrant, chez){
-  const portes = portesDe(p);
+  const portes = portesDe(p, entrant ? "entrant" : "sortant");
   if (!portes.length) return null;
   /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
      peut être derrière une rangée de stands. On ne calcule cependant pas
@@ -14912,12 +15179,18 @@ const TYPES_LIAISON = {
      marcher en plus pour éviter ce passage. Une porte ne se paie presque
      rien ; un ascenseur s'attend, et deux étages à pied lui restent parfois
      préférables. La durée, elle, s'ajoute à celle de la marche. */
-  entree:    { nom: "porte",     art: "la porte",     accessible: true,  cout: 15, min: 1 },
-  escalier:  { nom: "escalier",  art: "l'escalier",   accessible: false, cout: 30, min: 1 },
-  escalator: { nom: "escalator", art: "l'escalator",  accessible: false, cout: 25, min: 1 },
+  entree:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  /* Une porte à sens unique se relie comme les autres : le sens qu'elle porte
+     vaut pour le visiteur qui cherche le hall, pas pour la liaison que
+     l'exploitant a déclarée d'un plan à l'autre — s'il l'a déclarée, c'est
+     qu'on y passe. */
+  entree_seule: { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  sortie:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  escalier:     { nom: "escalier", art: "l'escalier", accessible: false, cout: 30, min: 1 },
+  escalator:    { nom: "escalator", art: "l'escalator", accessible: false, cout: 25, min: 1 },
   /* Le seul passage vertical qu'un fauteuil emprunte : sans lui, un étage
      relié par ses seuls escaliers est simplement hors d'atteinte. */
-  ascenseur: { nom: "ascenseur", art: "l'ascenseur",  accessible: true,  cout: 45, min: 2 },
+  ascenseur:    { nom: "ascenseur", art: "l'ascenseur", accessible: true, cout: 45, min: 2 },
 };
 
 /** Ce qu'un repère vaut comme passage, ou rien s'il n'en est pas un. */
@@ -15049,7 +15322,7 @@ function passagesDe(p, pmr){
 /** Par où l'on quitte un plan : ses portes, et les passages déclarés — un
  *  étage se quitte par son escalier, et non par la porte du hall d'en bas. */
 function sortiesDe(p, pmr){
-  const l = portesDe(p);
+  const l = portesDe(p, "sortant");
   for (const f of passagesDe(p, pmr)) if (l.indexOf(f) < 0) l.push(f);
   return l;
 }
@@ -15609,7 +15882,7 @@ function phraseLiaison(e){
   /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
      trajet dont les mètres ne rendent pas compte. */
   const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
-  if (e.type === "entree")
+  if (estPorte(e.type))
     return { t: "Changement de pavillon",
              s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
                 e.vers + " par « " + e.nomVers + " »." + duree };
@@ -16020,13 +16293,14 @@ function pointConf(c){
 }
 
 /**
- * Les départs qu'on propose : les portes, et rien d'autre.
+ * Les départs qu'on propose : les portes par où l'on entre, et rien d'autre.
  *
  * La liste offrait tous les repères du salon, entrées en tête. On y lisait
  * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
  * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
  * sur un téléphone. La question posée est « par où vous entrez » : seules les
- * portes y répondent.
+ * portes y répondent, et parmi elles, celles qui ne sont pas des sorties
+ * seules.
  *
  * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
  * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
@@ -16034,7 +16308,7 @@ function pointConf(c){
  */
 function departsProposes(){
   const l = [];
-  DATA.plans.forEach(p => portesDe(p).forEach(f => l.push(pointRepere(f, p))));
+  DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
   const vus = new Map();
   l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
   const rang = new Map();
@@ -16688,6 +16962,9 @@ function ouvreOrganisation(){
   const departs = departsProposes();
 
   let champHeure = null, champJour = null, champDepart = null;
+  /* Une porte unique ne se demande pas, elle se prend : la question n'aurait
+     qu'une réponse, et la poser ferait croire qu'il y en a d'autres. */
+  const departImpose = departs.length === 1 ? departs[0] : null;
 
   ouvreModale("Organiser ma journée", corps => {
     const p = document.createElement("p");
@@ -16727,7 +17004,7 @@ function ouvreOrganisation(){
       bloc("Jour de visite", champJour);
     }
 
-    if (departs.length){
+    if (departs.length > 1){
       champDepart = document.createElement("select");
       const vide = document.createElement("option");
       vide.value = "";
@@ -16743,6 +17020,15 @@ function ouvreOrganisation(){
         champDepart.appendChild(o);
       });
       bloc("Par où vous entrez", champDepart);
+    } else if (departImpose){
+      /* On dit quand même d'où l'on part : le visiteur retrouve le premier
+         pas de sa journée là où il l'attend, sans avoir à le choisir. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "La journée commencera à « " + departImpose.nom +
+        (DATA.plans.length > 1 ? " » (" + departImpose.detail + ")" : " »") +
+        ", la seule entrée repérée.";
+      form.appendChild(n);
     } else {
       /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
          absence se remarquerait plus que sa réponse. On dit d'où l'on partira
@@ -16766,10 +17052,14 @@ function ouvreOrganisation(){
       try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
       const cle = champJour ? champJour.value : (jours.length ? jours[0].cle : "");
       const j = jours.find(x => x.cle === cle);
-      const id = champDepart ? champDepart.value : "";
+      /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
+         choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
+      const choix = champDepart ? champDepart.value : null;
+      const depart = choix === null ? departImpose
+                   : choix === "" ? null : departs[+choix];
       lanceJournee({
         arrivee: min, jour: cle, jourNom: j ? j.nom : "",
-        depart: id === "" ? null : departs[+id],
+        depart: depart,
       });
     } },
   ]);
@@ -17572,6 +17862,511 @@ async function lanceRemiseAZero(){
     }
     if (b){ b.disabled = false; b.textContent = "Réinitialiser"; }
   }
+}
+/* ============================================================
+   15. La suggestion — un exposant de plus, pour compléter la visite
+
+   Un visiteur qui retient quatre enseignes du même secteur ne compose pas une
+   liste au hasard : il cherche quelque chose, et sa liste le dit avant lui. Le
+   tiroir du parcours lui propose alors un exposant de plus, pris dans ce qui
+   revient déjà — le plus consulté du salon sur ce critère, ou celui que
+   l'organisateur a désigné.
+
+   Rien ne quitte l'appareil pour autant : le rapprochement se fait sur la
+   liste qu'il a sous les yeux, avec des tables préparées en administration et
+   publiées comme le reste des réglages. Le plan ne demande rien au serveur, et
+   ne lui apprend pas ce que le visiteur retient.
+
+   D'où la forme de ces tables. Les compteurs d'usage ne sont lisibles que d'un
+   compte qui a accès au salon — `audience_cibles` est en « security invoker »,
+   et le plan public n'y entrera jamais. Le classement est donc relevé en
+   administration, réduit à ce que la suggestion en fera — les trois exposants
+   les plus consultés de chaque valeur — et c'est ce relevé qui part aux
+   visiteurs. Publier le classement entier aurait dit à tout le monde quel
+   stand personne n'ouvre ; trois noms par valeur ne disent que ce qu'ils
+   proposent.
+   ============================================================ */
+const NOM_VOLET_SUGGESTION = "Suggestion";
+
+/* Trois exposants du même critère : deux sont une coïncidence, quatre une
+   habitude. C'est le seuil qu'on propose, pas celui qu'on impose. */
+const SUGG_SEUIL_DEFAUT = 3, SUGG_SEUIL_MIN = 2, SUGG_SEUIL_MAX = 12;
+
+/* Combien de noms on retient par valeur. Un seul suffirait si le visiteur ne
+   l'avait jamais dans sa liste — mais c'est précisément le plus consulté du
+   secteur, donc souvent le premier qu'il a retenu. Trois laissent de quoi
+   proposer quand même, sans publier un classement. */
+const SUGG_CHAMPIONS = 3;
+
+/* Ce que le visiteur a écarté d'un revers de main, le temps de cette page.
+   En mémoire et non dans son stockage : un refus porte sur l'instant — la
+   liste qu'il avait alors, l'exposant qu'on lui mettait sous les yeux — et le
+   retenir d'une visite à l'autre condamnerait un exposant sans raison. */
+const SUGG_ECARTES = new Set();
+
+/* ------------------------------------------------------------
+   Le réglage
+   ------------------------------------------------------------ */
+const reglageSugg = () => conf("_suggestion");
+
+function seuilSugg(){
+  const v = Math.round(+reglageSugg().seuil);
+  return v >= SUGG_SEUIL_MIN && v <= SUGG_SEUIL_MAX ? v : SUGG_SEUIL_DEFAUT;
+}
+
+/** Le critère sur lequel on rapproche, s'il désigne encore quelque chose. Un
+ *  champ décoché dans la console, ou des secteurs éteints depuis, ne le font
+ *  pas : la suggestion se tait plutôt que de rapprocher sur du vide. */
+function critereSugg(){
+  const cle = reglageSugg().critere;
+  return cle && clesCriteres().indexOf(cle) >= 0 ? cle : null;
+}
+
+/* ------------------------------------------------------------
+   Ce que le salon porte, vu du critère
+
+   Un relevé par valeur, en un seul passage. Interroger chaque valeur à son
+   tour rebalayait les neuf cents stands autant de fois qu'un salon range de
+   villes — et c'est le rangement par ville qui en compte le plus.
+   ------------------------------------------------------------ */
+function indexSugg(cle){
+  const par = new Map();
+  TOUS.forEach(o => {
+    // sans nom, un emplacement n'a personne à proposer
+    if (o.kind !== "stand" || !o.nom) return;
+    /* Dédoublonné par fiche : une liste à choix multiple peut porter deux fois
+       la même valeur, et l'exposant compterait deux fois dans la sienne. */
+    new Set(valeursCritere(o, cle)).forEach(v => {
+      if (!par.has(v)) par.set(v, []);
+      par.get(v).push(o);
+    });
+  });
+  return par;
+}
+
+/**
+ * Les valeurs sur lesquelles une suggestion peut tomber, de la plus portée à
+ * la moins portée.
+ *
+ * Deux exposants ne suffisent pas, même au seuil le plus bas : il faudrait que
+ * le visiteur les retienne tous les deux pour l'atteindre, et il ne resterait
+ * alors personne à proposer. On s'arrête donc à trois — ce qui écarte du même
+ * coup la longue traîne des valeurs qu'un seul exposant porte, et garde la
+ * liste des réglages lisible sur un salon rangé par ville.
+ */
+function valeursSugg(cle){
+  return [...indexSugg(cle)]
+    .filter(([, l]) => l.length >= 3)
+    .sort((a, b) => (b[1].length - a[1].length) || COLLATION.compare(a[0], b[0]))
+    .map(([v, l]) => ({ v, expos: l }));
+}
+
+/* ------------------------------------------------------------
+   Côté visiteur
+   ------------------------------------------------------------ */
+/**
+ * Ce qu'on propose, et pourquoi — ou rien.
+ *
+ * La valeur qui revient le plus l'emporte, et l'on descend jusqu'à en trouver
+ * une qui ait encore quelqu'un à proposer : un visiteur qui a déjà retenu les
+ * trois enseignes que le relevé connaît pour son secteur n'en est pas quitte
+ * pour autant — le deuxième secteur de sa liste prend le relais, s'il atteint
+ * lui aussi le seuil.
+ */
+function suggestionCourante(){
+  const r = reglageSugg();
+  if (r.active !== true) return null;
+  // le parcours retiré, il n'y a plus de tiroir où poser la proposition
+  if (conf("_parcours").visible === false) return null;
+  const cle = critereSugg();
+  if (!cle) return null;
+
+  const seuil = seuilSugg();
+  const retenus = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  if (retenus.length < seuil) return null;
+
+  const compte = new Map();
+  retenus.forEach(o => new Set(valeursCritere(o, cle))
+    .forEach(v => compte.set(v, (compte.get(v) || 0) + 1)));
+
+  const fortes = [...compte].filter(([, n]) => n >= seuil)
+    .sort((a, b) => (b[1] - a[1]) || COLLATION.compare(a[0], b[0]));
+  for (const [v, n] of fortes){
+    const o = exposantPropose(cle, v);
+    if (o) return { cle: cle, valeur: v, n: n, o: o };
+  }
+  return null;
+}
+
+/**
+ * L'exposant que cette valeur appelle, s'il en reste un.
+ *
+ * Les deux provenances rendent la même chose — des identifiants, dans l'ordre
+ * où on les proposera — et se lisent donc pareil. Ce qui les sépare est en
+ * amont : l'une est relevée dans les compteurs, l'autre écrite à la main.
+ */
+function exposantPropose(cle, v){
+  const r = reglageSugg();
+  const pris = new Set(PARCOURS.stands.map(String));
+  const ids = r.source === "fixe"
+    ? [(r.fixes || {})[v]]
+    : ((r.auto || {})[v] || []);
+  for (const id of ids){
+    const o = id ? parId.get(String(id)) : null;
+    /* Déjà dans la liste, il ne la compléterait pas ; démonté depuis le
+       relevé, il n'est plus nulle part ; écarté, on vient de le dire. */
+    if (o && o.kind === "stand" && o.nom &&
+        !pris.has(String(o.id)) && !SUGG_ECARTES.has(String(o.id))) return o;
+  }
+  return null;
+}
+
+/** « Agroalimentaire », ou l'intitulé du champ quand la valeur ne dit rien
+ *  d'elle-même : un oui/non ne se coche que sous le nom de sa question. */
+const nomValeurSugg = (cle, v) => OUI_NON[cle] ? libelleCritere(cle) : v;
+
+/**
+ * La carte, au bas du tiroir du parcours.
+ *
+ * Elle dit d'abord pourquoi elle est là. Une proposition qui tombe sans motif
+ * se lit comme de la réclame ; la même, précédée de ce qu'on vient de retenir
+ * quatre fois, se lit comme une suite.
+ */
+function poseSuggestion(hote){
+  const s = suggestionCourante();
+  if (!s) return;
+
+  const d = document.createElement("div");
+  d.className = "pSugg";
+  d.innerHTML = '<div class="sTete"><span class="eyebrow">Pour compléter votre visite</span>' +
+    '<button type="button" class="sEcarte" title="Ne plus me proposer celui-ci" ' +
+    'aria-label="Ne plus me proposer celui-ci">&times;</button></div>' +
+    '<p class="sMotif"></p>' +
+    '<div class="pRang"><button type="button" class="pOuvre">' +
+    '<span class="pt"></span><span class="ps"></span></button>' +
+    signetParcours("stand", s.o.id) + "</div>";
+
+  d.querySelector(".sMotif").textContent =
+    "« " + nomValeurSugg(s.cle, s.valeur) + " » revient " + s.n +
+    " fois dans votre liste" +
+    (OUI_NON[s.cle] ? "" : " (" + libelleCritere(s.cle).toLowerCase() + ")") + ".";
+
+  const o = s.o;
+  d.querySelector(".pt").textContent = o.nom;
+  d.querySelector(".ps").textContent =
+    DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
+  /* Aller le voir, c'est vouloir le voir sur le plan : la fiche s'ouvre et le
+     tiroir se retire, comme pour un rang du parcours. */
+  d.querySelector(".pOuvre").onclick = () => select(o.id, true, "parcours");
+  d.querySelector(".sEcarte").onclick = () => {
+    SUGG_ECARTES.add(String(o.id));
+    remplitParcours();
+  };
+  hote.appendChild(d);
+  // le signet vit comme les autres : il ajoute, il compte, et il se retourne
+  brancheParcours(d);
+}
+
+/* ------------------------------------------------------------
+   Côté administration
+   ------------------------------------------------------------ */
+/**
+ * Le classement d'activité, relevé dans les compteurs et réduit par valeur.
+ *
+ * `audience_cibles` rend les cibles consultées, de la plus ouverte à la moins
+ * ouverte, et seulement celles que quelqu'un a ouvertes : un salon qui n'a pas
+ * encore ouvert rend une liste vide, et la suggestion se tait plutôt que de
+ * proposer au hasard un exposant qu'elle annonce comme le plus consulté.
+ */
+async function relevePalmares(cle){
+  const acces = accesBase();
+  if (!acces) throw new Error("session absente, reconnectez-vous");
+  const evt = await evenementCourant(acces);
+  const r = await base(acces, "rpc/audience_cibles", {
+    method: "POST",
+    body: JSON.stringify({ p_evenement: evt, p_jours: null, p_genre: "fiche_stand" }),
+  });
+  const rang = new Map(((r && r.cibles) || []).map((c, i) => [String(c.id), i]));
+  const auto = {};
+  valeursSugg(cle).forEach(({ v, expos }) => {
+    const l = expos.filter(o => rang.has(String(o.id)))
+      .sort((a, b) => rang.get(String(a.id)) - rang.get(String(b.id)))
+      .slice(0, SUGG_CHAMPIONS).map(o => String(o.id));
+    if (l.length) auto[v] = l;
+  });
+  return auto;
+}
+
+/** « G55 — SMC2 », pour une liste de choix. */
+const etiquetteSugg = (o) => [o.code, o.nom].filter(Boolean).join(" — ") || o.id;
+
+/**
+ * Le volet « Suggestion » des réglages.
+ *
+ * Le corps se redessine à chaque choix plutôt que de tout montrer d'avance :
+ * le classement et la liste des exposants choisis à la main ne se lisent pas
+ * ensemble — ils répondent à la même question, et la seconde réponse qu'on ne
+ * suit pas se lit comme un réglage oublié.
+ */
+function voletSuggestion(hote){
+  const p = document.createElement("p");
+  p.textContent = "Un exposant de plus, proposé au bas du parcours de visite " +
+    "quand plusieurs de ceux qu'un visiteur a retenus se ressemblent. Le " +
+    "rapprochement se fait sur son appareil, à partir de tables préparées " +
+    "ici : rien de ce qu'il retient ne remonte jamais.";
+  hote.appendChild(p);
+
+  if (conf("_parcours").visible === false){
+    const a = document.createElement("p");
+    a.className = "alerte";
+    a.textContent = "Le parcours de visite est retiré de ce plan, dans " +
+      "l'onglet « Plan » : sans lui, il n'y a ni liste à compléter ni tiroir " +
+      "où poser la proposition.";
+    hote.appendChild(a);
+  }
+
+  const cles = clesCriteres();
+  if (!cles.length){
+    const a = document.createElement("p");
+    a.className = "alerte";
+    a.textContent = "Aucun critère n'est réglé sur ce salon : le " +
+      "rapprochement n'a rien sur quoi se faire. Les champs qui font des " +
+      "critères se désignent dans la console, sur la fiche du salon ; le " +
+      "secteur en est un dès que « Montrer les secteurs » est coché.";
+    hote.appendChild(a);
+    return;
+  }
+
+  const r = reglageSugg();
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Proposer un exposant pour compléter le parcours";
+  const marche = l.querySelector("input");
+  marche.checked = r.active === true;
+  bloc.appendChild(l);
+  hote.appendChild(bloc);
+
+  const corps = document.createElement("div");
+  corps.className = "voletSugg";
+  hote.appendChild(corps);
+
+  marche.onchange = e => {
+    r.active = e.target.checked;
+    enregistreConf();
+    glisseFenetre(dessine);
+    // le tiroir ouvert derrière la fenêtre obéit sur-le-champ
+    rafraichitParcours();
+  };
+
+  /* Ce qui se lit sous la case, et qui dépend de tout ce qui précède : le
+     critère décide des valeurs, la provenance décide de ce qu'on en montre. */
+  function dessine(){
+    corps.innerHTML = "";
+    if (r.active !== true) return;
+    /* Un salon qui vient d'allumer la suggestion n'a pas de critère retenu : le
+       premier de la liste est celui que la console range en tête, et le plus
+       large — le secteur quand il y en a un. Retenu pour de bon, et non le
+       temps d'afficher la liste : c'est déjà celui sur lequel les visiteurs
+       seront rapprochés. */
+    if (!critereSugg()){ r.critere = cles[0]; enregistreConf(); }
+
+    const crit = champZone(corps, "Critère de rapprochement",
+      document.createElement("select"),
+      "Ce que plusieurs exposants d'une même liste doivent avoir en commun " +
+      "pour qu'on en propose un de plus. Ce sont les critères de recherche du " +
+      "salon, ceux-là mêmes que le visiteur peut cocher.");
+    crit.innerHTML = cles.map(c =>
+      '<option value="' + esc(c) + '">' + esc(libelleCritere(c)) + "</option>").join("");
+    crit.value = r.critere;
+    crit.onchange = e => {
+      r.critere = e.target.value;
+      /* Les tables sont rangées par valeur, et les valeurs d'un autre champ ne
+         désignent rien ici : les garder aurait laissé un réglage invisible
+         décider de ce qu'on propose. */
+      delete r.fixes; delete r.auto; delete r.releve;
+      enregistreConf();
+      glisseFenetre(dessine);
+      rafraichitParcours();
+    };
+
+    const seuil = document.createElement("div");
+    seuil.className = "reglage-nb";
+    seuil.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + SUGG_SEUIL_MIN + '" max="' + SUGG_SEUIL_MAX + '" step="1">' +
+      '<span class="u">exposants</span></label><span class="aide"></span>';
+    seuil.querySelector(".l").textContent = "Déclencher à partir de";
+    seuil.querySelector(".aide").textContent =
+      "Combien d'exposants d'une même valeur doivent figurer dans le parcours " +
+      "avant qu'on en propose un autre. Plus bas, la proposition arrive tôt et " +
+      "au jugé ; plus haut, elle se fait attendre.";
+    const nb = seuil.querySelector("input");
+    nb.value = seuilSugg();
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+       que ce qui tient dans les bornes, et le champ se remet d'aplomb quand on
+       le quitte — comme le temps de visite, dans l'onglet « Plan ». */
+    nb.oninput = e => {
+      const v = Math.round(+e.target.value);
+      if (v >= SUGG_SEUIL_MIN && v <= SUGG_SEUIL_MAX){
+        r.seuil = v; enregistreConf(); rafraichitParcours();
+      }
+    };
+    nb.onblur = () => { nb.value = seuilSugg(); };
+    corps.appendChild(seuil);
+
+    const source = champZone(corps, "Exposant proposé",
+      document.createElement("select"),
+      "D'où vient le nom qu'on met sous les yeux du visiteur.");
+    source.innerHTML =
+      '<option value="activite">Le plus consulté du salon, dans cette valeur</option>' +
+      '<option value="fixe">Un exposant choisi, un par valeur</option>';
+    source.value = r.source === "fixe" ? "fixe" : "activite";
+    source.onchange = e => {
+      r.source = e.target.value;
+      enregistreConf();
+      glisseFenetre(dessine);
+      rafraichitParcours();
+    };
+
+    if (r.source === "fixe") choixFixes(corps); else palmaresEnPlace(corps);
+  }
+
+  /* --- la provenance « le plus consulté » --- */
+  function palmaresEnPlace(hote2){
+    const cle = r.critere;
+    const valeurs = valeursSugg(cle);
+    const bloc2 = document.createElement("div");
+    bloc2.className = "champZ";
+    bloc2.innerHTML = '<span class="tZ">Classement</span>' +
+      '<p class="aideZ">Relevé dans les compteurs d\'usage, sur toute la vie ' +
+      'du salon. Il ne part aux visiteurs que réduit à ce qu\'il en faut — les ' +
+      'trois exposants les plus consultés de chaque valeur — et jamais entier : ' +
+      'le classement d\'un salon ne regarde que son organisateur.</p>' +
+      '<p class="etatZ"></p><div class="acts"></div><div class="suggVals"></div>';
+    hote2.appendChild(bloc2);
+    const etat = bloc2.querySelector(".etatZ");
+    const liste = bloc2.querySelector(".suggVals");
+
+    const ecrit = () => {
+      const auto = r.auto || {};
+      const n = Object.keys(auto).length;
+      etat.dataset.mal = "false";
+      etat.textContent = r.releve
+        ? n + (n > 1 ? " valeurs ont" : " valeur a") + " un exposant à proposer, " +
+          "sur " + valeurs.length + " · relevé le " +
+          new Date(r.releve).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })
+        : "Aucun relevé pour l'instant : la suggestion se tait tant qu'elle " +
+          "n'a pas de classement.";
+      liste.innerHTML = "";
+      valeurs.forEach(({ v, expos }) => {
+        const ids = auto[v] || [];
+        const chef = ids.length ? parId.get(String(ids[0])) : null;
+        const rang = document.createElement("div");
+        rang.className = "rang";
+        rang.innerHTML = '<span class="nV"></span><span class="vV"></span>' +
+          '<span class="cV"></span>';
+        rang.querySelector(".nV").textContent = nomValeurSugg(cle, v);
+        rang.querySelector(".vV").textContent = chef
+          ? chef.nom : "personne n'a encore été consulté ici";
+        if (!chef) rang.querySelector(".vV").classList.add("rien");
+        rang.querySelector(".cV").textContent = expos.length + " exposants";
+        liste.appendChild(rang);
+      });
+    };
+
+    const acts = bloc2.querySelector(".acts");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn";
+    b.textContent = "Relever le classement";
+    acts.appendChild(b);
+
+    const releve = (dire) => {
+      b.disabled = true;
+      if (dire){ etat.dataset.mal = "false"; etat.textContent = "Lecture des compteurs…"; }
+      return relevePalmares(cle).then(auto => {
+        /* On n'écrit que si quelque chose a bougé : ce volet se relève à chaque
+           ouverture, et republier un relevé identique ferait repartir la
+           configuration entière pour rien. */
+        if (JSON.stringify(auto) !== JSON.stringify(r.auto || {}) || !r.releve){
+          r.auto = auto;
+          r.releve = new Date().toISOString();
+          enregistreConf();
+          rafraichitParcours();
+        }
+        b.disabled = false;
+        glisseFenetre(ecrit);
+      }).catch(e => {
+        b.disabled = false;
+        /* Un relevé qui échoue ne retire rien : le précédent reste en place et
+           continue de servir, on dit seulement qu'il n'a pas été rafraîchi. */
+        ecrit();
+        etat.dataset.mal = "true";
+        etat.textContent = "Classement non rafraîchi : " + e.message;
+      });
+    };
+
+    b.onclick = () => releve(true);
+    ecrit();
+    /* Et d'office en arrivant : un classement qu'il faut penser à rafraîchir
+       est un classement périmé le jour du salon. */
+    releve(false);
+  }
+
+  /* --- la provenance « un exposant choisi » --- */
+  function choixFixes(hote2){
+    const cle = r.critere;
+    const valeurs = valeursSugg(cle);
+    const bloc2 = document.createElement("div");
+    bloc2.className = "champZ";
+    bloc2.innerHTML = '<span class="tZ">Un exposant par valeur</span>' +
+      '<p class="aideZ">Chaque liste ne propose que les exposants qui portent ' +
+      'cette valeur : ce qu\'on met sous les yeux du visiteur doit ressembler ' +
+      'à ce qu\'il a retenu. Une valeur laissée vide ne propose rien, et le ' +
+      'plan passe à la suivante.</p><div class="suggVals"></div>';
+    hote2.appendChild(bloc2);
+    const liste = bloc2.querySelector(".suggVals");
+
+    /* Ce que le volet ne montre plus ne doit plus décider de rien : un exposant
+       désigné puis démonté, une valeur retombée sous les trois exposants qu'il
+       lui faut. L'un s'afficherait « aucun » pendant que le réglage continue de
+       le nommer, l'autre proposerait sans que rien ne le dise ici. On les
+       retire pour de bon, en une fois. */
+    let perimes = false;
+    Object.keys(r.fixes || {}).forEach(v => {
+      if (!valeurs.some(x => x.v === v)){ delete r.fixes[v]; perimes = true; }
+    });
+
+    valeurs.forEach(({ v, expos }) => {
+      const rang = document.createElement("div");
+      rang.className = "rang";
+      rang.innerHTML = '<span class="nV"></span><select></select>' +
+        '<span class="cV"></span>';
+      rang.querySelector(".nV").textContent = nomValeurSugg(cle, v);
+      rang.querySelector(".cV").textContent = expos.length + " exposants";
+      const s = rang.querySelector("select");
+      s.innerHTML = '<option value="">— aucun —</option>' +
+        expos.slice().sort((a, b) => COLLATION.compare(String(a.nom), String(b.nom)))
+          .map(o => '<option value="' + esc(o.id) + '">' +
+                    esc(etiquetteSugg(o)) + "</option>").join("");
+      const garde = String((r.fixes || {})[v] || "");
+      s.value = garde;
+      if (garde && s.value !== garde){ delete r.fixes[v]; perimes = true; }
+      s.onchange = e => {
+        const f = r.fixes || (r.fixes = {});
+        if (e.target.value) f[v] = e.target.value; else delete f[v];
+        enregistreConf();
+        rafraichitParcours();
+      };
+      liste.appendChild(rang);
+    });
+
+    if (perimes){ enregistreConf(); rafraichitParcours(); }
+  }
+
+  dessine();
 }
 /* ============================================================
    12. Démarrage
