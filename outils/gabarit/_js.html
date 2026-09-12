@@ -2931,7 +2931,10 @@ document.addEventListener("keydown", e => {
     ferme();
     if ($("panel")) $("panel").classList.remove("open");
   }
-  if (e.key === "Enter" && e.target.id !== "q" && e.target.id !== "texteADessiner") termineTrace(true);
+  /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
+     outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
+     défairait la forme à l'instant posée. */
+  if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
 });
 
 $("btnFiltres").onclick = ouvreCriteres;
