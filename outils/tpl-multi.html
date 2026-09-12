@@ -8071,6 +8071,100 @@ function voletZones(hote){
 
   // une liste dont rien n'est choisi n'a que du vide en face d'elle
   choisit(zones[0]);
+
+  champsFicheZone(hote);
+}
+
+/* Les champs d'une fiche de zone, et ce que chacun porte.
+
+   Aucun ne vient d'une source : une zone n'a pas de fiche d'exposant derrière
+   elle, tout ce qu'on lit sur elle a été écrit juste au-dessus, zone par zone
+   — sauf le programme, que la synchronisation apporte. C'est pourquoi le
+   réglage a quitté la console, où il voisinait avec les champs d'origine des
+   stands : ici, on décoche « Description » en voyant la description qu'on
+   vient d'écrire, et sur la fiche ouverte derrière la fenêtre. */
+const CHAMPS_FICHE_ZONE = [
+  { cle: "logo", libelle: "Logo",
+    aide: "L'image déposée sur la zone, dans l'en-tête de sa fiche." },
+  { cle: "description", libelle: "Description",
+    aide: "Ce qu'on trouve dans la zone, ses horaires, ses conditions " +
+      "d'accès. Elle ne paraît que sur les zones où elle est remplie." },
+  { cle: "lien", libelle: "Lien",
+    aide: "La page où en savoir plus, saisie avec la description." },
+  { cle: "conferences", libelle: "Conférences",
+    aide: "Le programme tenu dans la zone, par ordre chronologique.",
+    dispo: () => CONFERENCES.length > 0,
+    absent: "Le programme n'est pas synchronisé : sa source se règle depuis " +
+      "la console, dans « Source des données »." },
+];
+
+/**
+ * Ce que la fiche d'une zone montre, pour toutes les zones du salon.
+ *
+ * Le réglage ne se publie pas : il vit à côté de l'événement, comme le
+ * rangement de la fiche, et parvient aux visiteurs dès l'écriture passée.
+ * D'où la ligne d'état plutôt qu'un bouton — il n'y a rien à valider.
+ */
+function champsFicheZone(hote){
+  const titre = document.createElement("span");
+  titre.className = "eyebrow";
+  titre.style.display = "block";
+  titre.style.margin = "18px 0 4px";
+  titre.textContent = "Ce que la fiche montre";
+  hote.appendChild(titre);
+
+  const p = document.createElement("p");
+  p.textContent = "Les champs qu'une fiche de zone déroule, pour toutes les " +
+    "zones à la fois. Un champ décoché reste écrit : il cesse de paraître, et " +
+    "revient tel quel en le recochant.";
+  hote.appendChild(p);
+
+  const etat = document.createElement("p");
+  etat.className = "etatZ";
+  etat.textContent = "Ces cases s'enregistrent dès qu'on les coche.";
+
+  /* Les écritures s'enchaînent plutôt que de partir ensemble : chacune relit
+     la colonne avant de la réécrire, et deux qui se croisent perdraient la
+     première. */
+  let file = Promise.resolve();
+  const dit = (txt, mal) => { etat.textContent = txt; etat.dataset.mal = String(!!mal); };
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  CHAMPS_FICHE_ZONE.forEach(c => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = c.libelle;
+    const i = l.querySelector("input");
+    i.checked = montre("zone", c.cle);
+    /* Éteinte, et non décochée, quand rien ne l'alimente : la case montre ce
+       qui est réglé, et le réglage vaudra le jour où le programme sera
+       synchronisé. C'est aussi ce que la console disait de son côté, par la
+       provenance affichée en tête du cadre. */
+    if (c.dispo && !c.dispo()){ l.classList.add("eteint"); i.disabled = true; }
+    i.onchange = () => {
+      DATA.fiche = { ...(DATA.fiche || {}) };
+      DATA.fiche.zone = { ...(DATA.fiche.zone || {}), [c.cle]: i.checked };
+      /* La fiche ouverte derrière la fenêtre lit le même réglage : elle le
+         suit sans attendre la réponse du serveur, sans quoi on douterait du
+         clic. L'écriture, elle, dira le dernier mot. */
+      const o = state.sel && parId.get(state.sel);
+      if (o && o.kind === "zone") ouvre(o, null);
+      dit("Enregistrement…");
+      file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
+        t.zone = { ...DATA.fiche.zone };
+      })).then(t => { DATA.fiche = t; dit("Enregistré."); })
+        .catch(e => dit("Échec : " + e.message, true));
+    };
+    bloc.appendChild(l);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = c.dispo && !c.dispo() ? c.absent : c.aide;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
+  hote.appendChild(etat);
 }
 
 /**

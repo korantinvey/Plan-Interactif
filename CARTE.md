@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2825 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2919 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1864 · 10. Mode administration
-- l.1942 · La fiche d'une zone organisateur
-- l.2572 · Masquer une zone organisateur
-- l.2655 · Placer un libellé à la main
+- l.1958 · 10. Mode administration
+- l.2036 · La fiche d'une zone organisateur
+- l.2666 · Masquer une zone organisateur
+- l.2749 · Placer un libellé à la main
 
 Fonctions :
 
@@ -29,18 +29,18 @@ Fonctions :
 `posePoliceLibelles` 499 · `appliqueModele` 527 · `habilleModale` 568 · `texteCorps` 639
 `standApercu` 654 · `lignesApercu` 678 · `contenuApercu` 704 · `apercuFiche` 741
 `apercuListe` 818 · `apercuDuo` 840 · `glisseFenetre` 873 · `ouvreReglages` 884
-`voletZones` 978 · `ficheZoneEnPlace` 1055 · `voletPlan` 1073 · `nomDuTon` 1200
-`voletApparence` 1205 · `clesFiche` 1318 · `voletOrdre` 1334 · `enregistreConf` 1813
-`rgbHex` 1820 · `hexa` 1827 · `luminance` 1831 · `ecarte` 1845 · `joli` 1860
-`retireAdmin` 1877 · `activeAdmin` 1890 · `champZone` 1968 · `champsZone` 1993
-`champSalles` 2049 · `nomDeZone` 2101 · `reduitLogo` 2135 · `champLogo` 2176
-`editeurRiche` 2273 · `memeFicheZone` 2430 · `suitFicheZone` 2435 · `verseFicheZone` 2443
-`ficheZone` 2469 · `enregistreZone` 2494 · `basculeAffichageZone` 2583
-`marqueZonesMasquees` 2600 · `ecritColonnesEvenement` 2620 · `ecritColonneEvenement` 2651
-`cleLibelle` 2676 · `empreinteLibelle` 2692 · `placementLibelle` 2700 · `posePlacement` 2710
-`libelleAutomatique` 2727 · `modePlacementLibelles` 2736 · `majPaletteLibelle` 2753
-`choisitLibelle` 2770 · `pousseLibelle` 2777 · `libellePointerDown` 2785
-`libellePointerMove` 2800 · `libellePointerUp` 2809
+`voletZones` 978 · `champsFicheZone` 1079 · `ficheZoneEnPlace` 1149 · `voletPlan` 1167
+`nomDuTon` 1294 · `voletApparence` 1299 · `clesFiche` 1412 · `voletOrdre` 1428
+`enregistreConf` 1907 · `rgbHex` 1914 · `hexa` 1921 · `luminance` 1925 · `ecarte` 1939
+`joli` 1954 · `retireAdmin` 1971 · `activeAdmin` 1984 · `champZone` 2062 · `champsZone` 2087
+`champSalles` 2143 · `nomDeZone` 2195 · `reduitLogo` 2229 · `champLogo` 2270
+`editeurRiche` 2367 · `memeFicheZone` 2524 · `suitFicheZone` 2529 · `verseFicheZone` 2537
+`ficheZone` 2563 · `enregistreZone` 2588 · `basculeAffichageZone` 2677
+`marqueZonesMasquees` 2694 · `ecritColonnesEvenement` 2714 · `ecritColonneEvenement` 2745
+`cleLibelle` 2770 · `empreinteLibelle` 2786 · `placementLibelle` 2794 · `posePlacement` 2804
+`libelleAutomatique` 2821 · `modePlacementLibelles` 2830 · `majPaletteLibelle` 2847
+`choisitLibelle` 2864 · `pousseLibelle` 2871 · `libellePointerDown` 2879
+`libellePointerMove` 2894 · `libellePointerUp` 2903
 
 Éléments :
 
@@ -135,7 +135,7 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2804 l. → admin-plans.html
+### `_console-js.html` — 2742 l. → admin-plans.html
 
 - l.829 · Provenance des données
 - l.956 · Contenu de la fiche détail
@@ -146,20 +146,20 @@ Fonctions :
 `courant` 412 · `charge` 414 · `chargePlans` 429 · `majEvenement` 434 · `selonAdresse` 454
 `majAdresse` 462 · `majBarre` 477 · `dessineChoix` 519 · `champ` 539 · `reduitIcone` 593
 `champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 891 · `source` 895
-`champCle` 900 · `ligneSource` 935 · `paraitSurFiche` 1087 · `origineConferences` 1093
-`resumeProvenance` 1158 · `resumeFiche` 1175 · `caseFiche` 1221 · `champsPersos` 1263
-`criteres` 1269 · `ecritFiche` 1272 · `caseCritere` 1287 · `clePerso` 1306
-`ajouteChampPerso` 1314 · `renommeChampPerso` 1325 · `retireChampPerso` 1343
-`lignesPerso` 1391 · `ligneOutil` 1411 · `ligneReglage` 1427 · `ouvreProvenance` 1439
-`ouvreSources` 1462 · `cadreFiche` 1514 · `ouvreFiche` 1543 · `sousTitre` 1693
-`tableauChamps` 1708 · `encode` 1851 · `decode` 1853 · `correspondance` 1858
-`sansPrefixe` 1861 · `courte` 1862 · `intitule` 1877 · `intituleSuite` 1889
-`separeValeurs` 1903 · `aplani` 1924 · `memeStyle` 1934 · `autreFace` 1952
-`champOrigine` 1968 · `majLiens` 2235 · `majIntegration` 2262 · `majMsgSync` 2269
-`etapesPressenties` 2299 · `synchronise` 2313 · `dupliquer` 2364 · `litMonProfil` 2462
-`RETOUR_MDP` 2473 · `litComptes` 2475 · `ligneMessage` 2484 · `casesSalons` 2494
-`ouvreComptes` 2524 · `ouvreFicheCompte` 2616 · `videEcran` 2775 · `dessine` 2780
-`demarre` 2792
+`champCle` 900 · `ligneSource` 935 · `paraitSurFiche` 1065 · `origineConferences` 1071
+`resumeProvenance` 1136 · `resumeFiche` 1153 · `caseFiche` 1198 · `champsPersos` 1240
+`criteres` 1246 · `ecritFiche` 1249 · `caseCritere` 1264 · `clePerso` 1283
+`ajouteChampPerso` 1291 · `renommeChampPerso` 1302 · `retireChampPerso` 1320
+`lignesPerso` 1368 · `ligneOutil` 1388 · `ligneReglage` 1404 · `ouvreProvenance` 1416
+`ouvreSources` 1439 · `cadreFiche` 1491 · `ouvreFiche` 1521 · `sousTitre` 1631
+`tableauChamps` 1646 · `encode` 1789 · `decode` 1791 · `correspondance` 1796
+`sansPrefixe` 1799 · `courte` 1800 · `intitule` 1815 · `intituleSuite` 1827
+`separeValeurs` 1841 · `aplani` 1862 · `memeStyle` 1872 · `autreFace` 1890
+`champOrigine` 1906 · `majLiens` 2173 · `majIntegration` 2200 · `majMsgSync` 2207
+`etapesPressenties` 2237 · `synchronise` 2251 · `dupliquer` 2302 · `litMonProfil` 2400
+`RETOUR_MDP` 2411 · `litComptes` 2413 · `ligneMessage` 2422 · `casesSalons` 2432
+`ouvreComptes` 2462 · `ouvreFicheCompte` 2554 · `videEcran` 2713 · `dessine` 2718
+`demarre` 2730
 
 Éléments :
 
