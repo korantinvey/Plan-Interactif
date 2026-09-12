@@ -1700,7 +1700,7 @@ function demandeNom(titre, valeur, suite){
   }, [
     { libelle: "Annuler" },
     { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
-  ]);
+  ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 
