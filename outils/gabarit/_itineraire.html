@@ -1423,15 +1423,18 @@ let ROUTE = null;
 const CLE_PMR = "plan-itineraire-pmr";
 try { ITI.pmr = localStorage.getItem(CLE_PMR) === "1"; } catch (e) {}
 
-/** Les portes d'un pavillon : ce par quoi on y entre et on en sort — c'est le
- *  même repère, les deux pictogrammes n'en faisant plus qu'un. */
-function portesDe(p){
-  return reperesDe(p).filter(f => pictoForme(f) === "entree");
+/** Les portes d'un pavillon, dans le sens où on les franchit : « entrant »
+ *  ne retient que ce par quoi on entre, « sortant » que ce par quoi on sort,
+ *  et sans précision toutes celles qui en sont une. */
+function portesDe(p, sens){
+  const ouvre = sens === "entrant" ? ouvreEntrant
+              : sens === "sortant" ? ouvreSortant : estPorte;
+  return reperesDe(p).filter(f => ouvre(pictoForme(f)));
 }
 
 /** Le meilleur tronçon entre un point et l'une des portes du pavillon. */
 function versPorte(p, pmr, xy, entrant, chez){
-  const portes = portesDe(p);
+  const portes = portesDe(p, entrant ? "entrant" : "sortant");
   if (!portes.length) return null;
   /* Le plus court se juge à l'arrivée, pas à vol d'oiseau : une porte proche
      peut être derrière une rangée de stands. On ne calcule cependant pas
@@ -1476,12 +1479,18 @@ const TYPES_LIAISON = {
      marcher en plus pour éviter ce passage. Une porte ne se paie presque
      rien ; un ascenseur s'attend, et deux étages à pied lui restent parfois
      préférables. La durée, elle, s'ajoute à celle de la marche. */
-  entree:    { nom: "porte",     art: "la porte",     accessible: true,  cout: 15, min: 1 },
-  escalier:  { nom: "escalier",  art: "l'escalier",   accessible: false, cout: 30, min: 1 },
-  escalator: { nom: "escalator", art: "l'escalator",  accessible: false, cout: 25, min: 1 },
+  entree:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  /* Une porte à sens unique se relie comme les autres : le sens qu'elle porte
+     vaut pour le visiteur qui cherche le hall, pas pour la liaison que
+     l'exploitant a déclarée d'un plan à l'autre — s'il l'a déclarée, c'est
+     qu'on y passe. */
+  entree_seule: { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  sortie:       { nom: "porte", art: "la porte", accessible: true, cout: 15, min: 1 },
+  escalier:     { nom: "escalier", art: "l'escalier", accessible: false, cout: 30, min: 1 },
+  escalator:    { nom: "escalator", art: "l'escalator", accessible: false, cout: 25, min: 1 },
   /* Le seul passage vertical qu'un fauteuil emprunte : sans lui, un étage
      relié par ses seuls escaliers est simplement hors d'atteinte. */
-  ascenseur: { nom: "ascenseur", art: "l'ascenseur",  accessible: true,  cout: 45, min: 2 },
+  ascenseur:    { nom: "ascenseur", art: "l'ascenseur", accessible: true, cout: 45, min: 2 },
 };
 
 /** Ce qu'un repère vaut comme passage, ou rien s'il n'en est pas un. */
@@ -1613,7 +1622,7 @@ function passagesDe(p, pmr){
 /** Par où l'on quitte un plan : ses portes, et les passages déclarés — un
  *  étage se quitte par son escalier, et non par la porte du hall d'en bas. */
 function sortiesDe(p, pmr){
-  const l = portesDe(p);
+  const l = portesDe(p, "sortant");
   for (const f of passagesDe(p, pmr)) if (l.indexOf(f) < 0) l.push(f);
   return l;
 }
@@ -2173,7 +2182,7 @@ function phraseLiaison(e){
   /* Le temps du passage se dit là où il se passe : c'est le seul endroit du
      trajet dont les mètres ne rendent pas compte. */
   const duree = e.min ? " Comptez " + ecritMinutes(e.min) + "." : "";
-  if (e.type === "entree")
+  if (estPorte(e.type))
     return { t: "Changement de pavillon",
              s: "Sortez du " + e.de + " par « " + e.nom + " », puis entrez dans le " +
                 e.vers + " par « " + e.nomVers + " »." + duree };

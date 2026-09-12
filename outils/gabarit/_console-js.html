@@ -983,10 +983,11 @@ const LIGNES_FICHE = {
   stand: [
     /* --- ce que le plan porte --- */
     { groupe: "stand", cle: "hall", libelle: "Hall",
-      fixe: "hall affecté au pavillon de l'emplacement",
-      aide: "Affiché devant le numéro de stand, là où le plan en porte un. " +
-        "Décoché tant qu'on ne l'a pas voulu : certains salons y portent le " +
-        "code du dossier plutôt qu'un nom de hall — l'aperçu montre lequel." },
+      fixe: "hall de l'emplacement",
+      aide: "Affiché devant le numéro de stand, sur les seuls stands dont le " +
+        "hall est renseigné. Il se lit sur l'emplacement et non sur le " +
+        "pavillon, un même plan pouvant en couvrir deux. Décoché tant qu'on ne " +
+        "l'a pas voulu." },
     { groupe: "stand", cle: "code", libelle: "Numéro de stand",
       fixe: "allée et numéro de l'emplacement",
       aide: "Affiché à côté du pavillon." },
@@ -1572,14 +1573,14 @@ function dessineApercu(hote, e, src, cles) {
   tete.querySelector(".neuf").hidden = !parait("nouveau") ||
     !champsLus(bloc, "nouveau").length;
   tete.querySelector("h4").textContent = nom;
-  /* Le pavillon et son hall sont ceux du salon, quand la synchronisation en a
-     déjà ramené : c'est là que se voit un hall qui n'est qu'un code de
-     dossier, et c'est la moitié de ce qu'on vient vérifier en cochant. */
+  /* Le pavillon est celui du salon dès qu'une synchronisation en a ramené un.
+     Le hall, lui, reste un exemple : il tient à l'emplacement, et la console
+     ne relève pas les stands un à un — l'aperçu en montre la place, pas la
+     valeur. */
   const pav = (PLANS[e.id] || [])[0];
-  const avecHall = (PLANS[e.id] || []).find((p) => p.hall) || pav;
   tete.querySelector(".af-code").textContent = [
     (pav && pav.libelle) || "Pavillon 1",
-    parait("hall") ? ((avecHall && avecHall.hall) || EXEMPLES_FICHE.hall) : "",
+    parait("hall") ? EXEMPLES_FICHE.hall : "",
     parait("code") ? EXEMPLES_FICHE.code : "",
   ].filter(Boolean).join(" · ");
   hote.appendChild(tete);
