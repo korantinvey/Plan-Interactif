@@ -359,6 +359,31 @@ l'exploitant l'a choisi lui-même sur une zone : renommer, c'est écrire autre
 chose, et cet autre chose n'a pas de raison de tenir à la même taille au même
 endroit.
 
+## Verrouiller un calque de dessin
+
+Un plan finit par porter un calque auquel on ne touche plus : le contour du
+hall, les murs qui barrent les trajets, le repérage posé une fois pour toutes.
+Il reste pourtant à un clic du crayon, au milieu de ceux qu'on retouche encore,
+et une forme y part à la dérive sans qu'on s'en aperçoive — on croyait dessiner
+sur le calque d'à côté.
+
+Le **cadenas** de sa ligne, dans le panneau des calques, le ferme. Le calque ne
+s'ouvre alors plus au dessin : ni tracé, ni forme attrapée, ni déplacement, ni
+suppression. Le crayon et la croix de sa ligne s'éteignent avec lui, et la
+fenêtre de réorganisation montre le cadenas là où elle offrait de renommer. Une
+image glissée sur le plan, qui se posait d'office sur le dernier calque, va
+maintenant au dernier qui ne soit pas verrouillé.
+
+Ce qu'il laisse passer, il le laisse exprès : **masquer le calque et changer sa
+couleur restent libres** — c'est en les réglant qu'on travaille autour de ce
+qu'on protège — et **son rang dans la pile** aussi, qui ne touche pas au dessin
+et se reprend d'un geste.
+
+Le verrou vit dans les réglages, comme le rôle d'un calque dans les itinéraires,
+et part aux autres postes avec eux : les colonnes de `calque_dessin` sont
+fixées, celles des réglages ne le sont pas, et rien de tout cela ne demande de
+migration.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des

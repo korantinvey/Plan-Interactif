@@ -691,6 +691,19 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .mcorps input.nomcalque:focus{border-color:var(--accent);outline:none}
 .calq .sup{width:18px;height:18px;border:none;color:var(--ink-3);font-size:14px;line-height:1}
 .calq .sup:hover{color:#C2372B}
+/* Le cadenas d'un calque de dessin. Fermé, il prend la couleur d'accent et son
+   boîtier se remplit : la ligne protégée se repère en parcourant la colonne,
+   sans lire un seul intitulé. Ce qu'il éteint s'efface au lieu de disparaître —
+   un bouton manquant ferait croire à un calque d'une autre espèce. */
+.pictoVerrou{width:12px;height:12px;display:block;margin:auto}
+.pictoVerrou rect,.pictoVerrou path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.calq .verr{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .verr:hover{color:var(--ink)}
+.calq .verr[aria-pressed="true"]{color:var(--accent)}
+.calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
+.calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
@@ -2793,6 +2806,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .ordre .bouts button{width:22px;height:20px;border:1px solid var(--line);border-radius:3px;
   color:var(--ink-3);font-size:11px;line-height:1}
 .ordre .bouts button:hover{border-color:var(--accent);color:var(--accent)}
+/* Le cadenas tient la place du crayon qu'il remplace : sans cette largeur, les
+   deux flèches de rang remonteraient d'un cran sur les lignes verrouillées et
+   la colonne se déchirerait. */
+.ordre .verrou{display:grid;place-items:center;width:22px;height:20px;color:var(--accent)}
 .reorg{width:100%;margin-bottom:8px;padding:6px;border:1px solid var(--line);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .reorg:hover{border-color:var(--accent);color:var(--accent)}
@@ -9791,12 +9808,16 @@ const MAX_PX = 1400;
 /* On ne refuse plus une image faute de calque actif : on en ouvre un. */
 function calquePourImage(){
   if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
-  const l = mesCalques();
-  if (l.length){ activeCalque(l[l.length - 1].id); return trouveCalque(calqueActif); }
+  /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
+     glissée sur le plan est le seul tracé qui n'ait pas eu à choisir son
+     calque, et elle se poserait donc sur celui qu'on protège. Tous fermés, on
+     en ouvre un neuf plutôt que de refuser l'image. */
+  const libres = mesCalques().filter(c => !verrouille(c));
+  if (libres.length){ activeCalque(libres[libres.length - 1].id); return trouveCalque(calqueActif); }
   memorise();
   const c = { id: nouvelId(), nom: "Images", couleur: "#2F49D1",
               rempli: false, visible: true, formes: [] };
-  l.push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
+  mesCalques().push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
   return c;
 }
 
@@ -10127,6 +10148,13 @@ $("elemSoc").onchange = appliqueSociete;
 $("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
+  /* Un calque verrouillé ne s'ouvre pas : tous les gestes d'édition — tracer,
+     saisir une forme, la déplacer, l'effacer — passent par le calque ouvert, et
+     le verrou n'a donc rien d'autre à retenir. Le panneau éteint déjà son
+     crayon ; restent les chemins de traverse, comme l'image déposée sur le
+     plan, qui aboutissent tous ici. */
+  const vise = trouveCalque(id);
+  if (vise && verrouille(vise)) return;
   calqueActif = calqueActif === id ? null : id;
   /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
      peuvent pas être allumés ensemble : leurs glissers viseraient le même
@@ -10154,6 +10182,52 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le verrou d'un calque
+   Un plan finit par porter un calque qu'on ne retouche plus : le contour du
+   hall, les murs qui barrent les trajets, le repérage posé une fois pour
+   toutes. Il reste pourtant à un clic du crayon, et une forme y part à la
+   dérive sans qu'on s'en aperçoive — on croyait dessiner sur le calque d'à
+   côté. Le cadenas de sa ligne le ferme : il ne s'ouvre plus au dessin, et ne
+   se supprime ni ne se renomme.
+
+   Ce qu'il laisse passer, il le laisse exprès. La coche qui le masque et sa
+   couleur ne touchent pas à ce qui est dessiné, et c'est justement en les
+   réglant qu'on travaille autour d'un calque qu'on protège ; son rang dans la
+   pile non plus — il se reprend d'un geste, et se voit.
+
+   Le verrou se range dans les réglages du salon, comme le rôle d'un calque
+   dans les itinéraires : la table des calques n'a pas de colonne pour lui, et
+   il part ainsi aux autres postes avec eux, tout seul. Ouvert, sa clé disparaît
+   plutôt que de valoir « non » : un calque supprimé ne laisse alors rien
+   derrière lui.
+   ------------------------------------------------------------ */
+const cleVerrou = (id) => "_verrou:" + id;
+const verrouille = (c) => !!c && !!(CONF[cleVerrou(c.id)] || {}).verrou;
+
+function basculeVerrou(c){
+  const cle = cleVerrou(c.id);
+  if (verrouille(c)) delete CONF[cle];
+  else {
+    conf(cle).verrou = true;
+    /* On ferme parfois le calque sur lequel on vient de dessiner : les outils
+       se replient avec lui, sans quoi le crayon resterait armé sur un calque
+       qu'on vient de protéger. */
+    if (calqueActif === c.id) activeCalque(null);
+  }
+  enregistreConf();
+  construitPanneau();
+}
+
+/** Le dessin du cadenas. Fermé, l'anse retombe sur le boîtier ; ouvert, elle
+ *  se relève d'un côté — à douze pixels, c'est la seule différence qui se
+ *  voie encore, là où deux teintes du même tracé se confondraient. */
+const pictoVerrou = (ferme) =>
+  '<svg class="pictoVerrou" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="2.3" y="5.4" width="7.4" height="5.2" rx="1.1"/>' +
+  '<path d="' + (ferme ? "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0v1.6"
+                       : "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0") + '"/></svg>';
 
 /* ------------------------------------------------------------
    Le rôle du calque dans les itinéraires
@@ -11303,6 +11377,17 @@ function boutonAjout(hote){
   hote.appendChild(plus);
 }
 
+/* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
+   plutôt que deux boutons qui se remplacent. Son intitulé dit ce que le clic
+   fera, et non l'état où l'on est — c'est ce qu'on cherche en le survolant. */
+function boutonVerrou(c){
+  const ferme = verrouille(c);
+  return '<button class="verr" aria-pressed="' + ferme + '" title="' +
+    (ferme ? "Déverrouiller le calque"
+           : "Verrouiller le calque : ni dessin, ni suppression") +
+    '">' + pictoVerrou(ferme) + '</button>';
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -11347,7 +11432,11 @@ function construitPanneau(){
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
+         on lit la ligne de gauche à droite — ce qui protège avant ce qui
+         modifie. */
+      (x.t === "dessin" ? boutonVerrou(x.ref) +
+                          '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -11397,7 +11486,10 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus";
+      const vr = verrouille(x.ref);
+      nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
+                     : "Cliquez pour dessiner dessus";
+      d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -11406,6 +11498,13 @@ function construitPanneau(){
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
+      /* Verrouillé, le calque n'ouvre plus ses outils et ne se supprime plus :
+         les deux boutons s'éteignent, plutôt que de mener à un refus qu'il
+         faudrait expliquer une fois le geste fait. */
+      [cr, d.querySelector(".sup")].forEach(b => {
+        b.disabled = vr;
+        if (vr) b.title = "Calque verrouillé";
+      });
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",
@@ -12099,8 +12198,16 @@ function remplitOrdre(hote){
       '<span class="bouts">' +
       // seul un calque de dessin nous appartient : les autres portent le nom
       // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      /* Verrouillé, il ne se renomme pas non plus : le cadenas prend la place
+         du crayon, et dit d'un coup d'œil lesquels sont protégés — c'est ici,
+         la liste complète sous les yeux, qu'on s'en aperçoit le mieux. Le rang,
+         lui, reste libre : il ne touche pas au dessin, et se reprend d'un
+         geste. */
       (x.t === "dessin"
-        ? '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>' : "") +
+        ? (verrouille(x.ref)
+            ? '<span class="verrou" title="Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer">' +
+              pictoVerrou(true) + '</span>'
+            : '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>') : "") +
       '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
       '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
     const nom = li.querySelector(".nom");
