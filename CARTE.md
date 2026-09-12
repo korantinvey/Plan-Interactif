@@ -408,7 +408,7 @@ Fonctions :
 `construitPanneau` 102 · `sectionSelection` 301 · `sectionFond` 357 · `ligneCouleur` 411
 `rangSecteur` 431 · `rangSous` 443 · `defautCouleur` 465
 
-### `_pousse.html` — 332 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 411 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · Enregistrer la configuration
 
@@ -416,8 +416,8 @@ Fonctions :
 
 `accesBase` 57 · `autoDispo` 69 · `enRetard` 72 · `etatCourant` 85 · `majAttente` 96
 `ditEtat` 106 · `programmeEnvoi` 113 · `programmePublication` 127 · `rattrapeRetard` 134
-`envoie` 139 · `presse` 152 · `base` 160 · `identifiants` 180 · `reglagesSeuls` 195
-`oublieCache` 206 · `pousseConfiguration` 225
+`envoie` 139 · `presse` 152 · `resteSession` 178 · `renouvelleSession` 194 · `base` 218
+`identifiants` 259 · `reglagesSeuls` 274 · `oublieCache` 285 · `pousseConfiguration` 304
 
 ### `_rapport-head.html` — 30 l. → rapport.html
 

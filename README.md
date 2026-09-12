@@ -280,6 +280,27 @@ repousse de lui-même — là encore sans rien demander. Fermer l'onglet juste a
 un réglage ne le perd pas non plus : l'envoi part sans attendre la fin du délai
 dès que la page passe à l'arrière-plan.
 
+### Le jeton de session se renouvelle tout seul
+
+Un jeton d'accès Supabase vit une heure ; personne ne travaille une heure
+d'affilée sur un plan, on l'ouvre le matin et on y revient dans la journée.
+Passé ce délai la base refusait tout, et chacun le disait à sa façon : le bouton
+d'enregistrement tournait en rond sur son « réessayer », la carte de chaleur et
+le classement de la suggestion rendaient un `JWT expired` brut.
+
+La session était pourtant récupérable : la console range à côté du jeton qui
+expire celui qui permet d'en obtenir un neuf. L'échange se fait donc dans
+`base()`, le seul endroit par lequel passent tous les appels du plan à la
+base — avant de partir quand il reste moins d'une minute au jeton, et après
+coup si la base refuse quand même (horloge en retard, jeton révoqué ailleurs).
+Un seul échange à la fois : un jeton de renouvellement ne sert qu'une fois, et
+la publication écrit pavillon par pavillon.
+
+Le 403 n'est pas touché : c'est un droit qui manque, pas un jeton qui se périme.
+Et quand l'échange lui-même ne rattrape plus rien — absence après plusieurs
+jours, déconnexion depuis un autre poste — l'erreur se lit en toutes lettres,
+« session expirée, reconnectez-vous », plutôt qu'en JSON.
+
 ### Et le plan public, lui, suit
 
 Enregistrer ne suffit pas : le plan public n'est pas lu dans la base à chaque
