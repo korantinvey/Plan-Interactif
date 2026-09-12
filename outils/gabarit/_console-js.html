@@ -982,6 +982,11 @@ function ligneSource(dom, libelle, offerts, aide) {
 const LIGNES_FICHE = {
   stand: [
     /* --- ce que le plan porte --- */
+    { groupe: "stand", cle: "hall", libelle: "Hall",
+      fixe: "hall affecté au pavillon de l'emplacement",
+      aide: "Affiché devant le numéro de stand, là où le plan en porte un. " +
+        "Décoché tant qu'on ne l'a pas voulu : certains salons y portent le " +
+        "code du dossier plutôt qu'un nom de hall — l'aperçu montre lequel." },
     { groupe: "stand", cle: "code", libelle: "Numéro de stand",
       fixe: "allée et numéro de l'emplacement",
       aide: "Affiché à côté du pavillon." },
@@ -1065,6 +1070,23 @@ const LIGNES_FICHE = {
       aide: "Le programme tenu dans la zone, par ordre chronologique." },
   ],
 };
+
+/* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru, et Klipso y porte parfois le code du dossier plutôt
+   qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
+   d'un coup sur tous les salons déjà en ligne.
+
+   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _js.html »,
+   qui décide de ce que le visiteur reçoit : les deux se suivent. */
+const FICHE_MASQUEE_PAR_DEFAUT = { hall: true };
+
+/** Un champ paraît-il sur la fiche, réglage ou défaut ? */
+function paraitSurFiche(e, type, cle) {
+  const regle = ((e.fiche || {})[type] || {})[cle];
+  return FICHE_MASQUEE_PAR_DEFAUT[cle] ? regle === true : regle !== false;
+}
 
 /** D'où vient le programme, dit dans la colonne d'origine. */
 function origineConferences(e) {
@@ -1154,9 +1176,8 @@ function resumeFiche(e) {
   // « Conférences » figure des deux côtés : sans le type devant, on ne saurait
   // pas laquelle est masquée.
   [["stand", "Stand"], ["zone", "Zone"]].forEach(([type, court]) => {
-    const r = (e.fiche && e.fiche[type]) || {};
     const caches = LIGNES_FICHE[type]
-      .filter((l) => l.cle && r[l.cle] === false).map((l) => l.libelle);
+      .filter((l) => l.cle && !paraitSurFiche(e, type, l.cle)).map((l) => l.libelle);
     if (caches.length) parts.push(court + " : " + caches.join(", "));
   });
 
@@ -1187,14 +1208,14 @@ function resumeFiche(e) {
 
 /**
  * Une case à cocher. Un champ non réglé est affiché : ajouter un champ plus
- * tard ne doit pas le faire disparaître des salons déjà réglés.
+ * tard ne doit pas le faire disparaître des salons déjà réglés — sauf ceux
+ * que « FICHE_MASQUEE_PAR_DEFAUT » réserve, qui attendent d'être cochés.
  *
  * `apres` sert aux lignes où la case commande autre chose qu'elle-même — le
  * champ d'origine se grise quand le champ ne paraît plus.
  */
 function caseFiche(type, cle, libelle, aide, apres) {
   const e = courant();
-  const regle = (e.fiche && e.fiche[type]) || {};
   const l = document.createElement("label");
   l.className = "case";
   l.innerHTML = '<input type="checkbox"><span></span>' +
@@ -1202,7 +1223,7 @@ function caseFiche(type, cle, libelle, aide, apres) {
   l.querySelector("span").textContent = libelle;
   if (aide) l.querySelector(".aide").textContent = aide;
   const i = l.querySelector("input");
-  i.checked = regle[cle] !== false;
+  i.checked = paraitSurFiche(e, type, cle);
   if (!libelle) i.setAttribute("aria-label", "Afficher ce champ sur la fiche");
   if (apres) apres(i.checked);
   i.onchange = async () => {
@@ -1453,7 +1474,8 @@ function libelleCorps(e, cle) {
    vient du plan et non d'une fiche, ou une synchronisation pas encore lancée.
    L'aperçu montre alors la forme de la valeur, à défaut de la valeur. */
 const EXEMPLES_FICHE = {
-  nom: "Maison Perrin", code: "A12", niveaux: "2", secteur: "Restauration",
+  nom: "Maison Perrin", code: "A12", hall: "Hall 2",
+  niveaux: "2", secteur: "Restauration",
   raison: "Perrin & Cie SAS", adresse: "12 rue des Lilas", ville: "Nantes",
   pays: "France", telephone: "02 40 00 00 00", site: "perrin.fr",
   facebook: "facebook.com/perrin", linkedin: "linkedin.com/company/perrin",
@@ -1536,8 +1558,7 @@ function valeurApercu(bloc, cle) {
  */
 function dessineApercu(hote, e, src, cles) {
   const bloc = correspondance(e, src);
-  const regle = (e.fiche || {}).stand || {};
-  const parait = (cle) => regle[cle] !== false;
+  const parait = (cle) => paraitSurFiche(e, "stand", cle);
   hote.textContent = "";
 
   const tete = document.createElement("div");
@@ -1551,8 +1572,16 @@ function dessineApercu(hote, e, src, cles) {
   tete.querySelector(".neuf").hidden = !parait("nouveau") ||
     !champsLus(bloc, "nouveau").length;
   tete.querySelector("h4").textContent = nom;
-  tete.querySelector(".af-code").textContent = "Pavillon 1" +
-    (parait("code") ? " · " + EXEMPLES_FICHE.code : "");
+  /* Le pavillon et son hall sont ceux du salon, quand la synchronisation en a
+     déjà ramené : c'est là que se voit un hall qui n'est qu'un code de
+     dossier, et c'est la moitié de ce qu'on vient vérifier en cochant. */
+  const pav = (PLANS[e.id] || [])[0];
+  const avecHall = (PLANS[e.id] || []).find((p) => p.hall) || pav;
+  tete.querySelector(".af-code").textContent = [
+    (pav && pav.libelle) || "Pavillon 1",
+    parait("hall") ? ((avecHall && avecHall.hall) || EXEMPLES_FICHE.hall) : "",
+    parait("code") ? EXEMPLES_FICHE.code : "",
+  ].filter(Boolean).join(" · ");
   hote.appendChild(tete);
 
   const corps = document.createElement("div");
@@ -2109,7 +2138,7 @@ function tableauChamps(lignes, type, src, avecCases, avecCriteres) {
      le code postal tient sur la ligne de l'adresse, et disparaît avec elle.
      Elles s'inscrivent ici, et la case du chef de file les entraîne. */
   const suiveurs = {};
-  const affiche = (cle) => !(((courant().fiche || {})[type] || {})[cle] === false);
+  const affiche = (cle) => paraitSurFiche(courant(), type, cle);
 
   lignes.forEach((l) => {
     const tr = document.createElement("tr");

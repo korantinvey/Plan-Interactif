@@ -253,6 +253,61 @@ autre pavillon que celui qu'on regarde. Une société hébergée répond pour
 elle-même — c'est bien sa fiche à elle qui porte sa ville et ses rubriques — et
 le stand qui l'accueille reste allumé sur le plan.
 
+## Ce qui s'enregistre, et quand
+
+Tout ce qu'on règle en administration — couleurs, visibilité et ordre des
+calques, calques de dessin, repères, libellés placés à la main, fiches de zones
+— **s'enregistre tout seul**, un peu plus d'une seconde après le dernier geste.
+Rien ne reste en attente d'un clic : le navigateur en garde une copie, mais c'est
+la base qui fait foi, et c'est elle que les visiteurs lisent.
+
+Ce délai n'est pas de la prudence, c'est de l'arithmétique : un sélecteur de
+couleur tiré à la souris émet un événement par pixel parcouru. On attend que la
+main s'arrête, puis on écrit une fois.
+
+Le pied du panneau des calques dit où l'on en est, et c'est tout ce qu'il y a à
+surveiller :
+
+| ce qu'il affiche | ce que cela veut dire |
+|---|---|
+| Configuration enregistrée | la base a tout ; les visiteurs le voient au rechargement suivant |
+| Enregistrement… | le dernier geste part, ou attend son tour |
+| Enregistrer — réessayer | l'envoi a échoué ; il se retente seul toutes les vingt secondes, et un clic le relance tout de suite |
+
+Un échec ne perd rien. Le travail reste sur le poste, les pavillons dont les
+dessins n'ont pas été reçus restent marqués, et le chargement suivant les
+repousse de lui-même — là encore sans rien demander. Fermer l'onglet juste après
+un réglage ne le perd pas non plus : l'envoi part sans attendre la fin du délai
+dès que la page passe à l'arrière-plan.
+
+### Et le plan public, lui, suit
+
+Enregistrer ne suffit pas : le plan public n'est pas lu dans la base à chaque
+visite, il est servi par le Worker depuis son stockage KV, et cette copie ne se
+périmait que d'elle-même — dix minutes de fraîcheur, puis une copie dépassée
+encore servie le temps d'en refaire une. L'administration pouvait donc dire
+« enregistrée » un quart d'heure avant que les visiteurs voient quoi que ce
+soit, et personne ne savait à partir de quand regarder.
+
+La page le dit donc au Worker en finissant : `POST /api/oublie?slug=…`, qui
+efface ce qu'il gardait de ce salon. La visite suivante relit la base et
+repeuple le cache. Oublier ne coûte qu'une lecture de plus, mais demande une
+session de ce projet — sinon ce chemin serait un moyen de vider le cache en
+boucle. Le fond de plan n'a rien à oublier : son adresse porte une version, et
+l'apparence entre dans son calcul.
+
+Reste la part du navigateur du visiteur, qu'on ne peut pas effacer à distance :
+elle est courte — trente secondes, une minute de grâce en cas de panne — parce
+qu'un navigateur qui revient retombe sur le Worker, qui répond de son stockage
+sans toucher la base. Compter donc **moins d'une minute** entre le geste et le
+plan public, et un rechargement.
+
+Deux conséquences à connaître. **Il n'y a plus d'essai sans publication** : une
+couleur changée part aux visiteurs, il faut la changer à nouveau pour revenir en
+arrière. Et **deux administrateurs sur le même salon s'écrasent l'un l'autre**,
+le dernier à régler ayant le dernier mot — ce qui était déjà vrai du bouton,
+mais arrive maintenant sans qu'on l'ait demandé.
+
 ## Placer un libellé à la main
 
 Le nom d'un stand se pose tout seul : au milieu de l'emplacement, à la taille
@@ -280,7 +335,7 @@ Deux choses valent d'être sues :
   inatteignable, et le réglage impossible à défaire.
 
 Le réglage se range dans l'apparence du salon, avec les couleurs et l'ordre des
-calques, et part aux visiteurs à la publication.
+calques, et part aux visiteurs de lui-même.
 
 ### Ce qui le périme, et ce qui ne le périme pas
 
@@ -304,6 +359,31 @@ l'exploitant l'a choisi lui-même sur une zone : renommer, c'est écrire autre
 chose, et cet autre chose n'a pas de raison de tenir à la même taille au même
 endroit.
 
+## Verrouiller un calque de dessin
+
+Un plan finit par porter un calque auquel on ne touche plus : le contour du
+hall, les murs qui barrent les trajets, le repérage posé une fois pour toutes.
+Il reste pourtant à un clic du crayon, au milieu de ceux qu'on retouche encore,
+et une forme y part à la dérive sans qu'on s'en aperçoive — on croyait dessiner
+sur le calque d'à côté.
+
+Le **cadenas** de sa ligne, dans le panneau des calques, le ferme. Le calque ne
+s'ouvre alors plus au dessin : ni tracé, ni forme attrapée, ni déplacement, ni
+suppression. Le crayon et la croix de sa ligne s'éteignent avec lui, et la
+fenêtre de réorganisation montre le cadenas là où elle offrait de renommer. Une
+image glissée sur le plan, qui se posait d'office sur le dernier calque, va
+maintenant au dernier qui ne soit pas verrouillé.
+
+Ce qu'il laisse passer, il le laisse exprès : **masquer le calque et changer sa
+couleur restent libres** — c'est en les réglant qu'on travaille autour de ce
+qu'on protège — et **son rang dans la pile** aussi, qui ne touche pas au dessin
+et se reprend d'un geste.
+
+Le verrou vit dans les réglages, comme le rôle d'un calque dans les itinéraires,
+et part aux autres postes avec eux : les colonnes de `calque_dessin` sont
+fixées, celles des réglages ne le sont pas, et rien de tout cela ne demande de
+migration.
+
 ## Le parcours de visite
 
 Le visiteur retient des exposants — par le signet en tête de leur fiche — et des
@@ -315,8 +395,7 @@ liseré sur le plan, une zone entrant par les conférences qu'elle abrite.
 La fonction se retire depuis « Réglages du plan », en administration, avec les
 icônes de zoom et l'échelle : décocher « Proposer le parcours de visite » fait
 disparaître d'un coup le bouton, les signets et le liseré. Comme les autres
-réglages, il faut publier la configuration pour que le changement parvienne aux
-visiteurs. Le retrait ne détruit rien — les listes déjà constituées sur les
+réglages, il part aux visiteurs tout seul, sans rien à publier. Le retrait ne détruit rien — les listes déjà constituées sur les
 téléphones réapparaissent si le réglage se rouvre.
 
 Le pied du tiroir porte **« Organiser ma journée »**, qui met cette liste en
@@ -483,7 +562,7 @@ allées qui ne se touchent pas d'un demi-mètre ne se remarquent qu'au premier
 trajet qui échoue, et sans dire où. Elle n'existe qu'en administration.
 
 Le rôle vit dans les réglages, à côté de l'ordre des calques, et part aux
-visiteurs à la publication : les colonnes de `calque_dessin` sont fixées, celles
+visiteurs avec eux : les colonnes de `calque_dessin` sont fixées, celles
 des réglages ne le sont pas, et rien de tout cela ne demande de migration.
 
 ### Ce qu'un repère est, et ce qu'il s'appelle
@@ -576,7 +655,7 @@ du rez-de-chaussée monte au premier et au second, et ce sont deux passages,
 chacun avec son temps. Seuls les passages des **autres** plans sont proposés —
 en relier deux du même hall ne décrirait rien qu'une allée ne dise déjà. La
 liaison s'écrit des deux côtés d'un seul geste, se retire d'une croix, et part
-aux visiteurs avec les dessins, à la publication.
+aux visiteurs avec les dessins, dès qu'elle est faite.
 
 Chaque ligne de la liste porte un **temps de passage**, en minutes, qui s'ajoute
 au temps de marche du trajet. Il se règle par couple et non par repère, pour la
@@ -762,8 +841,7 @@ plan — un salon grand public tourne vite, un salon d'affaires beaucoup moins �
 et c'est pourtant ce qui décide combien de stands tiennent entre deux
 conférences. Le réglage vit donc en administration, dans « Réglages du plan »
 sous les cases à cocher : **Temps de visite par stand**, en minutes, vingt par
-défaut. Comme les autres réglages, il faut publier la configuration pour qu'il
-parvienne aux visiteurs.
+défaut. Comme les autres réglages, il part aux visiteurs tout seul.
 
 Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
 disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
@@ -924,7 +1002,7 @@ sélecteur de couleur : les siennes ne se choisissent pas, elles sortent des
 chiffres et se refont à chaque changement de période.
 
 Il ne part **jamais** sur le plan public, et deux choses l'en empêchent plutôt
-qu'une. Il n'existe pas dans `CONF` — la publication de la configuration n'a
+qu'une. Il n'existe pas dans `CONF` — l'enregistrement de la configuration n'a
 donc rien à emporter, ni réglage ni rang dans la pile. Et il refuse de
 s'allumer hors administration : la page publique appelle bien le même code à
 chaque montage, elle n'y trouve simplement rien à peindre. Une pastille
@@ -935,7 +1013,7 @@ bleu — pas ou peu de consultations — au rouge, et le cartouche donne la pér
 (sept, trente, quatre-vingt-dix jours, ou depuis le début), l'échelle et les dix
 premiers, cliquables pour aller les voir sur le plan. Le survol d'un stand donne
 son chiffre exact. Rien ne s'enregistre : c'est une lecture, pas un réglage, et
-la publication de la configuration ne l'emporte pas.
+l'enregistrement de la configuration ne l'emporte pas.
 
 Deux commandes, et elles ne font pas la même chose. Le chevron du cartouche le
 **replie sur sa légende** — le plan reste peint, on gagne le coin de l'écran, et
