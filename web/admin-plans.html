@@ -1917,98 +1917,76 @@ function ligneSource(dom, libelle, offerts, aide) {
  *           bande de puces sur le plan — un second filtre pour lui ferait
  *           double emploi.
  */
-const LIGNES_FICHE = {
-  stand: [
-    /* --- ce que le plan porte --- */
-    { groupe: "stand", cle: "hall", libelle: "Hall",
-      fixe: "hall de l'emplacement",
-      aide: "Affiché devant le numéro de stand, sur les seuls stands dont le " +
-        "hall est renseigné. Il se lit sur l'emplacement et non sur le " +
-        "pavillon, un même plan pouvant en couvrir deux. Décoché tant qu'on ne " +
-        "l'a pas voulu." },
-    { groupe: "stand", cle: "code", libelle: "Numéro de stand",
-      fixe: "allée et numéro de l'emplacement",
-      aide: "Affiché à côté du pavillon." },
-    { groupe: "stand", cle: "niveaux", libelle: "Niveaux",
-      fixe: "nombre de niveaux de l'emplacement",
-      aide: "Seulement au-delà d'un niveau." },
-    { groupe: "stand", cle: "secteur", libelle: "Secteur",
-      fixe: "secteur de l'emplacement",
-      aide: "Le découpage commercial du plan, que Klipso porte sur " +
-        "l'emplacement. Les couleurs et le filtre par secteur se règlent, eux, " +
-        "depuis le plan." },
+const LIGNES_FICHE = [
+  /* --- ce que le plan porte --- */
+  { groupe: "stand", cle: "hall", libelle: "Hall",
+    fixe: "hall de l'emplacement",
+    aide: "Affiché devant le numéro de stand, sur les seuls stands dont le " +
+      "hall est renseigné. Il se lit sur l'emplacement et non sur le " +
+      "pavillon, un même plan pouvant en couvrir deux. Décoché tant qu'on ne " +
+      "l'a pas voulu." },
+  { groupe: "stand", cle: "code", libelle: "Numéro de stand",
+    fixe: "allée et numéro de l'emplacement",
+    aide: "Affiché à côté du pavillon." },
+  { groupe: "stand", cle: "niveaux", libelle: "Niveaux",
+    fixe: "nombre de niveaux de l'emplacement",
+    aide: "Seulement au-delà d'un niveau." },
+  { groupe: "stand", cle: "secteur", libelle: "Secteur",
+    fixe: "secteur de l'emplacement",
+    aide: "Le découpage commercial du plan, que Klipso porte sur " +
+      "l'emplacement. Les couleurs et le filtre par secteur se règlent, eux, " +
+      "depuis le plan." },
 
-    /* --- ce que la fiche de la société porte --- */
-    { cible: "nom", libelle: "Enseigne",
-      aide: "Le titre de la fiche : toujours affiché." },
-    { cle: "raison", cible: "raison", libelle: "Raison sociale",
-      aide: "Quand elle diffère de l'enseigne." },
-    /* Le seul champ de la fiche qui ne soit pas du texte. Il vaut pour les deux
-       fournisseurs : Eventmaker le porte d'office sur l'avatar de la fiche,
-       Klipso n'a rien qui s'en approche mais un salon peut tenir une adresse
-       d'image dans un champ à lui. */
-    { cle: "logo", cible: "logo", libelle: "Logo",
-      aide: "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est " +
-        "« avatar » qu'il faut désigner : « avatar_medium » et " +
-        "« avatar_thumb » sont recadrés au carré et coupent les bords d'un " +
-        "logo en largeur — et sur une fiche sans logo, ils rendent les " +
-        "initiales de la personne inscrite." },
-    { cle: "adresse", cible: "adresse", libelle: "Adresse" },
-    { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
-      suit: "adresse",
-      aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
-    { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
-    { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
-    /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
-       téléphone à montrer et n'a pas à dire lequel. L'aperçu suit la fiche :
-       c'est ce que le visiteur lira. */
-    { cle: "telephone", cible: "telephone", libelle: "Téléphone société",
-      surFiche: "Téléphone" },
-    { cle: "site", cible: "site", libelle: "Site web" },
-    { cle: "facebook", cible: "facebook", libelle: "Facebook" },
-    { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
-    { cle: "instagram", cible: "instagram", libelle: "Instagram" },
-    { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
-      critere: true,
-      aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
-    /* Klipso n'a pas de thématiques : ses rubriques passent par la
-       nomenclature, et proposer une ligne que rien n'alimenterait ferait
-       chercher un champ qui n'existe pas. */
-    { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
-      source: "eventmaker", critere: true,
-      aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
-        "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
-        "à l'exemple, certains salons n'y portent que des codes." },
-    { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant", ouiNon: true,
-      critere: true,
-      aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
-        "salons qui distinguent leurs nouveaux venus." },
-    /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
-       d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
-    { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
-      aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
-  ],
-  zone: [
-    /* Les seuls champs du plan qui ne viennent d'aucune source : une zone n'a
-       pas de fiche d'exposant derrière elle, et ce qu'on lit sur elle a été
-       écrit à la main, zone par zone, depuis les réglages du plan. */
-    { cle: "logo", libelle: "Logo",
-      fixe: "déposé depuis le plan, zone par zone",
-      aide: "L'image déposée sur la zone, dans l'en-tête de sa fiche. Elle est " +
-        "réduite puis enregistrée avec la fiche : rien n'est chargé depuis " +
-        "un autre site." },
-    { cle: "description", libelle: "Description",
-      fixe: "saisie depuis le plan, zone par zone",
-      aide: "Ce qu'on trouve dans la zone, ses horaires, ses conditions " +
-        "d'accès. Elle s'écrit depuis les réglages du plan, et ne paraît " +
-        "sur la fiche que là où elle est remplie." },
-    { cle: "lien", libelle: "Lien",
-      fixe: "saisi depuis le plan, zone par zone",
-      aide: "Une page où en savoir plus, saisie avec la description." },
-    { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
-      aide: "Le programme tenu dans la zone, par ordre chronologique." },
-  ],
-};
+  /* --- ce que la fiche de la société porte --- */
+  { cible: "nom", libelle: "Enseigne",
+    aide: "Le titre de la fiche : toujours affiché." },
+  { cle: "raison", cible: "raison", libelle: "Raison sociale",
+    aide: "Quand elle diffère de l'enseigne." },
+  /* Le seul champ de la fiche qui ne soit pas du texte. Il vaut pour les deux
+     fournisseurs : Eventmaker le porte d'office sur l'avatar de la fiche,
+     Klipso n'a rien qui s'en approche mais un salon peut tenir une adresse
+     d'image dans un champ à lui. */
+  { cle: "logo", cible: "logo", libelle: "Logo",
+    aide: "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est " +
+      "« avatar » qu'il faut désigner : « avatar_medium » et " +
+      "« avatar_thumb » sont recadrés au carré et coupent les bords d'un " +
+      "logo en largeur — et sur une fiche sans logo, ils rendent les " +
+      "initiales de la personne inscrite." },
+  { cle: "adresse", cible: "adresse", libelle: "Adresse" },
+  { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
+    suit: "adresse",
+    aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
+  { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
+  { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
+  /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
+     téléphone à montrer et n'a pas à dire lequel. L'aperçu suit la fiche :
+     c'est ce que le visiteur lira. */
+  { cle: "telephone", cible: "telephone", libelle: "Téléphone société",
+    surFiche: "Téléphone" },
+  { cle: "site", cible: "site", libelle: "Site web" },
+  { cle: "facebook", cible: "facebook", libelle: "Facebook" },
+  { cle: "linkedin", cible: "linkedin", libelle: "LinkedIn" },
+  { cle: "instagram", cible: "instagram", libelle: "Instagram" },
+  { cle: "nomenclature", cible: "nomenclature", libelle: "Nomenclature",
+    critere: true,
+    aide: "Les rubriques du catalogue. Plusieurs champs se cumulent." },
+  /* Klipso n'a pas de thématiques : ses rubriques passent par la
+     nomenclature, et proposer une ligne que rien n'alimenterait ferait
+     chercher un champ qui n'existe pas. */
+  { cle: "thematiques", cible: "thematiques", libelle: "Thématiques",
+    source: "eventmaker", critere: true,
+    aide: "Ce que l'exposant vient chercher ou proposer, tel que le salon " +
+      "le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous " +
+      "à l'exemple, certains salons n'y portent que des codes." },
+  { cle: "nouveau", cible: "nouveau", libelle: "Nouvel exposant", ouiNon: true,
+    critere: true,
+    aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
+      "salons qui distinguent leurs nouveaux venus." },
+  /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
+     d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
+  { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
+    aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
+];
 
 /* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
    règle générale, et pour la raison qui la fonde. Un champ absent du réglage
@@ -2090,7 +2068,7 @@ const LIGNES_RATTACHEMENT = {
 
 /* Ce qui se règle mais que rien n'alimente : à montrer en retrait plutôt qu'à
    taire, sans quoi on croirait le champ déjà repris. */
-const FICHE_INERTE = {};
+const FICHE_INERTE = [];
 
 /** Ce qu'on lit sans ouvrir : les exceptions, pas la liste complète. */
 function resumeProvenance(e) {
@@ -2111,21 +2089,15 @@ function resumeProvenance(e) {
 }
 
 function resumeFiche(e) {
-  const parts = [];
-  // « Conférences » figure des deux côtés : sans le type devant, on ne saurait
-  // pas laquelle est masquée.
-  [["stand", "Stand"], ["zone", "Zone"]].forEach(([type, court]) => {
-    const caches = LIGNES_FICHE[type]
-      .filter((l) => l.cle && !paraitSurFiche(e, type, l.cle)).map((l) => l.libelle);
-    if (caches.length) parts.push(court + " : " + caches.join(", "));
-  });
+  const caches = LIGNES_FICHE
+    .filter((l) => l.cle && !paraitSurFiche(e, "stand", l.cle)).map((l) => l.libelle);
 
   /* La correspondance tient dans le même réglage : la dire ici évite d'ouvrir
      la fenêtre pour savoir si elle a été touchée. */
   const src = source(e, "stands");
   const bloc = correspondance(e, src);
   const associes = Object.keys(bloc.champs || {}).length;
-  const mots = [parts.length ? "Masqué — " + parts.join(" · ") : "Tout affiché"];
+  const mots = [caches.length ? "Masqué — " + caches.join(", ") : "Tout affiché"];
   /* Deux réglages qui ne se voient pas dans la liste des champs masqués : les
      champs que le salon s'est ajoutés, et ceux qu'il propose à la recherche. */
   const nPerso = champsPersos(e).length;
@@ -2134,9 +2106,14 @@ function resumeFiche(e) {
   const nCrit = Object.keys(criteres(e)).length;
   mots.push(nCrit ? nCrit + " critère" + (nCrit > 1 ? "s" : "") + " de recherche"
     : "aucun critère de recherche");
-  /* Le rangement du corps se règle depuis le plan, mais il vit dans la même
-     colonne : le taire ici ferait croire la fiche à son état d'origine. */
+  /* Le rangement du corps et les champs d'une fiche de zone se règlent depuis
+     le plan, mais ils vivent dans la même colonne : les taire ici ferait
+     croire la fiche à son état d'origine. */
   if ((((e.fiche || {}).ordre) || []).length) mots.push("ordre d'affichage remanié");
+  const nZone = Object.values(((e.fiche || {}).zone) || {})
+    .filter((v) => v === false).length;
+  if (nZone) mots.push(nZone + " champ" + (nZone > 1 ? "s" : "") +
+    " de zone masqué" + (nZone > 1 ? "s" : ""));
   const nGrp = (((e.fiche || {}).groupes) || []).length;
   if (nGrp) mots.push(nGrp + " groupe" + (nGrp > 1 ? "s" : "") + " de champs");
   if (src !== "aucun") {
@@ -2470,9 +2447,10 @@ function cadreFiche(def, contenus) {
 /**
  * Fenêtre de la fiche détail : ce qu'elle montre, et ce qui l'alimente.
  *
- * Deux onglets, parce que les deux types n'ont presque rien en commun : un
- * stand tire son contenu d'une fiche d'exposant, une zone organisateur n'a que
- * son programme. Côte à côte, les deux listes se lisaient comme une seule.
+ * Elle ne parle que du stand. Une zone organisateur ne tire rien d'une fiche
+ * d'exposant — tout ce qu'elle montre s'écrit zone par zone, depuis le plan —
+ * et ses quatre cases se règlent là où on les écrit, dans l'onglet « Zones »
+ * des réglages du plan. Ici, elles n'avaient qu'un onglet pour elles seules.
  *
  * Sur la ligne, la case et la liste déroulante vont ensemble : décider qu'un
  * champ paraît et décider d'où il vient sont la même question, posée deux fois
@@ -2487,78 +2465,38 @@ function ouvreFiche(apres) {
   /* Une ligne réservée à un autre fournisseur n'a rien à faire ici : le champ
      qu'elle propose n'existe pas de ce côté, et la case masquerait un champ
      que la fiche n'affiche de toute façon pas. */
-  const lignes = (type) => LIGNES_FICHE[type].filter((l) => !l.source || l.source === src);
+  const lignes = () => LIGNES_FICHE.filter((l) => !l.source || l.source === src);
 
   ouvreModale("Fiche détail", (corps) => {
-    const barre = document.createElement("div");
-    barre.className = "onglets";
-    const boutons = [], panneaux = [];
-
-    /* Un onglet de la fenêtre : son bouton, son panneau, et la bascule qui les
-       relie. Les deux ne se remplissent pas de la même façon — l'un d'eux
-       s'arrête plus tôt — d'où la fabrique à part. */
-    const ongletFiche = (titre) => {
-      const i = boutons.length;
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = titre;
-      b.setAttribute("aria-pressed", String(i === 0));
-      b.onclick = () => {
-        boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
-        panneaux.forEach((x, j) => { x.hidden = j !== i; });
-      };
-      barre.appendChild(b);
-      boutons.push(b);
-      const pan = document.createElement("div");
-      pan.hidden = i > 0;
-      panneaux.push(pan);
-      return pan;
-    };
-
-    [["stand", "Stand"], ["zone", "Zone organisateur"]].forEach(([type, titre]) => {
-      const pan = ongletFiche(titre);
-
-      /* Une zone n'a pas de fiche d'exposant derrière elle : rien à associer,
-         donc pas de tableau — la liste de cases suffit, et c'est celle que la
-         fenêtre montrait déjà. */
-      if (type === "zone" || !mappable) {
-        const cases = document.createElement("div");
-        cases.className = "colonne-cases";
-        const inertes = FICHE_INERTE[type] || [];
-        lignes(type).filter((l) => l.cle).forEach((l) => {
-          const c = caseFiche(type, l.cle, l.libelle, l.aide);
-          if (inertes.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
-          cases.appendChild(c);
-        });
-        if (type === "zone") {
-          pan.appendChild(cadreFiche(
-            { titre: "La zone organisateur", domaine: "conferences",
-              aide: "Une zone n'a pas de fiche d'exposant : son programme est " +
-                "tout ce qu'elle montre." },
-            [cases]));
-        } else {
-          pan.appendChild(cases);
-          const p = document.createElement("p");
-          p.className = "aide";
-          p.textContent = "Aucune source d'exposants : il n'y a pas de champ " +
-            "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
-          pan.appendChild(p);
-        }
-        return;
-      }
-
+    /* Sans source d'exposants, il n'y a pas de champ d'origine à associer : le
+       tableau n'aurait qu'une colonne vide, et la liste de cases suffit. */
+    if (!mappable) {
+      const cases = document.createElement("div");
+      cases.className = "colonne-cases";
+      lignes().filter((l) => l.cle).forEach((l) => {
+        const c = caseFiche("stand", l.cle, l.libelle, l.aide);
+        if (FICHE_INERTE.indexOf(l.cle) >= 0) c.classList.add("source-inerte");
+        cases.appendChild(c);
+      });
+      corps.appendChild(cases);
+      const p = document.createElement("p");
+      p.className = "aide";
+      p.textContent = "Aucune source d'exposants : il n'y a pas de champ " +
+        "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
+      corps.appendChild(p);
+    } else {
       CADRES_FICHE.forEach((def) => {
-        const duCadre = lignes("stand").filter((l) => (l.groupe || "exposant") === def.cle);
+        const duCadre = lignes().filter((l) => (l.groupe || "exposant") === def.cle);
         /* Le rattachement rejoint le cadre de l'exposant : ces champs sont lus
            sur sa fiche comme les autres, ils n'en sortent simplement rien
            d'affichable. */
         const rattachement = def.cle !== "exposant" ? null
           : (LIGNES_RATTACHEMENT[src] || []);
-        pan.appendChild(cadreFiche(def, [
-          tableauChamps(duCadre, type, src, true, def.cle === "exposant"),
+        corps.appendChild(cadreFiche(def, [
+          tableauChamps(duCadre, "stand", src, true, def.cle === "exposant"),
           rattachement && rattachement.length ? sousTitre("Ce qui ne s'affiche pas") : null,
           rattachement && rattachement.length
-            ? tableauChamps(rattachement, type, src, false) : null,
+            ? tableauChamps(rattachement, "stand", src, false) : null,
         ]));
       });
 
@@ -2567,7 +2505,7 @@ function ouvreFiche(apres) {
          qu'on puisse renommer ou retirer. */
       const redessine = () => ouvreFiche(apres);
       const perso = lignesPerso(e, redessine);
-      pan.appendChild(cadreFiche(
+      corps.appendChild(cadreFiche(
         { titre: "Champs propres à ce salon", domaine: "stands",
           aide: "Un champ que ce salon est seul à tenir. Il se règle comme les " +
             "autres — un champ d'origine, une case pour l'afficher, une case " +
@@ -2576,7 +2514,7 @@ function ouvreFiche(apres) {
             "source joint ses valeurs par un point-virgule, et chacune compte " +
             "pour elle-même." },
         [
-          perso.length ? tableauChamps(perso, type, src, true, true) : null,
+          perso.length ? tableauChamps(perso, "stand", src, true, true) : null,
           (() => {
             const pied = document.createElement("div");
             pied.className = "pied-perso";
@@ -2595,10 +2533,7 @@ function ouvreFiche(apres) {
             return pied;
           })(),
         ]));
-    });
-
-    corps.appendChild(barre);
-    panneaux.forEach((x) => corps.appendChild(x));
+    }
 
     const note = document.createElement("p");
     note.className = "aide";
@@ -2615,15 +2550,18 @@ function ouvreFiche(apres) {
         "désigne plus rien.";
     corps.appendChild(note);
 
-    /* Ce que la fiche montre se décide ici ; dans quel ordre elle le montre se
-       décide sur le plan, où l'aperçu porte l'habillage retenu et les valeurs
-       d'un vrai stand. Le dire, faute de quoi on chercherait le réglage dans
-       cette fenêtre — c'est là qu'il était. */
+    /* Ce que la fiche d'un stand montre se décide ici ; dans quel ordre elle le
+       montre, et ce qu'une fiche de zone montre, se décident sur le plan — là
+       où l'aperçu porte l'habillage retenu et les valeurs d'un vrai stand, là
+       où les fiches des zones s'écrivent. Le dire, faute de quoi on chercherait
+       ces réglages dans cette fenêtre — c'est là qu'ils étaient. */
     const ou = document.createElement("p");
     ou.className = "aide";
     ou.textContent = "L'ordre dans lequel ces champs se lisent, et les groupes " +
       "qui les réunissent sous un même titre, se règlent depuis le plan : " +
-      "engrenage, « Fiche ».";
+      "engrenage, « Fiche ». Ce qu'une fiche de zone organisateur montre — " +
+      "logo, description, lien, programme — s'y règle aussi : engrenage, " +
+      "« Zones ».";
     corps.appendChild(ou);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
