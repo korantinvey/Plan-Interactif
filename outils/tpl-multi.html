@@ -869,10 +869,19 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    garde donc son logo à côté de lui, un nom long le passe en dessous.
 
    La réserve de droite quitte le titre pour la ligne entière : elle tient le
-   texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
+   texte à l'écart du coin des actions ; la marque, plus haute qu'une ligne,
+   en demande davantage — c'est la règle d'en dessous. */
 .detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
   column-gap:12px;row-gap:2px;padding-right:26px}
 .detail-hd .hdNom h2{padding-right:0;margin-right:auto}
+/* Vingt-six pixels tiennent un texte à l'écart du coin : haut d'une ligne, il
+   passe sous le signet et la croix sans jamais les atteindre. La marque, elle,
+   vaut trois lignes de titre — elle remonte dans leur bande, et le peu qui
+   restait à droite l'y menait tout droit dès que le nom mangeait la ligne.
+   Elle se réserve donc le coin entier, cette largeur que la ligne du type se
+   réserve déjà. La réserve suit la marque : elle tombe quand celle-ci déménage
+   sous le numéro, où le coin est loin. */
+.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:62px}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
