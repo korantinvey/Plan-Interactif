@@ -889,10 +889,19 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    garde donc son logo à côté de lui, un nom long le passe en dessous.
 
    La réserve de droite quitte le titre pour la ligne entière : elle tient le
-   texte à l'écart du coin des actions, et la marque n'a pas plus à y aller. */
+   texte à l'écart du coin des actions ; la marque, plus haute qu'une ligne,
+   en demande davantage — c'est la règle d'en dessous. */
 .detail-hd .hdNom{display:flex;flex-wrap:wrap;align-items:center;
   column-gap:12px;row-gap:2px;padding-right:26px}
 .detail-hd .hdNom h2{padding-right:0;margin-right:auto}
+/* Vingt-six pixels tiennent un texte à l'écart du coin : haut d'une ligne, il
+   passe sous le signet et la croix sans jamais les atteindre. La marque, elle,
+   vaut trois lignes de titre — elle remonte dans leur bande, et le peu qui
+   restait à droite l'y menait tout droit dès que le nom mangeait la ligne.
+   Elle se réserve donc le coin entier, cette largeur que la ligne du type se
+   réserve déjà. La réserve suit la marque : elle tombe quand celle-ci déménage
+   sous le numéro, où le coin est loin. */
+.detail-hd .hdNom:has(> .logoZone:not([hidden])){padding-right:62px}
 /* Le logo — celui qu'on dépose sur une zone, celui qu'un stand tient de sa
    source. Sans cadre ni fond : l'image porte le sien quand elle en a un, et un
    blanc plaqué sur l'en-tête coloré d'un modèle y faisait une étiquette
@@ -5807,18 +5816,20 @@ function poseMarque(blason){
  * le filigrane gardait le numéro du stand consulté juste avant, et la pastille
  * restait invisible pour avoir été cachée par la fiche d'une zone.
  */
-function poseCode(pl, num, filigrane){
+function poseCode(pl, num, filigrane, salle){
   const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
                   String(DATA.evenement || "").trim().toLowerCase();
   const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
-  /* Le hall est affecté au pavillon, donc à tout ce qui s'y trouve. Il se
-     glisse entre le pavillon et le numéro : c'est l'ordre dans lequel on
-     cherche un stand sur place — le hall, puis l'allée.
+  /* Le hall tient à l'emplacement, pas au pavillon : un même plan peut en
+     couvrir deux, et c'est le stand qui dit lequel. Il se glisse entre le
+     pavillon et le numéro — l'ordre dans lequel on cherche un stand sur place,
+     le hall puis l'allée.
 
      Il ne tombe pas, lui, quand le salon n'a qu'un pavillon : le pavillon ne
      distingue alors rien, tandis que le hall reste la porte par laquelle on
-     entre. Il reste au contraire muet tant qu'on ne l'a pas coché. */
-  const hall = montre("stand", "hall") ? (pl.hall || "") : "";
+     entre. Il reste au contraire muet tant qu'on ne l'a pas coché, et un
+     repère n'en a pas — il n'est sur aucun stand. */
+  const hall = montre("stand", "hall") ? (salle || "") : "";
   $("dCode").textContent = [pav, hall, num].filter(Boolean).join(" · ");
   $("dCode").hidden = !$("dCode").textContent;
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
@@ -5937,7 +5948,7 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
-           !zone && o.code ? String(o.code) : "");
+           !zone && o.code ? String(o.code) : "", !zone ? o.hall : "");
   /* De quoi revenir au choix sans refermer la fiche : sur un stand partagé, on
      compare souvent deux enseignes voisines. */
   const part = $("dPartage");
@@ -7185,7 +7196,8 @@ function standApercu(cles){
     const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
     if (n > score){
       score = n; mieux = o;
-      pavillon = pl.libelle || ""; hall = pl.hall || "";
+      // le hall tient au stand, pas au pavillon : un plan peut en couvrir deux
+      pavillon = pl.libelle || ""; hall = o.hall || "";
     }
   }));
   return { stand: mieux, pavillon, hall, neuf };
