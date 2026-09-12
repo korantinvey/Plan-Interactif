@@ -2134,8 +2134,11 @@ function resumeFiche(e) {
   const nCrit = Object.keys(criteres(e)).length;
   mots.push(nCrit ? nCrit + " critère" + (nCrit > 1 ? "s" : "") + " de recherche"
     : "aucun critère de recherche");
-  // l'ordre remanié ne se lit dans aucune des listes ci-dessus
+  /* Le rangement du corps se règle depuis le plan, mais il vit dans la même
+     colonne : le taire ici ferait croire la fiche à son état d'origine. */
   if ((((e.fiche || {}).ordre) || []).length) mots.push("ordre d'affichage remanié");
+  const nGrp = (((e.fiche || {}).groupes) || []).length;
+  if (nGrp) mots.push(nGrp + " groupe" + (nGrp > 1 ? "s" : "") + " de champs");
   if (src !== "aucun") {
     mots.push(associes
       ? associes + " champ" + (associes > 1 ? "s" : "") + " associé" +
@@ -2338,431 +2341,6 @@ function lignesPerso(e, redessine) {
   }));
 }
 
-/* ------------------------------------------------------------------
-   Ordre d'affichage du corps de la fiche
-
-   Ce que la fiche montre se règle champ par champ, plus haut. Dans quel ordre
-   elle le montre ne se réglait nulle part : l'ordre du code valait pour tous
-   les salons, alors que c'est justement là qu'ils diffèrent — ici le secteur
-   est ce qu'on vient lire, là l'adresse, là encore le champ que le salon s'est
-   ajouté passe devant tout le reste.
-   ------------------------------------------------------------------ */
-
-/* L'ordre par défaut du corps, tel que la page l'applique tant que rien n'est
-   réglé. Le même tableau vit dans la page — « ORDRE_CORPS_FICHE » de
-   « _js.html » : les deux se suivent. N'y figure que le corps ; le numéro de
-   stand et la pastille des nouveaux venus tiennent dans l'en-tête, les
-   conférences ont leur propre volet, et rien de tout cela ne se déplace. */
-const ORDRE_FICHE_DEFAUT = ["raison", "secteur", "adresse", "ville", "pays",
-  "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
-  "nomenclature", "thematiques"];
-
-/** Les clés du corps pour cet événement, dans leur ordre par défaut. */
-function clesCorps(e, src) {
-  const offertes = LIGNES_FICHE.stand
-    .filter((l) => l.cle && (!l.source || l.source === src)).map((l) => l.cle);
-  return ORDRE_FICHE_DEFAUT.filter((c) => offertes.indexOf(c) >= 0)
-    .concat(champsPersos(e).map((c) => PREFIXE_PERSO + c.cle));
-}
-
-/**
- * L'ordre enregistré, complété de ce qu'il ne connaît pas encore.
- *
- * Même règle que la page — un champ ajouté après coup reprend la place que le
- * défaut lui donne, derrière le champ qu'il y suit — sans quoi la console
- * montrerait un ordre et le visiteur en lirait un autre.
- */
-function ordreEffectif(e, defaut) {
-  const regle = (((e.fiche || {}).ordre) || [])
-    .filter((c) => defaut.indexOf(c) >= 0);
-  if (!regle.length) return defaut.slice();
-  const sortie = regle.slice();
-  defaut.forEach((c, i) => {
-    if (sortie.indexOf(c) >= 0) return;
-    let j = -1;
-    for (let k = i - 1; k >= 0 && j < 0; k--) j = sortie.indexOf(defaut[k]);
-    sortie.splice(j + 1, 0, c);
-  });
-  return sortie;
-}
-
-/** L'intitulé d'une clé du corps, tel que la fiche l'affiche. */
-function libelleCorps(e, cle) {
-  if (cle.indexOf(PREFIXE_PERSO) === 0) {
-    const c = champsPersos(e).find((x) => PREFIXE_PERSO + x.cle === cle);
-    return c ? c.libelle : sansPrefixe(cle);
-  }
-  const l = LIGNES_FICHE.stand.find((x) => x.cle === cle);
-  return l ? l.libelle : cle;
-}
-
-/* ------------------------------------------------------------------
-   Aperçu de la fiche
-
-   Une liste de quinze intitulés ne dit pas ce qu'on obtient : on règle un ordre
-   sans voir la fiche, et il fallait ouvrir le plan public pour juger. L'aperçu
-   la redessine à côté, avec les champs retenus, dans l'ordre réglé.
-
-   Les valeurs sont celles du relevé de la dernière synchronisation — les mêmes
-   qui s'affichent dans les listes de champs d'origine. Elles viennent donc des
-   fiches du salon, et pas d'un exposant inventé : un mauvais champ associé se
-   voit à sa valeur, ce qui est la moitié de ce qu'on vient vérifier ici.
-   ------------------------------------------------------------------ */
-
-/* De quoi remplir une ligne que le relevé ne renseigne pas — un champ qui
-   vient du plan et non d'une fiche, ou une synchronisation pas encore lancée.
-   L'aperçu montre alors la forme de la valeur, à défaut de la valeur. */
-const EXEMPLES_FICHE = {
-  nom: "Maison Perrin", code: "A12", hall: "Hall 2",
-  niveaux: "2", secteur: "Restauration",
-  raison: "Perrin & Cie SAS", adresse: "12 rue des Lilas", ville: "Nantes",
-  pays: "France", telephone: "02 40 00 00 00", site: "perrin.fr",
-  facebook: "facebook.com/perrin", linkedin: "linkedin.com/company/perrin",
-  instagram: "instagram.com/perrin",
-  nomenclature: "Équipement de cuisine", thematiques: "Circuits courts",
-};
-
-/**
- * Les champs d'origine qu'une cible lit, réglés ou non.
- *
- * Trois états, et l'aperçu doit les distinguer : un réglage à la main l'emporte
- * sur tout, « aucun » compris — c'est un choix, et il rend la ligne vide ; à
- * défaut, la proposition du relevé, qui est ce que la synchronisation ferait ;
- * à défaut encore, le champ par défaut du fournisseur.
- */
-function champsLus(bloc, cible) {
-  const regle = (bloc.champs || {})[cible];
-  if (regle !== undefined) return [].concat(regle).filter(Boolean);
-  const propose = bloc.propose && bloc.propose[cible];
-  if (propose && propose.length) return [].concat(propose).filter(Boolean);
-  return [].concat((bloc.defauts || {})[cible] || []).filter(Boolean);
-}
-
-/**
- * Une valeur d'exemple pour une cible, telle que les fiches la portent.
- *
- * La nomenclature cumule ses champs quand les autres s'arrêtent au premier
- * renseigné : l'aperçu suit la même règle, sans quoi il montrerait une seule
- * rubrique là où la fiche en aligne quatre.
- */
-function exempleCible(bloc, cible) {
-  const detectes = bloc.detectes || [];
-  const exemples = champsLus(bloc, cible)
-    .map((c) => (detectes.find((d) => d.cle === c) || {}).exemple)
-    .filter(Boolean).map(String);
-  if (!exemples.length) return "";
-  return cible === "nomenclature" ? exemples.join(";") : exemples[0];
-}
-
-/**
- * Ce qu'une ligne de l'aperçu porte, et pourquoi elle ne porte rien.
- *
- * Trois cas se ressemblent à l'écran et ne veulent pas dire la même chose. Un
- * champ qui ne vient d'aucune fiche — le secteur, les niveaux, que le plan
- * porte — n'a rien à relever : la valeur d'exemple montre alors la forme, et
- * c'est tout ce qu'on peut en dire. Un champ dont l'exploitant a choisi
- * « aucun » est vide par décision, et lui prêter une valeur inventée
- * masquerait précisément ce qu'il vient de régler. Un champ associé mais que
- * le relevé ne renseigne pas est vide par accident, et c'est ce qu'il faut
- * lire — tant qu'une synchronisation a eu lieu, faute de quoi rien n'a encore
- * été lu et la forme reprend ses droits.
- */
-function valeurApercu(bloc, cle) {
-  /* La cible porte le nom de la clé, pour un champ propre au salon comme pour
-     les autres. */
-  const ligne = LIGNES_FICHE.stand.find((l) => l.cle === cle);
-  const duPlan = cle.indexOf(PREFIXE_PERSO) !== 0 && !(ligne && ligne.cible);
-  if (duPlan) return { valeur: EXEMPLES_FICHE[cle] || "", faute: "sans valeur" };
-
-  let brut = exempleCible(bloc, cle);
-  // le code postal rejoint l'adresse sur la même ligne, comme sur une enveloppe
-  if (cle === "adresse") {
-    brut = [brut, exempleCible(bloc, "codePostal")].filter(Boolean).join(" ");
-  }
-  if (brut) return { valeur: brut, faute: "" };
-  if ((bloc.champs || {})[cle] === "") {
-    return { valeur: "", faute: "aucun champ associé" };
-  }
-  return bloc.detecteLe
-    ? { valeur: "", faute: "vide sur les fiches lues" }
-    : { valeur: EXEMPLES_FICHE[cle] || "", faute: "pas encore synchronisé" };
-}
-
-/**
- * La fiche telle que le visiteur la recevra.
- *
- * Le balisage reprend celui du plan — même en-tête, mêmes champs, même
- * `eyebrow` sur les intitulés — parce qu'un aperçu qui ne ressemble pas à ce
- * qu'il annonce ne sert qu'à se rassurer.
- */
-function dessineApercu(hote, e, src, cles) {
-  const bloc = correspondance(e, src);
-  const parait = (cle) => paraitSurFiche(e, "stand", cle);
-  hote.textContent = "";
-
-  const tete = document.createElement("div");
-  tete.className = "af-hd";
-  const nom = exempleCible(bloc, "nom") || EXEMPLES_FICHE.nom;
-  tete.innerHTML = '<div class="af-bads"><span class="af-bad mono"></span>' +
-    '<span class="af-bad neuf">Nouveau</span></div>' +
-    '<h4></h4><p class="af-code"></p>';
-  tete.querySelector(".af-bad").textContent = "Stand";
-  // la pastille ne paraît que là où le salon distingue ses nouveaux venus
-  tete.querySelector(".neuf").hidden = !parait("nouveau") ||
-    !champsLus(bloc, "nouveau").length;
-  tete.querySelector("h4").textContent = nom;
-  /* Le pavillon est celui du salon dès qu'une synchronisation en a ramené un.
-     Le hall, lui, reste un exemple : il tient à l'emplacement, et la console
-     ne relève pas les stands un à un — l'aperçu en montre la place, pas la
-     valeur. */
-  const pav = (PLANS[e.id] || [])[0];
-  tete.querySelector(".af-code").textContent = [
-    (pav && pav.libelle) || "Pavillon 1",
-    parait("hall") ? EXEMPLES_FICHE.hall : "",
-    parait("code") ? EXEMPLES_FICHE.code : "",
-  ].filter(Boolean).join(" · ");
-  hote.appendChild(tete);
-
-  const corps = document.createElement("div");
-  corps.className = "af-bd";
-  /* Le logo vient en tête du corps, et l'aperçu montre sa place plutôt que
-     l'image : le relevé abrège ses valeurs à soixante caractères, quand une
-     adresse d'image en fait le double — ce serait une adresse tronquée. Le
-     cadre disparaît là où aucun champ ne l'alimente, comme la pastille des
-     nouveaux venus. */
-  if (parait("logo") && champsLus(bloc, "logo").length) {
-    const l = document.createElement("span");
-    l.className = "af-logo";
-    l.textContent = "Logo";
-    corps.appendChild(l);
-  }
-  cles.forEach((cle) => {
-    if (!parait(cle)) return;
-    const { valeur, faute } = valeurApercu(bloc, cle);
-    const f = document.createElement("div");
-    f.className = "af-champ";
-    f.innerHTML = '<span class="eyebrow"></span><span class="v"></span>';
-    const l = LIGNES_FICHE.stand.find((x) => x.cle === cle);
-    f.querySelector(".eyebrow").textContent = (l && l.surFiche) || libelleCorps(e, cle);
-    const v = f.querySelector(".v");
-    if (!valeur) {
-      /* Rien à montrer : le dire plutôt que de sauter la ligne, sans quoi on
-         croirait le champ retiré de la fiche. */
-      v.className = "v af-vide";
-      v.textContent = faute;
-    } else {
-      /* Le point-virgule sépare les valeurs d'un champ à choix : la fiche les
-         montre l'une sous l'autre, l'aperçu aussi. */
-      const l = separeValeurs(valeur);
-      l.forEach((x) => {
-        const s = document.createElement("span");
-        s.className = "ligne";
-        s.textContent = x;
-        v.appendChild(s);
-      });
-    }
-    corps.appendChild(f);
-  });
-  if (!corps.children.length) {
-    const p = document.createElement("p");
-    p.className = "af-vide";
-    p.textContent = "Aucun champ affiché : la fiche se réduira à son en-tête.";
-    corps.appendChild(p);
-  }
-  hote.appendChild(corps);
-}
-
-/**
- * Le panneau de l'ordre d'affichage.
- *
- * Deux façons de déplacer un champ, et il en faut deux : la poignée, qu'on
- * attrape pour traverser la liste d'un geste, et les flèches, qui restent le
- * seul chemin au clavier — et le seul au doigt, le glisser-déposer du
- * navigateur ignorant le tactile.
- *
- * La liste se redessine sur place plutôt que de rouvrir la fenêtre : remonter
- * un champ de six rangs demande six clics, et rouvrir à chacun d'eux
- * ramènerait l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient
- * d'actionner reprend le focus, pour que le clic suivant tombe au même
- * endroit.
- */
-function panneauOrdre(e, src) {
-  const hote = document.createElement("div");
-  let ordre = ordreEffectif(e, clesCorps(e, src));
-
-  const aide = document.createElement("p");
-  aide.className = "aide";
-  aide.textContent = "L'ordre dans lequel la fiche déroule ses champs, de haut " +
-    "en bas : ce que le visiteur vient lire en premier n'est pas le même d'un " +
-    "salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des " +
-    "flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le " +
-    "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
-  hote.appendChild(aide);
-
-  const deux = document.createElement("div");
-  deux.className = "ordre-deux";
-  hote.appendChild(deux);
-
-  const liste = document.createElement("div");
-  liste.className = "ordre-liste";
-  deux.appendChild(liste);
-
-  /* L'aperçu se colle en haut : la liste est plus longue que lui, et le
-     laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
-     qu'on range. */
-  const cadre = document.createElement("div");
-  cadre.className = "apercu-cadre";
-  cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
-    '<div class="apercu-fiche"></div><p class="aide"></p>';
-  /* L'habillage de la fiche — onze modèles — se choisit plan par plan, dans le
-     panneau d'apparence du plan lui-même : la console n'en a ni le réglage ni
-     la feuille de style. L'aperçu montre donc l'ordre, pas le modèle, et le
-     dit plutôt que de laisser croire que le salon aura celui-ci. */
-  cadre.querySelector("p").textContent = "Les valeurs viennent du relevé de la " +
-    "dernière synchronisation. Sur téléphone, les champs qui tiennent en un " +
-    "mot se rangent deux par deux. Le modèle de fiche, lui, se choisit depuis " +
-    "le plan — engrenage, « Apparence » — où ses vignettes reprennent ces " +
-    "champs dans cet ordre.";
-  const apercu = cadre.querySelector(".apercu-fiche");
-  deux.appendChild(cadre);
-
-  /** Enregistre l'ordre courant, et reprend ce qui l'est vraiment si on refuse. */
-  const enregistre = async (focus) => {
-    await ecritFiche(e, { ordre: ordre.slice() });
-    ordre = ordreEffectif(e, clesCorps(e, src));
-    rendu(focus);
-  };
-
-  /* Le rang se relit dans la liste plutôt que de venir du dessin : un glissé
-     l'a peut-être changé depuis, et l'enregistrement qui suit n'a pas encore
-     rendu la main. */
-  const deplace = (cle, pas) => {
-    const i = ordre.indexOf(cle);
-    if (i < 0 || i + pas < 0 || i + pas >= ordre.length) return;
-    ordre = ordre.slice();
-    ordre.splice(i + pas, 0, ordre.splice(i, 1)[0]);
-    const focus = { cle, sens: pas < 0 ? 0 : 1 };
-    rendu(focus);
-    enregistre(focus);
-  };
-
-  /* Le rang est écrit sur chaque ligne : pendant le glissé il change à chaque
-     ligne franchie, et le laisser mentir jusqu'au lâcher ferait douter de ce
-     qu'on est en train de faire. Les flèches de bout de liste suivent, sans
-     quoi la première garderait un « monter » actif au milieu de la liste. */
-  const renumerote = () => {
-    const n = liste.children.length;
-    [...liste.children].forEach((d, i) => {
-      d.querySelector(".rang").textContent = String(i + 1);
-      const b = d.querySelectorAll("button");
-      b[0].disabled = i === 0;
-      b[1].disabled = i === n - 1;
-    });
-    // l'aperçu suit le glissé plutôt que d'attendre le lâcher : c'est lui
-    // qu'on regarde en déplaçant, pas la liste
-    dessineApercu(apercu, e, src, [...liste.children].map((d) => d.dataset.cle));
-  };
-
-  /**
-   * La ligne devant laquelle déposer, d'après la hauteur du pointeur.
-   *
-   * On compare au milieu de chaque ligne, et non à son bord : le bord ferait
-   * basculer l'insertion dès qu'on l'effleure, et la liste tremblerait sous le
-   * curseur au lieu de suivre. « null » veut dire la fin de la liste.
-   */
-  const voisinApres = (y) => [...liste.querySelectorAll(".ordre-ligne:not(.tire)")]
-    .find((d) => {
-      const r = d.getBoundingClientRect();
-      return y < r.top + r.height / 2;
-    }) || null;
-
-  liste.addEventListener("dragover", (ev) => {
-    const tire = liste.querySelector(".tire");
-    if (!tire) return;
-    // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
-    ev.preventDefault();
-    const apres = voisinApres(ev.clientY);
-    if (apres === tire.nextSibling || apres === tire) return;
-    liste.insertBefore(tire, apres);
-    renumerote();
-  });
-
-  const rendu = (focus) => {
-    liste.textContent = "";
-    ordre.forEach((cle, i) => {
-      const d = document.createElement("div");
-      d.className = "ordre-ligne";
-      d.dataset.cle = cle;
-      d.draggable = true;
-      d.innerHTML = '<span class="poignee" aria-hidden="true">⠿</span>' +
-        '<span class="rang"></span><span class="lib"></span>' +
-        '<span class="etiq"></span>' +
-        '<button type="button" class="outil">▲</button>' +
-        '<button type="button" class="outil">▼</button>';
-      d.querySelector(".rang").textContent = String(i + 1);
-      const libelle = libelleCorps(e, cle);
-      d.querySelector(".lib").textContent = libelle;
-      /* Deux champs peuvent porter le même intitulé — un salon qui s'ajoute sa
-         « Ville » à côté de celle de la fiche société — et rien d'autre ici ne
-         les distinguerait. */
-      if (cle.indexOf(PREFIXE_PERSO) === 0) {
-        d.querySelector(".etiq").textContent = "propre au salon";
-      }
-      /* Un champ masqué garde sa place : le remonter aujourd'hui pour
-         l'afficher demain doit rester possible, et le retirer d'ici ferait
-         sauter un rang sans qu'on sache lequel ni pourquoi. */
-      if (((e.fiche || {}).stand || {})[cle] === false) {
-        d.classList.add("source-inerte");
-        d.title = "Masqué : ce champ ne paraît pas sur la fiche.";
-      }
-      const b = d.querySelectorAll("button");
-      // l'état des deux flèches en bout de liste est posé par « renumerote »
-      [["Monter", -1], ["Descendre", 1]].forEach(([titre, pas], n) => {
-        b[n].title = titre;
-        b[n].setAttribute("aria-label", titre + " " + libelle);
-        b[n].onclick = () => deplace(cle, pas);
-      });
-
-      d.ondragstart = (ev) => {
-        /* Firefox n'ouvre pas de glissé sans donnée transportée, et le texte
-           déposé ailleurs vaut mieux que la clé technique. */
-        ev.dataTransfer.setData("text/plain", libelle);
-        ev.dataTransfer.effectAllowed = "move";
-        // la classe se pose au tour suivant : posée tout de suite, elle
-        // entrerait dans l'image que le navigateur vient de prendre de la ligne
-        setTimeout(() => d.classList.add("tire"), 0);
-      };
-      d.ondragend = () => {
-        d.classList.remove("tire");
-        const suite = [...liste.children].map((x) => x.dataset.cle);
-        // un glissé qui n'a rien déplacé n'a rien à enregistrer
-        if (suite.join("|") === ordre.join("|")) return;
-        ordre = suite;
-        enregistre();
-      };
-      liste.appendChild(d);
-    });
-    renumerote();
-
-    if (focus) {
-      const b = liste.querySelector('.ordre-ligne[data-cle="' + focus.cle +
-        '"] button:nth-of-type(' + (focus.sens + 1) + ')');
-      if (b && !b.disabled) b.focus();
-    }
-  };
-
-  /* On revient ici après avoir coché ou décoché dans l'onglet Stand : l'aperçu
-     doit s'en apercevoir, sans quoi il montrerait un champ qu'on vient de
-     retirer. */
-  hote.rafraichit = () => {
-    ordre = ordreEffectif(e, clesCorps(e, src));
-    rendu();
-  };
-
-  rendu();
-  return hote;
-}
-
 /**
  * Une ligne du bloc « Données » : ce dont il s'agit, ce que cela vaut, et de
  * quoi le changer. Les trois colonnes sont les mêmes d'une ligne à l'autre —
@@ -2917,7 +2495,7 @@ function ouvreFiche(apres) {
     const boutons = [], panneaux = [];
 
     /* Un onglet de la fenêtre : son bouton, son panneau, et la bascule qui les
-       relie. Les trois ne se remplissent pas de la même façon — l'un d'eux
+       relie. Les deux ne se remplissent pas de la même façon — l'un d'eux
        s'arrête plus tôt — d'où la fabrique à part. */
     const ongletFiche = (titre) => {
       const i = boutons.length;
@@ -2928,11 +2506,6 @@ function ouvreFiche(apres) {
       b.onclick = () => {
         boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
         panneaux.forEach((x, j) => { x.hidden = j !== i; });
-        /* Un panneau qui dépend des autres se refait en reparaissant : l'aperçu
-           de l'ordre montre les champs cochés dans l'onglet Stand, qui ont pu
-           changer pendant qu'il était caché. */
-        const pan = panneaux[i].firstChild;
-        if (pan && pan.rafraichit) pan.rafraichit();
       };
       barre.appendChild(b);
       boutons.push(b);
@@ -3024,12 +2597,6 @@ function ouvreFiche(apres) {
         ]));
     });
 
-    /* L'ordre de lecture a son onglet : il porte sur la fiche entière et non
-       sur l'un de ses cadres, et le chercher au bas de quarante lignes de
-       réglages revenait à ne pas le trouver. Il vient après les deux autres —
-       on ne range les champs qu'une fois qu'on sait lesquels paraissent. */
-    ongletFiche("Ordre d'affichage").appendChild(panneauOrdre(e, src));
-
     corps.appendChild(barre);
     panneaux.forEach((x) => corps.appendChild(x));
 
@@ -3047,6 +2614,17 @@ function ouvreFiche(apres) {
       : "Le nom et le pavillon sont toujours affichés : sans eux la fiche ne " +
         "désigne plus rien.";
     corps.appendChild(note);
+
+    /* Ce que la fiche montre se décide ici ; dans quel ordre elle le montre se
+       décide sur le plan, où l'aperçu porte l'habillage retenu et les valeurs
+       d'un vrai stand. Le dire, faute de quoi on chercherait le réglage dans
+       cette fenêtre — c'est là qu'il était. */
+    const ou = document.createElement("p");
+    ou.className = "aide";
+    ou.textContent = "L'ordre dans lequel ces champs se lisent, et les groupes " +
+      "qui les réunissent sous un même titre, se règlent depuis le plan : " +
+      "engrenage, « Fiche ».";
+    corps.appendChild(ou);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
 

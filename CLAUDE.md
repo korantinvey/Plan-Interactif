@@ -109,6 +109,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | recherche, index des exposants, liste | `_js.html` § 1 et 5 |
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
+| ordre des champs de la fiche, groupes sous un même titre | réglage `_admin1.html` `voletOrdre` ; rendu `_js.html` `corpsRange` ; migration `groupes_de_champs` |
 | tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` |

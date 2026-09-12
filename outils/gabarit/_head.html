@@ -2457,9 +2457,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
-   remonte, de quoi le plan a l'air, ses zones, sa mesure. Séparés par des
-   onglets plutôt qu'empilés — l'apparence est une planche d'aperçus, et
-   poussait tout le reste hors de l'écran. */
+   remonte, comment la fiche se range, de quoi le plan a l'air, ses zones, sa
+   mesure. Séparés par des onglets plutôt qu'empilés — l'apparence est une
+   planche d'aperçus, et poussait tout le reste hors de l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2480,7 +2480,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .voletReg{animation:none}
   .ongReg button{transition:none}
 }
-/* Les onglets étaient quatre, ils sont cinq : sur un téléphone, « Apparence »
+/* Les onglets étaient quatre, ils sont six : sur un téléphone, « Apparence »
    et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
    resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
    ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
@@ -2565,6 +2565,77 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
    qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
 .apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le rangement de la fiche : la liste des champs d'un côté, la fiche telle
+   qu'elle en sortira de l'autre. Une liste de quinze intitulés ne dit pas ce
+   qu'on obtient — on réglait un ordre sans voir la fiche, et il fallait ouvrir
+   le plan public pour juger. L'aperçu se colle en haut : la liste est plus
+   longue que lui, et le laisser défiler reviendrait à ranger des champs sans
+   plus rien voir de ce qu'on range. */
+.ordreDeux{display:grid;grid-template-columns:minmax(0,1fr) 264px;
+  gap:18px;align-items:start;margin-top:12px}
+.ordreApercu{position:sticky;top:0}
+.ordreApercu > .eyebrow{display:block;margin-bottom:7px}
+.ordreApercu > .aideO{margin:8px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+/* L'aperçu porte les classes de la vraie fiche, comme les vignettes des
+   modèles : c'est la même feuille de style qui l'habille. Il ne se réduit pas,
+   lui — on y lit des valeurs, pas une silhouette — d'où la hauteur bornée et
+   le fondu du bas plutôt qu'un défilement de plus dans la fenêtre. */
+.vueO{display:flex;max-height:52dvh;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 88%,transparent);
+  mask-image:linear-gradient(#000 88%,transparent)}
+.vueO .apercu{flex:1 1 auto}
+.ordreListe{display:flex;flex-direction:column;gap:3px}
+.ordreLigne{display:flex;align-items:center;gap:8px;font-size:13px;
+  padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:grab}
+.ordreLigne:active{cursor:grabbing}
+.ordreLigne .rang,.grpTete .rang{flex:0 0 20px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--ink-3);text-align:right}
+.ordreLigne .prise,.grpTete .prise{flex:0 0 auto;color:var(--ink-3);font-size:15px;line-height:1}
+.ordreLigne .lib{color:var(--ink);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.ordreLigne .etiq{flex:1;font-size:11px;color:var(--ink-3)}
+.ordreLigne .etiq:not(:empty){margin-left:2px}
+.cocheO{flex:0 0 auto;width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
+/* Un champ que la console a masqué garde sa place dans la liste : le remonter
+   aujourd'hui pour l'afficher demain doit rester possible. Il s'efface sans
+   disparaître, faute de quoi un rang sauterait sans qu'on sache lequel. */
+.ordreLigne.eteint{opacity:.5}
+.ordreLigne .outil,.grpTete .outil{flex:0 0 auto;width:22px;height:20px;
+  border:1px solid var(--line);border-radius:3px;font-size:10px;color:var(--ink-2);
+  background:var(--surface)}
+.ordreLigne .outil:not(:disabled):hover,.grpTete .outil:not(:disabled):hover{
+  border-color:var(--accent);color:var(--accent)}
+.ordreLigne .outil.danger:not(:disabled):hover,.grpTete .outil.danger:not(:disabled):hover{
+  border-color:var(--rouge);color:var(--rouge)}
+.ordreLigne .outil:disabled{opacity:.3;cursor:default}
+/* Le bloc tiré s'efface là où il était : c'est le trou qui se déplace sous le
+   curseur qui dit où le lâcher le posera. */
+.ordreLigne.tire,.ordreGrp.tire{opacity:.4}
+.ordreLigne.tire .outil,.ordreGrp.tire .outil{visibility:hidden}
+/* Un groupe se lit comme un champ de plus : il porte un rang, il se déplace
+   d'un bloc, et ses membres se serrent sous son titre plutôt qu'à côté des
+   autres champs. Le liseré d'accent tient lieu d'accolade. */
+.ordreGrp{border:1px solid var(--line);border-left:2px solid var(--accent);
+  border-radius:var(--radius);background:var(--surface-2);cursor:grab}
+.ordreGrp:active{cursor:grabbing}
+.grpTete{display:flex;align-items:center;gap:8px;padding:6px 9px}
+.grpTitre{flex:1;min-width:0;padding:4px 7px;font-size:13px;font-weight:600;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.grpTitre:focus{border-color:var(--accent);outline:none}
+.grpMembres{display:flex;flex-direction:column;gap:3px;padding:0 9px 8px 22px}
+.ordreGrp .ordreLigne{background:var(--surface)}
+.piedO{display:flex;align-items:center;gap:10px;margin-top:12px}
+/* Ce que l'enregistrement devient, à côté du bouton qui réunit : chaque geste
+   part en base tout seul, et rien d'autre ne le dirait. */
+.etatO{font-size:12px;color:var(--ink-3)}
+.etatO[data-mal="true"]{color:var(--rouge)}
+@media (max-width:760px){
+  .ordreDeux{grid-template-columns:minmax(0,1fr)}
+  .ordreApercu{position:static}
+  .vueO{max-width:320px}
+}
 /* Les zones organisateur dans les réglages : la liste d'un côté, la fiche de
    celle qu'on a choisie de l'autre. Un exploitant les reprend l'une après
    l'autre, et doit voir en même temps ce qu'il écrit et ce qui reste à
