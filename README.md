@@ -380,9 +380,9 @@ qu'on protège — et **son rang dans la pile** aussi, qui ne touche pas au dess
 et se reprend d'un geste.
 
 Le verrou vit dans les réglages, comme le rôle d'un calque dans les itinéraires,
-et part aux autres postes à la publication : les colonnes de `calque_dessin`
-sont fixées, celles des réglages ne le sont pas, et rien de tout cela ne demande
-de migration.
+et part aux autres postes avec eux : les colonnes de `calque_dessin` sont
+fixées, celles des réglages ne le sont pas, et rien de tout cela ne demande de
+migration.
 
 ## Le parcours de visite
 
