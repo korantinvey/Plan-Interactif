@@ -378,7 +378,7 @@ const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
    choisir un modèle sur une fiche plus courte que la vraie, et laisserait
    croire le champ retiré. */
 const EXEMPLES_CORPS = {
-  nom: "Ateliers Ligneron", code: "D14", hall: "Hall 2",
+  nom: "Ateliers Ligneron", code: "D14", pavillon: "Pavillon 2",
   raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
   adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
   niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
@@ -415,14 +415,17 @@ function texteCorps(o, cle){
  * choisirait un habillage sur une fiche vide.
  */
 function standApercu(cles){
-  let mieux = null, hall = "", score = 0, neuf = false;
+  let mieux = null, pavillon = "", hall = "", score = 0, neuf = false;
   Object.values(DATA.plans || {}).forEach(pl => (pl.stands || []).forEach(o => {
     if (!o.nom) return;
     neuf = neuf || Boolean(o.neuf);
     const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
-    if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
+    if (n > score){
+      score = n; mieux = o;
+      pavillon = pl.libelle || ""; hall = pl.hall || "";
+    }
   }));
-  return { stand: mieux, hall, neuf };
+  return { stand: mieux, pavillon, hall, neuf };
 }
 
 /**
@@ -464,7 +467,7 @@ function contenuApercu(){
   const persos = (DATA.fiche && DATA.fiche.perso) || [];
   const cles = ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
     .filter(c => montre("stand", c));
-  const { stand, hall, neuf } = standApercu(cles);
+  const { stand, pavillon, hall, neuf } = standApercu(cles);
   const vals = {};
   cles.forEach(c => {
     vals[c] = (stand && texteCorps(stand, c)) || EXEMPLES_CORPS[c] ||
@@ -474,7 +477,11 @@ function contenuApercu(){
     cles: cles.filter(c => vals[c]), vals,
     nom: (stand && stand.nom) || EXEMPLES_CORPS.nom,
     code: (stand && stand.code) || EXEMPLES_CORPS.code,
-    hall: hall || EXEMPLES_CORPS.hall,
+    pavillon: pavillon || EXEMPLES_CORPS.pavillon,
+    /* Le hall ne se supplée pas : tous les salons n'en portent pas, et un
+       exemple inventé ferait choisir un habillage sur une pastille plus longue
+       que la vraie. Il ne paraît donc que coché et renseigné. */
+    hall: montre("stand", "hall") ? hall : "",
     /* La pastille ne paraît que là où le salon distingue ses nouveaux venus :
        le réglage seul la ferait voir sur des salons dont aucune fiche ne porte
        le champ, et plusieurs modèles l'habillent — on choisirait sur une
@@ -488,7 +495,7 @@ function contenuApercu(){
       const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
       const n = ((pl && pl.stands) || []).length || EXEMPLES_LISTE.length;
       return n + (n > 1 ? " résultats" : " résultat") + " · " +
-        ((pl && pl.libelle) || hall || EXEMPLES_CORPS.hall);
+        ((pl && pl.libelle) || pavillon || EXEMPLES_CORPS.pavillon);
     })(),
   };
 }
@@ -534,7 +541,8 @@ function apercuFiche(cle, vu){
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
       '<span class="eyebrow">Stand</span><h2>' + esc(vu.nom) + '</h2>' +
-      '<span class="badge">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+      '<span class="badge">' +
+      esc([vu.pavillon, vu.hall, code].filter(Boolean).join(" · ")) + '</span>' +
       (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +

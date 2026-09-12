@@ -1506,14 +1506,26 @@ function centrePoint(xy){
   view = { x: xy[0] - w / 2, y: xy[1] - h / 2 + decale, w: w, h: h };
   poseVue();
 }
+/* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru, et Klipso y porte parfois le code du dossier plutôt
+   qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
+   d'un coup sur tous les salons déjà en ligne.
+
+   Le même tableau vit dans la console — « FICHE_MASQUEE_PAR_DEFAUT » de
+   « _console-js.html », qui décide de l'état des cases. */
+const MASQUE_PAR_DEFAUT = { hall: true };
+
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
  * Une entrée absente vaut « affiché », pour qu'un champ ajouté plus tard ne
- * disparaisse pas des salons déjà réglés.
+ * disparaisse pas des salons déjà réglés — sauf ceux que le tableau ci-dessus
+ * réserve, qui attendent d'être cochés.
  */
 function montre(type, cle){
-  const r = DATA && DATA.fiche && DATA.fiche[type];
-  return !r || r[cle] !== false;
+  const r = (DATA && DATA.fiche && DATA.fiche[type]) || {};
+  return MASQUE_PAR_DEFAUT[cle] ? r[cle] === true : r[cle] !== false;
 }
 
 /* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
@@ -1983,8 +1995,12 @@ function ouvre(o, rect, canal, iSoc){
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   const pl = DATA.plans[o.p] || P();
-  $("dCode").textContent = pl.libelle +
-    (ok("code", o.code) ? " · " + o.code : "");
+  /* Le hall est affecté au pavillon, donc au stand qui s'y trouve : Klipso le
+     porte sur le plan, et tous les salons ne le renseignent pas. Il se glisse
+     entre le pavillon et le numéro, parce que c'est l'ordre dans lequel on
+     cherche un stand sur place — le hall, puis l'allée. */
+  $("dCode").textContent = [pl.libelle, ok("hall", pl.hall), ok("code", o.code)]
+    .filter(Boolean).join(" · ");
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
      pour un filigrane, et une zone n'a pas de numéro du tout. */
