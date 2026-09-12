@@ -170,7 +170,7 @@ Fonctions :
 
 - l.640 · Page de rapport
 
-### `_dessin.html` — 1646 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1651 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -182,20 +182,20 @@ Fonctions :
 `cheminForme` 170 · `styleTrait` 190 · `poseTrait` 203 · `dessineDessins` 210
 `versPlan` 252 · `apercu` 258 · `apercuGuide` 270 · `toleranceTrace` 294
 `aimanteContour` 299 · `rayonContour` 302 · `redresseTrace` 321 · `traceGuide` 355
-`fermeIci` 362 · `ajouteForme` 367 · `pictoDe` 467 · `nomTypeRepere` 507 · `typeZone` 533
-`pictoForme` 540 · `estPorte` 560 · `ouvreEntrant` 561 · `ouvreSortant` 562
-`traceRepere` 576 · `etiquetteSociete` 644 · `nomSurLePlan` 648 · `societeDeForme` 659
-`societesDuPlan` 670 · `remplitListeSocietes` 681 · `societeSaisie` 689
-`traceStandDessine` 705 · `texteStandDessine` 729 · `poseLibellesDessines` 747
-`decoupeStand` 768 · `marqueStandsDessines` 780 · `rafraichitStandsDessines` 795
-`oublieReperes` 825 · `reperesCherchables` 827 · `vaAuRepere` 871 · `cartouchePoi` 892
-`ouvrePoi` 977 · `mesureCartouche` 1049 · `phareRepere` 1056 · `phareZone` 1057
-`eclairePoi` 1061 · `oublieChoixPoi` 1093 · `signale` 1102 · `calquePourImage` 1116
-`poseImage` 1133 · `importeImage` 1146 · `dessinPointerDown` 1197 · `dessinPointerMove` 1271
-`dessinPointerUp` 1309 · `termineTrace` 1345 · `aide` 1357 · `choisitOutil` 1382
-`enchaineStand` 1406 · `activeCalque` 1464 · `cleVerrou` 1520 · `verrouille` 1521
-`basculeVerrou` 1523 · `pictoVerrou` 1540 · `montreRoleIti` 1573 · `creeCalque` 1604
-`demandeNom` 1617 · `renommeCalque` 1636
+`fermeIci` 362 · `ajouteForme` 367 · `pictoDe` 467 · `nomTypeRepere` 512 · `typeZone` 538
+`pictoForme` 545 · `estPorte` 565 · `ouvreEntrant` 566 · `ouvreSortant` 567
+`traceRepere` 581 · `etiquetteSociete` 649 · `nomSurLePlan` 653 · `societeDeForme` 664
+`societesDuPlan` 675 · `remplitListeSocietes` 686 · `societeSaisie` 694
+`traceStandDessine` 710 · `texteStandDessine` 734 · `poseLibellesDessines` 752
+`decoupeStand` 773 · `marqueStandsDessines` 785 · `rafraichitStandsDessines` 800
+`oublieReperes` 830 · `reperesCherchables` 832 · `vaAuRepere` 876 · `cartouchePoi` 897
+`ouvrePoi` 982 · `mesureCartouche` 1054 · `phareRepere` 1061 · `phareZone` 1062
+`eclairePoi` 1066 · `oublieChoixPoi` 1098 · `signale` 1107 · `calquePourImage` 1121
+`poseImage` 1138 · `importeImage` 1151 · `dessinPointerDown` 1202 · `dessinPointerMove` 1276
+`dessinPointerUp` 1314 · `termineTrace` 1350 · `aide` 1362 · `choisitOutil` 1387
+`enchaineStand` 1411 · `activeCalque` 1469 · `cleVerrou` 1525 · `verrouille` 1526
+`basculeVerrou` 1528 · `pictoVerrou` 1545 · `montreRoleIti` 1578 · `creeCalque` 1609
+`demandeNom` 1622 · `renommeCalque` 1641
 
 Éléments :
 
