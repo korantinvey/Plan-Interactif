@@ -467,6 +467,7 @@ le porte :
 | *Infranchissable* | ce qui est dessiné barre le passage à tout le monde |
 | *Infranchissable en fauteuil* | il n'est contourné qu'en itinéraire accessible |
 | *Où l'on peut marcher* | les trajets ne sortent plus de ce qui est dessiné ici |
+| *Où l'on peut marcher — PMR uniquement* | ce qui est dessiné ne s'ouvre qu'en itinéraire accessible, et reste fermé aux autres |
 
 Les deux bouts par lesquels on peut prendre le problème. **Barrer est presque
 toujours le plus court** — un bloc sanitaire fait un rectangle, une allée en
@@ -476,6 +477,17 @@ qu'un pavillon porte une circulation dessinée, elle remplace l'enveloppe et ce
 qui n'est pas dessiné cesse de l'être. Cela coûte une après-midi de tracé, et il
 vaut mieux le savoir avant de s'y mettre. Dans les deux cas, tracez les surfaces
 telles qu'elles sont : le dégagement au bord est retiré tout seul.
+
+Le rôle *PMR uniquement* sert un cas que ni barrer ni ouvrir ne savait dire : le
+couloir qui mène à l'ascenseur est bien praticable, et le trajet ordinaire n'a
+pourtant rien à y faire — l'escalier d'à côté est plus court, et personne ne
+tient à y envoyer la foule d'un salon. Ouvert au fauteuil, fermé au marcheur :
+c'est le seul rôle dont l'effet dépend du mode. Faites-le **mordre d'un bon
+mètre sur l'allée qu'il rejoint** — le couloir est creusé de son dégagement
+comme une allée l'est du sien, et une jonction bord à bord serait mangée par
+cette érosion. Mordez dans la longueur de l'allée et non en travers : cette
+morsure se referme sur le marcheur comme le reste du couloir. La case « Voir ce qui est praticable », l'option accessible
+cochée puis décochée, montre les deux grilles et tranche la question.
 
 Une case **« Voir ce qui est praticable »**, dans la même barre, teinte la
 grille telle que le calcul la voit. Sans elle on dessine à l'aveugle : deux
@@ -616,7 +628,7 @@ partout ailleurs, le trajet doit s'expliquer par ce qu'on voit.
 
 ### Le mode accessible
 
-Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
+Cocher « Itinéraire accessible » change trois choses, sans changer le calcul :
 
 1. **Le passage minimal double** — un mètre quarante au lieu de quatre-vingt-dix
    centimètres, la largeur qu'exige un fauteuil roulant. Une allée plus étroite
@@ -628,6 +640,10 @@ Cocher « Itinéraire accessible » change deux choses, sans changer le calcul :
    dont le rôle est *Infranchissable en fauteuil*. Ce calque reste invisible au
    visiteur — c'est le trajet qui en tient compte, pas le dessin, et le masquer
    n'y change rien — et se reconnaît à son trait pointillé pendant l'édition.
+3. **Des passages s'ouvrent**, ce qui est plus rare. Un calque *Où l'on peut
+   marcher — PMR uniquement* trace les couloirs qu'on réserve au fauteuil : le
+   couloir de l'ascenseur, la rampe qui contourne les marches. Ils n'existent
+   que dans cette grille-là, et le trajet ordinaire les longe sans y entrer.
 
 Quand aucun chemin accessible n'existe, le tiroir le dit franchement et propose
 de décocher l'option pour voir le trajet ordinaire. C'est le seul cas où la
@@ -636,7 +652,8 @@ réponse est « non » : mieux vaut cela qu'un trajet qui fait monter un escalie
 Un calque masqué ne compte pas, ni ses repères ni les liaisons qu'ils portent :
 le trajet doit s'expliquer par ce qu'on voit à l'écran. Les calques *de rôle*
 font exception, et c'est voulu : *Infranchissable*, *Infranchissable en
-fauteuil* et *Où l'on peut marcher* décrivent le terrain, pas l'affichage. On
+fauteuil* et les deux *Où l'on peut marcher* décrivent le terrain, pas
+l'affichage. On
 les éteint justement parce que le visiteur n'a pas à voir le contour des
 sanitaires — le trajet, lui, continue de les contourner.
 
