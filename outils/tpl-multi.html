@@ -14964,11 +14964,32 @@ function centreCase(g, i){
   return horsGrille(g, [g.x0 + (cx + .5) * PAS_GRILLE, g.y0 + (cy + .5) * PAS_GRILLE]);
 }
 
-/* Jusqu'où l'on accepte de chercher l'allée d'un point : douze mètres, la
-   profondeur d'un très grand stand. Au-delà, on ne s'écarte plus — un point
-   qu'aucune allée n'atteint doit rester injoignable, sinon le mode accessible
-   tracerait des trajets vers des stands qu'il vient précisément d'exclure. */
+/* Jusqu'où l'on accepte de chercher l'allée d'un emplacement : douze mètres,
+   la profondeur d'un très grand stand. Au-delà, on ne s'écarte plus — un
+   emplacement qu'aucune allée n'atteint doit rester injoignable, sinon le mode
+   accessible tracerait des trajets vers des stands qu'il vient précisément
+   d'exclure. */
 const PORTEE_ACCROCHE = 24;
+
+/**
+ * Et pour un point qui n'est l'emprise de rien : quarante mètres.
+ *
+ * Une entrée est posée à la porte du hall, c'est-à-dire hors de ce que le
+ * calcul connaît : sans calque de circulation, le praticable se réduit à
+ * l'enveloppe des emplacements, et le parvis n'en fait pas partie. Sur
+ * Franchise Expo Paris, l'entrée tombe à vingt et un mètres de la première
+ * allée — deux fois trop loin pour l'accroche d'un stand. La journée
+ * s'ouvrait donc sur un trait qui commençait au premier exposant, l'entrée
+ * restant seule dans son coin.
+ *
+ * La borne des douze mètres ne vaut pourtant que pour les emplacements :
+ * c'est d'eux qu'on veut qu'ils restent injoignables quand aucune allée ne
+ * les borde. Un repère, lui, n'a pas de dégagement à faire respecter — c'est
+ * un point, posé là exprès pour qu'on y mène. On le laisse donc chercher son
+ * allée plus loin, et le trait dit alors les mètres qu'on marche vraiment
+ * avant d'entrer.
+ */
+const PORTEE_POINT = 80;
 
 /**
  * Les cases qu'un emplacement occupe en propre, son dégagement compris.
@@ -15013,7 +15034,7 @@ function empriseDe(g, d, cx0, cy0, cote){
  * de l'emplacement traversé. On ne franchit donc que son propre emplacement —
  * on n'entre pas chez quelqu'un pour aller chez soi.
  */
-function accrocheDepuis(g, xy, chez){
+function accrocheDepuis(g, xy, chez, portee){
   let d = caseDe(g, xy[0], xy[1]);
   if (d < 0){
     const [gx, gy] = celluleDe(g, xy[0], xy[1]);
@@ -15024,8 +15045,8 @@ function accrocheDepuis(g, xy, chez){
   if (g.nappe[d]) return d;
 
   const dx0 = d % g.w, dy0 = (d - dx0) / g.w;
-  const cote = 2 * PORTEE_ACCROCHE + 1;
-  const cx0 = dx0 - PORTEE_ACCROCHE, cy0 = dy0 - PORTEE_ACCROCHE;
+  const cote = 2 * portee + 1;
+  const cx0 = dx0 - portee, cy0 = dy0 - portee;
   const sien = chez ? empriseDe(g, chez, cx0, cy0, cote) : null;
   const chezSoi = (nx, ny) => {
     if (!sien) return true;
@@ -15040,7 +15061,7 @@ function accrocheDepuis(g, xy, chez){
   for (let k = 0; k < file.length; k++){
     const i = file[k], cx = i % g.w, cy = (i - cx) / g.w;
     // en huit voisins, le rang de l'anneau se lit sur les coordonnées
-    if (Math.max(Math.abs(cx - dx0), Math.abs(cy - dy0)) > PORTEE_ACCROCHE) break;
+    if (Math.max(Math.abs(cx - dx0), Math.abs(cy - dy0)) > portee) break;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++){
       const nx = cx + dx, ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= g.w || ny >= g.h) continue;
@@ -15095,11 +15116,15 @@ function versLeMilieu(g, i){
  * laisser injoignable serait pire que le défaut qu'on corrige : on relâche
  * alors la règle plutôt que de rendre la main, quitte à retrouver un trait qui
  * coupe par le voisin. Ce qui se voit, au moins, se comprend.
+ *
+ * La règle relâchée reste celle du voisinage, jamais la distance : le second
+ * essai cherche à la portée d'un emplacement, sans quoi on rendrait joignable
+ * le stand que la portée écarte — ce qu'elle est là pour empêcher.
  */
 function accroche(g, xy, chez){
-  let r = accrocheDepuis(g, xy, chez);
+  let r = accrocheDepuis(g, xy, chez, chez ? PORTEE_ACCROCHE : PORTEE_POINT);
   if (chez && !(r >= 0 && g.nappe[r])){
-    const large = accrocheDepuis(g, xy, null);
+    const large = accrocheDepuis(g, xy, null, PORTEE_ACCROCHE);
     if (large >= 0 && g.nappe[large]) r = large;
   }
   return r >= 0 && g.nappe[r] ? versLeMilieu(g, r) : r;
