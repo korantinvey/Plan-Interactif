@@ -9056,11 +9056,20 @@ function activeAdmin(){
      tout le travail de calques et de libellés, pour un besoin qui ne se
      présente jamais.
 
-     Ce qui reste dit où en est l'enregistrement — il se fait tout seul — et
-     permet de le relancer quand il a échoué. « majAttente » l'habille. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>';
+     La sauvegarde emportée, elle, revient — mais pour l'autre raison. Ce n'est
+     pas un moyen de transport : c'est le seul exemplaire qui ne dépende ni de
+     la base ni de ce navigateur, et le jour où les deux ont dit des choses
+     différentes, c'est un fichier tenu à part qui a permis de trancher.
+
+     Le premier bouton dit où en est l'enregistrement — il se fait tout seul —
+     et permet de le relancer quand il a échoué. « majAttente » l'habille. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>' +
+    '<button class="reset" id="sauveConf">Télécharger une sauvegarde</button>' +
+    '<button class="reset" id="restaureConf">Restaurer une sauvegarde…</button>' +
+    '<input type="file" id="fichierConf" accept="application/json,.json" hidden>';
   $("panel").appendChild(barre);
   $("pousseConf").onclick = () => pousseConfiguration();
+  brancheSauvegarde();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
      alors pas été construit — montePlan() n'en bâtit qu'en administration —
@@ -13635,6 +13644,137 @@ async function pousseConfiguration(auto){
     ditEtat("echec", e.message);
     programmeEnvoi(REPOS_ECHEC, "echec");
   }
+}
+
+/* ============================================================
+   La sauvegarde emportée
+
+   L'enregistrement automatique met le travail en base, et le poste en garde une
+   copie. Deux exemplaires, et pourtant une seule chaîne : le jour où la base
+   n'avait rien reçu et où la page s'est réalignée sur elle, il n'est resté que
+   le stockage d'un navigateur — récupérable, mais par la console, et à condition
+   d'y penser avant le prochain trait tracé.
+
+   D'où un troisième exemplaire, celui-là hors de tout : un fichier daté, sur
+   l'ordinateur de l'exploitant. Il ne sert pas à transporter une configuration
+   d'un poste à l'autre — l'enregistrement s'en charge — mais à tenir, à part,
+   ce que ni la base ni le navigateur ne garantissent.
+   ============================================================ */
+
+/** Le format du fichier. Il se lit dans l'en-tête plutôt que dans son nom :
+ *  un fichier renommé reste lisible, un fichier étranger est refusé. */
+const FORMAT_SAUVEGARDE = "plan-interactif/sauvegarde";
+
+/** Ce qu'un poste sait du salon ouvert, prêt à s'écrire dans un fichier. */
+function sauvegardeCourante(){
+  const pavillons = {};
+  (DATA?.plans || []).forEach(p => {
+    pavillons[p.id] = {
+      libelle: p.libelle || "",
+      dessins: DESSINS[p.id] || [],
+      pile: CONF["_pile:" + p.id] || [],
+    };
+  });
+  return {
+    format: FORMAT_SAUVEGARDE,
+    version: 1,
+    salon: DATA?.slug || "",
+    nom: DATA?.evenement || "",
+    date: new Date().toISOString(),
+    reglages: reglagesSeuls(),
+    pavillons: pavillons,
+  };
+}
+
+/** Le fichier, nommé par le salon et le jour : deux sauvegardes d'un même
+ *  salon ne se recouvrent pas, et on lit la date sans ouvrir le fichier. */
+function telechargeSauvegarde(){
+  const s = sauvegardeCourante();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(s, null, 1)],
+    { type: "application/json" }));
+  a.download = "plan-" + (s.salon || "salon") + "-" + s.date.slice(0, 10) + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  const n = Object.values(s.pavillons).reduce((t, p) => t + p.dessins.length, 0);
+  annonce("Sauvegarde téléchargée : " + Object.keys(s.pavillons).length +
+    " pavillon" + (Object.keys(s.pavillons).length > 1 ? "s" : "") +
+    (n ? ", " + n + " calque" + (n > 1 ? "s" : "") + " de dessin" : "") + ".");
+}
+
+/**
+ * Remet en place ce qu'un fichier contient.
+ *
+ * On n'y prend que les pavillons du salon ouvert : une sauvegarde d'un salon
+ * voisin nomme des pavillons qui ne désignent rien ici, et les poser
+ * n'écrirait qu'un mélange. Le reste suit le chemin ordinaire — marque
+ * d'attente, puis envoi automatique — plutôt qu'une écriture directe en base :
+ * si l'envoi échoue, le bandeau le dira comme pour n'importe quel autre geste.
+ */
+function appliqueSauvegarde(s){
+  const connus = new Set((DATA?.plans || []).map(p => p.id));
+  let pavillons = 0, calques = 0, ignores = 0;
+  Object.keys(s.pavillons || {}).forEach(id => {
+    if (!connus.has(id)){ ignores++; return; }
+    const v = s.pavillons[id] || {};
+    if (Array.isArray(v.dessins)){
+      DESSINS[id] = v.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      calques += DESSINS[id].length;
+      /* Le fichier l'emporte sur la base : c'est ce qu'on vient de demander.
+         La marque le dit au chargement suivant, le temps que l'envoi aboutisse. */
+      marqueAttente(id, true);
+    }
+    if (Array.isArray(v.pile)) CONF["_pile:" + id] = v.pile;
+    pavillons++;
+  });
+  if (s.reglages) Object.assign(CONF, reglagesDuSalon(s.reglages));
+  enregistreConf();
+  // range les dessins sur le poste, oublie les relevés qui en dépendent, et
+  // programme l'envoi — le même geste que pour un trait tracé à la main
+  enregistreDessins();
+  appliqueApparence();
+  dessineDessins();
+  construitPanneau();
+  annonce("Sauvegarde restaurée : " + pavillons +
+    " pavillon" + (pavillons > 1 ? "s" : "") +
+    (calques ? ", " + calques + " calque" + (calques > 1 ? "s" : "") + " de dessin" : "") +
+    (ignores ? " — " + ignores + " pavillon" + (ignores > 1 ? "s" : "") +
+      " du fichier ne concerne" + (ignores > 1 ? "nt" : "") + " pas ce salon." : "."));
+}
+
+/** Lit un fichier choisi, et demande confirmation avant d'écraser quoi que ce
+ *  soit : une restauration remplace le travail en place, y compris celui d'un
+ *  autre poste qui n'est pas encore arrivé ici. */
+function litSauvegarde(fichier){
+  fichier.text().then(txt => {
+    let s = null;
+    try { s = JSON.parse(txt); } catch (e) {}
+    if (!s || s.format !== FORMAT_SAUVEGARDE){
+      annonce("Ce fichier n'est pas une sauvegarde de plan.", true);
+      return;
+    }
+    const compte = Object.values(s.pavillons || {})
+      .reduce((t, p) => t + ((p.dessins || []).length), 0);
+    const dAilleurs = s.salon && DATA?.slug && s.salon !== DATA.slug;
+    confirme("Restaurer cette sauvegarde ?",
+      "Elle date du " + String(s.date || "").slice(0, 10) +
+      (dAilleurs ? ", et vient du salon « " + s.salon + " »" : "") +
+      " et porte " + compte + " calque" + (compte > 1 ? "s" : "") + " de dessin. " +
+      "Les calques et l'apparence en place seront remplacés" +
+      (dAilleurs ? ", pour autant qu'elle nomme des pavillons d'ici." : "."),
+      "Restaurer", () => appliqueSauvegarde(s));
+  }).catch(() => annonce("Fichier illisible.", true));
+}
+
+/** Branche les deux boutons de la barre d'administration. */
+function brancheSauvegarde(){
+  const t = $("sauveConf"), r = $("restaureConf"), f = $("fichierConf");
+  if (!t || !r || !f) return;
+  t.onclick = () => telechargeSauvegarde();
+  /* Le champ de fichier est remis à zéro à chaque fois : sans cela, rouvrir la
+     même sauvegarde après une hésitation ne déclenchait rien. */
+  r.onclick = () => { f.value = ""; f.click(); };
+  f.onchange = () => { if (f.files && f.files[0]) litSauvegarde(f.files[0]); };
 }
 
 /* ============================================================
