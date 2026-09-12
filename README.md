@@ -1038,12 +1038,29 @@ Un salon se visite là où le réseau manque : un hall de béton, un forfait
 chaque ouverture — la page, ses polices, le plan lui-même — et une barre à zéro
 ne laissait qu'un écran vide portant « Plan indisponible ».
 
-Le plan est donc une application installable, et il se garde sur l'appareil.
+Le plan public est donc une application installable, et il se garde sur
+l'appareil.
 
 **S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
 « Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
 Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même.
+
+**Le plan public, et lui seul.** La console, le rapport, l'administration du
+plan et la page de mot de passe sont des outils de travail : on les ouvre dans
+un navigateur, à côté d'autre chose, et une icône de plus sur le bureau n'y
+ajouterait rien — ces écrans ne tiennent de toute façon pas sans leur session
+ni sans la base. Le visiteur du salon, lui, est exactement celui qui veut
+l'icône et le plan sans réseau. Seule `web/plan.html` porte donc le manifeste
+et inscrit le service ; les autres pages n'en gardent que l'icône d'onglet et
+la couleur de barre, qui n'ont rien à voir avec l'installation. La construction
+le dit à chaque passage : une seule ligne porte la mention `application`.
+
+Une nuance à connaître : un service de second plan, une fois inscrit, vaut pour
+tout le domaine — un fichier servi à la racine ne peut pas se limiter à une
+page. Un exploitant qui ouvre la console après avoir consulté un plan passera
+donc par lui. Il n'y trouvera que le réseau d'abord, et jamais rien de ce qui
+porte une identité.
 
 **Chaque salon est sa propre application.** C'est le point qui a demandé du
 soin. Une même page sert tous les salons — `?plan=` tranche — quand le
@@ -1071,8 +1088,8 @@ Ce que le manifeste ne peut pas porter, c'est le nom du salon : il est lu avant
 que la page ait appelé l'API. L'onglet et son icône le prennent, eux, dès que
 les données arrivent.
 
-**Tenir sans réseau.** `web/sw.js` s'installe au premier passage et se place
-entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est
+**Tenir sans réseau.** `web/sw.js`, inscrit depuis le plan public, s'installe
+au premier passage et se place entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est
 gardé, et cela suffit — on installe un plan de salon après l'avoir ouvert,
 jamais avant. Précharger aurait retéléchargé le mégaoctet de la page au moment
 même où le visiteur venait de le recevoir.

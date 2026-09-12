@@ -136,7 +136,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | export tableur des exposants | `_export.html` (console **et** rapport), écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` |
-| installation, manifeste, couleur de la barre du système | `outils/pwa.js` ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
+| installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `APPLICATION` pour le seul plan public ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
+| quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
 | icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |

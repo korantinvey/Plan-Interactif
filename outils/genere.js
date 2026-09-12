@@ -12,20 +12,29 @@ const W = path.join(D, "..", "web") + path.sep;
 const API = "/api/plan";
 
 /**
+ * Le squelette d'une page.
+ *
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
  * se décomposent et tout caractère non-ASCII présent dans le code change de
- * valeur. Le squelette n'est donc pas de la décoration.
+ * valeur. Ce squelette n'est donc pas de la décoration.
+ *
+ * Les options, toutes facultatives :
+ *   `role`        — `data-role` porté par la page, lu par le chargeur.
+ *   `tete`        — ce qui doit venir avant tout le reste (le préchargement).
+ *   `application` — la page est installable : manifeste, icônes, service.
+ *                   Le plan public, et lui seul (voir `outils/pwa.js`).
+ *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
+ *                   une icône, le fichier voisin n'existerait pas.
  */
-function page(contenu, role, tete, autonome) {
+function page(contenu, options) {
+  const { role, tete, application, autonome } = options || {};
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     (tete || "") +
-    /* Ce qui rend la page installable ne vaut que servie depuis le domaine :
-       une page publiée seule en artefact n'a ni manifeste ni service à côté
-       d'elle, et son inscription n'aurait rien à inscrire. */
     (autonome ? "" : pwa.TETE) +
+    (application && !autonome ? pwa.APPLICATION : "") +
     contenu + "\n</body>\n</html>\n";
 }
 
@@ -62,16 +71,17 @@ function connecte(t) {
 
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), null, PRECHARGE));
+  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+       { tete: PRECHARGE, application: true }));
 
 /* --- page d'administration : accès après authentification --- */
 fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth), "admin"));
+  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth), { role: "admin" }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), null, null, true));
+          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), { autonome: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
@@ -152,6 +162,9 @@ for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
     // c'est la présence du module d'accès qui compte, pas une simple mention :
     // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
-    "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"));
+    "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"),
+    // une seule page doit s'installer : le relire ici évite de le découvrir
+    // sur un téléphone, un mois plus tard
+    (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));
 }
 console.log("sw.js".padEnd(18), "version " + version);

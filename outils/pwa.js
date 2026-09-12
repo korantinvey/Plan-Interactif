@@ -1,14 +1,24 @@
 /**
- * Ce qui fait du plan une application installable.
+ * Ce qui fait du plan public une application installable.
  *
  * Trois pièces, et une idée qui les tient ensemble :
  *
  *   — le manifeste (`manifeste.webmanifest`), qui dit au système comment
  *     nommer, peindre et lancer l'application ;
- *   — l'en-tête que chaque page porte : le lien vers ce manifeste, les icônes,
- *     et la couleur dont le système peint sa barre ;
+ *   — l'en-tête que porte la page du plan : le lien vers ce manifeste, les
+ *     icônes de l'installation, et ce qu'iOS demande en propre ;
  *   — l'inscription du service de second plan (`_sw.js`), qui garde ce qui a
  *     servi et rend le plan consultable sans réseau.
+ *
+ * **Le plan public, et lui seul.** La console, le rapport, l'administration et
+ * la page de mot de passe sont des outils de travail : on les ouvre dans un
+ * navigateur, à côté d'autre chose, et on n'a que faire d'une icône de plus sur
+ * son bureau. Leur proposer l'installation, c'était offrir une application qui
+ * ne sert à rien hors ligne — ces écrans ne tiennent pas sans leur session ni
+ * sans la base. Le visiteur du salon, lui, est précisément celui qui veut
+ * l'icône et le plan sans réseau. Ces pages-là gardent donc seulement ce qui
+ * n'a rien à voir avec l'installation : l'icône d'onglet, et la couleur dont
+ * le navigateur peint sa barre.
  *
  * L'idée : **le manifeste fabriqué ici ne vaut que par défaut**, et c'est le
  * relais qui lui donne son salon.
@@ -80,17 +90,33 @@ function manifeste() {
 /**
  * L'en-tête commun à toutes les pages servies depuis le domaine.
  *
- * L'icône vectorielle y est posée comme icône d'onglet : jusqu'ici les pages
- * n'en déclaraient aucune, et le navigateur réclamait un `/favicon.ico` qui
- * n'existe pas avant que le salon ne dépose la sienne. Celle du salon la
- * remplace dès que les données arrivent — `poseFavicon` reprend ce même lien.
+ * Rien ici ne relève de l'installation : deux lignes d'habillage, que tout
+ * écran mérite. L'icône vectorielle est posée comme icône d'onglet — jusqu'ici
+ * les pages n'en déclaraient aucune, et le navigateur réclamait un
+ * `/favicon.ico` qui n'existe pas. Sur les pages du plan, celle du salon la
+ * remplace dès que les données arrivent : `poseFavicon` reprend ce même lien.
+ * La couleur, elle, est celle dont un navigateur mobile peint sa barre
+ * d'adresse, application ou pas.
  */
 const TETE = [
-  '<link rel="manifest" href="manifeste.webmanifest">',
   '<link rel="icon" href="icone.svg" type="image/svg+xml">',
-  '<link rel="apple-touch-icon" href="icone-180.png">',
   '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + TON_CLAIR + '">',
   '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + TON_SOMBRE + '">',
+  "",
+].join("\n");
+
+/**
+ * Ce qui fait l'application, et que seule la page du plan public porte.
+ *
+ * Deux déclarations et deux scripts : le manifeste à installer, l'icône que
+ * réclame iOS, l'adresse de départ propre au salon ouvert, et le service qui
+ * gardera ce qui a servi. Sur toute autre page, ces lignes proposeraient
+ * d'installer un outil de travail — et le service s'y installerait pour un
+ * écran qui ne sait rien faire sans réseau.
+ */
+const APPLICATION = [
+  '<link rel="manifest" href="manifeste.webmanifest">',
+  '<link rel="apple-touch-icon" href="icone-180.png">',
   /* iOS ne lit pas `display` du manifeste : sans cette ligne, le plan ajouté à
      l'écran d'accueil s'y ouvre encore dans Safari, barres comprises. Sa
      remplaçante normalisée est donnée aussi, la première étant dépréciée. */
@@ -118,7 +144,13 @@ const TETE = [
   "/* Le service de second plan s'inscrit une fois la page chargée : inscrit",
   "   plus tôt, son téléchargement disputerait la bande passante à l'appel qui",
   "   ramène le plan — celui que le visiteur attend. Un refus n'est pas une",
-  "   panne : sans lui la page marche comme avant, en ligne seulement. */",
+  "   panne : sans lui la page marche comme avant, en ligne seulement.",
+  "",
+  "   Il n'est inscrit que d'ici, mais un service inscrit vaut pour tout le",
+  "   domaine — c'est la règle du navigateur, un fichier servi à la racine ne",
+  "   peut pas se limiter à une page. Un exploitant qui ouvre la console après",
+  "   avoir vu un plan passera donc par lui : il n'y trouvera que le réseau",
+  "   d'abord, et jamais rien de ce qui porte une identité. */",
   'if ("serviceWorker" in navigator){',
   '  addEventListener("load", () => {',
   '    navigator.serviceWorker.register("sw.js").catch(() => {});',
@@ -128,4 +160,4 @@ const TETE = [
   "",
 ].join("\n");
 
-module.exports = { TETE, manifeste };
+module.exports = { TETE, APPLICATION, manifeste };

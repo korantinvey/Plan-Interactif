@@ -7,11 +7,11 @@
 window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
   new URLSearchParams(location.search).get("plan") || "smcl-2026"));
 </script>
-<link rel="manifest" href="manifeste.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icone-180.png">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
+<link rel="manifest" href="manifeste.webmanifest">
+<link rel="apple-touch-icon" href="icone-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -36,7 +36,13 @@ window.__plan = fetch("/api/plan?slug=" + encodeURIComponent(
 /* Le service de second plan s'inscrit une fois la page chargée : inscrit
    plus tôt, son téléchargement disputerait la bande passante à l'appel qui
    ramène le plan — celui que le visiteur attend. Un refus n'est pas une
-   panne : sans lui la page marche comme avant, en ligne seulement. */
+   panne : sans lui la page marche comme avant, en ligne seulement.
+
+   Il n'est inscrit que d'ici, mais un service inscrit vaut pour tout le
+   domaine — c'est la règle du navigateur, un fichier servi à la racine ne
+   peut pas se limiter à une page. Un exploitant qui ouvre la console après
+   avoir vu un plan passera donc par lui : il n'y trouvera que le réseau
+   d'abord, et jamais rien de ce qui porte une identité. */
 if ("serviceWorker" in navigator){
   addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});

@@ -3,42 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="manifest" href="manifeste.webmanifest">
 <link rel="icon" href="icone.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icone-180.png">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Plan">
-<script>
-/* Le manifeste retenu à l'installation doit porter le salon qu'on regarde,
-   sans quoi l'application rouvrirait le salon par défaut. Le relais complète
-   le manifeste avec l'adresse demandée ici ; elle est reconstruite et non
-   recopiée, pour que rien d'autre que le salon n'y entre — ni jeton de
-   courriel, ni ancre, ni paramètre de passage. */
-{
-  /* Bloc fermé : les modules d'une page sont soudés dans un espace de noms
-     unique, où deux noms identiques se marchent dessus. Ces deux-là n'ont
-     rien à y faire. */
-  const lienManifeste = document.querySelector('link[rel="manifest"]');
-  const salon = new URLSearchParams(location.search).get("plan");
-  if (lienManifeste && salon){
-    lienManifeste.href = "manifeste.webmanifest?depart=" +
-      encodeURIComponent(location.pathname + "?plan=" + salon);
-  }
-}
-/* Le service de second plan s'inscrit une fois la page chargée : inscrit
-   plus tôt, son téléchargement disputerait la bande passante à l'appel qui
-   ramène le plan — celui que le visiteur attend. Un refus n'est pas une
-   panne : sans lui la page marche comme avant, en ligne seulement. */
-if ("serviceWorker" in navigator){
-  addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
-  });
-}
-</script>
 <title>Mot de passe — Plan interactif</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
