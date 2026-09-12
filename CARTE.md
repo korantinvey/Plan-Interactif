@@ -170,7 +170,7 @@ Fonctions :
 
 - l.640 · Page de rapport
 
-### `_dessin.html` — 1651 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1691 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -188,14 +188,14 @@ Fonctions :
 `societesDuPlan` 675 · `remplitListeSocietes` 686 · `societeSaisie` 694
 `traceStandDessine` 710 · `texteStandDessine` 734 · `poseLibellesDessines` 752
 `decoupeStand` 773 · `marqueStandsDessines` 785 · `rafraichitStandsDessines` 800
-`oublieReperes` 830 · `reperesCherchables` 832 · `vaAuRepere` 876 · `cartouchePoi` 897
-`ouvrePoi` 982 · `mesureCartouche` 1054 · `phareRepere` 1061 · `phareZone` 1062
-`eclairePoi` 1066 · `oublieChoixPoi` 1098 · `signale` 1107 · `calquePourImage` 1121
-`poseImage` 1138 · `importeImage` 1151 · `dessinPointerDown` 1202 · `dessinPointerMove` 1276
-`dessinPointerUp` 1314 · `termineTrace` 1350 · `aide` 1362 · `choisitOutil` 1387
-`enchaineStand` 1411 · `activeCalque` 1469 · `cleVerrou` 1525 · `verrouille` 1526
-`basculeVerrou` 1528 · `pictoVerrou` 1545 · `montreRoleIti` 1578 · `creeCalque` 1609
-`demandeNom` 1622 · `renommeCalque` 1641
+`oublieReperes` 830 · `reperesCherchables` 832 · `vaAuRepere` 876 · `clePoi` 911
+`cartouchePoi` 913 · `ouvrePoi` 1017 · `mesureCartouche` 1089 · `phareRepere` 1098
+`phareZone` 1100 · `eclairePoi` 1106 · `oublieChoixPoi` 1138 · `signale` 1147
+`calquePourImage` 1161 · `poseImage` 1178 · `importeImage` 1191 · `dessinPointerDown` 1242
+`dessinPointerMove` 1316 · `dessinPointerUp` 1354 · `termineTrace` 1390 · `aide` 1402
+`choisitOutil` 1427 · `enchaineStand` 1451 · `activeCalque` 1509 · `cleVerrou` 1565
+`verrouille` 1566 · `basculeVerrou` 1568 · `pictoVerrou` 1585 · `montreRoleIti` 1618
+`creeCalque` 1649 · `demandeNom` 1662 · `renommeCalque` 1681
 
 Éléments :
 

@@ -9761,8 +9761,15 @@ function vaAuRepere(id, p){
  * Cartouche des points d'intérêt.
  *
  * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
- * entrées — et se cherchent à l'œil. Le cartouche les récapitule par libellé ;
- * en choisir un met en avant tous ceux qui le portent, où qu'ils soient.
+ * entrées — et se cherchent à l'œil. Le cartouche les récapitule ; en choisir
+ * un met en avant tous ceux qui lui ressemblent, où qu'ils soient.
+ *
+ * Une pastille tient au couple libellé + type, et non au seul libellé. Un
+ * hall nomme volontiers « Entrée » les deux portes qu'il a, puis dit de l'une
+ * qu'elle est une sortie : sous le seul libellé, les deux ne faisaient qu'une
+ * pastille — le visiteur qui demandait l'entrée se voyait montrer la porte par
+ * où l'on ne rentre pas. Deux pastilles sous le même libellé ajoutent alors ce
+ * qui les sépare, sauf à celle que son libellé dit déjà.
  *
  * Les zones organisateur auxquelles l'exploitant a donné un type y entrent de
  * la même façon, et sous la même clé : ce qui s'appelle « Restauration » d'un
@@ -9772,24 +9779,25 @@ function vaAuRepere(id, p){
  */
 let poiChoisi = null;
 
+/* Un libellé qui ne porte qu'un seul type : ce que rejoint alors ce qu'on a
+   laissé sans pictogramme, pour que la zone « Restauration » et le repère qui
+   la nomme ne fassent pas deux pastilles, dont une muette. Rempli par
+   « cartouchePoi », relu par la clé et par la mise en avant. */
+let PICTO_SEUL = new Map();
+
+/** Ce qui fait une pastille : ce que la chose s'appelle, et ce qu'elle est. */
+const clePoi = (nom, picto) => nom + "\u0000" + (picto || PICTO_SEUL.get(nom) || "");
+
 function cartouchePoi(){
   const z = $("poi");
   if (!z) return;
-  const parNom = new Map();
-  const entree = (nom, picto) => {
-    if (!parNom.has(nom)) parNom.set(nom, { n: 0, picto: picto || null });
-    const e = parNom.get(nom);
-    // le premier qui en porte un le donne : un repère sans pictogramme et une
-    // zone typée sous le même nom ne doivent pas faire une pastille muette
-    if (!e.picto && picto) e.picto = picto;
-    return e;
-  };
+  const tout = [];
 
   for (const cal of mesCalques()){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      entree(f.txt.trim(), pictoForme(f)).n++;
+      tout.push({ nom: f.txt.trim(), picto: pictoForme(f) || "" });
     }
   }
   /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
@@ -9798,25 +9806,52 @@ function cartouchePoi(){
   if (conf("data:zones").visible !== false){
     for (const zo of P().zones){
       const t = typeZone(zo);
-      if (t && !zo.masquee) entree(t.nom, t.picto).n++;
+      if (t && !zo.masquee) tout.push({ nom: t.nom, picto: t.picto || "" });
     }
   }
 
-  z.hidden = parNom.size === 0;
+  const types = new Map();
+  tout.forEach(o => {
+    if (!o.picto) return;
+    if (!types.has(o.nom)) types.set(o.nom, new Set());
+    types.get(o.nom).add(o.picto);
+  });
+  PICTO_SEUL = new Map();
+  types.forEach((t, nom) => { if (t.size === 1) PICTO_SEUL.set(nom, [...t][0]); });
+
+  const parCle = new Map();
+  tout.forEach(o => {
+    const cle = clePoi(o.nom, o.picto);
+    const picto = o.picto || PICTO_SEUL.get(o.nom) || null;
+    if (!parCle.has(cle)) parCle.set(cle, { nom: o.nom, picto: picto, n: 0 });
+    parCle.get(cle).n++;
+  });
+
+  /* Ce qu'une pastille annonce : son libellé, et ce qu'elle est quand une
+     voisine porte le même libellé sans être la même chose. */
+  const homonymes = new Map();
+  parCle.forEach(o => homonymes.set(o.nom, (homonymes.get(o.nom) || 0) + 1));
+  const libellePoi = (o) => {
+    const type = o.picto ? nomTypeRepere(o.picto) : "";
+    return homonymes.get(o.nom) > 1 && type && type !== o.nom
+      ? o.nom + " · " + type : o.nom;
+  };
+
+  z.hidden = parCle.size === 0;
   /* Le pavillon d'à côté n'a pas les mêmes points d'intérêt : ce qui n'y est
      plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
      sans que rien n'y soit mis en avant. */
-  if (poiChoisi && !parNom.has(poiChoisi)) poiChoisi = null;
+  if (poiChoisi && !parCle.has(poiChoisi)) poiChoisi = null;
   if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
 
   z.innerHTML = "";
-  [...parNom.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0], "fr"))
-    .forEach(([nom, o]) => {
+  [...parCle.entries()]
+    .sort((a, b) => libellePoi(a[1]).localeCompare(libellePoi(b[1]), "fr"))
+    .forEach(([cle, o]) => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "poiBtn";
-      b.setAttribute("aria-pressed", nom === poiChoisi);
+      b.setAttribute("aria-pressed", cle === poiChoisi);
       const g = PICTOS[o.picto];
       // largeur et hauteur en attributs : un <svg> sans dimension explicite
       // s'étale à la place disponible, et le cartouche y perdait sa mise en page
@@ -9824,10 +9859,10 @@ function cartouchePoi(){
         ? '<svg class="poiPicto" width="17" height="17" viewBox="' + g.vb +
           '" aria-hidden="true">' + g.d + '</svg>'
         : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
-      b.querySelector("span").textContent = nom;
+      b.querySelector("span").textContent = libellePoi(o);
       b.onclick = () => {
-        const choisit = poiChoisi !== nom;
-        poiChoisi = choisit ? nom : null;
+        const choisit = poiChoisi !== cle;
+        poiChoisi = choisit ? cle : null;
         /* Les repères d'un même type sont dispersés dans le hall. Les mettre
            en avant sans reculer ne montrerait que ceux déjà à l'écran, et
            l'exploitant conclurait qu'il n'y en a pas d'autres. On revient donc
@@ -9935,10 +9970,15 @@ function mesureCartouche(){
   document.documentElement.style.setProperty("--cartouche", h + "px");
 }
 
-/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois. */
-const phareRepere = (f) => Boolean(poiChoisi && f && String(f.txt || "").trim() === poiChoisi);
-const phareZone = (o) => Boolean(poiChoisi && o && o.kind === "zone" &&
-  (typeZone(o) || {}).nom === poiChoisi);
+/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois,
+ *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
+ *  sortie avec l'entrée qui porte son nom. */
+const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
+  clePoi(String(f.txt).trim(), pictoForme(f) || "") === poiChoisi);
+const phareZone = (o) => {
+  const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
+  return Boolean(t && clePoi(t.nom, t.picto || "") === poiChoisi);
+};
 
 /** Met en avant les repères et les zones du point d'intérêt choisi. */
 function eclairePoi(){
