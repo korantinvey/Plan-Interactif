@@ -169,7 +169,7 @@ Fonctions :
 
 - l.640 · Page de rapport
 
-### `_dessin.html` — 1521 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1578 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -188,11 +188,12 @@ Fonctions :
 `marqueStandsDessines` 724 · `rafraichitStandsDessines` 739 · `oublieReperes` 769
 `reperesCherchables` 771 · `vaAuRepere` 815 · `cartouchePoi` 836 · `ouvrePoi` 921
 `mesureCartouche` 993 · `phareRepere` 1000 · `phareZone` 1001 · `eclairePoi` 1005
-`oublieChoixPoi` 1037 · `signale` 1046 · `calquePourImage` 1060 · `poseImage` 1073
-`importeImage` 1086 · `dessinPointerDown` 1137 · `dessinPointerMove` 1211
-`dessinPointerUp` 1249 · `termineTrace` 1285 · `aide` 1295 · `choisitOutil` 1320
-`enchaineStand` 1343 · `activeCalque` 1397 · `montreRoleIti` 1448 · `creeCalque` 1479
-`demandeNom` 1492 · `renommeCalque` 1511
+`oublieChoixPoi` 1037 · `signale` 1046 · `calquePourImage` 1060 · `poseImage` 1077
+`importeImage` 1090 · `dessinPointerDown` 1141 · `dessinPointerMove` 1215
+`dessinPointerUp` 1253 · `termineTrace` 1289 · `aide` 1299 · `choisitOutil` 1324
+`enchaineStand` 1347 · `activeCalque` 1401 · `cleVerrou` 1457 · `verrouille` 1458
+`basculeVerrou` 1460 · `pictoVerrou` 1477 · `montreRoleIti` 1505 · `creeCalque` 1536
+`demandeNom` 1549 · `renommeCalque` 1568
 
 Éléments :
 
@@ -220,7 +221,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 3327 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3344 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -349,14 +350,14 @@ Fonctions :
 
 `jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 117
 
-### `_modales.html` — 161 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_modales.html` — 169 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
 Fonctions :
 
 `verseModale` 22 · `ouvreModale` 28 · `fermeModale` 45 · `confirme` 52 · `deplaceVers` 70
-`versExtremite` 82 · `remplitOrdre` 90 · `ouvreOrdre` 152
+`versExtremite` 82 · `remplitOrdre` 90 · `ouvreOrdre` 160
 
 ### `_motdepasse.html` — 242 l. → motdepasse.html
 
@@ -385,19 +386,19 @@ Fonctions :
 `jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
 `ouvreParcours` 314 · `fermeParcours` 326
 
-### `_pile.html` — 444 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : une seule liste, tous types confondus
-- l.260 · Repères
-- l.312 · Fond du plan
+- l.285 · Repères
+- l.337 · Fond du plan
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`nature` 69 · `boutonAjout` 76 · `intertitre` 84 · `construitPanneau` 91
-`sectionSelection` 276 · `sectionFond` 332 · `ligneCouleur` 386 · `rangSecteur` 406
-`rangSous` 418 · `defautCouleur` 440
+`nature` 69 · `boutonAjout` 76 · `boutonVerrou` 87 · `intertitre` 95
+`construitPanneau` 102 · `sectionSelection` 301 · `sectionFond` 357 · `ligneCouleur` 411
+`rangSecteur` 431 · `rangSous` 443 · `defautCouleur` 465
 
 ### `_pousse.html` — 145 l. → plan-admin.html, plan-smcl.html, plan.html
 
