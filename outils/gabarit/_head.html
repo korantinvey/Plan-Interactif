@@ -496,6 +496,10 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un couloir réservé au fauteuil est une circulation qui n'en est pas toujours
+   une : il se remplit comme elle, et garde le pointillé du rôle pour dire que
+   son ouverture dépend du mode. */
+html.mode-edition .dcal.circulation-pmr path{fill:currentColor;fill-opacity:.12}
 /* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
    lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
    la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.

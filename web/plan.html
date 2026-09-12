@@ -505,6 +505,10 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un couloir réservé au fauteuil est une circulation qui n'en est pas toujours
+   une : il se remplit comme elle, et garde le pointillé du rôle pour dire que
+   son ouverture dépend du mode. */
+html.mode-edition .dcal.circulation-pmr path{fill:currentColor;fill-opacity:.12}
 /* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
    lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
    la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
@@ -10345,6 +10349,11 @@ const AIDE_ROLE = {
   circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
     "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
     "au bord est retiré tout seul.",
+  "circulation-pmr": "Ce qui est dessiné ici ne s'ouvre qu'en itinéraire accessible, " +
+    "et reste fermé aux autres : le couloir qui mène à l'ascenseur, la rampe qui " +
+    "contourne les marches. Faites-le mordre d'un bon mètre sur l'allée qu'il rejoint, " +
+    "sans quoi il débouche sur un mur — cette morsure se ferme aux autres comme le " +
+    "reste, ne barrez donc pas l'allée en travers.",
 };
 
 /* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
@@ -12922,10 +12931,18 @@ function reperesDe(p){
  * On demande donc, plutôt que de deviner. Un calque de dessin reçoit un rôle,
  * et tout ce qu'on y trace le porte :
  *
- *   obstacle     ce qui est dessiné barre le passage à tout le monde
- *   pmr          il ne le barre qu'en itinéraire accessible
- *   circulation  ce qui est dessiné dit où l'on peut marcher ; tout le reste
- *                du pavillon devient infranchissable
+ *   obstacle         ce qui est dessiné barre le passage à tout le monde
+ *   pmr              il ne le barre qu'en itinéraire accessible
+ *   circulation      ce qui est dessiné dit où l'on peut marcher ; tout le
+ *                    reste du pavillon devient infranchissable
+ *   circulation-pmr  ce qui est dessiné ne s'ouvre qu'en itinéraire
+ *                    accessible, et reste fermé au marcheur
+ *
+ * Le dernier sert un cas que ni barrer ni ouvrir ne savait dire : le couloir
+ * qui mène à l'ascenseur est bien praticable, et le trajet ordinaire n'a
+ * pourtant rien à y faire — l'escalier d'à côté est plus court, et personne
+ * ne tient à y envoyer la foule d'un salon. Ouvert au fauteuil, fermé au
+ * marcheur : c'est le seul rôle dont l'effet dépend du mode.
  *
  * Les deux bouts par lesquels on peut prendre le problème, donc. Barrer est
  * presque toujours le plus court — un bloc sanitaire fait un rectangle, une
@@ -12944,10 +12961,14 @@ const ROLES_ITI = [
   { v: "obstacle", nom: "Infranchissable" },
   { v: "pmr", nom: "Infranchissable en fauteuil" },
   { v: "circulation", nom: "Où l'on peut marcher" },
+  { v: "circulation-pmr", nom: "Où l'on peut marcher — PMR uniquement" },
 ];
 const cleRoleIti = (id) => "_iti:" + id;
 const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
 const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
+/* Réservée ou non, une circulation dit où l'on marche : les deux rôles se
+   traitent pareil partout où c'est la surface qui parle. */
+const estCirculation = (r) => r === "circulation" || r === "circulation-pmr";
 
 /**
  * Les formes d'un pavillon portant un rôle donné.
@@ -12970,7 +12991,7 @@ function formesRole(p, role){
     for (const f of c.formes || []){
       if (f.t === "rect" || f.t === "poly" || f.t === "stand")
         l.push({ d: cheminForme(f), trait: false });
-      else if (f.t === "ligne" && role !== "circulation")
+      else if (f.t === "ligne" && !estCirculation(role))
         l.push({ d: cheminForme(f), trait: true });
     }
   }
@@ -13132,6 +13153,51 @@ function grille(p, pmr){
   for (const o of p.zones) barre(o.d);
   formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
   if (pmr) obstaclesPmr(p).forEach(o => barre(o.d, o.trait));
+
+  /* Les couloirs réservés au fauteuil, en dernier, et c'est tout l'ouvrage :
+     le bord de l'allée qu'ils rejoignent vient d'être peint en mur, et un
+     couloir ouvert plus tôt se serait retrouvé muré à sa bouche — ouvert sur
+     rien. Creusé après, il perce ce mur-là et débouche.
+
+     Pour le marcheur, l'inverse : on le comble. Sans l'épaissir, car ce n'est
+     pas une cloison mais une consigne — le dégagement mordrait sur l'allée
+     qui le borde, où rien n'empêche de passer. */
+  const reserve = formesRole(p, "circulation-pmr");
+  if (reserve.length && !pmr) reserve.forEach(o => ctx.fill(new Path2D(o.d)));
+  if (reserve.length && pmr){
+    /* Creusé de son dégagement comme une allée l'est du sien : un couloir
+       trop étroit pour un fauteuil ne doit pas s'ouvrir sous prétexte qu'on
+       l'a déclaré. On l'érode donc à part — son plein moins son propre trait
+       — puis on reporte le masque obtenu ; l'éroder sur la grille reviendrait
+       à y repeindre le mur qu'on vient d'en ôter. */
+    const cm = document.createElement("canvas");
+    cm.width = w; cm.height = h;
+    const mx = cm.getContext("2d");
+    mx.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
+                    -x0 / PAS_GRILLE, -y0 / PAS_GRILLE);
+    mx.lineJoin = mx.lineCap = "round";
+    mx.lineWidth = 2 * DEGAGEMENT_PMR;
+    const couloirs = reserve.map(o => new Path2D(o.d));
+    couloirs.forEach(t => mx.fill(t));
+    mx.globalCompositeOperation = "destination-out";
+    couloirs.forEach(t => mx.stroke(t));
+    /* La bouche, elle, ne s'érode pas. Là où le couloir mord sur l'allée, le
+       mur n'est pas le sien : c'est le bord de l'allée, épaissi vers le
+       dedans juste avant. L'éroder une seconde fois refermait la jonction —
+       à un mètre de recouvrement il restait un demi-mètre de mur en travers,
+       et le couloir ne desservait plus rien. On rend donc au masque le
+       couloir entier, borné à ce qui est déjà ouvert. Le recouvrement reste
+       nécessaire : c'est dit sous la liste des rôles. */
+    mx.globalCompositeOperation = "source-over";
+    ouvert.forEach(o => {
+      mx.save(); mx.clip(o); couloirs.forEach(t => mx.fill(t)); mx.restore();
+    });
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.drawImage(cm, 0, 0);
+    ctx.restore();
+  }
 
   const px = ctx.getImageData(0, 0, w, h).data;
   const mur = new Uint8Array(w * h);
