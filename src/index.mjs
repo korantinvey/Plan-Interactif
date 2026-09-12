@@ -25,6 +25,9 @@
  *
  * Le même chemin sert aux mesures d'utilisation, en sens inverse : la page
  * pousse ses gestes, le Worker les passe à la fonction, sans rien garder.
+ *
+ * Reste un dernier détour, sans rapport avec le cache : le manifeste de
+ * l'application installée, complété ici du salon d'où l'on installe.
  */
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
@@ -151,6 +154,54 @@ async function oublie(requete, env) {
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
 
+/**
+ * Le manifeste, complété de l'adresse à rouvrir.
+ *
+ * Une même page sert tous les salons — `?plan=` tranche — et le manifeste, lui,
+ * est fabriqué une fois pour toutes : l'application installée depuis un salon
+ * rouvrait donc celui d'un autre. Le laisser sans adresse de départ, comme la
+ * spécification l'autorise, revenait à n'être plus installable du tout :
+ * Chromium refuse une adresse qu'il n'a pas encore remplacée.
+ *
+ * Le fichier construit est donc repris tel quel, et rien n'y change que
+ * `start_url`. Un manifeste à tenir, aucun à fabriquer par salon, et aucune
+ * lecture en base : la page dit l'adresse qu'elle veut rouvrir, on la vérifie.
+ *
+ * Vérifier n'est pas une politesse. `start_url` désigne ce que le système
+ * ouvrira ensuite, seul, sans la page : une adresse venue de l'extérieur y
+ * entre sans être relue par personne. Seul un chemin de ce site passe — même
+ * origine, une fois normalisé — et son ancre est retirée, une application ne
+ * s'ouvrant pas au milieu d'un document.
+ *
+ * Un fichier de `web/` est servi avant que ce script ne tourne : sans le
+ * `run_worker_first` de `wrangler.jsonc`, ce chemin-ci ne viendrait jamais
+ * jusqu'ici, et le manifeste partirait tel quel sans que rien ne le dise.
+ */
+async function manifeste(requete, env) {
+  const fichier = new URL("/manifeste.webmanifest", requete.url);
+  const rep = await env.ASSETS.fetch(new Request(fichier.toString(), { method: "GET" }));
+  const depart = new URL(requete.url).searchParams.get("depart");
+  if (!rep.ok) return rep;
+
+  const contenu = await rep.json().catch(() => null);
+  if (!contenu) return rep;
+  if (depart) {
+    /* `new URL` résout et normalise — `//ailleurs.example` nomme un autre
+       domaine, `../..` remonte, un protocole glissé devant change de site — et
+       la comparaison d'origine tranche : ce qui n'atterrit pas sur ce domaine
+       est écarté, et le manifeste repart avec son adresse par défaut. */
+    const cible = new URL(depart, fichier);
+    if (cible.origin === fichier.origin) contenu.start_url = cible.pathname + cible.search;
+  }
+  return new Response(JSON.stringify(contenu), {
+    headers: {
+      "Content-Type": "application/manifest+json; charset=utf-8",
+      // il ne change qu'avec une mise en ligne, et n'est lu qu'à l'installation
+      "Cache-Control": "public, max-age=600",
+    },
+  });
+}
+
 /** Relais des mesures : un aller simple, sans identité et sans cache. */
 async function mesure(requete) {
   if (requete.method !== "POST") {
@@ -172,6 +223,9 @@ async function mesure(requete) {
 export default {
   async fetch(requete, env, ctx) {
     const url = new URL(requete.url);
+    /* Le manifeste est un fichier construit, mais l'adresse qu'il fait rouvrir
+       dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
+    if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env);
     /* Les mesures d'utilisation prennent le même chemin que le plan : même
        origine que la page, donc aucun contrôle d'origine croisée à passer, et
        rien à configurer si le domaine change. Elles ne sont ni lues ni mises

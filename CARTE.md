@@ -47,13 +47,14 @@ Fonctions :
 
 `#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 148 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 170 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 28 · `entetesApi` 46 · `chargeFond` 69 · `charge` 101
+`demarre` 8 · `annonce` 28 · `entetesApi` 46 · `chargeFond` 69 · `panneDuChargement` 116
+`charge` 123
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -252,6 +253,12 @@ Fonctions :
 `#jCorps` · `#pPied` · `#btnJournee` · `#videParcours` · `#jPied` · `#jRefaire` · `#jRetour`
 `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg`
 `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
+
+### `_hors-ligne.html` — 40 l. → hors-ligne.html
+
+Éléments :
+
+`#reessaie`
 
 ### `_index.html` — 45 l. → index.html
 
@@ -457,6 +464,12 @@ Fonctions :
 `nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 228 · `poseSuggestion` 263
 `fenetreSuggestion` 276 · `relevePalmares` 310 · `etiquetteSugg` 330 · `voletSuggestion` 340
 
+### `_sw.js` — 168 l. → sw.js
+
+Fonctions :
+
+`range` 64 · `dabordCache` 71 · `dabordReseau` 82 · `revalide` 100 · `navigation` 121
+
 ## Dans `web/`, mais que la construction ne produit pas
 
 Ces fichiers sont servis sans qu'aucune source ne les regénère : les
@@ -542,10 +555,12 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 233 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 61 · `amontPour` 70 · `cleDe` 78 · `meta` 81 · `gardable` 94 · `range` 99 `rafraichit` 106 · `oublie` 133 · `mesure` 155
+- `src/index.mjs` — 287 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 64 · `amontPour` 73 · `cleDe` 81 · `meta` 84 · `gardable` 97 · `range` 102 `rafraichit` 109 · `oublie` 136 · `manifeste` 180 · `mesure` 206
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
+- `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
+- `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.
 - `outils/carte.js` — produit ce fichier.
 - `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.
 - `outils/controle.js` — analyse le script de chaque page construite, en module

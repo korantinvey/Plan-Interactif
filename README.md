@@ -1031,6 +1031,84 @@ Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
 disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
 moteur.
 
+## Installer le plan, et le consulter hors ligne
+
+Un salon se visite là où le réseau manque : un hall de béton, un forfait
+épuisé, dix mille visiteurs sur la même borne. Or tout arrivait du serveur à
+chaque ouverture — la page, ses polices, le plan lui-même — et une barre à zéro
+ne laissait qu'un écran vide portant « Plan indisponible ».
+
+Le plan est donc une application installable, et il se garde sur l'appareil.
+
+**S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
+« Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
+Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur.
+Rien à faire pour l'exploitant : la page se déclare installable d'elle-même.
+
+**Chaque salon est sa propre application.** C'est le point qui a demandé du
+soin. Une même page sert tous les salons — `?plan=` tranche — quand le
+manifeste, lui, est fabriqué une fois pour toutes : il ne peut donc désigner de
+page de départ sans les trahir tous sauf un, et le plan installé depuis un
+salon rouvrait celui d'un autre. La spécification prévoit bien qu'un
+`start_url` absent vaille « la page depuis laquelle on installe », ce qui
+aurait tout réglé, mais Chromium refuse alors d'installer : il vérifie la
+validité d'une adresse qu'il n'a pas encore remplacée.
+
+Le manifeste versionné porte donc l'adresse nue — le salon par défaut — et la
+page demande le sien : `manifeste.webmanifest?depart=/plan?plan=…`. Le Worker
+reprend alors ce même fichier et n'y change que l'adresse de départ, qu'il
+vérifie : `start_url` désigne ce que le système ouvrira plus tard, seul, sans
+la page, et seul un chemin de ce site y entre. Un manifeste à tenir, aucun à
+fabriquer par salon, aucune lecture en base pour le servir — et, sans
+JavaScript, le fichier nu reste installable.
+
+Un détail qui se paie cher si on l'ignore : Cloudflare sert un fichier de
+`web/` **avant** d'exécuter le Worker. Le manifeste serait donc parti tel quel,
+sans que rien ne le signale — d'où le `run_worker_first` de `wrangler.jsonc`,
+qui fait passer le script devant pour ce seul chemin.
+
+Ce que le manifeste ne peut pas porter, c'est le nom du salon : il est lu avant
+que la page ait appelé l'API. L'onglet et son icône le prennent, eux, dès que
+les données arrivent.
+
+**Tenir sans réseau.** `web/sw.js` s'installe au premier passage et se place
+entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est
+gardé, et cela suffit — on installe un plan de salon après l'avoir ouvert,
+jamais avant. Précharger aurait retéléchargé le mégaoctet de la page au moment
+même où le visiteur venait de le recevoir.
+
+| Ce qui passe | Comment |
+|---|---|
+| une page | le réseau d'abord : elle porte tout son code, et l'exécuter depuis la copie d'hier sur les données d'aujourd'hui n'a pas de sens |
+| `/api/plan` | le réseau d'abord, la copie gardée en secours |
+| le fond d'un pavillon | la copie d'abord : son adresse porte sa version, il ne peut pas être périmé |
+| les polices | la copie d'abord : leurs adresses portent leur empreinte |
+| le reste de `web/` | la copie d'abord, renouvelée derrière |
+| un appel porteur d'une identité | rien n'est lu ni gardé : il peut rendre un brouillon, et le poste peut être partagé |
+| les mesures d'usage | elles ne font que passer |
+
+Résultat : un salon déjà ouvert une fois se rouvre entier sans réseau, fond de
+plan compris. Un salon jamais ouvert le dit en français plutôt qu'en
+`Failed to fetch`, et une page jamais visitée tombe sur `hors-ligne.html`.
+
+**Se renouveler.** Le cache est nommé d'une empreinte de ce que la construction
+a produit : elle change quand les pages changent, et pas autrement. Une mise en
+ligne met donc au rebut tout ce qui précède, et le service prend la main sans
+attendre la fermeture des onglets. Un horodatage aurait jeté le cache du
+visiteur à chaque mise en ligne, y compris celles qui ne le concernaient pas —
+et fait bouger `web/` à chaque construction, sous le nez de `npm run verifie`.
+
+**L'icône** n'est pas une image déposée : elle est dessinée par
+`outils/icones.js`, qui en tire les quatre tailles attendues — la vectorielle
+de l'onglet, deux PNG pour le manifeste, une cinquième rognable qu'Android
+masque à sa façon, une dernière pour iOS. Un seul dessin à corriger, et rien à
+rouvrir dans un éditeur d'images le jour où l'on change une couleur.
+
+Tout cela s'essaie en local : `npm run essai` sert les pages **et** complète le
+manifeste comme le fait le Worker. Sans ce même geste, l'essai montrerait une
+application installable qui rouvre toujours le même salon — le seul défaut
+qu'on cherche justement à voir.
+
 ## Le rapport d'utilisation
 
 Le plan était une boîte noire : on savait combien d'exposants il portait, jamais

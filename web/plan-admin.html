@@ -3,6 +3,42 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifeste.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-180.png">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Plan">
+<script>
+/* Le manifeste retenu à l'installation doit porter le salon qu'on regarde,
+   sans quoi l'application rouvrirait le salon par défaut. Le relais complète
+   le manifeste avec l'adresse demandée ici ; elle est reconstruite et non
+   recopiée, pour que rien d'autre que le salon n'y entre — ni jeton de
+   courriel, ni ancre, ni paramètre de passage. */
+{
+  /* Bloc fermé : les modules d'une page sont soudés dans un espace de noms
+     unique, où deux noms identiques se marchent dessus. Ces deux-là n'ont
+     rien à y faire. */
+  const lienManifeste = document.querySelector('link[rel="manifest"]');
+  const salon = new URLSearchParams(location.search).get("plan");
+  if (lienManifeste && salon){
+    lienManifeste.href = "manifeste.webmanifest?depart=" +
+      encodeURIComponent(location.pathname + "?plan=" + salon);
+  }
+}
+/* Le service de second plan s'inscrit une fois la page chargée : inscrit
+   plus tôt, son téléchargement disputerait la bande passante à l'appel qui
+   ramène le plan — celui que le visiteur attend. Un refus n'est pas une
+   panne : sans lui la page marche comme avant, en ligne seulement. */
+if ("serviceWorker" in navigator){
+  addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
 <title>Plan du salon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19652,6 +19688,28 @@ function chargeFond(i){
   return promesse;
 }
 
+/**
+ * Ce qu'on dit d'un chargement qui n'aboutit pas.
+ *
+ * Depuis que le service de second plan garde ce qui a déjà servi (`_sw.js`),
+ * une coupure de réseau ne mène plus ici : le salon ouvert une fois s'affiche
+ * sans rien redemander. Ne restent donc que ceux qu'on n'a jamais ouverts sur
+ * cet appareil — et c'est cela qu'il faut dire, plutôt que le « Failed to
+ * fetch » du navigateur, qui n'est ni en français ni une explication.
+ *
+ * Seule une demande qui n'aboutit pas vaut ce mot, et c'est `TypeError` qui la
+ * désigne : un appel refusé ou un salon vide répondent, eux, et ont déjà leur
+ * message. `navigator.onLine` ne sert pas à trancher — il ne dit que l'état de
+ * l'interface, et vaut « en ligne » derrière un portail captif ou un serveur
+ * muet, c'est-à-dire précisément là où l'on se croyait connecté.
+ */
+function panneDuChargement(e){
+  return e.name === "TypeError"
+    ? "Plan indisponible : le réseau est injoignable, et ce salon n'a pas " +
+      "encore été ouvert sur cet appareil."
+    : "Plan indisponible : " + e.message;
+}
+
 function charge(){
   annonce("Chargement du plan…");
   const entetes = entetesApi();
@@ -19679,7 +19737,7 @@ function charge(){
       if (!d.plans?.length) throw new Error("Aucun pavillon : lancez une synchronisation depuis la console.");
       demarre(d);
     })
-    .catch(e => annonce("Plan indisponible : " + e.message, true));
+    .catch(e => annonce(panneDuChargement(e), true));
 }
 
 const fige = document.getElementById("data").textContent.trim();

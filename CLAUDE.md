@@ -13,6 +13,7 @@ depuis `outils/gabarit/`, puis **versionnées**, car Cloudflare les sert sans
 ```
 outils/gabarit/*.html → outils/tpl-multi.html → web/*.html
 outils/gabarit/_console.css                   → web/console.css
+outils/gabarit/_sw.js + outils/pwa.js         → web/sw.js, manifeste, icônes
 outils/gabarit/** + supabase/**               → CARTE.md
 ```
 
@@ -32,8 +33,9 @@ avant de pousser à nouveau. Lancez `npm run verifie` avant de valider.
 
 ## Ne jamais modifier directement
 
-- `web/*.html`, `web/console.css`, `web/config.js` — sortie de la
-  construction ; éditez `outils/gabarit/`.
+- `web/*.html`, `web/console.css`, `web/config.js`, `web/sw.js`,
+  `web/manifeste.webmanifest`, `web/icone*` — sortie de la construction ;
+  éditez `outils/gabarit/`, `outils/pwa.js` ou `outils/icones.js`.
 - `outils/tpl-multi.html` — intermédiaire, régénéré par `assemble.js`.
 - `CARTE.md` — index relu dans les sources par `carte.js`. Pour le corriger,
   corrigez ce qu'il décrit : un bandeau de section, un nom de fonction.
@@ -133,6 +135,9 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | rapport d'utilisation | `_rapport-js.html`, styles `_console.css` |
 | export tableur des exposants | `_export.html` (console **et** rapport), écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
+| consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` |
+| installation, manifeste, couleur de la barre du système | `outils/pwa.js` ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
+| icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |

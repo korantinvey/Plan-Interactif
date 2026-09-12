@@ -7,6 +7,12 @@
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./web",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    /* Un fichier de `web/` est servi avant que le script ne tourne : c'est ce
+       qui rend les pages rapides, et c'est aussi ce qui rendait le manifeste
+       intouchable. Or celui-là doit recevoir l'adresse du salon d'où l'on
+       installe, sans quoi le plan installé rouvre toujours le même — le script
+       passe donc devant, pour ce seul chemin (voir `src/index.mjs`). */
+    "run_worker_first": ["/manifeste.webmanifest"]
   }
 }

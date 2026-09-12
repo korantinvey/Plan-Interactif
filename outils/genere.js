@@ -1,5 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
+const icones = require("./icones.js");
+const pwa = require("./pwa.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -13,12 +16,16 @@ const API = "/api/plan";
  * se décomposent et tout caractère non-ASCII présent dans le code change de
  * valeur. Le squelette n'est donc pas de la décoration.
  */
-function page(contenu, role, tete) {
+function page(contenu, role, tete, autonome) {
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     (tete || "") +
+    /* Ce qui rend la page installable ne vaut que servie depuis le domaine :
+       une page publiée seule en artefact n'a ni manifeste ni service à côté
+       d'elle, et son inscription n'aurait rien à inscrire. */
+    (autonome ? "" : pwa.TETE) +
     contenu + "\n</body>\n</html>\n";
 }
 
@@ -64,7 +71,7 @@ fs.writeFileSync(W + "plan-admin.html",
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();")));
+          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), null, null, true));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
@@ -98,8 +105,48 @@ fs.writeFileSync(W + "rapport.html",
 fs.writeFileSync(W + "motdepasse.html",
   page(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8")));
 
-for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
-                 "admin-plans.html", "rapport.html", "motdepasse.html"]) {
+/* --- la page que le service rend quand le réseau manque --- */
+fs.writeFileSync(W + "hors-ligne.html",
+  page(fs.readFileSync(D + "/gabarit/_hors-ligne.html", "utf8")));
+
+/* --- de quoi s'installer : le manifeste et les icônes ---
+   Les icônes sont dessinées par `icones.js` plutôt que déposées en image :
+   quatre tailles pour un seul dessin, et rien à rouvrir dans un éditeur le
+   jour où l'on change une couleur. */
+fs.writeFileSync(W + "manifeste.webmanifest", pwa.manifeste());
+fs.writeFileSync(W + "icone.svg", icones.svg());
+fs.writeFileSync(W + "icone-192.png", icones.png(192));
+fs.writeFileSync(W + "icone-512.png", icones.png(512));
+fs.writeFileSync(W + "icone-masque-512.png", icones.png(512, "masquable"));
+// iOS ne lit pas le manifeste pour cela : il veut son lien et sa taille à lui
+fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
+
+/**
+ * Tout ce que la construction pose dans `web/`, service de second plan mis à
+ * part : c'est de là qu'il tire sa version, il ne peut pas s'y compter.
+ */
+const FABRIQUEES = [
+  "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
+  "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
+  "config.js", "console.css", "manifeste.webmanifest",
+  "icone.svg", "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
+];
+
+/* --- le service de second plan ---
+   Sa version nomme le cache, et met au rebut celui d'avant : elle doit donc
+   changer quand les pages changent, et seulement là. Un horodatage aurait
+   changé à chaque construction — `npm run verifie` aurait vu `web/` bouger
+   sans que rien n'ait été touché, et le cache du visiteur aurait été jeté à
+   chaque mise en ligne, y compris celles qui ne le concernaient pas. Une
+   empreinte de ce qui vient d'être produit dit exactement la bonne chose. */
+const empreinte = crypto.createHash("sha256");
+for (const f of FABRIQUEES) empreinte.update(f).update(fs.readFileSync(W + f));
+const version = empreinte.digest("hex").slice(0, 12);
+
+fs.writeFileSync(W + "sw.js",
+  fs.readFileSync(D + "/gabarit/_sw.js", "utf8").replace("__VERSION__", version));
+
+for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
   const s = fs.readFileSync(W + f, "utf8");
   console.log(f.padEnd(18), (s.length / 1024).toFixed(0).padStart(5) + " Ko",
     "· charset " + (s.indexOf('<meta charset="utf-8">') > 0 ? "oui" : "NON"),
@@ -107,3 +154,4 @@ for (const f of ["index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
     // le chargeur en cite le nom pour rouvrir l'écran sur session expirée
     "· admin " + (s.indexOf("function ecranAcces(") > 0 ? "authentifié" : "retiré"));
 }
+console.log("sw.js".padEnd(18), "version " + version);

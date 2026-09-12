@@ -19647,6 +19647,28 @@ function chargeFond(i){
   return promesse;
 }
 
+/**
+ * Ce qu'on dit d'un chargement qui n'aboutit pas.
+ *
+ * Depuis que le service de second plan garde ce qui a déjà servi (`_sw.js`),
+ * une coupure de réseau ne mène plus ici : le salon ouvert une fois s'affiche
+ * sans rien redemander. Ne restent donc que ceux qu'on n'a jamais ouverts sur
+ * cet appareil — et c'est cela qu'il faut dire, plutôt que le « Failed to
+ * fetch » du navigateur, qui n'est ni en français ni une explication.
+ *
+ * Seule une demande qui n'aboutit pas vaut ce mot, et c'est `TypeError` qui la
+ * désigne : un appel refusé ou un salon vide répondent, eux, et ont déjà leur
+ * message. `navigator.onLine` ne sert pas à trancher — il ne dit que l'état de
+ * l'interface, et vaut « en ligne » derrière un portail captif ou un serveur
+ * muet, c'est-à-dire précisément là où l'on se croyait connecté.
+ */
+function panneDuChargement(e){
+  return e.name === "TypeError"
+    ? "Plan indisponible : le réseau est injoignable, et ce salon n'a pas " +
+      "encore été ouvert sur cet appareil."
+    : "Plan indisponible : " + e.message;
+}
+
 function charge(){
   annonce("Chargement du plan…");
   const entetes = entetesApi();
@@ -19674,7 +19696,7 @@ function charge(){
       if (!d.plans?.length) throw new Error("Aucun pavillon : lancez une synchronisation depuis la console.");
       demarre(d);
     })
-    .catch(e => annonce("Plan indisponible : " + e.message, true));
+    .catch(e => annonce(panneDuChargement(e), true));
 }
 
 const fige = document.getElementById("data").textContent.trim();
