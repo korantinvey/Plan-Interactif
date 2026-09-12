@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2938 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2947 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.1977 · 10. Mode administration
-- l.2055 · La fiche d'une zone organisateur
-- l.2685 · Masquer une zone organisateur
-- l.2768 · Placer un libellé à la main
+- l.2064 · La fiche d'une zone organisateur
+- l.2694 · Masquer une zone organisateur
+- l.2777 · Placer un libellé à la main
 
 Fonctions :
 
@@ -32,19 +32,19 @@ Fonctions :
 `voletZones` 978 · `champsFicheZone` 1079 · `ficheZoneEnPlace` 1149 · `voletPlan` 1167
 `nomDuTon` 1313 · `voletApparence` 1318 · `clesFiche` 1431 · `voletOrdre` 1447
 `enregistreConf` 1926 · `rgbHex` 1933 · `hexa` 1940 · `luminance` 1944 · `ecarte` 1958
-`joli` 1973 · `retireAdmin` 1990 · `activeAdmin` 2003 · `champZone` 2081 · `champsZone` 2106
-`champSalles` 2162 · `nomDeZone` 2214 · `reduitLogo` 2248 · `champLogo` 2289
-`editeurRiche` 2386 · `memeFicheZone` 2543 · `suitFicheZone` 2548 · `verseFicheZone` 2556
-`ficheZone` 2582 · `enregistreZone` 2607 · `basculeAffichageZone` 2696
-`marqueZonesMasquees` 2713 · `ecritColonnesEvenement` 2733 · `ecritColonneEvenement` 2764
-`cleLibelle` 2789 · `empreinteLibelle` 2805 · `placementLibelle` 2813 · `posePlacement` 2823
-`libelleAutomatique` 2840 · `modePlacementLibelles` 2849 · `majPaletteLibelle` 2866
-`choisitLibelle` 2883 · `pousseLibelle` 2890 · `libellePointerDown` 2898
-`libellePointerMove` 2913 · `libellePointerUp` 2922
+`joli` 1973 · `retireAdmin` 1990 · `activeAdmin` 2003 · `champZone` 2090 · `champsZone` 2115
+`champSalles` 2171 · `nomDeZone` 2223 · `reduitLogo` 2257 · `champLogo` 2298
+`editeurRiche` 2395 · `memeFicheZone` 2552 · `suitFicheZone` 2557 · `verseFicheZone` 2565
+`ficheZone` 2591 · `enregistreZone` 2616 · `basculeAffichageZone` 2705
+`marqueZonesMasquees` 2722 · `ecritColonnesEvenement` 2742 · `ecritColonneEvenement` 2773
+`cleLibelle` 2798 · `empreinteLibelle` 2814 · `placementLibelle` 2822 · `posePlacement` 2832
+`libelleAutomatique` 2849 · `modePlacementLibelles` 2858 · `majPaletteLibelle` 2875
+`choisitLibelle` 2892 · `pousseLibelle` 2899 · `libellePointerDown` 2907
+`libellePointerMove` 2922 · `libellePointerUp` 2931
 
 Éléments :
 
-`#pousseConf`
+`#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
 
 ### `_admin2.html` — 148 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -169,7 +169,7 @@ Fonctions :
 
 - l.566 · Page de rapport
 
-### `_dessin.html` — 1717 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1718 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -193,14 +193,14 @@ Fonctions :
 `calquePourImage` 1187 · `poseImage` 1204 · `importeImage` 1217 · `dessinPointerDown` 1268
 `dessinPointerMove` 1342 · `dessinPointerUp` 1380 · `termineTrace` 1416 · `aide` 1428
 `choisitOutil` 1453 · `enchaineStand` 1477 · `activeCalque` 1535 · `cleVerrou` 1591
-`verrouille` 1592 · `basculeVerrou` 1594 · `pictoVerrou` 1611 · `montreRoleIti` 1644
-`creeCalque` 1675 · `demandeNom` 1688 · `renommeCalque` 1707
+`verrouille` 1592 · `basculeVerrou` 1594 · `pictoVerrou` 1611 · `montreRoleIti` 1645
+`creeCalque` 1676 · `demandeNom` 1689 · `renommeCalque` 1708
 
 Éléments :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 521 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 519 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
@@ -210,9 +210,9 @@ Fonctions :
 `choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 183 · `ecritDesDeuxCotes` 205
 `changeLien` 217 · `changeDureeLien` 233 · `majLiens` 250 · `etiquetteStand` 294
 `remplitListeStands` 299 · `standSaisi` 308 · `appliqueLiaison` 318 · `appliqueSociete` 336
-`appliqueTexte` 352 · `appliqueRayon` 362 · `appliqueTrait` 372 · `appliquePicto` 386
-`supprimeForme` 404 · `editionPointerDown` 414 · `editionPointerMove` 459
-`editionPointerUp` 511
+`appliqueTexte` 352 · `appliqueRayon` 362 · `appliqueTrait` 372 · `appliquePicto` 387
+`supprimeForme` 402 · `editionPointerDown` 412 · `editionPointerMove` 457
+`editionPointerUp` 509
 
 ### `_export.html` — 153 l. → admin-plans.html, rapport.html
 
@@ -408,9 +408,10 @@ Fonctions :
 `construitPanneau` 102 · `sectionSelection` 301 · `sectionFond` 357 · `ligneCouleur` 411
 `rangSecteur` 431 · `rangSous` 443 · `defautCouleur` 465
 
-### `_pousse.html` — 500 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pousse.html` — 631 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · Enregistrer la configuration
+- l.502 · La sauvegarde emportée
 
 Fonctions :
 
@@ -419,6 +420,8 @@ Fonctions :
 `programmePublication` 188 · `rattrapeRetard` 195 · `envoie` 200 · `presse` 213
 `resteSession` 247 · `renouvelleSession` 263 · `base` 287 · `identifiants` 335
 `reglagesSeuls` 350 · `oublieCache` 361 · `pousseConfiguration` 380
+`sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
+`litSauvegarde` 601 · `brancheSauvegarde` 623
 
 ### `_rapport-head.html` — 30 l. → rapport.html
 
