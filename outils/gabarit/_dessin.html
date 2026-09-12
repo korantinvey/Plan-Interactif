@@ -25,10 +25,14 @@ let ATTENTE = {};
 try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
 
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
-const enAttente = (id) => ATTENTE[id] === true;
+const enAttente = (id) => !!ATTENTE[id];
 
+/* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
+   avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
+   pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
+   ce que la base, qui ne l'avait pas reçu, en disait. */
 function marqueAttente(id, oui){
-  if (oui) ATTENTE[id] = true; else delete ATTENTE[id];
+  if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
   majAttente();
 }
@@ -57,6 +61,9 @@ const enregistreDessins = () => {
     if ($("outilsAide")) $("outilsAide").textContent =
       "Mémoire du navigateur pleine : allégez ou supprimez une image.";
   }
+  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
+     c'est justement quand son quota déborde que la base doit avoir le dessin. */
+  programmePublication();
 };
 
 let calqueActif = null;   // id du calque en cours d'édition
