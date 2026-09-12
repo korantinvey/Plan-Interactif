@@ -1855,14 +1855,26 @@ function centrePoint(xy){
      pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
   glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
+/* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru, et Klipso y porte parfois le code du dossier plutôt
+   qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
+   d'un coup sur tous les salons déjà en ligne.
+
+   Le même tableau vit dans la console — « FICHE_MASQUEE_PAR_DEFAUT » de
+   « _console-js.html », qui décide de l'état des cases. */
+const MASQUE_PAR_DEFAUT = { hall: true };
+
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
  * Une entrée absente vaut « affiché », pour qu'un champ ajouté plus tard ne
- * disparaisse pas des salons déjà réglés.
+ * disparaisse pas des salons déjà réglés — sauf ceux que le tableau ci-dessus
+ * réserve, qui attendent d'être cochés.
  */
 function montre(type, cle){
-  const r = DATA && DATA.fiche && DATA.fiche[type];
-  return !r || r[cle] !== false;
+  const r = (DATA && DATA.fiche && DATA.fiche[type]) || {};
+  return MASQUE_PAR_DEFAUT[cle] ? r[cle] === true : r[cle] !== false;
 }
 
 /* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
@@ -2393,7 +2405,15 @@ function poseCode(pl, num, filigrane){
   const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
                   String(DATA.evenement || "").trim().toLowerCase();
   const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
-  $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
+  /* Le hall est affecté au pavillon, donc à tout ce qui s'y trouve. Il se
+     glisse entre le pavillon et le numéro : c'est l'ordre dans lequel on
+     cherche un stand sur place — le hall, puis l'allée.
+
+     Il ne tombe pas, lui, quand le salon n'a qu'un pavillon : le pavillon ne
+     distingue alors rien, tandis que le hall reste la porte par laquelle on
+     entre. Il reste au contraire muet tant qu'on ne l'a pas coché. */
+  const hall = montre("stand", "hall") ? (pl.hall || "") : "";
+  $("dCode").textContent = [pav, hall, num].filter(Boolean).join(" · ");
   $("dCode").hidden = !$("dCode").textContent;
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
