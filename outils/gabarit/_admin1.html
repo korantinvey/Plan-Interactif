@@ -1221,10 +1221,11 @@ function voletApparence(hote){
   hote.appendChild(grille);
 }
 
-/** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
- *  remontés vers la base. */
+/** Les réglages d'apparence se posent sur le poste, puis montent en base
+ *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  programmePublication();
 };
 
 /** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
@@ -1330,14 +1331,17 @@ function activeAdmin(){
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
-     à l'autre, faute de mieux. Maintenant qu'elle se publie, ils n'ajoutent
+     à l'autre, faute de mieux. Maintenant qu'elle s'enregistre, ils n'ajoutent
      qu'un chemin de plus pour arriver au même endroit. Rétablir les valeurs
      d'origine est parti pour l'inverse : un clic effaçait sans confirmation
      tout le travail de calques et de libellés, pour un besoin qui ne se
-     présente jamais. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>';
+     présente jamais.
+
+     Ce qui reste dit où en est l'enregistrement — il se fait tout seul — et
+     permet de le relancer quand il a échoué. « majAttente » l'habille. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>';
   $("panel").appendChild(barre);
-  $("pousseConf").onclick = e => pousseConfiguration(e.target);
+  $("pousseConf").onclick = () => pousseConfiguration();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
      alors pas été construit — montePlan() n'en bâtit qu'en administration —

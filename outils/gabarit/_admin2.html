@@ -10,8 +10,12 @@ function demarre(d){
   montePlan();
   fit();
   liste();
-  // le plan chargé, le bouton peut dire ce qui reste à publier
+  // le plan chargé, le bouton peut dire où en est l'enregistrement
   majAttente();
+  /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
+     trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
+     le rattraper, personne ne viendra cliquer pour lui. */
+  rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
