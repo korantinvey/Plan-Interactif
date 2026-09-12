@@ -9308,27 +9308,32 @@ const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || n
  * Un repère posé avant cette séparation n'a que son libellé : on continue de
  * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
  * s'écrit dès qu'on y touche.
+ *
+ * La liste se lit dans l'ordre alphabétique : dix-sept lignes se parcourent à
+ * l'œil, et c'est le seul ordre où l'on sait d'avance où regarder. Le tri est
+ * fait ici plutôt que laissé à la main, pour qu'un type de plus se range de
+ * lui-même. « Sans pictogramme » reste en tête, hors du tri : ce n'est pas un
+ * type mais l'absence de choix, et c'est là que `nomTypeRepere` se replie.
  */
-const TYPES_REPERE = [
-  { v: "",             nom: "Sans pictogramme" },
-  { v: "entree",       nom: "Entrée/Sortie" },
-  { v: "entree_seule", nom: "Entrée" },
-  { v: "sortie",       nom: "Sortie" },
-  { v: "wc",           nom: "WC" },
-  { v: "accueil",      nom: "Accueil" },
-  { v: "info",         nom: "Information" },
-  { v: "restauration", nom: "Restauration" },
-  { v: "cafe",         nom: "Café" },
-  { v: "vestiaire",    nom: "Vestiaire" },
-  { v: "ascenseur",    nom: "Ascenseur" },
-  { v: "escalier",     nom: "Escalier" },
-  { v: "escalator",    nom: "Escalator" },
-  { v: "secours",      nom: "Secours" },
+const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "pmr",          nom: "Accessibilité" },
-  { v: "parking",      nom: "Parking" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "cafe",         nom: "Café" },
   { v: "distributeur", nom: "Distributeur" },
+  { v: "entree_seule", nom: "Entrée" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "info",         nom: "Information" },
+  { v: "parking",      nom: "Parking" },
+  { v: "restauration", nom: "Restauration" },
   { v: "reunion",      nom: "Salle de réunion" },
-];
+  { v: "secours",      nom: "Secours" },
+  { v: "sortie",       nom: "Sortie" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "wc",           nom: "WC" },
+].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
 const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
 
 /**
