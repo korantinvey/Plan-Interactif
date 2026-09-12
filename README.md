@@ -409,6 +409,64 @@ libellés sont relus dans les données à chaque affichage. Ce que le plan ne
 connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
 un rang mort.
 
+## Compléter une visite — la suggestion
+
+Un visiteur qui retient quatre enseignes du même secteur ne compose pas une liste
+au hasard : il cherche quelque chose, et sa liste le dit avant lui. Le bas du
+tiroir du parcours lui propose alors **un exposant de plus**, en disant pourquoi
+— « *« Agroalimentaire » revient 4 fois dans votre liste (secteur)* » — avec le
+signet pour l'ajouter et la croix pour ne plus le voir. Le refus vaut le temps de
+la page : il porte sur l'instant, pas sur l'exposant.
+
+La fonction est éteinte d'origine et se règle dans « Réglages du plan », onglet
+**« Suggestion »** :
+
+- **le critère de rapprochement** — un des critères de recherche du salon,
+  ceux-là mêmes que le visiteur peut cocher : secteur, ville, nomenclature,
+  thématiques, ou un champ que le salon s'est ajouté ;
+- **le seuil** — combien d'exposants d'une même valeur doivent figurer dans le
+  parcours avant qu'on en propose un autre, de 2 à 12 (3 d'origine) ;
+- **l'exposant proposé**, de deux provenances :
+  - **le plus consulté du salon** dans cette valeur, relevé dans les compteurs
+    d'usage ;
+  - **un exposant choisi**, un par valeur — la liste ne propose que ceux qui
+    portent la valeur, puisque ce qu'on met sous les yeux du visiteur doit
+    ressembler à ce qu'il a retenu.
+
+Seules les valeurs qu'**au moins trois exposants** portent sont réglables : à
+deux, il faudrait que le visiteur les retienne tous pour atteindre le seuil, et
+il ne resterait plus personne à proposer.
+
+### Ce qui ne sort pas du salon, et ce qui n'y entre pas
+
+Le rapprochement se fait **sur l'appareil du visiteur**, sur la liste qu'il a
+sous les yeux : rien de ce qu'il retient ne remonte, et le plan ne demande rien
+au serveur pour proposer.
+
+Il faut donc que la page publique ait de quoi répondre seule, alors que les
+compteurs d'usage ne sont lisibles que d'un compte qui a accès au salon —
+`audience_cibles` est en « security invoker ». Le classement est par conséquent
+relevé **en administration**, à chaque ouverture de l'onglet et par le bouton
+« Relever le classement », puis réduit à ce que la suggestion en fera : les trois
+exposants les plus consultés de chaque valeur. C'est ce relevé, et lui seul, qui
+part aux visiteurs avec le reste des réglages. Le classement entier aurait dit à
+tout le monde quel stand personne n'ouvre ; trois noms par valeur ne disent que
+ce qu'ils proposent.
+
+Trois plutôt qu'un parce que le premier de la liste est aussi celui que le
+visiteur a le plus de chances d'avoir déjà retenu — c'est le plus consulté du
+secteur. Les suivants prennent alors le relais, et quand la valeur n'a plus
+personne à offrir, c'est la valeur d'après qui est examinée.
+
+Un salon qui n'a pas encore ouvert n'a aucun classement : la suggestion se tait
+plutôt que d'annoncer comme le plus consulté un exposant tiré au hasard. L'onglet
+le dit en clair — « *n valeurs ont un exposant à proposer, sur N* » — et
+« un exposant choisi » est la provenance qui rend la fonction vivante dès le
+premier jour.
+
+Retirer le parcours de visite retire la suggestion avec lui : il n'y a plus ni
+liste à compléter ni tiroir où poser la proposition, et l'onglet le signale.
+
 ## L'itinéraire d'un stand à l'autre
 
 Un bouton de la barre du haut, et un bouton « Itinéraire » sur chaque fiche,

@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2246 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2250 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1285 · 10. Mode administration
-- l.1363 · La fiche d'une zone organisateur
-- l.1993 · Masquer une zone organisateur
-- l.2076 · Placer un libellé à la main
+- l.1289 · 10. Mode administration
+- l.1367 · La fiche d'une zone organisateur
+- l.1997 · Masquer une zone organisateur
+- l.2080 · Placer un libellé à la main
 
 Fonctions :
 
@@ -28,18 +28,18 @@ Fonctions :
 `themeSombre` 366 · `appliqueAccent` 380 · `appliqueFond` 411 · `modeleRetenu` 449
 `posePoliceLibelles` 499 · `appliqueModele` 527 · `texteCorps` 598 · `standApercu` 613
 `lignesApercu` 636 · `contenuApercu` 662 · `apercuFiche` 699 · `apercuListe` 764
-`apercuDuo` 786 · `glisseFenetre` 819 · `ouvreReglages` 830 · `voletZones` 912
-`ficheZoneEnPlace` 989 · `voletPlan` 1007 · `nomDuTon` 1134 · `voletApparence` 1139
-`enregistreConf` 1234 · `rgbHex` 1241 · `hexa` 1248 · `luminance` 1252 · `ecarte` 1266
-`joli` 1281 · `retireAdmin` 1298 · `activeAdmin` 1311 · `champZone` 1389 · `champsZone` 1414
-`champSalles` 1470 · `nomDeZone` 1522 · `reduitLogo` 1556 · `champLogo` 1597
-`editeurRiche` 1694 · `memeFicheZone` 1851 · `suitFicheZone` 1856 · `verseFicheZone` 1864
-`ficheZone` 1890 · `enregistreZone` 1915 · `basculeAffichageZone` 2004
-`marqueZonesMasquees` 2021 · `ecritTablesZones` 2041 · `ecritTableZones` 2072
-`cleLibelle` 2097 · `empreinteLibelle` 2113 · `placementLibelle` 2121 · `posePlacement` 2131
-`libelleAutomatique` 2148 · `modePlacementLibelles` 2157 · `majPaletteLibelle` 2174
-`choisitLibelle` 2191 · `pousseLibelle` 2198 · `libellePointerDown` 2206
-`libellePointerMove` 2221 · `libellePointerUp` 2230
+`apercuDuo` 786 · `glisseFenetre` 819 · `ouvreReglages` 830 · `voletZones` 916
+`ficheZoneEnPlace` 993 · `voletPlan` 1011 · `nomDuTon` 1138 · `voletApparence` 1143
+`enregistreConf` 1238 · `rgbHex` 1245 · `hexa` 1252 · `luminance` 1256 · `ecarte` 1270
+`joli` 1285 · `retireAdmin` 1302 · `activeAdmin` 1315 · `champZone` 1393 · `champsZone` 1418
+`champSalles` 1474 · `nomDeZone` 1526 · `reduitLogo` 1560 · `champLogo` 1601
+`editeurRiche` 1698 · `memeFicheZone` 1855 · `suitFicheZone` 1860 · `verseFicheZone` 1868
+`ficheZone` 1894 · `enregistreZone` 1919 · `basculeAffichageZone` 2008
+`marqueZonesMasquees` 2025 · `ecritTablesZones` 2045 · `ecritTableZones` 2076
+`cleLibelle` 2101 · `empreinteLibelle` 2117 · `placementLibelle` 2125 · `posePlacement` 2135
+`libelleAutomatique` 2152 · `modePlacementLibelles` 2161 · `majPaletteLibelle` 2178
+`choisitLibelle` 2195 · `pousseLibelle` 2202 · `libellePointerDown` 2210
+`libellePointerMove` 2225 · `libellePointerUp` 2234
 
 Éléments :
 
@@ -224,7 +224,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
 `nomFeuilleExport` 92 · `exporteExposants` 108
 
-### `_head.html` — 3397 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3446 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -379,7 +379,7 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 358 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 365 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -390,7 +390,7 @@ Fonctions :
 `rafraichitMarque` 85 · `brancheParcours` 97 · `calqueMarques` 129 · `dessineMarques` 145
 `marqueParcours` 175 · `rafraichitParcours` 189 · `instantConf` 213 · `cleTemps` 217
 `jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
-`ouvreParcours` 314 · `fermeParcours` 326
+`ouvreParcours` 318 · `fermeParcours` 330
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -437,6 +437,16 @@ Fonctions :
 Éléments :
 
 `#lienPublic`
+
+### `_suggestion.html` — 505 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
+
+Fonctions :
+
+`reglageSugg` 45 · `seuilSugg` 47 · `critereSugg` 55 · `indexSugg` 67 · `valeursSugg` 92
+`suggestionCourante` 111 · `exposantPropose` 143 · `nomValeurSugg` 161
+`poseSuggestion` 170 · `relevePalmares` 216 · `etiquetteSugg` 236 · `voletSuggestion` 246
 
 ## Dans `web/`, mais que la construction ne produit pas
 
