@@ -118,11 +118,38 @@ function indexe(d){
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
-       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
-       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
+       n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
        données figées n'en porte pas du tout : on n'y touche à rien. */
-    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
-      DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+    if (Array.isArray(p.dessins)){
+      const deLaBase = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      if (ADMIN && enAttente(p.id)){
+        /* Un travail que ce poste n'a pas encore publié : il l'emporte, la base
+           ne l'a pas vu passer. Ce que la base a de plus s'y ajoute pourtant —
+           un calque tracé depuis un autre poste, que ce poste-ci n'a jamais
+           connu : l'ignorer ici, c'était l'effacer au premier envoi. Un calque
+           déjà connu puis retiré d'ici, lui, a bien été supprimé à la main, et
+           ne revient pas. */
+        const locaux = DESSINS[p.id] || [];
+        const ailleurs = deLaBase.filter(b =>
+          !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
+        if (ailleurs.length) DESSINS[p.id] = locaux.concat(ailleurs);
+      } else if (ADMIN){
+        /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
+           confirmés : un enregistrement a échoué sans se faire entendre — une
+           session expirée suffit, et la page continue de tourner comme si de
+           rien n'était. On les garde et on les remet en file plutôt que de les
+           effacer : ce navigateur est le seul endroit où ils existent encore.
+           Ceux que la base a connus puis perdus, eux, ont bien été supprimés
+           ailleurs, et s'oublient. */
+        const rescapes = (DESSINS[p.id] || [])
+          .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
+        DESSINS[p.id] = deLaBase.concat(rescapes);
+        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+      } else {
+        DESSINS[p.id] = deLaBase;
+      }
+      if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa

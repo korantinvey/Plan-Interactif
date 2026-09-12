@@ -3200,6 +3200,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 #couches .cal{animation:parait .25s ease-out}
 @keyframes parait{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
+
+/* ------------------------------------------------------------
+   L'alerte d'enregistrement
+   Un plan qui n'est pas en base ne peut pas se signaler plus discrètement que
+   les calques qu'il porte : l'alerte prend la largeur, par-dessus le bandeau.
+   ------------------------------------------------------------ */
+.alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+/* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
+   la couleur de l'encre plutôt que celle de l'alerte. */
+.alerte-enr[data-genre="repris"]{background:var(--ink,#1b1b1f);color:var(--surface,#fff)}
+.alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
+  font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.alerte-enr button:hover{background:rgba(255,255,255,.16)}
 </style>
 
 <div class="app">
@@ -3250,6 +3266,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </details>
     </div>
   </header>
+
+  <!-- Un enregistrement qui n'aboutit pas ne peut pas s'annoncer au fond d'un
+       panneau fermé : il passe devant le bandeau, et propose son recours. En
+       dehors du flux de la grille, il ne déplace rien. -->
+  <div class="alerte-enr" id="alerteEnr" role="status" hidden>
+    <span id="alerteTxt"></span>
+    <button id="alerteAct" type="button"></button>
+  </div>
 
   <aside class="side" id="side">
     <button class="poignee" id="poignee" aria-expanded="false" aria-controls="list"
@@ -3661,11 +3685,38 @@ function indexe(d){
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
-       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
-       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
+       n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
        données figées n'en porte pas du tout : on n'y touche à rien. */
-    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
-      DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+    if (Array.isArray(p.dessins)){
+      const deLaBase = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      if (ADMIN && enAttente(p.id)){
+        /* Un travail que ce poste n'a pas encore publié : il l'emporte, la base
+           ne l'a pas vu passer. Ce que la base a de plus s'y ajoute pourtant —
+           un calque tracé depuis un autre poste, que ce poste-ci n'a jamais
+           connu : l'ignorer ici, c'était l'effacer au premier envoi. Un calque
+           déjà connu puis retiré d'ici, lui, a bien été supprimé à la main, et
+           ne revient pas. */
+        const locaux = DESSINS[p.id] || [];
+        const ailleurs = deLaBase.filter(b =>
+          !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
+        if (ailleurs.length) DESSINS[p.id] = locaux.concat(ailleurs);
+      } else if (ADMIN){
+        /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
+           confirmés : un enregistrement a échoué sans se faire entendre — une
+           session expirée suffit, et la page continue de tourner comme si de
+           rien n'était. On les garde et on les remet en file plutôt que de les
+           effacer : ce navigateur est le seul endroit où ils existent encore.
+           Ceux que la base a connus puis perdus, eux, ont bien été supprimés
+           ailleurs, et s'oublient. */
+        const rescapes = (DESSINS[p.id] || [])
+          .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
+        DESSINS[p.id] = deLaBase.concat(rescapes);
+        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+      } else {
+        DESSINS[p.id] = deLaBase;
+      }
+      if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
@@ -9722,6 +9773,32 @@ try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
 const enAttente = (id) => !!ATTENTE[id];
 
+/* Ce que la base a confirmé, pavillon par pavillon : la liste des clés qu'elle
+   nous a rendues au dernier chargement, ou que notre dernier envoi y a mises.
+
+   Elle répond à une question que la marque d'attente ne sait pas trancher. Un
+   calque présent ici et absent de la base a été supprimé ailleurs — il faut
+   l'oublier. Le même calque jamais confirmé n'a, lui, jamais quitté ce poste :
+   l'oublier le perd pour de bon. Faute de les distinguer, un enregistrement
+   manqué — session expirée, réseau coupé — rendait un plan nu au rechargement
+   suivant, alors que tout le travail était encore là, dans ce navigateur.
+
+   Elle sert aussi à l'envers, à la publication : on n'efface en base que ce
+   qu'on y a vu et qui a disparu depuis. Un poste qui ne connaît rien n'efface
+   rien, là où un « tout ce que je n'ai pas » emportait le travail d'à côté. */
+const CLE_PUBLIES = "plan-dessins-publies";
+let PUBLIES = {};
+try { PUBLIES = JSON.parse(localStorage.getItem(CLE_PUBLIES) || "{}"); } catch (e) {}
+
+/** Note ce que la base contient pour ce pavillon, à cet instant. */
+function notePubliees(id, cles){
+  PUBLIES[id] = cles.slice();
+  try { localStorage.setItem(CLE_PUBLIES, JSON.stringify(PUBLIES)); } catch (e) {}
+}
+
+/** Ce calque a-t-il déjà été vu en base ? */
+const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
+
 /* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
    avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
    pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
@@ -12944,12 +13021,73 @@ const etatCourant = () => etatEnvoi || (!autoDispo() ? "manuel"
  * en clair, et non plus une simple marque.
  */
 function majAttente(){
-  const b = $("pousseConf");
-  if (!b) return;
   const e = etatCourant();
-  b.textContent = DITS[e][0];
-  b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
-  b.dataset.etat = e;
+  const b = $("pousseConf");
+  if (b){
+    b.textContent = DITS[e][0];
+    b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
+    b.dataset.etat = e;
+  }
+  ditAlerte(e);
+}
+
+/* Ce que le chargement a retrouvé sur ce poste et remis en file, faute d'avoir
+   jamais réussi à le publier. On le dit, puis on l'oublie. */
+let _rescapes = 0;
+function compteRescapes(n){ _rescapes += n; majAttente(); }
+
+/**
+ * L'alerte, hors du panneau.
+ *
+ * Le panneau des calques reste fermé la plupart du temps : un enregistrement
+ * refusé s'annonçait sur un bouton que personne ne regardait. L'exploitant a
+ * dessiné une matinée entière, fermé l'onglet en croyant son travail publié,
+ * et ne l'a retrouvé nulle part ailleurs — ni sur son téléphone, ni le
+ * lendemain. Un échec prend donc toute la largeur de l'écran, et le
+ * rattrapage se dit aussi : c'est la seule chose qui distingue un plan
+ * enregistré d'un plan qui ne l'est pas.
+ */
+function ditAlerte(etat){
+  const z = $("alerteEnr");
+  if (!z) return;
+  const txt = $("alerteTxt"), act = $("alerteAct");
+  if (etat === "echec"){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vos calques ne sont enregistrés que sur ce poste : " + souci;
+    act.textContent = "Réessayer";
+    act.onclick = () => pousseConfiguration();
+    return;
+  }
+  /* Plus de session du tout : l'enregistrement automatique ne se déclenche même
+     pas — « autoDispo » est faux — et le bouton se contente de proposer une
+     poussée manuelle qui échouera. C'est le même piège que l'échec, en plus
+     silencieux encore, et il ne se dit qu'en présence d'un travail à perdre. */
+  if (ADMIN && etat === "manuel" && enRetard()){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
+    act.textContent = "Se reconnecter";
+    act.onclick = () => {
+      if (typeof ecranAcces === "function") ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
+      else location.reload();
+    };
+    return;
+  }
+  if (_rescapes){
+    const fini = etat === "fait";
+    z.hidden = false;
+    z.dataset.genre = "repris";
+    txt.textContent = _rescapes > 1
+      ? _rescapes + " calques de ce poste n'avaient jamais été enregistrés : ils " +
+        (fini ? "sont de nouveau en base." : "repartent vers la base.")
+      : "Un calque de ce poste n'avait jamais été enregistré : il " +
+        (fini ? "est de nouveau en base." : "repart vers la base.");
+    act.textContent = "Fermer";
+    act.onclick = () => { _rescapes = 0; majAttente(); };
+    return;
+  }
+  z.hidden = true;
 }
 
 /** Passe dans un état, et le fait dire par le bouton. */
@@ -13006,6 +13144,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") presse();
 });
 addEventListener("pagehide", presse);
+
+/* Et quitter la page sur un enregistrement en échec, c'est laisser le travail
+   dans ce seul navigateur — sans qu'il y paraisse, puisque le plan s'affiche
+   entier. Le navigateur ne laisse pas choisir le texte de sa question, mais il
+   la pose, et c'est tout ce qu'on lui demande. */
+addEventListener("beforeunload", (e) => {
+  if (etatCourant() === "echec"){ e.preventDefault(); e.returnValue = ""; }
+});
 
 /* ------------------------------------------------------------
    Le jeton, et son renouvellement
@@ -13086,17 +13232,24 @@ async function base(acces, chemin, options = {}){
 
   if (resteSession(acces.ses.access_token) < RESTE_JETON) await echangeContre();
   let r = await envoie();
+  let txt = await r.text();
   /* Et refusé malgré tout — une horloge en retard, un jeton révoqué ailleurs —
-     on échange puis on refait l'appel. Le 403 reste où il est : c'est un droit
-     qui manque, pas un jeton qui se périme, et le renouveler ne le donnerait
-     pas. */
-  if (r.status === 401 && await echangeContre()) r = await envoie();
-
-  const txt = await r.text();
+     on échange puis on refait l'appel. Le 403 a sa place ici, contre toute
+     attente : ce projet répond 403 à un jeton périmé là où l'on guettait un
+     401, et le tenir pour un droit manquant faisait tourner l'enregistrement
+     en rond — l'exploitant dessinait une matinée entière sans que rien ne
+     parte, puis fermait l'onglet. Le corps de la réponse tranche : lui seul
+     distingue le jeton mort du droit qui manque vraiment. */
+  const jetonMort = (etat, corps) => etat === 401 ||
+    (etat === 403 && /jwt|token|expir/i.test(corps));
+  if (jetonMort(r.status, txt) && await echangeContre()){
+    r = await envoie();
+    txt = await r.text();
+  }
   /* Une session que même l'échange ne rattrape plus se dit en toutes lettres :
      le corps de la réponse parle de JWT, ce qui ne veut rien dire pour qui
      voulait seulement enregistrer son plan. */
-  if (r.status === 401) throw new Error("session expirée, reconnectez-vous");
+  if (jetonMort(r.status, txt)) throw new Error("session expirée, reconnectez-vous");
   if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
   return txt ? JSON.parse(txt) : null;
 }
@@ -13211,14 +13364,27 @@ async function pousseConfiguration(auto){
           calques += liste.length;
         }
 
-        /* Ce qui a disparu de la page disparaît de la base. On retire après
-           avoir écrit, jamais avant : un échec en cours de route laisse alors
-           l'ancienne version en place plutôt qu'un plan vide. */
-        const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
-        await base(acces,
-          "calque_dessin?plan_id=eq." + planId +
-          (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
-          { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        /* Ce qui a disparu de la page disparaît de la base — mais nommément.
+           « Tout ce que je n'ai pas » était une consigne dangereuse : un poste
+           dont la copie locale était vide ou en retard emportait le travail
+           publié depuis un autre, sans que rien ne le demande. On ne retire
+           donc que les calques que la base nous avait rendus et qui ne sont
+           plus là ; un poste qui ne connaît rien n'efface rien. Et après avoir
+           écrit, jamais avant : un échec en cours de route laisse l'ancienne
+           version en place plutôt qu'un plan vide. */
+        const partis = (PUBLIES[p.id] || [])
+          .filter(cle => !liste.some(c => c.id === cle))
+          .map(cle => '"' + String(cle).replace(/"/g, "") + '"');
+        if (partis.length){
+          await base(acces,
+            "calque_dessin?plan_id=eq." + planId +
+            "&cle=in.(" + encodeURIComponent(partis.join(",")) + ")",
+            { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        }
+        /* Ce que la base contient désormais, de notre fait : c'est à cette
+           liste que le chargement suivant comparera la copie du poste pour
+           distinguer un calque supprimé ailleurs d'un calque jamais publié. */
+        notePubliees(p.id, liste.map(c => c.id));
 
         /* Ce pavillon est en base : le poste ne le devance plus, et le
            chargement suivant peut reprendre ce que la base en dit. On le note
