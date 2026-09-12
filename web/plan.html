@@ -1074,6 +1074,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
 .field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
 .field .v .ligne.theme:hover{text-decoration:underline}
+/* Un réseau social se lit à son logo, non à son adresse : les pictos tiennent
+   sur une seule ligne, côte à côte, là où trois adresses empilées prenaient
+   trois lignes pour redire le nom de l'exposant. Ils suivent la couleur des
+   liens de la fiche — chaque habillage a la sienne — plutôt que celle des
+   marques, qui se disputeraient la page. */
+.field .v .ligne.rs{display:inline-flex;vertical-align:middle}
+.field .v .ligne.rs + .ligne.rs{margin-top:0;margin-left:12px}
+.field .v a.rs{display:inline-flex;line-height:0}
+.field .v a.rs svg{width:21px;height:21px;fill:currentColor}
+.field .v a.rs:hover{opacity:.7}
 /* La description d'une zone, écrite dans un éditeur : elle porte ses propres
    paragraphes et ses propres listes, là où tous les autres champs tiennent en
    une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */
@@ -2010,6 +2020,12 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
+   proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
+   disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,
+   et ici il n'y a rien autour à quoi se comparer. */
+.modale[data-genre="sugg"] .mfen{width:min(420px,100%)}
+.modale[data-genre="sugg"] .pSugg{padding:0;border:none;background:none;gap:11px}
 /* La proposition qui ferme le tiroir.
    Elle ne se déguise pas en rang du parcours : ce qui est dessous a été retenu,
    ce qui est ici ne l'est pas encore. D'où le fond d'accent et le trait
@@ -2856,7 +2872,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fini avec les filtres. */
 .modale[data-genre="cote"]{background:none;place-items:center start}
 .modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+/* « background-color » et non « background », comme sur le parcours et
+   l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
+   classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
+   forme courte — écrite après eux dans la feuille — les effacerait. */
+.mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
@@ -2873,6 +2893,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
   border-top:1px solid var(--line)}
+/* Le bouton qui porte ce pour quoi la fenêtre s'est ouverte. Le rouge du
+   « danger » dit ce qu'on perd ; l'accent, ce vers quoi l'on va. */
+.mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
+.mfen footer .btn.accent:hover{filter:brightness(1.08)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 /* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
@@ -3193,6 +3218,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 #couches .cal{animation:parait .25s ease-out}
 @keyframes parait{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
+
+/* ------------------------------------------------------------
+   L'alerte d'enregistrement
+   Un plan qui n'est pas en base ne peut pas se signaler plus discrètement que
+   les calques qu'il porte : l'alerte prend la largeur, par-dessus le bandeau.
+   ------------------------------------------------------------ */
+.alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+/* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
+   la couleur de l'encre plutôt que celle de l'alerte. */
+.alerte-enr[data-genre="repris"]{background:var(--ink,#1b1b1f);color:var(--surface,#fff)}
+.alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
+  font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.alerte-enr button:hover{background:rgba(255,255,255,.16)}
 </style>
 
 <div class="app">
@@ -3243,6 +3284,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </details>
     </div>
   </header>
+
+  <!-- Un enregistrement qui n'aboutit pas ne peut pas s'annoncer au fond d'un
+       panneau fermé : il passe devant le bandeau, et propose son recours. En
+       dehors du flux de la grille, il ne déplace rien. -->
+  <div class="alerte-enr" id="alerteEnr" role="status" hidden>
+    <span id="alerteTxt"></span>
+    <button id="alerteAct" type="button"></button>
+  </div>
 
   <aside class="side" id="side">
     <button class="poignee" id="poignee" aria-expanded="false" aria-controls="list"
@@ -3654,11 +3703,38 @@ function indexe(d){
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
-       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
-       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
+       n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
        données figées n'en porte pas du tout : on n'y touche à rien. */
-    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
-      DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+    if (Array.isArray(p.dessins)){
+      const deLaBase = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      if (ADMIN && enAttente(p.id)){
+        /* Un travail que ce poste n'a pas encore publié : il l'emporte, la base
+           ne l'a pas vu passer. Ce que la base a de plus s'y ajoute pourtant —
+           un calque tracé depuis un autre poste, que ce poste-ci n'a jamais
+           connu : l'ignorer ici, c'était l'effacer au premier envoi. Un calque
+           déjà connu puis retiré d'ici, lui, a bien été supprimé à la main, et
+           ne revient pas. */
+        const locaux = DESSINS[p.id] || [];
+        const ailleurs = deLaBase.filter(b =>
+          !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
+        if (ailleurs.length) DESSINS[p.id] = locaux.concat(ailleurs);
+      } else if (ADMIN){
+        /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
+           confirmés : un enregistrement a échoué sans se faire entendre — une
+           session expirée suffit, et la page continue de tourner comme si de
+           rien n'était. On les garde et on les remet en file plutôt que de les
+           effacer : ce navigateur est le seul endroit où ils existent encore.
+           Ceux que la base a connus puis perdus, eux, ont bien été supprimés
+           ailleurs, et s'oublient. */
+        const rescapes = (DESSINS[p.id] || [])
+          .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
+        DESSINS[p.id] = deLaBase.concat(rescapes);
+        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+      } else {
+        DESSINS[p.id] = deLaBase;
+      }
+      if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
@@ -5784,11 +5860,65 @@ function ficheConf(id, canal){
  * que d'afficher un lien mort.
  */
 function lien(v){
-  let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  const u = adresseWeb(v);
   if (!u) return "";
-  if (!/^https?:/i.test(u)) u = "https://" + u.replace(/^\/+/, "");
   return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' +
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
+}
+
+/** Une adresse saisie à la main, ramenée à une adresse web complète. */
+function adresseWeb(v){
+  const u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  if (!u) return "";
+  return /^https?:/i.test(u) ? u : "https://" + u.replace(/^\/+/, "");
+}
+
+/* Les pictos des réseaux sociaux.
+
+   Une adresse de réseau social n'apprend rien qu'on ne sache déjà : elle
+   redit le nom du réseau puis celui de l'exposant, sur une ligne assez longue
+   pour revenir à la ligne. Le logo le dit plus vite, et trois logos tiennent
+   sur la ligne que prenait une seule adresse.
+
+   Ils sont tracés dans la couleur du texte plutôt que dans celle de la
+   marque : la fiche est habillée par l'exploitant, et trois aplats de marque
+   posés côte à côte lui prendraient sa page. */
+const PICTO_RS = {
+  facebook: '<path d="M24 12.07C24 5.44 18.63.07 12 .07S0 5.44 0 12.07c0 5.99 4.39' +
+    ' 10.95 10.13 11.86v-8.39H7.08v-3.47h3.05V9.43c0-3.01 1.79-4.67 4.53-4.67 1.31 0' +
+    ' 2.69.24 2.69.24v2.95h-1.51c-1.49 0-1.96.93-1.96 1.88v2.25h3.33l-.53' +
+    ' 3.47h-2.8v8.39C19.61 23.02 24 18.06 24 12.07Z"/>',
+  linkedin: '<path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85' +
+    ' 0-2.13 1.44-2.13 2.94v5.66H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6' +
+    ' 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0' +
+    ' 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0' +
+    ' 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/>',
+  instagram: '<rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none"' +
+    ' stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="17.5" cy="6.5" r="1.45"/>',
+};
+
+/**
+ * Un réseau social, en picto cliquable.
+ *
+ * La valeur sort déjà sous forme de ligne — ce que la fiche fait d'un champ
+ * qui en porte plusieurs — pour que le picto s'affiche pareil seul sous son
+ * intitulé ou réuni avec les autres sous un titre commun : c'est la ligne que
+ * la feuille de style aligne horizontalement.
+ *
+ * Un réseau dont on n'a pas le logo ne perd pas son adresse pour autant : il
+ * retombe sur le lien écrit en toutes lettres.
+ */
+function pictoRS(cle, v){
+  const u = adresseWeb(v);
+  if (!u) return [];
+  if (!PICTO_RS[cle]) return ['<span class="ligne">' + lien(v) + '</span>'];
+  const nom = LIBELLE_CORPS[cle] || cle;
+  return ['<span class="ligne rs"><a class="rs" href="' + esc(u) +
+    '" target="_blank" rel="noopener" title="' + esc(nom) +
+    '" aria-label="' + esc(nom) + '">' +
+    '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTO_RS[cle] + '</svg></a></span>'];
 }
 
 /**
@@ -6272,9 +6402,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court");
   met("site", LIBELLE_CORPS.site, lien(soc.site));
-  met("facebook", LIBELLE_CORPS.facebook, lien(soc.fb));
-  met("linkedin", LIBELLE_CORPS.linkedin, lien(soc.li));
-  met("instagram", LIBELLE_CORPS.instagram, lien(soc.ig));
+  met("facebook", LIBELLE_CORPS.facebook, pictoRS("facebook", soc.fb));
+  met("linkedin", LIBELLE_CORPS.linkedin, pictoRS("linkedin", soc.li));
+  met("instagram", LIBELLE_CORPS.instagram, pictoRS("instagram", soc.ig));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   met("nomenclature", LIBELLE_CORPS.nomenclature, (soc.nomencl || [])
     .map(n => '<span class="ligne">' + esc(String(n)) + '</span>'));
@@ -7439,7 +7569,48 @@ function appliqueModele(){
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
   pose($("bandeau"), "bandeau-");
+  // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
+  habilleModale();
   posePoliceLibelles(cle);
+}
+
+/**
+ * L'habillage du salon sur la fenêtre modale.
+ *
+ * Elle restait au fond neutre pendant que tout le reste portait la couleur du
+ * salon, et c'est pourtant là que le visiteur coche ses critères de recherche,
+ * lit le programme d'une conférence, choisit une société sur un stand partagé,
+ * fait organiser sa journée, confirme un vidage ou reçoit la proposition qui
+ * complète sa visite.
+ *
+ * Sauf les fenêtres d'exploitation, que leur genre nomme : « large » pour les
+ * réglages du plan et la fiche d'une zone, « outil » pour la remise à zéro des
+ * compteurs, l'ordre des calques et le nom d'un calque. Ce sont les outils de
+ * l'exploitant et non des pièces du salon, et deux d'entre elles ne peuvent pas
+ * porter d'habillage sans mentir :
+ *
+ * — les réglages montrent les onze habillages en vignettes, et l'on ne compare
+ *   pas onze habillages depuis une fenêtre qui en porte déjà un : celles dont
+ *   le modèle ne redéfinit pas son propre fond laissaient voir celui de la
+ *   fenêtre au travers, et promettaient une allure qu'elles n'auraient pas ;
+ * — la remise à zéro écrit son avertissement en rouge, d'un rouge qui ne
+ *   s'accorde à aucun fond puisqu'il ne vient d'aucun jeton. Sur un habillage
+ *   coloré il devenait illisible, et c'est le seul écran du plan où quelque
+ *   chose se perd sans retour.
+ *
+ * La classe va sur la fenêtre et non sur le voile qui la porte : celui-ci doit
+ * rester le gris sombre qui met le plan en retrait, et prendrait sinon le
+ * dégradé du modèle sur tout l'écran.
+ */
+const GENRES_OUTIL = ["large", "outil"];
+function habilleModale(){
+  const m = $("modale");
+  const fen = m && m.querySelector(".mfen");
+  if (!fen) return;
+  const porte = GENRES_OUTIL.indexOf(m.dataset.genre || "") < 0;
+  const cle = modeleRetenu();
+  MODELES.forEach(x =>
+    fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
 /* ------------------------------------------------------------------
@@ -7611,8 +7782,11 @@ function apercuFiche(cle, vu){
   // l'aperçu se regarde, il ne se manipule pas
   d.inert = true;
   /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
-     aussi, plusieurs modèles n'habillant que les liens. */
-  const LIENS = ["site", "facebook", "linkedin", "instagram"];
+     aussi, plusieurs modèles n'habillant que les liens. Les réseaux sociaux,
+     eux, s'y montrent en pictos comme sur la fiche — c'est leur hauteur et
+     leur couleur qu'on juge en choisissant un habillage, pas celles d'une
+     adresse qu'ils n'affichent plus. */
+  const LIENS = ["site"];
   /* Les champs sous la forme que « corpsRange » attend, et le rangement par la
      même fonction que la vraie fiche : les groupes réglés par l'exploitant se
      voient donc sur les onze vignettes, sans quoi il choisirait un habillage
@@ -7623,7 +7797,8 @@ function apercuFiche(cle, vu){
     if (!l.length) return;
     champs[c] = {
       libelle: esc(libelleCorps(c)),
-      valeur: l.length > 1
+      valeur: PICTO_RS[c] ? pictoRS(c, l[0])
+        : l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
         : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]),
       classe: COURTS_CORPS.indexOf(c) >= 0 ? "court" : "",
@@ -9809,6 +9984,32 @@ try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
 const enAttente = (id) => !!ATTENTE[id];
 
+/* Ce que la base a confirmé, pavillon par pavillon : la liste des clés qu'elle
+   nous a rendues au dernier chargement, ou que notre dernier envoi y a mises.
+
+   Elle répond à une question que la marque d'attente ne sait pas trancher. Un
+   calque présent ici et absent de la base a été supprimé ailleurs — il faut
+   l'oublier. Le même calque jamais confirmé n'a, lui, jamais quitté ce poste :
+   l'oublier le perd pour de bon. Faute de les distinguer, un enregistrement
+   manqué — session expirée, réseau coupé — rendait un plan nu au rechargement
+   suivant, alors que tout le travail était encore là, dans ce navigateur.
+
+   Elle sert aussi à l'envers, à la publication : on n'efface en base que ce
+   qu'on y a vu et qui a disparu depuis. Un poste qui ne connaît rien n'efface
+   rien, là où un « tout ce que je n'ai pas » emportait le travail d'à côté. */
+const CLE_PUBLIES = "plan-dessins-publies";
+let PUBLIES = {};
+try { PUBLIES = JSON.parse(localStorage.getItem(CLE_PUBLIES) || "{}"); } catch (e) {}
+
+/** Note ce que la base contient pour ce pavillon, à cet instant. */
+function notePubliees(id, cles){
+  PUBLIES[id] = cles.slice();
+  try { localStorage.setItem(CLE_PUBLIES, JSON.stringify(PUBLIES)); } catch (e) {}
+}
+
+/** Ce calque a-t-il déjà été vu en base ? */
+const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
+
 /* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
    avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
    pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
@@ -11456,7 +11657,7 @@ function demandeNom(titre, valeur, suite){
   }, [
     { libelle: "Annuler" },
     { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
-  ]);
+  ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 
@@ -13031,12 +13232,73 @@ const etatCourant = () => etatEnvoi || (!autoDispo() ? "manuel"
  * en clair, et non plus une simple marque.
  */
 function majAttente(){
-  const b = $("pousseConf");
-  if (!b) return;
   const e = etatCourant();
-  b.textContent = DITS[e][0];
-  b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
-  b.dataset.etat = e;
+  const b = $("pousseConf");
+  if (b){
+    b.textContent = DITS[e][0];
+    b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
+    b.dataset.etat = e;
+  }
+  ditAlerte(e);
+}
+
+/* Ce que le chargement a retrouvé sur ce poste et remis en file, faute d'avoir
+   jamais réussi à le publier. On le dit, puis on l'oublie. */
+let _rescapes = 0;
+function compteRescapes(n){ _rescapes += n; majAttente(); }
+
+/**
+ * L'alerte, hors du panneau.
+ *
+ * Le panneau des calques reste fermé la plupart du temps : un enregistrement
+ * refusé s'annonçait sur un bouton que personne ne regardait. L'exploitant a
+ * dessiné une matinée entière, fermé l'onglet en croyant son travail publié,
+ * et ne l'a retrouvé nulle part ailleurs — ni sur son téléphone, ni le
+ * lendemain. Un échec prend donc toute la largeur de l'écran, et le
+ * rattrapage se dit aussi : c'est la seule chose qui distingue un plan
+ * enregistré d'un plan qui ne l'est pas.
+ */
+function ditAlerte(etat){
+  const z = $("alerteEnr");
+  if (!z) return;
+  const txt = $("alerteTxt"), act = $("alerteAct");
+  if (etat === "echec"){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vos calques ne sont enregistrés que sur ce poste : " + souci;
+    act.textContent = "Réessayer";
+    act.onclick = () => pousseConfiguration();
+    return;
+  }
+  /* Plus de session du tout : l'enregistrement automatique ne se déclenche même
+     pas — « autoDispo » est faux — et le bouton se contente de proposer une
+     poussée manuelle qui échouera. C'est le même piège que l'échec, en plus
+     silencieux encore, et il ne se dit qu'en présence d'un travail à perdre. */
+  if (ADMIN && etat === "manuel" && enRetard()){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
+    act.textContent = "Se reconnecter";
+    act.onclick = () => {
+      if (typeof ecranAcces === "function") ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
+      else location.reload();
+    };
+    return;
+  }
+  if (_rescapes){
+    const fini = etat === "fait";
+    z.hidden = false;
+    z.dataset.genre = "repris";
+    txt.textContent = _rescapes > 1
+      ? _rescapes + " calques de ce poste n'avaient jamais été enregistrés : ils " +
+        (fini ? "sont de nouveau en base." : "repartent vers la base.")
+      : "Un calque de ce poste n'avait jamais été enregistré : il " +
+        (fini ? "est de nouveau en base." : "repart vers la base.");
+    act.textContent = "Fermer";
+    act.onclick = () => { _rescapes = 0; majAttente(); };
+    return;
+  }
+  z.hidden = true;
 }
 
 /** Passe dans un état, et le fait dire par le bouton. */
@@ -13093,6 +13355,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") presse();
 });
 addEventListener("pagehide", presse);
+
+/* Et quitter la page sur un enregistrement en échec, c'est laisser le travail
+   dans ce seul navigateur — sans qu'il y paraisse, puisque le plan s'affiche
+   entier. Le navigateur ne laisse pas choisir le texte de sa question, mais il
+   la pose, et c'est tout ce qu'on lui demande. */
+addEventListener("beforeunload", (e) => {
+  if (etatCourant() === "echec"){ e.preventDefault(); e.returnValue = ""; }
+});
 
 /* ------------------------------------------------------------
    Le jeton, et son renouvellement
@@ -13173,17 +13443,24 @@ async function base(acces, chemin, options = {}){
 
   if (resteSession(acces.ses.access_token) < RESTE_JETON) await echangeContre();
   let r = await envoie();
+  let txt = await r.text();
   /* Et refusé malgré tout — une horloge en retard, un jeton révoqué ailleurs —
-     on échange puis on refait l'appel. Le 403 reste où il est : c'est un droit
-     qui manque, pas un jeton qui se périme, et le renouveler ne le donnerait
-     pas. */
-  if (r.status === 401 && await echangeContre()) r = await envoie();
-
-  const txt = await r.text();
+     on échange puis on refait l'appel. Le 403 a sa place ici, contre toute
+     attente : ce projet répond 403 à un jeton périmé là où l'on guettait un
+     401, et le tenir pour un droit manquant faisait tourner l'enregistrement
+     en rond — l'exploitant dessinait une matinée entière sans que rien ne
+     parte, puis fermait l'onglet. Le corps de la réponse tranche : lui seul
+     distingue le jeton mort du droit qui manque vraiment. */
+  const jetonMort = (etat, corps) => etat === 401 ||
+    (etat === 403 && /jwt|token|expir/i.test(corps));
+  if (jetonMort(r.status, txt) && await echangeContre()){
+    r = await envoie();
+    txt = await r.text();
+  }
   /* Une session que même l'échange ne rattrape plus se dit en toutes lettres :
      le corps de la réponse parle de JWT, ce qui ne veut rien dire pour qui
      voulait seulement enregistrer son plan. */
-  if (r.status === 401) throw new Error("session expirée, reconnectez-vous");
+  if (jetonMort(r.status, txt)) throw new Error("session expirée, reconnectez-vous");
   if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
   return txt ? JSON.parse(txt) : null;
 }
@@ -13298,14 +13575,27 @@ async function pousseConfiguration(auto){
           calques += liste.length;
         }
 
-        /* Ce qui a disparu de la page disparaît de la base. On retire après
-           avoir écrit, jamais avant : un échec en cours de route laisse alors
-           l'ancienne version en place plutôt qu'un plan vide. */
-        const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
-        await base(acces,
-          "calque_dessin?plan_id=eq." + planId +
-          (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
-          { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        /* Ce qui a disparu de la page disparaît de la base — mais nommément.
+           « Tout ce que je n'ai pas » était une consigne dangereuse : un poste
+           dont la copie locale était vide ou en retard emportait le travail
+           publié depuis un autre, sans que rien ne le demande. On ne retire
+           donc que les calques que la base nous avait rendus et qui ne sont
+           plus là ; un poste qui ne connaît rien n'efface rien. Et après avoir
+           écrit, jamais avant : un échec en cours de route laisse l'ancienne
+           version en place plutôt qu'un plan vide. */
+        const partis = (PUBLIES[p.id] || [])
+          .filter(cle => !liste.some(c => c.id === cle))
+          .map(cle => '"' + String(cle).replace(/"/g, "") + '"');
+        if (partis.length){
+          await base(acces,
+            "calque_dessin?plan_id=eq." + planId +
+            "&cle=in.(" + encodeURIComponent(partis.join(",")) + ")",
+            { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        }
+        /* Ce que la base contient désormais, de notre fait : c'est à cette
+           liste que le chargement suivant comparera la copie du poste pour
+           distinguer un calque supprimé ailleurs d'un calque jamais publié. */
+        notePubliees(p.id, liste.map(c => c.id));
 
         /* Ce pavillon est en base : le poste ne le devance plus, et le
            chargement suivant peut reprendre ce que la base en dit. On le note
@@ -13377,6 +13667,9 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   verseModale();
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
+  /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
+     genre, que chaque fenêtre apporte en s'ouvrant. */
+  habilleModale();
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));
@@ -13513,7 +13806,7 @@ function ouvreOrdre(){
     ul.className = "ordre";
     corps.appendChild(p); corps.appendChild(ul);
     remplitOrdre(ul);
-  }, [{ libelle: "Terminé" }]);
+  }, [{ libelle: "Terminé" }], "outil");
 }
 
 /* ============================================================
@@ -13564,7 +13857,15 @@ function enregistreParcours(){
   try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
 }
 
-function basculeParcours(genre, id){
+/**
+ * Retenir un rang, ou le retirer.
+ *
+ * `canal` dit d'où vient le geste, et ne sert qu'à la mesure : un ajout venu
+ * d'une proposition ne se compte pas comme un ajout qu'on est allé chercher
+ * soi-même — c'est même le seul chiffre qui dise si proposer sert à quelque
+ * chose. Absent, le geste compte comme avant, sans provenance.
+ */
+function basculeParcours(genre, id, canal){
   const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
   // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
   if (i < 0) l.push(k); else l.splice(i, 1);
@@ -13577,8 +13878,13 @@ function basculeParcours(genre, id){
      Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
      visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
      retiré » ne veut rien dire. */
-  mesure("parcours", "", i < 0 ? k : "",
+  mesure("parcours", canal || "", i < 0 ? k : "",
          genre === "conf" ? "fiche_conf" : "fiche_stand");
+  /* Un ajout peut faire basculer la proposition au premier plan : c'est ici
+     qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
+     lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
+     par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
+  if (i < 0 && genre === "stand") fenetreSuggestion();
 }
 
 /* ------------------------------------------------------------
@@ -13610,13 +13916,14 @@ function rafraichitMarque(el){
   if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
 }
 
-/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. */
-function brancheParcours(hote){
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. `canal` suit
+ *  jusqu'à la mesure, pour les fragments qu'on n'est pas allé chercher. */
+function brancheParcours(hote, canal){
   hote.querySelectorAll("[data-mg]").forEach(el => {
     rafraichitMarque(el);
     el.onclick = ev => {
       ev.stopPropagation();
-      basculeParcours(el.dataset.mg, el.dataset.mi);
+      basculeParcours(el.dataset.mg, el.dataset.mi, canal);
     };
   });
 }
@@ -13790,6 +14097,15 @@ function remplitParcours(){
     return;
   }
 
+  /* Ce qui pourrait compléter la liste passe avant la liste elle-même.
+     Elle en découle, et la place logique était donc à la suite — mais sur un
+     téléphone le tiroir ne montre que trois rangs, et la proposition tombait
+     sous la ligne de flottaison d'une liste que personne ne fait défiler pour
+     voir ce qu'il y a après ce qu'il a lui-même retenu. En tête elle se voit,
+     et sa première phrase dit d'où elle vient : elle ne se prend pas pour un
+     rang du parcours. */
+  poseSuggestion(hote);
+
   /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
      le reste de la journée se range. */
   if (confs.length){
@@ -13827,9 +14143,6 @@ function remplitParcours(){
     }));
   }
 
-  /* Et, au bas de ce qu'on a retenu, ce qui pourrait le compléter : la
-     proposition vient après la liste parce qu'elle en découle. */
-  poseSuggestion(hote);
 }
 
 function ouvreParcours(){
@@ -13871,6 +14184,7 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
     /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
        repart de zéro, les refus avec elle. */
     SUGG_ECARTES.clear();
+    SUGG_MONTREES.clear();
     enregistreParcours();
     appliqueVueParcours();
   });
@@ -17999,7 +18313,7 @@ function ouvreRemiseAZero(){
     // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
     { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
     { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
-  ]);
+  ], "outil");
 
   const b = $("mPied").querySelector(".danger");
   if (b) b.disabled = true;
@@ -18086,6 +18400,18 @@ const SUGG_CHAMPIONS = 3;
    retenir d'une visite à l'autre condamnerait un exposant sans raison. */
 const SUGG_ECARTES = new Set();
 
+/* Et ce que la fenêtre a déjà mis au premier plan. Une proposition ne s'impose
+   qu'une fois : revenue à chaque ajout, elle se ferait fermer sans être lue,
+   puis fermerait le plan avec elle. Le tiroir, lui, n'a pas ce scrupule à
+   avoir — on y va pour la voir. */
+const SUGG_MONTREES = new Set();
+
+/* La mesure a son canal. Une fiche ouverte depuis la proposition, un exposant
+   ajouté depuis elle, ne se comptent pas comme ceux qu'on est allé chercher :
+   c'est le seul chiffre qui dise si la fonction sert. Le vocabulaire est celui
+   des compteurs — voir la migration « suggestion_un_canal_de_mesure_a_elle ». */
+const CANAL_SUGG = "suggestion";
+
 /* ------------------------------------------------------------
    Le réglage
    ------------------------------------------------------------ */
@@ -18095,6 +18421,19 @@ function seuilSugg(){
   const v = Math.round(+reglageSugg().seuil);
   return v >= SUGG_SEUIL_MIN && v <= SUGG_SEUIL_MAX ? v : SUGG_SEUIL_DEFAUT;
 }
+
+/**
+ * Comment la proposition se présente.
+ *
+ * « tiroir » l'attend en tête du parcours, là où le visiteur va de lui-même ;
+ * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
+ * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
+ * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
+ * salon professionnel de deux heures et un salon grand public d'un week-end
+ * n'ont pas la même tolérance à l'interruption.
+ */
+const presentationSugg = () =>
+  reglageSugg().presentation === "fenetre" ? "fenetre" : "tiroir";
 
 /** Le critère sur lequel on rapproche, s'il désigne encore quelque chose. Un
  *  champ décoché dans la console, ou des secteurs éteints depuis, ne le font
@@ -18207,17 +18546,48 @@ function exposantPropose(cle, v){
  *  d'elle-même : un oui/non ne se coche que sous le nom de sa question. */
 const nomValeurSugg = (cle, v) => OUI_NON[cle] ? libelleCritere(cle) : v;
 
-/**
- * La carte, au bas du tiroir du parcours.
- *
- * Elle dit d'abord pourquoi elle est là. Une proposition qui tombe sans motif
- * se lit comme de la réclame ; la même, précédée de ce qu'on vient de retenir
- * quatre fois, se lit comme une suite.
- */
-function poseSuggestion(hote){
-  const s = suggestionCourante();
-  if (!s) return;
+/* Comment se nomme ce que plusieurs exposants ont en commun.
+   Les critères que le plan connaît d'avance ont leur article — « du secteur »,
+   « de la ville ». Un champ que le salon s'est ajouté n'en a pas : rien ne dit
+   le genre de « Famille » ni d'« Univers », et « de la famille » sur un salon
+   qui range par « Univers » se lirait de travers. Ceux-là se disent « marqués
+   « X » », qui va avec tout — et avec le oui/non par la même occasion, dont la
+   valeur cochée n'est jamais qu'un « Oui ». */
+const ARTICLE_CRITERE = {
+  secteur: "du secteur", ville: "de la ville", pays: "du pays",
+  nomenclature: "de la nomenclature", thematiques: "de la thématique",
+};
 
+/**
+ * Ce que la proposition dit d'elle-même : d'où elle vient, puis où elle mène.
+ *
+ * Dans cet ordre, et en une phrase. Un nom qui tombe sans motif se lit comme
+ * de la réclame ; le même, précédé de ce que le visiteur vient de retenir trois
+ * fois, se lit comme la suite de ce qu'il était en train de faire.
+ */
+function phraseSuggestion(s){
+  const art = ARTICLE_CRITERE[s.cle];
+  const quoi = art ? art + " « " + s.valeur + " »"
+                   : "marqués « " + nomValeurSugg(s.cle, s.valeur) + " »";
+  return "Vous avez ajouté " + s.n + " exposants " + quoi + " à votre liste. " +
+         "Vous pourriez être intéressé par l'exposant " + s.o.nom + ".";
+}
+
+/**
+ * La carte, telle qu'elle se lit des deux côtés : en tête du tiroir, ou au
+ * premier plan dans sa fenêtre.
+ *
+ * La même, parce que c'est la même proposition : le motif, l'exposant, et les
+ * deux gestes qu'on peut faire dessus — aller le voir sur le plan, ou le
+ * retenir. Les deux portent le canal de la suggestion jusqu'aux compteurs.
+ *
+ * `ferme` n'est donné que par la fenêtre, et la désigne autant qu'il la
+ * referme : le bandeau de la carte y disparaît — son intitulé serait celui de
+ * la fenêtre, redit une ligne plus bas — et sa croix avec, la fenêtre ayant
+ * déjà la sienne et son « Non merci ».
+ */
+function carteSuggestion(s, ferme){
+  const o = s.o;
   const d = document.createElement("div");
   d.className = "pSugg";
   d.innerHTML = '<div class="sTete"><span class="eyebrow">Pour compléter votre visite</span>' +
@@ -18226,27 +18596,65 @@ function poseSuggestion(hote){
     '<p class="sMotif"></p>' +
     '<div class="pRang"><button type="button" class="pOuvre">' +
     '<span class="pt"></span><span class="ps"></span></button>' +
-    signetParcours("stand", s.o.id) + "</div>";
+    signetParcours("stand", o.id) + "</div>";
 
-  d.querySelector(".sMotif").textContent =
-    "« " + nomValeurSugg(s.cle, s.valeur) + " » revient " + s.n +
-    " fois dans votre liste" +
-    (OUI_NON[s.cle] ? "" : " (" + libelleCritere(s.cle).toLowerCase() + ")") + ".";
+  if (ferme) d.querySelector(".sTete").remove();
 
-  const o = s.o;
+  d.querySelector(".sMotif").textContent = phraseSuggestion(s);
   d.querySelector(".pt").textContent = o.nom;
   d.querySelector(".ps").textContent =
     DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
-  /* Aller le voir, c'est vouloir le voir sur le plan : la fiche s'ouvre et le
-     tiroir se retire, comme pour un rang du parcours. */
-  d.querySelector(".pOuvre").onclick = () => select(o.id, true, "parcours");
-  d.querySelector(".sEcarte").onclick = () => {
+  /* Aller le voir, c'est vouloir le voir sur le plan : la fiche s'ouvre et ce
+     qui la cachait se retire, comme pour un rang du parcours. */
+  d.querySelector(".pOuvre").onclick = () => {
+    if (ferme) ferme();
+    select(o.id, true, CANAL_SUGG);
+  };
+  const croix = d.querySelector(".sEcarte");
+  if (croix) croix.onclick = () => {
     SUGG_ECARTES.add(String(o.id));
     remplitParcours();
   };
-  hote.appendChild(d);
   // le signet vit comme les autres : il ajoute, il compte, et il se retourne
-  brancheParcours(d);
+  brancheParcours(d, CANAL_SUGG);
+  return d;
+}
+
+/** La proposition en tête du tiroir du parcours, quand il y en a une. */
+function poseSuggestion(hote){
+  const s = suggestionCourante();
+  if (s) hote.appendChild(carteSuggestion(s, null));
+}
+
+/**
+ * La même, au premier plan.
+ *
+ * Appelée depuis l'ajout d'un exposant au parcours, et de là seulement : c'est
+ * le geste qui peut faire atteindre le seuil. Le chargement d'une liste retenue
+ * lors d'une visite précédente n'en est pas un — accueillir le visiteur par une
+ * fenêtre qu'il n'a pas demandée serait autre chose que compléter sa visite.
+ */
+function fenetreSuggestion(){
+  if (presentationSugg() !== "fenetre") return;
+  /* Une fenêtre déjà ouverte a été demandée, elle : la remplacer par une
+     proposition que personne n'attendait ferait perdre ce qu'on y faisait —
+     un réglage en cours de saisie, une confirmation à donner. */
+  if ($("modale").classList.contains("open")) return;
+  const s = suggestionCourante();
+  if (!s) return;
+  /* Une proposition ne s'impose qu'une fois. La valeur autant que l'exposant :
+     le même nom proposé pour un autre motif est une autre proposition. */
+  const marque = s.cle + "\u0000" + s.valeur + "\u0000" + s.o.id;
+  if (SUGG_MONTREES.has(marque)) return;
+  SUGG_MONTREES.add(marque);
+  /* Le rang de la carte s'ouvre au clic, comme dans le tiroir — mais dans une
+     fenêtre à deux boutons, on lit les boutons et pas les rangs. Le geste est
+     donc redit au pied, où on l'attend. */
+  ouvreModale("Pour compléter votre visite", corps => {
+    corps.appendChild(carteSuggestion(s, fermeModale));
+  }, [{ libelle: "Non merci" },
+      { libelle: "Voir sur le plan", genre: "accent",
+        action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");
 }
 
 /* ------------------------------------------------------------
@@ -18292,7 +18700,7 @@ const etiquetteSugg = (o) => [o.code, o.nom].filter(Boolean).join(" — ") || o.
  */
 function voletSuggestion(hote){
   const p = document.createElement("p");
-  p.textContent = "Un exposant de plus, proposé au bas du parcours de visite " +
+  p.textContent = "Un exposant de plus, proposé en tête du parcours de visite " +
     "quand plusieurs de ceux qu'un visiteur a retenus se ressemblent. Le " +
     "rapprochement se fait sur son appareil, à partir de tables préparées " +
     "ici : rien de ce qu'il retient ne remonte jamais.";
@@ -18397,6 +18805,19 @@ function voletSuggestion(hote){
     };
     nb.onblur = () => { nb.value = seuilSugg(); };
     corps.appendChild(seuil);
+
+    const prez = champZone(corps, "Présentation",
+      document.createElement("select"),
+      "Discrète, la proposition attend en tête du parcours, là où le visiteur " +
+      "va de lui-même. Au premier plan, elle s'ouvre en plus dans une fenêtre " +
+      "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
+      "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
+      "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
+    prez.innerHTML =
+      '<option value="tiroir">Discrète — en tête du parcours de visite</option>' +
+      '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
+    prez.value = presentationSugg();
+    prez.onchange = e => { r.presentation = e.target.value; enregistreConf(); };
 
     const source = champZone(corps, "Exposant proposé",
       document.createElement("select"),
