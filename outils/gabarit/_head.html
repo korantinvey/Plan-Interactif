@@ -1065,6 +1065,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
 .field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
 .field .v .ligne.theme:hover{text-decoration:underline}
+/* Un réseau social se lit à son logo, non à son adresse : les pictos tiennent
+   sur une seule ligne, côte à côte, là où trois adresses empilées prenaient
+   trois lignes pour redire le nom de l'exposant. Ils suivent la couleur des
+   liens de la fiche — chaque habillage a la sienne — plutôt que celle des
+   marques, qui se disputeraient la page. */
+.field .v .ligne.rs{display:inline-flex;vertical-align:middle}
+.field .v .ligne.rs + .ligne.rs{margin-top:0;margin-left:12px}
+.field .v a.rs{display:inline-flex;line-height:0}
+.field .v a.rs svg{width:21px;height:21px;fill:currentColor}
+.field .v a.rs:hover{opacity:.7}
 /* La description d'une zone, écrite dans un éditeur : elle porte ses propres
    paragraphes et ses propres listes, là où tous les autres champs tiennent en
    une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */
@@ -2001,6 +2011,12 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
+   proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
+   disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,
+   et ici il n'y a rien autour à quoi se comparer. */
+.modale[data-genre="sugg"] .mfen{width:min(420px,100%)}
+.modale[data-genre="sugg"] .pSugg{padding:0;border:none;background:none;gap:11px}
 /* La proposition qui ferme le tiroir.
    Elle ne se déguise pas en rang du parcours : ce qui est dessous a été retenu,
    ce qui est ici ne l'est pas encore. D'où le fond d'accent et le trait
@@ -2847,7 +2863,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fini avec les filtres. */
 .modale[data-genre="cote"]{background:none;place-items:center start}
 .modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+/* « background-color » et non « background », comme sur le parcours et
+   l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
+   classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
+   forme courte — écrite après eux dans la feuille — les effacerait. */
+.mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
@@ -2864,6 +2884,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
   border-top:1px solid var(--line)}
+/* Le bouton qui porte ce pour quoi la fenêtre s'est ouverte. Le rouge du
+   « danger » dit ce qu'on perd ; l'accent, ce vers quoi l'on va. */
+.mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
+.mfen footer .btn.accent:hover{filter:brightness(1.08)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 /* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
@@ -3184,6 +3209,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 #couches .cal{animation:parait .25s ease-out}
 @keyframes parait{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#couches .cal{animation:none}}
+
+/* ------------------------------------------------------------
+   L'alerte d'enregistrement
+   Un plan qui n'est pas en base ne peut pas se signaler plus discrètement que
+   les calques qu'il porte : l'alerte prend la largeur, par-dessus le bandeau.
+   ------------------------------------------------------------ */
+.alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
+  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+/* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
+   la couleur de l'encre plutôt que celle de l'alerte. */
+.alerte-enr[data-genre="repris"]{background:var(--ink,#1b1b1f);color:var(--surface,#fff)}
+.alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
+  font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.alerte-enr button:hover{background:rgba(255,255,255,.16)}
 </style>
 
 <div class="app">
@@ -3234,6 +3275,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       </details>
     </div>
   </header>
+
+  <!-- Un enregistrement qui n'aboutit pas ne peut pas s'annoncer au fond d'un
+       panneau fermé : il passe devant le bandeau, et propose son recours. En
+       dehors du flux de la grille, il ne déplace rien. -->
+  <div class="alerte-enr" id="alerteEnr" role="status" hidden>
+    <span id="alerteTxt"></span>
+    <button id="alerteAct" type="button"></button>
+  </div>
 
   <aside class="side" id="side">
     <button class="poignee" id="poignee" aria-expanded="false" aria-controls="list"

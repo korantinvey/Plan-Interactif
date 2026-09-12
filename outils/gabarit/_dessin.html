@@ -27,6 +27,32 @@ try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
 const enAttente = (id) => !!ATTENTE[id];
 
+/* Ce que la base a confirmé, pavillon par pavillon : la liste des clés qu'elle
+   nous a rendues au dernier chargement, ou que notre dernier envoi y a mises.
+
+   Elle répond à une question que la marque d'attente ne sait pas trancher. Un
+   calque présent ici et absent de la base a été supprimé ailleurs — il faut
+   l'oublier. Le même calque jamais confirmé n'a, lui, jamais quitté ce poste :
+   l'oublier le perd pour de bon. Faute de les distinguer, un enregistrement
+   manqué — session expirée, réseau coupé — rendait un plan nu au rechargement
+   suivant, alors que tout le travail était encore là, dans ce navigateur.
+
+   Elle sert aussi à l'envers, à la publication : on n'efface en base que ce
+   qu'on y a vu et qui a disparu depuis. Un poste qui ne connaît rien n'efface
+   rien, là où un « tout ce que je n'ai pas » emportait le travail d'à côté. */
+const CLE_PUBLIES = "plan-dessins-publies";
+let PUBLIES = {};
+try { PUBLIES = JSON.parse(localStorage.getItem(CLE_PUBLIES) || "{}"); } catch (e) {}
+
+/** Note ce que la base contient pour ce pavillon, à cet instant. */
+function notePubliees(id, cles){
+  PUBLIES[id] = cles.slice();
+  try { localStorage.setItem(CLE_PUBLIES, JSON.stringify(PUBLIES)); } catch (e) {}
+}
+
+/** Ce calque a-t-il déjà été vu en base ? */
+const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
+
 /* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
    avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
    pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
@@ -1674,7 +1700,7 @@ function demandeNom(titre, valeur, suite){
   }, [
     { libelle: "Annuler" },
     { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
-  ]);
+  ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 

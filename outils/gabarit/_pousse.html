@@ -94,12 +94,73 @@ const etatCourant = () => etatEnvoi || (!autoDispo() ? "manuel"
  * en clair, et non plus une simple marque.
  */
 function majAttente(){
-  const b = $("pousseConf");
-  if (!b) return;
   const e = etatCourant();
-  b.textContent = DITS[e][0];
-  b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
-  b.dataset.etat = e;
+  const b = $("pousseConf");
+  if (b){
+    b.textContent = DITS[e][0];
+    b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
+    b.dataset.etat = e;
+  }
+  ditAlerte(e);
+}
+
+/* Ce que le chargement a retrouvé sur ce poste et remis en file, faute d'avoir
+   jamais réussi à le publier. On le dit, puis on l'oublie. */
+let _rescapes = 0;
+function compteRescapes(n){ _rescapes += n; majAttente(); }
+
+/**
+ * L'alerte, hors du panneau.
+ *
+ * Le panneau des calques reste fermé la plupart du temps : un enregistrement
+ * refusé s'annonçait sur un bouton que personne ne regardait. L'exploitant a
+ * dessiné une matinée entière, fermé l'onglet en croyant son travail publié,
+ * et ne l'a retrouvé nulle part ailleurs — ni sur son téléphone, ni le
+ * lendemain. Un échec prend donc toute la largeur de l'écran, et le
+ * rattrapage se dit aussi : c'est la seule chose qui distingue un plan
+ * enregistré d'un plan qui ne l'est pas.
+ */
+function ditAlerte(etat){
+  const z = $("alerteEnr");
+  if (!z) return;
+  const txt = $("alerteTxt"), act = $("alerteAct");
+  if (etat === "echec"){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vos calques ne sont enregistrés que sur ce poste : " + souci;
+    act.textContent = "Réessayer";
+    act.onclick = () => pousseConfiguration();
+    return;
+  }
+  /* Plus de session du tout : l'enregistrement automatique ne se déclenche même
+     pas — « autoDispo » est faux — et le bouton se contente de proposer une
+     poussée manuelle qui échouera. C'est le même piège que l'échec, en plus
+     silencieux encore, et il ne se dit qu'en présence d'un travail à perdre. */
+  if (ADMIN && etat === "manuel" && enRetard()){
+    z.hidden = false;
+    z.dataset.genre = "echec";
+    txt.textContent = "Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.";
+    act.textContent = "Se reconnecter";
+    act.onclick = () => {
+      if (typeof ecranAcces === "function") ecranAcces("Reconnectez-vous pour enregistrer votre travail.");
+      else location.reload();
+    };
+    return;
+  }
+  if (_rescapes){
+    const fini = etat === "fait";
+    z.hidden = false;
+    z.dataset.genre = "repris";
+    txt.textContent = _rescapes > 1
+      ? _rescapes + " calques de ce poste n'avaient jamais été enregistrés : ils " +
+        (fini ? "sont de nouveau en base." : "repartent vers la base.")
+      : "Un calque de ce poste n'avait jamais été enregistré : il " +
+        (fini ? "est de nouveau en base." : "repart vers la base.");
+    act.textContent = "Fermer";
+    act.onclick = () => { _rescapes = 0; majAttente(); };
+    return;
+  }
+  z.hidden = true;
 }
 
 /** Passe dans un état, et le fait dire par le bouton. */
@@ -156,6 +217,14 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") presse();
 });
 addEventListener("pagehide", presse);
+
+/* Et quitter la page sur un enregistrement en échec, c'est laisser le travail
+   dans ce seul navigateur — sans qu'il y paraisse, puisque le plan s'affiche
+   entier. Le navigateur ne laisse pas choisir le texte de sa question, mais il
+   la pose, et c'est tout ce qu'on lui demande. */
+addEventListener("beforeunload", (e) => {
+  if (etatCourant() === "echec"){ e.preventDefault(); e.returnValue = ""; }
+});
 
 /* ------------------------------------------------------------
    Le jeton, et son renouvellement
@@ -236,17 +305,24 @@ async function base(acces, chemin, options = {}){
 
   if (resteSession(acces.ses.access_token) < RESTE_JETON) await echangeContre();
   let r = await envoie();
+  let txt = await r.text();
   /* Et refusé malgré tout — une horloge en retard, un jeton révoqué ailleurs —
-     on échange puis on refait l'appel. Le 403 reste où il est : c'est un droit
-     qui manque, pas un jeton qui se périme, et le renouveler ne le donnerait
-     pas. */
-  if (r.status === 401 && await echangeContre()) r = await envoie();
-
-  const txt = await r.text();
+     on échange puis on refait l'appel. Le 403 a sa place ici, contre toute
+     attente : ce projet répond 403 à un jeton périmé là où l'on guettait un
+     401, et le tenir pour un droit manquant faisait tourner l'enregistrement
+     en rond — l'exploitant dessinait une matinée entière sans que rien ne
+     parte, puis fermait l'onglet. Le corps de la réponse tranche : lui seul
+     distingue le jeton mort du droit qui manque vraiment. */
+  const jetonMort = (etat, corps) => etat === 401 ||
+    (etat === 403 && /jwt|token|expir/i.test(corps));
+  if (jetonMort(r.status, txt) && await echangeContre()){
+    r = await envoie();
+    txt = await r.text();
+  }
   /* Une session que même l'échange ne rattrape plus se dit en toutes lettres :
      le corps de la réponse parle de JWT, ce qui ne veut rien dire pour qui
      voulait seulement enregistrer son plan. */
-  if (r.status === 401) throw new Error("session expirée, reconnectez-vous");
+  if (jetonMort(r.status, txt)) throw new Error("session expirée, reconnectez-vous");
   if (!r.ok) throw new Error("HTTP " + r.status + " · " + txt.slice(0, 160));
   return txt ? JSON.parse(txt) : null;
 }
@@ -361,14 +437,27 @@ async function pousseConfiguration(auto){
           calques += liste.length;
         }
 
-        /* Ce qui a disparu de la page disparaît de la base. On retire après
-           avoir écrit, jamais avant : un échec en cours de route laisse alors
-           l'ancienne version en place plutôt qu'un plan vide. */
-        const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
-        await base(acces,
-          "calque_dessin?plan_id=eq." + planId +
-          (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
-          { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        /* Ce qui a disparu de la page disparaît de la base — mais nommément.
+           « Tout ce que je n'ai pas » était une consigne dangereuse : un poste
+           dont la copie locale était vide ou en retard emportait le travail
+           publié depuis un autre, sans que rien ne le demande. On ne retire
+           donc que les calques que la base nous avait rendus et qui ne sont
+           plus là ; un poste qui ne connaît rien n'efface rien. Et après avoir
+           écrit, jamais avant : un échec en cours de route laisse l'ancienne
+           version en place plutôt qu'un plan vide. */
+        const partis = (PUBLIES[p.id] || [])
+          .filter(cle => !liste.some(c => c.id === cle))
+          .map(cle => '"' + String(cle).replace(/"/g, "") + '"');
+        if (partis.length){
+          await base(acces,
+            "calque_dessin?plan_id=eq." + planId +
+            "&cle=in.(" + encodeURIComponent(partis.join(",")) + ")",
+            { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+        }
+        /* Ce que la base contient désormais, de notre fait : c'est à cette
+           liste que le chargement suivant comparera la copie du poste pour
+           distinguer un calque supprimé ailleurs d'un calque jamais publié. */
+        notePubliees(p.id, liste.map(c => c.id));
 
         /* Ce pavillon est en base : le poste ne le devance plus, et le
            chargement suivant peut reprendre ce que la base en dit. On le note

@@ -118,11 +118,38 @@ function indexe(d){
       Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
-       ailleurs — sauf sur ce qui n'a pas encore été publié depuis ce poste :
-       cela n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
+       ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
+       n'existe nulle part ailleurs, et l'écraser le perdait. Une page à
        données figées n'en porte pas du tout : on n'y touche à rien. */
-    if (Array.isArray(p.dessins) && !(ADMIN && enAttente(p.id))){
-      DESSINS[p.id] = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+    if (Array.isArray(p.dessins)){
+      const deLaBase = p.dessins.map(c => ({ ...c, formes: (c.formes || []).slice() }));
+      if (ADMIN && enAttente(p.id)){
+        /* Un travail que ce poste n'a pas encore publié : il l'emporte, la base
+           ne l'a pas vu passer. Ce que la base a de plus s'y ajoute pourtant —
+           un calque tracé depuis un autre poste, que ce poste-ci n'a jamais
+           connu : l'ignorer ici, c'était l'effacer au premier envoi. Un calque
+           déjà connu puis retiré d'ici, lui, a bien été supprimé à la main, et
+           ne revient pas. */
+        const locaux = DESSINS[p.id] || [];
+        const ailleurs = deLaBase.filter(b =>
+          !locaux.some(c => c.id === b.id) && !dejaPubliee(p.id, b.id));
+        if (ailleurs.length) DESSINS[p.id] = locaux.concat(ailleurs);
+      } else if (ADMIN){
+        /* Rien en attente, et pourtant des calques d'ici que la base n'a jamais
+           confirmés : un enregistrement a échoué sans se faire entendre — une
+           session expirée suffit, et la page continue de tourner comme si de
+           rien n'était. On les garde et on les remet en file plutôt que de les
+           effacer : ce navigateur est le seul endroit où ils existent encore.
+           Ceux que la base a connus puis perdus, eux, ont bien été supprimés
+           ailleurs, et s'oublient. */
+        const rescapes = (DESSINS[p.id] || [])
+          .filter(c => !deLaBase.some(b => b.id === c.id) && !dejaPubliee(p.id, c.id));
+        DESSINS[p.id] = deLaBase.concat(rescapes);
+        if (rescapes.length){ marqueAttente(p.id, true); compteRescapes(rescapes.length); }
+      } else {
+        DESSINS[p.id] = deLaBase;
+      }
+      if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
@@ -2248,11 +2275,65 @@ function ficheConf(id, canal){
  * que d'afficher un lien mort.
  */
 function lien(v){
-  let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  const u = adresseWeb(v);
   if (!u) return "";
-  if (!/^https?:/i.test(u)) u = "https://" + u.replace(/^\/+/, "");
   return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' +
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
+}
+
+/** Une adresse saisie à la main, ramenée à une adresse web complète. */
+function adresseWeb(v){
+  const u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  if (!u) return "";
+  return /^https?:/i.test(u) ? u : "https://" + u.replace(/^\/+/, "");
+}
+
+/* Les pictos des réseaux sociaux.
+
+   Une adresse de réseau social n'apprend rien qu'on ne sache déjà : elle
+   redit le nom du réseau puis celui de l'exposant, sur une ligne assez longue
+   pour revenir à la ligne. Le logo le dit plus vite, et trois logos tiennent
+   sur la ligne que prenait une seule adresse.
+
+   Ils sont tracés dans la couleur du texte plutôt que dans celle de la
+   marque : la fiche est habillée par l'exploitant, et trois aplats de marque
+   posés côte à côte lui prendraient sa page. */
+const PICTO_RS = {
+  facebook: '<path d="M24 12.07C24 5.44 18.63.07 12 .07S0 5.44 0 12.07c0 5.99 4.39' +
+    ' 10.95 10.13 11.86v-8.39H7.08v-3.47h3.05V9.43c0-3.01 1.79-4.67 4.53-4.67 1.31 0' +
+    ' 2.69.24 2.69.24v2.95h-1.51c-1.49 0-1.96.93-1.96 1.88v2.25h3.33l-.53' +
+    ' 3.47h-2.8v8.39C19.61 23.02 24 18.06 24 12.07Z"/>',
+  linkedin: '<path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85' +
+    ' 0-2.13 1.44-2.13 2.94v5.66H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6' +
+    ' 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0' +
+    ' 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0' +
+    ' 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/>',
+  instagram: '<rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none"' +
+    ' stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="17.5" cy="6.5" r="1.45"/>',
+};
+
+/**
+ * Un réseau social, en picto cliquable.
+ *
+ * La valeur sort déjà sous forme de ligne — ce que la fiche fait d'un champ
+ * qui en porte plusieurs — pour que le picto s'affiche pareil seul sous son
+ * intitulé ou réuni avec les autres sous un titre commun : c'est la ligne que
+ * la feuille de style aligne horizontalement.
+ *
+ * Un réseau dont on n'a pas le logo ne perd pas son adresse pour autant : il
+ * retombe sur le lien écrit en toutes lettres.
+ */
+function pictoRS(cle, v){
+  const u = adresseWeb(v);
+  if (!u) return [];
+  if (!PICTO_RS[cle]) return ['<span class="ligne">' + lien(v) + '</span>'];
+  const nom = LIBELLE_CORPS[cle] || cle;
+  return ['<span class="ligne rs"><a class="rs" href="' + esc(u) +
+    '" target="_blank" rel="noopener" title="' + esc(nom) +
+    '" aria-label="' + esc(nom) + '">' +
+    '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTO_RS[cle] + '</svg></a></span>'];
 }
 
 /**
@@ -2736,9 +2817,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court");
   met("site", LIBELLE_CORPS.site, lien(soc.site));
-  met("facebook", LIBELLE_CORPS.facebook, lien(soc.fb));
-  met("linkedin", LIBELLE_CORPS.linkedin, lien(soc.li));
-  met("instagram", LIBELLE_CORPS.instagram, lien(soc.ig));
+  met("facebook", LIBELLE_CORPS.facebook, pictoRS("facebook", soc.fb));
+  met("linkedin", LIBELLE_CORPS.linkedin, pictoRS("linkedin", soc.li));
+  met("instagram", LIBELLE_CORPS.instagram, pictoRS("instagram", soc.ig));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   met("nomenclature", LIBELLE_CORPS.nomenclature, (soc.nomencl || [])
     .map(n => '<span class="ligne">' + esc(String(n)) + '</span>'));
