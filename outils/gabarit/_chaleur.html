@@ -561,7 +561,7 @@ function ouvreRemiseAZero(){
     // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
     { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
     { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
-  ]);
+  ], "outil");
 
   const b = $("mPied").querySelector(".danger");
   if (b) b.disabled = true;

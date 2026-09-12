@@ -823,6 +823,7 @@ const CANAUX_STAND = [
   ["conference", "Nom cité par une conférence"],
   ["liste", "Liste du pavillon"],
   ["parcours", "Programme de visite"],
+  ["suggestion", "Proposé pour compléter une visite"],
   ["lien", "Lien direct"],
 ];
 const AUTRE = ["autre", "Autre"];
@@ -836,6 +837,12 @@ const COL_TETE = [
 const COL_PIED = [
   { titre: "Itinéraires calculés", largeur: 20, lit: (r) => Number(r.itineraires) || 0 },
   { titre: "Ajouts au programme de visite", largeur: 29, lit: (r) => Number(r.parcours) || 0 },
+  /* Dont ceux venus de la suggestion — une colonne à part et non une part du
+     total : c'est le seul chiffre qui dise si proposer un exposant de plus a
+     servi, et le déduire de la colonne d'à côté demanderait de savoir qu'il en
+     fait partie. */
+  { titre: "Ajouts depuis une suggestion", largeur: 27,
+    lit: (r) => Number(r.suggestions) || 0 },
   { titre: "Total interactions", largeur: 18,
     lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
 ];

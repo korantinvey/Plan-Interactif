@@ -531,7 +531,48 @@ function appliqueModele(){
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
   pose($("bandeau"), "bandeau-");
+  // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
+  habilleModale();
   posePoliceLibelles(cle);
+}
+
+/**
+ * L'habillage du salon sur la fenêtre modale.
+ *
+ * Elle restait au fond neutre pendant que tout le reste portait la couleur du
+ * salon, et c'est pourtant là que le visiteur coche ses critères de recherche,
+ * lit le programme d'une conférence, choisit une société sur un stand partagé,
+ * fait organiser sa journée, confirme un vidage ou reçoit la proposition qui
+ * complète sa visite.
+ *
+ * Sauf les fenêtres d'exploitation, que leur genre nomme : « large » pour les
+ * réglages du plan et la fiche d'une zone, « outil » pour la remise à zéro des
+ * compteurs, l'ordre des calques et le nom d'un calque. Ce sont les outils de
+ * l'exploitant et non des pièces du salon, et deux d'entre elles ne peuvent pas
+ * porter d'habillage sans mentir :
+ *
+ * — les réglages montrent les onze habillages en vignettes, et l'on ne compare
+ *   pas onze habillages depuis une fenêtre qui en porte déjà un : celles dont
+ *   le modèle ne redéfinit pas son propre fond laissaient voir celui de la
+ *   fenêtre au travers, et promettaient une allure qu'elles n'auraient pas ;
+ * — la remise à zéro écrit son avertissement en rouge, d'un rouge qui ne
+ *   s'accorde à aucun fond puisqu'il ne vient d'aucun jeton. Sur un habillage
+ *   coloré il devenait illisible, et c'est le seul écran du plan où quelque
+ *   chose se perd sans retour.
+ *
+ * La classe va sur la fenêtre et non sur le voile qui la porte : celui-ci doit
+ * rester le gris sombre qui met le plan en retrait, et prendrait sinon le
+ * dégradé du modèle sur tout l'écran.
+ */
+const GENRES_OUTIL = ["large", "outil"];
+function habilleModale(){
+  const m = $("modale");
+  const fen = m && m.querySelector(".mfen");
+  if (!fen) return;
+  const porte = GENRES_OUTIL.indexOf(m.dataset.genre || "") < 0;
+  const cle = modeleRetenu();
+  MODELES.forEach(x =>
+    fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
 /* ------------------------------------------------------------------

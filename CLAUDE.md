@@ -121,7 +121,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
-| suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` |
+| suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
