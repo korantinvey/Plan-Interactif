@@ -2858,7 +2858,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fini avec les filtres. */
 .modale[data-genre="cote"]{background:none;place-items:center start}
 .modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+/* « background-color » et non « background », comme sur le parcours et
+   l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
+   classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
+   forme courte — écrite après eux dans la feuille — les effacerait. */
+.mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
 .mfen header{display:flex;align-items:center;justify-content:space-between;
@@ -7446,7 +7450,48 @@ function appliqueModele(){
   ["detail", "parcours", "itineraire"].forEach(id => pose($(id), "modele-"));
   pose($("side"), "liste-");
   pose($("bandeau"), "bandeau-");
+  // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
+  habilleModale();
   posePoliceLibelles(cle);
+}
+
+/**
+ * L'habillage du salon sur la fenêtre modale.
+ *
+ * Elle restait au fond neutre pendant que tout le reste portait la couleur du
+ * salon, et c'est pourtant là que le visiteur coche ses critères de recherche,
+ * lit le programme d'une conférence, choisit une société sur un stand partagé,
+ * fait organiser sa journée, confirme un vidage ou reçoit la proposition qui
+ * complète sa visite.
+ *
+ * Sauf les fenêtres d'exploitation, que leur genre nomme : « large » pour les
+ * réglages du plan et la fiche d'une zone, « outil » pour la remise à zéro des
+ * compteurs, l'ordre des calques et le nom d'un calque. Ce sont les outils de
+ * l'exploitant et non des pièces du salon, et deux d'entre elles ne peuvent pas
+ * porter d'habillage sans mentir :
+ *
+ * — les réglages montrent les onze habillages en vignettes, et l'on ne compare
+ *   pas onze habillages depuis une fenêtre qui en porte déjà un : celles dont
+ *   le modèle ne redéfinit pas son propre fond laissaient voir celui de la
+ *   fenêtre au travers, et promettaient une allure qu'elles n'auraient pas ;
+ * — la remise à zéro écrit son avertissement en rouge, d'un rouge qui ne
+ *   s'accorde à aucun fond puisqu'il ne vient d'aucun jeton. Sur un habillage
+ *   coloré il devenait illisible, et c'est le seul écran du plan où quelque
+ *   chose se perd sans retour.
+ *
+ * La classe va sur la fenêtre et non sur le voile qui la porte : celui-ci doit
+ * rester le gris sombre qui met le plan en retrait, et prendrait sinon le
+ * dégradé du modèle sur tout l'écran.
+ */
+const GENRES_OUTIL = ["large", "outil"];
+function habilleModale(){
+  const m = $("modale");
+  const fen = m && m.querySelector(".mfen");
+  if (!fen) return;
+  const porte = GENRES_OUTIL.indexOf(m.dataset.genre || "") < 0;
+  const cle = modeleRetenu();
+  MODELES.forEach(x =>
+    fen.classList.toggle("modele-" + x.cle, porte && x.cle === cle));
 }
 
 /* ------------------------------------------------------------------
@@ -11369,7 +11414,7 @@ function demandeNom(titre, valeur, suite){
   }, [
     { libelle: "Annuler" },
     { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
-  ]);
+  ], "outil");
   function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
 }
 
@@ -13290,6 +13335,9 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   verseModale();
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
+  /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
+     genre, que chaque fenêtre apporte en s'ouvrant. */
+  habilleModale();
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));
@@ -13426,7 +13474,7 @@ function ouvreOrdre(){
     ul.className = "ordre";
     corps.appendChild(p); corps.appendChild(ul);
     remplitOrdre(ul);
-  }, [{ libelle: "Terminé" }]);
+  }, [{ libelle: "Terminé" }], "outil");
 }
 
 /* ============================================================
@@ -13717,6 +13765,15 @@ function remplitParcours(){
     return;
   }
 
+  /* Ce qui pourrait compléter la liste passe avant la liste elle-même.
+     Elle en découle, et la place logique était donc à la suite — mais sur un
+     téléphone le tiroir ne montre que trois rangs, et la proposition tombait
+     sous la ligne de flottaison d'une liste que personne ne fait défiler pour
+     voir ce qu'il y a après ce qu'il a lui-même retenu. En tête elle se voit,
+     et sa première phrase dit d'où elle vient : elle ne se prend pas pour un
+     rang du parcours. */
+  poseSuggestion(hote);
+
   /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
      le reste de la journée se range. */
   if (confs.length){
@@ -13754,9 +13811,6 @@ function remplitParcours(){
     }));
   }
 
-  /* Et, au bas de ce qu'on a retenu, ce qui pourrait le compléter : la
-     proposition vient après la liste parce qu'elle en découle. */
-  poseSuggestion(hote);
 }
 
 function ouvreParcours(){
@@ -17927,7 +17981,7 @@ function ouvreRemiseAZero(){
     // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
     { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
     { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
-  ]);
+  ], "outil");
 
   const b = $("mPied").querySelector(".danger");
   if (b) b.disabled = true;
@@ -18039,7 +18093,7 @@ function seuilSugg(){
 /**
  * Comment la proposition se présente.
  *
- * « tiroir » l'attend au bas du parcours, là où le visiteur va de lui-même ;
+ * « tiroir » l'attend en tête du parcours, là où le visiteur va de lui-même ;
  * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
  * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
  * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
@@ -18188,7 +18242,7 @@ function phraseSuggestion(s){
 }
 
 /**
- * La carte, telle qu'elle se lit des deux côtés : au bas du tiroir, ou au
+ * La carte, telle qu'elle se lit des deux côtés : en tête du tiroir, ou au
  * premier plan dans sa fenêtre.
  *
  * La même, parce que c'est la même proposition : le motif, l'exposant, et les
@@ -18234,7 +18288,7 @@ function carteSuggestion(s, ferme){
   return d;
 }
 
-/** La proposition au bas du tiroir du parcours, quand il y en a une. */
+/** La proposition en tête du tiroir du parcours, quand il y en a une. */
 function poseSuggestion(hote){
   const s = suggestionCourante();
   if (s) hote.appendChild(carteSuggestion(s, null));
@@ -18314,7 +18368,7 @@ const etiquetteSugg = (o) => [o.code, o.nom].filter(Boolean).join(" — ") || o.
  */
 function voletSuggestion(hote){
   const p = document.createElement("p");
-  p.textContent = "Un exposant de plus, proposé au bas du parcours de visite " +
+  p.textContent = "Un exposant de plus, proposé en tête du parcours de visite " +
     "quand plusieurs de ceux qu'un visiteur a retenus se ressemblent. Le " +
     "rapprochement se fait sur son appareil, à partir de tables préparées " +
     "ici : rien de ce qu'il retient ne remonte jamais.";
@@ -18422,13 +18476,13 @@ function voletSuggestion(hote){
 
     const prez = champZone(corps, "Présentation",
       document.createElement("select"),
-      "Discrète, la proposition attend au bas du parcours, là où le visiteur " +
+      "Discrète, la proposition attend en tête du parcours, là où le visiteur " +
       "va de lui-même. Au premier plan, elle s'ouvre en plus dans une fenêtre " +
       "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
       "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
       "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
     prez.innerHTML =
-      '<option value="tiroir">Discrète — au bas du parcours de visite</option>' +
+      '<option value="tiroir">Discrète — en tête du parcours de visite</option>' +
       '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
     prez.value = presentationSugg();
     prez.onchange = e => { r.presentation = e.target.value; enregistreConf(); };

@@ -29,6 +29,9 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   verseModale();
   if (genre) $("modale").dataset.genre = genre;
   else delete $("modale").dataset.genre;
+  /* L'habillage se pose ici plutôt qu'une fois pour toutes : il dépend du
+     genre, que chaque fenêtre apporte en s'ouvrant. */
+  habilleModale();
   $("mTitre").textContent = titre;
   $("mCorps").innerHTML = "";
   remplitCorps($("mCorps"));
@@ -165,5 +168,5 @@ function ouvreOrdre(){
     ul.className = "ordre";
     corps.appendChild(p); corps.appendChild(ul);
     remplitOrdre(ul);
-  }, [{ libelle: "Terminé" }]);
+  }, [{ libelle: "Terminé" }], "outil");
 }

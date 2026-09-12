@@ -2853,7 +2853,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fini avec les filtres. */
 .modale[data-genre="cote"]{background:none;place-items:center start}
 .modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
-.mfen{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+/* « background-color » et non « background », comme sur le parcours et
+   l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
+   classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
+   forme courte — écrite après eux dans la feuille — les effacerait. */
+.mfen{background-color:var(--surface);border:1px solid var(--line);border-radius:8px;
   box-shadow:0 30px 70px -22px rgba(0,0,0,.6);width:min(430px,100%);max-height:82vh;
   display:flex;flex-direction:column;overflow:hidden}
 .mfen header{display:flex;align-items:center;justify-content:space-between;

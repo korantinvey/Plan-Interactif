@@ -287,6 +287,15 @@ function remplitParcours(){
     return;
   }
 
+  /* Ce qui pourrait compléter la liste passe avant la liste elle-même.
+     Elle en découle, et la place logique était donc à la suite — mais sur un
+     téléphone le tiroir ne montre que trois rangs, et la proposition tombait
+     sous la ligne de flottaison d'une liste que personne ne fait défiler pour
+     voir ce qu'il y a après ce qu'il a lui-même retenu. En tête elle se voit,
+     et sa première phrase dit d'où elle vient : elle ne se prend pas pour un
+     rang du parcours. */
+  poseSuggestion(hote);
+
   /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
      le reste de la journée se range. */
   if (confs.length){
@@ -324,9 +333,6 @@ function remplitParcours(){
     }));
   }
 
-  /* Et, au bas de ce qu'on a retenu, ce qui pourrait le compléter : la
-     proposition vient après la liste parce qu'elle en découle. */
-  poseSuggestion(hote);
 }
 
 function ouvreParcours(){

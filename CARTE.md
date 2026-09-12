@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 2780 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 2821 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.1819 · 10. Mode administration
-- l.1897 · La fiche d'une zone organisateur
-- l.2527 · Masquer une zone organisateur
-- l.2610 · Placer un libellé à la main
+- l.1860 · 10. Mode administration
+- l.1938 · La fiche d'une zone organisateur
+- l.2568 · Masquer une zone organisateur
+- l.2651 · Placer un libellé à la main
 
 Fonctions :
 
@@ -26,21 +26,21 @@ Fonctions :
 `styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 201 · `chercheSorte` 271
 `voletRecherche` 274 · `minutesVisite` 328 · `salonPartage` 335 · `trio` 348 · `melange` 358
 `themeSombre` 366 · `appliqueAccent` 380 · `appliqueFond` 411 · `modeleRetenu` 449
-`posePoliceLibelles` 499 · `appliqueModele` 527 · `texteCorps` 598 · `standApercu` 613
-`lignesApercu` 637 · `contenuApercu` 663 · `apercuFiche` 700 · `apercuListe` 773
-`apercuDuo` 795 · `glisseFenetre` 828 · `ouvreReglages` 839 · `voletZones` 933
-`ficheZoneEnPlace` 1010 · `voletPlan` 1028 · `nomDuTon` 1155 · `voletApparence` 1160
-`clesFiche` 1273 · `voletOrdre` 1289 · `enregistreConf` 1768 · `rgbHex` 1775 · `hexa` 1782
-`luminance` 1786 · `ecarte` 1800 · `joli` 1815 · `retireAdmin` 1832 · `activeAdmin` 1845
-`champZone` 1923 · `champsZone` 1948 · `champSalles` 2004 · `nomDeZone` 2056
-`reduitLogo` 2090 · `champLogo` 2131 · `editeurRiche` 2228 · `memeFicheZone` 2385
-`suitFicheZone` 2390 · `verseFicheZone` 2398 · `ficheZone` 2424 · `enregistreZone` 2449
-`basculeAffichageZone` 2538 · `marqueZonesMasquees` 2555 · `ecritColonnesEvenement` 2575
-`ecritColonneEvenement` 2606 · `cleLibelle` 2631 · `empreinteLibelle` 2647
-`placementLibelle` 2655 · `posePlacement` 2665 · `libelleAutomatique` 2682
-`modePlacementLibelles` 2691 · `majPaletteLibelle` 2708 · `choisitLibelle` 2725
-`pousseLibelle` 2732 · `libellePointerDown` 2740 · `libellePointerMove` 2755
-`libellePointerUp` 2764
+`posePoliceLibelles` 499 · `appliqueModele` 527 · `habilleModale` 568 · `texteCorps` 639
+`standApercu` 654 · `lignesApercu` 678 · `contenuApercu` 704 · `apercuFiche` 741
+`apercuListe` 814 · `apercuDuo` 836 · `glisseFenetre` 869 · `ouvreReglages` 880
+`voletZones` 974 · `ficheZoneEnPlace` 1051 · `voletPlan` 1069 · `nomDuTon` 1196
+`voletApparence` 1201 · `clesFiche` 1314 · `voletOrdre` 1330 · `enregistreConf` 1809
+`rgbHex` 1816 · `hexa` 1823 · `luminance` 1827 · `ecarte` 1841 · `joli` 1856
+`retireAdmin` 1873 · `activeAdmin` 1886 · `champZone` 1964 · `champsZone` 1989
+`champSalles` 2045 · `nomDeZone` 2097 · `reduitLogo` 2131 · `champLogo` 2172
+`editeurRiche` 2269 · `memeFicheZone` 2426 · `suitFicheZone` 2431 · `verseFicheZone` 2439
+`ficheZone` 2465 · `enregistreZone` 2490 · `basculeAffichageZone` 2579
+`marqueZonesMasquees` 2596 · `ecritColonnesEvenement` 2616 · `ecritColonneEvenement` 2647
+`cleLibelle` 2672 · `empreinteLibelle` 2688 · `placementLibelle` 2696 · `posePlacement` 2706
+`libelleAutomatique` 2723 · `modePlacementLibelles` 2732 · `majPaletteLibelle` 2749
+`choisitLibelle` 2766 · `pousseLibelle` 2773 · `libellePointerDown` 2781
+`libellePointerMove` 2796 · `libellePointerUp` 2805
 
 Éléments :
 
@@ -223,7 +223,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 66 · `libellePeriode` 83 · `nomFichierExport` 89
 `nomFeuilleExport` 99 · `exporteExposants` 115
 
-### `_head.html` — 3538 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3542 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -358,14 +358,14 @@ Fonctions :
 
 `jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 117
 
-### `_modales.html` — 169 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
 Fonctions :
 
-`verseModale` 22 · `ouvreModale` 28 · `fermeModale` 45 · `confirme` 52 · `deplaceVers` 70
-`versExtremite` 82 · `remplitOrdre` 90 · `ouvreOrdre` 160
+`verseModale` 22 · `ouvreModale` 28 · `fermeModale` 48 · `confirme` 55 · `deplaceVers` 73
+`versExtremite` 85 · `remplitOrdre` 93 · `ouvreOrdre` 163
 
 ### `_motdepasse.html` — 242 l. → motdepasse.html
 
@@ -381,7 +381,7 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 380 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 386 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -392,7 +392,7 @@ Fonctions :
 `rafraichitMarque` 98 · `brancheParcours` 111 · `calqueMarques` 143 · `dessineMarques` 159
 `marqueParcours` 189 · `rafraichitParcours` 203 · `instantConf` 227 · `cleTemps` 231
 `jourCourt` 237 · `rangParcours` 241 · `groupeParcours` 257 · `remplitParcours` 266
-`ouvreParcours` 332 · `fermeParcours` 344
+`ouvreParcours` 338 · `fermeParcours` 350
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
