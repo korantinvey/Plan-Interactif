@@ -81,6 +81,17 @@ function boutonAjout(hote){
   hote.appendChild(plus);
 }
 
+/* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
+   plutôt que deux boutons qui se remplacent. Son intitulé dit ce que le clic
+   fera, et non l'état où l'on est — c'est ce qu'on cherche en le survolant. */
+function boutonVerrou(c){
+  const ferme = verrouille(c);
+  return '<button class="verr" aria-pressed="' + ferme + '" title="' +
+    (ferme ? "Déverrouiller le calque"
+           : "Verrouiller le calque : ni dessin, ni suppression") +
+    '">' + pictoVerrou(ferme) + '</button>';
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -125,7 +136,11 @@ function construitPanneau(){
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
+         on lit la ligne de gauche à droite — ce qui protège avant ce qui
+         modifie. */
+      (x.t === "dessin" ? boutonVerrou(x.ref) +
+                          '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -175,7 +190,10 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus";
+      const vr = verrouille(x.ref);
+      nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
+                     : "Cliquez pour dessiner dessus";
+      d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -184,6 +202,13 @@ function construitPanneau(){
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
+      /* Verrouillé, le calque n'ouvre plus ses outils et ne se supprime plus :
+         les deux boutons s'éteignent, plutôt que de mener à un refus qu'il
+         faudrait expliquer une fois le geste fait. */
+      [cr, d.querySelector(".sup")].forEach(b => {
+        b.disabled = vr;
+        if (vr) b.title = "Calque verrouillé";
+      });
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",

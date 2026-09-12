@@ -101,8 +101,16 @@ function remplitOrdre(hote){
       '<span class="bouts">' +
       // seul un calque de dessin nous appartient : les autres portent le nom
       // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      /* Verrouillé, il ne se renomme pas non plus : le cadenas prend la place
+         du crayon, et dit d'un coup d'œil lesquels sont protégés — c'est ici,
+         la liste complète sous les yeux, qu'on s'en aperçoit le mieux. Le rang,
+         lui, reste libre : il ne touche pas au dessin, et se reprend d'un
+         geste. */
       (x.t === "dessin"
-        ? '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>' : "") +
+        ? (verrouille(x.ref)
+            ? '<span class="verrou" title="Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer">' +
+              pictoVerrou(true) + '</span>'
+            : '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>') : "") +
       '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
       '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
     const nom = li.querySelector(".nom");

@@ -25,10 +25,14 @@ let ATTENTE = {};
 try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
 
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
-const enAttente = (id) => ATTENTE[id] === true;
+const enAttente = (id) => !!ATTENTE[id];
 
+/* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
+   avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
+   pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
+   ce que la base, qui ne l'avait pas reçu, en disait. */
 function marqueAttente(id, oui){
-  if (oui) ATTENTE[id] = true; else delete ATTENTE[id];
+  if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
   majAttente();
 }
@@ -57,6 +61,9 @@ const enregistreDessins = () => {
     if ($("outilsAide")) $("outilsAide").textContent =
       "Mémoire du navigateur pleine : allégez ou supprimez une image.";
   }
+  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
+     c'est justement quand son quota déborde que la base doit avoir le dessin. */
+  programmePublication();
 };
 
 let calqueActif = null;   // id du calque en cours d'édition
@@ -1059,12 +1066,16 @@ const MAX_PX = 1400;
 /* On ne refuse plus une image faute de calque actif : on en ouvre un. */
 function calquePourImage(){
   if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
-  const l = mesCalques();
-  if (l.length){ activeCalque(l[l.length - 1].id); return trouveCalque(calqueActif); }
+  /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
+     glissée sur le plan est le seul tracé qui n'ait pas eu à choisir son
+     calque, et elle se poserait donc sur celui qu'on protège. Tous fermés, on
+     en ouvre un neuf plutôt que de refuser l'image. */
+  const libres = mesCalques().filter(c => !verrouille(c));
+  if (libres.length){ activeCalque(libres[libres.length - 1].id); return trouveCalque(calqueActif); }
   memorise();
   const c = { id: nouvelId(), nom: "Images", couleur: "#2F49D1",
               rempli: false, visible: true, formes: [] };
-  l.push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
+  mesCalques().push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
   return c;
 }
 
@@ -1395,6 +1406,13 @@ $("elemSoc").onchange = appliqueSociete;
 $("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
+  /* Un calque verrouillé ne s'ouvre pas : tous les gestes d'édition — tracer,
+     saisir une forme, la déplacer, l'effacer — passent par le calque ouvert, et
+     le verrou n'a donc rien d'autre à retenir. Le panneau éteint déjà son
+     crayon ; restent les chemins de traverse, comme l'image déposée sur le
+     plan, qui aboutissent tous ici. */
+  const vise = trouveCalque(id);
+  if (vise && verrouille(vise)) return;
   calqueActif = calqueActif === id ? null : id;
   /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
      peuvent pas être allumés ensemble : leurs glissers viseraient le même
@@ -1422,6 +1440,52 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le verrou d'un calque
+   Un plan finit par porter un calque qu'on ne retouche plus : le contour du
+   hall, les murs qui barrent les trajets, le repérage posé une fois pour
+   toutes. Il reste pourtant à un clic du crayon, et une forme y part à la
+   dérive sans qu'on s'en aperçoive — on croyait dessiner sur le calque d'à
+   côté. Le cadenas de sa ligne le ferme : il ne s'ouvre plus au dessin, et ne
+   se supprime ni ne se renomme.
+
+   Ce qu'il laisse passer, il le laisse exprès. La coche qui le masque et sa
+   couleur ne touchent pas à ce qui est dessiné, et c'est justement en les
+   réglant qu'on travaille autour d'un calque qu'on protège ; son rang dans la
+   pile non plus — il se reprend d'un geste, et se voit.
+
+   Le verrou se range dans les réglages du salon, comme le rôle d'un calque
+   dans les itinéraires : la table des calques n'a pas de colonne pour lui, et
+   il part ainsi aux autres postes avec eux, tout seul. Ouvert, sa clé disparaît
+   plutôt que de valoir « non » : un calque supprimé ne laisse alors rien
+   derrière lui.
+   ------------------------------------------------------------ */
+const cleVerrou = (id) => "_verrou:" + id;
+const verrouille = (c) => !!c && !!(CONF[cleVerrou(c.id)] || {}).verrou;
+
+function basculeVerrou(c){
+  const cle = cleVerrou(c.id);
+  if (verrouille(c)) delete CONF[cle];
+  else {
+    conf(cle).verrou = true;
+    /* On ferme parfois le calque sur lequel on vient de dessiner : les outils
+       se replient avec lui, sans quoi le crayon resterait armé sur un calque
+       qu'on vient de protéger. */
+    if (calqueActif === c.id) activeCalque(null);
+  }
+  enregistreConf();
+  construitPanneau();
+}
+
+/** Le dessin du cadenas. Fermé, l'anse retombe sur le boîtier ; ouvert, elle
+ *  se relève d'un côté — à douze pixels, c'est la seule différence qui se
+ *  voie encore, là où deux teintes du même tracé se confondraient. */
+const pictoVerrou = (ferme) =>
+  '<svg class="pictoVerrou" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="2.3" y="5.4" width="7.4" height="5.2" rx="1.1"/>' +
+  '<path d="' + (ferme ? "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0v1.6"
+                       : "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0") + '"/></svg>';
 
 /* ------------------------------------------------------------
    Le rôle du calque dans les itinéraires

@@ -267,14 +267,18 @@ Deno.serve(async (req) => {
   // Un fond porte sa version dans l'adresse : il peut être gardé indéfiniment.
   const versionne = Boolean(new URL(req.url).searchParams.get("v"));
 
-  const repond = (corps: unknown, code = 200, cache = 60) =>
+  const repond = (corps: unknown, code = 200, cache = 30) =>
     new Response(JSON.stringify(corps), {
       status: code,
       headers: {
         ...CORS,
         "Content-Type": "application/json",
-        // le contenu public ne bouge qu'à la synchronisation : on autorise le
-        // cache, avec un délai de grâce large en cas d'indisponibilité
+        /* Le relais garde cette réponse pour tout le monde, et l'oublie dès que
+           l'administration enregistre : le navigateur d'un visiteur, lui, ne
+           peut rien oublier sur commande. Sa part de cache est donc courte — il
+           revient au relais, qui répond de son stockage sans toucher la base,
+           ce qui ne coûte presque rien. Une minute de grâce couvre une panne
+           sans figer le plan pour un quart d'heure. */
         "Cache-Control": code !== 200
           ? "no-store"
           // le contenu versionné est immuable, mais reste privé à l'exploitant
@@ -283,7 +287,7 @@ Deno.serve(async (req) => {
           ? `${identifie ? "private" : "public"}, max-age=31536000, immutable`
           : identifie
           ? "private, no-store"
-          : `public, max-age=${cache}, stale-while-revalidate=600`,
+          : `public, max-age=${cache}, stale-while-revalidate=60`,
       },
     });
 
