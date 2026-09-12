@@ -3863,6 +3863,9 @@ function montePlan(){
   { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
   dessineDessins();          // crée les calques de dessin puis ordonne la pile
+  // les groupes viennent d'être réécrits : le retrait d'une recherche en cours
+  // est à reposer dessus, sans quoi le pavillon paraît entier
+  marqueRetrait();
   appliqueApparence();
   marqueParcours();
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
@@ -4225,6 +4228,7 @@ function filtreTheme(n){
   majVideQ();
   ferme();
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
   // sur téléphone la liste est repliée : le filtre n'aurait rien à montrer
   montreTiroir();
@@ -4409,12 +4413,14 @@ function basculeCritere(cle, v){
   if (l.has(v)) l.delete(v); else l.add(v);
   if (l.size) state.crit.set(cle, l); else state.crit.delete(cle);
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
 }
 
 function videCriteres(){
   state.crit.clear();
   majCriteres();
+  reposeRetrait();
   appliqueFiltre();
 }
 
@@ -4443,6 +4449,7 @@ function videRecherche(){
     if (!ETROIT()) champ.focus();
   }
   majVideQ();
+  reposeRetrait();
   appliqueFiltre();
 }
 
@@ -4629,6 +4636,26 @@ function ouvreCriteres(){
  *  cumulent, aucun ne prime. */
 const filtre = () => Boolean(state.qn) || state.crit.size > 0;
 
+/* Le retrait du plan, et le geste qui l'en sort.
+
+   Chercher éteint sur le plan ce qui ne répond pas : la liste et le plan sont
+   les deux faces du même résultat. Mais on se sert du plan pendant qu'on
+   cherche — pour situer ce qu'on a trouvé, et pour regarder ce qu'il y a
+   autour. Ce voisin-là était éteint, et l'ouvrir laissait le hall délavé
+   autour de sa fiche : on ne voyait plus l'endroit qu'on venait justement
+   d'ouvrir.
+
+   Un clic sur ce que la recherche n'a pas retenu lève donc le retrait. Le
+   mot-clé, les critères et la liste ne bougent pas : c'est le plan qu'on
+   reprend, pas la question qu'on retire — et revenir au menu de recherche la
+   repose. */
+let retraitLeve = false;
+
+/** Reposer le retrait. Les fonctions qui changent le filtre l'appellent avant
+ *  de le réappliquer : une question qu'on modifie est une question qu'on
+ *  repose. */
+const reposeRetrait = () => { retraitLeve = false; };
+
 /* Un critère qui parle de la société fait paraître les hébergées ; le secteur,
    qui parle de l'emplacement, non. */
 const critParSociete = () =>
@@ -4673,6 +4700,7 @@ const releveHotes = () => {
  * hébergent une société retenue.
  */
 function visibleSurPlan(o){
+  if (retraitLeve) return true;
   return visible(o) || (filtre() && o.kind === "stand" && HOTES.has(o.id));
 }
 
@@ -4683,12 +4711,22 @@ function visibleSurPlan(o){
  * de lui qu'on l'a dessinée.
  */
 function visibleSociete(o, i){
+  if (retraitLeve) return true;
   if (!(i >= 0)) return visibleSurPlan(o);
   const h = PAR_HEBERGE.get(o.id + "#" + i);
   return h ? visible(h) : visibleSurPlan(o);
 }
 
-function appliqueFiltre(){
+/**
+ * Le retrait posé sur ce qui est dessiné.
+ *
+ * À part du reste parce que le montage d'un pavillon le redemande : les
+ * groupes de « #stands » et « #zones » y sont réécrits d'un bloc, sans la
+ * marque qu'ils portaient. Un résultat ouvert dans un autre pavillon arrivait
+ * donc sur un plan entier, où rien ne disait plus ce que la recherche avait
+ * retenu — et où le doigt n'avait plus de quoi la reprendre.
+ */
+function marqueRetrait(){
   releveHotes();
   document.querySelectorAll("#stands g, #zones g").forEach(g => {
     const o = parId.get(g.dataset.id);
@@ -4698,7 +4736,33 @@ function appliqueFiltre(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
+}
+
+function appliqueFiltre(){
+  marqueRetrait();
   libelles(); liste();
+}
+
+/**
+ * Le retrait ne survit pas au clic qui l'ignore.
+ *
+ * Ce qui est resté allumé fait exception : l'ouvrir, c'est se servir du
+ * résultat, pas en sortir. On reconnaît l'un de l'autre à la marque que
+ * « marqueRetrait » leur a posée — celle-là même qui les éteint.
+ */
+function oublieRetrait(cible){
+  if (retraitLeve || !filtre() || !cible) return;
+  if (!cible.classList.contains("dim")) return;
+  retraitLeve = true;
+  appliqueFiltre();
+}
+
+/** Toute reprise du menu de recherche repose le retrait : la question est
+ *  rouverte, et le plan redit ce qu'elle retient. */
+function reprendRecherche(){
+  if (!retraitLeve) return;
+  reposeRetrait();
+  appliqueFiltre();
 }
 
 /* L'ordre des sortes dans les résultats. On cherche un exposant neuf fois sur
@@ -6260,6 +6324,57 @@ svg.addEventListener("pointermove", e => {
   if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
+/* ------------------------------------------------------------------
+   Le doigt vise plus large que la souris.
+
+   Un stand que la recherche éclaire est parfois un rectangle de quelques
+   pixels dans un hall dézoomé : le doigt le couvre entier et tombe à côté une
+   fois sur deux — sur le fond, ou sur le voisin éteint. Le résultat se voit,
+   et ne s'ouvre pas : c'est le geste même auquel la recherche appelle qui
+   échoue.
+
+   Ce qu'elle a retenu déborde donc de sa forme, et lui seul, de juste ce qu'il
+   faut pour atteindre la taille d'un doigt. La marge disparaît dès que la forme
+   est assez grande, c'est-à-dire dès qu'on a zoomé : elle n'existe que là où
+   la précision est impossible, et ne prend jamais la place d'une cible qu'on
+   pouvait viser. Le voisin éteint reste ainsi ouvrable — et c'est lui qui lève
+   le retrait.
+
+   Les boîtes sont lues sur le rendu plutôt que calculées : stands du salon,
+   zones et stands dessinés s'y présentent tous pareil, chacun à l'échelle où
+   il est vu. Les repères n'y entrent pas : rien ne les met en retrait, et les
+   élargir tous reviendrait à les préférer au reste pendant toute recherche.
+   ------------------------------------------------------------------ */
+/* La plus petite cible qu'un doigt atteint sans s'y reprendre. Bien en dessous
+   des quarante-huit points que recommandent les systèmes : la marge est prise
+   sur les stands voisins, qu'il faut pouvoir ouvrir aussi — c'est le rattrapage
+   d'un geste imprécis, pas un bouton qu'on dessine. */
+const DOIGT = 32;
+/* Au-delà, la recherche n'a rien resserré — ses résultats couvrent le hall, et
+   leurs marges se chevauchent plus qu'elles n'aident. */
+const MAX_ELARGIS = 150;
+
+function cibleElargie(x, y){
+  if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
+  const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
+    " #couches .dcal .sdes[data-id]:not(.dim)");
+  if (!allumes.length || allumes.length > MAX_ELARGIS) return null;
+  let choix = null, mieux = Infinity;
+  allumes.forEach(g => {
+    const b = g.getBoundingClientRect();
+    const mx = (DOIGT - b.width) / 2, my = (DOIGT - b.height) / 2;
+    if (mx <= 0 && my <= 0) return;              // déjà à portée du doigt
+    const dx = Math.max(b.left - Math.max(mx, 0) - x, x - b.right - Math.max(mx, 0));
+    const dy = Math.max(b.top - Math.max(my, 0) - y, y - b.bottom - Math.max(my, 0));
+    if (dx > 0 || dy > 0) return;                // hors de la boîte élargie
+    // entre deux marges qui se recouvrent, la plus profonde : c'est celle dont
+    // on est le plus près du centre
+    const d = Math.max(dx, dy);
+    if (d < mieux){ mieux = d; choix = g; }
+  });
+  return choix;
+}
+
 /* La capture de pointeur redirige le clic vers le <svg> : on retient la cible
    au pointerdown et on tranche au pointerup. */
 svg.addEventListener("pointerup", e => {
@@ -6273,21 +6388,28 @@ svg.addEventListener("pointerup", e => {
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
+  /* Ce que l'appui désigne. Un appui qui porte sur un objet allumé garde le
+     sien — il a touché ce qu'il visait ; les autres reviennent au résultat de
+     recherche dont ils débordent la marge, s'il y en a un. */
+  const cible = d.cible && !d.cible.classList.contains("dim")
+    ? d.cible : (cibleElargie(d.x, d.y) || d.cible);
   /* Le clic dit ce qu'on regarde maintenant : il lève donc la mise en avant
      du cartouche, sauf s'il porte justement sur ce qu'elle éclaire. */
-  oublieChoixPoi(d.cible);
+  oublieChoixPoi(cible);
+  // et de même le retrait de la recherche, qu'un objet éteint fait tomber
+  oublieRetrait(cible);
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
-  if (d.cible){
+  if (cible){
     /* Un repère n'est pas un objet du plan : il n'a pas de fiche d'exposant,
        mais il a un nom, et c'est ce qu'on vient lui demander. */
-    if (!d.cible.dataset.id){
-      if (visePoi(d.cible.dataset.poi)) return;
-      ouvrePoi(d.cible.dataset.poi, d.cible);
+    if (!cible.dataset.id){
+      if (visePoi(cible.dataset.poi)) return;
+      ouvrePoi(cible.dataset.poi, cible);
       return;
     }
-    if (viseItineraire(d.cible.dataset.id)) return;
-    select(d.cible.dataset.id, false, canalPlan(d.cible), rangSociete(d.cible));
+    if (viseItineraire(cible.dataset.id)) return;
+    select(cible.dataset.id, false, canalPlan(cible), rangSociete(cible));
   } else { ferme(); finVisee(); }
 });
 svg.addEventListener("pointercancel", e => {
@@ -6313,9 +6435,10 @@ svg.addEventListener("keydown", e => {
   const g = e.target.closest("[data-id],[data-poi]");
   if (g && (e.key === "Enter" || e.key === " ")){
     e.preventDefault();
-    // le plan se parcourt aussi au clavier : la visée et la mise en avant
-    // doivent y répondre pareil
+    // le plan se parcourt aussi au clavier : la visée, la mise en avant et le
+    // retrait doivent y répondre pareil
     oublieChoixPoi(g);
+    oublieRetrait(g);
     if (!g.dataset.id){
       if (!visePoi(g.dataset.poi)) ouvrePoi(g.dataset.poi, g);
       return;
@@ -6382,6 +6505,7 @@ $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
   majVideQ();
+  reposeRetrait();
   appliqueFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
@@ -6401,6 +6525,18 @@ $("q").addEventListener("keydown", e => {
   e.stopPropagation();
   videRecherche();
 });
+
+/* Revenir au menu de recherche repose le retrait du plan : le champ, le bouton
+   des critères, les puces de ce qui est retenu, la liste, la poignée du tiroir.
+   Le geste d'avant l'avait levé pour regarder le hall ; celui-ci rouvre la
+   question, et le plan redit ce qu'elle retient.
+
+   Un écouteur sur le panneau entier plutôt qu'un par commande : les puces et
+   les lignes de la liste naissent et meurent à chaque frappe, et aucune n'aurait
+   gardé le sien. Le clavier compte autant que le doigt — on revient au champ
+   par tabulation. */
+["pointerdown", "focusin"].forEach(t =>
+  $("side").addEventListener(t, reprendRecherche));
 
 /* ============================================================
    Le tiroir de la liste — écrans étroits
