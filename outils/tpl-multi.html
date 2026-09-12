@@ -2475,9 +2475,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
 
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
-   remonte, de quoi le plan a l'air, ses zones, sa mesure. Séparés par des
-   onglets plutôt qu'empilés — l'apparence est une planche d'aperçus, et
-   poussait tout le reste hors de l'écran. */
+   remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
+   l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
+   l'apparence est une planche d'aperçus, et poussait tout le reste hors de
+   l'écran. */
 .ongReg{display:flex;gap:3px;margin:0 0 14px;padding:3px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:999px}
 .ongReg button{flex:1;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:600;
@@ -2498,7 +2499,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .voletReg{animation:none}
   .ongReg button{transition:none}
 }
-/* Les onglets étaient quatre, ils sont cinq : sur un téléphone, « Apparence »
+/* Les onglets étaient quatre, ils sont sept : sur un téléphone, « Apparence »
    et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
    resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
    ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
@@ -2583,6 +2584,77 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
    qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
 .apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Le rangement de la fiche : la liste des champs d'un côté, la fiche telle
+   qu'elle en sortira de l'autre. Une liste de quinze intitulés ne dit pas ce
+   qu'on obtient — on réglait un ordre sans voir la fiche, et il fallait ouvrir
+   le plan public pour juger. L'aperçu se colle en haut : la liste est plus
+   longue que lui, et le laisser défiler reviendrait à ranger des champs sans
+   plus rien voir de ce qu'on range. */
+.ordreDeux{display:grid;grid-template-columns:minmax(0,1fr) 264px;
+  gap:18px;align-items:start;margin-top:12px}
+.ordreApercu{position:sticky;top:0}
+.ordreApercu > .eyebrow{display:block;margin-bottom:7px}
+.ordreApercu > .aideO{margin:8px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+/* L'aperçu porte les classes de la vraie fiche, comme les vignettes des
+   modèles : c'est la même feuille de style qui l'habille. Il ne se réduit pas,
+   lui — on y lit des valeurs, pas une silhouette — d'où la hauteur bornée et
+   le fondu du bas plutôt qu'un défilement de plus dans la fenêtre. */
+.vueO{display:flex;max-height:52dvh;overflow:hidden;
+  -webkit-mask-image:linear-gradient(#000 88%,transparent);
+  mask-image:linear-gradient(#000 88%,transparent)}
+.vueO .apercu{flex:1 1 auto}
+.ordreListe{display:flex;flex-direction:column;gap:3px}
+.ordreLigne{display:flex;align-items:center;gap:8px;font-size:13px;
+  padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:grab}
+.ordreLigne:active{cursor:grabbing}
+.ordreLigne .rang,.grpTete .rang{flex:0 0 20px;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--ink-3);text-align:right}
+.ordreLigne .prise,.grpTete .prise{flex:0 0 auto;color:var(--ink-3);font-size:15px;line-height:1}
+.ordreLigne .lib{color:var(--ink);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.ordreLigne .etiq{flex:1;font-size:11px;color:var(--ink-3)}
+.ordreLigne .etiq:not(:empty){margin-left:2px}
+.cocheO{flex:0 0 auto;width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
+/* Un champ que la console a masqué garde sa place dans la liste : le remonter
+   aujourd'hui pour l'afficher demain doit rester possible. Il s'efface sans
+   disparaître, faute de quoi un rang sauterait sans qu'on sache lequel. */
+.ordreLigne.eteint{opacity:.5}
+.ordreLigne .outil,.grpTete .outil{flex:0 0 auto;width:22px;height:20px;
+  border:1px solid var(--line);border-radius:3px;font-size:10px;color:var(--ink-2);
+  background:var(--surface)}
+.ordreLigne .outil:not(:disabled):hover,.grpTete .outil:not(:disabled):hover{
+  border-color:var(--accent);color:var(--accent)}
+.ordreLigne .outil.danger:not(:disabled):hover,.grpTete .outil.danger:not(:disabled):hover{
+  border-color:var(--rouge);color:var(--rouge)}
+.ordreLigne .outil:disabled{opacity:.3;cursor:default}
+/* Le bloc tiré s'efface là où il était : c'est le trou qui se déplace sous le
+   curseur qui dit où le lâcher le posera. */
+.ordreLigne.tire,.ordreGrp.tire{opacity:.4}
+.ordreLigne.tire .outil,.ordreGrp.tire .outil{visibility:hidden}
+/* Un groupe se lit comme un champ de plus : il porte un rang, il se déplace
+   d'un bloc, et ses membres se serrent sous son titre plutôt qu'à côté des
+   autres champs. Le liseré d'accent tient lieu d'accolade. */
+.ordreGrp{border:1px solid var(--line);border-left:2px solid var(--accent);
+  border-radius:var(--radius);background:var(--surface-2);cursor:grab}
+.ordreGrp:active{cursor:grabbing}
+.grpTete{display:flex;align-items:center;gap:8px;padding:6px 9px}
+.grpTitre{flex:1;min-width:0;padding:4px 7px;font-size:13px;font-weight:600;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius)}
+.grpTitre:focus{border-color:var(--accent);outline:none}
+.grpMembres{display:flex;flex-direction:column;gap:3px;padding:0 9px 8px 22px}
+.ordreGrp .ordreLigne{background:var(--surface)}
+.piedO{display:flex;align-items:center;gap:10px;margin-top:12px}
+/* Ce que l'enregistrement devient, à côté du bouton qui réunit : chaque geste
+   part en base tout seul, et rien d'autre ne le dirait. */
+.etatO{font-size:12px;color:var(--ink-3)}
+.etatO[data-mal="true"]{color:var(--rouge)}
+@media (max-width:760px){
+  .ordreDeux{grid-template-columns:minmax(0,1fr)}
+  .ordreApercu{position:static}
+  .vueO{max-width:320px}
+}
 /* Les zones organisateur dans les réglages : la liste d'un côté, la fiche de
    celle qu'on a choisie de l'autre. Un exploitant les reprend l'une après
    l'autre, et doit voir en même temps ce qu'il écrit et ce qui reste à
@@ -5399,11 +5471,10 @@ function montre(type, cle){
 /* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
    l'exploitant n'y a pas touché.
 
-   Le même tableau vit dans la console — « ORDRE_FICHE_DEFAUT » de
-   « _console-js.html » — qui propose de le remanier : les deux se suivent.
    N'y figure que le corps ; le numéro de stand et la pastille des nouveaux
    venus tiennent dans l'en-tête, les conférences ont leur propre volet, et
-   rien de tout cela ne se déplace. */
+   rien de tout cela ne se déplace — le volet qui propose de le remanier,
+   « voletOrdre » de « _admin1.html », le dit à l'exploitant. */
 const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
@@ -5450,6 +5521,75 @@ function ordreCorps(persos){
     sortie.splice(j + 1, 0, c);
   });
   return sortie;
+}
+
+/* ------------------------------------------------------------------
+   Les groupes de champs
+
+   Trois lignes qui se suivent — l'adresse, la ville, le pays — portaient trois
+   intitulés pour une seule information, et la fiche s'allongeait d'autant. Un
+   groupe les réunit sous un titre que l'exploitant écrit depuis les réglages
+   du plan : les intitulés de ses membres s'effacent, et leurs valeurs se
+   lisent l'une sous l'autre, comme les valeurs multiples d'un même champ.
+
+   Les onze modèles n'ont rien à en apprendre : un groupe est un champ de plus,
+   avec son intitulé et ses lignes. Ils l'habillent donc comme le reste sans
+   qu'aucun ait à le connaître.
+   ------------------------------------------------------------------ */
+
+/** Les groupes réglés pour ce salon — ceux qui réunissent vraiment quelque
+ *  chose : un groupe vidé de ses membres n'est plus un groupe. */
+const groupesFiche = () => ((DATA && DATA.fiche && DATA.fiche.groupes) || [])
+  .filter(g => g && Array.isArray(g.cles) && g.cles.length);
+
+/**
+ * La valeur d'un champ du corps, prête à poser dans la fiche.
+ *
+ * Une valeur unique s'écrit telle quelle, sur la ligne où l'intitulé l'attend.
+ * Plusieurs valeurs arrivent déjà découpées — c'est le champ qui sait comment
+ * les siennes se lisent, une thématique étant un bouton là où une ligne de
+ * nomenclature n'est que du texte. Dans un groupe, la valeur unique devient
+ * une ligne à son tour : elle n'est plus seule sous l'intitulé, elle en côtoie
+ * d'autres.
+ */
+const valeurCorps = (c, enGroupe) => Array.isArray(c.valeur)
+  ? c.valeur.join("")
+  : enGroupe ? '<span class="ligne">' + c.valeur + '</span>' : c.valeur;
+
+/** Un champ du corps : son intitulé, puis sa valeur. */
+const champCorps = c => '<div class="field' + (c.classe ? " " + c.classe : "") +
+  '"><span class="eyebrow">' + c.libelle + '</span>' +
+  '<span class="v">' + valeurCorps(c) + '</span></div>';
+
+/* Un groupe sans titre reprend l'intitulé de son premier membre : il vaut
+   mieux le nom d'un des champs réunis qu'un intitulé vide au-dessus de trois
+   lignes. L'intitulé d'un membre est déjà échappé, le titre saisi ne l'est
+   pas. */
+const groupeCorps = (titre, membres) => '<div class="field groupe">' +
+  '<span class="eyebrow">' + (titre ? esc(titre) : membres[0].libelle) + '</span>' +
+  '<span class="v">' + membres.map(c => valeurCorps(c, true)).join("") + '</span></div>';
+
+/**
+ * Le corps rangé : les champs dans l'ordre réglé, ceux d'un groupe réunis sous
+ * son titre à la place du premier d'entre eux.
+ *
+ * Les membres se lisent dans l'ordre du corps et non dans celui du groupe :
+ * c'est la liste rangée qui fait foi. Un membre masqué ou vide n'a pas de
+ * ligne à donner, et un groupe dont aucun membre n'en donne ne paraît pas —
+ * un titre seul n'annoncerait rien.
+ */
+function corpsRange(ordre, champs){
+  const groupes = groupesFiche();
+  const faits = [];
+  return ordre.map(cle => {
+    const i = groupes.findIndex(g => g.cles.indexOf(cle) >= 0);
+    if (i < 0) return champs[cle] ? champCorps(champs[cle]) : "";
+    if (faits.indexOf(i) >= 0) return "";
+    faits.push(i);
+    const membres = ordre.filter(c => groupes[i].cles.indexOf(c) >= 0 && champs[c])
+      .map(c => champs[c]);
+    return membres.length ? groupeCorps(groupes[i].titre, membres) : "";
+  }).join("");
 }
 
 /**
@@ -6066,12 +6206,6 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      que l'exploitant la laisse voir. Une zone organisateur n'est jamais
      nouvelle : elle n'est pas un exposant. */
   $("dNeuf").hidden = zone || !soc.neuf || !montre("stand", "nouveau");
-  /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
-     ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
-     lignes. */
-  const f = (l, v, cls) => v ? '<div class="field' + (cls ? " " + cls : "") +
-                          '"><span class="eyebrow">' + l +
-                          '</span><span class="v">' + v + '</span></div>' : "";
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
   /* Le programme est rattaché au stand par le dossier de son titulaire : la
@@ -6084,40 +6218,57 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   /* Le corps de la fiche, champ par champ sous sa clé plutôt que d'un seul
      tenant : l'ordre de lecture n'est pas le même d'un salon à l'autre — ici
      la nomenclature prime, là l'adresse — et c'est l'exploitant qui le règle
-     depuis la console. Le rangement vient après, une fois tout écrit.
+     depuis les réglages du plan. Le rangement vient après, une fois tout
+     écrit, et réunit sous un même titre les champs qu'il a groupés.
 
      Ni la surface, ni les angles ouverts, ni l'état de commercialisation
      n'apprennent quoi que ce soit au visiteur : ils n'y figurent pas. */
   const corps = {};
+  /**
+   * Pose un champ du corps sous sa clé : son intitulé, sa valeur, et la classe
+   * qui le range. Un champ que le salon n'affiche pas, ou qui ne porte rien, ne
+   * se pose pas du tout — c'est cette absence que le rangement lit ensuite.
+   *
+   * La valeur est une chaîne quand le champ n'en porte qu'une, un tableau de
+   * lignes déjà habillées quand il en porte plusieurs : réunie dans un groupe,
+   * la première devient une ligne à son tour, et les secondes s'y versent
+   * telles quelles.
+   *
+   * La classe « court » marque les champs qui tiennent en un mot : sur mobile
+   * ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
+   * lignes.
+   */
+  const met = (cle, libelle, valeur, classe) => {
+    const v = Array.isArray(valeur) ? valeur.filter(Boolean) : valeur;
+    if (!v || !v.length || !montre(t, cle)) return;
+    corps[cle] = { libelle: libelle, valeur: v, classe: classe || "" };
+  };
   // la raison sociale n'apprend rien quand elle est déjà le titre
-  corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
+  if (!zone && soc.plan && soc.plan !== titre) met("raison", LIBELLE_CORPS.raison, esc(soc.plan));
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
+  met("secteur", LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : "");
+  met("adresse", LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : "");
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
+  met("ville", LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court");
+  met("pays", LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court");
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  met("niveaux", LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court");
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
+  met("telephone", LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
-    : "", "court"));
-  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
-  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
-  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
+    : "", "court");
+  met("site", LIBELLE_CORPS.site, lien(soc.site));
+  met("facebook", LIBELLE_CORPS.facebook, lien(soc.fb));
+  met("linkedin", LIBELLE_CORPS.linkedin, lien(soc.li));
+  met("instagram", LIBELLE_CORPS.instagram, lien(soc.ig));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
-  corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
-        .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-    : "");
+  met("nomenclature", LIBELLE_CORPS.nomenclature, (soc.nomencl || [])
+    .map(n => '<span class="ligne">' + esc(String(n)) + '</span>'));
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
      nomenclature dit ce qu'il vend ; un salon qui n'en tient pas ne reçoit pas
      la clé du tout.
@@ -6126,13 +6277,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      l'exploitant en a fait un critère : ailleurs, rien ne saurait dresser la
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
-  corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f(LIBELLE_CORPS.thematiques, soc.themes
-        .map(n => themeFiltrable(n)
-          ? '<button type="button" class="ligne theme" data-t="' +
-            esc(String(n)) + '">' + esc(String(n)) + '</button>'
-          : '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-    : "");
+  met("thematiques", LIBELLE_CORPS.thematiques, (soc.themes || [])
+    .map(n => themeFiltrable(n)
+      ? '<button type="button" class="ligne theme" data-t="' +
+        esc(String(n)) + '">' + esc(String(n)) + '</button>'
+      : '<span class="ligne">' + esc(String(n)) + '</span>'));
   /* Les champs que ce salon-ci s'est ajoutés : l'ordre par défaut les range
      derrière ce que toutes les fiches ont en commun — ils lui sont propres,
      ils ne passent pas d'office devant l'adresse — sans empêcher l'exploitant
@@ -6145,10 +6294,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
     const l = separeValeurs(v);
     if (!l.length) return;
-    corps[PREFIXE_PERSO + c.cle] = ok(PREFIXE_PERSO + c.cle,
-      f(esc(c.libelle), l.length > 1
-        ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
-        : esc(l[0])));
+    met(PREFIXE_PERSO + c.cle, esc(c.libelle), l.length > 1
+      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
+      : esc(l[0]));
   });
   /* Ce que l'exploitant a écrit sur une zone, depuis les réglages du plan.
      C'est tout ce qu'une zone a en propre : Klipso ne lui donne qu'un nom et
@@ -6158,21 +6306,18 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      elle est relue avant d'être posée dans la fiche. Le libellé du champ ne
      paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
      n'en a pas. */
-  corps.description = zone
-    ? ok("description", o.description
-        ? f(LIBELLE_CORPS.description,
-            '<div class="riche">' + assainitRiche(o.description) + '</div>')
-        : "")
-    : "";
-  corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
+  if (zone){
+    met("description", LIBELLE_CORPS.description, o.description
+      ? '<div class="riche">' + assainitRiche(o.description) + '</div>' : "");
+    met("lien", LIBELLE_CORPS.lien, lien(o.lien));
+  }
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
      range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
      dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
      plus. */
   const infos = zone
-    ? corps.description + corps.lien
-    : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
-        .map(c => corps[c] || "").join("");
+    ? [corps.description, corps.lien].filter(Boolean).map(champCorps).join("")
+    : corpsRange(ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle)), corps);
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone se présente d'abord —
@@ -7456,18 +7601,26 @@ function apercuFiche(cle, vu){
   d.className = "apercu modele-" + cle;
   // l'aperçu se regarde, il ne se manipule pas
   d.inert = true;
-  const champ = (l, v, c) => '<div class="field' + (c ? " " + c : "") + '">' +
-    '<span class="eyebrow">' + esc(l) + '</span><span class="v">' + v + '</span></div>';
   /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
      aussi, plusieurs modèles n'habillant que les liens. */
   const LIENS = ["site", "facebook", "linkedin", "instagram"];
-  const corps = vu.cles.map(c => {
+  /* Les champs sous la forme que « corpsRange » attend, et le rangement par la
+     même fonction que la vraie fiche : les groupes réglés par l'exploitant se
+     voient donc sur les onze vignettes, sans quoi il choisirait un habillage
+     sur une fiche qui n'est plus la sienne. */
+  const champs = {};
+  vu.cles.forEach(c => {
     const l = separeValeurs(vu.vals[c]);
-    const v = l.length > 1
-      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
-      : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]);
-    return champ(libelleCorps(c), v, COURTS_CORPS.indexOf(c) >= 0 ? "court" : "");
-  }).join("");
+    if (!l.length) return;
+    champs[c] = {
+      libelle: esc(libelleCorps(c)),
+      valeur: l.length > 1
+        ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
+        : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]),
+      classe: COURTS_CORPS.indexOf(c) >= 0 ? "court" : "",
+    };
+  });
+  const corps = corpsRange(vu.cles, champs);
   /* Le programme reste celui de l'exemple, quand tout le reste vient du salon :
      le stand qui remplit le mieux la fiche ne tient pas forcément de
      conférence, et le modèle qui déroule une ligne de temps n'aurait rien à
@@ -7595,7 +7748,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Six onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Sept onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -7620,6 +7773,10 @@ function ouvreReglages(ouvrir){
           boutons.forEach((x, j) => x.setAttribute("aria-pressed", String(j === i)));
           volets.forEach((x, j) => { x.hidden = j !== i; });
         });
+        /* Un volet qui dépend d'un autre se refait en reparaissant : l'aperçu du
+           rangement porte l'habillage retenu, qui a pu changer dans « Apparence »
+           pendant qu'il était caché. */
+        if (volets[i].rafraichit) volets[i].rafraichit();
         ramene(b);
       };
       barre.appendChild(b);
@@ -7639,6 +7796,10 @@ function ouvreReglages(ouvrir){
        que le visiteur obtient, et elle se lit dans la foulée des critères,
        qu'elle emprunte. */
     voletSuggestion(volet(NOM_VOLET_SUGGESTION));
+    /* « Fiche » ferme la série de ce que le visiteur obtient : on ne range les
+       champs qu'une fois qu'on sait lesquels paraissent, et son aperçu emprunte
+       l'habillage que l'onglet suivant choisit. */
+    voletOrdre(volet("Fiche"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
@@ -7986,6 +8147,519 @@ function voletApparence(hote){
     grille.appendChild(b);
   });
   hote.appendChild(grille);
+}
+
+/* ------------------------------------------------------------------
+   L'ordre de lecture de la fiche, et les groupes de champs
+
+   Ce que la fiche montre se règle depuis la console, champ par champ, avec les
+   champs d'origine qui l'alimentent. Dans quel ordre elle le montre se règle
+   ici : l'ordre du code valait pour tous les salons, alors que c'est justement
+   là qu'ils diffèrent — ici le secteur est ce qu'on vient lire, là l'adresse,
+   là encore le champ que le salon s'est ajouté passe devant tout le reste.
+
+   Le réglage a quitté la console pour le plan parce que c'est ici qu'il se
+   juge : l'aperçu porte l'habillage retenu — celui de l'onglet d'à côté — et
+   les valeurs d'un vrai stand, là où la console ne pouvait montrer qu'une
+   fiche nue.
+
+   Un groupe réunit des champs sous un titre écrit à la main : les intitulés
+   des membres s'effacent, et leurs valeurs se lisent l'une sous l'autre.
+   Trois lignes — l'adresse, la ville, le pays — en font une, « Adresse ».
+   ------------------------------------------------------------------ */
+
+/** Les clés du corps de ce salon, dans l'ordre réglé. */
+const clesFiche = () => ordreCorps((((DATA || {}).fiche || {}).perso || [])
+  .map(c => PREFIXE_PERSO + c.cle));
+
+/**
+ * Le volet du rangement de la fiche.
+ *
+ * Deux façons de déplacer un champ, et il en faut deux : la poignée, qu'on
+ * attrape pour traverser la liste d'un geste, et les flèches, qui restent le
+ * seul chemin au clavier — et le seul au doigt, le glisser-déposer du
+ * navigateur ignorant le tactile.
+ *
+ * La liste se redessine sur place plutôt que de rouvrir la fenêtre : remonter
+ * un champ de six rangs demande six clics, et rouvrir à chacun d'eux
+ * ramènerait l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient
+ * d'actionner reprend le focus, pour que le clic suivant tombe au même endroit.
+ */
+function voletOrdre(hote){
+  const p = document.createElement("p");
+  p.textContent = "L'ordre dans lequel la fiche déroule ses champs, de haut en " +
+    "bas : ce que le visiteur vient lire en premier n'est pas le même d'un " +
+    "salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des " +
+    "flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le " +
+    "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
+  hote.appendChild(p);
+
+  let ordre = clesFiche();
+  /* Les groupes sont recopiés : le volet les remanie au fil des gestes, et ce
+     qui est en base ne change qu'une fois l'écriture passée. */
+  let groupes = groupesFiche().map(g =>
+    ({ titre: String(g.titre || ""), cles: g.cles.slice() }));
+  const coches = new Set();
+
+  const deux = document.createElement("div");
+  deux.className = "ordreDeux";
+  hote.appendChild(deux);
+
+  const colonne = document.createElement("div");
+  const liste = document.createElement("div");
+  liste.className = "ordreListe";
+  colonne.appendChild(liste);
+  deux.appendChild(colonne);
+
+  /* L'aperçu se colle en haut : la liste est plus longue que lui, et le laisser
+     défiler reviendrait à ranger des champs sans plus rien voir de ce qu'on
+     range. */
+  const cadre = document.createElement("div");
+  cadre.className = "ordreApercu";
+  cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
+    '<div class="vueO"></div><p class="aideO"></p>';
+  cadre.querySelector(".aideO").textContent = "La fiche telle que le visiteur " +
+    "la recevra : l'habillage retenu pour ce salon, et les valeurs du stand qui " +
+    "remplit le mieux les champs affichés. Sur téléphone, les champs qui " +
+    "tiennent en un mot se rangent deux par deux.";
+  const vue = cadre.querySelector(".vueO");
+  deux.appendChild(cadre);
+
+  const pied = document.createElement("div");
+  pied.className = "piedO";
+  const bGroupe = document.createElement("button");
+  bGroupe.type = "button";
+  bGroupe.className = "btn";
+  bGroupe.textContent = "Regrouper";
+  const etat = document.createElement("span");
+  etat.className = "etatO";
+  pied.appendChild(bGroupe);
+  pied.appendChild(etat);
+  colonne.appendChild(pied);
+
+  const dit = (txt, mal) => { etat.textContent = txt; etat.dataset.mal = String(!!mal); };
+
+  /* Les écritures s'enchaînent plutôt que de partir ensemble : chacune relit la
+     colonne avant de la réécrire, et deux qui se croisent perdraient la
+     première. */
+  let file = Promise.resolve();
+
+  /**
+   * Le rangement part en base, et paraît tout de suite.
+   *
+   * Le poste prend les devants : l'aperçu, les vignettes des modèles et la
+   * fiche ouverte derrière la fenêtre lisent tous « DATA.fiche », et attendre
+   * la réponse du serveur ferait douter du clic. L'écriture, elle, dira le
+   * dernier mot.
+   */
+  const enregistre = () => {
+    pose({ ordre, groupes });
+    /* La fiche ouverte derrière la fenêtre montre encore l'ancien rangement. On
+       la redessine, sauf celle d'un stand partagé : la rouvrir sans dire quelle
+       enseigne on lisait ramènerait le choix des exposants par-dessus. */
+    const o = state.sel && parId.get(state.sel);
+    if (o && !(o.coex && o.coex.length && coexChoisit())) ouvre(o, null);
+    dit("Enregistrement…");
+    file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
+      t.ordre = (DATA.fiche.ordre || []).slice();
+      const g = DATA.fiche.groupes || [];
+      // un salon qui n'a plus de groupe n'en garde pas la trace en creux
+      if (g.length) t.groupes = g; else delete t.groupes;
+    })).then(t => { DATA.fiche = t; dit("Enregistré."); })
+      .catch(e => dit("Échec : " + e.message, true));
+  };
+
+  const groupeDe = (cle) => groupes.find(g => g.cles.indexOf(cle) >= 0) || null;
+
+  /**
+   * Remet l'ordre en blocs : les membres d'un groupe se suivent, à la place du
+   * premier d'entre eux. Sans quoi un champ qu'on vient de sortir d'un groupe
+   * resterait au milieu de ceux qui y restent, et la liste dessinée ne dirait
+   * plus ce que la fiche fera.
+   */
+  const range = () => {
+    const sortie = [], vus = [];
+    ordre.forEach(cle => {
+      const g = groupeDe(cle);
+      if (!g){ sortie.push(cle); return; }
+      if (vus.indexOf(g) >= 0) return;
+      vus.push(g);
+      ordre.filter(c => g.cles.indexOf(c) >= 0).forEach(c => sortie.push(c));
+    });
+    ordre = sortie;
+  };
+
+  /**
+   * L'ordre et les groupes tels que la liste les dessine à l'instant.
+   *
+   * Pendant un glissé, c'est le dessin qui fait foi : le tableau n'est plus
+   * qu'un souvenir de ce qu'il était avant le geste, et l'aperçu doit suivre
+   * ce qui se passe sous le curseur. Un groupe qu'un retrait laisse à un seul
+   * membre n'en est plus un — le titre qu'on avait écrit ne réunit plus rien —
+   * et se défait de lui-même.
+   */
+  const dessin = () => {
+    const suite = [], grp = [];
+    [...liste.children].forEach(el => {
+      if (!el.classList.contains("ordreGrp")){ suite.push(el.dataset.cle); return; }
+      const cles = [...el.querySelector(".grpMembres").children].map(x => x.dataset.cle);
+      cles.forEach(c => suite.push(c));
+      if (cles.length > 1) grp.push({ titre: el.querySelector(".grpTitre").value, cles });
+    });
+    return { ordre: suite, groupes: grp };
+  };
+
+  /* Relire le dessin refait les groupes : les boutons déjà posés tiennent les
+     anciens, et la liste se redessine donc dans la foulée. */
+  const litDessin = () => {
+    const d = dessin();
+    ordre = d.ordre;
+    groupes = d.groupes;
+  };
+
+  /**
+   * Pose le rangement du moment dans « DATA.fiche ».
+   *
+   * L'aperçu, les vignettes des modèles et la fiche ouverte derrière la fenêtre
+   * y lisent tous le rangement, par le même chemin que la vraie fiche : c'est
+   * en l'y posant qu'un geste se voit, sans attendre que la base ait répondu.
+   */
+  const pose = (d) => {
+    DATA.fiche = DATA.fiche || {};
+    DATA.fiche.ordre = d.ordre.slice();
+    DATA.fiche.groupes = d.groupes.filter(g => g.cles.length > 1)
+      .map(g => ({ titre: String(g.titre || ""), cles: g.cles.slice() }));
+  };
+
+  /* Les flèches d'un bout de liste s'éteignent : sans elles, la première ligne
+     garderait un « monter » actif au milieu de la liste. Le rang, lui, ne
+     numérote que le premier rang — un groupe compte pour un champ, et ses
+     membres n'ont pas de place à eux dans la fiche. */
+  const majBouts = () => {
+    const bouts = (el) => el.classList.contains("ordreGrp")
+      ? el.querySelector(".grpTete").querySelectorAll("button.outil")
+      : el.querySelectorAll("button.outil");
+    const passe = (enfants) => enfants.forEach((el, i) => {
+      const b = bouts(el);
+      b[0].disabled = i === 0;
+      b[1].disabled = i === enfants.length - 1;
+    });
+    const premiers = [...liste.children];
+    passe(premiers);
+    premiers.forEach((el, i) => {
+      const r = el.querySelector(".rang");
+      if (r) r.textContent = String(i + 1);
+      if (el.classList.contains("ordreGrp")) passe([...el.querySelector(".grpMembres").children]);
+    });
+    majApercu();
+  };
+
+  /* L'aperçu suit le glissé plutôt que d'attendre le lâcher : c'est lui qu'on
+     regarde en déplaçant, pas la liste. D'où le dessin plutôt que le tableau —
+     pendant le geste, le second est en retard d'un rang. */
+  const majApercu = () => {
+    pose(dessin());
+    vue.textContent = "";
+    vue.appendChild(apercuFiche(modeleRetenu(), contenuApercu()));
+  };
+
+  /** Déplace un bloc d'un rang parmi ses voisins, puis relit la liste. */
+  const deplace = (el, pas, sens) => {
+    const voisin = pas < 0 ? el.previousElementSibling
+      : (el.nextElementSibling && el.nextElementSibling.nextElementSibling);
+    if (pas < 0 && !voisin) return;
+    if (pas > 0 && el === el.parentElement.lastElementChild) return;
+    el.parentElement.insertBefore(el, voisin);
+    litDessin();
+    rendu({ cle: el.dataset.cle || el.dataset.ref, sens });
+    enregistre();
+  };
+
+  /* Le conteneur d'où part le glissé : on ne dépose que parmi ses voisins.
+     Sortir un champ de son groupe en le tirant demanderait de deviner, au
+     pixel, si le lâcher voulait dire « en dessous du dernier membre » ou
+     « après le groupe » — la croix du membre le dit sans ambiguïté. */
+  let conteneurTire = null;
+
+  /**
+   * La ligne devant laquelle déposer, d'après la hauteur du pointeur.
+   *
+   * On compare au milieu de chaque ligne, et non à son bord : le bord ferait
+   * basculer l'insertion dès qu'on l'effleure, et la liste tremblerait sous le
+   * curseur au lieu de suivre. « null » veut dire la fin de la liste.
+   */
+  const accepteGlisse = (hote) => hote.addEventListener("dragover", ev => {
+    const tire = hote.querySelector(":scope > .tire");
+    if (!tire || conteneurTire !== hote) return;
+    // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
+    ev.preventDefault();
+    const apres = [...hote.children].find(d => {
+      if (d === tire) return false;
+      const r = d.getBoundingClientRect();
+      return ev.clientY < r.top + r.height / 2;
+    }) || null;
+    if (apres === tire.nextSibling || apres === tire) return;
+    hote.insertBefore(tire, apres);
+    majBouts();
+  });
+  accepteGlisse(liste);
+
+  /**
+   * Rend un bloc déplaçable au glisser.
+   *
+   * Un groupe ne se prend que par sa poignée : son titre se saisit sur place,
+   * et dans un bloc déplaçable le navigateur remplace la sélection du texte par
+   * un glissé — on ne pourrait plus double-cliquer sur un mot pour le corriger.
+   * Une ligne de champ, elle, n'a rien à sélectionner et se prend n'importe où.
+   */
+  const prise = (el, libelle, poignee) => {
+    el.draggable = !poignee;
+    if (poignee){
+      poignee.addEventListener("pointerdown", () => { el.draggable = true; });
+      el.addEventListener("pointerup", () => { el.draggable = false; });
+    }
+    el.ondragstart = ev => {
+      /* Firefox n'ouvre pas de glissé sans donnée transportée, et le texte
+         déposé ailleurs vaut mieux que la clé technique. */
+      ev.dataTransfer.setData("text/plain", libelle);
+      ev.dataTransfer.effectAllowed = "move";
+      ev.stopPropagation();
+      conteneurTire = el.parentElement;
+      // la classe se pose au tour suivant : posée tout de suite, elle entrerait
+      // dans l'image que le navigateur vient de prendre du bloc
+      setTimeout(() => el.classList.add("tire"), 0);
+    };
+    el.ondragend = ev => {
+      ev.stopPropagation();
+      el.classList.remove("tire");
+      el.draggable = !poignee;
+      conteneurTire = null;
+      const avant = ordre.join("|");
+      litDessin();
+      // un glissé qui n'a rien déplacé n'a rien à enregistrer
+      if (ordre.join("|") === avant) return;
+      rendu();
+      enregistre();
+    };
+  };
+
+  const fleches = (hote, el, libelle) => {
+    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "outil";
+      b.textContent = pas < 0 ? "▲" : "▼";
+      b.title = titre;
+      b.setAttribute("aria-label", titre + " " + libelle);
+      b.onclick = () => deplace(el, pas, sens);
+      hote.appendChild(b);
+    });
+  };
+
+  /** Un bouton d'outil : la croix qui défait un groupe ou en sort un champ. */
+  const outil = (hote, texte, titre, action, genre) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "outil" + (genre ? " " + genre : "");
+    b.textContent = texte;
+    b.title = titre;
+    b.setAttribute("aria-label", titre);
+    b.onclick = action;
+    hote.appendChild(b);
+    return b;
+  };
+
+  /** La ligne d'un champ : seule au premier rang, ou membre d'un groupe. */
+  const ligne = (cle, groupe) => {
+    const libelle = libelleCorps(cle);
+    const d = document.createElement("div");
+    d.className = "ordreLigne" + (groupe ? " membre" : "");
+    d.dataset.cle = cle;
+    if (!groupe){
+      const r = document.createElement("span");
+      r.className = "rang";
+      d.appendChild(r);
+    }
+    const poi = document.createElement("span");
+    poi.className = "prise";
+    poi.setAttribute("aria-hidden", "true");
+    poi.textContent = "⠿";
+    d.appendChild(poi);
+
+    /* La case sert à réunir, et rien d'autre : un champ ne s'affiche ou ne se
+       masque que depuis la console, où se règle aussi d'où il vient. */
+    const c = document.createElement("input");
+    c.type = "checkbox";
+    c.className = "cocheO";
+    c.checked = coches.has(cle);
+    c.setAttribute("aria-label", "Réunir " + libelle);
+    c.onchange = () => {
+      if (c.checked) coches.add(cle); else coches.delete(cle);
+      majGroupe();
+    };
+    d.appendChild(c);
+
+    const l = document.createElement("span");
+    l.className = "lib";
+    l.textContent = libelle;
+    d.appendChild(l);
+
+    /* Deux champs peuvent porter le même intitulé — un salon qui s'ajoute sa
+       « Ville » à côté de celle de la fiche société — et rien d'autre ici ne
+       les distinguerait. */
+    const e = document.createElement("span");
+    e.className = "etiq";
+    if (cle.indexOf(PREFIXE_PERSO) === 0) e.textContent = "propre au salon";
+    d.appendChild(e);
+
+    /* Un champ masqué garde sa place : le remonter aujourd'hui pour l'afficher
+       demain doit rester possible, et le retirer d'ici ferait sauter un rang
+       sans qu'on sache lequel ni pourquoi. */
+    if (!montre("stand", cle)){
+      d.classList.add("eteint");
+      d.title = "Masqué : ce champ ne paraît pas sur la fiche.";
+    }
+
+    fleches(d, d, libelle);
+    if (groupe){
+      outil(d, "×", "Sortir « " + libelle + " » du groupe", () => {
+        groupe.cles = groupe.cles.filter(x => x !== cle);
+        if (groupe.cles.length < 2) groupes = groupes.filter(g => g !== groupe);
+        range();
+        rendu();
+        enregistre();
+      }, "danger");
+    }
+    prise(d, libelle);
+    return d;
+  };
+
+  /** Le bloc d'un groupe : son titre, ses membres, et de quoi le défaire. */
+  const blocGroupe = (g) => {
+    const d = document.createElement("div");
+    d.className = "ordreGrp";
+    d.dataset.ref = "grp:" + g.cles[0];
+    const tete = document.createElement("div");
+    tete.className = "grpTete";
+    d.appendChild(tete);
+
+    const r = document.createElement("span");
+    r.className = "rang";
+    tete.appendChild(r);
+    const poi = document.createElement("span");
+    poi.className = "prise";
+    poi.setAttribute("aria-hidden", "true");
+    poi.textContent = "⠿";
+    tete.appendChild(poi);
+
+    /* Le titre se tape sur place : ouvrir une fenêtre pour trois lettres
+       fermerait celle-ci, et il faudrait la rouvrir sur le bon onglet pour voir
+       ce qu'on vient d'écrire.
+
+       Vide, il laisse paraître l'intitulé du premier champ réuni — ce que dit
+       le texte grisé du champ, et ce que fera la fiche. */
+    const titre = document.createElement("input");
+    titre.className = "grpTitre";
+    titre.value = g.titre;
+    titre.placeholder = libelleCorps(g.cles[0]);
+    titre.setAttribute("aria-label", "Titre du groupe");
+    let frappe = null;
+    titre.oninput = () => {
+      g.titre = titre.value;
+      majApercu();
+      /* Le titre part quand la frappe s'arrête : à chaque lettre ce serait une
+         écriture par caractère, et s'en remettre au seul « change » perdrait un
+         titre tapé puis laissé au clavier quand la fenêtre se referme. */
+      if (frappe) clearTimeout(frappe);
+      frappe = setTimeout(enregistre, 700);
+    };
+    tete.appendChild(titre);
+
+    fleches(tete, d, g.titre || libelleCorps(g.cles[0]));
+    outil(tete, "×", "Défaire le groupe", () => {
+      groupes = groupes.filter(x => x !== g);
+      rendu();
+      enregistre();
+    }, "danger");
+
+    const membres = document.createElement("div");
+    membres.className = "grpMembres";
+    ordre.filter(c => g.cles.indexOf(c) >= 0)
+      .forEach(c => membres.appendChild(ligne(c, g)));
+    accepteGlisse(membres);
+    d.appendChild(membres);
+    prise(d, g.titre || libelleCorps(g.cles[0]), poi);
+    return d;
+  };
+
+  /**
+   * Réunit les champs cochés sous un même titre.
+   *
+   * Le bloc se pose à la place du premier coché, et ses membres s'y suivent :
+   * un groupe éparpillé dans la liste ne dirait pas ce que la fiche en fera.
+   *
+   * Cocher les membres d'un groupe et un champ de plus est la façon de
+   * l'agrandir : son titre se garde alors, faute de quoi ce qu'on avait écrit
+   * serait effacé par un geste qui ne demandait qu'à ajouter une ligne.
+   */
+  const regroupe = () => {
+    const choix = ordre.filter(c => coches.has(c));
+    if (choix.length < 2) return;
+    const anciens = groupes.filter(g => g.cles.some(c => choix.indexOf(c) >= 0));
+    const titre = anciens.length === 1 ? anciens[0].titre : "";
+    groupes.forEach(g => { g.cles = g.cles.filter(c => choix.indexOf(c) < 0); });
+    groupes = groupes.filter(g => g.cles.length > 1);
+    const debut = ordre.indexOf(choix[0]);
+    const avant = ordre.slice(0, debut).filter(c => choix.indexOf(c) < 0);
+    const apres = ordre.slice(debut).filter(c => choix.indexOf(c) < 0);
+    ordre = avant.concat(choix, apres);
+    groupes.push({ titre, cles: choix.slice() });
+    coches.clear();
+    range();
+    rendu();
+    enregistre();
+    // le titre attend d'être écrit : c'est la seule chose qui reste à faire
+    const champ = liste.querySelector('[data-ref="grp:' + choix[0] + '"] .grpTitre');
+    if (champ) champ.focus();
+  };
+  bGroupe.onclick = regroupe;
+
+  const majGroupe = () => {
+    const n = coches.size;
+    bGroupe.disabled = n < 2;
+    bGroupe.title = n < 2
+      ? "Cochez au moins deux champs pour les réunir sous un même titre."
+      : "Réunir " + n + " champs sous un même titre.";
+  };
+
+  const rendu = (focus) => {
+    liste.textContent = "";
+    const vus = [];
+    ordre.forEach(cle => {
+      const g = groupeDe(cle);
+      if (!g){ liste.appendChild(ligne(cle, null)); return; }
+      if (vus.indexOf(g) >= 0) return;
+      vus.push(g);
+      liste.appendChild(blocGroupe(g));
+    });
+    majBouts();
+    majGroupe();
+    if (!focus) return;
+    const el = liste.querySelector('[data-cle="' + focus.cle + '"]') ||
+      liste.querySelector('[data-ref="' + focus.cle + '"]');
+    if (!el) return;
+    const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.outil");
+    if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
+  };
+
+  /* On revient ici après avoir touché au modèle dans l'onglet d'à côté :
+     l'aperçu doit s'en apercevoir, sans quoi il montrerait l'habillage qu'on
+     vient de quitter. */
+  hote.rafraichit = majApercu;
+
+  range();
+  rendu();
+  dit("");
 }
 
 /** Les réglages d'apparence se posent sur le poste, puis montent en base
@@ -8707,7 +9381,7 @@ async function enregistreZone(o, v, depart){
      qu'on vient de choisir, pas celui d'avant. L'écriture dira le dernier mot,
      et « rattacheSalles » ne fait rien deux fois. */
   if (rattache){ rattacheSalles(DATA.salles); rangeConferences(); }
-  const tables = await ecritTablesZones([
+  const tables = await ecritColonnesEvenement([
     ...(renomme ? [{ colonne: "zones", secours: DATA.nomsZones, change: t => {
         if (nom) t[o.id] = nom; else delete t[o.id];
       } }] : []),
@@ -8763,7 +9437,7 @@ async function enregistreZone(o, v, depart){
 async function basculeAffichageZone(o){
   const masquer = !o.masquee;
   try {
-    const masques = await ecritTableZones("zones_masquees", DATA.zonesMasquees, t => {
+    const masques = await ecritColonneEvenement("zones_masquees", DATA.zonesMasquees, t => {
       if (masquer) t[o.id] = true; else delete t[o.id];
     });
     DATA.zonesMasquees = masques;
@@ -8786,18 +9460,18 @@ function marqueZonesMasquees(){
 
 
 /**
- * Réécrire les tables de l'événement indexées par zone — les noms, les
- * masquages, les fiches. Chacune tient dans une seule colonne : la renvoyer
- * telle que la page l'avait chargée effacerait ce qu'un autre poste y a mis
- * depuis. On repart donc de ce que la base contient à l'instant, et « change »
- * n'y touche que la zone concernée.
+ * Réécrire des colonnes jsonb de l'événement — les noms de zones, leurs
+ * masquages, leurs fiches, le rangement de la fiche détail. Chacune tient d'un
+ * seul tenant : la renvoyer telle que la page l'avait chargée effacerait ce
+ * qu'un autre poste y a mis depuis. On repart donc de ce que la base contient
+ * à l'instant, et « change » n'y touche que ce qui est en cause.
  *
  * Plusieurs colonnes à la fois quand elles se saisissent ensemble : la fiche
  * d'une zone tient à la fois du nom, qui s'écrit sur le plan, et du reste, qui
  * n'existe que sur la fiche. Deux écritures les auraient dissociées à la
  * première qui échoue.
  */
-async function ecritTablesZones(travaux){
+async function ecritColonnesEvenement(travaux){
   let cfg = null, ses = null;
   try {
     cfg = JSON.parse(localStorage.getItem("console-config") || "null") || window.PLAN_CONFIG;
@@ -8828,8 +9502,8 @@ async function ecritTablesZones(travaux){
 }
 
 /** La même chose pour une seule colonne, qui est le cas courant. */
-const ecritTableZones = (colonne, secours, change) =>
-  ecritTablesZones([{ colonne, secours, change }]).then(t => t[colonne]);
+const ecritColonneEvenement = (colonne, secours, change) =>
+  ecritColonnesEvenement([{ colonne, secours, change }]).then(t => t[colonne]);
 
 
 /* ============================================================

@@ -1944,11 +1944,10 @@ function montre(type, cle){
 /* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
    l'exploitant n'y a pas touché.
 
-   Le même tableau vit dans la console — « ORDRE_FICHE_DEFAUT » de
-   « _console-js.html » — qui propose de le remanier : les deux se suivent.
    N'y figure que le corps ; le numéro de stand et la pastille des nouveaux
    venus tiennent dans l'en-tête, les conférences ont leur propre volet, et
-   rien de tout cela ne se déplace. */
+   rien de tout cela ne se déplace — le volet qui propose de le remanier,
+   « voletOrdre » de « _admin1.html », le dit à l'exploitant. */
 const ORDRE_CORPS_FICHE = ["raison", "secteur", "adresse", "ville", "pays",
   "niveaux", "telephone", "site", "facebook", "linkedin", "instagram",
   "nomenclature", "thematiques"];
@@ -1995,6 +1994,75 @@ function ordreCorps(persos){
     sortie.splice(j + 1, 0, c);
   });
   return sortie;
+}
+
+/* ------------------------------------------------------------------
+   Les groupes de champs
+
+   Trois lignes qui se suivent — l'adresse, la ville, le pays — portaient trois
+   intitulés pour une seule information, et la fiche s'allongeait d'autant. Un
+   groupe les réunit sous un titre que l'exploitant écrit depuis les réglages
+   du plan : les intitulés de ses membres s'effacent, et leurs valeurs se
+   lisent l'une sous l'autre, comme les valeurs multiples d'un même champ.
+
+   Les onze modèles n'ont rien à en apprendre : un groupe est un champ de plus,
+   avec son intitulé et ses lignes. Ils l'habillent donc comme le reste sans
+   qu'aucun ait à le connaître.
+   ------------------------------------------------------------------ */
+
+/** Les groupes réglés pour ce salon — ceux qui réunissent vraiment quelque
+ *  chose : un groupe vidé de ses membres n'est plus un groupe. */
+const groupesFiche = () => ((DATA && DATA.fiche && DATA.fiche.groupes) || [])
+  .filter(g => g && Array.isArray(g.cles) && g.cles.length);
+
+/**
+ * La valeur d'un champ du corps, prête à poser dans la fiche.
+ *
+ * Une valeur unique s'écrit telle quelle, sur la ligne où l'intitulé l'attend.
+ * Plusieurs valeurs arrivent déjà découpées — c'est le champ qui sait comment
+ * les siennes se lisent, une thématique étant un bouton là où une ligne de
+ * nomenclature n'est que du texte. Dans un groupe, la valeur unique devient
+ * une ligne à son tour : elle n'est plus seule sous l'intitulé, elle en côtoie
+ * d'autres.
+ */
+const valeurCorps = (c, enGroupe) => Array.isArray(c.valeur)
+  ? c.valeur.join("")
+  : enGroupe ? '<span class="ligne">' + c.valeur + '</span>' : c.valeur;
+
+/** Un champ du corps : son intitulé, puis sa valeur. */
+const champCorps = c => '<div class="field' + (c.classe ? " " + c.classe : "") +
+  '"><span class="eyebrow">' + c.libelle + '</span>' +
+  '<span class="v">' + valeurCorps(c) + '</span></div>';
+
+/* Un groupe sans titre reprend l'intitulé de son premier membre : il vaut
+   mieux le nom d'un des champs réunis qu'un intitulé vide au-dessus de trois
+   lignes. L'intitulé d'un membre est déjà échappé, le titre saisi ne l'est
+   pas. */
+const groupeCorps = (titre, membres) => '<div class="field groupe">' +
+  '<span class="eyebrow">' + (titre ? esc(titre) : membres[0].libelle) + '</span>' +
+  '<span class="v">' + membres.map(c => valeurCorps(c, true)).join("") + '</span></div>';
+
+/**
+ * Le corps rangé : les champs dans l'ordre réglé, ceux d'un groupe réunis sous
+ * son titre à la place du premier d'entre eux.
+ *
+ * Les membres se lisent dans l'ordre du corps et non dans celui du groupe :
+ * c'est la liste rangée qui fait foi. Un membre masqué ou vide n'a pas de
+ * ligne à donner, et un groupe dont aucun membre n'en donne ne paraît pas —
+ * un titre seul n'annoncerait rien.
+ */
+function corpsRange(ordre, champs){
+  const groupes = groupesFiche();
+  const faits = [];
+  return ordre.map(cle => {
+    const i = groupes.findIndex(g => g.cles.indexOf(cle) >= 0);
+    if (i < 0) return champs[cle] ? champCorps(champs[cle]) : "";
+    if (faits.indexOf(i) >= 0) return "";
+    faits.push(i);
+    const membres = ordre.filter(c => groupes[i].cles.indexOf(c) >= 0 && champs[c])
+      .map(c => champs[c]);
+    return membres.length ? groupeCorps(groupes[i].titre, membres) : "";
+  }).join("");
 }
 
 /**
@@ -2611,12 +2679,6 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      que l'exploitant la laisse voir. Une zone organisateur n'est jamais
      nouvelle : elle n'est pas un exposant. */
   $("dNeuf").hidden = zone || !soc.neuf || !montre("stand", "nouveau");
-  /* La classe « court » marque les champs qui tiennent en un mot : sur mobile
-     ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
-     lignes. */
-  const f = (l, v, cls) => v ? '<div class="field' + (cls ? " " + cls : "") +
-                          '"><span class="eyebrow">' + l +
-                          '</span><span class="v">' + v + '</span></div>' : "";
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
   /* Le programme est rattaché au stand par le dossier de son titulaire : la
@@ -2629,40 +2691,57 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   /* Le corps de la fiche, champ par champ sous sa clé plutôt que d'un seul
      tenant : l'ordre de lecture n'est pas le même d'un salon à l'autre — ici
      la nomenclature prime, là l'adresse — et c'est l'exploitant qui le règle
-     depuis la console. Le rangement vient après, une fois tout écrit.
+     depuis les réglages du plan. Le rangement vient après, une fois tout
+     écrit, et réunit sous un même titre les champs qu'il a groupés.
 
      Ni la surface, ni les angles ouverts, ni l'état de commercialisation
      n'apprennent quoi que ce soit au visiteur : ils n'y figurent pas. */
   const corps = {};
+  /**
+   * Pose un champ du corps sous sa clé : son intitulé, sa valeur, et la classe
+   * qui le range. Un champ que le salon n'affiche pas, ou qui ne porte rien, ne
+   * se pose pas du tout — c'est cette absence que le rangement lit ensuite.
+   *
+   * La valeur est une chaîne quand le champ n'en porte qu'une, un tableau de
+   * lignes déjà habillées quand il en porte plusieurs : réunie dans un groupe,
+   * la première devient une ligne à son tour, et les secondes s'y versent
+   * telles quelles.
+   *
+   * La classe « court » marque les champs qui tiennent en un mot : sur mobile
+   * ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
+   * lignes.
+   */
+  const met = (cle, libelle, valeur, classe) => {
+    const v = Array.isArray(valeur) ? valeur.filter(Boolean) : valeur;
+    if (!v || !v.length || !montre(t, cle)) return;
+    corps[cle] = { libelle: libelle, valeur: v, classe: classe || "" };
+  };
   // la raison sociale n'apprend rien quand elle est déjà le titre
-  corps.raison = ok("raison", !zone && soc.plan && soc.plan !== titre
-    ? f(LIBELLE_CORPS.raison, esc(soc.plan)) : "");
+  if (!zone && soc.plan && soc.plan !== titre) met("raison", LIBELLE_CORPS.raison, esc(soc.plan));
   /* Le secteur décrit l'emplacement, pas son occupant : il reste au stand,
      quelle que soit la société qu'on y regarde. Son libellé est résolu à la
      synchronisation, la page l'affiche tel quel. */
-  corps.secteur = ok("secteur", f(LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : ""));
-  corps.adresse = ok("adresse", f(LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : ""));
+  met("secteur", LIBELLE_CORPS.secteur, o.sect ? esc(o.sect) : "");
+  met("adresse", LIBELLE_CORPS.adresse, soc.adr ? esc(soc.adr) : "");
   /* Les champs courts s'apparient deux par deux sur mobile : l'ordre réglé
      décide donc aussi de qui se retrouve à côté de qui, et un champ long
      glissé au milieu d'eux y laisse une demi-ligne vide. */
-  corps.ville = ok("ville", f(LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court"));
-  corps.pays = ok("pays", f(LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court"));
+  met("ville", LIBELLE_CORPS.ville, soc.ville ? esc(soc.ville) : "", "court");
+  met("pays", LIBELLE_CORPS.pays, soc.pays ? esc(soc.pays) : "", "court");
   /* Les niveaux décrivent l'emplacement, pas son occupant : ils restent au
      stand, quelle que soit la société qu'on y regarde. */
-  corps.niveaux = ok("niveaux", f(LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court"));
+  met("niveaux", LIBELLE_CORPS.niveaux, o.niveaux > 1 ? String(o.niveaux) : "", "court");
   // le téléphone reste appelable d'un mobile, où le plan est le plus consulté
-  corps.telephone = ok("telephone", f(LIBELLE_CORPS.telephone, soc.tel
+  met("telephone", LIBELLE_CORPS.telephone, soc.tel
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
-    : "", "court"));
-  corps.site = ok("site", f(LIBELLE_CORPS.site, lien(soc.site)));
-  corps.facebook = ok("facebook", f(LIBELLE_CORPS.facebook, lien(soc.fb)));
-  corps.linkedin = ok("linkedin", f(LIBELLE_CORPS.linkedin, lien(soc.li)));
-  corps.instagram = ok("instagram", f(LIBELLE_CORPS.instagram, lien(soc.ig)));
+    : "", "court");
+  met("site", LIBELLE_CORPS.site, lien(soc.site));
+  met("facebook", LIBELLE_CORPS.facebook, lien(soc.fb));
+  met("linkedin", LIBELLE_CORPS.linkedin, lien(soc.li));
+  met("instagram", LIBELLE_CORPS.instagram, lien(soc.ig));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
-  corps.nomenclature = ok("nomenclature", soc.nomencl && soc.nomencl.length
-    ? f(LIBELLE_CORPS.nomenclature, soc.nomencl
-        .map(n => '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-    : "");
+  met("nomenclature", LIBELLE_CORPS.nomenclature, (soc.nomencl || [])
+    .map(n => '<span class="ligne">' + esc(String(n)) + '</span>'));
   /* Les thématiques disent ce que l'exposant vient faire là, quand la
      nomenclature dit ce qu'il vend ; un salon qui n'en tient pas ne reçoit pas
      la clé du tout.
@@ -2671,13 +2750,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      l'exploitant en a fait un critère : ailleurs, rien ne saurait dresser la
      liste promise, et une thématique qui ne mène nulle part vaut mieux en
      texte qu'en lien mort. */
-  corps.thematiques = ok("thematiques", soc.themes && soc.themes.length
-    ? f(LIBELLE_CORPS.thematiques, soc.themes
-        .map(n => themeFiltrable(n)
-          ? '<button type="button" class="ligne theme" data-t="' +
-            esc(String(n)) + '">' + esc(String(n)) + '</button>'
-          : '<span class="ligne">' + esc(String(n)) + '</span>').join(""))
-    : "");
+  met("thematiques", LIBELLE_CORPS.thematiques, (soc.themes || [])
+    .map(n => themeFiltrable(n)
+      ? '<button type="button" class="ligne theme" data-t="' +
+        esc(String(n)) + '">' + esc(String(n)) + '</button>'
+      : '<span class="ligne">' + esc(String(n)) + '</span>'));
   /* Les champs que ce salon-ci s'est ajoutés : l'ordre par défaut les range
      derrière ce que toutes les fiches ont en commun — ils lui sont propres,
      ils ne passent pas d'office devant l'adresse — sans empêcher l'exploitant
@@ -2690,10 +2767,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     // montre l'une sous l'autre plutôt qu'en une ligne à rallonge
     const l = separeValeurs(v);
     if (!l.length) return;
-    corps[PREFIXE_PERSO + c.cle] = ok(PREFIXE_PERSO + c.cle,
-      f(esc(c.libelle), l.length > 1
-        ? l.map(x => '<span class="ligne">' + esc(x) + '</span>').join("")
-        : esc(l[0])));
+    met(PREFIXE_PERSO + c.cle, esc(c.libelle), l.length > 1
+      ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
+      : esc(l[0]));
   });
   /* Ce que l'exploitant a écrit sur une zone, depuis les réglages du plan.
      C'est tout ce qu'une zone a en propre : Klipso ne lui donne qu'un nom et
@@ -2703,21 +2779,18 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      elle est relue avant d'être posée dans la fiche. Le libellé du champ ne
      paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
      n'en a pas. */
-  corps.description = zone
-    ? ok("description", o.description
-        ? f(LIBELLE_CORPS.description,
-            '<div class="riche">' + assainitRiche(o.description) + '</div>')
-        : "")
-    : "";
-  corps.lien = zone ? ok("lien", f(LIBELLE_CORPS.lien, lien(o.lien))) : "";
+  if (zone){
+    met("description", LIBELLE_CORPS.description, o.description
+      ? '<div class="riche">' + assainitRiche(o.description) + '</div>' : "");
+    met("lien", LIBELLE_CORPS.lien, lien(o.lien));
+  }
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
      range des champs d'exposant, qu'elle n'a pas, et les deux siens se lisent
      dans le seul ordre qui leur convienne — ce qu'elle est, puis où en savoir
      plus. */
   const infos = zone
-    ? corps.description + corps.lien
-    : ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle))
-        .map(c => corps[c] || "").join("");
+    ? [corps.description, corps.lien].filter(Boolean).map(champCorps).join("")
+    : corpsRange(ordreCorps(perso.map(c => PREFIXE_PERSO + c.cle)), corps);
   /* Un stand se lit dans cet ordre : qui est l'exposant, puis ce qu'il
      anime — ses conférences peuvent être nombreuses, et repoussaient
      l'adresse et les contacts hors de l'écran. Une zone se présente d'abord —
