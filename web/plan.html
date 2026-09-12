@@ -7933,7 +7933,7 @@ function ouvreReglages(ouvrir){
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
     /* Huit onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
-       qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
+       qu'on vient de retenir se ramène donc sous les yeux — sans lui, le dernier
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
        défile aussi pour son compte, et le centrage la remontait d'un cran.
@@ -7980,10 +7980,10 @@ function ouvreReglages(ouvrir){
        que le visiteur obtient, et elle se lit dans la foulée des critères,
        qu'elle emprunte. */
     voletSuggestion(volet(NOM_VOLET_SUGGESTION));
-    /* « Fiche » ferme la série de ce que le visiteur obtient : on ne range les
-       champs qu'une fois qu'on sait lesquels paraissent, et son aperçu emprunte
-       l'habillage que l'onglet suivant choisit. */
-    voletOrdre(volet("Fiche"));
+    /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
+       range les champs qu'une fois qu'on sait lesquels paraissent, et son
+       aperçu emprunte l'habillage que l'onglet suivant choisit. */
+    voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
@@ -18657,7 +18657,7 @@ function rangChaleur(hote){
    donc un geste, et un geste qu'on protège — il n'y a pas de sauvegarde
    derrière, et personne ne se relit deux fois avant de cliquer « Oui ».
    ============================================================ */
-const NOM_VOLET_MESURE = "Mesure";
+const NOM_VOLET_MESURE = "Statistiques";
 const MOT_RAZ = "réinitialiser";
 
 /* Le mot se compare sans ses accents : on demande une intention, pas une
@@ -18666,8 +18666,8 @@ const MOT_RAZ = "réinitialiser";
 const aplati = (t) => String(t || "").trim().toLowerCase()
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-/** Le volet « Mesure » des réglages : ce que comptent les compteurs, et le
- *  seul chemin pour les effacer. */
+/** Le volet « Statistiques » des réglages : ce que comptent les compteurs,
+ *  et le seul chemin pour les effacer. */
 function voletMesure(hote){
   const p = document.createElement("p");
   p.textContent = "Le plan compte ce qu'on en fait : visites, recherches, " +

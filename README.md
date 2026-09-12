@@ -1144,7 +1144,8 @@ identité, et c'est pourquoi le premier chiffre d'un salon est toujours faux.
 
 Personne ne peut deviner quand la recette s'arrête : la veille de l'ouverture,
 rien ne dit au système que les visites qui suivent sont les vraies. C'est donc
-un geste, depuis **l'engrenage du plan d'administration**, volet « Mesure ».
+un geste, depuis **l'engrenage du plan d'administration**, volet
+« Statistiques ».
 
 Il est protégé, parce qu'il n'y a rien derrière : la fenêtre dit ce qui part et
 ce qui reste, affiche les chiffres en cours — un nombre sur ce qu'on s'apprête
