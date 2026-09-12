@@ -505,6 +505,10 @@ html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 html.mode-edition .dcal.role path{stroke-dasharray:5 3}
 html.mode-edition .dcal.circulation path{stroke-dasharray:none;fill:currentColor;
   fill-opacity:.12}
+/* Un couloir réservé au fauteuil est une circulation qui n'en est pas toujours
+   une : il se remplit comme elle, et garde le pointillé du rôle pour dire que
+   son ouverture dépend du mode. */
+html.mode-edition .dcal.circulation-pmr path{fill:currentColor;fill-opacity:.12}
 /* Un stand dessiné à la main découpe un emplacement : il doit se lire comme
    lui et non comme un dessin. Il passe donc outre l'habillage de son calque —
    la couleur, le remplissage, le pointillé du rôle — que rien ici ne concerne.
@@ -584,6 +588,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .outils.mode-texte #texteADessiner{display:block}
 #contourReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-contour #contourReg{display:flex}
+/* L'épaisseur et le pointillé se règlent avant de tracer, comme l'arrondi du
+   contour : une allée provisoire et un mur ne se dessinent pas du même trait,
+   et on le sait avant de poser le premier point. */
+#traitReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-ligne #traitReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
@@ -657,6 +666,8 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .elemChamp[hidden]{display:none}
 #elemDim{display:flex;flex-direction:column;gap:6px}
 #elemDim[hidden]{display:none}
+#elemTraitReg{display:flex;flex-direction:column;gap:6px}
+#elemTraitReg[hidden]{display:none}
 /* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
    puisque c'est en dessinant qu'on le décide. */
 .outilsRole{display:flex;flex-direction:column;gap:3px}
@@ -3215,6 +3226,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <label class="outilsVoir"><input type="checkbox" id="contourAimant" checked>
           <span>Redresser les segments</span></label>
       </div>
+      <div id="traitReg">
+        <label class="elemChamp"><span>Épaisseur</span>
+          <select id="traitEpaisseur">
+            <option value="1">Fin</option>
+            <option value="2" selected>Normal</option>
+            <option value="3">Épais</option>
+            <option value="5">Très épais</option>
+          </select></label>
+        <label class="elemChamp"><span>Style</span>
+          <select id="traitStyle">
+            <option value="plein">Continu</option>
+            <option value="pointille">Pointillé</option>
+          </select></label>
+      </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
@@ -3245,6 +3270,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
         <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
           <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
+        <div id="elemTraitReg" hidden>
+          <label class="elemChamp"><span>Épaisseur</span>
+            <select id="elemEpaisseur">
+              <option value="1">Fin</option>
+              <option value="2">Normal</option>
+              <option value="3">Épais</option>
+              <option value="5">Très épais</option>
+            </select></label>
+          <label class="elemChamp"><span>Style</span>
+            <select id="elemStyle">
+              <option value="plein">Continu</option>
+              <option value="pointille">Pointillé</option>
+            </select></label>
+        </div>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
@@ -8962,6 +9001,34 @@ function cheminForme(f){
   }
   return cheminArrondi(f.pts, f.r || 0, f.t !== "ligne");
 }
+/* --- épaisseur et style du trait ---
+   Le trait des calques ne grossit pas avec le zoom : son épaisseur se compte
+   en pixels d'écran, et l'espacement des points avec elle. Rien n'est écrit
+   tant que la forme ne demande rien — la feuille de style garde alors la main,
+   et le pointillé qui signale un rôle d'itinéraire pendant l'édition reste
+   lisible sur les tracés qu'on n'a pas réglés. */
+const EPAISSEUR_TRAIT = 2;
+
+function styleTrait(f){
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  const css = [];
+  if (ep !== EPAISSEUR_TRAIT) css.push("stroke-width:" + ep);
+  /* Des points ronds plutôt que des tirets : les bouts arrondis du trait les
+     dessinent d'eux-mêmes dès que la portion tracée est quasi nulle. */
+  if (f.pointille) css.push("stroke-dasharray:.01 " + +(ep * 2.2).toFixed(2));
+  return css.length ? ' style="' + css.join(";") + '"' : "";
+}
+
+/** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
+ *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
+ *  calque, aujourd'hui comme le jour où il changera d'allure. */
+function poseTrait(f){
+  const e = $("traitEpaisseur"), s = $("traitStyle");
+  const ep = e ? parseFloat(e.value) : NaN;
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) f.ep = ep;
+  if (s && s.value === "pointille") f.pointille = true;
+}
+
 function dessineDessins(){
   const c = $("couches");
   c.querySelectorAll(".dcal").forEach(g => g.remove());
@@ -8993,7 +9060,7 @@ function dessineDessins(){
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
       : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><path d="' + cheminForme(f) + '"/></g>').join("");
+        '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/></g>').join("");
     c.appendChild(g);
   }
   ordonneDom();
@@ -10081,6 +10148,8 @@ function termineTrace(valider){
   const mini = enCours.t === "ligne" ? 2 : 3;
   // l'arrondi se lit à la validation : on peut le régler le tracé commencé
   if (outil === "contour" && rayonContour() > 0) enCours.r = rayonContour();
+  // l'épaisseur et le style se lisent de même, à la fin du tracé
+  if (outil === "ligne" && enCours.t === "ligne") poseTrait(enCours);
   if (valider && enCours.pts.length >= mini) ajouteForme(enCours);
   enCours = null; apercu(null); apercuGuide(null); montreCote(null);
   montreAimants(null); aide();
@@ -10124,6 +10193,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-image", o === "image");
   b.classList.toggle("mode-texte", o === "texte");
   b.classList.toggle("mode-contour", o === "contour");
+  b.classList.toggle("mode-ligne", o === "ligne");
   b.classList.toggle("mode-repere", o === "repere");
   b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
@@ -10167,6 +10237,10 @@ $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
 $("elemTaille").oninput = appliqueTexte;
 if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
+/* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
+   trait sur le plan, pas dans une liste déroulante. */
+if ($("elemEpaisseur")) $("elemEpaisseur").onchange = appliqueTrait;
+if ($("elemStyle")) $("elemStyle").onchange = appliqueTrait;
 /* La largeur et la hauteur au clavier : c'est le seul moyen d'obtenir deux
    fois la même, et de rattraper un stand tracé à peu près. */
 if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
@@ -10284,6 +10358,11 @@ const AIDE_ROLE = {
   circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
     "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
     "au bord est retiré tout seul.",
+  "circulation-pmr": "Ce qui est dessiné ici ne s'ouvre qu'en itinéraire accessible, " +
+    "et reste fermé aux autres : le couloir qui mène à l'ascenseur, la rampe qui " +
+    "contourne les marches. Faites-le mordre d'un bon mètre sur l'allée qu'il rejoint, " +
+    "sans quoi il débouche sur un mur — cette morsure se ferme aux autres comme le " +
+    "reste, ne barrez donc pas l'allée en travers.",
 };
 
 /* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
@@ -10473,6 +10552,18 @@ function majElement(){
   if (br){
     br.hidden = !arrondissable;
     if (arrondissable) $("elemRayon").value = f.r || 0;
+  }
+
+  /* Une ligne posée se relit : un trait fin fait une limite, un trait épais
+     fait un mur, et le pointillé un passage qui n'en est pas tout à fait un.
+     Cela se juge sur le plan, une fois le tracé en place. */
+  const bt = $("elemTraitReg");
+  if (bt){
+    bt.hidden = f.t !== "ligne";
+    if (f.t === "ligne"){
+      $("elemEpaisseur").value = String(f.ep > 0 ? f.ep : EPAISSEUR_TRAIT);
+      $("elemStyle").value = f.pointille ? "pointille" : "plein";
+    }
   }
 
   /* Le type d'un repère se change après coup : une porte mal typée ne se voit
@@ -10720,6 +10811,20 @@ function appliqueRayon(){
   if (!cible) return;
   memorise();
   cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  enregistreDessins(); dessineDessins();
+}
+
+/** L'épaisseur et le style du trait de la ligne choisie. Le trait ordinaire ne
+ *  s'écrit pas : la forme revient alors à l'allure de son calque. */
+function appliqueTrait(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "ligne") return;
+  memorise();
+  const ep = parseFloat($("elemEpaisseur").value);
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) cible.f.ep = ep;
+  else delete cible.f.ep;
+  if ($("elemStyle").value === "pointille") cible.f.pointille = true;
+  else delete cible.f.pointille;
   enregistreDessins(); dessineDessins();
 }
 
@@ -12835,10 +12940,18 @@ function reperesDe(p){
  * On demande donc, plutôt que de deviner. Un calque de dessin reçoit un rôle,
  * et tout ce qu'on y trace le porte :
  *
- *   obstacle     ce qui est dessiné barre le passage à tout le monde
- *   pmr          il ne le barre qu'en itinéraire accessible
- *   circulation  ce qui est dessiné dit où l'on peut marcher ; tout le reste
- *                du pavillon devient infranchissable
+ *   obstacle         ce qui est dessiné barre le passage à tout le monde
+ *   pmr              il ne le barre qu'en itinéraire accessible
+ *   circulation      ce qui est dessiné dit où l'on peut marcher ; tout le
+ *                    reste du pavillon devient infranchissable
+ *   circulation-pmr  ce qui est dessiné ne s'ouvre qu'en itinéraire
+ *                    accessible, et reste fermé au marcheur
+ *
+ * Le dernier sert un cas que ni barrer ni ouvrir ne savait dire : le couloir
+ * qui mène à l'ascenseur est bien praticable, et le trajet ordinaire n'a
+ * pourtant rien à y faire — l'escalier d'à côté est plus court, et personne
+ * ne tient à y envoyer la foule d'un salon. Ouvert au fauteuil, fermé au
+ * marcheur : c'est le seul rôle dont l'effet dépend du mode.
  *
  * Les deux bouts par lesquels on peut prendre le problème, donc. Barrer est
  * presque toujours le plus court — un bloc sanitaire fait un rectangle, une
@@ -12857,10 +12970,14 @@ const ROLES_ITI = [
   { v: "obstacle", nom: "Infranchissable" },
   { v: "pmr", nom: "Infranchissable en fauteuil" },
   { v: "circulation", nom: "Où l'on peut marcher" },
+  { v: "circulation-pmr", nom: "Où l'on peut marcher — PMR uniquement" },
 ];
 const cleRoleIti = (id) => "_iti:" + id;
 const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
 const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
+/* Réservée ou non, une circulation dit où l'on marche : les deux rôles se
+   traitent pareil partout où c'est la surface qui parle. */
+const estCirculation = (r) => r === "circulation" || r === "circulation-pmr";
 
 /**
  * Les formes d'un pavillon portant un rôle donné.
@@ -12883,7 +13000,7 @@ function formesRole(p, role){
     for (const f of c.formes || []){
       if (f.t === "rect" || f.t === "poly" || f.t === "stand")
         l.push({ d: cheminForme(f), trait: false });
-      else if (f.t === "ligne" && role !== "circulation")
+      else if (f.t === "ligne" && !estCirculation(role))
         l.push({ d: cheminForme(f), trait: true });
     }
   }
@@ -13045,6 +13162,51 @@ function grille(p, pmr){
   for (const o of p.zones) barre(o.d);
   formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
   if (pmr) obstaclesPmr(p).forEach(o => barre(o.d, o.trait));
+
+  /* Les couloirs réservés au fauteuil, en dernier, et c'est tout l'ouvrage :
+     le bord de l'allée qu'ils rejoignent vient d'être peint en mur, et un
+     couloir ouvert plus tôt se serait retrouvé muré à sa bouche — ouvert sur
+     rien. Creusé après, il perce ce mur-là et débouche.
+
+     Pour le marcheur, l'inverse : on le comble. Sans l'épaissir, car ce n'est
+     pas une cloison mais une consigne — le dégagement mordrait sur l'allée
+     qui le borde, où rien n'empêche de passer. */
+  const reserve = formesRole(p, "circulation-pmr");
+  if (reserve.length && !pmr) reserve.forEach(o => ctx.fill(new Path2D(o.d)));
+  if (reserve.length && pmr){
+    /* Creusé de son dégagement comme une allée l'est du sien : un couloir
+       trop étroit pour un fauteuil ne doit pas s'ouvrir sous prétexte qu'on
+       l'a déclaré. On l'érode donc à part — son plein moins son propre trait
+       — puis on reporte le masque obtenu ; l'éroder sur la grille reviendrait
+       à y repeindre le mur qu'on vient d'en ôter. */
+    const cm = document.createElement("canvas");
+    cm.width = w; cm.height = h;
+    const mx = cm.getContext("2d");
+    mx.setTransform(co / PAS_GRILLE, -si / PAS_GRILLE, si / PAS_GRILLE, co / PAS_GRILLE,
+                    -x0 / PAS_GRILLE, -y0 / PAS_GRILLE);
+    mx.lineJoin = mx.lineCap = "round";
+    mx.lineWidth = 2 * DEGAGEMENT_PMR;
+    const couloirs = reserve.map(o => new Path2D(o.d));
+    couloirs.forEach(t => mx.fill(t));
+    mx.globalCompositeOperation = "destination-out";
+    couloirs.forEach(t => mx.stroke(t));
+    /* La bouche, elle, ne s'érode pas. Là où le couloir mord sur l'allée, le
+       mur n'est pas le sien : c'est le bord de l'allée, épaissi vers le
+       dedans juste avant. L'éroder une seconde fois refermait la jonction —
+       à un mètre de recouvrement il restait un demi-mètre de mur en travers,
+       et le couloir ne desservait plus rien. On rend donc au masque le
+       couloir entier, borné à ce qui est déjà ouvert. Le recouvrement reste
+       nécessaire : c'est dit sous la liste des rôles. */
+    mx.globalCompositeOperation = "source-over";
+    ouvert.forEach(o => {
+      mx.save(); mx.clip(o); couloirs.forEach(t => mx.fill(t)); mx.restore();
+    });
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.drawImage(cm, 0, 0);
+    ctx.restore();
+  }
 
   const px = ctx.getImageData(0, 0, w, h).data;
   const mur = new Uint8Array(w * h);
