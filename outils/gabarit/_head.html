@@ -1065,6 +1065,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
 .field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
 .field .v .ligne.theme:hover{text-decoration:underline}
+/* Un réseau social se lit à son logo, non à son adresse : les pictos tiennent
+   sur une seule ligne, côte à côte, là où trois adresses empilées prenaient
+   trois lignes pour redire le nom de l'exposant. Ils suivent la couleur des
+   liens de la fiche — chaque habillage a la sienne — plutôt que celle des
+   marques, qui se disputeraient la page. */
+.field .v .ligne.rs{display:inline-flex;vertical-align:middle}
+.field .v .ligne.rs + .ligne.rs{margin-top:0;margin-left:12px}
+.field .v a.rs{display:inline-flex;line-height:0}
+.field .v a.rs svg{width:21px;height:21px;fill:currentColor}
+.field .v a.rs:hover{opacity:.7}
 /* La description d'une zone, écrite dans un éditeur : elle porte ses propres
    paragraphes et ses propres listes, là où tous les autres champs tiennent en
    une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */

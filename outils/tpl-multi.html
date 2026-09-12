@@ -1065,6 +1065,16 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
 .field .v .ligne.theme{width:100%;text-align:left;color:var(--accent)}
 .field .v .ligne.theme:hover{text-decoration:underline}
+/* Un réseau social se lit à son logo, non à son adresse : les pictos tiennent
+   sur une seule ligne, côte à côte, là où trois adresses empilées prenaient
+   trois lignes pour redire le nom de l'exposant. Ils suivent la couleur des
+   liens de la fiche — chaque habillage a la sienne — plutôt que celle des
+   marques, qui se disputeraient la page. */
+.field .v .ligne.rs{display:inline-flex;vertical-align:middle}
+.field .v .ligne.rs + .ligne.rs{margin-top:0;margin-left:12px}
+.field .v a.rs{display:inline-flex;line-height:0}
+.field .v a.rs svg{width:21px;height:21px;fill:currentColor}
+.field .v a.rs:hover{opacity:.7}
 /* La description d'une zone, écrite dans un éditeur : elle porte ses propres
    paragraphes et ses propres listes, là où tous les autres champs tiennent en
    une ligne. Ses marges extérieures reviennent au champ, qui espace déjà. */
@@ -5775,11 +5785,65 @@ function ficheConf(id, canal){
  * que d'afficher un lien mort.
  */
 function lien(v){
-  let u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  const u = adresseWeb(v);
   if (!u) return "";
-  if (!/^https?:/i.test(u)) u = "https://" + u.replace(/^\/+/, "");
   return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' +
          esc(u.replace(/^https?:\/\//i, "").replace(/\/$/, "")) + '</a>';
+}
+
+/** Une adresse saisie à la main, ramenée à une adresse web complète. */
+function adresseWeb(v){
+  const u = String(v == null ? "" : v).trim().replace(/\\/g, "");
+  if (!u) return "";
+  return /^https?:/i.test(u) ? u : "https://" + u.replace(/^\/+/, "");
+}
+
+/* Les pictos des réseaux sociaux.
+
+   Une adresse de réseau social n'apprend rien qu'on ne sache déjà : elle
+   redit le nom du réseau puis celui de l'exposant, sur une ligne assez longue
+   pour revenir à la ligne. Le logo le dit plus vite, et trois logos tiennent
+   sur la ligne que prenait une seule adresse.
+
+   Ils sont tracés dans la couleur du texte plutôt que dans celle de la
+   marque : la fiche est habillée par l'exploitant, et trois aplats de marque
+   posés côte à côte lui prendraient sa page. */
+const PICTO_RS = {
+  facebook: '<path d="M24 12.07C24 5.44 18.63.07 12 .07S0 5.44 0 12.07c0 5.99 4.39' +
+    ' 10.95 10.13 11.86v-8.39H7.08v-3.47h3.05V9.43c0-3.01 1.79-4.67 4.53-4.67 1.31 0' +
+    ' 2.69.24 2.69.24v2.95h-1.51c-1.49 0-1.96.93-1.96 1.88v2.25h3.33l-.53' +
+    ' 3.47h-2.8v8.39C19.61 23.02 24 18.06 24 12.07Z"/>',
+  linkedin: '<path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85' +
+    ' 0-2.13 1.44-2.13 2.94v5.66H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6' +
+    ' 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0' +
+    ' 4.13Zm1.78 13.02H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0' +
+    ' 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/>',
+  instagram: '<rect x="2.2" y="2.2" width="19.6" height="19.6" rx="5.6" fill="none"' +
+    ' stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2.1"/>' +
+    '<circle cx="17.5" cy="6.5" r="1.45"/>',
+};
+
+/**
+ * Un réseau social, en picto cliquable.
+ *
+ * La valeur sort déjà sous forme de ligne — ce que la fiche fait d'un champ
+ * qui en porte plusieurs — pour que le picto s'affiche pareil seul sous son
+ * intitulé ou réuni avec les autres sous un titre commun : c'est la ligne que
+ * la feuille de style aligne horizontalement.
+ *
+ * Un réseau dont on n'a pas le logo ne perd pas son adresse pour autant : il
+ * retombe sur le lien écrit en toutes lettres.
+ */
+function pictoRS(cle, v){
+  const u = adresseWeb(v);
+  if (!u) return [];
+  if (!PICTO_RS[cle]) return ['<span class="ligne">' + lien(v) + '</span>'];
+  const nom = LIBELLE_CORPS[cle] || cle;
+  return ['<span class="ligne rs"><a class="rs" href="' + esc(u) +
+    '" target="_blank" rel="noopener" title="' + esc(nom) +
+    '" aria-label="' + esc(nom) + '">' +
+    '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTO_RS[cle] + '</svg></a></span>'];
 }
 
 /**
@@ -6263,9 +6327,9 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
     ? '<a href="tel:' + esc(String(soc.tel).replace(/[^+\d]/g, "")) + '">' + esc(soc.tel) + '</a>'
     : "", "court");
   met("site", LIBELLE_CORPS.site, lien(soc.site));
-  met("facebook", LIBELLE_CORPS.facebook, lien(soc.fb));
-  met("linkedin", LIBELLE_CORPS.linkedin, lien(soc.li));
-  met("instagram", LIBELLE_CORPS.instagram, lien(soc.ig));
+  met("facebook", LIBELLE_CORPS.facebook, pictoRS("facebook", soc.fb));
+  met("linkedin", LIBELLE_CORPS.linkedin, pictoRS("linkedin", soc.li));
+  met("instagram", LIBELLE_CORPS.instagram, pictoRS("instagram", soc.ig));
   // le libellé est résolu à la synchronisation : la page l'affiche tel quel
   met("nomenclature", LIBELLE_CORPS.nomenclature, (soc.nomencl || [])
     .map(n => '<span class="ligne">' + esc(String(n)) + '</span>'));
@@ -7602,8 +7666,11 @@ function apercuFiche(cle, vu){
   // l'aperçu se regarde, il ne se manipule pas
   d.inert = true;
   /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
-     aussi, plusieurs modèles n'habillant que les liens. */
-  const LIENS = ["site", "facebook", "linkedin", "instagram"];
+     aussi, plusieurs modèles n'habillant que les liens. Les réseaux sociaux,
+     eux, s'y montrent en pictos comme sur la fiche — c'est leur hauteur et
+     leur couleur qu'on juge en choisissant un habillage, pas celles d'une
+     adresse qu'ils n'affichent plus. */
+  const LIENS = ["site"];
   /* Les champs sous la forme que « corpsRange » attend, et le rangement par la
      même fonction que la vraie fiche : les groupes réglés par l'exploitant se
      voient donc sur les onze vignettes, sans quoi il choisirait un habillage
@@ -7614,7 +7681,8 @@ function apercuFiche(cle, vu){
     if (!l.length) return;
     champs[c] = {
       libelle: esc(libelleCorps(c)),
-      valeur: l.length > 1
+      valeur: PICTO_RS[c] ? pictoRS(c, l[0])
+        : l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
         : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]),
       classe: COURTS_CORPS.indexOf(c) >= 0 ? "court" : "",
