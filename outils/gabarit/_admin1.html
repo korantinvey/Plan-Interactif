@@ -1018,6 +1018,7 @@ function voletZones(hote){
     b.appendChild(n);
     const dit = [];
     if (z.description || z.lien || z.logo) dit.push("fiche");
+    if (z.traversable) dit.push("traversée");
     if (z.masquee) dit.push("masquée");
     if (dit.length){
       const e = document.createElement("span");
@@ -2211,6 +2212,21 @@ function champsZone(hote, o){
     '<option value="' + esc(t.v) + '">' + esc(t.nom) + "</option>").join("");
   type.value = (typeZone(o) || {}).v || "";
 
+  /* Une zone est un mur pour le calcul d'itinéraire, et c'est juste d'une
+     réserve, faux d'un accueil qu'on traverse de part en part. Le contour ne
+     dit pas lequel des deux : on le demande. */
+  const passe = document.createElement("label");
+  passe.className = "cocheZ";
+  passe.innerHTML = '<input type="checkbox"><span></span>';
+  passe.querySelector("span").textContent = "L'itinéraire peut la traverser";
+  const traverse = passe.querySelector("input");
+  traverse.checked = !!o.traversable;
+  champZone(hote, "Itinéraire", passe,
+    "Les trajets coupent par cette zone au lieu d'en faire le tour. À cocher " +
+    "sur un accueil, une agora, une esplanade — tout sol qu'on franchit à " +
+    "pied. À laisser décoché sur une réserve, un local technique, un espace " +
+    "clos : le trajet les contourne, comme un stand.");
+
   const salles = champSalles(hote, o);
 
   const logo = champLogo(hote, o);
@@ -2229,6 +2245,7 @@ function champsZone(hote, o){
 
   return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
                   description: riche.lit(), lien: lienZ.value,
+                  traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
 
@@ -2631,7 +2648,8 @@ let ficheZoneEnCours = null;
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
-  a.logo === b.logo && String(a.salles) === String(b.salles));
+  a.logo === b.logo && a.traversable === b.traversable &&
+  String(a.salles) === String(b.salles));
 
 /** Suit la fiche qui vient de paraître : c'est elle qu'on versera en sortant. */
 function suitFicheZone(o, valeurs, etat, apres){
@@ -2711,6 +2729,11 @@ async function enregistreZone(o, v, depart){
      rattachement qu'un autre poste vient de changer. */
   const salles = Array.isArray(v.salles) ? v.salles : null;
   const rattache = salles && (!depart || String(depart.salles) !== String(salles));
+  /* La traversée a sa colonne, comme le masquage : elle ne décrit pas ce que
+     le visiteur lit sur la zone mais ce que le calcul a le droit d'en faire.
+     On n'y touche que si la case a bougé. */
+  const traverse = !!v.traversable;
+  const ouvre_ = !depart || !!depart.traversable !== traverse;
   const rattacheSalles = (t) => Object.keys(t).forEach(id => {
     const s = t[id];
     const ici = salles.indexOf(id) >= 0;
@@ -2745,6 +2768,10 @@ async function enregistreZone(o, v, depart){
     ...(rattache
       ? [{ colonne: "salles", secours: DATA.salles, change: rattacheSalles }]
       : []),
+    ...(ouvre_
+      ? [{ colonne: "zones_traversables", secours: DATA.zonesTraversables,
+           change: t => { if (traverse) t[o.id] = true; else delete t[o.id]; } }]
+      : []),
   ]);
   if (tables.zones) DATA.nomsZones = tables.zones;
   DATA.fichesZones = tables.zones_fiches;
@@ -2752,6 +2779,13 @@ async function enregistreZone(o, v, depart){
      qu'on vient de lui rattacher n'y est pas, et attendre la synchronisation
      pour la voir arriver ferait douter du clic. */
   if (tables.salles){ DATA.salles = tables.salles; rangeConferences(); }
+  if (tables.zones_traversables) DATA.zonesTraversables = tables.zones_traversables;
+  if (ouvre_){
+    o.traversable = traverse || undefined;
+    /* La grille de marche est gardée d'un trajet à l'autre : elle porte encore
+       la zone en mur, et le trajet suivant referait le tour. */
+    oublieGrilles();
+  }
   if (renomme){
     // le nom d'origine n'est pas perdu : on le garde pour pouvoir y revenir
     if (o.origine === undefined) o.origine = o.nom;

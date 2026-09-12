@@ -212,6 +212,21 @@ const ROLES_ITI = [
   { v: "circulation-pmr", nom: "Infranchissable sauf PMR" },
   { v: "circulation", nom: "Où l'on peut marcher" },
 ];
+/**
+ * Une zone organisateur qu'on traverse.
+ *
+ * Une zone est un mur pour le calcul : c'est vrai d'une réserve ou d'un local
+ * technique, faux d'un accueil, d'une agora, d'une esplanade — des sols qu'on
+ * traverse, et que le trajet contournait en faisant faire le tour de ce qu'on
+ * aurait coupé. Rien dans la source ne distingue les deux : l'exploitant les
+ * désigne, une par une, dans l'onglet « Zones » des réglages.
+ *
+ * La marque voyage sur la zone et non dans CONF : elle vient de la base, comme
+ * le nom et le masquage, et s'applique à la lecture — sans attendre ni la
+ * publication ni la prochaine synchronisation.
+ */
+const zoneTraversee = (z) => Boolean(z && z.traversable);
+
 const cleRoleIti = (id) => "_iti:" + id;
 const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
 const nomRoleIti = (r) => (ROLES_ITI.find(x => x.v === r) || ROLES_ITI[0]).nom;
@@ -377,8 +392,33 @@ function grille(p, pmr){
   ctx.globalCompositeOperation = "source-over";
   // le bord d'une circulation est un mur comme un autre : on s'en écarte
   ouvert.forEach(t => ctx.stroke(t));
+
+  /* Les zones qu'on traverse, creusées après ce bord-là et non avec les
+     surfaces ouvertes. Creusée avant, la zone se retrouverait murée à sa
+     bouche : le trait qui vient de peindre le bord de l'allée passe entre elle
+     et l'allée qu'elle touche. Creusée après, elle le perce.
+
+     Le débord d'un trait achève la jonction. Du bord peint il resterait sinon
+     la moitié posée du côté de l'allée — un demi-mètre, de quoi barrer une
+     grille au pas d'une case. Borné à ce qui est déjà ouvert, car un trait
+     rendu partout percerait aussi le mur du hall là où la zone l'épouse. */
+  const traversees = p.zones.filter(zoneTraversee).map(z => new Path2D(z.d));
+  if (traversees.length){
+    ctx.globalCompositeOperation = "destination-out";
+    traversees.forEach(t => ctx.fill(t));
+    ouvert.forEach(o => {
+      ctx.save(); ctx.clip(o);
+      traversees.forEach(t => ctx.stroke(t));
+      ctx.restore();
+    });
+    ctx.globalCompositeOperation = "source-over";
+  }
+
   for (const o of p.stands) barre(o.d);
-  for (const o of p.zones) barre(o.d);
+  /* Les emplacements repassent par-dessus : un stand posé dans une zone
+     traversable la barre toujours, ce que son contour ne dit pas. Elle-même ne
+     se mure pas — c'est tout l'objet. */
+  for (const o of p.zones) if (!zoneTraversee(o)) barre(o.d);
   formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
   if (pmr) formesRole(p, "pmr").forEach(o => barre(o.d, o.trait));
 
