@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_fiches, salles",
+      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_traversables, zones_fiches, salles",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -457,6 +457,10 @@ Deno.serve(async (req) => {
       // et pour savoir ce qu'elle a retiré du plan public : le visiteur, lui,
       // ne reçoit pas les zones masquées, la liste ne lui apprendrait rien
       zonesMasquees: identifie ? (evt.zones_masquees ?? {}) : {},
+      /* Les zones que le calcul d'itinéraire traverse. Le visiteur a déjà la
+         marque, posée sur chaque zone — la table ne lui apprendrait rien de
+         plus ; l'exploitant, lui, la réécrit sans perdre les autres. */
+      zonesTraversables: identifie ? (evt.zones_traversables ?? {}) : {},
       /* Les fiches que l'exploitant a écrites, en table : c'est de là que
          l'administration repart pour les réécrire sans perdre les autres. Le
          visiteur les a déjà, posées sur chaque zone — la table ne lui
@@ -513,6 +517,13 @@ Deno.serve(async (req) => {
             .map((z) => {
               const choisi = (evt.zones ?? {})[String(z.id)];
               const masquee = Boolean((evt.zones_masquees ?? {})[String(z.id)]);
+              /* Une zone qu'on traverse — un accueil, une agora, une
+                 esplanade — n'est pas un mur pour le calcul d'itinéraire.
+                 L'exploitant l'a désignée ; le visiteur reçoit la marque, car
+                 c'est sa page qui calcule le trajet. */
+              const traversable = Boolean(
+                (evt.zones_traversables ?? {})[String(z.id)],
+              );
               /* Ce que l'exploitant a écrit sur la zone. Klipso n'en donne
                  rien : sans cette fiche, une agora n'a que son nom à montrer.
                  Elle part au visiteur comme à l'exploitant — c'est pour le
@@ -525,6 +536,7 @@ Deno.serve(async (req) => {
                 ...z,
                 ...(choisi ? { nom: choisi } : {}),
                 ...(masquee ? { masquee: true } : {}),
+                ...(traversable ? { traversable: true } : {}),
                 ...(fiche.type ? { type: fiche.type } : {}),
                 ...(fiche.logo ? { logo: fiche.logo } : {}),
                 ...(fiche.description ? { description: fiche.description } : {}),
