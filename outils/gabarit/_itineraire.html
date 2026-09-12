@@ -172,16 +172,17 @@ function reperesDe(p){
  *
  *   obstacle         ce qui est dessiné barre le passage à tout le monde
  *   pmr              il ne le barre qu'en itinéraire accessible
+ *   circulation-pmr  il le barre sauf en itinéraire accessible
  *   circulation      ce qui est dessiné dit où l'on peut marcher ; tout le
  *                    reste du pavillon devient infranchissable
- *   circulation-pmr  ce qui est dessiné ne s'ouvre qu'en itinéraire
- *                    accessible, et reste fermé au marcheur
  *
- * Le dernier sert un cas que ni barrer ni ouvrir ne savait dire : le couloir
- * qui mène à l'ascenseur est bien praticable, et le trajet ordinaire n'a
- * pourtant rien à y faire — l'escalier d'à côté est plus court, et personne
- * ne tient à y envoyer la foule d'un salon. Ouvert au fauteuil, fermé au
- * marcheur : c'est le seul rôle dont l'effet dépend du mode.
+ * Les trois premiers barrent, et l'accessible s'ajoute au commun : ce qui est
+ * infranchissable l'est aussi en fauteuil, et le rôle « pmr » ne fait qu'en
+ * fermer davantage. Le troisième sert un cas que ni barrer ni ouvrir ne savait
+ * dire : le couloir qui mène à l'ascenseur est bien praticable, et le trajet
+ * ordinaire n'a pourtant rien à y faire — l'escalier d'à côté est plus court,
+ * et personne ne tient à y envoyer la foule d'un salon. Ouvert au fauteuil,
+ * fermé au marcheur : c'est le seul rôle qui change de camp selon le mode.
  *
  * Les deux bouts par lesquels on peut prendre le problème, donc. Barrer est
  * presque toujours le plus court — un bloc sanitaire fait un rectangle, une
@@ -199,8 +200,15 @@ const ROLES_ITI = [
   { v: "", nom: "Aucun" },
   { v: "obstacle", nom: "Infranchissable" },
   { v: "pmr", nom: "Infranchissable en fauteuil" },
+  /* Nommé « Où l'on peut marcher — PMR uniquement » tant qu'on l'a pensé
+     depuis le calcul, où il est bien une circulation. L'exploitant, lui, le
+     pose pour fermer un passage à la foule, et lisait deux rôles d'ouverture
+     là où il en cherchait un de fermeture. Il se range donc avec ce qui barre,
+     dont il est le troisième degré : tout le monde, le fauteuil, tout le monde
+     sauf lui. La valeur enregistrée ne bouge pas — c'est le libellé qui était
+     écrit du mauvais côté. */
+  { v: "circulation-pmr", nom: "Infranchissable sauf PMR" },
   { v: "circulation", nom: "Où l'on peut marcher" },
-  { v: "circulation-pmr", nom: "Où l'on peut marcher — PMR uniquement" },
 ];
 const cleRoleIti = (id) => "_iti:" + id;
 const roleIti = (c) => (CONF[cleRoleIti(c.id)] || {}).role || "";
@@ -222,6 +230,15 @@ const estCirculation = (r) => r === "circulation" || r === "circulation-pmr";
  * délimiter une circulation. Un stand dessiné en a une, comme le rectangle
  * dont il est un cas particulier : posé hors de l'emplacement qu'il découpe,
  * il barre le passage aussi sûrement qu'une cloison.
+ *
+ * Un repère n'en est jamais une, quel que soit son pictogramme. Les escaliers
+ * et les escalators l'ont été un temps — on reprenait leur pastille telle
+ * quelle en itinéraire accessible, au motif que ce qu'on voit est ce qui est
+ * évité. Mais une pastille est un panneau, pas un terrain : sa taille se règle
+ * pour qu'elle se lise de loin, et l'agrandir murait d'autant l'allée qu'elle
+ * désigne — près de dix mètres de côté par défaut, dégagement compris, de quoi
+ * condamner l'ascenseur posé à côté de l'escalier qu'il double. Poser un point
+ * d'intérêt ne doit rien changer au terrain ; ce qui barre se dessine.
  */
 function formesRole(p, role){
   const l = [];
@@ -232,36 +249,6 @@ function formesRole(p, role){
         l.push({ d: cheminForme(f), trait: false });
       else if (f.t === "ligne" && !estCirculation(role))
         l.push({ d: cheminForme(f), trait: true });
-    }
-  }
-  return l;
-}
-
-/**
- * Ce qui barre la route à un fauteuil, et à lui seul./**
- * Ce qui barre la route à un fauteuil, et à lui seul.
- *
- * Deux sources, parce qu'un salon en a deux. Les escaliers et les escalators
- * sont déjà signalés par un repère, et leur pastille est posée dessus : on
- * reprend son emprise telle qu'elle est dessinée — ce qu'on voit est ce qui
- * est évité. Les pentes, les emmarchements, les estrades n'ont pas de
- * pictogramme et n'en auront pas : l'exploitant les entoure d'un rectangle ou
- * d'un polygone, et coche « obstacle pour les PMR » sur la forme.
- */
-function obstaclesPmr(p){
-  const l = formesRole(p, "pmr");
-  /* Les escaliers et les escalators sont déjà signalés par un repère, posé sur
-     eux : leur pastille dit où ils sont, on la reprend telle quelle. Ce qu'on
-     voit est ce qui est évité, sans rien redessiner. */
-  for (const c of calquesDe(p)){
-    if (c.visible === false) continue;
-    for (const f of c.formes || []){
-      if (f.t !== "repere") continue;
-      const pic = pictoForme(f);
-      if (pic !== "escalier" && pic !== "escalator") continue;
-      const cote = (f.taille || 2) * 2.4;
-      const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
-      l.push({ d: "M" + x + " " + y + "h" + cote + "v" + cote + "h" + (-cote) + "Z" });
     }
   }
   return l;
@@ -391,7 +378,7 @@ function grille(p, pmr){
   for (const o of p.stands) barre(o.d);
   for (const o of p.zones) barre(o.d);
   formesRole(p, "obstacle").forEach(o => barre(o.d, o.trait));
-  if (pmr) obstaclesPmr(p).forEach(o => barre(o.d, o.trait));
+  if (pmr) formesRole(p, "pmr").forEach(o => barre(o.d, o.trait));
 
   /* Les couloirs réservés au fauteuil, en dernier, et c'est tout l'ouvrage :
      le bord de l'allée qu'ils rejoignent vient d'être peint en mur, et un
