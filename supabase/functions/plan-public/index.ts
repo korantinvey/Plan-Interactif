@@ -132,6 +132,7 @@ const publies = <Q extends { eq: (colonne: "publie", valeur: boolean) => Q }>(
  */
 const CHAMPS_FICHE: Record<string, string> = {
   logo: "logo",
+  hall: "hall",
   adresse: "adr",
   ville: "ville",
   pays: "pays",
@@ -142,6 +143,16 @@ const CHAMPS_FICHE: Record<string, string> = {
   instagram: "ig",
   nomenclature: "nomencl",
 };
+
+/* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru. Ici la conséquence va plus loin qu'à l'écran : non
+   coché, il ne part pas du tout.
+
+   Le même tableau vit dans la page — « MASQUE_PAR_DEFAUT » de « _js.html » —
+   et dans la console : les trois se suivent. */
+const MASQUE_PAR_DEFAUT: Record<string, boolean> = { hall: true };
 
 /** Les champs propres au salon portent leur clé préfixée dans le réglage. */
 const PREFIXE_PERSO = "perso:";
@@ -164,7 +175,8 @@ function retraits(fiche: Record<string, unknown>): Retraits | null {
   const montre = (fiche.stand ?? {}) as Record<string, boolean>;
   const criteres = (fiche.criteres ?? {}) as Record<string, boolean>;
   const retire = (cible: string) =>
-    montre[cible] === false && criteres[cible] !== true;
+    (MASQUE_PAR_DEFAUT[cible] ? montre[cible] !== true : montre[cible] === false) &&
+    criteres[cible] !== true;
 
   const cles = Object.entries(CHAMPS_FICHE)
     .filter(([cible]) => retire(cible))
