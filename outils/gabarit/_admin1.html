@@ -1226,6 +1226,25 @@ function voletPlan(hote){
     bloc.appendChild(l);
   }
 
+  /* Les sorties de conférence ne se règlent que là où il y en a : sans salle
+     rattachée à une zone, la case promettrait un détour qu'aucune donnée ne
+     permettrait de calculer. Elle se décoche pour une salle qui donne sur une
+     esplanade, où la foule ne bouche rien. */
+  if ((CONFERENCES || []).some(c => c.zone && parId.has(String(c.zone)))){
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent =
+      "Écarter l'itinéraire accessible des salles qui se vident — à l'heure de leurs conférences";
+    const c = l.querySelector("input");
+    c.checked = conf("_foule").visible !== false;
+    c.onchange = e => {
+      conf("_foule").visible = e.target.checked;
+      enregistreConf();
+      if (typeof relance === "function") relance();
+    };
+    bloc.appendChild(l);
+  }
+
   /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
      a : sur un salon d'un exposant par emplacement, ces deux cases ne
      promettraient qu'un plan déjà tel quel. */
