@@ -64,7 +64,7 @@ function seuilSugg(){
 /**
  * Comment la proposition se présente.
  *
- * « tiroir » l'attend au bas du parcours, là où le visiteur va de lui-même ;
+ * « tiroir » l'attend en tête du parcours, là où le visiteur va de lui-même ;
  * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
  * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
  * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
@@ -213,7 +213,7 @@ function phraseSuggestion(s){
 }
 
 /**
- * La carte, telle qu'elle se lit des deux côtés : au bas du tiroir, ou au
+ * La carte, telle qu'elle se lit des deux côtés : en tête du tiroir, ou au
  * premier plan dans sa fenêtre.
  *
  * La même, parce que c'est la même proposition : le motif, l'exposant, et les
@@ -259,7 +259,7 @@ function carteSuggestion(s, ferme){
   return d;
 }
 
-/** La proposition au bas du tiroir du parcours, quand il y en a une. */
+/** La proposition en tête du tiroir du parcours, quand il y en a une. */
 function poseSuggestion(hote){
   const s = suggestionCourante();
   if (s) hote.appendChild(carteSuggestion(s, null));
@@ -339,7 +339,7 @@ const etiquetteSugg = (o) => [o.code, o.nom].filter(Boolean).join(" — ") || o.
  */
 function voletSuggestion(hote){
   const p = document.createElement("p");
-  p.textContent = "Un exposant de plus, proposé au bas du parcours de visite " +
+  p.textContent = "Un exposant de plus, proposé en tête du parcours de visite " +
     "quand plusieurs de ceux qu'un visiteur a retenus se ressemblent. Le " +
     "rapprochement se fait sur son appareil, à partir de tables préparées " +
     "ici : rien de ce qu'il retient ne remonte jamais.";
@@ -447,13 +447,13 @@ function voletSuggestion(hote){
 
     const prez = champZone(corps, "Présentation",
       document.createElement("select"),
-      "Discrète, la proposition attend au bas du parcours, là où le visiteur " +
+      "Discrète, la proposition attend en tête du parcours, là où le visiteur " +
       "va de lui-même. Au premier plan, elle s'ouvre en plus dans une fenêtre " +
       "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
       "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
       "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
     prez.innerHTML =
-      '<option value="tiroir">Discrète — au bas du parcours de visite</option>' +
+      '<option value="tiroir">Discrète — en tête du parcours de visite</option>' +
       '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
     prez.value = presentationSugg();
     prez.onchange = e => { r.presentation = e.target.value; enregistreConf(); };

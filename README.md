@@ -434,14 +434,17 @@ un rang mort.
 
 Un visiteur qui retient quatre enseignes du même secteur ne compose pas une liste
 au hasard : il cherche quelque chose, et sa liste le dit avant lui. Le plan lui
-propose alors **un exposant de plus**, en disant d'où vient la proposition avant
-de dire où elle mène :
+propose alors **un exposant de plus**, en tête de son parcours, en disant d'où
+vient la proposition avant de dire où elle mène :
 
 > Vous avez ajouté 4 exposants du secteur « Agroalimentaire » à votre liste.
 > Vous pourriez être intéressé par l'exposant CLUB CAFE.
 
 Suit le nom, son emplacement, le signet pour l'ajouter et la croix pour ne plus
-le voir. Le refus vaut le temps de la page : il porte sur l'instant, pas sur
+le voir. **En tête, et non à la suite** : elle découle de la liste, sa place
+logique était donc après elle — mais sur un téléphone le tiroir ne montre que
+trois rangs, et personne ne fait défiler sa propre liste pour voir ce qu'il y a
+après ce qu'il a lui-même retenu. Le refus vaut le temps de la page : il porte sur l'instant, pas sur
 l'exposant.
 
 Le critère que le plan connaît d'avance porte son article — « du secteur », « de
@@ -462,7 +465,7 @@ La fonction est éteinte d'origine et se règle dans « Réglages du plan », on
   thématiques, ou un champ que le salon s'est ajouté ;
 - **le seuil** — combien d'exposants d'une même valeur doivent figurer dans le
   parcours avant qu'on en propose un autre, de 2 à 12 (3 d'origine) ;
-- **la présentation** — *discrète*, la proposition attend au bas du tiroir du
+- **la présentation** — *discrète*, la proposition attend en tête du tiroir du
   parcours, là où le visiteur va de lui-même ; *au premier plan*, elle s'ouvre
   **en plus** dans une fenêtre dès que le seuil réglé est atteint, quel qu'il
   soit. La fenêtre ne remplace pas le tiroir, elle s'y ajoute ;

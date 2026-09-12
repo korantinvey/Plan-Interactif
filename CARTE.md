@@ -381,7 +381,7 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 380 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 386 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -392,7 +392,7 @@ Fonctions :
 `rafraichitMarque` 98 · `brancheParcours` 111 · `calqueMarques` 143 · `dessineMarques` 159
 `marqueParcours` 189 · `rafraichitParcours` 203 · `instantConf` 227 · `cleTemps` 231
 `jourCourt` 237 · `rangParcours` 241 · `groupeParcours` 257 · `remplitParcours` 266
-`ouvreParcours` 332 · `fermeParcours` 344
+`ouvreParcours` 338 · `fermeParcours` 350
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
