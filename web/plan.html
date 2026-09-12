@@ -702,6 +702,19 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .mcorps input.nomcalque:focus{border-color:var(--accent);outline:none}
 .calq .sup{width:18px;height:18px;border:none;color:var(--ink-3);font-size:14px;line-height:1}
 .calq .sup:hover{color:#C2372B}
+/* Le cadenas d'un calque de dessin. Fermé, il prend la couleur d'accent et son
+   boîtier se remplit : la ligne protégée se repère en parcourant la colonne,
+   sans lire un seul intitulé. Ce qu'il éteint s'efface au lieu de disparaître —
+   un bouton manquant ferait croire à un calque d'une autre espèce. */
+.pictoVerrou{width:12px;height:12px;display:block;margin:auto}
+.pictoVerrou rect,.pictoVerrou path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
+.calq .verr{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .verr:hover{color:var(--ink)}
+.calq .verr[aria-pressed="true"]{color:var(--accent)}
+.calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
+.calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
 .calq .renom{width:100%;font-size:12.5px;padding:2px 5px;border:1px solid var(--accent);
   border-radius:3px;background:var(--surface-2);color:var(--ink)}
@@ -2804,6 +2817,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .ordre .bouts button{width:22px;height:20px;border:1px solid var(--line);border-radius:3px;
   color:var(--ink-3);font-size:11px;line-height:1}
 .ordre .bouts button:hover{border-color:var(--accent);color:var(--accent)}
+/* Le cadenas tient la place du crayon qu'il remplace : sans cette largeur, les
+   deux flèches de rang remonteraient d'un cran sur les lignes verrouillées et
+   la colonne se déchirerait. */
+.ordre .verrou{display:grid;place-items:center;width:22px;height:20px;color:var(--accent)}
 .reorg{width:100%;margin-bottom:8px;padding:6px;border:1px solid var(--line);
   border-radius:var(--radius);font-size:12px;color:var(--ink-2)}
 .reorg:hover{border-color:var(--accent);color:var(--accent)}
@@ -2824,6 +2841,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   border-radius:var(--radius);font-weight:500}
 .panel .reset.fort:hover{opacity:.9;color:#fff}
 .panel .reset:hover{color:var(--ink)}
+/* L'enregistrement se fait tout seul : le bouton en rend compte plus qu'il ne
+   commande, et se tait dès qu'il n'y a plus rien à dire. Un aplat d'accent y
+   réclamerait un clic qui n'a plus lieu d'être — il ne le garde donc que le
+   temps d'un envoi qui attend son tour. */
+.panel .reset.fort[data-etat="envoi"],
+.panel .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
+  font-weight:400}
+.panel .reset.fort[data-etat="envoi"]:hover,
+.panel .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
+/* Un échec doit se voir sans pour autant crier : le rouge du thème sombre est
+   trop clair pour porter du blanc, il passe donc au trait et au texte. */
+.panel .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
+  box-shadow:inset 0 0 0 1px var(--rouge)}
+.panel .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
 
 .voile{position:fixed;inset:0;background:rgba(8,10,12,.55);z-index:14;
   opacity:0;pointer-events:none;transition:opacity .2s;display:none}
@@ -5226,14 +5257,26 @@ function centrePoint(xy){
      pas de chemin à montrer entre deux plans, qui ne partagent aucun repère. */
   glisseVers({ x: xy[0] - w / 2 + decaleX, y: xy[1] - h / 2 + decale, w: w, h: h });
 }
+/* Les champs qui se taisent tant qu'on ne les a pas demandés — l'inverse de la
+   règle générale, et pour la raison qui la fonde. Un champ absent du réglage
+   paraît parce qu'il paraissait déjà avant que le réglage existe ; le hall,
+   lui, n'a jamais paru, et Klipso y porte parfois le code du dossier plutôt
+   qu'un nom de hall — « SMCL26_P71 ». S'afficher de lui-même le publierait
+   d'un coup sur tous les salons déjà en ligne.
+
+   Le même tableau vit dans la console — « FICHE_MASQUEE_PAR_DEFAUT » de
+   « _console-js.html », qui décide de l'état des cases. */
+const MASQUE_PAR_DEFAUT = { hall: true };
+
 /**
  * Un champ paraît-il sur la fiche ? L'exploitant en décide depuis la console.
  * Une entrée absente vaut « affiché », pour qu'un champ ajouté plus tard ne
- * disparaisse pas des salons déjà réglés.
+ * disparaisse pas des salons déjà réglés — sauf ceux que le tableau ci-dessus
+ * réserve, qui attendent d'être cochés.
  */
 function montre(type, cle){
-  const r = DATA && DATA.fiche && DATA.fiche[type];
-  return !r || r[cle] !== false;
+  const r = (DATA && DATA.fiche && DATA.fiche[type]) || {};
+  return MASQUE_PAR_DEFAUT[cle] ? r[cle] === true : r[cle] !== false;
 }
 
 /* L'ordre de lecture du corps d'une fiche de stand, tel qu'il vaut tant que
@@ -5764,7 +5807,15 @@ function poseCode(pl, num, filigrane){
   const memeNom = String(pl.libelle || "").trim().toLowerCase() ===
                   String(DATA.evenement || "").trim().toLowerCase();
   const pav = DATA.plans.length > 1 && !memeNom ? pl.libelle : "";
-  $("dCode").textContent = pav + (pav && num ? " · " : "") + num;
+  /* Le hall est affecté au pavillon, donc à tout ce qui s'y trouve. Il se
+     glisse entre le pavillon et le numéro : c'est l'ordre dans lequel on
+     cherche un stand sur place — le hall, puis l'allée.
+
+     Il ne tombe pas, lui, quand le salon n'a qu'un pavillon : le pavillon ne
+     distingue alors rien, tandis que le hall reste la porte par laquelle on
+     entre. Il reste au contraire muet tant qu'on ne l'a pas coché. */
+  const hall = montre("stand", "hall") ? (pl.hall || "") : "";
+  $("dCode").textContent = [pav, hall, num].filter(Boolean).join(" · ");
   $("dCode").hidden = !$("dCode").textContent;
   /* Les modèles de fiche qui impriment le numéro du stand en grand le lisent
      sur l'en-tête : la pastille, elle, porte aussi le pavillon — trop long
@@ -6302,7 +6353,10 @@ document.addEventListener("keydown", e => {
     ferme();
     if ($("panel")) $("panel").classList.remove("open");
   }
-  if (e.key === "Enter" && e.target.id !== "q" && e.target.id !== "texteADessiner") termineTrace(true);
+  /* Entrée ferme le tracé, et s'arrête là : le bouton qui garde le focus — un
+     outil de la palette, « Annuler » — s'activerait sinon dans la foulée, et
+     défairait la forme à l'instant posée. */
+  if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
 });
 
 $("btnFiltres").onclick = ouvreCriteres;
@@ -7083,7 +7137,7 @@ const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
    choisir un modèle sur une fiche plus courte que la vraie, et laisserait
    croire le champ retiré. */
 const EXEMPLES_CORPS = {
-  nom: "Ateliers Ligneron", code: "D14", hall: "Hall 2",
+  nom: "Ateliers Ligneron", code: "D14", pavillon: "Pavillon 2",
   raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
   adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
   niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
@@ -7120,14 +7174,17 @@ function texteCorps(o, cle){
  * choisirait un habillage sur une fiche vide.
  */
 function standApercu(cles){
-  let mieux = null, hall = "", score = 0, neuf = false;
+  let mieux = null, pavillon = "", hall = "", score = 0, neuf = false;
   Object.values(DATA.plans || {}).forEach(pl => (pl.stands || []).forEach(o => {
     if (!o.nom) return;
     neuf = neuf || Boolean(o.neuf);
     const n = cles.reduce((s, c) => s + (texteCorps(o, c) ? 1 : 0), 0);
-    if (n > score){ score = n; mieux = o; hall = pl.libelle || ""; }
+    if (n > score){
+      score = n; mieux = o;
+      pavillon = pl.libelle || ""; hall = pl.hall || "";
+    }
   }));
-  return { stand: mieux, hall, neuf };
+  return { stand: mieux, pavillon, hall, neuf };
 }
 
 /**
@@ -7169,7 +7226,7 @@ function contenuApercu(){
   const persos = (DATA.fiche && DATA.fiche.perso) || [];
   const cles = ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
     .filter(c => montre("stand", c));
-  const { stand, hall, neuf } = standApercu(cles);
+  const { stand, pavillon, hall, neuf } = standApercu(cles);
   const vals = {};
   cles.forEach(c => {
     vals[c] = (stand && texteCorps(stand, c)) || EXEMPLES_CORPS[c] ||
@@ -7179,7 +7236,11 @@ function contenuApercu(){
     cles: cles.filter(c => vals[c]), vals,
     nom: (stand && stand.nom) || EXEMPLES_CORPS.nom,
     code: (stand && stand.code) || EXEMPLES_CORPS.code,
-    hall: hall || EXEMPLES_CORPS.hall,
+    pavillon: pavillon || EXEMPLES_CORPS.pavillon,
+    /* Le hall ne se supplée pas : tous les salons n'en portent pas, et un
+       exemple inventé ferait choisir un habillage sur une pastille plus longue
+       que la vraie. Il ne paraît donc que coché et renseigné. */
+    hall: montre("stand", "hall") ? hall : "",
     /* La pastille ne paraît que là où le salon distingue ses nouveaux venus :
        le réglage seul la ferait voir sur des salons dont aucune fiche ne porte
        le champ, et plusieurs modèles l'habillent — on choisirait sur une
@@ -7193,7 +7254,7 @@ function contenuApercu(){
       const pl = stand && DATA.plans ? DATA.plans[stand.p] : null;
       const n = ((pl && pl.stands) || []).length || EXEMPLES_LISTE.length;
       return n + (n > 1 ? " résultats" : " résultat") + " · " +
-        ((pl && pl.libelle) || hall || EXEMPLES_CORPS.hall);
+        ((pl && pl.libelle) || pavillon || EXEMPLES_CORPS.pavillon);
     })(),
   };
 }
@@ -7243,7 +7304,8 @@ function apercuFiche(cle, vu){
       '</div>' +
       '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
       '<div class="hdBadges">' +
-        '<span class="badge code">' + esc(vu.hall + (code ? " · " + code : "")) + '</span>' +
+        '<span class="badge code">' +
+        esc([vu.pavillon, vu.hall, code].filter(Boolean).join(" · ")) + '</span>' +
       '</div>' +
     '</div>' +
     '<div class="detail-bd">' + corps + confs +
@@ -7730,10 +7792,11 @@ function voletApparence(hote){
   hote.appendChild(grille);
 }
 
-/** Les réglages d'apparence vivent sur le poste tant qu'ils ne sont pas
- *  remontés vers la base. */
+/** Les réglages d'apparence se posent sur le poste, puis montent en base
+ *  d'eux-mêmes — le poste n'en est plus que le cache et le refuge. */
 const enregistreConf = () => {
   try { localStorage.setItem(CLE_CONF, JSON.stringify(CONF)); } catch (e) {}
+  programmePublication();
 };
 
 /** Une couleur Klipso « rgb(r,g,b) » vers la notation attendue par le
@@ -7839,14 +7902,17 @@ function activeAdmin(){
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
-     à l'autre, faute de mieux. Maintenant qu'elle se publie, ils n'ajoutent
+     à l'autre, faute de mieux. Maintenant qu'elle s'enregistre, ils n'ajoutent
      qu'un chemin de plus pour arriver au même endroit. Rétablir les valeurs
      d'origine est parti pour l'inverse : un clic effaçait sans confirmation
      tout le travail de calques et de libellés, pour un besoin qui ne se
-     présente jamais. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf">Pousser la configuration</button>';
+     présente jamais.
+
+     Ce qui reste dit où en est l'enregistrement — il se fait tout seul — et
+     permet de le relancer quand il a échoué. « majAttente » l'habille. */
+  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>';
   $("panel").appendChild(barre);
-  $("pousseConf").onclick = e => pousseConfiguration(e.target);
+  $("pousseConf").onclick = () => pousseConfiguration();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
      alors pas été construit — montePlan() n'en bâtit qu'en administration —
@@ -8768,10 +8834,14 @@ let ATTENTE = {};
 try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
 
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
-const enAttente = (id) => ATTENTE[id] === true;
+const enAttente = (id) => !!ATTENTE[id];
 
+/* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
+   avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
+   pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
+   ce que la base, qui ne l'avait pas reçu, en disait. */
 function marqueAttente(id, oui){
-  if (oui) ATTENTE[id] = true; else delete ATTENTE[id];
+  if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
   try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
   majAttente();
 }
@@ -8800,6 +8870,9 @@ const enregistreDessins = () => {
     if ($("outilsAide")) $("outilsAide").textContent =
       "Mémoire du navigateur pleine : allégez ou supprimez une image.";
   }
+  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
+     c'est justement quand son quota déborde que la base doit avoir le dessin. */
+  programmePublication();
 };
 
 let calqueActif = null;   // id du calque en cours d'édition
@@ -9830,12 +9903,16 @@ const MAX_PX = 1400;
 /* On ne refuse plus une image faute de calque actif : on en ouvre un. */
 function calquePourImage(){
   if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
-  const l = mesCalques();
-  if (l.length){ activeCalque(l[l.length - 1].id); return trouveCalque(calqueActif); }
+  /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
+     glissée sur le plan est le seul tracé qui n'ait pas eu à choisir son
+     calque, et elle se poserait donc sur celui qu'on protège. Tous fermés, on
+     en ouvre un neuf plutôt que de refuser l'image. */
+  const libres = mesCalques().filter(c => !verrouille(c));
+  if (libres.length){ activeCalque(libres[libres.length - 1].id); return trouveCalque(calqueActif); }
   memorise();
   const c = { id: nouvelId(), nom: "Images", couleur: "#2F49D1",
               rempli: false, visible: true, formes: [] };
-  l.push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
+  mesCalques().push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
   return c;
 }
 
@@ -10173,6 +10250,13 @@ $("elemSoc").onchange = appliqueSociete;
 $("elemSoc").onblur = appliqueSociete;
 
 function activeCalque(id){
+  /* Un calque verrouillé ne s'ouvre pas : tous les gestes d'édition — tracer,
+     saisir une forme, la déplacer, l'effacer — passent par le calque ouvert, et
+     le verrou n'a donc rien d'autre à retenir. Le panneau éteint déjà son
+     crayon ; restent les chemins de traverse, comme l'image déposée sur le
+     plan, qui aboutissent tous ici. */
+  const vise = trouveCalque(id);
+  if (vise && verrouille(vise)) return;
   calqueActif = calqueActif === id ? null : id;
   /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
      peuvent pas être allumés ensemble : leurs glissers viseraient le même
@@ -10200,6 +10284,52 @@ function activeCalque(id){
   });
   aide();
 }
+
+/* ------------------------------------------------------------
+   Le verrou d'un calque
+   Un plan finit par porter un calque qu'on ne retouche plus : le contour du
+   hall, les murs qui barrent les trajets, le repérage posé une fois pour
+   toutes. Il reste pourtant à un clic du crayon, et une forme y part à la
+   dérive sans qu'on s'en aperçoive — on croyait dessiner sur le calque d'à
+   côté. Le cadenas de sa ligne le ferme : il ne s'ouvre plus au dessin, et ne
+   se supprime ni ne se renomme.
+
+   Ce qu'il laisse passer, il le laisse exprès. La coche qui le masque et sa
+   couleur ne touchent pas à ce qui est dessiné, et c'est justement en les
+   réglant qu'on travaille autour d'un calque qu'on protège ; son rang dans la
+   pile non plus — il se reprend d'un geste, et se voit.
+
+   Le verrou se range dans les réglages du salon, comme le rôle d'un calque
+   dans les itinéraires : la table des calques n'a pas de colonne pour lui, et
+   il part ainsi aux autres postes avec eux, tout seul. Ouvert, sa clé disparaît
+   plutôt que de valoir « non » : un calque supprimé ne laisse alors rien
+   derrière lui.
+   ------------------------------------------------------------ */
+const cleVerrou = (id) => "_verrou:" + id;
+const verrouille = (c) => !!c && !!(CONF[cleVerrou(c.id)] || {}).verrou;
+
+function basculeVerrou(c){
+  const cle = cleVerrou(c.id);
+  if (verrouille(c)) delete CONF[cle];
+  else {
+    conf(cle).verrou = true;
+    /* On ferme parfois le calque sur lequel on vient de dessiner : les outils
+       se replient avec lui, sans quoi le crayon resterait armé sur un calque
+       qu'on vient de protéger. */
+    if (calqueActif === c.id) activeCalque(null);
+  }
+  enregistreConf();
+  construitPanneau();
+}
+
+/** Le dessin du cadenas. Fermé, l'anse retombe sur le boîtier ; ouvert, elle
+ *  se relève d'un côté — à douze pixels, c'est la seule différence qui se
+ *  voie encore, là où deux teintes du même tracé se confondraient. */
+const pictoVerrou = (ferme) =>
+  '<svg class="pictoVerrou" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="2.3" y="5.4" width="7.4" height="5.2" rx="1.1"/>' +
+  '<path d="' + (ferme ? "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0v1.6"
+                       : "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0") + '"/></svg>';
 
 /* ------------------------------------------------------------
    Le rôle du calque dans les itinéraires
@@ -11375,6 +11505,17 @@ function boutonAjout(hote){
   hote.appendChild(plus);
 }
 
+/* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
+   plutôt que deux boutons qui se remplacent. Son intitulé dit ce que le clic
+   fera, et non l'état où l'on est — c'est ce qu'on cherche en le survolant. */
+function boutonVerrou(c){
+  const ferme = verrouille(c);
+  return '<button class="verr" aria-pressed="' + ferme + '" title="' +
+    (ferme ? "Déverrouiller le calque"
+           : "Verrouiller le calque : ni dessin, ni suppression") +
+    '">' + pictoVerrou(ferme) + '</button>';
+}
+
 function intertitre(hote, cle){
   const t = document.createElement("span");
   t.className = "eyebrow secpile";
@@ -11419,7 +11560,11 @@ function construitPanneau(){
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
-      (x.t === "dessin" ? '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
+      /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
+         on lit la ligne de gauche à droite — ce qui protège avant ce qui
+         modifie. */
+      (x.t === "dessin" ? boutonVerrou(x.ref) +
+                          '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
 
@@ -11469,7 +11614,10 @@ function construitPanneau(){
 
     /* propre aux calques de dessin */
     if (x.t === "dessin"){
-      nom.title = "Cliquez pour dessiner dessus";
+      const vr = verrouille(x.ref);
+      nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
+                     : "Cliquez pour dessiner dessus";
+      d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -11478,6 +11626,13 @@ function construitPanneau(){
       d.querySelector("label").onclick = ev => {
         if (ev.target.tagName !== "INPUT"){ ev.preventDefault(); activeCalque(x.ref.id); }
       };
+      /* Verrouillé, le calque n'ouvre plus ses outils et ne se supprime plus :
+         les deux boutons s'éteignent, plutôt que de mener à un refus qu'il
+         faudrait expliquer une fois le geste fait. */
+      [cr, d.querySelector(".sup")].forEach(b => {
+        b.disabled = vr;
+        if (vr) b.title = "Calque verrouillé";
+      });
       d.querySelector(".sup").onclick = () => {
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",
@@ -11736,39 +11891,60 @@ function defautCouleur(x){
   if (x.t === "fond") return jeton("--plan-line");
   return jeton(x.k === "data:zones" ? "--zone" : x.k === "data:stands" ? "--stand" : "--ink");
 }
-
 /* ============================================================
-   Pousser la configuration
+   Enregistrer la configuration
    Les couleurs, la visibilité, l'ordre des calques et les dessins vivaient
    dans le navigateur de celui qui les réglait. Un visiteur ne voyait donc
    rien, et l'exploitant retrouvait un plan nu depuis un autre poste ou depuis
    son téléphone.
 
-   Un bouton les envoie en base, d'où le service les rend à tout le monde.
-   Explicite plutôt qu'automatique : régler une couleur au sélecteur produit
-   une rafale d'événements, et l'exploitant doit pouvoir essayer sans publier.
+   Ils partent maintenant en base d'eux-mêmes, dès que la main s'arrête, et le
+   service les rend à tout le monde. Un bouton les y envoyait sur demande —
+   explicite, pour laisser essayer sans publier. En pratique l'exploitant
+   réglait, fermait l'onglet, et perdait tout : le stockage local ne survit ni
+   au changement de poste ni au nettoyage du navigateur, et rien dans l'écran
+   ne l'annonçait. Ce qu'il restait à éviter — la rafale d'événements d'un
+   sélecteur de couleur tiré à la souris — se règle par un temps de repos, pas
+   par un clic.
+
+   Le bouton reste, dans un autre rôle : il dit où en est l'enregistrement, et
+   rattrape un envoi qui a échoué.
    ============================================================ */
 
-/* Ce qui reste à publier, dit par le bouton lui-même.
-   Un dessin s'enregistre sur le poste au fil du geste, ce qui donne le
-   sentiment qu'il est à l'abri : rien ne distinguait alors un travail publié
-   d'un travail qui n'avait jamais quitté ce navigateur. Le bouton porte donc
-   la marque tant qu'un pavillon a de l'avance sur la base. */
+/* Le libellé d'avant l'enregistrement automatique. Il ne sert plus que sans
+   session — page publique, page à données figées — où rien ne part tout seul. */
 const LIBELLE_POUSSE = "Pousser la configuration";
 
-/* Pendant la publication le bouton raconte où elle en est : la marque ne doit
-   pas lui reprendre la parole à chaque pavillon qui vient de partir. */
-let publication = false;
+/* Temps de repos avant l'envoi. Assez long pour qu'une couleur tirée à la
+   souris ne s'écrive pas cent fois, assez court pour qu'un onglet fermé juste
+   après un réglage ne le perde pas. */
+const REPOS = 1200;
 
-function majAttente(){
-  const b = $("pousseConf");
-  if (!b || publication) return;
-  const reste = (DATA?.plans || []).some(p => enAttente(p.id));
-  b.textContent = reste ? LIBELLE_POUSSE + " •" : LIBELLE_POUSSE;
-  b.title = reste
-    ? "Des dessins ne sont enregistrés que sur ce poste : publiez-les."
-    : "";
-}
+/* Après un échec — réseau coupé, service en panne — on retente de loin en
+   loin plutôt que d'insister : le travail est sur le poste, il attend. */
+const REPOS_ECHEC = 20000;
+
+/* Le relais garde le plan public dix minutes, et sert encore l'ancienne copie
+   le temps de refaire la nouvelle : la base avait la configuration, les
+   visiteurs pas encore. On lui demande donc d'oublier, au même endroit que
+   celui où il sert le plan — déduit de son adresse plutôt qu'écrit deux fois. */
+const OUBLI = API ? API.replace(/\/[^/]*$/, "/oublie") : "";
+
+let minuteur = null;      // envoi programmé, pas encore parti
+let publication = false;  // envoi en cours
+let rejoue = false;       // une modification est arrivée pendant l'envoi
+let souci = "";           // la dernière erreur, dite par l'infobulle
+
+/* Ce que le bouton raconte, quand il y a quelque chose à raconter :
+   « envoi » et « echec » durent le temps qu'ils durent, le reste se déduit. */
+let etatEnvoi = "";
+
+/* Les réglages d'apparence sont d'un seul tenant, là où les dessins se notent
+   pavillon par pavillon (ATTENTE). On compte donc les modifications, et ce que
+   la base en a reçu : une retouche arrivée pendant l'envoi garde ainsi son
+   tour, sans qu'un drapeau à deux états l'avale. */
+let revision = 0;
+let revisionEnvoyee = 0;
 
 /** Session et projet, tels que la console les a laissés sur le poste. */
 function accesBase(){
@@ -11779,6 +11955,100 @@ function accesBase(){
   } catch (e) {}
   return null;
 }
+
+/** L'enregistrement automatique demande l'administration, un plan chargé et une
+ *  session : la page publique et celle à données figées n'ont ni la première ni
+ *  la dernière, et l'identité est vérifiée avant que le plan arrive. */
+const autoDispo = () => ADMIN && !!DATA?.plans?.length && !!accesBase();
+
+/** Reste-t-il quelque chose qui ne soit que sur ce poste ? */
+const enRetard = () => revision !== revisionEnvoyee ||
+  (DATA?.plans || []).some(p => enAttente(p.id));
+
+/* Ce que dit le bouton dans chaque état, et son infobulle. */
+const DITS = {
+  manuel:  [LIBELLE_POUSSE, ""],
+  attente: ["Enregistrement…", "Des réglages ne sont encore que sur ce poste."],
+  envoi:   ["Enregistrement…", "Les réglages partent vers la base."],
+  fait:    ["Configuration enregistrée", "Les visiteurs voient ces réglages."],
+  echec:   ["Enregistrer — réessayer", ""],
+};
+
+/** Où en est l'enregistrement, du point de vue du bouton. */
+const etatCourant = () => etatEnvoi || (!autoDispo() ? "manuel"
+  : enRetard() ? "attente" : "fait");
+
+/**
+ * Ce que le bouton dit de l'enregistrement.
+ *
+ * Un dessin s'enregistre sur le poste au fil du geste, ce qui donne le
+ * sentiment qu'il est à l'abri : rien ne distinguait un travail publié d'un
+ * travail qui n'avait jamais quitté ce navigateur. Le bouton porte donc l'état
+ * en clair, et non plus une simple marque.
+ */
+function majAttente(){
+  const b = $("pousseConf");
+  if (!b) return;
+  const e = etatCourant();
+  b.textContent = DITS[e][0];
+  b.title = e === "echec" ? "Enregistrement impossible : " + souci : DITS[e][1];
+  b.dataset.etat = e;
+}
+
+/** Passe dans un état, et le fait dire par le bouton. */
+function ditEtat(e, detail){
+  etatEnvoi = e;
+  if (detail) souci = detail;
+  majAttente();
+}
+
+/** Programme un envoi, en remplaçant celui qui attendait. */
+function programmeEnvoi(delai, etiquette){
+  if (minuteur) clearTimeout(minuteur);
+  minuteur = null;
+  if (!autoDispo()){ majAttente(); return; }
+  minuteur = setTimeout(envoie, delai);
+  ditEtat(etiquette || "");
+}
+
+/**
+ * Une modification vient d'être posée sur le poste : elle part en base dès que
+ * la main s'arrête. Appelée par les deux enregistrements locaux —
+ * `enregistreConf` pour l'apparence, `enregistreDessins` pour les calques —
+ * c'est le seul point d'entrée de l'enregistrement automatique.
+ */
+function programmePublication(){
+  revision++;
+  programmeEnvoi(REPOS);
+}
+
+/** Au chargement : ce qu'une session précédente n'a pas réussi à envoyer part
+ *  de lui-même, sans attendre qu'on pense à cliquer. */
+function rattrapeRetard(){
+  if (enRetard()) programmeEnvoi(REPOS); else majAttente();
+}
+
+/** L'envoi programmé, quand son temps de repos est écoulé. */
+function envoie(){
+  if (minuteur) clearTimeout(minuteur);
+  minuteur = null;
+  if (!autoDispo()) return;
+  // un envoi est déjà en cours : il reprendra la main en finissant
+  if (publication){ rejoue = true; return; }
+  if (enRetard()) pousseConfiguration(true);
+  else majAttente();
+}
+
+/* Un onglet qu'on ferme ne laisse pas le temps de repos s'écouler : ce qui
+   attendait part tout de suite. Le navigateur n'en garantit pas l'arrivée —
+   d'où la copie sur le poste, et le rattrapage au chargement suivant. */
+const presse = () => { if (minuteur) envoie(); };
+/* Sur le document, où l'événement naît : écouté sur la fenêtre, il n'y arrivait
+   que par remontée, et un onglet masqué trop tôt n'aurait rien envoyé. */
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") presse();
+});
+addEventListener("pagehide", presse);
 
 async function base(acces, chemin, options = {}){
   const r = await fetch(acces.cfg.url + "/rest/v1/" + chemin, {
@@ -11795,6 +12065,23 @@ async function base(acces, chemin, options = {}){
   return txt ? JSON.parse(txt) : null;
 }
 
+/* Le plan connaît les pavillons par leur identifiant Klipso ; la base par le
+   sien. Le lien ne change pas d'un envoi à l'autre : le redemander à chaque
+   retouche ferait deux requêtes pour rien. On le reprend tant qu'il nomme tous
+   les pavillons ouverts — une synchronisation a pu en ajouter un. */
+let _ids = null;
+async function identifiants(acces){
+  const attendus = (DATA?.plans || []).map(p => p.id);
+  if (_ids && _ids.slug === DATA.slug && attendus.every(id => _ids.par[id])) return _ids.par;
+  const evt = await base(acces,
+    "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+  if (!evt.length) throw new Error("Événement introuvable.");
+  const plans = await base(acces,
+    "plan?select=id,id_klipso&evenement_id=eq." + evt[0].id);
+  _ids = { slug: DATA.slug, par: Object.fromEntries(plans.map(p => [p.id_klipso, p.id])) };
+  return _ids.par;
+}
+
 /** Les réglages d'apparence de ce salon : sans les ordres de pile, qui sont
  *  par pavillon, et sans ceux d'un salon voisin, qui n'ont rien à faire dans
  *  son enregistrement — c'est par là qu'ils s'y installaient. */
@@ -11802,32 +12089,58 @@ function reglagesSeuls(){
   return reglagesDuSalon(CONF);
 }
 
-async function pousseConfiguration(bouton){
+/**
+ * Demande au relais d'oublier le plan public de ce salon.
+ *
+ * Sans réponse attendue : un relais absent — page servie autrement, essai en
+ * local — ou muet ne remet pas en cause un enregistrement qui, lui, a abouti.
+ * Et ce n'est qu'un cache : au pire les visiteurs attendent le délai d'avant.
+ */
+function oublieCache(acces){
+  if (!OUBLI || !DATA?.slug) return;
+  fetch(OUBLI + "?slug=" + encodeURIComponent(DATA.slug), {
+    method: "POST",
+    headers: {
+      "apikey": acces.cfg.anonKey,
+      "Authorization": "Bearer " + acces.ses.access_token,
+    },
+  }).catch(() => {});
+}
+
+/**
+ * Envoie la configuration en base.
+ *
+ * `auto` distingue l'envoi programmé du clic : l'un se tait et n'écrit que ce
+ * qui a bougé, l'autre parle dans la liste et réécrit tout — c'est le geste de
+ * réparation, celui qui remet en base un pavillon qu'un échec y aurait laissé
+ * en retard.
+ */
+async function pousseConfiguration(auto){
+  if (publication){ rejoue = true; return; }
   const acces = accesBase();
   if (!acces){
-    annonce("Session absente : reconnectez-vous pour publier.", true);
+    const dit = "Session absente : reconnectez-vous pour enregistrer.";
+    if (auto) ditEtat("echec", dit); else annonce(dit, true);
     return;
   }
-  const dit = (t) => { if (bouton) bouton.textContent = t; };
+  /* Ce que l'envoi aura mis en base s'il aboutit. Relevé avant d'écrire : une
+     retouche arrivée entre-temps garde son tour, et repartira ensuite. */
+  const cible = revision;
   publication = true;
-  dit("Publication…");
+  rejoue = false;
+  ditEtat("envoi");
 
   try {
-    /* Le plan connaît les pavillons par leur identifiant Klipso ; la base par
-       le sien. Une seule requête suffit à faire le lien. */
-    const evt = await base(acces,
-      "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
-    if (!evt.length) throw new Error("Événement introuvable.");
-    const plans = await base(acces,
-      "plan?select=id,id_klipso&evenement_id=eq." + evt[0].id);
-    const parKlipso = Object.fromEntries(plans.map(p => [p.id_klipso, p.id]));
-
+    const parKlipso = await identifiants(acces);
     const reglages = reglagesSeuls();
     let calques = 0;
+    /* Un pavillon de la page que la base ne nomme pas garde sa marque d'attente,
+       et la relancerait indéfiniment : on le compte pour le dire en finissant. */
+    let inconnus = 0;
 
     for (const p of DATA.plans){
       const planId = parKlipso[p.id];
-      if (!planId) continue;
+      if (!planId){ inconnus++; continue; }
 
       await base(acces, "apparence?on_conflict=plan_id", {
         method: "POST",
@@ -11840,46 +12153,75 @@ async function pousseConfiguration(bouton){
         }]),
       });
 
-      const liste = DESSINS[p.id] || [];
-      if (liste.length){
-        await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
-          method: "POST",
-          headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
-          body: JSON.stringify(liste.map((c, i) => ({
-            plan_id: planId, cle: c.id, nom: c.nom || "Calque",
-            couleur: c.couleur || "#2F49D1", rempli: !!c.rempli,
-            visible: c.visible !== false, rang: i,
-            formes: c.formes || [], modifie_le: new Date().toISOString(),
-          }))),
-        });
-        calques += liste.length;
+      /* Les dessins d'un pavillon qui n'a pas bougé sont déjà en base : les
+         réécrire à chaque couleur changée ferait passer des mégaoctets pour
+         rien. Le clic, lui, les réécrit tous — c'est ce qu'on lui demande. */
+      if (!auto || enAttente(p.id)){
+        /* La marque du pavillon, telle qu'elle est en commençant : on ne
+           l'effacera que si le geste suivant ne l'a pas relevée entre-temps. */
+        const marque = ATTENTE[p.id];
+        const liste = DESSINS[p.id] || [];
+        if (liste.length){
+          await base(acces, "calque_dessin?on_conflict=plan_id,cle", {
+            method: "POST",
+            headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(liste.map((c, i) => ({
+              plan_id: planId, cle: c.id, nom: c.nom || "Calque",
+              couleur: c.couleur || "#2F49D1", rempli: !!c.rempli,
+              visible: c.visible !== false, rang: i,
+              formes: c.formes || [], modifie_le: new Date().toISOString(),
+            }))),
+          });
+          calques += liste.length;
+        }
+
+        /* Ce qui a disparu de la page disparaît de la base. On retire après
+           avoir écrit, jamais avant : un échec en cours de route laisse alors
+           l'ancienne version en place plutôt qu'un plan vide. */
+        const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
+        await base(acces,
+          "calque_dessin?plan_id=eq." + planId +
+          (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
+          { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+
+        /* Ce pavillon est en base : le poste ne le devance plus, et le
+           chargement suivant peut reprendre ce que la base en dit. On le note
+           pavillon par pavillon — un échec à mi-parcours laisse marqués ceux
+           qui n'y sont pas encore passés. Et seulement si rien n'a été tracé
+           pendant l'envoi : ce trait-là n'existe nulle part ailleurs. */
+        if (ATTENTE[p.id] === marque) marqueAttente(p.id, false);
       }
-
-      /* Ce qui a disparu de la page disparaît de la base. On retire après
-         avoir écrit, jamais avant : un échec en cours de route laisse alors
-         l'ancienne version en place plutôt qu'un plan vide. */
-      const gardes = liste.map(c => '"' + String(c.id).replace(/"/g, "") + '"').join(",");
-      await base(acces,
-        "calque_dessin?plan_id=eq." + planId +
-        (gardes ? "&cle=not.in.(" + encodeURIComponent(gardes) + ")" : ""),
-        { method: "DELETE", headers: { "Prefer": "return=minimal" } });
-
-      /* Ce pavillon est en base : le poste ne le devance plus, et le
-         chargement suivant peut reprendre ce que la base en dit. On le note
-         pavillon par pavillon — un échec à mi-parcours laisse marqués ceux qui
-         n'y sont pas encore passés. */
-      marqueAttente(p.id, false);
     }
 
-    dit("Configuration publiée");
-    annonce("Configuration publiée : " + DATA.plans.length +
+    revisionEnvoyee = cible;
+    publication = false;
+    /* La base a la configuration ; le relais garde encore l'ancienne version du
+       plan public. On le lui dit tout de suite, sans quoi l'administration et le
+       plan public ne montreraient pas la même chose — et c'est le plan public
+       qui compte. Avant de signaler un pavillon manquant : ce qui est écrit est
+       écrit, et doit partir aux visiteurs. */
+    oublieCache(acces);
+    if (inconnus) throw new Error(inconnus +
+      (inconnus > 1 ? " pavillons sont absents" : " pavillon est absent") +
+      " de la base : lancez une synchronisation depuis la console.");
+    ditEtat("");
+    if (!auto) annonce("Configuration enregistrée : " + DATA.plans.length +
       (DATA.plans.length > 1 ? " pavillons" : " pavillon") +
       (calques ? ", " + calques + " calque" + (calques > 1 ? "s" : "") + " de dessin" : "") + ".");
+    /* Une retouche arrivée pendant l'envoi part à son tour. On s'en remet au
+       compteur, et non aux marques d'attente : celles d'un pavillon qu'on vient
+       de sauter tourneraient en rond. */
+    if (rejoue || revision !== revisionEnvoyee) programmeEnvoi(REPOS);
   } catch (e) {
-    dit("Publication impossible");
-    annonce("Publication impossible : " + e.message, true);
+    publication = false;
+    if (!auto) annonce("Enregistrement impossible : " + e.message, true);
+    /* Rien n'est perdu : le poste garde sa copie et la marque d'attente. On
+       retente de loin en loin, et le bouton dit pourquoi en attendant. L'état se
+       pose avant d'être programmé : une session expirée ne reprogramme rien, et
+       le bouton resterait à annoncer un envoi qui ne reviendra pas. */
+    ditEtat("echec", e.message);
+    programmeEnvoi(REPOS_ECHEC, "echec");
   }
-  setTimeout(() => { publication = false; majAttente(); }, 2600);
 }
 
 /* ============================================================
@@ -11984,8 +12326,16 @@ function remplitOrdre(hote){
       '<span class="bouts">' +
       // seul un calque de dessin nous appartient : les autres portent le nom
       // que Klipso leur donne, et le renommer ici mentirait sur leur origine
+      /* Verrouillé, il ne se renomme pas non plus : le cadenas prend la place
+         du crayon, et dit d'un coup d'œil lesquels sont protégés — c'est ici,
+         la liste complète sous les yeux, qu'on s'en aperçoit le mieux. Le rang,
+         lui, reste libre : il ne touche pas au dessin, et se reprend d'un
+         geste. */
       (x.t === "dessin"
-        ? '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>' : "") +
+        ? (verrouille(x.ref)
+            ? '<span class="verrou" title="Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer">' +
+              pictoVerrou(true) + '</span>'
+            : '<button class="crayon" data-ren="1" title="Renommer">&#9998;</button>') : "") +
       '<button data-h="1" title="Mettre au premier plan">&#8607;</button>' +
       '<button data-h="0" title="Mettre à l’arrière-plan">&#8609;</button></span>';
     const nom = li.querySelector(".nom");
@@ -16494,8 +16844,12 @@ function demarre(d){
   montePlan();
   fit();
   liste();
-  // le plan chargé, le bouton peut dire ce qui reste à publier
+  // le plan chargé, le bouton peut dire où en est l'enregistrement
   majAttente();
+  /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
+     trop vite, réseau coupé — repart de lui-même : c'est la seule occasion de
+     le rattraper, personne ne viendra cliquer pour lui. */
+  rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
