@@ -7923,7 +7923,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Sept onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Huit onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -7979,6 +7979,11 @@ function ouvreReglages(ouvrir){
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
     if (TOUS.some(z => z.kind === "zone")) voletZones(volet("Zones"));
+    /* « PMR » ne paraît qu'une fois des salles rattachées à des zones : ce
+       qu'il règle — la foule d'une sortie de conférence — n'a aucune prise sur
+       un salon dont le programme n'est situé nulle part. Le rattachement se
+       fait dans les réglages du plan, et l'onglet apparaît ensuite. */
+    if (sallesSituees()) voletPmr(volet("PMR"));
     /* La mesure a son volet à elle, et en dernier. Elle ne parle ni de ce que
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
@@ -8255,25 +8260,6 @@ function voletPlan(hote){
     bloc.appendChild(l);
   }
 
-  /* Les sorties de conférence ne se règlent que là où il y en a : sans salle
-     rattachée à une zone, la case promettrait un détour qu'aucune donnée ne
-     permettrait de calculer. Elle se décoche pour une salle qui donne sur une
-     esplanade, où la foule ne bouche rien. */
-  if ((CONFERENCES || []).some(c => c.zone && parId.has(String(c.zone)))){
-    const l = document.createElement("label");
-    l.innerHTML = '<input type="checkbox"><span></span>';
-    l.querySelector("span").textContent =
-      "Écarter l'itinéraire accessible des salles qui se vident — à l'heure de leurs conférences";
-    const c = l.querySelector("input");
-    c.checked = conf("_foule").visible !== false;
-    c.onchange = e => {
-      conf("_foule").visible = e.target.checked;
-      enregistreConf();
-      if (typeof relance === "function") relance();
-    };
-    bloc.appendChild(l);
-  }
-
   /* Les stands partagés, comme les secteurs, ne se règlent que là où il y en
      a : sur un salon d'un exposant par emplacement, ces deux cases ne
      promettraient qu'un plan déjà tel quel. */
@@ -8321,6 +8307,100 @@ function voletPlan(hote){
   };
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
+}
+
+/** Y a-t-il de quoi parler de foule ? Une conférence rattachée à une zone,
+ *  c'est-à-dire une salle qui a une place sur le plan. Sans cela, l'onglet
+ *  « PMR » ne réglerait qu'un calcul qui n'a jamais lieu. */
+const sallesSituees = () =>
+  (CONFERENCES || []).some(c => c.zone && parId.has(String(c.zone)));
+
+/**
+ * Ce qui change pour un visiteur en fauteuil.
+ *
+ * L'itinéraire accessible contourne déjà ce que l'exploitant a dessiné
+ * infranchissable — un emmarchement, une estrade — et refuse les passages trop
+ * étroits. Reste ce qu'aucun dessin ne peut porter : la foule d'une entrée ou
+ * d'une sortie de conférence, qui n'existe que vingt minutes par conférence et
+ * qu'on ne saurait tracer à l'avance.
+ *
+ * Trois chiffres la décrivent, et aucun ne vaut partout le même : une salle
+ * qui s'ouvre sur une esplanade ne bouche rien, un couloir de six mètres se
+ * ferme à lui seul. D'où l'onglet, plutôt qu'une règle décidée d'ici.
+ */
+function voletPmr(hote){
+  const p = document.createElement("p");
+  p.textContent = "L'itinéraire accessible contourne déjà ce qui est dessiné " +
+    "infranchissable. Ceci vise ce qu'aucun dessin ne porte : la foule d'une " +
+    "entrée ou d'une sortie de conférence, aux abords de la salle. Le trajet " +
+    "du marcheur, lui, n'en tient pas compte — il s'y faufile.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent =
+    "Écarter l'itinéraire accessible des salles qui se vident";
+  const c = l.querySelector("input");
+  c.checked = conf("_foule").visible !== false;
+  bloc.appendChild(l);
+  hote.appendChild(bloc);
+
+  /* Les bornes et les valeurs d'origine viennent du calcul lui-même
+     (`REGLAGES_FOULE`) : deux listes de chiffres finiraient par diverger, et
+     c'est le champ qui aurait tort. */
+  const chiffres = document.createElement("div");
+  const champ = (k, libelle, unite, aide) => {
+    const r = REGLAGES_FOULE[k];
+    const d = document.createElement("div");
+    d.className = "reglage-nb";
+    d.innerHTML = '<label><span class="l"></span>' +
+      '<input type="number" min="' + r.min + '" max="' + r.max + '" step="' + r.pas + '">' +
+      '<span class="u"></span></label><span class="aide"></span>';
+    d.querySelector(".l").textContent = libelle;
+    d.querySelector(".u").textContent = unite;
+    d.querySelector(".aide").textContent = aide;
+    const n = d.querySelector("input");
+    n.value = regleFoule(k);
+    /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient que
+       ce qui tient dans les bornes, et le champ se remet d'aplomb en le
+       quittant — comme le temps de visite. */
+    n.oninput = e => {
+      const v = +e.target.value;
+      if (!isFinite(v) || v < r.min || v > r.max) return;
+      conf("_foule")[k] = v;
+      enregistreConf();
+      // le trait affiché a été calculé avec l'ancien chiffre : il se refait
+      if (typeof relance === "function") relance();
+    };
+    n.onblur = () => { n.value = regleFoule(k); };
+    chiffres.appendChild(d);
+  };
+  champ("poids", "Un mètre longé en vaut", "mètres",
+    "Trois : le trajet accepte un détour jusqu'au double de ce qu'il aurait " +
+    "longé, et passe tout de même s'il n'existe pas d'autre chemin. À un, plus " +
+    "rien ne l'écarte.");
+  champ("metres", "Largeur des abords", "m",
+    "Depuis le contour de la salle, et seulement là : c'est la portion qui la " +
+    "jouxte qui coûte cher, pas l'allée d'un bout à l'autre. Quatre mètres " +
+    "valent une allée courante.");
+  champ("minutes", "Autour de l'heure dite", "min",
+    "Avant et après le début, avant et après la fin de chaque conférence. En " +
+    "dehors de ces minutes, le trajet est celui de toujours.");
+  hote.appendChild(chiffres);
+
+  /* Les trois chiffres disparaissent quand la règle est décochée : ils ne
+     décriraient plus rien, et un champ qu'on modifie sans effet fait douter de
+     tous les autres. */
+  const maj = () => { chiffres.hidden = !c.checked; };
+  c.onchange = e => {
+    conf("_foule").visible = e.target.checked;
+    enregistreConf();
+    maj();
+    if (typeof relance === "function") relance();
+  };
+  maj();
 }
 
 /* Le nuancier. Des tons de charte plutôt qu'une roue : choisir une couleur
@@ -15212,32 +15292,48 @@ function distancesMulti(g, departs){
  * ça passe, ou fait demi-tour dans l'allée qu'il vient de remonter — et
  * personne ne lui avait dit qu'elle serait pleine.
  *
- * L'itinéraire accessible s'en écarte donc, aux seules heures où ces abords
- * se remplissent : le mètre y vaut trois mètres, et l'A* s'en va le dépenser
- * ailleurs. Un prix et non un mur, car si l'allée bordée est la seule à mener
- * au but elle reste ouverte, et le trajet dit alors qu'il y passe. Prévenir
- * vaut mieux que ne rendre aucun chemin.
+ * L'itinéraire accessible s'en écarte donc, aux seules heures où ces abords se
+ * remplissent : le mètre y vaut trois mètres — l'exploitant en décide dans
+ * l'onglet « PMR » — et l'A* s'en va le dépenser ailleurs. Un prix et non un
+ * mur, car si l'allée bordée est la seule à mener au but elle reste ouverte, et
+ * le trajet dit alors qu'il y passe. Prévenir vaut mieux que ne rendre aucun
+ * chemin.
  *
  * Jamais pour qui s'y rend, enfin : celui qui vise la conférence veut
  * précisément la porte où tout le monde se presse.
  */
 
-/* Ce que coûte le mètre aux abords d'une salle en mouvement : trois fois le
-   mètre d'allée libre. Le pas vaut une case, on en ajoute deux. Un détour
-   reste donc préférable tant qu'il ne dépasse pas le double de ce qu'on aurait
-   longé — au-delà, on préfère encore la foule. */
-const PEINE_FOULE = 2;      // par case, en plus du pas lui-même
+/**
+ * Les trois valeurs qui règlent tout cela, leurs bornes et leur origine.
+ *
+ * Un seul tableau, parce que deux endroits les lisent et qu'ils ne doivent pas
+ * diverger : le calcul, ici, et l'onglet « PMR » des réglages, qui propose les
+ * mêmes bornes. Un salon dont les salles donnent sur une esplanade n'a pas la
+ * foule d'un salon dont elles s'ouvrent sur un couloir de six mètres — d'où le
+ * réglage, plutôt qu'un chiffre décidé de loin.
+ *
+ *   poids    ce que vaut le mètre longé, en mètres d'allée libre. Trois :
+ *            l'itinéraire accepte un détour jusqu'au double de ce qu'il aurait
+ *            longé. À un, plus rien ne l'écarte.
+ *   metres   la largeur des abords, depuis le contour de la salle. Quatre,
+ *            soit une allée courante — et c'est cette portion-là qui est
+ *            chère, non l'allée d'un bout à l'autre.
+ *   minutes  ce qui encadre l'heure dite, de part et d'autre du début comme de
+ *            la fin : une conférence commence et s'achève rarement à la
+ *            minute.
+ */
+const REGLAGES_FOULE = {
+  poids:   { defaut: 3,  min: 1, max: 10, pas: .5 },
+  metres:  { defaut: 4,  min: 1, max: 20, pas: .5 },
+  minutes: { defaut: 10, min: 0, max: 60, pas: 5  },
+};
 
-/* Jusqu'où ces abords s'étendent : quatre mètres, la largeur d'une allée
-   courante. C'est la portion qui jouxte la salle qui est chère, et non l'allée
-   d'un bout à l'autre — passé le masque, un pas redevient un pas. */
-const PORTEE_FOULE = 8;     // cases
-
-/* Ce qui encadre l'heure dite. La salle se remplit avant son début et se vide
-   après sa fin, mais l'un et l'autre débordent aussi de l'autre côté : une
-   conférence commence et s'achève rarement à la minute, et dix minutes de part
-   et d'autre couvrent les deux. */
-const MARGE_CONF = 10;
+/* Une valeur hors bornes — un champ à moitié tapé, une configuration d'une
+   version d'avant — retombe sur l'origine plutôt que de fausser un trajet. */
+function regleFoule(k){
+  const r = REGLAGES_FOULE[k], v = +(CONF["_foule"] || {})[k];
+  return isFinite(v) && v >= r.min && v <= r.max ? v : r.defaut;
+}
 
 /* En deçà, le détour ne mérite pas sa phrase : c'est la largeur d'une allée,
    pas un trajet qu'on aurait fait autrement. */
@@ -15251,7 +15347,7 @@ const SALLES_FOULE = 31;
 
 /* L'exploitant peut s'en passer : une salle qui donne sur une esplanade
    n'encombre rien, et le détour ne se justifierait plus. */
-const ecarteFoule = () => (CONF["_foule"] || {}).visible !== false;
+const ecarteFoule = () => (CONF["_foule"] || {}).visible !== false && regleFoule("poids") > 1;
 
 /** L'heure qu'il est au salon, et non chez le visiteur : un plan consulté d'un
  *  autre fuseau se lit à l'heure du hall. */
@@ -15268,7 +15364,7 @@ function sallesEnMouvement(p, exempts){
   if (!ecarteFoule() || !p.parZone || !p.parZone.size) return [];
   const t = heureAuSalon();
   if (!t) return [];
-  const m = minutesDe(t);
+  const m = minutesDe(t), marge = regleFoule("minutes");
   const l = [];
   p.parZone.forEach((confs, idZone) => {
     if (exempts.has(String(idZone))) return;
@@ -15279,7 +15375,7 @@ function sallesEnMouvement(p, exempts){
        programme. La sortie l'emporte sur l'entrée, elle est plus dense. */
     let quand = null;
     const encadre = (x) => x && x.cle === t.cle &&
-      m >= minutesDe(x) - MARGE_CONF && m <= minutesDe(x) + MARGE_CONF;
+      m >= minutesDe(x) - marge && m <= minutesDe(x) + marge;
     for (const c of confs){
       const d = instantConf(c), f = finInstant(c);
       if (!quand && encadre(d)) quand = { quoi: "entre", h: d };
@@ -15309,8 +15405,13 @@ const FOULES = new Map();
  */
 function foule(p, pmr, salles){
   if (!salles.length) return null;
+  /* La largeur et le poids entrent dans la clé : les retoucher dans les
+     réglages doit refaire la nappe, sans quoi le trajet suivant répondrait
+     encore à l'ancien chiffre. */
+  const portee = Math.max(1, Math.round(regleFoule("metres") / PAS_GRILLE));
+  const peineCase = regleFoule("poids") - 1;
   const cleP = p.id + (pmr ? "|pmr" : "");
-  const cle = salles.map(s => s.id).join(",");
+  const cle = salles.map(s => s.id).join(",") + "|" + portee + "|" + peineCase;
   const garde = FOULES.get(cleP);
   if (garde && garde.cle === cle) return garde;
 
@@ -15355,7 +15456,7 @@ function foule(p, pmr, salles){
   }
   while (tete < queue){
     const i = file[tete++];
-    if (d[i] >= PORTEE_FOULE) continue;
+    if (d[i] >= portee) continue;
     const cx = i % g.w, cy = (i - cx) / g.w;
     for (let v = 0; v < 4; v++){
       const nx = cx + VX[v], ny = cy + VY[v];
@@ -15370,7 +15471,7 @@ function foule(p, pmr, salles){
      qu'on s'écarte de la porte. Au bord du masque le pas reprend son prix, ce
      qui suffit à pousser le trait vers l'autre côté d'une allée large. */
   const peine = new Float32Array(n);
-  for (let i = 0; i < n; i++) if (d[i] >= 0) peine[i] = PEINE_FOULE;
+  for (let i = 0; i < n; i++) if (d[i] >= 0) peine[i] = peineCase;
 
   const f = { cle: cle, salles: salles, peine: peine, src: src };
   FOULES.set(cleP, f);

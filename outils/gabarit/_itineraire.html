@@ -867,32 +867,48 @@ function distancesMulti(g, departs){
  * ça passe, ou fait demi-tour dans l'allée qu'il vient de remonter — et
  * personne ne lui avait dit qu'elle serait pleine.
  *
- * L'itinéraire accessible s'en écarte donc, aux seules heures où ces abords
- * se remplissent : le mètre y vaut trois mètres, et l'A* s'en va le dépenser
- * ailleurs. Un prix et non un mur, car si l'allée bordée est la seule à mener
- * au but elle reste ouverte, et le trajet dit alors qu'il y passe. Prévenir
- * vaut mieux que ne rendre aucun chemin.
+ * L'itinéraire accessible s'en écarte donc, aux seules heures où ces abords se
+ * remplissent : le mètre y vaut trois mètres — l'exploitant en décide dans
+ * l'onglet « PMR » — et l'A* s'en va le dépenser ailleurs. Un prix et non un
+ * mur, car si l'allée bordée est la seule à mener au but elle reste ouverte, et
+ * le trajet dit alors qu'il y passe. Prévenir vaut mieux que ne rendre aucun
+ * chemin.
  *
  * Jamais pour qui s'y rend, enfin : celui qui vise la conférence veut
  * précisément la porte où tout le monde se presse.
  */
 
-/* Ce que coûte le mètre aux abords d'une salle en mouvement : trois fois le
-   mètre d'allée libre. Le pas vaut une case, on en ajoute deux. Un détour
-   reste donc préférable tant qu'il ne dépasse pas le double de ce qu'on aurait
-   longé — au-delà, on préfère encore la foule. */
-const PEINE_FOULE = 2;      // par case, en plus du pas lui-même
+/**
+ * Les trois valeurs qui règlent tout cela, leurs bornes et leur origine.
+ *
+ * Un seul tableau, parce que deux endroits les lisent et qu'ils ne doivent pas
+ * diverger : le calcul, ici, et l'onglet « PMR » des réglages, qui propose les
+ * mêmes bornes. Un salon dont les salles donnent sur une esplanade n'a pas la
+ * foule d'un salon dont elles s'ouvrent sur un couloir de six mètres — d'où le
+ * réglage, plutôt qu'un chiffre décidé de loin.
+ *
+ *   poids    ce que vaut le mètre longé, en mètres d'allée libre. Trois :
+ *            l'itinéraire accepte un détour jusqu'au double de ce qu'il aurait
+ *            longé. À un, plus rien ne l'écarte.
+ *   metres   la largeur des abords, depuis le contour de la salle. Quatre,
+ *            soit une allée courante — et c'est cette portion-là qui est
+ *            chère, non l'allée d'un bout à l'autre.
+ *   minutes  ce qui encadre l'heure dite, de part et d'autre du début comme de
+ *            la fin : une conférence commence et s'achève rarement à la
+ *            minute.
+ */
+const REGLAGES_FOULE = {
+  poids:   { defaut: 3,  min: 1, max: 10, pas: .5 },
+  metres:  { defaut: 4,  min: 1, max: 20, pas: .5 },
+  minutes: { defaut: 10, min: 0, max: 60, pas: 5  },
+};
 
-/* Jusqu'où ces abords s'étendent : quatre mètres, la largeur d'une allée
-   courante. C'est la portion qui jouxte la salle qui est chère, et non l'allée
-   d'un bout à l'autre — passé le masque, un pas redevient un pas. */
-const PORTEE_FOULE = 8;     // cases
-
-/* Ce qui encadre l'heure dite. La salle se remplit avant son début et se vide
-   après sa fin, mais l'un et l'autre débordent aussi de l'autre côté : une
-   conférence commence et s'achève rarement à la minute, et dix minutes de part
-   et d'autre couvrent les deux. */
-const MARGE_CONF = 10;
+/* Une valeur hors bornes — un champ à moitié tapé, une configuration d'une
+   version d'avant — retombe sur l'origine plutôt que de fausser un trajet. */
+function regleFoule(k){
+  const r = REGLAGES_FOULE[k], v = +(CONF["_foule"] || {})[k];
+  return isFinite(v) && v >= r.min && v <= r.max ? v : r.defaut;
+}
 
 /* En deçà, le détour ne mérite pas sa phrase : c'est la largeur d'une allée,
    pas un trajet qu'on aurait fait autrement. */
@@ -906,7 +922,7 @@ const SALLES_FOULE = 31;
 
 /* L'exploitant peut s'en passer : une salle qui donne sur une esplanade
    n'encombre rien, et le détour ne se justifierait plus. */
-const ecarteFoule = () => (CONF["_foule"] || {}).visible !== false;
+const ecarteFoule = () => (CONF["_foule"] || {}).visible !== false && regleFoule("poids") > 1;
 
 /** L'heure qu'il est au salon, et non chez le visiteur : un plan consulté d'un
  *  autre fuseau se lit à l'heure du hall. */
@@ -923,7 +939,7 @@ function sallesEnMouvement(p, exempts){
   if (!ecarteFoule() || !p.parZone || !p.parZone.size) return [];
   const t = heureAuSalon();
   if (!t) return [];
-  const m = minutesDe(t);
+  const m = minutesDe(t), marge = regleFoule("minutes");
   const l = [];
   p.parZone.forEach((confs, idZone) => {
     if (exempts.has(String(idZone))) return;
@@ -934,7 +950,7 @@ function sallesEnMouvement(p, exempts){
        programme. La sortie l'emporte sur l'entrée, elle est plus dense. */
     let quand = null;
     const encadre = (x) => x && x.cle === t.cle &&
-      m >= minutesDe(x) - MARGE_CONF && m <= minutesDe(x) + MARGE_CONF;
+      m >= minutesDe(x) - marge && m <= minutesDe(x) + marge;
     for (const c of confs){
       const d = instantConf(c), f = finInstant(c);
       if (!quand && encadre(d)) quand = { quoi: "entre", h: d };
@@ -964,8 +980,13 @@ const FOULES = new Map();
  */
 function foule(p, pmr, salles){
   if (!salles.length) return null;
+  /* La largeur et le poids entrent dans la clé : les retoucher dans les
+     réglages doit refaire la nappe, sans quoi le trajet suivant répondrait
+     encore à l'ancien chiffre. */
+  const portee = Math.max(1, Math.round(regleFoule("metres") / PAS_GRILLE));
+  const peineCase = regleFoule("poids") - 1;
   const cleP = p.id + (pmr ? "|pmr" : "");
-  const cle = salles.map(s => s.id).join(",");
+  const cle = salles.map(s => s.id).join(",") + "|" + portee + "|" + peineCase;
   const garde = FOULES.get(cleP);
   if (garde && garde.cle === cle) return garde;
 
@@ -1010,7 +1031,7 @@ function foule(p, pmr, salles){
   }
   while (tete < queue){
     const i = file[tete++];
-    if (d[i] >= PORTEE_FOULE) continue;
+    if (d[i] >= portee) continue;
     const cx = i % g.w, cy = (i - cx) / g.w;
     for (let v = 0; v < 4; v++){
       const nx = cx + VX[v], ny = cy + VY[v];
@@ -1025,7 +1046,7 @@ function foule(p, pmr, salles){
      qu'on s'écarte de la porte. Au bord du masque le pas reprend son prix, ce
      qui suffit à pousser le trait vers l'autre côté d'une allée large. */
   const peine = new Float32Array(n);
-  for (let i = 0; i < n; i++) if (d[i] >= 0) peine[i] = PEINE_FOULE;
+  for (let i = 0; i < n; i++) if (d[i] >= 0) peine[i] = peineCase;
 
   const f = { cle: cle, salles: salles, peine: peine, src: src };
   FOULES.set(cleP, f);
