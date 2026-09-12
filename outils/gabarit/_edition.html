@@ -107,6 +107,18 @@ function majElement(){
     if (arrondissable) $("elemRayon").value = f.r || 0;
   }
 
+  /* Une ligne posée se relit : un trait fin fait une limite, un trait épais
+     fait un mur, et le pointillé un passage qui n'en est pas tout à fait un.
+     Cela se juge sur le plan, une fois le tracé en place. */
+  const bt = $("elemTraitReg");
+  if (bt){
+    bt.hidden = f.t !== "ligne";
+    if (f.t === "ligne"){
+      $("elemEpaisseur").value = String(f.ep > 0 ? f.ep : EPAISSEUR_TRAIT);
+      $("elemStyle").value = f.pointille ? "pointille" : "plein";
+    }
+  }
+
   /* Le type d'un repère se change après coup : une porte mal typée ne se voit
      qu'en essayant un trajet, et il serait absurde de la redessiner pour
      cela. Un repère d'avant la séparation du type et du libellé n'en porte
@@ -352,6 +364,20 @@ function appliqueRayon(){
   if (!cible) return;
   memorise();
   cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
+  enregistreDessins(); dessineDessins();
+}
+
+/** L'épaisseur et le style du trait de la ligne choisie. Le trait ordinaire ne
+ *  s'écrit pas : la forme revient alors à l'allure de son calque. */
+function appliqueTrait(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || cible.f.t !== "ligne") return;
+  memorise();
+  const ep = parseFloat($("elemEpaisseur").value);
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) cible.f.ep = ep;
+  else delete cible.f.ep;
+  if ($("elemStyle").value === "pointille") cible.f.pointille = true;
+  else delete cible.f.pointille;
   enregistreDessins(); dessineDessins();
 }
 

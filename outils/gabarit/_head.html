@@ -579,6 +579,11 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .outils.mode-texte #texteADessiner{display:block}
 #contourReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-contour #contourReg{display:flex}
+/* L'épaisseur et le pointillé se règlent avant de tracer, comme l'arrondi du
+   contour : une allée provisoire et un mur ne se dessinent pas du même trait,
+   et on le sait avant de poser le premier point. */
+#traitReg{display:none;flex-direction:column;gap:6px}
+.outils.mode-ligne #traitReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
 .outils.mode-image #vignette[data-prete]{display:flex}
 #vignette img{width:40px;height:30px;object-fit:cover;border:1px solid var(--line);border-radius:2px}
@@ -652,6 +657,8 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .elemChamp[hidden]{display:none}
 #elemDim{display:flex;flex-direction:column;gap:6px}
 #elemDim[hidden]{display:none}
+#elemTraitReg{display:flex;flex-direction:column;gap:6px}
+#elemTraitReg[hidden]{display:none}
 /* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
    puisque c'est en dessinant qu'on le décide. */
 .outilsRole{display:flex;flex-direction:column;gap:3px}
@@ -3201,6 +3208,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <label class="outilsVoir"><input type="checkbox" id="contourAimant" checked>
           <span>Redresser les segments</span></label>
       </div>
+      <div id="traitReg">
+        <label class="elemChamp"><span>Épaisseur</span>
+          <select id="traitEpaisseur">
+            <option value="1">Fin</option>
+            <option value="2" selected>Normal</option>
+            <option value="3">Épais</option>
+            <option value="5">Très épais</option>
+          </select></label>
+        <label class="elemChamp"><span>Style</span>
+          <select id="traitStyle">
+            <option value="plein">Continu</option>
+            <option value="pointille">Pointillé</option>
+          </select></label>
+      </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
@@ -3231,6 +3252,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           <input id="elemTaille" type="number" min="0.3" max="30" step="0.2"></label>
         <label class="elemChamp" id="elemRayonBloc" hidden><span>Arrondi</span>
           <input id="elemRayon" type="number" min="0" max="10" step="0.5"></label>
+        <div id="elemTraitReg" hidden>
+          <label class="elemChamp"><span>Épaisseur</span>
+            <select id="elemEpaisseur">
+              <option value="1">Fin</option>
+              <option value="2">Normal</option>
+              <option value="3">Épais</option>
+              <option value="5">Très épais</option>
+            </select></label>
+          <label class="elemChamp"><span>Style</span>
+            <select id="elemStyle">
+              <option value="plein">Continu</option>
+              <option value="pointille">Pointillé</option>
+            </select></label>
+        </div>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
           placeholder="Lier à un stand — numéro ou exposant">
         <datalist id="listeStands"></datalist>
