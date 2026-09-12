@@ -895,7 +895,7 @@ function ouvreReglages(ouvrir){
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
     /* Huit onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
-       qu'on vient de retenir se ramène donc sous les yeux — sans lui, « Mesure »
+       qu'on vient de retenir se ramène donc sous les yeux — sans lui, le dernier
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
        défile aussi pour son compte, et le centrage la remontait d'un cran.
@@ -942,10 +942,10 @@ function ouvreReglages(ouvrir){
        que le visiteur obtient, et elle se lit dans la foulée des critères,
        qu'elle emprunte. */
     voletSuggestion(volet(NOM_VOLET_SUGGESTION));
-    /* « Fiche » ferme la série de ce que le visiteur obtient : on ne range les
-       champs qu'une fois qu'on sait lesquels paraissent, et son aperçu emprunte
-       l'habillage que l'onglet suivant choisit. */
-    voletOrdre(volet("Fiche"));
+    /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
+       range les champs qu'une fois qu'on sait lesquels paraissent, et son
+       aperçu emprunte l'habillage que l'onglet suivant choisit. */
+    voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
