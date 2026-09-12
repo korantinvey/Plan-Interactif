@@ -744,8 +744,11 @@ function apercuFiche(cle, vu){
   // l'aperçu se regarde, il ne se manipule pas
   d.inert = true;
   /* Une adresse web s'affiche en lien sur la fiche : la vignette le montre
-     aussi, plusieurs modèles n'habillant que les liens. */
-  const LIENS = ["site", "facebook", "linkedin", "instagram"];
+     aussi, plusieurs modèles n'habillant que les liens. Les réseaux sociaux,
+     eux, s'y montrent en pictos comme sur la fiche — c'est leur hauteur et
+     leur couleur qu'on juge en choisissant un habillage, pas celles d'une
+     adresse qu'ils n'affichent plus. */
+  const LIENS = ["site"];
   /* Les champs sous la forme que « corpsRange » attend, et le rangement par la
      même fonction que la vraie fiche : les groupes réglés par l'exploitant se
      voient donc sur les onze vignettes, sans quoi il choisirait un habillage
@@ -756,7 +759,8 @@ function apercuFiche(cle, vu){
     if (!l.length) return;
     champs[c] = {
       libelle: esc(libelleCorps(c)),
-      valeur: l.length > 1
+      valeur: PICTO_RS[c] ? pictoRS(c, l[0])
+        : l.length > 1
         ? l.map(x => '<span class="ligne">' + esc(x) + '</span>')
         : LIENS.indexOf(c) >= 0 ? '<a href="#">' + esc(l[0]) + '</a>' : esc(l[0]),
       classe: COURTS_CORPS.indexOf(c) >= 0 ? "court" : "",
