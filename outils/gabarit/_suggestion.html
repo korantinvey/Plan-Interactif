@@ -39,6 +39,18 @@ const SUGG_CHAMPIONS = 3;
    retenir d'une visite à l'autre condamnerait un exposant sans raison. */
 const SUGG_ECARTES = new Set();
 
+/* Et ce que la fenêtre a déjà mis au premier plan. Une proposition ne s'impose
+   qu'une fois : revenue à chaque ajout, elle se ferait fermer sans être lue,
+   puis fermerait le plan avec elle. Le tiroir, lui, n'a pas ce scrupule à
+   avoir — on y va pour la voir. */
+const SUGG_MONTREES = new Set();
+
+/* La mesure a son canal. Une fiche ouverte depuis la proposition, un exposant
+   ajouté depuis elle, ne se comptent pas comme ceux qu'on est allé chercher :
+   c'est le seul chiffre qui dise si la fonction sert. Le vocabulaire est celui
+   des compteurs — voir la migration « suggestion_un_canal_de_mesure_a_elle ». */
+const CANAL_SUGG = "suggestion";
+
 /* ------------------------------------------------------------
    Le réglage
    ------------------------------------------------------------ */
@@ -48,6 +60,19 @@ function seuilSugg(){
   const v = Math.round(+reglageSugg().seuil);
   return v >= SUGG_SEUIL_MIN && v <= SUGG_SEUIL_MAX ? v : SUGG_SEUIL_DEFAUT;
 }
+
+/**
+ * Comment la proposition se présente.
+ *
+ * « tiroir » l'attend au bas du parcours, là où le visiteur va de lui-même ;
+ * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
+ * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
+ * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
+ * salon professionnel de deux heures et un salon grand public d'un week-end
+ * n'ont pas la même tolérance à l'interruption.
+ */
+const presentationSugg = () =>
+  reglageSugg().presentation === "fenetre" ? "fenetre" : "tiroir";
 
 /** Le critère sur lequel on rapproche, s'il désigne encore quelque chose. Un
  *  champ décoché dans la console, ou des secteurs éteints depuis, ne le font
@@ -160,17 +185,48 @@ function exposantPropose(cle, v){
  *  d'elle-même : un oui/non ne se coche que sous le nom de sa question. */
 const nomValeurSugg = (cle, v) => OUI_NON[cle] ? libelleCritere(cle) : v;
 
-/**
- * La carte, au bas du tiroir du parcours.
- *
- * Elle dit d'abord pourquoi elle est là. Une proposition qui tombe sans motif
- * se lit comme de la réclame ; la même, précédée de ce qu'on vient de retenir
- * quatre fois, se lit comme une suite.
- */
-function poseSuggestion(hote){
-  const s = suggestionCourante();
-  if (!s) return;
+/* Comment se nomme ce que plusieurs exposants ont en commun.
+   Les critères que le plan connaît d'avance ont leur article — « du secteur »,
+   « de la ville ». Un champ que le salon s'est ajouté n'en a pas : rien ne dit
+   le genre de « Famille » ni d'« Univers », et « de la famille » sur un salon
+   qui range par « Univers » se lirait de travers. Ceux-là se disent « marqués
+   « X » », qui va avec tout — et avec le oui/non par la même occasion, dont la
+   valeur cochée n'est jamais qu'un « Oui ». */
+const ARTICLE_CRITERE = {
+  secteur: "du secteur", ville: "de la ville", pays: "du pays",
+  nomenclature: "de la nomenclature", thematiques: "de la thématique",
+};
 
+/**
+ * Ce que la proposition dit d'elle-même : d'où elle vient, puis où elle mène.
+ *
+ * Dans cet ordre, et en une phrase. Un nom qui tombe sans motif se lit comme
+ * de la réclame ; le même, précédé de ce que le visiteur vient de retenir trois
+ * fois, se lit comme la suite de ce qu'il était en train de faire.
+ */
+function phraseSuggestion(s){
+  const art = ARTICLE_CRITERE[s.cle];
+  const quoi = art ? art + " « " + s.valeur + " »"
+                   : "marqués « " + nomValeurSugg(s.cle, s.valeur) + " »";
+  return "Vous avez ajouté " + s.n + " exposants " + quoi + " à votre liste. " +
+         "Vous pourriez être intéressé par l'exposant " + s.o.nom + ".";
+}
+
+/**
+ * La carte, telle qu'elle se lit des deux côtés : au bas du tiroir, ou au
+ * premier plan dans sa fenêtre.
+ *
+ * La même, parce que c'est la même proposition : le motif, l'exposant, et les
+ * deux gestes qu'on peut faire dessus — aller le voir sur le plan, ou le
+ * retenir. Les deux portent le canal de la suggestion jusqu'aux compteurs.
+ *
+ * `ferme` n'est donné que par la fenêtre, et la désigne autant qu'il la
+ * referme : le bandeau de la carte y disparaît — son intitulé serait celui de
+ * la fenêtre, redit une ligne plus bas — et sa croix avec, la fenêtre ayant
+ * déjà la sienne et son « Non merci ».
+ */
+function carteSuggestion(s, ferme){
+  const o = s.o;
   const d = document.createElement("div");
   d.className = "pSugg";
   d.innerHTML = '<div class="sTete"><span class="eyebrow">Pour compléter votre visite</span>' +
@@ -179,27 +235,65 @@ function poseSuggestion(hote){
     '<p class="sMotif"></p>' +
     '<div class="pRang"><button type="button" class="pOuvre">' +
     '<span class="pt"></span><span class="ps"></span></button>' +
-    signetParcours("stand", s.o.id) + "</div>";
+    signetParcours("stand", o.id) + "</div>";
 
-  d.querySelector(".sMotif").textContent =
-    "« " + nomValeurSugg(s.cle, s.valeur) + " » revient " + s.n +
-    " fois dans votre liste" +
-    (OUI_NON[s.cle] ? "" : " (" + libelleCritere(s.cle).toLowerCase() + ")") + ".";
+  if (ferme) d.querySelector(".sTete").remove();
 
-  const o = s.o;
+  d.querySelector(".sMotif").textContent = phraseSuggestion(s);
   d.querySelector(".pt").textContent = o.nom;
   d.querySelector(".ps").textContent =
     DATA.plans[o.p].libelle + (o.code ? " · " + o.code : "");
-  /* Aller le voir, c'est vouloir le voir sur le plan : la fiche s'ouvre et le
-     tiroir se retire, comme pour un rang du parcours. */
-  d.querySelector(".pOuvre").onclick = () => select(o.id, true, "parcours");
-  d.querySelector(".sEcarte").onclick = () => {
+  /* Aller le voir, c'est vouloir le voir sur le plan : la fiche s'ouvre et ce
+     qui la cachait se retire, comme pour un rang du parcours. */
+  d.querySelector(".pOuvre").onclick = () => {
+    if (ferme) ferme();
+    select(o.id, true, CANAL_SUGG);
+  };
+  const croix = d.querySelector(".sEcarte");
+  if (croix) croix.onclick = () => {
     SUGG_ECARTES.add(String(o.id));
     remplitParcours();
   };
-  hote.appendChild(d);
   // le signet vit comme les autres : il ajoute, il compte, et il se retourne
-  brancheParcours(d);
+  brancheParcours(d, CANAL_SUGG);
+  return d;
+}
+
+/** La proposition au bas du tiroir du parcours, quand il y en a une. */
+function poseSuggestion(hote){
+  const s = suggestionCourante();
+  if (s) hote.appendChild(carteSuggestion(s, null));
+}
+
+/**
+ * La même, au premier plan.
+ *
+ * Appelée depuis l'ajout d'un exposant au parcours, et de là seulement : c'est
+ * le geste qui peut faire atteindre le seuil. Le chargement d'une liste retenue
+ * lors d'une visite précédente n'en est pas un — accueillir le visiteur par une
+ * fenêtre qu'il n'a pas demandée serait autre chose que compléter sa visite.
+ */
+function fenetreSuggestion(){
+  if (presentationSugg() !== "fenetre") return;
+  /* Une fenêtre déjà ouverte a été demandée, elle : la remplacer par une
+     proposition que personne n'attendait ferait perdre ce qu'on y faisait —
+     un réglage en cours de saisie, une confirmation à donner. */
+  if ($("modale").classList.contains("open")) return;
+  const s = suggestionCourante();
+  if (!s) return;
+  /* Une proposition ne s'impose qu'une fois. La valeur autant que l'exposant :
+     le même nom proposé pour un autre motif est une autre proposition. */
+  const marque = s.cle + "\u0000" + s.valeur + "\u0000" + s.o.id;
+  if (SUGG_MONTREES.has(marque)) return;
+  SUGG_MONTREES.add(marque);
+  /* Le rang de la carte s'ouvre au clic, comme dans le tiroir — mais dans une
+     fenêtre à deux boutons, on lit les boutons et pas les rangs. Le geste est
+     donc redit au pied, où on l'attend. */
+  ouvreModale("Pour compléter votre visite", corps => {
+    corps.appendChild(carteSuggestion(s, fermeModale));
+  }, [{ libelle: "Non merci" },
+      { libelle: "Voir sur le plan", genre: "accent",
+        action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");
 }
 
 /* ------------------------------------------------------------
@@ -350,6 +444,19 @@ function voletSuggestion(hote){
     };
     nb.onblur = () => { nb.value = seuilSugg(); };
     corps.appendChild(seuil);
+
+    const prez = champZone(corps, "Présentation",
+      document.createElement("select"),
+      "Discrète, la proposition attend au bas du parcours, là où le visiteur " +
+      "va de lui-même. Au premier plan, elle s'ouvre en plus dans une fenêtre " +
+      "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
+      "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
+      "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
+    prez.innerHTML =
+      '<option value="tiroir">Discrète — au bas du parcours de visite</option>' +
+      '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
+    prez.value = presentationSugg();
+    prez.onchange = e => { r.presentation = e.target.value; enregistreConf(); };
 
     const source = champZone(corps, "Exposant proposé",
       document.createElement("select"),

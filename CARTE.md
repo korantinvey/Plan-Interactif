@@ -214,16 +214,16 @@ Fonctions :
 `supprimeForme` 404 · `editionPointerDown` 414 · `editionPointerMove` 459
 `editionPointerUp` 511
 
-### `_export.html` — 146 l. → admin-plans.html, rapport.html
+### `_export.html` — 153 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
 Fonctions :
 
-`nb` 22 · `colonnesExport` 59 · `libellePeriode` 76 · `nomFichierExport` 82
-`nomFeuilleExport` 92 · `exporteExposants` 108
+`nb` 22 · `colonnesExport` 66 · `libellePeriode` 83 · `nomFichierExport` 89
+`nomFeuilleExport` 99 · `exporteExposants` 115
 
-### `_head.html` — 3527 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3538 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -381,18 +381,18 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 365 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 380 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 45 · `basculeParcours` 50 · `signetParcours` 74 · `boutonParcours` 80
-`rafraichitMarque` 85 · `brancheParcours` 97 · `calqueMarques` 129 · `dessineMarques` 145
-`marqueParcours` 175 · `rafraichitParcours` 189 · `instantConf` 213 · `cleTemps` 217
-`jourCourt` 223 · `rangParcours` 227 · `groupeParcours` 243 · `remplitParcours` 252
-`ouvreParcours` 318 · `fermeParcours` 330
+`enregistreParcours` 45 · `basculeParcours` 58 · `signetParcours` 87 · `boutonParcours` 93
+`rafraichitMarque` 98 · `brancheParcours` 111 · `calqueMarques` 143 · `dessineMarques` 159
+`marqueParcours` 189 · `rafraichitParcours` 203 · `instantConf` 227 · `cleTemps` 231
+`jourCourt` 237 · `rangParcours` 241 · `groupeParcours` 257 · `remplitParcours` 266
+`ouvreParcours` 332 · `fermeParcours` 344
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -440,15 +440,16 @@ Fonctions :
 
 `#lienPublic`
 
-### `_suggestion.html` — 505 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_suggestion.html` — 612 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
 
 Fonctions :
 
-`reglageSugg` 45 · `seuilSugg` 47 · `critereSugg` 55 · `indexSugg` 67 · `valeursSugg` 92
-`suggestionCourante` 111 · `exposantPropose` 143 · `nomValeurSugg` 161
-`poseSuggestion` 170 · `relevePalmares` 216 · `etiquetteSugg` 236 · `voletSuggestion` 246
+`reglageSugg` 57 · `seuilSugg` 59 · `presentationSugg` 74 · `critereSugg` 80
+`indexSugg` 92 · `valeursSugg` 117 · `suggestionCourante` 136 · `exposantPropose` 168
+`nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 228 · `poseSuggestion` 263
+`fenetreSuggestion` 276 · `relevePalmares` 310 · `etiquetteSugg` 330 · `voletSuggestion` 340
 
 ## Dans `web/`, mais que la construction ne produit pas
 
@@ -530,6 +531,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260911080023_logo_des_zones_organisateur.sql` — —
 - `20260911130920_icone_d_onglet_du_salon.sql` — evenement
 - `20260912053447_groupes_de_champs_de_la_fiche.sql` — —
+- `20260912055309_suggestion_un_canal_de_mesure_a_elle.sql` — fn enregistre_mesures, fn audience_cibles
 
 ## Le reste
 
