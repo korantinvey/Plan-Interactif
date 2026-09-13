@@ -36,11 +36,23 @@ const CANAUX_STAND = [
 ];
 const AUTRE = ["autre", "Autre"];
 
-/** Ce qui encadre le détail par canal. */
+/*
+ * Deux nombres par geste, et non un : « combien de fois » et « combien de qui ».
+ *
+ * C'est la colonne de gauche qu'on lisait jusqu'ici, et elle se comprenait de
+ * travers. « 240 » sur la ligne d'un exposant se lit « 240 personnes sont
+ * venues me voir » ; c'étaient 240 ouvertures de fiche, le même visiteur qui
+ * rouvre cinq fois pesant cinq. Les deux ensemble se lisent enfin : un stand
+ * ouvert 240 fois par 8 personnes et un stand ouvert 240 fois par 200 ne
+ * racontent pas la même chose, et aucun des deux nombres seul ne les distingue.
+ */
 const COL_TETE = [
   { titre: "Emplacement", largeur: 14, lit: (r) => r.code || "" },
   { titre: "Exposant", largeur: 38, lit: (r) => r.nom || "" },
   { titre: "Fiches ouvertes", largeur: 16, lit: (r) => Number(r.n) || 0 },
+];
+const COL_TETE_V = [
+  { titre: "Visiteurs uniques", largeur: 18, lit: (r) => Number(r.v) || 0 },
 ];
 const COL_PIED = [
   { titre: "Itinéraires calculés", largeur: 20, lit: (r) => Number(r.itineraires) || 0 },
@@ -54,6 +66,21 @@ const COL_PIED = [
   { titre: "Total interactions", largeur: 18,
     lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
 ];
+/* Les mêmes en visiteurs, intercalées chacune après la sienne : c'est côte à
+   côte que l'écart se voit. « Total interactions » n'a pas de jumelle — une
+   somme de gestes ne se convertit pas en personnes, et additionner trois
+   cardinaux qui se recouvrent ne donnerait aucun nombre réel. */
+const COL_PIED_V = {
+  "Itinéraires calculés":
+    { titre: "Visiteurs ayant demandé la route", largeur: 31,
+      lit: (r) => Number(r.v_itineraires) || 0 },
+  "Ajouts au programme de visite":
+    { titre: "Visiteurs l'ayant mis à leur programme", largeur: 36,
+      lit: (r) => Number(r.v_parcours) || 0 },
+  "Ajouts depuis une suggestion":
+    { titre: "Visiteurs venus d'une suggestion", largeur: 31,
+      lit: (r) => Number(r.v_suggestions) || 0 },
+};
 
 /**
  * Les colonnes, canaux compris.
@@ -62,21 +89,42 @@ const COL_PIED = [
  * logo » à zéro renseigne, elle dit qu'aucun logo n'a été posé — et dans le
  * même ordre qu'à l'écran. Un canal inconnu de cette page, ajouté depuis, prend
  * la suite sous son nom brut plutôt que de disparaître de la somme.
+ *
+ * `presence` dit si les visiteurs uniques sont enregistrés pour ce salon. Faux,
+ * les colonnes de visiteurs ne paraissent pas du tout — plutôt qu'une colonne
+ * de zéros, qui se lirait « personne n'est venu » là où il faut lire « on ne
+ * comptait pas encore les personnes ». Un classeur voyage seul, souvent jusqu'à
+ * l'exposant : il ne peut pas porter de note de bas de page.
  */
-function colonnesExport(lignes) {
+function colonnesExport(lignes, presence) {
   const canaux = CANAUX_STAND.concat([AUTRE]);
   const inconnus = new Set();
   lignes.forEach((r) => Object.keys(r.canaux || {}).forEach((c) => {
     if (!canaux.some((x) => x[0] === c)) inconnus.add(c);
   }));
   [...inconnus].sort().forEach((c) => canaux.push([c, c]));
+  const bas = (lib) => lib.charAt(0).toLowerCase() + lib.slice(1);
+  const large = (lib, marge) => Math.min(38, Math.max(15, lib.length + marge));
   return COL_TETE.concat(
-    canaux.map(([cle, lib]) => ({
-      titre: "Ouvertures · " + lib.charAt(0).toLowerCase() + lib.slice(1),
-      largeur: Math.min(36, Math.max(15, lib.length + 13)),
-      lit: (r) => (r.canaux || {})[cle] || 0,
-    })),
-    COL_PIED);
+    presence ? COL_TETE_V : [],
+    canaux.reduce((cols, [cle, lib]) => {
+      cols.push({
+        titre: "Ouvertures · " + bas(lib), largeur: large(lib, 13),
+        lit: (r) => (r.canaux || {})[cle] || 0,
+      });
+      if (presence) {
+        cols.push({
+          titre: "Visiteurs · " + bas(lib), largeur: large(lib, 13),
+          lit: (r) => (r.v_canaux || {})[cle] || 0,
+        });
+      }
+      return cols;
+    }, []),
+    COL_PIED.reduce((cols, c) => {
+      cols.push(c);
+      if (presence && COL_PIED_V[c.titre]) cols.push(COL_PIED_V[c.titre]);
+      return cols;
+    }, []));
 }
 
 /** La période en toutes lettres, depuis le nombre de jours demandé. */
@@ -137,7 +185,10 @@ async function exporteExposants(bouton, jours) {
       signale("Aucun exposant à exporter : ce salon n'a pas encore été synchronisé.", true);
       return;
     }
-    const cols = colonnesExport(lignes);
+    /* `v_depuis` est nul tant qu'aucune présence n'a été enregistrée — un
+       salon mesuré avant qu'on ne compte les visiteurs uniques. Les colonnes
+       correspondantes sont alors retirées plutôt que remplies de zéros. */
+    const cols = colonnesExport(lignes, !!(r && r.v_depuis));
     enregistreFichier(
       classeurXl(nomFeuilleExport(jours), cols, lignes.map((r2) => cols.map((c) => c.lit(r2)))),
       nomFichierExport(e, jours));

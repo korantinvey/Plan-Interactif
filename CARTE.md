@@ -83,19 +83,19 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 609 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 633 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.410 · Remise à zéro des compteurs
+- l.434 · Remise à zéro des compteurs
 
 Fonctions :
 
 `nbChal` 32 · `tonChaleur` 51 · `niveauChaleur` 73 · `valeurChaleur` 76 · `chargeChaleur` 89
-`coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
-`replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
-`dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
-`montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
-`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 571
+`coloreChaleur` 135 · `cartoucheChaleur` 170 · `mesureCartoucheChaleur` 234
+`replieChaleur` 240 · `ecritEtatChaleur` 251 · `dessineEchelleChaleur` 259
+`dessineTopChaleur` 279 · `phraseChaleur` 321 · `rafraichitChaleur` 346
+`montreChaleur` 380 · `rangChaleur` 416 · `aplati` 456 · `voletMesure` 461
+`evenementCourant` 487 · `ouvreRemiseAZero` 506 · `lanceRemiseAZero` 595
 
 Éléments :
 
@@ -137,37 +137,37 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2742 l. → admin-plans.html
+### `_console-js.html` — 2747 l. → admin-plans.html
 
-- l.829 · Provenance des données
-- l.956 · Contenu de la fiche détail
+- l.834 · Provenance des données
+- l.961 · Contenu de la fiche détail
 
 Fonctions :
 
 `refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 394 · `slugifie` 408
 `courant` 412 · `charge` 414 · `chargePlans` 429 · `majEvenement` 434 · `selonAdresse` 454
 `majAdresse` 462 · `majBarre` 477 · `dessineChoix` 519 · `champ` 539 · `reduitIcone` 593
-`champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 891 · `source` 895
-`champCle` 900 · `ligneSource` 935 · `paraitSurFiche` 1065 · `origineConferences` 1071
-`resumeProvenance` 1136 · `resumeFiche` 1153 · `caseFiche` 1198 · `champsPersos` 1240
-`criteres` 1246 · `ecritFiche` 1249 · `caseCritere` 1264 · `clePerso` 1283
-`ajouteChampPerso` 1291 · `renommeChampPerso` 1302 · `retireChampPerso` 1320
-`lignesPerso` 1368 · `ligneOutil` 1388 · `ligneReglage` 1404 · `ouvreProvenance` 1416
-`ouvreSources` 1439 · `cadreFiche` 1491 · `ouvreFiche` 1521 · `sousTitre` 1631
-`tableauChamps` 1646 · `encode` 1789 · `decode` 1791 · `correspondance` 1796
-`sansPrefixe` 1799 · `courte` 1800 · `intitule` 1815 · `intituleSuite` 1827
-`separeValeurs` 1841 · `aplani` 1862 · `memeStyle` 1872 · `autreFace` 1890
-`champOrigine` 1906 · `majLiens` 2173 · `majIntegration` 2200 · `majMsgSync` 2207
-`etapesPressenties` 2237 · `synchronise` 2251 · `dupliquer` 2302 · `litMonProfil` 2400
-`RETOUR_MDP` 2411 · `litComptes` 2413 · `ligneMessage` 2422 · `casesSalons` 2432
-`ouvreComptes` 2462 · `ouvreFicheCompte` 2554 · `videEcran` 2713 · `dessine` 2718
-`demarre` 2730
+`champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 896 · `source` 900
+`champCle` 905 · `ligneSource` 940 · `paraitSurFiche` 1070 · `origineConferences` 1076
+`resumeProvenance` 1141 · `resumeFiche` 1158 · `caseFiche` 1203 · `champsPersos` 1245
+`criteres` 1251 · `ecritFiche` 1254 · `caseCritere` 1269 · `clePerso` 1288
+`ajouteChampPerso` 1296 · `renommeChampPerso` 1307 · `retireChampPerso` 1325
+`lignesPerso` 1373 · `ligneOutil` 1393 · `ligneReglage` 1409 · `ouvreProvenance` 1421
+`ouvreSources` 1444 · `cadreFiche` 1496 · `ouvreFiche` 1526 · `sousTitre` 1636
+`tableauChamps` 1651 · `encode` 1794 · `decode` 1796 · `correspondance` 1801
+`sansPrefixe` 1804 · `courte` 1805 · `intitule` 1820 · `intituleSuite` 1832
+`separeValeurs` 1846 · `aplani` 1867 · `memeStyle` 1877 · `autreFace` 1895
+`champOrigine` 1911 · `majLiens` 2178 · `majIntegration` 2205 · `majMsgSync` 2212
+`etapesPressenties` 2242 · `synchronise` 2256 · `dupliquer` 2307 · `litMonProfil` 2405
+`RETOUR_MDP` 2416 · `litComptes` 2418 · `ligneMessage` 2427 · `casesSalons` 2437
+`ouvreComptes` 2467 · `ouvreFicheCompte` 2559 · `videEcran` 2718 · `dessine` 2723
+`demarre` 2735
 
 Éléments :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 620 l. → console.css
+### `_console.css` — 625 l. → console.css
 
 - l.566 · Page de rapport
 
@@ -216,16 +216,16 @@ Fonctions :
 `supprimeForme` 402 · `editionPointerDown` 412 · `editionPointerMove` 457
 `editionPointerUp` 509
 
-### `_export.html` — 153 l. → admin-plans.html, rapport.html
+### `_export.html` — 204 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
 Fonctions :
 
-`nb` 22 · `colonnesExport` 66 · `libellePeriode` 83 · `nomFichierExport` 89
-`nomFeuilleExport` 99 · `exporteExposants` 115
+`nb` 22 · `colonnesExport` 99 · `libellePeriode` 131 · `nomFichierExport` 137
+`nomFeuilleExport` 147 · `exporteExposants` 163
 
-### `_head.html` — 3638 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3641 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -359,13 +359,14 @@ Fonctions :
 
 `#data` · `#dGo` · `#dItin`
 
-### `_mesure.html` — 147 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 223 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.2 · 13. Mesure d'utilisation
+- l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 117
+`jetonMesure` 35 · `jetonRetenu` 63 · `supportMesure` 104 · `envoieMesures` 145
+`mesure` 187
 
 ### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -439,15 +440,15 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 308 l. → rapport.html
+### `_rapport-js.html` — 419 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 35 · `chargeEvenements` 40 · `joursPeriode` 58 · `chargeRapport` 60 · `chiffre` 71
-`barres` 90 · `jours` 117 · `dessineRapport` 138 · `dessineBarre` 236 · `rafraichit` 259
-`videEcran` 278 · `demarre` 294
+`courant` 47 · `chargeEvenements` 52 · `joursPeriode` 70 · `chargeRapport` 72 · `chiffre` 83
+`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 347
+`rafraichit` 370 · `videEcran` 389 · `demarre` 405
 
 Éléments :
 
@@ -503,20 +504,20 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/mesure/index.ts` — 125 l.
+### `supabase/functions/mesure/index.ts` — 155 l.
 
-`cors` 38 · `jeton` 52 · `client` 55
+`jeton` 73 · `client` 76
 
 ### `supabase/functions/plan-public/index.ts` — 581 l.
 
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1422 l.
+### `supabase/functions/sync-evenement/index.ts` — 1446 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
-`hebergee` 1379 · `nettoieUrl` 1398 · `groupeTextes` 1408
+`hebergee` 1403 · `nettoieUrl` 1422 · `groupeTextes` 1432
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -552,11 +553,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260912053447_groupes_de_champs_de_la_fiche.sql` — —
 - `20260912055309_suggestion_un_canal_de_mesure_a_elle.sql` — fn enregistre_mesures, fn audience_cibles
 - `20260912140943_zones_traversables.sql` — evenement
+- `20260913122346_le_support_d_acces_au_plan.sql` — compteur, visiteur_jour, fn enregistre_mesures, fn rapport_utilisation
+- `20260913170035_les_visiteurs_uniques_par_stand.sql` — visiteur_cible, fn enregistre_mesures, fn purge_presences, fn reinitialise_compteurs, fn audience_cibles
 
 ## Le reste
 
-- `src/index.mjs` — 287 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 64 · `amontPour` 73 · `cleDe` 81 · `meta` 84 · `gardable` 97 · `range` 102 `rafraichit` 109 · `oublie` 136 · `manifeste` 180 · `mesure` 206
+- `src/index.mjs` — 326 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 64 · `amontPour` 73 · `cleDe` 81 · `meta` 84 · `gardable` 97 · `range` 102 `rafraichit` 109 · `oublie` 136 · `manifeste` 209 · `mesure` 235
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

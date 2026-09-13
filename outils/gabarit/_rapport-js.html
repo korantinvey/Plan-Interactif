@@ -32,6 +32,18 @@ const CANAUX_CONF = [
   ["parcours", "Programme de visite"],
 ];
 
+/* Les portes par lesquelles on atteint le plan, dans l'ordre où on les lit, et
+   ce que chacune veut dire pour un organisateur qui ne connaît pas le mot que
+   la base emploie. La chaîne vide est ce qui a été compté avant que la porte ne
+   le soit : elle reste nommée, sans quoi un salon d'avant paraîtrait vide. */
+const SUPPORTS = [
+  ["web", "Navigateur", "Le plan ouvert dans un onglet."],
+  ["integre", "Cadre sur un site", "Encadré dans la page d'un site ou d'une application tierce."],
+  ["pwa", "Écran d'accueil", "Installé sur l'appareil, lancé hors du navigateur."],
+  ["appli", "Application", "Servi par une coque déposée sur une boutique."],
+  ["", "Non précisé", "Compté avant que la porte d'accès ne le soit."],
+];
+
 const courant = () => EVTS.find((e) => e.id === selection);
 
 /* ------------------------------------------------------------------
@@ -113,6 +125,70 @@ function barres(hote, canaux, total, connus) {
   hote.appendChild(box);
 }
 
+/**
+ * Une carte par porte d'accès.
+ *
+ * Des cartes et non des barres, alors que les canaux d'une fiche s'affichent en
+ * barres : une barre compare, et ces chiffres-là ne se comparent pas. Un
+ * lancement depuis l'écran d'accueil ouvre une visite à chaque fois qu'on
+ * rouvre l'application, un cadre en ouvre une par page du site qui le porte, un
+ * onglet laissé deux heures n'en ouvre qu'une. Les mettre côte à côte à la même
+ * échelle ferait lire un écart d'usage là où il n'y a qu'un écart de définition.
+ * Chaque porte se lit donc dans son ordre de grandeur, avec ses trois chiffres.
+ *
+ * Une porte sans rien n'est pas affichée : quatre cartes dont trois à zéro
+ * disent moins bien « tout est passé par le navigateur » qu'une carte seule.
+ */
+function portes(hote, liste) {
+  const compte = (p) => p.visites || p.visiteurs || p.fiches;
+  /* L'ordre est celui du vocabulaire, non celui des volumes, alors que la base
+     rend la porte la plus fréquentée d'abord. Deux raisons : des cartes qui
+     changent de place d'une période à l'autre se relisent à chaque fois, et
+     « non précisé » — l'historique d'avant cette mesure — passerait devant les
+     vraies portes tant qu'il pèse plus lourd qu'elles. Il vient donc en
+     dernier, où on le lit pour ce qu'il est. */
+  const vues = SUPPORTS
+    .map(([cle]) => (liste || []).find((p) => p.support === cle))
+    .filter((p) => p && compte(p));
+  // une porte que cette page ne connaît pas — ajoutée depuis — vaut mieux
+  // affichée sous son nom brut que passée sous silence
+  (liste || []).forEach((p) => {
+    if (compte(p) && !SUPPORTS.some((x) => x[0] === p.support)) vues.push(p);
+  });
+  if (!vues.length) return;
+  /* La porte la plus fréquentée prend l'accent, et « non précisé » n'y a pas
+     droit : ce n'est pas une porte, c'est ce qu'on ne savait pas encore. */
+  const phare = vues.reduce((a, p) =>
+    p.support && (!a || p.visites > a.visites) ? p : a, null);
+  const box = document.createElement("div");
+  box.className = "chiffres";
+  vues.forEach((p) => {
+    const su = SUPPORTS.find((x) => x[0] === p.support);
+    const s = [];
+    s.push(nb(p.visiteurs) + " visiteur" + (p.visiteurs > 1 ? "s" : ""));
+    if (p.volatils) s.push("dont " + nb(p.volatils) + " au stockage refusé");
+    s.push(nb(p.fiches) + " fiche" + (p.fiches > 1 ? "s" : "") + " ouverte" +
+      (p.fiches > 1 ? "s" : ""));
+    chiffre(box, p.visites, (su ? su[1] : p.support) + " · visites",
+      s.join(" · "), vues.length > 1 && p === phare);
+  });
+  hote.appendChild(box);
+  // la phrase de chaque porte vient sous les cartes : la carte porte le
+  // chiffre, la légende porte ce qu'il désigne
+  const l = document.createElement("div");
+  l.className = "legende";
+  vues.forEach((p) => {
+    const su = SUPPORTS.find((x) => x[0] === p.support);
+    if (!su) return;
+    const d = document.createElement("p");
+    d.className = "astuce";
+    d.textContent = su[1] + " — " + su[2];
+    l.appendChild(d);
+  });
+  // une porte inconnue n'a pas de phrase : la légende peut rester vide
+  if (l.children.length) hote.appendChild(l);
+}
+
 /** Les jours, en bâtons. Un salon dure trois jours : le pic se voit d'un œil. */
 function jours(hote, liste) {
   if (!liste.length) return;
@@ -175,8 +251,15 @@ function dessineRapport() {
   g1.className = "chiffres";
   chiffre(g1, r.visites, "Visites",
     "Une ouverture du plan. Revenir plus tard en fait une seconde.", true);
+  /* Les jetons volatils viennent à côté du chiffre, jamais en déduction : ces
+     visiteurs ont bien ouvert le plan, on sait seulement qu'ils y sont peut-être
+     comptés plusieurs fois. Le rapport signale ce qu'il ne peut pas corriger. */
   chiffre(g1, r.visiteurs, "Visiteurs uniques",
-    "Navigateurs distincts sur la période.", true);
+    "Navigateurs distincts sur la période." +
+    (r.visiteurs_volatils
+      ? " Dont " + nb(r.visiteurs_volatils) +
+        " au stockage refusé, recomptés à chaque ouverture."
+      : ""), true);
   chiffre(g1, r.recherches, "Recherches", "Mots-clés saisis, doublons écartés.");
   chiffre(g1, r.itineraires, "Itinéraires calculés", "Trajets distincts demandés.");
   chiffre(g1, r.parcours, "Programmes de visite",
@@ -185,52 +268,80 @@ function dessineRapport() {
   b1.appendChild(g1);
   f.appendChild(b1);
 
-  const b2 = bloc("Fiches exposants ouvertes");
-  const g2 = document.createElement("div");
-  g2.className = "chiffres seul";
-  chiffre(g2, r.stands.total, "Ouvertures", "Toutes provenances confondues.", true);
-  b2.appendChild(g2);
-  const t2 = document.createElement("p");
-  t2.className = "eyebrow";
-  t2.style.margin = "16px 0 10px";
-  t2.textContent = "Par canal";
-  b2.appendChild(t2);
-  barres(b2, r.stands.canaux || {}, r.stands.total, CANAUX_STAND);
+  const b2 = bloc("Par moyen d'accès");
+  portes(b2, r.supports);
+  const a2 = document.createElement("p");
+  a2.className = "astuce";
+  a2.style.marginTop = "12px";
+  /* Deux mises en garde dès qu'il y a plusieurs portes, et les deux sont des
+     propriétés du comptage, non des approximations : une visite ne veut pas dire
+     la même chose d'une porte à l'autre, et deux portes ne partagent aucun jeton
+     de visiteur. Sans elles, un organisateur additionne les cartes, tombe sur
+     plus que le total affiché plus haut, et conclut que le rapport se trompe.
+
+     Une seule porte se dit en une ligne — mais pas la même selon qu'on sache
+     laquelle : « non précisé » n'est pas une porte, c'est un salon mesuré avant
+     qu'on ne compte les portes, et le lui faire dire serait un contresens. */
+  const portesVues = (r.supports || []).filter((x) => x.support);
+  a2.textContent = (r.supports || []).length > 1
+    ? "Les visites ne se comparent pas d'une porte à l'autre : rouvrir une " +
+      "application en ouvre une à chaque fois, un cadre en ouvre une par page " +
+      "du site qui le porte. Et la somme des visiteurs dépasse le total " +
+      "ci-dessus — un navigateur, une application et un cadre posé sur un site " +
+      "tiers ne partagent aucun jeton, le même visiteur y compte une fois par " +
+      "porte et une seule au total."
+    : portesVues.length
+      ? "Tout est passé par la même porte sur cette période."
+      : "La porte d'accès n'était pas encore comptée sur cette période.";
+  b2.appendChild(a2);
   f.appendChild(b2);
 
-  const b3 = bloc("Fiches conférences ouvertes");
+  const b3 = bloc("Fiches exposants ouvertes");
   const g3 = document.createElement("div");
   g3.className = "chiffres seul";
-  chiffre(g3, r.conferences.total, "Ouvertures", "Toutes provenances confondues.", true);
+  chiffre(g3, r.stands.total, "Ouvertures", "Toutes provenances confondues.", true);
   b3.appendChild(g3);
   const t3 = document.createElement("p");
   t3.className = "eyebrow";
   t3.style.margin = "16px 0 10px";
   t3.textContent = "Par canal";
   b3.appendChild(t3);
-  barres(b3, r.conferences.canaux || {}, r.conferences.total, CANAUX_CONF);
-  const a3 = document.createElement("p");
-  a3.className = "astuce";
-  a3.style.marginTop = "12px";
-  a3.textContent = "Une conférence s'ouvre depuis le programme de la salle qui " +
-    "l'accueille, depuis la fiche de l'exposant qui la tient, ou depuis le " +
-    "programme de visite. Elle n'a ni recherche ni forme propre sur le plan.";
-  b3.appendChild(a3);
+  barres(b3, r.stands.canaux || {}, r.stands.total, CANAUX_STAND);
   f.appendChild(b3);
 
-  const b4 = bloc("Jour par jour");
-  jours(b4, r.jours || []);
+  const b4 = bloc("Fiches conférences ouvertes");
+  const g4 = document.createElement("div");
+  g4.className = "chiffres seul";
+  chiffre(g4, r.conferences.total, "Ouvertures", "Toutes provenances confondues.", true);
+  b4.appendChild(g4);
+  const t4 = document.createElement("p");
+  t4.className = "eyebrow";
+  t4.style.margin = "16px 0 10px";
+  t4.textContent = "Par canal";
+  b4.appendChild(t4);
+  barres(b4, r.conferences.canaux || {}, r.conferences.total, CANAUX_CONF);
   const a4 = document.createElement("p");
   a4.className = "astuce";
-  a4.style.marginTop = "10px";
+  a4.style.marginTop = "12px";
+  a4.textContent = "Une conférence s'ouvre depuis le programme de la salle qui " +
+    "l'accueille, depuis la fiche de l'exposant qui la tient, ou depuis le " +
+    "programme de visite. Elle n'a ni recherche ni forme propre sur le plan.";
+  b4.appendChild(a4);
+  f.appendChild(b4);
+
+  const b5 = bloc("Jour par jour");
+  jours(b5, r.jours || []);
+  const a5 = document.createElement("p");
+  a5.className = "astuce";
+  a5.style.marginTop = "10px";
   /* La date d'ouverture se lit dans le fuseau du salon, comme les bâtons :
      les deux dans le fuseau du lecteur ne se recouperaient pas. */
-  a4.textContent = "Visites par jour, dans le fuseau du salon (" + (r.fuseau || "UTC") +
+  a5.textContent = "Visites par jour, dans le fuseau du salon (" + (r.fuseau || "UTC") +
     "). Mesure ouverte depuis le " +
     new Date(r.depuis).toLocaleDateString("fr-FR",
       { dateStyle: "long", timeZone: r.fuseau || "UTC" }) + ".";
-  b4.appendChild(a4);
-  f.appendChild(b4);
+  b5.appendChild(a5);
+  f.appendChild(b5);
 }
 
 function dessineBarre() {

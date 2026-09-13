@@ -607,6 +607,11 @@ table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--a
   .barre .l{grid-area:l}.barre .v{grid-area:v}.barre .j{grid-area:j}
 }
 
+/* Ce que nomment les cartes des portes d'accès. « Navigateur » et « cadre sur
+   un site » ne se devinent pas, et la définition n'a pas sa place dans la carte,
+   qui porte le chiffre : elle vient dessous, en une ligne par porte affichée. */
+.legende{display:grid;gap:4px;margin-top:14px}
+
 /* La courbe des jours, en bâtons : on cherche le pic et le creux, pas la
    valeur au dixième. Un bâton par jour ouvert, l'axe se lit dessous. */
 .jours{display:flex;align-items:flex-end;gap:4px;height:120px;margin-top:6px;
