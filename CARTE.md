@@ -11,38 +11,38 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3183 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3264 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2180 · 10. Mode administration
-- l.2267 · La fiche d'une zone organisateur
-- l.2930 · Masquer une zone organisateur
-- l.3013 · Placer un libellé à la main
+- l.2261 · 10. Mode administration
+- l.2348 · La fiche d'une zone organisateur
+- l.3011 · Masquer une zone organisateur
+- l.3094 · Placer un libellé à la main
 
 Fonctions :
 
 `cleConf` 17 · `ouvreConf` 22 · `reglagesDuSalon` 41 · `conf` 62 · `jeton` 63 · `sousCle` 64
 `styleFond` 66 · `sousCalques` 87 · `styleDataGroupe` 96 · `appliqueCouleursData` 102
 `styleData` 134 · `appliqueApparence` 140 · `appliqueCommandes` 201 · `chercheSorte` 271
-`voletRecherche` 274 · `minutesVisite` 328 · `lueHeure` 348 · `horairesSalon` 352
-`salonPartage` 367 · `trio` 380 · `melange` 390 · `themeSombre` 398 · `appliqueAccent` 412
-`appliqueFond` 443 · `modeleRetenu` 481 · `posePoliceLibelles` 531 · `appliqueModele` 559
-`habilleModale` 600 · `texteCorps` 671 · `standApercu` 686 · `lignesApercu` 710
-`contenuApercu` 736 · `apercuFiche` 773 · `apercuListe` 850 · `apercuDuo` 872
-`glisseFenetre` 905 · `ouvreReglages` 916 · `voletZones` 1015 · `champsFicheZone` 1117
-`ficheZoneEnPlace` 1187 · `voletPlan` 1205 · `blocHoraires` 1328 · `sallesSituees` 1409
-`voletPmr` 1425 · `nomDuTon` 1516 · `voletApparence` 1521 · `clesFiche` 1634
-`voletOrdre` 1650 · `enregistreConf` 2129 · `rgbHex` 2136 · `hexa` 2143 · `luminance` 2147
-`ecarte` 2161 · `joli` 2176 · `retireAdmin` 2193 · `activeAdmin` 2206 · `champZone` 2293
-`champsZone` 2318 · `champSalles` 2390 · `nomDeZone` 2442 · `reduitLogo` 2476
-`champLogo` 2517 · `editeurRiche` 2614 · `memeFicheZone` 2771 · `suitFicheZone` 2777
-`verseFicheZone` 2785 · `ficheZone` 2811 · `enregistreZone` 2836
-`basculeAffichageZone` 2941 · `marqueZonesMasquees` 2958 · `ecritColonnesEvenement` 2978
-`ecritColonneEvenement` 3009 · `cleLibelle` 3034 · `empreinteLibelle` 3050
-`placementLibelle` 3058 · `posePlacement` 3068 · `libelleAutomatique` 3085
-`modePlacementLibelles` 3094 · `majPaletteLibelle` 3111 · `choisitLibelle` 3128
-`pousseLibelle` 3135 · `libellePointerDown` 3143 · `libellePointerMove` 3158
-`libellePointerUp` 3167
+`voletRecherche` 274 · `minutesVisite` 328 · `lueHeure` 355 · `lueDate` 359
+`datesSalon` 366 · `horairesSalon` 380 · `salonPartage` 393 · `trio` 406 · `melange` 416
+`themeSombre` 424 · `appliqueAccent` 438 · `appliqueFond` 469 · `modeleRetenu` 507
+`posePoliceLibelles` 557 · `appliqueModele` 585 · `habilleModale` 626 · `texteCorps` 697
+`standApercu` 712 · `lignesApercu` 736 · `contenuApercu` 762 · `apercuFiche` 799
+`apercuListe` 876 · `apercuDuo` 898 · `glisseFenetre` 931 · `ouvreReglages` 942
+`voletZones` 1041 · `champsFicheZone` 1143 · `ficheZoneEnPlace` 1213 · `voletPlan` 1231
+`blocHoraires` 1357 · `sallesSituees` 1490 · `voletPmr` 1506 · `nomDuTon` 1597
+`voletApparence` 1602 · `clesFiche` 1715 · `voletOrdre` 1731 · `enregistreConf` 2210
+`rgbHex` 2217 · `hexa` 2224 · `luminance` 2228 · `ecarte` 2242 · `joli` 2257
+`retireAdmin` 2274 · `activeAdmin` 2287 · `champZone` 2374 · `champsZone` 2399
+`champSalles` 2471 · `nomDeZone` 2523 · `reduitLogo` 2557 · `champLogo` 2598
+`editeurRiche` 2695 · `memeFicheZone` 2852 · `suitFicheZone` 2858 · `verseFicheZone` 2866
+`ficheZone` 2892 · `enregistreZone` 2917 · `basculeAffichageZone` 3022
+`marqueZonesMasquees` 3039 · `ecritColonnesEvenement` 3059 · `ecritColonneEvenement` 3090
+`cleLibelle` 3115 · `empreinteLibelle` 3131 · `placementLibelle` 3139 · `posePlacement` 3149
+`libelleAutomatique` 3166 · `modePlacementLibelles` 3175 · `majPaletteLibelle` 3192
+`choisitLibelle` 3209 · `pousseLibelle` 3216 · `libellePointerDown` 3224
+`libellePointerMove` 3239 · `libellePointerUp` 3248
 
 Éléments :
 
@@ -227,7 +227,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3723 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3727 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -302,17 +302,17 @@ Fonctions :
 `visePoi` 2847 · `visePoint` 2853 · `ouvreItineraire` 2879 · `fermeItineraire` 2907
 `versItineraire` 2917 · `versItineraireDe` 2920
 
-### `_journee.html` — 995 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 1000 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
 Fonctions :
 
-`minutesDe` 51 · `finInstant` 52 · `ecritHeure` 54 · `ecritMinutes` 59 · `joursSalon` 67
-`jourPropose` 78 · `pointConf` 93 · `departsProposes` 112 · `matriceJournee` 136
-`rangeJournee` 238 · `calculeJournee` 355 · `rangJournee` 567 · `lienJournee` 579
-`arretJournee` 586 · `remplitJournee` 611 · `appliqueVueParcours` 761 · `traceJournee` 791
-`montreJournee` 799 · `perimeJournee` 812 · `ouvreOrganisation` 821 · `lanceJournee` 960
+`minutesDe` 51 · `finInstant` 52 · `ecritHeure` 54 · `ecritMinutes` 59 · `joursSalon` 70
+`jourPropose` 83 · `pointConf` 98 · `departsProposes` 117 · `matriceJournee` 141
+`rangeJournee` 243 · `calculeJournee` 360 · `rangJournee` 572 · `lienJournee` 584
+`arretJournee` 591 · `remplitJournee` 616 · `appliqueVueParcours` 766 · `traceJournee` 796
+`montreJournee` 804 · `perimeJournee` 817 · `ouvreOrganisation` 826 · `lanceJournee` 965
 
 ### `_js.html` — 3456 l. → plan-admin.html, plan-smcl.html, plan.html
 

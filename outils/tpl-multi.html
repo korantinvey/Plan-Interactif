@@ -2533,12 +2533,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb input:focus{border-color:var(--accent);outline:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
-/* Les heures d'ouverture : deux champs par rangée, et une croix pour rendre
-   un jour aux heures de tous les jours. Un champ d'heure porte son sélecteur,
-   il ne tient pas dans la largeur d'un nombre. */
+/* Les dates du salon, puis une rangée par jour : deux champs d'heure, et une
+   croix pour laisser un jour sans heures. Un champ d'heure ou de date porte
+   son sélecteur, il ne tient pas dans la largeur d'un nombre. */
 .reglage-nb .hRang{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink)}
 .reglage-nb.horaires > .l{font-size:14px;color:var(--ink);margin-bottom:3px}
 .reglage-nb .hRang .l{color:var(--ink-2)}
+.reglage-nb .hRang .u{margin-left:4px}
+.reglage-nb .hRang .u:first-child{margin-left:0}
+.reglage-nb .hJours{display:flex;flex-direction:column;gap:6px;margin:4px 0 2px}
+.reglage-nb input[type="date"]{width:138px;text-align:left}
 .reglage-nb input[type="time"]{width:96px;text-align:left}
 .reglage-nb .hEfface{flex:none;width:24px;height:24px;padding:0;border:0;background:none;
   color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;border-radius:var(--radius)}
@@ -7509,29 +7513,55 @@ function minutesVisite(){
 }
 
 /**
- * Les heures où le salon est ouvert.
+ * Les dates du salon, et ses heures jour par jour.
  *
- * Sans elles, la journée organisée n'avait pas de fin : ce qui ne tenait pas
+ * Sans heures, la journée organisée n'avait pas de fin : ce qui ne tenait pas
  * entre deux conférences se rangeait après la dernière, et le visiteur se
  * voyait programmer un stand à dix-neuf heures quarante dans un hall fermé
- * depuis une heure. Klipso ne les donne pas ; c'est l'exploitant qui les dit.
+ * depuis une heure. Klipso ne donne ni les dates ni les heures ; c'est
+ * l'exploitant qui les dit.
  *
- * Deux heures valent pour tous les jours, et un jour peut avoir les siennes —
- * le dernier ferme souvent plus tôt, le jour réservé aux professionnels ouvre
- * parfois avant. Une heure laissée vide pour un jour reprend celle de tous
- * les jours ; aucune heure du tout, et la journée reste ouverte comme avant.
+ * Les dates d'abord, les heures ensuite, une paire par jour : un salon change
+ * d'horaires d'un jour à l'autre — le dernier ferme plus tôt, le jour réservé
+ * aux professionnels ouvre avant — et « tous les jours, sauf » se lisait moins
+ * bien qu'une ligne par date. Les dates servent aussi au visiteur : ce sont
+ * les jours qu'on lui propose, conférences ou non.
  *
- * Rendues en minutes depuis minuit, `null` là où rien n'est dit.
+ *   { debut: "2027-03-21", fin: "2027-03-23",
+ *     jours: { "20270321": { ouverture: "10:00", fermeture: "19:00" } } }
+ *
+ * Les jours sont indexés comme `momentLocal` date une conférence, ce qui les
+ * compare sans conversion. Un jour sans heures n'a pas de borne.
  */
+const JOURS_SALON_MAX = 31;   // au-delà, c'est une date mal tapée, pas un salon
 function lueHeure(s){
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ""));
   return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
 }
-function horairesSalon(jour){
+function lueDate(s){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ""));
+  return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+}
+
+/** Les jours du salon, dans l'ordre ; vide tant que les dates n'en disent
+ *  rien de lisible. Une date de fin absente fait un salon d'un jour. */
+function datesSalon(){
   const h = CONF["_horaires"] || {};
-  const j = (jour && (h.jours || {})[jour]) || {};
-  const heure = (k) => lueHeure(j[k]) !== null ? lueHeure(j[k]) : lueHeure(h[k]);
-  const ouverture = heure("ouverture"), fermeture = heure("fermeture");
+  const a = lueDate(h.debut), b = lueDate(h.fin) || a;
+  if (!a || b < a) return [];
+  const l = [];
+  for (const d = new Date(a); d <= b && l.length < JOURS_SALON_MAX; d.setUTCDate(d.getUTCDate() + 1)){
+    const an = d.getUTCFullYear(), mois = d.getUTCMonth() + 1, jour = d.getUTCDate();
+    l.push({ cle: an + String(mois).padStart(2, "0") + String(jour).padStart(2, "0"),
+             nom: jourCourt({ an: an, mois: mois, jour: jour }) });
+  }
+  return l;
+}
+
+/** Les heures d'un jour, en minutes depuis minuit ; `null` là où rien n'est dit. */
+function horairesSalon(jour){
+  const j = (jour && ((CONF["_horaires"] || {}).jours || {})[jour]) || {};
+  const ouverture = lueHeure(j.ouverture), fermeture = lueHeure(j.fermeture);
   /* Une fermeture qui précède l'ouverture n'est pas un salon de nuit, c'est
      une saisie à moitié faite : on n'en retient rien plutôt que de rendre une
      journée vide. L'onglet des réglages le signale. */
@@ -8494,90 +8524,145 @@ function voletPlan(hote){
 }
 
 /**
- * Les heures d'ouverture, dans l'onglet « Plan ».
+ * Les dates et les heures du salon, dans l'onglet « Plan ».
  *
- * Une rangée pour tous les jours, puis une par jour du programme quand il y en
- * a plusieurs. Les rangées d'un jour partent vides : c'est ce qui dit qu'elles
- * reprennent la première, et c'est ce qu'on laisse sur un salon aux mêmes
- * heures d'un bout à l'autre. Les jours sont ceux des conférences — le plan
- * n'en connaît pas d'autres, et c'est aussi parmi eux que le visiteur choisit
- * le sien.
+ * Deux dates, puis autant de lignes que de jours entre elles, chacune avec son
+ * ouverture et sa fermeture. Les lignes suivent les dates au fil de la saisie :
+ * c'est en voyant paraître « samedi 21 mars » qu'on sait avoir tapé la bonne
+ * année.
+ *
+ * Un jour qui paraît reprend les heures de la veille. Un salon garde le plus
+ * souvent les mêmes d'un bout à l'autre : les recopier à la main sur quatre
+ * lignes était la seule chose que l'écran demandait, et la plus facile à
+ * oublier sur la dernière.
  */
 function blocHoraires(hote){
   const bloc = document.createElement("div");
   bloc.className = "reglage-nb horaires";
   const titre = document.createElement("span");
   titre.className = "l";
-  titre.textContent = "Heures d'ouverture du salon";
+  titre.textContent = "Dates et heures d'ouverture du salon";
   bloc.appendChild(titre);
 
+  const h = () => conf("_horaires");
+
+  const dates = document.createElement("div");
+  dates.className = "hRang hDates";
+  dates.innerHTML = '<span class="u">Du</span><input type="date">' +
+    '<span class="u">au</span><input type="date">';
+  const [du, au] = dates.querySelectorAll("input");
+  du.setAttribute("aria-label", "Premier jour du salon");
+  au.setAttribute("aria-label", "Dernier jour du salon");
+  du.value = h().debut || "";
+  au.value = h().fin || "";
+  bloc.appendChild(dates);
+
+  const lignes = document.createElement("div");
+  lignes.className = "hJours";
+  bloc.appendChild(lignes);
+
+  const aide = document.createElement("span");
+  aide.className = "aide";
+  bloc.appendChild(aide);
   const alerte = document.createElement("span");
   alerte.className = "aide alerte";
+  bloc.appendChild(alerte);
+
   const majAlerte = () => {
-    const faux = [horairesSalon("")].concat(joursSalon().map(j => horairesSalon(j.cle)))
-      .some(h => h.incoherent);
-    alerte.hidden = !faux;
-    alerte.textContent = "Une fermeture tombe avant l'ouverture : ces heures-là ne " +
-      "sont pas prises en compte tant qu'elles ne sont pas corrigées.";
+    const a = lueDate(h().debut), b = lueDate(h().fin);
+    const dit = a && b && b < a
+      ? "Le dernier jour précède le premier : corrigez les dates pour régler les heures."
+      : a && b && (b - a) / 864e5 >= JOURS_SALON_MAX
+      ? "Plus de " + JOURS_SALON_MAX + " jours entre ces deux dates : seuls les " +
+        JOURS_SALON_MAX + " premiers sont proposés. Vérifiez l'année."
+      : datesSalon().some(j => horairesSalon(j.cle).incoherent)
+      ? "Une fermeture tombe avant l'ouverture : ce jour-là n'a pas d'heures tant " +
+        "qu'elle n'est pas corrigée."
+      : "";
+    alerte.hidden = !dit;
+    alerte.textContent = dit;
   };
 
-  const rangee = (libelle, jour) => {
+  const ligne = (j) => {
     const r = document.createElement("div");
     r.className = "hRang";
-    r.innerHTML = '<span class="l"></span><input type="time" step="300">' +
-      '<span class="u">–</span><input type="time" step="300">' +
-      '<button type="button" class="hEfface" title="Effacer">×</button>';
-    r.querySelector(".l").textContent = libelle;
+    r.innerHTML = '<span class="l"></span>' +
+      '<span class="u">Ouverture</span><input type="time" step="300">' +
+      '<span class="u">Fermeture</span><input type="time" step="300">' +
+      '<button type="button" class="hEfface" title="Effacer les heures de ce jour">×</button>';
+    r.querySelector(".l").textContent = j.nom;
     const [de, a] = r.querySelectorAll("input");
     const efface = r.querySelector(".hEfface");
-    const casier = () => {
-      const h = conf("_horaires");
-      if (!jour) return h;
-      h.jours = h.jours || {};
-      return (h.jours[jour] = h.jours[jour] || {});
-    };
-    const lu = () => {
-      const h = CONF["_horaires"] || {};
-      return (jour ? (h.jours || {})[jour] : h) || {};
-    };
-    de.value = lu().ouverture || "";
-    a.value = lu().fermeture || "";
-    de.setAttribute("aria-label", "Ouverture, " + libelle.toLowerCase());
-    a.setAttribute("aria-label", "Fermeture, " + libelle.toLowerCase());
+    const lu = (h().jours || {})[j.cle] || {};
+    de.value = lu.ouverture || "";
+    a.value = lu.fermeture || "";
+    de.setAttribute("aria-label", "Ouverture, " + j.nom);
+    a.setAttribute("aria-label", "Fermeture, " + j.nom);
     const majEfface = () => { efface.hidden = !de.value && !a.value; };
     /* Un champ d'heure n'a de valeur qu'une fois complet : tant qu'on tape, il
        rend une chaîne vide, et l'écrire effacerait l'heure qu'on corrige. On
        n'enregistre donc qu'au changement, où le champ est entier ou vidé. */
-    const ecrit = (cle, champ) => {
-      const c = casier();
-      if (lueHeure(champ.value) !== null) c[cle] = champ.value; else delete c[cle];
-      // un jour sans heure propre ne laisse pas de casier vide derrière lui
-      const h = CONF["_horaires"];
-      if (jour && h.jours && !Object.keys(h.jours[jour] || {}).length) delete h.jours[jour];
+    const ecrit = () => {
+      const t = h();
+      t.jours = t.jours || {};
+      const c = {};
+      if (lueHeure(de.value) !== null) c.ouverture = de.value;
+      if (lueHeure(a.value) !== null) c.fermeture = a.value;
+      // un jour sans heures ne laisse pas de casier vide derrière lui
+      if (Object.keys(c).length) t.jours[j.cle] = c; else delete t.jours[j.cle];
       enregistreConf();
       majEfface();
       majAlerte();
     };
-    de.onchange = () => ecrit("ouverture", de);
-    a.onchange = () => ecrit("fermeture", a);
-    efface.onclick = () => { de.value = a.value = ""; ecrit("ouverture", de); ecrit("fermeture", a); };
+    de.onchange = a.onchange = ecrit;
+    efface.onclick = () => { de.value = a.value = ""; ecrit(); };
     majEfface();
-    bloc.appendChild(r);
+    lignes.appendChild(r);
   };
 
-  const jours = joursSalon();
-  rangee(jours.length > 1 ? "Tous les jours" : "Ouverture – fermeture", "");
-  if (jours.length > 1) jours.forEach(j => rangee(j.nom, j.cle));
+  const remplit = () => {
+    lignes.innerHTML = "";
+    const jours = datesSalon();
+    jours.forEach(ligne);
+    aide.textContent = jours.length
+      ? "Aucun stand n'est programmé dans la journée d'un visiteur avant " +
+        "l'ouverture ni après la fermeture. Ces jours sont aussi ceux qu'on lui " +
+        "propose. Un jour sans heures n'a pas de borne."
+      : "Choisissez les dates : une ligne d'heures paraît pour chaque jour. Sans " +
+        "elles, la journée d'un visiteur n'a ni début ni fin.";
+    majAlerte();
+  };
 
-  const aide = document.createElement("span");
-  aide.className = "aide";
-  aide.textContent = "Aucun stand n'est programmé dans la journée d'un visiteur " +
-    "avant l'ouverture ni après la fermeture." +
-    (jours.length > 1 ? " Un jour laissé vide reprend les heures de tous les jours." : "") +
-    " Sans heures, la journée n'a pas de fin.";
-  bloc.appendChild(aide);
-  bloc.appendChild(alerte);
-  majAlerte();
+  /* Les jours qui paraissent reprennent les heures de la veille — ou, pour le
+     premier, celles qu'on aurait saisies pour tous les jours avant que les
+     dates n'existent. Les jours qui sortent des dates gardent les leurs : une
+     date corrigée dans le mauvais sens puis rétablie ne doit rien effacer. */
+  const recopie = () => {
+    const t = h();
+    t.jours = t.jours || {};
+    let veille = lueHeure(t.ouverture) !== null || lueHeure(t.fermeture) !== null
+      ? { ouverture: t.ouverture, fermeture: t.fermeture } : null;
+    const jours = datesSalon();
+    jours.forEach(j => {
+      if (t.jours[j.cle]) veille = t.jours[j.cle];
+      else if (veille) t.jours[j.cle] = Object.assign({}, veille);
+    });
+    if (jours.length){ delete t.ouverture; delete t.fermeture; }
+  };
+
+  du.onchange = au.onchange = () => {
+    const t = h();
+    if (lueDate(du.value)) t.debut = du.value; else delete t.debut;
+    if (lueDate(au.value)) t.fin = au.value; else delete t.fin;
+    // le calendrier du dernier jour s'ouvre sur le mois du premier
+    au.min = du.value || "";
+    recopie();
+    enregistreConf();
+    remplit();
+  };
+  au.min = du.value || "";
+
+  remplit();
   hote.appendChild(bloc);
 }
 
@@ -18549,8 +18634,13 @@ function ecritMinutes(m){
   return h + " h" + (r ? " " + r + " min" : "");
 }
 
-/** Les jours où le salon a un programme, dans l'ordre. */
+/** Les jours du salon, dans l'ordre. Ceux que l'exploitant a datés d'abord :
+ *  un salon sans conférence a des jours lui aussi, et c'est parmi eux que le
+ *  visiteur choisit le sien. À défaut, les jours où le programme a quelque
+ *  chose. */
 function joursSalon(){
+  const dates = datesSalon();
+  if (dates.length) return dates;
   const vus = new Map();
   CONFS.forEach(c => {
     const d = instantConf(c);
