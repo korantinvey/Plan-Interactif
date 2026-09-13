@@ -420,19 +420,19 @@ Fonctions :
 `ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 547
 `adoptePartage` 633
 
-### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 485 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
-- l.57 · Panneau : une seule liste, tous types confondus
-- l.285 · Repères
-- l.337 · Fond du plan
+- l.57 · Panneau : deux sections, chacune rangée par nom
+- l.301 · Repères
+- l.353 · Fond du plan
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`nature` 69 · `boutonAjout` 76 · `boutonVerrou` 87 · `intertitre` 95
-`construitPanneau` 102 · `sectionSelection` 301 · `sectionFond` 357 · `ligneCouleur` 411
-`rangSecteur` 431 · `rangSous` 443 · `defautCouleur` 465
+`nature` 75 · `boutonAjout` 82 · `boutonVerrou` 93 · `intertitre` 101
+`construitPanneau` 108 · `sectionSelection` 317 · `sectionFond` 373 · `ligneCouleur` 427
+`rangSecteur` 447 · `rangSous` 459 · `defautCouleur` 481
 
 ### `_pousse.html` — 631 l. → plan-admin.html, plan-smcl.html, plan.html
 
