@@ -1613,6 +1613,8 @@ const appliqueVue = () => {
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
+  // et la pointe des lignes fléchées, pas davantage
+  if (typeof rafraichitFleches === "function") rafraichitFleches();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
