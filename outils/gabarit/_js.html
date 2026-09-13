@@ -1826,7 +1826,10 @@ function rectVisee(n){
  */
 function zoom(f, fx, fy){
   const base = vise || view;
-  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
+  /* Jusqu'où l'on recule : `recul()` ouvre la limite quand le quartier a été
+     dessiné autour du pavillon, et la garde serrée quand il n'y a rien à voir
+     au-delà des murs. */
+  const nw = Math.min((emp.x1 - emp.x0) * recul(), Math.max(6, base.w * f)), k = nw / base.w;
   glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
                w: nw, h: base.h * k });
 }
@@ -3026,7 +3029,7 @@ function suitPince(){
   const r = cadrePlan();
   // le pincement change l'échelle : mêmes économies que la molette
   figeTextes();
-  const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
+  const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
   view = {

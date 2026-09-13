@@ -1,0 +1,700 @@
+/* ============================================================
+   16. Les environs — le pavillon dans son quartier
+
+   Un plan de salon s'arrête au mur. Le visiteur, lui, arrive par une rue, se
+   gare sur un parking, ressort par une porte qui donne quelque part : tout
+   cela existe à douze mètres du premier stand, et le plan n'en disait rien.
+
+   Le hall est pourtant déjà situé, et depuis toujours. Klipso stocke sa
+   géométrie en mètres dans le repère monde du parc, l'import ne fait qu'en
+   retourner le Y (`_partage/geometrie.ts`), et l'échelle affichée dit des
+   mètres parce que ce sont des mètres. Il ne manque donc pas une projection
+   pour situer le pavillon dans son quartier : il manque trois nombres — où
+   tombe un point du plan sur la Terre, et vers où pointe l'axe des X.
+
+   Ces trois nombres ne se devinent pas, et c'est la seule chose qui se fasse
+   à la main : on colle les coordonnées du centre du pavillon, prises sur
+   n'importe quelle carte, puis on tourne jusqu'à ce que les bâtiments voisins
+   tombent en face. Une fois par parc, jamais rejoué.
+
+   Le reste ne sort pas d'ici. On demande les rues et les bâtiments à
+   OpenStreetMap une fois, on les range en mètres-plan, et on les enregistre
+   comme un calque d'habillage ordinaire. À partir de là il n'y a plus rien de
+   particulier : le panneau des calques le colore, le masque et le déplace
+   comme le reste, le visiteur le reçoit avec le fond, hors ligne compris, et
+   la page ne parle à personne d'autre que son propre service. La Terre n'est
+   ronde qu'au moment du calage.
+   ============================================================ */
+
+/* Le calque qu'on écrit, et sous lequel rien ne se range. Son identifiant
+   tient la place d'un identifiant Klipso — il en a la forme sans risquer d'en
+   croiser un — et le même sert à tous les pavillons : l'unicité porte sur le
+   couple (pavillon, identifiant). */
+const CLE_ENVIRONS = "__environs";
+const ID_ENVIRONS = "e17b0000-0000-4000-8000-000000000001";
+const NOM_ENVIRONS = "Environs";
+/* Un rang que Klipso ne descend jamais : le calque arrive au fond de la pile
+   sans que personne ait à l'y pousser. */
+const RANG_ENVIRONS = -1000;
+
+/* Combien de largeurs de pavillon on demande, et jusqu'où l'on peut ensuite
+   reculer. Le même chiffre pour les deux : reculer au-delà de ce qui a été
+   dessiné ne montrerait que du vide, et s'arrêter en deçà laisserait dehors
+   ce qu'on est allé chercher. Six fois deux cents mètres, c'est le quartier —
+   les accès, les parkings, la station. */
+const TERRAIN_ENVIRONS = 6;
+
+/* ------------------------------------------------------------
+   Le calage
+   ------------------------------------------------------------ */
+
+const DEG = Math.PI / 180;
+/* WGS84 : demi-grand axe, et première excentricité au carré. */
+const RAYON_TERRE = 6378137, EXCENTRICITE2 = 0.00669437999014;
+
+/**
+ * Ce que vaut un degré, en mètres, à cette latitude.
+ *
+ * L'ellipsoïde plutôt que la sphère : cela ne coûte qu'une racine, et l'écart
+ * atteint sept mètres au kilomètre sous nos latitudes — de quoi décaler d'une
+ * demi-rue le bord du quartier, précisément là où l'on vérifie que le calage
+ * tombe juste.
+ */
+function metresParDegre(lat){
+  const s = Math.sin(lat * DEG), w = 1 - EXCENTRICITE2 * s * s;
+  return {
+    lat: DEG * RAYON_TERRE * (1 - EXCENTRICITE2) / Math.pow(w, 1.5),
+    lon: DEG * RAYON_TERRE * Math.cos(lat * DEG) / Math.sqrt(w),
+  };
+}
+
+/**
+ * Le passage entre le repère du plan et l'est/nord local.
+ *
+ * Le plan a son Y vers le bas, la Terre son nord vers le haut : à la rotation
+ * s'ajoute un retournement, et la matrice qui en résulte se trouve être sa
+ * propre réciproque. Une seule fonction sert donc dans les deux sens — ce
+ * n'est pas une économie d'écriture mais une garantie : l'aller et le retour
+ * ne peuvent pas diverger.
+ */
+function tourneEnvirons(dx, dy, a){
+  const c = Math.cos(a), s = Math.sin(a);
+  return [dx * c + dy * s, dx * s - dy * c];
+}
+
+/** Un point du plan, en longitude et latitude. */
+function versTerre(pt, cal){
+  const m = metresParDegre(cal.lat);
+  const [e, n] = tourneEnvirons(pt[0] - cal.x, pt[1] - cal.y, cal.angle);
+  return [cal.lon + e / m.lon, cal.lat + n / m.lat];
+}
+
+/** Une longitude et une latitude, en mètres du plan. */
+function versLePlan(ll, cal){
+  const m = metresParDegre(cal.lat);
+  const [dx, dy] = tourneEnvirons((ll[0] - cal.lon) * m.lon,
+                                  (ll[1] - cal.lat) * m.lat, cal.angle);
+  return [cal.x + dx, cal.y + dy];
+}
+
+/**
+ * Le même calage, écrit depuis un autre point du plan.
+ *
+ * Tourner autour de l'origine ferait fuir le quartier hors de l'écran dès le
+ * premier degré — elle est à sept kilomètres du hall. On ré-ancre donc sur le
+ * point qu'on regarde avant de toucher à l'angle : la rotation pivote alors
+ * là où l'œil est posé, et régler devient un geste au lieu d'une poursuite.
+ */
+function reancre(cal, pt){
+  const ll = versTerre(pt, cal);
+  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle };
+}
+
+/** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
+ *  c'est autour de l'ensemble qu'il faut demander le terrain — sans quoi un
+ *  salon sur deux halls n'en situerait qu'un. */
+function empriseDesPavillons(){
+  let e = null;
+  for (const p of (DATA && DATA.plans ? DATA.plans : [])){
+    const q = p.emprise;
+    if (!q) continue;
+    e = e ? { x0: Math.min(e.x0, q.x0), y0: Math.min(e.y0, q.y0),
+              x1: Math.max(e.x1, q.x1), y1: Math.max(e.y1, q.y1) } : Object.assign({}, q);
+  }
+  return e;
+}
+
+/** Le milieu de ce que le salon occupe : le point sur lequel on cale, et
+ *  autour duquel on tourne. */
+function centreDesPavillons(){
+  const e = empriseDesPavillons();
+  return e ? [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2] : [0, 0];
+}
+
+/**
+ * Le carré de terrain à demander, en degrés : sud, ouest, nord, est.
+ *
+ * Un carré, et non le rectangle du salon : le repère du plan est tourné par
+ * rapport au nord, et ce qui est à l'équerre sur le plan ne l'est plus sur la
+ * Terre. Bâti sur la plus grande dimension, il contient le salon quelle que
+ * soit la rotation — laquelle n'est justement pas encore sûre au moment où
+ * l'on demande.
+ */
+function carreDeTerrain(cal, facteur){
+  const e = empriseDesPavillons();
+  if (!e) return null;
+  const c = centreDesPavillons();
+  const d = Math.max(e.x1 - e.x0, e.y1 - e.y0) * facteur / 2;
+  let sud = 90, ouest = 180, nord = -90, est = -180;
+  for (const q of [[c[0] - d, c[1] - d], [c[0] + d, c[1] - d],
+                   [c[0] + d, c[1] + d], [c[0] - d, c[1] + d]]){
+    const ll = versTerre(q, cal);
+    ouest = Math.min(ouest, ll[0]); est = Math.max(est, ll[0]);
+    sud = Math.min(sud, ll[1]);     nord = Math.max(nord, ll[1]);
+  }
+  return { bbox: [sud, ouest, nord, est], demi: d, centre: c };
+}
+
+/* ------------------------------------------------------------
+   Ce qu'on demande à OpenStreetMap
+   ------------------------------------------------------------ */
+
+/* Le serveur public d'Overpass. Interrogé une fois par salon, à la main d'un
+   exploitant : ce n'est pas un appel que le visiteur fait — lui reçoit un
+   tracé déjà cuit, avec le reste du fond. */
+const OVERPASS = "https://overpass-api.de/api/interpreter";
+
+/* Trois familles, et non une seule. Le panneau des calques sait déjà régler
+   couleur et visibilité sous-calque par sous-calque : un quartier qu'on ne
+   pourrait éteindre que d'un bloc ne servirait qu'à moitié — les bâtiments
+   voisins situent, la végétation encombre.
+
+   Sans accent, contre l'usage de la maison : ces identifiants deviennent des
+   clés de réglage (`__environs/VOIES`), enregistrées chez l'exploitant et en
+   base, et une clé ne doit pas dépendre d'une normalisation Unicode. `joli()`
+   les rhabille dans le panneau. */
+const SOUS_ENVIRONS = ["VOIES", "CONSTRUCTIONS", "ESPACES"];
+
+/* La largeur d'une voie, en mètres, quand OpenStreetMap ne la donne pas. Le
+   trait est tracé à l'échelle du plan — huit mètres de rue font huit mètres,
+   et s'amincissent en reculant comme tout le reste — ce qui suppose de dire
+   lesquels. */
+const LARGEUR_VOIE = {
+  motorway: 18, trunk: 16, primary: 14, secondary: 11, tertiary: 9,
+  unclassified: 7, residential: 7, living_street: 6, pedestrian: 6,
+  service: 4.5, track: 3.5, cycleway: 2.5, footway: 2, path: 2, steps: 2,
+};
+const LARGEUR_RAIL = { rail: 4, light_rail: 3.5, tram: 3, subway: 3, narrow_gauge: 2.5 };
+const LARGEUR_EAU = { river: 12, canal: 8, stream: 3 };
+
+/** Ce que la source dit de la largeur, ou ce que sa catégorie laisse supposer. */
+function largeurVoie(t){
+  const l = parseFloat(t.width);
+  if (isFinite(l) && l > 0 && l < 60) return l;
+  /* Les voies plutôt que la largeur : c'est ce que les contributeurs
+     renseignent le plus, et trois mètres vingt par voie plus un mètre de
+     trottoir tombe juste sur une rue de ville. */
+  const v = parseInt(t.lanes, 10);
+  if (isFinite(v) && v > 0 && v < 12) return v * 3.2 + 1.5;
+  return LARGEUR_VOIE[t.highway] || 5;
+}
+
+/**
+ * La famille d'un chemin, et l'épaisseur de son trait. Nul : on n'en veut pas.
+ *
+ * Les surfaces — bâtiments, parkings, pelouses — sont fermées et tracées d'un
+ * filet ; l'exploitant les remplit d'un clic depuis le panneau s'il préfère
+ * des aplats. Le filet est en mètres lui aussi : un demi-mètre disparaît en
+ * reculant, ce qui est exactement ce qu'on veut d'un contour à cette échelle.
+ */
+function sorteEnvirons(t){
+  if (!t) return null;
+  if (t.highway && t.highway !== "proposed" && t.highway !== "construction")
+    return { sous: "VOIES", large: largeurVoie(t), ferme: false };
+  if (LARGEUR_RAIL[t.railway])
+    return { sous: "VOIES", large: LARGEUR_RAIL[t.railway], ferme: false };
+  if (t.building) return { sous: "CONSTRUCTIONS", large: 0.5, ferme: true };
+  if (LARGEUR_EAU[t.waterway])
+    return { sous: "ESPACES", large: LARGEUR_EAU[t.waterway], ferme: false };
+  if (t.amenity === "parking" || t.landuse || t.leisure || t.natural)
+    return { sous: "ESPACES", large: 0.5, ferme: true };
+  return null;
+}
+
+/** La requête Overpass : tout ce qu'on veut, dans un seul aller-retour. */
+function requeteOverpass(bbox){
+  /* `out geom` rend les coordonnées de chaque chemin dans la réponse : sans
+     lui il faudrait un second appel pour résoudre les nœuds, un par un. Les
+     relations — un bâtiment à cour intérieure, un lac à île — sont laissées
+     de côté : leur assemblage demanderait un module à lui seul, pour ce qu'il
+     ajouterait ici d'un trou dans une forme grise. */
+  return "[out:json][timeout:90][bbox:" + bbox.map(v => v.toFixed(6)).join(",") + "];(" + [
+    'way["highway"]',
+    'way["railway"~"^(rail|light_rail|tram|subway|narrow_gauge)$"]',
+    'way["building"]',
+    'way["amenity"="parking"]',
+    'way["landuse"]',
+    'way["leisure"~"^(park|garden|pitch|playground)$"]',
+    'way["natural"~"^(water|wood|scrub|grassland|sand)$"]',
+    'way["waterway"~"^(river|canal|stream)$"]',
+  ].join(";") + ";);out geom;";
+}
+
+/** Le quartier, tel qu'OpenStreetMap le rend. */
+async function chercheEnvirons(bbox){
+  let r;
+  try {
+    r = await fetch(OVERPASS, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(requeteOverpass(bbox)),
+    });
+  } catch (e) {
+    throw new Error("OpenStreetMap est injoignable depuis ce poste.");
+  }
+  /* Le serveur public d'Overpass est partagé, et le dit : ces deux codes ne
+     signalent pas une requête fautive mais un serveur qui ne peut pas
+     répondre maintenant. Les confondre enverrait corriger des coordonnées
+     justes. */
+  if (r.status === 429 || r.status === 504)
+    throw new Error("OpenStreetMap est saturé pour l'instant : réessayez dans une minute.");
+  if (!r.ok) throw new Error("OpenStreetMap a répondu " + r.status + ".");
+  const d = await r.json();
+  return (d.elements || []).filter(x =>
+    x.type === "way" && x.geometry && x.geometry.length > 1 && sorteEnvirons(x.tags));
+}
+
+/**
+ * Vers où penchent les rues du quartier, en radians depuis l'est.
+ *
+ * Un parc des expositions est bâti le long de ses rues : la direction
+ * dominante de celles-ci et celle des allées du pavillon (`anglePlan`) sont la
+ * même, au quart de tour près. De quoi proposer une rotation de départ plutôt
+ * qu'un zéro, et ne laisser à trancher que le quart de tour — ce qu'un coup
+ * d'œil règle, là où trouver un angle à la main ne se fait pas.
+ */
+function penteDesVoies(elements, cal){
+  const m = metresParDegre(cal.lat);
+  let sc = 0, ss = 0;
+  for (const w of elements){
+    if (!w.tags || !w.tags.highway) continue;
+    const g = w.geometry;
+    for (let i = 0; i + 1 < g.length; i++){
+      const e = (g[i + 1].lon - g[i].lon) * m.lon;
+      const n = (g[i + 1].lat - g[i].lat) * m.lat;
+      const l = Math.hypot(e, n);
+      if (l < 8) continue;            // un raccord de trottoir ne dit rien de la rue
+      const a = Math.atan2(n, e);
+      /* Quadruplées, comme les allées du plan le sont dans `anglePlan` : au
+         quart de tour près, une direction fait alors le tour entier, et 89°
+         se moyenne avec 1° au lieu de tomber à 45°. */
+      sc += l * Math.cos(4 * a); ss += l * Math.sin(4 * a);
+    }
+  }
+  return (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
+}
+
+/* ------------------------------------------------------------
+   Du chemin OSM au tracé du plan
+   ------------------------------------------------------------ */
+
+/**
+ * Un tracé allégé — Douglas-Peucker, à un demi-mètre près.
+ *
+ * Un contributeur pose ses points au mètre ; à l'échelle d'un quartier, neuf
+ * sur dix ne déplacent rien de visible et pèsent autant que les autres. Le
+ * quartier tient ainsi en quelques centaines de kilo-octets au lieu de
+ * quelques mégaoctets — et c'est chaque visiteur qui les téléchargerait.
+ */
+function allegeTrace(pts, tol){
+  if (pts.length < 3) return pts;
+  const a = pts[0], b = pts[pts.length - 1];
+  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  let pire = -1, iPire = 0;
+  for (let i = 1; i < pts.length - 1; i++){
+    let t = l2 ? ((pts[i][0] - a[0]) * dx + (pts[i][1] - a[1]) * dy) / l2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(pts[i][0] - (a[0] + t * dx), pts[i][1] - (a[1] + t * dy));
+    if (d > pire){ pire = d; iPire = i; }
+  }
+  if (pire <= tol) return [a, b];
+  return allegeTrace(pts.slice(0, iPire + 1), tol)
+    .slice(0, -1)
+    .concat(allegeTrace(pts.slice(iPire), tol));
+}
+
+/**
+ * Le quartier d'un pavillon, en SVG, dans le repère du plan.
+ *
+ * Les tracés de même épaisseur sont réunis dans un seul `<path>` : cinq cents
+ * rues font cinq balises au lieu de cinq cents, et le navigateur en pose
+ * autant de moins. Les plus larges d'abord, pour que les sentiers se lisent
+ * par-dessus l'avenue plutôt que dessous.
+ */
+function dessineEnvirons(p, elements, cal){
+  const e = p.emprise || empriseDesPavillons();
+  const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
+  const demi = Math.max(e.x1 - e.x0, e.y1 - e.y0) * TERRAIN_ENVIRONS / 2;
+  const par = new Map();
+  const r1 = v => Math.round(v * 10) / 10;
+
+  for (const w of elements){
+    const s = sorteEnvirons(w.tags);
+    if (!s) continue;
+    let pts = w.geometry.map(g => versLePlan([g.lon, g.lat], cal));
+    /* Le carré demandé est à l'équerre sur la Terre, le pavillon sur le plan :
+       les coins du premier débordent le second d'autant que la rotation est
+       franche. On écarte donc ce qui tombe entièrement hors du champ — sans
+       quoi le calque porterait un quart de quartier qu'aucun zoom n'atteint. */
+    if (pts.every(q => Math.abs(q[0] - cx) > demi || Math.abs(q[1] - cy) > demi)) continue;
+    /* Une surface d'OpenStreetMap répète son premier point à la fin : `Z` le
+       dit mieux, et l'allègement n'a pas à trancher entre les deux. */
+    const ferme = s.ferme && pts.length > 3;
+    if (ferme) pts = pts.slice(0, -1);
+    pts = allegeTrace(pts, 0.5);
+    if (pts.length < 2) continue;
+    const d = "M" + pts.map(q => r1(q[0]) + " " + r1(q[1])).join("L") + (ferme ? "Z" : "");
+    if (!par.has(s.sous)) par.set(s.sous, new Map());
+    const larges = par.get(s.sous);
+    if (!larges.has(s.large)) larges.set(s.large, []);
+    larges.get(s.large).push(d);
+  }
+
+  const groupes = [];
+  for (const sous of SOUS_ENVIRONS){
+    const larges = par.get(sous);
+    if (!larges || !larges.size) continue;
+    const chemins = [...larges.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([l, ds]) => '<path style="stroke-width:' + l + '" d="' + ds.join("") + '"/>')
+      .join("");
+    /* Un trait noir et pas de remplissage : c'est ainsi qu'un calque Klipso
+       dit « je n'ai pas de couleur à moi ». `styleFond` laisse alors la teinte
+       au thème — `--plan-line` — et le quartier suit le mode sombre comme le
+       reste du fond, au lieu d'y rester gris clair. */
+    groupes.push('<g id="' + sous + '" data-s="rgb(0,0,0)" data-f="none">' + chemins + "</g>");
+  }
+  return groupes.join("");
+}
+
+/* ------------------------------------------------------------
+   La pose sur le plan
+   ------------------------------------------------------------ */
+
+/** Le calque des environs d'un pavillon, s'il en a un. */
+const calqueEnvirons = (p) => (p && p.fond ? p.fond.find(f => f.cle === CLE_ENVIRONS) : null);
+
+/**
+ * Poser le quartier sur un pavillon, sans rien enregistrer.
+ *
+ * Un `svg` vide le retire. Le calque prend la tête de `fond`, donc le fond de
+ * la pile : c'est l'ordre par défaut, que l'exploitant garde ou défait comme
+ * pour n'importe quelle couche.
+ */
+function montreEnvirons(svg, p){
+  p = p || P();
+  if (!p || !p.fond) return;
+  const i = p.fond.findIndex(f => f.cle === CLE_ENVIRONS);
+  if (!svg){ if (i >= 0) p.fond.splice(i, 1); }
+  else if (i >= 0) p.fond[i].svg = svg;
+  else p.fond.unshift({ id: ID_ENVIRONS, cle: CLE_ENVIRONS, nom: NOM_ENVIRONS,
+                        ordre: RANG_ENVIRONS, svg: svg });
+  if (p !== P()) return;
+  monteHabillage();
+  ordonneDom();
+  appliqueApparence();
+  if (ADMIN && MONTE) construitPanneau();
+}
+
+/**
+ * Jusqu'où l'on peut reculer, en largeurs de pavillon.
+ *
+ * Deux fois et demie tant qu'il n'y a rien au-delà des murs : reculer
+ * davantage ne montrerait que du vide autour d'un plan devenu illisible. Le
+ * quartier posé, la limite s'ouvre — c'est pour le voir qu'on l'a dessiné, et
+ * la vue s'arrêtait jusqu'ici au bord de la première rue.
+ */
+function recul(){
+  return calqueEnvirons(DATA ? P() : null) ? TERRAIN_ENVIRONS : 2.5;
+}
+
+/* ------------------------------------------------------------
+   L'enregistrement pour tous
+   ------------------------------------------------------------ */
+
+/** Session, projet et correspondance des pavillons : ce qu'il faut pour
+ *  écrire, refusé d'un mot quand il manque. */
+async function accesEnvirons(){
+  const acces = accesBase();
+  if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
+  return { acces: acces, ids: await identifiants(acces) };
+}
+
+/**
+ * Le quartier, enregistré pour tous.
+ *
+ * Le calage part avec : il ne sert à personne d'autre qu'à celui qui
+ * recommencera — refaire le tracé après une synchronisation, étendre le
+ * terrain — et le retrouver vaut mieux que le refaire. Le visiteur, lui, n'en
+ * reçoit rien : il a le tracé, déjà en mètres-plan.
+ */
+async function enregistreEnvirons(cal, parPlan){
+  const { acces, ids } = await accesEnvirons();
+  const lignes = [];
+  for (const p of DATA.plans){
+    const svg = parPlan.get(p.id);
+    if (!ids[p.id] || !svg) continue;
+    lignes.push({ plan_id: ids[p.id], id_klipso: ID_ENVIRONS, cle: CLE_ENVIRONS,
+                  libelle: NOM_ENVIRONS, type: "Environs",
+                  ordre_klipso: RANG_ENVIRONS, svg: svg });
+  }
+  if (!lignes.length) throw new Error("aucun pavillon à qui l'enregistrer.");
+  await base(acces, "calque?on_conflict=plan_id,id_klipso", {
+    method: "POST",
+    headers: { "Prefer": "resolution=merge-duplicates" },
+    body: JSON.stringify(lignes),
+  });
+  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH", body: JSON.stringify({ calage: cal }),
+  });
+  oublieCache(acces);
+}
+
+/** Le quartier, retiré de partout — et le calage avec lui : ce qui reste sans
+ *  tracé n'est plus qu'un chiffre qui ne décrit rien. */
+async function effaceEnvirons(){
+  const { acces, ids } = await accesEnvirons();
+  const liste = DATA.plans.map(p => ids[p.id]).filter(Boolean);
+  if (liste.length) await base(acces,
+    "calque?id_klipso=eq." + ID_ENVIRONS + "&plan_id=in.(" + liste.join(",") + ")",
+    { method: "DELETE" });
+  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH", body: JSON.stringify({ calage: null }),
+  });
+  oublieCache(acces);
+  DATA.plans.forEach(p => montreEnvirons("", p));
+}
+
+/** Le calage déjà enregistré, s'il y en a un. */
+async function calageEnregistre(){
+  const acces = accesBase();
+  if (!acces) return null;
+  const l = await base(acces,
+    "evenement?select=calage&slug=eq." + encodeURIComponent(DATA.slug));
+  return l && l.length ? l[0].calage : null;
+}
+
+/* ------------------------------------------------------------
+   Le volet des réglages
+   ------------------------------------------------------------ */
+
+/* Ce qu'OpenStreetMap a rendu, gardé le temps de la fenêtre : tourner d'un
+   degré retrace tout, et ne doit rien redemander. */
+let ENV_OSM = null;
+let ENV_CAL = null;
+
+/**
+ * Deux nombres collés depuis une carte : « 48.830212, 2.287851 ».
+ *
+ * Deux nombres à virgule, séparés par ce qu'on voudra — le séparateur ne vaut
+ * pas qu'on le devine, et la virgule décimale française passe aussi bien que
+ * le point anglais puisqu'on ne lit que les nombres. Un entier n'est pas une
+ * coordonnée utile ici : à un degré près, on est à cent kilomètres.
+ */
+function litCoordonnees(txt){
+  const m = String(txt || "").match(/-?\d+[.,]\d+/g);
+  if (!m || m.length !== 2) return null;
+  const [a, b] = m.map(v => parseFloat(v.replace(",", ".")));
+  /* L'ordre est celui des cartes grand public : la latitude d'abord. Au-delà
+     de quatre-vingt-dix degrés ce ne peut plus en être une — on remet les deux
+     dans l'ordre plutôt que de refuser un copier-coller qui ne demandait qu'à
+     être lu. */
+  const [lat, lon] = Math.abs(a) > 90 ? [b, a] : [a, b];
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat: lat, lon: lon };
+}
+
+/** Le tracé refait sur tous les pavillons, avec le calage du moment. */
+function retraceEnvirons(){
+  const parPlan = new Map();
+  if (!ENV_OSM || !ENV_CAL) return parPlan;
+  for (const p of DATA.plans) parPlan.set(p.id, dessineEnvirons(p, ENV_OSM, ENV_CAL));
+  for (const p of DATA.plans) montreEnvirons(parPlan.get(p.id), p);
+  return parPlan;
+}
+
+/**
+ * Le volet « Environs ».
+ *
+ * Trois gestes, dans l'ordre où on les fait : coller un point, aller chercher
+ * le quartier, tourner jusqu'à ce qu'il tombe en face. Le troisième est le
+ * seul qui demande un œil, et c'est pourquoi il se règle sur le plan lui-même
+ * plutôt que dans un aperçu : la fenêtre se déplace, le pavillon reste
+ * visible derrière, et l'on voit les bâtiments voisins se ranger.
+ */
+function voletEnvirons(hote){
+  const p = document.createElement("p");
+  p.textContent = "Le plan est en mètres, dans le repère du parc : il ne lui " +
+    "manque que de savoir où il tombe sur la Terre. Donnez-lui un point, et " +
+    "les rues, les bâtiments voisins et les parkings viennent se ranger " +
+    "autour du pavillon — une fois pour toutes, et sans que le visiteur ait " +
+    "quoi que ce soit à télécharger de plus qu'un calque.";
+  hote.appendChild(p);
+
+  const etat = document.createElement("p");
+  etat.className = "envEtat";
+  const dit = (txt, mal) => {
+    etat.textContent = txt || "";
+    etat.classList.toggle("alerte", !!mal);
+  };
+
+  /* --- le point --- */
+  const bloc = document.createElement("div");
+  bloc.className = "reglage-nb envCoord";
+  bloc.innerHTML = '<label><span class="l">Coordonnées du centre du salon</span></label>' +
+    '<input type="text" inputmode="decimal" placeholder="48.830212, 2.287851">' +
+    '<span class="aide">Sur Google Maps ou le Géoportail, clic droit au milieu ' +
+    'du bâtiment puis « copier les coordonnées ». La latitude d\'abord, comme ' +
+    'elles le rendent toutes les deux.</span>';
+  const champ = bloc.querySelector("input");
+  hote.appendChild(bloc);
+
+  const acts = document.createElement("div");
+  acts.className = "acts";
+  const bCherche = document.createElement("button");
+  bCherche.type = "button";
+  bCherche.className = "btn";
+  bCherche.textContent = "Récupérer les environs";
+  acts.appendChild(bCherche);
+  hote.appendChild(acts);
+  hote.appendChild(etat);
+
+  /* --- le réglage, qui n'a de sens qu'une fois le quartier là --- */
+  const reglage = document.createElement("div");
+  reglage.className = "reglage-nb envRot";
+  reglage.innerHTML = '<label><span class="l">Rotation</span>' +
+    '<input type="number" step="0.5"><span class="u">°</span></label>' +
+    '<div class="acts"><button type="button" class="btn">Quart de tour</button></div>' +
+    '<span class="aide">La direction des rues est reprise de la carte, le ' +
+    'quart de tour non : tournez jusqu\'à ce que les bâtiments voisins tombent ' +
+    'en face du pavillon. Les flèches décalent de cinq mètres.</span>';
+  const nRot = reglage.querySelector("input");
+  const bQuart = reglage.querySelector("button");
+  hote.appendChild(reglage);
+
+  const dec = document.createElement("div");
+  dec.className = "reglage-nb envDec";
+  dec.innerHTML = '<label><span class="l">Décalage</span></label><div class="acts"></div>';
+  [["Ouest", -5, 0], ["Est", 5, 0], ["Nord", 0, 5], ["Sud", 0, -5]].forEach(([nom, de, dn]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn";
+    b.textContent = nom;
+    b.onclick = () => {
+      const [dx, dy] = tourneEnvirons(de, dn, ENV_CAL.angle);
+      ENV_CAL.x += dx; ENV_CAL.y += dy;
+      retraceEnvirons();
+    };
+    dec.querySelector(".acts").appendChild(b);
+  });
+  hote.appendChild(dec);
+
+  const finales = document.createElement("div");
+  finales.className = "acts envFin";
+  const bGarde = document.createElement("button");
+  bGarde.type = "button";
+  bGarde.className = "btn";
+  bGarde.textContent = "Enregistrer pour tous";
+  const bEfface = document.createElement("button");
+  bEfface.type = "button";
+  bEfface.className = "btn danger";
+  bEfface.textContent = "Retirer les environs";
+  finales.appendChild(bGarde);
+  finales.appendChild(bEfface);
+  hote.appendChild(finales);
+
+  /* Les commandes de réglage ne paraissent qu'une fois le quartier chargé :
+     tourner ce qui n'existe pas ne veut rien dire, et un champ sans effet fait
+     douter de tous les autres. Le retrait, lui, s'offre dès qu'il y a quelque
+     chose à retirer — y compris venu d'une session précédente. */
+  const maj = () => {
+    const pose = !!calqueEnvirons(P());
+    reglage.hidden = dec.hidden = !ENV_OSM;
+    bGarde.hidden = !ENV_OSM;
+    bEfface.hidden = !pose;
+    finales.hidden = bGarde.hidden && bEfface.hidden;
+    if (ENV_CAL) nRot.value = (Math.round(ENV_CAL.angle / DEG * 10) / 10);
+  };
+
+  const tourne = (a) => {
+    ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
+    ENV_CAL.angle = a;
+    retraceEnvirons();
+    maj();
+  };
+  nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourne(v * DEG); };
+  bQuart.onclick = () => tourne(ENV_CAL.angle + Math.PI / 2);
+
+  const occupe = (b, quoi) => { b.disabled = true; dit(quoi); };
+  const rendu = (b, txt, mal) => { b.disabled = false; dit(txt, mal); };
+
+  bCherche.onclick = async () => {
+    const ll = litCoordonnees(champ.value);
+    if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
+    const cal = { lon: ll.lon, lat: ll.lat,
+                  x: centreDesPavillons()[0], y: centreDesPavillons()[1], angle: 0 };
+    const terrain = carreDeTerrain(cal, TERRAIN_ENVIRONS);
+    if (!terrain) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
+    occupe(bCherche, "Demande à OpenStreetMap…");
+    try {
+      const elements = await chercheEnvirons(terrain.bbox);
+      if (!elements.length) throw new Error("rien trouvé autour de ce point : vérifiez les coordonnées.");
+      /* La direction des rues contre celle des allées : ce qui reste à
+         trancher, c'est le quart de tour, et lui seul. */
+      cal.angle = anglePlan(P()) + penteDesVoies(elements, cal);
+      ENV_OSM = elements;
+      ENV_CAL = cal;
+      const parPlan = retraceEnvirons();
+      const ko = Math.round([...parPlan.values()].reduce((n, s) => n + s.length, 0) / 1024);
+      rendu(bCherche, elements.length + " tracés, " + ko + " Ko. " +
+        "Tournez jusqu'à ce que les bâtiments tombent en face, puis enregistrez.");
+      maj();
+    } catch (e) {
+      rendu(bCherche, "Échec : " + e.message, true);
+    }
+  };
+
+  bGarde.onclick = async () => {
+    occupe(bGarde, "Enregistrement…");
+    try {
+      await enregistreEnvirons(ENV_CAL, retraceEnvirons());
+      rendu(bGarde, "Les visiteurs voient les environs.");
+      maj();
+    } catch (e) {
+      rendu(bGarde, "Échec : " + e.message, true);
+    }
+  };
+
+  bEfface.onclick = async () => {
+    occupe(bEfface, "Retrait…");
+    try {
+      await effaceEnvirons();
+      ENV_OSM = ENV_CAL = null;
+      rendu(bEfface, "Les environs sont retirés.");
+      maj();
+    } catch (e) {
+      rendu(bEfface, "Échec : " + e.message, true);
+    }
+  };
+
+  maj();
+  /* Le calage d'une session précédente remplit le champ : on revient le plus
+     souvent pour retoucher, pas pour tout reprendre — et retrouver un point
+     qu'on avait relevé sur une carte vaut mieux que le relever deux fois. */
+  calageEnregistre().then(cal => {
+    if (!cal || champ.value) return;
+    champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
+    ENV_CAL = cal;
+    maj();
+  }).catch(() => {});
+}

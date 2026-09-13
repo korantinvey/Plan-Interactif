@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3264 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3268 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2261 · 10. Mode administration
-- l.2348 · La fiche d'une zone organisateur
-- l.3011 · Masquer une zone organisateur
-- l.3094 · Placer un libellé à la main
+- l.2265 · 10. Mode administration
+- l.2352 · La fiche d'une zone organisateur
+- l.3015 · Masquer une zone organisateur
+- l.3098 · Placer un libellé à la main
 
 Fonctions :
 
@@ -30,32 +30,32 @@ Fonctions :
 `posePoliceLibelles` 557 · `appliqueModele` 585 · `habilleModale` 626 · `texteCorps` 697
 `standApercu` 712 · `lignesApercu` 736 · `contenuApercu` 762 · `apercuFiche` 799
 `apercuListe` 876 · `apercuDuo` 898 · `glisseFenetre` 931 · `ouvreReglages` 942
-`voletZones` 1041 · `champsFicheZone` 1143 · `ficheZoneEnPlace` 1213 · `voletPlan` 1231
-`blocHoraires` 1357 · `sallesSituees` 1490 · `voletPmr` 1506 · `nomDuTon` 1597
-`voletApparence` 1602 · `clesFiche` 1715 · `voletOrdre` 1731 · `enregistreConf` 2210
-`rgbHex` 2217 · `hexa` 2224 · `luminance` 2228 · `ecarte` 2242 · `joli` 2257
-`retireAdmin` 2274 · `activeAdmin` 2287 · `champZone` 2374 · `champsZone` 2399
-`champSalles` 2471 · `nomDeZone` 2523 · `reduitLogo` 2557 · `champLogo` 2598
-`editeurRiche` 2695 · `memeFicheZone` 2852 · `suitFicheZone` 2858 · `verseFicheZone` 2866
-`ficheZone` 2892 · `enregistreZone` 2917 · `basculeAffichageZone` 3022
-`marqueZonesMasquees` 3039 · `ecritColonnesEvenement` 3059 · `ecritColonneEvenement` 3090
-`cleLibelle` 3115 · `empreinteLibelle` 3131 · `placementLibelle` 3139 · `posePlacement` 3149
-`libelleAutomatique` 3166 · `modePlacementLibelles` 3175 · `majPaletteLibelle` 3192
-`choisitLibelle` 3209 · `pousseLibelle` 3216 · `libellePointerDown` 3224
-`libellePointerMove` 3239 · `libellePointerUp` 3248
+`voletZones` 1045 · `champsFicheZone` 1147 · `ficheZoneEnPlace` 1217 · `voletPlan` 1235
+`blocHoraires` 1361 · `sallesSituees` 1494 · `voletPmr` 1510 · `nomDuTon` 1601
+`voletApparence` 1606 · `clesFiche` 1719 · `voletOrdre` 1735 · `enregistreConf` 2214
+`rgbHex` 2221 · `hexa` 2228 · `luminance` 2232 · `ecarte` 2246 · `joli` 2261
+`retireAdmin` 2278 · `activeAdmin` 2291 · `champZone` 2378 · `champsZone` 2403
+`champSalles` 2475 · `nomDeZone` 2527 · `reduitLogo` 2561 · `champLogo` 2602
+`editeurRiche` 2699 · `memeFicheZone` 2856 · `suitFicheZone` 2862 · `verseFicheZone` 2870
+`ficheZone` 2896 · `enregistreZone` 2921 · `basculeAffichageZone` 3026
+`marqueZonesMasquees` 3043 · `ecritColonnesEvenement` 3063 · `ecritColonneEvenement` 3094
+`cleLibelle` 3119 · `empreinteLibelle` 3135 · `placementLibelle` 3143 · `posePlacement` 3153
+`libelleAutomatique` 3170 · `modePlacementLibelles` 3179 · `majPaletteLibelle` 3196
+`choisitLibelle` 3213 · `pousseLibelle` 3220 · `libellePointerDown` 3228
+`libellePointerMove` 3243 · `libellePointerUp` 3252
 
 Éléments :
 
 `#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 175 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 180 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 33 · `entetesApi` 51 · `chargeFond` 74 · `panneDuChargement` 121
-`charge` 128
+`demarre` 8 · `annonce` 33 · `entetesApi` 51 · `chargeFond` 74 · `panneDuChargement` 126
+`charge` 133
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -218,6 +218,20 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
+### `_environs.html` — 700 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 16. Les environs — le pavillon dans son quartier
+
+Fonctions :
+
+`metresParDegre` 63 · `tourneEnvirons` 80 · `versTerre` 86 · `versLePlan` 93 · `reancre` 108
+`empriseDesPavillons` 116 · `centreDesPavillons` 129 · `carreDeTerrain` 143
+`largeurVoie` 191 · `sorteEnvirons` 210 · `requeteOverpass` 225 · `chercheEnvirons` 244
+`penteDesVoies` 276 · `allegeTrace` 309 · `dessineEnvirons` 334 · `calqueEnvirons` 385
+`montreEnvirons` 394 · `recul` 417 · `accesEnvirons` 427 · `enregistreEnvirons` 441
+`effaceEnvirons` 465 · `calageEnregistre` 479 · `litCoordonnees` 504 · `retraceEnvirons` 518
+`voletEnvirons` 535
+
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
@@ -227,7 +241,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3727 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3745 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -314,7 +328,7 @@ Fonctions :
 `arretJournee` 591 · `remplitJournee` 616 · `appliqueVueParcours` 766 · `traceJournee` 796
 `montreJournee` 804 · `perimeJournee` 817 · `ouvreOrganisation` 826 · `lanceJournee` 965
 
-### `_js.html` — 3456 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 3459 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.331 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -322,9 +336,9 @@ Fonctions :
 - l.520 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.640 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1569 · 6. Vue
-- l.1841 · 7. Sélection et fiche
-- l.2984 · 8. Interactions du plan
-- l.3286 · Le tiroir de la liste — écrans étroits
+- l.1844 · 7. Sélection et fiche
+- l.2987 · 8. Interactions du plan
+- l.3289 · Le tiroir de la liste — écrans étroits
 
 Fonctions :
 
@@ -347,17 +361,17 @@ Fonctions :
 `sousLigne` 1450 · `liste` 1464 · `cadrePlan` 1584 · `oublieCadre` 1585 · `figeTextes` 1601
 `rendTextes` 1606 · `appliqueVue` 1611 · `rafraichitVue` 1634 · `poseVue` 1646
 `masque` 1665 · `masqueDroite` 1697 · `fit` 1708 · `stoppeZoom` 1738 · `glisseVersVise` 1744
-`glisseVers` 1786 · `rectVisee` 1808 · `zoom` 1827 · `echelle` 1833 · `ETROIT` 1847
-`anime` 1849 · `noeud` 1873 · `canalPlan` 1883 · `rangSociete` 1891 · `select` 1900
-`centre` 1919 · `centrePoint` 1923 · `montre` 1968 · `libelleCorps` 2000 · `ordreCorps` 2012
-`groupesFiche` 2044 · `valeurCorps` 2057 · `champCorps` 2062 · `groupeCorps` 2070
-`corpsRange` 2083 · `momentLocal` 2118 · `programme` 2141 · `jourLong` 2174
-`ficheConf` 2185 · `lien` 2279 · `adresseWeb` 2287 · `pictoRS` 2330 · `adresseSure` 2348
-`adresseImage` 2375 · `imageSure` 2388 · `assainitRiche` 2417 · `enBlocs` 2457
-`rangeRiche` 2470 · `ecarteClicFantome` 2498 · `nomSociete` 2507 · `societes` 2520
-`choisitExposant` 2531 · `poseMarque` 2569 · `poseCode` 2619 · `rangeMarque` 2660
-`ouvre` 2706 · `ferme` 2958 · `onglet` 2974 · `milieu` 3004 · `commencePince` 3010
-`suitPince` 3024 · `cibleElargie` 3102 · `mesureTiroir` 3297 · `montreTiroir` 3300
+`glisseVers` 1786 · `rectVisee` 1808 · `zoom` 1827 · `echelle` 1836 · `ETROIT` 1850
+`anime` 1852 · `noeud` 1876 · `canalPlan` 1886 · `rangSociete` 1894 · `select` 1903
+`centre` 1922 · `centrePoint` 1926 · `montre` 1971 · `libelleCorps` 2003 · `ordreCorps` 2015
+`groupesFiche` 2047 · `valeurCorps` 2060 · `champCorps` 2065 · `groupeCorps` 2073
+`corpsRange` 2086 · `momentLocal` 2121 · `programme` 2144 · `jourLong` 2177
+`ficheConf` 2188 · `lien` 2282 · `adresseWeb` 2290 · `pictoRS` 2333 · `adresseSure` 2351
+`adresseImage` 2378 · `imageSure` 2391 · `assainitRiche` 2420 · `enBlocs` 2460
+`rangeRiche` 2473 · `ecarteClicFantome` 2501 · `nomSociete` 2510 · `societes` 2523
+`choisitExposant` 2534 · `poseMarque` 2572 · `poseCode` 2622 · `rangeMarque` 2663
+`ouvre` 2709 · `ferme` 2961 · `onglet` 2977 · `milieu` 3007 · `commencePince` 3013
+`suitPince` 3027 · `cibleElargie` 3105 · `mesureTiroir` 3300 · `montreTiroir` 3303
 
 Éléments :
 
@@ -575,6 +589,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 - `20260913200617_le_fuseau_d_un_salon_au_format_iana.sql` — fn fuseau_iana, fn evenement_fuseau_iana, fn periode_salon, fn enregistre_mesures
 - `20260913205218_le_fuseau_d_un_salon_choisi_sinon_eventmaker_sinon_paris.sql` — evenement, fn evenement_fuseau_iana
+- `20260913220713_le_calage_du_plan_sur_la_terre.sql` — evenement
 
 ## Le reste
 

@@ -91,7 +91,12 @@ function chargeFond(i){
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
       const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
-      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
+      /* Un calque dont le service ne dit rien garde ce qu'il a. Cela ne
+         change rien aux calques Klipso — ils viennent tous de la réponse qu'on
+         est en train de lire — et cela protège le seul qui puisse exister ici
+         avant que la base le connaisse : les environs qu'un exploitant vient
+         de poser sans les avoir encore enregistrés. */
+      p.fond.forEach(c => { c.svg = par.has(c.cle) ? par.get(c.cle) : (c.svg || ""); });
       // le pavillon a pu changer pendant le chargement
       if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
     })
