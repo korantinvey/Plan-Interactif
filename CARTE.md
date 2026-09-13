@@ -225,7 +225,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 66 · `libellePeriode` 83 · `nomFichierExport` 89
 `nomFeuilleExport` 99 · `exporteExposants` 115
 
-### `_head.html` — 3580 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3621 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -266,7 +266,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2919 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2938 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -294,9 +294,9 @@ Fonctions :
 `cadreItineraire` 2415 · `champIti` 2439 · `ecritDistance` 2443 · `ecritDuree` 2451
 `fermeSugg` 2456 · `montreSugg` 2463 · `choisitPoint` 2495 · `valideSaisie` 2504
 `effaceItineraire` 2514 · `relance` 2536 · `phraseLiaison` 2587 · `montreResultat` 2601
-`bandeauVisee` 2738 · `armeVisee` 2752 · `finVisee` 2760 · `viseItineraire` 2772
-`visePoi` 2778 · `visePoint` 2784 · `ouvreItineraire` 2805 · `fermeItineraire` 2831
-`versItineraire` 2841 · `versItineraireDe` 2844
+`bandeauVisee` 2741 · `armeVisee` 2755 · `finVisee` 2769 · `viseItineraire` 2784
+`visePoi` 2790 · `visePoint` 2796 · `ouvreItineraire` 2822 · `fermeItineraire` 2850
+`versItineraire` 2860 · `versItineraireDe` 2863
 
 ### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
 
