@@ -540,6 +540,9 @@ Deno.serve(async (req) => {
                 ...(fiche.type ? { type: fiche.type } : {}),
                 ...(fiche.logo ? { logo: fiche.logo } : {}),
                 ...(fiche.description ? { description: fiche.description } : {}),
+                // la version anglaise, que la page montre à qui lit l'anglais
+                ...(fiche.nom_en ? { nom_en: fiche.nom_en } : {}),
+                ...(fiche.description_en ? { description_en: fiche.description_en } : {}),
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),

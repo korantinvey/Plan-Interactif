@@ -1577,6 +1577,19 @@ l'écran : pour voir ce qui reste en français sur une page réelle, ouvrez-la
 avec `?lang=en&manques`, parcourez-la, puis `LANGUE.manques()` dans la console
 du navigateur rend les textes restés en français, du plus fréquent au plus rare.
 
+**Les zones, dans les deux langues.** Le libellé et la description d'une zone
+organisateur sont écrits par l'exploitant : aucun dictionnaire ne les connaît.
+Leur fiche, dans les réglages du plan, les demande donc deux fois — en
+français et en anglais — et montre les quatre champs quelle que soit la langue
+de l'écran : on écrit l'anglais depuis la version française, et le français
+depuis l'anglaise. La version anglaise se range dans `zones_fiches`
+(`nom_en`, `description_en`) avec le reste de la fiche, et part au visiteur
+par l'API. Laissée vide, c'est la française qui s'affiche. Le nom se choisit à
+la source là où la zone est nommée pour elle-même — sur le plan, dans la
+liste, en titre de sa fiche — et passe par le moteur partout ailleurs, cité
+dans un itinéraire par exemple ; les deux descriptions sont posées dans la
+fiche, et la langue de la page dit laquelle se voit.
+
 **Ce qui ne se traduit pas.** Ce que l'exploitant ou le visiteur tape — un
 éditeur, un champ de saisie — et tout élément marqué `translate="no"`. Et les
 données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les

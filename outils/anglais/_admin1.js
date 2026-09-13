@@ -250,6 +250,15 @@ module.exports = {
   "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour revenir au nom d'origine, s'il y en a un.":
     "The area's name, on the map and in its details. Leave empty to go back to the original name, if there is one.",
   "Agora, Halte-garderie, Pitch Retail…": "Agora, Crèche, Pitch Retail…",
+  "Libellé en français": "Label in French",
+  "Libellé en anglais": "Label in English",
+  "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le libellé en français qui s'y affiche.":
+    "The area's name in the English version of the map. Left empty, the French label is shown there.",
+  "Agora, Childcare, Pitch Retail…": "Agora, Childcare, Pitch Retail…",
+  "Description en français": "Description in French",
+  "Description en anglais": "Description in English",
+  "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche anglaise montre la description en français.":
+    "What visitors read in the English version. Left empty, the English details show the French description.",
   "Type": "Type",
   "Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au bas du plan : le visiteur y retrouve d'un geste toutes les zones du même type. Sans type, la zone reste sur le plan comme aujourd'hui.":
     "Opens the matching entry in the points of interest panel, at the bottom of the map: visitors find all areas of the same type there in one tap. Without a type, the area stays on the map as it is today.",

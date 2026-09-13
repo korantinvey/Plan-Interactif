@@ -32,7 +32,7 @@
    à tomber, la page resterait en français plutôt que de tomber avec lui. */
 window.traduit = String;
 window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
-  bascule() {}, ajoute() {}, protege() {}, manques: () => null };
+  bascule() {}, ajoute() {}, protege() {}, donnees() {}, manques: () => null };
 
 (function () {
   "use strict";
@@ -99,6 +99,13 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      dictionnaire ou du calendrier — « Mars », « Accueil », « Café ». Elle doit
      rester telle que l'exposant l'a écrite, seule ou citée dans une phrase. */
   const PROTEGES = new Set();
+  /* Les traductions qui viennent des données et non du dictionnaire : le
+     libellé anglais qu'un exploitant a donné à une zone, celui qu'une source
+     tient pour une catégorie. Rangées par origine, pour qu'une origine se
+     remplace en entier — un libellé anglais effacé ne doit pas survivre dans
+     la page — et consultées avant le dictionnaire : un nom choisi pour ce
+     salon l'emporte sur la traduction générale d'un mot. */
+  const DONNEES = new Map();   // origine → Map : phrase → traduction
 
   function prepare() {
     if (EXACT) return;
@@ -230,6 +237,10 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
    */
   function cherche(t, profondeur, mode) {
     if (PROTEGES.size && PROTEGES.has(t.toLowerCase())) return null;
+    for (const table of DONNEES.values()) {
+      const v = table.get(t);
+      if (v !== undefined) return v;
+    }
     const deja = EXACT.get(t);
     if (deja !== undefined) return deja;
     // « aucune valeur relevée » vient souvent en minuscule d'une phrase qui la précède
@@ -667,6 +678,22 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
         if (k && !PROTEGES.has(k)) { PROTEGES.add(k); neuf = true; }
       }
       if (!neuf) return;
+      MEMO.clear();
+      if (courante === "en") { restaure(); parcourt(document); }
+    },
+    /**
+     * Les traductions d'une origine de données, qui remplacent celles qu'elle
+     * avait données : `donnees("zones", { "Agora": "Agora stage" })`.
+     */
+    donnees(origine, table) {
+      const t = new Map();
+      for (const fr of Object.keys(table || {})) {
+        const k = normalise(fr), en = normalise(table[fr] || "");
+        if (k && en && en !== k) t.set(k, en);
+      }
+      const avant = DONNEES.get(origine);
+      if (!t.size && !avant) return;
+      if (t.size) DONNEES.set(origine, t); else DONNEES.delete(origine);
       MEMO.clear();
       if (courante === "en") { restaure(); parcourt(document); }
     },
