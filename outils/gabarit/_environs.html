@@ -422,6 +422,21 @@ function recul(){
    L'enregistrement pour tous
    ------------------------------------------------------------ */
 
+/**
+ * Ce que dit une base qui ne connaît pas encore la colonne.
+ *
+ * Le message de PostgREST est juste et illisible — « column evenement.calage
+ * does not exist » ne dit pas quoi faire. Or le cas se rencontre pour de bon :
+ * un aperçu de branche est servi avant que les migrations ne partent, et une
+ * instance installée à la main peut n'avoir pas rejoué les siennes.
+ */
+function manqueCalage(e){
+  return /calage/.test(e.message) && /column|schema|PGRST/i.test(e.message)
+    ? new Error("la base ne connaît pas encore le calage : appliquez les " +
+                "migrations (`npm run bd`) ou attendez la mise en ligne.")
+    : e;
+}
+
 /** Session, projet et correspondance des pavillons : ce qu'il faut pour
  *  écrire, refusé d'un mot quand il manque. */
 async function accesEnvirons(){
@@ -449,13 +464,18 @@ async function enregistreEnvirons(cal, parPlan){
                   ordre_klipso: RANG_ENVIRONS, svg: svg });
   }
   if (!lignes.length) throw new Error("aucun pavillon à qui l'enregistrer.");
+  /* Le calage avant le tracé, et non l'inverse. Les deux écritures ne sont pas
+     une transaction : si la seconde échoue, il reste ce que la première a
+     posé. Un point d'ancrage sans tracé ne montre rien à personne et se
+     réécrit au coup suivant ; un tracé sans calage, lui, serait déjà chez les
+     visiteurs pendant que la fenêtre annonce un échec. */
+  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH", body: JSON.stringify({ calage: cal }),
+  }).catch(e => { throw manqueCalage(e); });
   await base(acces, "calque?on_conflict=plan_id,id_klipso", {
     method: "POST",
     headers: { "Prefer": "resolution=merge-duplicates" },
     body: JSON.stringify(lignes),
-  });
-  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
-    method: "PATCH", body: JSON.stringify({ calage: cal }),
   });
   oublieCache(acces);
 }
@@ -479,6 +499,9 @@ async function effaceEnvirons(){
 async function calageEnregistre(){
   const acces = accesBase();
   if (!acces) return null;
+  /* Sans rattrapage : l'appelant l'ignore, et une base qui ne connaît pas
+     encore la colonne ne doit pas empêcher d'ouvrir le volet — on y vient
+     justement pour poser un calage qu'elle n'a pas. */
   const l = await base(acces,
     "evenement?select=calage&slug=eq." + encodeURIComponent(DATA.slug));
   return l && l.length ? l[0].calage : null;

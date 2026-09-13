@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 700 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 723 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -228,9 +228,9 @@ Fonctions :
 `empriseDesPavillons` 116 · `centreDesPavillons` 129 · `carreDeTerrain` 143
 `largeurVoie` 191 · `sorteEnvirons` 210 · `requeteOverpass` 225 · `chercheEnvirons` 244
 `penteDesVoies` 276 · `allegeTrace` 309 · `dessineEnvirons` 334 · `calqueEnvirons` 385
-`montreEnvirons` 394 · `recul` 417 · `accesEnvirons` 427 · `enregistreEnvirons` 441
-`effaceEnvirons` 465 · `calageEnregistre` 479 · `litCoordonnees` 504 · `retraceEnvirons` 518
-`voletEnvirons` 535
+`montreEnvirons` 394 · `recul` 417 · `manqueCalage` 433 · `accesEnvirons` 442
+`enregistreEnvirons` 456 · `effaceEnvirons` 485 · `calageEnregistre` 499
+`litCoordonnees` 527 · `retraceEnvirons` 541 · `voletEnvirons` 558
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
