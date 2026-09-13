@@ -108,15 +108,11 @@ function sommets(o){
   return l;
 }
 
-/** Enveloppe convexe, parcours monotone d'Andrew. */
-const ENVELOPPES = new Map();
-function enveloppe(p){
-  const garde = ENVELOPPES.get(p.id);
-  if (garde) return garde;
-  const pts = [];
-  for (const o of p.stands) pts.push(...sommets(o));
-  for (const o of p.zones) pts.push(...sommets(o));
-  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+/** Enveloppe convexe d'un nuage de points, parcours monotone d'Andrew.
+ *  Les sommets, et non un tracé : le découpage des environs en a besoin
+ *  comme géométrie, là où la grille de marche veut un chemin à peindre. */
+function bordConvexe(pts){
+  pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cote = (suite) => {
     const r = [];
     for (const q of suite){
@@ -130,7 +126,17 @@ function enveloppe(p){
     r.pop();
     return r;
   };
-  let bord = pts.length < 3 ? [] : cote(pts).concat(cote(pts.slice().reverse()));
+  return pts.length < 3 ? [] : cote(pts).concat(cote(pts.slice().reverse()));
+}
+
+const ENVELOPPES = new Map();
+function enveloppe(p){
+  const garde = ENVELOPPES.get(p.id);
+  if (garde) return garde;
+  const pts = [];
+  for (const o of p.stands) pts.push(...sommets(o));
+  for (const o of p.zones) pts.push(...sommets(o));
+  let bord = bordConvexe(pts);
   /* Un pavillon sans emplacement — cela existe, le temps d'une première
      synchronisation — n'a pas d'enveloppe : on retombe sur son emprise, à
      défaut de mieux. */

@@ -173,7 +173,19 @@ const OVERPASS = "https://overpass-api.de/api/interpreter";
    clés de réglage (`__environs/VOIES`), enregistrées chez l'exploitant et en
    base, et une clé ne doit pas dépendre d'une normalisation Unicode. `joli()`
    les rhabille dans le panneau. */
-const SOUS_ENVIRONS = ["VOIES", "CONSTRUCTIONS", "ESPACES"];
+const SOUS_ENVIRONS = [
+  /* L'ordre est celui du tracé, et c'est celui de toutes les cartes : le sol
+     d'abord, les voies par-dessus, le bâti qui couvre tout. Un bâtiment n'est
+     jamais sous une route, une route jamais sous une pelouse. C'est aussi ce
+     qui fait que le pavillon, cartographié comme bâtiment, masque de lui-même
+     la voie qui semblait le traverser.
+
+     Les surfaces sont remplies et non cernées : un quartier en fil de fer se
+     lit comme un second plan posé sur le premier — c'est ce qu'il faisait. */
+  { id: "ESPACES",       env: "espaces",       remplit: true  },
+  { id: "VOIES",         env: "voies",         remplit: false },
+  { id: "CONSTRUCTIONS", env: "constructions", remplit: true  },
+];
 
 /* La largeur d'une voie, en mètres, quand OpenStreetMap ne la donne pas. Le
    trait est tracé à l'échelle du plan — huit mètres de rue font huit mètres,
@@ -185,7 +197,12 @@ const LARGEUR_VOIE = {
   service: 4.5, track: 3.5, cycleway: 2.5, footway: 2, path: 2, steps: 2,
 };
 const LARGEUR_RAIL = { rail: 4, light_rail: 3.5, tram: 3, subway: 3, narrow_gauge: 2.5 };
-const LARGEUR_EAU = { river: 12, canal: 8, stream: 3 };
+
+/* Le vert qu'on garde. `landuse` porte aussi bien un square qu'un périmètre
+   commercial de six hectares : les seconds ne décrivaient rien et couvraient
+   le quartier de grands rectangles vides. */
+const VERT = { grass: 1, forest: 1, meadow: 1, village_green: 1,
+               recreation_ground: 1, cemetery: 1 };
 
 /** Ce que la source dit de la largeur, ou ce que sa catégorie laisse supposer. */
 function largeurVoie(t){
@@ -213,11 +230,11 @@ function sorteEnvirons(t){
     return { sous: "VOIES", large: largeurVoie(t), ferme: false };
   if (LARGEUR_RAIL[t.railway])
     return { sous: "VOIES", large: LARGEUR_RAIL[t.railway], ferme: false };
-  if (t.building) return { sous: "CONSTRUCTIONS", large: 0.5, ferme: true };
-  if (LARGEUR_EAU[t.waterway])
-    return { sous: "ESPACES", large: LARGEUR_EAU[t.waterway], ferme: false };
-  if (t.amenity === "parking" || t.landuse || t.leisure || t.natural)
-    return { sous: "ESPACES", large: 0.5, ferme: true };
+  if (t.building) return { sous: "CONSTRUCTIONS", large: 0.4, ferme: true };
+  if (t.amenity === "parking" || VERT[t.landuse] ||
+      t.leisure === "park" || t.leisure === "garden" ||
+      t.natural === "water" || t.natural === "wood")
+    return { sous: "ESPACES", large: 0.4, ferme: true };
   return null;
 }
 
@@ -233,10 +250,9 @@ function requeteOverpass(bbox){
     'way["railway"~"^(rail|light_rail|tram|subway|narrow_gauge)$"]',
     'way["building"]',
     'way["amenity"="parking"]',
-    'way["landuse"]',
-    'way["leisure"~"^(park|garden|pitch|playground)$"]',
-    'way["natural"~"^(water|wood|scrub|grassland|sand)$"]',
-    'way["waterway"~"^(river|canal|stream)$"]',
+    'way["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|cemetery)$"]',
+    'way["leisure"~"^(park|garden)$"]',
+    'way["natural"~"^(water|wood)$"]',
   ].join(";") + ";);out geom;";
 }
 
@@ -323,6 +339,104 @@ function allegeTrace(pts, tol){
     .concat(allegeTrace(pts.slice(iPire), tol));
 }
 
+/* ------------------------------------------------------------
+   Ce qui reste dehors
+
+   Le quartier n'a rien à faire sous le pavillon. Une rue qui passe derrière
+   les stands remonte entre eux, dans les allées, et donne à lire deux plans
+   superposés là où l'on n'en veut qu'un : le hall est dessiné, ce qui
+   l'entoure est un fond.
+
+   On découpe donc, plutôt que d'écarter chemin par chemin — une rue qui longe
+   le hall doit se voir jusqu'au mur et s'arrêter là, ce qu'un tri par objet ne
+   saurait pas faire. Un `clipPath` en règle paire-impaire suffit : un grand
+   rectangle, et un trou par bâtiment.
+   ------------------------------------------------------------ */
+
+/* Les formes dessinées qui occupent vraiment le sol. Une flèche, un repère ou
+   un texte ne l'occupent pas — ils désignent, et perceraient le fond d'un trou
+   là où il n'y a rien. */
+const SURFACES_DESSINEES = { poly: 1, rect: 1, stand: 1 };
+
+/* Au-delà de cet écart, deux emplacements appartiennent à deux bâtiments ; en
+   deçà, c'est une allée. Et la marge dont on élargit chacun : le mur se tient
+   au-delà du dernier stand, et le fond doit s'arrêter au mur. */
+const ECART_PAVE = 30, MARGE_PAVE = 10;
+
+/** Tout ce qui occupe le sol d'un pavillon, ramené à des boîtes. */
+function occupeLeSol(p){
+  const l = [];
+  for (const o of p.stands.concat(p.zones)) if (o.c && o.bb) l.push({ c: o.c, bb: o.bb });
+  for (const c of calquesDe(p)){
+    if (c.visible === false) continue;     // ce qu'on ne montre pas n'occupe rien
+    for (const f of (c.formes || [])){
+      if (!SURFACES_DESSINEES[f.t] || !f.pts || f.pts.length < 2) continue;
+      const xs = f.pts.map(q => q[0]), ys = f.pts.map(q => q[1]);
+      const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+      const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+      l.push({ c: [(x0 + x1) / 2, (y0 + y1) / 2], bb: [x1 - x0, y1 - y0] });
+    }
+  }
+  return l;
+}
+
+/**
+ * Les bâtiments d'un pavillon, chacun par son enveloppe.
+ *
+ * Un groupe par bâtiment, et non une enveloppe unique : un salon tient
+ * parfois deux halls dans un même plan, et l'enveloppe de l'ensemble avalerait
+ * la rue qui les sépare — celle que l'on veut justement voir.
+ *
+ * Le rapprochement se fait de proche en proche, en comparant toutes les
+ * paires. C'est un carré sur quelques centaines de boîtes, soit une poignée de
+ * millisecondes, et cela se recalcule à chaque tracé plutôt que de se garder :
+ * un calque dessiné entre-temps changerait la réponse, et un fond qui garde la
+ * sienne se trompe en silence.
+ */
+function pavesDuPlan(p){
+  const objets = occupeLeSol(p);
+  const pere = objets.map((_, i) => i);
+  const chef = (i) => { while (pere[i] !== i) i = pere[i] = pere[pere[i]]; return i; };
+  for (let i = 0; i < objets.length; i++){
+    for (let j = i + 1; j < objets.length; j++){
+      const a = objets[i], b = objets[j];
+      const ex = Math.abs(a.c[0] - b.c[0]) - (a.bb[0] + b.bb[0]) / 2;
+      const ey = Math.abs(a.c[1] - b.c[1]) - (a.bb[1] + b.bb[1]) / 2;
+      if (Math.max(ex, ey) > ECART_PAVE) continue;
+      const x = chef(i), y = chef(j);
+      if (x !== y) pere[x] = y;
+    }
+  }
+  const groupes = new Map();
+  objets.forEach((o, i) => {
+    const k = chef(i);
+    if (!groupes.has(k)) groupes.set(k, []);
+    /* Les coins de la boîte, élargis de la marge : l'enveloppe les enferme
+       tous et se trouve dilatée d'autant de chaque côté. Écarter ensuite les
+       sommets depuis le centre aurait trop allongé un hall qui l'est déjà. */
+    const dx = o.bb[0] / 2 + MARGE_PAVE, dy = o.bb[1] / 2 + MARGE_PAVE;
+    groupes.get(k).push([o.c[0] - dx, o.c[1] - dy], [o.c[0] + dx, o.c[1] - dy],
+                        [o.c[0] + dx, o.c[1] + dy], [o.c[0] - dx, o.c[1] + dy]);
+  });
+  return [...groupes.values()].map(bordConvexe).filter(b => b.length > 2);
+}
+
+/* L'identifiant du gabarit de découpe. Fixe : un seul pavillon est monté à la
+   fois, et `monteHabillage` retire les calques du précédent avant de poser
+   ceux du suivant. */
+const ID_DECOUPE = "envHorsPavillon";
+
+/** Le gabarit : un grand rectangle percé d'un trou par bâtiment. La règle
+ *  paire-impaire fait le reste — deux traversées pour un point sous le hall,
+ *  une seule pour un point dehors. */
+function decoupeDuPavillon(p, cx, cy, demi, r1){
+  const bord = (pts) => "M" + pts.map(q => r1(q[0]) + " " + r1(q[1])).join("L") + "Z";
+  const cadre = bord([[cx - demi, cy - demi], [cx + demi, cy - demi],
+                      [cx + demi, cy + demi], [cx - demi, cy + demi]]);
+  return '<clipPath id="' + ID_DECOUPE + '"><path clip-rule="evenodd" d="' +
+         cadre + pavesDuPlan(p).map(bord).join("") + '"/></clipPath>';
+}
+
 /**
  * Le quartier d'un pavillon, en SVG, dans le repère du plan.
  *
@@ -361,20 +475,26 @@ function dessineEnvirons(p, elements, cal){
   }
 
   const groupes = [];
-  for (const sous of SOUS_ENVIRONS){
-    const larges = par.get(sous);
+  for (const fam of SOUS_ENVIRONS){
+    const larges = par.get(fam.id);
     if (!larges || !larges.size) continue;
     const chemins = [...larges.entries()]
-      .sort((a, b) => b[0] - a[0])
+      .sort((a, b) => b[0] - a[0])      // les larges d'abord, les sentiers par-dessus
       .map(([l, ds]) => '<path style="stroke-width:' + l + '" d="' + ds.join("") + '"/>')
       .join("");
-    /* Un trait noir et pas de remplissage : c'est ainsi qu'un calque Klipso
-       dit « je n'ai pas de couleur à moi ». `styleFond` laisse alors la teinte
-       au thème — `--plan-line` — et le quartier suit le mode sombre comme le
-       reste du fond, au lieu d'y rester gris clair. */
-    groupes.push('<g id="' + sous + '" data-s="rgb(0,0,0)" data-f="none">' + chemins + "</g>");
+    /* Un trait noir : c'est ainsi qu'un calque Klipso dit « je n'ai pas de
+       couleur à moi ». `styleFond` efface alors la teinte en ligne, et la
+       feuille de style pose celle de la famille — qui suit le thème, et qu'une
+       couleur choisie dans le panneau continue d'emporter. */
+    groupes.push('<g id="' + fam.id + '" data-env="' + fam.env + '"' +
+      ' data-s="rgb(0,0,0)" data-f="' + (fam.remplit ? "currentColor" : "none") + '"' +
+      ' clip-path="url(#' + ID_DECOUPE + ')">' + chemins + "</g>");
   }
-  return groupes.join("");
+  /* Le gabarit en tête, et rien du tout si rien n'est tracé : `sansMasques`
+     découpe le SVG enregistré sur ses balises `<g >` et garde ce qui les
+     précède, ce qui met le gabarit à l'abri d'un sous-calque masqué. */
+  if (!groupes.length) return "";
+  return decoupeDuPavillon(p, cx, cy, demi * 3, r1) + groupes.join("");
 }
 
 /* ------------------------------------------------------------
