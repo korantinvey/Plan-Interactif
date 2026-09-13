@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3469 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3559 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2466 · 10. Mode administration
-- l.2553 · La fiche d'une zone organisateur
-- l.3216 · Masquer une zone organisateur
-- l.3299 · Placer un libellé à la main
+- l.2556 · 10. Mode administration
+- l.2643 · La fiche d'une zone organisateur
+- l.3306 · Masquer une zone organisateur
+- l.3389 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,24 +27,24 @@ Fonctions :
 `voletRecherche` 274 · `minutesVisite` 328 · `lueHeure` 355 · `lueDate` 359
 `datesSalon` 366 · `horairesSalon` 380 · `salonPartage` 393 · `trio` 406 · `melange` 416
 `themeSombre` 424 · `appliqueAccent` 438 · `appliqueFond` 469 · `modeleRetenu` 507
-`policeChoisie` 593 · `policeDuModele` 598 · `feuillePolice` 608 · `chargePolice` 630
-`policePrete` 650 · `policeDesNoms` 668 · `posePoliceLibelles` 697 · `appliqueModele` 729
-`habilleModale` 770 · `texteCorps` 841 · `standApercu` 856 · `lignesApercu` 880
-`contenuApercu` 906 · `apercuFiche` 943 · `apercuListe` 1020 · `apercuDuo` 1042
-`glisseFenetre` 1075 · `ouvreReglages` 1086 · `voletZones` 1185 · `champsFicheZone` 1287
-`ficheZoneEnPlace` 1357 · `voletPlan` 1375 · `blocHoraires` 1501 · `sallesSituees` 1634
-`voletPmr` 1650 · `nomDuTon` 1741 · `voletApparence` 1746 · `clesFiche` 1920
-`voletOrdre` 1936 · `enregistreConf` 2415 · `rgbHex` 2422 · `hexa` 2429 · `luminance` 2433
-`ecarte` 2447 · `joli` 2462 · `retireAdmin` 2479 · `activeAdmin` 2492 · `champZone` 2579
-`champsZone` 2604 · `champSalles` 2676 · `nomDeZone` 2728 · `reduitLogo` 2762
-`champLogo` 2803 · `editeurRiche` 2900 · `memeFicheZone` 3057 · `suitFicheZone` 3063
-`verseFicheZone` 3071 · `ficheZone` 3097 · `enregistreZone` 3122
-`basculeAffichageZone` 3227 · `marqueZonesMasquees` 3244 · `ecritColonnesEvenement` 3264
-`ecritColonneEvenement` 3295 · `cleLibelle` 3320 · `empreinteLibelle` 3336
-`placementLibelle` 3344 · `posePlacement` 3354 · `libelleAutomatique` 3371
-`modePlacementLibelles` 3380 · `majPaletteLibelle` 3397 · `choisitLibelle` 3414
-`pousseLibelle` 3421 · `libellePointerDown` 3429 · `libellePointerMove` 3444
-`libellePointerUp` 3453
+`policeChoisie` 663 · `policeDuModele` 668 · `feuillePolice` 678 · `chargePolice` 700
+`policePrete` 720 · `policeDesNoms` 738 · `posePoliceLibelles` 767 · `appliqueModele` 799
+`habilleModale` 840 · `texteCorps` 911 · `standApercu` 926 · `lignesApercu` 950
+`contenuApercu` 976 · `apercuFiche` 1013 · `apercuListe` 1090 · `apercuDuo` 1112
+`glisseFenetre` 1145 · `ouvreReglages` 1156 · `voletZones` 1255 · `champsFicheZone` 1357
+`ficheZoneEnPlace` 1427 · `voletPlan` 1445 · `blocHoraires` 1571 · `sallesSituees` 1704
+`voletPmr` 1720 · `nomDuTon` 1811 · `voletApparence` 1816 · `clesFiche` 2010
+`voletOrdre` 2026 · `enregistreConf` 2505 · `rgbHex` 2512 · `hexa` 2519 · `luminance` 2523
+`ecarte` 2537 · `joli` 2552 · `retireAdmin` 2569 · `activeAdmin` 2582 · `champZone` 2669
+`champsZone` 2694 · `champSalles` 2766 · `nomDeZone` 2818 · `reduitLogo` 2852
+`champLogo` 2893 · `editeurRiche` 2990 · `memeFicheZone` 3147 · `suitFicheZone` 3153
+`verseFicheZone` 3161 · `ficheZone` 3187 · `enregistreZone` 3212
+`basculeAffichageZone` 3317 · `marqueZonesMasquees` 3334 · `ecritColonnesEvenement` 3354
+`ecritColonneEvenement` 3385 · `cleLibelle` 3410 · `empreinteLibelle` 3426
+`placementLibelle` 3434 · `posePlacement` 3444 · `libelleAutomatique` 3461
+`modePlacementLibelles` 3470 · `majPaletteLibelle` 3487 · `choisitLibelle` 3504
+`pousseLibelle` 3511 · `libellePointerDown` 3519 · `libellePointerMove` 3534
+`libellePointerUp` 3543
 
 Éléments :
 
@@ -230,7 +230,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3772 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3785 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
