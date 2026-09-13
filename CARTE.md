@@ -47,13 +47,14 @@ Fonctions :
 
 `#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 148 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 170 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 28 · `entetesApi` 46 · `chargeFond` 69 · `charge` 101
+`demarre` 8 · `annonce` 28 · `entetesApi` 46 · `chargeFond` 69 · `panneDuChargement` 116
+`charge` 123
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -224,7 +225,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 99 · `libellePeriode` 131 · `nomFichierExport` 137
 `nomFeuilleExport` 147 · `exporteExposants` 163
 
-### `_head.html` — 3583 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3641 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -253,43 +254,49 @@ Fonctions :
 `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA` · `#iSugg`
 `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
+### `_hors-ligne.html` — 40 l. → hors-ligne.html
+
+Éléments :
+
+`#reessaie`
+
 ### `_index.html` — 45 l. → index.html
 
 Éléments :
 
 `#secours`
 
-### `_itineraire.html` — 2806 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2995 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
 Fonctions :
 
-`sommets` 86 · `enveloppe` 95 · `oublieGrilles` 138 · `calquesDe` 143 · `reperesDe` 148
-`zoneTraversee` 228 · `cleRoleIti` 230 · `roleIti` 231 · `nomRoleIti` 232
-`estCirculation` 235 · `formesRole` 260 · `anglePlan` 292 · `dansGrille` 331
-`horsGrille` 332 · `grille` 342 · `distanceAuMur` 491 · `nappePrincipale` 533
-`celluleDe` 568 · `caseDe` 572 · `centreCase` 577 · `empriseDe` 620 · `accrocheDepuis` 652
-`versLeMilieu` 708 · `accroche` 739 · `Tas` 754 · `travail` 798 · `cherche` 821
-`distancesDepuis` 887 · `distancesMulti` 901 · `regleFoule` 973 · `ecarteFoule` 990
-`heureAuSalon` 994 · `sallesEnMouvement` 1003 · `foule` 1046 · `bilanFoule` 1134
-`reduit` 1163 · `guidageAllees` 1199 · `recentre` 1228 · `passable` 1276 · `lisse` 1309
-`longueur` 1334 · `longueurDehors` 1350 · `nettoie` 1392 · `oublieFaces` 1427
-`facesLibres` 1429 · `amorce` 1502 · `faceDeSortie` 1537 · `accesDe` 1567
-`couplesAcces` 1602 · `troncon` 1622 · `pointObjet` 1663 · `pointRepere` 1670
-`candidats` 1679 · `pointSaisi` 1705 · `portesDe` 1723 · `versPorte` 1730
-`typeLiaison` 1791 · `nomRepere` 1797 · `oublieLiaisons` 1815 · `lienEcrits` 1827
-`ecritLiens` 1836 · `annuaireLiaisons` 1841 · `liensDe` 1873 · `coutLiaison` 1893
-`passagePraticable` 1900 · `passagesDe` 1908 · `sortiesDe` 1918 · `plansRelies` 1926
-`balayage` 1950 · `distanceDepuis` 1964 · `cheminLiaisons` 1991 · `routeParLiaisons` 2075
-`routeEntre` 2111 · `calculeRoute` 2150 · `couleurNappe` 2176 · `rafraichitApercu` 2182
-`marchesIci` 2225 · `rayonBout` 2230 · `dessineItineraire` 2235 · `rafraichitBouts` 2279
-`cadreItineraire` 2302 · `champIti` 2326 · `ecritDistance` 2330 · `ecritDuree` 2338
-`fermeSugg` 2343 · `montreSugg` 2350 · `choisitPoint` 2382 · `valideSaisie` 2391
-`effaceItineraire` 2401 · `relance` 2423 · `phraseLiaison` 2474 · `montreResultat` 2488
-`bandeauVisee` 2625 · `armeVisee` 2639 · `finVisee` 2647 · `viseItineraire` 2659
-`visePoi` 2665 · `visePoint` 2671 · `ouvreItineraire` 2692 · `fermeItineraire` 2718
-`versItineraire` 2728 · `versItineraireDe` 2731
+`sommets` 104 · `enveloppe` 113 · `oublieGrilles` 156 · `calquesDe` 161 · `reperesDe` 166
+`zoneTraversee` 246 · `cleRoleIti` 248 · `roleIti` 249 · `nomRoleIti` 250
+`estCirculation` 253 · `formesRole` 278 · `anglePlan` 310 · `dansGrille` 349
+`horsGrille` 350 · `grille` 360 · `distanceAuMur` 510 · `cretes` 553 · `nappePrincipale` 571
+`celluleDe` 606 · `caseDe` 610 · `centreCase` 615 · `empriseDe` 658 · `accrocheDepuis` 690
+`versLeMilieu` 746 · `accroche` 777 · `Tas` 792 · `travail` 836 · `cherche` 859
+`distancesDepuis` 926 · `distancesMulti` 940 · `regleFoule` 1012 · `ecarteFoule` 1029
+`heureAuSalon` 1033 · `sallesEnMouvement` 1042 · `foule` 1085 · `bilanFoule` 1173
+`reduit` 1202 · `guidageAllees` 1265 · `recentre` 1321 · `passable` 1406 · `lisse` 1440
+`longueur` 1467 · `longueurDehors` 1483 · `nettoie` 1525 · `oublieFaces` 1572
+`facesLibres` 1574 · `amorce` 1647 · `faceDeSortie` 1682 · `accesDe` 1712
+`couplesAcces` 1757 · `troncon` 1790 · `pointObjet` 1833 · `pointRepere` 1840
+`candidats` 1849 · `pointSaisi` 1875 · `portesDe` 1893 · `versPorte` 1900
+`typeLiaison` 1961 · `nomRepere` 1967 · `oublieLiaisons` 1985 · `lienEcrits` 1997
+`ecritLiens` 2006 · `annuaireLiaisons` 2011 · `liensDe` 2043 · `coutLiaison` 2063
+`passagePraticable` 2070 · `passagesDe` 2078 · `sortiesDe` 2088 · `plansRelies` 2096
+`balayage` 2120 · `distanceDepuis` 2134 · `cheminLiaisons` 2161 · `routeParLiaisons` 2245
+`routeEntre` 2281 · `calculeRoute` 2320 · `couleurNappe` 2346 · `rafraichitApercu` 2352
+`marchesIci` 2395 · `rayonBout` 2400 · `dessineItineraire` 2405 · `rafraichitBouts` 2449
+`cadreItineraire` 2472 · `champIti` 2496 · `ecritDistance` 2500 · `ecritDuree` 2508
+`fermeSugg` 2513 · `montreSugg` 2520 · `choisitPoint` 2552 · `valideSaisie` 2561
+`effaceItineraire` 2571 · `relance` 2593 · `phraseLiaison` 2644 · `montreResultat` 2658
+`bandeauVisee` 2798 · `armeVisee` 2812 · `finVisee` 2826 · `viseItineraire` 2841
+`visePoi` 2847 · `visePoint` 2853 · `ouvreItineraire` 2879 · `fermeItineraire` 2907
+`versItineraire` 2917 · `versItineraireDe` 2920
 
 ### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -458,6 +465,12 @@ Fonctions :
 `nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 228 · `poseSuggestion` 263
 `fenetreSuggestion` 276 · `relevePalmares` 310 · `etiquetteSugg` 330 · `voletSuggestion` 340
 
+### `_sw.js` — 165 l. → sw.js
+
+Fonctions :
+
+`range` 72 · `dabordCache` 82 · `dabordReseau` 102 · `navigation` 119
+
 ## Dans `web/`, mais que la construction ne produit pas
 
 Ces fichiers sont servis sans qu'aucune source ne les regénère : les
@@ -545,10 +558,12 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 273 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 61 · `amontPour` 70 · `cleDe` 78 · `meta` 81 · `gardable` 94 · `range` 99 `rafraichit` 106 · `oublie` 133 · `mesure` 185
+- `src/index.mjs` — 326 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 64 · `amontPour` 73 · `cleDe` 81 · `meta` 84 · `gardable` 97 · `range` 102 `rafraichit` 109 · `oublie` 136 · `manifeste` 209 · `mesure` 235
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
+- `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
+- `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.
 - `outils/carte.js` — produit ce fichier.
 - `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.
 - `outils/controle.js` — analyse le script de chaque page construite, en module

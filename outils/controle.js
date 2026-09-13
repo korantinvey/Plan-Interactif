@@ -60,9 +60,26 @@ if (!fs.existsSync(WEB)) {
 }
 
 const pages = fs.readdirSync(WEB).filter((f) => f.endsWith(".html")).sort();
+/* Les scripts servis à part : la configuration, et le service de second plan.
+   Ils sortaient du contrôle par le bas — écartés des pages parce qu'ils sont
+   des fichiers, et lus par personne parce qu'ils ne sont pas des pages. Or le
+   service, lui, s'installe et survit à la visite : une faute de syntaxe y
+   coûte plus cher qu'ailleurs. */
+const scripts = fs.readdirSync(WEB).filter((f) => f.endsWith(".js")).sort();
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "controle-"));
 let controles = 0;
 const fautes = [];
+
+for (const script of scripts) {
+  const fichier = path.join(temp, script.replace(/\./g, "_") + ".mjs");
+  fs.copyFileSync(path.join(WEB, script), fichier);
+  try {
+    execFileSync(process.execPath, ["--check", fichier], { stdio: "pipe" });
+    controles++;
+  } catch (e) {
+    fautes.push({ page: script, dit: (e.stderr || "").toString().trim() });
+  }
+}
 
 for (const page of pages) {
   const html = fs.readFileSync(path.join(WEB, page), "utf8");
@@ -85,7 +102,8 @@ fs.rmSync(temp, { recursive: true, force: true });
 if (fautes.length) {
   console.error("Le JavaScript servi ne passe pas l'analyse :\n");
   for (const f of fautes) {
-    console.error("web/" + f.page + " — script ouvert ligne " + f.ligne + " :");
+    console.error("web/" + f.page +
+                  (f.ligne ? " — script ouvert ligne " + f.ligne : "") + " :");
     console.error(f.dit.split("\n").slice(0, 8).join("\n") + "\n");
   }
   console.error("Les numéros de ligne ci-dessus comptent depuis le début du");
@@ -94,4 +112,4 @@ if (fautes.length) {
 }
 
 console.log("Syntaxe : " + controles + " scripts contrôlés sur " + pages.length +
-            " pages, aucun défaut.");
+            " pages et " + scripts.length + " fichiers à part, aucun défaut.");
