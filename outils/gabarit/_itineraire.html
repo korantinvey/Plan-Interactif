@@ -2612,7 +2612,9 @@ function montreResultat(etat){
   if (etat === "calcul"){ badge.textContent = "calcul…"; dit("iNote", "Recherche du chemin…"); return; }
   if (!ITI.a || !ITI.b){
     badge.textContent = "à définir";
-    dit("iNote", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+    /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
+       des deux champs disent la même chose (voir « _head.html »). */
+    dit("iNote iIntro", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
                  "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
                  "devant lequel vous êtes.");
     return;
@@ -2728,8 +2730,8 @@ function montreResultat(etat){
  * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
  * revenir après coup.
  *
- * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
- * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
+ * Sur un téléphone le tiroir couvre la moitié basse de l'écran : viser
+ * demanderait de choisir un stand qu'on ne voit peut-être pas. Il s'efface donc le temps
  * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
  * quoi on ne saurait plus ce qu'on est en train de choisir.
  */
