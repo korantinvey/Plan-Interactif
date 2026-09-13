@@ -209,6 +209,10 @@ function rafraichitParcours(){
      liste servira. */
   const org = $("btnJournee");
   if (org) org.disabled = n === 0;
+  /* Et de même le partage : une liste vide se partage techniquement — le lien
+     serait valide — mais n'apprendrait rien à personne. */
+  const part = $("btnPartage");
+  if (part) part.disabled = n === 0;
   /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
      pas dans le dos du visiteur, on le lui dit. */
   perimeJournee();
@@ -237,6 +241,11 @@ const cleTemps = c => {
 const jourCourt = d => d
   ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
   : "";
+
+/** Le nom sous lequel un exposant paraît dans une liste : son enseigne, faute
+ *  de quoi ce que le plan porte, faute de quoi son numéro d'emplacement. La
+ *  fenêtre d'un parcours reçu montre les mêmes noms que le tiroir. */
+const nomDeStand = o => o.nom || o.plan || ("Stand " + (o.code || "")).trim();
 
 function rangParcours(hote, r){
   const d = document.createElement("div");
@@ -325,7 +334,7 @@ function remplitParcours(){
     const g = groupeParcours(hote, "Exposants");
     stands.forEach(o => rangParcours(g, {
       genre: "stand", id: o.id, dessus: false,
-      titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+      titre: nomDeStand(o),
       detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
       // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
       // et le tiroir se retire, puisqu'ils occupent la même bande

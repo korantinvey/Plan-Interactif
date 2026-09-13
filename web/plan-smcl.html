@@ -2012,6 +2012,14 @@ button.expo:hover{background:var(--line)}
 .pPied .jOrg:hover{border-color:var(--accent)}
 .pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
   color:var(--ink-3);cursor:default}
+/* Les deux commandes du parcours sur une seule rangée : organiser sa journée,
+   et la passer à quelqu'un. Empilées, elles poussaient « Vider le parcours »
+   hors du tiroir sur un téléphone. « Organiser » prend la place qui reste —
+   c'est la commande longue, et celle pour laquelle la liste a été faite. */
+.pActs{display:flex;align-items:stretch;gap:8px;width:100%}
+.pActs .btn{width:auto}
+.pActs .jOrg{flex:1;min-width:0}
+.pActs .jPart{flex:none}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:var(--rouge)}
 /* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
@@ -2933,6 +2941,32 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    parmi les commandes ordinaires. */
 .mfen footer .btn[disabled]{opacity:.4;cursor:default;filter:none}
 
+/* La fenêtre de partage du parcours.
+
+   Le code se photographie : il reste noir sur blanc quel que soit le thème de
+   la page, et garde sa plaque blanche jusque dans le thème sombre. Un code
+   inversé se lit encore sur un bon appareil, mal sur les autres, et rien
+   n'obligeait à courir ce risque pour une image de dix secondes. */
+.qrPlaque{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;display:grid;place-items:center}
+.qrPlaque svg{display:block;width:min(240px,58vw);height:auto}
+/* Le lien en clair : sélectionnable à la souris, et replié plutôt que de faire
+   déborder la fenêtre. La hauteur vaut exactement trois interlignes — une
+   quatrième ligne coupée en deux se lit comme un défaut d'affichage, alors
+   qu'elle ne dit que « faites défiler ». */
+.mcorps textarea.qrLien{width:100%;resize:none;padding:8px 10px;font-size:12px;
+  font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* Ce qu'un parcours reçu apporte, avant de l'accepter. */
+.mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.mcorps ul.partListe li{padding-left:13px;position:relative}
+.mcorps ul.partListe li::before{content:"";position:absolute;left:0;top:8px;
+  width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.mcorps ul.partListe li.reste{color:var(--ink-3);font-style:italic}
+.mcorps ul.partListe li.reste::before{background:var(--line-strong)}
+
 /* La remise à zéro des compteurs.
    La phrase qui dit « sans retour » ne peut pas se lire comme les autres :
    c'est la seule que l'on regrette de ne pas avoir lue. */
@@ -3594,9 +3628,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div class="pCorps" id="pCorps"></div>
       <div class="pCorps" id="jCorps" hidden></div>
       <div class="pPied" id="pPied">
-        <button class="btn jOrg" id="btnJournee" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
-          Organiser ma journée</button>
+        <div class="pActs">
+          <button class="btn jOrg" id="btnJournee" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+            Organiser ma journée</button>
+          <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
+            Partager</button>
+        </div>
         <button class="vider" id="videParcours">Vider le parcours</button>
       </div>
       <div class="pPied" id="jPied" hidden>
@@ -14359,6 +14398,10 @@ function rafraichitParcours(){
      liste servira. */
   const org = $("btnJournee");
   if (org) org.disabled = n === 0;
+  /* Et de même le partage : une liste vide se partage techniquement — le lien
+     serait valide — mais n'apprendrait rien à personne. */
+  const part = $("btnPartage");
+  if (part) part.disabled = n === 0;
   /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
      pas dans le dos du visiteur, on le lui dit. */
   perimeJournee();
@@ -14387,6 +14430,11 @@ const cleTemps = c => {
 const jourCourt = d => d
   ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
   : "";
+
+/** Le nom sous lequel un exposant paraît dans une liste : son enseigne, faute
+ *  de quoi ce que le plan porte, faute de quoi son numéro d'emplacement. La
+ *  fenêtre d'un parcours reçu montre les mêmes noms que le tiroir. */
+const nomDeStand = o => o.nom || o.plan || ("Stand " + (o.code || "")).trim();
 
 function rangParcours(hote, r){
   const d = document.createElement("div");
@@ -14475,7 +14523,7 @@ function remplitParcours(){
     const g = groupeParcours(hote, "Exposants");
     stands.forEach(o => rangParcours(g, {
       genre: "stand", id: o.id, dessus: false,
-      titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
+      titre: nomDeStand(o),
       detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
       // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
       // et le tiroir se retire, puisqu'ils occupent la même bande
@@ -14534,6 +14582,599 @@ $("videParcours").onclick = () => confirme("Vider le parcours",
 addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
 });
+/* ============================================================
+   11 quinquies. Partager son parcours
+   ============================================================ */
+/**
+ * Deux visiteurs viennent ensemble, un seul a préparé la journée. Jusqu'ici le
+ * second n'avait qu'à refaire la liste à la main, stand par stand.
+ *
+ * Le partage se fait donc d'appareil à appareil, sans rien demander à
+ * personne : un code affiché à l'écran, que l'autre téléphone photographie, ou
+ * le lien qu'on envoie par le moyen déjà installé — la feuille de partage du
+ * système ouvre WhatsApp, Messenger, Teams, un courriel, ce qu'on veut.
+ *
+ * Le parti pris tient en une phrase : **rien ne transite par le serveur**.
+ * Aucun code de partage à créer, à stocker, à faire expirer ; aucune adresse
+ * e-mail à recueillir, donc rien à déclarer, rien à effacer sur demande, et
+ * pas de bandeau de consentement de plus. La liste voyage entière dans
+ * l'adresse, et le plan la relit à l'arrivée.
+ *
+ * Ce que cela coûte, en retour : le lien porte autant de caractères qu'il y a
+ * d'étapes, et un parcours très long finit par faire un code dense. C'est le
+ * seul plafond, et il se voit — la fenêtre le dit et s'en tient au lien.
+ */
+
+/* ------------------------------------------------------------
+   Le lien qui porte le parcours
+   ------------------------------------------------------------ */
+/**
+ * Le parcours voyage dans le fragment — ce qui suit le « # ». Deux raisons,
+ * et la première décide : un fragment n'est pas envoyé au serveur. Ni le
+ * Worker, ni Cloudflare, ni Supabase ne voient jamais passer la liste, et il
+ * n'y a donc aucun journal à purger. La seconde est qu'un lien qui se suffit
+ * à lui-même s'ouvre hors ligne : un salon déjà visité s'affiche sans réseau
+ * (voir `_sw.js`), et le parcours arrive avec l'adresse.
+ */
+const CLE_LIEN_PARCOURS = "parcours=";
+
+/* Le format, en tête du fragment. Un lien envoyé la veille au soir doit
+   s'ouvrir le lendemain matin : si le format change un jour, ce chiffre fera
+   refuser proprement l'ancien plutôt que de l'ouvrir de travers. */
+const FORMAT_PARTAGE = "1";
+
+/**
+ * Ce sont les identifiants qui voyagent, et non les rangs de la liste.
+ *
+ * Les rangs auraient tenu en deux caractères chacun — un code quatre fois plus
+ * court. Mais ils ne veulent dire quelque chose que dans l'instantané qui les
+ * a produits : une synchronisation Klipso entre l'envoi et la lecture décale
+ * tout ce qui suit l'exposant ajouté, et l'autre visiteur reçoit alors une
+ * liste plausible et fausse — le pire des deux mondes. L'identifiant, lui, ne
+ * désigne jamais qu'une chose, et cesse simplement d'exister quand le stand
+ * s'en va : `chargeParcours` sait déjà écarter ce que les données ne
+ * connaissent plus.
+ */
+const codeIdParcours = id => String(id).replace(/[^A-Za-z0-9_-]/g, c =>
+  Array.from(new TextEncoder().encode(c),
+             o => "%" + o.toString(16).toUpperCase().padStart(2, "0")).join(""));
+
+/** Le parcours mis en une chaîne : le format, les stands, les conférences. */
+const codeParcours = p => [FORMAT_PARTAGE,
+                           p.stands.map(codeIdParcours).join("."),
+                           p.confs.map(codeIdParcours).join(".")].join("~");
+
+/** Et l'inverse, qui n'accorde sa confiance à rien : le fragment se tape à la
+ *  main aussi bien qu'il se scanne. */
+function litCodeParcours(txt){
+  const m = /^([0-9]+)~([^~]*)~([^~]*)$/.exec(txt || "");
+  if (!m || m[1] !== FORMAT_PARTAGE) return null;
+  const liste = s => s.split(".").map(x => {
+    try { return decodeURIComponent(x); } catch (e) { return ""; }
+  }).filter(Boolean);
+  return { stands: liste(m[2]), confs: liste(m[3]) };
+}
+
+/**
+ * L'adresse du plan, telle qu'un autre appareil doit la recevoir.
+ *
+ * Elle se relit dans la barre du navigateur plutôt qu'elle ne se compose :
+ * c'est la seule qu'on sache joignable, puisque c'est celle qui a servi à
+ * ouvrir cette page-ci. La page d'administration fait exception — elle réclame
+ * une session que le visiteur d'en face n'a pas — et renvoie vers la page
+ * publique qui vit à côté, comme le fait déjà son écran d'accès.
+ */
+function lienParcours(){
+  const u = new URL(location.href);
+  u.hash = "";
+  u.pathname = u.pathname.replace(/plan-admin(\.html)?$/, "plan$1");
+  /* Le salon est nommé même quand la page l'aurait deviné : le lien vaut alors
+     ce qu'il dit, et n'ouvrira pas l'édition suivante le jour où c'est elle qui
+     devient le salon par défaut. */
+  u.search = SLUG ? "?plan=" + encodeURIComponent(SLUG) : "";
+  return u.toString() + "#" + CLE_LIEN_PARCOURS + codeParcours(PARCOURS);
+}
+
+/* ------------------------------------------------------------
+   Le code QR, sans bibliothèque
+
+   Une bibliothèque de plus pour une fonction de plus : le dépôt écrit déjà ses
+   propres fichiers Excel (`_classeur.html`) pour ne pas en dépendre, et un
+   encodeur QR tient en moins de place qu'un classeur — la norme est fixée
+   depuis 2006 et ne bougera pas.
+
+   Un seul mode, un seul niveau de correction, et c'est assez ici : le mode
+   octet accepte n'importe quelle adresse sans avoir à la mettre en majuscules,
+   et le niveau M rattrape 15 % du code — ce qu'il faut pour un écran, où la
+   gêne n'est pas la saleté mais le reflet et le moiré de la photographie.
+   Le niveau L aurait tenu un peu plus court sans jamais faire descendre d'une
+   version : le gain n'aurait pas été visible, la tolérance perdue, si.
+   ------------------------------------------------------------ */
+/* Par version (1 à 40) : mots de correction par bloc, et nombre de blocs.
+   Ce sont les deux colonnes « niveau M » des tables de la norme. */
+const QR_ECC = [10,16,26,18,24,16,18,22,22,26,30,22,22,24,24,28,28,26,26,26,
+                26,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28];
+const QR_BLOCS = [1,1,1,2,2,4,4,4,5,5,5,8,9,9,10,10,11,13,14,16,
+                  17,17,18,20,21,23,25,26,28,29,31,33,35,37,38,40,43,45,47,49];
+
+/* Au-delà, le code se lit encore mais plus à bout de bras : 97 modules sur les
+   trois centimètres d'un téléphone tenu par un autre, c'est la limite de ce
+   qu'un appareil photo distingue. La fenêtre le dit plutôt que d'afficher un
+   damier que personne n'arrive à scanner. */
+const QR_VERSION_LISIBLE = 20;
+
+/** Combien de mots de huit bits tient une version, correction comprise. */
+function qrMotsBruts(v){
+  let n = (16 * v + 128) * v + 64;
+  if (v >= 2){
+    const a = Math.floor(v / 7) + 2;
+    n -= (25 * a - 10) * a - 55;      // les motifs d'alignement
+    if (v >= 7) n -= 36;              // les deux copies du numéro de version
+  }
+  return n >> 3;
+}
+const qrMotsUtiles = v => qrMotsBruts(v) - QR_ECC[v - 1] * QR_BLOCS[v - 1];
+
+/* Le corps fini à 256 éléments dans lequel se calcule la correction d'erreur.
+   Deux tables une fois pour toutes : la multiplication y devient une addition
+   d'exposants, ce qui est tout l'intérêt. */
+const QR_EXP = new Uint8Array(512), QR_LOG = new Uint8Array(256);
+for (let i = 0, x = 1; i < 255; i++){
+  QR_EXP[i] = x; QR_LOG[x] = i;
+  x = (x << 1) ^ ((x >> 7) * 0x11D);  // polynôme générateur de la norme
+}
+for (let i = 255; i < 512; i++) QR_EXP[i] = QR_EXP[i - 255];
+const qrMul = (a, b) => (a && b) ? QR_EXP[QR_LOG[a] + QR_LOG[b]] : 0;
+
+/** Le polynôme générateur de degré `n`, développé par récurrence. */
+function qrGenerateur(n){
+  let g = [1];
+  for (let i = 0; i < n; i++){
+    const h = g.concat(0);
+    for (let j = 0; j < g.length; j++) h[j + 1] ^= qrMul(g[j], QR_EXP[i]);
+    g = h;
+  }
+  return g;
+}
+
+/** Les mots de correction d'un bloc : le reste de sa division polynomiale. */
+function qrReste(bloc, n){
+  const g = qrGenerateur(n), r = new Uint8Array(n);
+  for (const mot of bloc){
+    const f = mot ^ r[0];
+    r.copyWithin(0, 1); r[n - 1] = 0;
+    for (let i = 0; i < n; i++) r[i] ^= qrMul(g[i + 1], f);
+  }
+  return r;
+}
+
+/** Où se posent les motifs d'alignement, en abscisse comme en ordonnée. */
+function qrAlignements(v){
+  if (v === 1) return [];
+  const n = Math.floor(v / 7) + 2, taille = v * 4 + 17;
+  // la version 32 est la seule que la formule ne retrouve pas
+  const pas = v === 32 ? 26 : Math.ceil((v * 4 + 4) / (n * 2 - 2)) * 2;
+  const r = [6];
+  for (let p = taille - 7; r.length < n; p -= pas) r.splice(1, 0, p);
+  return r;
+}
+
+/**
+ * La trame du code : un tableau de lignes de 0 et de 1.
+ *
+ * Cinq temps, dans l'ordre de la norme — le flot de bits, la correction
+ * d'erreur, les motifs fixes, les données en zigzag, le masque.
+ */
+function qrTrame(octets){
+  let v = 1;
+  // l'en-tête compte deux octets de plus à partir de la version 10
+  while (v <= 40 && qrMotsUtiles(v) * 8 < 4 + (v >= 10 ? 16 : 8) + octets.length * 8) v++;
+  if (v > 40) return null;
+  const taille = v * 4 + 17;
+
+  /* --- le flot de bits, puis les mots de huit bits --- */
+  const bits = [];
+  const pousse = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+  pousse(4, 4);                                   // mode octet
+  pousse(octets.length, v >= 10 ? 16 : 8);
+  for (const o of octets) pousse(o, 8);
+  pousse(0, Math.min(4, qrMotsUtiles(v) * 8 - bits.length));   // terminateur
+  while (bits.length % 8) bits.push(0);
+  const donnees = [];
+  for (let i = 0; i < bits.length; i += 8)
+    donnees.push(bits.slice(i, i + 8).reduce((a, b) => a * 2 + b, 0));
+  // le remplissage imposé par la norme, jusqu'à la capacité de la version
+  for (let p = 0xEC; donnees.length < qrMotsUtiles(v); p ^= 0xEC ^ 0x11) donnees.push(p);
+
+  /* --- blocs, correction, entrelacement --- */
+  const nb = QR_BLOCS[v - 1], ne = QR_ECC[v - 1];
+  const court = Math.floor(donnees.length / nb), courts = nb - donnees.length % nb;
+  const blocs = [], corrections = [];
+  for (let b = 0, i = 0; b < nb; b++){
+    const n = court + (b < courts ? 0 : 1);
+    blocs.push(donnees.slice(i, i + n)); i += n;
+    corrections.push(qrReste(blocs[b], ne));
+  }
+  /* Les blocs s'entremêlent mot à mot : une éraflure abîme alors un mot de
+     chacun plutôt que d'emporter un bloc entier, que rien ne rattraperait. */
+  const mots = [];
+  for (let j = 0; j <= court; j++)
+    for (let b = 0; b < nb; b++) if (j < blocs[b].length) mots.push(blocs[b][j]);
+  for (let j = 0; j < ne; j++)
+    for (let b = 0; b < nb; b++) mots.push(corrections[b][j]);
+
+  /* --- les motifs que le lecteur cherche en premier --- */
+  const m = [], fixe = [];
+  for (let y = 0; y < taille; y++){
+    m.push(new Uint8Array(taille)); fixe.push(new Uint8Array(taille));
+  }
+  const pose = (x, y, val) => {
+    if (x >= 0 && y >= 0 && x < taille && y < taille){ m[y][x] = val; fixe[y][x] = 1; }
+  };
+  // les trois cibles des coins, avec leur séparateur blanc
+  const cible = (cx, cy) => {
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++){
+      const d = Math.max(Math.abs(dx), Math.abs(dy));
+      pose(cx + dx, cy + dy, d !== 2 && d <= 3 ? 1 : 0);
+    }
+  };
+  cible(3, 3); cible(taille - 4, 3); cible(3, taille - 4);
+  // les deux lignes de synchronisation, un module sur deux
+  for (let k = 8; k < taille - 8; k++){
+    const b = (k % 2) ^ 1;
+    pose(6, k, b); pose(k, 6, b);
+  }
+  const al = qrAlignements(v);
+  al.forEach(cy => al.forEach(cx => {
+    // les trois qui tomberaient sur une cible de coin n'existent pas
+    if ((cx === 6 && cy === 6) || (cx === 6 && cy === taille - 7) ||
+        (cx === taille - 7 && cy === 6)) return;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
+      pose(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1 ? 1 : 0);
+  }));
+  /* La place du format est réservée avant les données — sans quoi elles s'y
+     écriraient. La case 6 en est exclue : elle appartient à la ligne de
+     synchronisation, qui la traverse. */
+  for (let k = 0; k <= 8; k++) if (k !== 6){ pose(k, 8, 0); pose(8, k, 0); }
+  // le format est écrit deux fois : sa seconde copie longe les deux autres cibles
+  for (let k = 0; k < 8; k++){ pose(taille - 1 - k, 8, 0); pose(8, taille - 1 - k, 0); }
+  pose(8, taille - 8, 1);                          // le module toujours noir
+  if (v >= 7){
+    let r = v;
+    for (let k = 0; k < 12; k++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+    const num = (v << 12) | r;
+    for (let k = 0; k < 18; k++){
+      const b = (num >>> k) & 1;
+      pose(Math.floor(k / 3), taille - 11 + k % 3, b);
+      pose(taille - 11 + k % 3, Math.floor(k / 3), b);
+    }
+  }
+
+  /* --- les données, en zigzag depuis le coin bas droit --- */
+  let ib = 0;
+  const bitSuivant = () => {
+    const b = ib < mots.length * 8 ? (mots[ib >> 3] >>> (7 - (ib & 7))) & 1 : 0;
+    ib++;
+    return b;
+  };
+  for (let droite = taille - 1; droite >= 1; droite -= 2){
+    if (droite === 6) droite = 5;                  // la colonne de synchronisation se saute
+    for (let k = 0; k < taille; k++) for (let c = 0; c < 2; c++){
+      const x = droite - c;
+      const y = ((droite + 1) & 2) === 0 ? taille - 1 - k : k;
+      if (!fixe[y][x]) m[y][x] = bitSuivant();
+    }
+  }
+
+  /* --- le masque : celui des huit qui déplaît le moins --- */
+  const MASQUES = [
+    (x, y) => (x + y) % 2 === 0,
+    (x, y) => y % 2 === 0,
+    (x, y) => x % 3 === 0,
+    (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0,
+    (x, y) => (x * y) % 2 + (x * y) % 3 === 0,
+    (x, y) => ((x * y) % 2 + (x * y) % 3) % 2 === 0,
+    (x, y) => ((x + y) % 2 + (x * y) % 3) % 2 === 0,
+  ];
+  // appliqué deux fois, un masque s'annule : c'est ce qui permet de les essayer
+  const applique = k => {
+    for (let y = 0; y < taille; y++) for (let x = 0; x < taille; x++)
+      if (!fixe[y][x] && MASQUES[k](x, y)) m[y][x] ^= 1;
+  };
+  const poseFormat = k => {
+    let r = k;                                     // niveau M : deux bits nuls en tête
+    for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const f = ((k << 10) | r) ^ 0x5412;
+    for (let i = 0; i <= 5; i++) m[i][8] = (f >>> i) & 1;
+    m[7][8] = (f >>> 6) & 1; m[8][8] = (f >>> 7) & 1; m[8][7] = (f >>> 8) & 1;
+    for (let i = 9; i < 15; i++) m[8][14 - i] = (f >>> i) & 1;
+    for (let i = 0; i < 8; i++) m[8][taille - 1 - i] = (f >>> i) & 1;
+    for (let i = 8; i < 15; i++) m[taille - 15 + i][8] = (f >>> i) & 1;
+  };
+  /* Les quatre pénalités de la norme : les longues plages d'une même couleur,
+     les carrés uniformes, tout ce qui ressemble à une cible de coin — c'est la
+     plus lourde, elle égarerait le lecteur — et le déséquilibre entre noir et
+     blanc. */
+  const penalite = () => {
+    let p = 0;
+    const plage = lit => {
+      let n = 1;
+      for (let i = 1; i < taille; i++){
+        if (lit(i) === lit(i - 1)) n++;
+        else { if (n >= 5) p += n - 2; n = 1; }
+      }
+      if (n >= 5) p += n - 2;
+    };
+    for (let y = 0; y < taille; y++) plage(x => m[y][x]);
+    for (let x = 0; x < taille; x++) plage(y => m[y][x]);
+    for (let y = 0; y < taille - 1; y++) for (let x = 0; x < taille - 1; x++)
+      if (m[y][x] === m[y][x + 1] && m[y][x] === m[y + 1][x] &&
+          m[y][x] === m[y + 1][x + 1]) p += 3;
+    // une fenêtre de onze modules : 00001011101 et son miroir
+    const cible = lit => {
+      let f = 0;
+      for (let i = 0; i < taille; i++){
+        f = ((f << 1) & 0x7FF) | lit(i);
+        if (i >= 10 && (f === 0x05D || f === 0x5D0)) p += 40;
+      }
+    };
+    for (let y = 0; y < taille; y++) cible(x => m[y][x]);
+    for (let x = 0; x < taille; x++) cible(y => m[y][x]);
+    let noirs = 0;
+    for (let y = 0; y < taille; y++) for (let x = 0; x < taille; x++) noirs += m[y][x];
+    const total = taille * taille;
+    p += Math.floor(Math.abs(noirs * 20 - total * 10) / total) * 10;
+    return p;
+  };
+  let choisi = 0, score = Infinity;
+  for (let k = 0; k < 8; k++){
+    applique(k); poseFormat(k);
+    const s = penalite();
+    applique(k);
+    if (s < score){ score = s; choisi = k; }
+  }
+  applique(choisi); poseFormat(choisi);
+  return m;
+}
+
+/**
+ * La trame en SVG.
+ *
+ * Noir sur blanc, thème sombre ou non : le code n'est pas une illustration, il
+ * doit se photographier. Une marge de quatre modules l'entoure — le lecteur en
+ * a besoin pour trouver les bords, et l'oublier est la panne la plus courante.
+ *
+ * Un seul tracé, par plages horizontales, plutôt qu'un rectangle par module :
+ * un code dense en compte plusieurs milliers, et autant d'éléments dans le
+ * document se paierait à chaque redessin.
+ */
+function qrSvg(m){
+  const q = 4, n = m.length, c = n + 2 * q;
+  let d = "";
+  for (let y = 0; y < n; y++){
+    for (let x = 0; x < n; x++){
+      if (!m[y][x]) continue;
+      let l = 1;
+      while (x + l < n && m[y][x + l]) l++;
+      d += "M" + (x + q) + " " + (y + q) + "h" + l + "v1h-" + l + "z";
+      x += l;
+    }
+  }
+  return '<svg viewBox="0 0 ' + c + ' ' + c + '" shape-rendering="crispEdges" ' +
+    'role="img" aria-label="Code à photographier qui ouvre ce parcours">' +
+    '<rect width="' + c + '" height="' + c + '" fill="#fff"/>' +
+    '<path d="' + d + '" fill="#000"/></svg>';
+}
+
+/* ------------------------------------------------------------
+   La fenêtre de partage
+   ------------------------------------------------------------ */
+const PICTO_PARTAGE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/>' +
+  '<circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>';
+
+function ouvrePartageParcours(){
+  const lien = lienParcours();
+  const trame = qrTrame(Array.from(new TextEncoder().encode(lien)));
+  const lisible = trame && (trame.length - 17) / 4 <= QR_VERSION_LISIBLE;
+
+  ouvreModale("Partager mon parcours", corps => {
+    const p = document.createElement("p");
+    p.textContent = lisible
+      ? "Faites photographier ce code : le plan s'ouvrira sur le même parcours."
+      : "Ce parcours porte trop d'étapes pour un code lisible de loin. " +
+        "Envoyez le lien, il fait le même travail.";
+    corps.appendChild(p);
+
+    if (lisible){
+      const plaque = document.createElement("div");
+      plaque.className = "qrPlaque";
+      plaque.innerHTML = qrSvg(trame);
+      corps.appendChild(plaque);
+    }
+
+    /* Le lien en toutes lettres, et non caché derrière le seul bouton : sur un
+       ordinateur il se sélectionne à la souris, et il montre au passage qu'il
+       ne contient ni compte ni adresse — ce que la phrase suivante affirme. */
+    const champ = document.createElement("textarea");
+    champ.className = "qrLien";
+    champ.readOnly = true;
+    champ.rows = 2;
+    champ.value = lien;
+    champ.onclick = () => champ.select();
+    corps.appendChild(champ);
+
+    const note = document.createElement("p");
+    note.className = "qrNote";
+    note.textContent = "Le parcours tient dans le lien lui-même : rien n'est " +
+      "enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.";
+    corps.appendChild(note);
+  }, boutonsPartage(lien), "partage");
+}
+
+/**
+ * Les boutons du pied, selon ce que l'appareil sait faire.
+ *
+ * `navigator.share` est la feuille de partage du système : c'est elle qui
+ * ouvre WhatsApp, Messenger, Teams ou le courrier, avec ce que le visiteur y a
+ * déjà installé — nous n'avons aucune liste d'applications à tenir, et aucune
+ * de ces applications n'a à savoir que ce plan existe. Elle manque sur la
+ * plupart des navigateurs de bureau ; la copie prend alors la tête, et le
+ * lien se colle où l'on veut.
+ */
+function boutonsPartage(lien){
+  const partageable = typeof navigator.share === "function";
+  const copie = {
+    libelle: "Copier le lien", ferme: false, genre: partageable ? "" : "accent",
+    action: () => {
+      const b = [...$("mPied").children].find(x => x.textContent === "Copier le lien");
+      navigator.clipboard?.writeText(lien).then(
+        () => { if (b){ b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier le lien", 1700); } },
+        () => { if (b) b.textContent = "Échec de la copie"; });
+    },
+  };
+  const boutons = [{ libelle: "Fermer" }, copie];
+  if (partageable) boutons.push({
+    libelle: "Partager…", genre: "accent",
+    /* Refuser la feuille de partage n'est pas une panne : on la referme, et la
+       fenêtre reste ouverte derrière — d'où le silence sur le rejet. */
+    action: () => navigator.share({
+      title: "Mon parcours de visite",
+      text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
+            "voici les stands et les conférences que j'ai retenus.",
+      url: lien,
+    }).catch(() => {}),
+  });
+  return boutons;
+}
+
+/* ------------------------------------------------------------
+   Le parcours reçu
+   ------------------------------------------------------------ */
+/**
+ * D'où l'on dit que vient un ajout reçu par lien.
+ *
+ * Le vocabulaire des canaux est clos côté serveur — un mot inventé rejoindrait
+ * « autre » — et « lien » y désigne déjà ce qui arrive par une adresse plutôt
+ * que par un geste dans la page. C'est bien ce dont il s'agit, et cela laisse
+ * l'exploitant lire ses ajouts sans qu'une migration soit nécessaire.
+ */
+const CANAL_PARTAGE = "lien";
+
+/** Combien de noms la fenêtre montre avant de compter le reste. */
+const PARTAGE_APERCU = 6;
+
+/**
+ * Un parcours arrivé dans l'adresse.
+ *
+ * Appelé au démarrage, une fois les données indexées : c'est `parId` et
+ * `CONFS` qui disent ce qui existe encore dans ce salon, et un parcours venu
+ * d'une autre édition ne doit pas remplir la liste de rangs morts.
+ */
+function accueilleParcoursPartage(){
+  /* Le fragment se lit tel que le navigateur le rend, sans le décoder ici :
+     les échappements qu'il porte appartiennent aux identifiants, et un
+     décodage de trop rendrait au séparateur un point qui n'en était pas un. */
+  const brut = (location.hash || "").replace(/^#/, "");
+  if (brut.indexOf(CLE_LIEN_PARCOURS) !== 0) return;
+  /* Le fragment part tout de suite, quoi qu'il advienne ensuite. Il a été lu ;
+     le garder ferait reposer la question à chaque rechargement, et un parcours
+     mis en signet se réimposerait des semaines plus tard. Un cadre tiers cloisonné
+     n'a pas le droit de réécrire l'adresse : le partage y marche quand même. */
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  // l'exploitant a pu retirer le parcours de ce salon : le lien n'a alors nulle
+  // part où poser ce qu'il porte
+  if (conf("_parcours").visible === false) return;
+
+  const recu = litCodeParcours(brut.slice(CLE_LIEN_PARCOURS.length));
+  if (!recu) return;
+  const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
+  const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
+
+  if (!stands.length && !confs.length){
+    /* Deux raisons de n'avoir rien à proposer, et elles ne se disent pas
+       pareil : le parcours est déjà là — on a rouvert son propre lien, ou
+       cliqué deux fois dessus — ou bien il ne parle pas de ce salon. */
+    const connus = recu.stands.filter(id => parId.has(id)).length +
+                   recu.confs.filter(id => CONFS.has(id)).length;
+    ouvreModale("Parcours partagé", corps => {
+      const p = document.createElement("p");
+      p.textContent = connus
+        ? "Tout ce que ce lien propose est déjà dans votre parcours."
+        : "Ce lien ne désigne rien de ce salon : il vient sans doute d'une " +
+          "autre édition, ou les stands qu'il retenait ont été démontés depuis.";
+      corps.appendChild(p);
+    }, [{ libelle: "Fermer" }]);
+    return;
+  }
+
+  const sien = PARCOURS.stands.length + PARCOURS.confs.length;
+  ouvreModale("Un parcours partagé", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ce lien porte le parcours de quelqu'un d'autre : " +
+      [stands.length ? stands.length + " exposant" + (stands.length > 1 ? "s" : "") : "",
+       confs.length ? confs.length + " conférence" + (confs.length > 1 ? "s" : "") : ""]
+        .filter(Boolean).join(" et ") + ".";
+    corps.appendChild(p);
+
+    const ul = document.createElement("ul");
+    ul.className = "partListe";
+    const noms = stands.map(id => nomDeStand(parId.get(id)))
+      .concat(confs.map(id => CONFS.get(id).nom));
+    noms.slice(0, PARTAGE_APERCU).forEach(n => {
+      const li = document.createElement("li");
+      li.textContent = n;
+      ul.appendChild(li);
+    });
+    if (noms.length > PARTAGE_APERCU){
+      const li = document.createElement("li");
+      li.className = "reste";
+      li.textContent = "et " + (noms.length - PARTAGE_APERCU) + " de plus";
+      ul.appendChild(li);
+    }
+    corps.appendChild(ul);
+  }, sien
+    /* Une liste déjà commencée ne se remplace pas sans le dire : la fusion est
+       proposée d'abord, c'est elle qui ne perd rien. */
+    ? [{ libelle: "Annuler" },
+       { libelle: "Remplacer le mien", genre: "danger",
+         action: () => adoptePartage(stands, confs, true) },
+       { libelle: "Ajouter au mien", genre: "accent",
+         action: () => adoptePartage(stands, confs, false) }]
+    : [{ libelle: "Annuler" },
+       { libelle: "Charger ce parcours", genre: "accent",
+         action: () => adoptePartage(stands, confs, true) }]);
+}
+
+/**
+ * Ce que le visiteur a accepté entre dans sa liste.
+ *
+ * Les ajouts se comptent un à un, comme s'il les avait faits lui-même : c'est
+ * bien un visiteur de plus qui a ce stand à son programme, et l'exposant a
+ * raison de le voir dans ses chiffres. Le canal dit d'où cela vient, et permet
+ * de faire la part des deux. Ce qui ne se compte pas, c'est le partage
+ * lui-même : personne n'a encore rien visité.
+ */
+function adoptePartage(stands, confs, remplace){
+  if (remplace) PARCOURS = { stands: [], confs: [] };
+  stands.forEach(id => {
+    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
+    mesure("parcours", CANAL_PARTAGE, id, "fiche_stand");
+  });
+  confs.forEach(id => {
+    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
+    mesure("parcours", CANAL_PARTAGE, id, "fiche_conf");
+  });
+  enregistreParcours();
+  rafraichitParcours();
+  /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
+     n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
+  ouvreParcours();
+}
+
+$("btnPartage").onclick = ouvrePartageParcours;
 /* ============================================================
    11 ter. Itinéraire — d'un point du salon à un autre
    ============================================================ */
@@ -19949,6 +20590,11 @@ function demarre(d){
   rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
+  /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
+     pour laquelle cette page vient d'être ouverte, et il retire son fragment
+     de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait
+     un stand dont le code serait tout le parcours. */
+  accueilleParcoursPartage();
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);

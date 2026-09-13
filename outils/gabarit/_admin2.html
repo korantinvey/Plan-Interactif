@@ -18,6 +18,11 @@ function demarre(d){
   rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
+  /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
+     pour laquelle cette page vient d'être ouverte, et il retire son fragment
+     de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait
+     un stand dont le code serait tout le parcours. */
+  accueilleParcoursPartage();
   const v = decodeURIComponent((location.hash || "").slice(1)).toLowerCase();
   if (v && v !== "admin"){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
