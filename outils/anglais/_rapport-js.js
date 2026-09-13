@@ -32,6 +32,12 @@ module.exports = {
   "Dont {n} au stockage refusé, recomptés à chaque ouverture.": "Including {n} with storage blocked, counted again at each opening.",
   "Navigateurs distincts sur la période. Dont {n} au stockage refusé, recomptés à chaque ouverture.":
     "Distinct browsers over the period. Including {n} with storage blocked, counted again at each opening.",
+  "Jetons effacés au bout de {n} jours : les visiteurs plus anciens n'y sont plus.":
+    "Tokens are deleted after {n} days: older visitors are no longer included.",
+  "Navigateurs distincts sur la période. Jetons effacés au bout de {n} jours : les visiteurs plus anciens n'y sont plus.":
+    "Distinct browsers over the period. Tokens are deleted after {n} days: older visitors are no longer included.",
+  "Navigateurs distincts sur la période. Dont {n} au stockage refusé, recomptés à chaque ouverture. Jetons effacés au bout de {n2} jours : les visiteurs plus anciens n'y sont plus.":
+    "Distinct browsers over the period. Including {n} with storage blocked, counted again at each opening. Tokens are deleted after {n2} days: older visitors are no longer included.",
   "Recherches": "Searches",
   "Mots-clés saisis, doublons écartés.": "Keywords typed, duplicates removed.",
   "Trajets distincts demandés.": "Distinct routes requested.",
