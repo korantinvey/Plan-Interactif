@@ -470,16 +470,17 @@ Fonctions :
 
 `#lienPublic`
 
-### `_suggestion.html` — 646 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_suggestion.html` — 679 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
 
 Fonctions :
 
-`reglageSugg` 56 · `seuilSugg` 58 · `presentationSugg` 74 · `critereSugg` 80
-`indexSugg` 92 · `valeursSugg` 117 · `suggestionCourante` 136 · `exposantPropose` 168
-`nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 235 · `poseSuggestion` 286
-`fenetreSuggestion` 300 · `relevePalmares` 339 · `etiquetteSugg` 359 · `voletSuggestion` 369
+`reglageSugg` 57 · `seuilSugg` 59 · `presentationsSugg` 83 · `presenteSugg` 89
+`critereSugg` 94 · `indexSugg` 106 · `valeursSugg` 131 · `suggestionCourante` 150
+`exposantPropose` 182 · `nomValeurSugg` 200 · `phraseSuggestion` 221 · `carteSuggestion` 249
+`poseSuggestion` 298 · `fenetreSuggestion` 312 · `relevePalmares` 351 · `etiquetteSugg` 371
+`voletSuggestion` 381
 
 ### `_sw.js` — 165 l. → sw.js
 
