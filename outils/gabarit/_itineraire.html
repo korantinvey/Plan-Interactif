@@ -2534,7 +2534,7 @@ function effaceItineraire(){
   ROUTE = TRACE = null;
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
      il appelle la même visée. */
-  visee = ETROIT() ? null : "a";
+  visee = "a";
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
@@ -2630,7 +2630,9 @@ function montreResultat(etat){
   if (etat === "calcul"){ badge.textContent = "calcul…"; dit("iNote", "Recherche du chemin…"); return; }
   if (!ITI.a || !ITI.b){
     badge.textContent = "à définir";
-    dit("iNote", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+    /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
+       des deux champs disent la même chose (voir « _head.html »). */
+    dit("iNote iIntro", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
                  "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
                  "devant lequel vous êtes.");
     return;
@@ -2746,10 +2748,11 @@ function montreResultat(etat){
  * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
  * revenir après coup.
  *
- * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
- * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
- * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
- * quoi on ne saurait plus ce qu'on est en train de choisir.
+ * Sur un téléphone le tiroir tient la moitié basse de l'écran : l'autre
+ * moitié se touche, et la visée armée à l'ouverture y suffit le plus souvent.
+ * Reste ce qu'il cache : la cible, elle, efface le tiroir le temps du geste et
+ * le ramène dès qu'il aboutit — le bandeau, lui, demeure, sans quoi on ne
+ * saurait plus ce qu'on est en train de choisir.
  */
 let visee = null;
 
@@ -2768,7 +2771,13 @@ function bandeauVisee(){
 }
 
 function armeVisee(r){
-  visee = visee === r ? null : r;
+  /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
+     est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
+     le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
+     dans le bandeau, qui porte « Annuler ». Au large, la cible reste
+     l'interrupteur qu'elle était. */
+  const efface = ETROIT() && $("itineraire").classList.contains("open");
+  visee = (visee === r && !efface) ? null : r;
   fermeSugg();
   if (visee && ETROIT()) fermeItineraire();
   bandeauVisee();
@@ -2777,10 +2786,13 @@ function armeVisee(r){
 /** Fin de la visée, quelle qu'en soit la raison. */
 function finVisee(){
   if (!visee) return;
-  const rouvre = ETROIT();
+  /* La cible referme le tiroir sur un téléphone : on ne le rouvre que si c'est
+     bien lui qui l'a fermé. Ouvert, le rouvrir réarmait la visée que ces deux
+     lignes viennent d'éteindre — et l'abandon n'aboutissait jamais. */
+  const rouvre = ETROIT() && !$("itineraire").classList.contains("open");
   visee = null;
   bandeauVisee();
-  if (rouvre) ouvreItineraire();
+  if (rouvre) ouvreItineraire(false);
 }
 
 /**
@@ -2820,13 +2832,18 @@ $("viseurStop").onclick = finVisee;
 /* ------------------------------------------------------------
    Ouverture, fermeture, branchements
    ------------------------------------------------------------ */
-function ouvreItineraire(){
+/**
+ * @param arme  Faux pour rouvrir le tiroir sans rien réarmer — c'est le cas
+ *   d'une visée abandonnée : la rouvrir doit rendre la main, non relancer le
+ *   geste qu'on vient d'annuler.
+ */
+function ouvreItineraire(arme = true){
   // fiche, parcours et itinéraire se partagent la même bande
   if ($("detail").classList.contains("open")) ferme();
   fermeParcours();
-  /* Rouvrir le tiroir, c'est renoncer à viser : sur un téléphone il recouvre
-     le plan qu'on visait. On ne passe pas par finVisee(), qui rouvrirait ce
-     tiroir déjà en train de s'ouvrir. */
+  /* Une ouverture repart de zéro : la visée en cours s'éteint ici, et les
+     lignes du bas la réarment sur le premier champ vide. On ne passe pas par
+     finVisee(), qui rouvrirait ce tiroir déjà en train de s'ouvrir. */
   visee = null;
   bandeauVisee();
   /* La journée organisée a pu prendre le trait entre-temps : le tiroir le
@@ -2839,9 +2856,11 @@ function ouvreItineraire(){
   /* Un itinéraire se désigne plus vite qu'il ne se tape : la visée est donc
      armée sur le premier champ vide dès l'ouverture, départ puis arrivée, sans
      passer par la cible. Le clavier reste à portée — cliquer dans un champ y
-     renonce. Sur un téléphone, où le tiroir recouvre le plan qu'on viserait,
-     viser suppose de le refermer : on attend que le visiteur le demande. */
-  if (!ETROIT()){
+     renonce. Le téléphone n'en est plus excepté : le tiroir ne prend que la
+     moitié basse de l'écran, et ce qui reste du plan se touche. Un stand qu'il
+     cache se désigne comme avant, par la cible, qui l'efface le temps du
+     geste. */
+  if (arme){
     visee = !ITI.a ? "a" : !ITI.b ? "b" : null;
     bandeauVisee();
   }
