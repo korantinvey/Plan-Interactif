@@ -58,6 +58,23 @@ const TOURNANT = 4;
  * La pénalité s'éteint à deux mètres du mur le plus proche : au-delà — dans
  * une aire dégagée, une entrée, un carrefour — aucun « milieu » n'a de sens,
  * et vouloir le tenir ferait faire des détours pour rien.
+ *
+ * Elle se compte sur ce que l'allée offre, et non sur la distance au mur
+ * elle-même. La nuance décide plus que le choix d'une file : comptée sur la
+ * distance au mur, toute case d'une allée étroite est en faute, du premier
+ * mètre au dernier — aucune n'y atteint jamais les deux mètres. La pénalité
+ * cessait alors d'être un prix de bord pour devenir un prix de passage, et
+ * comme elle se paie à la case, elle multipliait la longueur des allées
+ * étroites : le trajet faisait le tour du hall par les larges plutôt que de
+ * traverser. Sur les trajets d'essai, trois pour cent et demi de trop en tout,
+ * et jusqu'à cinquante-cinq mètres sur un seul — un détour que personne ne
+ * s'explique en le voyant.
+ *
+ * On compare donc chaque case à la crête de son allée — la marge qu'on
+ * atteindrait en remontant la pente depuis elle, ce que `versLeMilieu` fait
+ * déjà pour un point. Au milieu d'une allée étroite, la case est à sa crête et
+ * ne doit rien ; contre une façade dans une allée large, elle doit tout. Le
+ * prix redevient ce qu'il devait être : un choix de file, et non de route.
  */
 const PORTEE_CENTRE = 4;   // cases
 /* Deux plutôt qu'une demie. Le prix du virage est de quatre cases : passer du
@@ -67,6 +84,7 @@ const PORTEE_CENTRE = 4;   // cases
    d'être rentable — le trait longeait les stands d'un bout à l'autre du hall.
    À deux, quatre mètres suffisent. */
 const POIDS_CENTRE = 2;
+
 
 /* ------------------------------------------------------------
    L'enveloppe du hall
@@ -476,6 +494,7 @@ function grille(p, pmr){
   const g = { x0: x0, y0: y0, w: w, h: h, mur: mur, pmr: pmr, co: co, si: si };
   g.marge = distanceAuMur(g);
   g.nappe = nappePrincipale(g);
+  g.crete = cretes(g);
   GRILLES.set(cle, g);
   return g;
 }
@@ -517,6 +536,25 @@ function distanceAuMur(g){
     met(i, m);
   }
   return d;
+}
+
+/**
+ * La marge qu'offre l'allée de chaque case — sa crête.
+ *
+ * C'est `versLeMilieu` appliqué à tout le pavillon d'un coup : depuis chaque
+ * case on remonte la pente, et l'on retient la marge du sommet atteint. Le
+ * prix du bord s'y compare, et ne reproche donc à une case que ce que son
+ * allée permettait d'éviter. Se garde avec la grille, comme le reste.
+ *
+ * Quelques pas suffisent, `versLeMilieu` s'arrêtant à la portée au-delà de
+ * laquelle un milieu n'a plus de sens : le pavillon entier coûte moins qu'un
+ * seul A*.
+ */
+function cretes(g){
+  const n = g.w * g.h, c = new Uint8Array(n);
+  for (let i = 0; i < n; i++)
+    if (!g.mur[i]) c[i] = Math.min(PORTEE_CENTRE, g.marge[versLeMilieu(g, i)]);
+  return c;
 }
 
 /**
@@ -829,9 +867,10 @@ function cherche(g, depart, arrivee, peine){
     const x = i % g.w, y = (i - x) / g.w;
     return Math.abs(x - ax) + Math.abs(y - ay);
   };
+  // ce que la case doit à sa crête, et rien de plus
   const bord = (i) => {
-    const l = g.marge[i];
-    return l >= PORTEE_CENTRE ? 0 : POIDS_CENTRE * (PORTEE_CENTRE - l) / PORTEE_CENTRE;
+    const d = g.crete[i] - g.marge[i];
+    return d <= 0 ? 0 : POIDS_CENTRE * d / PORTEE_CENTRE;
   };
 
   const tas = new Tas();
@@ -1185,7 +1224,7 @@ const LISSAGE = .5;   // mètres
    donc mieux que le milieu exact, et le trait reste droit.
    Un vrai virage n'y gagne rien : le sommet d'un carrefour s'écarte de sa
    corde de la moitié d'une allée, des mètres et non des centimètres. */
-const LISSAGE_LARGE = 1.5;   // mètres
+const LISSAGE_LARGE = 2.5;   // mètres
 const AU_LARGE = 2;          // cases de marge, de part et d'autre
 
 /* Jusqu'où l'on va chercher le bord de l'allée, de part et d'autre du trait.

@@ -266,37 +266,37 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2956 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2995 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
 Fonctions :
 
-`sommets` 86 · `enveloppe` 95 · `oublieGrilles` 138 · `calquesDe` 143 · `reperesDe` 148
-`zoneTraversee` 228 · `cleRoleIti` 230 · `roleIti` 231 · `nomRoleIti` 232
-`estCirculation` 235 · `formesRole` 260 · `anglePlan` 292 · `dansGrille` 331
-`horsGrille` 332 · `grille` 342 · `distanceAuMur` 491 · `nappePrincipale` 533
-`celluleDe` 568 · `caseDe` 572 · `centreCase` 577 · `empriseDe` 620 · `accrocheDepuis` 652
-`versLeMilieu` 708 · `accroche` 739 · `Tas` 754 · `travail` 798 · `cherche` 821
-`distancesDepuis` 887 · `distancesMulti` 901 · `regleFoule` 973 · `ecarteFoule` 990
-`heureAuSalon` 994 · `sallesEnMouvement` 1003 · `foule` 1046 · `bilanFoule` 1134
-`reduit` 1163 · `guidageAllees` 1226 · `recentre` 1282 · `passable` 1367 · `lisse` 1401
-`longueur` 1428 · `longueurDehors` 1444 · `nettoie` 1486 · `oublieFaces` 1533
-`facesLibres` 1535 · `amorce` 1608 · `faceDeSortie` 1643 · `accesDe` 1673
-`couplesAcces` 1718 · `troncon` 1751 · `pointObjet` 1794 · `pointRepere` 1801
-`candidats` 1810 · `pointSaisi` 1836 · `portesDe` 1854 · `versPorte` 1861
-`typeLiaison` 1922 · `nomRepere` 1928 · `oublieLiaisons` 1946 · `lienEcrits` 1958
-`ecritLiens` 1967 · `annuaireLiaisons` 1972 · `liensDe` 2004 · `coutLiaison` 2024
-`passagePraticable` 2031 · `passagesDe` 2039 · `sortiesDe` 2049 · `plansRelies` 2057
-`balayage` 2081 · `distanceDepuis` 2095 · `cheminLiaisons` 2122 · `routeParLiaisons` 2206
-`routeEntre` 2242 · `calculeRoute` 2281 · `couleurNappe` 2307 · `rafraichitApercu` 2313
-`marchesIci` 2356 · `rayonBout` 2361 · `dessineItineraire` 2366 · `rafraichitBouts` 2410
-`cadreItineraire` 2433 · `champIti` 2457 · `ecritDistance` 2461 · `ecritDuree` 2469
-`fermeSugg` 2474 · `montreSugg` 2481 · `choisitPoint` 2513 · `valideSaisie` 2522
-`effaceItineraire` 2532 · `relance` 2554 · `phraseLiaison` 2605 · `montreResultat` 2619
-`bandeauVisee` 2759 · `armeVisee` 2773 · `finVisee` 2787 · `viseItineraire` 2802
-`visePoi` 2808 · `visePoint` 2814 · `ouvreItineraire` 2840 · `fermeItineraire` 2868
-`versItineraire` 2878 · `versItineraireDe` 2881
+`sommets` 104 · `enveloppe` 113 · `oublieGrilles` 156 · `calquesDe` 161 · `reperesDe` 166
+`zoneTraversee` 246 · `cleRoleIti` 248 · `roleIti` 249 · `nomRoleIti` 250
+`estCirculation` 253 · `formesRole` 278 · `anglePlan` 310 · `dansGrille` 349
+`horsGrille` 350 · `grille` 360 · `distanceAuMur` 510 · `cretes` 553 · `nappePrincipale` 571
+`celluleDe` 606 · `caseDe` 610 · `centreCase` 615 · `empriseDe` 658 · `accrocheDepuis` 690
+`versLeMilieu` 746 · `accroche` 777 · `Tas` 792 · `travail` 836 · `cherche` 859
+`distancesDepuis` 926 · `distancesMulti` 940 · `regleFoule` 1012 · `ecarteFoule` 1029
+`heureAuSalon` 1033 · `sallesEnMouvement` 1042 · `foule` 1085 · `bilanFoule` 1173
+`reduit` 1202 · `guidageAllees` 1265 · `recentre` 1321 · `passable` 1406 · `lisse` 1440
+`longueur` 1467 · `longueurDehors` 1483 · `nettoie` 1525 · `oublieFaces` 1572
+`facesLibres` 1574 · `amorce` 1647 · `faceDeSortie` 1682 · `accesDe` 1712
+`couplesAcces` 1757 · `troncon` 1790 · `pointObjet` 1833 · `pointRepere` 1840
+`candidats` 1849 · `pointSaisi` 1875 · `portesDe` 1893 · `versPorte` 1900
+`typeLiaison` 1961 · `nomRepere` 1967 · `oublieLiaisons` 1985 · `lienEcrits` 1997
+`ecritLiens` 2006 · `annuaireLiaisons` 2011 · `liensDe` 2043 · `coutLiaison` 2063
+`passagePraticable` 2070 · `passagesDe` 2078 · `sortiesDe` 2088 · `plansRelies` 2096
+`balayage` 2120 · `distanceDepuis` 2134 · `cheminLiaisons` 2161 · `routeParLiaisons` 2245
+`routeEntre` 2281 · `calculeRoute` 2320 · `couleurNappe` 2346 · `rafraichitApercu` 2352
+`marchesIci` 2395 · `rayonBout` 2400 · `dessineItineraire` 2405 · `rafraichitBouts` 2449
+`cadreItineraire` 2472 · `champIti` 2496 · `ecritDistance` 2500 · `ecritDuree` 2508
+`fermeSugg` 2513 · `montreSugg` 2520 · `choisitPoint` 2552 · `valideSaisie` 2561
+`effaceItineraire` 2571 · `relance` 2593 · `phraseLiaison` 2644 · `montreResultat` 2658
+`bandeauVisee` 2798 · `armeVisee` 2812 · `finVisee` 2826 · `viseItineraire` 2841
+`visePoi` 2847 · `visePoint` 2853 · `ouvreItineraire` 2879 · `fermeItineraire` 2907
+`versItineraire` 2917 · `versItineraireDe` 2920
 
 ### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
 
