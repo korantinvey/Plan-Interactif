@@ -75,6 +75,12 @@ appeler aucune API externe). Sa source est `outils/plans.json`, **versionnée**
 qu'avec une clé Klipso. Les mêmes données sont déjà dans la page publiée : la
 versionner n'expose rien de plus.
 
+Les polices suivent la même règle : `web/polices/` et `outils/polices.json` sont
+versionnés et ne se régénèrent qu'avec le réseau (`npm run polices`). Aucune
+page ne doit les demander à Google — chaque visiteur lui transmettrait son
+adresse IP, et la mesure du plan tient justement à ne rien laisser fuir sans
+consentement. `npm run construire` échoue si une page le fait.
+
 ## Où vit quoi
 
 | | |
@@ -127,6 +133,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
+| mesure sans bandeau : notice « Confidentialité », refus, vie du jeton, purge | `_mesure.html` § La notice, et le refus, `MESURE_VIE_MOIS` ; lien `_head.html` `#btnConfidentialite` ; `purge_presences` chaque nuit, migration `conservation_des_jetons` ; README « Sans bandeau de consentement » |
+| polices des pages | familles en tête de `outils/polices.js`, puis `npm run polices` → `web/polices/` ; déclarées par `genere.js` `feuillePolices` à la place de `<!--__POLICES__-->` |
 | porte d'accès au plan — navigateur, cadre, écran d'accueil, application | `_mesure.html` `supportMesure` ; rendu `_rapport-js.html` `portes` ; migration `support_d_acces_au_plan` |
 | visiteurs uniques par stand, par canal, par geste | table `visiteur_cible` et fn `audience_cibles` (clés `v_…`), migration `les_visiteurs_uniques_par_stand` ; colonnes `_export.html` `COL_TETE_V`, `COL_PIED_V` ; cartouche `_chaleur.html` `phraseChaleur` |
 | carte de chaleur du plan | `_chaleur.html`, migration `audience` |

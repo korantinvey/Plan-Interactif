@@ -245,6 +245,8 @@ ecrit(
   "- `outils/controle.js` — analyse le script de chaque page construite, en module",
   "  ES : une redéclaration y est une erreur, là où un `<script>` la tolère.",
   "- `outils/migration.js` — crée une migration horodatée à la seconde.",
+  "- `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors",
+  "  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.",
   "- `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —",
   "  outils hors ligne de récupération et de préparation des plans (clé Klipso requise).",
   ""

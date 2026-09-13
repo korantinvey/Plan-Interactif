@@ -1318,24 +1318,26 @@ Deno.serve(async (req) => {
         }).eq("id", evt.id);
       }
 
-      /* Au passage, la purge des présences anciennes.
+      /* Au passage, la purge des jetons de visiteur anciens.
        *
        * `visiteur_cible` est la seule table de mesure qui grossisse avec la
        * fréquentation : sans rien pour l'élaguer, elle accumulerait édition
        * après édition, et le jour où le disque est plein le projet passe en
        * lecture seule — c'est exactement le défaut du journal que les compteurs
        * ont remplacé, dont le vrai tort n'était pas la taille mais que rien ne
-       * l'effaçait jamais.
+       * l'effaçait jamais. La purge efface aussi les jetons de `visiteur_jour` :
+       * garder un jeton plus de quatre cents jours ferait sortir la mesure de
+       * l'exemption de consentement dont elle vit (voir `_mesure.html`).
        *
-       * Ici plutôt qu'ailleurs parce que c'est le seul rendez-vous régulier du
-       * système à tenir la clé de service. Elle ne coûte rien : l'index sur
-       * `jour` va droit aux lignes à retirer, et il n'y en a aucune la plupart
-       * du temps. Elle ne porte sur aucun salon en particulier — quatre cents
-       * jours partout —, d'où sa place hors de tout ce qui précède.
+       * Son vrai rendez-vous est désormais nocturne, par `pg_cron`. Celui-ci
+       * reste en secours, pour une base où l'extension manquerait. Il ne coûte
+       * rien : l'index sur `jour` va droit aux lignes à retirer, et il n'y en a
+       * aucune la plupart du temps. Il ne porte sur aucun salon en particulier —
+       * quatre cents jours partout —, d'où sa place hors de tout ce qui précède.
        *
-       * Un échec se tait : une purge manquée se rattrape à la synchronisation
-       * suivante, et rien ne justifie de faire échouer pour cela une
-       * synchronisation qui, elle, a réussi.
+       * Un échec se tait : une purge manquée se rattrape la nuit suivante, et
+       * rien ne justifie de faire échouer pour cela une synchronisation qui,
+       * elle, a réussi.
        */
       await db.rpc("purge_presences").then(
         () => {},

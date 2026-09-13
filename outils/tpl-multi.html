@@ -1,7 +1,5 @@
 <title>Plan du salon</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap">
+<!--__POLICES__-->
 
 <script src="config.js"></script>
 
@@ -255,6 +253,14 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
+/* Le pied de la liste porte la notice de confidentialité : une mention, pas
+   une commande. Discrète, mais toujours au même endroit — c'est là qu'on
+   cherche d'ordinaire ces choses, et la barre du haut n'a pas de place à
+   perdre sur un téléphone. */
+.side-pied{border-top:1px solid var(--line);padding:5px 16px;display:flex;justify-content:flex-end}
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line-strong)}
+.lien-discret:hover{color:var(--ink)}
 .row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
@@ -2978,6 +2984,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La notice de confidentialité : des paragraphes qui respirent, et le refus
+   posé comme une réponse, à part du texte qui l'explique. */
+.mcorps .notice p + p{margin-top:8px}
+.mcorps label.refusMesure{display:flex;align-items:center;gap:9px;margin:14px 0 2px;padding:10px 12px;
+  font-size:13.5px;font-weight:500;color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:pointer}
+.mcorps label.refusMesure input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+.mcorps p.noteRefus{margin-top:8px;font-size:12px;color:var(--ink-3)}
 /* Ce qu'un parcours reçu apporte, avant de l'accepter. */
 .mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
@@ -3457,6 +3471,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
          sommaire du pavillon, et n'a pas de résultat à annoncer. -->
     <div class="count" id="count" hidden><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
+    <!-- Ce que la mesure fait d'une visite, et le moyen de la refuser. Il ne
+         paraît que sur une page qui mesure (voir `_mesure.html`). -->
+    <footer class="side-pied" id="piedSide" hidden>
+      <button type="button" class="lien-discret" id="btnConfidentialite"
+        aria-haspopup="dialog">Confidentialité</button>
+    </footer>
   </aside>
 
   <main class="stage" id="stage">
@@ -19586,11 +19606,28 @@ $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
    refuser le stockage et gonfle les visiteurs uniques. Séparées, les quatre
    portes se lisent ; mélangées, aucune.
 
-   Trois choses qu'il ne fait pas, et c'est ce qui permet de le laisser tourner
-   sans bandeau de consentement : il ne pose pas de cookie, il n'envoie ni
-   adresse ni agent utilisateur — le serveur ne les enregistre pas davantage —
-   et le jeton de visiteur est tiré au hasard par le navigateur, propre à cet
-   événement. Il ne suit personne d'un salon à l'autre, encore moins ailleurs.
+   Pourquoi il tourne sans bandeau de consentement — et ce n'est pas faute de
+   cookie. La loi (article 82 de la loi Informatique et Libertés) vise tout ce
+   qu'une page écrit ou lit sur l'appareil du visiteur : le jeton rangé dans
+   `localStorage` en est, au même titre qu'un cookie. Ce qui dispense de
+   demander, c'est l'exemption que la CNIL accorde à la mesure d'audience, et
+   elle ne tient qu'à des conditions que chacune des lignes ci-dessous remplit :
+
+     — des statistiques pour le seul organisateur, et anonymes : le module
+       n'envoie ni adresse ni agent utilisateur, le serveur n'en enregistre pas
+       davantage, et les exposants ne reçoivent que des totaux ;
+     — un jeton tiré au hasard, propre à l'événement : il ne suit personne
+       d'un salon à l'autre, encore moins ailleurs ;
+     — treize mois de vie sur l'appareil au plus, sans que les visites les
+       prolongent (`MESURE_VIE_MOIS`) ;
+     — les données qui portent le jeton effacées au bout de quatre cents jours,
+       en base (`purge_presences`) ;
+     — une notice qui dit tout cela, et le moyen de refuser (en fin de module).
+
+   Croiser ces chiffres avec un autre fichier, remettre à un tiers autre chose
+   que des totaux, reconnaître un visiteur d'un salon à l'autre : chacun de ces
+   gestes ferait tomber l'exemption, et il faudrait alors un consentement.
+
    La porte n'y change rien : c'est la façon dont la page est affichée, pas une
    propriété de qui la regarde, et elle ne prend que quatre valeurs.
 
@@ -19601,6 +19638,18 @@ $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
 const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
 const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
   document.documentElement.dataset.role !== "admin");
+
+/* Le refus du visiteur, gardé sur son appareil. Une seule clé pour tous les
+   salons de ce domaine : qui a dit non sur un plan n'a pas à le redire sur le
+   suivant. Retenir ce choix ne demande pas davantage de consentement que la
+   mesure elle-même — c'est un traceur « conservant le choix exprimé ».
+
+   Quand le stockage est refusé, le choix ne survit pas à la page : il n'y a
+   rien pour le garder. Le jeton, lui non plus, n'y survit pas. */
+const CLE_REFUS = "plan-mesure-refusee";
+let MESURE_REFUSEE = false;
+try { MESURE_REFUSEE = localStorage.getItem(CLE_REFUS) === "1"; } catch (e) {}
+const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
 
 /** Un jeton de quelques caractères, tiré du générateur du navigateur. */
 function jetonMesure(){
@@ -19618,6 +19667,39 @@ function jetonMesure(){
    silence. C'est le cas ordinaire d'un cadre posé sur un site tiers. */
 let MESURE_RETENU = true;
 
+/* Treize mois : la durée de vie que la CNIL admet pour un traceur de mesure
+   d'audience dispensé de consentement. Elle court depuis le tirage, et revenir
+   sur le plan ne la prolonge pas — c'est la condition, et c'est pourquoi
+   l'échéance est écrite à côté du jeton plutôt que recalculée à chaque visite.
+   Passé ce délai, un autre jeton est tiré : le visiteur compte alors pour un
+   nouveau, ce qui est le prix de la règle, et n'arrive qu'entre deux éditions. */
+const MESURE_VIE_MOIS = 13;
+
+/* L'âge auquel la base efface ce qui porte un jeton : le défaut de
+   `purge_presences`. Il ne sert ici qu'à la notice, qui l'annonce — le changer
+   en base sans le changer ici ferait mentir la notice, et inversement. */
+const MESURE_CONSERVATION_JOURS = 400;
+
+/* Les jetons tirés avant que leur échéance soit écrite n'en portent pas. Aucun
+   n'est antérieur au 6 septembre 2026, jour où le module est né : les faire
+   expirer treize mois après ce jour-là tient la règle pour chacun d'eux, sans
+   avoir à les remplacer tous d'un coup — ce qui aurait compté chaque habitué
+   pour un nouveau visiteur, en plein salon. */
+const ECHEANCE_DES_ANCIENS = "2027-10-06";
+
+/* La date du jour, et celle de dans treize mois, au format `AAAA-MM-JJ` et
+   toutes deux en temps universel. Mêler le calendrier local et la date UTC
+   décalait l'échéance d'un jour autour d'un changement d'heure — et ce jour-là
+   pouvait tomber du mauvais côté des treize mois. */
+const jourIso = d => d.toISOString().slice(0, 10);
+function echeanceMesure(){
+  const d = new Date(), jour = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + MESURE_VIE_MOIS);
+  // du 31 au mois qui n'en a que 30, le calendrier déborderait sur le suivant
+  if (d.getUTCDate() !== jour) d.setUTCDate(0);
+  return jourIso(d);
+}
+
 /**
  * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
  *
@@ -19630,15 +19712,26 @@ let MESURE_RETENU = true;
  * `localStorage` qui lève, et l'évaluer à l'appel plaçait cette lecture hors
  * du `try`. L'exception remontait alors au corps de la page, dans le script
  * qui porte tout le plan : plus rien ne s'affichait, pour une mesure.
+ *
+ * Le jeton est rangé avec son échéance, `{"jeton": …, "echeance": "AAAA-MM-JJ"}`.
+ * Une valeur nue est un jeton d'avant l'échéance écrite : elle reçoit la sienne.
  */
 function jetonRetenu(cle, casier){
   try {
     const ou = window[casier];
-    const v = ou.getItem(cle);
-    if (v) return v;
-    const n = jetonMesure();
-    ou.setItem(cle, n);
-    return n;
+    const v = ou.getItem(cle), aujourdhui = jourIso(new Date());
+    let garde = null;
+    if (v) {
+      try { garde = JSON.parse(v); } catch (e) {}
+      if (!garde || typeof garde.jeton !== "string") {
+        garde = { jeton: v, echeance: ECHEANCE_DES_ANCIENS };
+        if (garde.echeance > aujourdhui) ou.setItem(cle, JSON.stringify(garde));
+      }
+    }
+    if (garde && garde.echeance > aujourdhui) return garde.jeton;
+    const n = { jeton: jetonMesure(), echeance: echeanceMesure() };
+    ou.setItem(cle, JSON.stringify(n));
+    return n.jeton;
   } catch (e) {
     MESURE_RETENU = false;
     return jetonMesure();
@@ -19697,9 +19790,12 @@ const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
    ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
    identifiant hors d'ici. Ce qui distinguait deux venues du même navigateur
    ne se transmet plus : le serveur ne le lisait pas, et une visite se compte
-   déjà par le geste qui porte ce nom. */
-const MESURE_VISITEUR = MESURE_ACTIVE
-  ? jetonRetenu("plan-visiteur:" + SLUG, "localStorage") : "";
+   déjà par le geste qui porte ce nom.
+
+   Un visiteur qui a refusé la mesure n'en reçoit pas : ce jeton-là ne sert
+   qu'à compter, et il n'y a plus rien à compter. */
+const CLE_VISITEUR = "plan-visiteur:" + SLUG;
+let MESURE_VISITEUR = mesureOuverte() ? jetonRetenu(CLE_VISITEUR, "localStorage") : "";
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
    quand le paquet est plein, quand la main s'arrête, ou quand la page part.
@@ -19716,7 +19812,7 @@ let _gestes = [], _envoiDiffere = null;
 function envoieMesures(dernier){
   clearTimeout(_envoiDiffere);
   _envoiDiffere = null;
-  if (!_gestes.length) return;
+  if (!_gestes.length || !mesureOuverte()) return;
   /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
      propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
      répéter trente fois l'exposerait à se contredire. */
@@ -19756,7 +19852,7 @@ function envoieMesures(dernier){
  * cible que l'événement ne porte pas est écartée de même.
  */
 function mesure(genre, canal, cible, objet){
-  if (!MESURE_ACTIVE) return;
+  if (!mesureOuverte()) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
   if (cible) g.cible = cible;
@@ -19779,7 +19875,8 @@ if (MESURE_ACTIVE){
   const CLE_VUE = "plan-visite:" + SLUG;
   let dejaVue = false;
   try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
-  if (!dejaVue){
+  // un refus n'écrit rien, pas même la marque d'une visite qu'on ne compte pas
+  if (!dejaVue && mesureOuverte()){
     try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
     mesure("visite");
   }
@@ -19791,6 +19888,106 @@ if (MESURE_ACTIVE){
   addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") envoieMesures(true);
   });
+}
+
+/* ------------------------------------------------------------
+   La notice, et le refus
+
+   L'exemption tient aussi à cela : le visiteur doit pouvoir apprendre ce
+   qu'on mesure, et s'y opposer sans rien perdre du plan. La notice le dit en
+   mots de visiteur et porte le seul réglage qui compte. Elle ne s'offre que là
+   où la page mesure : ailleurs, elle décrirait ce qui n'a pas lieu.
+
+   Elle nomme l'organisateur du salon comme celui qui en répond : le plan est
+   son service, et le prestataire qui le réalise ne traite ces chiffres que
+   pour lui. Chaque phrase y est une promesse que le code doit tenir — changer
+   une durée ici sans la changer là-bas, et la notice mentirait.
+   ------------------------------------------------------------ */
+
+/** Efface les jetons de visiteur de tous les salons gardés sur l'appareil. */
+function effaceJetonsVisiteur(){
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--){
+      const cle = localStorage.key(i);
+      if (cle && cle.startsWith("plan-visiteur:")) localStorage.removeItem(cle);
+    }
+  } catch (e) {}
+}
+
+/**
+ * Refuser la mesure, ou revenir sur son refus.
+ *
+ * Le refus vaut aussi pour ce qui attendait de partir : les gestes du paquet
+ * en cours sont jetés, et le jeton s'efface — celui de ce salon comme ceux des
+ * autres, puisque le refus les couvre tous. Revenir sur son refus repart d'un
+ * jeton neuf : le visiteur compte alors pour un nouveau, et c'est juste, rien
+ * ne le relie plus à celui d'avant.
+ */
+function refuseMesure(refus){
+  MESURE_REFUSEE = !!refus;
+  try {
+    if (refus) localStorage.setItem(CLE_REFUS, "1");
+    else localStorage.removeItem(CLE_REFUS);
+  } catch (e) {}
+  if (refus){
+    clearTimeout(_envoiDiffere);
+    _envoiDiffere = null;
+    _gestes = [];
+    MESURE_VISITEUR = "";
+    effaceJetonsVisiteur();
+  } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
+    MESURE_RETENU = true;
+    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+  }
+}
+
+function ouvreConfidentialite(){
+  const salon = DATA && DATA.evenement;
+  ouvreModale("Confidentialité", fenetre => {
+    const corps = document.createElement("div");
+    corps.className = "notice";
+    fenetre.appendChild(corps);
+    const texte = (t, classe) => {
+      const p = document.createElement("p");
+      p.textContent = t;
+      if (classe) p.className = classe;
+      corps.appendChild(p);
+    };
+    texte((salon ? "L'organisateur de « " + salon + " »" : "L'organisateur du salon") +
+      " mesure l'usage de ce plan pour savoir s'il sert : ouvertures du plan, " +
+      "recherches, fiches consultées, itinéraires, parcours composés et partagés.");
+    texte("Aucun cookie n'est posé, et ni votre adresse IP ni votre navigateur ne " +
+      "sont enregistrés avec ces mesures. Pour compter chaque visiteur une seule " +
+      "fois, votre appareil garde un numéro tiré au hasard, propre à ce salon : il " +
+      "ne dit pas qui vous êtes, et ne vous suit nulle part ailleurs.");
+    texte("Ce numéro est remplacé au bout de " + MESURE_VIE_MOIS + " mois. Ce qui a " +
+      "été enregistré avec lui est effacé au bout de " + MESURE_CONSERVATION_JOURS +
+      " jours : seuls restent des totaux anonymes.");
+    texte("Ces chiffres servent à l'organisateur et au prestataire qui réalise le " +
+      "plan pour lui. Les exposants peuvent recevoir les totaux de leur stand, " +
+      "jamais le détail d'une visite. Vos réglages et votre parcours restent sur " +
+      "votre appareil, pour vous être rendus à la prochaine visite.");
+
+    const choix = document.createElement("label");
+    choix.className = "refusMesure";
+    const caseRefus = document.createElement("input");
+    caseRefus.type = "checkbox";
+    caseRefus.checked = MESURE_REFUSEE;
+    caseRefus.onchange = () => refuseMesure(caseRefus.checked);
+    choix.append(caseRefus, document.createTextNode("Ne pas mesurer mes visites"));
+    corps.appendChild(choix);
+
+    texte("Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce " +
+      "site. Pour toute question sur ces données, adressez-vous à l'organisateur " +
+      "du salon ; vous pouvez aussi saisir la CNIL.", "noteRefus");
+  }, [{ libelle: "Fermer" }]);
+}
+
+if (MESURE_ACTIVE){
+  // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un salon
+  if (MESURE_REFUSEE) effaceJetonsVisiteur();
+  $("piedSide").hidden = false;
+  $("btnConfidentialite").onclick = ouvreConfidentialite;
 }
 
 /* ============================================================
@@ -20398,7 +20595,7 @@ async function lanceRemiseAZero(){
       method: "POST", body: JSON.stringify({ p_evenement: evt }),
     });
     const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
-              Number(r?.visiteurs || 0) + Number(r?.journal || 0);
+              Number(r?.visiteurs || 0);
 
     /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
        qui ne reposent plus sur rien. */

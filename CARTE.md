@@ -129,7 +129,7 @@ Fonctions :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 69 l. → admin-plans.html
+### `_console-head.html` — 67 l. → admin-plans.html
 
 Éléments :
 
@@ -227,7 +227,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3727 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3747 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -236,27 +236,27 @@ Fonctions :
 `#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail` · `#btnThemeCompte`
 `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side` · `#poignee` · `#q`
 `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut`
-`#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
-`#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
-`#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`
-`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
-`#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
-`#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
-`#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg`
-`#elemEpaisseur` · `#elemStyle` · `#elemFleche` · `#elemStand` · `#listeStands` · `#elemSoc`
-`#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom` · `#libFerme` · `#libTaille`
-`#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
-`#panel` · `#pile` · `#voile` · `#detail` · `#dMarque` · `#closeDetail` · `#dKind`
-`#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis` · `#dPartage`
-`#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
-`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee`
-`#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRefaire`
-`#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA`
-`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
-`#videItineraire`
+`#piedSide` · `#btnConfidentialite` · `#stage` · `#plan` · `#couches` · `#zones` · `#stands`
+`#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur`
+`#viseurTxt` · `#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils`
+`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas`
+`#contourReg` · `#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur`
+`#traitStyle` · `#traitFleche` · `#texteADessiner` · `#repereType` · `#repereTexte`
+`#standSoc` · `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel`
+`#elemType` · `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens`
+`#elemLiensListe` · `#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur`
+`#elemHauteur` · `#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon`
+`#elemTraitReg` · `#elemEpaisseur` · `#elemStyle` · `#elemFleche` · `#elemStand`
+`#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
+`#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
+`#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
+`#closeDetail` · `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
+`#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody`
+`#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs`
+`#btnJournee` · `#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours`
+`#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume`
+`#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr`
+`#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 40 l. → hors-ligne.html
 
@@ -264,7 +264,7 @@ Fonctions :
 
 `#reessaie`
 
-### `_index.html` — 45 l. → index.html
+### `_index.html` — 43 l. → index.html
 
 Éléments :
 
@@ -363,14 +363,15 @@ Fonctions :
 
 `#data` · `#dGo` · `#dItin`
 
-### `_mesure.html` — 223 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 400 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`jetonMesure` 35 · `jetonRetenu` 63 · `supportMesure` 104 · `envoieMesures` 145
-`mesure` 187
+`mesureOuverte` 61 · `jetonMesure` 64 · `jourIso` 103 · `echeanceMesure` 104
+`jetonRetenu` 128 · `supportMesure` 177 · `envoieMesures` 221 · `mesure` 263
+`effaceJetonsVisiteur` 317 · `refuseMesure` 335 · `ouvreConfidentialite` 353
 
 ### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -381,14 +382,14 @@ Fonctions :
 `verseModale` 22 · `ouvreModale` 28 · `fermeModale` 48 · `confirme` 55 · `deplaceVers` 73
 `versExtremite` 85 · `remplitOrdre` 93 · `ouvreOrdre` 163
 
-### `_motdepasse.html` — 242 l. → motdepasse.html
+### `_motdepasse.html` — 240 l. → motdepasse.html
 
-- l.54 · Poser un mot de passe
+- l.52 · Poser un mot de passe
 
 Fonctions :
 
-`$` 70 · `CFG` 72 · `dit` 80 · `fragment` 86 · `garde` 93 · `lit` 97 · `demandeLien` 170
-`ouvreSaisie` 179
+`$` 68 · `CFG` 70 · `dit` 78 · `fragment` 84 · `garde` 91 · `lit` 95 · `demandeLien` 168
+`ouvreSaisie` 177
 
 Éléments :
 
@@ -449,22 +450,22 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rapport-head.html` — 30 l. → rapport.html
+### `_rapport-head.html` — 28 l. → rapport.html
 
 Éléments :
 
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 427 l. → rapport.html
+### `_rapport-js.html` — 444 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 47 · `chargeEvenements` 52 · `joursPeriode` 70 · `chargeRapport` 72 · `chiffre` 83
-`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 355
-`rafraichit` 378 · `videEcran` 397 · `demarre` 413
+`courant` 52 · `chargeEvenements` 57 · `joursPeriode` 75 · `chargeRapport` 77 · `chiffre` 88
+`barres` 107 · `portes` 147 · `jours` 198 · `dessineRapport` 219 · `dessineBarre` 372
+`rafraichit` 395 · `videEcran` 414 · `demarre` 430
 
 Éléments :
 
@@ -486,7 +487,7 @@ Fonctions :
 
 Fonctions :
 
-`range` 72 · `dabordCache` 82 · `dabordReseau` 102 · `navigation` 119
+`range` 74 · `dabordCache` 84 · `dabordReseau` 102 · `navigation` 119
 
 ## Dans `web/`, mais que la construction ne produit pas
 
@@ -530,11 +531,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1463 l.
+### `supabase/functions/sync-evenement/index.ts` — 1465 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
-`hebergee` 1420 · `nettoieUrl` 1439 · `groupeTextes` 1449
+`hebergee` 1422 · `nettoieUrl` 1441 · `groupeTextes` 1451
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -575,6 +576,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 - `20260913200617_le_fuseau_d_un_salon_au_format_iana.sql` — fn fuseau_iana, fn evenement_fuseau_iana, fn periode_salon, fn enregistre_mesures
 - `20260913205218_le_fuseau_d_un_salon_choisi_sinon_eventmaker_sinon_paris.sql` — evenement, fn evenement_fuseau_iana
+- `20260913223216_la_conservation_des_jetons_de_visiteur.sql` — fn purge_presences, fn reinitialise_compteurs
 
 ## Le reste
 
@@ -589,5 +591,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `outils/controle.js` — analyse le script de chaque page construite, en module
   ES : une redéclaration y est une erreur, là où un `<script>` la tolère.
 - `outils/migration.js` — crée une migration horodatée à la seconde.
+- `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors
+  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.
 - `outils/fetch-all.js`, `outils/build-all.js`, `outils/optim.js`, `outils/lire-pdf.js` —
   outils hors ligne de récupération et de préparation des plans (clé Klipso requise).

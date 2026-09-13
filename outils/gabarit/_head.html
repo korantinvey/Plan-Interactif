@@ -1,7 +1,5 @@
 <title>Plan du salon</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap">
+<!--__POLICES__-->
 
 <script src="config.js"></script>
 
@@ -255,6 +253,14 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
+/* Le pied de la liste porte la notice de confidentialité : une mention, pas
+   une commande. Discrète, mais toujours au même endroit — c'est là qu'on
+   cherche d'ordinaire ces choses, et la barre du haut n'a pas de place à
+   perdre sur un téléphone. */
+.side-pied{border-top:1px solid var(--line);padding:5px 16px;display:flex;justify-content:flex-end}
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line-strong)}
+.lien-discret:hover{color:var(--ink)}
 .row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
@@ -2978,6 +2984,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La notice de confidentialité : des paragraphes qui respirent, et le refus
+   posé comme une réponse, à part du texte qui l'explique. */
+.mcorps .notice p + p{margin-top:8px}
+.mcorps label.refusMesure{display:flex;align-items:center;gap:9px;margin:14px 0 2px;padding:10px 12px;
+  font-size:13.5px;font-weight:500;color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:pointer}
+.mcorps label.refusMesure input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+.mcorps p.noteRefus{margin-top:8px;font-size:12px;color:var(--ink-3)}
 /* Ce qu'un parcours reçu apporte, avant de l'accepter. */
 .mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
@@ -3457,6 +3471,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
          sommaire du pavillon, et n'a pas de résultat à annoncer. -->
     <div class="count" id="count" hidden><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
+    <!-- Ce que la mesure fait d'une visite, et le moyen de la refuser. Il ne
+         paraît que sur une page qui mesure (voir `_mesure.html`). -->
+    <footer class="side-pied" id="piedSide" hidden>
+      <button type="button" class="lien-discret" id="btnConfidentialite"
+        aria-haspopup="dialog">Confidentialité</button>
+    </footer>
   </aside>
 
   <main class="stage" id="stage">
