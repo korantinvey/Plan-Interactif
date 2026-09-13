@@ -82,19 +82,19 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_chaleur.html` — 609 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_chaleur.html` — 633 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
-- l.410 · Remise à zéro des compteurs
+- l.434 · Remise à zéro des compteurs
 
 Fonctions :
 
 `nbChal` 32 · `tonChaleur` 51 · `niveauChaleur` 73 · `valeurChaleur` 76 · `chargeChaleur` 89
-`coloreChaleur` 130 · `cartoucheChaleur` 165 · `mesureCartoucheChaleur` 229
-`replieChaleur` 235 · `ecritEtatChaleur` 246 · `dessineEchelleChaleur` 254
-`dessineTopChaleur` 274 · `phraseChaleur` 305 · `rafraichitChaleur` 322
-`montreChaleur` 356 · `rangChaleur` 392 · `aplati` 432 · `voletMesure` 437
-`evenementCourant` 463 · `ouvreRemiseAZero` 482 · `lanceRemiseAZero` 571
+`coloreChaleur` 135 · `cartoucheChaleur` 170 · `mesureCartoucheChaleur` 234
+`replieChaleur` 240 · `ecritEtatChaleur` 251 · `dessineEchelleChaleur` 259
+`dessineTopChaleur` 279 · `phraseChaleur` 321 · `rafraichitChaleur` 346
+`montreChaleur` 380 · `rangChaleur` 416 · `aplati` 456 · `voletMesure` 461
+`evenementCourant` 487 · `ouvreRemiseAZero` 506 · `lanceRemiseAZero` 595
 
 Éléments :
 
@@ -215,16 +215,16 @@ Fonctions :
 `supprimeForme` 402 · `editionPointerDown` 412 · `editionPointerMove` 457
 `editionPointerUp` 509
 
-### `_export.html` — 153 l. → admin-plans.html, rapport.html
+### `_export.html` — 204 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
 Fonctions :
 
-`nb` 22 · `colonnesExport` 66 · `libellePeriode` 83 · `nomFichierExport` 89
-`nomFeuilleExport` 99 · `exporteExposants` 115
+`nb` 22 · `colonnesExport` 99 · `libellePeriode` 131 · `nomFichierExport` 137
+`nomFeuilleExport` 147 · `exporteExposants` 163
 
-### `_head.html` — 3580 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3583 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -491,20 +491,20 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/mesure/index.ts` — 161 l.
+### `supabase/functions/mesure/index.ts` — 155 l.
 
-`cors` 65 · `jeton` 79 · `client` 82
+`jeton` 73 · `client` 76
 
 ### `supabase/functions/plan-public/index.ts` — 581 l.
 
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1422 l.
+### `supabase/functions/sync-evenement/index.ts` — 1446 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
-`hebergee` 1379 · `nettoieUrl` 1398 · `groupeTextes` 1408
+`hebergee` 1403 · `nettoieUrl` 1422 · `groupeTextes` 1432
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -541,11 +541,12 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260912055309_suggestion_un_canal_de_mesure_a_elle.sql` — fn enregistre_mesures, fn audience_cibles
 - `20260912140943_zones_traversables.sql` — evenement
 - `20260913122346_le_support_d_acces_au_plan.sql` — compteur, visiteur_jour, fn enregistre_mesures, fn rapport_utilisation
+- `20260913170035_les_visiteurs_uniques_par_stand.sql` — visiteur_cible, fn enregistre_mesures, fn purge_presences, fn reinitialise_compteurs, fn audience_cibles
 
 ## Le reste
 
-- `src/index.mjs` — 233 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 61 · `amontPour` 70 · `cleDe` 78 · `meta` 81 · `gardable` 94 · `range` 99 `rafraichit` 106 · `oublie` 133 · `mesure` 155
+- `src/index.mjs` — 273 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 61 · `amontPour` 70 · `cleDe` 78 · `meta` 81 · `gardable` 94 · `range` 99 `rafraichit` 106 · `oublie` 133 · `mesure` 185
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/carte.js` — produit ce fichier.

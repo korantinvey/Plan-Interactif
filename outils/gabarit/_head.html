@@ -2456,6 +2456,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .chalTop .rang,.chalTop .code,.chalTop .n{font-family:"IBM Plex Mono",monospace;
   font-size:10.5px;color:var(--ink-3);flex:0 0 auto}
 .chalTop .n{font-size:11px;color:var(--ink-2)}
+/* Les visiteurs distincts, sous le nombre d'ouvertures : deux nombres au même
+   endroit se confondraient, l'un sous l'autre se comparent. */
+.chalTop .v{font-size:10px;color:var(--ink-3);margin-left:5px}
 .chalTop .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher

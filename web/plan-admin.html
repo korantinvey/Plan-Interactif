@@ -2461,6 +2461,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .chalTop .rang,.chalTop .code,.chalTop .n{font-family:"IBM Plex Mono",monospace;
   font-size:10.5px;color:var(--ink-3);flex:0 0 auto}
 .chalTop .n{font-size:11px;color:var(--ink-2)}
+/* Les visiteurs distincts, sous le nombre d'ouvertures : deux nombres au même
+   endroit se confondraient, l'un sous l'autre se comparent. */
+.chalTop .v{font-size:10px;color:var(--ink-3);margin-left:5px}
 .chalTop .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher
@@ -18519,6 +18522,11 @@ async function chargeChaleur(){
     max: cibles.length ? Number(cibles[0].n) || 0 : 0,
     total: Number(r?.total) || 0,
     depuis: r?.depuis || null,
+    /* Les visiteurs distincts, et la date d'où on les compte. `v_depuis` est
+       nul pour un salon mesuré avant qu'on ne les compte : l'écran s'abstient
+       alors d'afficher des zéros, qui se liraient « personne n'est venu ». */
+    visiteurs: Number(r?.total_visiteurs) || 0,
+    presence: !!r?.v_depuis,
     cibles: cibles,
   };
 }
@@ -18579,7 +18587,7 @@ function cartoucheChaleur(){
   c.id = "chaleur";
   c.hidden = true;
   c.innerHTML =
-    '<div class="chalTete"><span class="eyebrow">Fréquentation par stand</span>' +
+    '<div class="chalTete"><span class="eyebrow">Fiches ouvertes par stand</span>' +
     '<button type="button" id="chalReduit" aria-expanded="true">' +
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
@@ -18689,11 +18697,22 @@ function dessineTopChaleur(){
     const b = document.createElement("button");
     b.type = "button";
     b.innerHTML = '<span class="rang"></span><span class="code"></span>' +
-                  '<span class="nom"></span><span class="n"></span>';
+                  '<span class="nom"></span><span class="n"></span>' +
+                  '<span class="v"></span>';
     b.querySelector(".rang").textContent = (i + 1) + ".";
     b.querySelector(".code").textContent = c.code || "";
     b.querySelector(".nom").textContent = c.nom || "Sans nom";
     b.querySelector(".n").textContent = nbChal(c.n);
+    /* Les visiteurs distincts à côté des ouvertures, et seulement si on les
+       compte : un « 0 visiteur » en face de « 240 ouvertures » se lirait comme
+       une panne, alors qu'il dirait seulement que ce salon est plus vieux que
+       ce comptage. Le palmarès reste classé sur les ouvertures — changer ce
+       qu'il ordonne en même temps que ce qu'il affiche rendrait deux lectures
+       incomparables d'une période à l'autre. */
+    if (CHALEUR.presence){
+      const v = Number(c.v) || 0;
+      b.querySelector(".v").textContent = "· " + nbChal(v) + " vis.";
+    }
     /* Une cible que le salon ne porte plus — stand retiré depuis, exposant
        parti — garde ses consultations mais n'a plus de forme à montrer. On la
        laisse au palmarès, la taire fausserait le total, et on retire le clic
@@ -18720,10 +18739,18 @@ function phraseChaleur(){
       : "Aucune consultation de fiche enregistrée pour ce salon : " +
         "les compteurs par stand n'ont encore rien reçu.";
   }
+  const v = Number(CHALEUR.visiteurs) || 0;
   return nbChal(CHALEUR.total) + " fiche" + (CHALEUR.total > 1 ? "s" : "") +
     " d'exposant ouverte" + (CHALEUR.total > 1 ? "s" : "") + " " + quand + ", " +
     "sur " + nbChal(CHALEUR.par.size) + " emplacement" + (CHALEUR.par.size > 1 ? "s" : "") +
-    ". Consultations, non visiteurs uniques ; les zones organisateur ne sont pas comptées." +
+    /* Le second nombre est celui qu'on croyait lire dans le premier. Tant qu'il
+       n'existe pas, mieux vaut redire que le premier n'est pas lui que laisser
+       le malentendu : c'est ce chiffre-là qui part chez l'exposant. */
+    (CHALEUR.presence
+      ? ", par " + nbChal(v) + " visiteur" + (v > 1 ? "s" : "") + " distinct" +
+        (v > 1 ? "s" : "") + "."
+      : ". Consultations, non visiteurs uniques.") +
+    " La couleur suit les ouvertures ; les zones organisateur ne sont pas comptées." +
     (CHALEUR.depuis ? " Comptage par stand depuis le " +
       new Date(CHALEUR.depuis + "T00:00:00").toLocaleDateString("fr-FR") + "." : "");
 }

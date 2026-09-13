@@ -32,43 +32,37 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
-/** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
- *  une liste séparée par des virgules — pour qu'un changement de domaine ne
- *  demande pas de modification de code. */
-const ORIGINES = [
-  ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
-    .split(",").map((s) => s.trim()).filter(Boolean),
-  "https://plan-interactif.interactiveplan.workers.dev",
-  "http://localhost:4180",
-  /*
-   * Les origines des coques, que cette fonction-ci accepte en plus des autres.
-   *
-   * Un cadre posé sur un site tiers poste depuis notre domaine — le document
-   * encadré est le nôtre — et n'a donc rien demandé de spécial. Deux portes
-   * font exception, et perdaient jusqu'ici toutes leurs mesures en silence,
-   * puisque la réponse ne portait pas leur origine et que `fetch` se tait :
-   *
-   *   · un cadre en bac à sable sans `allow-same-origin` poste depuis `null` ;
-   *   · une coque d'application qui embarque la page au lieu de charger
-   *     l'adresse hébergée poste depuis le protocole de son cadre de travail.
-   *
-   * Ce sont les seules ajoutées : la liste reste close, et une coque imprévue
-   * s'ajoute par `ORIGINES_AUTORISEES` sans toucher au code. Rien ici n'ouvre
-   * de lecture — la réponse est vide — et aucun appel ne porte d'identité :
-   * la fonction ne lit ni cookie, ni session, ni en-tête d'autorisation.
-   */
-  "null",
-  "capacitor://localhost",
-  "ionic://localhost",
-  "http://localhost",
-];
-const cors = (req: Request) => {
-  const o = req.headers.get("Origin") ?? "";
-  return {
-    "Access-Control-Allow-Origin": ORIGINES.includes(o) ? o : ORIGINES[0],
-    "Access-Control-Allow-Headers": "authorization, content-type, apikey",
-    "Vary": "Origin",
-  };
+/*
+ * Cette fonction-ci accepte toutes les origines, à l'inverse des autres du
+ * projet, et il n'y a donc aucune liste à tenir pour qu'une porte compte.
+ *
+ * Ce n'est pas un relâchement, c'est la reconnaissance de ce que CORS fait et
+ * ne fait pas. Il n'a jamais rien gardé ici : un `curl` l'ignore entièrement,
+ * et ce qui protège réellement l'écriture est ailleurs — la clé de service
+ * reste au serveur, le vocabulaire est clos, la cible doit exister dans
+ * l'événement, l'événement doit être publié, le paquet est borné. Ce que la
+ * liste d'origines faisait, en revanche, c'était jeter en silence les mesures
+ * de tout visiteur qui n'était pas arrivé par un domaine inscrit : un cadre en
+ * bac à sable poste depuis `null`, une coque d'application qui embarque la page
+ * poste depuis le protocole de son cadre de travail. Le navigateur coupait,
+ * `fetch` se taisait, et la porte dont on voulait mesurer l'usage était la
+ * seule à ne rien compter — sans qu'aucun écran ne le dise.
+ *
+ * Tenir la liste à jour aurait voulu dire deviner d'avance chaque coque, chaque
+ * site partenaire et chaque bac à sable ; l'oubli ne se voit qu'au rapport, des
+ * semaines plus tard, sous la forme d'un salon qui paraît désert.
+ *
+ * Rien ne sort d'ici : la réponse est vide, on n'y lit aucune donnée, et aucun
+ * appel ne porte d'identité — ni cookie, ni session, ni en-tête d'autorisation,
+ * donc aucune requête ne peut emprunter les droits de qui la déclenche. Ouvrir
+ * n'expose rien de plus que ce qu'un visiteur poste déjà.
+ *
+ * C'est la seule fonction dans ce cas. `plan-public`, `comptes` et
+ * `sync-evenement` gardent leur liste : elles, rendent des données.
+ */
+const CORS_TOUS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
 };
 const METHODES = { "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
@@ -87,7 +81,7 @@ const client = () =>
   );
 
 Deno.serve(async (req) => {
-  const CORS = { ...cors(req), ...METHODES };
+  const CORS = { ...CORS_TOUS, ...METHODES };
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ erreur: "Méthode non permise." }), {
