@@ -37,7 +37,7 @@ const CLE_LIEN_PARCOURS = "parcours=";
 /* Le format, en tête du fragment. Un lien envoyé la veille au soir doit
    s'ouvrir le lendemain matin : si le format change un jour, ce chiffre fera
    refuser proprement l'ancien plutôt que de l'ouvrir de travers. */
-const FORMAT_PARTAGE = "1";
+const FORMAT_PARTAGE = "2";
 
 /**
  * Ce sont les identifiants qui voyagent, et non les rangs de la liste.
@@ -55,20 +55,54 @@ const codeIdParcours = id => String(id).replace(/[^A-Za-z0-9_-]/g, c =>
   Array.from(new TextEncoder().encode(c),
              o => "%" + o.toString(16).toUpperCase().padStart(2, "0")).join(""));
 
-/** Le parcours mis en une chaîne : le format, les stands, les conférences. */
-const codeParcours = p => [FORMAT_PARTAGE,
-                           p.stands.map(codeIdParcours).join("."),
-                           p.confs.map(codeIdParcours).join(".")].join("~");
+/**
+ * Le fragment entier : le format, les stands, les conférences.
+ *
+ * En « &clé=valeur », la syntaxe d'une adresse ordinaire, et non plus séparé
+ * par des tildes. La différence ne se voit pas dans le code, elle se voit dans
+ * le téléphone d'en face : un lecteur de codes ne lit pas une adresse, il lit
+ * du texte et décide ensuite si cela y ressemble. Les tildes le faisaient
+ * hésiter — le lecteur d'Android proposait « Rechercher » et « Copier le
+ * texte » là où il faut « Ouvrir » — quand « ?a=1&b=2 », que la moitié du web
+ * emploie jusque dans ses fragments, ne laisse aucun doute.
+ *
+ * Une section vide ne s'écrit pas du tout : un parcours sans conférence finissait
+ * sur un tilde solitaire, ce qui est exactement ce qu'une adresse n'a jamais.
+ */
+const codeParcours = p => CLE_LIEN_PARCOURS + FORMAT_PARTAGE +
+  (p.stands.length ? "&s=" + p.stands.map(codeIdParcours).join(".") : "") +
+  (p.confs.length ? "&c=" + p.confs.map(codeIdParcours).join(".") : "");
+
+/**
+ * Un champ du fragment, tel qu'il y est écrit — et non décodé.
+ *
+ * C'est pourquoi `URLSearchParams` ne sert pas ici, alors que c'est l'outil
+ * fait pour cela : il décode avant de rendre la valeur, si bien qu'un
+ * identifiant portant un point échappé rendrait au séparateur un point qui
+ * n'en était pas un. On découpe d'abord, on décode ensuite.
+ */
+const champParcours = (frag, nom) => {
+  const m = new RegExp("(?:^|&)" + nom + "=([^&]*)").exec(frag);
+  return m ? m[1] : null;
+};
 
 /** Et l'inverse, qui n'accorde sa confiance à rien : le fragment se tape à la
  *  main aussi bien qu'il se scanne. */
-function litCodeParcours(txt){
-  const m = /^([0-9]+)~([^~]*)~([^~]*)$/.exec(txt || "");
-  if (!m || m[1] !== FORMAT_PARTAGE) return null;
-  const liste = s => s.split(".").map(x => {
+function litCodeParcours(frag){
+  const liste = t => (t || "").split(".").map(x => {
     try { return decodeURIComponent(x); } catch (e) { return ""; }
   }).filter(Boolean);
-  return { stands: liste(m[2]), confs: liste(m[3]) };
+  const v = champParcours(frag, "parcours");
+  if (v === null) return null;
+  if (v === FORMAT_PARTAGE)
+    return { stands: liste(champParcours(frag, "s")),
+             confs:  liste(champParcours(frag, "c")) };
+  /* Le premier format séparait ses trois parties par des tildes. Il n'aura vécu
+     qu'un jour, mais un code déjà photographié, déjà envoyé, doit continuer de
+     s'ouvrir : le relire coûte deux lignes, et c'est à cela que sert le chiffre
+     de tête. */
+  const m = /^1~([^~]*)~([^~]*)$/.exec(v);
+  return m ? { stands: liste(m[1]), confs: liste(m[2]) } : null;
 }
 
 /**
@@ -88,7 +122,7 @@ function lienParcours(){
      ce qu'il dit, et n'ouvrira pas l'édition suivante le jour où c'est elle qui
      devient le salon par défaut. */
   u.search = SLUG ? "?plan=" + encodeURIComponent(SLUG) : "";
-  return u.toString() + "#" + CLE_LIEN_PARCOURS + codeParcours(PARCOURS);
+  return u.toString() + "#" + codeParcours(PARCOURS);
 }
 
 /* ------------------------------------------------------------
@@ -525,7 +559,7 @@ function accueilleParcoursPartage(){
   // part où poser ce qu'il porte
   if (conf("_parcours").visible === false) return;
 
-  const recu = litCodeParcours(brut.slice(CLE_LIEN_PARCOURS.length));
+  const recu = litCodeParcours(brut);
   if (!recu) return;
   const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
   const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
@@ -550,7 +584,9 @@ function accueilleParcoursPartage(){
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
   ouvreModale("Un parcours partagé", corps => {
     const p = document.createElement("p");
-    p.textContent = "Ce lien porte le parcours de quelqu'un d'autre : " +
+    /* Les conférences ne se mentionnent que s'il y en a : « 5 exposants et 0
+       conférence » fait lire un manque là où il n'y a rien à lire. */
+    p.textContent = "Le parcours qui vous a été partagé contient " +
       [stands.length ? stands.length + " exposant" + (stands.length > 1 ? "s" : "") : "",
        confs.length ? confs.length + " conférence" + (confs.length > 1 ? "s" : "") : ""]
         .filter(Boolean).join(" et ") + ".";

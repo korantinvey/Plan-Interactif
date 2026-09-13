@@ -2003,23 +2003,32 @@ button.expo:hover{background:var(--line)}
 .pPied{padding:10px 18px 14px;border-top:1px solid var(--line);
   display:flex;flex-direction:column;align-items:flex-start;gap:9px}
 .pPied[hidden]{display:none}
-.pPied .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+:is(.pPied,.pActs) .btn{display:flex;align-items:center;justify-content:center;gap:8px;
   padding:9px 12px;font-size:13px}
-.pPied .btn svg{width:15px;height:15px;flex:none}
-/* Organiser sa journée n'est pas une action de rangement comme les autres :
-   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
-.pPied .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-.pPied .jOrg:hover{border-color:var(--accent)}
-.pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
-  color:var(--ink-3);cursor:default}
-/* Les deux commandes du parcours sur une seule rangée : organiser sa journée,
-   et la passer à quelqu'un. Empilées, elles poussaient « Vider le parcours »
-   hors du tiroir sur un téléphone. « Organiser » prend la place qui reste —
-   c'est la commande longue, et celle pour laquelle la liste a été faite. */
-.pActs{display:flex;align-items:stretch;gap:8px;width:100%}
-.pActs .btn{width:auto}
+.pPied .btn{width:100%}
+:is(.pPied,.pActs) .btn svg{width:15px;height:15px;flex:none}
+/* Les deux commandes du parcours, sur une rangée et en tête du tiroir.
+
+   Au pied, elles disparaissaient : une liste de vingt exposants les pousse
+   hors de l'écran, et il fallait dérouler tout ce qu'on avait retenu pour
+   retrouver quoi en faire. Or ce sont elles qui disent à quoi la liste sert —
+   l'organiser, ou la passer à quelqu'un — et cela se lit avant la liste, pas
+   après. Reste au pied ce qui l'efface, qu'on ne cherche pas et qui ne doit
+   pas tomber sous le pouce.
+
+   « Organiser » prend la place qui reste : c'est la commande longue, et celle
+   pour laquelle la liste a été faite. */
+.pActs{display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
+  border-bottom:1px solid var(--line)}
+.pActs[hidden]{display:none}
 .pActs .jOrg{flex:1;min-width:0}
 .pActs .jPart{flex:none}
+/* Organiser sa journée n'est pas une action de rangement comme les autres :
+   c'est ce pour quoi la liste a été faite, et le bouton le dit. */
+.pActs .jOrg{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.pActs .jOrg:hover{border-color:var(--accent)}
+.pActs .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
+  color:var(--ink-3);cursor:default}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:var(--rouge)}
 /* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
@@ -2322,7 +2331,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modele-grille :is(.jBilan,.iBilan){background:var(--accent-base);color:var(--accent-ink)}
 .modele-grille :is(.jBilan span,.iBilan span){color:var(--accent-ink);opacity:.75}
 .modele-grille :is(.iChamp input,.iSugg){border-color:var(--ink)}
-.modele-grille .pPied{border-top:2px solid var(--ink)}
+.modele-grille .pPied{border-top:2px solid var(--ink)}.modele-grille .pActs{border-bottom:2px solid var(--ink)}
 
 /* Console — la police de la régie descend du panneau sur tout ce qu'il porte ;
    restent l'invite des libellés, que la fiche réserve à ses champs, et les
@@ -2331,12 +2340,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modele-console :is(.jBilan b,.iBilan b){font-family:"IBM Plex Mono",monospace;font-size:18px}
 .modele-console :is(.pRang .pOuvre,.jArret,.iEtape){border-left-style:dashed}
 .modele-console .pGroupe .jour{border-bottom-style:dashed}
-.modele-console .pPied{border-top-style:dashed}
+.modele-console .pPied{border-top-style:dashed}.modele-console .pActs{border-bottom-style:dashed}
 
 /* Billet — la perforation du talon sépare ici les jours, les listes et le
    pied ; les champs prennent l'arrondi plein des boutons. */
 .modele-billet .pGroupe .jour{border-bottom:2px dashed var(--line-strong)}
-.modele-billet .pPied{border-top:2px dashed var(--line-strong)}
+.modele-billet .pPied{border-top:2px dashed var(--line-strong)}.modele-billet .pActs{border-bottom:2px dashed var(--line-strong)}
 .modele-billet :is(.pRang .pOuvre,.jArret,.iEtape){border-left-style:dashed}
 .modele-billet :is(.iChamp input,.pRang .pOte,.iVise,.iEchange){border-radius:999px}
 .modele-billet :is(.pRang .ps,.iEtape .s,.jS){font-family:"IBM Plex Mono",monospace;font-size:11px}
@@ -2367,7 +2376,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modele-brut .jN{border:2px solid #111}
 .modele-brut .pGroupe .jour{border-bottom:3px solid #111;font-weight:700;
   font-size:12px;letter-spacing:.04em;text-transform:uppercase}
-.modele-brut .pPied{border-top:3px solid #111}
+.modele-brut .pPied{border-top:3px solid #111}.modele-brut .pActs{border-bottom:3px solid #111}
 
 /* Verre — chaque vignette devient un carreau translucide sur le bloc de
    couleur, comme les champs de la fiche et les lignes de la liste. */
@@ -2394,7 +2403,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modele-kraft :is(.jBilan b,.iBilan b){font-family:"Courier Prime",monospace;font-size:18px}
 .modele-kraft .pGroupe .jour{border-bottom:1px dashed var(--line-strong);
   font-weight:700;font-size:12.5px;text-transform:uppercase}
-.modele-kraft .pPied{border-top:1px dashed var(--line-strong)}
+.modele-kraft .pPied{border-top:1px dashed var(--line-strong)}.modele-kraft .pActs{border-bottom:1px dashed var(--line-strong)}
 
 /* Signalétique — capitales, flèche et gros filet : un arrêt se lit comme une
    direction de hall, ce qui va de soi pour deux panneaux qui ne parlent que
@@ -2437,7 +2446,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modele-nu .iChamp input{background:none;
   border-width:0 0 1px;border-radius:0;padding-left:0}
 .modele-nu :is(.pRang .pOte,.iEchange){border-color:transparent}
-.modele-nu .pPied{border-top:none}
+.modele-nu .pPied{border-top:none}.modele-nu .pActs{border-bottom:none}
 
 .panel{position:absolute;top:12px;right:12px;background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;z-index:3;display:none;
@@ -3250,6 +3259,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .parcours.open{transform:translateY(0);pointer-events:auto}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
+  .pActs{padding:11px 16px 12px}
 
   /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
      lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
@@ -3625,17 +3635,17 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <h2 id="pTitre">Parcours de visite</h2>
         <span class="badge" id="pResume"></span>
       </div>
+      <div class="pActs" id="pActs">
+        <button class="btn jOrg" id="btnJournee" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+          Organiser ma journée</button>
+        <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
+          Partager</button>
+      </div>
       <div class="pCorps" id="pCorps"></div>
       <div class="pCorps" id="jCorps" hidden></div>
       <div class="pPied" id="pPied">
-        <div class="pActs">
-          <button class="btn jOrg" id="btnJournee" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
-            Organiser ma journée</button>
-          <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
-            Partager</button>
-        </div>
         <button class="vider" id="videParcours">Vider le parcours</button>
       </div>
       <div class="pPied" id="jPied" hidden>
@@ -14621,7 +14631,7 @@ const CLE_LIEN_PARCOURS = "parcours=";
 /* Le format, en tête du fragment. Un lien envoyé la veille au soir doit
    s'ouvrir le lendemain matin : si le format change un jour, ce chiffre fera
    refuser proprement l'ancien plutôt que de l'ouvrir de travers. */
-const FORMAT_PARTAGE = "1";
+const FORMAT_PARTAGE = "2";
 
 /**
  * Ce sont les identifiants qui voyagent, et non les rangs de la liste.
@@ -14639,20 +14649,54 @@ const codeIdParcours = id => String(id).replace(/[^A-Za-z0-9_-]/g, c =>
   Array.from(new TextEncoder().encode(c),
              o => "%" + o.toString(16).toUpperCase().padStart(2, "0")).join(""));
 
-/** Le parcours mis en une chaîne : le format, les stands, les conférences. */
-const codeParcours = p => [FORMAT_PARTAGE,
-                           p.stands.map(codeIdParcours).join("."),
-                           p.confs.map(codeIdParcours).join(".")].join("~");
+/**
+ * Le fragment entier : le format, les stands, les conférences.
+ *
+ * En « &clé=valeur », la syntaxe d'une adresse ordinaire, et non plus séparé
+ * par des tildes. La différence ne se voit pas dans le code, elle se voit dans
+ * le téléphone d'en face : un lecteur de codes ne lit pas une adresse, il lit
+ * du texte et décide ensuite si cela y ressemble. Les tildes le faisaient
+ * hésiter — le lecteur d'Android proposait « Rechercher » et « Copier le
+ * texte » là où il faut « Ouvrir » — quand « ?a=1&b=2 », que la moitié du web
+ * emploie jusque dans ses fragments, ne laisse aucun doute.
+ *
+ * Une section vide ne s'écrit pas du tout : un parcours sans conférence finissait
+ * sur un tilde solitaire, ce qui est exactement ce qu'une adresse n'a jamais.
+ */
+const codeParcours = p => CLE_LIEN_PARCOURS + FORMAT_PARTAGE +
+  (p.stands.length ? "&s=" + p.stands.map(codeIdParcours).join(".") : "") +
+  (p.confs.length ? "&c=" + p.confs.map(codeIdParcours).join(".") : "");
+
+/**
+ * Un champ du fragment, tel qu'il y est écrit — et non décodé.
+ *
+ * C'est pourquoi `URLSearchParams` ne sert pas ici, alors que c'est l'outil
+ * fait pour cela : il décode avant de rendre la valeur, si bien qu'un
+ * identifiant portant un point échappé rendrait au séparateur un point qui
+ * n'en était pas un. On découpe d'abord, on décode ensuite.
+ */
+const champParcours = (frag, nom) => {
+  const m = new RegExp("(?:^|&)" + nom + "=([^&]*)").exec(frag);
+  return m ? m[1] : null;
+};
 
 /** Et l'inverse, qui n'accorde sa confiance à rien : le fragment se tape à la
  *  main aussi bien qu'il se scanne. */
-function litCodeParcours(txt){
-  const m = /^([0-9]+)~([^~]*)~([^~]*)$/.exec(txt || "");
-  if (!m || m[1] !== FORMAT_PARTAGE) return null;
-  const liste = s => s.split(".").map(x => {
+function litCodeParcours(frag){
+  const liste = t => (t || "").split(".").map(x => {
     try { return decodeURIComponent(x); } catch (e) { return ""; }
   }).filter(Boolean);
-  return { stands: liste(m[2]), confs: liste(m[3]) };
+  const v = champParcours(frag, "parcours");
+  if (v === null) return null;
+  if (v === FORMAT_PARTAGE)
+    return { stands: liste(champParcours(frag, "s")),
+             confs:  liste(champParcours(frag, "c")) };
+  /* Le premier format séparait ses trois parties par des tildes. Il n'aura vécu
+     qu'un jour, mais un code déjà photographié, déjà envoyé, doit continuer de
+     s'ouvrir : le relire coûte deux lignes, et c'est à cela que sert le chiffre
+     de tête. */
+  const m = /^1~([^~]*)~([^~]*)$/.exec(v);
+  return m ? { stands: liste(m[1]), confs: liste(m[2]) } : null;
 }
 
 /**
@@ -14672,7 +14716,7 @@ function lienParcours(){
      ce qu'il dit, et n'ouvrira pas l'édition suivante le jour où c'est elle qui
      devient le salon par défaut. */
   u.search = SLUG ? "?plan=" + encodeURIComponent(SLUG) : "";
-  return u.toString() + "#" + CLE_LIEN_PARCOURS + codeParcours(PARCOURS);
+  return u.toString() + "#" + codeParcours(PARCOURS);
 }
 
 /* ------------------------------------------------------------
@@ -15109,7 +15153,7 @@ function accueilleParcoursPartage(){
   // part où poser ce qu'il porte
   if (conf("_parcours").visible === false) return;
 
-  const recu = litCodeParcours(brut.slice(CLE_LIEN_PARCOURS.length));
+  const recu = litCodeParcours(brut);
   if (!recu) return;
   const stands = recu.stands.filter(id => parId.has(id) && !dansParcours("stand", id));
   const confs = recu.confs.filter(id => CONFS.has(id) && !dansParcours("conf", id));
@@ -15134,7 +15178,9 @@ function accueilleParcoursPartage(){
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
   ouvreModale("Un parcours partagé", corps => {
     const p = document.createElement("p");
-    p.textContent = "Ce lien porte le parcours de quelqu'un d'autre : " +
+    /* Les conférences ne se mentionnent que s'il y en a : « 5 exposants et 0
+       conférence » fait lire un manque là où il n'y a rien à lire. */
+    p.textContent = "Le parcours qui vous a été partagé contient " +
       [stands.length ? stands.length + " exposant" + (stands.length > 1 ? "s" : "") : "",
        confs.length ? confs.length + " conférence" + (confs.length > 1 ? "s" : "") : ""]
         .filter(Boolean).join(" et ") + ".";
@@ -18897,6 +18943,10 @@ function remplitJournee(){
 function appliqueVueParcours(){
   const sur = vueJournee && !!JOURNEE;
   $("pCorps").hidden = sur;
+  /* La rangée de commandes appartient à la liste : la journée organisée a les
+     siennes, et « Organiser ma journée » posé au-dessus de la journée qu'on
+     vient d'organiser n'inviterait à rien. */
+  $("pActs").hidden = sur;
   $("pPied").hidden = sur;
   $("jCorps").hidden = !sur;
   $("jPied").hidden = !sur;

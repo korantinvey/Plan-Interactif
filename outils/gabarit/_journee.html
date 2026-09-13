@@ -704,6 +704,10 @@ function remplitJournee(){
 function appliqueVueParcours(){
   const sur = vueJournee && !!JOURNEE;
   $("pCorps").hidden = sur;
+  /* La rangée de commandes appartient à la liste : la journée organisée a les
+     siennes, et « Organiser ma journée » posé au-dessus de la journée qu'on
+     vient d'organiser n'inviterait à rien. */
+  $("pActs").hidden = sur;
   $("pPied").hidden = sur;
   $("jCorps").hidden = !sur;
   $("jPied").hidden = !sur;
