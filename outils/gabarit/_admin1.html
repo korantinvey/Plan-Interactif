@@ -330,6 +330,38 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/**
+ * Les heures où le salon est ouvert.
+ *
+ * Sans elles, la journée organisée n'avait pas de fin : ce qui ne tenait pas
+ * entre deux conférences se rangeait après la dernière, et le visiteur se
+ * voyait programmer un stand à dix-neuf heures quarante dans un hall fermé
+ * depuis une heure. Klipso ne les donne pas ; c'est l'exploitant qui les dit.
+ *
+ * Deux heures valent pour tous les jours, et un jour peut avoir les siennes —
+ * le dernier ferme souvent plus tôt, le jour réservé aux professionnels ouvre
+ * parfois avant. Une heure laissée vide pour un jour reprend celle de tous
+ * les jours ; aucune heure du tout, et la journée reste ouverte comme avant.
+ *
+ * Rendues en minutes depuis minuit, `null` là où rien n'est dit.
+ */
+function lueHeure(s){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ""));
+  return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
+}
+function horairesSalon(jour){
+  const h = CONF["_horaires"] || {};
+  const j = (jour && (h.jours || {})[jour]) || {};
+  const heure = (k) => lueHeure(j[k]) !== null ? lueHeure(j[k]) : lueHeure(h[k]);
+  const ouverture = heure("ouverture"), fermeture = heure("fermeture");
+  /* Une fermeture qui précède l'ouverture n'est pas un salon de nuit, c'est
+     une saisie à moitié faite : on n'en retient rien plutôt que de rendre une
+     journée vide. L'onglet des réglages le signale. */
+  if (ouverture !== null && fermeture !== null && fermeture <= ouverture)
+    return { ouverture: null, fermeture: null, incoherent: true };
+  return { ouverture: ouverture, fermeture: fermeture };
+}
+
 /** Ce salon héberge-t-il des sociétés sur le stand d'une autre ? La question
  *  se pose sur les trois pavillons : un seul stand partagé suffit. */
 const salonPartage = () => (DATA?.plans || [])
@@ -1279,6 +1311,96 @@ function voletPlan(hote){
   };
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
+
+  blocHoraires(hote);
+}
+
+/**
+ * Les heures d'ouverture, dans l'onglet « Plan ».
+ *
+ * Une rangée pour tous les jours, puis une par jour du programme quand il y en
+ * a plusieurs. Les rangées d'un jour partent vides : c'est ce qui dit qu'elles
+ * reprennent la première, et c'est ce qu'on laisse sur un salon aux mêmes
+ * heures d'un bout à l'autre. Les jours sont ceux des conférences — le plan
+ * n'en connaît pas d'autres, et c'est aussi parmi eux que le visiteur choisit
+ * le sien.
+ */
+function blocHoraires(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "reglage-nb horaires";
+  const titre = document.createElement("span");
+  titre.className = "l";
+  titre.textContent = "Heures d'ouverture du salon";
+  bloc.appendChild(titre);
+
+  const alerte = document.createElement("span");
+  alerte.className = "aide alerte";
+  const majAlerte = () => {
+    const faux = [horairesSalon("")].concat(joursSalon().map(j => horairesSalon(j.cle)))
+      .some(h => h.incoherent);
+    alerte.hidden = !faux;
+    alerte.textContent = "Une fermeture tombe avant l'ouverture : ces heures-là ne " +
+      "sont pas prises en compte tant qu'elles ne sont pas corrigées.";
+  };
+
+  const rangee = (libelle, jour) => {
+    const r = document.createElement("div");
+    r.className = "hRang";
+    r.innerHTML = '<span class="l"></span><input type="time" step="300">' +
+      '<span class="u">–</span><input type="time" step="300">' +
+      '<button type="button" class="hEfface" title="Effacer">×</button>';
+    r.querySelector(".l").textContent = libelle;
+    const [de, a] = r.querySelectorAll("input");
+    const efface = r.querySelector(".hEfface");
+    const casier = () => {
+      const h = conf("_horaires");
+      if (!jour) return h;
+      h.jours = h.jours || {};
+      return (h.jours[jour] = h.jours[jour] || {});
+    };
+    const lu = () => {
+      const h = CONF["_horaires"] || {};
+      return (jour ? (h.jours || {})[jour] : h) || {};
+    };
+    de.value = lu().ouverture || "";
+    a.value = lu().fermeture || "";
+    de.setAttribute("aria-label", "Ouverture, " + libelle.toLowerCase());
+    a.setAttribute("aria-label", "Fermeture, " + libelle.toLowerCase());
+    const majEfface = () => { efface.hidden = !de.value && !a.value; };
+    /* Un champ d'heure n'a de valeur qu'une fois complet : tant qu'on tape, il
+       rend une chaîne vide, et l'écrire effacerait l'heure qu'on corrige. On
+       n'enregistre donc qu'au changement, où le champ est entier ou vidé. */
+    const ecrit = (cle, champ) => {
+      const c = casier();
+      if (lueHeure(champ.value) !== null) c[cle] = champ.value; else delete c[cle];
+      // un jour sans heure propre ne laisse pas de casier vide derrière lui
+      const h = CONF["_horaires"];
+      if (jour && h.jours && !Object.keys(h.jours[jour] || {}).length) delete h.jours[jour];
+      enregistreConf();
+      majEfface();
+      majAlerte();
+    };
+    de.onchange = () => ecrit("ouverture", de);
+    a.onchange = () => ecrit("fermeture", a);
+    efface.onclick = () => { de.value = a.value = ""; ecrit("ouverture", de); ecrit("fermeture", a); };
+    majEfface();
+    bloc.appendChild(r);
+  };
+
+  const jours = joursSalon();
+  rangee(jours.length > 1 ? "Tous les jours" : "Ouverture – fermeture", "");
+  if (jours.length > 1) jours.forEach(j => rangee(j.nom, j.cle));
+
+  const aide = document.createElement("span");
+  aide.className = "aide";
+  aide.textContent = "Aucun stand n'est programmé dans la journée d'un visiteur " +
+    "avant l'ouverture ni après la fermeture." +
+    (jours.length > 1 ? " Un jour laissé vide reprend les heures de tous les jours." : "") +
+    " Sans heures, la journée n'a pas de fin.";
+  bloc.appendChild(aide);
+  bloc.appendChild(alerte);
+  majAlerte();
+  hote.appendChild(bloc);
 }
 
 /** Y a-t-il de quoi parler de foule ? Une conférence rattachée à une zone,
