@@ -2485,6 +2485,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .chalTop .rang,.chalTop .code,.chalTop .n{font-family:"IBM Plex Mono",monospace;
   font-size:10.5px;color:var(--ink-3);flex:0 0 auto}
 .chalTop .n{font-size:11px;color:var(--ink-2)}
+/* Les visiteurs distincts, sous le nombre d'ouvertures : deux nombres au même
+   endroit se confondraient, l'un sous l'autre se comparent. */
+.chalTop .v{font-size:10px;color:var(--ink-3);margin-left:5px}
 .chalTop .nom{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Ce qui n'appartient pas à la pile s'en détache par un trait, comme la barre
    d'administration au bas du panneau. Le libellé n'a pas de case à cocher
@@ -18438,7 +18441,6 @@ function lanceJournee(choix){
 $("btnJournee").onclick = ouvreOrganisation;
 $("jRefaire").onclick = ouvreOrganisation;
 $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
-
 /* ============================================================
    13. Mesure d'utilisation
 
@@ -18447,11 +18449,22 @@ $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
    et les pousse par paquets vers la fonction `mesure`. Le rapport se lit
    depuis la console, sur sa page dédiée.
 
+   Chaque paquet dit aussi **par quelle porte** le plan a été atteint : un
+   navigateur, un cadre posé dans la page d'un site tiers, une installation sur
+   l'écran d'accueil, une coque d'application. Sans cela les quatre se
+   mélangeaient dans un chiffre unique, et ce chiffre ne voulait rien dire — une
+   page encadrée ouvre une visite à chaque page du site qui la porte, une
+   application repart à froid vingt fois par jour, un cadre tiers se voit
+   refuser le stockage et gonfle les visiteurs uniques. Séparées, les quatre
+   portes se lisent ; mélangées, aucune.
+
    Trois choses qu'il ne fait pas, et c'est ce qui permet de le laisser tourner
    sans bandeau de consentement : il ne pose pas de cookie, il n'envoie ni
    adresse ni agent utilisateur — le serveur ne les enregistre pas davantage —
    et le jeton de visiteur est tiré au hasard par le navigateur, propre à cet
    événement. Il ne suit personne d'un salon à l'autre, encore moins ailleurs.
+   La porte n'y change rien : c'est la façon dont la page est affichée, pas une
+   propriété de qui la regarde, et elle ne prend que quatre valeurs.
 
    Il se tait complètement dans deux cas : la page à données figées, qui n'a
    aucune API à appeler, et la page d'administration, où ce qu'on mesurerait
@@ -18469,6 +18482,13 @@ function jetonMesure(){
   } }).getRandomValues(t);
   return Array.from(t, o => o.toString(36).padStart(2, "0")).join("");
 }
+
+/* Le stockage a-t-il accepté de retenir le jeton. Faux, le jeton ne vaut que
+   pour cette ouverture, et le paquet le dit au serveur : le rapport compte
+   alors ce visiteur comme les autres — il a bien ouvert le plan — mais sait
+   qu'il le recompte peut-être, et l'annonce au lieu de gonfler une audience en
+   silence. C'est le cas ordinaire d'un cadre posé sur un site tiers. */
+let MESURE_RETENU = true;
 
 /**
  * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
@@ -18492,9 +18512,58 @@ function jetonRetenu(cle, casier){
     ou.setItem(cle, n);
     return n;
   } catch (e) {
+    MESURE_RETENU = false;
     return jetonMesure();
   }
 }
+
+/* Les quatre portes, dans le vocabulaire du serveur, qui écarte tout le reste.
+   Elles n'ont pas la même façon d'être reconnues, d'où l'ordre ci-dessous. */
+const SUPPORTS = ["web", "integre", "pwa", "appli"];
+
+/**
+ * Par quelle porte cette page a été atteinte.
+ *
+ * L'ordre des épreuves est celui de la certitude décroissante.
+ *
+ * Une coque d'application le **dit**, parce que rien dans la page ne permet de
+ * le voir : une vue web plein écran qui charge la page hébergée est en tout
+ * point un navigateur. C'est donc à l'hôte de l'annoncer, par `?support=appli`
+ * ajouté à l'adresse qu'il ouvre — une déclaration, pas une preuve, et le
+ * vocabulaire clos borne ce qu'elle peut raconter. Les coques qui servent la
+ * page depuis l'appareil se reconnaissent en plus à leur protocole.
+ *
+ * Un cadre se voit : le document n'est pas au sommet de sa fenêtre. La
+ * comparaison reste permise entre origines différentes, et un cadre bac à sable
+ * qui la refuserait est encadré de toute façon.
+ *
+ * Une installation sur l'écran d'accueil se lit dans le mode d'affichage.
+ * `navigator.standalone` est la forme d'iOS, qui la produit sans qu'aucun
+ * manifeste existe — ces visites se comptaient donc déjà, sous « web ».
+ *
+ * Rien de tout cela ne dit quoi que ce soit du visiteur : c'est la façon dont
+ * la page est affichée, et elle ne prend que quatre valeurs.
+ */
+function supportMesure(){
+  const dit = new URLSearchParams(location.search).get("support");
+  if (dit && SUPPORTS.includes(dit)) return dit;
+  if (/^(capacitor|ionic|app|tauri):$/.test(location.protocol)) return "appli";
+  try {
+    if (window.top !== window.self) return "integre";
+  } catch (e) { return "integre"; }
+  if (navigator.standalone === true) return "pwa";
+  try {
+    if (["standalone", "fullscreen", "minimal-ui", "window-controls-overlay"]
+        .some(m => matchMedia("(display-mode: " + m + ")").matches)) return "pwa";
+  } catch (e) {}
+  return "web";
+}
+
+/* Relevé une fois, au chargement : la porte est la façon dont la page a été
+   ouverte, et une page ouverte ne change pas de porte. Une installation faite
+   en cours de route ne vaudra donc que pour le lancement suivant — c'est aussi
+   ce qu'on veut compter. */
+const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
 
 /* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
    ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
@@ -18520,8 +18589,12 @@ function envoieMesures(dernier){
   clearTimeout(_envoiDiffere);
   _envoiDiffere = null;
   if (!_gestes.length) return;
+  /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
+     propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
+     répéter trente fois l'exposerait à se contredire. */
   const charge = JSON.stringify({
     slug: SLUG, visiteur: MESURE_VISITEUR,
+    support: MESURE_SUPPORT, retenu: MESURE_RETENU,
     gestes: _gestes.splice(0, _gestes.length),
   });
   /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
@@ -18568,7 +18641,13 @@ function mesure(genre, canal, cible, objet){
 
 if (MESURE_ACTIVE){
   /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
-     fait une seconde ; naviguer dedans pendant deux heures, une seule. */
+     fait une seconde ; naviguer dedans pendant deux heures, une seule.
+
+     Ce que « une session d'onglet » dure ne dépend pas de nous, et c'est
+     précisément pourquoi le rapport sépare les portes : un lancement depuis
+     l'écran d'accueil en ouvre une neuve à chaque fois, et une page de site qui
+     porte le cadre en ouvre une par page vue. Les visites se comparent dans une
+     porte, jamais d'une porte à l'autre. */
   const CLE_VUE = "plan-visite:" + SLUG;
   let dejaVue = false;
   try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
@@ -18697,6 +18776,11 @@ async function chargeChaleur(){
     max: cibles.length ? Number(cibles[0].n) || 0 : 0,
     total: Number(r?.total) || 0,
     depuis: r?.depuis || null,
+    /* Les visiteurs distincts, et la date d'où on les compte. `v_depuis` est
+       nul pour un salon mesuré avant qu'on ne les compte : l'écran s'abstient
+       alors d'afficher des zéros, qui se liraient « personne n'est venu ». */
+    visiteurs: Number(r?.total_visiteurs) || 0,
+    presence: !!r?.v_depuis,
     cibles: cibles,
   };
 }
@@ -18757,7 +18841,7 @@ function cartoucheChaleur(){
   c.id = "chaleur";
   c.hidden = true;
   c.innerHTML =
-    '<div class="chalTete"><span class="eyebrow">Fréquentation par stand</span>' +
+    '<div class="chalTete"><span class="eyebrow">Fiches ouvertes par stand</span>' +
     '<button type="button" id="chalReduit" aria-expanded="true">' +
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
     'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
@@ -18867,11 +18951,22 @@ function dessineTopChaleur(){
     const b = document.createElement("button");
     b.type = "button";
     b.innerHTML = '<span class="rang"></span><span class="code"></span>' +
-                  '<span class="nom"></span><span class="n"></span>';
+                  '<span class="nom"></span><span class="n"></span>' +
+                  '<span class="v"></span>';
     b.querySelector(".rang").textContent = (i + 1) + ".";
     b.querySelector(".code").textContent = c.code || "";
     b.querySelector(".nom").textContent = c.nom || "Sans nom";
     b.querySelector(".n").textContent = nbChal(c.n);
+    /* Les visiteurs distincts à côté des ouvertures, et seulement si on les
+       compte : un « 0 visiteur » en face de « 240 ouvertures » se lirait comme
+       une panne, alors qu'il dirait seulement que ce salon est plus vieux que
+       ce comptage. Le palmarès reste classé sur les ouvertures — changer ce
+       qu'il ordonne en même temps que ce qu'il affiche rendrait deux lectures
+       incomparables d'une période à l'autre. */
+    if (CHALEUR.presence){
+      const v = Number(c.v) || 0;
+      b.querySelector(".v").textContent = "· " + nbChal(v) + " vis.";
+    }
     /* Une cible que le salon ne porte plus — stand retiré depuis, exposant
        parti — garde ses consultations mais n'a plus de forme à montrer. On la
        laisse au palmarès, la taire fausserait le total, et on retire le clic
@@ -18898,10 +18993,18 @@ function phraseChaleur(){
       : "Aucune consultation de fiche enregistrée pour ce salon : " +
         "les compteurs par stand n'ont encore rien reçu.";
   }
+  const v = Number(CHALEUR.visiteurs) || 0;
   return nbChal(CHALEUR.total) + " fiche" + (CHALEUR.total > 1 ? "s" : "") +
     " d'exposant ouverte" + (CHALEUR.total > 1 ? "s" : "") + " " + quand + ", " +
     "sur " + nbChal(CHALEUR.par.size) + " emplacement" + (CHALEUR.par.size > 1 ? "s" : "") +
-    ". Consultations, non visiteurs uniques ; les zones organisateur ne sont pas comptées." +
+    /* Le second nombre est celui qu'on croyait lire dans le premier. Tant qu'il
+       n'existe pas, mieux vaut redire que le premier n'est pas lui que laisser
+       le malentendu : c'est ce chiffre-là qui part chez l'exposant. */
+    (CHALEUR.presence
+      ? ", par " + nbChal(v) + " visiteur" + (v > 1 ? "s" : "") + " distinct" +
+        (v > 1 ? "s" : "") + "."
+      : ". Consultations, non visiteurs uniques.") +
+    " La couleur suit les ouvertures ; les zones organisateur ne sont pas comptées." +
     (CHALEUR.depuis ? " Comptage par stand depuis le " +
       new Date(CHALEUR.depuis + "T00:00:00").toLocaleDateString("fr-FR") + "." : "");
 }

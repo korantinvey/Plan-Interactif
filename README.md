@@ -1152,10 +1152,88 @@ jours, ou depuis le début :
 - **Fiches conférences ouvertes**, de même : depuis le programme d'une salle,
   depuis la fiche de l'exposant qui la tient, ou depuis le programme de visite.
 - Les **visites jour par jour**, dans le fuseau du salon.
+- Le détail **par moyen d'accès** : une carte par porte — navigateur, cadre posé
+  sur un site, écran d'accueil, application — avec ses visites, ses visiteurs et
+  ses fiches ouvertes.
 
 Le détail par canal est ce qui se lit le plus vite : aucun clic sur un logo dit
 qu'aucun logo n'a été posé ; une recherche qui domine dit que le plan sert de
 répertoire plus que de plan.
+
+### Par quelle porte on arrive
+
+Le même plan se rejoint par quatre portes, et chaque paquet de mesures dit
+laquelle. Sans cela les quatre se confondaient dans un chiffre unique, et ce
+chiffre ne voulait rien dire : « mille deux cents visites » ne répond pas à la
+question que pose un organisateur qui vient de payer une application ou de coller
+un cadre sur son site — est-ce que **cette** porte sert ?
+
+| porte | ce que c'est | comment elle se reconnaît |
+|---|---|---|
+| `web` | le plan ouvert dans un onglet | ce qui reste quand aucune autre ne répond |
+| `integre` | encadré dans la page d'un site ou d'une application tierce | le document n'est pas au sommet de sa fenêtre |
+| `pwa` | installé sur l'appareil, lancé hors du navigateur | `display-mode: standalone`, ou `navigator.standalone`, la forme d'iOS |
+| `appli` | servi par une coque déposée sur une boutique | la coque le déclare |
+
+Une coque d'application ne se **voit** pas : une vue web plein écran qui charge
+la page hébergée est en tout point un navigateur. C'est donc à l'hôte de
+l'annoncer, en ajoutant `support=appli` à l'adresse qu'il ouvre :
+
+```
+https://…/plan?plan=smcl-2026&support=appli
+```
+
+C'est une déclaration, pas une preuve ; le vocabulaire clos borne ce qu'elle peut
+raconter — une valeur inventée compte sous « non précisé » plutôt que d'ouvrir
+une colonne au premier venu. Les coques qui embarquent la page au lieu de charger
+l'adresse hébergée se reconnaissent en plus à leur protocole (`capacitor://`,
+`ionic://`, `tauri://`).
+
+Deux mises en garde, que le rapport affiche sous les cartes parce qu'elles sont
+des propriétés du comptage et non des approximations :
+
+- **Les visites ne se comparent pas d'une porte à l'autre.** Une visite est une
+  session d'onglet, et ce qu'une session d'onglet dure ne dépend pas de nous :
+  rouvrir une application en ouvre une neuve à chaque fois, un cadre en ouvre une
+  par page du site qui le porte, un onglet laissé deux heures n'en ouvre qu'une.
+  Chaque porte se lit dans son ordre de grandeur, jamais contre les autres.
+- **La somme des visiteurs dépasse le total, et c'est juste.** Un navigateur, une
+  application et un cadre posé sur un site tiers ne partagent aucun jeton — le
+  stockage d'un cadre tiers est cloisonné par le navigateur. Le même visiteur
+  compte une fois par porte, et une seule au total, qui se compte en jetons
+  distincts et non en lignes.
+
+Une troisième tient au stockage. Un cadre posé sur un site tiers se voit souvent
+**refuser** le stockage, quand il n'est pas seulement cloisonné : le jeton ne se
+retient plus, et chaque ouverture ajoutait un « visiteur unique » sans que rien
+ne le signale. La page dit désormais si son jeton a pu être retenu,
+`visiteur_jour` le garde, et le rapport affiche « dont N au stockage refusé,
+recomptés à chaque ouverture ». Le chiffre vient à côté du total, jamais en
+déduction : ces visiteurs ont bien ouvert le plan, on sait seulement qu'ils y
+sont peut-être comptés plusieurs fois. Le rapport signale ce qu'il ne peut pas
+corriger — le corriger demanderait de reconnaître un visiteur sans son
+consentement, ce que ce système ne fait pas.
+
+Ce qui **n'apprend pas** la porte, et c'est délibéré : `compteur_cible`, donc la
+carte de chaleur et le classeur des exposants. L'audience d'un stand est son
+audience, quelle que soit la porte prise pour l'atteindre ; y ajouter une
+quatrième dimension multiplierait par quatre la seule table dont le volume ait
+jamais inquiété, pour répondre à une question que personne ne pose.
+
+Enfin, la fonction `mesure` accepte **toutes les origines**, seule de tout le
+projet, et il n'y a donc aucune liste à tenir pour qu'une porte compte. CORS n'a
+jamais rien gardé ici — un `curl` l'ignore entièrement — et ce qui protège
+l'écriture est ailleurs : la clé de service reste au serveur, le vocabulaire est
+clos, la cible doit exister dans l'événement, l'événement doit être publié, le
+paquet est borné. Ce que la liste faisait, en revanche, c'était jeter en silence
+les mesures de tout visiteur qui n'était pas arrivé par un domaine inscrit : un
+cadre en bac à sable poste depuis `null`, une coque qui embarque la page poste
+depuis le protocole de son cadre de travail. Le navigateur coupait, `fetch` se
+taisait, et la porte dont on voulait mesurer l'usage était la seule à ne rien
+compter — l'oubli ne se voyant qu'au rapport, des semaines plus tard, sous la
+forme d'un salon qui paraît désert. Rien ne sort de cette fonction : la réponse
+est vide, aucun appel ne porte d'identité. `plan-public`, `comptes` et
+`sync-evenement` gardent leur liste, elles : elles rendent des données.
 
 ### Des compteurs, et non un journal
 
@@ -1174,9 +1252,10 @@ Trois tables, parce que les trois questions n'ont pas la même forme.
 
 | | |
 |---|---|
-| `compteur` | la fréquentation, à l'heure, sans objet |
-| `compteur_cible` | l'audience d'un stand ou d'une conférence, au jour |
-| `visiteur_jour` | un jeton vu tel jour — le seul décompte qui ne soit pas une somme |
+| `compteur` | la fréquentation, à l'heure, par porte, sans objet |
+| `compteur_cible` | l'audience d'un stand ou d'une conférence, au jour — en gestes |
+| `visiteur_cible` | qui a touché quoi, une fois — en personnes |
+| `visiteur_jour` | un jeton vu tel jour, par porte — le seul décompte qui ne soit pas une somme |
 
 Croiser l'objet et l'heure reconstruirait le problème qu'on fuit : 931 stands ×
 9 canaux × 48 heures font quatre cent mille lignes possibles. D'où deux
@@ -1192,11 +1271,100 @@ un itinéraire ouvrent-ils plus de fiches ». Aucun chiffre du rapport ne posait
 cette question. Ce qu'on y gagne : savoir **quel** stand a été consulté, ce que
 le journal ne disait pas — il ne retenait que le genre du geste, jamais son objet.
 
+### Combien de fois, et combien de qui
+
+Un exposant à qui l'on annonce « 240 » comprend « 240 personnes sont venues me
+voir ». Ce que le produit lui donnait, c'étaient 240 **ouvertures de fiche** :
+le même visiteur qui rouvre cinq fois pesait cinq. L'écart n'est pas un détail
+de vocabulaire — il change le chiffre d'un facteur qu'on ne connaît même pas, et
+ce chiffre part par courriel à l'exposant.
+
+Chaque nombre par stand existe donc maintenant en deux exemplaires : le geste et
+la personne. `compteur_cible` compte les gestes, `visiteur_cible` retient les
+personnes — une ligne par (stand, geste, canal, jour, visiteur), où **une paire
+déjà vue n'ajoute rien**. Rouvrir la même fiche cinquante fois y pèse une ligne.
+
+| dans le classeur | ce que ça compte |
+|---|---|
+| Fiches ouvertes | les ouvertures |
+| Visiteurs uniques | les personnes distinctes qui en ont ouvert au moins une |
+| Ouvertures · clic sur le plan | les ouvertures venues de ce canal |
+| Visiteurs · clic sur le plan | les personnes distinctes venues par ce canal |
+| Itinéraires calculés / Visiteurs ayant demandé la route | idem, pour la route |
+| Ajouts au programme / Visiteurs l'ayant mis à leur programme | idem, pour le parcours |
+| Ajouts depuis une suggestion / Visiteurs venus d'une suggestion | idem, pour la suggestion |
+
+Les deux ensemble se lisent enfin : un stand ouvert 240 fois par 8 personnes et
+un stand ouvert 240 fois par 200 ne racontent pas la même chose, et aucun des
+deux nombres seul ne les distingue.
+
+Trois choses à savoir avant d'en tirer une conclusion.
+
+**Les colonnes de visiteurs ne s'additionnent pas.** La somme des visiteurs par
+canal dépasse le total de visiteurs de la fiche : celui qui a ouvert la fiche
+depuis le plan puis depuis la recherche compte dans les deux, et une fois au
+total. Un cardinal n'est pas une somme — même propriété que les portes d'accès,
+pour la même raison. « Total interactions » n'a d'ailleurs pas de jumelle en
+personnes : additionner trois cardinaux qui se recouvrent ne donnerait aucun
+nombre réel.
+
+**« Visiteur unique » désigne un jeton de navigateur**, donc une partition de
+stockage. Le même humain qui ouvre le plan dans son navigateur puis dans
+l'application installée compte deux fois ; celui dont le navigateur refuse le
+stockage — cas ordinaire d'un cadre posé sur un site tiers — compte une fois par
+ouverture. Le rapport le signale au niveau du salon. Faire mieux demanderait
+d'identifier les gens, ce que ce système ne fait pas.
+
+**Le comptage commence le jour de sa mise en service.** Un salon mesuré avant
+n'a aucune présence enregistrée : les colonnes de visiteurs sont alors **retirées
+du classeur** plutôt que remplies de zéros, qui se liraient « personne n'est
+venu » là où il faut lire « on ne comptait pas encore les personnes ». Un
+classeur voyage seul, souvent jusqu'à l'exposant : il ne peut pas porter de note
+de bas de page.
+
+Ce que ce chiffre corrige au passage, sans qu'on ait eu à réparer quoi que ce
+soit — trois défauts de comptage s'effacent d'eux-mêmes dès qu'on compte des
+personnes et non des gestes : la pastille « N exposants ici » d'un stand
+partagé, qui gonflait le total du stand de gestes faits à l'intérieur de sa
+fiche ; l'itinéraire, qui ne se dédoublonne que sur le dernier trajet demandé,
+si bien qu'une bascule PMR ou une inversion recomptait un trajet vers le même
+stand ; et le stand ajouté au parcours, retiré, puis rajouté, qui pesait deux
+ajouts pour son exposant. Dans les trois cas : même visiteur, même stand, une
+seule présence.
+
+#### Ce que cette table coûte
+
+Elle renverse une décision prise en même temps que les compteurs, et il faut le
+dire franchement. `compteur_cible` portait en tête : « compter les visiteurs
+uniques demanderait de retenir les paires (stand, visiteur), soit exactement le
+volume qu'on vient de supprimer. » Cette phrase se trompait d'ordre de grandeur
+— le demi-million de lignes qu'elle fuyait était un journal d'un geste par
+ligne, vingt-sept par visiteur et par jour, alors qu'une paire répétée n'ajoute
+rien. Pour 931 stands et 20 000 visiteurs, on compte 180 000 à 400 000 lignes,
+environ 65 Mo index compris : un huitième du journal supprimé.
+
+Ce qu'elle disait de vrai, en revanche : la propriété qui justifiait les
+compteurs — **ne pas grossir avec le trafic** — est perdue, et perdue
+entièrement. Cette table est linéaire en fréquentation. D'où une purge :
+`purge_presences()` retire les présences de plus de **400 jours** (et jamais
+moins de 31, contre l'erreur de manipulation), appelée à chaque synchronisation
+Klipso — le seul rendez-vous régulier du système à tenir la clé de service.
+Quatre cents jours et non trois cent soixante-cinq : un salon annuel se compare à
+l'édition précédente, et la comparaison se fait souvent quelques semaines après.
+
+Les compteurs, eux, ne se purgent jamais : ils sont bornés par construction, et
+c'est l'historique long d'un salon. Un salon purgé garde donc ses consultations
+et perd ses visiteurs uniques passés — c'est l'ordre des regrets qu'on a choisi.
+
 ### Ce qui est enregistré, et ce qui ne l'est pas
 
-Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure.
-`visiteur_jour` porte un jeton et une date. **Rien d'autre** — ni adresse IP, ni
-agent utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au
+Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure et
+la porte par laquelle le plan a été atteint. `visiteur_jour` porte un jeton, une
+date, la même porte, et si le stockage a accepté de retenir ce jeton.
+`visiteur_cible` porte un jeton en face d'un stand, une fois. **Rien
+d'autre** — ni adresse IP, ni agent utilisateur, ni identité, ni cookie. La porte
+n'y change rien : c'est la façon dont la page est affichée, pas une propriété de
+qui la regarde, et elle ne prend que quatre valeurs. Le jeton de visiteur est tiré au
 hasard par le navigateur et rangé chez lui sous une clé propre à l'événement
 (`plan-visiteur:<slug>`) : il ne suit personne d'un salon à l'autre, encore moins
 d'un site à l'autre. Les chiffres par stand sont des agrégats où aucun jeton ne
@@ -1304,10 +1472,12 @@ pile s'arrête où le cartouche commence : ils partagent le même bord.
 
 Trois choses qu'il faut savoir avant d'en tirer une conclusion :
 
-- Ce sont des **consultations de fiche**, pas des visiteurs uniques. Compter les
-  seconds demanderait de retenir les paires (stand, visiteur), soit exactement le
-  volume que les compteurs ont supprimé — et c'est aussi le nombre que l'exposant
-  comprend.
+- La **couleur suit les consultations**, pas les visiteurs uniques : un stand
+  rouge est un stand dont la fiche s'est beaucoup ouverte, ce qui n'est pas la
+  même chose qu'un stand que beaucoup de gens ont ouvert. Les deux nombres sont
+  désormais côte à côte — le cartouche donne le total en personnes, le palmarès
+  ajoute « N vis. » à chaque ligne — mais c'est le premier qui peint, parce que
+  c'est lui qui a une échelle : voir « Combien de fois, et combien de qui ».
 - Les **zones organisateur ne sont pas comptées** : la page ne les mesure pas
   davantage, une zone n'est pas un exposant. Elles gardent leur teinte.
 - L'échelle est **logarithmique**. Rapportée au maximum, elle n'aurait rien
@@ -1641,6 +1811,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | adresse | rôle | accès |
 |---|---|---|
 | `/plan?plan=<slug>` | le plan des visiteurs | libre |
+| `/plan?plan=<slug>&support=appli` | le même, ouvert par une coque d'application qui se déclare | libre |
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
 | `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |

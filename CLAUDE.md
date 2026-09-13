@@ -127,6 +127,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
+| porte d'accès au plan — navigateur, cadre, écran d'accueil, application | `_mesure.html` `supportMesure` ; rendu `_rapport-js.html` `portes` ; migration `support_d_acces_au_plan` |
+| visiteurs uniques par stand, par canal, par geste | table `visiteur_cible` et fn `audience_cibles` (clés `v_…`), migration `les_visiteurs_uniques_par_stand` ; colonnes `_export.html` `COL_TETE_V`, `COL_PIED_V` ; cartouche `_chaleur.html` `phraseChaleur` |
 | carte de chaleur du plan | `_chaleur.html`, migration `audience` |
 | remise à zéro des compteurs | `_chaleur.html` § Remise à zéro, `_admin1.html` `ouvreReglages`, migration `remise_a_zero` |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
@@ -162,7 +164,10 @@ secrets Supabase (`npx supabase secrets set …`). La clé `service_role` et la
 clé Klipso ne doivent jamais atteindre une page ni un commit.
 
 Toute nouvelle adresse de déploiement doit être ajoutée à
-`ORIGINES_AUTORISEES`, sans quoi les fonctions refusent ses appels.
+`ORIGINES_AUTORISEES`, sans quoi les fonctions refusent ses appels. Une
+exception : `mesure` accepte toutes les origines — un cadre ou une coque qu'on
+n'a pas prévue doit pouvoir compter sans qu'on tienne une liste, et CORS n'y
+gardait rien qu'un `curl` n'ignore.
 
 ## Conventions
 

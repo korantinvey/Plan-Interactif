@@ -5,8 +5,14 @@
 # Klipso les refait en une heure, et ils pèsent des dizaines de mégaoctets. Le
 # reste n'existe qu'ici — les dessins de l'exploitant, l'apparence qu'il a
 # réglée, les salles, les comptes, et l'historique d'usage, qui est du passé et
-# ne se rejoue pas. C'est cette part-là qu'on emporte, et elle tient dans
-# quelques centaines de kilo-octets.
+# ne se rejoue pas. C'est cette part-là qu'on emporte.
+#
+# Elle tenait dans quelques centaines de kilo-octets ; elle se compte désormais
+# en méga-octets, et c'est `visiteur_cible` qui pèse — une ligne par visiteur et
+# par stand touché, la seule table de mesure qui grossisse avec la
+# fréquentation. Elle reste emportée : c'est du passé qui ne se rejoue pas, au
+# même titre que le reste, et une purge à quatre cents jours borne ce qu'elle
+# peut atteindre.
 #
 # Le fichier part en artefact GitHub plutôt qu'en base ou dans le dépôt : une
 # sauvegarde rangée dans le système qu'elle protège ne couvre ni un projet

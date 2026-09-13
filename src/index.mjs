@@ -154,6 +154,35 @@ async function oublie(requete, env) {
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
 
+/*
+ * Ce relais répond à toutes les origines, et c'est ce qui permet de compter le
+ * plan quel que soit l'endroit d'où on l'ouvre.
+ *
+ * La page ordinaire n'en a pas besoin : servie par ce Worker, elle poste sur
+ * `/api/mesure` en relatif, donc sur sa propre origine. Cela couvrait trois
+ * portes sur quatre — le navigateur, l'écran d'accueil, et même le cadre posé
+ * sur un site tiers, dont le document reste le nôtre. La quatrième tombait :
+ * une coque d'application qui embarque la page, ou un cadre en bac à sable,
+ * poste depuis une autre origine, le navigateur exigeait un en-tête que rien
+ * n'envoyait, et la mesure se taisait — la porte qu'on voulait mesurer était la
+ * seule à ne rien compter, et l'oubli ne se voyait qu'au rapport, des semaines
+ * plus tard, sous la forme d'un salon qui paraît désert.
+ *
+ * Ouvrir ne donne rien à personne. La réponse est vide de données, l'appel ne
+ * porte aucune identité — ni cookie, ni session, ni en-tête d'autorisation,
+ * donc rien qu'une page tierce puisse emprunter — et ce qui protège l'écriture
+ * est ailleurs, tout entier côté base : vocabulaire clos, cible qui doit
+ * exister dans l'événement, événement qui doit être publié, paquet borné. CORS
+ * n'y gardait rien qu'un `curl` n'ignore ; il ne gardait que nos propres
+ * visiteurs de compter.
+ */
+const CORS_MESURE = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  // une page ne redemande pas la permission à chaque paquet de la visite
+  "Access-Control-Max-Age": "86400",
+};
 /**
  * Le manifeste, complété de l'adresse à rouvrir.
  *
@@ -204,11 +233,16 @@ async function manifeste(requete, env) {
 
 /** Relais des mesures : un aller simple, sans identité et sans cache. */
 async function mesure(requete) {
+  if (requete.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_MESURE });
+  }
   if (requete.method !== "POST") {
-    return new Response("Méthode non permise", { status: 405 });
+    return new Response("Méthode non permise", { status: 405, headers: CORS_MESURE });
   }
   const corps = await requete.text();
-  if (corps.length > MESURE_MAX) return new Response(null, { status: 413 });
+  if (corps.length > MESURE_MAX) {
+    return new Response(null, { status: 413, headers: CORS_MESURE });
+  }
   const reponse = await fetch(MESURE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -216,7 +250,11 @@ async function mesure(requete) {
   });
   return new Response(reponse.body, {
     status: reponse.status,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    headers: {
+      ...CORS_MESURE,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
   });
 }
 
@@ -227,9 +265,10 @@ export default {
        dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
     if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env);
     /* Les mesures d'utilisation prennent le même chemin que le plan : même
-       origine que la page, donc aucun contrôle d'origine croisée à passer, et
-       rien à configurer si le domaine change. Elles ne sont ni lues ni mises
-       en cache — elles ne font que passer. */
+       origine que la page, donc rien à configurer si le domaine change. Elles
+       ne sont ni lues ni mises en cache — elles ne font que passer. Le relais
+       répond en outre à toute origine, pour les portes qui ne sont pas servies
+       d'ici : voir `mesure` plus haut. */
     if (url.pathname === "/api/mesure") return mesure(requete);
     // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
     if (url.pathname === "/api/oublie") return oublie(requete, env);
