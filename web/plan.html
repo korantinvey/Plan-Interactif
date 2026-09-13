@@ -3236,11 +3236,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
 
-  /* L'itinéraire suit les deux autres, en un peu plus haut : deux champs, un
-     clavier qui monte, et le résultat qui doit rester lisible au-dessus. */
+  /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
+     lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
+     le tiroir. À soixante-seize pour cent de l'écran il recouvrait le trajet
+     qu'il venait de tracer. La moitié lui suffit, à condition que ce qu'il
+     porte s'y resserre : c'est l'objet des règles qui suivent. */
   .itineraire{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
-    max-height:76dvh;
+    max-height:50dvh;
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -3248,8 +3251,45 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     transform:translateY(100%);pointer-events:none;
   }
   .itineraire.open{transform:translateY(0);pointer-events:auto}
-  .iCorps{padding:14px 16px}
-  .iSugg{max-height:160px}
+  /* L'en-tête tient sur une ligne : le titre, et le bilan du trajet à sa
+     suite. Le sur-titre « Se rendre » redisait le titre, et la pastille sur sa
+     propre ligne coûtait la hauteur d'un champ — trois lignes pour deux mots
+     et un chiffre. */
+  .itineraire .detail-hd{display:flex;flex-wrap:wrap;align-items:baseline;
+    column-gap:10px;row-gap:2px;padding:11px 40px 10px 16px}
+  .itineraire .detail-hd .eyebrow{display:none}
+  .itineraire .detail-hd h2{margin:0;padding-right:0;font-size:16.5px}
+  .itineraire .detail-hd .close{top:7px;right:9px}
+  /* Quand le corps annonce le bilan, la pastille de l'en-tête dit la même
+     chose deux lignes plus haut : elle s'efface au profit du bloc qui en dit
+     davantage — passages empruntés, option accessible. Sans trajet, elle
+     reste : c'est alors le seul état affiché. */
+  .itineraire:has(.iBilan) .detail-hd .badge{display:none}
+  .iCorps{padding:12px 16px 14px;gap:10px}
+  .iChamps{gap:6px}
+  .iSugg{max-height:min(160px,30dvh)}
+  /* Le tiroir ne fait que la hauteur de ce qu'il porte, et la liste déroulée
+     ne compte pas dans cette hauteur : sous le second champ, elle passait sous
+     le bord de l'écran. Le corps se réserve de quoi la loger le temps qu'elle
+     est ouverte — il défile alors, plutôt que de la couper. */
+  .iCorps:has(.iSugg:not([hidden])){padding-bottom:172px}
+  /* Ce que l'option évite tient en trois lignes, lues une fois pour toutes :
+     sur un écran étroit elles valaient un quart du tiroir. Le libellé suffit à
+     décider ; le détail reste dit aux lecteurs d'écran, à qui il ne coûte
+     aucune hauteur. */
+  .iPmr .quoi{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+    overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .iPmr{align-items:center;gap:10px}
+  .iPmr input{margin-top:0}
+  /* « Choisissez un départ et une arrivée » : les deux invites des champs le
+     disent déjà, juste au-dessus, et cette phrase-ci prenait quatre lignes
+     pour l'expliquer une seconde fois. */
+  .iIntro{display:none}
+  /* Le bilan passe en ligne : la distance, la durée à sa suite. Empilés, les
+     deux tenaient la place d'une étape de trajet. */
+  .iBilan{flex-flow:row wrap;align-items:baseline;column-gap:8px;row-gap:1px;
+    padding:9px 11px}
+  .iBilan b{font-size:17px}
 
   /* Les trois panneaux ne sont plus une colonne à droite mais une bande en
      bas : le bord gauche que leur modèle redessine n'a plus de côté où se
@@ -3620,8 +3660,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
           </div>
         </div>
         <label class="iPmr"><input type="checkbox" id="iPmr">
-          <span><b>Itinéraire accessible</b>Évite les escaliers et les escalators,
-          les obstacles signalés, et les passages de moins d'un mètre quarante.</span></label>
+          <span><b>Itinéraire accessible</b><span class="quoi">Évite les escaliers
+          et les escalators, les obstacles signalés, et les passages de moins d'un
+          mètre quarante.</span></span></label>
         <div class="iResultat" id="iResultat"></div>
         <button class="vider iVider" id="videItineraire" type="button">Effacer l'itinéraire</button>
       </div>
@@ -17048,7 +17089,7 @@ function effaceItineraire(){
   ROUTE = TRACE = null;
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
      il appelle la même visée. */
-  visee = ETROIT() ? null : "a";
+  visee = "a";
   bandeauVisee();
   $("iDepart").value = $("iArrivee").value = "";
   fermeSugg();
@@ -17144,7 +17185,9 @@ function montreResultat(etat){
   if (etat === "calcul"){ badge.textContent = "calcul…"; dit("iNote", "Recherche du chemin…"); return; }
   if (!ITI.a || !ITI.b){
     badge.textContent = "à définir";
-    dit("iNote", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+    /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
+       des deux champs disent la même chose (voir « _head.html »). */
+    dit("iNote iIntro", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
                  "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
                  "devant lequel vous êtes.");
     return;
@@ -17260,10 +17303,11 @@ function montreResultat(etat){
  * « ouvreItineraire »), la cible de chaque champ ne servant plus qu'à y
  * revenir après coup.
  *
- * Sur un téléphone le tiroir couvre les deux tiers de l'écran : viser
- * demanderait de choisir un stand qu'on ne voit pas. Il s'efface donc le temps
- * de la visée, et revient dès qu'elle aboutit — le bandeau, lui, reste, sans
- * quoi on ne saurait plus ce qu'on est en train de choisir.
+ * Sur un téléphone le tiroir tient la moitié basse de l'écran : l'autre
+ * moitié se touche, et la visée armée à l'ouverture y suffit le plus souvent.
+ * Reste ce qu'il cache : la cible, elle, efface le tiroir le temps du geste et
+ * le ramène dès qu'il aboutit — le bandeau, lui, demeure, sans quoi on ne
+ * saurait plus ce qu'on est en train de choisir.
  */
 let visee = null;
 
@@ -17282,7 +17326,13 @@ function bandeauVisee(){
 }
 
 function armeVisee(r){
-  visee = visee === r ? null : r;
+  /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
+     est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
+     le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
+     dans le bandeau, qui porte « Annuler ». Au large, la cible reste
+     l'interrupteur qu'elle était. */
+  const efface = ETROIT() && $("itineraire").classList.contains("open");
+  visee = (visee === r && !efface) ? null : r;
   fermeSugg();
   if (visee && ETROIT()) fermeItineraire();
   bandeauVisee();
@@ -17291,10 +17341,13 @@ function armeVisee(r){
 /** Fin de la visée, quelle qu'en soit la raison. */
 function finVisee(){
   if (!visee) return;
-  const rouvre = ETROIT();
+  /* La cible referme le tiroir sur un téléphone : on ne le rouvre que si c'est
+     bien lui qui l'a fermé. Ouvert, le rouvrir réarmait la visée que ces deux
+     lignes viennent d'éteindre — et l'abandon n'aboutissait jamais. */
+  const rouvre = ETROIT() && !$("itineraire").classList.contains("open");
   visee = null;
   bandeauVisee();
-  if (rouvre) ouvreItineraire();
+  if (rouvre) ouvreItineraire(false);
 }
 
 /**
@@ -17334,13 +17387,18 @@ $("viseurStop").onclick = finVisee;
 /* ------------------------------------------------------------
    Ouverture, fermeture, branchements
    ------------------------------------------------------------ */
-function ouvreItineraire(){
+/**
+ * @param arme  Faux pour rouvrir le tiroir sans rien réarmer — c'est le cas
+ *   d'une visée abandonnée : la rouvrir doit rendre la main, non relancer le
+ *   geste qu'on vient d'annuler.
+ */
+function ouvreItineraire(arme = true){
   // fiche, parcours et itinéraire se partagent la même bande
   if ($("detail").classList.contains("open")) ferme();
   fermeParcours();
-  /* Rouvrir le tiroir, c'est renoncer à viser : sur un téléphone il recouvre
-     le plan qu'on visait. On ne passe pas par finVisee(), qui rouvrirait ce
-     tiroir déjà en train de s'ouvrir. */
+  /* Une ouverture repart de zéro : la visée en cours s'éteint ici, et les
+     lignes du bas la réarment sur le premier champ vide. On ne passe pas par
+     finVisee(), qui rouvrirait ce tiroir déjà en train de s'ouvrir. */
   visee = null;
   bandeauVisee();
   /* La journée organisée a pu prendre le trait entre-temps : le tiroir le
@@ -17353,9 +17411,11 @@ function ouvreItineraire(){
   /* Un itinéraire se désigne plus vite qu'il ne se tape : la visée est donc
      armée sur le premier champ vide dès l'ouverture, départ puis arrivée, sans
      passer par la cible. Le clavier reste à portée — cliquer dans un champ y
-     renonce. Sur un téléphone, où le tiroir recouvre le plan qu'on viserait,
-     viser suppose de le refermer : on attend que le visiteur le demande. */
-  if (!ETROIT()){
+     renonce. Le téléphone n'en est plus excepté : le tiroir ne prend que la
+     moitié basse de l'écran, et ce qui reste du plan se touche. Un stand qu'il
+     cache se désigne comme avant, par la cible, qui l'efface le temps du
+     geste. */
+  if (arme){
     visee = !ITI.a ? "a" : !ITI.b ? "b" : null;
     bandeauVisee();
   }
