@@ -83,7 +83,7 @@ consentement. `npm run construire` échoue si une page le fait.
 
 ## La version anglaise
 
-Toute page existe en français et en anglais ; le bouton `FR`/`EN` passe de
+Toute page existe en français et en anglais ; le bouton à drapeau passe de
 l'une à l'autre sans recharger, `?lang=en` l'impose par l'adresse. Le code
 reste écrit en français : `_langue.js`, posé en tête de chaque page, traduit ce
 qu'elle affiche en cherchant chaque phrase dans `outils/anglais/`. Les modules
@@ -145,8 +145,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | ordre des champs de la fiche, groupes sous un même titre | réglage `_admin1.html` `voletOrdre` ; rendu `_js.html` `corpsRange` ; migration `groupes_de_champs` |
 | tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
-| police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, liste par genre `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
-| fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` |
+| police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS` (relue par `npm run polices`) et ses genres `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
+| fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `_js.html` `nomDeLaZone` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
 | verrouiller un calque de dessin | `_dessin.html` § Le verrou d'un calque, cadenas posé par `_pile.html` `boutonVerrou` |

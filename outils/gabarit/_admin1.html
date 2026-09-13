@@ -2692,12 +2692,24 @@ function champZone(hote, titre, dedans, aide){
  * la publierait à moitié faite.
  */
 function champsZone(hote, o){
-  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+  /* Le libellé et la description se saisissent dans les deux langues, et les
+     deux champs paraissent quelle que soit la langue de l'écran : l'exploitant
+     qui travaille en anglais écrit aussi le français, et inversement. */
+  const libelle = champZone(hote, "Libellé en français", document.createElement("input"),
     "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
     "revenir au nom d'origine, s'il y en a un.");
   libelle.type = "text";
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+  libelle.lang = "fr";
+
+  const libelleEn = champZone(hote, "Libellé en anglais", document.createElement("input"),
+    "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le " +
+    "libellé en français qui s'y affiche.");
+  libelleEn.type = "text";
+  libelleEn.value = o.nom_en || "";
+  libelleEn.placeholder = "Agora, Childcare, Pitch Retail…";
+  libelleEn.lang = "en";
 
   /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
      visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
@@ -2730,9 +2742,16 @@ function champsZone(hote, o){
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
-  champZone(hote, "Description", riche.cadre,
+  riche.cadre.lang = "fr";
+  champZone(hote, "Description en français", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
     "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const richeEn = editeurRiche(o.description_en || "");
+  richeEn.cadre.lang = "en";
+  champZone(hote, "Description en anglais", richeEn.cadre,
+    "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche " +
+    "anglaise montre la description en français.");
 
   const lienZ = champZone(hote, "Lien", document.createElement("input"),
     "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
@@ -2741,8 +2760,9 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value,
+  return () => ({ libelle: libelle.value, libelleEn: libelleEn.value,
+                  type: type.value, logo: logo(),
+                  description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
@@ -3145,6 +3165,7 @@ let ficheZoneEnCours = null;
 /* Les salles cochées se comparent telles quelles : ce sont deux listes des
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.libelleEn === b.libelleEn && a.descriptionEn === b.descriptionEn &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
   a.logo === b.logo && a.traversable === b.traversable &&
   String(a.salles) === String(b.salles));
@@ -3212,6 +3233,11 @@ function ficheZone(o){
 async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  /* La version anglaise se range dans la fiche, avec le reste de ce que
+     l'exploitant écrit : elle ne s'applique pas au plan d'origine, elle
+     s'affiche à la place du français pour qui lit l'anglais. */
+  const nomEn = String(v.libelleEn || "").trim();
+  const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
   const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
@@ -3259,6 +3285,8 @@ async function enregistreZone(o, v, depart){
         if (genre) fiche.type = genre;
         if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
+        if (nomEn) fiche.nom_en = nomEn;
+        if (descriptionEn) fiche.description_en = descriptionEn;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
@@ -3290,11 +3318,14 @@ async function enregistreZone(o, v, depart){
     o.nom = nom || o.origine || null;
   }
   o.description = description;
+  o.nom_en = nomEn || undefined;
+  o.description_en = descriptionEn || undefined;
+  nomsAnglaisDesZones();
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
-  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
-  o.rech = String(o.nom || "").toLowerCase();
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
+  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();
