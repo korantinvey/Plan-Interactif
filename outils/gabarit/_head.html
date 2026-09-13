@@ -121,9 +121,6 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
-/* Deux lettres plutôt qu'un pictogramme : un drapeau dit un pays, pas une
-   langue, et le globe ne dit pas laquelle on obtiendra. */
-.iconbtn.langue{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.04em}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et
@@ -3423,8 +3420,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
-      <!-- La langue. Le bouton s'écrit tout seul (`_langue.js`) : il porte la
-           langue vers laquelle il mène, dans cette langue-là — c'est ce que
+      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
+           le drapeau de la langue vers laquelle il mène — c'est ce que
            cherche des yeux quelqu'un qui ne lit pas la page. Il reste en
            administration, où le thème part dans le menu du compte : la langue
            n'y a pas de doublon. -->

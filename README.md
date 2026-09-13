@@ -1545,15 +1545,18 @@ thermique est la même de jour comme de nuit.
 Un salon parisien reçoit des visiteurs qui ne lisent pas le français, et des
 exposants aussi. Toutes les pages — le plan public, son administration, la
 console, le rapport, la page de mot de passe, la page hors ligne — existent
-donc en anglais, et un bouton `EN` en haut de chacune passe de l'une à l'autre
-sans recharger. Il porte toujours la langue vers laquelle il mène, écrite dans
-cette langue : c'est celle que cherche quelqu'un qui ne lit pas la page.
+donc en anglais, et un drapeau en haut de chacune passe de l'une à l'autre
+sans recharger. Il montre toujours la langue vers laquelle il mène — le
+drapeau britannique sur une page en français, le français sur une page en
+anglais : c'est ce que cherche des yeux quelqu'un qui ne lit pas la page.
+Deux lettres, « EN », ne se comprenaient pas d'un coup d'œil. Le drapeau est
+dessiné et non tiré des emojis, que Windows n'affiche pas.
 
 **Quelle langue à l'ouverture.** L'adresse d'abord : `?lang=en` est ce qu'on
 imprime sur une affiche ou ce qu'on envoie à un exposant étranger, et vaut sur
 n'importe quel appareil — la racine le transmet au plan vers lequel elle
 redirige. Puis le choix déjà fait sur l'appareil, retenu dès qu'on a cliqué le
-bouton. À la première visite enfin, la langue du navigateur : le français pour
+drapeau. À la première visite enfin, la langue du navigateur : le français pour
 qui le lit, l'anglais pour les autres, car un visiteur allemand ou japonais lit
 plus souvent l'anglais que le français.
 
@@ -1617,7 +1620,10 @@ du navigateur rend les textes restés en français, du plus fréquent au plus ra
 données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les
 titres et descriptions des conférences d'Eventmaker, les libellés que
 l'exploitant a saisis. Ils arrivent en français de leur source, et s'affichent
-tels quels. Le manifeste de l'application installée, unique pour le domaine,
+tels quels. Les noms d'exposants sont de plus protégés : `_js.html` les confie
+au moteur (`LANGUE.protege`), qui n'y touche jamais — ni seuls, ni cités dans
+une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
+calendrier. Le manifeste de l'application installée, unique pour le domaine,
 reste lui aussi en français.
 
 ## Comptes et profils

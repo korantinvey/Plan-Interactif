@@ -99,6 +99,18 @@ function indexe(d){
                 " " + texteCriteres(s)).toLowerCase();
     });
   });
+  /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
+     phrase : une enseigne « Mars » ou « Accueil » deviendrait sinon « March »
+     ou « Reception » dans la version anglaise. */
+  const noms = [];
+  DATA.plans.forEach(p => {
+    p.stands.forEach(s => {
+      noms.push(s.nom, s.plan);
+      (s.coex || []).forEach(c => noms.push(c.nom, c.plan));
+    });
+    p.conferences.forEach(c => (c.exposants || []).forEach(e => e && noms.push(e.nom)));
+  });
+  LANGUE.protege(noms);
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
