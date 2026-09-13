@@ -849,9 +849,26 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    Tant que tout tient, le cartouche reste centré par ses marges automatiques —
    sa largeur épouse son contenu — et rien ne change à l'œil. */
 @media (max-width:760px){
+  /* Le glissement est horizontal, et rien d'autre. « overflow-x:auto » fait
+     passer « overflow-y » de « visible » à « auto » — la règle est dans la
+     spécification, les deux axes ne peuvent pas être de natures différentes —
+     et le cartouche devenait une zone de défilement dans les deux sens. Le
+     plan, lui, refuse les gestes du navigateur (« touch-action:none ») : sur
+     un téléphone, le cartouche était donc le seul endroit du bas de l'écran
+     où un doigt qui monte escamotait la barre du navigateur, et tout ce qui
+     s'ancre au bas de la page — le cartouche le premier — montait avec elle.
+     On tient l'axe vertical des deux côtés : plus rien à défiler, et plus de
+     geste à donner au navigateur. « pinch-zoom » reste permis, c'est le seul
+     agrandissement dont dispose qui lit mal.
+
+     « overscroll-behavior-x » retient le bout de course : arrivé à la dernière
+     pastille, l'élan continuait sur la page et faisait revenir la barre par
+     l'autre chemin. */
   .poi{max-width:calc(100% - 24px);bottom:12px;
     flex-wrap:nowrap;justify-content:flex-start;
-    overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+    overflow-x:auto;overflow-y:hidden;
+    touch-action:pan-x pinch-zoom;overscroll-behavior-x:contain;
+    scrollbar-width:none;-ms-overflow-style:none;
     gap:5px;padding:6px 8px}
   .poi::-webkit-scrollbar{display:none}
   /* Sans cela les pastilles se compriment au lieu de déborder : le libellé s'y
