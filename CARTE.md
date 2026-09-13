@@ -266,7 +266,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2921 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2938 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -294,9 +294,9 @@ Fonctions :
 `cadreItineraire` 2415 · `champIti` 2439 · `ecritDistance` 2443 · `ecritDuree` 2451
 `fermeSugg` 2456 · `montreSugg` 2463 · `choisitPoint` 2495 · `valideSaisie` 2504
 `effaceItineraire` 2514 · `relance` 2536 · `phraseLiaison` 2587 · `montreResultat` 2601
-`bandeauVisee` 2740 · `armeVisee` 2754 · `finVisee` 2762 · `viseItineraire` 2774
-`visePoi` 2780 · `visePoint` 2786 · `ouvreItineraire` 2807 · `fermeItineraire` 2833
-`versItineraire` 2843 · `versItineraireDe` 2846
+`bandeauVisee` 2741 · `armeVisee` 2755 · `finVisee` 2769 · `viseItineraire` 2784
+`visePoi` 2790 · `visePoint` 2796 · `ouvreItineraire` 2822 · `fermeItineraire` 2850
+`versItineraire` 2860 · `versItineraireDe` 2863
 
 ### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
 
