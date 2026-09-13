@@ -2594,12 +2594,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
    dernière pastille ouvre le nuancier du système pour ceux qui ont un
-   hexadécimal à respecter. */
-.reglage-coul{margin:2px 0 18px}
-.reglage-coul .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
-.reglage-coul .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
-.reglage-coul .raz{margin-left:auto;font-size:12px;color:var(--ink-3);text-decoration:underline}
-.reglage-coul .raz:hover{color:var(--ink)}
+   hexadécimal à respecter.
+   La police des noms, qui le suit, en reprend la tête : ce qui est en place,
+   et de quoi revenir à ce que prévoit le modèle. */
+.reglage-coul,.reglage-police{margin:2px 0 18px}
+.reglage-coul .tete,.reglage-police .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val,.reglage-police .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3)}
+.reglage-coul .raz,.reglage-police .raz{margin-left:auto;font-size:12px;color:var(--ink-3);
+  text-decoration:underline}
+.reglage-coul .raz:hover,.reglage-police .raz:hover{color:var(--ink)}
 .nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
 .nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
   padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
@@ -2621,6 +2625,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
+   ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
+   sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
+   même rang s'alignent sur la plus haute, la grille s'en charge. */
+.polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
+.pol{display:flex;flex-direction:column;justify-content:space-between;gap:3px;min-width:0;
+  padding:8px 10px 7px;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px}
+.pol:hover{border-color:var(--line-strong)}
+.pol[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.pol .t{font-size:16px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.pol .g{font-size:11px;line-height:1.3;color:var(--ink-3)}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -7727,8 +7743,138 @@ const POLICES_LIBELLE = {
   nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
 };
 
+/* Les polices qu'on peut préférer à celle du modèle, pour les noms du plan.
+
+   Le modèle décide d'abord, et en choisir un repose la sienne. Mais un salon
+   a souvent sa propre police — celle de sa charte, de ses kakémonos, de la
+   signalétique qu'on croise dans les allées — et un plan qui écrit les
+   enseignes dans une autre se lit comme une pièce rapportée. Le choix ne vaut
+   que pour les noms, des stands comme des zones : le numéro garde la chasse du
+   modèle, où les chiffres s'alignent d'un stand à l'autre.
+
+   Une liste plutôt qu'un nom saisi : Google répond en erreur à une famille
+   qu'il ne sert pas sous la graisse demandée — Lato n'a pas de 600 —, et le
+   plan garderait sans rien dire la police du modèle. Chaque ligne porte donc
+   une graisse qu'on sait servie, retenue pour se lire petit sur une cloison.
+
+   Les cinq polices des modèles sont déjà appelées par l'en-tête de la page, et
+   se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
+   par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
+   chargent qu'une fois choisies : chez le visiteur, la seule de son salon. */
+const REPLIS_POLICE = { "serif": "Georgia, serif", "chasse fixe": "monospace" };
+const POLICES_NOMS = [
+  ["Instrument Sans", "600", "sans serif", P_SANS],
+  ["Archivo", "600", "sans serif", P_GROTESQUE],
+  ["Inter", "600", "sans serif"],
+  ["Roboto", "600", "sans serif"],
+  ["Open Sans", "600", "sans serif"],
+  ["Lato", "700", "sans serif"],
+  ["Montserrat", "600", "sans serif"],
+  ["Poppins", "600", "sans serif"],
+  ["Raleway", "600", "sans serif"],
+  ["Nunito", "700", "arrondie"],
+  ["Atkinson Hyperlegible Next", "600", "haute lisibilité"],
+  ["Oswald", "500", "étroite"],
+  ["Roboto Condensed", "600", "étroite"],
+  ["Barlow Condensed", "600", "étroite"],
+  ["Fraunces", "600", "serif", P_SERIF],
+  ["Merriweather", "700", "serif"],
+  ["Playfair Display", "600", "serif"],
+  ["Roboto Slab", "600", "serif"],
+  ["IBM Plex Mono", "500", "chasse fixe", P_CHASSE],
+  ["Courier Prime", "700", "chasse fixe", P_MACHINE],
+].map(([nom, graisse, genre, pile]) => ({
+  nom, graisse, genre,
+  // sans pile écrite, la police vient de Google et ne se demande qu'au besoin
+  distante: !pile,
+  pile: pile || '"' + nom + '", ' + (REPLIS_POLICE[genre] || "sans-serif"),
+}));
+
+/** La police que l'exploitant a préférée pour les noms, s'il en a retenu une. */
+const policeChoisie = () => {
+  const n = (CONF["_fiche"] || {}).police;
+  return POLICES_NOMS.find(p => p.nom === n) || null;
+};
+/** La police qu'un modèle pose sur les noms, telle que la liste la connaît. */
+const policeDuModele = (cle) => {
+  const pile = (POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre).nom[1];
+  return POLICES_NOMS.find(p => p.pile === pile) || null;
+};
+
+/* Une police distante n'est demandée qu'une fois par visite : l'onglet qui les
+   montre se rouvre, et l'exploitant qui hésite revient trois fois sur la même.
+   La promesse dit si la feuille est arrivée, sans jamais échouer : une police
+   qui ne vient pas laisse celle du modèle, ce qui n'a rien d'une erreur. */
+const FEUILLES_POLICE = new Map(), FEUILLES_ARRIVEES = new Set();
+function feuillePolice(p){
+  if (!p.distante) return Promise.resolve(true);
+  if (!FEUILLES_POLICE.has(p.nom)) FEUILLES_POLICE.set(p.nom, new Promise(ok => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = "https://fonts.googleapis.com/css2?family=" + p.nom.replace(/ /g, "+") +
+      ":wght@" + p.graisse + "&display=swap";
+    l.onload = () => { FEUILLES_ARRIVEES.add(p.nom); ok(true); };
+    l.onerror = () => ok(false);
+    document.head.appendChild(l);
+  }));
+  return FEUILLES_POLICE.get(p.nom);
+}
+
+/* La feuille ne suffit pas : elle déclare la police, le fichier ne part qu'au
+   premier texte qui s'en sert. Le plan, lui, mesure avant d'écrire — dans une
+   police absente, le canevas prend celle de repli, et les noms se tailleraient
+   pour une autre que celle où ils s'affichent. On attend donc le fichier, et
+   les polices prêtes se retiennent pour que la question ne se repose plus. */
+const POLICES_PRETES = new Set(), CHARGEMENTS_POLICE = new Map();
+function chargePolice(p){
+  if (!CHARGEMENTS_POLICE.has(p.nom)) CHARGEMENTS_POLICE.set(p.nom, feuillePolice(p)
+    .then(arrivee => !arrivee ? false : !document.fonts ? true :
+      document.fonts.load(p.graisse + " 16px " + p.pile).then(f => f.length > 0))
+    .catch(() => false)
+    .then(prete => { if (prete) POLICES_PRETES.add(p.nom); return prete; }));
+  return CHARGEMENTS_POLICE.get(p.nom);
+}
+
 /**
- * Pose la police du modèle sur les libellés du plan.
+ * La police est-elle déjà là ? Souvent oui, sans rien avoir attendu : la
+ * vignette de l'onglet l'a fait venir en s'affichant. Le demander tout de suite
+ * épargne au plan, au clic, un aller-retour par la police du modèle le temps
+ * d'une promesse — un saut visible, et un tracé de trop.
+ *
+ * `check` ne se consulte qu'une fois la famille déclarée : pour une famille
+ * inconnue du document, Chrome répond qu'elle est prête, puisqu'il n'a rien à
+ * charger. D'où la feuille arrivée exigée d'une police distante — celles des
+ * modèles sont déclarées par l'en-tête.
+ */
+function policePrete(p){
+  if (POLICES_PRETES.has(p.nom)) return true;
+  if (p.distante && !FEUILLES_ARRIVEES.has(p.nom)) return false;
+  let prete = !document.fonts;
+  try { prete = prete || document.fonts.check(p.graisse + " 16px " + p.pile); } catch (e) {}
+  if (prete) POLICES_PRETES.add(p.nom);
+  return prete;
+}
+
+/**
+ * La police des noms : celle que l'exploitant a préférée dès qu'elle est prête,
+ * celle du modèle d'ici là — et pour de bon si elle ne vient jamais.
+ *
+ * Tant qu'elle manque, les noms restent dans la police du modèle, que la page
+ * a déjà. Poser l'autre sans l'avoir aurait écrit le plan dans la police de
+ * repli, puis l'aurait réécrit à l'arrivée du fichier : deux sauts au lieu
+ * d'un, dont le premier vers une police que personne n'a choisie.
+ */
+function policeDesNoms(duModele){
+  const p = policeChoisie();
+  if (!p || p.pile === duModele[1]) return duModele;
+  if (policePrete(p)) return [p.graisse, p.pile];
+  chargePolice(p).then(prete => { if (prete) posePoliceLibelles(modeleRetenu()); });
+  return duModele;
+}
+
+/**
+ * Pose la police du modèle sur les libellés du plan, et sur les noms celle que
+ * l'exploitant lui a préférée.
  *
  * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
  * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
@@ -7738,20 +7884,30 @@ const POLICES_LIBELLE = {
  *
  * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
  * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
- * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
- * que la case du numéro se taille elle aussi sur P_CODE.
+ * premier dessin plutôt que d'avoir à le reprendre. Une police préférée qui
+ * n'est pas encore là fait exception : elle rappelle la fonction à son arrivée,
+ * et le plan se retrace alors une fois. La liste n'est reprise que pour le
+ * numéro, parce que sa case se taille sur P_CODE et jamais sur le nom.
+ *
+ * Les polices se comparent par leur contenu : celle qu'on a préférée est une
+ * paire refaite à chaque appel, et comparée par identité elle aurait retracé
+ * le plan à chaque changement de pavillon.
  */
 function posePoliceLibelles(cle){
   const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
-  const change = P_NOM !== p.nom || P_CODE !== p.code;
-  P_NOM = p.nom; P_CODE = p.code;
-  racine.style.setProperty("--police-lab-nom", p.nom[1]);
-  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  const nom = policeDesNoms(p.nom);
+  const autre = (a, b) => a[0] !== b[0] || a[1] !== b[1];
+  const changeNom = autre(P_NOM, nom), changeCode = autre(P_CODE, p.code);
+  P_NOM = nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", nom[0]);
   racine.style.setProperty("--police-lab-code", p.code[1]);
   racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  if (!MONTE || !(changeNom || changeCode)) return;
   // les repères et les stands tracés à la main portent leur libellé dans leur
   // propre forme : ils se retracent, ils ne se restylent pas
-  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+  dessineDessins(); libelles();
+  if (changeCode) liste();
 }
 
 /**
@@ -8783,16 +8939,18 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
- *  visite et l'itinéraire. */
+/** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
+ *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
+ *  détail, le parcours de visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
     "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
     "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
-    "l'itinéraire.";
+    "l'itinéraire. Il pose aussi sa police sur les noms des stands et des " +
+    "zones : une autre peut lui être préférée, jusqu'au prochain changement " +
+    "de modèle. Les numéros de stand gardent la sienne.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -8844,6 +9002,61 @@ function voletApparence(hote){
   hote.appendChild(coul);
   majPastilles();
 
+  /* La police des noms, avant les modèles et non après : leur planche est
+     longue, et un réglage rangé dessous ne se trouvait qu'en la faisant
+     défiler en entier. L'ordre des gestes n'en change pas — le modèle choisi
+     repose sa police, et la tête de ce bloc dit laquelle est en place. */
+  const blocPolice = document.createElement("div");
+  blocPolice.className = "reglage-police";
+  blocPolice.innerHTML = '<div class="tete"><span class="eyebrow">Police des noms</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Police du modèle</button></div>' +
+    '<div class="polices"></div>';
+  const valPolice = blocPolice.querySelector(".val");
+  const polices = blocPolice.querySelector(".polices");
+  const majPolices = () => {
+    const modele = policeDuModele(modeleRetenu());
+    const choisie = policeChoisie();
+    const courante = choisie && choisie !== modele ? choisie : modele;
+    polices.querySelectorAll(".pol").forEach(b => {
+      const q = POLICES_NOMS.find(x => x.nom === b.dataset.police);
+      b.setAttribute("aria-pressed", String(q === courante));
+      b.querySelector(".g").textContent = q === modele ? q.genre + " · du modèle" : q.genre;
+    });
+    valPolice.textContent = !courante ? "" :
+      courante === modele ? courante.nom + " · modèle " +
+        (MODELES.find(m => m.cle === modeleRetenu()) || {}).nom : courante.nom;
+  };
+  const posePolice = (q) => {
+    const f = conf("_fiche");
+    // retenir celle du modèle, c'est revenir au modèle : le suivant reposera la sienne
+    if (!q || q === policeDuModele(modeleRetenu())) delete f.police;
+    else f.police = q.nom;
+    enregistreConf(); posePoliceLibelles(modeleRetenu()); majPolices();
+  };
+  POLICES_NOMS.forEach(q => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pol";
+    b.dataset.police = q.nom;
+    b.innerHTML = '<span class="t"></span><span class="g"></span>';
+    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
+       c'est une enseigne qu'on choisit, et un intitulé dans la police de
+       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
+       d'un serif. D'où la feuille demandée pour toutes, dès l'onglet bâti —
+       le navigateur ne télécharge que ce qu'il affiche. */
+    const t = b.querySelector(".t");
+    t.textContent = q.nom;
+    t.style.fontFamily = q.pile;
+    t.style.fontWeight = q.graisse;
+    feuillePolice(q);
+    b.onclick = () => posePolice(q);
+    polices.appendChild(b);
+  });
+  blocPolice.querySelector(".raz").onclick = () => posePolice(null);
+  hote.appendChild(blocPolice);
+  majPolices();
+
   const titre = document.createElement("span");
   titre.className = "eyebrow";
   titre.textContent = "Modèle d'habillage";
@@ -8870,9 +9083,13 @@ function voletApparence(hote){
     b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
+      /* Choisir un modèle, c'est choisir sa police : celle qu'on avait
+         préférée à la précédente ne s'accordait qu'à elle. */
+      delete conf("_fiche").police;
       enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
+      majPolices();
     };
     grille.appendChild(b);
   });
