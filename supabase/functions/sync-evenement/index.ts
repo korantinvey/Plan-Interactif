@@ -253,7 +253,7 @@ function range(liste: Record<string, unknown>[], ordre: string[]) {
  * « x_Catalogue_RaisonSociale » et « x_Catalogue_Enseigne » ne se distinguent
  * que par ce qu'elles contiennent.
  */
-async function champsKlipso(g: Gaia) {
+async function champsKlipso(g: Gaia, retenus: Set<string>) {
   const groupes: [string, string][] = [
     // l'entité du dossier ne porte pas le même nom d'une instance à l'autre :
     // on demande les deux et on garde ce qui répond
@@ -292,8 +292,60 @@ async function champsKlipso(g: Gaia) {
     }
   }
 
-  /* Ce que les fiches portent vraiment. L'échec n'est pas bloquant : sans
-     exemples la liste reste utilisable, seulement moins parlante. */
+  /* Ce qu'une fiche porte, champ par champ. L'emplacement d'un côté, le
+     dossier exposant de l'autre : c'est l'entité voisine, et ses champs
+     reviennent sous elle. */
+  const note = (brut: Record<string, any>) => {
+    const paires: [string, unknown][] = [
+      ...Object.entries(brut.RefDossierExpAff ?? {}),
+      ...Object.entries(brut).map(([k, v]) => ["stand:" + k, v] as [string, unknown]),
+    ];
+    for (const [cle, v] of paires) {
+      const ex = exemple(v);
+      if (!ex) continue;
+      const e = vus.get(cle) ?? {
+        cle,
+        libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
+        groupe: groupeKlipso(cle),
+        exemple: null as string | null,
+        valeurs: [] as string[],
+      };
+      if (!e.exemple) e.exemple = ex;
+      /* Les valeurs distinctes disent si le champ est une liste de choix.
+         C'est parmi elles que l'exploitant désignera celles qui déclenchent
+         « Nouvel exposant » ou « Exclu de la liste ». Elles se relèvent sur
+         la valeur brute, et non sur l'exemple : celui-ci est tronqué, et un
+         champ à choix multiple y perdrait ses dernières valeurs. */
+      const compte = comptes.get(cle) ?? new Map<string, number>();
+      noteValeurs(compte, v);
+      comptes.set(cle, compte);
+      vus.set(cle, e);
+    }
+  };
+
+  /* Un échantillon de fiches, sur les champs nommés. La demande doit nommer au
+     moins un champ de chaque côté : `Id` tient la place quand on ne veut que
+     l'autre. */
+  const echantillon = async (dossier: string[], stand: string[]) => {
+    const { data } = await g.entite({
+      Stand: {
+        // sans doublon : le schéma déclare `Id` comme les autres, et un champ
+        // répété ferait refuser la demande entière
+        fields: [...new Set(["Id", ...stand])],
+        ...(dossier.length
+          ? { entities: { RefDossierExpAff: { fields: [...new Set(["Id", ...dossier])] } } }
+          : {}),
+        start: 1,
+        take: ECHANTILLON,
+        order: [{ fieldPath: "Id", direction: "asc" }],
+      },
+    });
+    for (const brut of data as Record<string, any>[]) note(brut);
+  };
+
+  /* Le joker d'abord : il rend d'un coup tout ce que porte l'emplacement, y
+     compris les champs que le schéma ne déclare pas. L'échec n'est pas
+     bloquant — ce qui manque se redemande juste après. */
   try {
     const { data } = await g.entite({
       Stand: {
@@ -304,34 +356,57 @@ async function champsKlipso(g: Gaia) {
         order: [{ fieldPath: "Id", direction: "asc" }],
       },
     });
-    for (const brut of data as Record<string, any>[]) {
-      const paires: [string, unknown][] = [
-        ...Object.entries(brut.RefDossierExpAff ?? {}),
-        ...Object.entries(brut).map(([k, v]) => ["stand:" + k, v] as [string, unknown]),
-      ];
-      for (const [cle, v] of paires) {
-        const ex = exemple(v);
-        if (!ex) continue;
-        const e = vus.get(cle) ?? {
-          cle,
-          libelle: cle.startsWith("stand:") ? cle.slice(6) : cle,
-          groupe: groupeKlipso(cle),
-          exemple: null as string | null,
-          valeurs: [] as string[],
-        };
-        if (!e.exemple) e.exemple = ex;
-        /* Les valeurs distinctes disent si le champ est une liste de choix.
-           C'est parmi elles que l'exploitant désignera celles qui déclenchent
-           « Nouvel exposant » ou « Exclu de la liste ». Elles se relèvent sur
-           la valeur brute, et non sur l'exemple : celui-ci est tronqué, et un
-           champ à choix multiple y perdrait ses dernières valeurs. */
-        const compte = comptes.get(cle) ?? new Map<string, number>();
-        noteValeurs(compte, v);
-        comptes.set(cle, compte);
-        vus.set(cle, e);
-      }
+    for (const brut of data as Record<string, any>[]) note(brut);
+  } catch (_) { /* le joker n'a rien rendu, la relecture nommée suffit */ }
+
+  /* Puis ce que le joker n'a pas rempli, redemandé nommément.
+
+     Car il ne remplit pas tout : le dossier exposant, demandé sous l'entité
+     voisine, revenait sans ses champs — tout le catalogue, nomenclature en
+     tête, s'annonçait « vide sur les fiches lues » dans une console qui les
+     lisait pourtant sur le salon. Un champ nommé, lui, revient : c'est ainsi
+     que la synchronisation lit les stands, et elle en tire bien la
+     nomenclature qui manquait ici.
+
+     Reste qu'un champ vide sur les vingt-cinq fiches lues le restera : on
+     redemande donc à chaque fois quelques champs pour rien, et c'est le prix
+     à payer pour ne pas deviner lesquels. */
+  const LOT = 40;
+  /* Une borne au nombre d'appels : une demande refusée se recoupe en deux, et
+     un schéma qui déclare beaucoup de propriétés introuvables ferait sinon
+     durer le relevé plus que la synchronisation elle-même. */
+  const APPELS_MAX = 16;
+  let appels = 0;
+  const relis = async (noms: string[], stand: boolean): Promise<void> => {
+    if (!noms.length || appels >= APPELS_MAX) return;
+    if (noms.length > LOT) {
+      await relis(noms.slice(0, LOT), stand);
+      await relis(noms.slice(LOT), stand);
+      return;
     }
-  } catch (_) { /* l'échantillon manque, le schéma suffit */ }
+    appels++;
+    try {
+      await echantillon(stand ? [] : noms, stand ? noms : []);
+    } catch (_) {
+      /* Un seul champ refusé fait échouer la demande entière : le schéma du
+         dossier n'est pas toujours celui de l'entité voisine, et une propriété
+         qu'elle ne porte pas emporterait le lot avec elle. On coupe en deux
+         plutôt que d'abandonner — le champ fautif finit seul, et les autres
+         sont lus. */
+      if (noms.length === 1) return;
+      const m = noms.length >> 1;
+      await relis(noms.slice(0, m), stand);
+      await relis(noms.slice(m), stand);
+    }
+  };
+
+  /* Les champs que l'exploitant a désignés passent devant : si la borne
+     d'appels tombe, ce sont eux qui auront leur exemple — ce sont ceux qu'il
+     relit dans la fenêtre. */
+  const aRelire = [...vus.values()].filter((d) => !d.exemple).map((d) => String(d.cle))
+    .sort((a, b) => Number(retenus.has(b)) - Number(retenus.has(a)));
+  await relis(aRelire.filter((c) => !c.startsWith("stand:")), false);
+  await relis(aRelire.filter((c) => c.startsWith("stand:")).map((c) => c.slice(6)), true);
 
   /* Le verdict, champ par champ : sa liste de valeurs, ou le fait qu'il est du
      texte libre — ce que la console dit autrement qu'un relevé resté muet. */
@@ -721,13 +796,14 @@ Deno.serve(async (req) => {
 
       /* Klipso ne relève rien en lisant les stands : on ne lui demande que les
          champs de la correspondance, pas les autres. Le schéma et un
-         échantillon de fiches disent ce qu'il y a d'autre — deux appels, à
-         côté des dizaines que coûte un pavillon. L'échec n'est pas bloquant :
-         la correspondance en place continue de fonctionner, seule la liste
-         proposée à l'exploitant manquera. */
+         échantillon de fiches disent ce qu'il y a d'autre — une poignée
+         d'appels, à côté des dizaines que coûte un pavillon. L'échec n'est pas
+         bloquant : la correspondance en place continue de fonctionner, seule
+         la liste proposée à l'exploitant manquera. */
       if (srcStands === "klipso") {
         try {
-          detectes = await champsKlipso(g);
+          detectes = await champsKlipso(
+            g, new Set(ciblesK.flatMap((c) => cibleK(c.cle))));
         } catch (e) {
           console.error("relevé des champs d'exposant :", e);
         }
@@ -1243,9 +1319,18 @@ Deno.serve(async (req) => {
       pese("plan",
         resume.reduce((a, p) => a + Number(p.stands ?? 0), 0) || 1);
       etape("plan", "fait", plans.length + (plans.length > 1 ? " pavillons" : " pavillon"));
+      /* Combien de champs portent un exemple, et pas seulement combien le
+         schéma en déclare : c'est la seule façon de voir depuis la console
+         qu'un échantillon est revenu muet — une liste où tout s'annonce « vide
+         sur les fiches lues » se lit sinon comme un salon qui ne remplit
+         rien. */
+      const renseignes = detectes.filter((d) => d.exemple).length;
       etape("exposants", "fait",
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
-        (detectes.length ? ", " + detectes.length + " champs relevés" : ""));
+        (detectes.length
+          ? ", " + detectes.length + " champs relevés, " +
+            (renseignes ? renseignes + " renseignés" : "aucun renseigné")
+          : ""));
       if (confEm) {
         await db.from("evenement")
           .update({ salles: sallesConf, fuseau }).eq("id", evt.id);
