@@ -13303,24 +13303,30 @@ function deplaceCouche(k, dir){
 }
 
 /* ============================================================
-   Panneau : une seule liste, tous types confondus
+   Panneau : deux sections, chacune rangée par nom
 
-   Deux natures s'y mêlent pourtant, et rien ne les distinguait : ce que le
-   salon fournit — habillage Klipso, zones, stands, textes — et ce que
-   l'exploitant a dessiné lui-même. Les premières se refont à chaque
-   synchronisation, les secondes sont son travail : on ne les supprime pas du
-   même cœur léger. Un intertitre ouvre donc chaque suite d'une même nature.
-   Il suit l'ordre plutôt qu'il ne l'impose — un calque de dessin glissé sous
-   les stands reste où on l'a mis, et gagne son propre intertitre là.
+   Deux natures s'y côtoient, et rien ne les distinguait : ce que le salon
+   fournit — habillage Klipso, zones, stands, textes — et ce que l'exploitant
+   a dessiné lui-même. Les premières se refont à chaque synchronisation, les
+   secondes sont son travail : on ne les supprime pas du même cœur léger.
+   Chacune a donc sa section, sous son intertitre.
+
+   Le panneau suivait l'ordre de tracé, et ouvrait un intertitre à chaque
+   changement de nature : un calque de dessin glissé sous les stands faisait
+   naître une seconde section « Ajoutés à la main » plus bas, et l'on ne
+   savait plus où chercher. On vient ici montrer, masquer ou recolorer un
+   calque qu'on connaît par son nom, pas lire ce qui passe devant quoi — le
+   rang se règle et se lit dans la fenêtre de réorganisation. Le panneau range
+   donc par nom, et l'ordre de tracé n'y change plus rien.
    ============================================================ */
 const NATURES = { salon: "Issus du salon", dessin: "Ajoutés à la main" };
 const nature = x => x.t === "dessin" ? "dessin" : "salon";
 
-/* Le bouton d'ajout ferme la suite des calques dessinés plutôt que le panneau :
-   c'est un de ces calques-là qu'il crée, et au bas de la pile il paraissait
-   valoir pour tout ce qui le précédait, couches du salon comprises. Restent les
-   plans sans aucun dessin : là il n'a pas de suite à fermer, et revient en fin
-   de liste — la seule place qui reste. */
+/* Le bouton d'ajout ferme la section des calques dessinés plutôt que le
+   panneau : c'est un de ces calques-là qu'il crée, et au bas de la liste il
+   paraissait valoir pour tout ce qui le précédait, couches du salon comprises.
+   Restent les plans sans aucun dessin : là il n'a pas de section à fermer, et
+   revient en fin de liste. */
 function boutonAjout(hote){
   const plus = document.createElement("button");
   plus.className = "ajout";
@@ -13355,10 +13361,17 @@ function construitPanneau(){
   reorg.textContent = "⇅ Réorganiser les calques";
   reorg.onclick = ouvreOrdre;
   hote.appendChild(reorg);
-  const liste = pile().slice().reverse();   // premier plan en tête
+  /* Les calques dessinés en tête : ce sont eux qu'on retouche, et le bouton
+     d'ajout qui ferme leur section reste ainsi à portée, au lieu de glisser
+     sous la légende des secteurs, longue de vingt lignes sur certains salons.
+     Un nom partagé par deux calques garde l'ordre de création — le tri est
+     stable. */
+  const rangNature = x => nature(x) === "dessin" ? 0 : 1;
+  const liste = entrees().sort((a, b) => rangNature(a) - rangNature(b) ||
+    COLLATION.compare(String(a.nom || ""), String(b.nom || "")));
 
   /* Un intertitre ne vaut que s'il sépare : tant que le salon n'a pas de
-     calque dessiné, la pile est d'une seule nature et se passe de titre. */
+     calque dessiné, la liste est d'une seule nature et se passe de titre. */
   const melange = liste.some(x => nature(x) === "dessin") &&
                   liste.some(x => nature(x) === "salon");
   const dernierDessin = liste.reduce((r, x, i) => nature(x) === "dessin" ? i : r, -1);
@@ -13486,9 +13499,12 @@ function construitPanneau(){
 
     hote.appendChild(d);
 
-    /* sous-calques de l'habillage : couleur et visibilité, pas d'ordre */
+    /* sous-calques de l'habillage : couleur et visibilité, pas d'ordre. Rangés
+       par nom eux aussi, comme les secteurs : l'ordre de Klipso reparaissait
+       sinon au milieu d'une liste alphabétique. */
     if (x.t === "fond"){
-      const sous = sousCalques(x.k.slice(5));
+      const sous = sousCalques(x.k.slice(5))
+        .sort((a, b) => COLLATION.compare(joli(a.id), joli(b.id)));
       if (sous.length > 1) sous.forEach(sc =>
         rangSous(hote, sousCle(x.k.slice(5), sc.id), joli(sc.id),
                  () => rgbHex(sc.src) || jeton("--plan-line"), () => styleFond(x.k.slice(5))));
