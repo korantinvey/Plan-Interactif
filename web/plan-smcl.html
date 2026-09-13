@@ -15944,10 +15944,22 @@ function nettoie(pts){
     const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1];
     const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy);
     if (!lu || !lv) continue;
-    /* Franchement rebroussé, et pas seulement pointu : un demi-tour d'allée à
+    // pointu ne suffit pas : un carrefour se prend à angle droit
+    if ((ux * vx + uy * vy) / (lu * lv) > -.5) continue;
+    /* Ce qui distingue l'aller-retour du demi-tour, c'est l'écart entre les
+       deux branches, et non l'angle qu'elles font : un demi-tour d'allée à
        allée garde toujours la largeur de l'allée entre l'aller et le retour,
-       et ce n'est pas de lui qu'on parle. */
-    if ((ux * vx + uy * vy) / (lu * lv) > -.999) continue;
+       là où l'aller-retour se replie sur lui-même. On ne regardait ce repli
+       qu'exactement plat, à un millième près ; le trait n'y tombe presque
+       jamais — le recentrage et le redressement le penchent toujours un peu —
+       et il restait donc des crochets de quinze degrés d'écart. On mesure
+       maintenant de combien la branche courte s'écarte de la longue : en deçà
+       de ce que le dégagement laisse à un passage, les deux branches ne sont
+       pas deux façons de se croiser, c'est une seule ligne dessinée deux fois. */
+    const loin = lu <= lv ? a : c;
+    const dx = lu <= lv ? vx : ux, dy = lu <= lv ? vy : uy;
+    const ecart = Math.abs((loin[0] - b[0]) * dy - (loin[1] - b[1]) * dx) / Math.max(lu, lv);
+    if (ecart > 2 * DEGAGEMENT) continue;
     out.splice(i, 1);
     i = Math.max(0, i - 2);
   }
