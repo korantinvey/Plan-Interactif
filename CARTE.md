@@ -499,11 +499,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1373 l.
+### `supabase/functions/sync-evenement/index.ts` — 1422 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
-`fournisseur` 164 · `range` 200 · `champsKlipso` 221 · `hebergee` 1330 · `nettoieUrl` 1349
-`groupeTextes` 1359
+`fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
+`hebergee` 1379 · `nettoieUrl` 1398 · `groupeTextes` 1408
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
