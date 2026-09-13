@@ -225,7 +225,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3687 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3697 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -249,11 +249,11 @@ Fonctions :
 `#mFermer` · `#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#dMarque`
 `#closeDetail` · `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode`
 `#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody`
-`#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pCorps`
-`#jCorps` · `#pPied` · `#btnJournee` · `#btnPartage` · `#videParcours` · `#jPied`
-`#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart`
-`#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
-`#videItineraire`
+`#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs`
+`#btnJournee` · `#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours`
+`#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume`
+`#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr`
+`#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 40 l. → hors-ligne.html
 
@@ -299,7 +299,7 @@ Fonctions :
 `visePoi` 2847 · `visePoint` 2853 · `ouvreItineraire` 2879 · `fermeItineraire` 2907
 `versItineraire` 2917 · `versItineraireDe` 2920
 
-### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 916 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa journée
 
@@ -308,8 +308,8 @@ Fonctions :
 `minutesDe` 51 · `finInstant` 52 · `ecritHeure` 54 · `ecritMinutes` 59 · `joursSalon` 67
 `jourPropose` 78 · `pointConf` 93 · `departsProposes` 112 · `matriceJournee` 136
 `rangeJournee` 238 · `calculeJournee` 334 · `rangJournee` 522 · `lienJournee` 534
-`arretJournee` 541 · `remplitJournee` 566 · `appliqueVueParcours` 704 · `traceJournee` 730
-`montreJournee` 738 · `perimeJournee` 751 · `ouvreOrganisation` 760 · `lanceJournee` 877
+`arretJournee` 541 · `remplitJournee` 566 · `appliqueVueParcours` 704 · `traceJournee` 734
+`montreJournee` 742 · `perimeJournee` 755 · `ouvreOrganisation` 764 · `lanceJournee` 881
 
 ### `_js.html` — 3454 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -405,16 +405,17 @@ Fonctions :
 `jourCourt` 241 · `nomDeStand` 248 · `rangParcours` 250 · `groupeParcours` 266
 `remplitParcours` 275 · `ouvreParcours` 347 · `fermeParcours` 359
 
-### `_partage.html` — 614 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 650 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
 Fonctions :
 
-`codeIdParcours` 54 · `codeParcours` 59 · `litCodeParcours` 65 · `lienParcours` 83
-`qrMotsBruts` 123 · `qrMotsUtiles` 132 · `qrMul` 143 · `qrGenerateur` 146 · `qrReste` 157
-`qrAlignements` 168 · `qrTrame` 184 · `qrSvg` 368 · `ouvrePartageParcours` 394
-`boutonsPartage` 443 · `accueilleParcoursPartage` 513 · `adoptePartage` 597
+`codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
+`lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
+`qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrSvg` 402
+`ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 547
+`adoptePartage` 633
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
