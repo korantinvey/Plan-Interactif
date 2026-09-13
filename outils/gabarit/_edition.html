@@ -108,14 +108,16 @@ function majElement(){
   }
 
   /* Une ligne posée se relit : un trait fin fait une limite, un trait épais
-     fait un mur, et le pointillé un passage qui n'en est pas tout à fait un.
-     Cela se juge sur le plan, une fois le tracé en place. */
+     fait un mur, le pointillé un passage qui n'en est pas tout à fait un, et
+     la flèche le sens dans lequel on le prend. Cela se juge sur le plan, une
+     fois le tracé en place. */
   const bt = $("elemTraitReg");
   if (bt){
     bt.hidden = f.t !== "ligne";
     if (f.t === "ligne"){
       $("elemEpaisseur").value = String(f.ep > 0 ? f.ep : EPAISSEUR_TRAIT);
       $("elemStyle").value = f.pointille ? "pointille" : "plein";
+      if ($("elemFleche")) $("elemFleche").value = f.fleche || "";
     }
   }
 
@@ -367,8 +369,10 @@ function appliqueRayon(){
   enregistreDessins(); dessineDessins();
 }
 
-/** L'épaisseur et le style du trait de la ligne choisie. Le trait ordinaire ne
- *  s'écrit pas : la forme revient alors à l'allure de son calque. */
+/** L'épaisseur, le style et la pointe du trait de la ligne choisie. Le trait
+ *  ordinaire ne s'écrit pas : la forme revient alors à l'allure de son calque.
+ *  Une flèche se pose et se retire après coup — on s'aperçoit qu'une allée est
+ *  à sens unique en regardant le plan, rarement en la traçant. */
 function appliqueTrait(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "ligne") return;
@@ -378,6 +382,9 @@ function appliqueTrait(){
   else delete cible.f.ep;
   if ($("elemStyle").value === "pointille") cible.f.pointille = true;
   else delete cible.f.pointille;
+  const fl = $("elemFleche");
+  if (fl && fl.value) cible.f.fleche = fl.value;
+  else delete cible.f.fleche;
   enregistreDessins(); dessineDessins();
 }
 

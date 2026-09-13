@@ -579,9 +579,9 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .outils.mode-texte #texteADessiner{display:block}
 #contourReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-contour #contourReg{display:flex}
-/* L'épaisseur et le pointillé se règlent avant de tracer, comme l'arrondi du
-   contour : une allée provisoire et un mur ne se dessinent pas du même trait,
-   et on le sait avant de poser le premier point. */
+/* L'épaisseur, le pointillé et la flèche se règlent avant de tracer, comme
+   l'arrondi du contour : une allée provisoire et un mur ne se dessinent pas du
+   même trait, et on le sait avant de poser le premier point. */
 #traitReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-ligne #traitReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
@@ -3444,6 +3444,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             <option value="plein">Continu</option>
             <option value="pointille">Pointillé</option>
           </select></label>
+        <label class="elemChamp"><span>Flèche</span>
+          <select id="traitFleche">
+            <option value="">Aucune</option>
+            <option value="fin">Au bout</option>
+            <option value="debut">Au départ</option>
+            <option value="deux">Aux deux bouts</option>
+          </select></label>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
@@ -3487,6 +3494,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             <select id="elemStyle">
               <option value="plein">Continu</option>
               <option value="pointille">Pointillé</option>
+            </select></label>
+          <label class="elemChamp"><span>Flèche</span>
+            <select id="elemFleche">
+              <option value="">Aucune</option>
+              <option value="fin">Au bout</option>
+              <option value="debut">Au départ</option>
+              <option value="deux">Aux deux bouts</option>
             </select></label>
         </div>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
