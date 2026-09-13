@@ -138,35 +138,35 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2747 l. → admin-plans.html
+### `_console-js.html` — 2844 l. → admin-plans.html
 
-- l.834 · Provenance des données
-- l.961 · Contenu de la fiche détail
+- l.929 · Provenance des données
+- l.1056 · Contenu de la fiche détail
 
 Fonctions :
 
 `refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 394 · `slugifie` 408
 `courant` 412 · `charge` 414 · `chargePlans` 429 · `majEvenement` 434 · `selonAdresse` 454
 `majAdresse` 462 · `majBarre` 477 · `dessineChoix` 519 · `champ` 539 · `reduitIcone` 593
-`champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 896 · `source` 900
-`champCle` 905 · `ligneSource` 940 · `paraitSurFiche` 1070 · `origineConferences` 1076
-`resumeProvenance` 1141 · `resumeFiche` 1158 · `caseFiche` 1203 · `champsPersos` 1245
-`criteres` 1251 · `ecritFiche` 1254 · `caseCritere` 1269 · `clePerso` 1288
-`ajouteChampPerso` 1296 · `renommeChampPerso` 1307 · `retireChampPerso` 1325
-`lignesPerso` 1373 · `ligneOutil` 1393 · `ligneReglage` 1409 · `ouvreProvenance` 1421
-`ouvreSources` 1444 · `cadreFiche` 1496 · `ouvreFiche` 1526 · `sousTitre` 1636
-`tableauChamps` 1651 · `encode` 1794 · `decode` 1796 · `correspondance` 1801
-`sansPrefixe` 1804 · `courte` 1805 · `intitule` 1820 · `intituleSuite` 1832
-`separeValeurs` 1846 · `aplani` 1867 · `memeStyle` 1877 · `autreFace` 1895
-`champOrigine` 1911 · `majLiens` 2178 · `majIntegration` 2205 · `majMsgSync` 2212
-`etapesPressenties` 2242 · `synchronise` 2256 · `dupliquer` 2307 · `litMonProfil` 2405
-`RETOUR_MDP` 2416 · `litComptes` 2418 · `ligneMessage` 2427 · `casesSalons` 2437
-`ouvreComptes` 2467 · `ouvreFicheCompte` 2559 · `videEcran` 2718 · `dessine` 2723
-`demarre` 2735
+`champFavicon` 634 · `fuseauConnu` 730 · `champFuseau` 742 · `dessineFiche` 805
+`fournisseurUtilise` 991 · `source` 995 · `champCle` 1000 · `ligneSource` 1035
+`paraitSurFiche` 1165 · `origineConferences` 1171 · `resumeProvenance` 1236
+`resumeFiche` 1253 · `caseFiche` 1298 · `champsPersos` 1340 · `criteres` 1346
+`ecritFiche` 1349 · `caseCritere` 1364 · `clePerso` 1383 · `ajouteChampPerso` 1391
+`renommeChampPerso` 1402 · `retireChampPerso` 1420 · `lignesPerso` 1468 · `ligneOutil` 1488
+`ligneReglage` 1504 · `ouvreProvenance` 1516 · `ouvreSources` 1539 · `cadreFiche` 1591
+`ouvreFiche` 1621 · `sousTitre` 1731 · `tableauChamps` 1746 · `encode` 1889 · `decode` 1891
+`correspondance` 1896 · `sansPrefixe` 1899 · `courte` 1900 · `intitule` 1915
+`intituleSuite` 1927 · `separeValeurs` 1941 · `aplani` 1962 · `memeStyle` 1972
+`autreFace` 1990 · `champOrigine` 2006 · `majLiens` 2273 · `majIntegration` 2300
+`majMsgSync` 2307 · `etapesPressenties` 2337 · `synchronise` 2351 · `dupliquer` 2402
+`litMonProfil` 2502 · `RETOUR_MDP` 2513 · `litComptes` 2515 · `ligneMessage` 2524
+`casesSalons` 2534 · `ouvreComptes` 2564 · `ouvreFicheCompte` 2656 · `videEcran` 2815
+`dessine` 2820 · `demarre` 2832
 
 Éléments :
 
-`#msgSync` · `#fragment` · `#btnCopier`
+`#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
 ### `_console.css` — 625 l. → console.css
 
@@ -530,11 +530,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1446 l.
+### `supabase/functions/sync-evenement/index.ts` — 1463 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
-`hebergee` 1403 · `nettoieUrl` 1422 · `groupeTextes` 1432
+`hebergee` 1420 · `nettoieUrl` 1439 · `groupeTextes` 1449
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -574,6 +574,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913170035_les_visiteurs_uniques_par_stand.sql` — visiteur_cible, fn enregistre_mesures, fn purge_presences, fn reinitialise_compteurs, fn audience_cibles
 - `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 - `20260913200617_le_fuseau_d_un_salon_au_format_iana.sql` — fn fuseau_iana, fn evenement_fuseau_iana, fn periode_salon, fn enregistre_mesures
+- `20260913205218_le_fuseau_d_un_salon_choisi_sinon_eventmaker_sinon_paris.sql` — evenement, fn evenement_fuseau_iana
 
 ## Le reste
 

@@ -677,11 +677,32 @@ Deno.serve(async (req) => {
         }
       }
 
+      /* Le fuseau du salon, dès qu'Eventmaker connaît l'événement.
+         Il n'était lu qu'avec les conférences, et seulement quand elles
+         venaient de lui : un salon au programme tenu ailleurs, ou sans
+         programme, n'en avait aucun. Le demander coûte un appel, et vaut quel
+         que soit ce qu'on prend chez Eventmaker. La base traduit ce qu'il
+         rend — « Paris » et non « Europe/Paris » — et un fuseau choisi dans
+         la console l'emporte : on écrit la source, jamais le résultat. Un
+         appel qui échoue n'efface rien, le fuseau est un confort et non une
+         condition. */
+      const idEvtEm = String((evt.cles ?? {}).eventmaker ?? "");
+      if (idEvtEm && Deno.env.get("EVENTMAKER_TOKEN")) {
+        try {
+          const detail = await new Eventmaker({
+            jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+            champs: champsEm, valeurs: valeursEm, perso: persos,
+          }).evenement(idEvtEm);
+          await db.from("evenement")
+            .update({ fuseau_source: detail?.timezone ? String(detail.timezone) : null })
+            .eq("id", evt.id);
+        } catch (_) { /* l'ancien fuseau reste */ }
+      }
+
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
          une fois, on les rattachera pavillon par pavillon. */
       let confEm: ConferenceEm[] | null = null;
       let exposantsConf = new Map<string, ExposantConfEm[]>();
-      let fuseau: string | null = null;
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
@@ -698,10 +719,6 @@ Deno.serve(async (req) => {
            tant qu'elle ne l'est pas. */
         avance("conferences", confEm.length, null,
           "Rattachement des exposants", "conférences");
-        try {
-          const detail = await em.evenement(idEm);
-          if (detail?.timezone) fuseau = String(detail.timezone);
-        } catch (_) { /* le fuseau est un confort, pas une condition */ }
         /* Quels exposants tiennent quelle conférence : le graphe le dit, REST
            non. Un salon sur deux laisse le rôle vide — l'absence de
            rattachement n'est donc pas une anomalie, et ne doit pas faire
@@ -1248,7 +1265,7 @@ Deno.serve(async (req) => {
         (detectes.length ? ", " + detectes.length + " champs relevés" : ""));
       if (confEm) {
         await db.from("evenement")
-          .update({ salles: sallesConf, fuseau }).eq("id", evt.id);
+          .update({ salles: sallesConf }).eq("id", evt.id);
         const rattachees = Object.values(sallesConf).filter((s: any) => s.zone).length;
         etape("conferences", "fait",
           rattachees + " / " + Object.keys(sallesConf).length + " salles situées");
