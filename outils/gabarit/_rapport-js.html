@@ -265,6 +265,14 @@ function dessineRapport() {
   chiffre(g1, r.parcours, "Programmes de visite",
     nb(r.parcours_gestes) + " ajout" + (r.parcours_gestes > 1 ? "s" : "") +
     " ou retrait" + (r.parcours_gestes > 1 ? "s" : "") + " au total.");
+  /* Le partage se lit en deux temps, et le second est le seul qui tranche : un
+     parcours envoyé que personne n'ouvre n'a rien changé au salon. D'où le
+     nombre d'étapes reprises en sous-titre, plutôt qu'un envoi seul. */
+  chiffre(g1, r.partages, "Parcours partagés",
+    r.partages_repris
+      ? nb(r.partages_repris) + " étape" + (r.partages_repris > 1 ? "s" : "") +
+        " reprise" + (r.partages_repris > 1 ? "s" : "") + " par ceux qui les ont reçus."
+      : "Aucune étape reprise pour l'instant.");
   b1.appendChild(g1);
   f.appendChild(b1);
 

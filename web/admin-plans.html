@@ -858,6 +858,10 @@ const COL_PIED = [
      fait partie. */
   { titre: "Ajouts depuis une suggestion", largeur: 27,
     lit: (r) => Number(r.suggestions) || 0 },
+  /* Et ceux repris du parcours de quelqu'un d'autre, pour la même raison :
+     c'est un exposant qu'on s'est transmis, pas un exposant qu'on a trouvé. */
+  { titre: "Ajouts depuis un parcours reçu", largeur: 29,
+    lit: (r) => Number(r.partages) || 0 },
   { titre: "Total interactions", largeur: 18,
     lit: (r) => (Number(r.n) || 0) + (Number(r.itineraires) || 0) + (Number(r.parcours) || 0) },
 ];
@@ -875,6 +879,9 @@ const COL_PIED_V = {
   "Ajouts depuis une suggestion":
     { titre: "Visiteurs venus d'une suggestion", largeur: 31,
       lit: (r) => Number(r.v_suggestions) || 0 },
+  "Ajouts depuis un parcours reçu":
+    { titre: "Visiteurs venus d'un parcours reçu", largeur: 33,
+      lit: (r) => Number(r.v_partages) || 0 },
 };
 
 /**

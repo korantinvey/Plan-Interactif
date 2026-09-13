@@ -2007,6 +2007,14 @@ button.expo:hover{background:var(--line)}
 .pPied .jOrg:hover{border-color:var(--accent)}
 .pPied .jOrg[disabled]{opacity:.45;background:var(--surface-2);border-color:var(--line);
   color:var(--ink-3);cursor:default}
+/* Les deux commandes du parcours sur une seule rangée : organiser sa journée,
+   et la passer à quelqu'un. Empilées, elles poussaient « Vider le parcours »
+   hors du tiroir sur un téléphone. « Organiser » prend la place qui reste —
+   c'est la commande longue, et celle pour laquelle la liste a été faite. */
+.pActs{display:flex;align-items:stretch;gap:8px;width:100%}
+.pActs .btn{width:auto}
+.pActs .jOrg{flex:1;min-width:0}
+.pActs .jPart{flex:none}
 .pPied .vider{font-size:12px;color:var(--ink-3);text-decoration:underline}
 .pPied .vider:hover{color:var(--rouge)}
 /* Revenir en arrière n'efface rien : le rouge du survol s'y lirait comme une
@@ -2928,6 +2936,32 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    parmi les commandes ordinaires. */
 .mfen footer .btn[disabled]{opacity:.4;cursor:default;filter:none}
 
+/* La fenêtre de partage du parcours.
+
+   Le code se photographie : il reste noir sur blanc quel que soit le thème de
+   la page, et garde sa plaque blanche jusque dans le thème sombre. Un code
+   inversé se lit encore sur un bon appareil, mal sur les autres, et rien
+   n'obligeait à courir ce risque pour une image de dix secondes. */
+.qrPlaque{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;
+  background:#fff;display:grid;place-items:center}
+.qrPlaque svg{display:block;width:min(240px,58vw);height:auto}
+/* Le lien en clair : sélectionnable à la souris, et replié plutôt que de faire
+   déborder la fenêtre. La hauteur vaut exactement trois interlignes — une
+   quatrième ligne coupée en deux se lit comme un défaut d'affichage, alors
+   qu'elle ne dit que « faites défiler ». */
+.mcorps textarea.qrLien{width:100%;resize:none;padding:8px 10px;font-size:12px;
+  font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* Ce qu'un parcours reçu apporte, avant de l'accepter. */
+.mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.mcorps ul.partListe li{padding-left:13px;position:relative}
+.mcorps ul.partListe li::before{content:"";position:absolute;left:0;top:8px;
+  width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.mcorps ul.partListe li.reste{color:var(--ink-3);font-style:italic}
+.mcorps ul.partListe li.reste::before{background:var(--line-strong)}
+
 /* La remise à zéro des compteurs.
    La phrase qui dit « sans retour » ne peut pas se lire comme les autres :
    c'est la seule que l'on regrette de ne pas avoir lue. */
@@ -3589,9 +3623,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <div class="pCorps" id="pCorps"></div>
       <div class="pCorps" id="jCorps" hidden></div>
       <div class="pPied" id="pPied">
-        <button class="btn jOrg" id="btnJournee" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
-          Organiser ma journée</button>
+        <div class="pActs">
+          <button class="btn jOrg" id="btnJournee" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>
+            Organiser ma journée</button>
+          <button class="btn jPart" id="btnPartage" type="button" title="Partager mon parcours" aria-label="Partager mon parcours">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
+            Partager</button>
+        </div>
         <button class="vider" id="videParcours">Vider le parcours</button>
       </div>
       <div class="pPied" id="jPied" hidden>
