@@ -1754,7 +1754,12 @@ function dessineFiche() {
   const b4 = bloc("Intégration");
   const astuce = document.createElement("p");
   astuce.className = "astuce";
-  astuce.textContent = "Collez ce fragment dans la page du salon.";
+  /* Le rapport sépare les portes d'accès : le dire ici, où l'on décide de
+     poser le cadre, évite de chercher plus tard pourquoi les visites du site
+     n'apparaissent pas dans le même chiffre que celles du plan. */
+  astuce.textContent = "Collez ce fragment dans la page du salon. Les visites " +
+    "qui en viennent se comptent à part, sous « Cadre sur un site », dans le " +
+    "rapport d'utilisation.";
   b4.appendChild(astuce);
   const zone = document.createElement("div");
   zone.className = "integration";

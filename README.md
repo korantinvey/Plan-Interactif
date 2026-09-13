@@ -1057,10 +1057,82 @@ jours, ou depuis le début :
 - **Fiches conférences ouvertes**, de même : depuis le programme d'une salle,
   depuis la fiche de l'exposant qui la tient, ou depuis le programme de visite.
 - Les **visites jour par jour**, dans le fuseau du salon.
+- Le détail **par moyen d'accès** : une carte par porte — navigateur, cadre posé
+  sur un site, écran d'accueil, application — avec ses visites, ses visiteurs et
+  ses fiches ouvertes.
 
 Le détail par canal est ce qui se lit le plus vite : aucun clic sur un logo dit
 qu'aucun logo n'a été posé ; une recherche qui domine dit que le plan sert de
 répertoire plus que de plan.
+
+### Par quelle porte on arrive
+
+Le même plan se rejoint par quatre portes, et chaque paquet de mesures dit
+laquelle. Sans cela les quatre se confondaient dans un chiffre unique, et ce
+chiffre ne voulait rien dire : « mille deux cents visites » ne répond pas à la
+question que pose un organisateur qui vient de payer une application ou de coller
+un cadre sur son site — est-ce que **cette** porte sert ?
+
+| porte | ce que c'est | comment elle se reconnaît |
+|---|---|---|
+| `web` | le plan ouvert dans un onglet | ce qui reste quand aucune autre ne répond |
+| `integre` | encadré dans la page d'un site ou d'une application tierce | le document n'est pas au sommet de sa fenêtre |
+| `pwa` | installé sur l'appareil, lancé hors du navigateur | `display-mode: standalone`, ou `navigator.standalone`, la forme d'iOS |
+| `appli` | servi par une coque déposée sur une boutique | la coque le déclare |
+
+Une coque d'application ne se **voit** pas : une vue web plein écran qui charge
+la page hébergée est en tout point un navigateur. C'est donc à l'hôte de
+l'annoncer, en ajoutant `support=appli` à l'adresse qu'il ouvre :
+
+```
+https://…/plan?plan=smcl-2026&support=appli
+```
+
+C'est une déclaration, pas une preuve ; le vocabulaire clos borne ce qu'elle peut
+raconter — une valeur inventée compte sous « non précisé » plutôt que d'ouvrir
+une colonne au premier venu. Les coques qui embarquent la page au lieu de charger
+l'adresse hébergée se reconnaissent en plus à leur protocole (`capacitor://`,
+`ionic://`, `tauri://`).
+
+Deux mises en garde, que le rapport affiche sous les cartes parce qu'elles sont
+des propriétés du comptage et non des approximations :
+
+- **Les visites ne se comparent pas d'une porte à l'autre.** Une visite est une
+  session d'onglet, et ce qu'une session d'onglet dure ne dépend pas de nous :
+  rouvrir une application en ouvre une neuve à chaque fois, un cadre en ouvre une
+  par page du site qui le porte, un onglet laissé deux heures n'en ouvre qu'une.
+  Chaque porte se lit dans son ordre de grandeur, jamais contre les autres.
+- **La somme des visiteurs dépasse le total, et c'est juste.** Un navigateur, une
+  application et un cadre posé sur un site tiers ne partagent aucun jeton — le
+  stockage d'un cadre tiers est cloisonné par le navigateur. Le même visiteur
+  compte une fois par porte, et une seule au total, qui se compte en jetons
+  distincts et non en lignes.
+
+Une troisième tient au stockage. Un cadre posé sur un site tiers se voit souvent
+**refuser** le stockage, quand il n'est pas seulement cloisonné : le jeton ne se
+retient plus, et chaque ouverture ajoutait un « visiteur unique » sans que rien
+ne le signale. La page dit désormais si son jeton a pu être retenu,
+`visiteur_jour` le garde, et le rapport affiche « dont N au stockage refusé,
+recomptés à chaque ouverture ». Le chiffre vient à côté du total, jamais en
+déduction : ces visiteurs ont bien ouvert le plan, on sait seulement qu'ils y
+sont peut-être comptés plusieurs fois. Le rapport signale ce qu'il ne peut pas
+corriger — le corriger demanderait de reconnaître un visiteur sans son
+consentement, ce que ce système ne fait pas.
+
+Ce qui **n'apprend pas** la porte, et c'est délibéré : `compteur_cible`, donc la
+carte de chaleur et le classeur des exposants. L'audience d'un stand est son
+audience, quelle que soit la porte prise pour l'atteindre ; y ajouter une
+quatrième dimension multiplierait par quatre la seule table dont le volume ait
+jamais inquiété, pour répondre à une question que personne ne pose.
+
+Enfin, la fonction `mesure` accepte, elle seule, les origines des coques : `null`
+d'un cadre en bac à sable, `capacitor://localhost`, `ionic://localhost`,
+`http://localhost`. Une coque qui embarque la page postait depuis une origine
+refusée, la réponse ne portait pas son origine, le navigateur coupait et la
+mesure se taisait : la porte dont on voulait mesurer l'usage était la seule à ne
+rien compter. Une coque imprévue s'ajoute à `ORIGINES_AUTORISEES` ; le plus
+simple reste qu'elle charge la page hébergée, qui poste alors depuis notre
+domaine — et c'est de toute façon nécessaire pour que l'API du plan lui réponde.
 
 ### Des compteurs, et non un journal
 
@@ -1079,9 +1151,9 @@ Trois tables, parce que les trois questions n'ont pas la même forme.
 
 | | |
 |---|---|
-| `compteur` | la fréquentation, à l'heure, sans objet |
+| `compteur` | la fréquentation, à l'heure, par porte, sans objet |
 | `compteur_cible` | l'audience d'un stand ou d'une conférence, au jour |
-| `visiteur_jour` | un jeton vu tel jour — le seul décompte qui ne soit pas une somme |
+| `visiteur_jour` | un jeton vu tel jour, par porte — le seul décompte qui ne soit pas une somme |
 
 Croiser l'objet et l'heure reconstruirait le problème qu'on fuit : 931 stands ×
 9 canaux × 48 heures font quatre cent mille lignes possibles. D'où deux
@@ -1099,9 +1171,12 @@ le journal ne disait pas — il ne retenait que le genre du geste, jamais son ob
 
 ### Ce qui est enregistré, et ce qui ne l'est pas
 
-Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure.
-`visiteur_jour` porte un jeton et une date. **Rien d'autre** — ni adresse IP, ni
-agent utilisateur, ni identité, ni cookie. Le jeton de visiteur est tiré au
+Un compteur porte l'événement, le geste, le canal, l'objet désigné, une heure et
+la porte par laquelle le plan a été atteint. `visiteur_jour` porte un jeton, une
+date, la même porte, et si le stockage a accepté de retenir ce jeton. **Rien
+d'autre** — ni adresse IP, ni agent utilisateur, ni identité, ni cookie. La porte
+n'y change rien : c'est la façon dont la page est affichée, pas une propriété de
+qui la regarde, et elle ne prend que quatre valeurs. Le jeton de visiteur est tiré au
 hasard par le navigateur et rangé chez lui sous une clé propre à l'événement
 (`plan-visiteur:<slug>`) : il ne suit personne d'un salon à l'autre, encore moins
 d'un site à l'autre. Les chiffres par stand sont des agrégats où aucun jeton ne
@@ -1546,6 +1621,7 @@ Cloudflare sert les pages sans l'extension `.html`.
 | adresse | rôle | accès |
 |---|---|---|
 | `/plan?plan=<slug>` | le plan des visiteurs | libre |
+| `/plan?plan=<slug>&support=appli` | le même, ouvert par une coque d'application qui se déclare | libre |
 | `/plan-admin?plan=<slug>` | le même, avec calques et dessins | authentifié |
 | `/admin-plans` | la console des événements | authentifié |
 | `/rapport?plan=<slug>` | le rapport d'utilisation | authentifié |

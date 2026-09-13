@@ -125,6 +125,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
+| porte d'accès au plan — navigateur, cadre, écran d'accueil, application | `_mesure.html` `supportMesure` ; rendu `_rapport-js.html` `portes` ; migration `support_d_acces_au_plan` |
 | carte de chaleur du plan | `_chaleur.html`, migration `audience` |
 | remise à zéro des compteurs | `_chaleur.html` § Remise à zéro, `_admin1.html` `ouvreReglages`, migration `remise_a_zero` |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |

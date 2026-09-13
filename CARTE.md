@@ -136,37 +136,37 @@ Fonctions :
 `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnCompte`
 `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2742 l. → admin-plans.html
+### `_console-js.html` — 2747 l. → admin-plans.html
 
-- l.829 · Provenance des données
-- l.956 · Contenu de la fiche détail
+- l.834 · Provenance des données
+- l.961 · Contenu de la fiche détail
 
 Fonctions :
 
 `refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 119 · `fonction` 394 · `slugifie` 408
 `courant` 412 · `charge` 414 · `chargePlans` 429 · `majEvenement` 434 · `selonAdresse` 454
 `majAdresse` 462 · `majBarre` 477 · `dessineChoix` 519 · `champ` 539 · `reduitIcone` 593
-`champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 891 · `source` 895
-`champCle` 900 · `ligneSource` 935 · `paraitSurFiche` 1065 · `origineConferences` 1071
-`resumeProvenance` 1136 · `resumeFiche` 1153 · `caseFiche` 1198 · `champsPersos` 1240
-`criteres` 1246 · `ecritFiche` 1249 · `caseCritere` 1264 · `clePerso` 1283
-`ajouteChampPerso` 1291 · `renommeChampPerso` 1302 · `retireChampPerso` 1320
-`lignesPerso` 1368 · `ligneOutil` 1388 · `ligneReglage` 1404 · `ouvreProvenance` 1416
-`ouvreSources` 1439 · `cadreFiche` 1491 · `ouvreFiche` 1521 · `sousTitre` 1631
-`tableauChamps` 1646 · `encode` 1789 · `decode` 1791 · `correspondance` 1796
-`sansPrefixe` 1799 · `courte` 1800 · `intitule` 1815 · `intituleSuite` 1827
-`separeValeurs` 1841 · `aplani` 1862 · `memeStyle` 1872 · `autreFace` 1890
-`champOrigine` 1906 · `majLiens` 2173 · `majIntegration` 2200 · `majMsgSync` 2207
-`etapesPressenties` 2237 · `synchronise` 2251 · `dupliquer` 2302 · `litMonProfil` 2400
-`RETOUR_MDP` 2411 · `litComptes` 2413 · `ligneMessage` 2422 · `casesSalons` 2432
-`ouvreComptes` 2462 · `ouvreFicheCompte` 2554 · `videEcran` 2713 · `dessine` 2718
-`demarre` 2730
+`champFavicon` 634 · `dessineFiche` 711 · `fournisseurUtilise` 896 · `source` 900
+`champCle` 905 · `ligneSource` 940 · `paraitSurFiche` 1070 · `origineConferences` 1076
+`resumeProvenance` 1141 · `resumeFiche` 1158 · `caseFiche` 1203 · `champsPersos` 1245
+`criteres` 1251 · `ecritFiche` 1254 · `caseCritere` 1269 · `clePerso` 1288
+`ajouteChampPerso` 1296 · `renommeChampPerso` 1307 · `retireChampPerso` 1325
+`lignesPerso` 1373 · `ligneOutil` 1393 · `ligneReglage` 1409 · `ouvreProvenance` 1421
+`ouvreSources` 1444 · `cadreFiche` 1496 · `ouvreFiche` 1526 · `sousTitre` 1636
+`tableauChamps` 1651 · `encode` 1794 · `decode` 1796 · `correspondance` 1801
+`sansPrefixe` 1804 · `courte` 1805 · `intitule` 1820 · `intituleSuite` 1832
+`separeValeurs` 1846 · `aplani` 1867 · `memeStyle` 1877 · `autreFace` 1895
+`champOrigine` 1911 · `majLiens` 2178 · `majIntegration` 2205 · `majMsgSync` 2212
+`etapesPressenties` 2242 · `synchronise` 2256 · `dupliquer` 2307 · `litMonProfil` 2405
+`RETOUR_MDP` 2416 · `litComptes` 2418 · `ligneMessage` 2427 · `casesSalons` 2437
+`ouvreComptes` 2467 · `ouvreFicheCompte` 2559 · `videEcran` 2718 · `dessine` 2723
+`demarre` 2735
 
 Éléments :
 
 `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 620 l. → console.css
+### `_console.css` — 625 l. → console.css
 
 - l.566 · Page de rapport
 
@@ -352,13 +352,14 @@ Fonctions :
 
 `#data` · `#dGo` · `#dItin`
 
-### `_mesure.html` — 147 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 223 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.2 · 13. Mesure d'utilisation
+- l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`jetonMesure` 25 · `jetonRetenu` 46 · `envoieMesures` 79 · `mesure` 117
+`jetonMesure` 35 · `jetonRetenu` 63 · `supportMesure` 104 · `envoieMesures` 145
+`mesure` 187
 
 ### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -432,15 +433,15 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 308 l. → rapport.html
+### `_rapport-js.html` — 419 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 35 · `chargeEvenements` 40 · `joursPeriode` 58 · `chargeRapport` 60 · `chiffre` 71
-`barres` 90 · `jours` 117 · `dessineRapport` 138 · `dessineBarre` 236 · `rafraichit` 259
-`videEcran` 278 · `demarre` 294
+`courant` 47 · `chargeEvenements` 52 · `joursPeriode` 70 · `chargeRapport` 72 · `chiffre` 83
+`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 347
+`rafraichit` 370 · `videEcran` 389 · `demarre` 405
 
 Éléments :
 
@@ -490,9 +491,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/mesure/index.ts` — 125 l.
+### `supabase/functions/mesure/index.ts` — 161 l.
 
-`cors` 38 · `jeton` 52 · `client` 55
+`cors` 65 · `jeton` 79 · `client` 82
 
 ### `supabase/functions/plan-public/index.ts` — 581 l.
 
@@ -539,6 +540,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260912053447_groupes_de_champs_de_la_fiche.sql` — —
 - `20260912055309_suggestion_un_canal_de_mesure_a_elle.sql` — fn enregistre_mesures, fn audience_cibles
 - `20260912140943_zones_traversables.sql` — evenement
+- `20260913122346_le_support_d_acces_au_plan.sql` — compteur, visiteur_jour, fn enregistre_mesures, fn rapport_utilisation
 
 ## Le reste
 
