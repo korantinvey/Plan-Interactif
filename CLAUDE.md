@@ -77,7 +77,7 @@ versionner n'expose rien de plus.
 
 ## La version anglaise
 
-Toute page existe en français et en anglais ; le bouton `FR`/`EN` passe de
+Toute page existe en français et en anglais ; le bouton à drapeau passe de
 l'une à l'autre sans recharger, `?lang=en` l'impose par l'adresse. Le code
 reste écrit en français : `_langue.js`, posé en tête de chaque page, traduit ce
 qu'elle affiche en cherchant chaque phrase dans `outils/anglais/`. Les modules

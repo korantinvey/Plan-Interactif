@@ -111,9 +111,6 @@ a.btn.inactif{opacity:.45;pointer-events:none}
 @keyframes tourne{to{transform:rotate(360deg)}}
 .icone.occupe svg{animation:tourne .9s linear infinite}
 @media (prefers-reduced-motion:reduce){.icone.occupe svg{animation:none}}
-/* La langue : deux lettres plutôt qu'un pictogramme — un drapeau dit un pays,
-   et le globe ne dit pas quelle langue on obtiendra. */
-.icone.langue{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.04em}
 
 .vide{padding:56px 20px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.6}
 

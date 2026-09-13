@@ -38,7 +38,7 @@
    à tomber, la page resterait en français plutôt que de tomber avec lui. */
 window.traduit = String;
 window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
-  bascule() {}, ajoute() {}, manques: () => null };
+  bascule() {}, ajoute() {}, protege() {}, manques: () => null };
 
 (function () {
   "use strict";
@@ -100,6 +100,11 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   let MODELES = null;     // modèles rangés par leurs deux premiers et derniers signes
   let PLURIELS = null;    // Map : modèle dépouillé de ses pluriels → sa forme au pluriel
   const MEMO = new Map();
+  /* Les noms que rien ne traduit, en minuscules : ceux des exposants. Une
+     enseigne est un nom propre, et elle tombe parfois sur un mot du
+     dictionnaire ou du calendrier — « Mars », « Accueil », « Café ». Elle doit
+     rester telle que l'exposant l'a écrite, seule ou citée dans une phrase. */
+  const PROTEGES = new Set();
 
   function prepare() {
     if (EXACT) return;
@@ -230,6 +235,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
    *   "entiere"   la chaîne d'un seul tenant — une clé, un modèle, une date.
    */
   function cherche(t, profondeur, mode) {
+    if (PROTEGES.size && PROTEGES.has(t.toLowerCase())) return null;
     const deja = EXACT.get(t);
     if (deja !== undefined) return deja;
     // « aucune valeur relevée » vient souvent en minuscule d'une phrase qui la précède
@@ -608,16 +614,36 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     applique(l, false);
   }
 
-  /* Le bouton de bascule est le même partout : il porte la langue vers
-     laquelle il mène, écrite dans cette langue-là — c'est celle que cherche
-     quelqu'un qui ne lit pas la page. Un élément `data-langue` suffit, où
-     qu'il soit ; il est tenu hors traduction, puisqu'il parle déjà la bonne. */
+  /* Le bouton de bascule est le même partout : il montre le drapeau de la
+     langue vers laquelle il mène. Deux lettres, « EN », ne se comprenaient pas
+     d'un coup d'œil ; un drapeau, si, même de qui ne lit ni l'une ni l'autre.
+     Celui du Royaume-Uni pour l'anglais, puisque c'est l'anglais britannique
+     qu'on écrit. Il est dessiné et non tiré des emojis : Windows n'a pas
+     d'emoji de drapeau, et y afficherait « GB » en toutes lettres.
+
+     Les tailles sont posées sur le dessin même : le bouton vit dans des pages
+     aux feuilles de style différentes, dont certaines fixent la taille de tout
+     `svg` d'un bouton pour ses pictogrammes. Un élément `data-langue` suffit,
+     où qu'il soit ; il est tenu hors traduction, puisqu'il parle déjà la bonne. */
+  const HABIT_DRAPEAU = 'aria-hidden="true" focusable="false" style="display:block;width:20px;' +
+    'height:14px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.18)"';
+  const DRAPEAUX = {
+    en: '<svg viewBox="0 0 60 30" preserveAspectRatio="xMidYMid slice" ' + HABIT_DRAPEAU + '>' +
+      '<rect width="60" height="30" fill="#012169"/>' +
+      '<path d="M0 0L60 30M60 0L0 30" stroke="#fff" stroke-width="6"/>' +
+      '<path d="M0 0L60 30M60 0L0 30" stroke="#C8102E" stroke-width="2"/>' +
+      '<path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>' +
+      '<path d="M30 0v30M0 15h60" stroke="#C8102E" stroke-width="6"/></svg>',
+    fr: '<svg viewBox="0 0 3 2" preserveAspectRatio="none" ' + HABIT_DRAPEAU + '>' +
+      '<rect width="1" height="2" fill="#0055A4"/><rect x="1" width="1" height="2" fill="#fff"/>' +
+      '<rect x="2" width="1" height="2" fill="#EF4135"/></svg>',
+  };
   function majBascules() {
     document.querySelectorAll("[data-langue]").forEach((b) => {
       const vers = courante === "fr" ? "en" : "fr";
       b.setAttribute("translate", "no");
       b.setAttribute("lang", vers);
-      b.textContent = vers.toUpperCase();
+      if (b.dataset.drapeau !== vers) { b.innerHTML = DRAPEAUX[vers]; b.dataset.drapeau = vers; }
       const dit = vers === "en" ? "English version" : "Version française";
       b.title = dit;
       b.setAttribute("aria-label", dit);
@@ -636,6 +662,20 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     traduit: (fr) => courante === "en" ? (traduitBrut(String(fr)) ?? String(fr)) : String(fr),
     /** La traduction anglaise, quelle que soit la langue de la page, ou `null`. */
     enAnglais: (fr) => traduitBrut(String(fr)),
+    /**
+     * Des noms à ne jamais traduire — ceux des exposants, que la page reçoit
+     * après s'être affichée. Ce qui en était déjà traduit revient à l'original.
+     */
+    protege(noms) {
+      let neuf = false;
+      for (const n of noms || []) {
+        const k = normalise(n || "").toLowerCase();
+        if (k && !PROTEGES.has(k)) { PROTEGES.add(k); neuf = true; }
+      }
+      if (!neuf) return;
+      MEMO.clear();
+      if (courante === "en") { restaure(); parcourt(document); }
+    },
     /** Des entrées de plus — celles d'un salon, par exemple. */
     ajoute(table) {
       prepare();
@@ -701,8 +741,8 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
           <button class="mitem" id="btnExport">Copier les données (JSON)</button>
         </div>
       </details>
-      <!-- La langue, en deux lettres : celle vers laquelle on bascule, écrite
-           dans cette langue-là (`_langue.js` en remplit le texte). -->
+      <!-- La langue : le drapeau de celle vers laquelle on bascule
+           (`_langue.js` le dessine). -->
       <button class="icone langue" id="btnLangue" type="button" data-langue></button>
       <!-- Le compte, sous les initiales de son adresse. Le thème y descend :
            il se règle une fois, et occupait la barre en permanence pour cela.
