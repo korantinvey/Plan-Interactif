@@ -216,14 +216,14 @@ Fonctions :
 `supprimeForme` 402 · `editionPointerDown` 412 · `editionPointerMove` 457
 `editionPointerUp` 509
 
-### `_export.html` — 204 l. → admin-plans.html, rapport.html
+### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
 - l.2 · Export par exposant — une ligne par stand, une colonne par provenance
 
 Fonctions :
 
-`nb` 22 · `colonnesExport` 99 · `libellePeriode` 131 · `nomFichierExport` 137
-`nomFeuilleExport` 147 · `exporteExposants` 163
+`nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
+`nomFeuilleExport` 154 · `exporteExposants` 170
 
 ### `_head.html` — 3687 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
@@ -405,7 +405,7 @@ Fonctions :
 `jourCourt` 241 · `nomDeStand` 248 · `rangParcours` 250 · `groupeParcours` 266
 `remplitParcours` 275 · `ouvreParcours` 347 · `fermeParcours` 359
 
-### `_partage.html` — 593 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 614 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -414,7 +414,7 @@ Fonctions :
 `codeIdParcours` 54 · `codeParcours` 59 · `litCodeParcours` 65 · `lienParcours` 83
 `qrMotsBruts` 123 · `qrMotsUtiles` 132 · `qrMul` 143 · `qrGenerateur` 146 · `qrReste` 157
 `qrAlignements` 168 · `qrTrame` 184 · `qrSvg` 368 · `ouvrePartageParcours` 394
-`boutonsPartage` 443 · `accueilleParcoursPartage` 492 · `adoptePartage` 576
+`boutonsPartage` 443 · `accueilleParcoursPartage` 513 · `adoptePartage` 597
 
 ### `_pile.html` — 469 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -452,15 +452,15 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 419 l. → rapport.html
+### `_rapport-js.html` — 427 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 47 · `chargeEvenements` 52 · `joursPeriode` 70 · `chargeRapport` 72 · `chiffre` 83
-`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 347
-`rafraichit` 370 · `videEcran` 389 · `demarre` 405
+`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 355
+`rafraichit` 378 · `videEcran` 397 · `demarre` 413
 
 Éléments :
 
@@ -567,6 +567,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260912140943_zones_traversables.sql` — evenement
 - `20260913122346_le_support_d_acces_au_plan.sql` — compteur, visiteur_jour, fn enregistre_mesures, fn rapport_utilisation
 - `20260913170035_les_visiteurs_uniques_par_stand.sql` — visiteur_cible, fn enregistre_mesures, fn purge_presences, fn reinitialise_compteurs, fn audience_cibles
+- `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 
 ## Le reste
 

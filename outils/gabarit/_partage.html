@@ -442,26 +442,47 @@ function ouvrePartageParcours(){
  */
 function boutonsPartage(lien){
   const partageable = typeof navigator.share === "function";
+  /* Le geste d'envoyer se compte à part des ajouts : envoyer sa liste ne
+     l'allonge ni ne la raccourcit, et c'est l'autre moitié de la seule question
+     qui vaille — on partage, mais est-ce que cela arrive à quelqu'un ?
+
+     Une fois par fenêtre ouverte, et non par clic : copier puis envoyer, ou
+     recopier parce qu'on a raté son collage, reste un seul parcours partagé.
+     Copier compte comme envoyer — sur un ordinateur c'est le seul geste
+     possible, et l'écarter ferait paraître la fonction inutilisée au bureau. */
+  let compte = false;
+  const envoi = () => { if (!compte){ compte = true; mesure("partage"); } };
+
+  // retrouvé une fois : son libellé change en route, et ne le désignerait plus
+  let bCopie = null;
   const copie = {
     libelle: "Copier le lien", ferme: false, genre: partageable ? "" : "accent",
     action: () => {
-      const b = [...$("mPied").children].find(x => x.textContent === "Copier le lien");
+      envoi();
+      bCopie = bCopie ||
+        [...$("mPied").children].find(x => x.textContent === "Copier le lien");
       navigator.clipboard?.writeText(lien).then(
-        () => { if (b){ b.textContent = "Copié"; setTimeout(() => b.textContent = "Copier le lien", 1700); } },
-        () => { if (b) b.textContent = "Échec de la copie"; });
+        () => { if (bCopie){ bCopie.textContent = "Copié";
+                             setTimeout(() => bCopie.textContent = "Copier le lien", 1700); } },
+        () => { if (bCopie) bCopie.textContent = "Échec de la copie"; });
     },
   };
   const boutons = [{ libelle: "Fermer" }, copie];
   if (partageable) boutons.push({
     libelle: "Partager…", genre: "accent",
     /* Refuser la feuille de partage n'est pas une panne : on la referme, et la
-       fenêtre reste ouverte derrière — d'où le silence sur le rejet. */
-    action: () => navigator.share({
-      title: "Mon parcours de visite",
-      text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
-            "voici les stands et les conférences que j'ai retenus.",
-      url: lien,
-    }).catch(() => {}),
+       fenêtre reste ouverte derrière — d'où le silence sur le rejet. Le geste
+       est compté avant, parce qu'un envoi abandonné à mi-chemin ne se distingue
+       pas d'un envoi réussi : la feuille ne dit pas où le lien est parti. */
+    action: () => {
+      envoi();
+      return navigator.share({
+        title: "Mon parcours de visite",
+        text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
+              "voici les stands et les conférences que j'ai retenus.",
+        url: lien,
+      }).catch(() => {});
+    },
   });
   return boutons;
 }
@@ -470,14 +491,14 @@ function boutonsPartage(lien){
    Le parcours reçu
    ------------------------------------------------------------ */
 /**
- * D'où l'on dit que vient un ajout reçu par lien.
+ * D'où l'on dit que vient un rang repris d'un parcours reçu.
  *
- * Le vocabulaire des canaux est clos côté serveur — un mot inventé rejoindrait
- * « autre » — et « lien » y désigne déjà ce qui arrive par une adresse plutôt
- * que par un geste dans la page. C'est bien ce dont il s'agit, et cela laisse
- * l'exploitant lire ses ajouts sans qu'une migration soit nécessaire.
+ * Un canal à lui, comme la suggestion en a un : un stand que huit visiteurs ont
+ * repris du parcours d'un ami n'a pas été trouvé huit fois, il a été transmis,
+ * et l'exposant ne lit pas ce chiffre-là comme les autres. Noyé dans le total
+ * des ajouts, il revenait à ne pas être mesuré.
  */
-const CANAL_PARTAGE = "lien";
+const CANAL_PARTAGE = "partage";
 
 /** Combien de noms la fenêtre montre avant de compter le reste. */
 const PARTAGE_APERCU = 6;
