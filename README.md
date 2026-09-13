@@ -1347,10 +1347,13 @@ Ce qu'elle disait de vrai, en revanche : la propriété qui justifiait les
 compteurs — **ne pas grossir avec le trafic** — est perdue, et perdue
 entièrement. Cette table est linéaire en fréquentation. D'où une purge :
 `purge_presences()` retire les présences de plus de **400 jours** (et jamais
-moins de 31, contre l'erreur de manipulation), appelée à chaque synchronisation
-Klipso — le seul rendez-vous régulier du système à tenir la clé de service.
-Quatre cents jours et non trois cent soixante-cinq : un salon annuel se compare à
-l'édition précédente, et la comparaison se fait souvent quelques semaines après.
+moins de 31, contre l'erreur de manipulation), et avec elles les jetons de
+`visiteur_jour` du même âge — ce qui tient aussi la mesure dans son exemption de
+consentement (voir « Sans bandeau de consentement »). Elle tourne chaque nuit à
+01 h 43 UTC par `pg_cron`, une demi-heure avant la sauvegarde, et à chaque
+synchronisation Klipso en secours. Quatre cents jours et non trois cent
+soixante-cinq : un salon annuel se compare à l'édition précédente, et la
+comparaison se fait souvent quelques semaines après.
 
 Les compteurs, eux, ne se purgent jamais : ils sont bornés par construction, et
 c'est l'historique long d'un salon. Un salon purgé garde donc ses consultations
@@ -1396,6 +1399,43 @@ ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel, et
 par `audience_cibles()` pour le détail par stand.
 
+### Sans bandeau de consentement
+
+La page publique ne demande aucun consentement, et ce n'est pas parce qu'elle ne
+pose pas de cookie. La règle — article 82 de la loi Informatique et Libertés,
+qui transpose la directive ePrivacy — vise tout ce qu'une page écrit ou lit sur
+l'appareil du visiteur : le jeton rangé dans `localStorage` est un traceur au
+même titre qu'un cookie. Ce qui dispense de demander, c'est l'**exemption que la
+CNIL accorde à la mesure d'audience**, et elle tient à des conditions que le
+système remplit une à une.
+
+| Condition | Où elle est tenue |
+|---|---|
+| des statistiques anonymes, pour le seul organisateur | ni adresse IP ni agent utilisateur, envoyés ou enregistrés ; les exposants ne reçoivent que des totaux |
+| aucun suivi d'un site ou d'un salon à l'autre | un jeton tiré au hasard, rangé sous `plan-visiteur:<slug>` |
+| treize mois de vie au plus pour le traceur, sans que les visites les prolongent | l'échéance est écrite à côté du jeton, et un autre est tiré à son terme (`MESURE_VIE_MOIS`, `_mesure.html`) |
+| vingt-cinq mois au plus pour ce qu'il a permis de recueillir | `purge_presences()` efface les jetons de `visiteur_cible` et `visiteur_jour` à 400 jours, chaque nuit |
+| l'information du visiteur, et le moyen de refuser | la notice « Confidentialité », au pied de la liste, et sa case « Ne pas mesurer mes visites » |
+
+Le refus est gardé sur l'appareil (`plan-mesure-refusee`) et vaut pour tous les
+salons du domaine : il jette les gestes en attente et efface les jetons. Revenir
+dessus tire un jeton neuf, que rien ne relie à l'ancien. La notice nomme
+l'organisateur du salon comme celui qui répond de la mesure, et le prestataire
+comme agissant pour lui.
+
+Ce qui ferait tomber l'exemption, et exigerait alors un vrai consentement :
+croiser ces chiffres avec un autre fichier, remettre à un tiers autre chose que
+des totaux, reconnaître un visiteur d'un salon à l'autre, ou garder un jeton
+au-delà des durées ci-dessus. La notice annonce ces durées en toutes lettres :
+changer l'une sans l'autre la ferait mentir.
+
+Les **polices** relèvent du même souci par un autre chemin. Demandées à Google,
+elles lui transmettaient l'adresse IP de chaque visiteur à chaque ouverture,
+avant toute réponse possible — le tribunal régional de Munich l'a jugé contraire
+au RGPD le 20 janvier 2022. Elles sont désormais servies depuis `web/polices/`
+(voir « Fabriquer les pages »), et la construction échoue si une page en
+redemande une à Google.
+
 ### Remettre les compteurs à zéro
 
 La recette d'un plan se fait sur le plan : on ouvre des fiches, on cherche une
@@ -1421,13 +1461,11 @@ disposition de clavier.
 `reinitialise_compteurs()` efface en une transaction — un échec à mi-chemin
 laisserait un salon dont les visiteurs uniques ne correspondraient plus à ses
 visites, pire qu'un salon faux. Elle vide `compteur`, `compteur_cible`,
-`visiteur_jour`, et `mesure` pour ce salon. `cible` reste : ce n'est pas de la
-mesure mais le vocabulaire écrit par la synchronisation, et la vider priverait
-le rapport de ses libellés jusqu'à la synchronisation suivante. Le journal
-`mesure`, lui, part pour une raison qui n'est pas son poids : la reprise de
-`20260908000001_compteurs.sql` s'arme sur « compteur est vide », et l'épargner
-laisserait de quoi ressusciter les anciens gestes le jour où on rejoue cette
-migration.
+`visiteur_cible` et `visiteur_jour` pour ce salon. `cible` reste : ce n'est pas
+de la mesure mais le vocabulaire écrit par la synchronisation, et la vider
+priverait le rapport de ses libellés jusqu'à la synchronisation suivante. Elle
+vidait aussi l'ancien journal `mesure`, supprimé depuis avec tout ce qu'il
+gardait (`20260913223216_la_conservation_des_jetons_de_visiteur.sql`).
 
 Comme partout ici, la fonction est en « security invoker » : elle n'ajoute
 aucun pouvoir, ce sont les politiques d'effacement — bornées par
@@ -1831,6 +1869,31 @@ npm run essai        # sert web/ sur http://localhost:4180
 à leurs sources. Le workflow Pages fait ce travail à votre place sur toute
 poussée ; lancer `verifie` localement reste plus rapide que d'attendre le
 retour de l'intégration, et évite un commit de reconstruction en plus du vôtre.
+
+### Les polices
+
+Les polices ne viennent pas de Google : chaque page ouverte lui aurait transmis
+l'adresse IP de son visiteur. Elles sont téléchargées une fois dans
+`web/polices/`, versionnées, et déclarées par la construction dans l'en-tête des
+pages qui portent `<!--__POLICES__-->` — en fichiers voisins pour les pages
+servies, embarquées en `data:` pour la page autonome (`plan-smcl.html`).
+
+```bash
+npm run polices      # télécharge les familles des modèles et celles au choix → web/polices/
+```
+
+Deux listes. Les familles des **modèles**, en tête de `outils/polices.js`, sont
+déclarées dans toutes les pages. Les polices **au choix** pour les noms du plan
+se lisent dans `POLICES_NOMS` (`_admin1.html`) — l'onglet qui les propose reste
+la seule liste — et ne se chargent qu'une fois choisies, par leur feuille
+`web/polices/<famille>.css`.
+
+Le téléchargement n'appartient pas à la construction, qui doit tourner sans
+réseau. On ne le relance que pour changer l'une des deux listes ; il écrit aussi
+`outils/polices.json`, que la construction relit. Deux garde-fous font échouer
+`npm run construire` : une page qui demanderait encore une police à Google, et
+une police proposée dans l'onglet qui n'aurait pas été rapatriée sous sa
+graisse.
 
 ## Vérifier les fonctions
 
