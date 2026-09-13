@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3496 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3500 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2462 · 10. Mode administration
-- l.2549 · La fiche d'une zone organisateur
-- l.3243 · Masquer une zone organisateur
-- l.3326 · Placer un libellé à la main
+- l.2466 · 10. Mode administration
+- l.2553 · La fiche d'une zone organisateur
+- l.3247 · Masquer une zone organisateur
+- l.3330 · Placer un libellé à la main
 
 Fonctions :
 
@@ -27,24 +27,24 @@ Fonctions :
 `voletRecherche` 274 · `minutesVisite` 328 · `lueHeure` 355 · `lueDate` 359
 `datesSalon` 366 · `horairesSalon` 380 · `salonPartage` 393 · `trio` 406 · `melange` 416
 `themeSombre` 424 · `appliqueAccent` 438 · `appliqueFond` 469 · `modeleRetenu` 507
-`policeChoisie` 591 · `policeDuModele` 596 · `feuillePolice` 606 · `chargePolice` 626
-`policePrete` 646 · `policeDesNoms` 664 · `posePoliceLibelles` 693 · `appliqueModele` 725
-`habilleModale` 766 · `texteCorps` 837 · `standApercu` 852 · `lignesApercu` 876
-`contenuApercu` 902 · `apercuFiche` 939 · `apercuListe` 1016 · `apercuDuo` 1038
-`glisseFenetre` 1071 · `ouvreReglages` 1082 · `voletZones` 1181 · `champsFicheZone` 1283
-`ficheZoneEnPlace` 1353 · `voletPlan` 1371 · `blocHoraires` 1497 · `sallesSituees` 1630
-`voletPmr` 1646 · `nomDuTon` 1737 · `voletApparence` 1742 · `clesFiche` 1916
-`voletOrdre` 1932 · `enregistreConf` 2411 · `rgbHex` 2418 · `hexa` 2425 · `luminance` 2429
-`ecarte` 2443 · `joli` 2458 · `retireAdmin` 2475 · `activeAdmin` 2488 · `champZone` 2575
-`champsZone` 2600 · `champSalles` 2692 · `nomDeZone` 2744 · `reduitLogo` 2778
-`champLogo` 2819 · `editeurRiche` 2916 · `memeFicheZone` 3073 · `suitFicheZone` 3080
-`verseFicheZone` 3088 · `ficheZone` 3114 · `enregistreZone` 3139
-`basculeAffichageZone` 3254 · `marqueZonesMasquees` 3271 · `ecritColonnesEvenement` 3291
-`ecritColonneEvenement` 3322 · `cleLibelle` 3347 · `empreinteLibelle` 3363
-`placementLibelle` 3371 · `posePlacement` 3381 · `libelleAutomatique` 3398
-`modePlacementLibelles` 3407 · `majPaletteLibelle` 3424 · `choisitLibelle` 3441
-`pousseLibelle` 3448 · `libellePointerDown` 3456 · `libellePointerMove` 3471
-`libellePointerUp` 3480
+`policeChoisie` 593 · `policeDuModele` 598 · `feuillePolice` 608 · `chargePolice` 630
+`policePrete` 650 · `policeDesNoms` 668 · `posePoliceLibelles` 697 · `appliqueModele` 729
+`habilleModale` 770 · `texteCorps` 841 · `standApercu` 856 · `lignesApercu` 880
+`contenuApercu` 906 · `apercuFiche` 943 · `apercuListe` 1020 · `apercuDuo` 1042
+`glisseFenetre` 1075 · `ouvreReglages` 1086 · `voletZones` 1185 · `champsFicheZone` 1287
+`ficheZoneEnPlace` 1357 · `voletPlan` 1375 · `blocHoraires` 1501 · `sallesSituees` 1634
+`voletPmr` 1650 · `nomDuTon` 1741 · `voletApparence` 1746 · `clesFiche` 1920
+`voletOrdre` 1936 · `enregistreConf` 2415 · `rgbHex` 2422 · `hexa` 2429 · `luminance` 2433
+`ecarte` 2447 · `joli` 2462 · `retireAdmin` 2479 · `activeAdmin` 2492 · `champZone` 2579
+`champsZone` 2604 · `champSalles` 2696 · `nomDeZone` 2748 · `reduitLogo` 2782
+`champLogo` 2823 · `editeurRiche` 2920 · `memeFicheZone` 3077 · `suitFicheZone` 3084
+`verseFicheZone` 3092 · `ficheZone` 3118 · `enregistreZone` 3143
+`basculeAffichageZone` 3258 · `marqueZonesMasquees` 3275 · `ecritColonnesEvenement` 3295
+`ecritColonneEvenement` 3326 · `cleLibelle` 3351 · `empreinteLibelle` 3367
+`placementLibelle` 3375 · `posePlacement` 3385 · `libelleAutomatique` 3402
+`modePlacementLibelles` 3411 · `majPaletteLibelle` 3428 · `choisitLibelle` 3445
+`pousseLibelle` 3452 · `libellePointerDown` 3460 · `libellePointerMove` 3475
+`libellePointerUp` 3484
 
 Éléments :
 
@@ -131,7 +131,7 @@ Fonctions :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 72 l. → admin-plans.html
+### `_console-head.html` — 70 l. → admin-plans.html
 
 Éléments :
 
@@ -230,7 +230,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3751 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3771 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -239,10 +239,11 @@ Fonctions :
 `#btnLangue` · `#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail`
 `#btnThemeCompte` · `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side`
 `#poignee` · `#q` · `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count`
-`#countTxt` · `#list` · `#stage` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels`
-`#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt`
-`#viseurStop` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti`
-`#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#countTxt` · `#list` · `#piedSide` · `#btnConfidentialite` · `#stage` · `#plan`
+`#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar`
+`#scaleTxt` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#outils`
+`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`
 `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
@@ -267,7 +268,7 @@ Fonctions :
 
 `#reessaie`
 
-### `_index.html` — 48 l. → index.html
+### `_index.html` — 46 l. → index.html
 
 Éléments :
 
@@ -371,14 +372,15 @@ Fonctions :
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
 
-### `_mesure.html` — 223 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 400 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
-`jetonMesure` 35 · `jetonRetenu` 63 · `supportMesure` 104 · `envoieMesures` 145
-`mesure` 187
+`mesureOuverte` 61 · `jetonMesure` 64 · `jourIso` 103 · `echeanceMesure` 104
+`jetonRetenu` 128 · `supportMesure` 177 · `envoieMesures` 221 · `mesure` 263
+`effaceJetonsVisiteur` 317 · `refuseMesure` 335 · `ouvreConfidentialite` 353
 
 ### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -389,14 +391,14 @@ Fonctions :
 `verseModale` 22 · `ouvreModale` 28 · `fermeModale` 48 · `confirme` 55 · `deplaceVers` 73
 `versExtremite` 85 · `remplitOrdre` 93 · `ouvreOrdre` 163
 
-### `_motdepasse.html` — 247 l. → motdepasse.html
+### `_motdepasse.html` — 245 l. → motdepasse.html
 
-- l.59 · Poser un mot de passe
+- l.57 · Poser un mot de passe
 
 Fonctions :
 
-`$` 75 · `CFG` 77 · `dit` 85 · `fragment` 91 · `garde` 98 · `lit` 102 · `demandeLien` 175
-`ouvreSaisie` 184
+`$` 73 · `CFG` 75 · `dit` 83 · `fragment` 89 · `garde` 96 · `lit` 100 · `demandeLien` 173
+`ouvreSaisie` 182
 
 Éléments :
 
@@ -457,22 +459,22 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rapport-head.html` — 31 l. → rapport.html
+### `_rapport-head.html` — 29 l. → rapport.html
 
 Éléments :
 
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 427 l. → rapport.html
+### `_rapport-js.html` — 443 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
-`courant` 47 · `chargeEvenements` 52 · `joursPeriode` 70 · `chargeRapport` 72 · `chiffre` 83
-`barres` 102 · `portes` 142 · `jours` 193 · `dessineRapport` 214 · `dessineBarre` 355
-`rafraichit` 378 · `videEcran` 397 · `demarre` 413
+`courant` 52 · `chargeEvenements` 57 · `joursPeriode` 75 · `chargeRapport` 77 · `chiffre` 88
+`barres` 107 · `portes` 147 · `jours` 198 · `dessineRapport` 219 · `dessineBarre` 371
+`rafraichit` 394 · `videEcran` 413 · `demarre` 429
 
 Éléments :
 
@@ -494,7 +496,7 @@ Fonctions :
 
 Fonctions :
 
-`range` 72 · `dabordCache` 82 · `dabordReseau` 102 · `navigation` 119
+`range` 74 · `dabordCache` 84 · `dabordReseau` 102 · `navigation` 119
 
 ## Dans `web/`, mais que la construction ne produit pas
 
@@ -538,11 +540,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1511 l.
+### `supabase/functions/sync-evenement/index.ts` — 1513 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `retiensAnglais` 166 · `fournisseur` 184 · `raccourci` 192 · `enClair` 229 · `range` 255
-`champsKlipso` 276 · `hebergee` 1468 · `nettoieUrl` 1487 · `groupeTextes` 1497
+`champsKlipso` 276 · `hebergee` 1470 · `nettoieUrl` 1489 · `groupeTextes` 1499
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -583,6 +585,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 - `20260913200617_le_fuseau_d_un_salon_au_format_iana.sql` — fn fuseau_iana, fn evenement_fuseau_iana, fn periode_salon, fn enregistre_mesures
 - `20260913205218_le_fuseau_d_un_salon_choisi_sinon_eventmaker_sinon_paris.sql` — evenement, fn evenement_fuseau_iana
+- `20260913223216_la_conservation_des_jetons_de_visiteur.sql` — fn purge_presences, fn reinitialise_compteurs
 - `20260913234328_libelles_anglais_des_listes_de_valeurs.sql` — evenement
 
 ## Le reste
@@ -598,6 +601,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `outils/controle.js` — analyse le script de chaque page construite, en module
   ES : une redéclaration y est une erreur, là où un `<script>` la tolère.
 - `outils/migration.js` — crée une migration horodatée à la seconde.
+- `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors
+  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.
 - `outils/gabarit/_langue.js` — la version anglaise : posé en tête de chaque page, il
   traduit ce qu'elle affiche d'après le dictionnaire, et tient la bascule FR/EN.
 - `outils/anglais/` — le dictionnaire anglais, un fichier par module ; `serveur.js` et
