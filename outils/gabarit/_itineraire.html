@@ -1258,6 +1258,14 @@ const guidageAllees = () => (CONF["_guidage"] || {}).allees === true;
  * redressement gardait ensuite pour un virage. Et un point ne se déplace que
  * là où il reste praticable, ce que la grille seule décide — en rognant le
  * décalage plutôt qu'en l'abandonnant, pour la même raison.
+ *
+ * Aux deux bouts, enfin, le décalage s'éteint sur une longueur de stand. Le
+ * trait y part de la porte du stand, où l'amorce vient le prendre, et non du
+ * milieu de l'allée : posé d'un coup dès le premier point, le décalage faisait
+ * sortir le trait de biais, puis se reprendre — le petit crochet qu'on voyait
+ * au départ et à l'arrivée. L'extinction a un second mérite : elle laisse les
+ * deux extrémités exactement où le calcul les a mises, et c'est ce qui rend ce
+ * recentrage identique dans les deux sens.
  */
 function recentre(g, pts){
   if (pts.length < 2) return pts;
@@ -1271,7 +1279,7 @@ function recentre(g, pts){
     return DEMI_ALLEE;
   };
 
-  // le trait échantillonné à la case ; l'arrivée, elle, ne bouge pas
+  // le trait échantillonné à la case, l'arrivée comprise
   const ech = [];
   for (let i = 0; i + 1 < pts.length; i++){
     const A = pts[i], B = pts[i + 1];
@@ -1284,6 +1292,7 @@ function recentre(g, pts){
     }
   }
   if (!ech.length) return pts;
+  ech.push(pts[pts.length - 1].slice());
 
   const borne = (i) => ech[Math.min(ech.length - 1, Math.max(0, i))];
   const corde = Math.round(CORDE_ALLEE / PAS_GRILLE);
@@ -1326,15 +1335,16 @@ function recentre(g, pts){
   if (rive < 0) return pts;     // pas de bordure de bout en bout : rien à recentrer
   for (let k = rive + 1; k < ecart.length; k++) ecart[k] = ecart[rive];
 
-  const out = ech.map((q, i) => {
+  // éteint sur une longueur de stand à chaque bout
+  const fondu = (i) => Math.min(1, i / corde, (ech.length - 1 - i) / corde);
+
+  return ech.map((q, i) => {
     const n = norm[i];
-    let e = n ? ecart[i] : 0;
+    let e = n ? ecart[i] * fondu(i) : 0;
     while (e && !libre(q[0] + n[0] * e, q[1] + n[1] * e))
       e = Math.abs(e) <= pas ? 0 : e - (e > 0 ? pas : -pas);
     return e ? [q[0] + n[0] * e, q[1] + n[1] * e] : q;
   });
-  out.push(pts[pts.length - 1].slice());
-  return out;
 }
 
 /** Le segment tient-il dans le passage ? On l'échantillonne à la demi-case :
@@ -1657,22 +1667,40 @@ function accesDe(g, p, obj, xy){
 const ESSAIS_ACCES = 3;
 
 /**
- * Les couples entrée-sortie à essayer, du plus prometteur au moins.
+ * Les couples entrée-sortie à essayer.
  *
  * Tracer chaque entrée contre chaque sortie ferait jusqu'à seize A* pour un
  * seul tronçon. Un balayage depuis toutes les sorties à la fois donne, pour
  * chaque entrée, la distance à la plus proche d'entre elles — et laquelle :
  * le classement des couples se lit alors d'un seul parcours du pavillon, et
  * l'A* n'est payé que sur les premiers.
+ *
+ * Mais classer depuis un seul bout ne dit pas la même chose selon le bout
+ * qu'on prend : un stand de rangée n'ouvre que d'un côté, un stand d'angle de
+ * trois, et les trois faces retenues depuis l'un ne sont pas les trois faces
+ * retenues depuis l'autre. Un aller et son retour s'essayaient donc sur des
+ * couples différents, et rendaient deux trajets différents — jusqu'à seize
+ * mètres d'écart sur les plans d'essai, ce qu'aucun visiteur ne peut
+ * comprendre. On balaie donc des deux bouts et on réunit les couples, puis on
+ * les range par numéro de case : la liste est alors la même dans les deux
+ * sens, jusque dans son ordre.
  */
 function couplesAcces(g, A, B){
   if (A.length === 1 && B.length === 1) return [[A[0], B[0]]];
-  const bal = distancesMulti(g, B);
-  return A
-    .filter(c => c >= 0 && bal.d[c] >= 0)
-    .sort((x, y) => bal.d[x] - bal.d[y])
-    .slice(0, ESSAIS_ACCES)
-    .map(c => [c, B[bal.src[c]]]);
+  const couples = new Map();
+  const depuis = (X, Y, retourne) => {
+    const bal = distancesMulti(g, Y);
+    X.filter(c => c >= 0 && bal.d[c] >= 0)
+     .sort((x, y) => bal.d[x] - bal.d[y] || x - y)
+     .slice(0, ESSAIS_ACCES)
+     .forEach(c => {
+       const couple = retourne ? [Y[bal.src[c]], c] : [c, Y[bal.src[c]]];
+       couples.set(couple[0] + ":" + couple[1], couple);
+     });
+  };
+  depuis(A, B, false);
+  depuis(B, A, true);
+  return [...couples.values()].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
 }
 
 /**
@@ -1684,6 +1712,11 @@ function couplesAcces(g, A, B){
  * Des couples d'entrées proposés on garde celui dont le trait, une fois tracé
  * et les amorces posées, est le plus court : c'est la seule mesure qui soit
  * celle du visiteur.
+ *
+ * Le trait est tracé dans un sens convenu — celui des numéros de case — et
+ * retourné ensuite s'il le faut. À coût égal la grille offre mille chemins, et
+ * celui qu'A* rend dépend de la case d'où il part : sans cette convention, le
+ * retour ne repassait pas par où l'aller était passé.
  */
 function troncon(p, pmr, depart, arrivee, objD, objA){
   const g = grille(p, pmr);
@@ -1696,10 +1729,12 @@ function troncon(p, pmr, depart, arrivee, objD, objA){
   const f = pmr ? foule(p, pmr, sallesEnMouvement(p, exempts)) : null;
   let mieux = null, retenu = null;
   for (const [a, b] of couplesAcces(g, A, B)){
-    const suite = cherche(g, a, b, f && f.peine);
+    const retourne = a > b;
+    let suite = cherche(g, retourne ? b : a, retourne ? a : b, f && f.peine);
     if (!suite) continue;
     const brut = reduit(g, suite);
-    const chemin = lisse(g, guidageAllees() ? recentre(g, brut) : brut);
+    let chemin = lisse(g, guidageAllees() ? recentre(g, brut) : brut);
+    if (retourne){ suite = suite.slice().reverse(); chemin = chemin.reverse(); }
     const envers = chemin.slice().reverse();
     const pts = nettoie([depart.slice()]
       .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
