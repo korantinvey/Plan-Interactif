@@ -2052,6 +2052,13 @@ button.expo:hover{background:var(--line)}
    de « surface-2 » s'y serait fondu. */
 .pSugg .pRang .pOuvre{background:var(--surface)}
 .pSugg .pRang .pOuvre:hover{background:var(--surface-2)}
+/* La réponse que la carte attend, de la largeur de la carte.
+   Pleine d'accent, et la seule : le fond d'accent pâle du tiroir avale un
+   bouton en retrait, et dans la fenêtre le pied est en retrait pour elle. */
+.pSugg .btn.parc{width:100%;justify-content:center;padding:9px 12px;font-size:13px;
+  background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pSugg .btn.parc:hover{border-color:var(--accent);filter:brightness(1.08)}
+.pSugg .btn.parc svg{width:15px;height:15px}
 /* ------------------------------------------------------------
    La journée organisée
 
@@ -19504,8 +19511,15 @@ function phraseSuggestion(s){
  * premier plan dans sa fenêtre.
  *
  * La même, parce que c'est la même proposition : le motif, l'exposant, et les
- * deux gestes qu'on peut faire dessus — aller le voir sur le plan, ou le
- * retenir. Les deux portent le canal de la suggestion jusqu'aux compteurs.
+ * deux gestes qu'on peut faire dessus — le retenir, ou aller le voir sur le
+ * plan. Les deux portent le canal de la suggestion jusqu'aux compteurs.
+ *
+ * Le retenir est ce pour quoi la carte s'affiche, et le geste se donne donc au
+ * pied, en toutes lettres et sur toute la largeur. Le signet des rangs du
+ * parcours, posé de côté, ne le disait qu'à qui savait déjà le lire : une
+ * marque de vingt-huit pixels à côté d'un nom n'a pas l'air de la réponse
+ * qu'une proposition attend, et sous une fenêtre à deux boutons elle ne
+ * pesait plus rien du tout — on y lit les boutons.
  *
  * `ferme` n'est donné que par la fenêtre, et la désigne autant qu'il la
  * referme : le bandeau de la carte y disparaît — son intitulé serait celui de
@@ -19521,8 +19535,8 @@ function carteSuggestion(s, ferme){
     'aria-label="Ne plus me proposer celui-ci">&times;</button></div>' +
     '<p class="sMotif"></p>' +
     '<div class="pRang"><button type="button" class="pOuvre">' +
-    '<span class="pt"></span><span class="ps"></span></button>' +
-    signetParcours("stand", o.id) + "</div>";
+    '<span class="pt"></span><span class="ps"></span></button></div>' +
+    boutonParcours("stand", o.id);
 
   if (ferme) d.querySelector(".sTete").remove();
 
@@ -19541,8 +19555,16 @@ function carteSuggestion(s, ferme){
     SUGG_ECARTES.add(String(o.id));
     remplitParcours();
   };
-  // le signet vit comme les autres : il ajoute, il compte, et il se retourne
+  // le bouton vit comme les signets : il ajoute, il compte, et il se retourne
   brancheParcours(d, CANAL_SUGG);
+  /* La fenêtre s'est ouverte pour cette proposition-là : acceptée, elle n'a
+     plus rien à dire, et « Non merci » sous un exposant qu'on vient de retenir
+     se lirait de travers. Le tiroir fait de même à sa façon — la carte y cède
+     la place au rang, ou à la proposition suivante. Branché après
+     `brancheParcours` pour passer après la bascule, et non avant elle. */
+  if (ferme) d.querySelector(".parc").addEventListener("click", () => {
+    if (dansParcours("stand", o.id)) ferme();
+  });
   return d;
 }
 
@@ -19575,11 +19597,16 @@ function fenetreSuggestion(){
   SUGG_MONTREES.add(marque);
   /* Le rang de la carte s'ouvre au clic, comme dans le tiroir — mais dans une
      fenêtre à deux boutons, on lit les boutons et pas les rangs. Le geste est
-     donc redit au pied, où on l'attend. */
+     donc redit au pied, où on l'attend.
+
+     En retrait, lui : l'accent revient au bouton de la carte, parce que
+     compléter sa visite, c'est retenir l'exposant — le voir sur le plan est
+     l'autre chemin, celui qu'on prend quand on veut d'abord regarder. Deux
+     boutons pleins auraient laissé la proposition sans réponse évidente. */
   ouvreModale("Pour compléter votre visite", corps => {
     corps.appendChild(carteSuggestion(s, fermeModale));
   }, [{ libelle: "Non merci" },
-      { libelle: "Voir sur le plan", genre: "accent",
+      { libelle: "Voir sur le plan",
         action: () => select(s.o.id, true, CANAL_SUGG) }], "sugg");
 }
 

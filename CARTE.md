@@ -225,7 +225,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 99 · `libellePeriode` 131 · `nomFichierExport` 137
 `nomFeuilleExport` 147 · `exporteExposants` 163
 
-### `_head.html` — 3641 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3648 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -454,7 +454,7 @@ Fonctions :
 
 `#lienPublic`
 
-### `_suggestion.html` — 612 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_suggestion.html` — 632 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
 
@@ -462,8 +462,8 @@ Fonctions :
 
 `reglageSugg` 57 · `seuilSugg` 59 · `presentationSugg` 74 · `critereSugg` 80
 `indexSugg` 92 · `valeursSugg` 117 · `suggestionCourante` 136 · `exposantPropose` 168
-`nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 228 · `poseSuggestion` 263
-`fenetreSuggestion` 276 · `relevePalmares` 310 · `etiquetteSugg` 330 · `voletSuggestion` 340
+`nomValeurSugg` 186 · `phraseSuggestion` 207 · `carteSuggestion` 235 · `poseSuggestion` 278
+`fenetreSuggestion` 291 · `relevePalmares` 330 · `etiquetteSugg` 350 · `voletSuggestion` 360
 
 ### `_sw.js` — 165 l. → sw.js
 
