@@ -16,6 +16,13 @@ const TYPES = {
   html: "text/html; charset=utf-8",
   js: "text/javascript; charset=utf-8",
   css: "text/css; charset=utf-8",
+  /* Même exigence pour le manifeste et les icônes : un manifeste servi en
+     flux d'octets n'est pas lu, et l'essai local ne montrerait pas ce que
+     Cloudflare, lui, sert correctement — une application qui ne s'installe
+     qu'en production ne se met pas au point. */
+  webmanifest: "application/manifest+json; charset=utf-8",
+  svg: "image/svg+xml",
+  png: "image/png",
 };
 
 http.createServer((q, s) => {
@@ -31,6 +38,22 @@ http.createServer((q, s) => {
       r.pipe(s);
     }).on("error", e => { s.writeHead(502); s.end(e.message); });
     return;
+  }
+
+  /* Le manifeste est complété en production par le Worker (`src/index.mjs`) :
+     il y reçoit l'adresse du salon d'où l'on installe. Sans ce même geste ici,
+     l'essai local montrerait une application installable qui rouvre toujours
+     le salon par défaut — le seul défaut qu'on cherche justement à voir. */
+  if (u === "/manifeste.webmanifest"){
+    const contenu = JSON.parse(fs.readFileSync(DIR + "manifeste.webmanifest", "utf8"));
+    const depart = new URLSearchParams(q.url.split("?")[1] || "").get("depart");
+    const base = "http://localhost:4180/";
+    const cible = depart ? new URL(depart, base) : null;
+    if (cible && cible.origin === new URL(base).origin){
+      contenu.start_url = cible.pathname + cible.search;
+    }
+    s.writeHead(200, { "Content-Type": TYPES.webmanifest, "Cache-Control": "no-store" });
+    return s.end(JSON.stringify(contenu));
   }
 
   if (u === "/") u = "/index.html";

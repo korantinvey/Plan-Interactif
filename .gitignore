@@ -18,3 +18,7 @@ supabase/.temp/
 deno.lock
 
 outils/chk.js
+
+# État local de `wrangler dev` : caches, bases de simulation, paquet temporaire.
+# Il se refait tout seul, et ne décrit que la machine qui l'a produit.
+.wrangler/

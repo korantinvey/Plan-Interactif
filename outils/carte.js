@@ -238,6 +238,8 @@ ecrit(
   "  " + enveloppe(fonctions(ls).map((f) => `\`${f.nom}\` ${f.l}`)).join(" "),
   "- `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.",
   "- `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.",
+  "- `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.",
+  "- `outils/icones.js` — dessine l'icône de l'application, et l'encode en PNG.",
   "- `outils/carte.js` — produit ce fichier.",
   "- `outils/verifie.js` — reconstruit, et échoue si le versionné était en retard.",
   "- `outils/controle.js` — analyse le script de chaque page construite, en module",
