@@ -15647,6 +15647,18 @@ function reduit(g, suite){
    raboterait des détours que le trajet fait pour de bonnes raisons. */
 const LISSAGE = .5;   // mètres
 
+/* Ce qu'on accepte de plus quand la corde passe au large.
+   Le milieu d'une allée se déplace dès qu'un seul de ses bords recule — une
+   zone ouverte, une rangée moins profonde — et le trait suivait ce
+   déplacement par un angle, au beau milieu d'une allée que le visiteur voit
+   droite. Or ce milieu-là n'a rien de sacré : ce qu'on lui demande, c'est de
+   ne frôler personne. Là où la corde garde un mètre de chaque côté, elle vaut
+   donc mieux que le milieu exact, et le trait reste droit.
+   Un vrai virage n'y gagne rien : le sommet d'un carrefour s'écarte de sa
+   corde de la moitié d'une allée, des mètres et non des centimètres. */
+const LISSAGE_LARGE = 1.5;   // mètres
+const AU_LARGE = 2;          // cases de marge, de part et d'autre
+
 /* Jusqu'où l'on va chercher le bord de l'allée, de part et d'autre du trait.
    Au-delà ce n'est plus une allée mais une esplanade, et son milieu ne veut
    plus rien dire — on laisse alors le trajet où il passe. */
@@ -15818,15 +15830,19 @@ function recentre(g, pts){
   });
 }
 
-/** Le segment tient-il dans le passage ? On l'échantillonne à la demi-case :
- *  plus fin ne dirait rien de plus, la grille n'en sait pas davantage. */
-function passable(g, A, B){
+/** Le segment tient-il dans le passage, et s'y tient-il au large ? On
+ *  l'échantillonne à la demi-case : plus fin ne dirait rien de plus, la grille
+ *  n'en sait pas davantage. `marge` est le nombre de cases qu'on exige entre
+ *  le trait et le mur le plus proche — zéro pour demander seulement qu'il
+ *  passe. */
+function passable(g, A, B, marge){
   const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
   const n = Math.max(1, Math.ceil(l / (PAS_GRILLE / 2)));
   for (let k = 0; k <= n; k++){
     const u = k / n;
     const i = caseDe(g, A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u);
     if (i < 0 || g.mur[i]) return false;
+    if (marge && g.marge[i] < marge) return false;
   }
   return true;
 }
@@ -15872,6 +15888,8 @@ function lisse(g, pts){
       if (e > pire){ pire = e; k = m; }
     }
     if (pire <= LISSAGE && passable(g, A, B)) continue;
+    // ou davantage, si la corde tient l'allée sans frôler ses bords
+    if (pire <= LISSAGE_LARGE && passable(g, A, B, AU_LARGE)) continue;
     garde[k] = 1;
     restes.push([i, k], [k, j]);
   }
