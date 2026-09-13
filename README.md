@@ -1628,6 +1628,32 @@ liste, en titre de sa fiche — et passe par le moteur partout ailleurs, cité
 dans un itinéraire par exemple ; les deux descriptions sont posées dans la
 fiche, et la langue de la page dit laquelle se voit.
 
+**Les listes de valeurs, en anglais depuis les sources.** Secteurs,
+nomenclature, parcours de visite, offres de reprise : leurs valeurs viennent de
+Klipso ou d'Eventmaker, et les deux en tiennent l'anglais. La synchronisation
+le relève et l'écrit dans `evenement.libelles_en`, en une table valeur
+française → valeur anglaise, toutes listes confondues ; `plan-public` la sert
+sous `anglais`, et la page la confie au moteur (`LANGUE.donnees`), qui
+traduit ces valeurs partout où elles paraissent — fiche, critères de recherche,
+console. La recherche les connaît dans les deux langues.
+
+- **Klipso** rend chaque libellé de codification dans toutes les langues que le
+  salon a saisies (`label: { fr, en }`) : l'anglais vient du même appel que le
+  français (`Gaia.codificationLangues`).
+- **Eventmaker** ne pose pas la traduction sur le champ mais dans les
+  traductions de l'événement (`/events/:id/translations.json`), sous une clé
+  faite de l'identifiant du champ et de la valeur réduite — minuscules, chaque
+  suite de signes ni lettre ASCII ni chiffre remplacée par
+  `SPECIAL_HASH_KEY_CHARACTER` (`Eventmaker.listesEnAnglais`). Vérifié sur
+  Franchise Expo Paris 2027 : 23 secteurs sur 23, 118 sous-secteurs sur 119,
+  le parcours de visite en entier. Deux appels par synchronisation, pour toutes
+  les listes de l'événement.
+
+Une valeur que la source ne traduit pas reste en français. Un relevé incomplet
+— Eventmaker injoignable — ne remplace pas le précédent. L'intitulé des champs
+propres au salon, lui, est écrit par l'exploitant : il se donne en français et
+en anglais depuis la console, en renommant le champ (`fiche.perso[].libelle_en`).
+
 **Ce qui ne se traduit pas.** Ce que l'exploitant ou le visiteur tape — un
 éditeur, un champ de saisie — et tout élément marqué `translate="no"`. Et les
 données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les

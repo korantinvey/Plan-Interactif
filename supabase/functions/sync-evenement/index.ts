@@ -138,19 +138,39 @@ const gaia = (instance: string, eventId?: string) =>
  */
 async function libellesChoix(g: Gaia, entite: string, champ: string): Promise<{
   libelles: Record<string, string>;
+  /** les mêmes codes en anglais, quand le salon l'a saisi — du même appel */
+  anglais: Record<string, string>;
   chemin: string | null;
   erreur: string | null;
 }> {
-  if (!champ) return { libelles: {}, chemin: null, erreur: null };
+  if (!champ) return { libelles: {}, anglais: {}, chemin: null, erreur: null };
   try {
     const chemin = await g.cheminCodification(entite, champ);
-    return { libelles: await g.codification(chemin), chemin, erreur: null };
+    const t = await g.codificationLangues(chemin, ["fr", "en"]);
+    return { libelles: t.fr, anglais: t.en, chemin, erreur: null };
   } catch (e) {
     return {
       libelles: {},
+      anglais: {},
       chemin: null,
       erreur: e instanceof Error ? e.message : String(e),
     };
+  }
+}
+
+/**
+ * Range dans `vers` l'anglais d'une codification : libellé français →
+ * libellé anglais. Un code dont l'anglais manque retombe sur le français, et
+ * n'apprend rien : il n'est pas retenu.
+ */
+function retiensAnglais(
+  vers: Record<string, string>,
+  fr: Record<string, string>,
+  en: Record<string, string>,
+): void {
+  for (const [code, lib] of Object.entries(fr)) {
+    const anglais = en[code];
+    if (lib && anglais && anglais !== lib && !(lib in vers)) vers[lib] = anglais;
   }
 }
 
@@ -612,6 +632,12 @@ Deno.serve(async (req) => {
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
       const resume: Record<string, unknown>[] = [];
+      /* L'anglais des valeurs des listes, relevé au passage dans les deux
+         sources : la page du plan le reçoit pour sa version anglaise. Un relevé
+         incomplet — une source qui n'a pas répondu — ne remplace pas le
+         précédent : il en effacerait la moitié. */
+      const libellesEn: Record<string, string> = {};
+      let anglaisComplet = true;
 
       /* Les exposants peuvent venir d'Eventmaker. Le rattachement se fait par
          le numéro de stand : Klipso le compose de l'allée et du numéro,
@@ -697,6 +723,20 @@ Deno.serve(async (req) => {
             .update({ fuseau_source: detail?.timezone ? String(detail.timezone) : null })
             .eq("id", evt.id);
         } catch (_) { /* l'ancien fuseau reste */ }
+        /* L'anglais des listes Eventmaker — parcours de visite, secteurs,
+           offres de reprise. Deux appels, et toutes les listes de l'événement
+           d'un coup : une liste qu'aucune fiche du plan ne montre encore ne
+           coûte rien de plus, et sera prête le jour où elle paraîtra. */
+        try {
+          const em = new Eventmaker({
+            jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+            champs: champsEm, valeurs: valeursEm, perso: persos,
+          });
+          Object.assign(libellesEn, await em.listesEnAnglais(idEvtEm));
+        } catch (e) {
+          console.error("anglais des listes Eventmaker :", e);
+          anglaisComplet = false;
+        }
       }
 
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
@@ -774,7 +814,7 @@ Deno.serve(async (req) => {
       const aHall = (await g.proprietes("Stand")).some((x) => x.cle === CHAMP_HALL);
       const choixHall = aHall
         ? await libellesChoix(g, "Stand", CHAMP_HALL)
-        : { libelles: {}, chemin: null, erreur: null };
+        : { libelles: {}, anglais: {}, chemin: null, erreur: null };
       /* Un champ personnalisé peut être un champ « choix » comme la
          nomenclature : il ne porte alors qu'un code, et la fiche afficherait
          « FEP26_GAM102 » là où l'exploitant attend « Prêt-à-porter ». Sa
@@ -788,7 +828,14 @@ Deno.serve(async (req) => {
           if (!nom) continue;
           const t = await libellesChoix(g, origine === "stand" ? "Stand" : "DossierExp", nom);
           if (Object.keys(t.libelles).length) choixPerso[c.cle] = t.libelles;
+          retiensAnglais(libellesEn, t.libelles, t.anglais);
         }
+      }
+      /* Une codification en échec ne retient pas le relevé : elle échouerait
+         de même à la synchronisation suivante, et l'anglais ne se mettrait plus
+         jamais à jour. Ses valeurs restent en français, comme ses codes. */
+      for (const t of [nomencl, choixSect, choixHall]) {
+        retiensAnglais(libellesEn, t.libelles, t.anglais);
       }
 
       /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
@@ -1315,6 +1362,7 @@ Deno.serve(async (req) => {
           derniere_sync: new Date().toISOString(),
           derniere_err: null,
           modifie_le: new Date().toISOString(),
+          ...(anglaisComplet ? { libelles_en: libellesEn } : {}),
         }).eq("id", evt.id);
       }
 

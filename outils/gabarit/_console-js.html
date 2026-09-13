@@ -1398,16 +1398,53 @@ function ajouteChampPerso(redessine) {
     });
 }
 
-/** Renomme un champ : seul l'intitulé change, la clé et le réglage restent. */
+/**
+ * Renomme un champ : seuls les intitulés changent, la clé et le réglage restent.
+ *
+ * L'intitulé se donne dans les deux langues, et les deux champs paraissent
+ * quelle que soit la langue de la console : c'est l'exploitant qui l'a écrit,
+ * aucun dictionnaire ne le connaît. L'anglais est facultatif — laissé vide, la
+ * version anglaise du plan montre l'intitulé français.
+ */
 function renommeChampPerso(cle, redessine) {
   const e = courant();
-  const actuel = champsPersos(e).find((c) => c.cle === cle);
-  demande("Renommer le champ", "Intitulé", actuel ? actuel.libelle : "",
-    async (libelle) => {
-      const perso = champsPersos(e).map((c) => c.cle === cle ? { ...c, libelle } : c);
-      await ecritFiche(e, { perso });
-      redessine();
+  const actuel = champsPersos(e).find((c) => c.cle === cle) || {};
+  let fr, en;
+  const champ = (corps, texte, valeur, lang) => {
+    const l = document.createElement("label");
+    l.innerHTML = "<span></span><input>";
+    l.querySelector("span").textContent = texte;
+    const i = l.querySelector("input");
+    i.value = valeur || "";
+    i.lang = lang;
+    corps.appendChild(l);
+    return i;
+  };
+  const valide = async () => {
+    const libelle = fr.value.trim();
+    const libelleEn = en.value.trim();
+    const perso = champsPersos(e).map((c) => {
+      if (c.cle !== cle) return c;
+      const n = { ...c, libelle };
+      if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
+      return n;
     });
+    await ecritFiche(e, { perso });
+    redessine();
+  };
+  ouvreModale("Renommer le champ", (corps) => {
+    fr = champ(corps, "Intitulé en français", actuel.libelle, "fr");
+    en = champ(corps, "Intitulé en anglais", actuel.libelle_en, "en");
+    const aide = document.createElement("p");
+    aide.className = "aide";
+    aide.textContent = "Laissé vide, l'intitulé en français s'affiche aussi dans la version " +
+      "anglaise du plan.";
+    corps.appendChild(aide);
+    setTimeout(() => { fr.focus(); fr.select(); }, 30);
+  }, [{ libelle: "Annuler" },
+      // sans intitulé français, la fenêtre reste ouverte : c'est lui qui nomme le champ
+      { libelle: "Valider", genre: "primaire",
+        action: () => { if (!fr.value.trim()) { fr.focus(); return false; } valide(); } }]);
 }
 
 /**
@@ -2818,6 +2855,9 @@ function videEcran() {
 }
 
 function dessine() {
+  /* Les valeurs des listes du salon affiché — critères, correspondances — se
+     lisent en anglais dans la console anglaise, comme sur le plan. */
+  LANGUE.donnees("sources", (courant() || {}).libelles_en || {});
   // les comptes et la création d'un salon sont le fait de l'administrateur ;
   // un organisateur reçoit ses salons, il ne s'en donne pas
   const patron = MOI?.role === "admin";
