@@ -266,7 +266,7 @@ Fonctions :
 
 `#secours`
 
-### `_itineraire.html` — 2806 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 2907 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -280,23 +280,23 @@ Fonctions :
 `versLeMilieu` 708 · `accroche` 739 · `Tas` 754 · `travail` 798 · `cherche` 821
 `distancesDepuis` 887 · `distancesMulti` 901 · `regleFoule` 973 · `ecarteFoule` 990
 `heureAuSalon` 994 · `sallesEnMouvement` 1003 · `foule` 1046 · `bilanFoule` 1134
-`reduit` 1163 · `guidageAllees` 1199 · `recentre` 1228 · `passable` 1276 · `lisse` 1309
-`longueur` 1334 · `longueurDehors` 1350 · `nettoie` 1392 · `oublieFaces` 1427
-`facesLibres` 1429 · `amorce` 1502 · `faceDeSortie` 1537 · `accesDe` 1567
-`couplesAcces` 1602 · `troncon` 1622 · `pointObjet` 1663 · `pointRepere` 1670
-`candidats` 1679 · `pointSaisi` 1705 · `portesDe` 1723 · `versPorte` 1730
-`typeLiaison` 1791 · `nomRepere` 1797 · `oublieLiaisons` 1815 · `lienEcrits` 1827
-`ecritLiens` 1836 · `annuaireLiaisons` 1841 · `liensDe` 1873 · `coutLiaison` 1893
-`passagePraticable` 1900 · `passagesDe` 1908 · `sortiesDe` 1918 · `plansRelies` 1926
-`balayage` 1950 · `distanceDepuis` 1964 · `cheminLiaisons` 1991 · `routeParLiaisons` 2075
-`routeEntre` 2111 · `calculeRoute` 2150 · `couleurNappe` 2176 · `rafraichitApercu` 2182
-`marchesIci` 2225 · `rayonBout` 2230 · `dessineItineraire` 2235 · `rafraichitBouts` 2279
-`cadreItineraire` 2302 · `champIti` 2326 · `ecritDistance` 2330 · `ecritDuree` 2338
-`fermeSugg` 2343 · `montreSugg` 2350 · `choisitPoint` 2382 · `valideSaisie` 2391
-`effaceItineraire` 2401 · `relance` 2423 · `phraseLiaison` 2474 · `montreResultat` 2488
-`bandeauVisee` 2625 · `armeVisee` 2639 · `finVisee` 2647 · `viseItineraire` 2659
-`visePoi` 2665 · `visePoint` 2671 · `ouvreItineraire` 2692 · `fermeItineraire` 2718
-`versItineraire` 2728 · `versItineraireDe` 2731
+`reduit` 1163 · `guidageAllees` 1214 · `recentre` 1270 · `passable` 1352 · `lisse` 1385
+`longueur` 1410 · `longueurDehors` 1426 · `nettoie` 1468 · `oublieFaces` 1503
+`facesLibres` 1505 · `amorce` 1578 · `faceDeSortie` 1613 · `accesDe` 1643
+`couplesAcces` 1688 · `troncon` 1721 · `pointObjet` 1764 · `pointRepere` 1771
+`candidats` 1780 · `pointSaisi` 1806 · `portesDe` 1824 · `versPorte` 1831
+`typeLiaison` 1892 · `nomRepere` 1898 · `oublieLiaisons` 1916 · `lienEcrits` 1928
+`ecritLiens` 1937 · `annuaireLiaisons` 1942 · `liensDe` 1974 · `coutLiaison` 1994
+`passagePraticable` 2001 · `passagesDe` 2009 · `sortiesDe` 2019 · `plansRelies` 2027
+`balayage` 2051 · `distanceDepuis` 2065 · `cheminLiaisons` 2092 · `routeParLiaisons` 2176
+`routeEntre` 2212 · `calculeRoute` 2251 · `couleurNappe` 2277 · `rafraichitApercu` 2283
+`marchesIci` 2326 · `rayonBout` 2331 · `dessineItineraire` 2336 · `rafraichitBouts` 2380
+`cadreItineraire` 2403 · `champIti` 2427 · `ecritDistance` 2431 · `ecritDuree` 2439
+`fermeSugg` 2444 · `montreSugg` 2451 · `choisitPoint` 2483 · `valideSaisie` 2492
+`effaceItineraire` 2502 · `relance` 2524 · `phraseLiaison` 2575 · `montreResultat` 2589
+`bandeauVisee` 2726 · `armeVisee` 2740 · `finVisee` 2748 · `viseItineraire` 2760
+`visePoi` 2766 · `visePoint` 2772 · `ouvreItineraire` 2793 · `fermeItineraire` 2819
+`versItineraire` 2829 · `versItineraireDe` 2832
 
 ### `_journee.html` — 912 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -512,11 +512,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1373 l.
+### `supabase/functions/sync-evenement/index.ts` — 1422 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
-`fournisseur` 164 · `range` 200 · `champsKlipso` 221 · `hebergee` 1330 · `nettoieUrl` 1349
-`groupeTextes` 1359
+`fournisseur` 164 · `raccourci` 172 · `enClair` 209 · `range` 235 · `champsKlipso` 256
+`hebergee` 1379 · `nettoieUrl` 1398 · `groupeTextes` 1408
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

@@ -168,12 +168,47 @@ const fournisseur = (evt: Record<string, any>, domaine: string) =>
    réellement : au-delà on relit les mêmes. */
 const ECHANTILLON = 25;
 
-/** Une valeur qu'on peut montrer en exemple : ni objet, ni vide. */
+/** Un exemple tient sur une ligne de liste déroulante, pas davantage. */
+const raccourci = (t: string) => t.length > 60 ? t.slice(0, 57) + "…" : t;
+
+/**
+ * Une valeur qu'on peut montrer en exemple : ni entité imbriquée, ni vide.
+ *
+ * Un champ à choix multiple — la nomenclature en tête — revient de Klipso en
+ * tableau de codes et non en chaîne. Écarté avec les entités imbriquées, il
+ * s'annonçait « vide sur les fiches lues » sur un salon qui le remplit
+ * pourtant, et le rangement le reléguait derrière les champs renseignés :
+ * l'exploitant cherchait le champ là où il n'était plus. Ses valeurs se
+ * joignent donc comme les autres sources les joignent, par un point-virgule —
+ * c'est la séparation que le relevé des valeurs défait.
+ *
+ * Rendue entière, et raccourcie plus loin seulement : un champ à choix ne
+ * porte que des codes, et c'est une fois sa codification lue qu'on saura
+ * l'écrire en clair — couper ici laisserait un code dont le libellé ne se
+ * retrouverait plus.
+ */
 const exemple = (v: unknown): string | null => {
-  if (v === null || v === undefined || typeof v === "object") return null;
-  const t = String(v).trim();
-  return t ? (t.length > 60 ? t.slice(0, 57) + "…" : t) : null;
+  if (v === null || v === undefined) return null;
+  if (Array.isArray(v)) {
+    const l = v
+      .filter((x) => x !== null && x !== undefined && typeof x !== "object")
+      .map((x) => String(x).trim()).filter(Boolean);
+    return l.length ? l.join(" ; ") : null;
+  }
+  if (typeof v === "object") return null;
+  return String(v).trim() || null;
 };
+
+/**
+ * L'exemple d'un champ à choix, écrit en clair : « Menuiserie ; Agencement de
+ * boutique » plutôt que « FEP26_NOM10201 ; FEP26_NOM10305 ». C'est l'exemple
+ * qui fait reconnaître un champ dans la liste, et un code n'y est reconnu de
+ * personne. Un code que la codification ignore reste tel quel : mieux vaut un
+ * code qu'un trou.
+ */
+const enClair = (table: Record<string, string>, ex: string) =>
+  ex.split(";").map((c) => c.trim()).filter(Boolean)
+    .map((c) => table[c] || c).join(" ; ");
 
 /* Les champs standard sont les mêmes d'un salon à l'autre ; ce sont les
    personnalisés qui diffèrent, et Klipso les préfixe « x_ » précisément pour
@@ -322,12 +357,26 @@ async function champsKlipso(g: Gaia) {
     catch (e) { console.error("codifications de " + entite + " :", e); continue; }
     for (const [prop, cles] of parProp) {
       const table = tables[prop];
-      if (!table || Object.keys(table).length > CHOIX_MAX) continue;
+      if (!table || !Object.keys(table).length) continue;
+      /* Deux usages de la même table, et un seul seuil : au-delà d'une
+         quarantaine d'entrées les cases à cocher ne se lisent plus, mais
+         l'exemple, lui, s'écrit en clair quelle que soit la longueur de la
+         liste — une nomenclature de deux cents entrées est justement celle
+         dont les codes ne disent rien. */
+      const offrable = Object.keys(table).length <= CHOIX_MAX;
       for (const cle of cles) {
         const d = vus.get(cle);
-        if (d) d.choix = table;
+        if (!d) continue;
+        if (offrable) d.choix = table;
+        if (d.exemple) d.exemple = enClair(table, String(d.exemple));
       }
     }
+  }
+
+  // l'exemple se raccourcit en dernier : il vient d'être réécrit en clair, et
+  // un libellé est plus long que le code qu'il remplace
+  for (const d of vus.values()) {
+    if (d.exemple) d.exemple = raccourci(String(d.exemple));
   }
   return range([...vus.values()], GROUPES_KLIPSO);
 }

@@ -15649,6 +15649,21 @@ const LISSAGE = .5;   // mètres
    plus rien dire — on laisse alors le trajet où il passe. */
 const DEMI_ALLEE = 4;   // mètres
 
+/* Sur quelle longueur de trait se lisent la direction de l'allée et sa
+   largeur. Une longueur de stand pour la direction : assez pour enjamber les
+   marches de la grille, assez peu pour suivre une allée qui tourne. Deux fois
+   plus pour la largeur, qui ne tourne pas : plus la lecture porte loin, mieux
+   les bouches de stands y restent minoritaires. */
+const CORDE_ALLEE = 3;     // mètres de trait, de part et d'autre
+const PORTEE_LARGEUR = 6;
+
+/* De combien la largeur lue peut s'écarter de celle de l'allée sans que ce
+   soit une porte. Le dégagement referme déjà dans la grille tout ce qui est
+   plus étroit qu'un passage : ce qui reste ouvert et recule de trois quarts
+   de mètre au-delà de la façade est une bouche de stand ou une transversale,
+   et non le bord dont on cherche le milieu. */
+const ECART_LARGEUR = .75;   // mètres
+
 /**
  * Sur quoi le trait se règle : l'inclinaison du hall, ou les allées.
  *
@@ -15683,15 +15698,42 @@ const guidageAllees = () => (CONF["_guidage"] || {}).allees === true;
  * qu'on ait eu à lui calculer d'angle : le milieu de deux façades parallèles
  * leur est parallèle.
  *
- * Trois réserves, qui sont les trois façons de n'être pas dans une allée. Il
- * faut un mur des deux côtés : un seul ne fait pas un milieu, et s'en écarter
- * pousserait le trait vers le large sans raison. Le décalage se lit ensuite
- * sur quelques mètres et non point par point — entre deux stands d'une même
- * rangée, la façade s'interrompt, un bord part à quatre mètres et le trait
- * partirait le rejoindre pour revenir aussitôt ; la médiane sur une longueur
- * de stand ignore ce trou sans rien perdre de la courbure, qui est lente. Et
- * un point ne se déplace que là où il reste praticable, ce que la grille seule
- * décide.
+ * Encore faut-il mesurer en travers de l'allée, et non en travers de la
+ * marche. Le trajet que rend la grille est un escalier, et pris segment par
+ * segment sa perpendiculaire saute d'un quart de tour à chaque marche : le
+ * décalage lu vers le nord se retrouvait mêlé au décalage lu vers l'est. La
+ * direction se lit donc sur une corde d'une longueur de stand de part et
+ * d'autre, qui enjambe les marches et donne l'inclinaison de l'allée
+ * elle-même ; les décalages parlent alors tous de la même perpendiculaire.
+ *
+ * Et ce décalage s'applique tel quel, point par point. Il passait auparavant
+ * par une médiane, pour ignorer l'interstice entre deux stands — mais c'est
+ * justement le décalage qui oscille avec les marches, et le lisser revenait à
+ * effacer la correction avec elles. Le réglage ne faisait alors rien,
+ * précisément là où on l'avait demandé : sur une allée inclinée sur la grille,
+ * la seule qui produise un escalier.
+ *
+ * L'interstice se tient autrement, et mieux : par la largeur de l'allée. Elle
+ * ne bouge pas avec les marches, puisqu'elle se mesure en travers — sa médiane
+ * sur deux longueurs de stand donne donc la largeur vraie, sans rien devoir au
+ * tracé. Un échantillon qui lit sensiblement plus large ne lit pas une façade
+ * mais une porte, et on l'écarte.
+ *
+ * Restent les deux façons de n'être pas dans une allée : un seul mur, ou
+ * aucun. Ces passages-là — un carrefour, une esplanade, la bouche d'un stand —
+ * ne s'annulent pas pour autant : le décalage s'y interpole entre les deux
+ * rives, car le ramener à zéro rouvrait dans le trait une dent que le
+ * redressement gardait ensuite pour un virage. Et un point ne se déplace que
+ * là où il reste praticable, ce que la grille seule décide — en rognant le
+ * décalage plutôt qu'en l'abandonnant, pour la même raison.
+ *
+ * Aux deux bouts, enfin, le décalage s'éteint sur une longueur de stand. Le
+ * trait y part de la porte du stand, où l'amorce vient le prendre, et non du
+ * milieu de l'allée : posé d'un coup dès le premier point, le décalage faisait
+ * sortir le trait de biais, puis se reprendre — le petit crochet qu'on voyait
+ * au départ et à l'arrivée. L'extinction a un second mérite : elle laisse les
+ * deux extrémités exactement où le calcul les a mises, et c'est ce qui rend ce
+ * recentrage identique dans les deux sens.
  */
 function recentre(g, pts){
   if (pts.length < 2) return pts;
@@ -15705,38 +15747,72 @@ function recentre(g, pts){
     return DEMI_ALLEE;
   };
 
-  // le trait échantillonné à la case, chacun avec la normale de son segment
-  const ech = [], norm = [], brut = [];
+  // le trait échantillonné à la case, l'arrivée comprise
+  const ech = [];
   for (let i = 0; i + 1 < pts.length; i++){
     const A = pts[i], B = pts[i + 1];
     const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy);
     if (!l) continue;
-    const nx = -dy / l, ny = dx / l;
     const n = Math.max(1, Math.round(l / PAS_GRILLE));
     for (let k = 0; k < n; k++){
       const u = k / n;
-      const q = [A[0] + dx * u, A[1] + dy * u];
-      const dp = jusquAuMur(q, nx, ny), dm = jusquAuMur(q, -nx, -ny);
-      ech.push(q); norm.push([nx, ny]);
-      // sans deux bords, il n'y a pas de milieu : on ne bouge pas
-      brut.push(dp >= DEMI_ALLEE || dm >= DEMI_ALLEE ? 0 : (dp - dm) / 2);
+      ech.push([A[0] + dx * u, A[1] + dy * u]);
     }
   }
   if (!ech.length) return pts;
+  ech.push(pts[pts.length - 1].slice());
 
-  /* La médiane glissante sur une longueur de stand : assez large pour enjamber
-     une façade interrompue, assez courte pour suivre une allée qui tourne. */
-  const demi = Math.round(3 / PAS_GRILLE);
-  const out = [];
-  for (let i = 0; i < ech.length; i++){
-    const f = brut.slice(Math.max(0, i - demi), i + demi + 1).sort((a, b) => a - b);
-    const e = f[f.length >> 1];
-    const q = ech[i], n = norm[i];
-    const r = [q[0] + n[0] * e, q[1] + n[1] * e];
-    out.push(e && libre(r[0], r[1]) ? r : q);
+  const borne = (i) => ech[Math.min(ech.length - 1, Math.max(0, i))];
+  const corde = Math.round(CORDE_ALLEE / PAS_GRILLE);
+  // la perpendiculaire à l'allée, lue sur la corde et non sur la marche
+  const norm = ech.map((q, i) => {
+    const A = borne(i - corde), B = borne(i + corde);
+    const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy);
+    return l ? [-dy / l, dx / l] : null;
+  });
+
+  // les deux bordures, là où il y en a deux
+  const bords = ech.map((q, i) => {
+    const n = norm[i];
+    if (!n) return null;
+    const dp = jusquAuMur(q, n[0], n[1]), dm = jusquAuMur(q, -n[0], -n[1]);
+    return dp >= DEMI_ALLEE || dm >= DEMI_ALLEE ? null : [dp, dm];
+  });
+
+  /* La largeur vraie de l'allée, par médiane, et le décalage de ceux qui la
+     lisent : les autres regardent par une porte. */
+  const portee = Math.round(PORTEE_LARGEUR / PAS_GRILLE);
+  const ecart = bords.map((b, i) => {
+    if (!b) return null;
+    const f = [];
+    for (let k = Math.max(0, i - portee); k <= Math.min(bords.length - 1, i + portee); k++)
+      if (bords[k]) f.push(bords[k][0] + bords[k][1]);
+    f.sort((x, y) => x - y);
+    return Math.abs(b[0] + b[1] - f[f.length >> 1]) > ECART_LARGEUR ? null : (b[0] - b[1]) / 2;
+  });
+
+  // ce qui n'a pas été lu, interpolé entre les deux rives qui l'encadrent
+  let rive = -1;
+  for (let i = 0; i < ecart.length; i++){
+    if (ecart[i] === null) continue;
+    if (rive < 0) for (let k = 0; k < i; k++) ecart[k] = ecart[i];
+    else for (let k = rive + 1; k < i; k++)
+      ecart[k] = ecart[rive] + (ecart[i] - ecart[rive]) * (k - rive) / (i - rive);
+    rive = i;
   }
-  out.push(pts[pts.length - 1].slice());
-  return out;
+  if (rive < 0) return pts;     // pas de bordure de bout en bout : rien à recentrer
+  for (let k = rive + 1; k < ecart.length; k++) ecart[k] = ecart[rive];
+
+  // éteint sur une longueur de stand à chaque bout
+  const fondu = (i) => Math.min(1, i / corde, (ech.length - 1 - i) / corde);
+
+  return ech.map((q, i) => {
+    const n = norm[i];
+    let e = n ? ecart[i] * fondu(i) : 0;
+    while (e && !libre(q[0] + n[0] * e, q[1] + n[1] * e))
+      e = Math.abs(e) <= pas ? 0 : e - (e > 0 ? pas : -pas);
+    return e ? [q[0] + n[0] * e, q[1] + n[1] * e] : q;
+  });
 }
 
 /** Le segment tient-il dans le passage ? On l'échantillonne à la demi-case :
@@ -16059,22 +16135,40 @@ function accesDe(g, p, obj, xy){
 const ESSAIS_ACCES = 3;
 
 /**
- * Les couples entrée-sortie à essayer, du plus prometteur au moins.
+ * Les couples entrée-sortie à essayer.
  *
  * Tracer chaque entrée contre chaque sortie ferait jusqu'à seize A* pour un
  * seul tronçon. Un balayage depuis toutes les sorties à la fois donne, pour
  * chaque entrée, la distance à la plus proche d'entre elles — et laquelle :
  * le classement des couples se lit alors d'un seul parcours du pavillon, et
  * l'A* n'est payé que sur les premiers.
+ *
+ * Mais classer depuis un seul bout ne dit pas la même chose selon le bout
+ * qu'on prend : un stand de rangée n'ouvre que d'un côté, un stand d'angle de
+ * trois, et les trois faces retenues depuis l'un ne sont pas les trois faces
+ * retenues depuis l'autre. Un aller et son retour s'essayaient donc sur des
+ * couples différents, et rendaient deux trajets différents — jusqu'à seize
+ * mètres d'écart sur les plans d'essai, ce qu'aucun visiteur ne peut
+ * comprendre. On balaie donc des deux bouts et on réunit les couples, puis on
+ * les range par numéro de case : la liste est alors la même dans les deux
+ * sens, jusque dans son ordre.
  */
 function couplesAcces(g, A, B){
   if (A.length === 1 && B.length === 1) return [[A[0], B[0]]];
-  const bal = distancesMulti(g, B);
-  return A
-    .filter(c => c >= 0 && bal.d[c] >= 0)
-    .sort((x, y) => bal.d[x] - bal.d[y])
-    .slice(0, ESSAIS_ACCES)
-    .map(c => [c, B[bal.src[c]]]);
+  const couples = new Map();
+  const depuis = (X, Y, retourne) => {
+    const bal = distancesMulti(g, Y);
+    X.filter(c => c >= 0 && bal.d[c] >= 0)
+     .sort((x, y) => bal.d[x] - bal.d[y] || x - y)
+     .slice(0, ESSAIS_ACCES)
+     .forEach(c => {
+       const couple = retourne ? [Y[bal.src[c]], c] : [c, Y[bal.src[c]]];
+       couples.set(couple[0] + ":" + couple[1], couple);
+     });
+  };
+  depuis(A, B, false);
+  depuis(B, A, true);
+  return [...couples.values()].sort((x, y) => x[0] - y[0] || x[1] - y[1]);
 }
 
 /**
@@ -16086,6 +16180,11 @@ function couplesAcces(g, A, B){
  * Des couples d'entrées proposés on garde celui dont le trait, une fois tracé
  * et les amorces posées, est le plus court : c'est la seule mesure qui soit
  * celle du visiteur.
+ *
+ * Le trait est tracé dans un sens convenu — celui des numéros de case — et
+ * retourné ensuite s'il le faut. À coût égal la grille offre mille chemins, et
+ * celui qu'A* rend dépend de la case d'où il part : sans cette convention, le
+ * retour ne repassait pas par où l'aller était passé.
  */
 function troncon(p, pmr, depart, arrivee, objD, objA){
   const g = grille(p, pmr);
@@ -16098,10 +16197,12 @@ function troncon(p, pmr, depart, arrivee, objD, objA){
   const f = pmr ? foule(p, pmr, sallesEnMouvement(p, exempts)) : null;
   let mieux = null, retenu = null;
   for (const [a, b] of couplesAcces(g, A, B)){
-    const suite = cherche(g, a, b, f && f.peine);
+    const retourne = a > b;
+    let suite = cherche(g, retourne ? b : a, retourne ? a : b, f && f.peine);
     if (!suite) continue;
     const brut = reduit(g, suite);
-    const chemin = lisse(g, guidageAllees() ? recentre(g, brut) : brut);
+    let chemin = lisse(g, guidageAllees() ? recentre(g, brut) : brut);
+    if (retourne){ suite = suite.slice().reverse(); chemin = chemin.reverse(); }
     const envers = chemin.slice().reverse();
     const pts = nettoie([depart.slice()]
       .concat(amorce(chemin, depart, faceDeSortie(p, objD, chemin[0])), chemin,
