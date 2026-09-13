@@ -20,9 +20,16 @@ h1{font-size:17px;font-weight:600;color:var(--ink);margin:0 0 8px}
 p{margin:0 0 18px}
 button{font:inherit;font-weight:500;cursor:pointer;padding:9px 18px;border:0;border-radius:6px;
   background:var(--accent);color:var(--accent-ink)}
+/* La langue se reprend ici aussi : cette page ne connaît que ce que
+   l'appareil a retenu, et un visiteur arrivé sans réseau n'a pas encore vu le
+   bouton du plan. */
+.bloc{position:relative}
+button.langue{position:absolute;top:10px;right:10px;padding:4px 8px;font-size:11px;
+  letter-spacing:.04em;background:none;color:var(--ink-3);border:1px solid var(--line)}
 </style>
 
 <div class="bloc">
+  <button class="langue" type="button" data-langue></button>
   <h1>Plan hors ligne</h1>
   <!-- Ce que le visiteur peut faire, et non ce qui a échoué : il est devant un
        stand, pas devant un journal d'erreurs. Un plan déjà ouvert une fois

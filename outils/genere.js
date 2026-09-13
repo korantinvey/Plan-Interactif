@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const icones = require("./icones.js");
 const pwa = require("./pwa.js");
+const traductions = require("./traductions.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -32,10 +33,29 @@ function page(contenu, options) {
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    langue(contenu) +
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
     (application && !autonome ? pwa.APPLICATION : "") +
     contenu + "\n</body>\n</html>\n";
+}
+
+/**
+ * La version anglaise, posée en tête de chaque page : le moteur
+ * (`gabarit/_langue.js`) et la part du dictionnaire que la page affiche.
+ *
+ * En tête, parce qu'il doit voir passer le balisage : demandée en anglais, la
+ * page ne se montre jamais d'abord en français. La part seulement, parce que
+ * le dictionnaire couvre toutes les pages — la console n'a que faire des
+ * phrases de l'itinéraire, ni le plan public de celles des comptes.
+ */
+const MOTEUR_LANGUE = fs.readFileSync(D + "/gabarit/_langue.js", "utf8");
+const DICTIONNAIRE = traductions.chargeDictionnaire();
+function langue(contenu) {
+  const table = traductions.dictionnairePour(contenu, DICTIONNAIRE);
+  // du texte JSON dans une chaîne JavaScript, où `</script>` ne doit pas paraître
+  const texte = JSON.stringify(JSON.stringify(table)).replace(/</g, "\\u003c");
+  return "<script>\n" + MOTEUR_LANGUE.replace("__DICTIONNAIRE__", () => texte) + "</script>\n";
 }
 
 const SLUG_DEFAUT = "smcl-2026";

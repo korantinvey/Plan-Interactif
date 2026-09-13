@@ -75,6 +75,30 @@ appeler aucune API externe). Sa source est `outils/plans.json`, **versionnée**
 qu'avec une clé Klipso. Les mêmes données sont déjà dans la page publiée : la
 versionner n'expose rien de plus.
 
+## La version anglaise
+
+Toute page existe en français et en anglais ; le bouton `FR`/`EN` passe de
+l'une à l'autre sans recharger, `?lang=en` l'impose par l'adresse. Le code
+reste écrit en français : `_langue.js`, posé en tête de chaque page, traduit ce
+qu'elle affiche en cherchant chaque phrase dans `outils/anglais/`. Les modules
+n'appellent donc aucune fonction de traduction — sauf pour ce qui quitte la
+page (export tableur, feuille de partage) ou ce que le code mesure et compare :
+là, `traduit("…")`.
+
+Le geste qui va avec : **une phrase affichée s'ajoute avec sa traduction**,
+dans `outils/anglais/<module>.js`. `npm run verifie` refuse une chaîne visible
+qui n'en a pas, et nomme le fichier et la ligne. Une phrase composée —
+`n + " exposants retenus"` — se traduit par un modèle : `"{n} exposants
+retenus": "{n} exhibitors match"`. Ce que le serveur écrit et que la page
+affiche tel quel va dans `serveur.js` ; une chaîne que le contrôle croit
+visible à tort, dans `invisibles.js`.
+
+Deux pièges. Un code qui relit le texte d'un bouton pour savoir où il en est
+lira l'anglais : comparez à `traduit("…")`, ou mieux à un état. Et le contrôle
+lit les sources, pas l'écran : `?lang=en&manques` relève dans le navigateur ce
+qui reste en français (`LANGUE.manques()`). Ce qui y reste est une donnée —
+exposants, nomenclature Klipso, conférences Eventmaker — non une chaîne du code.
+
 ## Où vit quoi
 
 | | |
@@ -85,6 +109,7 @@ versionner n'expose rien de plus.
 | `supabase/functions/` | synchronisation Klipso et API publique |
 | `src/index.mjs` | Worker Cloudflare : relais et cache de `/api/plan` |
 | `.github/workflows/` | reconstruction des pages, déploiement Supabase |
+| `outils/anglais/` | le dictionnaire anglais, un fichier par module |
 
 ## Chercher sans tout ouvrir
 
@@ -143,6 +168,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
+| version anglaise, bascule FR/EN | moteur `_langue.js`, dictionnaire `outils/anglais/`, contrôle et choix par page `outils/traductions.js`, injection `outils/genere.js` `langue` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 

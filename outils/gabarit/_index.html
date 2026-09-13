@@ -36,9 +36,12 @@ const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &
 const souci = h.get("error_description") || q.get("error_description");
 
 const slug = q.get("plan");
+/* La langue demandée suit la redirection : un lien « ?plan=…&lang=en »
+   imprimé pour les visiteurs étrangers doit ouvrir le plan en anglais. */
+const langue = q.get("lang") ? "lang=" + encodeURIComponent(q.get("lang")) : "";
 const cible = (jeton || souci) ? "motdepasse" + location.search + location.hash
-  : slug ? "plan?plan=" + encodeURIComponent(slug) + location.hash
-  : "admin-plans";
+  : slug ? "plan?plan=" + encodeURIComponent(slug) + (langue && "&" + langue) + location.hash
+  : "admin-plans" + (langue && "?" + langue);
 document.getElementById("secours").href = cible;
 location.replace(cible);
 </script>

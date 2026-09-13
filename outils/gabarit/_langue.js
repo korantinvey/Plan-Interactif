@@ -1,9 +1,3 @@
-<!doctype html>
-<html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<script>
 /* ============================================================
    La langue de la page — le français d'origine, l'anglais sur demande
    ============================================================ */
@@ -48,7 +42,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   /* Le dictionnaire voyage en texte et ne se lit qu'au premier besoin : un
      visiteur qui reste en français n'a pas à payer l'analyse de centaines
      d'entrées qu'il ne lira jamais. */
-  const SOURCE = "{\"Nu\":\"Bare\",\"Plan\":\"Map\",\"Mot de passe\":\"Password\",\"{n} j\":\"{n} d\",\"Secours\":\"First aid\",\"Continu\":\"Solid\",\"Plan interactif\":\"Interactive map\",\"Redirection vers la console…\":\"Redirecting to the console…\",\"Continuer\":\"Continue\",\"{n} m\":\"{n} m\",\"≥ {distance}\":\"≥ {distance}\",\"≈ {n} min\":\"≈ {n} min\",\"plan\":\"base map\"}";
+  const SOURCE = __DICTIONNAIRE__;
   const racine = document.documentElement;
 
   /* ------------------------------------------------------------------
@@ -649,58 +643,3 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
 
   applique(courante, true);
 })();
-</script>
-<link rel="icon" href="icone.svg" type="image/svg+xml">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
-<title>Plan interactif</title>
-<meta name="robots" content="noindex">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&display=swap">
-
-<style>
-:root{ --ground:#E9EAE4; --ink-3:#7C8285; --accent:#2F49D1 }
-@media (prefers-color-scheme: dark){
-  :root{ --ground:#0E1113; --ink-3:#767D80; --accent:#7A8CFF }
-}
-body{margin:0;min-height:100vh;background:var(--ground);color:var(--ink-3);
-  font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:14px;
-  display:grid;place-items:center;padding:24px;text-align:center}
-a{color:var(--accent)}
-</style>
-
-<p>Redirection vers la console…<br><a id="secours" href="admin-plans">Continuer</a></p>
-
-<script>
-/* La racine mène à la console. Un identifiant de plan dans l'adresse mène au
-   plan correspondant : les liens partagés continuent de fonctionner.
-
-   Sauf si l'adresse porte un jeton de courriel. Supabase, quand il ne
-   reconnaît pas l'adresse de retour demandée, se replie sans le dire sur le
-   « Site URL » du projet — c'est-à-dire ici. Le jeton qu'il dépose ne vaut
-   que pour la page qui pose un mot de passe ; l'envoyer à la console, c'était
-   présenter un écran de connexion à qui vient justement d'en perdre la clé.
-   Ce repli-ci ne dépend d'aucun réglage : le lien aboutit tant que le domaine
-   est le bon. */
-const q = new URLSearchParams(location.search);
-const h = new URLSearchParams((location.hash || "").replace(/^#/, ""));
-const type = h.get("type") || q.get("type") || "";
-const jeton = (h.get("access_token") || q.get("token_hash") || q.get("token")) &&
-  (type === "recovery" || type === "invite" || type === "signup");
-const souci = h.get("error_description") || q.get("error_description");
-
-const slug = q.get("plan");
-/* La langue demandée suit la redirection : un lien « ?plan=…&lang=en »
-   imprimé pour les visiteurs étrangers doit ouvrir le plan en anglais. */
-const langue = q.get("lang") ? "lang=" + encodeURIComponent(q.get("lang")) : "";
-const cible = (jeton || souci) ? "motdepasse" + location.search + location.hash
-  : slug ? "plan?plan=" + encodeURIComponent(slug) + (langue && "&" + langue) + location.hash
-  : "admin-plans" + (langue && "?" + langue);
-document.getElementById("secours").href = cible;
-location.replace(cible);
-</script>
-<noscript><meta http-equiv="refresh" content="0; url=admin-plans"></noscript>
-
-</body>
-</html>
