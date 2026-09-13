@@ -3,6 +3,7 @@
    parcours et de l'itinéraire. */
 module.exports = {
   "Plan du salon": "Floor plan",
+  "Confidentialité": "Privacy",
   "Pavillons": "Halls",
   "emplacements": "stands",
   "exposants": "exhibitors",

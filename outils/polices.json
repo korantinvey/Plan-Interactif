@@ -1,0 +1,708 @@
+{
+  "sources": [
+    "https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Roboto:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Open+Sans:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Lato:wght@700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Raleway:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Nunito:wght@700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap",
+    "https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Merriweather:wght@700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap",
+    "https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@600&display=swap"
+  ],
+  "sousEnsembles": [
+    "latin-ext",
+    "latin"
+  ],
+  "faces": [
+    {
+      "famille": "Archivo",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "archivo-normal-500-700-latin-ext-ff4f17d2.woff2",
+      "octets": 32608,
+      "descripteurs": {
+        "font-family": "'Archivo'",
+        "font-style": "normal",
+        "font-weight": "500 700",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Archivo",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "archivo-normal-500-700-latin-8f704806.woff2",
+      "octets": 34928,
+      "descripteurs": {
+        "font-family": "'Archivo'",
+        "font-style": "normal",
+        "font-weight": "500 700",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Courier Prime",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "courier-prime-normal-400-latin-ext-efbea074.woff2",
+      "octets": 12736,
+      "descripteurs": {
+        "font-family": "'Courier Prime'",
+        "font-style": "normal",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Courier Prime",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "courier-prime-normal-400-latin-f09844e1.woff2",
+      "octets": 18640,
+      "descripteurs": {
+        "font-family": "'Courier Prime'",
+        "font-style": "normal",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Courier Prime",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "courier-prime-normal-700-latin-ext-b7ce6854.woff2",
+      "octets": 12928,
+      "descripteurs": {
+        "font-family": "'Courier Prime'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Courier Prime",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "courier-prime-normal-700-latin-5c7ae1cc.woff2",
+      "octets": 19348,
+      "descripteurs": {
+        "font-family": "'Courier Prime'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Fraunces",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "fraunces-italic-400-latin-ext-9eca373f.woff2",
+      "octets": 37624,
+      "descripteurs": {
+        "font-family": "'Fraunces'",
+        "font-style": "italic",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Fraunces",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "fraunces-italic-400-latin-f5134999.woff2",
+      "octets": 42228,
+      "descripteurs": {
+        "font-family": "'Fraunces'",
+        "font-style": "italic",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Fraunces",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "fraunces-normal-600-latin-ext-fffaa196.woff2",
+      "octets": 32196,
+      "descripteurs": {
+        "font-family": "'Fraunces'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Fraunces",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "fraunces-normal-600-latin-170a928c.woff2",
+      "octets": 35120,
+      "descripteurs": {
+        "font-family": "'Fraunces'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "ibm-plex-mono-normal-400-latin-ext-6bc0f226.woff2",
+      "octets": 13348,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "ibm-plex-mono-normal-400-latin-08949f72.woff2",
+      "octets": 14708,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "400",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "ibm-plex-mono-normal-500-latin-ext-6bb06407.woff2",
+      "octets": 13432,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "500",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "ibm-plex-mono-normal-500-latin-01d28544.woff2",
+      "octets": 14888,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "500",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "ibm-plex-mono-normal-600-latin-ext-32057cf5.woff2",
+      "octets": 14328,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "IBM Plex Mono",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "ibm-plex-mono-normal-600-latin-0d1f0b8d.woff2",
+      "octets": 15620,
+      "descripteurs": {
+        "font-family": "'IBM Plex Mono'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Instrument Sans",
+      "aLaDemande": false,
+      "sousEnsemble": "latin-ext",
+      "fichier": "instrument-sans-normal-400-600-latin-ext-c4fcfea4.woff2",
+      "octets": 11144,
+      "descripteurs": {
+        "font-family": "'Instrument Sans'",
+        "font-style": "normal",
+        "font-weight": "400 600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Instrument Sans",
+      "aLaDemande": false,
+      "sousEnsemble": "latin",
+      "fichier": "instrument-sans-normal-400-600-latin-2ee17598.woff2",
+      "octets": 30092,
+      "descripteurs": {
+        "font-family": "'Instrument Sans'",
+        "font-style": "normal",
+        "font-weight": "400 600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Inter",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "inter-normal-600-latin-ext-e4bdf67b.woff2",
+      "octets": 36260,
+      "descripteurs": {
+        "font-family": "'Inter'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Inter",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "inter-normal-600-latin-f9a06e79.woff2",
+      "octets": 24452,
+      "descripteurs": {
+        "font-family": "'Inter'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Roboto",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "roboto-normal-600-latin-ext-82ea2dcb.woff2",
+      "octets": 15188,
+      "descripteurs": {
+        "font-family": "'Roboto'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Roboto",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "roboto-normal-600-latin-3eac5e2f.woff2",
+      "octets": 22240,
+      "descripteurs": {
+        "font-family": "'Roboto'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Open Sans",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "open-sans-normal-600-latin-ext-6dbc7ead.woff2",
+      "octets": 15280,
+      "descripteurs": {
+        "font-family": "'Open Sans'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Open Sans",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "open-sans-normal-600-latin-a97a6ed7.woff2",
+      "octets": 18620,
+      "descripteurs": {
+        "font-family": "'Open Sans'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Lato",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "lato-normal-700-latin-ext-3a5797f4.woff2",
+      "octets": 5552,
+      "descripteurs": {
+        "font-family": "'Lato'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Lato",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "lato-normal-700-latin-c447dd76.woff2",
+      "octets": 23040,
+      "descripteurs": {
+        "font-family": "'Lato'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Montserrat",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "montserrat-normal-600-latin-ext-1d8a4af6.woff2",
+      "octets": 33192,
+      "descripteurs": {
+        "font-family": "'Montserrat'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Montserrat",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "montserrat-normal-600-latin-d857325c.woff2",
+      "octets": 18688,
+      "descripteurs": {
+        "font-family": "'Montserrat'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Poppins",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "poppins-normal-600-latin-ext-bb1f2d58.woff2",
+      "octets": 5524,
+      "descripteurs": {
+        "font-family": "'Poppins'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Poppins",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "poppins-normal-600-latin-f4e80d9d.woff2",
+      "octets": 8000,
+      "descripteurs": {
+        "font-family": "'Poppins'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Raleway",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "raleway-normal-600-latin-ext-9c8d6e31.woff2",
+      "octets": 17248,
+      "descripteurs": {
+        "font-family": "'Raleway'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Raleway",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "raleway-normal-600-latin-0a66971e.woff2",
+      "octets": 22816,
+      "descripteurs": {
+        "font-family": "'Raleway'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Nunito",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "nunito-normal-700-latin-ext-0a4e4a02.woff2",
+      "octets": 15820,
+      "descripteurs": {
+        "font-family": "'Nunito'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Nunito",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "nunito-normal-700-latin-fa89300b.woff2",
+      "octets": 16228,
+      "descripteurs": {
+        "font-family": "'Nunito'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Atkinson Hyperlegible Next",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "atkinson-hyperlegible-next-normal-600-latin-ext-cf06258c.woff2",
+      "octets": 7544,
+      "descripteurs": {
+        "font-family": "'Atkinson Hyperlegible Next'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Atkinson Hyperlegible Next",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "atkinson-hyperlegible-next-normal-600-latin-828f4525.woff2",
+      "octets": 12672,
+      "descripteurs": {
+        "font-family": "'Atkinson Hyperlegible Next'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Oswald",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "oswald-normal-500-latin-ext-462ee312.woff2",
+      "octets": 12044,
+      "descripteurs": {
+        "font-family": "'Oswald'",
+        "font-style": "normal",
+        "font-weight": "500",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Oswald",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "oswald-normal-500-latin-541b1288.woff2",
+      "octets": 12704,
+      "descripteurs": {
+        "font-family": "'Oswald'",
+        "font-style": "normal",
+        "font-weight": "500",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Roboto Condensed",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "roboto-condensed-normal-600-latin-ext-ca47ccb5.woff2",
+      "octets": 14288,
+      "descripteurs": {
+        "font-family": "'Roboto Condensed'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Roboto Condensed",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "roboto-condensed-normal-600-latin-eaf78273.woff2",
+      "octets": 21112,
+      "descripteurs": {
+        "font-family": "'Roboto Condensed'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Barlow Condensed",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "barlow-condensed-normal-600-latin-ext-aef7edf5.woff2",
+      "octets": 14516,
+      "descripteurs": {
+        "font-family": "'Barlow Condensed'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Barlow Condensed",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "barlow-condensed-normal-600-latin-215a93c6.woff2",
+      "octets": 22308,
+      "descripteurs": {
+        "font-family": "'Barlow Condensed'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Merriweather",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "merriweather-normal-700-latin-ext-c4d28d6e.woff2",
+      "octets": 42880,
+      "descripteurs": {
+        "font-family": "'Merriweather'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Merriweather",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "merriweather-normal-700-latin-4e1ab493.woff2",
+      "octets": 48660,
+      "descripteurs": {
+        "font-family": "'Merriweather'",
+        "font-style": "normal",
+        "font-weight": "700",
+        "font-stretch": "100%",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Playfair Display",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "playfair-display-normal-600-latin-ext-cf968562.woff2",
+      "octets": 12880,
+      "descripteurs": {
+        "font-family": "'Playfair Display'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Playfair Display",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "playfair-display-normal-600-latin-5d228694.woff2",
+      "octets": 23228,
+      "descripteurs": {
+        "font-family": "'Playfair Display'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    },
+    {
+      "famille": "Roboto Slab",
+      "aLaDemande": true,
+      "sousEnsemble": "latin-ext",
+      "fichier": "roboto-slab-normal-600-latin-ext-43c91c8f.woff2",
+      "octets": 9400,
+      "descripteurs": {
+        "font-family": "'Roboto Slab'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+      }
+    },
+    {
+      "famille": "Roboto Slab",
+      "aLaDemande": true,
+      "sousEnsemble": "latin",
+      "fichier": "roboto-slab-normal-600-latin-fb6a1cc3.woff2",
+      "octets": 14352,
+      "descripteurs": {
+        "font-family": "'Roboto Slab'",
+        "font-style": "normal",
+        "font-weight": "600",
+        "font-display": "swap",
+        "unicode-range": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+      }
+    }
+  ]
+}

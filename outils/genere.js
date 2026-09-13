@@ -13,6 +13,37 @@ const W = path.join(D, "..", "web") + path.sep;
 const API = "/api/plan";
 
 /**
+ * Les polices, déclarées dans l'en-tête des pages qui portent `<!--__POLICES__-->`.
+ *
+ * Elles venaient de Google, et chaque page ouverte lui transmettait l'adresse
+ * IP de son visiteur ; `outils/polices.js` les a rapatriées dans `web/polices/`.
+ * Les déclarations sont posées dans la page plutôt que dans une feuille à part :
+ * une feuille coûterait un aller-retour de plus avant le premier texte, pour
+ * quelques kilo-octets que la page porte sans peine. Le navigateur ne
+ * télécharge ensuite que les fichiers dont un texte se sert.
+ *
+ * La page autonome embarque les fichiers eux-mêmes, en `data:` : publiée
+ * seule, aucune adresse voisine ne lui répondrait.
+ *
+ * Seules les polices des modèles sont déclarées ainsi. Celles qu'un exploitant
+ * peut préférer pour les noms ne se chargent qu'une fois choisies, par leur
+ * feuille (`polices/<famille>.css`) : les déclarer toutes grossirait chaque
+ * page pour des familles qu'un salon sur vingt emploie.
+ */
+const POLICES_JSON = JSON.parse(fs.readFileSync(D + "/polices.json", "utf8"));
+const POLICES = POLICES_JSON.faces.filter((f) => !f.aLaDemande);
+function feuillePolices(autonome) {
+  return "<style>\n" + POLICES.map((f) =>
+    "@font-face{" +
+    Object.entries(f.descripteurs).map(([k, v]) => k + ":" + v).join(";") +
+    ";src:url(" + (autonome
+      ? "data:font/woff2;base64," +
+        fs.readFileSync(W + "polices" + path.sep + f.fichier).toString("base64")
+      : "polices/" + f.fichier) +
+    ") format('woff2')}").join("\n") + "\n</style>";
+}
+
+/**
  * Le squelette d'une page.
  *
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
@@ -25,7 +56,8 @@ const API = "/api/plan";
  *   `application` — la page est installable : manifeste, icônes, service.
  *                   Le plan public, et lui seul (voir `outils/pwa.js`).
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
- *                   une icône, le fichier voisin n'existerait pas.
+ *                   une icône, le fichier voisin n'existerait pas. Ses
+ *                   polices viennent donc avec elle.
  */
 function page(contenu, options) {
   const { role, tete, application, autonome } = options || {};
@@ -37,7 +69,8 @@ function page(contenu, options) {
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
     (application && !autonome ? pwa.APPLICATION : "") +
-    contenu + "\n</body>\n</html>\n";
+    contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome)) +
+    "\n</body>\n</html>\n";
 }
 
 /**
@@ -188,3 +221,33 @@ for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
     (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));
 }
 console.log("sw.js".padEnd(18), "version " + version);
+
+/* Aucune page ne demande plus rien aux serveurs de polices de Google. Le
+   relire ici plutôt qu'en relecture de code : une police ajoutée par l'ancienne
+   voie — un `<link>` recopié d'un exemple, un chargement à la demande —
+   referait partir l'adresse de chaque visiteur, et rien d'autre ne le dirait. */
+const CHEZ_GOOGLE = /fonts\.(googleapis|gstatic)\.com/;
+const fautives = FABRIQUEES.concat("sw.js")
+  .filter((f) => /\.(html|js)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
+if (fautives.length) {
+  console.error("\nPolices demandées à Google dans : " + fautives.join(", ") + ".\n" +
+    "Déclarez la famille dans `outils/polices.js` (ou dans `POLICES_NOMS` pour une police\n" +
+    "au choix), lancez `npm run polices`, et servez-la depuis `polices/` : chaque visiteur\n" +
+    "transmettrait sinon son adresse IP à Google.");
+  process.exit(1);
+}
+
+/* Et chaque police que l'onglet propose pour les noms est bien rapatriée, sous
+   la graisse qu'il demande. Sans cela, la choisir laisserait le plan dans la
+   police du modèle sans rien dire — et la tentation reviendrait de la
+   redemander à Google. */
+const { policesAuChoix, nomDeFichier, couvre } = require("./polices.js");
+const absentes = policesAuChoix().filter((p) =>
+  !fs.existsSync(W + "polices" + path.sep + nomDeFichier(p.nom) + ".css") ||
+  !POLICES_JSON.faces.some((f) => f.aLaDemande && f.famille === p.nom &&
+    couvre(f.descripteurs["font-weight"], p.graisse)));
+if (absentes.length) {
+  console.error("\nPolices proposées pour les noms, mais pas rapatriées : " +
+    absentes.map((p) => p.nom + " " + p.graisse).join(", ") + ".\nLancez `npm run polices`.");
+  process.exit(1);
+}
