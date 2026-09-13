@@ -4690,6 +4690,13 @@ function indexe(d){
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
                 " " + texteCriteres(s)).toLowerCase();
+      /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
+         qui lit « Construction » tape « construction », pas « bâtiment ». */
+      const anglais = d.anglais || {};
+      const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
+        clesCriteres().flatMap(c => valeursCritere(s, c)))
+        .map(v => anglais[v]).filter(Boolean);
+      if (traduites.length) s.rech += " " + traduites.join(" ").toLowerCase();
     });
   });
   /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
@@ -4705,6 +4712,16 @@ function indexe(d){
   });
   LANGUE.protege(noms);
   nomsAnglaisDesZones();
+  /* L'anglais des valeurs des listes — secteurs, nomenclature, parcours de
+     visite — tel que la synchronisation l'a relevé dans les sources. */
+  LANGUE.donnees("sources", d.anglais || {});
+  /* Et l'intitulé anglais que l'exploitant a donné aux champs propres au
+     salon : il nomme la ligne de la fiche et le critère de recherche. */
+  const intitules = {};
+  (((DATA.fiche || {}).perso) || []).forEach(c => {
+    if (c && c.libelle && c.libelle_en) intitules[c.libelle] = c.libelle_en;
+  });
+  LANGUE.donnees("champs", intitules);
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
