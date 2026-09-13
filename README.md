@@ -1502,6 +1502,86 @@ libellé que l'exploitant a pu régler est écartée pendant ce temps : elle ava
 Contrairement au reste du plan, la rampe ne suit pas le thème : une image
 thermique est la même de jour comme de nuit.
 
+## La version anglaise
+
+Un salon parisien reçoit des visiteurs qui ne lisent pas le français, et des
+exposants aussi. Toutes les pages — le plan public, son administration, la
+console, le rapport, la page de mot de passe, la page hors ligne — existent
+donc en anglais, et un bouton `EN` en haut de chacune passe de l'une à l'autre
+sans recharger. Il porte toujours la langue vers laquelle il mène, écrite dans
+cette langue : c'est celle que cherche quelqu'un qui ne lit pas la page.
+
+**Quelle langue à l'ouverture.** L'adresse d'abord : `?lang=en` est ce qu'on
+imprime sur une affiche ou ce qu'on envoie à un exposant étranger, et vaut sur
+n'importe quel appareil — la racine le transmet au plan vers lequel elle
+redirige. Puis le choix déjà fait sur l'appareil, retenu dès qu'on a cliqué le
+bouton. À la première visite enfin, la langue du navigateur : le français pour
+qui le lit, l'anglais pour les autres, car un visiteur allemand ou japonais lit
+plus souvent l'anglais que le français.
+
+**Pourquoi le code reste en français.** Les pages écrivent leurs textes de
+mille façons — `textContent`, un gabarit passé à `innerHTML`, un `title` posé à
+la volée — et plusieurs sessions les retouchent en même temps. Envelopper chaque
+chaîne dans un appel aurait réécrit des milliers de lignes, et chaque phrase
+nouvelle aurait dû se souvenir de l'appel. La version anglaise se pose donc
+par-dessus la page : `outils/gabarit/_langue.js`, injecté en tête de chaque page
+par `genere.js`, observe ce que la page écrit et remplace chaque phrase par sa
+traduction. En français, rien n'est observé ; la langue d'origine ne coûte
+rien. La page mesure parfois ce qu'elle vient d'écrire — la largeur d'un
+cartouche, d'une pastille — : toute mesure commence alors par traduire ce que
+l'observateur n'a pas encore vu, pour que la page mesure l'anglais qu'elle
+affichera.
+
+Trois cas passent malgré tout par un appel explicite, `traduit("…")` : ce qui
+quitte la page (l'export tableur, le texte de la feuille de partage du
+téléphone), ce que le code compare à l'écran (le texte d'un bouton relu), et
+ce qu'il cherche ou mesure lui-même (le nom d'un repère).
+
+**Le dictionnaire.** `outils/anglais/` tient un fichier par module du gabarit,
+qui associe chaque phrase française à sa version anglaise — un anglais
+britannique, celui des salons européens. Une phrase est une clé entière : une
+enseigne ne tombe jamais par hasard sur « Calculer un itinéraire ». Ce que la
+page compose se traduit par un modèle :
+
+```js
+"{n} exposants retenus": "{n} exhibitors match",
+"Retirer le critère {critere} {valeur}": "Remove filter {critere} {valeur}",
+```
+
+`{n}` accepte un nombre et le réécrit à l'anglaise (`1 234,5` → `1,234.5`) ;
+toute autre accolade accepte un texte, traduit à son tour s'il est lui-même une
+clé, gardé tel quel sinon — un nom de salle, un exposant. Zéro prend le pluriel
+en anglais : « 0 fiche ouverte » devient « 0 records opened » sans clé de plus.
+Les dates et les heures n'ont pas de clé : une chaîne faite seulement de jours,
+de mois, d'heures et de nombres se réécrit mot à mot (« lundi 14 septembre ·
+10h30 » → « Monday 14 September · 10:30 »). Et ce qui est mis bout à bout sans
+être une clé — des phrases à la suite, des morceaux séparés par `·`, `—` ou une
+virgule — se traduit morceau par morceau.
+
+Chaque page n'emporte que la part du dictionnaire qui la concerne :
+`outils/traductions.js` retient les entrées dont la page porte le module, ou
+dont les morceaux se lisent dans son code. `serveur.js` et `donnees.js`, qui
+traduisent ce que la synchronisation écrit, partent avec toute page qui
+interroge le serveur.
+
+**Ajouter une phrase.** Une phrase nouvelle affichée par le code s'ajoute avec
+sa traduction, dans le fichier du module. `npm run verifie` relève toutes les
+chaînes visibles du gabarit et refuse celles qui n'en ont pas, avec le fichier
+et la ligne ; le workflow `Pages` refait le même contrôle. Une chaîne que le
+relevé croit visible à tort — un nom de classe, un mot tenu par le code — se
+déclare dans `outils/anglais/invisibles.js`. Le relevé lit les sources, pas
+l'écran : pour voir ce qui reste en français sur une page réelle, ouvrez-la
+avec `?lang=en&manques`, parcourez-la, puis `LANGUE.manques()` dans la console
+du navigateur rend les textes restés en français, du plus fréquent au plus rare.
+
+**Ce qui ne se traduit pas.** Ce que l'exploitant ou le visiteur tape — un
+éditeur, un champ de saisie — et tout élément marqué `translate="no"`. Et les
+données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les
+titres et descriptions des conférences d'Eventmaker, les libellés que
+l'exploitant a saisis. Ils arrivent en français de leur source, et s'affichent
+tels quels. Le manifeste de l'application installée, unique pour le domaine,
+reste lui aussi en français.
+
 ## Comptes et profils
 
 Il n'y a pas d'inscription libre : un compte est créé par quelqu'un qui en a

@@ -196,8 +196,12 @@ async function exporteExposants(bouton, jours) {
        salon mesuré avant qu'on ne compte les visiteurs uniques. Les colonnes
        correspondantes sont alors retirées plutôt que remplies de zéros. */
     const cols = colonnesExport(lignes, !!(r && r.v_depuis));
+    /* Le classeur quitte la page : la version anglaise ne le voit pas passer.
+       Ses intitulés partent donc dans la langue de l'écran, traduits ici. */
+    const intitules = cols.map((c) => ({ ...c, titre: traduit(c.titre) }));
     enregistreFichier(
-      classeurXl(nomFeuilleExport(jours), cols, lignes.map((r2) => cols.map((c) => c.lit(r2)))),
+      classeurXl(traduit(nomFeuilleExport(jours)), intitules,
+        lignes.map((r2) => cols.map((c) => c.lit(r2)))),
       nomFichierExport(e, jours));
     const s = lignes.length > 1 ? "s" : "";
     signale(nb(lignes.length) + " exposant" + s + " exporté" + s +

@@ -1963,8 +1963,10 @@ const typeLiaison = (f) =>
 
 /** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
  *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
- *  « WC », et non rien. */
-const nomRepere = (f) => String(f.txt || "").trim() ||
+ *  « WC », et non rien. Un libellé qui n'est que le nom d'un type — « Entrée »,
+ *  posé d'office — se lit dans la langue de l'écran, comme le type lui-même :
+ *  c'est ce nom-là qui remplit le champ de l'itinéraire. */
+const nomRepere = (f) => traduit(String(f.txt || "").trim()) ||
   nomTypeRepere(pictoForme(f));
 
 /**

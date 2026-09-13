@@ -21,10 +21,15 @@
 .carte .msg{margin:14px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
 .carte .msg.err{color:var(--rouge)}
 .carte .msg.ok{color:var(--vert)}
+/* La langue se choisit dans le coin de la carte : on arrive ici depuis un
+   courriel, souvent avant d'avoir jamais vu la console ni son bouton. */
+.carte{position:relative}
+.carte .langue{position:absolute;top:14px;right:14px}
 </style>
 
 <div class="seule">
   <div class="carte">
+    <button class="icone langue" type="button" data-langue></button>
     <h1 id="titre">Mot de passe</h1>
     <p class="intro" id="intro">Vérification du lien…</p>
 

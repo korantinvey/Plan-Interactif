@@ -3,6 +3,653 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+/* ============================================================
+   La langue de la page — le français d'origine, l'anglais sur demande
+   ============================================================ */
+/*
+ * Toutes les pages sont écrites en français, et le restent dans le code : une
+ * phrase se lit là où elle s'affiche, et c'est elle qui sert de clé au
+ * dictionnaire anglais (`outils/anglais/`). La version anglaise ne réécrit donc
+ * aucun module. Elle se pose par-dessus la page déjà rendue, et suit ce que la
+ * page écrit ensuite.
+ *
+ * Pourquoi par-dessus plutôt qu'à la source : les pages s'écrivent de mille
+ * façons — `textContent`, un gabarit passé à `innerHTML`, un `title` posé à la
+ * volée — et une douzaine de sessions les retouchent en même temps. Envelopper
+ * chaque chaîne dans un appel aurait réécrit des milliers de lignes que
+ * d'autres étaient en train de modifier, et chaque phrase nouvelle aurait dû
+ * se souvenir de l'appel. Ici, une phrase nouvelle n'a besoin que de sa
+ * traduction : `npm run verifie` refuse celle qui n'en a pas.
+ *
+ * Ce script est posé en tête de page, avant le balisage : la page n'existe pas
+ * encore en français sous les yeux du visiteur quand la version anglaise est
+ * demandée — l'observateur voit chaque élément à mesure que le navigateur le
+ * lit. En français, rien n'est observé : la langue d'origine ne coûte rien.
+ *
+ * Ce qui ne se traduit pas : ce que la page écrit mais que l'exploitant ou le
+ * visiteur tape — un éditeur, un champ de saisie, une zone de texte — et tout
+ * ce qu'un attribut `translate="no"` écarte. Les noms d'exposants n'y sont pas
+ * écartés un à un : une clé du dictionnaire est une phrase entière, et une
+ * enseigne ne tombe pas sur « Calculer un itinéraire ».
+ */
+/* La page appelle `traduit` pour les rares noms qu'elle mesure ou compare — le
+   type d'un repère. Un repli est posé avant tout le reste : si le moteur venait
+   à tomber, la page resterait en français plutôt que de tomber avec lui. */
+window.traduit = String;
+window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
+  bascule() {}, ajoute() {}, manques: () => null };
+
+(function () {
+  "use strict";
+
+  const CLE = "plan-langue";
+  const LANGUES = ["fr", "en"];
+  /* Le dictionnaire voyage en texte et ne se lit qu'au premier besoin : un
+     visiteur qui reste en français n'a pas à payer l'analyse de centaines
+     d'entrées qu'il ne lira jamais. */
+  const SOURCE = "{\"Afficher les icônes de zoom\":\"Show the zoom buttons\",\"Afficher l'échelle\":\"Show the scale\",\"Proposer le parcours de visite\":\"Offer the visit plan\",\"Proposer le calcul d'itinéraire\":\"Offer directions\",\"Stands et exposants\":\"Stands and exhibitors\",\"Le nom d'une enseigne, son numéro d'emplacement, son secteur, ses thématiques, et les sociétés hébergées sur un stand partagé.\":\"A brand's name, its stand number, its sector, its themes, and the companies hosted on a shared stand.\",\"Ce salon ne porte aucun emplacement.\":\"This show has no stands.\",\"Accueil, restauration, village start-up — les endroits que le salon fournit avec son plan.\":\"Reception, catering, start-up village — the places the show provides along with its map.\",\"Ce salon ne porte aucune zone organisateur.\":\"This show has no organiser areas.\",\"Le titre d'une session, sa salle, son thème, et l'exposant qui la tient — souvent le seul nom dont on se souvienne.\":\"A session's title, its room, its theme, and the exhibitor running it — often the only name people remember.\",\"Le programme n'est pas synchronisé : sa source se règle depuis la console, dans « Source des données ».\":\"The programme is not synchronised: its source is set in the console, under “Data sources”.\",\"Produits\":\"Products\",\"Ce que les exposants présentent, nommé produit par produit.\":\"What exhibitors present, named product by product.\",\"Les produits ne sont pas encore repris par la synchronisation, quelle que soit la source réglée dans la console.\":\"Products are not yet picked up by the synchronisation, whatever source is set in the console.\",\"Les repères posés sur le plan : entrées, WC, escaliers, parkings, vestiaires. Le cartouche du bas les récapitule de son côté, que cette case soit cochée ou non.\":\"The landmarks placed on the map: entrances, toilets, stairs, car parks, cloakrooms. The panel at the bottom lists them anyway, whether this box is ticked or not.\",\"Aucun repère n'est posé sur les plans de ce salon : ils se dessinent depuis la boîte à outils.\":\"No landmarks are placed on this show's maps: they are drawn from the toolbox.\",\"Ce que le champ de recherche remonte. Le sommaire du pavillon n'en dépend pas : sans mot-clé, la liste reste celle de ses emplacements. Publiez la configuration pour que le changement parvienne aux visiteurs.\":\"What the search box brings up. The hall's list does not depend on it: without a keyword, the list stays that of its stands. Publish the configuration for the change to reach visitors.\",\"Sobre\":\"Plain\",\"Le rendu d'origine : un seul rythme, de la liste à la fiche.\":\"The original look: one rhythm, from the list to the details.\",\"Grille\":\"Grid\",\"Encre pleine, numéro en filigrane, filets francs jusque dans la liste.\":\"Solid ink, watermarked number, crisp rules right down the list.\",\"Chasse fixe et invites de commande, sur un phosphore à la couleur du salon.\":\"Monospace type and command prompts, on a phosphor glow in the show's colour.\",\"Billet\":\"Ticket\",\"Bandeau d'accent sur la recherche, numéros comptables, lignes perforées.\":\"Accent band on the search, ledger numbers, perforated lines.\",\"Serif à fort contraste et italiques : le catalogue et son sommaire.\":\"High-contrast serif and italics: the catalogue and its contents page.\",\"Brut\":\"Raw\",\"Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes.\":\"Thick lines, hard shadows, flat colour. Paper and black in both themes.\",\"Verre\":\"Glass\",\"Un bloc de la couleur du salon, champs et lignes en carreaux translucides.\":\"A block in the show's colour, with fields and rows as translucent panes.\",\"Carton et machine à écrire, « nouvel exposant » tamponné de travers.\":\"Cardboard and typewriter, with “new exhibitor” stamped askew.\",\"Signalétique\":\"Signage\",\"Aplat, flèche et capitales : un stand se lit comme une direction de hall.\":\"Flat colour, arrows and capitals: a stand reads like a hall sign.\",\"Chronologie\":\"Timeline\",\"Le programme en ligne de temps, et la liste égrenée le long du même rail.\":\"The programme as a timeline, and the list strung along the same rail.\",\"Nu\":\"Bare\",\"Ni cadre ni libellés : la hiérarchie typographique seule.\":\"No frames, no labels: typographic hierarchy alone.\",\"Pavillon 2\":\"Hall 2\",\"Aménagement & second œuvre\":\"Fit-out & finishing works\",\"Menuiserie;Agencement de boutique\":\"Joinery;Shop fitting\",\"Réemploi;Bois de pays\":\"Reuse;Local timber\",\"Menuiserie\":\"Joinery\",\"Agencement de boutique\":\"Shop fitting\",\"Réemploi\":\"Reuse\",\"Bois de pays\":\"Local timber\",\"Valeur d'exemple\":\"Sample value\",\"Le bois de pays dans la commande publique\":\"Local timber in public procurement\",\"Table ronde\":\"Round table\",\"Agencer une boutique en réemploi\":\"Fitting out a shop with reused materials\",\"Démonstration\":\"Demonstration\",\"Plan\":\"Map\",\"Recherche\":\"Search\",\"Fiche Stand\":\"Stand details\",\"Apparence\":\"Appearance\",\"Zones\":\"Areas\",\"PMR\":\"Accessibility\",\"Ce que le visiteur lit sur une zone organisateur. La source n'en donne que le contour et parfois un nom : le reste s'écrit ici, et paraît sans attendre la prochaine synchronisation.\":\"What visitors read about an organiser area. The source only gives its outline and sometimes a name: the rest is written here, and shows up without waiting for the next synchronisation.\",\"fiche\":\"details\",\"traversée\":\"walk-through\",\"masquée\":\"hidden\",\"L'image déposée sur la zone, dans l'en-tête de sa fiche.\":\"The image uploaded for the area, at the top of its details.\",\"Ce qu'on trouve dans la zone, ses horaires, ses conditions d'accès. Elle ne paraît que sur les zones où elle est remplie.\":\"What you find in the area, its opening hours, how to get in. It only appears on areas where it has been filled in.\",\"La page où en savoir plus, saisie avec la description.\":\"The page to find out more, entered with the description.\",\"Le programme tenu dans la zone, par ordre chronologique.\":\"The programme held in the area, in chronological order.\",\"Ce que la fiche montre\":\"What the details show\",\"Les champs qu'une fiche de zone déroule, pour toutes les zones à la fois. Un champ décoché reste écrit : il cesse de paraître, et revient tel quel en le recochant.\":\"The fields an area's details show, for all areas at once. An unticked field stays written: it stops appearing, and comes back as it was when ticked again.\",\"Ces cases s'enregistrent dès qu'on les coche.\":\"These boxes are saved as soon as they are ticked.\",\"Enregistré.\":\"Saved.\",\"Échec : {raison}\":\"Failed: {raison}\",\"retirée du plan public\":\"removed from the public map\",\"Ce que vous écrivez est enregistré en quittant la fiche.\":\"What you write is saved when you leave these details.\",\"Ce que les visiteurs voient sur le plan. Publiez la configuration pour que le changement leur parvienne.\":\"What visitors see on the map. Publish the configuration for the change to reach them.\",\"Montrer les secteurs — couleurs et filtre\":\"Show sectors — colours and filter\",\"Suivre les allées une à une — pour un hall arrondi ou aux rangées désaccordées\":\"Follow the aisles one by one — for a rounded hall or one with uneven rows\",\"Compter les co-exposants sur le plan\":\"Count co-exhibitors on the map\",\"Afficher la liste des co-exposants au clic sur le stand\":\"Show the list of co-exhibitors when the stand is clicked\",\"Temps de visite par stand\":\"Visiting time per stand\",\"Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce qui décide combien de stands tiennent entre deux conférences.\":\"Used to plan a visitor's day from their visit plan: it decides how many stands fit between two conferences.\",\"Dates et heures d'ouverture du salon\":\"Show dates and opening hours\",\"Du\":\"From\",\"au\":\"to\",\"Premier jour du salon\":\"First day of the show\",\"Dernier jour du salon\":\"Last day of the show\",\"Le dernier jour précède le premier : corrigez les dates pour régler les heures.\":\"The last day comes before the first: correct the dates to set the hours.\",\"Plus de {n} jours entre ces deux dates : seuls les {n2} premiers sont proposés. Vérifiez l'année.\":\"More than {n} days between these two dates: only the first {n2} are offered. Check the year.\",\"Une fermeture tombe avant l'ouverture : ce jour-là n'a pas d'heures tant qu'elle n'est pas corrigée.\":\"A closing time comes before the opening time: that day has no hours until it is corrected.\",\"Ouverture\":\"Opening\",\"Fermeture\":\"Closing\",\"Effacer les heures de ce jour\":\"Clear this day's hours\",\"Ouverture, {jour}\":\"Opening, {jour}\",\"Fermeture, {jour}\":\"Closing, {jour}\",\"Aucun stand n'est programmé dans la journée d'un visiteur avant l'ouverture ni après la fermeture. Ces jours sont aussi ceux qu'on lui propose. Un jour sans heures n'a pas de borne.\":\"No stand is scheduled in a visitor's day before opening or after closing. These days are also the ones offered to visitors. A day without hours has no limits.\",\"Choisissez les dates : une ligne d'heures paraît pour chaque jour. Sans elles, la journée d'un visiteur n'a ni début ni fin.\":\"Choose the dates: a row of hours appears for each day. Without them, a visitor's day has no start and no end.\",\"L'itinéraire accessible contourne déjà ce qui est dessiné infranchissable. Ceci vise ce qu'aucun dessin ne porte : la foule d'une entrée ou d'une sortie de conférence, aux abords de la salle. Le trajet du marcheur, lui, n'en tient pas compte — il s'y faufile.\":\"The accessible route already avoids whatever is drawn as impassable. This targets what no drawing shows: the crowd going into or out of a conference, around the room. The walking route ignores it — people on foot squeeze through.\",\"Écarter l'itinéraire accessible des salles qui se vident\":\"Keep the accessible route away from rooms that are emptying\",\"Un mètre longé en vaut\":\"One metre alongside counts as\",\"mètres\":\"metres\",\"Trois : le trajet accepte un détour jusqu'au double de ce qu'il aurait longé, et passe tout de même s'il n'existe pas d'autre chemin. À un, plus rien ne l'écarte.\":\"Three: the route accepts a detour of up to twice what it would have gone alongside, and still goes through if there is no other way. At one, nothing keeps it away any more.\",\"Largeur des abords\":\"Width of the surroundings\",\"Depuis le contour de la salle, et seulement là : c'est la portion qui la jouxte qui coûte cher, pas l'allée d'un bout à l'autre. Quatre mètres valent une allée courante.\":\"From the outline of the room, and only there: it is the stretch right next to it that costs, not the whole aisle. Four metres is a standard aisle.\",\"Autour de l'heure dite\":\"Around the scheduled time\",\"Avant et après le début, avant et après la fin de chaque conférence. En dehors de ces minutes, le trajet est celui de toujours.\":\"Before and after the start, before and after the end of each conference. Outside these minutes, the route is the usual one.\",\"Bleu d'encre\":\"Ink blue\",\"Bleu roi\":\"Royal blue\",\"Bleu nuit\":\"Midnight blue\",\"Bleu canard\":\"Teal blue\",\"Vert prairie\":\"Meadow green\",\"Vert forêt\":\"Forest green\",\"Or brûlé\":\"Burnt gold\",\"Ambre\":\"Amber\",\"Brique\":\"Brick\",\"Grenat\":\"Garnet\",\"Cerise\":\"Cherry\",\"Framboise\":\"Raspberry\",\"Prune\":\"Plum\",\"Brun\":\"Brown\",\"Ardoise\":\"Slate\",\"Anthracite\":\"Charcoal\",\"La couleur principale sert partout : sélection, liens, boutons, pastilles, et les modèles s'en habillent. Le modèle décide de l'allure de tout l'écran à la fois : le bandeau du haut, la liste des exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire. Il pose aussi sa police sur les noms des stands et des zones : une autre peut lui être préférée, jusqu'au prochain changement de modèle. Les numéros de stand gardent la sienne.\":\"The main colour is used everywhere: selection, links, buttons, badges, and the templates dress themselves in it. The template sets the look of the whole screen at once: the top bar, the exhibitor list, the details that open on a stand, the visit plan and the directions. It also sets the font of stand and area names: another one can be preferred, until the template changes again. Stand numbers keep their own.\",\"Couleur principale\":\"Main colour\",\"Réglage d'origine\":\"Original setting\",\"Modèle d'habillage\":\"Template\",\"Police des noms\":\"Name font\",\"Police du modèle\":\"Template font\",\"du modèle\":\"from the template\",\"modèle {modele}\":\"{modele} template\",\"arrondie\":\"rounded\",\"haute lisibilité\":\"high legibility\",\"étroite\":\"condensed\",\"chasse fixe\":\"monospace\",\"L'ordre dans lequel la fiche déroule ses champs, de haut en bas : ce que le visiteur vient lire en premier n'est pas le même d'un salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le volet des conférences n'en font pas partie : ils ne se déplacent pas.\":\"The order in which the details list their fields, from top to bottom: what visitors come to read first differs from one show to the next. Grab a row by its handle, or use the arrows. The header — the brand, the hall, the stand number — and the conferences panel are not part of it: they don't move.\",\"Aperçu\":\"Preview\",\"La fiche telle que le visiteur la recevra : l'habillage retenu pour ce salon, et les valeurs du stand qui remplit le mieux les champs affichés. Sur téléphone, les champs qui tiennent en un mot se rangent deux par deux.\":\"The details as visitors will get them: the template chosen for this show, and the values of the stand that best fills the fields shown. On phones, fields that fit in one word are laid out two by two.\",\"Regrouper\":\"Group\",\"Monter\":\"Move up\",\"Descendre\":\"Move down\",\"Monter {champ}\":\"Move up {champ}\",\"Descendre {champ}\":\"Move down {champ}\",\"Réunir {champ}\":\"Group {champ}\",\"propre au salon\":\"specific to this show\",\"Masqué : ce champ ne paraît pas sur la fiche.\":\"Hidden: this field does not appear in the details.\",\"Sortir « {champ} » du groupe\":\"Take “{champ}” out of the group\",\"Titre du groupe\":\"Group title\",\"Défaire le groupe\":\"Ungroup\",\"Cochez au moins deux champs pour les réunir sous un même titre.\":\"Tick at least two fields to group them under one title.\",\"Réunir {n} champs sous un même titre.\":\"Group {n} fields under one title.\",\"Télécharger une sauvegarde\":\"Download a backup\",\"Restaurer une sauvegarde…\":\"Restore a backup…\",\"Libellé\":\"Label\",\"Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour revenir au nom d'origine, s'il y en a un.\":\"The area's name, on the map and in its details. Leave empty to go back to the original name, if there is one.\",\"Agora, Halte-garderie, Pitch Retail…\":\"Agora, Crèche, Pitch Retail…\",\"Ouvre l'entrée correspondante dans le cartouche des points d'intérêt, au bas du plan : le visiteur y retrouve d'un geste toutes les zones du même type. Sans type, la zone reste sur le plan comme aujourd'hui.\":\"Opens the matching entry in the points of interest panel, at the bottom of the map: visitors find all areas of the same type there in one tap. Without a type, the area stays on the map as it is today.\",\"L'itinéraire peut la traverser\":\"Routes can go through it\",\"Les trajets coupent par cette zone au lieu d'en faire le tour. À cocher sur un accueil, une agora, une esplanade — tout sol qu'on franchit à pied. À laisser décoché sur une réserve, un local technique, un espace clos : le trajet les contourne, comme un stand.\":\"Routes cut through this area instead of going around it. Tick it for a reception, an agora, a forecourt — any floor people walk across. Leave it unticked for a storeroom, a service room, an enclosed space: the route goes around them, like a stand.\",\"Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.\":\"What you find in this area, its opening hours, how to get in. The “Description” heading only appears in the details if you write one.\",\"Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et n'apparaît sur la fiche que si vous en donnez une.\":\"A page to find out more. It opens in a new tab, and only appears in the details if you give one.\",\"trouvée automatiquement\":\"found automatically\",\"choisie à la main\":\"chosen by hand\",\"rattachée à {zone}\":\"linked to {zone}\",\"à situer\":\"to be located\",\"Salles de conférence\":\"Conference rooms\",\"Le programme du salon, salle par salle. Cochez celles qui se tiennent dans cette zone : leurs conférences paraissent aussitôt sur sa fiche. Un rattachement choisi ici n'est plus modifié par les synchronisations suivantes.\":\"The show's programme, room by room. Tick the ones located in this area: their conferences appear straight away in its details. A link chosen here is no longer changed by later synchronisations.\",\"une zone absente du plan\":\"an area not on the map\",\"une zone sans nom\":\"an unnamed area\",\"ce fichier n'est pas une image\":\"this file is not an image\",\"fichier illisible\":\"unreadable file\",\"image illisible\":\"unreadable image\",\"image trop lourde, même réduite — un logo, pas une photo\":\"image too heavy, even reduced — a logo, not a photo\",\"Retirer\":\"Remove\",\"Aucun logo\":\"No logo\",\"Remplacer…\":\"Replace…\",\"Choisir un fichier…\":\"Choose a file…\",\"Lecture…\":\"Reading…\",\"{n} Ko\":\"{n} KB\",\"L'image paraît dans l'en-tête de la fiche, au-dessus du type et du nom. Elle est réduite puis enregistrée dans la fiche : elle part avec le plan, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou choisissez-la.\":\"The image appears at the top of the details, above the type and the name. It is reduced then saved in the details: it travels with the map, without depending on a file hosted elsewhere. Drag it onto the thumbnail, or choose it.\",\"Gras\":\"Bold\",\"Italique\":\"Italic\",\"Liste à puces\":\"Bulleted list\",\"Liste numérotée\":\"Numbered list\",\"Description de la zone\":\"Area description\",\"Ce qu'on trouve dans cette zone, ses horaires…\":\"What you find in this area, its opening hours…\",\"Poser\":\"Apply\",\"Poser un lien sur le texte choisi\":\"Add a link to the selected text\",\"Enregistrement de la zone impossible : {raison}\":\"Could not save the area: {raison}\",\"Changement impossible : {raison}\":\"Change failed: {raison}\",\"Glissez le libellé, ou ajustez-le aux flèches du clavier.\":\"Drag the label, or nudge it with the arrow keys.\",\"Glissez ce libellé pour le déplacer, ou tirez la taille.\":\"Drag this label to move it, or pull the size slider.\",\"Indisponible\":\"Unavailable\",\"Chargement…\":\"Loading…\",\"Plan indisponible : le réseau est injoignable, et ce salon n'a pas encore été ouvert sur cet appareil.\":\"Map unavailable: the network cannot be reached, and this show has not been opened on this device yet.\",\"Plan indisponible : {raison}\":\"Map unavailable: {raison}\",\"Chargement du plan…\":\"Loading the map…\",\"Session expirée, reconnectez-vous.\":\"Session expired, please sign in again.\",\"Session expirée.\":\"Session expired.\",\"Aucun pavillon : lancez une synchronisation depuis la console.\":\"No halls: run a synchronisation from the console.\",\"Aucune source de données configurée.\":\"No data source configured.\",\"Vérification de l'identité…\":\"Checking your identity…\",\"Administration du plan\":\"Map administration\",\"Adresse du projet\":\"Project URL\",\"Clé publique (anon)\":\"Public key (anon)\",\"Adresse e-mail\":\"Email address\",\"Mot de passe\":\"Password\",\"Voir le plan public\":\"View the public map\",\"Mot de passe oublié\":\"Forgot your password?\",\"Se connecter\":\"Sign in\",\"Cette page est réservée à l'exploitant.\":\"This page is for the organiser only.\",\"Adresse et clé publique sont nécessaires.\":\"The project URL and public key are required.\",\"Connexion…\":\"Signing in…\",\"Identifiants refusés. (HTTP {code})\":\"Credentials rejected. (HTTP {code})\",\"Réponse inattendue de {adresse} — HTTP {code}. Vérifiez l'adresse du projet.\":\"Unexpected response from {adresse} — HTTP {code}. Check the project URL.\",\"Réponse inattendue de {adresse} — HTTP {code}, corps vide. Vérifiez l'adresse du projet.\":\"Unexpected response from {adresse} — HTTP {code}, empty body. Check the project URL.\",\"session inconnue\":\"unknown session\",\"{n} j\":\"{n} d\",\"Tout\":\"All\",\"emplacement\":\"stand\",\"{n} consultations\":\"{n} views\",\"{n} consultation\":\"{n} view\",\"Fiches ouvertes par stand\":\"Records opened per stand\",\"Période\":\"Period\",\"Déployer le cartouche\":\"Expand the panel\",\"Replier sur la légende\":\"Collapse to the legend\",\"· {n} vis.\":\"· {n} vis.\",\"Cet emplacement n'est plus au plan.\":\"This stand is no longer on the map.\",\"depuis le début\":\"since the start\",\"sur les {n} derniers jours\":\"over the last {n} days\",\"Aucune fiche ouverte {quand}.\":\"No records opened {quand}.\",\"Aucune consultation de fiche enregistrée pour ce salon : les compteurs par stand n'ont encore rien reçu.\":\"No record views recorded for this show: the per-stand counters have not received anything yet.\",\"{n} fiches d'exposant ouvertes {quand}, sur {n2} {emplacements}, par {n3} {visiteurs}.\":\"{n} exhibitor records opened {quand}, across {n2} {emplacements}, by {n3} {visiteurs}.\",\"{n} fiche d'exposant ouverte {quand}, sur {n2} {emplacements}, par {n3} {visiteurs}.\":\"{n} exhibitor record opened {quand}, across {n2} {emplacements}, by {n3} {visiteurs}.\",\"{n} fiches d'exposant ouvertes {quand}, sur {n2} {emplacements}.\":\"{n} exhibitor records opened {quand}, across {n2} {emplacements}.\",\"{n} fiche d'exposant ouverte {quand}, sur {n2} {emplacements}.\":\"{n} exhibitor record opened {quand}, across {n2} {emplacements}.\",\"visiteurs distincts\":\"unique visitors\",\"visiteur distinct\":\"unique visitor\",\"Consultations, non visiteurs uniques.\":\"Views, not unique visitors.\",\"La couleur suit les ouvertures ; les zones organisateur ne sont pas comptées.\":\"The colour follows the number of views; organiser areas are not counted.\",\"Comptage par stand depuis le {date}.\":\"Counted per stand since {date}.\",\"Fréquentation indisponible : {raison}\":\"Attendance unavailable: {raison}\",\"événement introuvable\":\"event not found\",\"Carte de chaleur\":\"Heat map\",\"non publié\":\"not published\",\"Une lecture pour l'exploitant : ce calque ne part jamais sur le plan public, et la publication de la configuration ne l'emporte pas.\":\"A view for the organiser: this layer never goes onto the public map, and publishing the configuration does not take it along.\",\"Statistiques\":\"Statistics\",\"Le plan compte ce qu'on en fait : visites, recherches, itinéraires, et les fiches ouvertes stand par stand. Ces chiffres nourrissent le rapport d'utilisation et la carte de chaleur.\":\"The map counts how it is used: visits, searches, routes, and records opened stand by stand. These figures feed the usage report and the heat map.\",\"La recette gonfle ces compteurs — les fiches qu'on ouvre pour vérifier le plan sont comptées comme des visites, la page publique ne sachant pas qui la regarde. Remettez-les à zéro le jour où le salon ouvre, pour que le premier chiffre soit le bon.\":\"Testing inflates these counters — records opened to check the map count as visits, since the public page cannot tell who is looking at it. Reset them on the day the show opens, so that the first figure is the right one.\",\"Réinitialiser les compteurs…\":\"Reset the counters…\",\"Réinitialiser les compteurs\":\"Reset the counters\",\"Toute la mesure de ce salon sera effacée\":\"All of this show's measurements will be erased\",\": visites, visiteurs, recherches, itinéraires, programmes de visite, et les consultations de chaque stand. Le rapport d'utilisation et la carte de chaleur repartent de zéro, pour tous les comptes.\":\": visits, visitors, searches, routes, visit plans, and views of each stand. The usage report and the heat map start again from zero, for every account.\",\"Le plan lui-même n'est pas touché : emplacements, exposants, dessins, calques et réglages restent tels quels.\":\"The map itself is untouched: stands, exhibitors, drawings, layers and settings stay as they are.\",\"Cette action est irréversible. Aucune sauvegarde n'est conservée : ces chiffres ne pourront pas être retrouvés.\":\"This cannot be undone. No backup is kept: these figures cannot be recovered.\",\"Lecture des compteurs en cours…\":\"Reading the counters…\",\"réinitialiser\":\"reset\",\"Pour confirmer, tapez « {mot} » :\":\"To confirm, type “{mot}”:\",\"À effacer : {visites}, {visiteurs}, {recherches}, {fiches}, mesurés depuis le {date}.\":\"To be erased: {visites}, {visiteurs}, {recherches}, {fiches}, measured since {date}.\",\"{n} visites\":\"{n} visits\",\"{n} visite\":\"{n} visit\",\"{n} visiteurs\":\"{n} visitors\",\"{n} visiteur\":\"{n} visitor\",\"{n} recherches\":\"{n} searches\",\"{n} recherche\":\"{n} search\",\"{n} fiches d'exposant\":\"{n} exhibitor records\",\"{n} fiche d'exposant\":\"{n} exhibitor record\",\"Ce salon n'a encore aucune mesure : il n'y a rien à effacer.\":\"This show has no measurements yet: there is nothing to erase.\",\"Compteurs illisibles : {raison} — la remise à zéro échouerait de même.\":\"Counters unreadable: {raison} — the reset would fail in the same way.\",\"Réinitialiser\":\"Reset\",\"Effacement…\":\"Erasing…\",\"Compteurs remis à zéro : {n} lignes effacées.\":\"Counters reset: {n} rows erased.\",\"Compteurs remis à zéro : {n} ligne effacée.\":\"Counters reset: {n} row erased.\",\"Le salon repart de zéro.\":\"The show starts again from zero.\",\"Il n'y avait aucune mesure à effacer.\":\"There were no measurements to erase.\",\"Remise à zéro impossible : {raison}\":\"Reset failed: {raison}\",\"Non autorisé.\":\"Not authorised.\",\"Erreur {code}\":\"Error {code}\",\"Erreur {code} sur {chemin}\":\"Error {code} on {chemin}\",\"Connexion au projet\":\"Connect to the project\",\"L'adresse de l'\":\"The project's\",\"du projet, en\":\"address, ending in\",\"— pas celle du tableau de bord. La clé publique est faite pour circuler côté navigateur : c'est son rôle. Ne mettez jamais ici la clé de service.\":\"— not the dashboard one. The public key is meant to be used in the browser: that is what it is for. Never put the service key here.\",\"Connexion\":\"Sign in\",\"Projet : {adresse}\":\"Project: {adresse}\",\"non configuré\":\"not configured\",\"Changer de projet\":\"Change project\",\"Salon\":\"Show\",\"Nouveau\":\"New\",\"Plan public\":\"Public map\",\"Administration\":\"Admin\",\"Rapport d'utilisation\":\"Usage report\",\"Sources de données\":\"Data sources\",\"Adresse du projet…\":\"Project URL…\",\"Connecté\":\"Signed in\",\"Manuel uniquement\":\"Manual only\",\"Toutes les heures\":\"Every hour\",\"Une fois par jour\":\"Once a day\",\"Avancement\":\"Progress\",\"en cours\":\"in progress\",\"Interrompu\":\"Interrupted\",\"Publié\":\"Published\",\"modification refusée\":\"change refused\",\"Identité\":\"Identity\",\"Données\":\"Data\",\"Fiche détail\":\"Record details\",\"Pavillons\":\"Halls\",\"{n} publiés\":\"{n} published\",\"{n} publié\":\"{n} published\",\"Publier\":\"Publish\",\"Pavillon\":\"Hall\",\"Hall\":\"Hall no.\",\"Emplacements\":\"Stands\",\"Copier\":\"Copy\",\"Échec\":\"Failed\",\"Plan : {source}\":\"Map: {source}\",\"Exposants : {source}\":\"Exhibitors: {source}\",\"Conférences : {source}\":\"Conferences: {source}\",\"Produits : {source}\":\"Products: {source}\",\"Klipso pour tout\":\"Klipso for everything\",\"Numéro de stand\":\"Stand number\",\"secteur de l'emplacement\":\"sector of the stand\",\"Enseigne\":\"Brand\",\"Téléphone société\":\"Company phone\",\"Le stand\":\"The stand\",\"L'exposant\":\"The exhibitor\",\"Rattachement des co-exposants\":\"Co-exhibitor link\",\"Masqué — {champs}\":\"Hidden — {champs}\",\"Masqué\":\"Hidden\",\"{n} critères de recherche\":\"{n} search filters\",\"{n} critère de recherche\":\"{n} search filter\",\"aucun critère de recherche\":\"no search filters\",\"{n} champs de zone masqués\":\"{n} area fields hidden\",\"{n} groupes de champs\":\"{n} field groups\",\"{n} groupe de champs\":\"{n} field group\",\"{n} champs associés à la main\":\"{n} fields mapped by hand\",\"champs d'origine proposés\":\"source fields suggested\",\"Afficher ce champ sur la fiche\":\"Show this field on the record\",\"Proposer ce champ dans les critères de recherche\":\"Offer this field as a search filter\",\"Nouveau champ\":\"New field\",\"Renommer le champ\":\"Rename field\",\"Renommer {champ}\":\"Rename {champ}\",\"Retirer {champ}\":\"Remove {champ}\",\"Modifier\":\"Edit\",\"Ajouter un champ\":\"Add a field\",\"Afficher\":\"Show\",\"Sur la fiche\":\"On the record\",\"Champ d'origine\":\"Source field\",\"Critère\":\"Filter\",\"Critère de recherche\":\"Search filter\",\"toujours\":\"always\",\"{champs}, puis {suite}\":\"{champs}, then {suite}\",\"Aucun — laisser vide\":\"None — leave empty\",\"Champs\":\"Fields\",\"laissé vide\":\"left empty\",\"choisi à la main\":\"chosen by hand\",\"relevée sur les fiches\":\"found on the records\",\"Ouvrir le plan tel que le voient les visiteurs\":\"Open the map as visitors see it\",\"Dernière : {date}\":\"Last: {date}\",\"Jamais synchronisé.\":\"Never synchronised.\",\"Synchronisation — {salon}\":\"Synchronisation — {salon}\",\"salon\":\"show\",\"Synchronisation en cours…\":\"Synchronisation in progress…\",\"{n} pavillons, {n2} emplacements.\":\"{n} halls, {n2} stands.\",\"{n} pavillon, {n2} emplacements.\":\"{n} hall, {n2} stands.\",\"Nom de la copie\":\"Name of the copy\",\"Nouvel événement\":\"New event\",\"Administrateur\":\"Administrator\",\"Organisateur\":\"Organiser\",\"Vous\":\"You\",\"Nom\":\"Surname\",\"E-mail\":\"Email\",\"Aucun compte.\":\"No accounts.\",\"Compte enregistré.\":\"Account saved.\",\"Suppression…\":\"Deleting…\",\"Compte supprimé.\":\"Account deleted.\",\"Retour\":\"Back\",\"Enregistrer\":\"Save\",\"Modifier le compte\":\"Edit account\",\"Salons\":\"Shows\",\"Chargement impossible : {raison}\":\"Could not load: {raison}\",\"Mémoire du navigateur pleine : allégez ou supprimez une image.\":\"Browser storage is full: shrink or delete an image.\",\"Rien à annuler.\":\"Nothing to undo.\",\"Sans pictogramme\":\"No icon\",\"Accessibilité\":\"Accessibility\",\"Accueil\":\"Reception\",\"Ascenseur\":\"Lift\",\"Distributeur\":\"Cash machine\",\"Entrée\":\"Entrance\",\"Entrée/Sortie\":\"Entrance/Exit\",\"Escalier\":\"Stairs\",\"Parking\":\"Car park\",\"Restauration\":\"Food & drink\",\"Salle de réunion\":\"Meeting room\",\"Secours\":\"First aid\",\"Sortie\":\"Exit\",\"Vestiaire\":\"Cloakroom\",\"WC\":\"Toilets\",\"Sans type\":\"No type\",\"Mène à\":\"Leads to\",\"Image posée au centre de la vue. Glissez sur le plan pour en poser une autre.\":\"Image placed in the centre of the view. Drag on the map to place another one.\",\"Image illisible.\":\"Unreadable image.\",\"Choisissez d'abord l'exposant à matérialiser.\":\"Choose the exhibitor to draw first.\",\"Choisissez d’abord une image.\":\"Choose an image first.\",\"Glissez pour déplacer, les carrés pour redimensionner.\":\"Drag to move, use the squares to resize.\",\"Cliquez une forme de ce calque pour la modifier.\":\"Click a shape on this layer to edit it.\",\"Cliquez-glissez pour tracer un rectangle.\":\"Click and drag to draw a rectangle.\",\"Un clic par sommet, Entrée pour fermer, Échap pour annuler.\":\"One click per corner, Enter to close, Esc to cancel.\",\"Un clic par angle du hall. Revenez sur le premier point, ou Entrée, pour fermer le contour.\":\"One click per corner of the hall. Come back to the first point, or press Enter, to close the outline.\",\"Un clic par point, Entrée pour terminer, Échap pour annuler.\":\"One click per point, Enter to finish, Esc to cancel.\",\"Saisissez le texte, puis cliquez à l'emplacement voulu.\":\"Type the text, then click where you want it.\",\"Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.\":\"Choose or type a label, then click where it goes.\",\"Choisissez l'exposant, puis cliquez-glissez sur sa part du stand.\":\"Choose the exhibitor, then click and drag over its part of the stand.\",\"Glissez sur le plan pour poser une autre copie.\":\"Drag on the map to place another copy.\",\"Choisissez une image, ou déposez le fichier sur le plan.\":\"Choose an image, or drop the file onto the map.\",\"{aide} ({n} points)\":\"{aide} ({n} points)\",\"{aide} ({n} point)\":\"{aide} ({n} point)\",\"Un clic simple repose {largeur} × {hauteur} m.\":\"A single click places {largeur} × {hauteur} m again.\",\"« {exposant} » matérialisé. Choisissez l'exposant suivant.\":\"“{exposant}” drawn. Choose the next exhibitor.\",\"Dessin\":\"Drawing\",\"Ce calque n'entre pas dans le calcul des trajets.\":\"This layer plays no part in working out routes.\",\"Ce qui est dessiné ici barre le passage à tout le monde : entourez les sanitaires, les locaux, les réserves. C'est le plus court chemin — quelques rectangles au lieu de toutes les allées.\":\"Whatever is drawn here blocks the way for everyone: outline the toilets, the service rooms, the storerooms. It is the quickest way — a few rectangles instead of every aisle.\",\"Ce qui est dessiné ici n'est contourné qu'en itinéraire accessible : escaliers, escalators, pentes, emmarchements, estrades. Un pictogramme posé dessus les signale au visiteur, il ne les fait pas éviter.\":\"Whatever is drawn here is only avoided on the accessible route: stairs, escalators, slopes, steps, stages. An icon placed on them points them out to visitors, it does not make the route avoid them.\",\"Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement au bord est retiré tout seul.\":\"Routes will no longer leave what is drawn here, so every aisle will have to be drawn. Draw them as they are: the clearance along the edges is taken off automatically.\",\"Ce qui est dessiné ici ne s'ouvre qu'en itinéraire accessible, et reste fermé aux autres : le couloir qui mène à l'ascenseur, la rampe qui contourne les marches. Faites-le mordre d'un bon mètre sur l'allée qu'il rejoint, sans quoi il débouche sur un mur — cette morsure se ferme aux autres comme le reste, ne barrez donc pas l'allée en travers.\":\"Whatever is drawn here only opens on the accessible route, and stays closed to everyone else: the corridor leading to the lift, the ramp that goes around the steps. Make it overlap the aisle it joins by a good metre, otherwise it leads into a wall — that overlap is closed to others like the rest, so don't draw it right across the aisle.\",\"{aide} Masquer le calque ne change rien au calcul : le dessin disparaît de l'écran, pas du terrain.\":\"{aide} Hiding the layer changes nothing in the calculation: the drawing disappears from the screen, not from the ground.\",\"Nouveau calque\":\"New layer\",\"Calque {n}\":\"Layer {n}\",\"Nom du calque\":\"Layer name\",\"Valider\":\"OK\",\"Polygone\":\"Polygon\",\"Ligne\":\"Line\",\"Stand dessiné\":\"Drawn stand\",\"Temps de passage, en minutes\":\"Time to go through, in minutes\",\"Retirer ce passage\":\"Remove this connection\",\"{nom} (calque masqué)\":\"{nom} (hidden layer)\",\"Relier à…\":\"Link to…\",\"Aucun autre passage sur les autres plans\":\"No other connection on the other maps\",\"Un trajet qui arrive ici continue de l'autre côté. Le temps de chaque passage s'ajoute à celui de la marche ; laissé vide, il vaut {duree}.\":\"A route arriving here carries on at the other end. The time of each connection is added to the walking time; left empty, it counts as {duree}.\",\"Reliez ce {passage} à ce qu'il dessert sur les autres plans — un escalier monte souvent à deux étages, et chacun est un passage — et les itinéraires enchaîneront les plans au lieu de s'arrêter là.\":\"Link this {passage} to what it leads to on the other maps — stairs often go up two floors, and each one is a connection — and routes will carry on from map to map instead of stopping here.\",\"Clic sur le plan\":\"Click on the map\",\"Liste du pavillon\":\"Hall list\",\"Programme de visite\":\"Visit plan\",\"Lien direct\":\"Direct link\",\"Autre\":\"Other\",\"Emplacement\":\"Stand\",\"Exposant\":\"Exhibitor\",\"Fiches ouvertes\":\"Records opened\",\"Visiteurs uniques\":\"Unique visitors\",\"Itinéraires calculés\":\"Routes calculated\",\"Ouvertures\":\"Opens\",\"Visiteurs\":\"Visitors\",\"Exposants ({n} derniers jours)\":\"Exhibitors (last {n} days)\",\"Plan du salon\":\"Floor plan\",\"emplacements\":\"stands\",\"exposants\":\"exhibitors\",\"zones\":\"areas\",\"Calculer un itinéraire\":\"Get directions\",\"Mon parcours de visite\":\"My visit plan\",\"Calques\":\"Layers\",\"Réglages du plan\":\"Map settings\",\"Thème clair / sombre\":\"Light / dark theme\",\"Basculer le thème\":\"Switch theme\",\"Compte\":\"Account\",\"Thème sombre\":\"Dark theme\",\"Thème clair\":\"Light theme\",\"Se déconnecter\":\"Sign out\",\"Afficher la liste des stands\":\"Show the stand list\",\"Exposant, stand…\":\"Exhibitor, stand…\",\"Effacer la recherche\":\"Clear search\",\"Critères de recherche\":\"Search filters\",\"Critères retenus\":\"Selected filters\",\"Revenir au début\":\"Back to the start\",\"Voir la suite\":\"See more\",\"Plan du pavillon 7.1\":\"Map of hall 7.1\",\"Zoom avant\":\"Zoom in\",\"Zoom arrière\":\"Zoom out\",\"Ajuster\":\"Fit to screen\",\"Annuler\":\"Cancel\",\"Renommer le calque\":\"Rename layer\",\"Fermer — Échap\":\"Close — Esc\",\"Fermer la barre de dessin\":\"Close the drawing toolbar\",\"Rôle dans les itinéraires\":\"Role in routes\",\"Voir ce qui est praticable\":\"Show where people can walk\",\"Accrocher aux stands et aux zones — Alt pour relâcher\":\"Snap to stands and areas — Alt to release\",\"Pas de la grille\":\"Grid step\",\"Sélectionner\":\"Select\",\"Polygone — clic pour chaque sommet, Entrée pour fermer\":\"Polygon — click for each corner, Enter to close\",\"Contour de hall — un clic par angle, segments redressés, Entrée pour fermer\":\"Hall outline — one click per corner, straightened sides, Enter to close\",\"Ligne — clic pour chaque point, Entrée pour terminer\":\"Line — click for each point, Enter to finish\",\"Texte\":\"Text\",\"Repère — WC, entrée, accueil…\":\"Landmark — toilets, entrance, reception…\",\"Stand — matérialiser un exposant ou un co-exposant sur son emplacement\":\"Stand — draw an exhibitor or co-exhibitor on its space\",\"Arrondi\":\"Corner radius\",\"Redresser les segments\":\"Straighten sides\",\"Épaisseur\":\"Thickness\",\"Fin\":\"Thin\",\"Épais\":\"Thick\",\"Très épais\":\"Very thick\",\"Continu\":\"Solid\",\"Pointillé\":\"Dashed\",\"Flèche\":\"Arrow\",\"Aucune\":\"None\",\"Au bout\":\"At the end\",\"Au départ\":\"At the start\",\"Aux deux bouts\":\"At both ends\",\"Texte à placer\":\"Text to place\",\"Ce que le repère est\":\"What the landmark is\",\"Libellé — « Nord », « A »…\":\"Label — “North”, “A”…\",\"Exposant à matérialiser\":\"Exhibitor to draw\",\"Choisir une image…\":\"Choose an image…\",\"Supprimer — Suppr\":\"Delete — Del\",\"Passages vers d'autres plans\":\"Links to other maps\",\"Largeur\":\"Width\",\"Hauteur\":\"Height\",\"Taille\":\"Size\",\"Lier à un stand — numéro ou exposant\":\"Link to a stand — number or exhibitor\",\"Exposant — numéro ou nom\":\"Exhibitor — number or name\",\"Annuler · Ctrl+Z\":\"Undo · Ctrl+Z\",\"Terminer — Échap\":\"Done — Esc\",\"Terminer le placement des libellés\":\"Finish placing labels\",\"Placement automatique\":\"Automatic placement\",\"Fermer\":\"Close\",\"Ordre des calques\":\"Layer order\",\"Nouvel exposant\":\"New exhibitor\",\"Modifier la fiche\":\"Edit details\",\"Détail\":\"Details\",\"Mon parcours\":\"My visit\",\"Parcours de visite\":\"Visit plan\",\"Organiser ma journée\":\"Plan my day\",\"Partager mon parcours\":\"Share my visit plan\",\"Partager\":\"Share\",\"Vider le parcours\":\"Clear my visit plan\",\"Changer l'heure d'arrivée\":\"Change arrival time\",\"Revenir à ma liste\":\"Back to my list\",\"Itinéraire\":\"Directions\",\"Se rendre\":\"Getting there\",\"à définir\":\"to be set\",\"Départ\":\"Start\",\"Arrivée\":\"Destination\",\"Entrée, stand, zone…\":\"Entrance, stand, area…\",\"Choisir le départ sur le plan\":\"Pick the start on the map\",\"Inverser le départ et l'arrivée\":\"Swap start and destination\",\"Nom ou numéro de stand\":\"Stand name or number\",\"Choisir l'arrivée sur le plan\":\"Pick the destination on the map\",\"Itinéraire accessible\":\"Accessible route\",\"Évite les escaliers et les escalators, les obstacles signalés, et les passages de moins d'un mètre quarante.\":\"Avoids stairs and escalators, reported obstacles, and passages narrower than 1.40 metres.\",\"Effacer l'itinéraire\":\"Clear route\",\"Plan interactif\":\"Interactive map\",\"Continuer\":\"Continue\",\"Aucun\":\"None\",\"Infranchissable\":\"Impassable\",\"Infranchissable en fauteuil\":\"Impassable in a wheelchair\",\"Infranchissable sauf PMR\":\"Impassable except for reduced mobility\",\"Où l'on peut marcher\":\"Where people can walk\",\"salle de conférence\":\"conference room\",\"repère\":\"landmark\",\"porte\":\"door\",\"la porte\":\"the door\",\"escalier\":\"stairs\",\"l'escalier\":\"the stairs\",\"l'escalator\":\"the escalator\",\"ascenseur\":\"lift\",\"l'ascenseur\":\"the lift\",\"Le chemin dans le {plan} n'a pas pu être tracé : cette partie du trajet manque à l'écran.\":\"The path in {plan} could not be drawn: this part of the route is missing on screen.\",\"La sortie du {plan} n'est pas repérée sur le plan : cette partie du trajet n'est pas tracée.\":\"The exit from {plan} is not marked on the map: this part of the route is not drawn.\",\"L'entrée du {plan} n'est pas repérée sur le plan : cette partie du trajet n'est pas tracée.\":\"The entrance to {plan} is not marked on the map: this part of the route is not drawn.\",\"{n} m\":\"{n} m\",\"{n} km\":\"{n} km\",\"≥ {distance}\":\"≥ {distance}\",\"≈ {n} min\":\"≈ {n} min\",\"Aucun stand, zone ni repère ne porte ce nom.\":\"No stand, area or landmark has this name.\",\"Tapez le nom ou le numéro d'un stand.\":\"Type a stand name or number.\",\"Comptez {duree}.\":\"Allow {duree}.\",\"Changement de pavillon\":\"Change of hall\",\"Sortez du {de} par « {porte} », puis entrez dans le {vers} par « {porteVers} ».\":\"Leave {de} through “{porte}”, then enter {vers} through “{porteVers}”.\",\"Prenez {passage} « {nom} » : vous arrivez dans le {vers}.\":\"Take {passage} “{nom}”: you come out in {vers}.\",\"Prenez {passage} « {nom} » : vous arrivez dans le {vers}, « {nomVers} ».\":\"Take {passage} “{nom}”: you come out in {vers}, at “{nomVers}”.\",\"Recherche du chemin…\":\"Finding the way…\",\"Choisissez un départ et une arrivée. Sans localisation, c'est vous qui dites d'où vous partez — l'entrée du hall, ou le stand devant lequel vous êtes.\":\"Choose a start and a destination. There is no location tracking: you say where you start from — the hall entrance, or the stand you are standing at.\",\"Vous y êtes déjà.\":\"You are already there.\",\"Le calcul n'a pas abouti sur cet appareil.\":\"The route could not be worked out on this device.\",\"Aucun chemin accessible ne relie ces deux points : les passages disponibles sont trop étroits, ou coupés par un escalier. Décochez l'option pour voir le trajet ordinaire.\":\"No accessible path links these two points: the available passages are too narrow, or cut off by stairs. Untick the option to see the standard route.\",\"Aucun chemin ne relie ces deux points sur ce plan.\":\"No path links these two points on this map.\",\"non tracé\":\"not drawn\",\"au moins {distance}\":\"at least {distance}\",\"hors trajet entre pavillons\":\"not counting the way between halls\",\"{n} passage\":\"{n} connection\",\"{n} passages\":\"{n} connections\",\"Le trajet contourne « {salle} » : sa conférence se termine à {heure}, et l'allée qui la borde va se remplir. Environ {distance} de plus.\":\"The route goes around “{salle}”: its conference ends at {heure}, and the aisle beside it is about to fill up. About {distance} further.\",\"Le trajet contourne « {salle} » : sa conférence commence à {heure}, et l'allée qui la borde va se remplir. Environ {distance} de plus.\":\"The route goes around “{salle}”: its conference starts at {heure}, and the aisle beside it is about to fill up. About {distance} further.\",\"Le trajet longe « {salle} », dont sa conférence se termine à {heure} : attendez-vous à du monde dans l'allée.\":\"The route runs along “{salle}”, where a conference ends at {heure}: expect crowds in the aisle.\",\"Le trajet longe « {salle} », dont sa conférence commence à {heure} : attendez-vous à du monde dans l'allée.\":\"The route runs along “{salle}”, where a conference starts at {heure}: expect crowds in the aisle.\",\"Sortez du {de}, rejoignez le {vers}.\":\"Leave {de} and go to {vers}.\",\"{distance} dans le pavillon\":\"{distance} in the hall\",\"tracé à l'écran\":\"shown on screen\",\"voir\":\"view\",\"Indiquez votre point de départ sur le plan.\":\"Tap your starting point on the map.\",\"Indiquez votre arrivée sur le plan.\":\"Tap your destination on the map.\",\"Salle non située sur le plan\":\"Room not located on the map\",\"vous y seriez à {heure}\":\"you would get there at {heure}\",\"Votre parcours a changé depuis ce calcul : reprenez-le pour que la journée en tienne compte.\":\"Your visit plan has changed since this was worked out: plan your day again so it takes the change into account.\",\"Le salon ouvre à {ouverture} : la journée commence à l'ouverture, et non à {demandee}.\":\"The show opens at {ouverture}: your day starts at opening time, not at {demandee}.\",\"{n} arrêts\":\"{n} stops\",\"{n} arrêt\":\"{n} stop\",\"au moins {distance} de marche\":\"at least {distance} on foot\",\"{mesure} de marche\":\"{mesure} on foot\",\"itinéraire accessible\":\"accessible route\",\"Départ : {nom}\":\"Start: {nom}\",\"{duree} de marche (non tracé)\":\"{duree} on foot (not drawn)\",\"Rejoignez le {plan}\":\"Go to {plan}\",\"comptez {duree}, ce trajet n'est pas sur le plan\":\"allow {duree}, this part is not on the map\",\"{duree} sur place avant le début\":\"{duree} to spare before it starts\",\"en arrivant à {heure}, vous ne perdriez rien\":\"arriving at {heure}, you would lose nothing\",\"« {conference} » : au mieux, vous y arriveriez {duree} après le début — le trajet n'y suffit pas. Arrivez plus tôt, ou retirez ce qui la précède.\":\"“{conference}”: at best, you would arrive {duree} after it starts — there isn't enough time to walk there. Arrive earlier, or remove what comes before it.\",\"{n} exposants ne tiennent pas avant la fermeture du salon, à {heure} : vous arrivez après.\":\"{n} exhibitors don't fit in before the show closes at {heure}: you arrive after closing time.\",\"{n} exposants ne tiennent pas avant la fermeture du salon, à {heure} : arrivez plus tôt, ou retirez ce qui passe avant.\":\"{n} exhibitors don't fit in before the show closes at {heure}: arrive earlier, or remove something that comes before them.\",\"Un exposant ne tient pas avant la fermeture du salon, à {heure} : vous arrivez après.\":\"One exhibitor doesn't fit in before the show closes at {heure}: you arrive after closing time.\",\"Un exposant ne tient pas avant la fermeture du salon, à {heure} : arrivez plus tôt, ou retirez ce qui passe avant.\":\"One exhibitor doesn't fit in before the show closes at {heure}: arrive earlier, or remove something that comes before it.\",\"Après la fermeture\":\"After closing time\",\"Restés de côté\":\"Left out\",\"Un autre jour\":\"Another day\",\"date inconnue\":\"date unknown\",\"En même temps qu'une autre\":\"At the same time as another\",\"Déjà commencées à votre arrivée\":\"Already started when you arrive\",\"Certaines conférences retenues ne sont rattachées à aucune zone du plan : elles gardent leur heure, mais le trajet ne peut pas y mener.\":\"Some of the conferences you picked are not linked to any area on the map: they keep their time, but the route cannot take you there.\",\"« {conference} » n'est rattachée à aucune zone du plan : elle garde son heure, mais le trajet ne peut pas y mener.\":\"“{conference}” is not linked to any area on the map: it keeps its time, but the route cannot take you there.\",\"Il reste {duree} d'attente dans cette journée. Avancer ce qui suit la dernière conférence demanderait un détour plus long que le temps gagné.\":\"This day still has {duree} of waiting. Moving up what follows the last conference would mean a detour longer than the time saved.\",\"Il reste {duree} d'attente dans cette journée. Votre parcours ne contient plus rien à visiter d'ici là : ajoutez des exposants pour la combler.\":\"This day still has {duree} of waiting. Your visit plan has nothing left to see until then: add exhibitors to fill it.\",\"Comptez {duree} par stand. Les heures sont indicatives : elles supposent qu'on ne s'attarde pas, et ne tiennent compte ni des files ni des pauses.\":\"Allow {duree} per stand. Times are only a guide: they assume you don't linger, and allow for neither queues nor breaks.\",\"Ma journée\":\"My day\",\"Journée organisée\":\"Planned day\",\"On place d'abord les conférences que vous avez retenues — elles ne se déplacent pas — puis on glisse les stands entre elles, dans l'ordre qui fait le moins de chemin.\":\"The conferences you picked go in first — their times are fixed — then the stands are fitted in between, in the order that means the least walking.\",\"Heure d'arrivée\":\"Arrival time\",\"Jour de visite\":\"Day of your visit\",\"Le salon est ouvert de {ouverture} à {fermeture}.\":\"The show is open from {ouverture} to {fermeture}.\",\"Le salon ouvre à {heure}.\":\"The show opens at {heure}.\",\"Le salon ferme à {heure}.\":\"The show closes at {heure}.\",\"Peu importe\":\"Any\",\"Par où vous entrez\":\"Where you come in\",\"La journée commencera à « {entree} » ({pavillon}), la seule entrée repérée.\":\"Your day will start at “{entree}” ({pavillon}), the only entrance marked.\",\"La journée commencera à « {entree} », la seule entrée repérée.\":\"Your day will start at “{entree}”, the only entrance marked.\",\"Aucune entrée n'est repérée sur ce plan : la journée commencera au premier exposant de votre liste.\":\"No entrance is marked on this map: your day will start at the first exhibitor on your list.\",\"Organiser\":\"Plan my day\",\"calcul…\":\"working it out…\",\"Recherche du meilleur ordre de visite…\":\"Finding the best order to visit…\",\"Le calcul de la journée n'a pas abouti sur cet appareil. Votre parcours, lui, est intact.\":\"Your day could not be worked out on this device. Your visit plan is untouched.\",\"Administration — {salon}\":\"Admin — {salon}\",\"{n} pavillons\":\"{n} halls\",\"{n} pavillon\":\"{n} hall\",\"Stand {code}\":\"Stand {code}\",\"Zone\":\"Area\",\"zone\":\"area\",\"Conf\":\"Talk\",\"Repère\":\"Landmark\",\"Secteur\":\"Sector\",\"Ville\":\"City\",\"Pays\":\"Country\",\"Nomenclature\":\"Categories\",\"Thématiques\":\"Themes\",\"Retirer ce critère\":\"Remove this filter\",\"Retirer le critère {critere} {valeur}\":\"Remove filter {critere} {valeur}\",\"Tout effacer\":\"Clear all\",\"{n} exposants retenus\":\"{n} exhibitors match\",\"{n} exposant retenu\":\"{n} exhibitor matches\",\"0 exposant retenu\":\"0 exhibitors match\",\"aucune valeur relevée\":\"no values found\",\"retenu\":\"selected\",\"{n} retenue\":\"{n} selected\",\"{n} retenues\":\"{n} selected\",\"Aucune valeur sur les fiches. Vérifiez le champ d'origine de ce champ dans la console, puis lancez une synchronisation : les valeurs proposées ici viennent d'elle.\":\"No values on the exhibitor records. Check where this field comes from in the console, then run a synchronisation: the values offered here come from it.\",\"Aucune valeur ne correspond.\":\"No value matches.\",\"Filtrer {critere}…\":\"Filter {critere}…\",\"Voir les résultats\":\"Show results\",\"{n} résultats\":\"{n} results\",\"{n} résultat\":\"{n} result\",\"tous pavillons\":\"all halls\",\"Zone sans nom\":\"Unnamed area\",\"Aucun résultat dans les {n} pavillons.\":\"No results in the {n} halls.\",\"Aucun résultat dans les 1 pavillons.\":\"No results in the hall.\",\"0 résultat\":\"0 results\",\"Raison sociale\":\"Company name\",\"Adresse\":\"Address\",\"Niveaux\":\"Levels\",\"Téléphone\":\"Phone\",\"Site web\":\"Website\",\"Lien\":\"Link\",\"Conférences\":\"Conferences\",\"Centrer sur le plan\":\"Centre on map\",\"Sans nom\":\"Unnamed\",\"{n} sociétés occupent ce stand.\":\"{n} companies share this stand.\",\"{n} exposants ici\":\"{n} exhibitors here\",\"Affiché : oui\":\"Shown: yes\",\"Affiché : non\":\"Shown: no\",\"Retirer cette zone du plan public\":\"Remove this area from the public map\",\"Remettre cette zone sur le plan public\":\"Put this area back on the public map\",\"Quand\":\"When\",\"Où\":\"Where\",\"Organisée par\":\"Hosted by\",\"Thématique\":\"Theme\",\"Présentation\":\"Presentation\",\"Situer sur le plan\":\"Show on map\",\"plan\":\"base map\",\"données\":\"data\",\"dessin\":\"drawing\",\"Calque verrouillé : ouvrez son cadenas dans la pile pour le renommer\":\"Locked layer: open its padlock in the stack to rename it\",\"Renommer\":\"Rename\",\"Mettre au premier plan\":\"Bring to front\",\"Mettre à l’arrière-plan\":\"Send to back\",\"Glissez pour réordonner. Le premier de la liste est au premier plan.\":\"Drag to reorder. The first in the list is in front.\",\"Terminé\":\"Done\",\"Nouveau mot de passe\":\"New password\",\"Confirmation\":\"Confirm\",\"Ouvrir la console\":\"Open the console\",\"Refusé (HTTP {code})\":\"Refused (HTTP {code})\",\"Mot de passe enregistré.\":\"Password saved.\",\"Retirer de mon parcours\":\"Remove from my visit plan\",\"Ajouter à mon parcours\":\"Add to my visit plan\",\"Dans mon parcours\":\"In my visit plan\",\"Retirer du parcours\":\"Remove from visit plan\",\"{n} exposant\":\"{n} exhibitor\",\"{n} exposants\":\"{n} exhibitors\",\"{n} conférence\":\"{n} conference\",\"{n} conférences\":\"{n} conferences\",\"rien pour l'instant\":\"nothing yet\",\"Ouvrez la fiche d'un exposant, ou le programme d'une zone, et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet appareil et vous y retrouverez tout à votre prochaine visite.\":\"Open an exhibitor's details, or an area's programme, and tap the bookmark to add it here. Your visit plan stays on this device, and you will find it all here on your next visit.\",\"Exposants\":\"Exhibitors\",\"Les exposants et les conférences retenus seront oubliés. Ils ne sont enregistrés que sur cet appareil : rien ne permettra de les retrouver.\":\"The exhibitors and conferences you picked will be forgotten. They are only saved on this device: there will be no way to get them back.\",\"Vider\":\"Clear\",\"Code à photographier qui ouvre ce parcours\":\"Code to scan that opens this visit plan\",\"Faites photographier ce code : le plan s'ouvrira sur le même parcours.\":\"Have this code scanned: the map will open on the same visit plan.\",\"Ce parcours porte trop d'étapes pour un code lisible de loin. Envoyez le lien, il fait le même travail.\":\"This visit plan has too many stops for a code that scans from a distance. Send the link: it does the same job.\",\"Le parcours tient dans le lien lui-même : rien n'est enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.\":\"The visit plan lives in the link itself: nothing is saved on our servers, and there is no account or email address to give.\",\"Copier le lien\":\"Copy link\",\"Copié\":\"Copied\",\"Échec de la copie\":\"Copy failed\",\"Partager…\":\"Share…\",\"voici les stands et les conférences que j'ai retenus.\":\"here are the stands and conferences I picked.\",\"Parcours partagé\":\"Shared visit plan\",\"Tout ce que ce lien propose est déjà dans votre parcours.\":\"Everything this link offers is already in your visit plan.\",\"Ce lien ne désigne rien de ce salon : il vient sans doute d'une autre édition, ou les stands qu'il retenait ont été démontés depuis.\":\"This link points to nothing in this show: it probably comes from another edition, or the stands it listed have been taken down since.\",\"Un parcours partagé\":\"A shared visit plan\",\"Le parcours qui vous a été partagé contient {contenu}.\":\"The visit plan shared with you contains {contenu}.\",\"{n} exposant et {n2} conférence\":\"{n} exhibitor and {n2} conference\",\"{n} exposant et {n2} conférences\":\"{n} exhibitor and {n2} conferences\",\"{n} exposants et {n2} conférence\":\"{n} exhibitors and {n2} conference\",\"{n} exposants et {n2} conférences\":\"{n} exhibitors and {n2} conferences\",\"et {n} de plus\":\"and {n} more\",\"Remplacer le mien\":\"Replace mine\",\"Ajouter au mien\":\"Add to mine\",\"Charger ce parcours\":\"Load this visit plan\",\"Zones organisateur\":\"Organiser areas\",\"Textes\":\"Labels\",\"Issus du salon\":\"From the show\",\"Ajoutés à la main\":\"Added by hand\",\"+ Nouveau calque de dessin\":\"+ New drawing layer\",\"Déverrouiller le calque\":\"Unlock layer\",\"Verrouiller le calque : ni dessin, ni suppression\":\"Lock layer: no drawing, no deleting\",\"⇅ Réorganiser les calques\":\"⇅ Reorder layers\",\"Contour seul ou surface remplie\":\"Outline only or filled\",\"Placer les libellés à la main\":\"Place labels by hand\",\"Dessiner sur ce calque\":\"Draw on this layer\",\"Supprimer le calque\":\"Delete layer\",\"Ce calque compte dans les itinéraires, même masqué.\":\"This layer counts for routes, even when hidden.\",\"Calque verrouillé : ouvrez son cadenas pour y dessiner.\":\"Locked layer: open its padlock to draw on it.\",\"Cliquez pour dessiner dessus\":\"Click to draw on it\",\"Calque verrouillé\":\"Locked layer\",\"Supprimer le calque ?\":\"Delete layer?\",\"« {calque} » et ses {n} formes seront définitivement perdus.\":\"“{calque}” and its {n} shapes will be permanently lost.\",\"« {calque} » et ses {n} forme seront définitivement perdus.\":\"“{calque}” and its {n} shape will be permanently lost.\",\"« {calque} » et son contenu seront définitivement perdus.\":\"“{calque}” and its content will be permanently lost.\",\"Supprimer\":\"Delete\",\"Textes des stands\":\"Stand labels\",\"Textes des zones\":\"Area labels\",\"Repères\":\"Landmarks\",\"Élément sélectionné\":\"Selected item\",\"Points d'intérêt\":\"Points of interest\",\"Blanc\":\"White\",\"Ivoire\":\"Ivory\",\"Coquille\":\"Eggshell\",\"Gris perle\":\"Pearl grey\",\"Vert d'eau\":\"Pale green\",\"Bleu pâle\":\"Pale blue\",\"Sable\":\"Sand\",\"Fond du plan\":\"Map background\",\"Couleur d'origine\":\"Original colour\",\"Couleur libre\":\"Custom colour\",\"Pousser la configuration\":\"Publish configuration\",\"Enregistrement…\":\"Saving…\",\"Des réglages ne sont encore que sur ce poste.\":\"Some settings are still only on this computer.\",\"Les réglages partent vers la base.\":\"The settings are on their way to the database.\",\"Configuration enregistrée\":\"Configuration saved\",\"Les visiteurs voient ces réglages.\":\"Visitors see these settings.\",\"Enregistrer — réessayer\":\"Save — try again\",\"Enregistrement impossible : {raison}\":\"Could not save: {raison}\",\"Vos calques ne sont enregistrés que sur ce poste : {raison}\":\"Your layers are only saved on this computer: {raison}\",\"Réessayer\":\"Try again\",\"Vous n'êtes plus connecté : vos calques ne sont enregistrés que sur ce poste.\":\"You are no longer signed in: your layers are only saved on this computer.\",\"Se reconnecter\":\"Sign in again\",\"Reconnectez-vous pour enregistrer votre travail.\":\"Sign in again to save your work.\",\"{n} calques de ce poste n'avaient jamais été enregistrés : ils sont de nouveau en base.\":\"{n} layers on this computer had never been saved: they are back in the database.\",\"{n} calques de ce poste n'avaient jamais été enregistrés : ils repartent vers la base.\":\"{n} layers on this computer had never been saved: they are being sent to the database again.\",\"Un calque de ce poste n'avait jamais été enregistré : il est de nouveau en base.\":\"One layer on this computer had never been saved: it is back in the database.\",\"Un calque de ce poste n'avait jamais été enregistré : il repart vers la base.\":\"One layer on this computer had never been saved: it is being sent to the database again.\",\"session expirée, reconnectez-vous\":\"session expired, please sign in again\",\"Événement introuvable.\":\"Event not found.\",\"Session absente : reconnectez-vous pour enregistrer.\":\"No session: sign in again to save.\",\"Calque\":\"Layer\",\"{n} pavillons sont absents de la base : lancez une synchronisation depuis la console.\":\"{n} halls are missing from the database: run a synchronisation from the console.\",\"{n} pavillon est absent de la base : lancez une synchronisation depuis la console.\":\"{n} hall is missing from the database: run a synchronisation from the console.\",\"{n} calques de dessin\":\"{n} drawing layers\",\"{n} calque de dessin\":\"{n} drawing layer\",\"Configuration enregistrée : {pavillons}, {calques}.\":\"Configuration saved: {pavillons}, {calques}.\",\"Configuration enregistrée : {pavillons}.\":\"Configuration saved: {pavillons}.\",\"Sauvegarde téléchargée : {pavillons}, {calques}.\":\"Backup downloaded: {pavillons}, {calques}.\",\"Sauvegarde téléchargée : {pavillons}.\":\"Backup downloaded: {pavillons}.\",\"Sauvegarde restaurée : {pavillons}, {calques}.\":\"Backup restored: {pavillons}, {calques}.\",\"Sauvegarde restaurée : {pavillons}.\":\"Backup restored: {pavillons}.\",\"Sauvegarde restaurée : {pavillons}, {calques}\":\"Backup restored: {pavillons}, {calques}\",\"Sauvegarde restaurée : {pavillons}\":\"Backup restored: {pavillons}\",\"{n} pavillons du fichier ne concernent pas ce salon.\":\"{n} halls in the file do not belong to this show.\",\"{n} pavillon du fichier ne concerne pas ce salon.\":\"{n} hall in the file does not belong to this show.\",\"Ce fichier n'est pas une sauvegarde de plan.\":\"This file is not a map backup.\",\"Restaurer cette sauvegarde ?\":\"Restore this backup?\",\"Elle date du {date} et porte {calques}.\":\"It dates from {date} and holds {calques}.\",\"Elle date du {date}, et vient du salon « {salon} » et porte {calques}.\":\"It dates from {date}, comes from the show “{salon}”, and holds {calques}.\",\"Les calques et l'apparence en place seront remplacés.\":\"The current layers and appearance will be replaced.\",\"Les calques et l'apparence en place seront remplacés, pour autant qu'elle nomme des pavillons d'ici.\":\"The current layers and appearance will be replaced, insofar as it names halls from this show.\",\"Restaurer\":\"Restore\",\"Fichier illisible.\":\"Unreadable file.\",\"Utilisation\":\"Usage\",\"Événement\":\"Event\",\"Thème\":\"Theme\",\"{n} derniers jours\":\"Last {n} days\",\"Depuis le début\":\"Since the start\",\"Programme d'une salle\":\"A room's programme\",\"Fiche d'un exposant\":\"An exhibitor's details\",\"Navigateur\":\"Browser\",\"Le plan ouvert dans un onglet.\":\"The map opened in a browser tab.\",\"Cadre sur un site\":\"Frame on a website\",\"Encadré dans la page d'un site ou d'une application tierce.\":\"Embedded in a page of a third-party website or app.\",\"Écran d'accueil\":\"Home screen\",\"Installé sur l'appareil, lancé hors du navigateur.\":\"Installed on the device, launched outside the browser.\",\"Application\":\"App\",\"Servi par une coque déposée sur une boutique.\":\"Served by a wrapper app published on a store.\",\"Non précisé\":\"Not specified\",\"Compté avant que la porte d'accès ne le soit.\":\"Counted before the way in was recorded.\",\"visites\":\"visits\",\"dont {n} au stockage refusé\":\"including {n} with storage blocked\",\"{n} fiches ouvertes\":\"{n} records opened\",\"{n} fiche ouverte\":\"{n} record opened\",\"Connectez-vous pour lire le rapport.\":\"Sign in to read the report.\",\"Aucun événement.\":\"No events.\",\"Créez-en un depuis la console.\":\"Create one from the console.\",\"Voir le plan\":\"View the map\",\"Aucune mesure pour cet événement.\":\"No measurements for this event.\",\"Les visites sont comptées dès la première ouverture du plan public.\":\"Visits are counted from the first time the public map is opened.\",\"L'événement est en brouillon : son plan n'est pas encore servi aux visiteurs.\":\"The event is a draft: its map is not yet served to visitors.\",\"Fréquentation\":\"Attendance\",\"Visites\":\"Visits\",\"Une ouverture du plan. Revenir plus tard en fait une seconde.\":\"One opening of the map. Coming back later makes a second one.\",\"Navigateurs distincts sur la période.\":\"Distinct browsers over the period.\",\"Dont {n} au stockage refusé, recomptés à chaque ouverture.\":\"Including {n} with storage blocked, counted again at each opening.\",\"Navigateurs distincts sur la période. Dont {n} au stockage refusé, recomptés à chaque ouverture.\":\"Distinct browsers over the period. Including {n} with storage blocked, counted again at each opening.\",\"Recherches\":\"Searches\",\"Mots-clés saisis, doublons écartés.\":\"Keywords typed, duplicates removed.\",\"Trajets distincts demandés.\":\"Distinct routes requested.\",\"Programmes de visite\":\"Visit plans\",\"{n} ajouts ou retraits au total.\":\"{n} additions or removals in total.\",\"{n} ajout ou retrait au total.\":\"{n} addition or removal in total.\",\"Parcours partagés\":\"Shared visit plans\",\"{n} étapes reprises par ceux qui les ont reçus.\":\"{n} stops taken up by those who received them.\",\"{n} étape reprise par ceux qui les ont reçus.\":\"{n} stop taken up by those who received them.\",\"Aucune étape reprise pour l'instant.\":\"No stops taken up yet.\",\"Par moyen d'accès\":\"By way in\",\"Les visites ne se comparent pas d'une porte à l'autre : rouvrir une application en ouvre une à chaque fois, un cadre en ouvre une par page du site qui le porte. Et la somme des visiteurs dépasse le total ci-dessus — un navigateur, une application et un cadre posé sur un site tiers ne partagent aucun jeton, le même visiteur y compte une fois par porte et une seule au total.\":\"Visits cannot be compared from one way in to another: reopening an app starts a new one each time, and a frame starts one per page of the site that hosts it. And the sum of visitors exceeds the total above — a browser, an app and a frame on a third-party site share no token, so the same visitor counts once per way in and only once in the total.\",\"Tout est passé par la même porte sur cette période.\":\"Everything came through the same way in over this period.\",\"La porte d'accès n'était pas encore comptée sur cette période.\":\"The way in was not yet recorded over this period.\",\"Fiches exposants ouvertes\":\"Exhibitor records opened\",\"Toutes provenances confondues.\":\"All sources combined.\",\"Par canal\":\"By channel\",\"Fiches conférences ouvertes\":\"Conference records opened\",\"Une conférence s'ouvre depuis le programme de la salle qui l'accueille, depuis la fiche de l'exposant qui la tient, ou depuis le programme de visite. Elle n'a ni recherche ni forme propre sur le plan.\":\"A conference is opened from the programme of the room hosting it, from the record of the exhibitor running it, or from the visit plan. It has no search and no shape of its own on the map.\",\"Jour par jour\":\"Day by day\",\"Visites par jour, dans le fuseau du salon ({fuseau}).\":\"Visits per day, in the show's time zone ({fuseau}).\",\"Mesure ouverte depuis le {date}.\":\"Measured since {date}.\",\"Visites par jour, dans le fuseau du salon ({fuseau}). Mesure ouverte depuis le {date}.\":\"Visits per day, in the show's time zone ({fuseau}). Measured since {date}.\",\"Vous avez ajouté {n} exposants {motif} à votre liste.\":\"You have added {n} exhibitors {motif} to your list.\",\"du secteur « {valeur} »\":\"from the “{valeur}” sector\",\"de la ville « {valeur} »\":\"from “{valeur}”\",\"du pays « {valeur} »\":\"from “{valeur}”\",\"de la nomenclature « {valeur} »\":\"in the “{valeur}” category\",\"de la thématique « {valeur} »\":\"with the theme “{valeur}”\",\"marqués « {valeur} »\":\"marked “{valeur}”\",\"Vous pourriez être intéressé par l'exposant {nom}.\":\"You might be interested in {nom}.\",\"Pour compléter votre visite\":\"To round off your visit\",\"Ne plus me proposer celui-ci\":\"Don't suggest this one again\",\"Non merci\":\"No thanks\",\"Voir sur le plan\":\"See on map\",\"session absente, reconnectez-vous\":\"no session, please sign in again\",\"Un exposant de plus, proposé au visiteur quand plusieurs de ceux qu'il a retenus dans son parcours se ressemblent. Le rapprochement se fait sur son appareil, à partir de tables préparées ici : rien de ce qu'il retient ne remonte jamais.\":\"One more exhibitor, suggested to visitors when several of those they picked for their visit plan have something in common. The matching happens on their device, from tables prepared here: nothing they pick is ever sent back.\",\"Le parcours de visite est retiré de ce plan, dans l'onglet « Plan » : sans lui, il n'y a ni liste à compléter ni tiroir où poser la proposition.\":\"The visit plan is turned off for this map, in the “Map” tab: without it, there is neither a list to round off nor a panel to show the suggestion in.\",\"Aucun critère n'est réglé sur ce salon : le rapprochement n'a rien sur quoi se faire. Les champs qui font des critères se désignent dans la console, sur la fiche du salon ; le secteur en est un dès que « Montrer les secteurs » est coché.\":\"No filters are set up for this show: there is nothing to match on. The fields used as filters are chosen in the console, on the show's record; the sector becomes one as soon as “Show sectors” is ticked.\",\"Proposer un exposant pour compléter le parcours\":\"Suggest an exhibitor to round off the visit plan\",\"Critère de rapprochement\":\"Matching filter\",\"Ce que plusieurs exposants d'une même liste doivent avoir en commun pour qu'on en propose un de plus. Ce sont les critères de recherche du salon, ceux-là mêmes que le visiteur peut cocher.\":\"What several exhibitors in the same list must have in common for one more to be suggested. These are the show's search filters, the very ones visitors can tick.\",\"Déclencher à partir de\":\"Trigger from\",\"Combien d'exposants d'une même valeur doivent figurer dans le parcours avant qu'on en propose un autre. Plus bas, la proposition arrive tôt et au jugé ; plus haut, elle se fait attendre.\":\"How many exhibitors with the same value must be in the visit plan before another one is suggested. Lower, the suggestion comes early and is more of a guess; higher, it takes longer to appear.\",\"Dans le parcours, la proposition attend en tête de la liste, là où le visiteur va de lui-même. Dans une fenêtre, elle s'ouvre dès que le seuil est atteint : elle se voit, et elle interrompt. Elle ne s'y impose qu'une fois par proposition, jamais par-dessus une autre fenêtre, et jamais à l'ouverture du plan sur une liste d'hier. Les deux cochées, la fenêtre refermée laisse la proposition dans le parcours.\":\"In the visit plan, the suggestion waits at the top of the list, where visitors go on their own. In a window, it opens as soon as the threshold is reached: it gets noticed, and it interrupts. It only pops up once per suggestion, never over another window, and never when the map opens on yesterday's list. With both ticked, closing the window leaves the suggestion in the visit plan.\",\"En tête du parcours de visite\":\"At the top of the visit plan\",\"Dans une fenêtre, dès le seuil atteint\":\"In a window, as soon as the threshold is reached\",\"Exposant proposé\":\"Suggested exhibitor\",\"D'où vient le nom qu'on met sous les yeux du visiteur.\":\"Where the name shown to visitors comes from.\",\"Le plus consulté du salon, dans cette valeur\":\"The show's most viewed, for this value\",\"Un exposant choisi, un par valeur\":\"A chosen exhibitor, one per value\",\"Classement\":\"Ranking\",\"Relevé dans les compteurs d'usage, sur toute la vie du salon. Il ne part aux visiteurs que réduit à ce qu'il en faut — les trois exposants les plus consultés de chaque valeur — et jamais entier : le classement d'un salon ne regarde que son organisateur.\":\"Taken from the usage counters, over the whole life of the show. Visitors only receive the part they need — the three most viewed exhibitors for each value — never the whole thing: a show's ranking is its organiser's business alone.\",\"{n} valeurs ont un exposant à proposer, sur {n2}\":\"{n} values have an exhibitor to suggest, out of {n2}\",\"{n} valeur a un exposant à proposer, sur {n2}\":\"{n} value has an exhibitor to suggest, out of {n2}\",\"relevé le {date}\":\"taken on {date}\",\"Aucun relevé pour l'instant : la suggestion se tait tant qu'elle n'a pas de classement.\":\"No ranking taken yet: the suggestion stays silent until it has one.\",\"personne n'a encore été consulté ici\":\"nobody has been viewed here yet\",\"Relever le classement\":\"Take the ranking\",\"Lecture des compteurs…\":\"Reading the counters…\",\"Classement non rafraîchi : {raison}\":\"Ranking not refreshed: {raison}\",\"Un exposant par valeur\":\"One exhibitor per value\",\"Chaque liste ne propose que les exposants qui portent cette valeur : ce qu'on met sous les yeux du visiteur doit ressembler à ce qu'il a retenu. Une valeur laissée vide ne propose rien, et le plan passe à la suivante.\":\"Each list only offers the exhibitors that have this value: what visitors are shown must look like what they picked. A value left empty suggests nothing, and the map moves on to the next one.\",\"— aucun —\":\"— none —\",\"Oui\":\"Yes\",\"Non\":\"No\",\"oui\":\"yes\",\"non\":\"no\",\"Réseaux sociaux\":\"Social media\",\"Coordonnées\":\"Contact details\",\"Localisation\":\"Location\",\"Activité\":\"Business\",\"Activités\":\"Activities\",\"Secteur d'activité\":\"Business sector\",\"Département\":\"Department\",\"Région\":\"Region\",\"Pavillon {n}\":\"Hall {n}\",\"Hall {n}\":\"Hall {n}\",\"Afrique du Sud\":\"South Africa\",\"Algérie\":\"Algeria\",\"Allemagne\":\"Germany\",\"Andorre\":\"Andorra\",\"Arabie saoudite\":\"Saudi Arabia\",\"Argentine\":\"Argentina\",\"Australie\":\"Australia\",\"Autriche\":\"Austria\",\"Belgique\":\"Belgium\",\"Brésil\":\"Brazil\",\"Bulgarie\":\"Bulgaria\",\"Cameroun\":\"Cameroon\",\"Chine\":\"China\",\"Chypre\":\"Cyprus\",\"Colombie\":\"Colombia\",\"Corée du Sud\":\"South Korea\",\"Croatie\":\"Croatia\",\"Côte d'Ivoire\":\"Ivory Coast\",\"Danemark\":\"Denmark\",\"Égypte\":\"Egypt\",\"Émirats arabes unis\":\"United Arab Emirates\",\"Espagne\":\"Spain\",\"Estonie\":\"Estonia\",\"États-Unis\":\"United States\",\"Finlande\":\"Finland\",\"Grèce\":\"Greece\",\"Guyane\":\"French Guiana\",\"Hongrie\":\"Hungary\",\"Île Maurice\":\"Mauritius\",\"Inde\":\"India\",\"Irlande\":\"Ireland\",\"Islande\":\"Iceland\",\"Israël\":\"Israel\",\"Italie\":\"Italy\",\"Japon\":\"Japan\",\"La Réunion\":\"Réunion\",\"Lettonie\":\"Latvia\",\"Liban\":\"Lebanon\",\"Lituanie\":\"Lithuania\",\"Malte\":\"Malta\",\"Maroc\":\"Morocco\",\"Mexique\":\"Mexico\",\"Norvège\":\"Norway\",\"Nouvelle-Calédonie\":\"New Caledonia\",\"Nouvelle-Zélande\":\"New Zealand\",\"Pays-Bas\":\"Netherlands\",\"Pérou\":\"Peru\",\"Pologne\":\"Poland\",\"Polynésie française\":\"French Polynesia\",\"République tchèque\":\"Czech Republic\",\"Roumanie\":\"Romania\",\"Royaume-Uni\":\"United Kingdom\",\"Russie\":\"Russia\",\"Sénégal\":\"Senegal\",\"Singapour\":\"Singapore\",\"Slovaquie\":\"Slovakia\",\"Slovénie\":\"Slovenia\",\"Suède\":\"Sweden\",\"Suisse\":\"Switzerland\",\"Tunisie\":\"Tunisia\",\"Turquie\":\"Turkey\",\"Recherche des catégories d'invités\":\"Looking up guest categories\",\"Lecture des fiches\":\"Reading records\",\"fiches\":\"records\",\"Fiches lues\":\"Records read\",\"Exposants retenus\":\"Exhibitors kept\",\"Écartés — non inscrits\":\"Left out — not registered\",\"{n} exposants lus\":\"{n} exhibitors read\",\"Lecture du programme\":\"Reading the programme\",\"Rattachement des exposants\":\"Linking exhibitors\",\"conférences\":\"conferences\",\"Conférences tenues par un exposant\":\"Conferences run by an exhibitor\",\"{n} conférences lues\":\"{n} conferences read\",\"{n} conférences lues, {n2} tenues par un exposant\":\"{n} conferences read, {n2} run by an exhibitor\",\"Codification des champs à choix\":\"Decoding choice fields\",\"Aucun pavillon à traiter.\":\"No halls to process.\",\"pavillons\":\"halls\",\"Pavillon « {pavillon} »\":\"Hall “{pavillon}”\",\"Calque « {calque} »\":\"Layer “{calque}”\",\"Enregistrement du pavillon\":\"Saving the hall\",\"Pavillon terminé\":\"Hall done\",\"Emplacements nommés\":\"Named stands\",\"Emplacements appariés\":\"Matched stands\",\"Co-exposants\":\"Co-exhibitors\",\"{n} fiches\":\"{n} records\",\"{n} / {n2} pavillons\":\"{n} / {n2} halls\",\"{n} rattachés\":\"{n} linked\",\"{n} rattachés, {n2} champs relevés\":\"{n} linked, {n2} fields collected\",\"{n} / {n2} salles situées\":\"{n} / {n2} rooms located\",\"non synchronisé\":\"not synchronised\",\"{source} — pas encore repris\":\"{source} — not supported yet\",\"Dossier exposant\":\"Exhibitor record\",\"Fiche invité\":\"Guest record\",\"champ personnalisé\":\"custom field\",\"champ standard\":\"standard field\",\"Champ personnalisé\":\"Custom field\",\"Bâtiment\":\"Building\",\"Poteaux\":\"Pillars\",\"Délimitation des secteurs\":\"Sector boundaries\",\"Fil jaune\":\"Yellow line\",\"Cotes des allées\":\"Aisle dimensions\",\"Cotes des îlots\":\"Island dimensions\",\"Lettres d'allée\":\"Aisle letters\",\"Numérotation des stands\":\"Stand numbering\",\"Textes des zones organisateur\":\"Organiser area labels\",\"Noms des zones IG\":\"IG area names\",\"Zones non élingables\":\"No-rigging zones\",\"Authentification requise.\":\"Authentication required.\",\"evenementId manquant.\":\"evenementId missing.\",\"Salon inaccessible.\":\"Show not accessible.\",\"Source « {source} » pas encore prise en charge pour le plan.\":\"Source “{source}” is not supported for the map yet.\",\"Source « {source} » pas encore prise en charge pour les exposants.\":\"Source “{source}” is not supported for exhibitors yet.\",\"Identifiant de l'événement Eventmaker manquant : renseignez-le dans « Source des données ».\":\"Eventmaker event ID missing: enter it under “Data sources”.\",\"Jeton Eventmaker absent des secrets.\":\"Eventmaker token missing from the secrets.\",\"Clé API refusée par GAIA.\":\"API key rejected by GAIA.\",\"Réponse GAIA invalide.\":\"Invalid GAIA response.\",\"Métadonnées refusées par GAIA.\":\"Metadata rejected by GAIA.\",\"Chemin de codification illisible : {chemin}\":\"Unreadable codification path: {chemin}\",\"Codification refusée par GAIA.\":\"Codification rejected by GAIA.\",\"Média {media} indisponible ({code}).\":\"Media {media} unavailable ({code}).\",\"champ non déclaré par le schéma\":\"field not declared by the schema\",\"Méthode non permise.\":\"Method not allowed.\",\"Réservé à l'administrateur.\":\"Administrator only.\",\"Corps illisible.\":\"Unreadable request body.\",\"Adresse invalide.\":\"Invalid address.\",\"Compte manquant.\":\"Account missing.\",\"Rôle inconnu.\":\"Unknown role.\",\"Vous ne pouvez pas retirer votre propre rôle d'administrateur.\":\"You cannot remove your own administrator role.\",\"Compte introuvable.\":\"Account not found.\",\"Vous ne pouvez pas supprimer votre propre compte.\":\"You cannot delete your own account.\",\"Action inconnue.\":\"Unknown action.\",\"Adresse de retour non autorisée : ajoutez cette origine à ORIGINES_AUTORISEES.\":\"Return address not allowed: add this origin to ORIGINES_AUTORISEES.\",\"Paramètres manquants.\":\"Missing parameters.\",\"Événement introuvable ou non publié.\":\"Event not found or not published.\",\"Paramètre slug manquant.\":\"Missing slug parameter.\",\"Session expirée : reconnectez-vous.\":\"Session expired: please sign in again.\",\"Pavillon introuvable.\":\"Hall not found.\",\"Aucun pavillon : lancez une synchronisation.\":\"No halls: run a synchronisation.\",\"Aucun pavillon publié.\":\"No published halls.\"}";
+  const racine = document.documentElement;
+
+  /* ------------------------------------------------------------------
+     Quelle langue
+
+     L'adresse d'abord : un lien `?lang=en` est ce qu'on imprime sur une
+     affiche pour les visiteurs étrangers, ou ce qu'on envoie à un exposant qui
+     ne lit pas le français, et il doit valoir sur n'importe quel appareil.
+     Puis le choix déjà fait sur cet appareil. Et à la première visite, la
+     langue du navigateur : le français pour qui le lit, l'anglais pour les
+     autres — un visiteur allemand ou japonais lit plus souvent l'anglais que
+     le français.
+     ------------------------------------------------------------------ */
+  function langueDemandee() {
+    try {
+      const l = new URLSearchParams(location.search).get("lang");
+      if (LANGUES.includes(l)) return l;
+    } catch (e) {}
+    try {
+      const l = localStorage.getItem(CLE);
+      if (LANGUES.includes(l)) return l;
+    } catch (e) {}
+    const prefs = (navigator.languages && navigator.languages.length)
+      ? navigator.languages : [navigator.language || "fr"];
+    for (const p of prefs) {
+      const l = String(p).slice(0, 2).toLowerCase();
+      if (LANGUES.includes(l)) return l;
+    }
+    return "en";
+  }
+
+  let courante = langueDemandee();
+
+  /* ------------------------------------------------------------------
+     Le dictionnaire
+
+     Une clé sans accolades est une phrase exacte. Une clé à accolades est un
+     modèle : « {n} exposants retenus » accepte n'importe quel nombre à la
+     place de {n}, « Retirer le critère {critere} » n'importe quel texte. Ce
+     qui remplit l'accolade est traduit à son tour s'il est lui-même une clé —
+     « Échec : {raison} » traduit la raison quand elle est connue — et un
+     nombre y change d'écriture : « 1 234,5 » devient « 1,234.5 ».
+     ------------------------------------------------------------------ */
+  const ESPACES = /[\s\u00A0\u202F\u2009]+/g;
+  const normalise = (s) => String(s).replace(ESPACES, " ").trim();
+  const LETTRE = /[A-Za-zÀ-ÖØ-öø-ÿ]/;
+
+  let EXACT = null;       // Map : phrase → traduction
+  let MODELES = null;     // modèles rangés par leurs deux premiers et derniers signes
+  let PLURIELS = null;    // Map : modèle dépouillé de ses pluriels → sa forme au pluriel
+  const MEMO = new Map();
+
+  function prepare() {
+    if (EXACT) return;
+    EXACT = new Map();
+    MODELES = { debut: new Map(), fin: new Map(), libres: [] };
+    PLURIELS = new Map();
+    ajouteEntrees(typeof SOURCE === "string" ? JSON.parse(SOURCE) : SOURCE);
+  }
+
+  function ajouteEntrees(table) {
+    for (const cleBrute of Object.keys(table)) {
+      const fr = normalise(cleBrute), en = table[cleBrute];
+      if (!fr || typeof en !== "string") continue;
+      /* Une phrase identique dans les deux langues n'a rien à faire ; un modèle
+         identique, si : « {n} km » réécrit encore son nombre. */
+      if (fr.indexOf("{") < 0) { if (en !== cleBrute) EXACT.set(fr, en); continue; }
+      rangeModele(fr, en);
+    }
+    MEMO.clear();
+  }
+
+  const NUMERIQUE = /^n\d?$/;
+  const sansPluriel = (fr) => fr.replace(/([A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF])[sx](?=[\s.,;:!?)\u00BB]|$)/g, "$1");
+  function rangeModele(fr, en) {
+    const noms = [];
+    let statique = 0;
+    const motif = fr.split(/(\{[^{}]+\})/).map((morceau) => {
+      const m = /^\{([^{}]+)\}$/.exec(morceau);
+      if (!m) {
+        statique += morceau.length;
+        return morceau.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
+      }
+      noms.push(m[1]);
+      return NUMERIQUE.test(m[1]) ? "(-?\\d[\\d\\s\\u00A0\\u202F]*(?:[.,]\\d+)?)" : "(.+?)";
+    }).join("");
+    const modele = { re: new RegExp("^" + motif + "$"), noms, en, statique, fr };
+    /* Le français met zéro au singulier, l'anglais au pluriel : « 0 fiche
+       ouverte », « 0 records opened ». Chaque modèle chiffré se range sous sa
+       forme dépouillée de ses « s » et de ses « x » ; la plus longue des deux
+       formes qui s'y retrouvent est le pluriel. */
+    if (noms.some((n) => NUMERIQUE.test(n))) {
+      const r = sansPluriel(fr), deja = PLURIELS.get(r);
+      if (!deja || fr.length > deja.fr.length) PLURIELS.set(r, { fr, en });
+    }
+    const debut = /^[^{]{2}/.test(fr) ? fr.slice(0, 2) : null;
+    const fin = /[^}]{2}$/.test(fr) ? fr.slice(-2) : null;
+    if (debut) ajouteA(MODELES.debut, debut, modele);
+    else if (fin) ajouteA(MODELES.fin, fin, modele);
+    else MODELES.libres.push(modele);
+  }
+  function ajouteA(table, cle, modele) {
+    const l = table.get(cle);
+    if (!l) { table.set(cle, [modele]); return; }
+    l.push(modele);
+    // le modèle le plus précis d'abord : « Plan indisponible : {raison} » avant « Plan {nom} »
+    l.sort((a, b) => b.statique - a.statique);
+  }
+
+  /** Un nombre écrit à la française, réécrit à l'anglaise. */
+  function nombreEn(s) {
+    const brut = s.replace(/[\s\u00A0\u202F]/g, "").replace(",", ".");
+    const v = Number(brut);
+    if (!isFinite(v)) return s;
+    const decimales = (brut.split(".")[1] || "").length;
+    return v.toLocaleString("en-GB", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
+  }
+
+  /* ------------------------------------------------------------------
+     Les dates et les heures
+
+     Elles ne passent pas par le dictionnaire : « lundi 14 septembre »,
+     « 10h30 – 11h15 » s'écrivent avec des nombres qui changent à chaque
+     conférence. Une chaîne faite seulement de jours, de mois, d'heures, de
+     nombres et de séparateurs se réécrit mot à mot — l'ordre britannique est
+     celui du français, « Monday 14 September ». Au moindre autre mot, on n'y
+     touche pas : ce n'est plus une date, c'est une phrase, et elle a sa clé.
+     ------------------------------------------------------------------ */
+  const JOURS = { lundi: "Monday", mardi: "Tuesday", mercredi: "Wednesday", jeudi: "Thursday",
+    vendredi: "Friday", samedi: "Saturday", dimanche: "Sunday",
+    "lun.": "Mon", "mar.": "Tue", "mer.": "Wed", "jeu.": "Thu", "ven.": "Fri", "sam.": "Sat", "dim.": "Sun",
+    lun: "Mon", mar: "Tue", mer: "Wed", jeu: "Thu", ven: "Fri", sam: "Sat", dim: "Sun" };
+  const MOIS = { janvier: "January", "février": "February", mars: "March", avril: "April", mai: "May",
+    juin: "June", juillet: "July", "août": "August", septembre: "September", octobre: "October",
+    novembre: "November", "décembre": "December",
+    "janv.": "Jan", "févr.": "Feb", "avr.": "Apr", "juil.": "Jul", "sept.": "Sep", "oct.": "Oct",
+    "nov.": "Nov", "déc.": "Dec" };
+  const LIENS = { "à": "at", au: "to", du: "from", et: "and" };
+  const UNITES = new Set(["h", "min", "km", "m"]);
+  const PEUT_ETRE_DATE = /\d|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|janv|févr|mars|avril|mai|juin|juil|août|sept|oct|nov|déc/i;
+  const MORCEAUX_DATE = /(\d{1,2})h(\d{2})?(?![\dA-Za-zÀ-ÿ])|(\d+)(er)?(?![\dA-Za-zÀ-ÿ])|([A-Za-zÀ-ÿ]+\.?)|([^\dA-Za-zÀ-ÿ]+)/g;
+
+  function dateEn(t) {
+    if (!PEUT_ETRE_DATE.test(t)) return null;
+    let change = false, ok = true;
+    const sortie = t.replace(MORCEAUX_DATE, (m, h, min, nb, er, mot, sep) => {
+      if (h !== undefined) { change = true; return h + ":" + (min || "00"); }
+      if (nb !== undefined) {
+        if (er) { change = true; return nb === "1" ? "1st" : nb; }
+        return nb;
+      }
+      if (mot !== undefined) {
+        const k = mot.toLowerCase();
+        const j = JOURS[k] || MOIS[k];
+        if (j) { change = true; return j; }
+        // « du 12 au 14 septembre » : un mot de liaison ne suffit pas à faire une date
+        if (LIENS[k]) return LIENS[k];
+        // les unités d'une durée s'écrivent pareil : « 1 h 30 min » n'est pas une heure
+        if (UNITES.has(k)) return mot;
+        ok = false;
+        return mot;
+      }
+      if (/[^\s·–—\-,:/()]/.test(sep)) ok = false;
+      return sep;
+    });
+    return ok && change ? sortie : null;
+  }
+
+  /* ------------------------------------------------------------------
+     Traduire une chaîne
+     ------------------------------------------------------------------ */
+  /**
+   * La traduction d'une chaîne déjà normalisée, ou `null`.
+   *
+   * `mode` dit ce qu'on accepte :
+   *   (rien)      la meilleure traduction, fût-elle partielle : ce qui ne se
+   *               traduit pas — une salle, un nom — reste tel quel ;
+   *   "complete"  une découpe dont tous les morceaux se traduisent, ou rien ;
+   *   "entiere"   la chaîne d'un seul tenant — une clé, un modèle, une date.
+   */
+  function cherche(t, profondeur, mode) {
+    const deja = EXACT.get(t);
+    if (deja !== undefined) return deja;
+    // « aucune valeur relevée » vient souvent en minuscule d'une phrase qui la précède
+    const premiere = t[0], autre = premiere === premiere.toUpperCase()
+      ? premiere.toLowerCase() : premiere.toUpperCase();
+    if (autre !== premiere) {
+      const v = EXACT.get(autre + t.slice(1));
+      if (v !== undefined) return premiere === premiere.toLowerCase() ? v[0].toLowerCase() + v.slice(1) : v[0].toUpperCase() + v.slice(1);
+    }
+    const d = dateEn(t);
+    if (d) return d;
+    if (profondeur > 2) return null;
+    const candidats = [].concat(MODELES.debut.get(t.slice(0, 2)) || [],
+      MODELES.fin.get(t.slice(-2)) || [], MODELES.libres);
+    for (const m of candidats) {
+      const r = m.re.exec(t);
+      if (!r) continue;
+      let en = m.en, avale = false;
+      if (m.noms.some((nom, i) => NUMERIQUE.test(nom) &&
+          Number(r[i + 1].replace(/[\s\u00A0\u202F]/g, "").replace(",", ".")) === 0)) {
+        const pluriel = PLURIELS.get(sansPluriel(m.fr));
+        if (pluriel && pluriel.fr !== m.fr) en = pluriel.en;
+      }
+      m.noms.forEach((nom, i) => {
+        const brut = r[i + 1];
+        /* Ce qui remplit une accolade se traduit en entier ou pas du tout.
+           « Sauvegarde restaurée : {pavillons}. » attrapait « 2 pavillons —
+           1 pavillon du fichier ne concerne pas ce salon », dont la moitié
+           se traduisait : le modèle passait pour bon, et l'autre moitié
+           restait en français. */
+        let v = NUMERIQUE.test(nom) ? nombreEn(brut) : cherche(normalise(brut), profondeur + 1, "complete");
+        /* Une accolade qui a avalé un assemblage — « 2 pavillons, 3 calques —
+           1 pavillon du fichier… » — sans savoir le traduire laisserait tout ce
+           morceau en français : le modèle ne convenait pas, on laisse les
+           découpes plus bas tenter leur chance. */
+        if (v === null) { v = brut; if (/ [·—|] |[.!?] [A-ZÀ-Ö]/.test(brut)) avale = true; }
+        en = en.split("{" + nom + "}").join(v);
+      });
+      if (!avale) return en;
+    }
+    // un nombre seul, écrit à la française
+    if (/^-?\d{1,3}([\u00A0\u202F ]\d{3})+(,\d+)?$|^-?\d+,\d+$/.test(t)) return nombreEn(t);
+    if (mode === "entiere") return null;
+    const complete = mode === "complete";
+    const sansLettre = (x) => !LETTRE.test(x);
+
+    /* Des phrases mises bout à bout : « Prenez l'escalier « Nord » : vous
+       arrivez dans le pavillon 7.2. » suivie ou non de « Comptez 1 min. ».
+       Avant les séparateurs : une phrase porte ses virgules, et c'est entière
+       qu'elle est une clé — « 2 pavillons, 1 320 emplacements. » coupée à la
+       virgule ne se retrouvait plus. */
+    const bornes = [0];
+    let fin;
+    FIN_DE_PHRASE.lastIndex = 0;
+    while ((fin = FIN_DE_PHRASE.exec(t))) {
+      const suite = fin.index + fin[0].length;
+      // « lun. 14 » n'est pas deux phrases : un nombre ne coupe qu'après plusieurs mots
+      if (/\d/.test(t[suite]) && t.slice(bornes[bornes.length - 1], fin.index).indexOf(" ") < 0) continue;
+      bornes.push(suite);
+    }
+    const nb = bornes.length;
+    if (nb > 1) {
+      const morceau = (i, j) => t.slice(bornes[i], j < nb ? bornes[j] : t.length).trim();
+      let traduites = 0, vraies = 0;
+      const sortie = [];
+      for (let i = 0; i < nb;) {
+        /* La plus longue suite de phrases qui soit une clé d'abord. Une aide
+           de deux phrases est une seule clé, suivie d'une troisième ajoutée
+           selon le cas : coupée phrase à phrase, la première tombait sur un
+           modèle accommodant qui traduisait « Par défaut » et laissait le
+           reste en français. */
+        let j = i === 0 ? nb - 1 : nb, v = null;
+        for (; j > i + 1; j--) if ((v = cherche(morceau(i, j), profondeur + 1, "entiere")) !== null) break;
+        if (v === null) { j = i + 1; v = cherche(morceau(i, j), profondeur + 1, mode); }
+        if (v !== null) vraies++;
+        if (v !== null || sansLettre(morceau(i, j))) traduites += j - i;
+        sortie.push(v === null ? morceau(i, j) : v);
+        i = j;
+      }
+      if (vraies && (!complete || traduites === nb)) return sortie.join(" ");
+    }
+
+    /* Des morceaux mis bout à bout : « lun. 14 · 10h30 · Agora », « 404 résultats
+       · tous pavillons ». La page les assemble de ce qu'elle a sous la main, et
+       l'assemblage entier n'est une clé nulle part. Chaque morceau se traduit
+       pour lui-même ; ce qui ne se traduit pas — une salle, un nom — reste tel
+       quel. */
+    for (const sep of SEPARATEURS) {
+      if (t.indexOf(sep) < 0) continue;
+      let traduits = 0;
+      const parts = t.split(sep);
+      const morceaux = parts.map((m) => {
+        const v = m.trim() ? cherche(m.trim(), profondeur + 1, mode) : null;
+        if (v === null) { if (sansLettre(m)) traduits++; return m; }
+        traduits++;
+        return m.replace(m.trim(), v);
+      });
+      /* La virgule sépare aussi bien une liste — « Raison sociale, Code postal »
+         — que les membres d'une phrase qu'aucune clé ne connaît. Dans ce
+         second cas, traduire le seul morceau qui tombe sur une clé ferait une
+         phrase à moitié anglaise : une liste se reconnaît à ce que la plupart
+         de ses éléments se traduisent. */
+      const assez = complete ? traduits === parts.length
+        : sep === ", " ? traduits * 2 >= parts.length : traduits;
+      if (assez && morceaux.some((m, i) => m !== parts[i])) return morceaux.join(sep);
+    }
+    return null;
+  }
+  const SEPARATEURS = [" · ", " — ", " | ", ", "];
+  /* Sans « lookbehind » : Safari ne le lit que depuis la 16.4, et une
+     expression qu'il ne sait pas lire fait tomber le script entier — la page
+     avec lui, puisqu'elle appelle `traduit`. */
+  const FIN_DE_PHRASE = /[.!?\u2026\u00BB)]\s+(?=[A-Z0-9\u00C0-\u00D6\u00D8-\u00DE\u00AB])/g;
+
+  /** La traduction d'un texte tel qu'il est dans la page, blancs d'autour gardés. */
+  function traduitBrut(brut) {
+    if (!brut || !LETTRE.test(brut) && !/\d[\u00A0\u202F ]\d|\d,\d/.test(brut)) return null;
+    let v = MEMO.get(brut);
+    if (v !== undefined) return v;
+    prepare();
+    const t = normalise(brut);
+    let en = t ? cherche(t, 0) : null;
+    /* Un nom resté tel quel dans une phrase traduite garde ses guillemets
+       français : « Oui », « Vrai » au milieu d'une phrase anglaise. */
+    if (en !== null) en = en.replace(/\u00AB\s*/g, "“").replace(/\s*\u00BB/g, "”");
+    /* Le blanc qui précède un deux-points français ne se garde pas en anglais :
+       « effacée</b> : visites » deviendrait « erased : visits ». */
+    const avant = en !== null && /^[:;!?]/.test(en) ? "" : brut.match(/^\s*/)[0];
+    v = en === null ? null : avant + en + brut.match(/\s*$/)[0];
+    if (MEMO.size > 4000) MEMO.clear();
+    MEMO.set(brut, v);
+    return v;
+  }
+
+  /* ------------------------------------------------------------------
+     La page
+
+     Chaque nœud traduit garde sa version française et celle qu'on a écrite :
+     revenir au français, c'est remettre la première là où la seconde est
+     encore en place. Si la page a réécrit le nœud entre-temps, c'est sa
+     nouvelle version qui fait foi, et on la traduit à son tour.
+     ------------------------------------------------------------------ */
+  const ATTRIBUTS = ["title", "placeholder", "aria-label", "alt", "label", "data-vide", "value"];
+  const TEXTES = new WeakMap();     // Text → { fr, en }
+  const ATTRS = new WeakMap();      // Element → { attribut: { fr, en } }
+  const EXCLUS = "script,style,textarea,noscript,template,code,pre,[translate=\"no\"]," +
+    "[contenteditable]:not([contenteditable=\"false\"])";
+  /* Un éditeur garde ses attributs à traduire : son contenu est ce que tape
+     l'exploitant, mais l'invite qu'il affiche vide (`data-vide`) et son
+     `aria-label` sont bien de la page. */
+  const EXCLUS_ATTRIBUTS = "script,style,noscript,template,[translate=\"no\"]";
+
+  const exclu = (n) => {
+    const e = n && (n.nodeType === 1 ? n : n.parentElement);
+    return Boolean(e && e.closest(EXCLUS));
+  };
+  const excluAttributs = (el) => Boolean(el.closest(EXCLUS_ATTRIBUTS) ||
+    (el.parentElement && el.parentElement.closest(EXCLUS)));
+
+  function traduitTexte(n) {
+    const v = n.nodeValue;
+    const memo = TEXTES.get(n);
+    if (memo && memo.en === v) return;
+    const en = traduitBrut(v);
+    if (en === null || en === v) {
+      if (memo) TEXTES.delete(n);
+      if (MANQUES && en === null) releveManque(v, n.parentElement);
+      return;
+    }
+    TEXTES.set(n, { fr: v, en });
+    n.nodeValue = en;
+  }
+
+  function traduitAttribut(el, nom) {
+    if (nom === "value" && !(el.tagName === "INPUT" && /^(button|submit|reset)$/i.test(el.type))) return;
+    const v = el.getAttribute(nom);
+    if (v === null) return;
+    let memo = ATTRS.get(el);
+    if (memo && memo[nom] && memo[nom].en === v) return;
+    const en = traduitBrut(v);
+    if (en === null || en === v) {
+      if (memo) delete memo[nom];
+      if (MANQUES && en === null) releveManque(v, el, nom);
+      return;
+    }
+    if (!memo) ATTRS.set(el, memo = {});
+    memo[nom] = { fr: v, en };
+    el.setAttribute(nom, en);
+  }
+
+  function traduitElement(el) {
+    for (const nom of ATTRIBUTS) if (el.hasAttribute(nom)) traduitAttribut(el, nom);
+  }
+
+  /* Pendant la lecture du document, le dernier texte d'un élément encore
+     ouvert peut n'être qu'un début : le navigateur y ajoutera la suite. Le
+     traduire maintenant, c'est coller cette suite derrière une traduction. On
+     attend donc qu'il ait un voisin, ou que la page soit lue. */
+  const enAttente = new Set();
+  const peutEtreIncomplet = (n) => document.readyState === "loading" &&
+    !n.nextSibling && !(n.parentNode && n.parentNode.nextSibling);
+
+  function parcourt(noeud) {
+    if (noeud.nodeType === 3) {
+      if (peutEtreIncomplet(noeud)) enAttente.add(noeud); else traduitTexte(noeud);
+      return;
+    }
+    if (noeud.nodeType !== 1 && noeud.nodeType !== 9 && noeud.nodeType !== 11) return;
+    if (noeud.nodeType === 1) {
+      if (noeud.matches(EXCLUS)) { if (!noeud.matches(EXCLUS_ATTRIBUTS)) traduitElement(noeud); return; }
+      traduitElement(noeud);
+    }
+    const marcheur = document.createTreeWalker(noeud, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: (n) => {
+        if (n.nodeType !== 1 || !n.matches(EXCLUS)) return NodeFilter.FILTER_ACCEPT;
+        if (!n.matches(EXCLUS_ATTRIBUTS)) traduitElement(n);
+        return NodeFilter.FILTER_REJECT;
+      },
+    });
+    let n;
+    while ((n = marcheur.nextNode())) {
+      if (n.nodeType === 3) {
+        if (peutEtreIncomplet(n)) enAttente.add(n); else traduitTexte(n);
+      } else traduitElement(n);
+    }
+  }
+
+  function repasseAttente() {
+    for (const n of enAttente) {
+      if (!peutEtreIncomplet(n)) { enAttente.delete(n); if (n.isConnected && !exclu(n)) traduitTexte(n); }
+    }
+  }
+
+  function surMutations(liste) {
+    for (const r of liste) {
+      if (r.type === "childList") {
+        if (!r.addedNodes.length || exclu(r.target)) continue;
+        r.addedNodes.forEach(parcourt);
+      } else if (r.type === "characterData") {
+        if (!exclu(r.target)) traduitTexte(r.target);
+      } else if (!excluAttributs(r.target)) {
+        traduitAttribut(r.target, r.attributeName);
+      }
+    }
+    if (enAttente.size) repasseAttente();
+  }
+
+  const observateur = new MutationObserver(surMutations);
+  const observe = () => observateur.observe(racine, {
+    subtree: true, childList: true, characterData: true,
+    attributes: true, attributeFilter: ATTRIBUTS,
+  });
+
+  /* Traduire avant de mesurer.
+
+     L'observateur passe après le code qui écrit, pas pendant : entre les deux,
+     la page peut mesurer ce qu'elle vient de poser — la fiche range son logo
+     d'après la largeur des pastilles, un cartouche se centre sur sa propre
+     largeur. Elle mesurerait le français, puis l'anglais prendrait sa place
+     avec une autre largeur. Toute mesure commence donc par vider ce que
+     l'observateur n'a pas encore vu. Une file vide ne coûte qu'un appel ; et
+     rien de cela n'est posé tant que la page reste en français. */
+  let mesuresBranchees = false;
+  function brancheMesures() {
+    if (mesuresBranchees) return;
+    mesuresBranchees = true;
+    const vide = () => {
+      if (courante !== "en") return;
+      const r = observateur.takeRecords();
+      if (r.length) surMutations(r);
+    };
+    const methode = (proto, nom) => {
+      const f = proto && proto[nom];
+      if (typeof f !== "function") return;
+      proto[nom] = function () { vide(); return f.apply(this, arguments); };
+    };
+    const lecture = (proto, nom) => {
+      const d = proto && Object.getOwnPropertyDescriptor(proto, nom);
+      if (!d || !d.get) return;
+      Object.defineProperty(proto, nom, Object.assign({}, d, { get() { vide(); return d.get.call(this); } }));
+    };
+    methode(Element.prototype, "getBoundingClientRect");
+    methode(Element.prototype, "getClientRects");
+    if (window.SVGGraphicsElement) methode(SVGGraphicsElement.prototype, "getBBox");
+    if (window.SVGTextContentElement) methode(SVGTextContentElement.prototype, "getComputedTextLength");
+    ["offsetWidth", "offsetHeight", "offsetLeft", "offsetTop"].forEach((n) => lecture(HTMLElement.prototype, n));
+    ["scrollWidth", "scrollHeight", "clientWidth", "clientHeight"].forEach((n) => lecture(Element.prototype, n));
+  }
+
+  /** Remet le français partout où la traduction est encore en place. */
+  function restaure() {
+    const marcheur = document.createTreeWalker(racine, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    let n = racine;
+    do {
+      if (n.nodeType === 3) {
+        const memo = TEXTES.get(n);
+        if (memo) { if (n.nodeValue === memo.en) n.nodeValue = memo.fr; TEXTES.delete(n); }
+      } else {
+        const memo = ATTRS.get(n);
+        if (memo) {
+          for (const nom of Object.keys(memo)) if (n.getAttribute(nom) === memo[nom].en) n.setAttribute(nom, memo[nom].fr);
+          ATTRS.delete(n);
+        }
+      }
+    } while ((n = marcheur.nextNode()));
+  }
+
+  /* ------------------------------------------------------------------
+     Ce qui manque encore — pour qui traduit
+
+     `?lang=en&manques` relève, pendant qu'on parcourt la page, les textes
+     restés en français. `LANGUE.manques()` les rend, du plus fréquent au plus
+     rare. Le relevé ne sert qu'à celui qui complète le dictionnaire : un
+     visiteur n'en paie jamais le coût.
+     ------------------------------------------------------------------ */
+  let MANQUES = null;
+  try { if (/[?&]manques\b/.test(location.search)) MANQUES = new Map(); } catch (e) {}
+  const MOTS_FRANCAIS = /(^|[\s'’(«])(le|la|les|des|du|de|un|une|et|ou|pour|sur|dans|avec|sans|pas|ne|est|sont|au|aux|ce|cette|ces|qui|que|son|sa|ses|par|vous|votre|vos|plus|tout|tous|aucun|aucune)(?=[\s'’),.:;!?»]|$)|[àâçéèêëîïôûùüÿœ]/i;
+  function releveManque(v, el, attribut) {
+    const t = normalise(v);
+    if (!t || !LETTRE.test(t) || !MOTS_FRANCAIS.test(t)) return;
+    // une enseigne s'écrit souvent en capitales, et n'a pas à se traduire
+    if (t === t.toUpperCase()) return;
+    if (el && el.closest && el.closest("#stands,#labels,#zones,.cal")) return;
+    const k = (attribut ? "@" + attribut + " " : "") + t;
+    const e = MANQUES.get(k);
+    const classe = el && el.getAttribute ? el.getAttribute("class") : "";
+    if (e) e.n++;
+    else MANQUES.set(k, { n: 1, ou: el ? (el.id ? "#" + el.id : classe ? "." + classe.split(" ")[0] : el.tagName) : "" });
+  }
+
+  /* ------------------------------------------------------------------
+     Passer de l'une à l'autre
+     ------------------------------------------------------------------ */
+  function applique(langue, premiere) {
+    courante = langue;
+    racine.lang = langue;
+    if (langue === "en") {
+      prepare();
+      brancheMesures();
+      parcourt(document);
+      observe();
+      if (premiere && document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => {
+          repasseAttente();
+          enAttente.forEach((n) => { if (n.isConnected && !exclu(n)) traduitTexte(n); });
+          enAttente.clear();
+        }, { once: true });
+      }
+    } else if (!premiere) {
+      observateur.disconnect();
+      enAttente.clear();
+      restaure();
+    }
+    majBascules();
+    if (!premiere) dispatchEvent(new CustomEvent("langue", { detail: { langue } }));
+  }
+
+  /**
+   * Change la langue de la page, sans la recharger. Le choix se retient sur
+   * l'appareil ; l'adresse ne change que si elle en portait déjà un — sans
+   * quoi elle l'emporterait au prochain chargement sur ce qu'on vient de
+   * choisir.
+   */
+  function bascule(langue) {
+    const l = LANGUES.includes(langue) ? langue : (courante === "fr" ? "en" : "fr");
+    if (l === courante) return;
+    try { localStorage.setItem(CLE, l); } catch (e) {}
+    try {
+      const u = new URL(location.href);
+      if (u.searchParams.has("lang")) {
+        u.searchParams.set("lang", l);
+        history.replaceState(history.state, "", u);
+      }
+    } catch (e) {}
+    applique(l, false);
+  }
+
+  /* Le bouton de bascule est le même partout : il porte la langue vers
+     laquelle il mène, écrite dans cette langue-là — c'est celle que cherche
+     quelqu'un qui ne lit pas la page. Un élément `data-langue` suffit, où
+     qu'il soit ; il est tenu hors traduction, puisqu'il parle déjà la bonne. */
+  function majBascules() {
+    document.querySelectorAll("[data-langue]").forEach((b) => {
+      const vers = courante === "fr" ? "en" : "fr";
+      b.setAttribute("translate", "no");
+      b.setAttribute("lang", vers);
+      b.textContent = vers.toUpperCase();
+      const dit = vers === "en" ? "English version" : "Version française";
+      b.title = dit;
+      b.setAttribute("aria-label", dit);
+    });
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest && e.target.closest("[data-langue]");
+    if (b) { e.preventDefault(); bascule(); }
+  });
+  document.addEventListener("DOMContentLoaded", majBascules, { once: true });
+
+  window.LANGUE = {
+    get code() { return courante; },
+    bascule,
+    /** La traduction d'une phrase dans la langue de la page. */
+    traduit: (fr) => courante === "en" ? (traduitBrut(String(fr)) ?? String(fr)) : String(fr),
+    /** La traduction anglaise, quelle que soit la langue de la page, ou `null`. */
+    enAnglais: (fr) => traduitBrut(String(fr)),
+    /** Des entrées de plus — celles d'un salon, par exemple. */
+    ajoute(table) {
+      prepare();
+      ajouteEntrees(table || {});
+      if (courante === "en") parcourt(document);
+    },
+    manques: () => MANQUES ? [...MANQUES].sort((a, b) => b[1].n - a[1].n)
+      .map(([t, e]) => e.n + " × " + t + (e.ou ? "   (" + e.ou + ")" : "")) : null,
+  };
+  window.traduit = window.LANGUE.traduit;
+
+  applique(courante, true);
+})();
+</script>
 <link rel="icon" href="icone.svg" type="image/svg+xml">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
@@ -131,6 +778,9 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+/* Deux lettres plutôt qu'un pictogramme : un drapeau dit un pays, pas une
+   langue, et le globe ne dit pas laquelle on obtiendra. */
+.iconbtn.langue{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.04em}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et
@@ -3414,6 +4064,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
+      <!-- La langue. Le bouton s'écrit tout seul (`_langue.js`) : il porte la
+           langue vers laquelle il mène, dans cette langue-là — c'est ce que
+           cherche des yeux quelqu'un qui ne lit pas la page. Il reste en
+           administration, où le thème part dans le menu du compte : la langue
+           n'y a pas de doublon. -->
+      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
@@ -7190,6 +7846,19 @@ let montreTiroir = () => {};
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
   addEventListener("load", mesure);
 })();
+
+/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
+   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
+   dans la langue d'avant : les libellés taillés à leur largeur, les repères
+   dessinés autour de leur nom, ceux que la recherche balaie. */
+addEventListener("langue", () => {
+  if (!DATA || !view) return;
+  oublieReperes();
+  _lg.clear();
+  dessineDessins();
+  libelles();
+  liste();
+});
 
 /* thème */
 const CLE_THEME = "plan-theme";
@@ -11284,7 +11953,14 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
-const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+/* Le nom d'un type vit sous deux formes. En français, il sert de libellé
+   enregistré — un repère posé sans libellé prend celui de son type — et doit le
+   rester quelle que soit la langue de l'écran : posé depuis la version
+   anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
+   Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
  * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
@@ -12039,7 +12715,7 @@ function dessinPointerDown(e){
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
        cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
        rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
     ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
@@ -15644,8 +16320,10 @@ function boutonsPartage(lien){
     libelle: "Copier le lien", ferme: false, genre: partageable ? "" : "accent",
     action: () => {
       envoi();
+      /* Le libellé se relit à l'écran, où la version anglaise l'a peut-être
+         réécrit : c'est donc à sa traduction qu'on le compare. */
       bCopie = bCopie ||
-        [...$("mPied").children].find(x => x.textContent === "Copier le lien");
+        [...$("mPied").children].find(x => x.textContent === traduit("Copier le lien"));
       navigator.clipboard?.writeText(lien).then(
         () => { if (bCopie){ bCopie.textContent = "Copié";
                              setTimeout(() => bCopie.textContent = "Copier le lien", 1700); } },
@@ -15661,10 +16339,12 @@ function boutonsPartage(lien){
        pas d'un envoi réussi : la feuille ne dit pas où le lien est parti. */
     action: () => {
       envoi();
+      /* La feuille de partage est au système, hors de la page : la version
+         anglaise ne la voit pas passer, le texte part donc déjà traduit. */
       return navigator.share({
-        title: "Mon parcours de visite",
+        title: traduit("Mon parcours de visite"),
         text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
-              "voici les stands et les conférences que j'ai retenus.",
+              traduit("voici les stands et les conférences que j'ai retenus."),
         url: lien,
       }).catch(() => {});
     },
@@ -17764,8 +18444,10 @@ const typeLiaison = (f) =>
 
 /** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
  *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
- *  « WC », et non rien. */
-const nomRepere = (f) => String(f.txt || "").trim() ||
+ *  « WC », et non rien. Un libellé qui n'est que le nom d'un type — « Entrée »,
+ *  posé d'office — se lit dans la langue de l'écran, comme le type lui-même :
+ *  c'est ce nom-là qui remplit le champ de l'itinéraire. */
+const nomRepere = (f) => traduit(String(f.txt || "").trim()) ||
   nomTypeRepere(pictoForme(f));
 
 /**
@@ -20559,9 +21241,12 @@ function ouvreRemiseAZero(){
 
     const saisie = l.querySelector("input");
     const bouton = () => $("mPied").querySelector(".danger");
+    /* En anglais, la consigne demande « reset » : le mot traduit vaut donc
+       autant que l'original, qui reste accepté — on demande une intention. */
+    const motJuste = (v) => [MOT_RAZ, traduit(MOT_RAZ)].some(m => aplati(v) === aplati(m));
     const relit = () => {
       const b = bouton();
-      if (b) b.disabled = aplati(saisie.value) !== aplati(MOT_RAZ) || !tally;
+      if (b) b.disabled = !motJuste(saisie.value) || !tally;
     };
     saisie.oninput = relit;
     saisie.onkeydown = (e) => {
