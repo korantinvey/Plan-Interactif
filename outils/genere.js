@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const icones = require("./icones.js");
 const pwa = require("./pwa.js");
+const traductions = require("./traductions.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -23,8 +24,14 @@ const API = "/api/plan";
  *
  * La page autonome embarque les fichiers eux-mêmes, en `data:` : publiée
  * seule, aucune adresse voisine ne lui répondrait.
+ *
+ * Seules les polices des modèles sont déclarées ainsi. Celles qu'un exploitant
+ * peut préférer pour les noms ne se chargent qu'une fois choisies, par leur
+ * feuille (`polices/<famille>.css`) : les déclarer toutes grossirait chaque
+ * page pour des familles qu'un salon sur vingt emploie.
  */
-const POLICES = JSON.parse(fs.readFileSync(D + "/polices.json", "utf8")).faces;
+const POLICES_JSON = JSON.parse(fs.readFileSync(D + "/polices.json", "utf8"));
+const POLICES = POLICES_JSON.faces.filter((f) => !f.aLaDemande);
 function feuillePolices(autonome) {
   return "<style>\n" + POLICES.map((f) =>
     "@font-face{" +
@@ -58,11 +65,30 @@ function page(contenu, options) {
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    langue(contenu) +
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
     (application && !autonome ? pwa.APPLICATION : "") +
     contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome)) +
     "\n</body>\n</html>\n";
+}
+
+/**
+ * La version anglaise, posée en tête de chaque page : le moteur
+ * (`gabarit/_langue.js`) et la part du dictionnaire que la page affiche.
+ *
+ * En tête, parce qu'il doit voir passer le balisage : demandée en anglais, la
+ * page ne se montre jamais d'abord en français. La part seulement, parce que
+ * le dictionnaire couvre toutes les pages — la console n'a que faire des
+ * phrases de l'itinéraire, ni le plan public de celles des comptes.
+ */
+const MOTEUR_LANGUE = fs.readFileSync(D + "/gabarit/_langue.js", "utf8");
+const DICTIONNAIRE = traductions.chargeDictionnaire();
+function langue(contenu) {
+  const table = traductions.dictionnairePour(contenu, DICTIONNAIRE);
+  // du texte JSON dans une chaîne JavaScript, où `</script>` ne doit pas paraître
+  const texte = JSON.stringify(JSON.stringify(table)).replace(/</g, "\\u003c");
+  return "<script>\n" + MOTEUR_LANGUE.replace("__DICTIONNAIRE__", () => texte) + "</script>\n";
 }
 
 const SLUG_DEFAUT = "smcl-2026";
@@ -205,7 +231,23 @@ const fautives = FABRIQUEES.concat("sw.js")
   .filter((f) => /\.(html|js)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
 if (fautives.length) {
   console.error("\nPolices demandées à Google dans : " + fautives.join(", ") + ".\n" +
-    "Ajoutez la famille à `outils/polices.js`, lancez `npm run polices`, et servez-la\n" +
-    "depuis `polices/` : chaque visiteur transmettrait sinon son adresse IP à Google.");
+    "Déclarez la famille dans `outils/polices.js` (ou dans `POLICES_NOMS` pour une police\n" +
+    "au choix), lancez `npm run polices`, et servez-la depuis `polices/` : chaque visiteur\n" +
+    "transmettrait sinon son adresse IP à Google.");
+  process.exit(1);
+}
+
+/* Et chaque police que l'onglet propose pour les noms est bien rapatriée, sous
+   la graisse qu'il demande. Sans cela, la choisir laisserait le plan dans la
+   police du modèle sans rien dire — et la tentation reviendrait de la
+   redemander à Google. */
+const { policesAuChoix, nomDeFichier, couvre } = require("./polices.js");
+const absentes = policesAuChoix().filter((p) =>
+  !fs.existsSync(W + "polices" + path.sep + nomDeFichier(p.nom) + ".css") ||
+  !POLICES_JSON.faces.some((f) => f.aLaDemande && f.famille === p.nom &&
+    couvre(f.descripteurs["font-weight"], p.graisse)));
+if (absentes.length) {
+  console.error("\nPolices proposées pour les noms, mais pas rapatriées : " +
+    absentes.map((p) => p.nom + " " + p.graisse).join(", ") + ".\nLancez `npm run polices`.");
   process.exit(1);
 }

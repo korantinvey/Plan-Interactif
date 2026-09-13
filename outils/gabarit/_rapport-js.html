@@ -273,9 +273,8 @@ function dessineRapport() {
         " au stockage refusé, recomptés à chaque ouverture."
       : "") +
     (debut < horizon
-      ? " Jetons effacés au bout de " + JETONS_GARDES_JOURS + " jours : les visiteurs " +
-        "d'avant le " + horizon.toLocaleDateString("fr-FR", { dateStyle: "long" }) +
-        " n'y sont plus."
+      ? " Jetons effacés au bout de " + JETONS_GARDES_JOURS +
+        " jours : les visiteurs plus anciens n'y sont plus."
       : ""), true);
   chiffre(g1, r.recherches, "Recherches", "Mots-clés saisis, doublons écartés.");
   chiffre(g1, r.itineraires, "Itinéraires calculés", "Trajets distincts demandés.");

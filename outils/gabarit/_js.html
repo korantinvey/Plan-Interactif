@@ -3440,6 +3440,19 @@ let montreTiroir = () => {};
   addEventListener("load", mesure);
 })();
 
+/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
+   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
+   dans la langue d'avant : les libellés taillés à leur largeur, les repères
+   dessinés autour de leur nom, ceux que la recherche balaie. */
+addEventListener("langue", () => {
+  if (!DATA || !view) return;
+  oublieReperes();
+  _lg.clear();
+  dessineDessins();
+  libelles();
+  liste();
+});
+
 /* thème */
 const CLE_THEME = "plan-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
