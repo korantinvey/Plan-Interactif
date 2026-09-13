@@ -20413,8 +20413,7 @@ const SUGG_ECARTES = new Set();
 
 /* Et ce que la fenêtre a déjà mis au premier plan. Une proposition ne s'impose
    qu'une fois : revenue à chaque ajout, elle se ferait fermer sans être lue,
-   puis fermerait le plan avec elle. Le tiroir, lui, n'a pas ce scrupule à
-   avoir — on y va pour la voir. */
+   puis fermerait le plan avec elle. */
 const SUGG_MONTREES = new Set();
 
 /* La mesure a son canal. Une fiche ouverte depuis la proposition, un exposant
@@ -20437,8 +20436,9 @@ function seuilSugg(){
  * Comment la proposition se présente.
  *
  * « tiroir » l'attend en tête du parcours, là où le visiteur va de lui-même ;
- * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
- * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
+ * « fenetre » la met au premier plan dès que le seuil est atteint, et là
+ * seulement. La seconde se voit, et c'est tout son intérêt comme tout son
+ * risque : elle interrompt.
  * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
  * salon professionnel de deux heures et un salon grand public d'un week-end
  * n'ont pas la même tolérance à l'interruption.
@@ -20646,8 +20646,17 @@ function carteSuggestion(s, ferme){
   return d;
 }
 
-/** La proposition en tête du tiroir du parcours, quand il y en a une. */
+/**
+ * La proposition en tête du tiroir du parcours, quand il y en a une.
+ *
+ * Pas au premier plan : l'organisateur a choisi la fenêtre, et la même carte
+ * redite dans le tiroir ferait de son choix un « les deux ». Refermée d'un
+ * « Non merci », elle reviendrait d'ailleurs attendre le visiteur là même où
+ * il consulte sa liste — lui imposer deux fois ce qu'on s'était promis de ne
+ * lui imposer qu'une.
+ */
 function poseSuggestion(hote){
+  if (presentationSugg() === "fenetre") return;
   const s = suggestionCourante();
   if (s) hote.appendChild(carteSuggestion(s, null));
 }
@@ -20840,7 +20849,7 @@ function voletSuggestion(hote){
     const prez = champZone(corps, "Présentation",
       document.createElement("select"),
       "Discrète, la proposition attend en tête du parcours, là où le visiteur " +
-      "va de lui-même. Au premier plan, elle s'ouvre en plus dans une fenêtre " +
+      "va de lui-même. Au premier plan, elle s'ouvre à la place dans une fenêtre " +
       "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
       "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
       "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
@@ -20848,7 +20857,12 @@ function voletSuggestion(hote){
       '<option value="tiroir">Discrète — en tête du parcours de visite</option>' +
       '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
     prez.value = presentationSugg();
-    prez.onchange = e => { r.presentation = e.target.value; enregistreConf(); };
+    prez.onchange = e => {
+      r.presentation = e.target.value;
+      enregistreConf();
+      // la carte quitte le tiroir ou y revient : il obéit sur-le-champ
+      rafraichitParcours();
+    };
 
     const source = champZone(corps, "Exposant proposé",
       document.createElement("select"),
