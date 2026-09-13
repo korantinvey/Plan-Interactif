@@ -180,6 +180,53 @@ export class Eventmaker {
   }
 
   /**
+   * L'anglais des listes de valeurs de l'événement : valeur française →
+   * valeur anglaise, toutes listes confondues.
+   *
+   * Eventmaker ne pose pas la traduction sur le champ : il la range à part,
+   * dans les traductions de l'événement, sous une clé composée de
+   * l'identifiant du champ et de la valeur réduite — minuscules, et chaque
+   * suite de signes qui ne sont ni lettre ASCII ni chiffre remplacée par un
+   * marqueur. « Bâtiment et habitat » y devient
+   * `b…timent…et…habitat`. La règle se vérifie sur Franchise Expo Paris 2027 :
+   * 23 secteurs sur 23, 118 sous-secteurs sur 119.
+   *
+   * Les fiches portent la valeur, et la liste son libellé ponctué — « Automobile
+   * cycle moto », « Automobile, cycle, moto » — : les deux mènent à l'anglais.
+   * Une valeur sans traduction n'y est pas, et reste en français.
+   */
+  async listesEnAnglais(id: string): Promise<Record<string, string>> {
+    const [champs, traductions] = await Promise.all([
+      this.json<Record<string, any>[]>(`/events/${id}/guest_fields.json`, { per_page: 1000 }),
+      this.json<Record<string, any>[]>(`/events/${id}/translations.json`),
+    ]);
+    const parChamp = new Map<string, Record<string, unknown>>();
+    for (const t of traductions ?? []) {
+      if (t?.locale !== "en" || t?.translatable_parent_type !== "GuestField") continue;
+      const idChamp = String(t.translatable_parent_id);
+      parChamp.set(idChamp, { ...(parChamp.get(idChamp) ?? {}), ...(t.table ?? {}) });
+    }
+    const reduit = (v: unknown) =>
+      String(v).toLowerCase().replace(/[^a-z0-9]+/g, "SPECIAL_HASH_KEY_CHARACTER");
+    const out: Record<string, string> = {};
+    for (const c of champs ?? []) {
+      const table = parChamp.get(String(c._id));
+      if (!table) continue;
+      for (const v of (c.available_values ?? []) as Record<string, unknown>[]) {
+        const en = table[`${c._id}__available_values__value__${reduit(v.value)}`];
+        if (typeof en !== "string" || !en.trim()) continue;
+        for (const fr of [v.value, v.label]) {
+          const cle = String(fr ?? "").trim();
+          // la première liste qui traduit une valeur l'emporte : deux listes
+          // qui la partagent la traduisent d'ordinaire pareil
+          if (cle && cle !== en.trim() && !(cle in out)) out[cle] = en.trim();
+        }
+      }
+    }
+    return out;
+  }
+
+  /**
    * L'événement : son intitulé, et surtout son fuseau horaire — sans lui, une
    * heure ISO se lirait dans le fuseau du visiteur, qui peut être ailleurs.
    */

@@ -169,6 +169,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
+| anglais des listes de valeurs (secteurs, nomenclature, champs à choix) | relevé par `sync-evenement` (`Gaia.codificationLangues`, `Eventmaker.listesEnAnglais`), colonne `libelles_en`, servi par `plan-public` sous `anglais`, posé par `_js.html` `indexe` ; intitulé anglais des champs propres `_console-js.html` `renommeChampPerso` |
 | version anglaise, bascule FR/EN | moteur `_langue.js`, dictionnaire `outils/anglais/`, contrôle et choix par page `outils/traductions.js`, injection `outils/genere.js` `langue` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
