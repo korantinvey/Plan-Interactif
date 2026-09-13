@@ -12,6 +12,8 @@ module.exports = [
 
   // `_admin2.html` : le mot d'un en-tête HTTP, `Authorization: Bearer …`
   "Bearer",
+  // un morceau de l'adresse des feuilles de police
+  ":wght@",
 
   // `_suggestion.html` : des morceaux de la phrase de la suggestion, jamais
   // affichés seuls — la phrase entière a sa clé dans `_suggestion.js`

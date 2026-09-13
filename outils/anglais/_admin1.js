@@ -182,11 +182,44 @@ module.exports = {
   "Brun": "Brown",
   "Ardoise": "Slate",
   "Anthracite": "Charcoal",
-  "La couleur principale sert partout : sélection, liens, boutons, pastilles, et les modèles s'en habillent. Le modèle décide de l'allure de tout l'écran à la fois : le bandeau du haut, la liste des exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire.":
-    "The main colour is used everywhere: selection, links, buttons, badges, and the templates dress themselves in it. The template sets the look of the whole screen at once: the top bar, the exhibitor list, the details that open on a stand, the visit plan and the directions.",
+  "La couleur principale sert partout : sélection, liens, boutons, pastilles, et les modèles s'en habillent. Le modèle décide de l'allure de tout l'écran à la fois : le bandeau du haut, la liste des exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et l'itinéraire. Il pose aussi sa police sur les noms des stands et des zones : une autre peut lui être préférée, jusqu'au prochain changement de modèle. Les numéros de stand gardent la sienne.":
+    "The main colour is used everywhere: selection, links, buttons, badges, and the templates dress themselves in it. The template sets the look of the whole screen at once: the top bar, the exhibitor list, the details that open on a stand, the visit plan and the directions. It also sets the font of stand and area names: another one can be preferred, until the template changes again. Stand numbers keep their own.",
   "Couleur principale": "Main colour",
   "Réglage d'origine": "Original setting",
   "Modèle d'habillage": "Template",
+
+  // la police des noms
+  "Police des noms": "Name font",
+  "Police du modèle": "Template font",
+  "du modèle": "from the template",
+  "modèle {modele}": "{modele} template",
+  "sans serif": "sans serif",
+  "serif": "serif",
+  "arrondie": "rounded",
+  "haute lisibilité": "high legibility",
+  "étroite": "condensed",
+  "chasse fixe": "monospace",
+  // les noms des polices, identiques dans les deux langues
+  "Instrument Sans": "Instrument Sans",
+  "Archivo": "Archivo",
+  "Inter": "Inter",
+  "Roboto": "Roboto",
+  "Open Sans": "Open Sans",
+  "Lato": "Lato",
+  "Montserrat": "Montserrat",
+  "Poppins": "Poppins",
+  "Raleway": "Raleway",
+  "Nunito": "Nunito",
+  "Atkinson Hyperlegible Next": "Atkinson Hyperlegible Next",
+  "Oswald": "Oswald",
+  "Roboto Condensed": "Roboto Condensed",
+  "Barlow Condensed": "Barlow Condensed",
+  "Fraunces": "Fraunces",
+  "Merriweather": "Merriweather",
+  "Playfair Display": "Playfair Display",
+  "Roboto Slab": "Roboto Slab",
+  "IBM Plex Mono": "IBM Plex Mono",
+  "Courier Prime": "Courier Prime",
 
   // l'onglet « Fiche Stand »
   "L'ordre dans lequel la fiche déroule ses champs, de haut en bas : ce que le visiteur vient lire en premier n'est pas le même d'un salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le volet des conférences n'en font pas partie : ils ne se déplacent pas.":
