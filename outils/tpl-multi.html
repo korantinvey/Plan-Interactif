@@ -2131,7 +2131,7 @@ button.expo:hover{background:var(--line)}
   background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink)}
 .jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
-.jSansPorte{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+.jSansPorte,.jHeures{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
 
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
@@ -2533,6 +2533,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb input:focus{border-color:var(--accent);outline:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
+/* Les heures d'ouverture : deux champs par rangée, et une croix pour rendre
+   un jour aux heures de tous les jours. Un champ d'heure porte son sélecteur,
+   il ne tient pas dans la largeur d'un nombre. */
+.reglage-nb .hRang{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink)}
+.reglage-nb.horaires > .l{font-size:14px;color:var(--ink);margin-bottom:3px}
+.reglage-nb .hRang .l{color:var(--ink-2)}
+.reglage-nb input[type="time"]{width:96px;text-align:left}
+.reglage-nb .hEfface{flex:none;width:24px;height:24px;padding:0;border:0;background:none;
+  color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;border-radius:var(--radius)}
+.reglage-nb .hEfface:hover{color:var(--ink);background:var(--surface-2)}
+.reglage-nb .hEfface[hidden]{display:inline-block !important;visibility:hidden}
+.reglage-nb .aide.alerte{color:var(--rouge)}
 
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
    remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
@@ -7480,6 +7492,38 @@ function minutesVisite(){
   return v >= VISITE_MIN && v <= VISITE_MAX ? v : VISITE_DEFAUT;
 }
 
+/**
+ * Les heures où le salon est ouvert.
+ *
+ * Sans elles, la journée organisée n'avait pas de fin : ce qui ne tenait pas
+ * entre deux conférences se rangeait après la dernière, et le visiteur se
+ * voyait programmer un stand à dix-neuf heures quarante dans un hall fermé
+ * depuis une heure. Klipso ne les donne pas ; c'est l'exploitant qui les dit.
+ *
+ * Deux heures valent pour tous les jours, et un jour peut avoir les siennes —
+ * le dernier ferme souvent plus tôt, le jour réservé aux professionnels ouvre
+ * parfois avant. Une heure laissée vide pour un jour reprend celle de tous
+ * les jours ; aucune heure du tout, et la journée reste ouverte comme avant.
+ *
+ * Rendues en minutes depuis minuit, `null` là où rien n'est dit.
+ */
+function lueHeure(s){
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ""));
+  return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
+}
+function horairesSalon(jour){
+  const h = CONF["_horaires"] || {};
+  const j = (jour && (h.jours || {})[jour]) || {};
+  const heure = (k) => lueHeure(j[k]) !== null ? lueHeure(j[k]) : lueHeure(h[k]);
+  const ouverture = heure("ouverture"), fermeture = heure("fermeture");
+  /* Une fermeture qui précède l'ouverture n'est pas un salon de nuit, c'est
+     une saisie à moitié faite : on n'en retient rien plutôt que de rendre une
+     journée vide. L'onglet des réglages le signale. */
+  if (ouverture !== null && fermeture !== null && fermeture <= ouverture)
+    return { ouverture: null, fermeture: null, incoherent: true };
+  return { ouverture: ouverture, fermeture: fermeture };
+}
+
 /** Ce salon héberge-t-il des sociétés sur le stand d'une autre ? La question
  *  se pose sur les trois pavillons : un seul stand partagé suffit. */
 const salonPartage = () => (DATA?.plans || [])
@@ -8429,6 +8473,96 @@ function voletPlan(hote){
   };
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
+
+  blocHoraires(hote);
+}
+
+/**
+ * Les heures d'ouverture, dans l'onglet « Plan ».
+ *
+ * Une rangée pour tous les jours, puis une par jour du programme quand il y en
+ * a plusieurs. Les rangées d'un jour partent vides : c'est ce qui dit qu'elles
+ * reprennent la première, et c'est ce qu'on laisse sur un salon aux mêmes
+ * heures d'un bout à l'autre. Les jours sont ceux des conférences — le plan
+ * n'en connaît pas d'autres, et c'est aussi parmi eux que le visiteur choisit
+ * le sien.
+ */
+function blocHoraires(hote){
+  const bloc = document.createElement("div");
+  bloc.className = "reglage-nb horaires";
+  const titre = document.createElement("span");
+  titre.className = "l";
+  titre.textContent = "Heures d'ouverture du salon";
+  bloc.appendChild(titre);
+
+  const alerte = document.createElement("span");
+  alerte.className = "aide alerte";
+  const majAlerte = () => {
+    const faux = [horairesSalon("")].concat(joursSalon().map(j => horairesSalon(j.cle)))
+      .some(h => h.incoherent);
+    alerte.hidden = !faux;
+    alerte.textContent = "Une fermeture tombe avant l'ouverture : ces heures-là ne " +
+      "sont pas prises en compte tant qu'elles ne sont pas corrigées.";
+  };
+
+  const rangee = (libelle, jour) => {
+    const r = document.createElement("div");
+    r.className = "hRang";
+    r.innerHTML = '<span class="l"></span><input type="time" step="300">' +
+      '<span class="u">–</span><input type="time" step="300">' +
+      '<button type="button" class="hEfface" title="Effacer">×</button>';
+    r.querySelector(".l").textContent = libelle;
+    const [de, a] = r.querySelectorAll("input");
+    const efface = r.querySelector(".hEfface");
+    const casier = () => {
+      const h = conf("_horaires");
+      if (!jour) return h;
+      h.jours = h.jours || {};
+      return (h.jours[jour] = h.jours[jour] || {});
+    };
+    const lu = () => {
+      const h = CONF["_horaires"] || {};
+      return (jour ? (h.jours || {})[jour] : h) || {};
+    };
+    de.value = lu().ouverture || "";
+    a.value = lu().fermeture || "";
+    de.setAttribute("aria-label", "Ouverture, " + libelle.toLowerCase());
+    a.setAttribute("aria-label", "Fermeture, " + libelle.toLowerCase());
+    const majEfface = () => { efface.hidden = !de.value && !a.value; };
+    /* Un champ d'heure n'a de valeur qu'une fois complet : tant qu'on tape, il
+       rend une chaîne vide, et l'écrire effacerait l'heure qu'on corrige. On
+       n'enregistre donc qu'au changement, où le champ est entier ou vidé. */
+    const ecrit = (cle, champ) => {
+      const c = casier();
+      if (lueHeure(champ.value) !== null) c[cle] = champ.value; else delete c[cle];
+      // un jour sans heure propre ne laisse pas de casier vide derrière lui
+      const h = CONF["_horaires"];
+      if (jour && h.jours && !Object.keys(h.jours[jour] || {}).length) delete h.jours[jour];
+      enregistreConf();
+      majEfface();
+      majAlerte();
+    };
+    de.onchange = () => ecrit("ouverture", de);
+    a.onchange = () => ecrit("fermeture", a);
+    efface.onclick = () => { de.value = a.value = ""; ecrit("ouverture", de); ecrit("fermeture", a); };
+    majEfface();
+    bloc.appendChild(r);
+  };
+
+  const jours = joursSalon();
+  rangee(jours.length > 1 ? "Tous les jours" : "Ouverture – fermeture", "");
+  if (jours.length > 1) jours.forEach(j => rangee(j.nom, j.cle));
+
+  const aide = document.createElement("span");
+  aide.className = "aide";
+  aide.textContent = "Aucun stand n'est programmé dans la journée d'un visiteur " +
+    "avant l'ouverture ni après la fermeture." +
+    (jours.length > 1 ? " Un jour laissé vide reprend les heures de tous les jours." : "") +
+    " Sans heures, la journée n'a pas de fin.";
+  bloc.appendChild(aide);
+  bloc.appendChild(alerte);
+  majAlerte();
+  hote.appendChild(bloc);
 }
 
 /** Y a-t-il de quoi parler de foule ? Une conférence rattachée à une zone,
@@ -18479,8 +18613,9 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau, penaliteTardive){
   /**
    * Ce qu'un créneau coûte, en mètres.
    *
-   * Le dernier n'a pas de fin : ce qu'on y met retarde la journée d'autant,
-   * et chaque stand y porte le forfait. Les autres butent sur une conférence
+   * Le dernier ne bute sur rien, sinon la fermeture du salon quand elle est
+   * connue : ce qu'on y met retarde la journée d'autant, et chaque stand y
+   * porte le forfait. Les autres butent sur une conférence
    * et ne coûtent que leur chemin — ce qu'ils ne remplissent pas se passe à
    * patienter, ce dont le forfait rend déjà compte de l'autre côté. Un
    * créneau qui déborde vaut l'infini plutôt qu'un refus à part : un
@@ -18488,73 +18623,93 @@ function rangeJournee(creneaux, restants, dist, tempsCreneau, penaliteTardive){
    */
   const coutCreneau = (c) => {
     const m = distanceCreneau(c);
-    if (c.tMax === null) return m + penaliteTardive * c.stands.length;
-    return c.t0 + tempsCreneau(c, m) > c.tMax ? Infinity : m;
+    /* La fermeture borne le dernier créneau sans lui ôter son forfait : la
+       borne dit ce qui tient, le forfait ce qui vaudrait mieux plus tôt. */
+    if (c.tMax !== null && c.t0 + tempsCreneau(c, m) > c.tMax) return Infinity;
+    return c.dernier ? m + penaliteTardive * c.stands.length : m;
   };
 
-  while (restants.length){
-    let choix = null;
-    for (const c of creneaux){
-      const base = coutCreneau(c);
-      // un créneau déjà intenable ne se répare pas en le chargeant davantage
-      if (!isFinite(base)) continue;
-      for (const s of restants){
-        for (let k = 0; k <= c.stands.length; k++){
-          c.stands.splice(k, 0, s);
-          const cout = coutCreneau(c) - base;
-          c.stands.splice(k, 1);
-          if (isFinite(cout) && (!choix || cout < choix.cout)) choix = { cout: cout, c: c, k: k, s: s };
+  /* Poser ce qui reste, au meilleur endroit où cela tient. Rend le nombre
+     de stands posés : une reprise qui raccourcit un créneau borné peut y
+     libérer la place d'un stand refusé au premier passage. */
+  const insere = () => {
+    let poses = 0;
+    while (restants.length){
+      let choix = null;
+      for (const c of creneaux){
+        const base = coutCreneau(c);
+        // un créneau déjà intenable ne se répare pas en le chargeant davantage
+        if (!isFinite(base)) continue;
+        for (const s of restants){
+          for (let k = 0; k <= c.stands.length; k++){
+            c.stands.splice(k, 0, s);
+            const cout = coutCreneau(c) - base;
+            c.stands.splice(k, 1);
+            if (isFinite(cout) && (!choix || cout < choix.cout)) choix = { cout: cout, c: c, k: k, s: s };
+          }
         }
       }
+      if (!choix) break;
+      choix.c.stands.splice(choix.k, 0, choix.s);
+      restants.splice(restants.indexOf(choix.s), 1);
+      poses++;
     }
-    if (!choix) break;
-    choix.c.stands.splice(choix.k, 0, choix.s);
-    restants.splice(restants.indexOf(choix.s), 1);
-  }
+    return poses;
+  };
 
   /* Les deux reprises. Chacune se juge sur le coût entier des créneaux
      touchés, et non sur les seules arêtes déplacées : c'est l'attente qui
      l'impose, elle ne se lit pas sur une arête. */
-  for (let tour = 0; tour < 30; tour++){
-    let gagne = false;
+  const reprend = () => {
+    for (let tour = 0; tour < 30; tour++){
+      let gagne = false;
 
-    for (const c of creneaux){
-      for (let i = 0; i < c.stands.length - 1; i++){
-        for (let j = i + 1; j < c.stands.length; j++){
-          const avant = coutCreneau(c);
-          const copie = c.stands.slice();
-          c.stands.splice(i, j - i + 1, ...c.stands.slice(i, j + 1).reverse());
-          if (coutCreneau(c) < avant - 1e-9) gagne = true; else c.stands = copie;
-        }
-      }
-    }
-
-    for (const c of creneaux){
-      for (let i = 0; i < c.stands.length; i++){
-        const s = c.stands[i];
-        /* Un déplacement ne touche que deux créneaux — celui qu'on quitte et
-           celui qu'on rejoint : les autres n'ont pas à être recomptés. */
-        const avantC = coutCreneau(c);
-        c.stands.splice(i, 1);
-        const apresC = coutCreneau(c);
-        let mieux = null;
-        for (const d of creneaux){
-          const avant = d === c ? avantC : avantC + coutCreneau(d);
-          for (let k = 0; k <= d.stands.length; k++){
-            d.stands.splice(k, 0, s);
-            const t = d === c ? coutCreneau(d) : coutCreneau(d) + apresC;
-            d.stands.splice(k, 1);
-            if (t < avant - 1e-9 && (!mieux || t - avant < mieux.gain))
-              mieux = { gain: t - avant, d: d, k: k };
+      for (const c of creneaux){
+        for (let i = 0; i < c.stands.length - 1; i++){
+          for (let j = i + 1; j < c.stands.length; j++){
+            const avant = coutCreneau(c);
+            const copie = c.stands.slice();
+            c.stands.splice(i, j - i + 1, ...c.stands.slice(i, j + 1).reverse());
+            if (coutCreneau(c) < avant - 1e-9) gagne = true; else c.stands = copie;
           }
         }
-        if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
-        else c.stands.splice(i, 0, s);
       }
-    }
 
-    if (!gagne) break;
-  }
+      for (const c of creneaux){
+        for (let i = 0; i < c.stands.length; i++){
+          const s = c.stands[i];
+          /* Un déplacement ne touche que deux créneaux — celui qu'on quitte et
+             celui qu'on rejoint : les autres n'ont pas à être recomptés. */
+          const avantC = coutCreneau(c);
+          c.stands.splice(i, 1);
+          const apresC = coutCreneau(c);
+          let mieux = null;
+          for (const d of creneaux){
+            const avant = d === c ? avantC : avantC + coutCreneau(d);
+            for (let k = 0; k <= d.stands.length; k++){
+              d.stands.splice(k, 0, s);
+              const t = d === c ? coutCreneau(d) : coutCreneau(d) + apresC;
+              d.stands.splice(k, 1);
+              if (t < avant - 1e-9 && (!mieux || t - avant < mieux.gain))
+                mieux = { gain: t - avant, d: d, k: k };
+            }
+          }
+          if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); gagne = true; }
+          else c.stands.splice(i, 0, s);
+        }
+      }
+
+      if (!gagne) break;
+    }
+  };
+
+  insere();
+  reprend();
+  /* Sans heure de fermeture, tout finit posé au premier passage et la boucle
+     ne tourne pas. Avec, un créneau que les reprises ont raccourci peut
+     accueillir ce qu'on avait laissé dehors : on y revient, quelques fois
+     au plus, tant que cela pose quelque chose. */
+  for (let passe = 0; passe < 3 && restants.length && insere(); passe++) reprend();
 }
 
 /* ------------------------------------------------------------
@@ -18571,6 +18726,16 @@ function calculeJournee(choix){
   const allure = pmr ? ALLURE_PMR : ALLURE;
   const enMinutes = (m) => m / (allure * 60);
 
+  /* Les heures du salon, pour le jour choisi. Arriver avant l'ouverture
+     n'avance rien : la journée part de l'heure où les portes s'ouvrent, et
+     le déroulé le dit plutôt que de programmer un stand devant un rideau
+     baissé. La fermeture borne le dernier créneau comme une conférence borne
+     les autres. */
+  const heures = horairesSalon(choix.jour);
+  const ouverture = heures.ouverture, fermeture = heures.fermeture;
+  const avantOuverture = ouverture !== null && choix.arrivee < ouverture;
+  const arrivee = avantOuverture ? ouverture : choix.arrivee;
+
   const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
   const horsJour = [], passees = [], sansLieu = [], chevauchent = [];
 
@@ -18585,7 +18750,7 @@ function calculeJournee(choix){
     const t0 = minutesDe(x.d);
     /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
        on ne la fait pas manquer, on la dit manquée. */
-    if (t0 < choix.arrivee){ passees.push(x.c); return; }
+    if (t0 < arrivee){ passees.push(x.c); return; }
     /* Deux conférences qui se recouvrent ne se suivent pas : on ne peut pas
        assister aux deux, et les enchaîner ferait une journée qui remonte le
        temps. On garde celle qui commence la première — retenue plus tôt dans
@@ -18619,13 +18784,13 @@ function calculeJournee(choix){
      conférence dont la salle n'est située nulle part borne l'heure sans borner
      le lieu : on ne sait pas s'en approcher, et on repart d'où l'on était. */
   const creneaux = [];
-  let de = iDepart, t0 = choix.arrivee;
+  let de = iDepart, t0 = arrivee;
   rdv.forEach(r => {
     creneaux.push({ de: de, t0: t0, vers: r.pt ? r.i : -1, tMax: r.t0, stands: [] });
     if (r.pt) de = r.i;
     t0 = r.t1;
   });
-  creneaux.push({ de: de, t0: t0, vers: -1, tMax: null, stands: [] });
+  creneaux.push({ de: de, t0: t0, vers: -1, tMax: fermeture, dernier: true, stands: [] });
 
   /* Ce que coûte un stand renvoyé après le dernier rendez-vous : sa visite
      entière, comptée en mètres au pas de marche. C'est exactement ce qu'elle
@@ -18638,7 +18803,7 @@ function calculeJournee(choix){
      annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que
      le visiteur suivra. */
   const etapes = [], arrets = [], trace = [], retards = [];
-  let t = choix.arrivee, m = 0, coupe = false, rang = 0;
+  let t = arrivee, m = 0, coupe = false, rang = 0;
 
   /**
    * D'un arrêt au suivant.
@@ -18698,7 +18863,19 @@ function calculeJournee(choix){
   let ou = iDepart;
   creneaux.forEach((c, k) => {
     c.stands.forEach(s => {
+      /* Le rangement a jugé sur la matrice, qui ignore le prix des virages et
+         des escaliers : le tracé réel peut coûter quelques minutes de plus,
+         et faire passer la dernière visite après la fermeture. On ne la
+         programme pas pour autant — on défait le trajet qui y menait, et le
+         stand rejoint ce qui n'a pas trouvé sa place. */
+      const avant = { e: etapes.length, tr: trace.length, t: t, m: m, coupe: coupe };
       rejoint(ou, s);
+      if (fermeture !== null && t + tv > fermeture){
+        etapes.length = avant.e; trace.length = avant.tr;
+        t = avant.t; m = avant.m; coupe = avant.coupe;
+        restants.push(s);
+        return;
+      }
       const n = pose(s, false);
       etapes.push({ genre: "stand", n: n, o: parId.get(PTS[s].id), pt: PTS[s], t0: t, t1: t + tv });
       t += tv;
@@ -18736,7 +18913,9 @@ function calculeJournee(choix){
   });
 
   return {
-    jour: choix.jour, jourNom: choix.jourNom, arrivee: choix.arrivee, fin: t,
+    jour: choix.jour, jourNom: choix.jourNom, arrivee: arrivee, fin: t,
+    demandee: choix.arrivee, ouverture: ouverture, fermeture: fermeture,
+    avantOuverture: avantOuverture,
     pmr: pmr, tv: tv, etapes: etapes, arrets: arrets, trace: trace, m: m, coupe: coupe,
     nArrets: rang,
     /* De quoi expliquer un creux plutôt que de le laisser sans réponse : ce
@@ -18816,6 +18995,11 @@ function remplitJournee(){
   if (j.perime) dit("iAlerte", "Votre parcours a changé depuis ce calcul : " +
     "reprenez-le pour que la journée en tienne compte.");
 
+  /* L'heure affichée en tête n'est plus celle qu'on a saisie : sans un mot,
+     le visiteur croirait à une faute de frappe du calcul. */
+  if (j.avantOuverture) dit("iNote", "Le salon ouvre à " + ecritHeure(j.ouverture) +
+    " : la journée commence à l'ouverture, et non à " + ecritHeure(j.demandee) + ".");
+
   const bilan = document.createElement("div");
   bilan.className = "jBilan";
   bilan.innerHTML = '<b></b><span></span>';
@@ -18874,12 +19058,19 @@ function remplitJournee(){
     "arriveriez " + ecritMinutes(r.min) + " après le début — le trajet n'y suffit " +
     "pas. Arrivez plus tôt, ou retirez ce qui la précède."));
 
-  /* En l'état cette liste reste vide : la journée n'a pas d'heure de fin, si
-     bien qu'un stand refusé entre deux conférences finit toujours par tenir
-     après la dernière. C'est le garde-fou de la contrainte horaire — le jour
-     où l'on demandera aussi à quelle heure le visiteur repart, c'est ici
-     qu'il lira ce qui n'y tient pas, plutôt que de recompter ses stands. */
-  groupe("Restés de côté", j.restants, o => ({
+  /* Sans heure de fermeture, cette liste reste vide : un stand refusé entre
+     deux conférences finit toujours par tenir après la dernière. Avec, c'est
+     la fermeture qui l'a refusé, et c'est elle qu'on nomme — le visiteur
+     sait alors quoi changer, plutôt que de recompter ses stands. */
+  if (j.restants.length && j.fermeture !== null) dit("iAlerte",
+    (j.restants.length > 1
+      ? j.restants.length + " exposants ne tiennent pas"
+      : "Un exposant ne tient pas") +
+    " avant la fermeture du salon, à " + ecritHeure(j.fermeture) + " : " +
+    (j.arrivee >= j.fermeture
+      ? "vous arrivez après."
+      : "arrivez plus tôt, ou retirez ce qui passe avant."));
+  groupe(j.fermeture !== null ? "Après la fermeture" : "Restés de côté", j.restants, o => ({
     genre: "stand", id: o.id, dessus: false,
     titre: o.nom || o.plan || ("Stand " + (o.code || "")).trim(),
     detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
@@ -19032,6 +19223,9 @@ function ouvreOrganisation(){
     champHeure.type = "time";
     champHeure.value = arrivee;
     bloc("Heure d'arrivée", champHeure);
+    const heures = document.createElement("span");
+    heures.className = "jHeures";
+    champHeure.parentNode.appendChild(heures);
 
     if (jours.length > 1){
       champJour = document.createElement("select");
@@ -19044,6 +19238,25 @@ function ouvreOrganisation(){
       });
       bloc("Jour de visite", champJour);
     }
+
+    /* Les heures du salon se lisent sous l'heure d'arrivée, là où on la
+       choisit, et suivent le jour : le dernier ferme souvent plus tôt. Une
+       heure retenue d'une visite précédente qui tombe avant l'ouverture est
+       ramenée à celle-ci — la garder proposerait une arrivée que le calcul
+       corrigerait aussitôt. */
+    const majHeures = () => {
+      const h = horairesSalon(champJour ? champJour.value : (jours.length ? jours[0].cle : ""));
+      heures.hidden = h.ouverture === null && h.fermeture === null;
+      heures.textContent = h.ouverture !== null && h.fermeture !== null
+        ? "Le salon est ouvert de " + ecritHeure(h.ouverture) + " à " + ecritHeure(h.fermeture) + "."
+        : h.ouverture !== null ? "Le salon ouvre à " + ecritHeure(h.ouverture) + "."
+        : "Le salon ferme à " + ecritHeure(h.fermeture) + ".";
+      const v = lueHeure(champHeure.value);
+      if (h.ouverture !== null && (v === null || v < h.ouverture))
+        champHeure.value = ecritHeure(h.ouverture).replace("h", ":");
+    };
+    majHeures();
+    if (champJour) champJour.onchange = majHeures;
 
     if (departs.length > 1){
       champDepart = document.createElement("select");

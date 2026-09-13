@@ -2131,7 +2131,7 @@ button.expo:hover{background:var(--line)}
   background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);color:var(--ink)}
 .jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
-.jSansPorte{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+.jSansPorte,.jHeures{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
 
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
@@ -2533,6 +2533,18 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb input:focus{border-color:var(--accent);outline:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
+/* Les heures d'ouverture : deux champs par rangée, et une croix pour rendre
+   un jour aux heures de tous les jours. Un champ d'heure porte son sélecteur,
+   il ne tient pas dans la largeur d'un nombre. */
+.reglage-nb .hRang{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink)}
+.reglage-nb.horaires > .l{font-size:14px;color:var(--ink);margin-bottom:3px}
+.reglage-nb .hRang .l{color:var(--ink-2)}
+.reglage-nb input[type="time"]{width:96px;text-align:left}
+.reglage-nb .hEfface{flex:none;width:24px;height:24px;padding:0;border:0;background:none;
+  color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;border-radius:var(--radius)}
+.reglage-nb .hEfface:hover{color:var(--ink);background:var(--surface-2)}
+.reglage-nb .hEfface[hidden]{display:inline-block !important;visibility:hidden}
+.reglage-nb .aide.alerte{color:var(--rouge)}
 
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
    remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
