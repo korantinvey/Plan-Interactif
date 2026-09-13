@@ -245,6 +245,8 @@ ecrit(
   "- `outils/controle.js` — analyse le script de chaque page construite, en module",
   "  ES : une redéclaration y est une erreur, là où un `<script>` la tolère.",
   "- `outils/migration.js` — crée une migration horodatée à la seconde.",
+  "- `outils/polices.js` — rapatrie les polices de Google dans `web/polices/`, hors",
+  "  construction (réseau requis) ; écrit `outils/polices.json`, relu par `genere.js`.",
   "- `outils/gabarit/_langue.js` — la version anglaise : posé en tête de chaque page, il",
   "  traduit ce qu'elle affiche d'après le dictionnaire, et tient la bascule FR/EN.",
   "- `outils/anglais/` — le dictionnaire anglais, un fichier par module ; `serveur.js` et",

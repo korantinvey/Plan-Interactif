@@ -10,6 +10,10 @@ outils/*.json
 # Klipso. Les mêmes données sont déjà publiées dans la page : rien de plus
 # n'est exposé, et la construction redevient reproductible partout.
 !outils/plans.json
+# Les déclarations des polices rapatriées dans web/polices/, relues par la
+# construction. Même raison : elles ne se régénèrent qu'avec le réseau
+# (`npm run polices`), et sans elles un clone neuf ne construit plus.
+!outils/polices.json
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont

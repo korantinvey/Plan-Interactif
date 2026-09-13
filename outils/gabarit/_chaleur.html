@@ -607,7 +607,7 @@ async function lanceRemiseAZero(){
       method: "POST", body: JSON.stringify({ p_evenement: evt }),
     });
     const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
-              Number(r?.visiteurs || 0) + Number(r?.journal || 0);
+              Number(r?.visiteurs || 0);
 
     /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
        qui ne reposent plus sur rien. */

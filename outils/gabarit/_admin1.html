@@ -549,12 +549,14 @@ const POLICES_LIBELLE = {
    que pour les noms, des stands comme des zones : le numéro garde la chasse du
    modèle, où les chiffres s'alignent d'un stand à l'autre.
 
-   Une liste plutôt qu'un nom saisi : Google répond en erreur à une famille
-   qu'il ne sert pas sous la graisse demandée — Lato n'a pas de 600 —, et le
-   plan garderait sans rien dire la police du modèle. Chaque ligne porte donc
-   une graisse qu'on sait servie, retenue pour se lire petit sur une cloison.
+   Une liste plutôt qu'un nom saisi : chaque police est rapatriée de Google une
+   fois pour toutes par `npm run polices`, qui relit cette liste, et Google
+   répond en erreur à une famille qu'il ne sert pas sous la graisse demandée —
+   Lato n'a pas de 600. Chaque ligne porte donc une graisse qu'on sait servie,
+   retenue pour se lire petit sur une cloison. Une ligne ajoutée ici fait
+   échouer la construction tant que le script n'a pas été relancé.
 
-   Les cinq polices des modèles sont déjà appelées par l'en-tête de la page, et
+   Les cinq polices des modèles sont déjà déclarées par l'en-tête de la page, et
    se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
    par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
    chargent qu'une fois choisies : chez le visiteur, la seule de son salon. */
@@ -582,7 +584,7 @@ const POLICES_NOMS = [
   ["Courier Prime", "700", "chasse fixe", P_MACHINE],
 ].map(([nom, graisse, genre, pile]) => ({
   nom, graisse, genre,
-  // sans pile écrite, la police vient de Google et ne se demande qu'au besoin
+  // sans pile écrite, la police ne se demande qu'au besoin, à `polices/`
   distante: !pile,
   pile: pile || '"' + nom + '", ' + (REPLIS_POLICE[genre] || "sans-serif"),
 }));
@@ -608,8 +610,10 @@ function feuillePolice(p){
   if (!FEUILLES_POLICE.has(p.nom)) FEUILLES_POLICE.set(p.nom, new Promise(ok => {
     const l = document.createElement("link");
     l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=" + p.nom.replace(/ /g, "+") +
-      ":wght@" + p.graisse + "&display=swap";
+    /* La feuille de la famille, rangée à côté de la page par `npm run polices`.
+       La demander à Google transmettrait à celui-ci l'adresse de chaque
+       visiteur du salon — et la construction le refuse. */
+    l.href = "polices/" + p.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".css";
     l.onload = () => { FEUILLES_ARRIVEES.add(p.nom); ok(true); };
     l.onerror = () => ok(false);
     document.head.appendChild(l);
