@@ -63,8 +63,13 @@ function ecritMinutes(m){
   return h + " h" + (r ? " " + r + " min" : "");
 }
 
-/** Les jours où le salon a un programme, dans l'ordre. */
+/** Les jours du salon, dans l'ordre. Ceux que l'exploitant a datés d'abord :
+ *  un salon sans conférence a des jours lui aussi, et c'est parmi eux que le
+ *  visiteur choisit le sien. À défaut, les jours où le programme a quelque
+ *  chose. */
 function joursSalon(){
+  const dates = datesSalon();
+  if (dates.length) return dates;
   const vus = new Map();
   CONFS.forEach(c => {
     const d = instantConf(c);

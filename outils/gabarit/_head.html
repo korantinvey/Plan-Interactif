@@ -2533,12 +2533,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb input:focus{border-color:var(--accent);outline:none}
 .reglage-nb .u{flex:none;font-size:12.5px;color:var(--ink-3)}
 .reglage-nb .aide{font-size:12px;color:var(--ink-3);line-height:1.5}
-/* Les heures d'ouverture : deux champs par rangée, et une croix pour rendre
-   un jour aux heures de tous les jours. Un champ d'heure porte son sélecteur,
-   il ne tient pas dans la largeur d'un nombre. */
+/* Les dates du salon, puis une rangée par jour : deux champs d'heure, et une
+   croix pour laisser un jour sans heures. Un champ d'heure ou de date porte
+   son sélecteur, il ne tient pas dans la largeur d'un nombre. */
 .reglage-nb .hRang{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--ink)}
 .reglage-nb.horaires > .l{font-size:14px;color:var(--ink);margin-bottom:3px}
 .reglage-nb .hRang .l{color:var(--ink-2)}
+.reglage-nb .hRang .u{margin-left:4px}
+.reglage-nb .hRang .u:first-child{margin-left:0}
+.reglage-nb .hJours{display:flex;flex-direction:column;gap:6px;margin:4px 0 2px}
+.reglage-nb input[type="date"]{width:138px;text-align:left}
 .reglage-nb input[type="time"]{width:96px;text-align:left}
 .reglage-nb .hEfface{flex:none;width:24px;height:24px;padding:0;border:0;background:none;
   color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;border-radius:var(--radius)}
