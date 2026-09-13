@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 723 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 882 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -227,10 +227,12 @@ Fonctions :
 `metresParDegre` 63 · `tourneEnvirons` 80 · `versTerre` 86 · `versLePlan` 93 · `reancre` 108
 `empriseDesPavillons` 116 · `centreDesPavillons` 129 · `carreDeTerrain` 143
 `largeurVoie` 191 · `sorteEnvirons` 210 · `requeteOverpass` 225 · `chercheEnvirons` 244
-`penteDesVoies` 276 · `allegeTrace` 309 · `dessineEnvirons` 334 · `calqueEnvirons` 385
-`montreEnvirons` 394 · `recul` 417 · `manqueCalage` 433 · `accesEnvirons` 442
-`enregistreEnvirons` 456 · `effaceEnvirons` 485 · `calageEnregistre` 499
-`litCoordonnees` 527 · `retraceEnvirons` 541 · `voletEnvirons` 558
+`penteDesVoies` 276 · `allegeTrace` 309 · `dessineEnvirons` 334 · `aireDuContour` 395
+`centreDuContour` 404 · `axeDuContour` 418 · `empriseDesObjets` 432
+`batimentsCandidats` 450 · `caleSurBatiment` 473 · `calqueEnvirons` 490
+`rangeEnvironsAuFond` 506 · `montreEnvirons` 525 · `recul` 549 · `manqueCalage` 565
+`accesEnvirons` 574 · `enregistreEnvirons` 588 · `effaceEnvirons` 617
+`calageEnregistre` 631 · `litCoordonnees` 662 · `retraceEnvirons` 676 · `voletEnvirons` 693
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -434,19 +436,19 @@ Fonctions :
 `ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 547
 `adoptePartage` 633
 
-### `_pile.html` — 485 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 487 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
-- l.57 · Panneau : deux sections, chacune rangée par nom
-- l.301 · Repères
-- l.353 · Fond du plan
+- l.59 · Panneau : deux sections, chacune rangée par nom
+- l.303 · Repères
+- l.355 · Fond du plan
 
 Fonctions :
 
-`clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
-`nature` 75 · `boutonAjout` 82 · `boutonVerrou` 93 · `intertitre` 101
-`construitPanneau` 108 · `sectionSelection` 317 · `sectionFond` 373 · `ligneCouleur` 427
-`rangSecteur` 447 · `rangSous` 459 · `defautCouleur` 481
+`clePile` 10 · `entrees` 12 · `pile` 23 · `groupe` 35 · `ordonneDom` 43 · `deplaceCouche` 48
+`nature` 77 · `boutonAjout` 84 · `boutonVerrou` 95 · `intertitre` 103
+`construitPanneau` 110 · `sectionSelection` 319 · `sectionFond` 375 · `ligneCouleur` 429
+`rangSecteur` 449 · `rangSous` 461 · `defautCouleur` 483
 
 ### `_pousse.html` — 631 l. → plan-admin.html, plan-smcl.html, plan.html
 

@@ -13273,7 +13273,9 @@ function appliqueDimension(quoi){
    un seul empilement : n'importe lequel peut se glisser entre deux autres.
    L'ordre de la liste est l'ordre de tracé — le premier est derrière.
    ============================================================ */
-const clePile = () => "_pile:" + P().id;
+/* Le pavillon est facultatif : la pile qu'on règle est celle qu'on regarde,
+   sauf quand on range une couche sur tous les pavillons à la fois. */
+const clePile = (p) => "_pile:" + (p || P()).id;
 
 function entrees(){
   const e = [];
@@ -21509,11 +21511,142 @@ function dessineEnvirons(p, elements, cal){
 }
 
 /* ------------------------------------------------------------
+   S'accrocher au bâtiment du parc
+
+   Tourner à l'œil contre un quartier entier demande de la patience et ne
+   tombe jamais tout à fait juste. Or le pavillon est dans les données : un
+   parc des expositions est bâti, donc cartographié, et OpenStreetMap en rend
+   le contour comme celui de n'importe quelle maison. Il suffit de s'y
+   accrocher — même orientation, même centre — pour que tout le reste suive.
+
+   Ce que le calcul ne peut pas trancher, c'est lequel des bâtiments voisins
+   est le bon, et lequel des quatre quarts de tour. D'où un bouton qui passe de
+   l'un à l'autre : la machine propose, l'œil confirme.
+   ------------------------------------------------------------ */
+
+/** L'aire d'un contour fermé, par la formule du lacet. */
+function aireDuContour(pts){
+  let s = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++)
+    s += pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+  return Math.abs(s) / 2;
+}
+
+/** Le centre d'un contour fermé — le vrai, celui de la surface. La moyenne des
+ *  sommets pencherait du côté où le contributeur en a posé le plus. */
+function centreDuContour(pts){
+  let s = 0, cx = 0, cy = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){
+    const f = pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+    s += f;
+    cx += (pts[j][0] + pts[i][0]) * f;
+    cy += (pts[j][1] + pts[i][1]) * f;
+  }
+  if (!s) return pts[0];
+  return [cx / (3 * s), cy / (3 * s)];
+}
+
+/** La direction dominante d'un contour, au quart de tour près — les façades
+ *  d'un hall, comme `anglePlan` fait des allées. */
+function axeDuContour(pts){
+  let sc = 0, ss = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){
+    const dx = pts[i][0] - pts[j][0], dy = pts[i][1] - pts[j][1];
+    const l = Math.hypot(dx, dy);
+    if (l < 2) continue;               // un pan coupé ne dit rien de la façade
+    const a = Math.atan2(dy, dx);
+    sc += l * Math.cos(4 * a); ss += l * Math.sin(4 * a);
+  }
+  return (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
+}
+
+/** L'emprise réelle de ce qu'un pavillon contient — sans la marge de douze
+ *  mètres que porte `emprise`, qui fausserait la comparaison des aires. */
+function empriseDesObjets(p){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const o of p.stands.concat(p.zones)){
+    if (!o.c || !o.bb) continue;
+    x0 = Math.min(x0, o.c[0] - o.bb[0] / 2); x1 = Math.max(x1, o.c[0] + o.bb[0] / 2);
+    y0 = Math.min(y0, o.c[1] - o.bb[1] / 2); y1 = Math.max(y1, o.c[1] + o.bb[1] / 2);
+  }
+  return isFinite(x0) ? { x0: x0, y0: y0, x1: x1, y1: y1 } : p.emprise;
+}
+
+/**
+ * Les bâtiments qui pourraient être celui-ci, le plus vraisemblable d'abord.
+ *
+ * Le critère est l'aire : un pavillon de vingt mille mètres carrés ne se
+ * confond pas avec le pavillon d'accueil ni avec l'immeuble d'en face. On
+ * compare en logarithme pour que « deux fois trop grand » et « deux fois trop
+ * petit » se valent, et l'on écarte ce qui tient dans un quart du hall.
+ */
+function batimentsCandidats(elements, cal, p){
+  const e = empriseDesObjets(p);
+  const aire = Math.max(1, (e.x1 - e.x0) * (e.y1 - e.y0));
+  const l = [];
+  for (const w of elements){
+    if (!w.tags || !w.tags.building || w.geometry.length < 4) continue;
+    const pts = w.geometry.map(g => versLePlan([g.lon, g.lat], cal));
+    const a = aireDuContour(pts);
+    if (a < aire / 4) continue;
+    l.push({ w: w, aire: a, ecart: Math.abs(Math.log(a / aire)) });
+  }
+  return l.sort((x, y) => x.ecart - y.ecart).slice(0, 8);
+}
+
+/**
+ * Le calage posé sur un bâtiment : même orientation, même centre.
+ *
+ * Augmenter l'angle du calage de δ fait tourner le quartier de δ dans le
+ * repère du plan — la matrice de passage vaut R(a)·F, et R(a+δ) = R(δ)·R(a).
+ * On amène donc l'axe du bâtiment sur celui des allées, puis on fait glisser
+ * son centre sur celui du pavillon. Reste le quart de tour, que le bouton
+ * voisin tranche.
+ */
+function caleSurBatiment(cand, p){
+  const e = empriseDesObjets(p);
+  const centre = [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2];
+  ENV_CAL = reancre(ENV_CAL, centre);
+  const avant = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
+  ENV_CAL.angle += anglePlan(p) - axeDuContour(avant);
+  const apres = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
+  const c = centreDuContour(apres);
+  ENV_CAL.x += centre[0] - c[0];
+  ENV_CAL.y += centre[1] - c[1];
+}
+
+/* ------------------------------------------------------------
    La pose sur le plan
    ------------------------------------------------------------ */
 
 /** Le calque des environs d'un pavillon, s'il en a un. */
 const calqueEnvirons = (p) => (p && p.fond ? p.fond.find(f => f.cle === CLE_ENVIRONS) : null);
+
+/**
+ * Le sol, rangé sous tout le reste.
+ *
+ * L'ordre naturel de `fond` y suffirait — le calque prend la tête de la liste.
+ * Mais dès que l'exploitant a touché à sa pile, c'est l'ordre enregistré qui
+ * fait loi, et celui-là range à la fin, donc au-dessus, toute couche qu'il ne
+ * connaît pas encore. C'est la bonne règle pour un dessin qu'on vient de
+ * tracer, et l'inverse de ce qu'il faut pour un quartier : le plan passait
+ * dessous, rues en travers des stands.
+ *
+ * `force` sert au moment où l'on va chercher le quartier : c'est là qu'on le
+ * pose, et c'est le seul moment où l'on peut décider de sa place sans défaire
+ * un choix. Ensuite le rang appartient à l'exploitant, flèches comprises.
+ */
+function rangeEnvironsAuFond(p, force){
+  const cle = clePile(p);
+  const ordre = CONF[cle];
+  if (!Array.isArray(ordre)) return;      // sans pile enregistrée, `fond` suffit
+  const k = "fond:" + CLE_ENVIRONS;
+  const i = ordre.indexOf(k);
+  if (i === 0 || (i > 0 && !force)) return;
+  if (i > 0) ordre.splice(i, 1);
+  ordre.unshift(k);
+  enregistreConf();
+}
 
 /**
  * Poser le quartier sur un pavillon, sans rien enregistrer.
@@ -21530,6 +21663,7 @@ function montreEnvirons(svg, p){
   else if (i >= 0) p.fond[i].svg = svg;
   else p.fond.unshift({ id: ID_ENVIRONS, cle: CLE_ENVIRONS, nom: NOM_ENVIRONS,
                         ordre: RANG_ENVIRONS, svg: svg });
+  if (svg) rangeEnvironsAuFond(p, false);
   if (p !== P()) return;
   monteHabillage();
   ordonneDom();
@@ -21646,6 +21780,9 @@ async function calageEnregistre(){
    degré retrace tout, et ne doit rien redemander. */
 let ENV_OSM = null;
 let ENV_CAL = null;
+/* Les bâtiments auxquels s'accrocher, et celui qu'on essaie. */
+let ENV_BATIS = [];
+let ENV_BATI = 0;
 
 /**
  * Deux nombres collés depuis une carte : « 48.830212, 2.287851 ».
@@ -21728,12 +21865,15 @@ function voletEnvirons(hote){
   reglage.className = "reglage-nb envRot";
   reglage.innerHTML = '<label><span class="l">Rotation</span>' +
     '<input type="number" step="0.5"><span class="u">°</span></label>' +
-    '<div class="acts"><button type="button" class="btn">Quart de tour</button></div>' +
-    '<span class="aide">La direction des rues est reprise de la carte, le ' +
-    'quart de tour non : tournez jusqu\'à ce que les bâtiments voisins tombent ' +
-    'en face du pavillon. Les flèches décalent de cinq mètres.</span>';
+    '<div class="acts"><button type="button" class="btn bBati"></button>' +
+    '<button type="button" class="btn bQuart">Quart de tour</button></div>' +
+    '<span class="aide">Le pavillon est cartographié comme n\'importe quel ' +
+    'bâtiment : le calage s\'accroche au sien, orientation et centre compris. ' +
+    'S\'il a visé le voisin, passez au suivant ; s\'il est retourné, donnez-lui ' +
+    'un quart de tour. Les flèches décalent de cinq mètres.</span>';
   const nRot = reglage.querySelector("input");
-  const bQuart = reglage.querySelector("button");
+  const bBati = reglage.querySelector(".bBati");
+  const bQuart = reglage.querySelector(".bQuart");
   hote.appendChild(reglage);
 
   const dec = document.createElement("div");
@@ -21777,6 +21917,8 @@ function voletEnvirons(hote){
     bGarde.hidden = !ENV_OSM;
     bEfface.hidden = !pose;
     finales.hidden = bGarde.hidden && bEfface.hidden;
+    bBati.hidden = !ENV_BATIS.length;
+    bBati.textContent = "Bâtiment suivant (" + (ENV_BATI + 1) + "/" + ENV_BATIS.length + ")";
     if (ENV_CAL) nRot.value = (Math.round(ENV_CAL.angle / DEG * 10) / 10);
   };
 
@@ -21788,6 +21930,13 @@ function voletEnvirons(hote){
   };
   nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourne(v * DEG); };
   bQuart.onclick = () => tourne(ENV_CAL.angle + Math.PI / 2);
+  bBati.onclick = () => {
+    if (!ENV_BATIS.length) return;
+    ENV_BATI = (ENV_BATI + 1) % ENV_BATIS.length;
+    caleSurBatiment(ENV_BATIS[ENV_BATI], P());
+    retraceEnvirons();
+    maj();
+  };
 
   const occupe = (b, quoi) => { b.disabled = true; dit(quoi); };
   const rendu = (b, txt, mal) => { b.disabled = false; dit(txt, mal); };
@@ -21803,15 +21952,27 @@ function voletEnvirons(hote){
     try {
       const elements = await chercheEnvirons(terrain.bbox);
       if (!elements.length) throw new Error("rien trouvé autour de ce point : vérifiez les coordonnées.");
-      /* La direction des rues contre celle des allées : ce qui reste à
-         trancher, c'est le quart de tour, et lui seul. */
+      /* La direction des rues contre celle des allées : de quoi partir droit
+         quand le pavillon n'est pas cartographié. */
       cal.angle = anglePlan(P()) + penteDesVoies(elements, cal);
       ENV_OSM = elements;
       ENV_CAL = cal;
+      /* Et s'il l'est — ce qui est la règle pour un parc des expositions — on
+         s'accroche directement à son contour : c'est de loin le meilleur
+         départ que l'on puisse proposer. */
+      ENV_BATIS = batimentsCandidats(elements, cal, P());
+      ENV_BATI = 0;
+      if (ENV_BATIS.length) caleSurBatiment(ENV_BATIS[0], P());
+      /* La place du calque se décide ici, au moment où on le pose : c'est le
+         seul instant où la fixer ne défait aucun choix. */
+      DATA.plans.forEach(q => rangeEnvironsAuFond(q, true));
       const parPlan = retraceEnvirons();
       const ko = Math.round([...parPlan.values()].reduce((n, s) => n + s.length, 0) / 1024);
-      rendu(bCherche, elements.length + " tracés, " + ko + " Ko. " +
-        "Tournez jusqu'à ce que les bâtiments tombent en face, puis enregistrez.");
+      rendu(bCherche, elements.length + " tracés, " + ko + " Ko" +
+        (ENV_BATIS.length
+          ? ", calé sur un bâtiment de " + Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") +
+            " m². Vérifiez qu'il tombe en face, puis enregistrez."
+          : ". Aucun bâtiment à la bonne taille : tournez à la main."));
       maj();
     } catch (e) {
       rendu(bCherche, "Échec : " + e.message, true);

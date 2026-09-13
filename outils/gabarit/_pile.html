@@ -5,7 +5,9 @@
    un seul empilement : n'importe lequel peut se glisser entre deux autres.
    L'ordre de la liste est l'ordre de tracé — le premier est derrière.
    ============================================================ */
-const clePile = () => "_pile:" + P().id;
+/* Le pavillon est facultatif : la pile qu'on règle est celle qu'on regarde,
+   sauf quand on range une couche sur tous les pavillons à la fois. */
+const clePile = (p) => "_pile:" + (p || P()).id;
 
 function entrees(){
   const e = [];
