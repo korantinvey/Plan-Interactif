@@ -20378,7 +20378,8 @@ const SUGG_ECARTES = new Set();
 
 /* Et ce que la fenêtre a déjà mis au premier plan. Une proposition ne s'impose
    qu'une fois : revenue à chaque ajout, elle se ferait fermer sans être lue,
-   puis fermerait le plan avec elle. */
+   puis fermerait le plan avec elle. Le tiroir, quand on l'y pose aussi, n'a
+   pas ce scrupule à avoir — on y va pour la voir. */
 const SUGG_MONTREES = new Set();
 
 /* La mesure a son canal. Une fiche ouverte depuis la proposition, un exposant
@@ -20398,18 +20399,31 @@ function seuilSugg(){
 }
 
 /**
- * Comment la proposition se présente.
+ * Où la proposition se présente : l'un, l'autre, ou les deux.
  *
  * « tiroir » l'attend en tête du parcours, là où le visiteur va de lui-même ;
- * « fenetre » la met au premier plan dès que le seuil est atteint, et là
- * seulement. La seconde se voit, et c'est tout son intérêt comme tout son
- * risque : elle interrompt.
+ * « fenetre » la met au premier plan dès que le seuil est atteint. La seconde
+ * se voit, et c'est tout son intérêt comme tout son risque : elle interrompt.
  * D'où le réglage plutôt qu'un choix fait à la place de l'organisateur — un
  * salon professionnel de deux heures et un salon grand public d'un week-end
- * n'ont pas la même tolérance à l'interruption.
+ * n'ont pas la même tolérance à l'interruption. Les deux ensemble ne se
+ * contredisent pas : la fenêtre refermée, la proposition reste là où le
+ * visiteur la retrouvera s'il change d'avis.
+ *
+ * Le réglage a d'abord été un choix unique, écrit en chaîne : un salon publié
+ * avant les deux cases garde ce qu'il avait choisi. Une liste vide se lit
+ * comme le tiroir seul : éteindre la fonction revient à la case « Proposer »,
+ * pas à celle-ci.
  */
-const presentationSugg = () =>
-  reglageSugg().presentation === "fenetre" ? "fenetre" : "tiroir";
+const PRESENTATIONS_SUGG = ["tiroir", "fenetre"];
+
+function presentationsSugg(){
+  const v = reglageSugg().presentation;
+  const l = Array.isArray(v) ? PRESENTATIONS_SUGG.filter(x => v.indexOf(x) >= 0)
+          : [v === "fenetre" ? "fenetre" : "tiroir"];
+  return l.length ? l : ["tiroir"];
+}
+const presenteSugg = (ou) => presentationsSugg().indexOf(ou) >= 0;
 
 /** Le critère sur lequel on rapproche, s'il désigne encore quelque chose. Un
  *  champ décoché dans la console, ou des secteurs éteints depuis, ne le font
@@ -20614,14 +20628,12 @@ function carteSuggestion(s, ferme){
 /**
  * La proposition en tête du tiroir du parcours, quand il y en a une.
  *
- * Pas au premier plan : l'organisateur a choisi la fenêtre, et la même carte
- * redite dans le tiroir ferait de son choix un « les deux ». Refermée d'un
- * « Non merci », elle reviendrait d'ailleurs attendre le visiteur là même où
- * il consulte sa liste — lui imposer deux fois ce qu'on s'était promis de ne
- * lui imposer qu'une.
+ * Seulement si le tiroir est coché : l'organisateur qui n'a choisi que la
+ * fenêtre ne veut pas la même carte redite dans le parcours, où elle
+ * reviendrait attendre le visiteur qui l'a refermée d'un « Non merci ».
  */
 function poseSuggestion(hote){
-  if (presentationSugg() === "fenetre") return;
+  if (!presenteSugg("tiroir")) return;
   const s = suggestionCourante();
   if (s) hote.appendChild(carteSuggestion(s, null));
 }
@@ -20635,7 +20647,7 @@ function poseSuggestion(hote){
  * fenêtre qu'il n'a pas demandée serait autre chose que compléter sa visite.
  */
 function fenetreSuggestion(){
-  if (presentationSugg() !== "fenetre") return;
+  if (!presenteSugg("fenetre")) return;
   /* Une fenêtre déjà ouverte a été demandée, elle : la remplacer par une
      proposition que personne n'attendait ferait perdre ce qu'on y faisait —
      un réglage en cours de saisie, une confirmation à donner. */
@@ -20705,8 +20717,8 @@ const etiquetteSugg = (o) => [o.code, o.nom].filter(Boolean).join(" — ") || o.
  */
 function voletSuggestion(hote){
   const p = document.createElement("p");
-  p.textContent = "Un exposant de plus, proposé en tête du parcours de visite " +
-    "quand plusieurs de ceux qu'un visiteur a retenus se ressemblent. Le " +
+  p.textContent = "Un exposant de plus, proposé au visiteur quand plusieurs " +
+    "de ceux qu'il a retenus dans son parcours se ressemblent. Le " +
     "rapprochement se fait sur son appareil, à partir de tables préparées " +
     "ici : rien de ce qu'il retient ne remonte jamais.";
   hote.appendChild(p);
@@ -20812,22 +20824,43 @@ function voletSuggestion(hote){
     corps.appendChild(seuil);
 
     const prez = champZone(corps, "Présentation",
-      document.createElement("select"),
-      "Discrète, la proposition attend en tête du parcours, là où le visiteur " +
-      "va de lui-même. Au premier plan, elle s'ouvre à la place dans une fenêtre " +
-      "dès que le seuil est atteint : elle se voit, et elle interrompt. Elle " +
-      "ne s'impose qu'une fois par proposition, jamais par-dessus une autre " +
-      "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier.");
-    prez.innerHTML =
-      '<option value="tiroir">Discrète — en tête du parcours de visite</option>' +
-      '<option value="fenetre">Au premier plan — une fenêtre dès le seuil atteint</option>';
-    prez.value = presentationSugg();
-    prez.onchange = e => {
-      r.presentation = e.target.value;
-      enregistreConf();
-      // la carte quitte le tiroir ou y revient : il obéit sur-le-champ
-      rafraichitParcours();
+      document.createElement("div"),
+      "Dans le parcours, la proposition attend en tête de la liste, là où le " +
+      "visiteur va de lui-même. Dans une fenêtre, elle s'ouvre dès que le " +
+      "seuil est atteint : elle se voit, et elle interrompt. Elle ne s'y " +
+      "impose qu'une fois par proposition, jamais par-dessus une autre " +
+      "fenêtre, et jamais à l'ouverture du plan sur une liste d'hier. Les " +
+      "deux cochées, la fenêtre refermée laisse la proposition dans le parcours.");
+    const cases = {};
+    [["tiroir", "En tête du parcours de visite"],
+     ["fenetre", "Dans une fenêtre, dès le seuil atteint"]].forEach(([ou, libelle]) => {
+      const l = document.createElement("label");
+      l.className = "cocheZ";
+      l.innerHTML = '<input type="checkbox"><span></span>';
+      l.querySelector("span").textContent = libelle;
+      cases[ou] = l.querySelector("input");
+      prez.appendChild(l);
+    });
+    /* La dernière case cochée ne se décoche pas : sans l'une ni l'autre, la
+       proposition serait calculée pour n'être montrée nulle part — ce que la
+       case « Proposer » dit déjà, et plus franchement. */
+    const accorde = () => {
+      const l = presentationsSugg();
+      PRESENTATIONS_SUGG.forEach(ou => {
+        cases[ou].checked = l.indexOf(ou) >= 0;
+        cases[ou].disabled = l.length === 1 && cases[ou].checked;
+      });
     };
+    PRESENTATIONS_SUGG.forEach(ou => {
+      cases[ou].onchange = () => {
+        r.presentation = PRESENTATIONS_SUGG.filter(x => cases[x].checked);
+        enregistreConf();
+        accorde();
+        // la carte quitte le tiroir ou y revient : il obéit sur-le-champ
+        rafraichitParcours();
+      };
+    });
+    accorde();
 
     const source = champZone(corps, "Exposant proposé",
       document.createElement("select"),
