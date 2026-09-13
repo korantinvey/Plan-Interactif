@@ -121,6 +121,8 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+/* Un texte écrit dans les deux langues ne montre que celui de la page. */
+html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et

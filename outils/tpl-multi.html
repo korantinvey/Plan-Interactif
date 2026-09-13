@@ -121,6 +121,8 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+/* Un texte écrit dans les deux langues ne montre que celui de la page. */
+html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et
@@ -3821,6 +3823,30 @@ let view, emp;
 /* ============================================================
    1. Index global — la recherche porte sur tous les pavillons
    ============================================================ */
+/**
+ * Les libellés anglais que l'exploitant a donnés aux zones. Le moteur de
+ * langue les substitue au nom français partout où celui-ci paraît — sur le
+ * plan, dans la liste, sur la fiche, cité dans un itinéraire — sans que chacun
+ * de ces endroits ait à choisir entre les deux. À relancer après chaque
+ * enregistrement d'une zone : un libellé effacé doit disparaître aussi.
+ */
+/**
+ * Le nom d'une zone dans la langue de la page. Le dictionnaire ci-dessous ne
+ * suffit pas partout : le nom posé sur le plan est coupé en lignes, et une
+ * zone peut s'appeler comme l'exposant qu'elle abrite, dont le nom ne se
+ * traduit jamais. Là où la zone est nommée en tant que telle — sur le plan,
+ * dans la liste, en titre de sa fiche — le nom se choisit donc à la source.
+ */
+const nomDeLaZone = (z) => (LANGUE.code === "en" && z.nom_en) || z.nom;
+
+function nomsAnglaisDesZones(){
+  const t = {};
+  DATA.plans.forEach(p => (p.zones || []).forEach(z => {
+    if (z.nom && z.nom_en) t[z.nom] = z.nom_en;
+  }));
+  LANGUE.donnees("zones", t);
+}
+
 function indexe(d){
   DATA = d;
   DATA.plans.forEach((p, i) => {
@@ -3847,7 +3873,8 @@ function indexe(d){
        endroits du salon au même titre qu'un stand. */
     p.zones.forEach(z => {
       z.kind = "zone"; z.p = i;
-      z.rech = String(z.nom || "").toLowerCase();
+      // son libellé anglais aussi : un visiteur étranger tape celui qu'il lit
+      z.rech = (String(z.nom || "") + " " + String(z.nom_en || "")).toLowerCase();
     });
     /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
        toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
@@ -3880,6 +3907,7 @@ function indexe(d){
     p.conferences.forEach(c => (c.exposants || []).forEach(e => e && noms.push(e.nom)));
   });
   LANGUE.protege(noms);
+  nomsAnglaisDesZones();
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
@@ -4380,7 +4408,7 @@ const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
 
 /** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
 function libelleZone(z, az, w, h, sel, pxParM, reg){
-  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  const a = habille(nomDeLaZone(z), w * .88, h * .7, 3.4, P_NOM);
   if (!a) return "";
   const f = a.f * facteurLibelle(reg);
   if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
@@ -5322,7 +5350,7 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
       '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan ||
+      '<span><span class="nm">' + esc((o.kind === "zone" ? nomDeLaZone(o) : o.nom) || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
@@ -6511,7 +6539,7 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const genre = zone ? typeZone(o) : null;
   $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
   $("dKind").hidden = zone && !genre;
-  const titre = soc.nom || soc.plan ||
+  const titre = (zone ? nomDeLaZone(o) : soc.nom) || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
@@ -6644,8 +6672,16 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
      n'en a pas. */
   if (zone){
-    met("description", LIBELLE_CORPS.description, o.description
-      ? '<div class="riche">' + assainitRiche(o.description) + '</div>' : "");
+    /* Deux descriptions quand l'exploitant a écrit l'anglaise : les deux sont
+       posées, et la langue de la page dit laquelle se voit — la bascule n'a
+       ainsi rien à redessiner. Ce que l'exploitant a écrit dans une langue ne
+       passe pas par le dictionnaire. Sans version anglaise, la française sert
+       aux deux. */
+    const riche = (h, lg) => '<div class="riche"' + (lg ? ' data-lg="' + lg + '" translate="no"' : "") +
+      '>' + assainitRiche(h) + '</div>';
+    met("description", LIBELLE_CORPS.description, !o.description && !o.description_en ? ""
+      : o.description && o.description_en ? riche(o.description, "fr") + riche(o.description_en, "en")
+      : riche(o.description || o.description_en));
     met("lien", LIBELLE_CORPS.lien, lien(o.lien));
   }
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
@@ -7232,6 +7268,9 @@ addEventListener("langue", () => {
   dessineDessins();
   libelles();
   liste();
+  // la fiche ouverte sur une zone porte son nom dans la langue d'avant
+  const o = state.sel && parId.get(state.sel);
+  if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
 });
 
 /* thème */
@@ -9851,12 +9890,24 @@ function champZone(hote, titre, dedans, aide){
  * la publierait à moitié faite.
  */
 function champsZone(hote, o){
-  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+  /* Le libellé et la description se saisissent dans les deux langues, et les
+     deux champs paraissent quelle que soit la langue de l'écran : l'exploitant
+     qui travaille en anglais écrit aussi le français, et inversement. */
+  const libelle = champZone(hote, "Libellé en français", document.createElement("input"),
     "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
     "revenir au nom d'origine, s'il y en a un.");
   libelle.type = "text";
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+  libelle.lang = "fr";
+
+  const libelleEn = champZone(hote, "Libellé en anglais", document.createElement("input"),
+    "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le " +
+    "libellé en français qui s'y affiche.");
+  libelleEn.type = "text";
+  libelleEn.value = o.nom_en || "";
+  libelleEn.placeholder = "Agora, Childcare, Pitch Retail…";
+  libelleEn.lang = "en";
 
   /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
      visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
@@ -9889,9 +9940,16 @@ function champsZone(hote, o){
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
-  champZone(hote, "Description", riche.cadre,
+  riche.cadre.lang = "fr";
+  champZone(hote, "Description en français", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
     "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const richeEn = editeurRiche(o.description_en || "");
+  richeEn.cadre.lang = "en";
+  champZone(hote, "Description en anglais", richeEn.cadre,
+    "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche " +
+    "anglaise montre la description en français.");
 
   const lienZ = champZone(hote, "Lien", document.createElement("input"),
     "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
@@ -9900,8 +9958,9 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value,
+  return () => ({ libelle: libelle.value, libelleEn: libelleEn.value,
+                  type: type.value, logo: logo(),
+                  description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
@@ -10304,6 +10363,7 @@ let ficheZoneEnCours = null;
 /* Les salles cochées se comparent telles quelles : ce sont deux listes des
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.libelleEn === b.libelleEn && a.descriptionEn === b.descriptionEn &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
   a.logo === b.logo && a.traversable === b.traversable &&
   String(a.salles) === String(b.salles));
@@ -10371,6 +10431,11 @@ function ficheZone(o){
 async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  /* La version anglaise se range dans la fiche, avec le reste de ce que
+     l'exploitant écrit : elle ne s'applique pas au plan d'origine, elle
+     s'affiche à la place du français pour qui lit l'anglais. */
+  const nomEn = String(v.libelleEn || "").trim();
+  const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
   const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
@@ -10418,6 +10483,8 @@ async function enregistreZone(o, v, depart){
         if (genre) fiche.type = genre;
         if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
+        if (nomEn) fiche.nom_en = nomEn;
+        if (descriptionEn) fiche.description_en = descriptionEn;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
@@ -10449,11 +10516,14 @@ async function enregistreZone(o, v, depart){
     o.nom = nom || o.origine || null;
   }
   o.description = description;
+  o.nom_en = nomEn || undefined;
+  o.description_en = descriptionEn || undefined;
+  nomsAnglaisDesZones();
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
-  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
-  o.rech = String(o.nom || "").toLowerCase();
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
+  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();

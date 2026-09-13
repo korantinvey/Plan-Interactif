@@ -146,7 +146,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS`, `posePoliceLibelles` ; vignettes dans `voletApparence` ; clé `_fiche.police` |
-| fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` |
+| fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `_js.html` `nomDeLaZone` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
 | verrouiller un calque de dessin | `_dessin.html` § Le verrou d'un calque, cadenas posé par `_pile.html` `boutonVerrou` |
