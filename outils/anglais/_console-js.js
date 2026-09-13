@@ -169,6 +169,10 @@ module.exports = {
   "champs d'origine non relevés": "source fields not collected",
   "Afficher ce champ sur la fiche": "Show this field on the record",
   "Proposer ce champ dans les critères de recherche": "Offer this field as a search filter",
+  "Intitulé en français": "Label in French",
+  "Intitulé en anglais": "Label in English",
+  "Laissé vide, l'intitulé en français s'affiche aussi dans la version anglaise du plan.":
+    "Left empty, the French label is also shown in the English version of the map.",
   "Nouveau champ": "New field",
   "Intitulé du champ, tel que la fiche l'affichera": "Field label, as the record will show it",
   "Renommer le champ": "Rename field",
