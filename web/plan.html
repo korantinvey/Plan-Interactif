@@ -630,9 +630,9 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .outils.mode-texte #texteADessiner{display:block}
 #contourReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-contour #contourReg{display:flex}
-/* L'épaisseur et le pointillé se règlent avant de tracer, comme l'arrondi du
-   contour : une allée provisoire et un mur ne se dessinent pas du même trait,
-   et on le sait avant de poser le premier point. */
+/* L'épaisseur, le pointillé et la flèche se règlent avant de tracer, comme
+   l'arrondi du contour : une allée provisoire et un mur ne se dessinent pas du
+   même trait, et on le sait avant de poser le premier point. */
 #traitReg{display:none;flex-direction:column;gap:6px}
 .outils.mode-ligne #traitReg{display:flex}
 #vignette{display:none;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-2)}
@@ -3578,6 +3578,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             <option value="plein">Continu</option>
             <option value="pointille">Pointillé</option>
           </select></label>
+        <label class="elemChamp"><span>Flèche</span>
+          <select id="traitFleche">
+            <option value="">Aucune</option>
+            <option value="fin">Au bout</option>
+            <option value="debut">Au départ</option>
+            <option value="deux">Aux deux bouts</option>
+          </select></label>
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
@@ -3621,6 +3628,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
             <select id="elemStyle">
               <option value="plein">Continu</option>
               <option value="pointille">Pointillé</option>
+            </select></label>
+          <label class="elemChamp"><span>Flèche</span>
+            <select id="elemFleche">
+              <option value="">Aucune</option>
+              <option value="fin">Au bout</option>
+              <option value="debut">Au départ</option>
+              <option value="deux">Aux deux bouts</option>
             </select></label>
         </div>
         <input id="elemStand" list="listeStands" spellcheck="false" hidden
@@ -5373,6 +5387,8 @@ const appliqueVue = () => {
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
+  // et la pointe des lignes fléchées, pas davantage
+  if (typeof rafraichitFleches === "function") rafraichitFleches();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -10619,14 +10635,91 @@ function styleTrait(f){
   return css.length ? ' style="' + css.join(";") + '"' : "";
 }
 
+/* --- la pointe des flèches ---
+   Une ligne dit un chemin ; une flèche dit dans quel sens on le prend — le
+   sens d'une allée, la porte par laquelle on entre, le flux d'un jour de
+   montage. C'est un réglage du trait et non une forme de plus : la ligne
+   reste la même pour l'itinéraire, qui lit ses sommets sans rien savoir de
+   sa pointe. */
+const ANGLE_FLECHE = .45;   // demi-ouverture des branches, en radians (~26°)
+
+/**
+ * La longueur des branches, en mètres, d'après le zoom du moment.
+ *
+ * Comme l'épaisseur du trait qu'elle termine, et pour la même raison : une
+ * pointe comptée en mètres suivrait le plan, et un dézoom la réduirait à rien
+ * sur une ligne restée bien visible. Elle grandit avec l'épaisseur, sans quoi
+ * un trait très épais avalerait sa propre pointe.
+ */
+function longueurFleche(f){
+  const r = cadrePlan();
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  return view.w / (r.width || 1) * (4 + ep * 3);
+}
+
+/** Les deux branches de chaque bout fléché, d'un seul tracé. */
+function cheminFleche(f){
+  const pts = f.pts;
+  if (!f.fleche || !pts || pts.length < 2) return "";
+  const bouts = [];
+  if (f.fleche !== "debut") bouts.push([pts[pts.length - 2], pts[pts.length - 1]]);
+  if (f.fleche !== "fin") bouts.push([pts[1], pts[0]]);
+  const L = longueurFleche(f);
+  let d = "";
+  for (const [a, b] of bouts){
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l = Math.hypot(dx, dy);
+    if (!l) continue;                 // deux points confondus n'indiquent rien
+    const ux = dx / l, uy = dy / l;
+    /* Chaque branche repart de la pointe vers l'arrière, tournée d'un
+       demi-angle de part et d'autre du trait. */
+    for (const sens of [1, -1]){
+      const c = Math.cos(ANGLE_FLECHE), s = Math.sin(ANGLE_FLECHE) * sens;
+      const vx = -(ux * c - uy * s), vy = -(uy * c + ux * s);
+      d += "M" + b[0].toFixed(2) + " " + b[1].toFixed(2) +
+           "L" + (b[0] + vx * L).toFixed(2) + " " + (b[1] + vy * L).toFixed(2);
+    }
+  }
+  return d;
+}
+
+/** La pointe prend la couleur et l'épaisseur du trait, jamais son pointillé
+ *  ni le remplissage de son calque : une pointe en creux, ou en trois points,
+ *  ne montre plus rien. Le style est écrit sur la balise pour tenir devant le
+ *  pointillé que le mode édition pose sur les calques porteurs d'un rôle. */
+function marqueFleche(f){
+  const d = cheminFleche(f);
+  if (!d) return "";
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  return '<path class="fleche" style="fill:none;stroke-dasharray:none' +
+         (ep !== EPAISSEUR_TRAIT ? ";stroke-width:" + ep : "") + '" d="' + d + '"/>';
+}
+
+/** Le zoom change : les pointes se reprennent, comme les pastilles de
+ *  l'itinéraire — le trait, lui, garde son épaisseur par la feuille de style.
+ *  Un plan sans flèche ne coûte que le premier test. */
+function rafraichitFleches(){
+  const c = $("couches");
+  const pointes = c && c.querySelectorAll(".dcal .fleche");
+  if (!pointes || !pointes.length || !view) return;
+  const par = new Map();
+  for (const cal of mesCalques())
+    for (const f of cal.formes) if (f.fleche) par.set(f.id, f);
+  pointes.forEach(p => {
+    const f = par.get(p.parentNode.dataset.f);
+    if (f) p.setAttribute("d", cheminFleche(f));
+  });
+}
+
 /** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
  *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
  *  calque, aujourd'hui comme le jour où il changera d'allure. */
 function poseTrait(f){
-  const e = $("traitEpaisseur"), s = $("traitStyle");
+  const e = $("traitEpaisseur"), s = $("traitStyle"), fl = $("traitFleche");
   const ep = e ? parseFloat(e.value) : NaN;
   if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) f.ep = ep;
   if (s && s.value === "pointille") f.pointille = true;
+  if (fl && fl.value) f.fleche = fl.value;
 }
 
 function dessineDessins(){
@@ -10660,7 +10753,8 @@ function dessineDessins(){
       ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
         '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
       : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/></g>').join("");
+        '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
+        marqueFleche(f) + '</g>').join("");
     c.appendChild(g);
   }
   ordonneDom();
@@ -11907,6 +12001,7 @@ if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
    trait sur le plan, pas dans une liste déroulante. */
 if ($("elemEpaisseur")) $("elemEpaisseur").onchange = appliqueTrait;
 if ($("elemStyle")) $("elemStyle").onchange = appliqueTrait;
+if ($("elemFleche")) $("elemFleche").onchange = appliqueTrait;
 /* La largeur et la hauteur au clavier : c'est le seul moyen d'obtenir deux
    fois la même, et de rattraper un stand tracé à peu près. */
 if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
@@ -12222,14 +12317,16 @@ function majElement(){
   }
 
   /* Une ligne posée se relit : un trait fin fait une limite, un trait épais
-     fait un mur, et le pointillé un passage qui n'en est pas tout à fait un.
-     Cela se juge sur le plan, une fois le tracé en place. */
+     fait un mur, le pointillé un passage qui n'en est pas tout à fait un, et
+     la flèche le sens dans lequel on le prend. Cela se juge sur le plan, une
+     fois le tracé en place. */
   const bt = $("elemTraitReg");
   if (bt){
     bt.hidden = f.t !== "ligne";
     if (f.t === "ligne"){
       $("elemEpaisseur").value = String(f.ep > 0 ? f.ep : EPAISSEUR_TRAIT);
       $("elemStyle").value = f.pointille ? "pointille" : "plein";
+      if ($("elemFleche")) $("elemFleche").value = f.fleche || "";
     }
   }
 
@@ -12481,8 +12578,10 @@ function appliqueRayon(){
   enregistreDessins(); dessineDessins();
 }
 
-/** L'épaisseur et le style du trait de la ligne choisie. Le trait ordinaire ne
- *  s'écrit pas : la forme revient alors à l'allure de son calque. */
+/** L'épaisseur, le style et la pointe du trait de la ligne choisie. Le trait
+ *  ordinaire ne s'écrit pas : la forme revient alors à l'allure de son calque.
+ *  Une flèche se pose et se retire après coup — on s'aperçoit qu'une allée est
+ *  à sens unique en regardant le plan, rarement en la traçant. */
 function appliqueTrait(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "ligne") return;
@@ -12492,6 +12591,9 @@ function appliqueTrait(){
   else delete cible.f.ep;
   if ($("elemStyle").value === "pointille") cible.f.pointille = true;
   else delete cible.f.pointille;
+  const fl = $("elemFleche");
+  if (fl && fl.value) cible.f.fleche = fl.value;
+  else delete cible.f.fleche;
   enregistreDessins(); dessineDessins();
 }
 
