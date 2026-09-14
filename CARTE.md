@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1517 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1522 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -228,20 +228,20 @@ Fonctions :
 `empriseDesPavillons` 97 · `centreDesPavillons` 110 · `styleSobre` 187 · `forceCarte` 281
 `calageCourant` 293 · `fondCourant` 296 · `recul` 301 · `pixelsMercator` 306
 `latitudeDePixel` 315 · `metresParPixel` 323 · `echelleDesTuiles` 341
-`niveauDesTuiles` 353 · `adresseTuile` 360 · `tuilesDeLaVue` 370 · `chargeMapLibre` 430
-`vueGL` 461 · `styleDuFond` 481 · `guetteLaCarte` 495 · `poseCarteGL` 506
-`diagnostiqueGL` 582 · `relanceCarteGL` 602 · `videCarteGL` 613 · `dessineFondCarte` 626
-`cleMasqueCarte` 716 · `masqueCarte` 717 · `basculeMasqueCarte` 719
-`boutonMasqueCarte` 730 · `pictoMasque` 741 · `formesMasquantes` 753 · `cheminDuHall` 775
-`poseMasqueCarte` 794 · `carreDeTerrain` 828 · `chercheBatiments` 844 · `aireDuContour` 871
-`centreDuContour` 880 · `axeDuContour` 893 · `empriseDesObjets` 910
-`batimentsCandidats` 928 · `caleSurBatiment` 949 · `retientLeHall` 975 · `manqueCalage` 997
-`enregistreCalage` 1006 · `calageEnregistre` 1019 · `litCoordonnees` 1044
-`rafraichitCarte` 1058 · `armeCalage` 1100 · `pivotCalage` 1111 · `glisseCarte` 1115
-`calagePointerDown` 1122 · `calagePointerMove` 1136 · `calagePointerUp` 1155
-`ditCalage` 1163 · `ditCarte` 1172 · `majCalage` 1180 · `appliqueCalage` 1195
-`tourneCalage` 1202 · `construitCalage` 1208 · `ouvreCalage` 1356 · `fermeCalage` 1365
-`voletEnvirons` 1393
+`niveauDesTuiles` 353 · `adresseTuile` 360 · `tuilesDeLaVue` 370 · `chargeMapLibre` 435
+`vueGL` 466 · `styleDuFond` 486 · `guetteLaCarte` 500 · `poseCarteGL` 511
+`diagnostiqueGL` 587 · `relanceCarteGL` 607 · `videCarteGL` 618 · `dessineFondCarte` 631
+`cleMasqueCarte` 721 · `masqueCarte` 722 · `basculeMasqueCarte` 724
+`boutonMasqueCarte` 735 · `pictoMasque` 746 · `formesMasquantes` 758 · `cheminDuHall` 780
+`poseMasqueCarte` 799 · `carreDeTerrain` 833 · `chercheBatiments` 849 · `aireDuContour` 876
+`centreDuContour` 885 · `axeDuContour` 898 · `empriseDesObjets` 915
+`batimentsCandidats` 933 · `caleSurBatiment` 954 · `retientLeHall` 980 · `manqueCalage` 1002
+`enregistreCalage` 1011 · `calageEnregistre` 1024 · `litCoordonnees` 1049
+`rafraichitCarte` 1063 · `armeCalage` 1105 · `pivotCalage` 1116 · `glisseCarte` 1120
+`calagePointerDown` 1127 · `calagePointerMove` 1141 · `calagePointerUp` 1160
+`ditCalage` 1168 · `ditCarte` 1177 · `majCalage` 1185 · `appliqueCalage` 1200
+`tourneCalage` 1207 · `construitCalage` 1213 · `ouvreCalage` 1361 · `fermeCalage` 1370
+`voletEnvirons` 1398
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 

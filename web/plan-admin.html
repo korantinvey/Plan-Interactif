@@ -21683,10 +21683,15 @@ function tuilesDeLaVue(cal, fond, vue, mParPx){
    ------------------------------------------------------------ */
 
 /* La bibliothèque n'est chargée que lorsqu'un fond vectoriel est retenu : deux
-   cents kilo-octets qu'un salon sans carte n'a pas à télécharger. Une version
-   majeure plutôt qu'exacte — le CDN résout alors toujours vers quelque chose
-   qui existe, là où un numéro de correctif mal deviné ne rendrait qu'un 404
-   silencieux. */
+   cent sept kilo-octets compressés qu'un salon sans carte n'a pas à
+   télécharger. Une version majeure plutôt qu'exacte — le CDN résout alors
+   toujours vers quelque chose qui existe, là où un numéro de correctif mal
+   deviné ne rendrait qu'un 404 silencieux.
+
+   La quatre, et pas au-delà : à partir de la six le paquet ne publie plus de
+   « maplibre-gl.js », seulement des modules. Monter de majeure sans changer
+   aussi le nom du fichier ferait donc disparaître la carte en silence — le
+   404 d'un script ajouté à la main ne se remarque nulle part. */
 const MAPLIBRE_JS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js";
 const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css";
 
