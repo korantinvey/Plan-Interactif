@@ -143,7 +143,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
 | ordre des champs de la fiche, groupes sous un même titre | réglage `_admin1.html` `voletOrdre` ; rendu `_js.html` `corpsRange` ; migration `groupes_de_champs` |
-| tiroir de la liste sur écran étroit | `_js.html` l. 1188 |
+| tiroirs de la liste et de la fiche sur écran étroit | `_js.html` § Le tiroir de la liste, § Le tiroir de la fiche ; crans et prise dans `_head.html` `.side`, `.detail`, `.poignee` |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS` (relue par `npm run polices`) et ses genres `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
 | fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `_js.html` `nomDeLaZone` |

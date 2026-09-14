@@ -3303,9 +3303,25 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
     z-index:13;
     transform:translateY(100%);opacity:1;pointer-events:none;
-    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .detail.open{transform:translateY(0);pointer-events:auto}
+  /* Trois crans, comme la liste, et la même prise pour les parcourir. Le cran
+     joue ici la hauteur et non le glissement : la fiche se lit en défilant, et
+     un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
+     corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
+     s'agit tout en regardant le plan derrière. */
+  .detail.open[data-cran="replie"]{max-height:var(--fiche-replie,132px)}
+  .detail.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .detail.glisse{transition:none}
+  /* L'en-tête ne se laisse pas comprimer au cran le plus bas : sans cela il
+     s'écrasait au profit d'un corps qu'on ne voit plus. */
+  .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
+  /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
+     qu'elle surmonte porte déjà sa propre marge. */
+  .detail > .poignee{padding:9px 0 3px}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}
@@ -3830,6 +3846,11 @@ html.tuto-retrait .dcal .forme{opacity:.22}
 
     <div class="voile" id="voile"></div>
     <section class="detail" id="detail" aria-live="polite">
+      <!-- La fiche se hisse comme la liste : même prise, même geste. Sur un
+           téléphone elle ne montrait que la moitié basse de l'écran, et une
+           fiche bien remplie s'y lisait par le trou d'une serrure. -->
+      <button class="poignee" id="poigneeFiche" aria-expanded="false" aria-controls="dBody"
+        aria-label="Agrandir la fiche"></button>
       <div class="detail-hd">
         <div class="hdActs">
           <button class="marque" id="dMarque" hidden></button>
