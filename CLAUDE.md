@@ -145,6 +145,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | ordre des champs de la fiche, groupes sous un même titre | réglage `_admin1.html` `voletOrdre` ; rendu `_js.html` `corpsRange` ; migration `groupes_de_champs` |
 | tiroirs de la liste et de la fiche sur écran étroit | `_js.html` § Le tiroir de la liste, § Le tiroir de la fiche ; crans et prise dans `_head.html` `.side`, `.detail`, `.poignee` |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
+| lenteur d'un nuancier, couleur qui traîne derrière la souris | `_admin1.html` § La rafale du sélecteur de couleur, `suitNuancier` ; peintures ciblées `_dessin.html` `peintCalque`, `_js.html` `peintSecteur` |
 | police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS` (relue par `npm run polices`) et ses genres `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
 | fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `_js.html` `nomDeLaZone` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |

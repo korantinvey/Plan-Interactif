@@ -352,6 +352,15 @@ function dessineDessins(){
   rafraichitStandsDessines();
 }
 
+/** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
+ *  et ses tracés la prennent par `currentColor`. C'est ce dont le nuancier a
+ *  besoin pendant qu'on glisse — `dessineDessins` refait tous les nœuds de
+ *  tous les calques, ce qu'une rafale d'événements ne supporte pas. */
+function peintCalque(cal){
+  const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
+  if (g) g.style.color = cal.couleur || "var(--accent)";
+}
+
 /* --- conversion écran → repère du plan --- */
 function versPlan(clientX, clientY){
   const r = cadrePlan();
