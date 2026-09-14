@@ -86,16 +86,17 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_batiments.html` — 355 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_batiments.html` — 365 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
 `CLE_CALAGE` 25 · `bibliothequeDispo` 26 · `batimentsPoses` 33 · `poseCalage` 40
-`ouvreBibliotheque` 49 · `vueDuLieu` 132 · `lanceCalage` 161 · `finCalage` 175
-`dessineCalage` 192 · `coinVise` 225 · `calagePointerUp` 241 · `ajouteBatiments` 287
-`mentionOsm` 350
+`ouvreBibliotheque` 49 · `vueDuLieu` 132 · `lanceCalage` 172 · `cadreCalage` 200
+`finCalage` 213 · `pivoteCalage` 223 · `degresCalage` 232 · `dessineCalage` 234
+`calagePointerDown` 257 · `calagePointerMove` 268 · `calagePointerUp` 284
+`ajouteBatiments` 294 · `mentionOsm` 360
 
 ### `_borne.html` — 355 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -254,7 +255,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4069 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4080 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -266,7 +267,7 @@ Fonctions :
 `#countTxt` · `#list` · `#piedSide` · `#btnConfidentialite` · `#stage` · `#plan`
 `#couches` · `#zones` · `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar`
 `#scaleTxt` · `#mentionOsm` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#calageBat` · `#calageTxt` · `#calageRefait` · `#calageStop` · `#calageValide`
+`#calageBat` · `#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide`
 `#bornePose` · `#bornePoser` · `#outils` · `#outilsCalque` · `#renommeOutils`
 `#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas`
 `#contourReg` · `#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur`
@@ -358,7 +359,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 3738 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 3744 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.386 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -366,10 +367,10 @@ Fonctions :
 - l.577 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.697 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1647 · 6. Vue
-- l.1921 · 7. Sélection et fiche
-- l.3112 · 8. Interactions du plan
-- l.3419 · Le tiroir de la liste — écrans étroits
-- l.3576 · Le tiroir de la fiche — écrans étroits
+- l.1924 · 7. Sélection et fiche
+- l.3115 · 8. Interactions du plan
+- l.3425 · Le tiroir de la liste — écrans étroits
+- l.3582 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -391,19 +392,19 @@ Fonctions :
 `appliqueFiltre` 1435 · `oublieRetrait` 1447 · `reprendRecherche` 1456 · `rangSorte` 1469
 `codeCase` 1491 · `caseNumero` 1508 · `sousLigne` 1528 · `liste` 1542 · `cadrePlan` 1662
 `oublieCadre` 1663 · `figeTextes` 1679 · `rendTextes` 1684 · `appliqueVue` 1689
-`rafraichitVue` 1714 · `poseVue` 1726 · `masque` 1745 · `masqueDroite` 1777 · `fit` 1788
-`stoppeZoom` 1818 · `glisseVersVise` 1824 · `glisseVers` 1866 · `rectVisee` 1888
-`zoom` 1907 · `echelle` 1913 · `ETROIT` 1927 · `anime` 1929 · `noeud` 1953
-`canalPlan` 1963 · `rangSociete` 1971 · `select` 1980 · `centre` 1999 · `centrePoint` 2003
-`montre` 2048 · `libelleCorps` 2080 · `ordreCorps` 2097 · `groupesFiche` 2129
-`montreIntitule` 2142 · `valeurCorps` 2162 · `champCorps` 2175 · `groupeCorps` 2187
-`corpsRange` 2200 · `momentLocal` 2235 · `programme` 2258 · `jourLong` 2291
-`ficheConf` 2302 · `lien` 2396 · `adresseWeb` 2404 · `pictoRS` 2447 · `adresseSure` 2465
-`adresseImage` 2492 · `imageSure` 2505 · `assainitRiche` 2534 · `enBlocs` 2574
-`rangeRiche` 2587 · `ecarteClicFantome` 2615 · `nomSociete` 2624 · `societes` 2637
-`choisitExposant` 2648 · `poseMarque` 2686 · `poseCode` 2736 · `rangeMarque` 2777
-`ouvre` 2823 · `ferme` 3086 · `onglet` 3102 · `milieu` 3132 · `commencePince` 3138
-`suitPince` 3152 · `cibleElargie` 3230 · `mesureTiroir` 3430 · `montreTiroir` 3433
+`rafraichitVue` 1714 · `poseVue` 1728 · `masque` 1748 · `masqueDroite` 1780 · `fit` 1791
+`stoppeZoom` 1821 · `glisseVersVise` 1827 · `glisseVers` 1869 · `rectVisee` 1891
+`zoom` 1910 · `echelle` 1916 · `ETROIT` 1930 · `anime` 1932 · `noeud` 1956
+`canalPlan` 1966 · `rangSociete` 1974 · `select` 1983 · `centre` 2002 · `centrePoint` 2006
+`montre` 2051 · `libelleCorps` 2083 · `ordreCorps` 2100 · `groupesFiche` 2132
+`montreIntitule` 2145 · `valeurCorps` 2165 · `champCorps` 2178 · `groupeCorps` 2190
+`corpsRange` 2203 · `momentLocal` 2238 · `programme` 2261 · `jourLong` 2294
+`ficheConf` 2305 · `lien` 2399 · `adresseWeb` 2407 · `pictoRS` 2450 · `adresseSure` 2468
+`adresseImage` 2495 · `imageSure` 2508 · `assainitRiche` 2537 · `enBlocs` 2577
+`rangeRiche` 2590 · `ecarteClicFantome` 2618 · `nomSociete` 2627 · `societes` 2640
+`choisitExposant` 2651 · `poseMarque` 2689 · `poseCode` 2739 · `rangeMarque` 2780
+`ouvre` 2826 · `ferme` 3089 · `onglet` 3105 · `milieu` 3135 · `commencePince` 3141
+`suitPince` 3155 · `cibleElargie` 3236 · `mesureTiroir` 3436 · `montreTiroir` 3439
 
 Éléments :
 
