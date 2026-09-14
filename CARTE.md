@@ -50,14 +50,14 @@ Fonctions :
 
 `#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 175 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 178 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 33 · `entetesApi` 51 · `chargeFond` 74 · `panneDuChargement` 121
-`charge` 128
+`demarre` 8 · `annonce` 36 · `entetesApi` 54 · `chargeFond` 77 · `panneDuChargement` 124
+`charge` 131
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -274,19 +274,20 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 441 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 483 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 48 · `invitationVoulue` 49 · `auDoigt` 74 · `reponsesInstallation` 92
-`retientInstallation` 97 · `jourInstallation` 106 · `invitationEcartee` 109
-`refuseInstallation` 115 · `faconInstallation` 143 · `tempsInstallation` 167
-`relanceInvitation` 170 · `gesteInstallation` 175 · `doigtPose` 179 · `doigtLeve` 180
-`vueInstallation` 182 · `invitationRetenue` 200 · `finInvitation` 212
-`essaieInvitation` 230 · `remplitInvitation` 320 · `ouvreInvitation` 359
-`caseInstallation` 416
+`reglageInstallation` 50 · `invitationVoulue` 51 · `auDoigt` 76 · `reponsesInstallation` 94
+`retientInstallation` 99 · `jourInstallation` 108 · `invitationEcartee` 111
+`refuseInstallation` 117 · `faconInstallation` 145 · `relanceInvitation` 163
+`gesteInstallation` 168 · `doigtPose` 172 · `doigtLeve` 173 · `vueInstallation` 176
+`accueilleInvitation` 185 · `invitationRetenue` 198 · `finInvitation` 210
+`essaieInvitation` 229 · `teteInvitation` 319 · `retourAuxReglages` 334
+`remplitInvitation` 342 · `ouvreInvitation` 372 · `ouvreInstalle` 422
+`confirmeInstallation` 438 · `caseInstallation` 456
 
 ### `_itineraire.html` — 2997 l. → plan-admin.html, plan-smcl.html, plan.html
 

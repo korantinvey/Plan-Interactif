@@ -25,10 +25,11 @@
    — sur un téléphone ou une tablette : c'est là que le plan sert au salon. Sur
      un ordinateur, l'application n'apporte qu'une fenêtre sans barre
      d'adresse, rien qui vaille d'interrompre qui prépare sa visite ;
-   — après usage, jamais à l'ouverture : une demi-minute de plan sous les yeux,
-     au moins un geste dessus, puis un moment où rien n'est en cours.
-     Accueillir par une fenêtre celui qui cherche un stand, c'est se faire
-     fermer sans être lu ;
+   — dès l'ouverture, mais jamais par-dessus ce qu'on fait : le plan affiché,
+     la fenêtre suit, sauf si autre chose occupe l'écran — la fiche d'un stand
+     ouverte par un lien, un parcours partagé, un doigt posé, une saisie. Elle
+     attend alors que ce soit fini : c'est la raison de la venue, et elle passe
+     avant ;
    — là où l'installation aboutit : d'un bouton quand le navigateur sait le
      faire, en trois gestes décrits quand il ne le sait pas, et pas du tout là
      où elle est impossible ;
@@ -36,12 +37,13 @@
      installation, ou des explications qu'on a dit avoir comprises.
    ============================================================ */
 
-/* Une demi-minute sur le plan. C'est aussi ce que Chrome attend avant de juger
-   un site installable : plus tôt, il n'aurait rien à offrir. */
-const INSTALL_VU = 30000;
-/* Trois secondes sans geste : on ne se glisse pas sous un doigt qui fait
-   glisser le plan, ni entre deux frappes. */
-const INSTALL_CALME = 3000;
+/* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
+   la même image que lui se poserait sur un écran encore vide, et le visiteur
+   ne saurait pas ce qu'on lui propose d'installer. */
+const INSTALL_ACCUEIL = 800;
+/* Après un geste, un temps sans geste : on ne se glisse pas sous un doigt qui
+   fait glisser le plan, ni entre deux frappes. */
+const INSTALL_CALME = 1500;
 /* Deux refus, puis plus rien : une troisième fois, ce ne serait plus proposer. */
 const INSTALL_REFUS = 2;
 
@@ -151,21 +153,12 @@ function faconInstallation(){
 /* ------------------------------------------------------------
    Le moment
    ------------------------------------------------------------ */
-/* Le temps passé sur la page, compté dès son ouverture : le chargement en fait
-   partie, et ne dure qu'un instant quand la demande du plan part de l'en-tête.
-   Un onglet laissé derrière un autre ne compte pas, lui : c'est une
-   demi-minute d'usage qu'on attend, pas d'horloge. */
-let installVu = 0;
-let installDepuis = document.visibilityState === "visible" ? performance.now() : null;
 /* L'instant du dernier geste — zéro tant qu'il n'y en a eu aucun — et les
    doigts encore posés : un glissement qui dure plus que le calme exigé n'a
    pas de geste nouveau à signaler, mais n'est pas fini pour autant. */
 let installGeste = 0;
 const installDoigts = new Set();
 let installMinuteur = null, installFini = !INSTALL_POSSIBLE;
-
-const tempsInstallation = () =>
-  installVu + (installDepuis === null ? 0 : performance.now() - installDepuis);
 
 function relanceInvitation(ms){
   clearTimeout(installMinuteur);
@@ -179,23 +172,28 @@ function gesteInstallation(){
 function doigtPose(e){ installDoigts.add(e.pointerId); gesteInstallation(); }
 function doigtLeve(e){ installDoigts.delete(e.pointerId); gesteInstallation(); }
 
+// un onglet ouvert en arrière-plan attend qu'on y vienne, et l'accueille alors
 function vueInstallation(){
-  if (document.visibilityState === "visible"){
-    if (installDepuis === null) installDepuis = performance.now();
-    // de retour sur la page, on ne l'accueille pas par une fenêtre
-    relanceInvitation(INSTALL_CALME);
-  } else if (installDepuis !== null){
-    installVu += performance.now() - installDepuis;
-    installDepuis = null;
-  }
+  if (document.visibilityState === "visible") relanceInvitation(INSTALL_ACCUEIL);
+}
+
+/**
+ * Le plan est affiché : l'invitation peut venir. Appelée par `demarre`, sur
+ * toutes les pages du plan — ailleurs que sur le plan public au doigt, elle
+ * n'a rien à faire et le dit tout de suite.
+ */
+function accueilleInvitation(){
+  if (!installFini) relanceInvitation(INSTALL_ACCUEIL);
 }
 
 /**
  * Ce qui retient la fenêtre maintenant : un doigt posé, une autre fenêtre, un
  * tiroir ouvert, un stand qu'on vise pour un itinéraire, une saisie en cours.
  *
- * Aucun de ces états ne dure : le geste qui y met fin relance l'attente, et la
- * fenêtre s'ouvre trois secondes après — jamais par-dessus ce qu'on faisait.
+ * C'est ce qui l'empêche de passer devant la raison de la venue : un lien vers
+ * un stand ouvre sa fiche, un parcours partagé sa fenêtre, et l'invitation
+ * attend qu'on les ait refermés. Aucun de ces états ne dure : le geste qui y
+ * met fin relance l'attente, et la fenêtre s'ouvre juste après.
  */
 function invitationRetenue(){
   if (installDoigts.size || $("modale").classList.contains("open")) return true;
@@ -222,14 +220,14 @@ function finInvitation(){
 /**
  * Ouvre la fenêtre si tout le permet, ou dit ce qui la relancera.
  *
- * Appelée à chaque geste, trois secondes après ; à la fin de la demi-minute ;
- * et quand Chromium annonce le plan installable. Tout ce qui l'empêche pour de
- * bon — le réglage éteint, une réponse déjà donnée — arrête l'attente ; ce qui
- * ne l'empêche que pour l'instant la laisse à l'appel suivant.
+ * Appelée à l'affichage du plan, à chaque geste un instant après, au retour
+ * sur un onglet caché, et quand Chromium annonce le plan installable. Tout ce
+ * qui l'empêche pour de bon — le réglage éteint, une réponse déjà donnée —
+ * arrête l'attente ; ce qui ne l'empêche que pour l'instant la laisse à
+ * l'appel suivant.
  */
 function essaieInvitation(){
-  /* Onglet caché, le temps d'usage ne court plus : reprogrammer sur ce qu'il en
-     reste tournerait à vide. Le retour sur la page relance l'attente. */
+  // onglet caché : personne à inviter, le retour sur la page relancera
   if (installFini || document.visibilityState !== "visible") return;
   // le réglage arrive avec les données : avant elles, rien ne dit s'il est voulu
   if (!DATA) return;
@@ -238,12 +236,13 @@ function essaieInvitation(){
      les données : il devra savoir sans elles s'il est attendu. */
   if (reponsesInstallation().voulue !== voulue) retientInstallation({ voulue });
   if (!voulue || invitationEcartee()) return finInvitation();
+  /* Chromium n'a pas encore annoncé le plan installable : son événement
+     relancera. Il vient d'ordinaire dès le chargement, mais Chrome peut aussi
+     attendre un premier geste et un peu d'usage — la fenêtre attend avec lui,
+     puisqu'elle n'aurait rien à proposer sans. */
   const facon = faconInstallation();
   if (!facon) return;
-  const reste = INSTALL_VU - tempsInstallation();
-  if (reste > 0) return relanceInvitation(reste);
-  if (!installGeste) return;
-  const calme = INSTALL_CALME - (performance.now() - installGeste);
+  const calme = installGeste ? INSTALL_CALME - (performance.now() - installGeste) : 0;
   if (calme > 0) return relanceInvitation(calme);
   if (invitationRetenue()) return;
   finInvitation();
@@ -253,15 +252,12 @@ function essaieInvitation(){
 if (INSTALL_POSSIBLE){
   addEventListener("beforeinstallprompt", e => {
     /* Retenu, l'événement retire le bandeau que Chrome aurait posé en bas de
-       l'écran : la fenêtre en tient lieu, au moment qu'elle choisit. Réglage
-       éteint, il passe — le navigateur garde sa manière de proposer, qui n'a
-       rien à nous demander.
+       l'écran : la fenêtre en tient lieu. Réglage éteint, il passe — le
+       navigateur garde sa manière de proposer, qui n'a rien à nous demander.
 
-       Il peut précéder les données, chez qui a déjà passé du temps sur le site :
-       Chrome compte cet usage pour le domaine, pas pour la page. On se fie
-       alors à ce que ce salon voulait à la visite précédente, et, faute d'en
-       avoir eu une, on le garde — au pire, le bandeau du navigateur attend une
-       visite de plus. */
+       Il peut précéder les données. On se fie alors à ce que ce salon voulait
+       à la visite précédente, et, faute d'en avoir eu une, on le garde — au
+       pire, le bandeau du navigateur attend une visite de plus. */
     const voulue = DATA ? invitationVoulue() : reponsesInstallation().voulue !== false;
     if (!voulue) return;
     e.preventDefault();
@@ -273,13 +269,13 @@ if (INSTALL_POSSIBLE){
   addEventListener("appinstalled", () => {
     INSTALL_NATIVE = null;
     retientInstallation({ installe: true });
+    if (DATA && invitationVoulue()) confirmeInstallation(0);
   });
   addEventListener("pointerdown", doigtPose, true);
   addEventListener("pointerup", doigtLeve, true);
   addEventListener("pointercancel", doigtLeve, true);
   addEventListener("keydown", gesteInstallation, true);
   document.addEventListener("visibilitychange", vueInstallation);
-  relanceInvitation(INSTALL_VU);
 }
 
 /* ------------------------------------------------------------
@@ -317,17 +313,34 @@ const ETAPES_INSTALLATION = {
   ],
 };
 
-function remplitInvitation(corps, facon){
-  /* L'icône est celle que l'écran d'accueil montrera, et le nom du salon celui
-     que le visiteur a sous les yeux : les deux ensemble disent ce qu'on
-     installe, mieux qu'une phrase. */
+/* L'icône est celle que l'écran d'accueil montre, et le nom du salon celui que
+   le visiteur a sous les yeux : les deux ensemble disent ce qu'on installe,
+   mieux qu'une phrase. */
+function teteInvitation(corps, sousTitre){
   const tete = document.createElement("div");
   tete.className = "instTete";
   tete.innerHTML = '<img class="instIcone" src="icone.svg" alt="" width="52" height="52">' +
-    "<div><b></b><span>Le plan, sur votre écran d'accueil</span></div>";
+    "<div><b></b><span></span></div>";
   tete.querySelector("b").textContent =
     String((DATA && DATA.evenement) || "").trim() || "Plan du salon";
+  tete.querySelector("span").textContent = sousTitre;
   corps.appendChild(tete);
+}
+
+/* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
+   qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
+   achève de se fermer après lui, et refermerait les réglages rouverts
+   sur-le-champ. */
+function retourAuxReglages(){
+  queueMicrotask(() => {
+    ouvreReglages("Plan");
+    const aide = $("mCorps").querySelector('[data-reglage="installation"]');
+    if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
+  });
+}
+
+function remplitInvitation(corps, facon){
+  teteInvitation(corps, "Le plan, sur votre écran d'accueil");
 
   const p = document.createElement("p");
   p.textContent = "Ajoutez-le comme une application : il s'ouvrira d'un geste, " +
@@ -387,19 +400,46 @@ function ouvreInvitation(facon, apercu){
     [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
-    if (apercu){
-      /* Un temps plus tard : la fenêtre achève de se fermer après ce crochet, et
-         refermerait les réglages rouverts sur-le-champ. */
-      queueMicrotask(() => {
-        ouvreReglages("Plan");
-        const aide = $("mCorps").querySelector('[data-reglage="installation"]');
-        if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
-      });
-      return;
-    }
+    if (apercu) return retourAuxReglages();
     if (reponse === "compris") retientInstallation({ compris: true });
     else if (!reponse) refuseInstallation();
   };
+}
+
+/**
+ * Une fois installé : où le retrouver.
+ *
+ * Aucune page ne peut ouvrir l'application à la place du visiteur — ni lien ni
+ * API ne passent de l'onglet à l'application installée, sur Android comme sur
+ * iOS. Ce qu'on peut faire, c'est lui dire où elle est, et sous quel nom : il
+ * n'a pas vu l'icône se poser, et « Plan » ne ressemble pas au nom du salon
+ * qu'il vient de lire.
+ *
+ * Seul Chromium dit qu'une installation a eu lieu (`appinstalled`), qu'elle
+ * soit partie de la fenêtre ou du menu du navigateur. Sur iOS, la page n'en
+ * sait rien : les trois gestes décrits disaient déjà où regarder ensuite.
+ */
+function ouvreInstalle(apercu){
+  ouvreModale("Le plan est installé", corps => {
+    teteInvitation(corps, "Sur votre écran d'accueil, sous le nom « Plan »");
+    const p = document.createElement("p");
+    p.textContent = "Ouvrez-le depuis son icône : il s'affichera en plein écran, " +
+      "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
+    corps.appendChild(p);
+  }, [{ libelle: "Compris", genre: "accent" }], "installe");
+  if (apercu) avantFermeture = retourAuxReglages;
+}
+
+/* L'installation se termine quelques secondes après qu'on l'a acceptée — le
+   temps que le système pose l'icône — et la fenêtre du navigateur peut encore
+   occuper l'écran. On attend donc que la page soit visible et libre, une
+   minute au plus : au-delà, le visiteur est parti ailleurs, et l'icône lui
+   aura parlé d'elle-même. */
+function confirmeInstallation(essais){
+  if (document.visibilityState === "visible" && !$("modale").classList.contains("open")){
+    return ouvreInstalle(false);
+  }
+  if (essais < 60) setTimeout(() => confirmeInstallation(essais + 1), 1000);
 }
 
 /* ------------------------------------------------------------
@@ -429,13 +469,15 @@ function caseInstallation(bloc){
   aide.className = "aideR";
   aide.dataset.reglage = "installation";
   aide.innerHTML = "Sur téléphone et tablette, quand le plan est ouvert dans le " +
-    "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, après " +
-    "une demi-minute d'usage. Une fois par jour au plus, et plus du tout après " +
-    "deux refus. Aperçu : " +
+    "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès " +
+    "l'ouverture. Une fois par jour au plus, et plus du tout après deux " +
+    "refus. Aperçu : " +
     '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +
-    '<button type="button" class="apercuInst" data-facon="partage">iPhone</button>';
+    '<button type="button" class="apercuInst" data-facon="partage">iPhone</button> · ' +
+    '<button type="button" class="apercuInst" data-facon="installe">une fois installé</button>';
   aide.querySelectorAll(".apercuInst").forEach(b => {
-    b.onclick = () => ouvreInvitation(b.dataset.facon, true);
+    b.onclick = () => b.dataset.facon === "installe"
+      ? ouvreInstalle(true) : ouvreInvitation(b.dataset.facon, true);
   });
   bloc.appendChild(aide);
 }

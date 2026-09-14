@@ -28,6 +28,9 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* L'invitation à installer vient après tout cela : elle attend qu'une fiche
+     ouverte par lien ou un parcours partagé aient été refermés. */
+  accueilleInvitation();
 }
 
 function annonce(txt, erreur){
