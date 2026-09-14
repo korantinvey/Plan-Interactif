@@ -927,8 +927,15 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    quartier, et à pleine force il dispute l'œil aux stands. La force est un
    réglage du salon, posée en variable par le calage. */
 #fondCarte{opacity:var(--carte-force,.62)}
-.fondGL{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--carte-force,.62)}
-.fondGL canvas{outline:none}
+/* Par l'identifiant, et non par la classe : MapLibre pose sa propre classe sur
+   le conteneur qu'on lui donne, avec « position:relative », et sa feuille est
+   injectée après la nôtre. À spécificité égale la sienne l'emportait, le
+   conteneur perdait son positionnement absolu et s'effondrait à zéro de haut —
+   la carte se montait sans rien montrer. Un sélecteur d'identifiant tranche,
+   quel que soit l'ordre d'arrivée. */
+#fondCarteGL{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;opacity:var(--carte-force,.62)}
+#fondCarteGL canvas{outline:none}
 /* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
    l'exploitant choisit, et qui suit le thème. */
 #trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
@@ -3587,6 +3594,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
         <div class="outilsActs"><button type="button" id="calageFerme" aria-label="Fermer">×</button></div>
       </div>
       <div id="calageCorps"></div>
+      <!-- Deux lignes, et non une. L'état de la carte et celui d'un
+           enregistrement ne se remplacent pas : le second masquait le premier,
+           et l'on cherchait pourquoi la carte manquait en lisant un message
+           qui parlait de la base. -->
+      <p class="calageEtat" id="calageCarte"></p>
       <p class="calageEtat" id="calageEtat"></p>
       <div class="acts">
         <button type="button" class="btn" id="calageGarde">Enregistrer pour tous</button>

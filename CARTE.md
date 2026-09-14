@@ -218,28 +218,29 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1359 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1392 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
 `metresParDegre` 43 · `tourneEnvirons` 60 · `versTerre` 66 · `versLePlan` 73 · `reancre` 88
-`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 199 · `calageCourant` 211
-`fondCourant` 214 · `recul` 219 · `pixelsMercator` 224 · `latitudeDePixel` 233
-`metresParPixel` 241 · `echelleDesTuiles` 259 · `niveauDesTuiles` 271 · `adresseTuile` 278
-`tuilesDeLaVue` 288 · `chargeMapLibre` 348 · `vueGL` 375 · `styleDuFond` 394
-`poseCarteGL` 403 · `diagnostiqueGL` 459 · `relanceCarteGL` 479 · `videCarteGL` 489
-`dessineFondCarte` 501 · `cleMasqueCarte` 582 · `masqueCarte` 583 · `basculeMasqueCarte` 585
-`boutonMasqueCarte` 596 · `pictoMasque` 607 · `formesMasquantes` 619 · `cheminDuHall` 641
-`poseMasqueCarte` 660 · `carreDeTerrain` 694 · `chercheBatiments` 710 · `aireDuContour` 737
-`centreDuContour` 746 · `axeDuContour` 759 · `empriseDesObjets` 776
-`batimentsCandidats` 794 · `caleSurBatiment` 815 · `retientLeHall` 841 · `manqueCalage` 863
-`enregistreCalage` 872 · `calageEnregistre` 885 · `litCoordonnees` 910
-`rafraichitCarte` 924 · `armeCalage` 966 · `pivotCalage` 977 · `glisseCarte` 981
-`calagePointerDown` 988 · `calagePointerMove` 1002 · `calagePointerUp` 1021
-`ditCalage` 1029 · `majCalage` 1037 · `appliqueCalage` 1052 · `tourneCalage` 1059
-`construitCalage` 1065 · `ouvreCalage` 1198 · `fermeCalage` 1207 · `voletEnvirons` 1235
+`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 202 · `calageCourant` 214
+`fondCourant` 217 · `recul` 222 · `pixelsMercator` 227 · `latitudeDePixel` 236
+`metresParPixel` 244 · `echelleDesTuiles` 262 · `niveauDesTuiles` 274 · `adresseTuile` 281
+`tuilesDeLaVue` 291 · `chargeMapLibre` 351 · `vueGL` 382 · `styleDuFond` 401
+`poseCarteGL` 410 · `diagnostiqueGL` 472 · `relanceCarteGL` 492 · `videCarteGL` 502
+`dessineFondCarte` 514 · `cleMasqueCarte` 595 · `masqueCarte` 596 · `basculeMasqueCarte` 598
+`boutonMasqueCarte` 609 · `pictoMasque` 620 · `formesMasquantes` 632 · `cheminDuHall` 654
+`poseMasqueCarte` 673 · `carreDeTerrain` 707 · `chercheBatiments` 723 · `aireDuContour` 750
+`centreDuContour` 759 · `axeDuContour` 772 · `empriseDesObjets` 789
+`batimentsCandidats` 807 · `caleSurBatiment` 828 · `retientLeHall` 854 · `manqueCalage` 876
+`enregistreCalage` 885 · `calageEnregistre` 898 · `litCoordonnees` 923
+`rafraichitCarte` 937 · `armeCalage` 979 · `pivotCalage` 990 · `glisseCarte` 994
+`calagePointerDown` 1001 · `calagePointerMove` 1015 · `calagePointerUp` 1034
+`ditCalage` 1042 · `ditCarte` 1051 · `majCalage` 1059 · `appliqueCalage` 1074
+`tourneCalage` 1081 · `construitCalage` 1087 · `ouvreCalage` 1231 · `fermeCalage` 1240
+`voletEnvirons` 1268
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -250,7 +251,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3840 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3852 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -262,8 +263,8 @@ Fonctions :
 `#stage` · `#fondCarteGL` · `#plan` · `#couches` · `#fondCarte` · `#trouDuFond` · `#zones`
 `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt`
 `#creditCarte` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#calage`
-`#calageFerme` · `#calageCorps` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#calageFerme` · `#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde`
+`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
 `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`

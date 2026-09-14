@@ -159,8 +159,11 @@ const CARTES = {
      une page publique est lisible de tous — c'est leur modèle, et ils s'en
      protègent en la liant à un domaine, non en la cachant. À régler chez eux,
      pas ici. */
-  maptiler: { nom: "MapTiler (clé requise)", cle: true,
-             style: "https://api.maptiler.com/maps/dataviz-light/style.json?key={cle}",
+  maptiler: { nom: "MapTiler sobre (clé requise)", cle: true,
+             style: "https://api.maptiler.com/maps/dataviz/style.json?key={cle}",
+             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
+  maptilerBase: { nom: "MapTiler standard (clé requise)", cle: true,
+             style: "https://api.maptiler.com/maps/basic-v2/style.json?key={cle}",
              credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
   maptilerSombre: { nom: "MapTiler sombre (clé requise)", cle: true,
              style: "https://api.maptiler.com/maps/dataviz-dark/style.json?key={cle}",
@@ -348,6 +351,10 @@ let _biblioGL = null;
 function chargeMapLibre(){
   if (_biblioGL) return _biblioGL;
   _biblioGL = new Promise((ok, non) => {
+    /* Une promesse rejetée se garde comme une autre : sans cet oubli, un
+       premier échec — le réseau au mauvais moment — condamnait la carte pour
+       toute la session, et chaque nouvel essai retombait dessus sans rien
+       redemander. */
     if (window.maplibregl) return ok(window.maplibregl);
     const css = document.createElement("link");
     css.rel = "stylesheet";
@@ -358,7 +365,7 @@ function chargeMapLibre(){
     js.onload = () => window.maplibregl
       ? ok(window.maplibregl)
       : non(new Error("bibliothèque chargée mais introuvable"));
-    js.onerror = () => non(new Error("bibliothèque de carte injoignable"));
+    js.onerror = () => { _biblioGL = null; non(new Error("bibliothèque de carte injoignable")); };
     document.head.appendChild(js);
   });
   return _biblioGL;
@@ -415,6 +422,9 @@ function poseCarteGL(cal, fond){
      drapeau on empilerait trente cartes le temps d'un glissement. */
   if (_monteGL) return;
   _monteGL = true;
+  /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
+     demandée — et c'est la moitié du diagnostic. */
+  ditCarte("Chargement de la carte… " + style.replace(/^https?:\/\//, "").slice(0, 48));
   chargeMapLibre().then(gl => {
     const v = vueGL(cal);
     _styleGL = style;
@@ -434,12 +444,15 @@ function poseCarteGL(cal, fond){
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
     _carteGL.on("error", ev => diagnostiqueGL(ev));
+    /* Et quand elle arrive, le dire aussi : sans ce mot, une carte pâlie par
+       la discrétion et posée sous le plan peut passer pour absente. */
+    _carteGL.on("load", () => { if (!_ditGL) ditCarte("Carte chargée."); });
   }).catch(e => {
     _monteGL = false;
     _echecGL = e.message;
     hote.hidden = true;
-    ditCalage("Carte vectorielle indisponible (" + e.message +
-              ") : prenez un fond en images.", true);
+    ditCarte("Carte vectorielle indisponible (" + e.message +
+             ") : prenez un fond en images.", true);
   });
 }
 
@@ -470,7 +483,7 @@ function diagnostiqueGL(ev){
     (e.message && !code ? " — " + String(e.message).slice(0, 80) : "");
   if (dit === _ditGL) return;
   _ditGL = dit;
-  ditCalage(dit, true);
+  ditCarte(dit, true);
 }
 
 /** Une adresse changée mérite un nouvel essai : sans cela un premier échec —
@@ -481,7 +494,7 @@ function relanceCarteGL(){
   _ditGL = "";
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
-  ditCalage("");
+  ditCarte("");
   dessineFondCarte();
 }
 
@@ -1033,6 +1046,15 @@ function ditCalage(txt, mal){
   e.classList.toggle("alerte", !!mal);
 }
 
+/** L'état de la carte, sur sa ligne à elle : un enregistrement raté ne doit
+ *  pas effacer ce qu'elle a à dire, ni l'inverse. */
+function ditCarte(txt, mal){
+  const e = $("calageCarte");
+  if (!e) return;
+  e.textContent = txt || "";
+  e.classList.toggle("alerte", !!mal);
+}
+
 /** Remet à jour ce que la palette affiche de l'état courant. */
 function majCalage(){
   const corps = $("calageCorps");
@@ -1086,8 +1108,19 @@ function construitCalage(){
     '<input type="text" class="cStyle" placeholder="Adresse du style, si autre" autocomplete="off">';
   const iCle = avance.querySelector(".cCle");
   const iStyle = avance.querySelector(".cStyle");
-  iCle.oninput = () => { ENV_CAL.cle = iCle.value.trim() || undefined; relanceCarteGL(); };
-  iStyle.oninput = () => { ENV_CAL.style = iStyle.value.trim() || undefined; relanceCarteGL(); };
+  /* Une clé se tape ou se colle caractère par caractère : relancer à chacun
+     monterait vingt cartes pour en garder une, et les dix-neuf premières
+     répondraient « clé invalide » sur une clé qu'on était en train d'écrire. */
+  let attente = null;
+  const plusTard = (f) => { clearTimeout(attente); attente = setTimeout(f, 600); };
+  iCle.oninput = () => plusTard(() => {
+    ENV_CAL.cle = iCle.value.trim() || undefined;
+    relanceCarteGL();
+  });
+  iStyle.oninput = () => plusTard(() => {
+    ENV_CAL.style = iStyle.value.trim() || undefined;
+    relanceCarteGL();
+  });
 
   const majAvance = () => {
     const f = CARTES[sel.value];
