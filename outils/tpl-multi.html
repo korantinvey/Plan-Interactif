@@ -2229,6 +2229,37 @@ button.expo:hover{background:var(--line)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
 
+/* ------------------------------------------------------------
+   La borne interactive
+   ------------------------------------------------------------ */
+/* Le bandeau de pose se range en bas, à l'opposé du bandeau de visée : les
+   deux ne paraissent jamais ensemble, mais celui-ci s'adresse à l'exploitant
+   qui installe l'écran, et celui-là au doigt qui est en train de désigner. */
+.bornePose{position:absolute;left:0;right:0;bottom:14px;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:8px 12px 8px 15px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.bornePose[hidden]{display:none}
+.bornePose button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+/* Le départ d'une borne ne se choisit pas : sa cible et l'inversion quittent
+   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur. */
+html.mode-borne #iViseA,html.mode-borne #iEchange{display:none}
+html.mode-borne .iChamps{grid-template-columns:1fr}
+html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
+  border-color:transparent;color:var(--ink);cursor:default}
+
+/* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
+   écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
+   taille à l'écran, comme les pastilles du trajet — et son nom se lit par-dessus
+   le plan, cerné de la couleur du fond plutôt que posé sur une étiquette. */
+#borneIci{pointer-events:none}
+#borneIci .bOnde{fill:var(--accent);opacity:.16}
+#borneIci .bPoint{fill:var(--accent);stroke:var(--surface);stroke-width:2;
+  vector-effect:non-scaling-stroke}
+#borneIci .bNom{fill:var(--ink);font-family:"Archivo",sans-serif;font-weight:700;
+  text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:4;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
 /* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
    la souris, le bandeau le dit à tout le monde. */
 .viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
@@ -3694,6 +3725,12 @@ html.tuto-retrait .dcal .forme{opacity:.22}
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
     </div>
+    <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
+         s'efface dès qu'elle le sait, et ne reparaît plus. -->
+    <div class="bornePose" id="bornePose" hidden>
+      <span>Mode borne : cet écran ne sait pas encore où il est posé.</span>
+      <button type="button" id="bornePoser">Poser la borne</button>
+    </div>
 
     <div class="outils" id="outils">
       <div class="outilsTete">
@@ -4489,6 +4526,8 @@ function montePlan(){
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
   // n'est pas celui du pavillon qu'on vient d'ouvrir
   dessineItineraire();
+  // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
+  dessineBorne();
   rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
@@ -5617,6 +5656,8 @@ const appliqueVue = () => {
   if (typeof rafraichitBouts === "function") rafraichitBouts();
   // et la pointe des lignes fléchées, pas davantage
   if (typeof rafraichitFleches === "function") rafraichitFleches();
+  // le point de la borne, pas davantage non plus
+  if (typeof rafraichitBorne === "function") rafraichitBorne();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -7153,6 +7194,10 @@ svg.addEventListener("pointerup", e => {
   oublieChoixPoi(cible);
   // et de même le retrait de la recherche, qu'un objet éteint fait tomber
   oublieRetrait(cible);
+  /* Poser une borne prend le clic avant tout le reste : ce n'est ni une fiche
+     qu'on ouvre ni un bout de trajet qu'on désigne, et l'endroit compte même
+     là où il n'y a rien (voir « _borne.html »). */
+  if (poseBorneIci(d.x, d.y, cible)) return;
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (cible){
@@ -15722,27 +15767,34 @@ function fermeParcours(){
 $("btnParcours").onclick = () =>
   $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
 $("closeParcours").onclick = fermeParcours;
+
+/**
+ * Tout oublier. Le visiteur le demande par le bouton ci-dessous, après
+ * confirmation ; une borne interactive le fait d'elle-même en se remettant
+ * pour le visiteur suivant, et n'a personne à qui demander.
+ */
+function videLeParcours(){
+  PARCOURS = { stands: [], confs: [] };
+  /* La journée n'était que cette liste, mise en heures : elle s'en va avec
+     elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
+     qui ne doit rien au parcours. */
+  if (JOURNEE && TRACE === JOURNEE.dessin){
+    TRACE = null;
+    dessineItineraire();
+  }
+  JOURNEE = null; vueJournee = false;
+  /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
+     repart de zéro, les refus avec elle. */
+  SUGG_ECARTES.clear();
+  SUGG_MONTREES.clear();
+  enregistreParcours();
+  appliqueVueParcours();
+}
+
 $("videParcours").onclick = () => confirme("Vider le parcours",
   "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
-  "Vider",
-  () => {
-    PARCOURS = { stands: [], confs: [] };
-    /* La journée n'était que cette liste, mise en heures : elle s'en va avec
-       elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
-       qui ne doit rien au parcours. */
-    if (JOURNEE && TRACE === JOURNEE.dessin){
-      TRACE = null;
-      dessineItineraire();
-    }
-    JOURNEE = null; vueJournee = false;
-    /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
-       repart de zéro, les refus avec elle. */
-    SUGG_ECARTES.clear();
-    SUGG_MONTREES.clear();
-    enregistreParcours();
-    appliqueVueParcours();
-  });
+  "Vider", videLeParcours);
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
    le tiroir, pas avec lui. */
@@ -18925,6 +18977,8 @@ function fermeSugg(){
 }
 
 function montreSugg(r){
+  // le départ d'une borne ne se saisit pas : il n'y a rien à proposer
+  if (r === "a" && pointBorne()) return;
   champSugg = r;
   survolSugg = -1;
   const z = $("iSugg");
@@ -18966,6 +19020,8 @@ function choisitPoint(r, pt){
 /** Une saisie abandonnée sans choix : on tranche pour elle si c'est possible,
  *  on oublie le point sinon — mieux vaut un champ vide qu'un trajet faux. */
 function valideSaisie(r){
+  // une borne ne se ravise pas : le champ reprend ce qu'il disait
+  if (r === "a" && pointBorne()){ ecritDepartBorne(); return; }
   const v = champIti(r).value.trim();
   if (!v){ if (ITI[r]){ ITI[r] = null; relance(); } return; }
   if (ITI[r] && ITI[r].nom === v) return;
@@ -18976,13 +19032,18 @@ function valideSaisie(r){
 }
 
 function effaceItineraire(){
-  ITI.a = ITI.b = null;
+  /* Effacer, sur une borne, c'est revenir à elle : son départ n'a jamais été
+     saisi, et le vider laisserait l'écran incapable de dire d'où l'on part. */
+  const borne = pointBorne();
+  ITI.a = borne; ITI.b = null;
   ROUTE = TRACE = null;
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
-     il appelle la même visée. */
-  visee = "a";
+     il appelle la même visée — celle du seul champ qui reste à remplir. */
+  visee = borne ? "b" : "a";
   bandeauVisee();
-  $("iDepart").value = $("iArrivee").value = "";
+  $("iDepart").value = "";
+  $("iArrivee").value = "";
+  ecritDepartBorne();
   fermeSugg();
   dessineItineraire();
   montreResultat();
@@ -19078,9 +19139,11 @@ function montreResultat(etat){
     badge.textContent = "à définir";
     /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
        des deux champs disent la même chose (voir « _head.html »). */
-    dit("iNote iIntro", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
-                 "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
-                 "devant lequel vous êtes.");
+    dit("iNote iIntro", pointBorne()
+      ? "Choisissez votre destination : le trajet part de cette borne."
+      : "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+        "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
+        "devant lequel vous êtes.");
     return;
   }
   if (!ROUTE) return;
@@ -19208,15 +19271,22 @@ function bandeauVisee(){
     b.hidden = !visee;
     /* La visée n'est plus le geste du seul téléphone : le bandeau s'adresse
        aussi bien au doigt qu'au curseur. */
-    if (visee) $("viseurTxt").textContent =
-      "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+    if (visee) $("viseurTxt").textContent = visee === "borne"
+      ? "Touchez le plan à l'endroit où cette borne est posée."
+      : "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
   $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
+  /* Le bandeau d'une borne à poser s'efface le temps du geste : c'est le même
+     état, dit deux fois, et deux bandeaux ne se lisent plus. */
+  montreBandeauBorne();
 }
 
 function armeVisee(r){
+  /* Une borne sait d'où elle part : sa cible de départ est retirée du tiroir
+     (voir « _borne.html »), et ce garde-fou vaut pour le clavier. */
+  if (r === "a" && pointBorne()) return;
   /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
      est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
      le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
@@ -19235,7 +19305,8 @@ function finVisee(){
   /* La cible referme le tiroir sur un téléphone : on ne le rouvre que si c'est
      bien lui qui l'a fermé. Ouvert, le rouvrir réarmait la visée que ces deux
      lignes viennent d'éteindre — et l'abandon n'aboutissait jamais. */
-  const rouvre = ETROIT() && !$("itineraire").classList.contains("open");
+  const rouvre = visee !== "borne" && ETROIT() &&
+                 !$("itineraire").classList.contains("open");
   visee = null;
   bandeauVisee();
   if (rouvre) ouvreItineraire(false);
@@ -19259,6 +19330,9 @@ function visePoi(id){
 
 function visePoint(pt){
   if (!visee) return false;
+  /* Poser une borne n'est pas désigner un bout de trajet : le point part
+     ailleurs (voir « _borne.html »). */
+  if (visee === "borne") return poseLaBorne(pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
@@ -19327,7 +19401,11 @@ const versItineraire = (o) => versItineraireDe(pointObjet(o));
 function versItineraireDe(pt){
   ITI.b = pt;
   $("iArrivee").value = ITI.b.nom;
-  if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
+  /* Le départ d'une borne reste le sien même si l'on demande la route
+     jusqu'à elle : « vous y êtes déjà » se dit mieux qu'un champ vidé. */
+  if (ITI.a && ITI.a.cle === ITI.b.cle && !pointBorne()){
+    ITI.a = null; $("iDepart").value = "";
+  }
   ouvreItineraire();
   if (ITI.a) relance();
   /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
@@ -19367,6 +19445,8 @@ function versItineraireDe(pt){
 $("iSugg").addEventListener("pointerdown", e => e.preventDefault());
 
 $("iEchange").onclick = () => {
+  // une borne ne se déplace pas à l'arrivée d'un trajet
+  if (pointBorne()) return;
   const a = ITI.a;
   ITI.a = ITI.b; ITI.b = a;
   $("iDepart").value = ITI.a ? ITI.a.nom : "";
@@ -19400,6 +19480,361 @@ addEventListener("keydown", e => {
   if (visee){ e.stopPropagation(); finVisee(); return; }
   if ($("iSugg").hidden) fermeItineraire();
 });
+/* ============================================================
+   11 quinquies. La borne interactive — un plan qui sait où il est
+
+   Le plan pose la même question à tout le monde : « d'où partez-vous ? ».
+   Elle est inévitable sur un téléphone — sous une charpente métallique le GPS
+   ne situe rien, et baliser les allées demanderait une pose que personne ne
+   finance. Elle est absurde sur l'écran vissé à l'entrée du hall, qui, lui,
+   ne bouge pas de la journée : il suffit de le lui dire une fois.
+
+   Le mode se déclare dans l'adresse, `?borne`, et nulle part ailleurs. C'est
+   exactement ce qu'un navigateur de borne sait faire — ouvrir une adresse et
+   ne plus en sortir — et cela laisse l'état du mode visible : on en sort en
+   rouvrant la page sans le paramètre, jamais par un réglage caché. Ce n'est
+   pas non plus un réglage du salon : ceux-là partent chez tous les visiteurs
+   (voir `_pousse.html`), et la position d'un écran n'appartient qu'à cet
+   écran-là.
+
+   Trois choses changent, et ce sont les trois qu'on attend d'une borne :
+
+     — le départ n'est plus une question. Il est là où la borne est posée, le
+       champ le dit et ne se laisse pas modifier, et « J'y vais » depuis une
+       fiche donne le trajet sans rien demander de plus ;
+     — le plan porte un « Vous êtes ici », la seule chose qu'on cherche des
+       yeux en arrivant devant un écran qu'on n'a pas choisi ;
+     — la borne se remet d'elle-même après un temps sans un geste : le visiteur
+       suivant ne trouve pas la recherche, la fiche ni l'itinéraire du
+       précédent.
+
+   Et une quatrième, invisible : la mesure compte des visiteurs, pas des
+   appareils. Une borne en reçoit des centaines dans la journée, son jeton ne
+   peut donc pas être retenu, et chaque remise à zéro vaut une visite de plus —
+   voir `_mesure.html`.
+   ============================================================ */
+
+/* La position est gardée sous le nom du salon : le même écran peut servir
+   deux éditions, et ce n'est pas le même hall. */
+const CLE_BORNE = "plan-borne:" + SLUG;
+
+/* Le mot réservé qui refait la pose. L'exploitant qui déplace l'écran n'a
+   rien à effacer sur l'appareil : il rouvre la page avec `?borne=poser`,
+   désigne le nouvel endroit, et repart. */
+const BORNE_POSER = "poser";
+
+/* Quatre-vingt-dix secondes sans un geste. Celui qui lit un itinéraire touche
+   l'écran bien avant ; celui qui est parti l'est depuis un moment. */
+const BORNE_REPOS = 90000;
+
+const _borneDite = new URLSearchParams(location.search).get("borne");
+const _borneMot = (_borneDite || "").trim();
+const BORNE = _borneDite !== null;
+/* Une valeur qui n'est pas le mot réservé nomme le lieu : `?borne=Entrée Nord`
+   fixe la position dans l'adresse elle-même. C'est ce qu'il faut pour un
+   appareil dont le navigateur vide son stockage chaque nuit — rien à retenir,
+   donc rien à perdre. */
+const BORNE_LIEU_DIT = BORNE && _borneMot.toLowerCase() !== BORNE_POSER ? _borneMot : "";
+
+/* Le point d'où partent les itinéraires. Nul tant que la borne ne sait pas où
+   elle est posée — c'est alors la pose qu'on demande, et rien d'autre. */
+let LIEU_BORNE = null;
+
+/** Le départ imposé, lu par l'itinéraire et par l'organisation de la journée. */
+function pointBorne(){ return LIEU_BORNE; }
+
+/* ------------------------------------------------------------
+   Ce que l'appareil retient
+   ------------------------------------------------------------ */
+/* Le pavillon est gardé par son identifiant et non par son rang : une
+   synchronisation qui ajoute un hall décale les rangs, et la borne se
+   retrouverait posée ailleurs sans que personne l'ait touchée. */
+function borneRetenue(){
+  try {
+    const o = JSON.parse(localStorage.getItem(CLE_BORNE) || "null");
+    return o && typeof o.plan === "string" && Array.isArray(o.xy) ? o : null;
+  } catch (e) { return null; }
+}
+function retientBorne(o){
+  try { localStorage.setItem(CLE_BORNE, JSON.stringify(o)); } catch (e) {}
+}
+function oublieBorne(){
+  try { localStorage.removeItem(CLE_BORNE); } catch (e) {}
+}
+
+/* ------------------------------------------------------------
+   Le point de la borne
+   ------------------------------------------------------------ */
+/**
+ * Ce que le calcul d'itinéraire attend : un pavillon et une position.
+ *
+ * Sans `obj` ni contour : une borne n'est pas un emplacement dont il faudrait
+ * sortir, c'est un point dans une allée, et `accroche` sait déjà rejoindre la
+ * case praticable la plus proche d'un point nu.
+ *
+ * Le nom est celui que le visiteur lira dans le champ de départ. Le lieu — le
+ * repère sur lequel la borne a été posée, s'il y en a un — l'accompagne en
+ * second : « Vous êtes ici » ne dit pas où, et l'exploitant qui vérifie sa
+ * borne veut lire « Entrée Nord ».
+ */
+function lieuBorne(i, xy, lieu){
+  const p = DATA.plans[i];
+  return { cle: "borne", genre: "borne", p: i, xy: xy.slice(), lieu: lieu || "",
+           nom: "Vous êtes ici",
+           detail: p.libelle + (lieu ? " · " + lieu : "") };
+}
+
+/**
+ * Le lieu que l'adresse nomme.
+ *
+ * `pointSaisi` tranche une saisie de visiteur : il exige le nom entier, faute
+ * de quoi il rend la main plutôt qu'un trajet faux. Ici personne n'est devant
+ * l'écran pour se raviser — c'est une adresse écrite une fois pour toutes, et
+ * l'exploitant y écrit ce qu'il lit sur le plan : le libellé d'un repère, ou
+ * le numéro d'un stand, « A15 » et non « Stand A15 ». On accepte donc le
+ * mieux classé des candidats, qui place déjà en tête le repère nommé puis le
+ * code exact — et rien du tout quand rien ne correspond, ce qui renvoie à la
+ * pose plutôt qu'à un endroit tiré au sort.
+ */
+function lieuNomme(txt){
+  return pointSaisi(txt) || candidats(txt)[0] || null;
+}
+
+/** Un point désigné du doigt, là où il n'y avait rien à désigner. */
+function pointLibre(xy){ return lieuBorne(state.plan, xy, ""); }
+
+/**
+ * Poser la borne, d'où que vienne le point.
+ *
+ * Un repère apporte son nom, un emplacement le sien ; un point nu n'en a pas,
+ * et c'est très bien — le pavillon suffit à dire où l'écran est.
+ */
+function poseLaBorne(pt){
+  if (!pt) return false;
+  LIEU_BORNE = lieuBorne(pt.p, pt.xy, pt.genre === "borne" ? pt.lieu : pt.nom);
+  /* Une position dictée par l'adresse ne s'enregistre pas : elle se relit à
+     chaque ouverture, et la retenir ferait deux vérités à corriger le jour
+     où l'écran change de place. */
+  if (!BORNE_LIEU_DIT)
+    retientBorne({ plan: DATA.plans[LIEU_BORNE.p].id, xy: LIEU_BORNE.xy, lieu: LIEU_BORNE.lieu });
+  visee = null;
+  bandeauVisee();
+  if (state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
+  dessineBorne();
+  remetLeDepart();
+  fermeItineraire();
+  return true;
+}
+
+/**
+ * Le tiroir remis sur la borne.
+ *
+ * `effaceItineraire` rearme la visée sur le champ qui reste à remplir — ce
+ * qu'il faut quand on vient de vider son tiroir, jamais quand la borne
+ * repart au repos : le plan resterait en « désignez votre arrivée », et le
+ * premier appui du visiteur remplirait un champ au lieu d'ouvrir une fiche.
+ */
+function remetLeDepart(){
+  effaceItineraire();
+  visee = null;
+  bandeauVisee();
+}
+
+/**
+ * Un appui pendant la pose.
+ *
+ * Un repère est un lieu nommé, et c'est pour cela que l'exploitant l'a posé :
+ * la borne en prend le nom. Partout ailleurs — une allée, un carrefour, la
+ * cloison d'un stand qu'on frôle — c'est l'endroit exact du doigt qui compte,
+ * et non ce qui se trouvait dessous.
+ */
+function poseBorneIci(clientX, clientY, cible){
+  if (visee !== "borne") return false;
+  const id = cible && !cible.dataset.id ? cible.dataset.poi : null;
+  const rep = id ? formeParId(id) : null;
+  return poseLaBorne(rep && rep.f.t === "repere" ? pointRepere(rep.f, P())
+                                                 : pointLibre(versPlan(clientX, clientY)));
+}
+
+/** Reprendre la pose : le plan redevient une liste d'endroits à désigner. */
+function armeLaPose(){
+  ferme();
+  fermeItineraire();
+  fermeParcours();
+  visee = "borne";
+  bandeauVisee();
+}
+
+/* ------------------------------------------------------------
+   Le bandeau de pose
+   ------------------------------------------------------------ */
+/**
+ * Il ne paraît que tant que la borne ignore où elle est, et s'efface pendant
+ * le geste : le bandeau de visée dit déjà ce qu'on attend, et deux bandeaux
+ * qui se répondent ne se lisent plus.
+ */
+function montreBandeauBorne(){
+  const b = $("bornePose");
+  if (!b) return;
+  b.hidden = !BORNE || !!LIEU_BORNE || visee === "borne";
+}
+
+/* ------------------------------------------------------------
+   Le départ, dans le tiroir
+   ------------------------------------------------------------ */
+/**
+ * Le moteur de langue ne traduit pas la valeur d'un champ de saisie — elle
+ * vient du code ici, et non des données : on la réécrit donc soi-même, et
+ * encore après une bascule de langue.
+ */
+function ecritDepartBorne(){
+  if (!LIEU_BORNE) return;
+  const c = $("iDepart");
+  if (c){ c.value = traduit(LIEU_BORNE.nom); c.title = LIEU_BORNE.detail; }
+}
+document.addEventListener("click", e => {
+  if (e.target.closest && e.target.closest("[data-langue]")) setTimeout(ecritDepartBorne, 0);
+});
+
+/* ------------------------------------------------------------
+   « Vous êtes ici »
+   ------------------------------------------------------------ */
+/** Rayon du point, constant à l'écran, donc exprimé en mètres d'après le zoom. */
+function rayonBorne(){
+  const r = cadrePlan();
+  return Math.max(.4, view.w / (r.width || 1) * 7);
+}
+
+function dessineBorne(){
+  let g = $("borneIci");
+  if (!LIEU_BORNE || !DATA || !view || LIEU_BORNE.p !== state.plan){
+    if (g) g.remove();
+    return;
+  }
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "borneIci";
+    // sous le trait de l'itinéraire, qui part justement d'ici
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  rempliBorne(g);
+}
+
+/** Le zoom change : le point garde sa taille à l'écran, pas celle du plan. */
+function rafraichitBorne(){
+  const g = $("borneIci");
+  if (g && LIEU_BORNE && view) rempliBorne(g);
+}
+
+function rempliBorne(g){
+  const r = rayonBorne(), x = LIEU_BORNE.xy[0], y = LIEU_BORNE.xy[1];
+  g.innerHTML = '<title></title>' +
+    '<circle class="bOnde" cx="' + x + '" cy="' + y + '" r="' + (r * 2.6).toFixed(2) + '"/>' +
+    '<circle class="bPoint" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(2) + '"/>' +
+    '<text class="bNom" x="' + x + '" y="' + (y - r * 3.4).toFixed(2) +
+    '" font-size="' + (r * 2).toFixed(2) + '"></text>';
+  /* Le titre et le nom passent par « textContent » : le moteur de langue les
+     traduit là où il ne traduirait pas une valeur d'attribut construite. */
+  g.querySelector("title").textContent = LIEU_BORNE.nom;
+  g.querySelector(".bNom").textContent = LIEU_BORNE.nom;
+}
+
+/* ------------------------------------------------------------
+   Le repos
+   ------------------------------------------------------------ */
+/**
+ * Une borne n'appartient à personne : ce que le visiteur précédent a cherché,
+ * retenu et demandé doit avoir disparu quand le suivant arrive. On remet donc
+ * l'écran dans l'état du premier matin — la recherche vide, aucune fiche, le
+ * parcours oublié, le pavillon de la borne cadré — et l'on compte une visite
+ * de plus, parce que c'en est une.
+ *
+ * Rien ne se remet pendant qu'on s'en sert : le compte à rebours repart à
+ * chaque geste, et la remise ne se fait qu'une fois, tant qu'un geste n'a pas
+ * relancé la borne.
+ */
+let reposBorne = null, borneServie = false;
+
+function relanceRepos(){
+  if (!BORNE) return;
+  borneServie = true;
+  clearTimeout(reposBorne);
+  reposBorne = setTimeout(reposeLaBorne, BORNE_REPOS);
+}
+
+function reposeLaBorne(){
+  clearTimeout(reposBorne);
+  reposBorne = null;
+  if (!BORNE || !borneServie) return;
+  borneServie = false;
+  fermeModale();
+  ferme();
+  fermeParcours();
+  fermeItineraire();
+  videLeParcours();
+  videRecherche();
+  remetLeDepart();
+  if (LIEU_BORNE && state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
+  else if (view) fit();
+  dessineBorne();
+  /* Le visiteur suivant est un autre visiteur : son jeton aussi. */
+  renouvelleVisiteur();
+}
+
+/* ------------------------------------------------------------
+   Démarrage
+   ------------------------------------------------------------ */
+/**
+ * Où la borne est posée, dans l'ordre de ce qui fait autorité : ce que
+ * l'adresse dit, puis ce que l'appareil a retenu. Rien des deux, et c'est la
+ * pose qu'on demande.
+ *
+ * Un lieu nommé dans l'adresse que le plan ne connaît pas ne se devine pas :
+ * plutôt que de poser la borne au hasard, on redemande — l'exploitant lira
+ * son erreur de frappe sur l'écran, ce qui vaut mieux qu'un trajet faux.
+ */
+function demarreBorne(){
+  if (!BORNE) return;
+  racine.classList.add("mode-borne");
+  /* Le champ de départ devient une étiquette : il dit d'où l'on part, et n'a
+     plus rien à recevoir. Il reste un champ — le tiroir garde sa forme, et un
+     lecteur d'écran continue d'en lire le libellé — mais il cesse d'être une
+     liste déroulante, qui n'aurait plus rien à dérouler. */
+  const c = $("iDepart");
+  if (c){
+    c.readOnly = true;
+    ["role", "aria-autocomplete", "aria-expanded", "aria-controls"]
+      .forEach(a => c.removeAttribute(a));
+  }
+  if (BORNE_LIEU_DIT){
+    const pt = lieuNomme(BORNE_LIEU_DIT);
+    if (pt){ poseLaBorne(pt); return; }
+  } else if (_borneMot.toLowerCase() === BORNE_POSER){
+    // on repose : l'ancienne position ne doit pas revenir si la pose est laissée en plan
+    oublieBorne();
+  } else {
+    const garde = borneRetenue();
+    const i = garde ? DATA.plans.findIndex(p => p.id === garde.plan) : -1;
+    if (i >= 0){
+      LIEU_BORNE = lieuBorne(i, garde.xy, garde.lieu);
+      if (state.plan !== i) changePlan(i);
+      dessineBorne();
+      remetLeDepart();
+      return;
+    }
+    // un pavillon disparu depuis : mieux vaut redemander que pointer un hall démonté
+    if (garde) oublieBorne();
+  }
+  armeLaPose();
+}
+
+const _bornePoser = $("bornePoser");
+if (_bornePoser) _bornePoser.onclick = armeLaPose;
+
+if (BORNE){
+  ["pointerdown", "keydown", "wheel"].forEach(n =>
+    addEventListener(n, relanceRepos, { passive: true, capture: true }));
+}
 /* ============================================================
    11 ter. Organiser sa journée
    ============================================================ */
@@ -19517,6 +19952,10 @@ function pointConf(c){
  * — reste le vrai remède, et il appartient à l'exploitant.
  */
 function departsProposes(){
+  /* Une borne sait où elle est posée : la question n'aurait qu'une réponse, et
+     la poser ferait croire qu'il y en a d'autres. */
+  const borne = pointBorne();
+  if (borne) return [borne];
   const l = [];
   DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
   const vus = new Map();
@@ -20606,7 +21045,36 @@ const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
    Un visiteur qui a refusé la mesure n'en reçoit pas : ce jeton-là ne sert
    qu'à compter, et il n'y a plus rien à compter. */
 const CLE_VISITEUR = "plan-visiteur:" + SLUG;
-let MESURE_VISITEUR = mesureOuverte() ? jetonRetenu(CLE_VISITEUR, "localStorage") : "";
+
+/**
+ * Le jeton d'une borne ne se retient pas.
+ *
+ * Une borne interactive est un appareil, pas un visiteur : elle en voit
+ * passer des centaines dans la journée, et un jeton gardé sur elle les
+ * compterait tous pour un seul — l'écran le plus utilisé du salon aurait
+ * alors l'audience d'une personne. Elle tire donc un jeton neuf à chaque
+ * ouverture, et un de plus à chaque remise à zéro (voir `_borne.html`), et le
+ * paquet dit au serveur qu'il n'est pas retenu : le rapport compte ces
+ * visiteurs comme les autres, mais sait qu'il les recompte peut-être, plutôt
+ * que de gonfler une audience en silence. C'est déjà la situation d'un cadre
+ * posé sur un site tiers, et le rapport sait la dire.
+ */
+let MESURE_VISITEUR = "";
+if (mesureOuverte()){
+  if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+  else MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+}
+
+/** Le visiteur suivant d'une borne : un autre jeton, et une visite de plus. */
+function renouvelleVisiteur(){
+  if (!mesureOuverte()) return;
+  /* Ce qui attendait de partir appartient encore au visiteur précédent : le
+     paquet s'en va sous son jeton, sinon ses gestes seraient mis au compte du
+     suivant. */
+  envoieMesures();
+  MESURE_VISITEUR = jetonMesure();
+  mesure("visite");
+}
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
    quand le paquet est plein, quand la main s'arrête, ou quand la page part.
@@ -22197,7 +22665,9 @@ function auDoigt(){
 /* Tout ce qui ne bouge pas d'ici la fin de la page se juge une fois : ailleurs
    qu'au doigt, dans un navigateur, sur le plan public, le module ne pose pas
    même un écouteur. */
-const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web";
+/* Une borne n'a rien à installer : l'écran est déjà à demeure, et le visiteur
+   qui passe devant n'emportera pas la tablette du salon. */
+const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" && !BORNE;
 
 /* ------------------------------------------------------------
    Ce que le visiteur a répondu
@@ -22982,7 +23452,10 @@ const chapitresTuto = () => CHAPITRES_TUTO.filter(c => c.actif());
  * prochaine ouverture.
  */
 function proposeTutoriel(){
-  if (PLAN_ADMIN || TUTO || !tutoPropose()) return;
+  /* Une borne n'a pas de première visite : l'écran est à tout le monde, et la
+     seule personne à qui la fenêtre se proposerait est l'exploitant en train
+     de l'installer — après quoi elle ne reparaîtrait plus pour personne. */
+  if (PLAN_ADMIN || BORNE || TUTO || !tutoPropose()) return;
   try { if (localStorage.getItem(cleTuto()) !== null) return; } catch (e) { return; }
   setTimeout(() => {
     if (TUTO || !DATA || !tutoPropose()) return;
@@ -23475,6 +23948,9 @@ function demarre(d){
   rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
+  /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
+     savoir avant qu'un lien reçu n'ouvre une fiche et son « J'y vais ». */
+  demarreBorne();
   /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
      pour laquelle cette page vient d'être ouverte, et il retire son fragment
      de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait

@@ -907,6 +907,61 @@ La fonction se retire comme le parcours de visite, depuis « Réglages du plan �
 — « Proposer le calcul d'itinéraire » — et le bouton des fiches suit celui de
 la barre.
 
+### La borne interactive
+
+Le plan pose la même question à tout le monde : « d'où partez-vous ? ». Elle est
+inévitable sur un téléphone, et absurde sur l'écran vissé à l'entrée du hall,
+qui ne bouge pas de la journée. Il suffit de le lui dire une fois, et c'est ce
+que fait le **mode borne** : ouvrez le plan avec `?borne` dans l'adresse, et
+l'écran devient une borne interactive.
+
+```
+https://plan.exemple.fr/plan?plan=smcl-2026&borne
+https://plan.exemple.fr/plan?plan=smcl-2026&borne=Entrée%20Nord
+https://plan.exemple.fr/plan?plan=smcl-2026&borne=poser
+```
+
+Le mode se déclare dans l'adresse et nulle part ailleurs — c'est ce qu'un
+navigateur de borne sait faire, ouvrir une adresse et ne plus en sortir, et cela
+laisse l'état du mode visible : on en sort en rouvrant la page sans le
+paramètre. Ce n'est pas non plus un réglage du salon : ceux-là partent chez tous
+les visiteurs, et la position d'un écran n'appartient qu'à cet écran-là.
+
+**Où la borne est posée.** Sans valeur, `?borne` demande la pose la première
+fois — un bandeau, puis un appui sur le plan à l'endroit où l'écran se trouve —
+et l'appareil la retient pour les fois suivantes. Un appui sur un repère lui en
+donne le nom ; partout ailleurs, c'est l'endroit exact du doigt qui compte, et
+non le stand dont on frôle la cloison. `?borne=Entrée Nord` fixe la position
+dans l'adresse elle-même, ce qu'il faut pour un appareil dont le navigateur vide
+son stockage chaque nuit : le nom est celui d'un repère ou le numéro d'un stand,
+tel qu'il se lit sur le plan. `?borne=poser` oublie la position retenue et
+redemande — c'est le geste de l'exploitant qui déplace l'écran, et il n'a rien à
+effacer sur l'appareil.
+
+**Ce que le mode change.** Le départ n'est plus une question : il est là où la
+borne est posée, le champ le dit — « Vous êtes ici » — et ne se laisse pas
+modifier ; la cible et l'inversion quittent le tiroir plutôt que d'y rester sans
+effet. « Itinéraire » depuis une fiche donne le trajet sans rien demander de
+plus, et « Organiser ma journée » ne demande plus par où l'on commence. Le plan
+porte un « Vous êtes ici » à l'endroit de la borne, de taille constante à
+l'écran comme les pastilles du trajet.
+
+**Elle se remet toute seule.** Quatre-vingt-dix secondes sans un geste, et
+l'écran redevient ce qu'il était : recherche vide, aucune fiche, parcours
+oublié, itinéraire effacé, pavillon de la borne cadré. Une borne n'appartient à
+personne, et le visiteur suivant ne doit pas trouver ce que le précédent a
+cherché. L'invitation à installer le plan et la visite guidée ne se proposent
+pas sur une borne : l'écran est déjà à demeure, et « première visite ? » ne veut
+rien dire adressé à un passant.
+
+**Et la mesure.** Une borne est un appareil, pas un visiteur : elle en voit
+passer des centaines dans la journée. Son jeton n'est donc pas retenu — un jeton
+neuf à chaque ouverture, un de plus à chaque remise à zéro, et chaque remise
+compte une visite — et le paquet annonce au serveur qu'il n'est pas retenu, de
+sorte que le rapport sait qu'il recompte peut-être plutôt que de gonfler une
+audience en silence. C'est déjà la situation d'un cadre posé sur un site tiers ;
+voir *Combien de fois, et combien de qui*.
+
 ## Organiser sa journée
 
 Une liste de douze stands et de deux conférences ne dit ni par où commencer, ni

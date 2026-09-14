@@ -157,6 +157,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | parcours de visite | `_parcours.html` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
+| mode borne interactive — `?borne`, position de l'écran, remise à zéro | `_borne.html` ; départ figé dans `_itineraire.html` `pointBorne`, marqueur posé par `_js.html` `montePlan` |
 | ordre de visite, conférences, horaires | `_journee.html` |
 | visite guidée du premier démarrage | `_tutoriel.html` (chapitres `CHAPITRES_TUTO`), proposée par `_admin2.html` `demarre` ; case et « Essayer » dans `_admin1.html` `voletPlan` ; styles `_head.html` § La visite guidée ; anglais `outils/anglais/_tutoriel.js` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |

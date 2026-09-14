@@ -2229,6 +2229,37 @@ button.expo:hover{background:var(--line)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
 
+/* ------------------------------------------------------------
+   La borne interactive
+   ------------------------------------------------------------ */
+/* Le bandeau de pose se range en bas, à l'opposé du bandeau de visée : les
+   deux ne paraissent jamais ensemble, mais celui-ci s'adresse à l'exploitant
+   qui installe l'écran, et celui-là au doigt qui est en train de désigner. */
+.bornePose{position:absolute;left:0;right:0;bottom:14px;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:8px 12px 8px 15px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.bornePose[hidden]{display:none}
+.bornePose button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+/* Le départ d'une borne ne se choisit pas : sa cible et l'inversion quittent
+   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur. */
+html.mode-borne #iViseA,html.mode-borne #iEchange{display:none}
+html.mode-borne .iChamps{grid-template-columns:1fr}
+html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
+  border-color:transparent;color:var(--ink);cursor:default}
+
+/* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
+   écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
+   taille à l'écran, comme les pastilles du trajet — et son nom se lit par-dessus
+   le plan, cerné de la couleur du fond plutôt que posé sur une étiquette. */
+#borneIci{pointer-events:none}
+#borneIci .bOnde{fill:var(--accent);opacity:.16}
+#borneIci .bPoint{fill:var(--accent);stroke:var(--surface);stroke-width:2;
+  vector-effect:non-scaling-stroke}
+#borneIci .bNom{fill:var(--ink);font-family:"Archivo",sans-serif;font-weight:700;
+  text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:4;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
 /* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
    la souris, le bandeau le dit à tout le monde. */
 .viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
@@ -3693,6 +3724,12 @@ html.tuto-retrait .dcal .forme{opacity:.22}
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
+    </div>
+    <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
+         s'efface dès qu'elle le sait, et ne reparaît plus. -->
+    <div class="bornePose" id="bornePose" hidden>
+      <span>Mode borne : cet écran ne sait pas encore où il est posé.</span>
+      <button type="button" id="bornePoser">Poser la borne</button>
     </div>
 
     <div class="outils" id="outils">

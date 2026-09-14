@@ -80,7 +80,9 @@ function auDoigt(){
 /* Tout ce qui ne bouge pas d'ici la fin de la page se juge une fois : ailleurs
    qu'au doigt, dans un navigateur, sur le plan public, le module ne pose pas
    même un écouteur. */
-const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web";
+/* Une borne n'a rien à installer : l'écran est déjà à demeure, et le visiteur
+   qui passe devant n'emportera pas la tablette du salon. */
+const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" && !BORNE;
 
 /* ------------------------------------------------------------
    Ce que le visiteur a répondu

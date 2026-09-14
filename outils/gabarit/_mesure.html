@@ -204,7 +204,36 @@ const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
    Un visiteur qui a refusé la mesure n'en reçoit pas : ce jeton-là ne sert
    qu'à compter, et il n'y a plus rien à compter. */
 const CLE_VISITEUR = "plan-visiteur:" + SLUG;
-let MESURE_VISITEUR = mesureOuverte() ? jetonRetenu(CLE_VISITEUR, "localStorage") : "";
+
+/**
+ * Le jeton d'une borne ne se retient pas.
+ *
+ * Une borne interactive est un appareil, pas un visiteur : elle en voit
+ * passer des centaines dans la journée, et un jeton gardé sur elle les
+ * compterait tous pour un seul — l'écran le plus utilisé du salon aurait
+ * alors l'audience d'une personne. Elle tire donc un jeton neuf à chaque
+ * ouverture, et un de plus à chaque remise à zéro (voir `_borne.html`), et le
+ * paquet dit au serveur qu'il n'est pas retenu : le rapport compte ces
+ * visiteurs comme les autres, mais sait qu'il les recompte peut-être, plutôt
+ * que de gonfler une audience en silence. C'est déjà la situation d'un cadre
+ * posé sur un site tiers, et le rapport sait la dire.
+ */
+let MESURE_VISITEUR = "";
+if (mesureOuverte()){
+  if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+  else MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+}
+
+/** Le visiteur suivant d'une borne : un autre jeton, et une visite de plus. */
+function renouvelleVisiteur(){
+  if (!mesureOuverte()) return;
+  /* Ce qui attendait de partir appartient encore au visiteur précédent : le
+     paquet s'en va sous son jeton, sinon ses gestes seraient mis au compte du
+     suivant. */
+  envoieMesures();
+  MESURE_VISITEUR = jetonMesure();
+  mesure("visite");
+}
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
    quand le paquet est plein, quand la main s'arrête, ou quand la page part.
