@@ -153,7 +153,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2907 l. → admin-plans.html
+### `_console-js.html` — 3011 l. → admin-plans.html
 
 - l.929 · Provenance des données
 - l.1056 · Contenu de la fiche détail
@@ -170,14 +170,14 @@ Fonctions :
 `ecritFiche` 1349 · `caseCritere` 1364 · `clePerso` 1383 · `ajouteChampPerso` 1391
 `renommeChampPerso` 1409 · `retireChampPerso` 1457 · `lignesPerso` 1515 · `ligneOutil` 1535
 `ligneReglage` 1551 · `ouvreProvenance` 1563 · `ouvreSources` 1586 · `cadreFiche` 1638
-`ouvreFiche` 1668 · `sousTitre` 1781 · `tableauChamps` 1796 · `encode` 1939 · `decode` 1941
-`correspondance` 1946 · `sansPrefixe` 1949 · `courte` 1950 · `intitule` 1965
-`intituleSuite` 1977 · `separeValeurs` 1991 · `aplani` 2012 · `memeStyle` 2022
-`autreFace` 2040 · `champOrigine` 2056 · `majLiens` 2323 · `majIntegration` 2360
-`majMsgSync` 2367 · `etapesPressenties` 2397 · `synchronise` 2411 · `dupliquer` 2462
-`litMonProfil` 2562 · `RETOUR_MDP` 2573 · `litComptes` 2575 · `ligneMessage` 2584
-`casesSalons` 2594 · `ouvreComptes` 2624 · `ouvreFicheCompte` 2716 · `videEcran` 2875
-`dessine` 2880 · `demarre` 2895
+`ouvreFiche` 1668 · `cadreCategories` 1806 · `sousTitre` 1885 · `tableauChamps` 1900
+`encode` 2043 · `decode` 2045 · `correspondance` 2050 · `sansPrefixe` 2053 · `courte` 2054
+`intitule` 2069 · `intituleSuite` 2081 · `separeValeurs` 2095 · `aplani` 2116
+`memeStyle` 2126 · `autreFace` 2144 · `champOrigine` 2160 · `majLiens` 2427
+`majIntegration` 2464 · `majMsgSync` 2471 · `etapesPressenties` 2501 · `synchronise` 2515
+`dupliquer` 2566 · `litMonProfil` 2666 · `RETOUR_MDP` 2677 · `litComptes` 2679
+`ligneMessage` 2688 · `casesSalons` 2698 · `ouvreComptes` 2728 · `ouvreFicheCompte` 2820
+`videEcran` 2979 · `dessine` 2984 · `demarre` 2999
 
 Éléments :
 
@@ -559,9 +559,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 800 l.
+### `supabase/functions/_partage/eventmaker.ts` — 890 l.
 
-`grapheJson` 147 · `enParallele` 662 · `texteSeul` 682 · `champs` 765
+`grapheJson` 159 · `enParallele` 711 · `texteSeul` 731 · `champs` 855
 
 ### `supabase/functions/_partage/gaia.ts` — 305 l.
 
@@ -588,11 +588,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1513 l.
+### `supabase/functions/sync-evenement/index.ts` — 1536 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `retiensAnglais` 166 · `fournisseur` 184 · `raccourci` 192 · `enClair` 229 · `range` 255
-`champsKlipso` 276 · `hebergee` 1470 · `nettoieUrl` 1489 · `groupeTextes` 1499
+`champsKlipso` 276 · `hebergee` 1493 · `nettoieUrl` 1512 · `groupeTextes` 1522
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

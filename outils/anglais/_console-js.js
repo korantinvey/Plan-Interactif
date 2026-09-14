@@ -299,4 +299,22 @@ module.exports = {
   "Vous ne pouvez pas retirer votre propre rôle.": "You cannot remove your own role.",
   "Salons": "Shows",
   "Chargement impossible : {raison}": "Could not load: {raison}",
+  /* Les catégories d'invités qui portent les exposants. */
+  "Catégories d'invités": "Guest categories",
+  "Les fiches que la synchronisation lit. Une catégorie Eventmaker mêle souvent les sociétés et les personnes qui les représentent : cochez celles qui portent les exposants, et rien d'autre n'est lu. Tout décocher rend la main à la détection automatique. Le réglage prend effet à la synchronisation suivante.":
+    "The records the sync reads. An Eventmaker category often mixes companies with the people representing them: tick the ones holding the exhibitors, and nothing else is read. Unticking them all hands control back to automatic detection. The setting takes effect on the next sync.",
+  "{n} catégories désignées : la synchronisation ne lira que leurs fiches.":
+    "{n} categories selected: the sync will read only their records.",
+  "1 catégorie désignée : la synchronisation ne lira que ses fiches.":
+    "1 category selected: the sync will read only its records.",
+  "Aucune catégorie désignée : la synchronisation cherche elle-même celles dont les fiches portent un numéro de stand, et la dernière en a retenu {n}.":
+    "No category selected: the sync looks for those whose records carry a stand number by itself, and the last one kept {n}.",
+  "Aucune catégorie désignée : la synchronisation cherche elle-même celles dont les fiches portent un numéro de stand, et la dernière n'en a retenu aucune.":
+    "No category selected: the sync looks for those whose records carry a stand number by itself, and the last one kept none.",
+  "Les catégories se relèvent à la synchronisation : lancez-en une pour qu'elles soient proposées ici.":
+    "Categories are surveyed during a sync: run one for them to be offered here.",
+  "des fiches de cette catégorie portent un numéro de stand":
+    "records in this category carry a stand number",
+  "aucune fiche de cette catégorie ne portait de numéro de stand":
+    "no record in this category carried a stand number",
 };

@@ -40,6 +40,18 @@ export interface ConfigEm {
    * distingue — mais leur liste n'est connue que de l'événement.
    */
   perso?: ChampPerso[];
+  /**
+   * Les catégories d'invités qui portent les exposants, désignées depuis la
+   * console. Elles remplacent la détection, elles ne s'y ajoutent pas.
+   *
+   * La détection reconnaît une catégorie à ce que ses fiches portent un numéro
+   * de stand ; elle ne sait pas reconnaître celles qui n'en portent aucun, et
+   * elle retient une catégorie entière dès qu'une seule de ses fiches en porte
+   * un — sur Moove On, « EXPOSANT (raison sociale) » mêle 51 sociétés et 36
+   * personnes. L'exploitant, lui, sait laquelle de ses catégories est celle
+   * des exposants : quand il le dit, on ne devine plus.
+   */
+  categories?: string[];
 }
 
 const BASE = "https://app.eventmaker.io/api/v1";
@@ -335,9 +347,35 @@ export class Eventmaker {
     id: string,
     connues: string[] = [],
     codes: string[] = [],
-  ): Promise<{ retenues: { _id: string; name: string }[]; appels: number; voie: string }> {
+  ): Promise<{
+    retenues: { _id: string; name: string }[];
+    /* Toutes les catégories de l'événement, retenues ou non : c'est parmi
+       elles que la console fait désigner celles des exposants, et elle n'a
+       aucun autre moyen de les connaître. */
+    catalogue: { id: string; nom: string }[];
+    appels: number;
+    voie: string;
+  }> {
     const cats = await this.categories(id);
     const parId = new Map(cats.map((c) => [c._id, c]));
+    const catalogue = cats.map((c) => ({ id: c._id, nom: c.name }));
+
+    /* --- le choix de l'exploitant, quand il en a fait un ---
+
+       Il passe avant tout le reste, et sans un appel de plus : ce que la
+       détection cherche à deviner, il vient de le dire. Une catégorie qu'il
+       désigne est retenue même si aucune des fiches sondées ne porte de
+       numéro — c'est justement le cas que la détection ne sait pas voir. */
+    const voulues = (this.cfg.categories ?? []).filter((c) => parId.has(c));
+    if (voulues.length) {
+      return {
+        retenues: voulues.map((c) => parId.get(c)!),
+        catalogue,
+        appels: 1,
+        voie: "catégories désignées",
+      };
+    }
+
     // une catégorie supprimée disparaît d'elle-même de la liste
     const trouvees = new Set(connues.filter((c) => parId.has(c)));
 
@@ -360,6 +398,7 @@ export class Eventmaker {
       if (trouvees.size) {
         return {
           retenues: [...trouvees].map((c) => parId.get(c)!),
+          catalogue,
           appels,
           voie: "recherche par numéro",
         };
@@ -380,6 +419,7 @@ export class Eventmaker {
 
     return {
       retenues: [...trouvees].map((c) => parId.get(c)!),
+      catalogue,
       appels,
       voie: "sondage des catégories",
     };
@@ -527,6 +567,9 @@ export class Eventmaker {
     tousParStand: Map<string, ExposantEm[]>;
     categories: string[];
     categoriesIds: string[];
+    /* Toutes les catégories de l'événement, pour que la console fasse désigner
+       celles des exposants sans avoir à les redemander à l'API. */
+    catalogue: { id: string; nom: string }[];
     appels: number;
     voie: string;
     lus: number;
@@ -541,7 +584,8 @@ export class Eventmaker {
        et de ses hébergés mêlées : c'est la synchronisation qui les départage,
        elle seule sachant quel dossier le stand porte côté Klipso. */
     const tousParStand = new Map<string, ExposantEm[]>();
-    const { retenues: cats, appels, voie } = await this.categoriesExposants(id, connues, codes);
+    const { retenues: cats, catalogue, appels, voie } =
+      await this.categoriesExposants(id, connues, codes);
     let lus = 0, ecartesNonInscrits = 0;
     const releve = new Releve();
 
@@ -566,12 +610,13 @@ export class Eventmaker {
     for (const g of paquets.flat()) {
       lus++;
       const m = champs(g.guest_metadata);
-      // relevé avant tout tri : une fiche écartée porte les mêmes champs qu'une
-      // fiche retenue, et c'est la liste des champs qu'on veut, pas celle des
-      // exposants
-      releve.ajoute(g, m);
       const stand = this.stand(g, m);
       const dossier = this.dossier(g, m);
+      /* Relevé avant le tri sur le statut — une fiche en attente porte les
+         mêmes champs qu'une fiche inscrite — mais en disant si elle désigne
+         un exposant : une catégorie d'exposants n'en contient pas que, et ce
+         sont les valeurs des exposants qu'on veut montrer. */
+      releve.ajoute(g, m, Boolean(stand || dossier));
       if (!stand && !dossier) continue;
       if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
       const v = (cible: string) => ou(this.valeur(g, m, cible));
@@ -624,6 +669,7 @@ export class Eventmaker {
       tousParStand,
       categories: cats.map((c) => c.name),
       categoriesIds: cats.map((c) => c._id),
+      catalogue,
       appels,
       voie,
       lus,
@@ -650,7 +696,10 @@ export class Eventmaker {
           `/events/${id}/guests.json`,
           { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
         ));
-      for (const g of paquets.flat()) releve.ajoute(g, champs(g.guest_metadata));
+      for (const g of paquets.flat()) {
+        const m = champs(g.guest_metadata);
+        releve.ajoute(g, m, this.exposant(g, m));
+      }
     } catch (e) {
       console.error("relevé des champs sans catégorie d'exposants :", e);
     }
@@ -704,6 +753,23 @@ function texteSeul(html: unknown): string | null {
  * de l'API, et une valeur du début de liste se retrouve plus vite. Un champ
  * vide sur toutes les fiches lues n'apparaît pas — le proposer ferait perdre
  * du temps.
+ *
+ * Premier exemple **d'exposant**, cependant, et c'est tout le sujet. Une
+ * catégorie d'exposants ne contient pas que des exposants : « EXPOSANT (raison
+ * sociale) » de Moove On mêle 51 fiches de société et 36 fiches de personnes,
+ * et l'API rend une personne en deuxième position. Le champ natif `uid` y vaut
+ * l'identifiant Klipso sur une société — `60f5bfeb-a764-…` — et un code court
+ * sur une personne — `CLALKZK` ; la console proposait le second, l'exploitant
+ * désignait le champ en le croyant porteur du premier, et le rattachement ne
+ * trouvait personne. Un exemple qui ne vient pas d'un exposant décrit un champ
+ * que la fiche n'affichera jamais.
+ *
+ * Dès qu'un exposant renseigne un champ, il reprend donc le relevé de ce champ
+ * à zéro et les fiches qui n'en sont pas cessent d'y compter. Un champ
+ * qu'aucun exposant ne porte disparaît de la liste — sauf s'il n'y avait aucun
+ * exposant à lire, auquel cas tout est gardé : c'est le seul état où
+ * l'exploitant ait besoin de voir les autres fiches, puisque c'est de là qu'il
+ * corrigera le réglage qui n'en reconnaissait aucune.
  */
 class Releve {
   private vus = new Map<
@@ -713,35 +779,51 @@ class Releve {
       /* Un compte et non une liste : c'est la répétition des valeurs qui dira
          si le champ range les fiches ou s'il porte du texte libre. */
       compte: Map<string, number>;
+      /** Ce relevé-ci vient-il d'une fiche d'exposant ? */
+      sur: boolean;
     }
   >();
 
-  /** Une fiche de plus. */
-  ajoute(g: Record<string, any>, m: Record<string, string>): void {
+  /** Une fiche de plus, et si elle désigne un exposant. */
+  ajoute(g: Record<string, any>, m: Record<string, string>, exposant: boolean): void {
     for (const [k, v] of Object.entries(g)) {
       // ni les objets imbriqués, ni les clés techniques : rien de tout cela
       // ne s'affiche sur une fiche détail
       if (v && typeof v === "object") continue;
       if (/^_|(^|_)id$|_at$/.test(k)) continue;
-      this.note("invite:" + k, k, GROUPES[1], v);
+      this.note("invite:" + k, k, GROUPES[1], v, exposant);
     }
-    for (const [k, v] of Object.entries(m)) this.note(k, k, GROUPES[0], v);
+    for (const [k, v] of Object.entries(m)) this.note(k, k, GROUPES[0], v, exposant);
   }
 
-  private note(cle: string, libelle: string, groupe: string, valeur: unknown): void {
+  private note(
+    cle: string,
+    libelle: string,
+    groupe: string,
+    valeur: unknown,
+    exposant: boolean,
+  ): void {
     const ex = String(valeur ?? "").trim();
     if (!ex) return;
-    const d = this.vus.get(cle) ?? {
-      cle, libelle, groupe,
-      exemple: ex.length > 60 ? ex.slice(0, 57) + "…" : ex,
-      compte: new Map<string, number>(),
-    };
+    const court = ex.length > 60 ? ex.slice(0, 57) + "…" : ex;
+    let d = this.vus.get(cle);
+    if (!d) {
+      d = { cle, libelle, groupe, exemple: court, compte: new Map(), sur: exposant };
+      this.vus.set(cle, d);
+    } else if (exposant && !d.sur) {
+      // le premier exposant efface ce que les autres fiches avaient relevé :
+      // leurs valeurs décrivaient un autre champ que celui-ci
+      d.sur = true;
+      d.exemple = court;
+      d.compte = new Map();
+    } else if (d.sur && !exposant) {
+      return;
+    }
     /* Les valeurs distinctes, et pas seulement la première : c'est à elles
        qu'on reconnaît un champ à choix — « Nouveau Client », « Client N-1 »,
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
        déclenchent. */
     noteValeurs(d.compte, ex);
-    this.vus.set(cle, d);
   }
 
   /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
@@ -752,12 +834,20 @@ class Releve {
        échantillon arbitraire — mais il le dit, sans quoi la console l'annonce
        comme un relevé muet et fait attendre une synchronisation qui ne
        relèverait pas davantage. */
-    return [...this.vus.values()].map(({ compte, ...d }) => {
-      const { valeurs, libre } = valeursRelevees(compte);
-      return libre ? { ...d, valeurs, libre } : { ...d, valeurs };
-    }).sort((a, b) =>
-      GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
-      a.cle.localeCompare(b.cle, "fr"));
+    /* Un seul exposant lu suffit à ne plus montrer que ce que les exposants
+       portent : `region`, `jour_de_visite` ou `adherent_de_mobilians` sont des
+       champs de visiteur, et les proposer sur une fiche d'exposant n'a jamais
+       fait que des réglages qui ne rendent rien. Aucun exposant lu, en
+       revanche, et tout est gardé : c'est le relevé du dernier recours. */
+    const desExposants = [...this.vus.values()].some((d) => d.sur);
+    return [...this.vus.values()]
+      .filter((d) => !desExposants || d.sur)
+      .map(({ compte, sur: _sur, ...d }) => {
+        const { valeurs, libre } = valeursRelevees(compte);
+        return libre ? { ...d, valeurs, libre } : { ...d, valeurs };
+      }).sort((a, b) =>
+        GROUPES.indexOf(a.groupe) - GROUPES.indexOf(b.groupe) ||
+        a.cle.localeCompare(b.cle, "fr"));
   }
 }
 
