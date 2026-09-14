@@ -142,7 +142,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | recherche, index des exposants, liste | `_js.html` § 1 et 5 |
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
-| ordre des champs de la fiche, groupes sous un même titre | réglage `_admin1.html` `voletOrdre` ; rendu `_js.html` `corpsRange` ; migration `groupes_de_champs` |
+| ce que la fiche montre, ordre des champs, sections, intitulés | réglage `_admin1.html` `voletOrdre` (réserve à gauche, fiche au milieu, aperçu à droite) ; rendu `_js.html` `corpsRange`, `champCorps`, `montreIntitule` ; migrations `groupes_de_champs`, `intitules_des_champs` |
 | tiroirs de la liste et de la fiche sur écran étroit | `_js.html` § Le tiroir de la liste, § Le tiroir de la fiche ; crans et prise dans `_head.html` `.side`, `.detail`, `.poignee` |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | lenteur d'un nuancier, couleur qui traîne derrière la souris | `_admin1.html` § La rafale du sélecteur de couleur, `suitNuancier` ; peintures ciblées `_dessin.html` `peintCalque`, `_js.html` `peintSecteur` |
