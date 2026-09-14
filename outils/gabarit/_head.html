@@ -379,13 +379,19 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .plan-gl{position:absolute;inset:0;pointer-events:none}
 html.rendu-webgl #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
-/* L'édition reste au SVG : le calque ouvert, les libellés qu'on place et les
-   aides de l'éditeur redeviennent visibles. Le SVG passe alors au-dessus du
-   dessin — positionné, il se peint après lui dans l'ordre du document. */
+/* Pendant l'édition, ce que l'éditeur attrape — le calque ouvert, les
+   libellés qu'on place, les poignées — redevient atteignable, et reste
+   transparent : la carte graphique le peint à son rang. « filter » plutôt
+   qu'« opacity », que le rendu lit et recopierait. Le SVG passe au-dessus du
+   dessin pour recevoir le pointeur. */
 html.rendu-webgl .stage > svg{position:relative}
 html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
 html.rendu-webgl.edition-svg #couches > .dcal.editable,
-html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible}
+html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible;filter:opacity(0)}
+/* Une animation lue au vol figerait n'importe laquelle de ses images : un
+   calque encore à demi fondu, un repère saisi au creux de son battement. La
+   carte graphique rejoue elle-même les battements et le défilement. */
+html.rendu-webgl #plan *{animation:none!important}
 /* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
    pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
    rien : ni peints ni visés par le pointeur — la carte graphique les montre,

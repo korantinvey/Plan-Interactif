@@ -1117,13 +1117,19 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .plan-gl{position:absolute;inset:0;pointer-events:none}
 html.rendu-webgl #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
-/* L'édition reste au SVG : le calque ouvert, les libellés qu'on place et les
-   aides de l'éditeur redeviennent visibles. Le SVG passe alors au-dessus du
-   dessin — positionné, il se peint après lui dans l'ordre du document. */
+/* Pendant l'édition, ce que l'éditeur attrape — le calque ouvert, les
+   libellés qu'on place, les poignées — redevient atteignable, et reste
+   transparent : la carte graphique le peint à son rang. « filter » plutôt
+   qu'« opacity », que le rendu lit et recopierait. Le SVG passe au-dessus du
+   dessin pour recevoir le pointeur. */
 html.rendu-webgl .stage > svg{position:relative}
 html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
 html.rendu-webgl.edition-svg #couches > .dcal.editable,
-html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible}
+html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible;filter:opacity(0)}
+/* Une animation lue au vol figerait n'importe laquelle de ses images : un
+   calque encore à demi fondu, un repère saisi au creux de son battement. La
+   carte graphique rejoue elle-même les battements et le défilement. */
+html.rendu-webgl #plan *{animation:none!important}
 /* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
    pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
    rien : ni peints ni visés par le pointeur — la carte graphique les montre,
@@ -5392,11 +5398,21 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
-  if (GL.actif && !PLACE_LIBELLES){
+  if (GL.actif){
     libellesWebgl();
-    // le calque ouvert est du SVG visible : ses stands dessinés écrivent leur nom eux-mêmes
-    if (editionSvg()) poseLibellesDessines((cadrePlan().width || 1) / view.w);
-    return;
+    /* Ce qui garde sa taille à l'écran — pastilles de l'itinéraire, pointes
+       de flèche, point de la borne — suit la vue dans « appliqueVue », que le
+       rendu WebGL court-circuite pendant le geste. On le remet à l'échelle
+       ici, une fois le geste posé : le refaire à chaque image repeindrait les
+       calques qui les portent. */
+    if (!editionSvg()){
+      if (typeof rafraichitBouts === "function") rafraichitBouts();
+      if (typeof rafraichitFleches === "function") rafraichitFleches();
+      if (typeof rafraichitBorne === "function") rafraichitBorne();
+    }
+    /* Au placement à la main, les libellés s'écrivent aussi dans le SVG :
+       invisibles, ils y restent ce que le pointeur attrape. */
+    if (!PLACE_LIBELLES) return;
   }
   const l = $("labels"), p = P();
   const r = cadrePlan();
@@ -5446,7 +5462,8 @@ function libelles(){
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
      qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
   if (libPeints) peintLibelles(vueEcrite);
-  l.innerHTML = out;
+  // les témoins de style du rendu WebGL restent à côté des libellés
+  l.innerHTML = out + (GL.actif ? modelesLibellesHtml() : "");
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
      nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
@@ -25121,7 +25138,7 @@ const GL = {
   charge: false, actif: false, deck: null,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
-  groupes: new Map(), survol: null, focus: null,
+  groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
@@ -25211,22 +25228,25 @@ function blocDe(n){
   // le nom d'un stand dessiné, que le SVG réécrit à chaque vue, est peint à part
   if (x && x.closest && x.closest(".lab")) return null;
   while (x && x.parentNode !== couches && x.parentNode !== svg) x = x.parentNode;
-  if (!x || x.id === "labels" || blocSvgVisible(x)) return null;
+  if (!x || x.id === "labels") return null;
   return x;
 }
 
 /* ------------------------------------------------------------
-   L'édition reste au SVG.
+   L'édition.
 
-   Les outils de dessin attrapent les poignées et les formes par le pointage du
-   navigateur, et posent leurs aides — poignées, aperçu du tracé, guides des
-   aimants, cotes — à la racine du SVG. Les rejouer dans la carte graphique
-   reviendrait à réécrire l'éditeur. Pendant qu'un calque est ouvert, ou que
-   l'on place les libellés à la main, ce qui s'édite redevient donc du SVG
-   visible, calé sur la vue et posé au-dessus du dessin ; le reste du plan
-   continue d'être peint par la carte graphique. L'édition se fait sur un
-   poste : la remise en page du SVG à chaque image, que le zoom du visiteur
-   ne supporte pas, y reste acceptable.
+   Le SVG est le modèle, jamais ce qu'on voit : tout ce qui s'affiche passe
+   par la carte graphique, le calque qu'on dessine comme le reste. Montrer le
+   calque ouvert en SVG par-dessus aurait fait deux rendus à tenir d'accord —
+   et le calque passait devant tout, quel que soit son rang dans la pile.
+
+   Les outils de dessin, eux, attrapent les poignées et les formes par le
+   pointage du navigateur. Pendant qu'un calque est ouvert, ou que l'on place
+   les libellés à la main, ce qui s'attrape redevient donc atteignable —
+   présent, calé sur la vue, mais transparent — et la carte graphique repeint
+   à chaque geste ce que l'éditeur y écrit. L'édition se fait sur un poste :
+   la remise en page du SVG à chaque image, que le zoom du visiteur ne
+   supporte pas, y reste acceptable.
    ------------------------------------------------------------ */
 const editionSvg = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
 
@@ -25245,12 +25265,15 @@ function majEditionWebgl(){
   toutRepeindreWebgl();
 }
 
-/** Ce que le SVG montre lui-même pendant l'édition, et que la carte graphique
- *  ne doit donc pas peindre une seconde fois. */
-function blocSvgVisible(b){
-  if (!document.documentElement.classList.contains("edition-svg")) return false;
-  if (b.parentNode === svg) return !["couches", "marques", "itin"].includes(b.id);
-  return b.classList.contains("editable") || (b.id === "labels" && PLACE_LIBELLES);
+/** La clé des couches d'un bloc. Elle tient au calque et non au nœud :
+ *  l'éditeur recrée tous les calques de dessin à chaque mouvement de souris,
+ *  et des couches renommées à chaque fois rechargeaient leurs images et
+ *  remettaient leurs textes en page. */
+function cleBloc(b){
+  if (b.dataset && b.dataset.dcal) return "d:" + b.dataset.dcal;
+  if (b.id) return "#" + b.id;
+  if (!GL.cles.has(b)) GL.cles.set(b, "b" + (++GL.compteur));
+  return GL.cles.get(b);
 }
 
 function planifieWebgl(){
@@ -25258,7 +25281,8 @@ function planifieWebgl(){
 }
 function toutRepeindreWebgl(){
   GL.tout = true; GL.couchesLibelles = null;
-  if (GL.actif) lisModelesLibelles();
+  // une mise en avant, la carte de chaleur : les noms s'estompent ou changent d'encre
+  if (GL.actif){ lisModelesLibelles(); libellesWebgl(); }
   planifieWebgl();
 }
 
@@ -25277,16 +25301,16 @@ function repeintWebgl(){
   if ([...GL.sales].some(b => b.classList && b.classList.contains("dcal"))) libellesWebgl();
   for (const b of blocsDansLOrdre()){
     vus.add(b);
-    if (b.id === "labels" || blocSvgVisible(b)) continue;
+    if (b.id === "labels") continue;
     if (GL.tout || GL.sales.has(b) || !GL.blocs.has(b)){
-      if (!GL.cles.has(b)) GL.cles.set(b, "b" + (++GL.compteur));
-      GL.blocs.set(b, convertitBloc(b, GL.cles.get(b)));
+      GL.blocs.set(b, convertitBloc(b, cleBloc(b)));
       n++;
     }
   }
   for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
   GL.sales.clear(); GL.tout = false; GL.ordre = false;
   GL.deck.setProps({ layers: assembleWebgl() });
+  majAnimationWebgl();
   GL.duree = performance.now() - t0;
   GL.reconstruits = n;
 }
@@ -25294,11 +25318,10 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
-    if (blocSvgVisible(b)) continue;
-    if (b.id === "labels"){ out.push(...couchesLibellesWebgl()); continue; }
+    if (b.id === "labels"){ out.push(...couchesLibellesWebgl(), ...couchesPhareNoms()); continue; }
     const couches = GL.blocs.get(b) || [];
     for (const c of couches){
-      out.push(c);
+      out.push(animeCouche(c));
       // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
       if (GL.survol) out.push(...coucheSurvol(c));
     }
@@ -25345,6 +25368,23 @@ function constTexte(){
     }
   }
   FiltreZoom.extensionName = "FiltreZoom";
+  /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
+     Le décalage des tirets se passe au shader à chaque pas, sans toucher aux
+     données — en pixels, comme le « stroke-dashoffset » d'un trait qui ne
+     grossit pas au zoom. La bibliothèque compte le long du trait en
+     demi-épaisseurs, d'où la division. */
+  class DefileTirets extends deck.LayerExtension {
+    getShaders(){
+      return {
+        modules: [{ name: "defile", vs: "layout(std140) uniform defileUniforms {\n  float decalage;\n} defile;\n",
+                    uniformTypes: { decalage: "f32" } }],
+        inject: { "vs:#main-end": "vDashOffset += defile.decalage / max(widthPixels.x, 0.001);" },
+      };
+    }
+    draw(){ this.setShaderModuleProps({ defile: { decalage: this.props.decalage || 0 } }); }
+  }
+  DefileTirets.extensionName = "DefileTirets";
+  DefileTirets.defaultProps = { decalage: 0 };
   FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] } };
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
@@ -25354,11 +25394,14 @@ function constTexte(){
     grand: { ext: [new FiltreZoom({ petit: false })], atlas: { sdf: true, fontSize: 64, buffer: 6 } },
     // ce qui n'est pas du texte n'a pas d'atlas à choisir : seul l'intervalle compte
     tout: { ext: [new FiltreZoom({ tout: true })] },
+    tirets: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true })],
+    defile: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new DefileTirets()],
     sansDeclencheur: {},
   });
 }
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
+  const halo = extra.halo;
   const commun = {
     data: items, pickable: false, fontFamily: famille, fontWeight: graisse, characterSet: "auto",
     getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
@@ -25368,9 +25411,19 @@ function couchesTexte(id, items, famille, graisse, extra){
     getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
                          Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
   };
+  /* Le liseré clair qui détache un nom de ce qu'il recouvre — carte de
+     chaleur, zone mise en avant. Les grands textes le tirent de leur champ de
+     distance, en proportion du corps comme le « .15em » du SVG. Les petits
+     n'en ont pas : quatre copies claires décalées d'un pixel le dessinent,
+     ce qui est à peu près ce qu'un liseré mesure à cette taille. */
+  const autour = halo ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([x, y], k) =>
+    new deck.TextLayer({ ...commun, id: id + "-petit-halo-" + k, fontSettings: K.petit.atlas, extensions: K.petit.ext,
+      getColor: halo.couleur, getPixelOffset: [x, y], updateTriggers: { ...commun.updateTriggers, getColor: halo.couleur.join() } })) : [];
   return [
+    ...autour,
     new deck.TextLayer({ ...commun, id: id + "-petit", fontSettings: K.petit.atlas, extensions: K.petit.ext }),
-    new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext }),
+    new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext,
+      ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) }),
   ];
 }
 
@@ -25519,10 +25572,23 @@ function couleurGl(v, alpha){
   return a > 0 ? [c[0], c[1], c[2], a] : null;
 }
 
+const accVide = () => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map() });
 function convertitBloc(racine, cle){
-  const acc = { pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [] };
+  const acc = accVide();
   parcoursGl(racine, M_ID, 1, acc);
-  return couchesDeBloc(acc, cle);
+  const out = couchesDeBloc(acc, cle);
+  let i = 0;
+  for (const [el, sous] of acc.phares) out.push(...couchesPhare(el, sous, cle + "-phare-" + (i++)));
+  return out;
+}
+
+/* Ce que le cartouche met en avant se range à part : il bat, et seules ses
+   couches changent d'une image à l'autre. */
+function accDe(el, acc){
+  const ph = acc.phares && el.closest(".phare");
+  if (!ph) return acc;
+  if (!acc.phares.has(ph)) acc.phares.set(ph, accVide());
+  return acc.phares.get(ph);
 }
 
 function parcoursGl(el, m, op, acc){
@@ -25588,6 +25654,7 @@ function avecTrous(anneaux){
 
 function formeGl(el, cs, m, op, traces, acc){
   const cible = el.closest("[data-id],[data-poi]");
+  acc = accDe(el, acc);
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
@@ -25600,17 +25667,20 @@ function formeGl(el, cs, m, op, traces, acc){
     const largeur = fixe ? sw : sw * echelleM(m);
     const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
       ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
-    const dash = tirets && tirets.length >= 2 ? [tirets[0] / sw, tirets[1] / sw] : [0, 0];
+    // la bibliothèque mesure les tirets en demi-épaisseurs de trait
+    const dash = tirets && tirets.length >= 2 ? [2 * tirets[0] / sw, 2 * tirets[1] / sw] : [0, 0];
+    const defile = el.classList.contains("iSens");
     for (const t of traces){
       if (t.pts.length < 2) continue;
       const path = t.pts.map(p => appM(m, p));
       if (t.ferme) path.push(path[0]);
-      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: cible });
+      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible });
     }
   }
 }
 
 function texteGl(el, cs, m, op, acc){
+  acc = accDe(el, acc);
   const texte = el.textContent;
   if (!texte || !texte.trim()) return;
   const coul = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
@@ -25633,6 +25703,7 @@ function texteGl(el, cs, m, op, acc){
 }
 
 function imageGl(el, m, op, acc){
+  acc = accDe(el, acc);
   const href = el.getAttribute("href") || el.getAttribute("xlink:href");
   if (!href) return;
   let x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
@@ -25674,11 +25745,16 @@ function couchesDeBloc(acc, cle){
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
   partage(tous).forEach((liste, k) => {
     if (!liste.length) return;
-    const tirets = liste.some(d => d.dash[0] > 0);
-    out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k, data: liste, pickable: k === 0,
-      getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
-      jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0,
-      ...(tirets ? { extensions: [new L.PathStyleExtension({ dash: true })], getDashArray: d => d.dash, dashJustified: true } : {}) }));
+    // les pointillés qui défilent ont leur couche : c'est elle seule qui bouge
+    const K = constTexte();
+    [liste.filter(d => !d.defile), liste.filter(d => d.defile)].forEach((l, j) => {
+      if (!l.length) return;
+      const tirets = l.some(d => d.dash[0] > 0);
+      out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + (j ? "-defile" : ""), data: l, pickable: k === 0,
+        getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
+        jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: j === 1,
+        ...(tirets ? { extensions: j ? K.defile : K.tirets, getDashArray: d => d.dash, dashJustified: false } : {}) }));
+    });
   });
   let i = 0;
   for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse, {}));
@@ -25699,16 +25775,25 @@ function couchesDeBloc(acc, cle){
    ------------------------------------------------------------ */
 const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel",
   "coexN", "coexN sel", "coexPast", "coexPast sel"];
+// le libellé d'une zone mise en avant ; celui qu'on déplace à la main
+const CLASSES_PHARE = ["zn", "zn sel", "zn masquee", "zn sel masquee"];
 
 /** Des témoins dans « #labels », jamais montrés : la feuille de style leur
  *  donne la couleur et la police qu'elle donnerait aux vrais. La pastille des
  *  coexposants est un rectangle ; le survol n'a pas de classe à lui, et prend
  *  la teinte que sa règle lui donne. */
+function modelesLibellesHtml(){
+  const temoin = (c, groupe, cle) => '<g class="' + groupe + '">' + (c.startsWith("coexPast")
+    ? '<rect class="' + c + '" data-modele="' + cle + '"/>'
+    : '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + cle + '">A</text>') + '</g>';
+  return CLASSES_LIBELLES.map(c => temoin(c, "lbl", c)).join("") +
+    CLASSES_PHARE.map(c => temoin(c, "lbl phare", c + " phare")).join("") +
+    temoin("nm", "lbl pick", "pick") +
+    '<rect data-modele="survol" style="fill:var(--accent-soft);stroke:var(--accent)"/>' +
+    '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
+}
 function poseModelesLibelles(){
-  $("labels").innerHTML = CLASSES_LIBELLES.map(c => c.startsWith("coexPast")
-    ? '<rect class="' + c + '" data-modele="' + c + '"/>'
-    : '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + c + '">A</text>').join("") +
-    '<rect data-modele="survol" style="fill:var(--accent-soft);stroke:var(--accent)"/>';
+  $("labels").innerHTML = modelesLibellesHtml();
   lisModelesLibelles();
 }
 function lisModelesLibelles(){
@@ -25716,8 +25801,17 @@ function lisModelesLibelles(){
   GL.modeles.clear();
   $("labels").querySelectorAll("[data-modele]").forEach(t => {
     const cs = getComputedStyle(t);
-    GL.modeles.set(t.dataset.modele, { couleur: couleurGl(cs.fill, parseFloat(cs.fillOpacity) || 1) || [0, 0, 0, 255],
-      trait: couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) || 1) || [0, 0, 0, 0],
+    /* L'opacité du groupe — le plan en retrait derrière une mise en avant —
+       et celle du texte — une zone masquée — se multiplient, comme à l'écran. */
+    const op = parseFloat(getComputedStyle(t.parentNode).opacity) * parseFloat(cs.opacity);
+    const couleur = couleurGl(cs.fill, (parseFloat(cs.fillOpacity) || 1) * op) || [0, 0, 0, 0];
+    // un contour peint sous la lettre est un liseré ; sa largeur se dit en corps
+    const sw = parseFloat(cs.strokeWidth), corps = parseFloat(cs.fontSize) || 16;
+    const lisere = cs.paintOrder.startsWith("stroke") && cs.stroke !== "none" && sw > 0
+      ? couleurGl(cs.stroke, (parseFloat(cs.strokeOpacity) || 1) * op) : null;
+    GL.modeles.set(t.dataset.modele, { couleur,
+      trait: couleurGl(cs.stroke, (parseFloat(cs.strokeOpacity) || 1) * op) || [0, 0, 0, 0],
+      halo: lisere ? { couleur: lisere, largeur: sw / corps } : null,
       famille: cs.fontFamily, graisse: cs.fontWeight, visible: cs.display !== "none" });
   });
   GL.signatureModeles = JSON.stringify([...GL.modeles]);
@@ -25752,8 +25846,9 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
     const wPast = largeur(compte, P_CODE) * fc + fc * .68;
     if (wCode + ecart + wPast <= w * .9 * k) past = { compte, wCode, ecart, wPast };
   }
+  const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
   const pose = (lignes, f, x, y, cls, z0, z1) =>
-    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1 });
+    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
@@ -25791,8 +25886,9 @@ function libellesWebgl(){
     if (!a) continue;
     const f = a.f * facteurLibelle(reg), xy = decaleLibelle(ancre(z), reg);
     items.push({ text: a.lignes.join("\n"), position: xy, taille: f,
-      cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""),
-      z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN });
+      cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : "") + (phareZone(z) ? " phare" : ""),
+      z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN,
+      pick: Boolean(PLACE_LIBELLES && z.id === libSel) });
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
@@ -25821,12 +25917,13 @@ function libellesWebgl(){
         b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
     }
   }
-  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3);
+  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3) + (d.pick ? "*" : "");
   const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
     "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   if (cle === GL.cleLibelles) return;
   GL.cleLibelles = cle;
-  GL.libelles = items;
+  GL.libelles = items.filter(d => !d.cls.endsWith(" phare"));
+  GL.libellesPhare = items.filter(d => d.cls.endsWith(" phare"));
   GL.pastilles = pastilles;
   GL.dessines = dessines;
   GL.versionLibelles = (GL.versionLibelles || 0) + 1;
@@ -25847,7 +25944,8 @@ function groupesNoms(cle, liste){
   for (const d of liste){
     const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
     if (!mo || !mo.visible) continue;
-    const k = mo.famille + "|" + mo.graisse;
+    // un liseré se règle pour toute une couche : les noms qui en portent un vont ensemble
+    const k = mo.famille + "|" + mo.graisse + "|" + (mo.halo ? mo.halo.couleur.join() + "/" + mo.halo.largeur.toFixed(3) : "");
     if (!groupes.has(k)) groupes.set(k, { mo, items: [] });
     groupes.get(k).items.push(d);
   }
@@ -25857,8 +25955,8 @@ function groupesNoms(cle, liste){
 function couchesNoms(prefixe, groupes){
   let i = 0;
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle",
-      getColor: d => (GL.modeles.get(d.cls) || g.mo).couleur,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo,
+      getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
 
@@ -25881,8 +25979,6 @@ function couchesPastilles(){
 }
 
 function couchesLibellesWebgl(){
-  // pendant le placement à la main, les libellés sont ceux du SVG, qu'on attrape
-  if (PLACE_LIBELLES) return [];
   if (!GL.couchesLibelles)
     GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles))];
   return GL.couchesLibelles;
@@ -25892,7 +25988,7 @@ function couchesLibellesWebgl(){
 function couchesDessineesWebgl(b){
   const liste = GL.dessines.get(b);
   if (!liste || !liste.length) return [];
-  const cle = GL.cles.get(b) || "d";
+  const cle = cleBloc(b);
   return couchesNoms(cle + "-noms-", groupesNoms(cle, liste));
 }
 
@@ -25964,6 +26060,86 @@ function coucheFocus(couches){
   const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
   return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
     getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true })];
+}
+
+/* ------------------------------------------------------------
+   La mise en avant et ce qui bouge.
+
+   Le cartouche met une famille de repères en avant : le reste du plan
+   s'estompe — la feuille de style le dit, le rendu le lit — et ce qui est
+   retenu gagne un halo et bat. Le halo était un « drop-shadow » que la carte
+   graphique ne connaît pas : deux traits larges et translucides autour de la
+   silhouette le remplacent, aux mêmes mesures en mètres. Le battement change
+   l'opacité d'une zone, la taille d'un repère, l'encre du nom d'une zone ;
+   les pointillés de l'itinéraire avancent. Rien de tout cela ne touche aux
+   données : les couches concernées sont redonnées avec un réglage neuf, et
+   seules elles changent d'une image à l'autre.
+   ------------------------------------------------------------ */
+function couchesPhare(el, sous, cle){
+  const couches = couchesDeBloc(sous, cle);
+  const anneaux = sous.pleins.map(d => d.polygon[0]);
+  const pts = anneaux.flat().concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path));
+  if (!pts.length) return couches;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pts){ x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }
+  const repere = el.classList.contains("repere");
+  // les deux passes du « drop-shadow » : la première cerne, la seconde diffuse
+  const passes = repere ? [[1.4, 170], [3.5, 60]] : [[2.5, 170], [6, 60]];
+  const poi = (GL.modeles.get("poi") || {}).couleur || [0, 0, 0, 255];
+  const lueurs = passes.map(([largeur, a], k) => new deck.PathLayer({ id: cle + "-lueur-" + k, data: anneaux,
+    getPath: an => [...an, an[0]], getWidth: largeur, widthUnits: "common", jointRounded: true, capRounded: true,
+    getColor: [poi[0], poi[1], poi[2], a] }));
+  const phare = { sorte: repere ? "repere" : "zone", centre: [(x0 + x1) / 2, (y0 + y1) / 2] };
+  return [...lueurs.reverse(), ...couches].map(c => c.clone({ phare }));
+}
+
+/** Les noms des zones mises en avant : leur encre bat avec elles. */
+function couchesPhareNoms(){
+  if (!GL.libellesPhare.length) return [];
+  const poi = (GL.modeles.get("poi") || {}).couleur || [0, 0, 0, 255];
+  const p = GL.animePhare ? (1 - Math.cos(2 * Math.PI * GL.temps / 1.5)) / 2 : 0;
+  const pas = Math.round(p * 60);
+  let i = 0;
+  return groupesNoms("phare", GL.libellesPhare).flatMap(g => couchesTexte("phare-noms-" + (i++), g.items,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo,
+      getColor: d => { const c = (GL.modeles.get(d.cls) || g.mo).couleur;
+        return [0, 1, 2].map(k => Math.round(c[k] + (poi[k] - c[k]) * p)).concat(c[3]); },
+      updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
+}
+
+/** Une couche telle qu'elle doit paraître à cet instant. */
+function animeCouche(c){
+  const ph = c.props.phare;
+  if (ph && GL.animePhare){
+    // les courbes de « pulseZone » et « pulsePoi » : 1 → 0,58 → 1, et 1 → 1,14 → 1
+    if (ph.sorte === "zone") return c.clone({ opacity: .79 + .21 * Math.cos(2 * Math.PI * GL.temps / 1.5) });
+    const s = 1.07 - .07 * Math.cos(2 * Math.PI * GL.temps / 1.4), [x, y] = ph.centre;
+    return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
+  }
+  // « defile » : douze paliers d'un pixel en 1,1 seconde
+  if (c.props.defile && GL.bouge) return c.clone({ decalage: -(Math.floor(GL.temps / 1.1 * 12) % 12) });
+  return c;
+}
+
+const MOUVEMENT_REDUIT = matchMedia("(prefers-reduced-motion: reduce)");
+function majAnimationWebgl(){
+  GL.bouge = !MOUVEMENT_REDUIT.matches;
+  const couches = [...GL.blocs.values()].flat();
+  GL.animePhare = GL.bouge && document.documentElement.classList.contains("poi-actif") &&
+    (GL.libellesPhare.length > 0 || couches.some(c => c.props.phare));
+  GL.anime = GL.animePhare || (GL.bouge && couches.some(c => c.props.defile));
+  if (GL.anime && !GL.imageAnim) GL.imageAnim = requestAnimationFrame(animeWebgl);
+}
+function animeWebgl(now){
+  GL.imageAnim = 0;
+  if (!GL.actif || !GL.anime) return;
+  GL.temps = now / 1000;
+  /* Tout le plan se redessine quand une couche change : le battement se
+     contente donc de trente images par seconde, et le défilement seul ne
+     redessine qu'à chacun de ses paliers. */
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + Math.floor(GL.temps / 1.1 * 12);
+  if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
+  GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
 
 /* ------------------------------------------------------------
