@@ -1111,8 +1111,9 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
   transform-origin:0 0;will-change:transform}
 .calque-libelles > svg{display:block;width:100%;height:100%}
 
-/* Le plan peint par la carte graphique (`?rendu=webgl`, voir « Le plan peint
-   par la carte graphique »). Le SVG reste en place et reçoit les gestes, mais
+/* Le plan peint par la carte graphique — le rendu par défaut, `?rendu=svg`
+   pour l'écarter ; voir « Le plan peint par la carte graphique ». Le SVG
+   reste en place et reçoit les gestes, mais
    ne montre plus rien : « visibility » et non « display », pour que sa
    géométrie et ses styles calculés restent lisibles par le peintre — et que
    le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
@@ -25539,14 +25540,14 @@ function marqueLibelleTuto(id){
   TUTO.guet.observe($("labels"), { childList: true });
 }
 /* ============================================================
-   13 bis. Le plan peint par la carte graphique — WebGL2, à l'essai
+   13 bis. Le plan peint par la carte graphique — WebGL2
 
    Le SVG remet le plan en page et le repeint à chaque image d'un zoom : son
    coût grandit avec le nombre de formes, et les noms, qu'il faudrait
    re-rastériser à chaque taille, doivent se taire pendant le geste. Ici la
    carte graphique redessine tout d'un changement de matrice, noms compris.
 
-   L'essai ne réécrit ni le plan ni ses règles. Le SVG reste construit comme
+   Ce rendu ne réécrit ni le plan ni ses règles. Le SVG reste construit comme
    avant, caché : c'est lui qui dit quoi dessiner, dans quel ordre et de
    quelle couleur — secteurs, sélection, retrait de la recherche, calques
    dessinés, itinéraire. Ce module le relit et le repeint. Deux peintres pour
@@ -25559,12 +25560,13 @@ function marqueLibelleTuto(id){
    les gestes restent au SVG, transparent au-dessus du dessin : le zoom, le
    pincement, la glissade n'ont pas été touchés.
 
-   Le mode s'active par l'adresse, `?rendu=webgl`, et seulement si le
-   navigateur a WebGL2 et que la bibliothèque arrive. Sinon, rien ne change :
-   le plan reste en SVG. C'est aussi le repli des appareils qui ne l'ont pas.
+   C'est le rendu par défaut, dès que le navigateur a WebGL2 et que la
+   bibliothèque arrive. Sinon le plan reste en SVG : c'est le repli des
+   appareils qui ne l'ont pas. `?rendu=svg` le force, pour comparer ou pour
+   écarter le dessin le temps d'un dépannage.
    ============================================================ */
 
-const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") === "webgl";
+const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") !== "svg";
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
    nos pieds changerait le plan des visiteurs sans que rien ne soit publié.
    La 9.3 et non la 9.4 : sur la carte graphique d'essai, la 9.4.0 ne
