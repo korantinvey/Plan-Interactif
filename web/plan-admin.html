@@ -25568,9 +25568,16 @@ const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") === "webgl
 /* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
    nos pieds changerait le plan des visiteurs sans que rien ne soit publié.
    La 9.3 et non la 9.4 : sur la carte graphique d'essai, la 9.4.0 ne
-   dessinait plus les points. */
+   dessinait plus les points.
+
+   Servie par le site lui-même, comme les polices : un réseau tiers aurait
+   reçu l'adresse de chaque visiteur, et sa panne privait le plan du dessin.
+   Le nom du fichier porte la version — il ne change jamais sous une même
+   adresse, et le service hors ligne le garde tel quel. Pour en changer :
+   poser dans `web/bibliotheques/` le `dist.min.js` du paquet npm `deck.gl`,
+   sous le nom de sa version, et reporter son empreinte ici. */
 const DECK_WEBGL = {
-  src: "https://cdn.jsdelivr.net/npm/deck.gl@9.3.11/dist.min.js",
+  src: "bibliotheques/deck.gl-9.3.11.min.js",
   integrite: "sha384-n9TufhIL8BMsQ8I/frAQGFsg2D/50T9gjWMitdG+F1HtTxSz62ol4tnA1nXOoeun",
 };
 const GL = {
@@ -25597,7 +25604,7 @@ const GL = {
   const secours = () => racine.classList.remove("gl-attente");
   setTimeout(secours, 4000);
   const s = document.createElement("script");
-  s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite; s.crossOrigin = "anonymous";
+  s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite;
   s.onload = () => { GL.charge = true; monteWebgl(); };
   s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
   document.head.appendChild(s);
