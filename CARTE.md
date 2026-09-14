@@ -199,7 +199,7 @@ Fonctions :
 
 - l.592 · Page de rapport
 
-### `_dessin.html` — 1815 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1834 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -214,19 +214,19 @@ Fonctions :
 `aimanteContour` 413 · `rayonContour` 416 · `redresseTrace` 435 · `traceGuide` 469
 `fermeIci` 476 · `ajouteForme` 481 · `pictoDe` 581 · `nomTypeRepereFr` 632
 `nomTypeRepere` 633 · `typeZone` 659 · `pictoForme` 666 · `estPorte` 686
-`ouvreEntrant` 687 · `ouvreSortant` 688 · `traceRepere` 702 · `etiquetteSociete` 770
-`nomSurLePlan` 774 · `societeDeForme` 785 · `societesDuPlan` 796
-`remplitListeSocietes` 807 · `societeSaisie` 815 · `traceStandDessine` 831
-`texteStandDessine` 855 · `poseLibellesDessines` 873 · `decoupeStand` 894
-`marqueStandsDessines` 906 · `rafraichitStandsDessines` 921 · `oublieReperes` 951
-`reperesCherchables` 953 · `vaAuRepere` 997 · `clePoi` 1032 · `cartouchePoi` 1034
-`ouvrePoi` 1138 · `mesureCartouche` 1210 · `phareRepere` 1219 · `phareZone` 1221
-`eclairePoi` 1227 · `oublieChoixPoi` 1260 · `signale` 1269 · `calquePourImage` 1283
-`poseImage` 1300 · `importeImage` 1313 · `dessinPointerDown` 1364 · `dessinPointerMove` 1438
-`dessinPointerUp` 1476 · `termineTrace` 1512 · `aide` 1524 · `choisitOutil` 1549
-`enchaineStand` 1573 · `activeCalque` 1632 · `cleVerrou` 1688 · `verrouille` 1689
-`basculeVerrou` 1691 · `pictoVerrou` 1708 · `montreRoleIti` 1742 · `creeCalque` 1773
-`demandeNom` 1786 · `renommeCalque` 1805
+`ouvreEntrant` 687 · `ouvreSortant` 688 · `traceRepere` 702 · `nomSurLePlan` 771
+`etiquetteSociete` 782 · `societeDeForme` 799 · `societesDuPlan` 811
+`remplitListeSocietes` 826 · `societeSaisie` 834 · `traceStandDessine` 850
+`texteStandDessine` 874 · `poseLibellesDessines` 892 · `decoupeStand` 913
+`marqueStandsDessines` 925 · `rafraichitStandsDessines` 940 · `oublieReperes` 970
+`reperesCherchables` 972 · `vaAuRepere` 1016 · `clePoi` 1051 · `cartouchePoi` 1053
+`ouvrePoi` 1157 · `mesureCartouche` 1229 · `phareRepere` 1238 · `phareZone` 1240
+`eclairePoi` 1246 · `oublieChoixPoi` 1279 · `signale` 1288 · `calquePourImage` 1302
+`poseImage` 1319 · `importeImage` 1332 · `dessinPointerDown` 1383 · `dessinPointerMove` 1457
+`dessinPointerUp` 1495 · `termineTrace` 1531 · `aide` 1543 · `choisitOutil` 1568
+`enchaineStand` 1592 · `activeCalque` 1651 · `cleVerrou` 1707 · `verrouille` 1708
+`basculeVerrou` 1710 · `pictoVerrou` 1727 · `montreRoleIti` 1761 · `creeCalque` 1792
+`demandeNom` 1805 · `renommeCalque` 1824
 
 Éléments :
 

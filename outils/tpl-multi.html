@@ -12549,12 +12549,26 @@ function traceRepere(f){
    pas jusqu'à un co-exposant, on marche jusqu'à son hôte.
    ------------------------------------------------------------ */
 
-/** L'étiquette sous laquelle une société se désigne : « G55 — SMC2 ». */
-const etiquetteSociete = (code, nom) => [code, nom].filter(Boolean).join(" — ");
-
 /** Le nom d'une société tel qu'il s'écrit sur le plan — vide s'il n'y en a
  *  pas, là où la fiche se rabat sur « Sans nom ». */
 const nomSurLePlan = (soc) => soc.nom || soc.plan || "";
+
+/**
+ * L'étiquette sous laquelle une société se désigne : « SMC2 — G55 », et pour
+ * un co-exposant « BERTRAND FRANCHISE - AU BUREAU — G55 ».
+ *
+ * Le nom vient d'abord, parce que c'est lui qu'on cherche des yeux dans une
+ * liste rangée par ordre alphabétique ; le titulaire préfixe ses hébergés pour
+ * qu'ils se lisent sous lui, et non dispersés au fil de l'alphabet. Le numéro
+ * reste en queue : deux enseignes portent parfois le même nom.
+ */
+function etiquetteSociete(o, soc){
+  const titulaire = nomSurLePlan(o);
+  const nom = nomSurLePlan(soc);
+  const tete = soc === o || !nom || nom === titulaire ? nom
+    : (titulaire || o.code) + " - " + nom;
+  return [tete, o.code].filter(Boolean).join(" — ");
+}
 
 /**
  * Ce qu'un stand dessiné désigne : l'emplacement, le rang de la société, la
@@ -12574,16 +12588,21 @@ function societeDeForme(f){
   return soc ? { o: o, i: i, soc: soc } : null;
 }
 
-/** Les sociétés du pavillon courant, titulaires et hébergées mêlées : c'est
- *  parmi elles que se choisit ce qu'un stand dessiné matérialise. */
+/** Les sociétés du pavillon courant, parmi lesquelles se choisit ce qu'un
+ *  stand dessiné matérialise : par ordre alphabétique des titulaires, chacun
+ *  suivi de ses co-exposants, rangés à leur tour. */
 function societesDuPlan(){
+  const range = (a, b) => a.localeCompare(b, "fr", { sensitivity: "base", numeric: true });
+  const cle = (s) => nomSurLePlan(s) || s.code || "";
   const out = [];
-  P().stands.forEach(s => societes(s).forEach(x => {
-    const nom = nomSurLePlan(x.soc);
-    if (!s.code && !nom) return;
-    out.push({ o: s, i: x.i, soc: x.soc,
-               etiquette: etiquetteSociete(s.code, nom) || s.id });
-  }));
+  P().stands.slice().sort((a, b) => range(cle(a), cle(b))).forEach(s => {
+    const liste = societes(s)
+      .filter(x => s.code || nomSurLePlan(x.soc))
+      .map(x => ({ o: s, i: x.i, soc: x.soc,
+                   etiquette: etiquetteSociete(s, x.soc) || s.id }));
+    out.push(...liste.filter(x => x.i < 0),
+             ...liste.filter(x => x.i >= 0).sort((a, b) => range(a.etiquette, b.etiquette)));
+  });
   return out;
 }
 
@@ -13760,7 +13779,7 @@ function majElement(){
     if (estStandDessine){
       remplitListeSocietes();
       const l = societeDeForme(f);
-      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
+      cs.value = l ? etiquetteSociete(l.o, l.soc) : "";
     }
   }
 }
@@ -13941,7 +13960,7 @@ function appliqueSociete(){
   memorise();
   if (l){
     cible.f.stand = l.o.id; cible.f.soc = l.i;
-    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+    ch.value = etiquetteSociete(l.o, l.soc);
   } else {
     delete cible.f.stand; delete cible.f.soc;
     ch.value = "";
