@@ -556,6 +556,23 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   box-shadow:var(--shadow);padding:12px 14px;width:264px;
   max-height:calc(100% - 24px);overflow-y:auto}
 .outils.open{display:flex}
+/* La palette de calage partage l'allure de celle du dessin — et sa place : les
+   deux ne servent jamais en même temps, ouvrir l'une ferme l'autre. Elle
+   s'affiche par `hidden`, non par une classe : rien d'autre ne la commande. */
+.calage:not([hidden]){display:flex}
+.calage .cRang{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cRang > span{flex:1;min-width:0}
+.calage select,.calage input[type="number"]{padding:5px 7px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.calage input[type="number"]{width:74px;text-align:right}
+.calage .cGrille{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.calage .cGrille button,.calage .cLigne button{height:30px;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);font-size:12px;padding:0 6px}
+.calage .cGrille button:hover,.calage .cLigne button:hover{border-color:var(--line-strong);color:var(--ink)}
+.calage .cLigne{display:flex;gap:4px}
+.calage .cLigne button{flex:1;min-width:0}
+.calageEtat{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin:0}
+.calageEtat.alerte{color:var(--rouge)}
 .outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .outilsActs{display:flex;align-items:center;gap:2px}
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
@@ -3509,6 +3526,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
+    </div>
+
+    <!-- La palette de calage. Elle flotte sur le plan plutôt que d'occuper une
+         fenêtre : on cale en regardant la carte glisser sous le pavillon, et
+         une modale posée devant rend le réglage aveugle. Même place et même
+         allure que la palette de dessin, dont elle prend le tour de rôle. -->
+    <div class="outils calage" id="calage" hidden>
+      <div class="outilsTete">
+        <strong>Caler la carte</strong>
+        <div class="outilsActs"><button type="button" id="calageFerme" aria-label="Fermer">×</button></div>
+      </div>
+      <div id="calageCorps"></div>
+      <p class="calageEtat" id="calageEtat"></p>
+      <div class="acts">
+        <button type="button" class="btn" id="calageGarde">Enregistrer pour tous</button>
+      </div>
     </div>
 
     <div class="outils" id="outils">

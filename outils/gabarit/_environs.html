@@ -552,13 +552,156 @@ function rafraichitCarte(){
   dessineFondCarte();
 }
 
+/* ------------------------------------------------------------
+   La palette de calage
+
+   Caler, c'est regarder : on fait glisser une carte sous le pavillon jusqu'à
+   ce que les deux coïncident. Les commandes vivent donc sur le plan, dans une
+   palette qui prend la place de celle du dessin — une fenêtre posée devant
+   rendait le réglage aveugle, ce qu'aucune quantité de boutons ne rattrape.
+
+   Les réglages, eux, gardent l'onglet « Environs » : c'est là qu'on explique,
+   qu'on colle un point et qu'on retire une carte — trois gestes qui ne
+   demandent pas de voir le plan.
+   ------------------------------------------------------------ */
+
+function ditCalage(txt, mal){
+  const e = $("calageEtat");
+  if (!e) return;
+  e.textContent = txt || "";
+  e.classList.toggle("alerte", !!mal);
+}
+
+/** Remet à jour ce que la palette affiche de l'état courant. */
+function majCalage(){
+  const corps = $("calageCorps");
+  if (!corps || !ENV_CAL) return;
+  const rot = corps.querySelector(".cRot");
+  if (rot) rot.value = Math.round(ENV_CAL.angle / DEG * 10) / 10;
+  const bat = corps.querySelector(".cBati");
+  if (bat){
+    bat.hidden = !ENV_BATIS.length;
+    bat.textContent = "Bâtiment suivant (" + (ENV_BATI + 1) + "/" + ENV_BATIS.length + ")";
+  }
+  const sel = corps.querySelector(".cFond");
+  if (sel) sel.value = ENV_CAL.fond && CARTES[ENV_CAL.fond] ? ENV_CAL.fond : "";
+}
+
+/** Le réglage appliqué et montré : toute commande de la palette finit ici. */
+function appliqueCalage(){
+  rafraichitCarte();
+  majCalage();
+}
+
+/** Tourner autour du point qu'on regarde, et non autour d'une origine à sept
+ *  kilomètres — sans quoi la carte fuit l'écran au premier degré. */
+function tourneCalage(a){
+  ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
+  ENV_CAL.angle = a;
+  appliqueCalage();
+}
+
+function construitCalage(){
+  const corps = $("calageCorps");
+  corps.innerHTML = "";
+
+  const fond = document.createElement("div");
+  fond.className = "cRang";
+  fond.innerHTML = '<span>Fond</span><select class="cFond"><option value="">Aucun</option></select>';
+  const sel = fond.querySelector("select");
+  for (const k of Object.keys(CARTES)){
+    const o = document.createElement("option");
+    o.value = k; o.textContent = CARTES[k].nom;
+    sel.appendChild(o);
+  }
+  sel.onchange = () => {
+    ENV_CAL.fond = sel.value || undefined;
+    appliqueCalage();
+    /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
+       limite change sans que rien ne le montre. */
+    if (typeof poseVue === "function") poseVue();
+    if (_tuilesMuettes) ditCalage("Ce fond ne répond pas : essayez-en un autre.", true);
+  };
+  corps.appendChild(fond);
+
+  const rot = document.createElement("div");
+  rot.className = "cRang";
+  rot.innerHTML = '<span>Rotation</span><input type="number" step="0.5" class="cRot"><span class="u">°</span>';
+  const nRot = rot.querySelector("input");
+  nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourneCalage(v * DEG); };
+  corps.appendChild(rot);
+
+  const ligne = document.createElement("div");
+  ligne.className = "cLigne";
+  const bBati = document.createElement("button");
+  bBati.type = "button";
+  bBati.className = "cBati";
+  bBati.onclick = () => {
+    if (!ENV_BATIS.length) return;
+    ENV_BATI = (ENV_BATI + 1) % ENV_BATIS.length;
+    caleSurBatiment(ENV_BATIS[ENV_BATI], P());
+    appliqueCalage();
+  };
+  const bQuart = document.createElement("button");
+  bQuart.type = "button";
+  bQuart.textContent = "Quart de tour";
+  bQuart.onclick = () => tourneCalage(ENV_CAL.angle + Math.PI / 2);
+  ligne.appendChild(bBati);
+  ligne.appendChild(bQuart);
+  corps.appendChild(ligne);
+
+  const grille = document.createElement("div");
+  grille.className = "cGrille";
+  [["← O", -5, 0], ["E →", 5, 0], ["↑ N", 0, 5], ["↓ S", 0, -5]].forEach(([nom, de, dn]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = nom;
+    b.title = "Décaler la carte de cinq mètres";
+    b.onclick = () => {
+      const [dx, dy] = tourneEnvirons(de, dn, ENV_CAL.angle);
+      ENV_CAL.x += dx; ENV_CAL.y += dy;
+      appliqueCalage();
+    };
+    grille.appendChild(b);
+  });
+  corps.appendChild(grille);
+  majCalage();
+}
+
+/** Ouvrir la palette, et refermer ce qui occupait sa place. */
+function ouvreCalage(){
+  if (!ENV_CAL) return;
+  if (typeof fermeModale === "function") fermeModale();
+  const o = $("outils");
+  if (o) o.classList.remove("open");
+  construitCalage();
+  $("calage").hidden = false;
+}
+
+function fermeCalage(){
+  const c = $("calage");
+  if (c) c.hidden = true;
+}
+
+/** Branchements de la palette. Faits une fois, au chargement : ces trois
+ *  éléments sont dans le balisage, et non construits à l'ouverture. */
+if ($("calageFerme")) $("calageFerme").onclick = fermeCalage;
+if ($("calageGarde")) $("calageGarde").onclick = async () => {
+  const b = $("calageGarde");
+  b.disabled = true;
+  ditCalage("Enregistrement…");
+  try {
+    await enregistreCalage(ENV_CAL);
+    ditCalage("Les visiteurs voient la carte.");
+  } catch (e) { ditCalage("Échec : " + e.message, true); }
+  b.disabled = false;
+};
+
 /**
  * Le volet « Environs ».
  *
- * Trois gestes, dans l'ordre où on les fait : choisir un fond, coller un point,
- * vérifier que le hall tombe sur son bâtiment. Le dernier est le seul qui
- * demande un œil — et il se fait sur le plan lui-même, la fenêtre se déplaçant
- * pour qu'on voie les rues se ranger derrière.
+ * Ce qui ne demande pas de voir le plan : l'explication, le point qu'on colle,
+ * le retrait. Le réglage, lui, s'ouvre sur le plan — c'est le bouton du bas.
  */
 function voletEnvirons(hote){
   const p = document.createElement("p");
@@ -568,6 +711,12 @@ function voletEnvirons(hote){
     "les parkings, dessinés par ceux dont c'est le métier.";
   hote.appendChild(p);
 
+  const q = document.createElement("p");
+  q.textContent = "Le réglage se fait ensuite sur le plan lui-même, dans une " +
+    "palette posée à côté : on cale en regardant la carte glisser sous le " +
+    "pavillon, et cette fenêtre-ci serait devant.";
+  hote.appendChild(q);
+
   const etat = document.createElement("p");
   etat.className = "envEtat";
   const dit = (txt, mal) => {
@@ -575,30 +724,15 @@ function voletEnvirons(hote){
     etat.classList.toggle("alerte", !!mal);
   };
 
-  /* --- le fond --- */
-  const blocFond = document.createElement("div");
-  blocFond.className = "reglage-nb envFond";
-  blocFond.innerHTML = '<label><span class="l">Fond de carte</span></label>' +
-    '<select><option value="">Aucun</option></select>' +
-    '<span class="aide">Les tuiles sont chargées pendant la visite, et gardées ' +
-    'par le navigateur une fois vues. La page à données figées, qui n\'appelle ' +
-    'rien au dehors, n\'en affichera pas.</span>';
-  const selFond = blocFond.querySelector("select");
-  for (const k of Object.keys(CARTES)){
-    const o = document.createElement("option");
-    o.value = k; o.textContent = CARTES[k].nom;
-    selFond.appendChild(o);
-  }
-  hote.appendChild(blocFond);
-
-  /* --- le point --- */
   const bloc = document.createElement("div");
   bloc.className = "reglage-nb envCoord";
   bloc.innerHTML = '<label><span class="l">Coordonnées du centre du salon</span></label>' +
     '<input type="text" inputmode="decimal" placeholder="48.830212, 2.287851">' +
     '<span class="aide">Sur n\'importe quelle carte, clic droit au milieu du ' +
     'bâtiment puis « copier les coordonnées ». À peu près suffit : ' +
-    'l\'accrochage au bâtiment fait le reste.</span>';
+    'l\'accrochage au bâtiment fait le reste. Les tuiles sont chargées pendant ' +
+    'la visite et gardées par le navigateur une fois vues ; la page à données ' +
+    'figées, qui n\'appelle rien au dehors, n\'en affichera pas.</span>';
   const champ = bloc.querySelector("input");
   hote.appendChild(bloc);
 
@@ -608,140 +742,59 @@ function voletEnvirons(hote){
   bSitue.type = "button";
   bSitue.className = "btn";
   bSitue.textContent = "Situer le salon";
-  acts.appendChild(bSitue);
-  hote.appendChild(acts);
-  hote.appendChild(etat);
-
-  /* --- le réglage fin --- */
-  const reglage = document.createElement("div");
-  reglage.className = "reglage-nb envRot";
-  reglage.innerHTML = '<label><span class="l">Rotation</span>' +
-    '<input type="number" step="0.5"><span class="u">°</span></label>' +
-    '<div class="acts"><button type="button" class="btn bBati"></button>' +
-    '<button type="button" class="btn bQuart">Quart de tour</button></div>' +
-    '<span class="aide">Le pavillon est cartographié comme n\'importe quel ' +
-    'bâtiment : le calage s\'accroche au sien. S\'il a visé le voisin, passez au ' +
-    'suivant ; s\'il est retourné, donnez-lui un quart de tour. Les flèches ' +
-    'décalent de cinq mètres.</span>';
-  const nRot = reglage.querySelector("input");
-  const bBati = reglage.querySelector(".bBati");
-  const bQuart = reglage.querySelector(".bQuart");
-  hote.appendChild(reglage);
-
-  const dec = document.createElement("div");
-  dec.className = "reglage-nb envDec";
-  dec.innerHTML = '<label><span class="l">Décalage</span></label><div class="acts"></div>';
-  [["Ouest", -5, 0], ["Est", 5, 0], ["Nord", 0, 5], ["Sud", 0, -5]].forEach(([nom, de, dn]) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "btn";
-    b.textContent = nom;
-    b.onclick = () => {
-      const [dx, dy] = tourneEnvirons(de, dn, ENV_CAL.angle);
-      ENV_CAL.x += dx; ENV_CAL.y += dy;
-      rafraichitCarte();
-    };
-    dec.querySelector(".acts").appendChild(b);
-  });
-  hote.appendChild(dec);
-
-  const finales = document.createElement("div");
-  finales.className = "acts envFin";
-  const bGarde = document.createElement("button");
-  bGarde.type = "button";
-  bGarde.className = "btn";
-  bGarde.textContent = "Enregistrer pour tous";
+  const bRegle = document.createElement("button");
+  bRegle.type = "button";
+  bRegle.className = "btn";
+  bRegle.textContent = "Régler sur le plan";
   const bEfface = document.createElement("button");
   bEfface.type = "button";
   bEfface.className = "btn danger";
   bEfface.textContent = "Retirer la carte";
-  finales.appendChild(bGarde);
-  finales.appendChild(bEfface);
-  hote.appendChild(finales);
+  acts.appendChild(bSitue);
+  acts.appendChild(bRegle);
+  acts.appendChild(bEfface);
+  hote.appendChild(acts);
+  hote.appendChild(etat);
 
-  /* Le réglage fin ne paraît qu'une fois un point posé : tourner ce qui n'est
-     nulle part ne veut rien dire, et un champ sans effet fait douter de tous
-     les autres. */
   const maj = () => {
-    reglage.hidden = dec.hidden = !ENV_CAL;
-    bGarde.hidden = !ENV_CAL;
+    bRegle.hidden = !ENV_CAL;
     bEfface.hidden = !(DATA && DATA.calage);
-    finales.hidden = bGarde.hidden && bEfface.hidden;
-    bBati.hidden = !ENV_BATIS.length;
-    bBati.textContent = "Bâtiment suivant (" + (ENV_BATI + 1) + "/" + ENV_BATIS.length + ")";
-    if (ENV_CAL) nRot.value = Math.round(ENV_CAL.angle / DEG * 10) / 10;
-  };
-
-  const tourne = (a) => {
-    ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
-    ENV_CAL.angle = a;
-    rafraichitCarte();
-    maj();
-  };
-  nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourne(v * DEG); };
-  bQuart.onclick = () => tourne(ENV_CAL.angle + Math.PI / 2);
-  bBati.onclick = () => {
-    if (!ENV_BATIS.length) return;
-    ENV_BATI = (ENV_BATI + 1) % ENV_BATIS.length;
-    caleSurBatiment(ENV_BATIS[ENV_BATI], P());
-    rafraichitCarte();
-    maj();
-  };
-
-  selFond.onchange = () => {
-    if (ENV_CAL) ENV_CAL.fond = selFond.value || undefined;
-    else if (DATA && DATA.calage) DATA.calage.fond = selFond.value || undefined;
-    rafraichitCarte();
-    /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
-       limite change sans que rien ne le montre. */
-    if (typeof poseVue === "function") poseVue();
   };
 
   bSitue.onclick = async () => {
     const ll = litCoordonnees(champ.value);
     if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
     const centre = centreDesPavillons();
-    ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0,
-                fond: selFond.value || undefined };
-    /* La carte d'abord : elle paraît sans attendre le réseau d'Overpass, et
-       l'on voit déjà si l'on est au bon endroit du monde. */
-    rafraichitCarte();
-    maj();
+    const fond = ENV_CAL && ENV_CAL.fond ? ENV_CAL.fond : "plan";
+    ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond };
     const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
     if (!bbox) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
     bSitue.disabled = true;
     dit("Recherche du bâtiment…");
+    /* La palette s'ouvre avant la réponse d'Overpass : la carte est déjà
+       posée, et l'on voit sans attendre si l'on est au bon endroit du monde. */
+    ouvreCalage();
+    appliqueCalage();
     try {
       ENV_BATIS = batimentsCandidats(await chercheBatiments(bbox), ENV_CAL, P());
       ENV_BATI = 0;
       if (ENV_BATIS.length){
         caleSurBatiment(ENV_BATIS[0], P());
-        rafraichitCarte();
-        dit("Calé sur un bâtiment de " + Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") +
-            " m². Vérifiez qu'il tombe en face, puis enregistrez.");
+        appliqueCalage();
+        ditCalage("Calé sur un bâtiment de " +
+          Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") + " m².");
       } else {
-        dit("Aucun bâtiment à la bonne taille ici : tournez à la main, la carte " +
-            "est déjà en place.");
+        ditCalage("Aucun bâtiment à la bonne taille ici : tournez à la main.");
       }
     } catch (e) {
-      dit("Le bâtiment n'a pas pu être cherché (" + e.message +
-          ") — la carte est posée, tournez à la main.", true);
+      ditCalage("Bâtiment non cherché (" + e.message + ") : tournez à la main.", true);
     }
     bSitue.disabled = false;
+    majCalage();
     maj();
-    if (_tuilesMuettes) dit("Les tuiles du fond ne répondent pas : essayez un autre fond.", true);
   };
 
-  bGarde.onclick = async () => {
-    bGarde.disabled = true;
-    dit("Enregistrement…");
-    try {
-      await enregistreCalage(ENV_CAL);
-      dit("Les visiteurs voient la carte.");
-    } catch (e) { dit("Échec : " + e.message, true); }
-    bGarde.disabled = false;
-    maj();
-  };
+  bRegle.onclick = () => { ouvreCalage(); appliqueCalage(); };
 
   bEfface.onclick = async () => {
     bEfface.disabled = true;
@@ -749,7 +802,8 @@ function voletEnvirons(hote){
     try {
       await enregistreCalage(null);
       ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
-      champ.value = ""; selFond.value = "";
+      champ.value = "";
+      fermeCalage();
       rafraichitCarte();
       if (typeof poseVue === "function") poseVue();
       dit("La carte est retirée.");
@@ -763,14 +817,12 @@ function voletEnvirons(hote){
   const pose = calageCourant();
   if (pose){
     champ.value = pose.lat.toFixed(6) + ", " + pose.lon.toFixed(6);
-    selFond.value = pose.fond && CARTES[pose.fond] ? pose.fond : "";
     ENV_CAL = Object.assign({}, pose);
   }
   maj();
   calageEnregistre().then(cal => {
     if (!cal || ENV_CAL) return;
     champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
-    selFond.value = cal.fond && CARTES[cal.fond] ? cal.fond : "";
     ENV_CAL = cal;
     rafraichitCarte();
     maj();
