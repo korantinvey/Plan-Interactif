@@ -21445,7 +21445,113 @@ const TOUR_MERCATOR = 40075016.686;
 const GEOPF = "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0" +
   "&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM" +
   "&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
+/* ------------------------------------------------------------
+   Notre style de carte
+
+   Après avoir visé trois adresses de style et manqué les trois, on cesse de
+   deviner : un style MapLibre n'est qu'un objet, et le moteur en prend un
+   aussi bien qu'une adresse. Celui-ci est écrit ici, une quinzaine de couches
+   au lieu des trois cents d'un style du commerce — un fond de salon situe, il
+   ne raconte pas le quartier — et il ne dépend plus que du serveur de tuiles.
+
+   Le schéma est « shortbread », et les noms de couches comme les valeurs
+   d'attributs ci-dessous ont été relevés dans le paquet `@versatiles/style`
+   plutôt que supposés. Les tuiles s'arrêtent au niveau 14 et se regardent de
+   plus près par sur-zoom : c'est la limite du service, pas la nôtre.
+   ------------------------------------------------------------ */
+
+const TUILES_VT = "https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}";
+const GLYPHES_VT = "https://tiles.versatiles.org/assets/glyphs/{fontstack}/{range}.pbf";
+const CREDIT_VT = "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles";
+
+/* Deux jeux de tons, clair et sombre. Pâles des deux côtés : ce fond passe
+   sous des stands, et doit se laisser oublier. */
+const TONS_CARTE = {
+  clair: { sol: "#F3F3EF", eau: "#CBDDE6", vert: "#E4EBDC", bati: "#E6E6E0",
+           voie: "#FFFFFF", bord: "#DEDED6", ruelle: "#FAFAF6",
+           encre: "#6E7478", halo: "rgba(255,255,255,.85)" },
+  sombre: { sol: "#11161A", eau: "#17262E", vert: "#182119", bati: "#1C2226",
+            voie: "#2B3339", bord: "#222A2F", ruelle: "#222930",
+            encre: "#8C9498", halo: "rgba(14,17,19,.85)" },
+};
+
+/* Les classes de voies qui méritent un trait large. Le reste passe en ruelle :
+   à l'échelle d'un salon, la hiérarchie fine d'OpenStreetMap n'apprend rien. */
+const GRANDES_VOIES = ["motorway", "trunk", "primary", "secondary", "tertiary"];
+
+/**
+ * Le style, tel que le moteur le prend — un objet, pas une adresse.
+ *
+ * Onze couches et trois kilo-octets, contre deux cents et soixante-quinze pour
+ * le plus sobre des styles du commerce : c'est la simplification qu'on
+ * cherchait, et elle tient à ce qu'on écarte, non à ce qu'on ajoute.
+ *
+ * Vérifié par le validateur officiel de la spécification, qui se relit sans
+ * navigateur :
+ *   npm i --no-save @maplibre/maplibre-gl-style-spec
+ *   node -e "…validateStyleMin(styleSobre(false))…"
+ */
+function styleSobre(sombre){
+  const t = TONS_CARTE[sombre ? "sombre" : "clair"];
+  const large = (a, b, c) => ["interpolate", ["exponential", 1.6], ["zoom"],
+                              10, a, 14, b, 18, c];
+  const couche = (id, source, type, peinture, extra) => Object.assign(
+    { id: id, type: type, source: "vt", "source-layer": source, paint: peinture }, extra || {});
+  return {
+    version: 8,
+    glyphs: GLYPHES_VT,
+    sources: { vt: { type: "vector", tiles: [TUILES_VT], maxzoom: 14,
+                     attribution: CREDIT_VT } },
+    layers: [
+      { id: "sol", type: "background", paint: { "background-color": t.sol } },
+      couche("vert", "land", "fill", { "fill-color": t.vert }, {
+        filter: ["match", ["get", "kind"],
+          ["park", "garden", "forest", "grass", "village_green", "recreation_ground",
+           "cemetery", "allotments", "meadow", "orchard", "farmland"], true, false] }),
+      couche("eau", "water_polygons", "fill", { "fill-color": t.eau }),
+      couche("ocean", "ocean", "fill", { "fill-color": t.eau }),
+      couche("esplanades", "street_polygons", "fill",
+             { "fill-color": t.ruelle, "fill-outline-color": t.bord }),
+      /* Les ruelles d'abord, les grandes voies par-dessus : un carrefour se lit
+         mal quand la petite rue passe sur l'avenue. */
+      couche("ruelles", "streets", "line",
+             { "line-color": t.ruelle, "line-width": large(0.4, 1.4, 6) }, {
+        filter: ["!", ["match", ["get", "kind"], GRANDES_VOIES, true, false]],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("voies-bord", "streets", "line",
+             { "line-color": t.bord, "line-width": large(1.6, 4.4, 17) }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("voies", "streets", "line",
+             { "line-color": t.voie, "line-width": large(1, 3.2, 14) }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("bati", "buildings", "fill",
+             { "fill-color": t.bati, "fill-opacity": ["interpolate", ["linear"], ["zoom"],
+                                                     13, 0, 15, 1] }),
+      /* Les libellés, et toute la raison d'être du vectoriel : le moteur les
+         repose droits à chaque changement d'orientation, là où un texte cuit
+         dans une image tourne avec le plan et se lit à l'envers. */
+      couche("nomsRues", "street_labels", "symbol",
+             { "text-color": t.encre, "text-halo-color": t.halo, "text-halo-width": 1.2 }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "text-field": ["get", "name"], "text-font": ["noto_sans_regular"],
+                  "symbol-placement": "line", "text-size": 11, "text-letter-spacing": .02 } }),
+      couche("nomsLieux", "place_labels", "symbol",
+             { "text-color": t.encre, "text-halo-color": t.halo, "text-halo-width": 1.4 }, {
+        filter: ["match", ["get", "kind"],
+          ["city", "town", "village", "suburb", "quarter", "neighbourhood"], true, false],
+        layout: { "text-field": ["get", "name"], "text-font": ["noto_sans_bold"],
+                  "text-size": ["match", ["get", "kind"], ["city", "town"], 14, 11.5] } }),
+    ],
+  };
+}
+
 const CARTES = {
+  /* Le nôtre d'abord : aucune adresse de style à deviner, et deux fois moins
+     de couches qu'un style du commerce. */
+  maison: { nom: "Sobre (notre style)", objet: () => styleSobre(false), credit: CREDIT_VT },
+  maisonSombre: { nom: "Sobre sombre (notre style)", objet: () => styleSobre(true), credit: CREDIT_VT },
   /* Les fonds vectoriels d'abord, et pour une raison qui n'a rien d'esthétique :
      eux seuls gardent les libellés droits. Un plan de salon se dessine l'entrée
      vers le bas, presque jamais le nord en haut ; la carte tourne donc avec
@@ -21734,15 +21840,19 @@ function guetteLaCarte(style){
 function poseCarteGL(cal, fond){
   const hote = $("fondCarteGL");
   if (!hote || _echecGL) return;
-  const style = styleDuFond(cal, fond);
+  /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
+     adresse. L'empreinte sert à savoir si le style a changé — un objet n'a pas
+     d'adresse à comparer, on prend le nom du fond. */
+  const style = (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
+  const sig = (cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style);
   if (!style) return;
   hote.hidden = false;
   if (_carteGL){
-    if (_styleGL !== style){
-      _styleGL = style;
+    if (_styleGL !== sig){
+      _styleGL = sig;
       _ditGL = "";
       ditCarte("Chargement de la carte…");
-      guetteLaCarte(style);
+      guetteLaCarte(sig);
       _carteGL.setStyle(style);
     }
     _carteGL.jumpTo(vueGL(cal));
@@ -21754,11 +21864,11 @@ function poseCarteGL(cal, fond){
   _monteGL = true;
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
-  ditCarte("Chargement de la carte… " + style.replace(/^https?:\/\//, "").slice(0, 48));
-  guetteLaCarte(style);
+  ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
+  guetteLaCarte(sig);
   chargeMapLibre().then(gl => {
     const v = vueGL(cal);
-    _styleGL = style;
+    _styleGL = sig;
     _carteGL = new gl.Map({
       container: hote, style: style,
       center: v.center, zoom: v.zoom, bearing: v.bearing,
@@ -21862,7 +21972,7 @@ function dessineFondCarte(){
   if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
-  if (fond.style){
+  if (fond.style || fond.objet){
     if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
     poseCarteGL(cal, fond);
     return;
