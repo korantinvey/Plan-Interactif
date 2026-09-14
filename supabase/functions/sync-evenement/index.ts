@@ -472,6 +472,12 @@ Deno.serve(async (req) => {
        celles de ses valeurs qui déclenchent. */
     const valeursEm = Object.fromEntries(
       ciblesEm.map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
+    /* Les catégories d'invités que l'exploitant tient pour celles des
+       exposants. Vide, la détection reprend la main — c'est l'état de tous les
+       salons réglés avant que ce choix existe. */
+    const categoriesEm = ([] as unknown[])
+      .concat((evt.correspondances as any)?.eventmaker?.categories ?? [])
+      .map((c) => String(c ?? "").trim()).filter(Boolean);
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
@@ -503,6 +509,11 @@ Deno.serve(async (req) => {
        serait absurde d'aller les redemander alors qu'on vient de lire les
        fiches où ils se trouvent. */
     let detectes: Record<string, unknown>[] = [];
+    /* Les catégories d'invités de l'événement, toutes, et celles qui ont été
+       retenues. La console les offre à cocher : sans elles, l'exploitant ne
+       peut désigner celle de ses exposants qu'en la devinant. */
+    let catalogueEm: { id: string; nom: string }[] = [];
+    let retenuesEm: string[] = [];
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
     // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
     if (srcStands === "eventmaker") {
@@ -649,7 +660,8 @@ Deno.serve(async (req) => {
         avance("exposants", 0, null, "Recherche des catégories d'invités");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
-          champs: champsEm, valeurs: valeursEm, perso: persos });
+          champs: champsEm, valeurs: valeursEm, perso: persos,
+          categories: categoriesEm });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -674,6 +686,8 @@ Deno.serve(async (req) => {
           tousParStand: r.tousParStand,
         };
         detectes = r.champs;
+        catalogueEm = r.catalogue;
+        retenuesEm = r.categoriesIds;
         resumeEm = {
           categories: r.categories,
           voie: r.voie,
@@ -718,6 +732,7 @@ Deno.serve(async (req) => {
           const detail = await new Eventmaker({
             jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
             champs: champsEm, valeurs: valeursEm, perso: persos,
+            categories: categoriesEm,
           }).evenement(idEvtEm);
           await db.from("evenement")
             .update({ fuseau_source: detail?.timezone ? String(detail.timezone) : null })
@@ -731,6 +746,7 @@ Deno.serve(async (req) => {
           const em = new Eventmaker({
             jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
             champs: champsEm, valeurs: valeursEm, perso: persos,
+            categories: categoriesEm,
           });
           Object.assign(libellesEn, await em.listesEnAnglais(idEvtEm));
         } catch (e) {
@@ -749,7 +765,8 @@ Deno.serve(async (req) => {
         avance("conferences", 0, null, "Lecture du programme");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
-          champs: champsEm, valeurs: valeursEm, perso: persos });
+          champs: champsEm, valeurs: valeursEm, perso: persos,
+          categories: categoriesEm });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         pese("conferences", confEm.length || 1);
@@ -1351,6 +1368,12 @@ Deno.serve(async (req) => {
         corr[srcStands] = {
           ...(corr[srcStands] ?? {}),
           detectes, defauts, propose,
+          /* Le catalogue et ce qui a été retenu, mais jamais `categories` :
+             celui-là est le choix de l'exploitant, et la synchronisation
+             n'écrit que ce qu'elle a vu. */
+          ...(catalogueEm.length
+            ? { catalogue: catalogueEm, retenues: retenuesEm }
+            : {}),
           detecteLe: new Date().toISOString(),
         };
         await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);

@@ -1694,6 +1694,11 @@ function ouvreFiche(apres) {
         "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
       corps.appendChild(p);
     } else {
+      /* Avant les champs, les fiches : désigner un champ d'origine ne sert à
+         rien tant qu'on lit les mauvaises fiches. Le cadre vient donc en
+         premier, et il n'existe que pour Eventmaker — Klipso range ses
+         exposants par dossier, pas par catégorie d'invités. */
+      if (src === "eventmaker") corps.appendChild(cadreCategories(src));
       CADRES_FICHE.forEach((def) => {
         const duCadre = lignes().filter((l) => (l.groupe || "exposant") === def.cle);
         /* Le rattachement rejoint le cadre de l'exposant : ces champs sont lus
@@ -1776,6 +1781,105 @@ function ouvreFiche(apres) {
       "description, lien, programme — s'y règle aussi : engrenage, « Zones ».";
     corps.appendChild(ou);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Les catégories d'invités qui portent les exposants.
+ *
+ * Eventmaker range toutes ses fiches — visiteurs, intervenants, organisateurs,
+ * exposants — dans les mêmes catégories, nommées librement par l'organisateur.
+ * La synchronisation devinait laquelle est celle des exposants en cherchant
+ * qui porte un numéro de stand ; elle se trompait de deux façons, et le cadre
+ * répond aux deux.
+ *
+ * Elle retient une catégorie entière dès qu'une seule de ses fiches porte un
+ * numéro : « EXPOSANT (raison sociale) » de Moove On mêle 51 sociétés et 36
+ * personnes, et c'est le champ d'une personne que la console proposait. Et
+ * elle ne voit pas une catégorie d'exposants dont aucune fiche ne porte encore
+ * de numéro — au début d'un salon, c'est-à-dire quand on le règle.
+ *
+ * Cocher, c'est donc décider : la synchronisation suivante ne lit plus que
+ * ces catégories-là, sans les sonder. Tout décocher rend la main à la
+ * détection, qui reste le bon réglage pour un salon qui n'a jamais posé de
+ * problème.
+ */
+function cadreCategories(src) {
+  const e = courant();
+  const bloc = correspondance(e, src);
+  const catalogue = bloc.catalogue || [];
+  const detectees = bloc.retenues || [];
+  // le choix vit à côté du relevé, comme les champs : c'est le même réglage
+  const choisies = [].concat(bloc.categories || []).map(String);
+
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+
+  const note = document.createElement("p");
+  note.className = "aide";
+
+  const AUTO = "Aucune catégorie désignée : la synchronisation cherche " +
+    "elle-même celles dont les fiches portent un numéro de stand";
+  const dis = () => {
+    note.textContent = choisies.length > 1
+      ? choisies.length + " catégories désignées : la synchronisation ne lira " +
+        "que leurs fiches."
+      : choisies.length
+      ? "1 catégorie désignée : la synchronisation ne lira que ses fiches."
+      : !catalogue.length
+      ? "Les catégories se relèvent à la synchronisation : lancez-en une pour " +
+        "qu'elles soient proposées ici."
+      : detectees.length
+      ? AUTO + ", et la dernière en a retenu " + detectees.length + "."
+      : AUTO + ", et la dernière n'en a retenu aucune.";
+  };
+
+  const enregistre = async () => {
+    const e2 = courant();
+    const avant = e2.correspondances;
+    const corr = { ...(e2.correspondances || {}) };
+    const part = { ...(corr[src] || {}) };
+    if (choisies.length) part.categories = [...choisies];
+    else delete part.categories;
+    corr[src] = part;
+    e2.correspondances = corr;
+    try { await majEvenement(e2.id, { correspondances: corr }); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  };
+
+  catalogue.forEach((c) => {
+    const id = String(c.id);
+    const l = document.createElement("label");
+    l.className = "puce";
+    /* Celle que la dernière synchronisation avait retenue d'elle-même se
+       signale : c'est la réponse à « laquelle, déjà ? » sur un salon dont on
+       ne connaît pas la nomenclature interne. */
+    const auto = detectees.indexOf(id) >= 0;
+    if (!auto) l.dataset.hors = "1";
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = c.nom || id;
+    l.title = auto ? "des fiches de cette catégorie portent un numéro de stand"
+      : "aucune fiche de cette catégorie ne portait de numéro de stand";
+    const i = l.querySelector("input");
+    i.checked = choisies.indexOf(id) >= 0;
+    i.onchange = () => {
+      const k = choisies.indexOf(id);
+      if (i.checked && k < 0) choisies.push(id);
+      if (!i.checked && k >= 0) choisies.splice(k, 1);
+      enregistre();
+      dis();
+    };
+    zone.appendChild(l);
+  });
+
+  dis();
+  return cadreFiche(
+    { titre: "Catégories d'invités", domaine: "stands",
+      aide: "Les fiches que la synchronisation lit. Une catégorie Eventmaker " +
+        "mêle souvent les sociétés et les personnes qui les représentent : " +
+        "cochez celles qui portent les exposants, et rien d'autre n'est lu. " +
+        "Tout décocher rend la main à la détection automatique. Le réglage " +
+        "prend effet à la synchronisation suivante." },
+    [catalogue.length ? zone : null, note]);
 }
 
 const sousTitre = (txt) => {
