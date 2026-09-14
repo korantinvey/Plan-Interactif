@@ -3407,6 +3407,90 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
   font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .alerte-enr button:hover{background:rgba(255,255,255,.16)}
+
+/* ------------------------------------------------------------
+   La visite guidée
+   Une bulle qui dit quoi toucher, et un repère sur ce qu'il faut toucher. Les
+   deux passent devant tout — tiroirs et fenêtre compris, puisqu'une étape se
+   joue dans celle de la journée — sans prendre aucun clic hors de la bulle :
+   c'est la page qu'on manipule. Un voile posé dessus en aurait fait une
+   démonstration, qu'on regarde au lieu de la faire.
+   ------------------------------------------------------------ */
+/* Placée par « transform » et non par « left » et « top » : elle change de
+   coin quand ce qu'elle désigne passe dessous, et le glissement se délègue au
+   compositeur au lieu de remettre la page en forme à chaque image. */
+.tuto{position:fixed;left:0;top:0;z-index:41;width:min(340px,calc(100vw - 24px));
+  display:flex;flex-direction:column;gap:5px;padding:11px 14px 12px;
+  background-color:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+  box-shadow:0 24px 60px -18px rgba(0,0,0,.5);
+  transition:transform .28s cubic-bezier(.32,.72,0,1);will-change:transform;
+  animation:tutoParait .2s ease-out}
+@keyframes tutoParait{from{opacity:0}to{opacity:1}}
+/* Tout ce qui ne change pas d'une étape à l'autre tient sur la ligne du haut —
+   la progression, « Passer », la croix — et le pied n'existe que pour
+   « Suivant ». Sur un téléphone, chaque ligne de la bulle est une ligne de plan
+   en moins, précisément là où l'on demande de toucher. */
+.tutoTete{display:flex;align-items:center;gap:10px;min-height:22px}
+.tutoTete .eyebrow{flex:none;color:var(--accent)}
+/* Un point par chapitre : on voit ce qui reste sans lire de chiffre. */
+.tutoPoints{display:flex;align-items:center;gap:4px;margin-right:auto}
+.tutoPoints i{width:6px;height:6px;border-radius:999px;background:var(--line-strong)}
+.tutoPoints i.fait{background:color-mix(in srgb,var(--accent) 45%,var(--line-strong))}
+.tutoPoints i.ici{width:16px;background:var(--accent)}
+.tutoPasse{flex:none;padding:3px 2px;font-size:12px;color:var(--ink-3);
+  text-decoration:underline;text-underline-offset:3px}
+.tutoPasse:hover{color:var(--ink)}
+.tutoQuitte{flex:none;width:28px;height:28px;margin:-6px -8px -6px -6px;display:grid;
+  place-items:center;font-size:19px;line-height:1;color:var(--ink-3);border-radius:var(--radius)}
+.tutoQuitte:hover{color:var(--ink);background:var(--surface-2)}
+.tuto h2{margin:0;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.tuto p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.tutoPied{display:flex;justify-content:flex-end;margin-top:6px}
+.tutoSuite{padding:7px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:600;
+  background:var(--accent);border:1px solid var(--accent);color:var(--accent-ink)}
+.tutoSuite:hover{filter:brightness(1.08)}
+/* Le repère bat par son opacité, seule animée : c'est la seule propriété, avec
+   « transform », que le compositeur tient sans rien repeindre — une ombre qui
+   s'étire aurait repeint la barre du haut à chaque image, et avec elle le plan
+   qui partage sa couche. */
+.tutoRepere{position:fixed;left:0;top:0;z-index:40;pointer-events:none;
+  border:2px solid var(--accent);border-radius:9px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 24%,transparent),
+    0 0 22px 2px color-mix(in srgb,var(--accent) 42%,transparent);
+  animation:tutoBat 1.5s ease-in-out infinite}
+@keyframes tutoBat{0%,100%{opacity:1}50%{opacity:.4}}
+/* Sur le plan, la zone à toucher est recopiée au-dessus des couches, comme la
+   sélection dans « #marques » : tracé sur la zone elle-même, son contour
+   passerait sous les stands voisins. Elle ne prend aucun clic — c'est la zone,
+   dessous, qu'on touche. */
+#tutoZone{pointer-events:none;animation:tutoBat 1.5s ease-in-out infinite}
+#tutoZone path{vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#tutoZone .halo{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);
+  stroke-width:10;stroke-opacity:.22}
+#tutoZone .trait{fill:none;stroke:var(--accent);stroke-width:3}
+/* Ce que la visite parcourra, dans la fenêtre qui la propose. */
+.mcorps ul.tutoListe{margin:12px 0 4px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ul.tutoListe li{display:flex;align-items:baseline;gap:10px;font-size:13px;
+  line-height:1.45;color:var(--ink-2)}
+.mcorps ul.tutoListe .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ul.tutoListe b{color:var(--ink);font-weight:600}
+/* « Essayer », dans l'aide de la case des réglages : un lien plutôt qu'un
+   bouton plein, la case reste ce qu'on règle. */
+.reglages .aideR .essaiTuto{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
+@media (max-width:900px){
+  .tuto{width:min(420px,calc(100vw - 20px));padding:10px 13px 11px}
+  .tuto p{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tuto{transition:none;animation:none}
+  .tutoRepere,#tutoZone{animation:none}
+}
 </style>
 
 <div class="app">
@@ -8469,6 +8553,9 @@ function voletPlan(hote){
 
   const bloc = document.createElement("div");
   bloc.className = "reglages";
+  /* La visite guidée fait le tour des commandes qu'on coche ici : son aide dit
+     lesquelles, et se refait à chaque case touchée. */
+  let majTuto = () => {};
   COMMANDES.forEach(cmd => {
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
@@ -8480,9 +8567,49 @@ function voletPlan(hote){
       enregistreConf(); appliqueCommandes();
       // la couleur du parcours vit dans la pile : elle suit le réglage
       if (ADMIN) construitPanneau();
+      majTuto();
     };
     bloc.appendChild(l);
   });
+
+  /* La visite guidée se propose d'elle-même à la première ouverture. C'est une
+     fenêtre de plus devant le plan, et tous les salons n'en veulent pas : d'où
+     la case, et de quoi l'essayer d'ici — l'exploitant ne la verrait jamais
+     autrement, l'administration ne la proposant pas. Éteinte plutôt que
+     décochée sur un salon qui n'a rien à présenter, comme les sortes de la
+     recherche : le choix fait vaudra le jour où quelque chose l'alimentera. */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = "Proposer la visite guidée au premier démarrage";
+    const c = l.querySelector("input");
+    c.checked = tutoPropose();
+    c.onchange = e => { reglageTuto().visible = e.target.checked; enregistreConf(); };
+    bloc.appendChild(l);
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    bloc.appendChild(aide);
+    majTuto = () => {
+      const noms = chapitresTuto().map(ch => ch.nom);
+      l.classList.toggle("eteint", !noms.length);
+      c.disabled = !noms.length;
+      if (!noms.length){
+        aide.textContent = "Rien à présenter sur ce salon : ni programme rattaché à " +
+          "une zone, ni parcours de visite, ni itinéraire.";
+        return;
+      }
+      aide.textContent = "Le visiteur y fait lui-même chaque geste : " +
+        (noms.length > 1 ? noms.slice(0, -1).join(", ") + " et " : "") +
+        noms[noms.length - 1] + ". Proposée une fois par appareil. ";
+      const essai = document.createElement("button");
+      essai.type = "button";
+      essai.className = "essaiTuto";
+      essai.textContent = "Essayer";
+      essai.onclick = () => { fermeModale(); lanceTutoriel(); };
+      aide.appendChild(essai);
+    };
+    majTuto();
+  }
 
   /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
      retirent une commande du plan, celui-ci change ce que le plan donne à
@@ -21156,6 +21283,730 @@ function voletSuggestion(hote){
   dessine();
 }
 /* ============================================================
+   16. La visite guidée — le tour du plan, geste par geste
+   ============================================================ */
+/**
+ * Un visiteur ouvre le plan et voit un hall : cinq cents stands et une barre
+ * d'icônes. Ce qui fait du plan autre chose qu'une affiche — le programme d'une
+ * salle, le chemin jusqu'à elle, la liste qu'on se compose, la journée qu'on en
+ * tire — attend derrière ces icônes, et personne ne les essaie une à une.
+ *
+ * Une démonstration qui se déroule seule ne l'apprend pas : on la regarde, puis
+ * on l'oublie. La visite fait donc faire. Elle montre où toucher et attend qu'on
+ * l'ait fait, sur le vrai plan : la conférence retenue en chemin est dans le
+ * parcours, la journée organisée aussi. Rien n'est simulé, rien n'est à défaire
+ * en sortant.
+ *
+ * Rien n'y est choisi à la place du visiteur non plus : c'est lui qui désigne
+ * le stand qu'il retient et la conférence qu'il garde. Un exposant imposé par la
+ * visite aurait vu ses chiffres gonfler dans le rapport, un nouveau visiteur
+ * après l'autre. Seule la zone est montrée du doigt — une zone organisateur
+ * n'est pas un exposant, et ne se compte pas.
+ *
+ * Elle ne présente que ce que ce salon offre. Chaque chapitre vérifie que sa
+ * fonction est là — un programme rattaché à une zone, un parcours ou un
+ * itinéraire que l'exploitant n'a pas retirés — et se tait sinon : montrer un
+ * bouton absent ferait chercher ce qui n'existe pas.
+ */
+
+/* Le temps de voir le plan avant qu'on propose d'en faire le tour. Proposée
+   d'emblée, la fenêtre recouvre ce qu'on vient d'ouvrir : on la ferme pour voir
+   ce qu'elle cache, sans l'avoir lue. */
+const TUTO_DELAI = 1000;
+
+/* L'état de la page se relit à ce rythme, en plus de chaque geste : un trajet ou
+   une journée aboutissent un temps mort après le clic (voir « relance » et
+   « lanceJournee »), sans qu'aucun geste ne le signale. */
+const TUTO_POULS = 250;
+
+/* Le repère suit ce qu'il désigne image par image, le temps qu'un tiroir
+   finisse de glisser ou qu'une fiche finisse de s'ouvrir. Au-delà, le pouls
+   suffit : ce qu'on désigne ne bouge plus. */
+const TUTO_RAFALE = 650;
+
+/* Ce qui défile dans les tiroirs et les fenêtres. */
+const TUTO_DEFILE = ".detail-bd, .pCorps, .iCorps, .mcorps";
+
+/* La visite en cours, ou rien. */
+let TUTO = null;
+
+/* ------------------------------------------------------------
+   Le réglage, et la première ouverture
+   ------------------------------------------------------------ */
+const reglageTuto = () => conf("_tutoriel");
+
+/**
+ * Proposée tant que l'exploitant ne l'a pas éteinte. C'est à la première
+ * ouverture qu'elle sert, et un salon déjà en ligne a justement tous ses
+ * visiteurs devant lui. Celui qui ne veut pas d'une fenêtre de plus devant son
+ * plan — un salon d'habitués, qui reviennent chaque année — la retire dans
+ * l'onglet « Plan » des réglages.
+ */
+const tutoPropose = () => reglageTuto().visible !== false;
+
+/* Une clé par salon, comme le parcours : un même téléphone ouvre plusieurs
+   salons, et ce qu'on a vu de l'un ne dit rien de ce que l'autre propose. */
+const cleTuto = () => "plan-tutoriel:" + (SLUG || (DATA && DATA.evenement) || "");
+
+const tutoOuvert = (id) => { const e = $(id); return !!e && e.classList.contains("open"); };
+const tutoModale = () => $("modale").classList.contains("open");
+
+/* Une fiche ouverte, et qui n'est pas en train de se refermer : sur un grand
+   écran elle garde sa classe le temps de se replier, et la consigne parlerait
+   encore de ses boutons pendant qu'ils disparaissent. Le voile, lui, part dès
+   le geste — y compris sur un téléphone, où il n'est pas peint. */
+const tutoFicheOuverte = () => tutoOuvert("detail") && $("voile").classList.contains("on");
+
+/** L'objet dont la fiche est ouverte — une zone, un stand — ou rien. */
+const tutoFiche = () => tutoFicheOuverte() && state.sel ? parId.get(state.sel) || null : null;
+
+const tutoParcours = () => conf("_parcours").visible !== false;
+/* Sans « Path2D », l'itinéraire est retiré de la page (voir la fin de
+   « _itineraire.html ») : la visite n'a rien à en montrer. */
+const tutoItineraire = () =>
+  conf("_itineraire").visible !== false && typeof Path2D !== "undefined";
+
+/**
+ * La zone qu'on fait toucher : une zone qui a un programme, et dont la fiche le
+ * montre. Celle du pavillon qu'on regarde d'abord — en changer n'apprendrait
+ * rien de plus —, puis une zone qui a un nom — « touchez Workshop 1 » se suit
+ * mieux que « touchez la zone en surbrillance » —, puis la plus fournie.
+ */
+function zoneDuTuto(){
+  if (!DATA || !montre("zone", "conferences") || conf("data:zones").visible === false) return null;
+  const l = [];
+  DATA.plans.forEach(p => p.zones.forEach(z => {
+    const n = ((p.parZone && p.parZone.get(z.id)) || []).length;
+    // une zone éteinte n'existe qu'en administration : le visiteur ne la verra pas
+    if (n && !z.masquee) l.push({ z: z, n: n });
+  }));
+  l.sort((a, b) => Number(b.z.p === state.plan) - Number(a.z.p === state.plan) ||
+                   Number(!!b.z.nom) - Number(!!a.z.nom) || b.n - a.n);
+  return l.length ? l[0].z : null;
+}
+
+/* Les espaces de la ponctuation française ne se coupent pas, ni celle qui
+   sépare un nombre de son unité. Dans une bulle de téléphone, le guillemet
+   ouvrant de « Workshop 1 » finissait seul en bout de ligne, et « ≈ » loin de
+   la durée qu'il nuance. */
+const insecable = (t) => String(t)
+  .replace(/« /g, "«\u00a0")
+  .replace(/ ([»:;!?])/g, "\u00a0$1")
+  .replace(/(≈|\d) (?=\d|m\b|min\b|km\b|h\b)/g, "$1\u00a0");
+
+/** Le chemin affiché, dit en une phrase — ou ce qui l'empêche. */
+function phraseTrajetTuto(){
+  const r = ROUTE;
+  if (r.memePoint)
+    return "Départ et arrivée désignent le même endroit : changez l'un des deux, " +
+           "ou passez à la suite.";
+  if (r.panne || r.sansChemin)
+    return "Aucun chemin ne relie ces deux points, et le tiroir dit pourquoi : " +
+           "essayez-en d'autres, ou passez à la suite.";
+  if (r.aucunTrace)
+    return "Ces deux points sont dans deux pavillons : le tiroir dit comment " +
+           "passer de l'un à l'autre.";
+  return "Voici le chemin" + (r.pmr ? " accessible" : "") + " : " +
+    (r.coupe ? "au moins " : "") + ecritDistance(r.m) + ", " +
+    ecritDuree(r.m, r.pmr, r.minutes) + " de marche, tracé sur le plan." +
+    (r.pmr ? "" : " Cochez « Itinéraire accessible » pour éviter les escaliers " +
+                  "et les passages étroits.");
+}
+
+/* ------------------------------------------------------------
+   Les chapitres
+   ------------------------------------------------------------ */
+/**
+ * Chaque chapitre dit où l'on en est d'après ce que la page montre, et non
+ * d'après les étapes déjà franchies.
+ *
+ * Une visite qui compte ses étapes se perd au premier écart : le visiteur
+ * referme la fiche au lieu de toucher le signet, trouve son stand par la liste
+ * plutôt que sur le plan, touche une autre zone que celle qu'on lui montre — et
+ * la bulle continue de parler d'un bouton qui n'est plus à l'écran. Relue dans
+ * l'état de la page, la consigne suit le visiteur où qu'il aille : fiche
+ * refermée, elle redemande de l'ouvrir ; fiche ouverte par un autre chemin,
+ * elle passe à la suite.
+ *
+ * `etape(m)` rend la consigne du moment : son `texte`, ce qu'elle désigne —
+ * `cible`, un élément de la page, ou `zone`, une zone du plan —, `suite` quand
+ * elle se lit plutôt qu'elle ne se fait, et `fini` quand le chapitre a eu lieu.
+ * `m` est la mémoire du chapitre : ce que la page montrait en y entrant, pour
+ * reconnaître ce qui s'est passé depuis.
+ *
+ * `nom` sert à l'aide des réglages, `resume` à la fenêtre qui propose la visite.
+ */
+const CHAPITRES_TUTO = [
+  {
+    cle: "zones",
+    titre: "Le programme des zones",
+    nom: "le programme des zones",
+    resume: "les conférences de chaque espace, heure par heure",
+    actif: () => !!zoneDuTuto(),
+    debut(m){
+      m.zone = zoneDuTuto();
+      m.confs = new Set(PARCOURS.confs);
+      if (!m.zone) return;
+      if (m.zone.p !== state.plan) changePlan(m.zone.p);
+      /* La zone est amenée sous les yeux avant qu'on demande de la toucher :
+         sur le hall entier, elle ne fait que quelques pixels. */
+      centre(m.zone);
+    },
+    etape(m){
+      const z = m.zone;
+      if (!z) return { fini: true };
+      const retient = tutoParcours();
+      // une conférence retenue, d'où qu'on l'ait retenue : le chapitre a eu lieu
+      if (retient && PARCOURS.confs.some(id => !m.confs.has(id))) return { fini: true };
+      /* La conférence elle-même, ouverte depuis le programme : sa fiche porte de
+         quoi la retenir aussi, et c'est là qu'on en est. */
+      const retenir = tutoModale() && $("mCorps").querySelector('.btn.parc[data-mg="conf"]');
+      if (retenir){
+        if (!retient) return { fini: true };
+        return { cle: "conference", cible: retenir,
+          texte: "Touchez « Ajouter à mon parcours » pour retenir cette conférence." };
+      }
+      const o = tutoFiche();
+      if (o && o.kind === "zone" && $("dBody").querySelector(".prog")){
+        /* Le bloc du programme, et non son volet : celui-ci se range en
+           « display: contents », et n'a aucune boîte à encadrer. */
+        return { cle: "programme", cible: $("dBody").querySelector(".prog-bloc"), texte: retient
+          ? "Voici son programme, heure par heure. Touchez le signet à côté d'une " +
+            "conférence pour la retenir dans votre parcours."
+          : "Voici son programme, heure par heure. Touchez une conférence pour lire " +
+            "sa présentation." };
+      }
+      return { cle: "zone", zone: z, texte:
+        "Les espaces de l'organisateur ont leur programme. Touchez " +
+        (z.nom ? "« " + z.nom + " », en surbrillance sur le plan."
+               : "la zone en surbrillance sur le plan.") +
+        (z.p !== state.plan ? " Elle se trouve dans le " + DATA.plans[z.p].libelle + "." : "") };
+    },
+  },
+  {
+    cle: "itineraire",
+    titre: "L'itinéraire",
+    nom: "l'itinéraire",
+    resume: "le chemin d'un point du salon à un autre",
+    actif: () => tutoItineraire(),
+    debut(m){ m.route = ROUTE; },
+    etape(m){
+      const tiroir = tutoOuvert("itineraire");
+      const pret = !!(ROUTE && !attente && ITI.a && ITI.b);
+      /* Un trajet d'avant la visite ne compte pas tant qu'on ne l'a pas rouvert :
+         c'est le geste qu'on vient apprendre, pas son résultat. */
+      if (pret && (ROUTE !== m.route || tiroir)) m.trace = true;
+      // le trajet vu, le visiteur qui referme le tiroir est passé à autre chose
+      if (m.trace && !tiroir && !visee) return { fini: true };
+      if (pret && tiroir) return { cle: "trajet", suite: true, texte: phraseTrajetTuto(),
+        cible: $("iResultat").querySelector(".iBilan") || $("iResultat") };
+      if (tiroir || visee){
+        if (ITI.a && ITI.b) return { cle: "calcul", texte: "Recherche du chemin…" };
+        // la visée éteinte, c'est qu'on a choisi le clavier : le champ se désigne
+        const tape = visee ? "" : ", ou tapez son nom";
+        if (!ITI.a) return { cle: "depart", cible: visee ? null : $("iDepart"), texte:
+          (ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». Touchez maintenant" : "Touchez") +
+          " sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant " +
+          "lequel vous êtes" + tape + "." };
+        return { cle: "arrivee", cible: visee ? null : $("iArrivee"),
+          texte: "Touchez maintenant sur le plan l'endroit où vous allez" + tape + "." };
+      }
+      /* Depuis une fiche, le trajet part avec son arrivée : c'est le chemin qu'on
+         prend quand on vient de lire ce qu'on veut aller voir. */
+      const itin = tutoFicheOuverte() && $("dItin");
+      if (itin && itin.getClientRects().length) return { cle: "fiche", cible: itin,
+        texte: "Pour vous y rendre, touchez « Itinéraire » : l'arrivée sera « " +
+               $("dName").textContent + " »." };
+      return { cle: "bouton", cible: $("btnItineraire"),
+        texte: "Touchez cette icône pour tracer le chemin d'un point du salon à un autre." };
+    },
+  },
+  {
+    cle: "parcours",
+    titre: "Mon parcours de visite",
+    nom: "le parcours de visite",
+    resume: "les exposants et les conférences à ne pas manquer",
+    actif: () => tutoParcours(),
+    debut(m){ m.stands = new Set(PARCOURS.stands); },
+    etape(m){
+      const sig = $("dMarque");
+      /* Une fiche d'exposant, et non celle d'un repère ou d'une zone : seule la
+         première porte le signet en tête. */
+      const surStand = !!tutoFiche() && !sig.hidden && sig.dataset.mg === "stand";
+      if (PARCOURS.stands.some(id => !m.stands.has(id)) ||
+          (surStand && dansParcours("stand", sig.dataset.mi))) m.retenu = true;
+      if (m.retenu && tutoOuvert("parcours")) return { fini: true };
+      if (m.retenu) return { cle: "liste", cible: $("btnParcours"),
+        texte: "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour " +
+               "retrouver ce que vous avez retenu." };
+      // un stand partagé demande d'abord laquelle de ses sociétés on vient voir
+      const societes = tutoModale() && $("mCorps").querySelector("ul.expos");
+      if (societes) return { cle: "societes", cible: societes,
+        texte: "Plusieurs sociétés partagent ce stand : choisissez celle qui vous intéresse." };
+      if (surStand) return { cle: "signet", cible: sig,
+        texte: "Touchez le signet pour ajouter « " + $("dName").textContent +
+               " » à votre parcours." };
+      return { cle: "stand",
+        texte: "Retenez les exposants à ne pas manquer : touchez un stand qui vous " +
+               "intéresse sur le plan, ou cherchez-le par son nom." };
+    },
+  },
+  {
+    cle: "journee",
+    titre: "Ma journée",
+    nom: "la journée organisée",
+    resume: "votre parcours mis en ordre, avec les heures",
+    /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
+       l'itinéraire, le bouton n'est pas là (voir « _head.html »). */
+    actif: () => tutoParcours() && tutoItineraire(),
+    // une liste vide n'a rien à organiser, et son bouton est éteint
+    pret: () => PARCOURS.stands.length + PARCOURS.confs.length > 0,
+    debut(m){ m.journee = JOURNEE; },
+    etape(m){
+      const tiroir = tutoOuvert("parcours");
+      if (JOURNEE && vueJournee && JOURNEE !== m.journee) m.faite = true;
+      if (m.faite) return tiroir && vueJournee && JOURNEE
+        ? { cle: "journee", cible: $("jCorps"), suite: true,
+            texte: "Voici votre journée : chaque étape a son heure, et le trajet est " +
+                   "tracé sur le plan. Bonne visite !" }
+        : { fini: true };
+      if (tiroir && vueJournee && !JOURNEE){
+        if ($("jCorps").querySelector(".iAlerte")) return { cle: "echec", suite: true,
+          texte: "Le calcul n'a pas abouti sur cet appareil. Votre parcours, lui, est intact." };
+        return { cle: "calcul", texte: "Recherche du meilleur ordre de visite…" };
+      }
+      if (tutoModale() && $("mCorps").querySelector(".jForm")) return { cle: "heure",
+        cible: $("mPied").querySelector(".btn:last-child"),
+        texte: "Indiquez votre heure d'arrivée, puis touchez « Organiser »." };
+      if (!(PARCOURS.stands.length + PARCOURS.confs.length)) return { fini: true };
+      if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
+        texte: "Touchez « Changer l'heure d'arrivée » pour organiser à nouveau votre journée." };
+      if (tiroir) return { cle: "organiser", cible: $("btnJournee"),
+        texte: "Touchez « Organiser ma journée » : les conférences retenues gardent " +
+               "leur heure, et les stands se glissent entre elles dans l'ordre qui fait " +
+               "le moins de chemin." };
+      return { cle: "ouvrir", cible: $("btnParcours"),
+        texte: "Votre parcours peut devenir une journée organisée : ouvrez « Mon " +
+               "parcours », en haut de l'écran." };
+    },
+  },
+];
+
+/** Les chapitres que ce salon permet, dans l'ordre de la visite. */
+const chapitresTuto = () => CHAPITRES_TUTO.filter(c => c.actif());
+
+/* ------------------------------------------------------------
+   La proposition
+   ------------------------------------------------------------ */
+/**
+ * Proposée une fois par salon et par appareil, quelle que soit la réponse : un
+ * visiteur qui a dit « Non merci » l'a lue, et la lui reposer à chaque
+ * ouverture la lui ferait fermer sans lire. Un stockage refusé — un cadre posé
+ * sur un site tiers, un navigateur qui bloque les données de site — ne saurait
+ * pas retenir la réponse : on s'abstient, plutôt que de redemander à chaque page.
+ *
+ * Jamais en administration : l'exploitant ouvre son plan cent fois, et c'est
+ * depuis les réglages qu'il essaie la visite.
+ *
+ * Elle attend son tour. Qui arrive par un lien vers un stand, ou avec un
+ * parcours partagé, sait déjà pourquoi il est là : la fenêtre passerait devant
+ * ce qu'il vient voir. Rien n'est retenu alors, et elle se proposera à la
+ * prochaine ouverture.
+ */
+function proposeTutoriel(){
+  if (PLAN_ADMIN || TUTO || !tutoPropose()) return;
+  try { if (localStorage.getItem(cleTuto()) !== null) return; } catch (e) { return; }
+  setTimeout(() => {
+    if (TUTO || !DATA || !tutoPropose()) return;
+    if (tutoModale() || visee ||
+        ["detail", "parcours", "itineraire"].some(id => tutoOuvert(id))) return;
+    const chapitres = chapitresTuto();
+    if (!chapitres.length) return;
+    try { localStorage.setItem(cleTuto(), "proposee"); } catch (e) { return; }
+    ouvreModale("Découvrir le plan", corps => {
+      const p = document.createElement("p");
+      p.textContent = "Première visite ? Faites le tour de ce que ce plan sait " +
+        "faire, en quelques gestes. Chacun se fait pour de vrai : ce que vous " +
+        "retenez en chemin vous reste.";
+      corps.appendChild(p);
+      const ul = document.createElement("ul");
+      ul.className = "tutoListe";
+      chapitres.forEach((c, i) => {
+        const li = document.createElement("li");
+        const n = document.createElement("span");
+        n.className = "n";
+        n.textContent = i + 1;
+        const t = document.createElement("span");
+        const b = document.createElement("b");
+        b.textContent = c.titre;
+        t.appendChild(b);
+        t.appendChild(document.createTextNode(" — " + c.resume));
+        li.appendChild(n);
+        li.appendChild(t);
+        ul.appendChild(li);
+      });
+      corps.appendChild(ul);
+    }, [
+      { libelle: "Non merci" },
+      /* Lancée une fois cette fenêtre refermée, et non pendant : ouverte, elle
+         ferait dire à la première consigne de la refermer. */
+      { libelle: "Commencer", genre: "accent", action: () => setTimeout(lanceTutoriel, 0) },
+    ]);
+  }, TUTO_DELAI);
+}
+
+/* ------------------------------------------------------------
+   La visite en cours
+   ------------------------------------------------------------ */
+function lanceTutoriel(){
+  if (TUTO || !DATA) return;
+  const chapitres = chapitresTuto();
+  if (!chapitres.length) return;
+  /* On part d'un plan dégagé : une fiche ou un tiroir restés ouverts — celui
+     qui essaie la visite depuis les réglages en a souvent un — la feraient
+     commencer au milieu d'un chapitre. La visée s'éteint comme l'ouverture de
+     l'itinéraire l'éteint, sans passer par « finVisee », qui rouvrirait le
+     tiroir qu'on referme. */
+  if (tutoOuvert("detail")) ferme();
+  fermeParcours();
+  fermeItineraire();
+  if (visee){ visee = null; bandeauVisee(); }
+
+  const bulle = document.createElement("section");
+  bulle.className = "tuto";
+  bulle.id = "tuto";
+  bulle.setAttribute("aria-labelledby", "tutoTitre");
+  bulle.innerHTML = '<div class="tutoTete"><span class="eyebrow">Visite guidée</span>' +
+    '<span class="tutoPoints" id="tutoPoints" role="img"></span>' +
+    '<button type="button" class="tutoPasse" id="tutoPasse" title="Passer à la suite">Passer</button>' +
+    '<button type="button" class="tutoQuitte" id="tutoQuitte" title="Quitter la visite ' +
+    'guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
+    '<h2 id="tutoTitre"></h2><p id="tutoTexte" aria-live="polite"></p>' +
+    '<div class="tutoPied" id="tutoPied" hidden>' +
+    '<button type="button" class="tutoSuite" id="tutoSuite"></button></div>';
+  document.body.appendChild(bulle);
+  const repere = document.createElement("div");
+  repere.className = "tutoRepere";
+  repere.id = "tutoRepere";
+  repere.hidden = true;
+  document.body.appendChild(repere);
+
+  /* Chaque geste fait relire la page, une fois ses propres gestionnaires
+     passés : la fiche s'ouvre dans le clic, et c'est après qu'on la trouve. */
+  const geste = () => { setTimeout(battementTuto, 0); rafaleTuto(); };
+  const recadre = () => { repereTuto(); placeTuto(true); };
+  /* Échap referme d'abord ce qui est ouvert — une fenêtre, un tiroir, une
+     visée, une recherche en cours de frappe, un tracé —, et ce sont les
+     gestionnaires de la page qui s'en chargent. La visite ne le prend pour elle
+     que lorsqu'il n'aurait rien fermé : relevé avant eux, à la capture, sans
+     quoi le tiroir tout juste refermé aurait laissé croire qu'il n'y avait
+     rien. */
+  const echap = e => {
+    if (e.key !== "Escape") return;
+    if (e.target && e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
+    const cran = $("side").dataset.cran;
+    if (tutoModale() || visee || (cran && cran !== "replie") ||
+        ["detail", "parcours", "itineraire"].some(id => tutoOuvert(id)) ||
+        PLACE_LIBELLES || enCours || formeSel || calqueActif) return;
+    quitteTutoriel();
+  };
+  TUTO = {
+    chapitres: chapitres, i: -1, m: {}, cle: "", texte: "", suite: "",
+    cible: null, pos: null, raf: 0, rafale: 0,
+    pouls: setInterval(battementTuto, TUTO_POULS),
+    ecoutes: [["click", geste, true], ["keyup", geste, true], ["input", geste, true],
+              ["keydown", echap, true],
+              ["transitionrun", rafaleTuto, true], ["scroll", rafaleTuto, true],
+              ["resize", recadre, false]],
+  };
+  TUTO.ecoutes.forEach(([t, f, c]) => addEventListener(t, f, c));
+
+  $("tutoQuitte").onclick = quitteTutoriel;
+  // passer un chapitre, c'est aller au suivant ; passer le dernier, en finir
+  $("tutoPasse").onclick = () => {
+    if (TUTO.i >= TUTO.chapitres.length - 1) quitteTutoriel();
+    else chapitreTuto(TUTO.i + 1);
+  };
+  $("tutoSuite").onclick = () => {
+    if (TUTO.i >= TUTO.chapitres.length - 1){ quitteTutoriel(); return; }
+    TUTO.m.suite = true;
+    battementTuto();
+  };
+  chapitreTuto(0);
+}
+
+function quitteTutoriel(){
+  if (!TUTO) return;
+  clearInterval(TUTO.pouls);
+  cancelAnimationFrame(TUTO.raf);
+  TUTO.ecoutes.forEach(([t, f, c]) => removeEventListener(t, f, c));
+  ["tuto", "tutoRepere", "tutoZone"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  TUTO = null;
+}
+
+function chapitreTuto(i){
+  const l = TUTO.chapitres;
+  // un chapitre qui n'a rien sur quoi s'appuyer en y entrant se saute
+  while (i < l.length && l[i].pret && !l[i].pret()) i++;
+  TUTO.i = i;
+  TUTO.m = {};
+  if (i >= l.length){ finTuto(); return; }
+  l[i].debut(TUTO.m);
+  battementTuto();
+}
+
+function battementTuto(){
+  if (!TUTO || TUTO.i >= TUTO.chapitres.length) return;
+  const ch = TUTO.chapitres[TUTO.i];
+  let e;
+  try {
+    // « Suivant » clôt le chapitre : seules les étapes qui se lisent le proposent
+    e = TUTO.m.suite ? { fini: true } : ch.etape(TUTO.m);
+  } catch (err){
+    /* Une visite qui déraille ne doit pas laisser une bulle figée sur le plan :
+       elle se retire, et le plan reste entier. */
+    console.warn("Visite guidée :", err);
+    quitteTutoriel();
+    return;
+  }
+  if (e.fini){ chapitreTuto(TUTO.i + 1); return; }
+  afficheTuto(e, ch);
+}
+
+function finTuto(){
+  // le parcours ne se rappelle qu'à qui y a mis quelque chose en chemin
+  const retenu = tutoParcours() && PARCOURS.stands.length + PARCOURS.confs.length > 0;
+  afficheTuto({ cle: "fin", titre: "Bonne visite !", suite: true,
+    texte: "Vous avez fait le tour du plan." + (retenu
+      ? " Votre parcours reste sur cet appareil : vous le retrouverez à votre " +
+        "prochaine visite."
+      : "") }, null);
+}
+
+/**
+ * La consigne à l'écran : la bulle, le repère, la zone.
+ *
+ * La bulle ne se réécrit que si la consigne change. Relue quatre fois par
+ * seconde, elle aurait sinon relancé sa lecture à voix haute à chaque pouls, et
+ * repris sa place alors qu'on était en train de la lire.
+ */
+function afficheTuto(e, ch){
+  /* Une fenêtre ouverte par-dessus — une proposition d'exposant, une fiche de
+     conférence qu'on n'attendait pas — cache ce qu'on désigne et prend les
+     clics : la consigne attend qu'on la referme, plutôt que de montrer un
+     bouton qu'on ne peut pas toucher. */
+  const bloque = !!ch && tutoModale() && !(e.cible && $("modale").contains(e.cible));
+  const texte = bloque ? "Refermez d'abord cette fenêtre : la visite reprend juste après."
+                       : e.texte;
+  const n = TUTO.chapitres.length;
+  const suite = e.suite && !bloque ? (TUTO.i >= n - 1 ? "Terminer" : "Suivant") : "";
+  const cle = (ch ? ch.cle : "fin") + ":" + (bloque ? "bloque" : e.cle);
+  TUTO.cible = bloque ? null : e.cible || null;
+  marqueZoneTuto(bloque ? null : e.zone);
+  if (cle === TUTO.cle && texte === TUTO.texte && suite === TUTO.suite){
+    repereTuto();
+    placeTuto(false);
+    return;
+  }
+  const nouvelle = cle !== TUTO.cle;
+  TUTO.cle = cle; TUTO.texte = texte; TUTO.suite = suite;
+  const points = $("tutoPoints");
+  points.innerHTML = TUTO.chapitres.map((c, i) =>
+    '<i class="' + (!ch || i < TUTO.i ? "fait" : i === TUTO.i ? "ici" : "") + '"></i>').join("");
+  points.setAttribute("aria-label", ch ? "Étape " + (TUTO.i + 1) + " sur " + n : "Visite terminée");
+  $("tutoTitre").textContent = insecable(e.titre || ch.titre);
+  $("tutoTexte").textContent = insecable(texte);
+  /* « Passer » et « Suivant » mèneraient au même endroit : quand l'étape se
+     lit, seul le second reste. */
+  $("tutoPasse").hidden = !ch || !!suite;
+  $("tutoPied").hidden = !suite;
+  $("tutoSuite").textContent = suite;
+  if (nouvelle && TUTO.cible) rameneTuto(TUTO.cible);
+  repereTuto();
+  placeTuto(nouvelle);
+}
+
+/* ------------------------------------------------------------
+   Désigner
+   ------------------------------------------------------------ */
+/** La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place. */
+function boiteTuto(el){
+  if (!el || !el.isConnected) return null;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 ? r : null;
+}
+
+/**
+ * Le repère autour de la cible.
+ *
+ * Ce qui défile dans un tiroir ou une fenêtre n'est encadré que pour sa part
+ * visible : le programme d'une zone aligne parfois vingt conférences, et son
+ * cadre entier descendrait sous le bord de l'écran, encadrant ce qu'on ne voit
+ * pas.
+ */
+function repereTuto(){
+  const r = $("tutoRepere");
+  if (!r || !TUTO) return;
+  const c = TUTO.cible, b = boiteTuto(c);
+  if (!b){ r.hidden = true; return; }
+  /* Le cadre s'écarte de quatre pixels de ce qu'il entoure, mais sans sortir
+     de l'écran ni de ce qui défile : un tiroir pleine largeur le voyait sinon
+     déborder des deux bords, et il n'en restait que deux traits. */
+  const marge = 4;
+  let g = b.left - marge, h = b.top - marge, d = b.right + marge, bas = b.bottom + marge;
+  const bornes = [{ left: 2, top: 2, right: innerWidth - 2, bottom: innerHeight - 2 }];
+  const boite = c.parentElement && c.parentElement.closest(TUTO_DEFILE);
+  if (boite) bornes.push(boite.getBoundingClientRect());
+  bornes.forEach(q => {
+    g = Math.max(g, q.left); h = Math.max(h, q.top);
+    d = Math.min(d, q.right); bas = Math.min(bas, q.bottom);
+  });
+  // ce qui reste visible tient dans un trait : on n'encadre pas un fil
+  if (d - g < 12 || bas - h < 12){ r.hidden = true; return; }
+  r.hidden = false;
+  r.style.width = Math.round(d - g) + "px";
+  r.style.height = Math.round(bas - h) + "px";
+  r.style.transform = "translate(" + Math.round(g) + "px," + Math.round(h) + "px)";
+}
+
+/**
+ * Un bouton au bas d'une fiche longue — « Itinéraire », sous vingt conférences —
+ * est hors de vue au moment où on le désigne : on l'y amène. Un bloc plus haut
+ * que ce qui se voit ne s'amène que par son début, et seulement s'il commence
+ * trop bas pour qu'on le remarque.
+ */
+function rameneTuto(el){
+  const boite = el.parentElement && el.parentElement.closest(TUTO_DEFILE);
+  const b = boiteTuto(el);
+  if (!boite || !b) return;
+  const q = boite.getBoundingClientRect();
+  const ecart = b.height <= q.height
+    ? (b.top < q.top ? b.top - q.top - 8 : b.bottom > q.bottom ? b.bottom - q.bottom + 8 : 0)
+    : (b.top > q.top + q.height * .4 ? b.top - q.top - 8 : 0);
+  if (!ecart) return;
+  boite.scrollBy({ top: ecart, behavior: REDUIT ? "auto" : "smooth" });
+  rafaleTuto();
+}
+
+/**
+ * Où poser la bulle : là où elle ne cache ni ce qu'elle désigne, ni ce qu'il
+ * faut voir pour le faire.
+ *
+ * Aucune place fixe ne convenait à toutes les étapes. Le bas de l'écran cache
+ * le tiroir où se trouve le signet, le haut la barre où se trouve le parcours,
+ * et une zone du plan peut être n'importe où. On essaie donc quelques places —
+ * à côté de ce qu'on désigne, puis les coins du plan — et on garde la première
+ * qui ne recouvre rien, ou à défaut celle qui recouvre le moins. La cible pèse
+ * plus lourd que le reste : on accepte de cacher un bout de tiroir, pas le
+ * bouton qu'on demande de toucher.
+ *
+ * Sur un téléphone la bulle prend la largeur : il ne reste que le haut et le
+ * bas, et c'est entre les deux qu'on tranche.
+ *
+ * `force` vaut pour une consigne nouvelle. Hors de là, la bulle ne bouge que
+ * pour libérer nettement la vue : un plan qu'on fait glisser sous elle l'aurait
+ * sinon fait sauter d'un coin à l'autre à chaque pouls.
+ */
+function placeTuto(force){
+  const bulle = $("tuto");
+  if (!bulle || !TUTO) return;
+  const vw = document.documentElement.clientWidth, vh = innerHeight, bord = 10;
+  const w = bulle.offsetWidth, h = bulle.offsetHeight;
+  const cible = boiteTuto(TUTO.cible);
+  const evite = [];
+  const pese = (r, poids) => { if (r) evite.push({ r: r, poids: poids }); };
+  pese(cible, 6);
+  pese(boiteTuto($("tutoZone")), 4);
+  // le bandeau de la visée dit ce qu'on est en train de désigner
+  pese(boiteTuto($("viseur")), 3);
+  // et le trajet tracé est ce que deux étapes montrent du doigt
+  pese(boiteTuto($("itin")), .5);
+  ["detail", "parcours", "itineraire"].forEach(id => {
+    if (tutoOuvert(id)) pese(boiteTuto($(id)), 1);
+  });
+  if (tutoModale()) pese(boiteTuto($("modale").querySelector(".mfen")), 1.5);
+  pese(boiteTuto($("poi")), .5);
+  if (ETROIT()) pese(boiteTuto($("side")), .3);
+  else pese(boiteTuto(document.querySelector(".zoombar")), .5);
+
+  const places = [];
+  if (ETROIT()){
+    const x = (vw - w) / 2;
+    places.push([x, $("bandeau").getBoundingClientRect().bottom + 8]);
+    const vis = boiteTuto($("viseur"));
+    if (vis) places.push([x, vis.bottom + 8]);
+    places.push([x, vh - h - bord]);
+  } else {
+    if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
+                           [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
+    const s = $("stage").getBoundingClientRect();
+    places.push([s.left + 16, s.bottom - h - 16], [s.left + 16, s.top + 16],
+                [s.right - w - 16, s.top + 16], [s.right - w - 16, s.bottom - h - 16]);
+  }
+  const cout = (x, y) => evite.reduce((t, { r, poids }) => {
+    const dx = Math.min(x + w, r.right) - Math.max(x, r.left);
+    const dy = Math.min(y + h, r.bottom) - Math.max(y, r.top);
+    return dx > 0 && dy > 0 ? t + dx * dy * poids : t;
+  }, 0);
+  let choix = null, mieux = Infinity;
+  places.forEach(p => {
+    const x = Math.round(Math.max(bord, Math.min(vw - w - bord, p[0])));
+    const y = Math.round(Math.max(bord, Math.min(vh - h - bord, p[1])));
+    const c = cout(x, y);
+    if (c < mieux){ mieux = c; choix = [x, y]; }
+  });
+  if (!force && TUTO.pos && mieux >= cout(TUTO.pos[0], TUTO.pos[1]) * .7) return;
+  if (TUTO.pos && TUTO.pos[0] === choix[0] && TUTO.pos[1] === choix[1]) return;
+  /* À la première pose, la bulle paraît à sa place : glisser depuis le coin de
+     l'écran lui aurait fait traverser la page. */
+  const premiere = !TUTO.pos;
+  if (premiere) bulle.style.transition = "none";
+  bulle.style.transform = "translate(" + choix[0] + "px," + choix[1] + "px)";
+  if (premiere){ bulle.getBoundingClientRect(); bulle.style.transition = ""; }
+  TUTO.pos = choix;
+}
+
+/** Le repère suit la cible image par image, le temps que les choses se posent. */
+function rafaleTuto(){
+  if (!TUTO) return;
+  TUTO.rafale = performance.now() + TUTO_RAFALE;
+  if (TUTO.raf) return;
+  const image = () => {
+    if (!TUTO) return;
+    repereTuto();
+    TUTO.raf = performance.now() < TUTO.rafale ? requestAnimationFrame(image) : 0;
+  };
+  TUTO.raf = requestAnimationFrame(image);
+}
+
+/**
+ * La zone à toucher, recopiée au-dessus du plan.
+ *
+ * Elle vit dans le plan et non dans la page : elle suit le zoom et le glissé
+ * sans qu'on la replace, là où un repère posé par-dessus aurait couru derrière
+ * la zone à chaque geste. Un autre pavillon à l'écran l'efface — la consigne
+ * dit alors où la trouver.
+ */
+function marqueZoneTuto(z){
+  let g = $("tutoZone");
+  if (!z || z.p !== state.plan){ if (g) g.remove(); return; }
+  if (g && g.dataset.id === z.id) return;
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "tutoZone";
+    // au-dessus des couches et des marques, sous le trajet et les poignées
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  g.dataset.id = z.id;
+  g.innerHTML = "";
+  ["halo", "trait"].forEach(cls => {
+    const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("class", cls);
+    p.setAttribute("d", z.d);
+    g.appendChild(p);
+  });
+}
+/* ============================================================
    12. Démarrage
    ============================================================ */
 /* ------------------------------------------------------------------
@@ -21185,6 +22036,10 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* La visite guidée passe après tout cela, et attend son tour : un lien vers
+     un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
+     propose que si rien d'autre n'a pris la place entre-temps. */
+  proposeTutoriel();
 }
 
 function annonce(txt, erreur){

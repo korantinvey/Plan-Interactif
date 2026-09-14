@@ -3356,6 +3356,90 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
   font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .alerte-enr button:hover{background:rgba(255,255,255,.16)}
+
+/* ------------------------------------------------------------
+   La visite guidée
+   Une bulle qui dit quoi toucher, et un repère sur ce qu'il faut toucher. Les
+   deux passent devant tout — tiroirs et fenêtre compris, puisqu'une étape se
+   joue dans celle de la journée — sans prendre aucun clic hors de la bulle :
+   c'est la page qu'on manipule. Un voile posé dessus en aurait fait une
+   démonstration, qu'on regarde au lieu de la faire.
+   ------------------------------------------------------------ */
+/* Placée par « transform » et non par « left » et « top » : elle change de
+   coin quand ce qu'elle désigne passe dessous, et le glissement se délègue au
+   compositeur au lieu de remettre la page en forme à chaque image. */
+.tuto{position:fixed;left:0;top:0;z-index:41;width:min(340px,calc(100vw - 24px));
+  display:flex;flex-direction:column;gap:5px;padding:11px 14px 12px;
+  background-color:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+  box-shadow:0 24px 60px -18px rgba(0,0,0,.5);
+  transition:transform .28s cubic-bezier(.32,.72,0,1);will-change:transform;
+  animation:tutoParait .2s ease-out}
+@keyframes tutoParait{from{opacity:0}to{opacity:1}}
+/* Tout ce qui ne change pas d'une étape à l'autre tient sur la ligne du haut —
+   la progression, « Passer », la croix — et le pied n'existe que pour
+   « Suivant ». Sur un téléphone, chaque ligne de la bulle est une ligne de plan
+   en moins, précisément là où l'on demande de toucher. */
+.tutoTete{display:flex;align-items:center;gap:10px;min-height:22px}
+.tutoTete .eyebrow{flex:none;color:var(--accent)}
+/* Un point par chapitre : on voit ce qui reste sans lire de chiffre. */
+.tutoPoints{display:flex;align-items:center;gap:4px;margin-right:auto}
+.tutoPoints i{width:6px;height:6px;border-radius:999px;background:var(--line-strong)}
+.tutoPoints i.fait{background:color-mix(in srgb,var(--accent) 45%,var(--line-strong))}
+.tutoPoints i.ici{width:16px;background:var(--accent)}
+.tutoPasse{flex:none;padding:3px 2px;font-size:12px;color:var(--ink-3);
+  text-decoration:underline;text-underline-offset:3px}
+.tutoPasse:hover{color:var(--ink)}
+.tutoQuitte{flex:none;width:28px;height:28px;margin:-6px -8px -6px -6px;display:grid;
+  place-items:center;font-size:19px;line-height:1;color:var(--ink-3);border-radius:var(--radius)}
+.tutoQuitte:hover{color:var(--ink);background:var(--surface-2)}
+.tuto h2{margin:0;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.tuto p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.tutoPied{display:flex;justify-content:flex-end;margin-top:6px}
+.tutoSuite{padding:7px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:600;
+  background:var(--accent);border:1px solid var(--accent);color:var(--accent-ink)}
+.tutoSuite:hover{filter:brightness(1.08)}
+/* Le repère bat par son opacité, seule animée : c'est la seule propriété, avec
+   « transform », que le compositeur tient sans rien repeindre — une ombre qui
+   s'étire aurait repeint la barre du haut à chaque image, et avec elle le plan
+   qui partage sa couche. */
+.tutoRepere{position:fixed;left:0;top:0;z-index:40;pointer-events:none;
+  border:2px solid var(--accent);border-radius:9px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 24%,transparent),
+    0 0 22px 2px color-mix(in srgb,var(--accent) 42%,transparent);
+  animation:tutoBat 1.5s ease-in-out infinite}
+@keyframes tutoBat{0%,100%{opacity:1}50%{opacity:.4}}
+/* Sur le plan, la zone à toucher est recopiée au-dessus des couches, comme la
+   sélection dans « #marques » : tracé sur la zone elle-même, son contour
+   passerait sous les stands voisins. Elle ne prend aucun clic — c'est la zone,
+   dessous, qu'on touche. */
+#tutoZone{pointer-events:none;animation:tutoBat 1.5s ease-in-out infinite}
+#tutoZone path{vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#tutoZone .halo{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);
+  stroke-width:10;stroke-opacity:.22}
+#tutoZone .trait{fill:none;stroke:var(--accent);stroke-width:3}
+/* Ce que la visite parcourra, dans la fenêtre qui la propose. */
+.mcorps ul.tutoListe{margin:12px 0 4px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ul.tutoListe li{display:flex;align-items:baseline;gap:10px;font-size:13px;
+  line-height:1.45;color:var(--ink-2)}
+.mcorps ul.tutoListe .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ul.tutoListe b{color:var(--ink);font-weight:600}
+/* « Essayer », dans l'aide de la case des réglages : un lien plutôt qu'un
+   bouton plein, la case reste ce qu'on règle. */
+.reglages .aideR .essaiTuto{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
+@media (max-width:900px){
+  .tuto{width:min(420px,calc(100vw - 20px));padding:10px 13px 11px}
+  .tuto p{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tuto{transition:none;animation:none}
+  .tutoRepere,#tutoZone{animation:none}
+}
 </style>
 
 <div class="app">

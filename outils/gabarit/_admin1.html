@@ -1236,6 +1236,9 @@ function voletPlan(hote){
 
   const bloc = document.createElement("div");
   bloc.className = "reglages";
+  /* La visite guidée fait le tour des commandes qu'on coche ici : son aide dit
+     lesquelles, et se refait à chaque case touchée. */
+  let majTuto = () => {};
   COMMANDES.forEach(cmd => {
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
@@ -1247,9 +1250,49 @@ function voletPlan(hote){
       enregistreConf(); appliqueCommandes();
       // la couleur du parcours vit dans la pile : elle suit le réglage
       if (ADMIN) construitPanneau();
+      majTuto();
     };
     bloc.appendChild(l);
   });
+
+  /* La visite guidée se propose d'elle-même à la première ouverture. C'est une
+     fenêtre de plus devant le plan, et tous les salons n'en veulent pas : d'où
+     la case, et de quoi l'essayer d'ici — l'exploitant ne la verrait jamais
+     autrement, l'administration ne la proposant pas. Éteinte plutôt que
+     décochée sur un salon qui n'a rien à présenter, comme les sortes de la
+     recherche : le choix fait vaudra le jour où quelque chose l'alimentera. */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = "Proposer la visite guidée au premier démarrage";
+    const c = l.querySelector("input");
+    c.checked = tutoPropose();
+    c.onchange = e => { reglageTuto().visible = e.target.checked; enregistreConf(); };
+    bloc.appendChild(l);
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    bloc.appendChild(aide);
+    majTuto = () => {
+      const noms = chapitresTuto().map(ch => ch.nom);
+      l.classList.toggle("eteint", !noms.length);
+      c.disabled = !noms.length;
+      if (!noms.length){
+        aide.textContent = "Rien à présenter sur ce salon : ni programme rattaché à " +
+          "une zone, ni parcours de visite, ni itinéraire.";
+        return;
+      }
+      aide.textContent = "Le visiteur y fait lui-même chaque geste : " +
+        (noms.length > 1 ? noms.slice(0, -1).join(", ") + " et " : "") +
+        noms[noms.length - 1] + ". Proposée une fois par appareil. ";
+      const essai = document.createElement("button");
+      essai.type = "button";
+      essai.className = "essaiTuto";
+      essai.textContent = "Essayer";
+      essai.onclick = () => { fermeModale(); lanceTutoriel(); };
+      aide.appendChild(essai);
+    };
+    majTuto();
+  }
 
   /* Le coloriage par secteur reste hors de COMMANDES : celles-ci montrent ou
      retirent une commande du plan, celui-ci change ce que le plan donne à
