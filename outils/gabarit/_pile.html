@@ -180,14 +180,17 @@ function construitPanneau(){
              x.t === "fond" ? styleFond(x.k.slice(5)) : styleDataGroupe(x.k.slice(5), on); }
     };
 
-    /* couleur */
+    /* couleur — peinte à chaque événement, retenue une fois le glissement
+       fini : voir « La rafale du sélecteur de couleur » dans `_admin1.html`. */
     const cc = d.querySelector(".cc");
     cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
-    cc.oninput = ev => {
-      if (x.t === "dessin"){ x.ref.couleur = ev.target.value; enregistreDessins(); dessineDessins(); }
-      else { c.couleur = ev.target.value; enregistreConf();
-             x.t === "fond" ? styleFond(x.k.slice(5)) : appliqueCouleursData(); }
-    };
+    suitNuancier(cc,
+      v => {
+        if (x.t === "dessin"){ x.ref.couleur = v; peintCalque(x.ref); }
+        else { c.couleur = v;
+               x.t === "fond" ? styleFond(x.k.slice(5)) : appliqueCouleursData(); }
+      },
+      () => { if (x.t === "dessin") enregistreDessins(); else enregistreConf(); });
 
     /* trait ou aplat */
     const fb = d.querySelector(".fillbtn");
@@ -324,14 +327,14 @@ function sectionSelection(hote){
 
   const c = conf("selection");
   bloc.appendChild(ligneCouleur("Élément sélectionné", c.couleur || jeton("--accent-soft"),
-    (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+    (v) => { c.couleur = v; appliqueCouleursData(); }));
 
   /* Le parcours retiré, sa couleur ne règle plus rien : la ligne s'efface avec
      lui, et revient si l'exploitant le rouvre. */
   if (conf("_parcours").visible !== false){
     const p = conf("parcours");
     bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
-      (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+      (v) => { p.couleur = v; appliqueCouleursData(); }));
   }
 
   /* Les points d'intérêt, comme les deux autres : une marque que le plan pose
@@ -345,7 +348,7 @@ function sectionSelection(hote){
   if ($("poi") && !$("poi").hidden){
     const i = conf("poi");
     bloc.appendChild(ligneCouleur("Points d'intérêt", i.couleur || jeton("--accent"),
-      (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+      (v) => { i.couleur = v; appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
 }
@@ -390,7 +393,8 @@ function sectionFond(hote){
     const libre = nuancier.querySelector(".perso input");
     if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
   };
-  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+  const peint = (v) => { c.couleur = v; appliqueFond(); majPastilles(); };
+  const choisit = (v) => { peint(v); enregistreConf(); };
 
   FONDS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
@@ -402,15 +406,14 @@ function sectionFond(hote){
     b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
-     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
-     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
-     publication reste un geste à part. */
+  /* On suit la rafale du sélecteur : c'est le seul moyen de voir le fond
+     s'installer sous le plan pendant qu'on le cherche. Seule l'écriture attend
+     la fin du geste — voir « La rafale du sélecteur de couleur ». */
   const libre = document.createElement("label");
   libre.className = "perso";
   libre.title = "Couleur libre";
   libre.innerHTML = '<input type="color"><span></span>';
-  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
 
   bloc.querySelector(".reset").onclick = () => {
@@ -423,8 +426,12 @@ function sectionFond(hote){
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
    ni rang. C'est le cas de tout ce qui n'est pas un calque — la sélection, un
-   secteur — et qui n'a donc rien à masquer ni à empiler. */
-function ligneCouleur(libelle, valeur, applique){
+   secteur — et qui n'a donc rien à masquer ni à empiler.
+
+   `peint` ne fait que poser la couleur à l'écran, et se répète autant de fois
+   que le sélecteur l'envoie ; l'écriture sur le poste attend la fin du geste
+   et se fait ici, une fois pour toutes. */
+function ligneCouleur(libelle, valeur, peint){
   const d = document.createElement("div");
   d.className = "calq";
   d.innerHTML = '<label><span></span></label>' +
@@ -432,7 +439,7 @@ function ligneCouleur(libelle, valeur, applique){
   d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
   cc.value = valeur;
-  cc.oninput = (e) => applique(e.target.value);
+  suitNuancier(cc, peint, enregistreConf);
   return d;
 }
 
@@ -448,8 +455,9 @@ function rangSecteur(hote, nom){
   const c = conf("secteur:" + nom);
   const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
     c.couleur = v;
-    enregistreConf();
-    appliqueSecteurs();
+    /* Seuls les stands de ce secteur changent de teinte : `appliqueSecteurs`
+       relit tout le salon, ce qui ne tient pas au rythme du sélecteur. */
+    peintSecteur(nom);
   });
   d.classList.add("sous");
   hote.appendChild(d);
@@ -470,7 +478,7 @@ function rangSous(hote, cle, libelle, defaut, applique){
   };
   const cc = d.querySelector(".cc");
   cc.value = c.couleur || defaut();
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
+  suitNuancier(cc, v => { c.couleur = v; applique(); }, enregistreConf);
   const fb = d.querySelector(".fillbtn");
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);

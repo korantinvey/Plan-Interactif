@@ -394,6 +394,68 @@ const salonPartage = () => (DATA?.plans || [])
   .some(p => (p.stands || []).some(s => (s.coex || []).length));
 
 /* ------------------------------------------------------------
+   La rafale du sélecteur de couleur
+
+   Un nuancier n'envoie pas un événement par couleur retenue : le sélecteur du
+   système en envoie une rafale pendant qu'on glisse, plusieurs dizaines par
+   seconde. Peindre à ce rythme se tient — c'est une variable CSS, ou la
+   couleur d'un groupe. Retenir, non : sérialiser toute la configuration ou
+   tous les dessins vers le poste, rebâtir le SVG des calques, refaire la
+   nappe d'itinéraire, cela demande plus de temps qu'il n'en reste entre deux
+   événements. Le retard s'accumule alors, et sur un salon chargé — mille
+   stands, des calques dessinés — la couleur traîne plusieurs secondes
+   derrière la souris.
+
+   On sépare donc les deux gestes : la peinture suit la main, la mémoire
+   attend qu'elle s'arrête. Rien ne part en base pour autant — la publication
+   reste un geste à part.
+   ------------------------------------------------------------ */
+
+/** Le temps d'immobilité, en millisecondes, au bout duquel la couleur est
+ *  retenue. Assez court pour qu'un clic sur une pastille paraisse immédiat,
+ *  assez long pour traverser une rafale sans en écrire une seule image. */
+const REPOS_NUANCIER = 200;
+
+/* Deux dixièmes de seconde suffisent à fermer un onglet : ce qui attend encore
+   est noté ici, et part avant que la page ne s'en aille. Aux deux moments que
+   `_pousse.html` guette, et avant lui — ce module le précède, donc la couleur
+   est écrite quand il presse l'envoi. */
+const NUANCIERS_EN_ATTENTE = new Set();
+const presseNuanciers = () => NUANCIERS_EN_ATTENTE.forEach(fixe => fixe());
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") presseNuanciers();
+});
+addEventListener("pagehide", presseNuanciers);
+
+/**
+ * Branche un sélecteur de couleur : `peint` à chaque événement reçu, `retient`
+ * une fois le glissement fini.
+ *
+ * `change` ne clôt pas le geste partout — certains navigateurs l'envoient au
+ * fil du glissement, comme `input`. On ne s'y fie donc pas : c'est le temps de
+ * repos qui décide, et quitter le champ presse ce qui attendait.
+ *
+ * Rend la fonction qui presse, pour qui a une autre raison de conclure.
+ */
+function suitNuancier(input, peint, retient){
+  let minuteur = null;
+  const fixe = () => {
+    if (!minuteur) return;
+    clearTimeout(minuteur); minuteur = null;
+    NUANCIERS_EN_ATTENTE.delete(fixe);
+    retient();
+  };
+  input.oninput = input.onchange = e => {
+    peint(e.target.value);
+    if (minuteur) clearTimeout(minuteur);
+    minuteur = setTimeout(fixe, REPOS_NUANCIER);
+    NUANCIERS_EN_ATTENTE.add(fixe);
+  };
+  input.onblur = fixe;
+  return fixe;
+}
+
+/* ------------------------------------------------------------
    Couleur principale et modèle de fiche
 
    Deux réglages d'apparence qui ne portent sur aucun calque : la teinte dont
@@ -1902,10 +1964,13 @@ function voletApparence(hote){
     const libre = nuancier.querySelector(".perso input");
     if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
   };
-  const choisit = (v) => {
+  /* Peindre : trois mélanges et six variables posées sur la racine, la page
+     s'y refait d'elle-même. C'est ce qui peut suivre la rafale du sélecteur. */
+  const peint = (v) => {
     conf("_accent").couleur = v;
-    enregistreConf(); appliqueAccent(); majPastilles();
+    appliqueAccent(); majPastilles();
   };
+  const choisit = (v) => { peint(v); enregistreConf(); };
   TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1916,15 +1981,15 @@ function voletApparence(hote){
     b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
-     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
-     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
-     en base pour autant, la publication reste un geste à part. */
+  /* La pastille de couleur libre. On suit la rafale du sélecteur : c'est le
+     seul moyen de voir la couleur s'installer sur le plan pendant qu'on la
+     cherche. Seule l'écriture attend la fin du geste — voir « La rafale du
+     sélecteur de couleur ». */
   const libre = document.createElement("label");
   libre.className = "perso";
   libre.title = "Couleur libre";
   libre.innerHTML = '<input type="color"><span></span>';
-  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
     delete conf("_accent").couleur;

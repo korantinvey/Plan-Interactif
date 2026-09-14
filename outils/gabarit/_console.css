@@ -21,6 +21,10 @@
      rayon unique donnait soit des cartes à angle vif, soit des boutons en
      pastille — ils ne sont pas à la même échelle. */
   --radius:6px; --radius-bloc:10px;
+  /* Le menu déroulant d'un « select » est peint par le système : ses tons ne
+     peuvent venir que d'ici, et « --systeme » lui dit de quel côté peindre
+     l'ascenseur et la surbrillance. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -32,6 +36,7 @@
     --ambre:#F0B429; --ambre-soft:#3A2F12;
     --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -43,6 +48,7 @@
   --ambre:#F0B429; --ambre-soft:#3A2F12;
   --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
 }
 
 *{box-sizing:border-box}
@@ -50,6 +56,11 @@ body{margin:0;background:var(--ground);color:var(--ink);
   font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
+/* Les lignes du menu héritent de l'encre du champ, jamais de son fond : dans
+   le thème sombre, elles écrivaient du blanc sur le blanc du système et ne
+   paraissaient qu'au survol. */
+select{color-scheme:var(--systeme)}
+option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 /* Un display: flex ou grid l'emporte sinon sur la règle du navigateur, et
    l'élément reste visible alors qu'on le croit masqué. */
 [hidden]{display:none!important}
