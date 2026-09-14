@@ -1610,6 +1610,11 @@ function rendTextes(){
 
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+  /* Le fond de carte suit la vue : ses tuiles dépendent de l'échelle et du
+     cadrage, comme la barre d'échelle juste à côté. Il se refait au plus une
+     fois par image, et ne réécrit rien tant que le carré de tuiles ne change
+     pas — glisser d'un mètre ne redemande aucune image. */
+  if (typeof dessineFondCarte === "function") dessineFondCarte();
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();

@@ -36,14 +36,6 @@
      deviendrait illisible sur l'un des deux. */
   --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
-  /* Les environs, et pourquoi ils ne prennent pas l'encre du plan. Dessiné
-     dans la teinte de l'habillage, le quartier ne se lisait plus comme un sol
-     mais comme une seconde couche de plan : rues, parcelles et stands au même
-     poids, et plus rien de lisible. Trois tons donc, rangés comme sur toutes
-     les cartes — les voies plus claires que le sol, le bâti plus sombre. C'est
-     ce contraste-là qui fait qu'on lit une ville sans y penser, et il tient
-     sans que l'exploitant ait à peindre quoi que ce soit. */
-  --env-voie:#F7F8F4; --env-espace:#DEE3D7; --env-bati:#D3D8CB;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
   --radius:3px;
   /* La pile du sans, écrite une fois. Elle l'était à deux endroits — la page
@@ -68,7 +60,6 @@
     --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
     --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
-    --env-voie:#2B3236; --env-espace:#181E20; --env-bati:#1F2528;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
   }
 }
@@ -83,7 +74,6 @@
   --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
   --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
-  --env-voie:#2B3236; --env-espace:#181E20; --env-bati:#1F2528;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
 }
 
@@ -327,20 +317,7 @@ button{cursor:pointer;background:none;border:none}
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
 #couches .cal{color:var(--plan-line)}
-/* Chaque famille des environs a son ton. `styleFond` efface la couleur en
-   ligne quand le sous-calque n'en porte pas — c'est le cas ici, tous noirs à
-   la source — et ces règles prennent alors le relais ; une couleur choisie
-   dans le panneau reste en ligne, et l'emporte comme toujours. */
-#couches .cal [data-env="voies"]{color:var(--env-voie)}
-#couches .cal [data-env="espaces"]{color:var(--env-espace)}
-#couches .cal [data-env="constructions"]{color:var(--env-bati)}
 #couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
-/* Sauf les environs. Une rue de huit mètres se dessine large de huit mètres,
-   et s'amincit en reculant comme le ferait une carte : un trait d'un demi-pixel
-   à tous les zooms ferait de l'avenue un cheveu, et du quartier un gribouillis
-   uniforme. L'épaisseur voyage donc en style sur chaque tracé — une règle de
-   feuille l'emporterait sur un attribut de présentation. */
-#couches .cal[data-cle="__environs"] path{vector-effect:none}
 /* Le groupe d'un calque porte stroke: currentColor pour ses tracés. Un texte
    en hérite aussi, avec l'épaisseur par défaut d'une unité — soit un mètre ici,
    trois fois la hauteur des glyphes : les mots devenaient des taches. Un texte
@@ -903,6 +880,15 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
   font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
 .scalebar i{display:block;height:6px;border:1px solid var(--ink-3);border-top:none}
+
+/* Le fond de carte. Les tuiles se posent bord à bord et le navigateur laisse
+   un cheveu blanc entre deux bords calculés au millième : elles se recouvrent
+   donc d'un pouce, ce qui ne se voit pas et supprime la couture. Une tuile qui
+   ne répond pas ne laisse rien — pas de cadre brisé sous le plan. */
+#fondCarte image{image-rendering:auto}
+.creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
+  background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
+  border-radius:3px;pointer-events:none;max-width:60%;text-align:right}
 
 .detail{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
   border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;z-index:4;
@@ -2589,6 +2575,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   color:var(--ink);font-variant-numeric:tabular-nums}
 .envCoord input:focus{border-color:var(--accent);outline:none}
 .envRot input{width:88px}
+.envFond select{width:100%;padding:6px 8px;font-size:13.5px}
 .envEtat{font-size:12.5px;color:var(--ink-3);line-height:1.5;margin:10px 0 0}
 .envEtat.alerte{color:var(--rouge)}
 .envFin{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
@@ -3505,6 +3492,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   <main class="stage" id="stage">
     <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
       <g id="couches">
+        <!-- Le fond de carte, sous tout le reste. Il ne participe pas à la
+             pile des calques : `ordonneDom` n'y déplace que ce qu'elle connaît,
+             et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
+             contenu est refait à chaque changement de vue et ne s'enregistre
+             nulle part — ce sont des tuiles, pas un dessin. -->
+        <g id="fondCarte"></g>
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>
@@ -3517,6 +3510,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <!-- Le fond de carte se cite. C'est la contrepartie de tuiles qu'on
+         n'a pas dessinées, et elle ne paraît que lorsqu'il y en a. -->
+    <div class="creditCarte" id="creditCarte" hidden></div>
     <div class="poi" id="poi" hidden></div>
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
@@ -5380,6 +5376,11 @@ function rendTextes(){
 
 const appliqueVue = () => {
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+  /* Le fond de carte suit la vue : ses tuiles dépendent de l'échelle et du
+     cadrage, comme la barre d'échelle juste à côté. Il se refait au plus une
+     fois par image, et ne réécrit rien tant que le carré de tuiles ne change
+     pas — glisser d'un mètre ne redemande aucune image. */
+  if (typeof dessineFondCarte === "function") dessineFondCarte();
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
@@ -13298,9 +13299,7 @@ function appliqueDimension(quoi){
    un seul empilement : n'importe lequel peut se glisser entre deux autres.
    L'ordre de la liste est l'ordre de tracé — le premier est derrière.
    ============================================================ */
-/* Le pavillon est facultatif : la pile qu'on règle est celle qu'on regarde,
-   sauf quand on range une couche sur tous les pavillons à la fois. */
-const clePile = (p) => "_pile:" + (p || P()).id;
+const clePile = () => "_pile:" + P().id;
 
 function entrees(){
   const e = [];
@@ -15736,11 +15735,15 @@ function sommets(o){
   return l;
 }
 
-/** Enveloppe convexe d'un nuage de points, parcours monotone d'Andrew.
- *  Les sommets, et non un tracé : le découpage des environs en a besoin
- *  comme géométrie, là où la grille de marche veut un chemin à peindre. */
-function bordConvexe(pts){
-  pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+/** Enveloppe convexe, parcours monotone d'Andrew. */
+const ENVELOPPES = new Map();
+function enveloppe(p){
+  const garde = ENVELOPPES.get(p.id);
+  if (garde) return garde;
+  const pts = [];
+  for (const o of p.stands) pts.push(...sommets(o));
+  for (const o of p.zones) pts.push(...sommets(o));
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cote = (suite) => {
     const r = [];
     for (const q of suite){
@@ -15754,17 +15757,7 @@ function bordConvexe(pts){
     r.pop();
     return r;
   };
-  return pts.length < 3 ? [] : cote(pts).concat(cote(pts.slice().reverse()));
-}
-
-const ENVELOPPES = new Map();
-function enveloppe(p){
-  const garde = ENVELOPPES.get(p.id);
-  if (garde) return garde;
-  const pts = [];
-  for (const o of p.stands) pts.push(...sommets(o));
-  for (const o of p.zones) pts.push(...sommets(o));
-  let bord = bordConvexe(pts);
+  let bord = pts.length < 3 ? [] : cote(pts).concat(cote(pts.slice().reverse()));
   /* Un pavillon sans emplacement — cela existe, le temps d'une première
      synchronisation — n'a pas d'enveloppe : on retombe sur son emprise, à
      défaut de mieux. */
@@ -21166,47 +21159,28 @@ function voletSuggestion(hote){
    16. Les environs — le pavillon dans son quartier
 
    Un plan de salon s'arrête au mur. Le visiteur, lui, arrive par une rue, se
-   gare sur un parking, ressort par une porte qui donne quelque part : tout
-   cela existe à douze mètres du premier stand, et le plan n'en disait rien.
+   gare sur un parking, ressort par une porte qui donne quelque part.
 
-   Le hall est pourtant déjà situé, et depuis toujours. Klipso stocke sa
-   géométrie en mètres dans le repère monde du parc, l'import ne fait qu'en
-   retourner le Y (`_partage/geometrie.ts`), et l'échelle affichée dit des
-   mètres parce que ce sont des mètres. Il ne manque donc pas une projection
-   pour situer le pavillon dans son quartier : il manque trois nombres — où
-   tombe un point du plan sur la Terre, et vers où pointe l'axe des X.
+   Le hall est pourtant déjà situé. Klipso stocke sa géométrie en mètres dans
+   le repère monde du parc, l'import ne fait qu'en retourner le Y
+   (`_partage/geometrie.ts`), et l'échelle affichée dit des mètres parce que ce
+   sont des mètres. Il ne manque que trois nombres — où tombe un point du plan
+   sur la Terre, et vers où pointe l'axe des X — pour glisser une carte dessous.
 
-   Ces trois nombres ne se devinent pas, et c'est la seule chose qui se fasse
-   à la main : on colle les coordonnées du centre du pavillon, prises sur
-   n'importe quelle carte, puis on tourne jusqu'à ce que les bâtiments voisins
-   tombent en face. Une fois par parc, jamais rejoué.
+   Une carte, et non un quartier dessiné. La première version allait chercher
+   les rues et les bâtiments d'OpenStreetMap et les traçait elle-même : il a
+   fallu en écrire la classification, les largeurs, les tons, l'ordre de tracé
+   et le découpage, et chaque correction en découvrait une autre. Un style de
+   carte, ce sont des centaines de règles, et les réinventer une par une ne
+   converge pas. On pose donc des tuiles servies par des gens dont c'est le
+   métier, et il ne reste ici que ce que personne d'autre ne peut faire à notre
+   place : dire où le plan tombe sur la Terre.
 
-   Le reste ne sort pas d'ici. On demande les rues et les bâtiments à
-   OpenStreetMap une fois, on les range en mètres-plan, et on les enregistre
-   comme un calque d'habillage ordinaire. À partir de là il n'y a plus rien de
-   particulier : le panneau des calques le colore, le masque et le déplace
-   comme le reste, le visiteur le reçoit avec le fond, hors ligne compris, et
-   la page ne parle à personne d'autre que son propre service. La Terre n'est
-   ronde qu'au moment du calage.
+   Le fond vit hors de la pile des calques et ne s'enregistre nulle part : il
+   se refait à chaque changement de vue, comme la barre d'échelle. Ce qui
+   s'enregistre tient en une ligne — `evenement.calage` — et part au visiteur
+   avec le plan.
    ============================================================ */
-
-/* Le calque qu'on écrit, et sous lequel rien ne se range. Son identifiant
-   tient la place d'un identifiant Klipso — il en a la forme sans risquer d'en
-   croiser un — et le même sert à tous les pavillons : l'unicité porte sur le
-   couple (pavillon, identifiant). */
-const CLE_ENVIRONS = "__environs";
-const ID_ENVIRONS = "e17b0000-0000-4000-8000-000000000001";
-const NOM_ENVIRONS = "Environs";
-/* Un rang que Klipso ne descend jamais : le calque arrive au fond de la pile
-   sans que personne ait à l'y pousser. */
-const RANG_ENVIRONS = -1000;
-
-/* Combien de largeurs de pavillon on demande, et jusqu'où l'on peut ensuite
-   reculer. Le même chiffre pour les deux : reculer au-delà de ce qui a été
-   dessiné ne montrerait que du vide, et s'arrêter en deçà laisserait dehors
-   ce qu'on est allé chercher. Six fois deux cents mètres, c'est le quartier —
-   les accès, les parkings, la station. */
-const TERRAIN_ENVIRONS = 6;
 
 /* ------------------------------------------------------------
    Le calage
@@ -21221,8 +21195,7 @@ const RAYON_TERRE = 6378137, EXCENTRICITE2 = 0.00669437999014;
  *
  * L'ellipsoïde plutôt que la sphère : cela ne coûte qu'une racine, et l'écart
  * atteint sept mètres au kilomètre sous nos latitudes — de quoi décaler d'une
- * demi-rue le bord du quartier, précisément là où l'on vérifie que le calage
- * tombe juste.
+ * demi-rue le bord du quartier, précisément là où l'on vérifie le calage.
  */
 function metresParDegre(lat){
   const s = Math.sin(lat * DEG), w = 1 - EXCENTRICITE2 * s * s;
@@ -21264,19 +21237,20 @@ function versLePlan(ll, cal){
 /**
  * Le même calage, écrit depuis un autre point du plan.
  *
- * Tourner autour de l'origine ferait fuir le quartier hors de l'écran dès le
+ * Tourner autour de l'origine ferait fuir la carte hors de l'écran dès le
  * premier degré — elle est à sept kilomètres du hall. On ré-ancre donc sur le
  * point qu'on regarde avant de toucher à l'angle : la rotation pivote alors
  * là où l'œil est posé, et régler devient un geste au lieu d'une poursuite.
  */
 function reancre(cal, pt){
   const ll = versTerre(pt, cal);
-  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle };
+  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1],
+           angle: cal.angle, fond: cal.fond };
 }
 
 /** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
- *  c'est autour de l'ensemble qu'il faut demander le terrain — sans quoi un
- *  salon sur deux halls n'en situerait qu'un. */
+ *  c'est autour de l'ensemble qu'on se situe — sans quoi un salon sur deux
+ *  halls n'en placerait qu'un. */
 function empriseDesPavillons(){
   let e = null;
   for (const p of (DATA && DATA.plans ? DATA.plans : [])){
@@ -21295,15 +21269,235 @@ function centreDesPavillons(){
   return e ? [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2] : [0, 0];
 }
 
+/* ------------------------------------------------------------
+   Le fond de carte
+
+   Les tuiles d'une pyramide Web Mercator : un carré de 256 pixels par
+   (niveau, colonne, ligne), servi par un fournisseur.
+
+   Le placement tient en une rotation, et c'est la seule chose à comprendre
+   ici. Le passage plan ↔ est/nord retourne le Y ; les tuiles, elles, se
+   rangent en est/**sud**, comme les pixels d'une image. Deux retournements
+   s'annulent : de l'est/sud vers le plan, il ne reste qu'une rotation pure.
+   D'où un seul groupe SVG portant `rotate`, et des tuiles posées à l'équerre
+   dedans — pas de transformation par tuile, pas de trigonométrie répétée.
+   ------------------------------------------------------------ */
+
+const PX_TUILE = 256;
+/* Le tour de la Terre à l'équateur, dans la projection des tuiles. */
+const TOUR_MERCATOR = 40075016.686;
+
+/* Les fonds proposés. La Géoplateforme de l'IGN d'abord : ouverte, sans clé à
+   cacher dans une page publique, et couvrant le pays où se tiennent les salons
+   qui nous occupent. OpenStreetMap en recours, hors de France.
+
+   Chacun se cite : c'est la contrepartie d'un fond qu'on n'a pas dessiné. */
+const GEOPF = "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0" +
+  "&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM" +
+  "&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
+const CARTES = {
+  plan: { nom: "Plan IGN", max: 19,
+          url: GEOPF + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
+          credit: "Fond de plan © IGN — Géoplateforme" },
+  photo: { nom: "Vue aérienne", max: 20,
+           url: GEOPF + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
+           credit: "Vue aérienne © IGN — Géoplateforme" },
+  osm: { nom: "OpenStreetMap", max: 19,
+         url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+         credit: "Fond de plan © les contributeurs d'OpenStreetMap" },
+};
+
+/* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
+   qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
+   c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
+   première rue. L'emprise, elle, ne bouge pas : elle tient aussi la grille
+   d'itinéraire, au demi-mètre. */
+const RECUL_CARTE = 8;
+
+/** Le calage qui vaut à cet instant : celui qu'on règle s'il y en a un, celui
+ *  du salon sinon. Le visiteur n'a jamais que le second. */
+const calageCourant = () => ENV_CAL || (DATA && DATA.calage) || null;
+
+/** Le fond retenu, s'il en est un de connu. */
+const fondCourant = () => {
+  const c = calageCourant();
+  return c && CARTES[c.fond] ? CARTES[c.fond] : null;
+};
+
+function recul(){
+  return fondCourant() ? RECUL_CARTE : 2.5;
+}
+
+/** Un point du globe, en pixels de la pyramide, à ce niveau. */
+function pixelsMercator(lon, lat, z){
+  const n = PX_TUILE * Math.pow(2, z);
+  const s = Math.max(-0.9999, Math.min(0.9999, Math.sin(lat * DEG)));
+  return [(lon + 180) / 360 * n,
+          (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
+}
+
+/** La latitude d'une ligne de pixels — la réciproque de la précédente, dont on
+ *  n'a besoin que du Y. */
+function latitudeDePixel(py, z){
+  const n = PX_TUILE * Math.pow(2, z);
+  return Math.atan(Math.sinh(Math.PI * (1 - 2 * py / n))) / DEG;
+}
+
+/** Ce que vaut un pixel de la pyramide, en mètres au sol, par la formule
+ *  sphérique. Sert à choisir le niveau, et à rien d'autre : un écart de trois
+ *  millièmes ne change jamais un arrondi. */
+const metresParPixel = (lat, z) =>
+  TOUR_MERCATOR * Math.cos(lat * DEG) / (PX_TUILE * Math.pow(2, z));
+
 /**
- * Le carré de terrain à demander, en degrés : sud, ouest, nord, est.
+ * Ce que vaut un pixel de la pyramide, en mètres du plan — vers l'est, et vers
+ * le sud.
  *
- * Un carré, et non le rectangle du salon : le repère du plan est tourné par
- * rapport au nord, et ce qui est à l'équerre sur le plan ne l'est plus sur la
- * Terre. Bâti sur la plus grande dimension, il contient le salon quelle que
- * soit la rotation — laquelle n'est justement pas encore sûre au moment où
- * l'on demande.
+ * Mesuré dans notre propre repère, et non déduit de la formule sphérique. Web
+ * Mercator projette depuis une sphère, `versLePlan` depuis l'ellipsoïde
+ * WGS84 ; et sur l'ellipsoïde la projection n'est plus conforme — un pixel ne
+ * vaut pas tout à fait le même terrain vers l'est et vers le nord. Supposer
+ * l'un et l'autre égaux à la valeur sphérique décalait la carte d'un mètre au
+ * bout du quartier : invisible sur un stand, et exactement là où l'œil vérifie
+ * que le calage tombe juste.
+ *
+ * Deux dérivées suffisent, et le reste du placement se fait alors en pixels
+ * entiers : le groupe porte l'échelle, les tuiles n'ont plus rien à calculer.
  */
+function echelleDesTuiles(cal, z){
+  const m = metresParDegre(cal.lat);
+  const py = pixelsMercator(cal.lon, cal.lat, z)[1];
+  return {
+    x: 360 / (PX_TUILE * Math.pow(2, z)) * m.lon,
+    y: (cal.lat - latitudeDePixel(py + 1, z)) * m.lat,
+  };
+}
+
+/** Le niveau dont les tuiles tombent au plus près de l'échelle affichée : à un
+ *  niveau près on afficherait un fond deux fois trop grossier, ou quatre fois
+ *  trop de tuiles pour la même image. */
+function niveauDesTuiles(cal, mParPx, max){
+  const z = Math.round(
+    Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (PX_TUILE * mParPx)) / Math.LN2);
+  return Math.max(2, Math.min(max, z));
+}
+
+/** L'adresse d'une tuile. */
+const adresseTuile = (fond, z, x, y) => fond.url
+  .replace("{z}", z).replace("{x}", x).replace("{y}", y);
+
+/**
+ * Les tuiles à poser pour couvrir la vue, et où les poser.
+ *
+ * Rendu à part du dessin pour être éprouvé sans navigateur : c'est la seule
+ * arithmétique de ce module qu'une erreur de signe rendrait invisible à la
+ * lecture et évidente à l'écran.
+ */
+function tuilesDeLaVue(cal, fond, vue, mParPx){
+  const z = niveauDesTuiles(cal, mParPx, fond.max);
+  const k = echelleDesTuiles(cal, z);
+  const ancre = pixelsMercator(cal.lon, cal.lat, z);
+  /* Les quatre coins de la vue, ramenés en est/sud puis en pixels. La
+     transformation étant rigide, c'est encore un rectangle — tourné ; on
+     encadre donc ses coins. */
+  const co = Math.cos(cal.angle), si = Math.sin(cal.angle);
+  const coins = [[vue.x, vue.y], [vue.x + vue.w, vue.y],
+                 [vue.x + vue.w, vue.y + vue.h], [vue.x, vue.y + vue.h]]
+    .map(q => { const dx = q[0] - cal.x, dy = q[1] - cal.y;
+                return [ancre[0] + (dx * co + dy * si) / k.x,
+                        ancre[1] + (-dx * si + dy * co) / k.y]; });
+  const n = Math.pow(2, z);
+  const X0 = Math.floor(Math.min.apply(null, coins.map(q => q[0])) / PX_TUILE);
+  const X1 = Math.floor(Math.max.apply(null, coins.map(q => q[0])) / PX_TUILE);
+  const Y0 = Math.floor(Math.min.apply(null, coins.map(q => q[1])) / PX_TUILE);
+  const Y1 = Math.floor(Math.max.apply(null, coins.map(q => q[1])) / PX_TUILE);
+  const tuiles = [];
+  /* Un garde-fou, et non une limite de travail : le niveau étant choisi sur
+     l'échelle, il en tient toujours quelques dizaines. Passé ce compte, c'est
+     qu'un calage aberrant demande la moitié du globe. */
+  if ((X1 - X0 + 1) * (Y1 - Y0 + 1) > 400) return { z: z, k: k, tuiles: [] };
+  for (let X = X0; X <= X1; X++){
+    for (let Y = Y0; Y <= Y1; Y++){
+      if (X < 0 || Y < 0 || X >= n || Y >= n) continue;
+      /* En pixels de la pyramide, relatifs à l'ancre : des entiers, que le
+         groupe met à l'échelle et tourne d'un seul coup. */
+      tuiles.push({ z: z, x: X, y: Y,
+                    px: X * PX_TUILE - ancre[0], py: Y * PX_TUILE - ancre[1] });
+    }
+  }
+  return { z: z, k: k, tuiles: tuiles };
+}
+
+/* Ce qui est déjà posé : sans cette empreinte, chaque image d'un glissement
+   réécrirait les mêmes trente balises et redemanderait les mêmes tuiles. */
+let _fondPose = "";
+let _tuilesMuettes = 0;
+
+/** Le fond de carte, refait pour la vue courante. */
+function dessineFondCarte(){
+  const hote = typeof $ === "function" && $("fondCarte");
+  if (!hote) return;
+  const cal = calageCourant(), fond = fondCourant();
+  const credit = $("creditCarte");
+  if (!cal || !fond || typeof view === "undefined" || !view){
+    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    if (credit) credit.hidden = true;
+    return;
+  }
+  const r = cadrePlan();
+  const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
+  const empreinte = [cal.fond, cal.lon, cal.lat, cal.x, cal.y, cal.angle, t.z,
+    t.tuiles.length, t.tuiles.length ? t.tuiles[0].x + "," + t.tuiles[0].y : ""].join("|");
+  if (empreinte === _fondPose) return;
+  _fondPose = empreinte;
+  _tuilesMuettes = 0;
+
+  /* Le groupe porte tout : la position de l'ancre, la rotation vers le repère
+     du plan, et l'échelle est/sud. Les tuiles n'ont plus alors que des pixels
+     entiers à porter — ce qui les pose exactement bord à bord.
+
+     Un millième de recouvrement malgré tout : le navigateur laisse entre deux
+     bords calculés en virgule flottante un cheveu de fond, et ce cheveu
+     dessine une grille sur toute la carte. */
+  const r2 = (v) => Math.round(v * 1e6) / 1e6;
+  const c = PX_TUILE * 1.001;
+  hote.setAttribute("transform",
+    "translate(" + r2(cal.x) + " " + r2(cal.y) + ")" +
+    " rotate(" + r2(cal.angle / DEG) + ")" +
+    " scale(" + r2(t.k.x) + " " + r2(t.k.y) + ")");
+  hote.innerHTML = t.tuiles.map(q =>
+    '<image x="' + q.px + '" y="' + q.py + '" width="' + c + '" height="' + c +
+    '" href="' + esc(adresseTuile(fond, q.z, q.x, q.y)) + '"/>').join("");
+  /* Une tuile qui ne répond pas s'efface : un cadre brisé sous le plan dirait
+     une panne du plan, quand seul le fond manque. On les compte, pour que le
+     volet de réglage puisse dire qu'aucune n'arrive. */
+  hote.querySelectorAll("image").forEach(im => {
+    im.onerror = () => { _tuilesMuettes++; im.remove(); };
+  });
+  if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
+}
+
+/* ------------------------------------------------------------
+   S'accrocher au bâtiment du parc
+
+   Poser les trois nombres à la main demande de la patience, et ne tombe jamais
+   tout à fait juste. Or le pavillon est cartographié : un parc des expositions
+   est bâti, donc relevé, et OpenStreetMap en rend le contour comme celui de
+   n'importe quelle maison. On s'y accroche — même orientation, même centre —
+   et il ne reste à trancher que ce qu'aucun calcul ne peut trancher : lequel
+   des bâtiments voisins, et lequel des quatre quarts de tour.
+
+   Un seul appel, au moment du calage, par un exploitant. Le visiteur ne voit
+   jamais passer cette requête : il reçoit trois nombres.
+   ------------------------------------------------------------ */
+
+const OVERPASS = "https://overpass-api.de/api/interpreter";
+/* Le terrain demandé, en largeurs de pavillon : de quoi contenir le hall et
+   ses voisins immédiats, quelle que soit la rotation — qui n'est justement pas
+   encore connue au moment où l'on demande. */
+const TERRAIN_BATIS = 3;
+
+/** Le carré de terrain à fouiller, en degrés : sud, ouest, nord, est. */
 function carreDeTerrain(cal, facteur){
   const e = empriseDesPavillons();
   if (!e) return null;
@@ -21316,364 +21510,35 @@ function carreDeTerrain(cal, facteur){
     ouest = Math.min(ouest, ll[0]); est = Math.max(est, ll[0]);
     sud = Math.min(sud, ll[1]);     nord = Math.max(nord, ll[1]);
   }
-  return { bbox: [sud, ouest, nord, est], demi: d, centre: c };
+  return [sud, ouest, nord, est];
 }
 
-/* ------------------------------------------------------------
-   Ce qu'on demande à OpenStreetMap
-   ------------------------------------------------------------ */
-
-/* Le serveur public d'Overpass. Interrogé une fois par salon, à la main d'un
-   exploitant : ce n'est pas un appel que le visiteur fait — lui reçoit un
-   tracé déjà cuit, avec le reste du fond. */
-const OVERPASS = "https://overpass-api.de/api/interpreter";
-
-/* Trois familles, et non une seule. Le panneau des calques sait déjà régler
-   couleur et visibilité sous-calque par sous-calque : un quartier qu'on ne
-   pourrait éteindre que d'un bloc ne servirait qu'à moitié — les bâtiments
-   voisins situent, la végétation encombre.
-
-   Sans accent, contre l'usage de la maison : ces identifiants deviennent des
-   clés de réglage (`__environs/VOIES`), enregistrées chez l'exploitant et en
-   base, et une clé ne doit pas dépendre d'une normalisation Unicode. `joli()`
-   les rhabille dans le panneau. */
-const SOUS_ENVIRONS = [
-  /* L'ordre est celui du tracé, et c'est celui de toutes les cartes : le sol
-     d'abord, les voies par-dessus, le bâti qui couvre tout. Un bâtiment n'est
-     jamais sous une route, une route jamais sous une pelouse. C'est aussi ce
-     qui fait que le pavillon, cartographié comme bâtiment, masque de lui-même
-     la voie qui semblait le traverser.
-
-     Les surfaces sont remplies et non cernées : un quartier en fil de fer se
-     lit comme un second plan posé sur le premier — c'est ce qu'il faisait. */
-  { id: "ESPACES",       env: "espaces",       remplit: true  },
-  { id: "VOIES",         env: "voies",         remplit: false },
-  { id: "CONSTRUCTIONS", env: "constructions", remplit: true  },
-];
-
-/* La largeur d'une voie, en mètres, quand OpenStreetMap ne la donne pas. Le
-   trait est tracé à l'échelle du plan — huit mètres de rue font huit mètres,
-   et s'amincissent en reculant comme tout le reste — ce qui suppose de dire
-   lesquels. */
-const LARGEUR_VOIE = {
-  motorway: 18, trunk: 16, primary: 14, secondary: 11, tertiary: 9,
-  unclassified: 7, residential: 7, living_street: 6, pedestrian: 6,
-  service: 4.5, track: 3.5, cycleway: 2.5, footway: 2, path: 2, steps: 2,
-};
-const LARGEUR_RAIL = { rail: 4, light_rail: 3.5, tram: 3, subway: 3, narrow_gauge: 2.5 };
-
-/* Le vert qu'on garde. `landuse` porte aussi bien un square qu'un périmètre
-   commercial de six hectares : les seconds ne décrivaient rien et couvraient
-   le quartier de grands rectangles vides. */
-const VERT = { grass: 1, forest: 1, meadow: 1, village_green: 1,
-               recreation_ground: 1, cemetery: 1 };
-
-/** Ce que la source dit de la largeur, ou ce que sa catégorie laisse supposer. */
-function largeurVoie(t){
-  const l = parseFloat(t.width);
-  if (isFinite(l) && l > 0 && l < 60) return l;
-  /* Les voies plutôt que la largeur : c'est ce que les contributeurs
-     renseignent le plus, et trois mètres vingt par voie plus un mètre de
-     trottoir tombe juste sur une rue de ville. */
-  const v = parseInt(t.lanes, 10);
-  if (isFinite(v) && v > 0 && v < 12) return v * 3.2 + 1.5;
-  return LARGEUR_VOIE[t.highway] || 5;
-}
-
-/**
- * La famille d'un chemin, et l'épaisseur de son trait. Nul : on n'en veut pas.
- *
- * Les surfaces — bâtiments, parkings, pelouses — sont fermées et tracées d'un
- * filet ; l'exploitant les remplit d'un clic depuis le panneau s'il préfère
- * des aplats. Le filet est en mètres lui aussi : un demi-mètre disparaît en
- * reculant, ce qui est exactement ce qu'on veut d'un contour à cette échelle.
- */
-function sorteEnvirons(t){
-  if (!t) return null;
-  if (t.highway && t.highway !== "proposed" && t.highway !== "construction")
-    return { sous: "VOIES", large: largeurVoie(t), ferme: false };
-  if (LARGEUR_RAIL[t.railway])
-    return { sous: "VOIES", large: LARGEUR_RAIL[t.railway], ferme: false };
-  if (t.building) return { sous: "CONSTRUCTIONS", large: 0.4, ferme: true };
-  if (t.amenity === "parking" || VERT[t.landuse] ||
-      t.leisure === "park" || t.leisure === "garden" ||
-      t.natural === "water" || t.natural === "wood")
-    return { sous: "ESPACES", large: 0.4, ferme: true };
-  return null;
-}
-
-/** La requête Overpass : tout ce qu'on veut, dans un seul aller-retour. */
-function requeteOverpass(bbox){
-  /* `out geom` rend les coordonnées de chaque chemin dans la réponse : sans
-     lui il faudrait un second appel pour résoudre les nœuds, un par un. Les
-     relations — un bâtiment à cour intérieure, un lac à île — sont laissées
-     de côté : leur assemblage demanderait un module à lui seul, pour ce qu'il
-     ajouterait ici d'un trou dans une forme grise. */
-  return "[out:json][timeout:90][bbox:" + bbox.map(v => v.toFixed(6)).join(",") + "];(" + [
-    'way["highway"]',
-    'way["railway"~"^(rail|light_rail|tram|subway|narrow_gauge)$"]',
-    'way["building"]',
-    'way["amenity"="parking"]',
-    'way["landuse"~"^(grass|forest|meadow|village_green|recreation_ground|cemetery)$"]',
-    'way["leisure"~"^(park|garden)$"]',
-    'way["natural"~"^(water|wood)$"]',
-  ].join(";") + ";);out geom;";
-}
-
-/** Le quartier, tel qu'OpenStreetMap le rend. */
-async function chercheEnvirons(bbox){
+/** Les bâtiments du secteur, tels qu'OpenStreetMap les rend. */
+async function chercheBatiments(bbox){
+  /* `out geom` rend les coordonnées dans la réponse : sans lui il faudrait un
+     second appel pour résoudre les nœuds, un par un. */
+  const requete = "[out:json][timeout:60][bbox:" +
+    bbox.map(v => v.toFixed(6)).join(",") + '];way["building"];out geom;';
   let r;
   try {
     r = await fetch(OVERPASS, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: "data=" + encodeURIComponent(requeteOverpass(bbox)),
+      body: "data=" + encodeURIComponent(requete),
     });
   } catch (e) {
     throw new Error("OpenStreetMap est injoignable depuis ce poste.");
   }
   /* Le serveur public d'Overpass est partagé, et le dit : ces deux codes ne
-     signalent pas une requête fautive mais un serveur qui ne peut pas
-     répondre maintenant. Les confondre enverrait corriger des coordonnées
-     justes. */
+     signalent pas une requête fautive mais un serveur qui ne peut pas répondre
+     maintenant. Les confondre enverrait corriger des coordonnées justes. */
   if (r.status === 429 || r.status === 504)
-    throw new Error("OpenStreetMap est saturé pour l'instant : réessayez dans une minute.");
+    throw new Error("OpenStreetMap est saturé : réessayez dans une minute.");
   if (!r.ok) throw new Error("OpenStreetMap a répondu " + r.status + ".");
   const d = await r.json();
   return (d.elements || []).filter(x =>
-    x.type === "way" && x.geometry && x.geometry.length > 1 && sorteEnvirons(x.tags));
+    x.type === "way" && x.geometry && x.geometry.length > 3);
 }
-
-/**
- * Vers où penchent les rues du quartier, en radians depuis l'est.
- *
- * Un parc des expositions est bâti le long de ses rues : la direction
- * dominante de celles-ci et celle des allées du pavillon (`anglePlan`) sont la
- * même, au quart de tour près. De quoi proposer une rotation de départ plutôt
- * qu'un zéro, et ne laisser à trancher que le quart de tour — ce qu'un coup
- * d'œil règle, là où trouver un angle à la main ne se fait pas.
- */
-function penteDesVoies(elements, cal){
-  const m = metresParDegre(cal.lat);
-  let sc = 0, ss = 0;
-  for (const w of elements){
-    if (!w.tags || !w.tags.highway) continue;
-    const g = w.geometry;
-    for (let i = 0; i + 1 < g.length; i++){
-      const e = (g[i + 1].lon - g[i].lon) * m.lon;
-      const n = (g[i + 1].lat - g[i].lat) * m.lat;
-      const l = Math.hypot(e, n);
-      if (l < 8) continue;            // un raccord de trottoir ne dit rien de la rue
-      const a = Math.atan2(n, e);
-      /* Quadruplées, comme les allées du plan le sont dans `anglePlan` : au
-         quart de tour près, une direction fait alors le tour entier, et 89°
-         se moyenne avec 1° au lieu de tomber à 45°. */
-      sc += l * Math.cos(4 * a); ss += l * Math.sin(4 * a);
-    }
-  }
-  return (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
-}
-
-/* ------------------------------------------------------------
-   Du chemin OSM au tracé du plan
-   ------------------------------------------------------------ */
-
-/**
- * Un tracé allégé — Douglas-Peucker, à un demi-mètre près.
- *
- * Un contributeur pose ses points au mètre ; à l'échelle d'un quartier, neuf
- * sur dix ne déplacent rien de visible et pèsent autant que les autres. Le
- * quartier tient ainsi en quelques centaines de kilo-octets au lieu de
- * quelques mégaoctets — et c'est chaque visiteur qui les téléchargerait.
- */
-function allegeTrace(pts, tol){
-  if (pts.length < 3) return pts;
-  const a = pts[0], b = pts[pts.length - 1];
-  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
-  let pire = -1, iPire = 0;
-  for (let i = 1; i < pts.length - 1; i++){
-    let t = l2 ? ((pts[i][0] - a[0]) * dx + (pts[i][1] - a[1]) * dy) / l2 : 0;
-    t = Math.max(0, Math.min(1, t));
-    const d = Math.hypot(pts[i][0] - (a[0] + t * dx), pts[i][1] - (a[1] + t * dy));
-    if (d > pire){ pire = d; iPire = i; }
-  }
-  if (pire <= tol) return [a, b];
-  return allegeTrace(pts.slice(0, iPire + 1), tol)
-    .slice(0, -1)
-    .concat(allegeTrace(pts.slice(iPire), tol));
-}
-
-/* ------------------------------------------------------------
-   Ce qui reste dehors
-
-   Le quartier n'a rien à faire sous le pavillon. Une rue qui passe derrière
-   les stands remonte entre eux, dans les allées, et donne à lire deux plans
-   superposés là où l'on n'en veut qu'un : le hall est dessiné, ce qui
-   l'entoure est un fond.
-
-   On découpe donc, plutôt que d'écarter chemin par chemin — une rue qui longe
-   le hall doit se voir jusqu'au mur et s'arrêter là, ce qu'un tri par objet ne
-   saurait pas faire. Un `clipPath` en règle paire-impaire suffit : un grand
-   rectangle, et un trou par bâtiment.
-   ------------------------------------------------------------ */
-
-/* Les formes dessinées qui occupent vraiment le sol. Une flèche, un repère ou
-   un texte ne l'occupent pas — ils désignent, et perceraient le fond d'un trou
-   là où il n'y a rien. */
-const SURFACES_DESSINEES = { poly: 1, rect: 1, stand: 1 };
-
-/* Au-delà de cet écart, deux emplacements appartiennent à deux bâtiments ; en
-   deçà, c'est une allée. Et la marge dont on élargit chacun : le mur se tient
-   au-delà du dernier stand, et le fond doit s'arrêter au mur. */
-const ECART_PAVE = 30, MARGE_PAVE = 10;
-
-/** Tout ce qui occupe le sol d'un pavillon, ramené à des boîtes. */
-function occupeLeSol(p){
-  const l = [];
-  for (const o of p.stands.concat(p.zones)) if (o.c && o.bb) l.push({ c: o.c, bb: o.bb });
-  for (const c of calquesDe(p)){
-    if (c.visible === false) continue;     // ce qu'on ne montre pas n'occupe rien
-    for (const f of (c.formes || [])){
-      if (!SURFACES_DESSINEES[f.t] || !f.pts || f.pts.length < 2) continue;
-      const xs = f.pts.map(q => q[0]), ys = f.pts.map(q => q[1]);
-      const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
-      const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-      l.push({ c: [(x0 + x1) / 2, (y0 + y1) / 2], bb: [x1 - x0, y1 - y0] });
-    }
-  }
-  return l;
-}
-
-/**
- * Les bâtiments d'un pavillon, chacun par son enveloppe.
- *
- * Un groupe par bâtiment, et non une enveloppe unique : un salon tient
- * parfois deux halls dans un même plan, et l'enveloppe de l'ensemble avalerait
- * la rue qui les sépare — celle que l'on veut justement voir.
- *
- * Le rapprochement se fait de proche en proche, en comparant toutes les
- * paires. C'est un carré sur quelques centaines de boîtes, soit une poignée de
- * millisecondes, et cela se recalcule à chaque tracé plutôt que de se garder :
- * un calque dessiné entre-temps changerait la réponse, et un fond qui garde la
- * sienne se trompe en silence.
- */
-function pavesDuPlan(p){
-  const objets = occupeLeSol(p);
-  const pere = objets.map((_, i) => i);
-  const chef = (i) => { while (pere[i] !== i) i = pere[i] = pere[pere[i]]; return i; };
-  for (let i = 0; i < objets.length; i++){
-    for (let j = i + 1; j < objets.length; j++){
-      const a = objets[i], b = objets[j];
-      const ex = Math.abs(a.c[0] - b.c[0]) - (a.bb[0] + b.bb[0]) / 2;
-      const ey = Math.abs(a.c[1] - b.c[1]) - (a.bb[1] + b.bb[1]) / 2;
-      if (Math.max(ex, ey) > ECART_PAVE) continue;
-      const x = chef(i), y = chef(j);
-      if (x !== y) pere[x] = y;
-    }
-  }
-  const groupes = new Map();
-  objets.forEach((o, i) => {
-    const k = chef(i);
-    if (!groupes.has(k)) groupes.set(k, []);
-    /* Les coins de la boîte, élargis de la marge : l'enveloppe les enferme
-       tous et se trouve dilatée d'autant de chaque côté. Écarter ensuite les
-       sommets depuis le centre aurait trop allongé un hall qui l'est déjà. */
-    const dx = o.bb[0] / 2 + MARGE_PAVE, dy = o.bb[1] / 2 + MARGE_PAVE;
-    groupes.get(k).push([o.c[0] - dx, o.c[1] - dy], [o.c[0] + dx, o.c[1] - dy],
-                        [o.c[0] + dx, o.c[1] + dy], [o.c[0] - dx, o.c[1] + dy]);
-  });
-  return [...groupes.values()].map(bordConvexe).filter(b => b.length > 2);
-}
-
-/* L'identifiant du gabarit de découpe. Fixe : un seul pavillon est monté à la
-   fois, et `monteHabillage` retire les calques du précédent avant de poser
-   ceux du suivant. */
-const ID_DECOUPE = "envHorsPavillon";
-
-/** Le gabarit : un grand rectangle percé d'un trou par bâtiment. La règle
- *  paire-impaire fait le reste — deux traversées pour un point sous le hall,
- *  une seule pour un point dehors. */
-function decoupeDuPavillon(p, cx, cy, demi, r1){
-  const bord = (pts) => "M" + pts.map(q => r1(q[0]) + " " + r1(q[1])).join("L") + "Z";
-  const cadre = bord([[cx - demi, cy - demi], [cx + demi, cy - demi],
-                      [cx + demi, cy + demi], [cx - demi, cy + demi]]);
-  return '<clipPath id="' + ID_DECOUPE + '"><path clip-rule="evenodd" d="' +
-         cadre + pavesDuPlan(p).map(bord).join("") + '"/></clipPath>';
-}
-
-/**
- * Le quartier d'un pavillon, en SVG, dans le repère du plan.
- *
- * Les tracés de même épaisseur sont réunis dans un seul `<path>` : cinq cents
- * rues font cinq balises au lieu de cinq cents, et le navigateur en pose
- * autant de moins. Les plus larges d'abord, pour que les sentiers se lisent
- * par-dessus l'avenue plutôt que dessous.
- */
-function dessineEnvirons(p, elements, cal){
-  const e = p.emprise || empriseDesPavillons();
-  const cx = (e.x0 + e.x1) / 2, cy = (e.y0 + e.y1) / 2;
-  const demi = Math.max(e.x1 - e.x0, e.y1 - e.y0) * TERRAIN_ENVIRONS / 2;
-  const par = new Map();
-  const r1 = v => Math.round(v * 10) / 10;
-
-  for (const w of elements){
-    const s = sorteEnvirons(w.tags);
-    if (!s) continue;
-    let pts = w.geometry.map(g => versLePlan([g.lon, g.lat], cal));
-    /* Le carré demandé est à l'équerre sur la Terre, le pavillon sur le plan :
-       les coins du premier débordent le second d'autant que la rotation est
-       franche. On écarte donc ce qui tombe entièrement hors du champ — sans
-       quoi le calque porterait un quart de quartier qu'aucun zoom n'atteint. */
-    if (pts.every(q => Math.abs(q[0] - cx) > demi || Math.abs(q[1] - cy) > demi)) continue;
-    /* Une surface d'OpenStreetMap répète son premier point à la fin : `Z` le
-       dit mieux, et l'allègement n'a pas à trancher entre les deux. */
-    const ferme = s.ferme && pts.length > 3;
-    if (ferme) pts = pts.slice(0, -1);
-    pts = allegeTrace(pts, 0.5);
-    if (pts.length < 2) continue;
-    const d = "M" + pts.map(q => r1(q[0]) + " " + r1(q[1])).join("L") + (ferme ? "Z" : "");
-    if (!par.has(s.sous)) par.set(s.sous, new Map());
-    const larges = par.get(s.sous);
-    if (!larges.has(s.large)) larges.set(s.large, []);
-    larges.get(s.large).push(d);
-  }
-
-  const groupes = [];
-  for (const fam of SOUS_ENVIRONS){
-    const larges = par.get(fam.id);
-    if (!larges || !larges.size) continue;
-    const chemins = [...larges.entries()]
-      .sort((a, b) => b[0] - a[0])      // les larges d'abord, les sentiers par-dessus
-      .map(([l, ds]) => '<path style="stroke-width:' + l + '" d="' + ds.join("") + '"/>')
-      .join("");
-    /* Un trait noir : c'est ainsi qu'un calque Klipso dit « je n'ai pas de
-       couleur à moi ». `styleFond` efface alors la teinte en ligne, et la
-       feuille de style pose celle de la famille — qui suit le thème, et qu'une
-       couleur choisie dans le panneau continue d'emporter. */
-    groupes.push('<g id="' + fam.id + '" data-env="' + fam.env + '"' +
-      ' data-s="rgb(0,0,0)" data-f="' + (fam.remplit ? "currentColor" : "none") + '"' +
-      ' clip-path="url(#' + ID_DECOUPE + ')">' + chemins + "</g>");
-  }
-  /* Le gabarit en tête, et rien du tout si rien n'est tracé : `sansMasques`
-     découpe le SVG enregistré sur ses balises `<g >` et garde ce qui les
-     précède, ce qui met le gabarit à l'abri d'un sous-calque masqué. */
-  if (!groupes.length) return "";
-  return decoupeDuPavillon(p, cx, cy, demi * 3, r1) + groupes.join("");
-}
-
-/* ------------------------------------------------------------
-   S'accrocher au bâtiment du parc
-
-   Tourner à l'œil contre un quartier entier demande de la patience et ne
-   tombe jamais tout à fait juste. Or le pavillon est dans les données : un
-   parc des expositions est bâti, donc cartographié, et OpenStreetMap en rend
-   le contour comme celui de n'importe quelle maison. Il suffit de s'y
-   accrocher — même orientation, même centre — pour que tout le reste suive.
-
-   Ce que le calcul ne peut pas trancher, c'est lequel des bâtiments voisins
-   est le bon, et lequel des quatre quarts de tour. D'où un bouton qui passe de
-   l'un à l'autre : la machine propose, l'œil confirme.
-   ------------------------------------------------------------ */
 
 /** L'aire d'un contour fermé, par la formule du lacet. */
 function aireDuContour(pts){
@@ -21693,12 +21558,11 @@ function centreDuContour(pts){
     cx += (pts[j][0] + pts[i][0]) * f;
     cy += (pts[j][1] + pts[i][1]) * f;
   }
-  if (!s) return pts[0];
-  return [cx / (3 * s), cy / (3 * s)];
+  return s ? [cx / (3 * s), cy / (3 * s)] : pts[0];
 }
 
 /** La direction dominante d'un contour, au quart de tour près — les façades
- *  d'un hall, comme `anglePlan` fait des allées. */
+ *  d'un hall, comme `anglePlan` fait de ses allées. */
 function axeDuContour(pts){
   let sc = 0, ss = 0;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){
@@ -21706,6 +21570,9 @@ function axeDuContour(pts){
     const l = Math.hypot(dx, dy);
     if (l < 2) continue;               // un pan coupé ne dit rien de la façade
     const a = Math.atan2(dy, dx);
+    /* Quadruplées, comme les allées du plan dans `anglePlan` : au quart de tour
+       près, une direction fait alors le tour entier, et 89° se moyenne avec 1°
+       au lieu de tomber à 45°. */
     sc += l * Math.cos(4 * a); ss += l * Math.sin(4 * a);
   }
   return (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
@@ -21727,16 +21594,15 @@ function empriseDesObjets(p){
  * Les bâtiments qui pourraient être celui-ci, le plus vraisemblable d'abord.
  *
  * Le critère est l'aire : un pavillon de vingt mille mètres carrés ne se
- * confond pas avec le pavillon d'accueil ni avec l'immeuble d'en face. On
- * compare en logarithme pour que « deux fois trop grand » et « deux fois trop
- * petit » se valent, et l'on écarte ce qui tient dans un quart du hall.
+ * confond ni avec la loge d'accueil ni avec l'immeuble d'en face. On compare
+ * en logarithme pour que « deux fois trop grand » et « deux fois trop petit »
+ * se vaillent, et l'on écarte ce qui tient dans un quart du hall.
  */
 function batimentsCandidats(elements, cal, p){
   const e = empriseDesObjets(p);
   const aire = Math.max(1, (e.x1 - e.x0) * (e.y1 - e.y0));
   const l = [];
   for (const w of elements){
-    if (!w.tags || !w.tags.building || w.geometry.length < 4) continue;
     const pts = w.geometry.map(g => versLePlan([g.lon, g.lat], cal));
     const a = aireDuContour(pts);
     if (a < aire / 4) continue;
@@ -21748,11 +21614,10 @@ function batimentsCandidats(elements, cal, p){
 /**
  * Le calage posé sur un bâtiment : même orientation, même centre.
  *
- * Augmenter l'angle du calage de δ fait tourner le quartier de δ dans le
- * repère du plan — la matrice de passage vaut R(a)·F, et R(a+δ) = R(δ)·R(a).
- * On amène donc l'axe du bâtiment sur celui des allées, puis on fait glisser
- * son centre sur celui du pavillon. Reste le quart de tour, que le bouton
- * voisin tranche.
+ * Augmenter l'angle du calage de δ fait tourner la carte de δ dans le repère
+ * du plan — la matrice de passage vaut R(a)·F, et R(a+δ) = R(δ)·R(a). On amène
+ * donc l'axe du bâtiment sur celui des allées, puis on fait glisser son centre
+ * sur celui du pavillon.
  */
 function caleSurBatiment(cand, p){
   const e = empriseDesObjets(p);
@@ -21767,75 +21632,7 @@ function caleSurBatiment(cand, p){
 }
 
 /* ------------------------------------------------------------
-   La pose sur le plan
-   ------------------------------------------------------------ */
-
-/** Le calque des environs d'un pavillon, s'il en a un. */
-const calqueEnvirons = (p) => (p && p.fond ? p.fond.find(f => f.cle === CLE_ENVIRONS) : null);
-
-/**
- * Le sol, rangé sous tout le reste.
- *
- * L'ordre naturel de `fond` y suffirait — le calque prend la tête de la liste.
- * Mais dès que l'exploitant a touché à sa pile, c'est l'ordre enregistré qui
- * fait loi, et celui-là range à la fin, donc au-dessus, toute couche qu'il ne
- * connaît pas encore. C'est la bonne règle pour un dessin qu'on vient de
- * tracer, et l'inverse de ce qu'il faut pour un quartier : le plan passait
- * dessous, rues en travers des stands.
- *
- * `force` sert au moment où l'on va chercher le quartier : c'est là qu'on le
- * pose, et c'est le seul moment où l'on peut décider de sa place sans défaire
- * un choix. Ensuite le rang appartient à l'exploitant, flèches comprises.
- */
-function rangeEnvironsAuFond(p, force){
-  const cle = clePile(p);
-  const ordre = CONF[cle];
-  if (!Array.isArray(ordre)) return;      // sans pile enregistrée, `fond` suffit
-  const k = "fond:" + CLE_ENVIRONS;
-  const i = ordre.indexOf(k);
-  if (i === 0 || (i > 0 && !force)) return;
-  if (i > 0) ordre.splice(i, 1);
-  ordre.unshift(k);
-  enregistreConf();
-}
-
-/**
- * Poser le quartier sur un pavillon, sans rien enregistrer.
- *
- * Un `svg` vide le retire. Le calque prend la tête de `fond`, donc le fond de
- * la pile : c'est l'ordre par défaut, que l'exploitant garde ou défait comme
- * pour n'importe quelle couche.
- */
-function montreEnvirons(svg, p){
-  p = p || P();
-  if (!p || !p.fond) return;
-  const i = p.fond.findIndex(f => f.cle === CLE_ENVIRONS);
-  if (!svg){ if (i >= 0) p.fond.splice(i, 1); }
-  else if (i >= 0) p.fond[i].svg = svg;
-  else p.fond.unshift({ id: ID_ENVIRONS, cle: CLE_ENVIRONS, nom: NOM_ENVIRONS,
-                        ordre: RANG_ENVIRONS, svg: svg });
-  if (svg) rangeEnvironsAuFond(p, false);
-  if (p !== P()) return;
-  monteHabillage();
-  ordonneDom();
-  appliqueApparence();
-  if (ADMIN && MONTE) construitPanneau();
-}
-
-/**
- * Jusqu'où l'on peut reculer, en largeurs de pavillon.
- *
- * Deux fois et demie tant qu'il n'y a rien au-delà des murs : reculer
- * davantage ne montrerait que du vide autour d'un plan devenu illisible. Le
- * quartier posé, la limite s'ouvre — c'est pour le voir qu'on l'a dessiné, et
- * la vue s'arrêtait jusqu'ici au bord de la première rue.
- */
-function recul(){
-  return calqueEnvirons(DATA ? P() : null) ? TERRAIN_ENVIRONS : 2.5;
-}
-
-/* ------------------------------------------------------------
-   L'enregistrement pour tous
+   L'enregistrement
    ------------------------------------------------------------ */
 
 /**
@@ -21853,71 +21650,24 @@ function manqueCalage(e){
     : e;
 }
 
-/** Session, projet et correspondance des pavillons : ce qu'il faut pour
- *  écrire, refusé d'un mot quand il manque. */
-async function accesEnvirons(){
+/** Le calage, enregistré pour tous. Une ligne, et rien d'autre : le fond n'est
+ *  pas un dessin qu'on stocke, ce sont des tuiles qu'on va chercher. */
+async function enregistreCalage(cal){
   const acces = accesBase();
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
-  return { acces: acces, ids: await identifiants(acces) };
-}
-
-/**
- * Le quartier, enregistré pour tous.
- *
- * Le calage part avec : il ne sert à personne d'autre qu'à celui qui
- * recommencera — refaire le tracé après une synchronisation, étendre le
- * terrain — et le retrouver vaut mieux que le refaire. Le visiteur, lui, n'en
- * reçoit rien : il a le tracé, déjà en mètres-plan.
- */
-async function enregistreEnvirons(cal, parPlan){
-  const { acces, ids } = await accesEnvirons();
-  const lignes = [];
-  for (const p of DATA.plans){
-    const svg = parPlan.get(p.id);
-    if (!ids[p.id] || !svg) continue;
-    lignes.push({ plan_id: ids[p.id], id_klipso: ID_ENVIRONS, cle: CLE_ENVIRONS,
-                  libelle: NOM_ENVIRONS, type: "Environs",
-                  ordre_klipso: RANG_ENVIRONS, svg: svg });
-  }
-  if (!lignes.length) throw new Error("aucun pavillon à qui l'enregistrer.");
-  /* Le calage avant le tracé, et non l'inverse. Les deux écritures ne sont pas
-     une transaction : si la seconde échoue, il reste ce que la première a
-     posé. Un point d'ancrage sans tracé ne montre rien à personne et se
-     réécrit au coup suivant ; un tracé sans calage, lui, serait déjà chez les
-     visiteurs pendant que la fenêtre annonce un échec. */
   await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
-  await base(acces, "calque?on_conflict=plan_id,id_klipso", {
-    method: "POST",
-    headers: { "Prefer": "resolution=merge-duplicates" },
-    body: JSON.stringify(lignes),
-  });
+  DATA.calage = cal;
   oublieCache(acces);
 }
 
-/** Le quartier, retiré de partout — et le calage avec lui : ce qui reste sans
- *  tracé n'est plus qu'un chiffre qui ne décrit rien. */
-async function effaceEnvirons(){
-  const { acces, ids } = await accesEnvirons();
-  const liste = DATA.plans.map(p => ids[p.id]).filter(Boolean);
-  if (liste.length) await base(acces,
-    "calque?id_klipso=eq." + ID_ENVIRONS + "&plan_id=in.(" + liste.join(",") + ")",
-    { method: "DELETE" });
-  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
-    method: "PATCH", body: JSON.stringify({ calage: null }),
-  });
-  oublieCache(acces);
-  DATA.plans.forEach(p => montreEnvirons("", p));
-}
-
-/** Le calage déjà enregistré, s'il y en a un. */
+/** Le calage déjà enregistré, s'il y en a un. Sans rattrapage : l'appelant
+ *  l'ignore, et une base qui ne connaît pas encore la colonne ne doit pas
+ *  empêcher d'ouvrir le volet — on y vient pour poser ce qui manque. */
 async function calageEnregistre(){
   const acces = accesBase();
   if (!acces) return null;
-  /* Sans rattrapage : l'appelant l'ignore, et une base qui ne connaît pas
-     encore la colonne ne doit pas empêcher d'ouvrir le volet — on y vient
-     justement pour poser un calage qu'elle n'a pas. */
   const l = await base(acces,
     "evenement?select=calage&slug=eq." + encodeURIComponent(DATA.slug));
   return l && l.length ? l[0].calage : null;
@@ -21927,11 +21677,8 @@ async function calageEnregistre(){
    Le volet des réglages
    ------------------------------------------------------------ */
 
-/* Ce qu'OpenStreetMap a rendu, gardé le temps de la fenêtre : tourner d'un
-   degré retrace tout, et ne doit rien redemander. */
-let ENV_OSM = null;
+/* Le calage en cours de réglage, et les bâtiments auxquels s'accrocher. */
 let ENV_CAL = null;
-/* Les bâtiments auxquels s'accrocher, et celui qu'on essaie. */
 let ENV_BATIS = [];
 let ENV_BATI = 0;
 
@@ -21956,31 +21703,26 @@ function litCoordonnees(txt){
   return { lat: lat, lon: lon };
 }
 
-/** Le tracé refait sur tous les pavillons, avec le calage du moment. */
-function retraceEnvirons(){
-  const parPlan = new Map();
-  if (!ENV_OSM || !ENV_CAL) return parPlan;
-  for (const p of DATA.plans) parPlan.set(p.id, dessineEnvirons(p, ENV_OSM, ENV_CAL));
-  for (const p of DATA.plans) montreEnvirons(parPlan.get(p.id), p);
-  return parPlan;
+/** Le fond refait et la vue rendue : tout réglage passe par là. */
+function rafraichitCarte(){
+  _fondPose = "";
+  dessineFondCarte();
 }
 
 /**
  * Le volet « Environs ».
  *
- * Trois gestes, dans l'ordre où on les fait : coller un point, aller chercher
- * le quartier, tourner jusqu'à ce qu'il tombe en face. Le troisième est le
- * seul qui demande un œil, et c'est pourquoi il se règle sur le plan lui-même
- * plutôt que dans un aperçu : la fenêtre se déplace, le pavillon reste
- * visible derrière, et l'on voit les bâtiments voisins se ranger.
+ * Trois gestes, dans l'ordre où on les fait : choisir un fond, coller un point,
+ * vérifier que le hall tombe sur son bâtiment. Le dernier est le seul qui
+ * demande un œil — et il se fait sur le plan lui-même, la fenêtre se déplaçant
+ * pour qu'on voie les rues se ranger derrière.
  */
 function voletEnvirons(hote){
   const p = document.createElement("p");
-  p.textContent = "Le plan est en mètres, dans le repère du parc : il ne lui " +
-    "manque que de savoir où il tombe sur la Terre. Donnez-lui un point, et " +
-    "les rues, les bâtiments voisins et les parkings viennent se ranger " +
-    "autour du pavillon — une fois pour toutes, et sans que le visiteur ait " +
-    "quoi que ce soit à télécharger de plus qu'un calque.";
+  p.textContent = "Le plan est déjà en mètres, dans le repère du parc : il ne " +
+    "lui manque que de savoir où il tombe sur la Terre. Donnez-lui un point, " +
+    "et une carte vient se glisser sous le pavillon — les rues, les accès, " +
+    "les parkings, dessinés par ceux dont c'est le métier.";
   hote.appendChild(p);
 
   const etat = document.createElement("p");
@@ -21990,28 +21732,44 @@ function voletEnvirons(hote){
     etat.classList.toggle("alerte", !!mal);
   };
 
+  /* --- le fond --- */
+  const blocFond = document.createElement("div");
+  blocFond.className = "reglage-nb envFond";
+  blocFond.innerHTML = '<label><span class="l">Fond de carte</span></label>' +
+    '<select><option value="">Aucun</option></select>' +
+    '<span class="aide">Les tuiles sont chargées pendant la visite, et gardées ' +
+    'par le navigateur une fois vues. La page à données figées, qui n\'appelle ' +
+    'rien au dehors, n\'en affichera pas.</span>';
+  const selFond = blocFond.querySelector("select");
+  for (const k of Object.keys(CARTES)){
+    const o = document.createElement("option");
+    o.value = k; o.textContent = CARTES[k].nom;
+    selFond.appendChild(o);
+  }
+  hote.appendChild(blocFond);
+
   /* --- le point --- */
   const bloc = document.createElement("div");
   bloc.className = "reglage-nb envCoord";
   bloc.innerHTML = '<label><span class="l">Coordonnées du centre du salon</span></label>' +
     '<input type="text" inputmode="decimal" placeholder="48.830212, 2.287851">' +
-    '<span class="aide">Sur Google Maps ou le Géoportail, clic droit au milieu ' +
-    'du bâtiment puis « copier les coordonnées ». La latitude d\'abord, comme ' +
-    'elles le rendent toutes les deux.</span>';
+    '<span class="aide">Sur n\'importe quelle carte, clic droit au milieu du ' +
+    'bâtiment puis « copier les coordonnées ». À peu près suffit : ' +
+    'l\'accrochage au bâtiment fait le reste.</span>';
   const champ = bloc.querySelector("input");
   hote.appendChild(bloc);
 
   const acts = document.createElement("div");
   acts.className = "acts";
-  const bCherche = document.createElement("button");
-  bCherche.type = "button";
-  bCherche.className = "btn";
-  bCherche.textContent = "Récupérer les environs";
-  acts.appendChild(bCherche);
+  const bSitue = document.createElement("button");
+  bSitue.type = "button";
+  bSitue.className = "btn";
+  bSitue.textContent = "Situer le salon";
+  acts.appendChild(bSitue);
   hote.appendChild(acts);
   hote.appendChild(etat);
 
-  /* --- le réglage, qui n'a de sens qu'une fois le quartier là --- */
+  /* --- le réglage fin --- */
   const reglage = document.createElement("div");
   reglage.className = "reglage-nb envRot";
   reglage.innerHTML = '<label><span class="l">Rotation</span>' +
@@ -22019,9 +21777,9 @@ function voletEnvirons(hote){
     '<div class="acts"><button type="button" class="btn bBati"></button>' +
     '<button type="button" class="btn bQuart">Quart de tour</button></div>' +
     '<span class="aide">Le pavillon est cartographié comme n\'importe quel ' +
-    'bâtiment : le calage s\'accroche au sien, orientation et centre compris. ' +
-    'S\'il a visé le voisin, passez au suivant ; s\'il est retourné, donnez-lui ' +
-    'un quart de tour. Les flèches décalent de cinq mètres.</span>';
+    'bâtiment : le calage s\'accroche au sien. S\'il a visé le voisin, passez au ' +
+    'suivant ; s\'il est retourné, donnez-lui un quart de tour. Les flèches ' +
+    'décalent de cinq mètres.</span>';
   const nRot = reglage.querySelector("input");
   const bBati = reglage.querySelector(".bBati");
   const bQuart = reglage.querySelector(".bQuart");
@@ -22038,7 +21796,7 @@ function voletEnvirons(hote){
     b.onclick = () => {
       const [dx, dy] = tourneEnvirons(de, dn, ENV_CAL.angle);
       ENV_CAL.x += dx; ENV_CAL.y += dy;
-      retraceEnvirons();
+      rafraichitCarte();
     };
     dec.querySelector(".acts").appendChild(b);
   });
@@ -22053,30 +21811,28 @@ function voletEnvirons(hote){
   const bEfface = document.createElement("button");
   bEfface.type = "button";
   bEfface.className = "btn danger";
-  bEfface.textContent = "Retirer les environs";
+  bEfface.textContent = "Retirer la carte";
   finales.appendChild(bGarde);
   finales.appendChild(bEfface);
   hote.appendChild(finales);
 
-  /* Les commandes de réglage ne paraissent qu'une fois le quartier chargé :
-     tourner ce qui n'existe pas ne veut rien dire, et un champ sans effet fait
-     douter de tous les autres. Le retrait, lui, s'offre dès qu'il y a quelque
-     chose à retirer — y compris venu d'une session précédente. */
+  /* Le réglage fin ne paraît qu'une fois un point posé : tourner ce qui n'est
+     nulle part ne veut rien dire, et un champ sans effet fait douter de tous
+     les autres. */
   const maj = () => {
-    const pose = !!calqueEnvirons(P());
-    reglage.hidden = dec.hidden = !ENV_OSM;
-    bGarde.hidden = !ENV_OSM;
-    bEfface.hidden = !pose;
+    reglage.hidden = dec.hidden = !ENV_CAL;
+    bGarde.hidden = !ENV_CAL;
+    bEfface.hidden = !(DATA && DATA.calage);
     finales.hidden = bGarde.hidden && bEfface.hidden;
     bBati.hidden = !ENV_BATIS.length;
     bBati.textContent = "Bâtiment suivant (" + (ENV_BATI + 1) + "/" + ENV_BATIS.length + ")";
-    if (ENV_CAL) nRot.value = (Math.round(ENV_CAL.angle / DEG * 10) / 10);
+    if (ENV_CAL) nRot.value = Math.round(ENV_CAL.angle / DEG * 10) / 10;
   };
 
   const tourne = (a) => {
     ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
     ENV_CAL.angle = a;
-    retraceEnvirons();
+    rafraichitCarte();
     maj();
   };
   nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourne(v * DEG); };
@@ -22085,82 +21841,95 @@ function voletEnvirons(hote){
     if (!ENV_BATIS.length) return;
     ENV_BATI = (ENV_BATI + 1) % ENV_BATIS.length;
     caleSurBatiment(ENV_BATIS[ENV_BATI], P());
-    retraceEnvirons();
+    rafraichitCarte();
     maj();
   };
 
-  const occupe = (b, quoi) => { b.disabled = true; dit(quoi); };
-  const rendu = (b, txt, mal) => { b.disabled = false; dit(txt, mal); };
+  selFond.onchange = () => {
+    if (ENV_CAL) ENV_CAL.fond = selFond.value || undefined;
+    else if (DATA && DATA.calage) DATA.calage.fond = selFond.value || undefined;
+    rafraichitCarte();
+    /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
+       limite change sans que rien ne le montre. */
+    if (typeof poseVue === "function") poseVue();
+  };
 
-  bCherche.onclick = async () => {
+  bSitue.onclick = async () => {
     const ll = litCoordonnees(champ.value);
     if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
-    const cal = { lon: ll.lon, lat: ll.lat,
-                  x: centreDesPavillons()[0], y: centreDesPavillons()[1], angle: 0 };
-    const terrain = carreDeTerrain(cal, TERRAIN_ENVIRONS);
-    if (!terrain) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
-    occupe(bCherche, "Demande à OpenStreetMap…");
+    const centre = centreDesPavillons();
+    ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0,
+                fond: selFond.value || undefined };
+    /* La carte d'abord : elle paraît sans attendre le réseau d'Overpass, et
+       l'on voit déjà si l'on est au bon endroit du monde. */
+    rafraichitCarte();
+    maj();
+    const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
+    if (!bbox) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
+    bSitue.disabled = true;
+    dit("Recherche du bâtiment…");
     try {
-      const elements = await chercheEnvirons(terrain.bbox);
-      if (!elements.length) throw new Error("rien trouvé autour de ce point : vérifiez les coordonnées.");
-      /* La direction des rues contre celle des allées : de quoi partir droit
-         quand le pavillon n'est pas cartographié. */
-      cal.angle = anglePlan(P()) + penteDesVoies(elements, cal);
-      ENV_OSM = elements;
-      ENV_CAL = cal;
-      /* Et s'il l'est — ce qui est la règle pour un parc des expositions — on
-         s'accroche directement à son contour : c'est de loin le meilleur
-         départ que l'on puisse proposer. */
-      ENV_BATIS = batimentsCandidats(elements, cal, P());
+      ENV_BATIS = batimentsCandidats(await chercheBatiments(bbox), ENV_CAL, P());
       ENV_BATI = 0;
-      if (ENV_BATIS.length) caleSurBatiment(ENV_BATIS[0], P());
-      /* La place du calque se décide ici, au moment où on le pose : c'est le
-         seul instant où la fixer ne défait aucun choix. */
-      DATA.plans.forEach(q => rangeEnvironsAuFond(q, true));
-      const parPlan = retraceEnvirons();
-      const ko = Math.round([...parPlan.values()].reduce((n, s) => n + s.length, 0) / 1024);
-      rendu(bCherche, elements.length + " tracés, " + ko + " Ko" +
-        (ENV_BATIS.length
-          ? ", calé sur un bâtiment de " + Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") +
-            " m². Vérifiez qu'il tombe en face, puis enregistrez."
-          : ". Aucun bâtiment à la bonne taille : tournez à la main."));
-      maj();
+      if (ENV_BATIS.length){
+        caleSurBatiment(ENV_BATIS[0], P());
+        rafraichitCarte();
+        dit("Calé sur un bâtiment de " + Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") +
+            " m². Vérifiez qu'il tombe en face, puis enregistrez.");
+      } else {
+        dit("Aucun bâtiment à la bonne taille ici : tournez à la main, la carte " +
+            "est déjà en place.");
+      }
     } catch (e) {
-      rendu(bCherche, "Échec : " + e.message, true);
+      dit("Le bâtiment n'a pas pu être cherché (" + e.message +
+          ") — la carte est posée, tournez à la main.", true);
     }
+    bSitue.disabled = false;
+    maj();
+    if (_tuilesMuettes) dit("Les tuiles du fond ne répondent pas : essayez un autre fond.", true);
   };
 
   bGarde.onclick = async () => {
-    occupe(bGarde, "Enregistrement…");
+    bGarde.disabled = true;
+    dit("Enregistrement…");
     try {
-      await enregistreEnvirons(ENV_CAL, retraceEnvirons());
-      rendu(bGarde, "Les visiteurs voient les environs.");
-      maj();
-    } catch (e) {
-      rendu(bGarde, "Échec : " + e.message, true);
-    }
+      await enregistreCalage(ENV_CAL);
+      dit("Les visiteurs voient la carte.");
+    } catch (e) { dit("Échec : " + e.message, true); }
+    bGarde.disabled = false;
+    maj();
   };
 
   bEfface.onclick = async () => {
-    occupe(bEfface, "Retrait…");
+    bEfface.disabled = true;
+    dit("Retrait…");
     try {
-      await effaceEnvirons();
-      ENV_OSM = ENV_CAL = null;
-      rendu(bEfface, "Les environs sont retirés.");
-      maj();
-    } catch (e) {
-      rendu(bEfface, "Échec : " + e.message, true);
-    }
+      await enregistreCalage(null);
+      ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
+      champ.value = ""; selFond.value = "";
+      rafraichitCarte();
+      if (typeof poseVue === "function") poseVue();
+      dit("La carte est retirée.");
+    } catch (e) { dit("Échec : " + e.message, true); }
+    bEfface.disabled = false;
+    maj();
   };
 
+  /* Ce qui est déjà en place remplit l'écran : on revient le plus souvent pour
+     retoucher, et relever deux fois un point sur une carte n'apprend rien. */
+  const pose = calageCourant();
+  if (pose){
+    champ.value = pose.lat.toFixed(6) + ", " + pose.lon.toFixed(6);
+    selFond.value = pose.fond && CARTES[pose.fond] ? pose.fond : "";
+    ENV_CAL = Object.assign({}, pose);
+  }
   maj();
-  /* Le calage d'une session précédente remplit le champ : on revient le plus
-     souvent pour retoucher, pas pour tout reprendre — et retrouver un point
-     qu'on avait relevé sur une carte vaut mieux que le relever deux fois. */
   calageEnregistre().then(cal => {
-    if (!cal || champ.value) return;
+    if (!cal || ENV_CAL) return;
     champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
+    selFond.value = cal.fond && CARTES[cal.fond] ? cal.fond : "";
     ENV_CAL = cal;
+    rafraichitCarte();
     maj();
   }).catch(() => {});
 }
@@ -22257,12 +22026,7 @@ function chargeFond(i){
     .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
     .then(d => {
       const par = new Map((d.calques || []).map(c => [c.cle, c.svg]));
-      /* Un calque dont le service ne dit rien garde ce qu'il a. Cela ne
-         change rien aux calques Klipso — ils viennent tous de la réponse qu'on
-         est en train de lire — et cela protège le seul qui puisse exister ici
-         avant que la base le connaisse : les environs qu'un exploitant vient
-         de poser sans les avoir encore enregistrés. */
-      p.fond.forEach(c => { c.svg = par.has(c.cle) ? par.get(c.cle) : (c.svg || ""); });
+      p.fond.forEach(c => { c.svg = par.get(c.cle) || ""; });
       // le pavillon a pu changer pendant le chargement
       if (state.plan === i){ monteHabillage(); ordonneDom(); appliqueApparence(); }
     })

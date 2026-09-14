@@ -121,7 +121,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |
-| rues et bâtiments autour du pavillon, calage du plan sur la Terre | `_environs.html` ; limite de recul `_js.html` `recul` ; migration `calage_du_plan_sur_la_terre` |
+| fond de carte sous le pavillon, calage du plan sur la Terre | `_environs.html` ; groupe `#fondCarte` posé par `_js.html` `appliqueVue`, limite de recul `recul` ; migration `calage_du_plan_sur_la_terre` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
