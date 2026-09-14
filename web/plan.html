@@ -3556,9 +3556,15 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    une fiche fournie passe sous le bord de la fenêtre, et c'est justement le bas
    qu'on vient vérifier. Le défilement s'arrête à lui plutôt que d'emporter la
    fenêtre une fois le bas atteint. */
-.vueO{display:flex;max-height:min(52dvh,430px);overflow:auto;
+.vueO{display:block;max-height:min(52dvh,430px);overflow:auto;
   overscroll-behavior:contain}
-.vueO .apercu{flex:1 1 auto}
+/* La vignette d'un modèle se coupe dans sa tuile ; l'aperçu du rangement se
+   déroule en entier — c'est le bas de la fiche qu'on vient vérifier — et c'est
+   le cadre qui défile. Posé en ligne comme les vignettes, il s'étirait à la
+   hauteur du cadre : rien ne débordait, et le seul défilement était celui de
+   son corps, hors d'atteinte puisque l'aperçu est inerte et que la roulette le
+   traverse. Il reprend donc sa hauteur naturelle, et le cadre la borne. */
+.vueO .detail-bd{overflow:visible;flex:none}
 /* Les deux listes reçoivent un dépôt, et le disent : le trait tient lieu de
    bac, y compris quand la liste est vide et qu'il n'y aurait rien à viser. */
 .ficheDispo,.ordreListe{display:flex;flex-direction:column;gap:3px;
