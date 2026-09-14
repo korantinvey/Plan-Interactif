@@ -28,9 +28,17 @@ module.exports = {
   "Ouvrez le menu du navigateur": "Open the browser menu",
   "Ajouter à l'écran d'accueil": "Add to Home screen",
 
+  // une fois installé
+  "Le plan est installé": "The map is installed",
+  "Sur votre écran d'accueil, sous le nom « Plan »": "On your home screen, under the name “Plan”",
+  "Ouvrez-le depuis son icône : il s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
+    "Open it from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
+  "Compris": "OK",
+
   // la case des réglages
   "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
-  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, après une demi-minute d'usage. Une fois par jour au plus, et plus du tout après deux refus. Aperçu :":
-    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, after half a minute of use. At most once a day, and never again after two refusals. Preview:",
+  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une fois par jour au plus, et plus du tout après deux refus. Aperçu :":
+    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. At most once a day, and never again after two refusals. Preview:",
   "Android": "Android",
+  "une fois installé": "once installed",
 };

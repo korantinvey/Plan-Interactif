@@ -1200,20 +1200,32 @@ qu'une réclame. Toutes doivent tenir :
   proposer quoi que ce soit. La porte se lit comme pour la mesure ;
 - **sur un téléphone ou une tablette** — sur un ordinateur, l'application
   n'apporte qu'une fenêtre sans barre d'adresse ;
-- **après usage, jamais à l'ouverture** — une demi-minute de plan sous les
-  yeux, au moins un geste, puis trois secondes où rien n'est en cours : ni doigt
-  posé, ni autre fenêtre, ni fiche, parcours ou itinéraire ouvert, ni stand
-  visé, ni saisie ;
+- **dès l'ouverture, jamais par-dessus ce qu'on fait** — le plan affiché, la
+  fenêtre suit un instant après. Si autre chose occupe l'écran — la fiche d'un
+  stand ouverte par un lien, un parcours partagé, un doigt posé, une saisie,
+  un stand visé pour un itinéraire —, elle attend que ce soit fini : c'est la
+  raison de la venue, et elle passe avant. Un onglet ouvert en arrière-plan
+  attend qu'on y vienne ;
 - **là où l'installation aboutit** — voir le tableau ;
 - **rarement** — une fois par jour au plus, et plus jamais après deux refus,
   une installation, ou « J'ai compris ».
 
 | navigateur | ce que propose la fenêtre |
 |---|---|
-| Chrome, Edge, Samsung Internet sur Android | un bouton « Installer », qui ouvre la fenêtre du navigateur — une fois seulement que celui-ci a jugé le plan installable, ce qu'il ne fait pas quand il l'est déjà |
+| Chrome, Edge, Samsung Internet sur Android | un bouton « Installer », qui ouvre la fenêtre du navigateur — une fois seulement que celui-ci a jugé le plan installable, ce qu'il ne fait pas quand il l'est déjà. Il le fait d'ordinaire dès le chargement, mais peut attendre un premier geste et un peu d'usage : la fenêtre attend alors avec lui |
 | Safari et les autres navigateurs d'iOS et d'iPadOS | les trois gestes : « Partager », « Sur l'écran d'accueil », « Ajouter » |
 | Firefox et les autres navigateurs d'Android | les deux gestes de leur menu |
 | la vue web d'une application — un lien ouvert depuis un réseau social | rien : l'installation y est impossible |
+
+**Une fois installé**, une seconde fenêtre dit où le retrouver : sur l'écran
+d'accueil, sous le nom « Plan » — que rien ne relie au nom du salon qu'on vient
+de lire. Elle ne peut pas l'ouvrir à la place du visiteur : aucun lien ni aucune
+API ne passent de l'onglet à l'application installée, sur Android comme sur iOS.
+Seul Chromium annonce l'installation (`appinstalled`), qu'elle soit partie de la
+fenêtre ou du menu du navigateur ; la confirmation attend que la fenêtre
+d'installation du système se soit retirée, une minute au plus. Sur iOS la page
+n'en sait rien, et les trois gestes décrits disaient déjà où regarder. La case
+des réglages en porte un troisième aperçu, « une fois installé ».
 
 Fermer sans répondre — la croix, le voile, « Échap » — vaut « Plus tard ». Les
 réponses restent sur l'appareil, rangées sous le nom du salon : chaque salon est
@@ -1222,9 +1234,8 @@ remonte au serveur. Ce que la fenêtre produit se lit pourtant déjà dans le
 rapport d'utilisation : les lancements depuis l'écran d'accueil ont leur porte.
 
 Un détail de Chromium a demandé du soin. L'événement par lequel il annonce le
-plan installable peut arriver **avant les données**, chez qui a déjà passé du
-temps sur le site — Chrome compte cet usage pour le domaine, pas pour la page.
-Il faut pourtant décider sur-le-champ de le retenir, et le retenir retire le
+plan installable peut arriver **avant les données**, donc avant qu'on sache ce
+que veut le salon. Il faut pourtant décider sur-le-champ de le retenir, et le retenir retire le
 bandeau que Chrome aurait posé en bas de l'écran. L'appareil garde donc ce que
 le salon voulait à la visite précédente : réglage éteint, le bandeau du
 navigateur reste tel quel ; sans visite précédente, l'événement est retenu, et
