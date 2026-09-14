@@ -1127,6 +1127,13 @@ html.rendu-webgl .stage > svg{position:relative}
 html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
 html.rendu-webgl.edition-svg #couches > .dcal.editable,
 html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible}
+/* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
+   pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
+   rien : ni peints ni visés par le pointeur — la carte graphique les montre,
+   et leur liseré de focus avec eux. */
+html.rendu-webgl #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.rendu-webgl.edition-svg #couches > .dcal.editable [tabindex]{clip-path:none}
+html.rendu-webgl .stage.survol-gl > svg{cursor:pointer}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -5388,7 +5395,12 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
-  if (GL.actif && !PLACE_LIBELLES){ libellesWebgl(); return; }
+  if (GL.actif && !PLACE_LIBELLES){
+    libellesWebgl();
+    // le calque ouvert est du SVG visible : ses stands dessinés écrivent leur nom eux-mêmes
+    if (editionSvg()) poseLibellesDessines((cadrePlan().width || 1) / view.w);
+    return;
+  }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
@@ -25111,7 +25123,8 @@ const DECK_WEBGL = {
 const GL = {
   charge: false, actif: false, deck: null,
   blocs: new Map(), sales: new Set(), tout: true, image: 0,
-  libelles: [], cleLibelles: "", couchesLibelles: null,
+  libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
+  groupes: new Map(), survol: null, focus: null,
   modeles: new Map(), tailles: new Map(), duree: 0,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
@@ -25168,6 +25181,7 @@ function monteWebgl(){
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
   if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
+  brancheSurvolWebgl();
   libellesWebgl();
   toutRepeindreWebgl();
 }
@@ -25197,6 +25211,8 @@ function blocDe(n){
   const couches = $("couches");
   if (n === couches) return "ordre";
   let x = n.nodeType === 1 ? n : n.parentNode;
+  // le nom d'un stand dessiné, que le SVG réécrit à chaque vue, est peint à part
+  if (x && x.closest && x.closest(".lab")) return null;
   while (x && x.parentNode !== couches && x.parentNode !== svg) x = x.parentNode;
   if (!x || x.id === "labels" || blocSvgVisible(x)) return null;
   return x;
@@ -25260,6 +25276,8 @@ function repeintWebgl(){
   const t0 = performance.now();
   const vus = new Set();
   let n = 0;
+  // un stand dessiné a pu naître, changer d'exposant ou disparaître : son nom suit
+  if ([...GL.sales].some(b => b.classList && b.classList.contains("dcal"))) libellesWebgl();
   for (const b of blocsDansLOrdre()){
     vus.add(b);
     if (b.id === "labels" || blocSvgVisible(b)) continue;
@@ -25281,7 +25299,13 @@ function assembleWebgl(){
   for (const b of blocsDansLOrdre()){
     if (blocSvgVisible(b)) continue;
     if (b.id === "labels"){ out.push(...couchesLibellesWebgl()); continue; }
-    out.push(...(GL.blocs.get(b) || []));
+    const couches = GL.blocs.get(b) || [];
+    for (const c of couches){
+      out.push(c);
+      // la teinte du survol juste sur l'aplat : cloisons et noms restent devant
+      if (GL.survol) out.push(...coucheSurvol(c));
+    }
+    out.push(...couchesDessineesWebgl(b), ...coucheFocus(couches));
   }
   return out;
 }
@@ -25309,7 +25333,8 @@ function constTexte(){
   if (CONST_TEXTE) return CONST_TEXTE;
   class FiltreZoom extends deck.LayerExtension {
     getShaders(extension){
-      const garde = extension.opts.petit ? "z >= instanceZoomFiltre.z" : "z < instanceZoomFiltre.z";
+      const garde = extension.opts.tout ? "false"
+        : extension.opts.petit ? "z >= instanceZoomFiltre.z" : "z < instanceZoomFiltre.z";
       return { inject: {
         "vs:#decl": "in vec3 instanceZoomFiltre;",
         "vs:DECKGL_FILTER_GL_POSITION":
@@ -25330,6 +25355,8 @@ function constTexte(){
   return (CONST_TEXTE = {
     petit: { ext: [new FiltreZoom({ petit: true })], atlas: { sdf: false, fontSize: 24, buffer: 2 } },
     grand: { ext: [new FiltreZoom({ petit: false })], atlas: { sdf: true, fontSize: 64, buffer: 6 } },
+    // ce qui n'est pas du texte n'a pas d'atlas à choisir : seul l'intervalle compte
+    tout: { ext: [new FiltreZoom({ tout: true })] },
     sansDeclencheur: {},
   });
 }
@@ -25509,6 +25536,8 @@ function parcoursGl(el, m, op, acc){
   op *= parseFloat(cs.opacity);
   if (!(op > .003)) return;
   const tag = el.localName;
+  // le nom d'un stand dessiné : « libellesWebgl » le prépare avec ses seuils de zoom
+  if (tag === "g" && el.classList.contains("lab")) return;
   if (tag === "g" || tag === "a"){ for (const c of el.children) parcoursGl(c, m, op, acc); return; }
   if (tag === "svg"){
     const vb = (el.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
@@ -25671,34 +25700,92 @@ function couchesDeBloc(acc, cle){
    numéro que « libelleEmplacement » : l'enseigne seule tant que son numéro
    serait illisible, les deux dès qu'il le devient.
    ------------------------------------------------------------ */
-const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel"];
+const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel",
+  "coexN", "coexN sel", "coexPast", "coexPast sel"];
 
-/** Des textes témoins dans « #labels », jamais montrés : la feuille de style
- *  leur donne la couleur et la police qu'elle donnerait aux vrais. */
+/** Des témoins dans « #labels », jamais montrés : la feuille de style leur
+ *  donne la couleur et la police qu'elle donnerait aux vrais. La pastille des
+ *  coexposants est un rectangle ; le survol n'a pas de classe à lui, et prend
+ *  la teinte que sa règle lui donne. */
 function poseModelesLibelles(){
-  $("labels").innerHTML = CLASSES_LIBELLES.map(c =>
-    '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + c + '">A</text>').join("");
+  $("labels").innerHTML = CLASSES_LIBELLES.map(c => c.startsWith("coexPast")
+    ? '<rect class="' + c + '" data-modele="' + c + '"/>'
+    : '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + c + '">A</text>').join("") +
+    '<rect data-modele="survol" style="fill:var(--accent-soft);stroke:var(--accent)"/>';
   lisModelesLibelles();
 }
 function lisModelesLibelles(){
   const avant = GL.signatureModeles;
   GL.modeles.clear();
-  $("labels").querySelectorAll("text[data-modele]").forEach(t => {
+  $("labels").querySelectorAll("[data-modele]").forEach(t => {
     const cs = getComputedStyle(t);
     GL.modeles.set(t.dataset.modele, { couleur: couleurGl(cs.fill, parseFloat(cs.fillOpacity) || 1) || [0, 0, 0, 255],
+      trait: couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) || 1) || [0, 0, 0, 0],
       famille: cs.fontFamily, graisse: cs.fontWeight, visible: cs.display !== "none" });
   });
   GL.signatureModeles = JSON.stringify([...GL.modeles]);
   if (GL.signatureModeles !== avant) GL.versionModeles++;
 }
 
+const LOIN = 99;
+
+/**
+ * Le nom et le numéro d'un emplacement, avec les intervalles de zoom où chacun
+ * se lit. Mêmes mesures que « libelleEmplacement » et « ligneCode » : c'est
+ * aussi ce qu'écrit un stand dessiné, qui n'a simplement pas de pastille.
+ */
+function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
+  const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
+  const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+  const fn = nom ? nom.f * k : 0;
+  const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+  const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+  const c = sel ? " sel" : "";
+  // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
+  const seuil = t => tout ? -LOIN : Math.log2(t);
+  const zN = nom ? seuil(4.5 / fn) : LOIN;
+  const zC1 = fc ? seuil(5 / fc) : LOIN, zC0 = fc ? seuil(6 / fc) : LOIN;
+  /* La pastille des sociétés hébergées ne dépend pas du zoom — ses mesures
+     sont en corps du numéro — mais seulement de la place : on la décide une
+     fois, comme « ligneCode » le fait à chaque écriture. */
+  const n = pastilles && fc && coexComptes() ? (s.coex || []).length : 0;
+  let past = null;
+  if (n){
+    const compte = "+" + n, wCode = largeur(s.code, P_CODE) * fc, ecart = fc * .42;
+    const wPast = largeur(compte, P_CODE) * fc + fc * .68;
+    if (wCode + ecart + wPast <= w * .9 * k) past = { compte, wCode, ecart, wPast };
+  }
+  const pose = (lignes, f, x, y, cls, z0, z1) =>
+    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1 });
+  const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
+  for (let i = 0; i + 1 < bornes.length; i++){
+    const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
+    const nomLisible = nom && zm >= zN;
+    const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
+    if (!nomLisible && !codeLisible) continue;
+    const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
+    const haut = xy[1] - (hNom + hCode) / 2;
+    if (nomLisible) pose(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
+    if (!codeLisible) continue;
+    // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
+    const milieu = haut + hNom + fc * .59;
+    if (!past){ pose([s.code], fc, xy[0], milieu, "cd" + c, z0, z1); continue; }
+    const g = xy[0] - (past.wCode + past.ecart + past.wPast) / 2;
+    const xp = g + past.wCode + past.ecart, hp = fc * 1.16;
+    // le milieu de la pastille : sa boîte part à 0,84 corps au-dessus de la ligne de base
+    const yp = haut + hNom + fc * (.92 - .84 + .58);
+    pose([s.code], fc, g + past.wCode / 2, milieu, "cd" + c, z0, z1);
+    pose([past.compte], fc, xp + past.wPast / 2, milieu, "coexN" + c, z0, z1);
+    pastilles.push({ path: [[xp + hp / 2, yp], [xp + Math.max(past.wPast - hp / 2, hp / 2 + .001), yp]],
+      largeur: hp, cls: "coexPast" + c, z0, z1 });
+  }
+}
+
 function libellesWebgl(){
   if (!GL.actif) return;
   // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
-  if (!$("labels").querySelector("text[data-modele]")) poseModelesLibelles();
-  const p = P(), items = [];
-  const bloc = (lignes, f, x, y, cls, z0, z1) => { if (z1 > z0) items.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1 }); };
-  const LOIN = 99;
+  if (!$("labels").querySelector("[data-modele]")) poseModelesLibelles();
+  const p = P(), items = [], pastilles = [], dessines = new Map();
   for (const z of p.zones){
     const sel = z.id === state.sel;
     if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
@@ -25706,74 +25793,180 @@ function libellesWebgl(){
     const a = habille(nomDeLaZone(z), pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
     if (!a) continue;
     const f = a.f * facteurLibelle(reg), xy = decaleLibelle(ancre(z), reg);
-    bloc(a.lignes, f, xy[0], xy[1], "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""),
-      sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), LOIN);
+    items.push({ text: a.lignes.join("\n"), position: xy, taille: f,
+      cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""),
+      z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN });
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
     const sel = s.id === state.sel && !decoupe;
     if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
-    const ps = place(s), w = ps[0], h = ps[1], reg = placementLibelle(s);
-    const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
-    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
-    const fn = nom ? nom.f * k : 0;
-    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
-    const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
-    const xy = decaleLibelle(ancre(s), reg), c = sel ? " sel" : "";
-    // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
-    const seuil = t => tout ? -LOIN : Math.log2(t);
-    const zN = nom ? seuil(4.5 / fn) : LOIN;
-    const zC1 = fc ? seuil(5 / fc) : LOIN, zC0 = fc ? seuil(6 / fc) : LOIN;
-    const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
-    for (let i = 0; i + 1 < bornes.length; i++){
-      const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
-      const nomLisible = nom && zm >= zN;
-      const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
-      if (!nomLisible && !codeLisible) continue;
-      const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
-      const haut = xy[1] - (hNom + hCode) / 2;
-      if (nomLisible) bloc(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
-      // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
-      if (codeLisible) bloc([s.code], fc, xy[0], haut + hNom + fc * .59, "cd" + c, z0, z1);
+    const ps = place(s), reg = placementLibelle(s);
+    emplacementWebgl(s, decaleLibelle(ancre(s), reg), ps[0], ps[1], sel, reg, items, pastilles);
+  }
+  /* Les stands dessinés gardent leur nom dans leur calque, comme en SVG : un
+     calque de dessin empilé par-dessus celui des textes recouvrirait sinon le
+     nom qu'il porte. Il se peint donc juste après le calque qui les tient. */
+  const couches = $("couches");
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes){
+      if (f.t !== "stand") continue;
+      const g = couches.querySelector('.sdes[data-f="' + CSS.escape(f.id) + '"]');
+      const dcal = g && g.closest(".dcal"), l = societeDeForme(f);
+      if (!dcal || !l) continue;
+      const nom = nomSurLePlan(l.soc);
+      const sel = l.o.id === state.sel && l.i === state.selSoc;
+      if ((!nom && !l.o.code) || (!sel && !visibleSociete(l.o, l.i))) continue;
+      const b = boite(f);
+      if (!dessines.has(dcal)) dessines.set(dcal, []);
+      emplacementWebgl({ nom, code: l.o.code }, [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2],
+        b[2] - b[0], b[3] - b[1], sel, null, dessines.get(dcal), null);
     }
   }
-  const cle = items.map(d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3)).join("|");
+  const ecrit = d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3);
+  const cle = items.map(ecrit).join("|") + "#" + pastilles.map(d => d.path[0][0].toFixed(2) + d.cls + d.z0.toFixed(3)).join("|") +
+    "#" + [...dessines].map(([g, l]) => g.dataset.dcal + ":" + l.map(ecrit).join("|")).join("#");
   if (cle === GL.cleLibelles) return;
   GL.cleLibelles = cle;
   GL.libelles = items;
+  GL.pastilles = pastilles;
+  GL.dessines = dessines;
   GL.versionLibelles = (GL.versionLibelles || 0) + 1;
   GL.couchesLibelles = null;
   planifieWebgl();
 }
 
-function couchesLibellesWebgl(){
-  // pendant le placement à la main, les libellés sont ceux du SVG, qu'on attrape
-  if (PLACE_LIBELLES) return [];
-  if (GL.couchesLibelles) return GL.couchesLibelles;
-  /* Les noms se regroupent par police une fois, et non à chaque pas de zoom :
-     un nouveau tableau, même au contenu identique, passe pour des données
-     neuves, et la bibliothèque remettait en page les mille noms à chaque
-     image — quarante millisecondes, le zoom à vingt-cinq images par seconde.
-     Seul le filtre de zoom change d'une image à l'autre. */
-  const cleGroupes = GL.versionLibelles + "|" + GL.versionModeles;
-  if (GL.cleGroupes !== cleGroupes){
-    const groupes = new Map();
-    for (const d of GL.libelles){
-      const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
-      if (!mo || !mo.visible) continue;
-      const cle = mo.famille + "|" + mo.graisse;
-      if (!groupes.has(cle)) groupes.set(cle, { mo, items: [] });
-      groupes.get(cle).items.push(d);
-    }
-    GL.groupesLibelles = [...groupes.values()];
-    GL.cleGroupes = cleGroupes;
+/* Les noms se regroupent par police une fois par version, et non à chaque pas
+   de zoom : un nouveau tableau, même au contenu identique, passe pour des
+   données neuves, et la bibliothèque remettait en page les mille noms à chaque
+   image — quarante millisecondes, le zoom à vingt-cinq images par seconde. Seul
+   le filtre de zoom change d'une image à l'autre. */
+function groupesNoms(cle, liste){
+  const version = GL.versionLibelles + "|" + GL.versionModeles;
+  const deja = GL.groupes.get(cle);
+  if (deja && deja.version === version) return deja.groupes;
+  const groupes = new Map();
+  for (const d of liste){
+    const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
+    if (!mo || !mo.visible) continue;
+    const k = mo.famille + "|" + mo.graisse;
+    if (!groupes.has(k)) groupes.set(k, { mo, items: [] });
+    groupes.get(k).items.push(d);
   }
+  GL.groupes.set(cle, { version, groupes: [...groupes.values()] });
+  return GL.groupes.get(cle).groupes;
+}
+function couchesNoms(prefixe, groupes){
   let i = 0;
-  GL.couchesLibelles = GL.groupesLibelles.flatMap(g => couchesTexte("libelles-" + (i++), g.items,
+  return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
     g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle",
       getColor: d => (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
+}
+
+/* La pastille est un trait épais aux bouts arrondis : c'est la forme exacte
+   d'une gélule, et un trait se montre ou se tait au zoom comme un texte. Son
+   liseré est un second trait, un peu plus large, posé dessous. */
+function couchesPastilles(){
+  const K = constTexte();
+  const liste = GL.pastilles.filter(d => (GL.modeles.get(d.cls) || {}).visible);
+  if (!liste.length) return [];
+  const commun = { data: liste, getPath: d => d.path, widthUnits: "common", capRounded: true,
+    extensions: K.tout.ext, getZoomFiltre: d => [d.z0, d.z1, -100],
+    updateTriggers: { getColor: GL.versionModeles } };
+  return [
+    new deck.PathLayer({ ...commun, id: "pastilles-trait", getWidth: d => d.largeur,
+      getColor: d => GL.modeles.get(d.cls).trait }),
+    new deck.PathLayer({ ...commun, id: "pastilles-fond", getWidth: d => d.largeur * .9,
+      getColor: d => GL.modeles.get(d.cls).couleur }),
+  ];
+}
+
+function couchesLibellesWebgl(){
+  // pendant le placement à la main, les libellés sont ceux du SVG, qu'on attrape
+  if (PLACE_LIBELLES) return [];
+  if (!GL.couchesLibelles)
+    GL.couchesLibelles = [...couchesPastilles(), ...couchesNoms("libelles-", groupesNoms("labels", GL.libelles))];
   return GL.couchesLibelles;
+}
+
+/** Les noms des stands dessinés d'un calque, posés juste au-dessus de lui. */
+function couchesDessineesWebgl(b){
+  const liste = GL.dessines.get(b);
+  if (!liste || !liste.length) return [];
+  const cle = GL.cles.get(b) || "d";
+  return couchesNoms(cle + "-noms-", groupesNoms(cle, liste));
+}
+
+/* ------------------------------------------------------------
+   Le survol et le focus.
+
+   Le SVG caché ne connaît plus « :hover » : le pointeur tombe sur sa racine,
+   jamais sur le stand. On demande donc à la carte graphique ce qui est sous
+   la souris — une fois par image au plus — et la teinte du survol se peint
+   sur l'aplat de ce stand, juste au-dessus de lui : ses cloisons et son nom
+   restent devant.
+
+   Le focus du clavier, lui, se pose toujours sur l'élément du SVG, que la
+   feuille de style laisse atteignable. Son liseré se peint de même, au-dessus
+   du calque qui le porte.
+   ------------------------------------------------------------ */
+const SURVOLABLE = ".stand, .zone, .dcal .forme.sdes.lie";
+const FOCALISABLE = ".stand, .zone, .dcal .forme.sdes";
+let _survolXY = null, _survolImage = 0;
+
+function brancheSurvolWebgl(){
+  svg.addEventListener("pointermove", e => {
+    if (e.pointerType !== "mouse" || e.buttons || drag || pince){ poseSurvolWebgl(null); return; }
+    _survolXY = [e.clientX, e.clientY];
+    if (!_survolImage) _survolImage = requestAnimationFrame(() => {
+      _survolImage = 0;
+      if (!_survolXY || !GL.actif) return;
+      const el = cibleWebgl(_survolXY[0], _survolXY[1]);
+      poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+    });
+  });
+  svg.addEventListener("pointerleave", () => { _survolXY = null; poseSurvolWebgl(null); });
+  svg.addEventListener("focusin", e => {
+    const el = e.target.closest && e.target.closest(FOCALISABLE);
+    poseFocusWebgl(el && el.matches(":focus-visible") ? el : null);
+  });
+  svg.addEventListener("focusout", () => poseFocusWebgl(null));
+}
+function poseSurvolWebgl(el){
+  if (el === GL.survol) return;
+  GL.survol = el;
+  // le curseur suit la cible : la racine du SVG, seule sous la souris, le porte
+  svg.parentNode.classList.toggle("survol-gl", Boolean(el));
+  GL.deck.setProps({ layers: assembleWebgl() });
+}
+function poseFocusWebgl(el){
+  if (el === GL.focus) return;
+  GL.focus = el;
+  GL.deck.setProps({ layers: assembleWebgl() });
+}
+
+/** Les aplats d'un élément dans une couche pleine et cliquable du dessin. */
+const aplatsDe = (couche, el) => el && couche.props.pickable && couche.id.includes("-pleins-")
+  ? couche.props.data.filter(d => d.el === el) : [];
+
+function coucheSurvol(couche){
+  const aplats = aplatsDe(couche, GL.survol);
+  if (!aplats.length) return [];
+  const t = (GL.modeles.get("survol") || {}).couleur || [0, 0, 0, 0];
+  return [new deck.SolidPolygonLayer({ id: "survol", data: aplats, getPolygon: d => d.polygon,
+    // l'opacité propre de l'aplat — une zone translucide, un stand écarté — reste la sienne
+    getFillColor: d => [t[0], t[1], t[2], Math.round(t[3] * d.couleur[3] / 255)] })];
+}
+
+function coucheFocus(couches){
+  if (!GL.focus) return [];
+  const aplats = couches.flatMap(c => aplatsDe(c, GL.focus));
+  if (!aplats.length) return [];
+  const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
+  return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
+    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true })];
 }
 
 /* ------------------------------------------------------------

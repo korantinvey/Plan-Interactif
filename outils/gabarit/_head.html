@@ -386,6 +386,13 @@ html.rendu-webgl .stage > svg{position:relative}
 html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
 html.rendu-webgl.edition-svg #couches > .dcal.editable,
 html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible}
+/* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
+   pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
+   rien : ni peints ni visés par le pointeur — la carte graphique les montre,
+   et leur liseré de focus avec eux. */
+html.rendu-webgl #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.rendu-webgl.edition-svg #couches > .dcal.editable [tabindex]{clip-path:none}
+html.rendu-webgl .stage.survol-gl > svg{cursor:pointer}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un

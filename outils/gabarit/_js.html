@@ -586,7 +586,12 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
-  if (GL.actif && !PLACE_LIBELLES){ libellesWebgl(); return; }
+  if (GL.actif && !PLACE_LIBELLES){
+    libellesWebgl();
+    // le calque ouvert est du SVG visible : ses stands dessinés écrivent leur nom eux-mêmes
+    if (editionSvg()) poseLibellesDessines((cadrePlan().width || 1) / view.w);
+    return;
+  }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
