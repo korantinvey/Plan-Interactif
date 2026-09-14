@@ -162,7 +162,7 @@ function majElement(){
     if (estStandDessine){
       remplitListeSocietes();
       const l = societeDeForme(f);
-      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
+      cs.value = l ? etiquetteSociete(l.o, l.soc) : "";
     }
   }
 }
@@ -343,7 +343,7 @@ function appliqueSociete(){
   memorise();
   if (l){
     cible.f.stand = l.o.id; cible.f.soc = l.i;
-    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+    ch.value = etiquetteSociete(l.o, l.soc);
   } else {
     delete cible.f.stand; delete cible.f.soc;
     ch.value = "";
