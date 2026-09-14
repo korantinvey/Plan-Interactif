@@ -73,3 +73,10 @@ jobs:
             exit 1
           fi
           echo 'Pages à jour : web/ correspond bien à outils/gabarit/.'
+
+      # Toute phrase affichée doit exister en anglais : le contrôle relève les
+      # chaînes visibles du gabarit et les cherche dans `outils/anglais/`. Placé
+      # après la validation, il ne retient pas la reconstruction des pages — il
+      # signale seulement la traduction manquante.
+      - name: Contrôler les traductions
+        run: node outils/traductions.js

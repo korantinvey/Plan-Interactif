@@ -99,7 +99,8 @@ function manifeste() {
  * d'adresse, application ou pas.
  */
 const TETE = [
-  '<link rel="icon" href="icone.svg" type="image/svg+xml">',
+  // l'onglet prend la marque réduite : le monogramme entier s'y empâte
+  '<link rel="icon" href="icone-onglet.svg" type="image/svg+xml">',
   '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + TON_CLAIR + '">',
   '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + TON_SOMBRE + '">',
   "",

@@ -169,14 +169,33 @@ export class Gaia {
    * codification arborescente ajoute des niveaux, d'où l'aplatissement.
    */
   async codification(chemin: string, langue = "fr"): Promise<Record<string, string>> {
+    return (await this.codificationLangues(chemin, [langue]))[langue];
+  }
+
+  /**
+   * Les libellés d'une codification dans plusieurs langues, d'un seul appel.
+   *
+   * Le service rend chaque libellé dans toutes les langues que le salon a
+   * saisies — `label: { fr, en }` — : demander l'anglais ne coûte donc rien de
+   * plus que le français. Une langue que le salon n'a pas renseignée retombe
+   * sur le français, qu'on reconnaît à ce qu'il est identique.
+   */
+  async codificationLangues(
+    chemin: string,
+    langues: string[],
+  ): Promise<Record<string, Record<string, string>>> {
     const point = chemin.indexOf(".");
     if (point < 0) throw new Error(`Chemin de codification illisible : ${chemin}`);
     const entite = chemin.slice(0, point);
     const propriete = chemin.slice(point + 1);
-    const table: Record<string, string> = {};
     const data = await this.demande(entite, [propriete]);
-    aplatit(data?.[propriete], table, langue);
-    return table;
+    const out: Record<string, Record<string, string>> = {};
+    for (const langue of langues) {
+      const table: Record<string, string> = {};
+      aplatit(data?.[propriete], table, langue);
+      out[langue] = table;
+    }
+    return out;
   }
 
   /**

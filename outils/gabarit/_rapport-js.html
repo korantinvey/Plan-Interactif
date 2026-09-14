@@ -22,6 +22,11 @@ const PERIODES = [
   ["tout", "Depuis le début"],
 ];
 
+/* L'âge auquel la base efface les jetons de visiteur : le défaut de
+   `purge_presences`, que la notice du plan annonce aussi. Les trois vont
+   ensemble, et un seul changé ferait mentir les deux autres. */
+const JETONS_GARDES_JOURS = 400;
+
 /* Les canaux d'une fiche exposant — `CANAUX_STAND`, `AUTRE` — et le formatage
    des nombres viennent du module d'export : les barres d'ici et les colonnes du
    classeur nomment les mêmes provenances, et il n'y a pas deux vocabulaires.
@@ -254,11 +259,22 @@ function dessineRapport() {
   /* Les jetons volatils viennent à côté du chiffre, jamais en déduction : ces
      visiteurs ont bien ouvert le plan, on sait seulement qu'ils y sont peut-être
      comptés plusieurs fois. Le rapport signale ce qu'il ne peut pas corriger. */
+  /* Les jetons ne se gardent que quatre cents jours, puis la base les efface
+     (`purge_presences`) : les visites d'avant restent comptées, leurs visiteurs
+     non. Sur une période qui remonte plus loin, le chiffre est donc partiel, et
+     le rapport le dit plutôt que de laisser lire une audience en chute. */
+  const horizon = new Date(Date.now() - JETONS_GARDES_JOURS * 864e5);
+  const debut = periode === "tout" ? new Date(r.depuis)
+    : new Date(Date.now() - Number(periode) * 864e5);
   chiffre(g1, r.visiteurs, "Visiteurs uniques",
     "Navigateurs distincts sur la période." +
     (r.visiteurs_volatils
       ? " Dont " + nb(r.visiteurs_volatils) +
         " au stockage refusé, recomptés à chaque ouverture."
+      : "") +
+    (debut < horizon
+      ? " Jetons effacés au bout de " + JETONS_GARDES_JOURS +
+        " jours : les visiteurs plus anciens n'y sont plus."
       : ""), true);
   chiffre(g1, r.recherches, "Recherches", "Mots-clés saisis, doublons écartés.");
   chiffre(g1, r.itineraires, "Itinéraires calculés", "Trajets distincts demandés.");

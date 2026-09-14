@@ -1,7 +1,5 @@
 <title>Console des plans de salon</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<!--__POLICES__-->
 
 <script src="config.js"></script>
 
@@ -34,6 +32,10 @@
       <details class="menu">
         <summary class="btn petit">Actions</summary>
         <div class="menu-pan">
+          <!-- La borne est une troisième sortie vers le plan, mais elle se
+               déplie : on l'ouvre le jour où l'on installe un écran dans le
+               salon, et non chaque fois qu'on vient voir un salon. -->
+          <a class="mitem" id="lienBorne" data-portee="salon" target="_blank" rel="noopener">Ouvrir en mode borne</a>
           <a class="mitem" id="lienRapport" data-portee="salon">Rapport d'utilisation</a>
           <button class="mitem" id="btnExcel" data-portee="salon" title="Un classeur : une ligne par exposant, une colonne par provenance, depuis le début">Export Excel des exposants</button>
           <button class="mitem" id="btnSources" data-portee="salon">Sources de données</button>
@@ -46,6 +48,9 @@
           <button class="mitem" id="btnExport">Copier les données (JSON)</button>
         </div>
       </details>
+      <!-- La langue : le drapeau de celle vers laquelle on bascule
+           (`_langue.js` le dessine). -->
+      <button class="icone langue" id="btnLangue" type="button" data-langue></button>
       <!-- Le compte, sous les initiales de son adresse. Le thème y descend :
            il se règle une fois, et occupait la barre en permanence pour cela.
            La sortie, elle, n'avait aucun bouton — on fermait l'onglet, et la

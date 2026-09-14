@@ -708,6 +708,100 @@ function champFavicon() {
   return l;
 }
 
+/* ------------------------------------------------------------------
+   Fuseau horaire
+
+   Il date les jours du rapport et de la mesure, et dit à la page l'heure qu'il
+   est au salon. Trois provenances, dans cet ordre : celui qu'on règle ici,
+   celui qu'Eventmaker donne à la synchronisation, et Paris. C'est la base qui
+   tranche — un déclencheur calcule `fuseau` depuis les deux autres — et le
+   champ relit ce qu'elle a retenu plutôt que de le deviner.
+   ------------------------------------------------------------------ */
+const FUSEAU_DEFAUT = "Europe/Paris";
+
+/**
+ * Le nom saisi, écrit comme la liste l'écrit — « Europe/Paris » pour
+ * « europe/paris » —, ou nul s'il ne se lit pas.
+ *
+ * Pas `resolvedOptions()` : il ramène un fuseau à celui dont il est l'alias,
+ * et « America/Montreal » revenait sous les yeux en « America/Toronto ». Le
+ * même fuseau, mais pas celui qu'on a choisi.
+ */
+function fuseauConnu(nom, connus) {
+  const bas = nom.toLowerCase();
+  const tel = connus.find((z) => z.toLowerCase() === bas);
+  if (tel) return tel;
+  try {
+    new Intl.DateTimeFormat("fr-FR", { timeZone: nom });
+    return nom;
+  } catch (e) {
+    return null;
+  }
+}
+
+function champFuseau() {
+  const e = courant();
+  const l = document.createElement("label");
+  l.innerHTML = '<span>Fuseau horaire</span>' +
+    '<input list="fuseaux" spellcheck="false" autocomplete="off">' +
+    '<datalist id="fuseaux"></datalist><span class="aide"></span>';
+  const i = l.querySelector("input");
+  const aide = l.querySelector(".aide");
+  // la liste vient du navigateur : c'est lui qui devra lire le fuseau retenu
+  const connus = typeof Intl.supportedValuesOf === "function"
+    ? Intl.supportedValuesOf("timeZone") : [];
+  l.querySelector("datalist").innerHTML =
+    connus.map((z) => '<option value="' + esc(z) + '">').join("");
+
+  // ce que donnerait le champ vide : c'est ce que l'invite montre
+  const sansChoix = () => e.fuseau_source || FUSEAU_DEFAUT;
+  const peint = (mot) => {
+    i.value = e.fuseau_choisi || "";
+    i.placeholder = sansChoix();
+    aide.classList.toggle("alerte", Boolean(mot));
+    aide.textContent = mot || (e.fuseau_choisi
+      ? "Choisi ici, il l'emporte sur la synchronisation. Videz le champ pour " +
+        "revenir à " + sansChoix() + (e.fuseau_source ? ", donné par Eventmaker." : ", le défaut.")
+      : e.fuseau_source
+      ? "Donné par Eventmaker à la synchronisation. Choisissez-en un autre pour l'écarter."
+      : "Par défaut : aucune source n'en donne. Réglez-le si le salon se tient ailleurs.") +
+      (mot ? "" : " Il date les jours du rapport et l'heure du plan.");
+  };
+
+  i.onchange = async () => {
+    const saisi = i.value.trim();
+    const nom = saisi ? fuseauConnu(saisi, connus) : null;
+    if (saisi && !nom) {
+      // la saisie reste sous les yeux : on corrige une faute, on ne la retape pas
+      aide.classList.add("alerte");
+      aide.textContent = "« " + saisi + " » n'est pas un fuseau connu : choisissez-le dans la liste.";
+      return;
+    }
+    try {
+      const [r] = await rest("evenement?id=eq." + e.id +
+        "&select=fuseau,fuseau_source,fuseau_choisi", {
+        method: "PATCH",
+        headers: { "Prefer": "return=representation" },
+        body: JSON.stringify({ fuseau_choisi: nom, modifie_le: new Date().toISOString() }),
+      });
+      if (!r) throw new Error("modification refusée");
+      Object.assign(e, r);
+      /* La base traduit à son tour, et rend nul ce qu'elle ne sait pas lire —
+         un nom trop récent pour son répertoire de fuseaux. Le taire laisserait
+         croire que le choix a pris. */
+      peint(nom && !r.fuseau_choisi
+        ? "La base ne connaît pas « " + nom + " » : c'est " + r.fuseau + " qui reste retenu."
+        : undefined);
+    } catch (err) {
+      peint();
+      signale(err.message, true);
+    }
+  };
+
+  peint();
+  return l;
+}
+
 function dessineFiche() {
   const e = courant();
   const f = $("fiche");
@@ -730,6 +824,7 @@ function dessineFiche() {
   g1.appendChild(champ("nom", "Nom de l'événement"));
   g1.appendChild(champ("slug", "Identifiant d'URL", "Sert d'adresse publique du plan."));
   g1.appendChild(champFavicon());
+  g1.appendChild(champFuseau());
   b1.appendChild(g1);
   f.appendChild(b1);
 
@@ -1303,16 +1398,53 @@ function ajouteChampPerso(redessine) {
     });
 }
 
-/** Renomme un champ : seul l'intitulé change, la clé et le réglage restent. */
+/**
+ * Renomme un champ : seuls les intitulés changent, la clé et le réglage restent.
+ *
+ * L'intitulé se donne dans les deux langues, et les deux champs paraissent
+ * quelle que soit la langue de la console : c'est l'exploitant qui l'a écrit,
+ * aucun dictionnaire ne le connaît. L'anglais est facultatif — laissé vide, la
+ * version anglaise du plan montre l'intitulé français.
+ */
 function renommeChampPerso(cle, redessine) {
   const e = courant();
-  const actuel = champsPersos(e).find((c) => c.cle === cle);
-  demande("Renommer le champ", "Intitulé", actuel ? actuel.libelle : "",
-    async (libelle) => {
-      const perso = champsPersos(e).map((c) => c.cle === cle ? { ...c, libelle } : c);
-      await ecritFiche(e, { perso });
-      redessine();
+  const actuel = champsPersos(e).find((c) => c.cle === cle) || {};
+  let fr, en;
+  const champ = (corps, texte, valeur, lang) => {
+    const l = document.createElement("label");
+    l.innerHTML = "<span></span><input>";
+    l.querySelector("span").textContent = texte;
+    const i = l.querySelector("input");
+    i.value = valeur || "";
+    i.lang = lang;
+    corps.appendChild(l);
+    return i;
+  };
+  const valide = async () => {
+    const libelle = fr.value.trim();
+    const libelleEn = en.value.trim();
+    const perso = champsPersos(e).map((c) => {
+      if (c.cle !== cle) return c;
+      const n = { ...c, libelle };
+      if (libelleEn) n.libelle_en = libelleEn; else delete n.libelle_en;
+      return n;
     });
+    await ecritFiche(e, { perso });
+    redessine();
+  };
+  ouvreModale("Renommer le champ", (corps) => {
+    fr = champ(corps, "Intitulé en français", actuel.libelle, "fr");
+    en = champ(corps, "Intitulé en anglais", actuel.libelle_en, "en");
+    const aide = document.createElement("p");
+    aide.className = "aide";
+    aide.textContent = "Laissé vide, l'intitulé en français s'affiche aussi dans la version " +
+      "anglaise du plan.";
+    corps.appendChild(aide);
+    setTimeout(() => { fr.focus(); fr.select(); }, 30);
+  }, [{ libelle: "Annuler" },
+      // sans intitulé français, la fenêtre reste ouverte : c'est lui qui nomme le champ
+      { libelle: "Valider", genre: "primaire",
+        action: () => { if (!fr.value.trim()) { fr.focus(); return false; } valide(); } }]);
 }
 
 /**
@@ -1337,8 +1469,18 @@ function retireChampPerso(cle, libelle, redessine) {
         perso: champsPersos(e).filter((c) => c.cle !== cle),
         stand, criteres: crit,
         /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
-           sous le même intitulé à la place qu'occupait le premier. */
+           sous le même intitulé à la place qu'occupait le premier. Et avec lui
+           la section qui le réunissait et le sort réservé à son intitulé, qui
+           ne décrivent plus rien. */
         ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
+        groupes: (((e.fiche || {}).groupes) || [])
+          .map((g) => ({ ...g, cles: (g.cles || []).filter((c) => c !== cible) }))
+          .filter((g) => g.cles.length),
+        intitules: (() => {
+          const i = { ...((e.fiche || {}).intitules || {}) };
+          delete i[cible];
+          return i;
+        })(),
       });
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
@@ -1378,9 +1520,9 @@ function lignesPerso(e, redessine) {
     critere: true,
     outils: [
       { titre: "Renommer", texte: "\u270E",
-        action: () => renommeChampPerso(c.cle, redessine) },
+        action: () => renommeChampPerso(c.cle, gardeLaPlace(redessine)) },
       { titre: "Retirer", texte: "\u00D7", genre: "danger",
-        action: () => retireChampPerso(c.cle, c.libelle, redessine) },
+        action: () => retireChampPerso(c.cle, c.libelle, gardeLaPlace(redessine)) },
     ],
   }));
 }
@@ -1552,6 +1694,11 @@ function ouvreFiche(apres) {
         "d'origine à associer. Choisissez-en une dans « Provenance des données ».";
       corps.appendChild(p);
     } else {
+      /* Avant les champs, les fiches : désigner un champ d'origine ne sert à
+         rien tant qu'on lit les mauvaises fiches. Le cadre vient donc en
+         premier, et il n'existe que pour Eventmaker — Klipso range ses
+         exposants par dossier, pas par catégorie d'invités. */
+      if (src === "eventmaker") corps.appendChild(cadreCategories(src));
       CADRES_FICHE.forEach((def) => {
         const duCadre = lignes().filter((l) => (l.groupe || "exposant") === def.cle);
         /* Le rattachement rejoint le cadre de l'exposant : ces champs sont lus
@@ -1589,7 +1736,7 @@ function ouvreFiche(apres) {
             b.type = "button";
             b.className = "btn petit";
             b.textContent = "Ajouter un champ";
-            b.onclick = () => ajouteChampPerso(redessine);
+            b.onclick = () => ajouteChampPerso(gardeLaPlace(redessine));
             pied.appendChild(b);
             if (!perso.length) {
               const p = document.createElement("span");
@@ -1617,20 +1764,122 @@ function ouvreFiche(apres) {
         "désigne plus rien.";
     corps.appendChild(note);
 
-    /* Ce que la fiche d'un stand montre se décide ici ; dans quel ordre elle le
-       montre, et ce qu'une fiche de zone montre, se décident sur le plan — là
-       où l'aperçu porte l'habillage retenu et les valeurs d'un vrai stand, là
-       où les fiches des zones s'écrivent. Le dire, faute de quoi on chercherait
-       ces réglages dans cette fenêtre — c'est là qu'ils étaient. */
+    /* D'où vient un champ se décide ici, et nulle part ailleurs : c'est la
+       seule fenêtre qui voie le relevé de la source. Ce que la fiche en montre
+       se décide des deux côtés — la case ici, le glissé sur le plan — parce que
+       c'est le même réglage, et que le plan seul peut le faire juger : l'aperçu
+       y porte l'habillage retenu et les valeurs d'un vrai stand. Le dire, faute
+       de quoi on chercherait le reste dans cette fenêtre — c'est là qu'il
+       était. */
     const ou = document.createElement("p");
     ou.className = "aide";
-    ou.textContent = "L'ordre dans lequel ces champs se lisent, et les groupes " +
-      "qui les réunissent sous un même titre, se règlent depuis le plan : " +
-      "engrenage, « Fiche Stand ». Ce qu'une fiche de zone organisateur " +
-      "montre — logo, description, lien, programme — s'y règle aussi : " +
-      "engrenage, « Zones ».";
+    ou.textContent = "Décocher un champ le renvoie en réserve sur le plan, où " +
+      "il attend d'être réaffiché. C'est là que se règle le reste de la fiche " +
+      "— l'ordre des champs, les sections qui les réunissent sous un même " +
+      "titre, les intitulés qui paraissent devant les valeurs : engrenage, " +
+      "« Fiche Stand ». Ce qu'une fiche de zone organisateur montre — logo, " +
+      "description, lien, programme — s'y règle aussi : engrenage, « Zones ».";
     corps.appendChild(ou);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
+}
+
+/**
+ * Les catégories d'invités qui portent les exposants.
+ *
+ * Eventmaker range toutes ses fiches — visiteurs, intervenants, organisateurs,
+ * exposants — dans les mêmes catégories, nommées librement par l'organisateur.
+ * La synchronisation devinait laquelle est celle des exposants en cherchant
+ * qui porte un numéro de stand ; elle se trompait de deux façons, et le cadre
+ * répond aux deux.
+ *
+ * Elle retient une catégorie entière dès qu'une seule de ses fiches porte un
+ * numéro : « EXPOSANT (raison sociale) » de Moove On mêle 51 sociétés et 36
+ * personnes, et c'est le champ d'une personne que la console proposait. Et
+ * elle ne voit pas une catégorie d'exposants dont aucune fiche ne porte encore
+ * de numéro — au début d'un salon, c'est-à-dire quand on le règle.
+ *
+ * Cocher, c'est donc décider : la synchronisation suivante ne lit plus que
+ * ces catégories-là, sans les sonder. Tout décocher rend la main à la
+ * détection, qui reste le bon réglage pour un salon qui n'a jamais posé de
+ * problème.
+ */
+function cadreCategories(src) {
+  const e = courant();
+  const bloc = correspondance(e, src);
+  const catalogue = bloc.catalogue || [];
+  const detectees = bloc.retenues || [];
+  // le choix vit à côté du relevé, comme les champs : c'est le même réglage
+  const choisies = [].concat(bloc.categories || []).map(String);
+
+  const zone = document.createElement("div");
+  zone.className = "valeurs";
+
+  const note = document.createElement("p");
+  note.className = "aide";
+
+  const AUTO = "Aucune catégorie désignée : la synchronisation cherche " +
+    "elle-même celles dont les fiches portent un numéro de stand";
+  const dis = () => {
+    note.textContent = choisies.length > 1
+      ? choisies.length + " catégories désignées : la synchronisation ne lira " +
+        "que leurs fiches."
+      : choisies.length
+      ? "1 catégorie désignée : la synchronisation ne lira que ses fiches."
+      : !catalogue.length
+      ? "Les catégories se relèvent à la synchronisation : lancez-en une pour " +
+        "qu'elles soient proposées ici."
+      : detectees.length
+      ? AUTO + ", et la dernière en a retenu " + detectees.length + "."
+      : AUTO + ", et la dernière n'en a retenu aucune.";
+  };
+
+  const enregistre = async () => {
+    const e2 = courant();
+    const avant = e2.correspondances;
+    const corr = { ...(e2.correspondances || {}) };
+    const part = { ...(corr[src] || {}) };
+    if (choisies.length) part.categories = [...choisies];
+    else delete part.categories;
+    corr[src] = part;
+    e2.correspondances = corr;
+    try { await majEvenement(e2.id, { correspondances: corr }); }
+    catch (err) { e2.correspondances = avant; signale(err.message, true); }
+  };
+
+  catalogue.forEach((c) => {
+    const id = String(c.id);
+    const l = document.createElement("label");
+    l.className = "puce";
+    /* Celle que la dernière synchronisation avait retenue d'elle-même se
+       signale : c'est la réponse à « laquelle, déjà ? » sur un salon dont on
+       ne connaît pas la nomenclature interne. */
+    const auto = detectees.indexOf(id) >= 0;
+    if (!auto) l.dataset.hors = "1";
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = c.nom || id;
+    l.title = auto ? "des fiches de cette catégorie portent un numéro de stand"
+      : "aucune fiche de cette catégorie ne portait de numéro de stand";
+    const i = l.querySelector("input");
+    i.checked = choisies.indexOf(id) >= 0;
+    i.onchange = () => {
+      const k = choisies.indexOf(id);
+      if (i.checked && k < 0) choisies.push(id);
+      if (!i.checked && k >= 0) choisies.splice(k, 1);
+      enregistre();
+      dis();
+    };
+    zone.appendChild(l);
+  });
+
+  dis();
+  return cadreFiche(
+    { titre: "Catégories d'invités", domaine: "stands",
+      aide: "Les fiches que la synchronisation lit. Une catégorie Eventmaker " +
+        "mêle souvent les sociétés et les personnes qui les représentent : " +
+        "cochez celles qui portent les exposants, et rien d'autre n'est lu. " +
+        "Tout décocher rend la main à la détection automatique. Le réglage " +
+        "prend effet à la synchronisation suivante." },
+    [catalogue.length ? zone : null, note]);
 }
 
 const sousTitre = (txt) => {
@@ -2177,16 +2426,26 @@ function champOrigine(src, cible, apres, ouiNon) {
 
 function majLiens(e) {
   const q = "?plan=" + encodeURIComponent(e.slug || "");
+  // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
+  // laisser cliquer vers une page qui répondra « introuvable »
+  const brouillon = e.etat !== "publie";
+  const enBrouillon = "L'événement est en brouillon : le plan public n'est pas encore servi.";
   const pub = $("lienPublic"), adm = $("lienAdmin");
   if (pub) {
     pub.href = BASE_PAGES + "plan" + q;
-    // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
-    // laisser cliquer vers une page qui répondra « introuvable »
-    const brouillon = e.etat !== "publie";
     pub.classList.toggle("inactif", brouillon);
-    pub.title = brouillon
-      ? "L'événement est en brouillon : le plan public n'est pas encore servi."
-      : "Ouvrir le plan tel que le voient les visiteurs";
+    pub.title = brouillon ? enBrouillon : "Ouvrir le plan tel que le voient les visiteurs";
+  }
+  /* La borne n'est que le plan public avec un paramètre de plus. Le lien est
+     là pour qu'on n'ait pas à l'écrire de mémoire : on l'ouvre sur la tablette
+     posée dans le salon, ou l'on copie son adresse pour l'y porter. */
+  const bor = $("lienBorne");
+  if (bor) {
+    bor.href = BASE_PAGES + "plan" + q + "&borne";
+    bor.classList.toggle("inactif", brouillon);
+    bor.title = brouillon ? enBrouillon
+      : "Le plan sur un écran posé dans le salon : il demande où il est, " +
+        "puis les itinéraires en partent";
   }
   if (adm) {
     adm.href = BASE_PAGES + "plan-admin" + q;
@@ -2308,13 +2567,15 @@ function dupliquer(e) {
   demande("Dupliquer l'événement", "Nom de la copie", e.nom + " — copie", async (nom) => {
     try {
       // l'édition suivante a ses propres identifiants Klipso : on ne recopie
-      // ni l'identifiant d'événement, ni les pavillons
+      // ni l'identifiant d'événement, ni les pavillons. Le fuseau choisi, si :
+      // l'édition suivante se tient d'ordinaire au même endroit
       await rest("evenement", {
         method: "POST",
         headers: { "Prefer": "return=representation" },
         body: JSON.stringify({
           nom, slug: slugifie(nom), instance: e.instance,
           rythme_min: e.rythme_min, etat: "brouillon",
+          fuseau_choisi: e.fuseau_choisi ?? null,
         }),
       });
       await charge();
@@ -2721,6 +2982,9 @@ function videEcran() {
 }
 
 function dessine() {
+  /* Les valeurs des listes du salon affiché — critères, correspondances — se
+     lisent en anglais dans la console anglaise, comme sur le plan. */
+  LANGUE.donnees("sources", (courant() || {}).libelles_en || {});
   // les comptes et la création d'un salon sont le fait de l'administrateur ;
   // un organisateur reçoit ses salons, il ne s'en donne pas
   const patron = MOI?.role === "admin";

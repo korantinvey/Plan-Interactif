@@ -18,6 +18,9 @@ function demarre(d){
   rattrapeRetard();
   // le plan est manipulable : le fond peut arriver derrière
   chargeFond(state.plan);
+  /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
+     savoir avant qu'un lien reçu n'ouvre une fiche et son « J'y vais ». */
+  demarreBorne();
   /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
      pour laquelle cette page vient d'être ouverte, et il retire son fragment
      de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait
@@ -28,6 +31,14 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* La visite guidée passe après tout cela, et attend son tour : un lien vers
+     un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
+     propose que si rien d'autre n'a pris la place entre-temps. */
+  proposeTutoriel();
+  /* L'invitation à installer vient ensuite. La visite guidée renonce pour toute
+     la visite si l'écran est pris quand elle se propose, l'invitation sait
+     attendre : c'est donc elle qui cède son tour. */
+  accueilleInvitation();
 }
 
 function annonce(txt, erreur){

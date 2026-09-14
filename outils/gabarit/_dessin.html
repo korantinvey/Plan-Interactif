@@ -352,6 +352,15 @@ function dessineDessins(){
   rafraichitStandsDessines();
 }
 
+/** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
+ *  et ses tracés la prennent par `currentColor`. C'est ce dont le nuancier a
+ *  besoin pendant qu'on glisse — `dessineDessins` refait tous les nœuds de
+ *  tous les calques, ce qu'une rafale d'événements ne supporte pas. */
+function peintCalque(cal){
+  const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
+  if (g) g.style.color = cal.couleur || "var(--accent)";
+}
+
 /* --- conversion écran → repère du plan --- */
 function versPlan(clientX, clientY){
   const r = cadrePlan();
@@ -613,7 +622,14 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
-const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+/* Le nom d'un type vit sous deux formes. En français, il sert de libellé
+   enregistré — un repère posé sans libellé prend celui de son type — et doit le
+   rester quelle que soit la langue de l'écran : posé depuis la version
+   anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
+   Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
  * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
@@ -1368,7 +1384,7 @@ function dessinPointerDown(e){
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
        cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
        rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
     ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });

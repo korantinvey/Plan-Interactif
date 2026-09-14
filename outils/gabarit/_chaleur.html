@@ -540,9 +540,12 @@ function ouvreRemiseAZero(){
 
     const saisie = l.querySelector("input");
     const bouton = () => $("mPied").querySelector(".danger");
+    /* En anglais, la consigne demande « reset » : le mot traduit vaut donc
+       autant que l'original, qui reste accepté — on demande une intention. */
+    const motJuste = (v) => [MOT_RAZ, traduit(MOT_RAZ)].some(m => aplati(v) === aplati(m));
     const relit = () => {
       const b = bouton();
-      if (b) b.disabled = aplati(saisie.value) !== aplati(MOT_RAZ) || !tally;
+      if (b) b.disabled = !motJuste(saisie.value) || !tally;
     };
     saisie.oninput = relit;
     saisie.onkeydown = (e) => {
@@ -604,7 +607,7 @@ async function lanceRemiseAZero(){
       method: "POST", body: JSON.stringify({ p_evenement: evt }),
     });
     const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
-              Number(r?.visiteurs || 0) + Number(r?.journal || 0);
+              Number(r?.visiteurs || 0);
 
     /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
        qui ne reposent plus sur rien. */

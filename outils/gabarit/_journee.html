@@ -115,6 +115,10 @@ function pointConf(c){
  * — reste le vrai remède, et il appartient à l'exploitant.
  */
 function departsProposes(){
+  /* Une borne sait où elle est posée : la question n'aurait qu'une réponse, et
+     la poser ferait croire qu'il y en a d'autres. */
+  const borne = pointBorne();
+  if (borne) return [borne];
   const l = [];
   DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
   const vus = new Map();

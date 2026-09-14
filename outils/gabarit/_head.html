@@ -1,7 +1,5 @@
 <title>Plan du salon</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap">
+<!--__POLICES__-->
 
 <script src="config.js"></script>
 
@@ -39,6 +37,12 @@
      le plan à celle du navigateur. Deux polices sur un écran, pour le même
      nom d'exposant lu deux fois. */
   --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  /* La liste déroulante d'un « select » est peinte par le système, hors de la
+     page : ses tons ne peuvent donc pas être ceux d'un modèle, qui les pose
+     translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
+     redéfinit. « --systeme » dit au navigateur de quel côté peindre le reste
+     du menu — ascenseur, surbrillance, cadre. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -53,6 +57,7 @@
     --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -67,6 +72,7 @@
   --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
 }
 
 *{box-sizing:border-box}
@@ -74,6 +80,13 @@ body{margin:0;background:var(--ground);color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
+/* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
+   fond : sous « Verre » — encre blanche sur un carreau translucide — comme
+   dans le thème sombre, elles écrivaient du blanc sur le blanc du système, et
+   ne paraissaient qu'au survol. Elles reçoivent donc leurs propres tons, que
+   le champ soit habillé ou non. */
+select{color-scheme:var(--systeme)}
+option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
 /* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
@@ -123,6 +136,8 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+/* Un texte écrit dans les deux langues ne montre que celui de la page. */
+html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et
@@ -255,6 +270,14 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
+/* Le pied de la liste porte la notice de confidentialité : une mention, pas
+   une commande. Discrète, mais toujours au même endroit — c'est là qu'on
+   cherche d'ordinaire ces choses, et la barre du haut n'a pas de place à
+   perdre sur un téléphone. */
+.side-pied{border-top:1px solid var(--line);padding:5px 16px;display:flex;justify-content:flex-end}
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line-strong)}
+.lien-discret:hover{color:var(--ink)}
 .row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
@@ -1090,6 +1113,11 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    de trois caractères ; les libellés sont des phrases. */
 .field .v .ligne{display:block}
 .field .v .ligne + .ligne{margin-top:3px}
+/* L'intitulé d'un champ réuni sous un titre, quand l'exploitant le lui laisse :
+   devant sa valeur et non au-dessus, où il ferait un second titre sous le
+   premier. Trois lignes sous « Contact » ne disent plus laquelle est le
+   téléphone : c'est à cela qu'il sert. */
+.field .v .ligne > .lib{color:var(--ink-3);margin-right:7px}
 /* Une thématique de la fiche mène aux exposants qui la partagent : elle se
    souligne au survol pour le dire, mais garde la graisse et l'alignement des
    autres valeurs — c'en est une, pas un bouton posé dans la fiche. */
@@ -1434,6 +1462,9 @@ button.expo:hover{background:var(--line)}
 .modele-chrono .detail-hd .badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='12' r='7.6' fill='none' stroke='black' stroke-width='2.4'/%3E%3Ccircle cx='12' cy='12' r='2.9'/%3E%3C/svg%3E")}
 .modele-chrono .detail-bd{gap:11px}
 .modele-chrono .field{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;align-items:baseline}
+/* Sans intitulé, la valeur tomberait dans la colonne qui lui était réservée :
+   elle reprend donc toute la largeur, comme dans les dix autres habillages. */
+.modele-chrono .field.muet{display:block}
 .modele-chrono .field .eyebrow{font-family:"IBM Plex Mono",monospace;letter-spacing:.05em;text-align:right}
 .modele-chrono .field.prog-bloc{display:block;margin-top:6px;padding-top:14px;
   border-top:1px solid var(--line)}
@@ -2234,6 +2265,37 @@ button.expo:hover{background:var(--line)}
 .iEtape .t{font-size:13px;color:var(--ink)}
 .iEtape .s{font-size:11.5px;color:var(--ink-3)}
 
+/* ------------------------------------------------------------
+   La borne interactive
+   ------------------------------------------------------------ */
+/* Le bandeau de pose se range en bas, à l'opposé du bandeau de visée : les
+   deux ne paraissent jamais ensemble, mais celui-ci s'adresse à l'exploitant
+   qui installe l'écran, et celui-là au doigt qui est en train de désigner. */
+.bornePose{position:absolute;left:0;right:0;bottom:14px;margin-inline:auto;width:fit-content;
+  max-width:92%;z-index:14;display:flex;align-items:center;gap:12px;
+  padding:8px 12px 8px 15px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:999px;box-shadow:var(--shadow);font-size:12.5px;color:var(--ink)}
+.bornePose[hidden]{display:none}
+.bornePose button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
+/* Le départ d'une borne ne se choisit pas : sa cible et l'inversion quittent
+   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur. */
+html.mode-borne #iViseA,html.mode-borne #iEchange{display:none}
+html.mode-borne .iChamps{grid-template-columns:1fr}
+html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
+  border-color:transparent;color:var(--ink);cursor:default}
+
+/* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
+   écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
+   taille à l'écran, comme les pastilles du trajet — et son nom se lit par-dessus
+   le plan, cerné de la couleur du fond plutôt que posé sur une étiquette. */
+#borneIci{pointer-events:none}
+#borneIci .bOnde{fill:var(--accent);opacity:.16}
+#borneIci .bPoint{fill:var(--accent);stroke:var(--surface);stroke-width:2;
+  vector-effect:non-scaling-stroke}
+#borneIci .bNom{fill:var(--ink);font-family:"Archivo",sans-serif;font-weight:700;
+  text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:4;
+  stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
 /* Pendant la visée, le plan devient une liste de choix : le curseur le dit à
    la souris, le bandeau le dit à tout le monde. */
 .viseur{position:absolute;top:12px;left:0;right:0;margin-inline:auto;width:fit-content;
@@ -2602,12 +2664,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
    dernière pastille ouvre le nuancier du système pour ceux qui ont un
-   hexadécimal à respecter. */
-.reglage-coul{margin:2px 0 18px}
-.reglage-coul .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
-.reglage-coul .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
-.reglage-coul .raz{margin-left:auto;font-size:12px;color:var(--ink-3);text-decoration:underline}
-.reglage-coul .raz:hover{color:var(--ink)}
+   hexadécimal à respecter.
+   La police des noms, qui le suit, en reprend la tête : ce qui est en place,
+   et de quoi revenir à ce que prévoit le modèle. */
+.reglage-coul,.reglage-police{margin:2px 0 18px}
+.reglage-coul .tete,.reglage-police .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val,.reglage-police .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3)}
+.reglage-coul .raz,.reglage-police .raz{margin-left:auto;font-size:12px;color:var(--ink-3);
+  text-decoration:underline}
+.reglage-coul .raz:hover,.reglage-police .raz:hover{color:var(--ink)}
 .nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
 .nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
   padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
@@ -2629,6 +2695,31 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
+   l'allure du bouton des critères de recherche une fois actif — c'en est un,
+   de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
+.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:600}
+.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+  color:var(--ink-3)}
+/* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
+   ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
+   sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
+   même rang s'alignent sur la plus haute, la grille s'en charge, et le nom
+   reste en haut de chacune pour que le rang se lise d'une traite. */
+.polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
+.pol{display:flex;flex-direction:column;gap:3px;min-width:0;
+  padding:8px 10px 7px;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px}
+.pol:hover{border-color:var(--line-strong)}
+.pol[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.pol .t{font-size:16px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.pol .g{font-size:11px;line-height:1.3;color:var(--ink-3)}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -2673,42 +2764,57 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    passait à la ligne, et l'on jugeait un habillage sur un défaut de largeur
    qu'aucun visiteur ne verra. Il se coupe, comme un nom trop long. */
 .apercu-liste .count span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Le rangement de la fiche : la liste des champs d'un côté, la fiche telle
-   qu'elle en sortira de l'autre. Une liste de quinze intitulés ne dit pas ce
-   qu'on obtient — on réglait un ordre sans voir la fiche, et il fallait ouvrir
-   le plan public pour juger. L'aperçu se colle en haut : la liste est plus
-   longue que lui, et le laisser défiler reviendrait à ranger des champs sans
-   plus rien voir de ce qu'on range. */
-.ordreDeux{display:grid;grid-template-columns:minmax(0,1fr) 264px;
-  gap:18px;align-items:start;margin-top:12px}
+/* La fiche d'un stand, en trois colonnes : les champs dont le salon dispose,
+   ceux que la fiche montre, et la fiche telle qu'elle en sortira. Une liste de
+   quinze intitulés ne dit pas ce qu'on obtient — on réglait un ordre sans voir
+   la fiche, et il fallait ouvrir le plan public pour juger. La réserve est
+   étroite : on n'y lit qu'un nom, quand la colonne du milieu porte les
+   commandes de chaque champ. */
+.ficheTrois{display:grid;grid-template-columns:168px minmax(0,1fr) 244px;
+  gap:14px;align-items:start;margin-top:12px}
+.ficheCol{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ficheCol > .eyebrow{display:block}
+/* L'aperçu se colle en haut : les listes sont plus longues que lui, et le
+   laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
+   qu'on range. */
 .ordreApercu{position:sticky;top:0}
-.ordreApercu > .eyebrow{display:block;margin-bottom:7px}
-.ordreApercu > .aideO{margin:8px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
+.ordreApercu > .aideO{margin:1px 0 0;font-size:11px;color:var(--ink-3);line-height:1.5}
 /* L'aperçu porte les classes de la vraie fiche, comme les vignettes des
    modèles : c'est la même feuille de style qui l'habille. Il ne se réduit pas,
-   lui — on y lit des valeurs, pas une silhouette — d'où la hauteur bornée et
-   le fondu du bas plutôt qu'un défilement de plus dans la fenêtre. */
-.vueO{display:flex;max-height:52dvh;overflow:hidden;
-  -webkit-mask-image:linear-gradient(#000 88%,transparent);
-  mask-image:linear-gradient(#000 88%,transparent)}
-.vueO .apercu{flex:1 1 auto}
-.ordreListe{display:flex;flex-direction:column;gap:3px}
+   lui — on y lit des valeurs, pas une silhouette — et défile pour son compte :
+   une fiche fournie passe sous le bord de la fenêtre, et c'est justement le bas
+   qu'on vient vérifier. Le défilement s'arrête à lui plutôt que d'emporter la
+   fenêtre une fois le bas atteint. */
+.vueO{display:block;max-height:min(52dvh,430px);overflow:auto;
+  overscroll-behavior:contain}
+/* La vignette d'un modèle se coupe dans sa tuile ; l'aperçu du rangement se
+   déroule en entier — c'est le bas de la fiche qu'on vient vérifier — et c'est
+   le cadre qui défile. Posé en ligne comme les vignettes, il s'étirait à la
+   hauteur du cadre : rien ne débordait, et le seul défilement était celui de
+   son corps, hors d'atteinte puisque l'aperçu est inerte et que la roulette le
+   traverse. Il reprend donc sa hauteur naturelle, et le cadre la borne. */
+.vueO .detail-bd{overflow:visible;flex:none}
+/* Les deux listes reçoivent un dépôt, et le disent : le trait tient lieu de
+   bac, y compris quand la liste est vide et qu'il n'y aurait rien à viser. */
+.ficheDispo,.ordreListe{display:flex;flex-direction:column;gap:3px;
+  min-height:58px;padding:5px;border:1px dashed var(--line);
+  border-radius:var(--radius)}
+.videO{margin:0;font-size:11px;color:var(--ink-3);line-height:1.45}
 .ordreLigne{display:flex;align-items:center;gap:8px;font-size:13px;
   padding:6px 9px;background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--radius);cursor:grab}
 .ordreLigne:active{cursor:grabbing}
-.ordreLigne .rang,.grpTete .rang{flex:0 0 20px;font-family:"IBM Plex Mono",monospace;
-  font-size:11px;color:var(--ink-3);text-align:right}
 .ordreLigne .prise,.grpTete .prise{flex:0 0 auto;color:var(--ink-3);font-size:15px;line-height:1}
 .ordreLigne .lib{color:var(--ink);min-width:0;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.ordreLigne .etiq{flex:1;font-size:11px;color:var(--ink-3)}
+.ordreLigne .etiq{flex:1;font-size:11px;color:var(--ink-3);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ordreLigne .etiq:not(:empty){margin-left:2px}
+/* Un champ en réserve ne se règle pas : tant qu'il ne paraît pas, il n'a ni
+   intitulé à montrer ni voisins à doubler. Il s'efface d'autant, et le nom
+   qu'on vient y chercher prend toute la place. */
+.ordreLigne.dispo{background:var(--surface);padding:5px 7px;font-size:12.5px}
 .cocheO{flex:0 0 auto;width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
-/* Un champ que la console a masqué garde sa place dans la liste : le remonter
-   aujourd'hui pour l'afficher demain doit rester possible. Il s'efface sans
-   disparaître, faute de quoi un rang sauterait sans qu'on sache lequel. */
-.ordreLigne.eteint{opacity:.5}
 .ordreLigne .outil,.grpTete .outil{flex:0 0 auto;width:22px;height:20px;
   border:1px solid var(--line);border-radius:3px;font-size:10px;color:var(--ink-2);
   background:var(--surface)}
@@ -2721,9 +2827,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    curseur qui dit où le lâcher le posera. */
 .ordreLigne.tire,.ordreGrp.tire{opacity:.4}
 .ordreLigne.tire .outil,.ordreGrp.tire .outil{visibility:hidden}
-/* Un groupe se lit comme un champ de plus : il porte un rang, il se déplace
-   d'un bloc, et ses membres se serrent sous son titre plutôt qu'à côté des
-   autres champs. Le liseré d'accent tient lieu d'accolade. */
+/* Une section se lit comme un champ de plus : elle se déplace d'un bloc, et ses
+   membres se serrent sous son titre plutôt qu'à côté des autres champs. Le
+   liseré d'accent tient lieu d'accolade. */
 .ordreGrp{border:1px solid var(--line);border-left:2px solid var(--accent);
   border-radius:var(--radius);background:var(--surface-2);cursor:grab}
 .ordreGrp:active{cursor:grabbing}
@@ -2732,15 +2838,21 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   color:var(--ink);background:var(--surface);border:1px solid var(--line);
   border-radius:var(--radius)}
 .grpTitre:focus{border-color:var(--accent);outline:none}
-.grpMembres{display:flex;flex-direction:column;gap:3px;padding:0 9px 8px 22px}
+/* Une section vide garde la hauteur d'une ligne : c'est là qu'on vise pour y
+   déposer le premier champ. */
+.grpMembres{display:flex;flex-direction:column;gap:3px;min-height:26px;
+  padding:0 9px 8px 22px}
 .ordreGrp .ordreLigne{background:var(--surface)}
-.piedO{display:flex;align-items:center;gap:10px;margin-top:12px}
-/* Ce que l'enregistrement devient, à côté du bouton qui réunit : chaque geste
-   part en base tout seul, et rien d'autre ne le dirait. */
+.piedO{display:flex;align-items:center;gap:10px;margin-top:2px}
+/* Le bouton garde sa ligne : un échec d'enregistrement tient en deux lignes à
+   côté de lui, et le repliait sur deux mots. */
+.piedO .btn{flex:0 0 auto;white-space:nowrap}
+/* Ce que l'enregistrement devient, à côté du bouton qui ouvre une section :
+   chaque geste part en base tout seul, et rien d'autre ne le dirait. */
 .etatO{font-size:12px;color:var(--ink-3)}
 .etatO[data-mal="true"]{color:var(--rouge)}
 @media (max-width:760px){
-  .ordreDeux{grid-template-columns:minmax(0,1fr)}
+  .ficheTrois{grid-template-columns:minmax(0,1fr)}
   .ordreApercu{position:static}
   .vueO{max-width:320px}
 }
@@ -2991,6 +3103,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La notice de confidentialité : des paragraphes qui respirent, et le refus
+   posé comme une réponse, à part du texte qui l'explique. */
+.mcorps .notice p + p{margin-top:8px}
+.mcorps label.refusMesure{display:flex;align-items:center;gap:9px;margin:14px 0 2px;padding:10px 12px;
+  font-size:13.5px;font-weight:500;color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:pointer}
+.mcorps label.refusMesure input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+.mcorps p.noteRefus{margin-top:8px;font-size:12px;color:var(--ink-3)}
 /* Ce qu'un parcours reçu apporte, avant de l'accepter. */
 .mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
@@ -3009,6 +3129,43 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mcorps p.etatRaz.err{color:#C2372B}
 .mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
 .mcorps .razMot span{color:var(--ink-2)}
+
+/* L'invitation à installer le plan.
+   Étroite comme celle de la suggestion : elle ne porte qu'une proposition. Sur
+   téléphone, la règle commune en fait une feuille posée en bas de l'écran — là
+   où le système pose les siennes, et où le pouce trouve « Installer ». La
+   largeur ne vaut donc qu'au-delà : posée sur la feuille, elle l'arrêtait à
+   quelques pixels du bord, et la liste dépassait dans l'interstice. */
+@media (min-width:901px){
+  .modale[data-genre="installe"] .mfen{width:min(400px,100%)}
+}
+.instTete{display:flex;align-items:center;gap:13px;margin:4px 0 12px}
+/* L'icône telle que l'écran d'accueil la montrera, avec l'ombre légère d'une
+   icône posée sur un fond : sans elle, le bleu se lirait comme un aplat de la
+   fenêtre. */
+.instIcone{flex:none;width:52px;height:52px;border-radius:12px;
+  box-shadow:0 5px 14px -7px rgba(0,0,0,.5)}
+.instTete b{display:block;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.instTete span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+.mcorps ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
+  line-height:1.5;color:var(--ink-2)}
+.mcorps ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ol.instEtapes b{color:var(--ink);font-weight:600}
+/* Le pictogramme se lit dans la phrase, à la hauteur du texte : c'est le même
+   dessin que dans la barre du navigateur, qu'on y cherchera des yeux. */
+.instPicto{white-space:nowrap}
+.instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
+  vertical-align:-.25em;color:var(--accent)}
+/* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
+   pleins — la case reste ce qu'on règle. */
+.reglages .aideR .apercuInst{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
@@ -3234,9 +3391,25 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     /* au-dessus du tiroir de la liste, qui se replie quand elle s'ouvre */
     z-index:13;
     transform:translateY(100%);opacity:1;pointer-events:none;
-    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .detail.open{transform:translateY(0);pointer-events:auto}
+  /* Trois crans, comme la liste, et la même prise pour les parcourir. Le cran
+     joue ici la hauteur et non le glissement : la fiche se lit en défilant, et
+     un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
+     corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
+     s'agit tout en regardant le plan derrière. */
+  .detail.open[data-cran="replie"]{max-height:var(--fiche-replie,132px)}
+  .detail.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .detail.glisse{transition:none}
+  /* L'en-tête ne se laisse pas comprimer au cran le plus bas : sans cela il
+     s'écrasait au profit d'un corps qu'on ne voit plus. */
+  .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
+  /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
+     qu'elle surmonte porte déjà sa propre marge. */
+  .detail > .poignee{padding:9px 0 3px}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}
@@ -3369,6 +3542,111 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .alerte-enr button{border:1px solid currentColor;background:none;color:inherit;
   font:inherit;padding:3px 13px;border-radius:999px;cursor:pointer;white-space:nowrap}
 .alerte-enr button:hover{background:rgba(255,255,255,.16)}
+
+/* ------------------------------------------------------------
+   La visite guidée
+   Une bulle qui dit quoi toucher, et un repère sur ce qu'il faut toucher. Les
+   deux passent devant tout — tiroirs et fenêtre compris, puisqu'une étape se
+   joue dans celle de la journée — sans prendre aucun clic hors de la bulle :
+   c'est la page qu'on manipule. Un voile posé dessus en aurait fait une
+   démonstration, qu'on regarde au lieu de la faire.
+   ------------------------------------------------------------ */
+/* Placée par « transform » et non par « left » et « top » : elle change de
+   coin quand ce qu'elle désigne passe dessous, et le glissement se délègue au
+   compositeur au lieu de remettre la page en forme à chaque image. */
+.tuto{position:fixed;left:0;top:0;z-index:41;width:min(340px,calc(100vw - 24px));
+  display:flex;flex-direction:column;gap:5px;padding:11px 14px 12px;
+  background-color:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+  box-shadow:0 24px 60px -18px rgba(0,0,0,.5);
+  transition:transform .28s cubic-bezier(.32,.72,0,1);will-change:transform;
+  animation:tutoParait .2s ease-out}
+@keyframes tutoParait{from{opacity:0}to{opacity:1}}
+/* Tout ce qui ne change pas d'une étape à l'autre tient sur la ligne du haut —
+   la progression, « Suivant », la croix — et le pied n'existe que pour
+   « Suivant ». Sur un téléphone, chaque ligne de la bulle est une ligne de plan
+   en moins, précisément là où l'on demande de toucher. */
+.tutoTete{display:flex;align-items:center;gap:10px;min-height:22px}
+.tutoTete .eyebrow{flex:none;color:var(--accent)}
+/* Un point par chapitre : on voit ce qui reste sans lire de chiffre. */
+.tutoPoints{display:flex;align-items:center;gap:4px;margin-right:auto}
+.tutoPoints i{width:6px;height:6px;border-radius:999px;background:var(--line-strong)}
+.tutoPoints i.fait{background:color-mix(in srgb,var(--accent) 45%,var(--line-strong))}
+.tutoPoints i.ici{width:16px;background:var(--accent)}
+.tutoAvance{flex:none;padding:3px 2px;font-size:12px;color:var(--ink-3);
+  text-decoration:underline;text-underline-offset:3px}
+.tutoAvance:hover{color:var(--ink)}
+.tutoQuitte{flex:none;width:28px;height:28px;margin:-6px -8px -6px -6px;display:grid;
+  place-items:center;font-size:19px;line-height:1;color:var(--ink-3);border-radius:var(--radius)}
+.tutoQuitte:hover{color:var(--ink);background:var(--surface-2)}
+.tuto h2{margin:0;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.tuto p{margin:0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.tutoPied{display:flex;justify-content:flex-end;margin-top:6px}
+.tutoSuite{padding:7px 14px;border-radius:var(--radius);font-size:12.5px;font-weight:600;
+  background:var(--accent);border:1px solid var(--accent);color:var(--accent-ink)}
+.tutoSuite:hover{filter:brightness(1.08)}
+/* Le repère bat par son opacité, seule animée : c'est la seule propriété, avec
+   « transform », que le compositeur tient sans rien repeindre — une ombre qui
+   s'étire aurait repeint la barre du haut à chaque image, et avec elle le plan
+   qui partage sa couche. */
+.tutoRepere{position:fixed;left:0;top:0;z-index:40;pointer-events:none;
+  border:2px solid var(--accent);border-radius:9px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 24%,transparent),
+    0 0 22px 2px color-mix(in srgb,var(--accent) 42%,transparent);
+  animation:tutoBat 1.5s ease-in-out infinite}
+@keyframes tutoBat{0%,100%{opacity:1}50%{opacity:.4}}
+/* Le voile : ce qui n'est pas désigné recule. Quatre bandes d'un pixel étirées
+   par la page autour de ce qui reste clair ; posé sous le repère et la bulle,
+   il ne prend aucun clic. Plus appuyé dans le thème sombre, où un gris léger
+   ne se distinguerait pas du fond. */
+.tutoVoile{position:fixed;inset:0;z-index:39;pointer-events:none;opacity:0;
+  transition:opacity .25s ease;--voile:rgba(8,10,12,.42)}
+.tutoVoile.on{opacity:1}
+.tutoVoile i{position:absolute;left:0;top:0;width:1px;height:1px;background:var(--voile);
+  transform-origin:0 0;will-change:transform}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .tutoVoile{--voile:rgba(0,0,0,.55)}
+}
+:root[data-theme="dark"] .tutoVoile{--voile:rgba(0,0,0,.55)}
+/* Autour d'une zone désignée, le plan recule comme sous le cartouche des points
+   d'intérêt : la zone et son nom restent entiers, le reste s'efface. */
+html.tuto-retrait #stands,
+html.tuto-retrait #couches .cal,
+html.tuto-retrait #zones g:not(.tutoCible),
+html.tuto-retrait #labels .lbl:not(.tutoCible),
+html.tuto-retrait .dcal .forme{opacity:.22}
+/* Sur le plan, la zone à toucher est recopiée au-dessus des couches, comme la
+   sélection dans « #marques » : tracé sur la zone elle-même, son contour
+   passerait sous les stands voisins. Elle ne prend aucun clic — c'est la zone,
+   dessous, qu'on touche. */
+#tutoZone{pointer-events:none;animation:tutoBat 1.5s ease-in-out infinite}
+#tutoZone path{vector-effect:non-scaling-stroke;stroke-linejoin:round}
+#tutoZone .halo{fill:var(--accent);fill-opacity:.16;stroke:var(--accent);
+  stroke-width:10;stroke-opacity:.22}
+#tutoZone .trait{fill:none;stroke:var(--accent);stroke-width:3}
+/* Ce que la visite parcourra, dans la fenêtre qui la propose. */
+.mcorps ul.tutoListe{margin:12px 0 4px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ul.tutoListe li{display:flex;align-items:baseline;gap:10px;font-size:13px;
+  line-height:1.45;color:var(--ink-2)}
+.mcorps ul.tutoListe .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ul.tutoListe b{color:var(--ink);font-weight:600}
+/* « Essayer », dans l'aide de la case des réglages : un lien plutôt qu'un
+   bouton plein, la case reste ce qu'on règle. */
+.reglages .aideR .essaiTuto{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
+@media (max-width:900px){
+  .tuto{width:min(420px,calc(100vw - 20px));padding:10px 13px 11px}
+  .tuto p{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tuto{transition:none;animation:none}
+  .tutoRepere,#tutoZone{animation:none}
+  .tutoVoile{transition:none}
+}
 </style>
 
 <div class="app">
@@ -3403,6 +3681,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
+      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
+           le drapeau de la langue vers laquelle il mène — c'est ce que
+           cherche des yeux quelqu'un qui ne lit pas la page. Il reste en
+           administration, où le thème part dans le menu du compte : la langue
+           n'y a pas de doublon. -->
+      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
@@ -3470,6 +3754,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
          sommaire du pavillon, et n'a pas de résultat à annoncer. -->
     <div class="count" id="count" hidden><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
+    <!-- Ce que la mesure fait d'une visite, et le moyen de la refuser. Il ne
+         paraît que sur une page qui mesure (voir `_mesure.html`). -->
+    <footer class="side-pied" id="piedSide" hidden>
+      <button type="button" class="lien-discret" id="btnConfidentialite"
+        aria-haspopup="dialog">Confidentialité</button>
+    </footer>
   </aside>
 
   <main class="stage" id="stage">
@@ -3494,6 +3784,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
+    </div>
+    <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
+         s'efface dès qu'elle le sait, et ne reparaît plus. -->
+    <div class="bornePose" id="bornePose" hidden>
+      <span>Mode borne : cet écran ne sait pas encore où il est posé.</span>
+      <button type="button" id="bornePoser">Poser la borne</button>
     </div>
 
     <div class="outils" id="outils">
@@ -3647,6 +3943,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 
     <div class="voile" id="voile"></div>
     <section class="detail" id="detail" aria-live="polite">
+      <!-- La fiche se hisse comme la liste : même prise, même geste. Sur un
+           téléphone elle ne montrait que la moitié basse de l'écran, et une
+           fiche bien remplie s'y lisait par le trou d'une serrure. -->
+      <button class="poignee" id="poigneeFiche" aria-expanded="false" aria-controls="dBody"
+        aria-label="Agrandir la fiche"></button>
       <div class="detail-hd">
         <div class="hdActs">
           <button class="marque" id="dMarque" hidden></button>

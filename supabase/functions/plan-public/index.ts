@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_traversables, zones_fiches, salles",
+      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_traversables, zones_fiches, salles, libelles_en",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -452,6 +452,10 @@ Deno.serve(async (req) => {
       fiche: evt.fiche ?? {},
       // sans lui, une heure ISO se lirait dans le fuseau du visiteur
       fuseau: evt.fuseau ?? null,
+      /* L'anglais des valeurs des listes, relevé dans les sources : la version
+         anglaise de la page traduit avec lui secteurs, nomenclature et champs
+         à choix, partout où ils paraissent. */
+      anglais: evt.libelles_en ?? {},
       // l'administration en a besoin pour savoir ce qui a déjà été renommé
       nomsZones: evt.zones ?? {},
       // et pour savoir ce qu'elle a retiré du plan public : le visiteur, lui,
@@ -540,6 +544,9 @@ Deno.serve(async (req) => {
                 ...(fiche.type ? { type: fiche.type } : {}),
                 ...(fiche.logo ? { logo: fiche.logo } : {}),
                 ...(fiche.description ? { description: fiche.description } : {}),
+                // la version anglaise, que la page montre à qui lit l'anglais
+                ...(fiche.nom_en ? { nom_en: fiche.nom_en } : {}),
+                ...(fiche.description_en ? { description_en: fiche.description_en } : {}),
                 ...(fiche.lien ? { lien: fiche.lien } : {}),
               };
             }),
