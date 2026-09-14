@@ -571,6 +571,20 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calage .cGrille button:hover,.calage .cLigne button:hover{border-color:var(--line-strong);color:var(--ink)}
 .calage .cLigne{display:flex;gap:4px}
 .calage .cLigne button{flex:1;min-width:0}
+.calage .cMode{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.calage .cMode button{height:26px;border:none;border-radius:999px;font-size:11.5px;
+  font-weight:600;color:var(--ink-2);padding:0}
+.calage .cMode button:hover{color:var(--ink)}
+.calage .cMode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.calageAide{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
+.calage .cCoche{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cCoche input{width:auto;margin:0}
+.calage input[type="range"]{flex:1;min-width:0;padding:0;background:none;border:none;accent-color:var(--accent)}
+/* Un mode armé change ce que la main fait du plan : le curseur est la seule
+   chose qui le dise avant le premier geste. */
+html.cale-deplace #plan{cursor:grab}
+html.cale-tourne #plan{cursor:crosshair}
 .calageEtat{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin:0}
 .calageEtat.alerte{color:var(--rouge)}
 .outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -900,6 +914,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    un cheveu blanc entre deux bords calculés au millième : elles se recouvrent
    donc d'un pouce, ce qui ne se voit pas et supprime la couture. Une tuile qui
    ne répond pas ne laisse rien — pas de cadre brisé sous le plan. */
+/* Le fond se tient en retrait : il situe le pavillon, il ne raconte pas le
+   quartier, et à pleine force il dispute l'œil aux stands. La force est un
+   réglage du salon, posée en variable par le calage. */
+#fondCarte{opacity:var(--carte-force,.62)}
 #fondCarte image{image-rendering:auto}
 .creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
   background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;

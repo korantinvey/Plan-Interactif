@@ -3060,6 +3060,9 @@ svg.addEventListener("pointerdown", e => {
   if (doigts.size > 2) return;
   /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
      l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  /* Caler la carte passe avant tout : tant qu'un mode est armé, la main saisit
+     le fond et non le plan — c'est le seul geste que la palette attend. */
+  if (typeof calagePointerDown === "function" && calagePointerDown(e)) return;
   if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
@@ -3069,6 +3072,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (typeof calagePointerMove === "function" && calagePointerMove(e)) return;
   if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
@@ -3135,6 +3139,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (typeof calagePointerUp === "function" && calagePointerUp(e)) return;
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");

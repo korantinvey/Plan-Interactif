@@ -122,7 +122,8 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |
 | fond de carte sous le pavillon, calage du plan sur la Terre | `_environs.html` ; groupe `#fondCarte` posé par `_js.html` `appliqueVue`, limite de recul `recul` ; migration `calage_du_plan_sur_la_terre` |
-| percer le fond de carte sous le hall | `_environs.html` § Le trou sous le pavillon, bouton posé par `_pile.html` |
+| placer et tourner la carte à la main | `_environs.html` § Placer à la main, branché dans la chaîne des gestes de `_js.html` |
+| percer le fond de carte sous le hall | `_environs.html` § Le trou sous le pavillon — contour retenu par `caleSurBatiment`, bouton par calque posé par `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |

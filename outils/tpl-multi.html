@@ -571,6 +571,20 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calage .cGrille button:hover,.calage .cLigne button:hover{border-color:var(--line-strong);color:var(--ink)}
 .calage .cLigne{display:flex;gap:4px}
 .calage .cLigne button{flex:1;min-width:0}
+.calage .cMode{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.calage .cMode button{height:26px;border:none;border-radius:999px;font-size:11.5px;
+  font-weight:600;color:var(--ink-2);padding:0}
+.calage .cMode button:hover{color:var(--ink)}
+.calage .cMode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.calageAide{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
+.calage .cCoche{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cCoche input{width:auto;margin:0}
+.calage input[type="range"]{flex:1;min-width:0;padding:0;background:none;border:none;accent-color:var(--accent)}
+/* Un mode armé change ce que la main fait du plan : le curseur est la seule
+   chose qui le dise avant le premier geste. */
+html.cale-deplace #plan{cursor:grab}
+html.cale-tourne #plan{cursor:crosshair}
 .calageEtat{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin:0}
 .calageEtat.alerte{color:var(--rouge)}
 .outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -900,6 +914,10 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    un cheveu blanc entre deux bords calculés au millième : elles se recouvrent
    donc d'un pouce, ce qui ne se voit pas et supprime la couture. Une tuile qui
    ne répond pas ne laisse rien — pas de cadre brisé sous le plan. */
+/* Le fond se tient en retrait : il situe le pavillon, il ne raconte pas le
+   quartier, et à pleine force il dispute l'œil aux stands. La force est un
+   réglage du salon, posée en variable par le calage. */
+#fondCarte{opacity:var(--carte-force,.62)}
 #fondCarte image{image-rendering:auto}
 .creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
   background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
@@ -6862,6 +6880,9 @@ svg.addEventListener("pointerdown", e => {
   if (doigts.size > 2) return;
   /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
      l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  /* Caler la carte passe avant tout : tant qu'un mode est armé, la main saisit
+     le fond et non le plan — c'est le seul geste que la palette attend. */
+  if (typeof calagePointerDown === "function" && calagePointerDown(e)) return;
   if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
@@ -6871,6 +6892,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (typeof calagePointerMove === "function" && calagePointerMove(e)) return;
   if (libellePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
@@ -6937,6 +6959,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (typeof calagePointerUp === "function" && calagePointerUp(e)) return;
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
@@ -21288,7 +21311,7 @@ function versLePlan(ll, cal){
 function reancre(cal, pt){
   const ll = versTerre(pt, cal);
   return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1],
-           angle: cal.angle, fond: cal.fond };
+           angle: cal.angle, fond: cal.fond, contour: cal.contour, vide: cal.vide };
 }
 
 /** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
@@ -21339,6 +21362,14 @@ const GEOPF = "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0" +
   "&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM" +
   "&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
 const CARTES = {
+  /* Un fond sans un mot écrit, et en premier. Deux raisons, qui vont ensemble :
+     un plan de salon se dessine l'entrée vers le bas, presque jamais le nord en
+     haut — la carte tourne donc avec lui, et son texte se lit de travers ou à
+     l'envers ; et un fond de salon n'a pas à raconter le quartier, seulement à
+     le situer. Les plans du métier sont tous pâles et muets. */
+  muet: { nom: "Sobre, sans texte", max: 19,
+          url: "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
   plan: { nom: "Plan IGN", max: 19,
           url: GEOPF + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
           credit: "Fond de plan © IGN — Géoplateforme" },
@@ -21349,6 +21380,15 @@ const CARTES = {
          url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
          credit: "Fond de plan © les contributeurs d'OpenStreetMap" },
 };
+
+/* Ce que vaut un fond « à pleine force », et ce qu'on prend par défaut. Un
+   fond de plan n'est pas la carte : il situe, il ne raconte pas, et il doit
+   passer derrière les stands sans leur disputer l'œil. Les plans du métier
+   sont tous pâlis ; on l'est donc d'office, et le curseur laisse le dernier
+   mot. */
+const FORCE_CARTE = 0.62;
+const forceCarte = (cal) =>
+  cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
 
 /* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
    qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
@@ -21487,27 +21527,36 @@ function dessineFondCarte(){
     if (credit) credit.hidden = true;
     return;
   }
+  racine.style.setProperty("--carte-force", forceCarte(cal));
   const r = cadrePlan();
   const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
-  const empreinte = [cal.fond, cal.lon, cal.lat, cal.x, cal.y, cal.angle, t.z,
-    t.tuiles.length, t.tuiles.length ? t.tuiles[0].x + "," + t.tuiles[0].y : ""].join("|");
+
+  /* Le groupe suit toujours : la position de l'ancre, la rotation vers le
+     repère du plan, l'échelle est/sud. Ce n'est qu'une attribution, et c'est
+     elle qui rend le glissement fluide — déplacer la carte d'un mètre ne
+     redemande aucune image. */
+  const r6 = (v) => Math.round(v * 1e6) / 1e6;
+  hote.setAttribute("transform",
+    "translate(" + r6(cal.x) + " " + r6(cal.y) + ")" +
+    " rotate(" + r6(cal.angle / DEG) + ")" +
+    " scale(" + r6(t.k.x) + " " + r6(t.k.y) + ")");
+
+  /* Les tuiles, elles, ne se réécrivent que lorsque le carré change : les
+     recréer à chaque image les ferait redécoder, et la carte scintillerait
+     sous la main qui la déplace. */
+  const der = t.tuiles.length ? t.tuiles[t.tuiles.length - 1] : null;
+  const empreinte = !der ? cal.fond + "|vide" : [cal.fond, t.z,
+    t.tuiles[0].x, t.tuiles[0].y, der.x, der.y, t.tuiles.length].join("|");
   if (empreinte === _fondPose) return;
   _fondPose = empreinte;
   _tuilesMuettes = 0;
 
-  /* Le groupe porte tout : la position de l'ancre, la rotation vers le repère
-     du plan, et l'échelle est/sud. Les tuiles n'ont plus alors que des pixels
-     entiers à porter — ce qui les pose exactement bord à bord.
-
-     Un millième de recouvrement malgré tout : le navigateur laisse entre deux
-     bords calculés en virgule flottante un cheveu de fond, et ce cheveu
-     dessine une grille sur toute la carte. */
-  const r2 = (v) => Math.round(v * 1e6) / 1e6;
+  /* Les tuiles n'ont que des pixels entiers à porter — le groupe fait le
+     reste — ce qui les pose exactement bord à bord. Un millième de
+     recouvrement malgré tout : le navigateur laisse entre deux bords calculés
+     en virgule flottante un cheveu de fond, et ce cheveu dessine une grille
+     sur toute la carte. */
   const c = PX_TUILE * 1.001;
-  hote.setAttribute("transform",
-    "translate(" + r2(cal.x) + " " + r2(cal.y) + ")" +
-    " rotate(" + r2(cal.angle / DEG) + ")" +
-    " scale(" + r2(t.k.x) + " " + r2(t.k.y) + ")");
   hote.innerHTML = t.tuiles.map(q =>
     '<image x="' + q.px + '" y="' + q.py + '" width="' + c + '" height="' + c +
     '" href="' + esc(adresseTuile(fond, q.z, q.x, q.y)) + '"/>').join("");
@@ -21587,6 +21636,29 @@ function formesMasquantes(){
   return l;
 }
 
+/**
+ * Le tracé du hall, vidé de la carte.
+ *
+ * L'accrochage a retenu le contour du bâtiment : c'est l'emprise du hall telle
+ * que la carte la connaît, et c'est elle qu'il faut évider. Sans quoi une voie
+ * passe par-dessus — le périphérique franchit le pavillon dans les données,
+ * parce qu'il le franchit pour de bon, et le plan se retrouve barré d'une
+ * route. Le dessin de l'exploitant, lui, s'installe alors dans du vide.
+ *
+ * C'est aussi ce que ni l'enveloppe des stands ni le contour dessiné ne
+ * savent donner : le premier s'arrête au dernier stand, le second ne couvre
+ * que ce qu'on a bien voulu tracer.
+ */
+function cheminDuHall(){
+  const cal = calageCourant();
+  if (!cal || !cal.contour || cal.contour.length < 3 || cal.vide === false) return "";
+  const r2 = (v) => Math.round(v * 100) / 100;
+  return "M" + cal.contour.map(ll => {
+    const q = versLePlan(ll, cal);
+    return r2(q[0]) + " " + r2(q[1]);
+  }).join("L") + "Z";
+}
+
 /* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
    même gabarit — et un gabarit réécrit fait repeindre toute la carte. */
 let _masquePose = null;
@@ -21602,7 +21674,7 @@ let _masquePose = null;
 function poseMasqueCarte(){
   const defs = $("masqueCarte"), enveloppe = $("fondCarteClip");
   if (!defs || !enveloppe) return;
-  const trous = formesMasquantes().map(cheminForme).join("");
+  const trous = cheminDuHall() + formesMasquantes().map(cheminForme).join("");
   if (trous === _masquePose) return;
   _masquePose = trous;
   if (!trous){
@@ -21761,6 +21833,12 @@ function caleSurBatiment(cand, p){
   const e = empriseDesObjets(p);
   const centre = [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2];
   ENV_CAL = reancre(ENV_CAL, centre);
+  /* Le contour du bâtiment, retenu en longitude et latitude : c'est l'emprise
+     du hall telle que la carte la connaît, et elle sert ensuite à la vider. En
+     degrés et non en mètres du plan, pour qu'un calage retouché la déplace
+     avec le reste plutôt que de la laisser en arrière. */
+  ENV_CAL.contour = cand.w.geometry.map(g =>
+    [Math.round(g.lon * 1e6) / 1e6, Math.round(g.lat * 1e6) / 1e6]);
   const avant = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
   ENV_CAL.angle += anglePlan(p) - axeDuContour(avant);
   const apres = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
@@ -21865,6 +21943,89 @@ function rafraichitCarte(){
    demandent pas de voir le plan.
    ------------------------------------------------------------ */
 
+/* ------------------------------------------------------------
+   Placer à la main : on saisit la carte, on la pose
+
+   Trois boutons et quatre flèches disaient ce qu'un geste dit mieux. Tant que
+   la palette arme un mode, le plan ne se déplace plus : la main saisit la
+   carte dessous et la glisse, ou la fait tourner autour du milieu de l'écran.
+   « Naviguer » rend le plan à ses gestes ordinaires, le temps d'aller voir
+   ailleurs.
+
+   La touche majuscule bascule en rotation sans quitter le déplacement : c'est
+   l'aller-retour qu'on fait vingt fois en calant, et traverser la palette à
+   chaque fois use plus que le geste lui-même.
+   ------------------------------------------------------------ */
+
+let CALAGE_MODE = "";
+let _glisseCalage = null;
+
+/** Arme un mode, et le dit au document : le curseur en dépend, et c'est la
+ *  seule chose qui annonce que le plan ne répondra pas comme d'habitude. */
+function armeCalage(mode){
+  CALAGE_MODE = mode || "";
+  racine.classList.toggle("cale-deplace", CALAGE_MODE === "deplace");
+  racine.classList.toggle("cale-tourne", CALAGE_MODE === "tourne");
+  const corps = $("calageCorps");
+  if (corps) corps.querySelectorAll(".cMode button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.mode === CALAGE_MODE)));
+}
+
+/** Le milieu de la vue : le pivot des rotations. Tourner autour de l'ancre
+ *  ferait fuir la carte — elle est à sept kilomètres du hall. */
+const pivotCalage = () => [view.x + view.w / 2, view.y + view.h / 2];
+
+/** Pendant le geste, on ne refait que la carte et le chiffre de la rotation :
+ *  reconstruire le panneau des calques à chaque image le rendrait saccadé. */
+function glisseCarte(){
+  dessineFondCarte();
+  /* Le trou du hall est tenu par le calage : il doit suivre la carte, sinon il
+     resterait où la carte était et découperait le plan à côté. */
+  poseMasqueCarte();
+  majCalage();
+}
+
+function calagePointerDown(e){
+  if (!CALAGE_MODE || !ENV_CAL || !calageCourant()) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const pivot = pivotCalage();
+  _glisseCalage = {
+    tourne: CALAGE_MODE === "tourne" || e.shiftKey,
+    p: p, pivot: pivot, angle0: ENV_CAL.angle,
+    a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
+  };
+  svg.setPointerCapture(e.pointerId);
+  svg.classList.add("dragging");
+  return true;
+}
+
+function calagePointerMove(e){
+  if (!_glisseCalage) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  if (_glisseCalage.tourne){
+    /* L'angle du pointeur autour du pivot, et non son déplacement : on saisit
+       un point et on le fait tourner, ce que la main sait faire sans y penser.
+       Le ré-ancrage à chaque image tient le pivot immobile. */
+    const a = Math.atan2(p[1] - _glisseCalage.pivot[1], p[0] - _glisseCalage.pivot[0]);
+    ENV_CAL = reancre(ENV_CAL, _glisseCalage.pivot);
+    ENV_CAL.angle = _glisseCalage.angle0 + (a - _glisseCalage.a0);
+  } else {
+    ENV_CAL.x += p[0] - _glisseCalage.p[0];
+    ENV_CAL.y += p[1] - _glisseCalage.p[1];
+    _glisseCalage.p = p;
+  }
+  glisseCarte();
+  return true;
+}
+
+function calagePointerUp(e){
+  if (!_glisseCalage) return false;
+  _glisseCalage = null;
+  svg.classList.remove("dragging");
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
 function ditCalage(txt, mal){
   const e = $("calageEtat");
   if (!e) return;
@@ -21950,21 +22111,59 @@ function construitCalage(){
   ligne.appendChild(bQuart);
   corps.appendChild(ligne);
 
-  const grille = document.createElement("div");
-  grille.className = "cGrille";
-  [["← O", -5, 0], ["E →", 5, 0], ["↑ N", 0, 5], ["↓ S", 0, -5]].forEach(([nom, de, dn]) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = nom;
-    b.title = "Décaler la carte de cinq mètres";
-    b.onclick = () => {
-      const [dx, dy] = tourneEnvirons(de, dn, ENV_CAL.angle);
-      ENV_CAL.x += dx; ENV_CAL.y += dy;
-      appliqueCalage();
-    };
-    grille.appendChild(b);
-  });
-  corps.appendChild(grille);
+  /* Le geste, et ce qu'il fait. Trois états plutôt que deux : sans
+     « Naviguer », aller regarder l'autre bout du plan demanderait de fermer la
+     palette, donc de perdre ce qu'on était en train de régler. */
+  const mode = document.createElement("div");
+  mode.className = "cMode";
+  [["", "Naviguer", "Le plan répond comme d'habitude"],
+   ["deplace", "Déplacer", "Glissez la carte sous le plan"],
+   ["tourne", "Tourner", "Faites tourner la carte autour du milieu de l'écran"]]
+    .forEach(([k, nom, aide]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.mode = k;
+      b.textContent = nom;
+      b.title = aide;
+      b.onclick = () => armeCalage(k);
+      mode.appendChild(b);
+    });
+  corps.insertBefore(mode, corps.firstChild);
+
+  const force = document.createElement("div");
+  force.className = "cRang";
+  force.innerHTML = '<span>Discrétion</span>' +
+    '<input type="range" class="cForce" min="10" max="100" step="5">';
+  const nForce = force.querySelector("input");
+  nForce.value = Math.round(forceCarte(ENV_CAL) * 100);
+  nForce.title = "À gauche le fond s'efface, à droite il reprend toute sa force";
+  nForce.oninput = () => {
+    ENV_CAL.force = +nForce.value / 100;
+    racine.style.setProperty("--carte-force", forceCarte(ENV_CAL));
+  };
+  corps.appendChild(force);
+
+  /* Vider le hall. Coché d'office : c'est presque toujours ce qu'on veut, et
+     le décocher se comprend tout de suite en voyant ce qui revient. */
+  const vide = document.createElement("label");
+  vide.className = "cCoche";
+  vide.innerHTML = '<input type="checkbox"><span>Vider le hall sous le plan</span>';
+  const cVide = vide.querySelector("input");
+  cVide.checked = ENV_CAL.vide !== false;
+  cVide.onchange = () => {
+    ENV_CAL.vide = cVide.checked;
+    poseMasqueCarte();
+  };
+  corps.appendChild(vide);
+
+  const aide = document.createElement("p");
+  aide.className = "calageAide";
+  aide.textContent = "Maintenez Majuscule pendant le glissement pour tourner " +
+    "sans changer de mode. Un plan dessiné l'entrée vers le bas fait tourner " +
+    "la carte avec lui : prenez un fond sans texte, ou la vue aérienne.";
+  corps.appendChild(aide);
+
+  armeCalage("deplace");
   majCalage();
 }
 
@@ -21981,6 +22180,9 @@ function ouvreCalage(){
 function fermeCalage(){
   const c = $("calage");
   if (c) c.hidden = true;
+  /* Sans cela le plan resterait saisi par un réglage refermé : on cliquerait
+     sur un stand et c'est la carte qui bougerait. */
+  armeCalage("");
 }
 
 /** Branchements de la palette. Faits une fois, au chargement : ces trois
