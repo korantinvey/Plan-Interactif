@@ -10,7 +10,7 @@
    précisément celui qui n'ira pas l'y chercher.
 
    Une fenêtre le lui propose donc, si l'organisateur l'a voulu : la case est
-   dans l'onglet « Plan » des réglages, et reste décochée tant qu'on n'y a pas
+   dans l'onglet « Admin » des réglages, et reste décochée tant qu'on n'y a pas
    touché. Une fenêtre qui interrompt ne s'ajoute pas d'elle-même à un salon
    déjà en ligne.
 
@@ -341,7 +341,7 @@ function teteInvitation(corps, sousTitre){
    sur-le-champ. */
 function retourAuxReglages(){
   queueMicrotask(() => {
-    ouvreReglages("Plan");
+    ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="installation"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
@@ -454,7 +454,7 @@ function confirmeInstallation(essais){
    Côté administration
    ------------------------------------------------------------ */
 /**
- * La case, dans l'onglet « Plan » des réglages : une fenêtre de plus, c'est
+ * La case, dans l'onglet « Admin » des réglages : une fenêtre de plus, c'est
  * encore ce que les visiteurs voient.
  *
  * Avec deux aperçus, parce que l'organisateur règle son salon depuis un

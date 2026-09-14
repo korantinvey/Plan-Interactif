@@ -21,8 +21,8 @@ module.exports = {
   "session absente, reconnectez-vous": "no session, please sign in again",
   "Un exposant de plus, proposé au visiteur quand plusieurs de ceux qu'il a retenus dans son parcours se ressemblent. Le rapprochement se fait sur son appareil, à partir de tables préparées ici : rien de ce qu'il retient ne remonte jamais.":
     "One more exhibitor, suggested to visitors when several of those they picked for their visit plan have something in common. The matching happens on their device, from tables prepared here: nothing they pick is ever sent back.",
-  "Le parcours de visite est retiré de ce plan, dans l'onglet « Plan » : sans lui, il n'y a ni liste à compléter ni tiroir où poser la proposition.":
-    "The visit plan is turned off for this map, in the “Map” tab: without it, there is neither a list to round off nor a panel to show the suggestion in.",
+  "Le parcours de visite est retiré de ce plan, dans l'onglet « Admin » : sans lui, il n'y a ni liste à compléter ni tiroir où poser la proposition.":
+    "The visit plan is turned off for this map, in the “Admin” tab: without it, there is neither a list to round off nor a panel to show the suggestion in.",
   "Aucun critère n'est réglé sur ce salon : le rapprochement n'a rien sur quoi se faire. Les champs qui font des critères se désignent dans la console, sur la fiche du salon ; le secteur en est un dès que « Montrer les secteurs » est coché.":
     "No filters are set up for this show: there is nothing to match on. The fields used as filters are chosen in the console, on the show's record; the sector becomes one as soon as “Show sectors” is ticked.",
   "Proposer un exposant pour compléter le parcours": "Suggest an exhibitor to round off the visit plan",
