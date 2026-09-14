@@ -586,6 +586,7 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
+  if (GL.actif){ libellesWebgl(); return; }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
@@ -1681,6 +1682,8 @@ if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
    qu'il dure, et toujours quand il s'interrompt sans se poser. */
 let filetTextes = null;
 function figeTextes(){
+  // en WebGL les noms restent au dessin : il n'y a rien à taire
+  if (GL.actif) return;
   detacheLibelles();
   svg.classList.add("fige");
   clearTimeout(filetTextes);
@@ -1772,6 +1775,10 @@ function etireLibelles(){
 }
 
 const appliqueVue = () => {
+  /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
+     part vers elle, et le SVG caché garde sa géométrie figée. */
+  if (RENDU_WEBGL && !GL.actif) monteWebgl();
+  if (GL.actif){ vueWebgl(); return; }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
@@ -1974,6 +1981,7 @@ function glisseVers(but){
  */
 function rectVisee(n){
   if (!n) return null;
+  if (GL.actif) return rectEcranWebgl(n, vise || view);
   if (!vise) return n.getBoundingClientRect();
   const avant = view;
   view = vise; appliqueVue();
@@ -3176,7 +3184,7 @@ function ferme(){
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
      le découpage qu'il héberge. */
   const n = ouvert && id ? noeud(id, state.selSoc) : null;
-  const rect = n ? n.getBoundingClientRect() : null;
+  const rect = n ? (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()) : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
@@ -3270,7 +3278,9 @@ svg.addEventListener("pointerdown", e => {
   if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-           cible: e.target.closest("[data-id],[data-poi]") };
+           // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
+           cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
+                           : e.target.closest("[data-id],[data-poi]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
@@ -3316,6 +3326,7 @@ const MAX_ELARGIS = 150;
 
 function cibleElargie(x, y){
   if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
+  if (GL.actif) return cibleWebgl(x, y, DOIGT / 2);
   const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
     " #couches .dcal .sdes[data-id]:not(.dim)");
   if (!allumes.length || allumes.length > MAX_ELARGIS) return null;

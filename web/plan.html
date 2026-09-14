@@ -1154,6 +1154,16 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
   transform-origin:0 0;will-change:transform}
 .calque-libelles > svg{display:block;width:100%;height:100%}
 
+/* Le plan peint par la carte graphique (`?rendu=webgl`, voir « Le plan peint
+   par la carte graphique »). Le SVG reste en place et reçoit les gestes, mais
+   ne montre plus rien : « visibility » et non « display », pour que sa
+   géométrie et ses styles calculés restent lisibles par le peintre — et que
+   le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
+   dessin passe au-dessus sans prendre le clic. */
+.plan-gl{position:absolute;inset:0;pointer-events:none}
+html.rendu-webgl #plan > *{visibility:hidden}
+html.rendu-webgl .calque-libelles{display:none}
+
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
@@ -5414,6 +5424,7 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
+  if (GL.actif){ libellesWebgl(); return; }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
@@ -6509,6 +6520,8 @@ if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
    qu'il dure, et toujours quand il s'interrompt sans se poser. */
 let filetTextes = null;
 function figeTextes(){
+  // en WebGL les noms restent au dessin : il n'y a rien à taire
+  if (GL.actif) return;
   detacheLibelles();
   svg.classList.add("fige");
   clearTimeout(filetTextes);
@@ -6600,6 +6613,10 @@ function etireLibelles(){
 }
 
 const appliqueVue = () => {
+  /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
+     part vers elle, et le SVG caché garde sa géométrie figée. */
+  if (RENDU_WEBGL && !GL.actif) monteWebgl();
+  if (GL.actif){ vueWebgl(); return; }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
@@ -6802,6 +6819,7 @@ function glisseVers(but){
  */
 function rectVisee(n){
   if (!n) return null;
+  if (GL.actif) return rectEcranWebgl(n, vise || view);
   if (!vise) return n.getBoundingClientRect();
   const avant = view;
   view = vise; appliqueVue();
@@ -8004,7 +8022,7 @@ function ferme(){
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
      le découpage qu'il héberge. */
   const n = ouvert && id ? noeud(id, state.selSoc) : null;
-  const rect = n ? n.getBoundingClientRect() : null;
+  const rect = n ? (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()) : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
@@ -8098,7 +8116,9 @@ svg.addEventListener("pointerdown", e => {
   if (libellePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-           cible: e.target.closest("[data-id],[data-poi]") };
+           // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
+           cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
+                           : e.target.closest("[data-id],[data-poi]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
@@ -8144,6 +8164,7 @@ const MAX_ELARGIS = 150;
 
 function cibleElargie(x, y){
   if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
+  if (GL.actif) return cibleWebgl(x, y, DOIGT / 2);
   const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
     " #couches .dcal .sdes[data-id]:not(.dim)");
   if (!allumes.length || allumes.length > MAX_ELARGIS) return null;
@@ -25082,6 +25103,691 @@ function marqueLibelleTuto(id){
   if (!id) return;
   TUTO.guet = new MutationObserver(pose);
   TUTO.guet.observe($("labels"), { childList: true });
+}
+/* ============================================================
+   13 bis. Le plan peint par la carte graphique — WebGL2, à l'essai
+
+   Le SVG remet le plan en page et le repeint à chaque image d'un zoom : son
+   coût grandit avec le nombre de formes, et les noms, qu'il faudrait
+   re-rastériser à chaque taille, doivent se taire pendant le geste. Ici la
+   carte graphique redessine tout d'un changement de matrice, noms compris.
+
+   L'essai ne réécrit ni le plan ni ses règles. Le SVG reste construit comme
+   avant, caché : c'est lui qui dit quoi dessiner, dans quel ordre et de
+   quelle couleur — secteurs, sélection, retrait de la recherche, calques
+   dessinés, itinéraire. Ce module le relit et le repeint. Deux peintres pour
+   un seul modèle : le jour où une règle de style change, elle change pour
+   les deux.
+
+   Deux exceptions, et elles sont voulues. Les noms ne sont pas relus : le SVG
+   les choisit pour la vue du moment, alors qu'ici on les prépare une fois
+   pour toutes et la carte graphique les montre ou les tait selon le zoom. Et
+   les gestes restent au SVG, transparent au-dessus du dessin : le zoom, le
+   pincement, la glissade n'ont pas été touchés.
+
+   Le mode s'active par l'adresse, `?rendu=webgl`, et seulement si le
+   navigateur a WebGL2 et que la bibliothèque arrive. Sinon, rien ne change :
+   le plan reste en SVG. C'est aussi le repli des appareils qui ne l'ont pas.
+   ============================================================ */
+
+const RENDU_WEBGL = new URLSearchParams(location.search).get("rendu") === "webgl";
+/* Version figée, empreinte vérifiée : une bibliothèque qui changerait sous
+   nos pieds changerait le plan des visiteurs sans que rien ne soit publié.
+   La 9.3 et non la 9.4 : sur la carte graphique d'essai, la 9.4.0 ne
+   dessinait plus les points. */
+const DECK_WEBGL = {
+  src: "https://cdn.jsdelivr.net/npm/deck.gl@9.3.11/dist.min.js",
+  integrite: "sha384-n9TufhIL8BMsQ8I/frAQGFsg2D/50T9gjWMitdG+F1HtTxSz62ol4tnA1nXOoeun",
+};
+const GL = {
+  charge: false, actif: false, deck: null,
+  blocs: new Map(), sales: new Set(), tout: true, image: 0,
+  libelles: [], cleLibelles: "", couchesLibelles: null,
+  modeles: new Map(), tailles: new Map(), duree: 0,
+  // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
+  cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
+};
+
+(function chargeWebgl(){
+  if (!RENDU_WEBGL) return;
+  let gl2 = null;
+  try { gl2 = document.createElement("canvas").getContext("webgl2"); } catch (e) {}
+  if (!gl2) return;
+  const s = document.createElement("script");
+  s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite; s.crossOrigin = "anonymous";
+  s.onload = () => { GL.charge = true; monteWebgl(); };
+  s.onerror = () => console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG.");
+  document.head.appendChild(s);
+})();
+
+/** Le dessin prend la main dès que la bibliothèque et le plan sont là, dans
+ *  n'importe quel ordre : c'est « appliqueVue » qui rappelle, une fois la vue
+ *  posée. */
+function monteWebgl(){
+  if (GL.actif || !GL.charge || !window.deck || typeof view === "undefined" || !view) return;
+  const hote = document.createElement("div");
+  hote.className = "plan-gl";
+  hote.setAttribute("aria-hidden", "true");
+  svg.before(hote);
+  GL.deck = new deck.Deck({
+    parent: hote, controller: false,
+    views: new deck.OrthographicView({ id: "plan", flipY: true }),
+    viewState: vueDeck(), layers: [],
+    onError: e => console.warn("Rendu WebGL :", e && e.message),
+  });
+  GL.actif = true;
+  document.documentElement.classList.add("rendu-webgl");
+  poseModelesLibelles();
+
+  /* Ce qui change le dessin passe par le SVG caché : on le guette plutôt que
+     d'appeler le peintre depuis chaque fonction qui touche au plan. Seule la
+     vue n'y passe pas — elle ne s'écrit plus dans la « viewBox ». */
+  new MutationObserver(notes => {
+    for (const n of notes){
+      const b = blocDe(n.target);
+      if (b === "ordre") GL.ordre = true;
+      else if (b) GL.sales.add(b);
+    }
+    planifieWebgl();
+  }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
+  // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
+  // classes posées sur la racine, que la feuille de style lit
+  new MutationObserver(toutRepeindreWebgl)
+    .observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
+  if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
+
+  libellesWebgl();
+  toutRepeindreWebgl();
+}
+
+/** La vue du plan, dite comme la bibliothèque l'attend : un centre et une
+ *  puissance de deux. Même règle que la « viewBox » — « meet », centrée. */
+function vueDeck(){
+  const r = cadrePlan();
+  const s = Math.min((r.width || 1) / view.w, (r.height || 1) / view.h);
+  return { target: [view.x + view.w / 2, view.y + view.h / 2, 0], zoom: Math.log2(s) };
+}
+
+/** Appelée à chaque image d'un geste : la matrice, et rien d'autre. Les noms
+ *  qui passent un seuil de lisibilité se montrent ou se taisent dans le
+ *  shader, qui connaît le zoom — voir « FiltreZoom ». */
+function vueWebgl(){
+  GL.deck.setProps({ viewState: vueDeck() });
+}
+
+/* ------------------------------------------------------------
+   Le SVG caché, découpé en blocs : un par calque de la pile, puis ce qui vit
+   hors des calques (marques, itinéraire). Chaque bloc garde ses couches
+   deck.gl tant que rien n'y bouge.
+   ------------------------------------------------------------ */
+function blocDe(n){
+  if (n === svg) return "ordre";
+  const couches = $("couches");
+  if (n === couches) return "ordre";
+  let x = n.nodeType === 1 ? n : n.parentNode;
+  while (x && x.parentNode !== couches && x.parentNode !== svg) x = x.parentNode;
+  if (!x || x.id === "labels") return null;
+  return x;
+}
+
+function planifieWebgl(){
+  if (GL.actif && !GL.image) GL.image = requestAnimationFrame(repeintWebgl);
+}
+function toutRepeindreWebgl(){
+  GL.tout = true; GL.couchesLibelles = null;
+  if (GL.actif) lisModelesLibelles();
+  planifieWebgl();
+}
+
+function blocsDansLOrdre(){
+  const couches = $("couches");
+  return [...couches.children, ...[...svg.children].filter(c => c !== couches)];
+}
+
+function repeintWebgl(){
+  GL.image = 0;
+  if (!GL.actif) return;
+  const t0 = performance.now();
+  const vus = new Set();
+  let n = 0;
+  for (const b of blocsDansLOrdre()){
+    vus.add(b);
+    if (b.id === "labels") continue;
+    if (GL.tout || GL.sales.has(b) || !GL.blocs.has(b)){
+      if (!GL.cles.has(b)) GL.cles.set(b, "b" + (++GL.compteur));
+      GL.blocs.set(b, convertitBloc(b, GL.cles.get(b)));
+      n++;
+    }
+  }
+  for (const b of [...GL.blocs.keys()]) if (!vus.has(b)) GL.blocs.delete(b);
+  GL.sales.clear(); GL.tout = false; GL.ordre = false;
+  GL.deck.setProps({ layers: assembleWebgl() });
+  GL.duree = performance.now() - t0;
+  GL.reconstruits = n;
+}
+
+function assembleWebgl(){
+  const out = [];
+  for (const b of blocsDansLOrdre()){
+    if (b.id === "labels"){ out.push(...couchesLibellesWebgl()); continue; }
+    out.push(...(GL.blocs.get(b) || []));
+  }
+  return out;
+}
+
+/* Le texte SDF garde des bords nets quand il grandit, mais il se désagrège
+   sous une douzaine de pixels : les noms de la vue d'ensemble devenaient des
+   pointillés, là où le SVG les écrivait encore lisibles. Chaque couche de
+   texte se double donc d'une autre, tirée d'un atlas à petite taille, et la
+   carte graphique passe de l'une à l'autre au seuil. */
+const SEUIL_PETIT_TEXTE = 14;
+
+/* Montrer ou taire un texte selon le zoom, sans que rien ne bouge côté page.
+
+   Chaque texte porte trois nombres : le zoom où il devient lisible, celui où
+   il cède la place à un autre empilement, et celui où il change d'atlas. Le
+   shader les compare au zoom qu'il connaît déjà — l'échelle de la projection
+   — et envoie hors du cadre ce qui n'a pas à paraître.
+
+   Le filtre de données de la bibliothèque faisait la même chose, mais sa
+   plage se passait en réglage de couche : il fallait recréer les couches à
+   chaque pas de zoom. Sur un téléphone lent, ce seul travail coupait la
+   cadence de moitié. */
+let CONST_TEXTE = null;
+function constTexte(){
+  if (CONST_TEXTE) return CONST_TEXTE;
+  class FiltreZoom extends deck.LayerExtension {
+    getShaders(extension){
+      const garde = extension.opts.petit ? "z >= instanceZoomFiltre.z" : "z < instanceZoomFiltre.z";
+      return { inject: {
+        "vs:#decl": "in vec3 instanceZoomFiltre;",
+        "vs:DECKGL_FILTER_GL_POSITION":
+          "float z = log2(project.scale);\n" +
+          "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || " + garde + ") position = vec4(0.0, 0.0, 2.0, 1.0);",
+      } };
+    }
+    initializeState(){
+      const am = this.getAttributeManager();
+      if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
+    }
+  }
+  FiltreZoom.extensionName = "FiltreZoom";
+  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] } };
+  /* Des objets créés une fois pour toutes : la bibliothèque compare ces
+     réglages par identité, et un nouvel objet — même identique — lui faisait
+     régénérer l'atlas des polices et recompiler ses shaders. */
+  return (CONST_TEXTE = {
+    petit: { ext: [new FiltreZoom({ petit: true })], atlas: { sdf: false, fontSize: 24, buffer: 2 } },
+    grand: { ext: [new FiltreZoom({ petit: false })], atlas: { sdf: true, fontSize: 64, buffer: 6 } },
+    sansDeclencheur: {},
+  });
+}
+function couchesTexte(id, items, famille, graisse, extra){
+  const K = constTexte();
+  const commun = {
+    data: items, pickable: false, fontFamily: famille, fontWeight: graisse, characterSet: "auto",
+    getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
+    getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
+    getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
+    lineHeight: extra.lineHeight || 1, updateTriggers: extra.updateTriggers || K.sansDeclencheur,
+    getZoomFiltre: d => [d.z0 === undefined ? -100 : d.z0, d.z1 === undefined ? 100 : d.z1,
+                         Math.log2(SEUIL_PETIT_TEXTE / d.taille)],
+  };
+  return [
+    new deck.TextLayer({ ...commun, id: id + "-petit", fontSettings: K.petit.atlas, extensions: K.petit.ext }),
+    new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext }),
+  ];
+}
+
+/* ------------------------------------------------------------
+   Du SVG aux primitives : formes pleines, traits, textes, images. Les
+   coordonnées restent en mètres ; les styles sont ceux que la feuille de
+   style a calculés, variables et classes résolues.
+   ------------------------------------------------------------ */
+const M_ID = [1, 0, 0, 1, 0, 0];
+const mulM = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+  m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+  m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+const appM = (m, p) => [m[0] * p[0] + m[2] * p[1] + m[4], m[1] * p[0] + m[3] * p[1] + m[5]];
+const echelleM = m => Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2]));
+
+function lisTransform(t){
+  let m = M_ID;
+  for (const [, nom, args] of t.matchAll(/(matrix|translate|scale|rotate|skewX|skewY)\s*\(([^)]*)\)/g)){
+    const a = args.split(/[\s,]+/).filter(Boolean).map(Number);
+    let n = M_ID;
+    if (nom === "matrix") n = a.slice(0, 6);
+    else if (nom === "translate") n = [1, 0, 0, 1, a[0] || 0, a[1] || 0];
+    else if (nom === "scale") n = [a[0], 0, 0, a[1] === undefined ? a[0] : a[1], 0, 0];
+    else if (nom === "rotate"){
+      const r = (a[0] || 0) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+      n = [c, s, -s, c, 0, 0];
+      if (a.length >= 3) n = mulM(mulM([1, 0, 0, 1, a[1], a[2]], n), [1, 0, 0, 1, -a[1], -a[2]]);
+    }
+    else if (nom === "skewX") n = [1, 0, Math.tan(a[0] * Math.PI / 180), 1, 0, 0];
+    else if (nom === "skewY") n = [1, Math.tan(a[0] * Math.PI / 180), 0, 1, 0, 0];
+    m = mulM(m, n);
+  }
+  return m;
+}
+
+/** Un tracé en polylignes : droites telles quelles, courbes et arcs aplatis
+ *  — assez finement pour qu'aucun zoom du plan n'en montre les facettes. */
+function lisTrace(d){
+  const out = [];
+  let cur = null, x = 0, y = 0, x0 = 0, y0 = 0, cx = 0, cy = 0, prec = "";
+  const jetons = d.match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/g) || [];
+  let i = 0, cmd = "";
+  const nb = () => parseFloat(jetons[i++]);
+  const pousse = (px, py) => { cur.pts.push([px, py]); };
+  const debut = (px, py) => { cur = { pts: [[px, py]], ferme: false }; out.push(cur); };
+  const courbe = (pts, n) => {
+    for (let k = 1; k <= n; k++){
+      const t = k / n, u = 1 - t;
+      if (pts.length === 3) pousse(u * u * pts[0][0] + 2 * u * t * pts[1][0] + t * t * pts[2][0],
+                                   u * u * pts[0][1] + 2 * u * t * pts[1][1] + t * t * pts[2][1]);
+      else pousse(u * u * u * pts[0][0] + 3 * u * u * t * pts[1][0] + 3 * u * t * t * pts[2][0] + t * t * t * pts[3][0],
+                  u * u * u * pts[0][1] + 3 * u * u * t * pts[1][1] + 3 * u * t * t * pts[2][1] + t * t * t * pts[3][1]);
+    }
+  };
+  const arc = (rx, ry, rot, grand, sens, x2, y2) => {
+    if (!rx || !ry){ pousse(x2, y2); return; }
+    const phi = rot * Math.PI / 180, cp = Math.cos(phi), sp = Math.sin(phi);
+    const dx = (x - x2) / 2, dy = (y - y2) / 2;
+    const x1p = cp * dx + sp * dy, y1p = -sp * dx + cp * dy;
+    rx = Math.abs(rx); ry = Math.abs(ry);
+    const l = x1p * x1p / (rx * rx) + y1p * y1p / (ry * ry);
+    if (l > 1){ rx *= Math.sqrt(l); ry *= Math.sqrt(l); }
+    const sg = grand === sens ? -1 : 1;
+    const num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+    const co = sg * Math.sqrt(Math.max(0, num / (rx * rx * y1p * y1p + ry * ry * x1p * x1p)));
+    const cxp = co * rx * y1p / ry, cyp = -co * ry * x1p / rx;
+    const ccx = cp * cxp - sp * cyp + (x + x2) / 2, ccy = sp * cxp + cp * cyp + (y + y2) / 2;
+    const ang = (ux, uy, vx, vy) => Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+    const t1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+    let dt = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+    if (!sens && dt > 0) dt -= 2 * Math.PI; else if (sens && dt < 0) dt += 2 * Math.PI;
+    const n = Math.max(2, Math.ceil(Math.abs(dt) / (Math.PI / 18)));
+    for (let k = 1; k <= n; k++){
+      const t = t1 + dt * k / n;
+      pousse(ccx + rx * Math.cos(t) * cp - ry * Math.sin(t) * sp, ccy + rx * Math.cos(t) * sp + ry * Math.sin(t) * cp);
+    }
+  };
+  while (i < jetons.length){
+    if (/[a-zA-Z]/.test(jetons[i])) cmd = jetons[i++];
+    const rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase();
+    const ox = rel ? x : 0, oy = rel ? y : 0;
+    if (C === "Z"){ if (cur){ cur.ferme = true; x = x0; y = y0; } prec = C; cmd = ""; continue; }
+    if (i >= jetons.length || /[a-zA-Z]/.test(jetons[i])){ i++; continue; }
+    if (C === "M"){ x = ox + nb(); y = oy + nb(); x0 = x; y0 = y; debut(x, y); cmd = rel ? "l" : "L"; }
+    else if (!cur){ debut(x, y); continue; }
+    else if (C === "L"){ x = ox + nb(); y = oy + nb(); pousse(x, y); }
+    else if (C === "H"){ x = ox + nb(); pousse(x, y); }
+    else if (C === "V"){ y = oy + nb(); pousse(x, y); }
+    else if (C === "C"){ const a = [ox + nb(), oy + nb()], b = [ox + nb(), oy + nb()], e = [ox + nb(), oy + nb()];
+      courbe([[x, y], a, b, e], 12); cx = b[0]; cy = b[1]; x = e[0]; y = e[1]; }
+    else if (C === "S"){ const a = prec === "C" || prec === "S" ? [2 * x - cx, 2 * y - cy] : [x, y];
+      const b = [ox + nb(), oy + nb()], e = [ox + nb(), oy + nb()];
+      courbe([[x, y], a, b, e], 12); cx = b[0]; cy = b[1]; x = e[0]; y = e[1]; }
+    else if (C === "Q"){ const a = [ox + nb(), oy + nb()], e = [ox + nb(), oy + nb()];
+      courbe([[x, y], a, e], 10); cx = a[0]; cy = a[1]; x = e[0]; y = e[1]; }
+    else if (C === "T"){ const a = prec === "Q" || prec === "T" ? [2 * x - cx, 2 * y - cy] : [x, y];
+      const e = [ox + nb(), oy + nb()]; courbe([[x, y], a, e], 10); cx = a[0]; cy = a[1]; x = e[0]; y = e[1]; }
+    else if (C === "A"){ const rx = nb(), ry = nb(), rot = nb(), g = nb(), s = nb(), ex = ox + nb(), ey = oy + nb();
+      arc(rx, ry, rot, g, s, ex, ey); x = ex; y = ey; }
+    else { i++; }
+    prec = C;
+  }
+  return out;
+}
+
+const lisPoints = s => {
+  const v = (s || "").trim().split(/[\s,]+/).map(Number);
+  const pts = [];
+  for (let k = 0; k + 1 < v.length; k += 2) pts.push([v[k], v[k + 1]]);
+  return pts;
+};
+const num = (el, a, d) => { const v = parseFloat(el.getAttribute(a)); return Number.isFinite(v) ? v : (d || 0); };
+
+function anneau(cx, cy, rx, ry, n){
+  const pts = [];
+  for (let k = 0; k < n; k++){ const t = 2 * Math.PI * k / n; pts.push([cx + rx * Math.cos(t), cy + ry * Math.sin(t)]); }
+  return pts;
+}
+
+function rectArrondi(x, y, w, h, rx, ry){
+  if (!(rx > 0) && !(ry > 0)) return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+  rx = Math.min(rx > 0 ? rx : ry, w / 2); ry = Math.min(ry > 0 ? ry : rx, h / 2);
+  const pts = [], coin = (cx, cy, a0) => { for (let k = 0; k <= 6; k++){ const t = a0 + Math.PI / 2 * k / 6; pts.push([cx + rx * Math.cos(t), cy + ry * Math.sin(t)]); } };
+  coin(x + w - rx, y + ry, -Math.PI / 2); coin(x + w - rx, y + h - ry, 0);
+  coin(x + rx, y + h - ry, Math.PI / 2); coin(x + rx, y + ry, Math.PI);
+  return pts;
+}
+
+/* Les couleurs calculées ne parlent pas toutes la même langue — rgb(),
+   color-mix(), oklch() selon ce que la feuille de style a écrit. Un pixel
+   peint puis relu les ramène toutes à quatre octets. */
+const _coulCtx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+const _coul = new Map();
+function couleurGl(v, alpha){
+  if (!v || v === "none" || v.startsWith("url(")) return null;
+  let c = _coul.get(v);
+  if (!c){
+    _coulCtx.clearRect(0, 0, 1, 1);
+    _coulCtx.fillStyle = "rgba(0,0,0,0)"; _coulCtx.fillStyle = v;
+    _coulCtx.fillRect(0, 0, 1, 1);
+    const d = _coulCtx.getImageData(0, 0, 1, 1).data;
+    c = [d[0], d[1], d[2], d[3] / 255];
+    _coul.set(v, c);
+  }
+  const a = Math.round(255 * c[3] * alpha);
+  return a > 0 ? [c[0], c[1], c[2], a] : null;
+}
+
+function convertitBloc(racine, cle){
+  const acc = { pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [] };
+  parcoursGl(racine, M_ID, 1, acc);
+  return couchesDeBloc(acc, cle);
+}
+
+function parcoursGl(el, m, op, acc){
+  const cs = getComputedStyle(el);
+  if (cs.display === "none") return;
+  const tr = el.getAttribute("transform");
+  if (tr) m = mulM(m, lisTransform(tr));
+  op *= parseFloat(cs.opacity);
+  if (!(op > .003)) return;
+  const tag = el.localName;
+  if (tag === "g" || tag === "a"){ for (const c of el.children) parcoursGl(c, m, op, acc); return; }
+  if (tag === "svg"){
+    const vb = (el.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+    const x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
+    let n = [1, 0, 0, 1, x, y];
+    if (vb.length === 4 && vb[2] > 0 && vb[3] > 0 && w > 0 && h > 0){
+      const s = Math.min(w / vb[2], h / vb[3]);
+      n = [s, 0, 0, s, x + (w - vb[2] * s) / 2 - vb[0] * s, y + (h - vb[3] * s) / 2 - vb[1] * s];
+    }
+    const m2 = mulM(m, n);
+    for (const c of el.children) parcoursGl(c, m2, op, acc);
+    return;
+  }
+  if (tag === "text"){ texteGl(el, cs, m, op, acc); return; }
+  if (tag === "image"){ imageGl(el, m, op, acc); return; }
+  let traces = null;
+  if (tag === "path") traces = lisTrace(el.getAttribute("d") || "");
+  else if (tag === "polyline") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: false }];
+  else if (tag === "polygon") traces = [{ pts: lisPoints(el.getAttribute("points")), ferme: true }];
+  else if (tag === "line") traces = [{ pts: [[num(el, "x1"), num(el, "y1")], [num(el, "x2"), num(el, "y2")]], ferme: false }];
+  else if (tag === "rect") traces = [{ pts: rectArrondi(num(el, "x"), num(el, "y"), num(el, "width"), num(el, "height"), num(el, "rx"), num(el, "ry")), ferme: true }];
+  else if (tag === "circle"){ const r = num(el, "r"); traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), r, r, 32), ferme: true }]; }
+  else if (tag === "ellipse") traces = [{ pts: anneau(num(el, "cx"), num(el, "cy"), num(el, "rx"), num(el, "ry"), 32), ferme: true }];
+  if (traces) formeGl(el, cs, m, op, traces, acc);
+}
+
+/* Les sous-tracés d'une forme ne sont pas des formes à part : un pictogramme
+   est un aplat percé de sa silhouette, et les remplir chacun pour soi donnait
+   un carré blanc à la place de l'ascenseur. Chaque anneau se range dans le
+   plus petit qui le contient ; à profondeur impaire, c'est un trou. */
+function avecTrous(anneaux){
+  if (anneaux.length < 2) return anneaux.map(a => [a]);
+  const aire = a => { let t = 0; for (let i = 0, j = a.length - 1; i < a.length; j = i++) t += (a[j][0] + a[i][0]) * (a[j][1] - a[i][1]); return Math.abs(t / 2); };
+  const dedans = (p, a) => { let c = false;
+    for (let i = 0, j = a.length - 1; i < a.length; j = i++){
+      const xi = a[i][0], yi = a[i][1], xj = a[j][0], yj = a[j][1];
+      if ((yi > p[1]) !== (yj > p[1]) && p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c; };
+  const tri = anneaux.map(a => ({ a, aire: aire(a), parent: null, prof: 0 })).sort((x, y) => y.aire - x.aire);
+  for (let i = 0; i < tri.length; i++)
+    for (let j = i - 1; j >= 0; j--)
+      if (dedans(tri[i].a[0], tri[j].a)){ tri[i].parent = tri[j]; tri[i].prof = tri[j].prof + 1; break; }
+  const polys = new Map();
+  for (const t of tri){
+    if (t.prof % 2 === 0) polys.set(t, [t.a]);
+    else if (polys.has(t.parent)) polys.get(t.parent).push(t.a);
+  }
+  return [...polys.values()];
+}
+
+function formeGl(el, cs, m, op, traces, acc){
+  const cible = el.closest("[data-id],[data-poi]");
+  const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
+  if (plein){
+    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
+    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible });
+  }
+  const trait = couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) * op);
+  const sw = parseFloat(cs.strokeWidth);
+  if (trait && sw > 0){
+    const fixe = cs.vectorEffect === "non-scaling-stroke";
+    const largeur = fixe ? sw : sw * echelleM(m);
+    const tirets = cs.strokeDasharray && cs.strokeDasharray !== "none"
+      ? cs.strokeDasharray.split(/[\s,]+/).map(parseFloat).filter(Number.isFinite) : null;
+    const dash = tirets && tirets.length >= 2 ? [tirets[0] / sw, tirets[1] / sw] : [0, 0];
+    for (const t of traces){
+      if (t.pts.length < 2) continue;
+      const path = t.pts.map(p => appM(m, p));
+      if (t.ferme) path.push(path[0]);
+      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, el: cible });
+    }
+  }
+}
+
+function texteGl(el, cs, m, op, acc){
+  const texte = el.textContent;
+  if (!texte || !texte.trim()) return;
+  const coul = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
+  if (!coul) return;
+  const taille = parseFloat(cs.fontSize);
+  if (!(taille > 0)) return;
+  /* La ligne de base du SVG est au pied des lettres ; la bibliothèque centre
+     le texte sur son point. On remonte d'un tiers de corps, dans le repère
+     du texte, avant d'appliquer sa rotation. */
+  const pos = appM(m, [num(el, "x"), num(el, "y") - taille * .33]);
+  const angle = Math.atan2(m[1], m[0]) * 180 / Math.PI;
+  const famille = cs.fontFamily, graisse = cs.fontWeight;
+  const cle = famille + "|" + graisse;
+  if (!acc.textes.has(cle)) acc.textes.set(cle, { famille, graisse, items: [] });
+  acc.textes.get(cle).items.push({
+    text: texte, position: pos, taille: taille * echelleM(m), angle: -angle,
+    ancre: cs.textAnchor === "middle" ? "middle" : cs.textAnchor === "end" ? "end" : "start",
+    couleur: coul, el: el.closest("[data-id],[data-poi]"),
+  });
+}
+
+function imageGl(el, m, op, acc){
+  const href = el.getAttribute("href") || el.getAttribute("xlink:href");
+  if (!href) return;
+  let x = num(el, "x"), y = num(el, "y"), w = num(el, "width"), h = num(el, "height");
+  /* « meet » : l'image garde ses proportions dans sa boîte. Sa taille n'est
+     connue qu'une fois chargée ; en attendant elle ne se dessine pas, puis
+     son bloc se repeint. */
+  const nat = GL.tailles.get(href);
+  if (!nat){
+    GL.tailles.set(href, "attente");
+    const i = new Image();
+    i.onload = () => { GL.tailles.set(href, [i.naturalWidth, i.naturalHeight]); toutRepeindreWebgl(); };
+    i.src = href;
+    return;
+  }
+  if (nat === "attente") return;
+  if ((el.getAttribute("preserveAspectRatio") || "xMidYMid meet") !== "none" && nat[0] > 0 && nat[1] > 0){
+    const s = Math.min(w / nat[0], h / nat[1]);
+    const w2 = nat[0] * s, h2 = nat[1] * s;
+    x += (w - w2) / 2; y += (h - h2) / 2; w = w2; h = h2;
+  }
+  const a = appM(m, [x, y]), b = appM(m, [x + w, y + h]);
+  acc.images.push({ href, bornes: [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])],
+    op, el: el.closest("[data-id],[data-poi]") });
+}
+
+/* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
+   calques dessinés sont « pointer-events: none » : un aplat décoratif posé sur
+   un stand ne doit pas empêcher d'ouvrir sa fiche. Chaque sorte de primitive
+   se partage donc en deux couches, l'une cliquable, l'autre non. */
+const partage = liste => [liste.filter(d => d.el), liste.filter(d => !d.el)];
+
+function couchesDeBloc(acc, cle){
+  const L = deck, out = [];
+  partage(acc.pleins).forEach((liste, k) => {
+    if (!liste.length) return;
+    out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: liste, pickable: k === 0,
+      getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
+  });
+  for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
+  partage(tous).forEach((liste, k) => {
+    if (!liste.length) return;
+    const tirets = liste.some(d => d.dash[0] > 0);
+    out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k, data: liste, pickable: k === 0,
+      getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
+      jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0,
+      ...(tirets ? { extensions: [new L.PathStyleExtension({ dash: true })], getDashArray: d => d.dash, dashJustified: true } : {}) }));
+  });
+  let i = 0;
+  for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse, {}));
+  acc.images.forEach((d, k) => out.push(new L.BitmapLayer({ id: cle + "-image-" + k, image: d.href,
+    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el), el: d.el })));
+  return out;
+}
+
+/* ------------------------------------------------------------
+   Les noms.
+
+   Le SVG écrit ceux que la vue du moment rend lisibles, et les réécrit à
+   chaque arrêt. Ici chaque nom est préparé une fois, avec l'intervalle de
+   zoom où il se lit ; la carte graphique les montre ou les tait à chaque
+   image, sans rien recalculer. Mêmes seuils, même empilement du nom et du
+   numéro que « libelleEmplacement » : l'enseigne seule tant que son numéro
+   serait illisible, les deux dès qu'il le devient.
+   ------------------------------------------------------------ */
+const CLASSES_LIBELLES = ["nm", "nm sel", "zn", "zn sel", "zn masquee", "zn sel masquee", "cd", "cd sel"];
+
+/** Des textes témoins dans « #labels », jamais montrés : la feuille de style
+ *  leur donne la couleur et la police qu'elle donnerait aux vrais. */
+function poseModelesLibelles(){
+  $("labels").innerHTML = CLASSES_LIBELLES.map(c =>
+    '<text class="' + c.replace(/\bcd\b/, "").trim() + '" data-modele="' + c + '">A</text>').join("");
+  lisModelesLibelles();
+}
+function lisModelesLibelles(){
+  const avant = GL.signatureModeles;
+  GL.modeles.clear();
+  $("labels").querySelectorAll("text[data-modele]").forEach(t => {
+    const cs = getComputedStyle(t);
+    GL.modeles.set(t.dataset.modele, { couleur: couleurGl(cs.fill, parseFloat(cs.fillOpacity) || 1) || [0, 0, 0, 255],
+      famille: cs.fontFamily, graisse: cs.fontWeight, visible: cs.display !== "none" });
+  });
+  GL.signatureModeles = JSON.stringify([...GL.modeles]);
+  if (GL.signatureModeles !== avant) GL.versionModeles++;
+}
+
+function libellesWebgl(){
+  if (!GL.actif) return;
+  const p = P(), items = [];
+  const bloc = (lignes, f, x, y, cls, z0, z1) => { if (z1 > z0) items.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1 }); };
+  const LOIN = 99;
+  for (const z of p.zones){
+    const sel = z.id === state.sel;
+    if (!z.nom || (!sel && !visibleSurPlan(z))) continue;
+    const pz = place(z), reg = placementLibelle(z);
+    const a = habille(nomDeLaZone(z), pz[0] * .88, pz[1] * .7, 3.4, P_NOM);
+    if (!a) continue;
+    const f = a.f * facteurLibelle(reg), xy = decaleLibelle(ancre(z), reg);
+    bloc(a.lignes, f, xy[0], xy[1], "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : ""),
+      sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), LOIN);
+  }
+  const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
+  for (const s of p.stands){
+    const sel = s.id === state.sel && !decoupe;
+    if ((!sel && !visibleSurPlan(s)) || (!s.code && !s.nom)) continue;
+    const ps = place(s), w = ps[0], h = ps[1], reg = placementLibelle(s);
+    const k = facteurLibelle(reg), tout = sel || libelleForce(reg);
+    const nom = s.nom ? habille(s.nom, w * .9, h * .62, 2.4, P_NOM) : null;
+    const fn = nom ? nom.f * k : 0;
+    const maxCode = s.nom ? Math.min(nom ? nom.f * .78 : 1.2, h * .22) : h * .34;
+    const fc = (s.code ? Math.min(maxCode, (w * .9) / largeur(s.code, P_CODE), 1.9) : 0) * k;
+    const xy = decaleLibelle(ancre(s), reg), c = sel ? " sel" : "";
+    // les seuils de « libelleEmplacement », dits en zoom : 2^zoom pixels par mètre
+    const seuil = t => tout ? -LOIN : Math.log2(t);
+    const zN = nom ? seuil(4.5 / fn) : LOIN;
+    const zC1 = fc ? seuil(5 / fc) : LOIN, zC0 = fc ? seuil(6 / fc) : LOIN;
+    const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
+    for (let i = 0; i + 1 < bornes.length; i++){
+      const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
+      const nomLisible = nom && zm >= zN;
+      const codeLisible = fc && zm >= (nomLisible ? zC1 : zC0);
+      if (!nomLisible && !codeLisible) continue;
+      const hNom = nomLisible ? nom.lignes.length * fn * 1.18 : 0, hCode = codeLisible ? fc * 1.25 : 0;
+      const haut = xy[1] - (hNom + hCode) / 2;
+      if (nomLisible) bloc(nom.lignes, fn, xy[0], haut + hNom / 2, "nm" + c, z0, z1);
+      // le numéro a sa ligne de base à 0,92 corps sous le nom ; son milieu, un tiers plus haut
+      if (codeLisible) bloc([s.code], fc, xy[0], haut + hNom + fc * .59, "cd" + c, z0, z1);
+    }
+  }
+  const cle = items.map(d => d.text + d.position[0].toFixed(2) + d.position[1].toFixed(2) + d.taille.toFixed(3) + d.cls + d.z0.toFixed(3) + d.z1.toFixed(3)).join("|");
+  if (cle === GL.cleLibelles) return;
+  GL.cleLibelles = cle;
+  GL.libelles = items;
+  GL.versionLibelles = (GL.versionLibelles || 0) + 1;
+  GL.couchesLibelles = null;
+  planifieWebgl();
+}
+
+function couchesLibellesWebgl(){
+  if (GL.couchesLibelles) return GL.couchesLibelles;
+  /* Les noms se regroupent par police une fois, et non à chaque pas de zoom :
+     un nouveau tableau, même au contenu identique, passe pour des données
+     neuves, et la bibliothèque remettait en page les mille noms à chaque
+     image — quarante millisecondes, le zoom à vingt-cinq images par seconde.
+     Seul le filtre de zoom change d'une image à l'autre. */
+  const cleGroupes = GL.versionLibelles + "|" + GL.versionModeles;
+  if (GL.cleGroupes !== cleGroupes){
+    const groupes = new Map();
+    for (const d of GL.libelles){
+      const mo = GL.modeles.get(d.cls) || GL.modeles.get("nm");
+      if (!mo || !mo.visible) continue;
+      const cle = mo.famille + "|" + mo.graisse;
+      if (!groupes.has(cle)) groupes.set(cle, { mo, items: [] });
+      groupes.get(cle).items.push(d);
+    }
+    GL.groupesLibelles = [...groupes.values()];
+    GL.cleGroupes = cleGroupes;
+  }
+  let i = 0;
+  GL.couchesLibelles = GL.groupesLibelles.flatMap(g => couchesTexte("libelles-" + (i++), g.items,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle",
+      getColor: d => (GL.modeles.get(d.cls) || g.mo).couleur,
+      updateTriggers: { getColor: GL.versionModeles } }));
+  return GL.couchesLibelles;
+}
+
+/* ------------------------------------------------------------
+   Désigner et situer.
+
+   Le SVG caché ne sait plus où ses formes tombent à l'écran : sa « viewBox »
+   ne suit plus la vue. On demande donc à la carte graphique ce qui est sous le
+   doigt — elle rend l'élément du SVG qu'elle a peint, et tout le reste du
+   code le reçoit comme avant — et l'on situe une forme par sa boîte, projetée
+   avec la même règle que la vue.
+   ------------------------------------------------------------ */
+function cibleWebgl(x, y, rayon){
+  const r = cadrePlan();
+  const o = GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
+  if (!o) return null;
+  const el = (o.object && o.object.el) || (o.layer && o.layer.props.el);
+  return el || null;
+}
+
+function rectEcranWebgl(n, v){
+  let b;
+  try { b = n.getBBox(); } catch (e) { return null; }
+  const r = cadrePlan(), vue = v || view;
+  const s = Math.min(r.width / vue.w, r.height / vue.h);
+  const ox = (r.width - vue.w * s) / 2, oy = (r.height - vue.h * s) / 2;
+  const left = r.left + (b.x - vue.x) * s + ox, top = r.top + (b.y - vue.y) * s + oy;
+  const width = b.width * s, height = b.height * s;
+  return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top };
 }
 /* ============================================================
    12. Démarrage

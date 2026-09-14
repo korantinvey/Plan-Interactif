@@ -370,6 +370,16 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
   transform-origin:0 0;will-change:transform}
 .calque-libelles > svg{display:block;width:100%;height:100%}
 
+/* Le plan peint par la carte graphique (`?rendu=webgl`, voir « Le plan peint
+   par la carte graphique »). Le SVG reste en place et reçoit les gestes, mais
+   ne montre plus rien : « visibility » et non « display », pour que sa
+   géométrie et ses styles calculés restent lisibles par le peintre — et que
+   le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
+   dessin passe au-dessus sans prendre le clic. */
+.plan-gl{position:absolute;inset:0;pointer-events:none}
+html.rendu-webgl #plan > *{visibility:hidden}
+html.rendu-webgl .calque-libelles{display:none}
+
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
    beige. La moitié rapproche les deux sans écraser le nom posé par-dessus, qui
