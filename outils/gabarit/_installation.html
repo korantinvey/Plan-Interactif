@@ -183,7 +183,11 @@ function vueInstallation(){
  * n'a rien à faire et le dit tout de suite.
  */
 function accueilleInvitation(){
-  if (!installFini) relanceInvitation(INSTALL_ACCUEIL);
+  /* Après la proposition de visite guidée (`TUTO_DELAI`), qui se propose au
+     même moment : elle renonce si l'écran est pris, quand l'invitation, elle,
+     attend qu'il se libère. Passer la seconde ne coûte à l'invitation qu'un
+     instant ; passer la première aurait coûté la visite guidée. */
+  if (!installFini) relanceInvitation(TUTO_DELAI + INSTALL_ACCUEIL);
 }
 
 /**
@@ -197,6 +201,8 @@ function accueilleInvitation(){
  */
 function invitationRetenue(){
   if (installDoigts.size || $("modale").classList.contains("open")) return true;
+  // une visite guidée en cours est un geste en train de se faire, sur toute sa durée
+  if (TUTO) return true;
   if (["detail", "parcours", "itineraire"].some(id => {
     const t = $(id);
     return t && t.classList.contains("open");

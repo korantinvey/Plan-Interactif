@@ -1031,6 +1031,54 @@ Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
 disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
 moteur.
 
+## La visite guidée
+
+Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,
+la journée qu'on en tire : tout cela attend derrière des icônes que personne
+n'essaie une à une. À la première ouverture d'un salon, le plan propose donc
+d'en faire le tour — « Découvrir le plan » —, et le visiteur y fait **lui-même**
+chaque geste, sur le vrai plan. Une bulle dit quoi toucher, un repère lumineux
+encadre ce qu'il faut toucher, et la visite attend que ce soit fait pour passer
+à la suite. Rien n'est simulé : la conférence retenue en chemin est dans le
+parcours, la journée organisée aussi.
+
+Quatre chapitres, dans cet ordre :
+
+1. **Le programme des zones** — le plan s'amène sur une zone organisateur qui a
+   un programme, en surbrillance ; le visiteur la touche, puis retient une
+   conférence par son signet.
+2. **L'itinéraire** — depuis la fiche de cette zone, « Itinéraire » : l'arrivée
+   est remplie, le visiteur désigne son départ sur le plan, et lit le trajet.
+3. **Mon parcours de visite** — il touche un stand de son choix, le retient par
+   le signet, et ouvre « Mon parcours ».
+4. **Ma journée** — « Organiser ma journée », une heure d'arrivée, et l'ordre de
+   visite apparaît.
+
+Chaque chapitre ne paraît que si sa fonction existe sur ce salon : sans
+conférence rattachée à une zone, la visite commence à l'itinéraire ; sans
+parcours, elle s'arrête avant ; sans itinéraire, la journée disparaît avec lui.
+La consigne se relit dans l'état de la page plutôt que dans une liste d'étapes
+franchies : le visiteur qui referme une fiche, trouve son stand par la liste ou
+touche une autre zone voit la consigne le suivre. « Passer » saute au chapitre
+suivant, la croix ou Échap quittent la visite.
+
+La visite ne choisit ni le stand ni la conférence à la place du visiteur : un
+exposant imposé verrait ses chiffres gonfler dans le rapport d'utilisation. Seule
+la zone est montrée du doigt, et une zone organisateur ne se compte pas.
+
+Elle se propose **une fois par salon et par appareil**, quelle que soit la
+réponse, sous la clé `plan-tutoriel:<slug>` du stockage local ; un navigateur qui
+refuse ce stockage ne se la voit pas proposer, faute de pouvoir retenir la
+réponse. Elle attend aussi son tour : un visiteur arrivé par le lien d'un stand
+ou avec un parcours partagé ne se la voit pas proposer cette fois-là, mais à sa
+prochaine ouverture. La page d'administration ne la propose jamais.
+
+L'exploitant la règle dans « Réglages du plan », onglet **Plan** : **Proposer la
+visite guidée au premier démarrage**, cochée par défaut. L'aide de la case dit
+quels chapitres ce salon présentera, et **Essayer** la lance aussitôt, pour voir
+ce que les visiteurs verront. Comme les autres réglages, la case part aux
+visiteurs toute seule.
+
 ## Installer le plan, et le consulter hors ligne
 
 Un salon se visite là où le réseau manque : un hall de béton, un forfait

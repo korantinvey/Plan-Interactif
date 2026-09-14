@@ -348,4 +348,12 @@ module.exports = {
   // le placement des libellés
   "Glissez le libellé, ou ajustez-le aux flèches du clavier.": "Drag the label, or nudge it with the arrow keys.",
   "Glissez ce libellé pour le déplacer, ou tirez la taille.": "Drag this label to move it, or pull the size slider.",
+
+  // la visite guidée, dans l'onglet « Plan » — le reste vit dans `_tutoriel.js`
+  "Proposer la visite guidée au premier démarrage": "Offer the guided tour on first launch",
+  "Le visiteur y fait lui-même chaque geste. Sur ce salon :": "Visitors make every move themselves. On this show:",
+  "Proposée une fois par appareil.": "Offered once per device.",
+  "Essayer": "Try it",
+  "Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.":
+    "Nothing to present on this show: no programme linked to an area, no visit plan, no directions.",
 };
