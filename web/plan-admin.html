@@ -1116,9 +1116,13 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    ne montre plus rien : « visibility » et non « display », pour que sa
    géométrie et ses styles calculés restent lisibles par le peintre — et que
    le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
-   dessin passe au-dessus sans prendre le clic. */
+   dessin passe au-dessus sans prendre le clic.
+
+   Le SVG ne s'efface qu'à la première image effectivement dessinée
+   (« gl-pret ») : préparer les textes prend une à deux secondes, et le plan
+   disparaissait entre-temps pour reparaître. */
 .plan-gl{position:absolute;inset:0;pointer-events:none}
-html.rendu-webgl #plan > *{visibility:hidden}
+html.gl-pret #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
 /* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
    carte graphique qui dit ce qu'il vise. */
@@ -1131,7 +1135,7 @@ html.rendu-webgl #plan *{animation:none!important}
    pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
    rien : ni peints ni visés par le pointeur — la carte graphique les montre,
    et leur liseré de focus avec eux. */
-html.rendu-webgl #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.gl-pret #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
 html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
@@ -6602,7 +6606,8 @@ const appliqueVue = () => {
     majEditionWebgl();
     // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
     if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
-    return;
+    // tant que la première image n'est pas dessinée, le SVG montre le plan et suit la vue
+    if (GL.pret) return;
   }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
@@ -25165,6 +25170,12 @@ function monteWebgl(){
     views: new deck.OrthographicView({ id: "plan", flipY: true }),
     viewState: vueDeck(), layers: [],
     onError: e => console.warn("Rendu WebGL :", e && e.message),
+    // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
+    onAfterRender: () => {
+      if (GL.pret || !GL.deck.props.layers.length) return;
+      GL.pret = true;
+      document.documentElement.classList.add("gl-pret");
+    },
   });
   GL.actif = true;
   document.documentElement.classList.add("rendu-webgl");
@@ -25799,7 +25810,8 @@ function modelesLibellesHtml(){
     '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
 }
 function poseModelesLibelles(){
-  $("labels").innerHTML = modelesLibellesHtml();
+  // ajoutés aux libellés du SVG, qui restent à l'écran jusqu'à la première image
+  $("labels").insertAdjacentHTML("beforeend", modelesLibellesHtml());
   lisModelesLibelles();
 }
 function lisModelesLibelles(){

@@ -375,9 +375,13 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    ne montre plus rien : « visibility » et non « display », pour que sa
    géométrie et ses styles calculés restent lisibles par le peintre — et que
    le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
-   dessin passe au-dessus sans prendre le clic. */
+   dessin passe au-dessus sans prendre le clic.
+
+   Le SVG ne s'efface qu'à la première image effectivement dessinée
+   (« gl-pret ») : préparer les textes prend une à deux secondes, et le plan
+   disparaissait entre-temps pour reparaître. */
 .plan-gl{position:absolute;inset:0;pointer-events:none}
-html.rendu-webgl #plan > *{visibility:hidden}
+html.gl-pret #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
 /* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
    carte graphique qui dit ce qu'il vise. */
@@ -390,7 +394,7 @@ html.rendu-webgl #plan *{animation:none!important}
    pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
    rien : ni peints ni visés par le pointeur — la carte graphique les montre,
    et leur liseré de focus avec eux. */
-html.rendu-webgl #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.gl-pret #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
 html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend

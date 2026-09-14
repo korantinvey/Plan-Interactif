@@ -36,7 +36,7 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "f6e02b01376c";
+const VERSION = "d6228e4030eb";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 

@@ -69,6 +69,12 @@ function monteWebgl(){
     views: new deck.OrthographicView({ id: "plan", flipY: true }),
     viewState: vueDeck(), layers: [],
     onError: e => console.warn("Rendu WebGL :", e && e.message),
+    // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
+    onAfterRender: () => {
+      if (GL.pret || !GL.deck.props.layers.length) return;
+      GL.pret = true;
+      document.documentElement.classList.add("gl-pret");
+    },
   });
   GL.actif = true;
   document.documentElement.classList.add("rendu-webgl");
@@ -703,7 +709,8 @@ function modelesLibellesHtml(){
     '<rect data-modele="poi" style="fill:var(--c-poi,var(--accent))"/>';
 }
 function poseModelesLibelles(){
-  $("labels").innerHTML = modelesLibellesHtml();
+  // ajoutés aux libellés du SVG, qui restent à l'écran jusqu'à la première image
+  $("labels").insertAdjacentHTML("beforeend", modelesLibellesHtml());
   lisModelesLibelles();
 }
 function lisModelesLibelles(){
