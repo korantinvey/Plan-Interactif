@@ -150,6 +150,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | fiche d'une zone, salles de conférence qu'elle abrite | `_admin1.html` `champsZone`, `champSalles` ; colonne `salles` ; libellé et description anglais `nom_en`, `description_en` dans `zones_fiches`, affichés par `_js.html` `nomDeLaZone` |
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
+| halls d'un lieu connu (OSM), calage en deux coins, mention de la source | `_batiments.html` ; bibliothèque `outils/lieux.js` → `outils/lieux.json`, versée par `genere.js` dans `plan-admin.html` seul |
 | verrouiller un calque de dessin | `_dessin.html` § Le verrou d'un calque, cadenas posé par `_pile.html` `boutonVerrou` |
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |

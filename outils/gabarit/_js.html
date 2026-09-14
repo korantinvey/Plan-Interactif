@@ -3257,6 +3257,7 @@ svg.addEventListener("pointerup", e => {
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
+  if (calagePointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }

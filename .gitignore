@@ -14,6 +14,9 @@ outils/*.json
 # construction. Même raison : elles ne se régénèrent qu'avec le réseau
 # (`npm run polices`), et sans elles un clone neuf ne construit plus.
 !outils/polices.json
+# La bibliothèque des lieux, versée dans la page d'administration. Même
+# raison encore : elle ne se régénère qu'avec le réseau (`node outils/lieux.js`).
+!outils/lieux.json
 supabase/.temp/
 
 # Empreinte de ce que Deno télécharge pour `npm run typage`. Les versions sont

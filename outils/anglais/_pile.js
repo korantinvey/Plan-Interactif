@@ -7,6 +7,7 @@ module.exports = {
   "Issus du salon": "From the show",
   "Ajoutés à la main": "Added by hand",
   "+ Nouveau calque de dessin": "+ New drawing layer",
+  "+ Bâtiment de la bibliothèque…": "+ Building from the library…",
   "Déverrouiller le calque": "Unlock layer",
   "Verrouiller le calque : ni dessin, ni suppression": "Lock layer: no drawing, no deleting",
   "⇅ Réorganiser les calques": "⇅ Reorder layers",

@@ -718,6 +718,23 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .mcorps input.nomcalque{width:100%;padding:8px 10px;font-size:14px;border:1px solid var(--line);
   border-radius:var(--radius);background:var(--surface-2);color:var(--ink)}
 .mcorps input.nomcalque:focus{border-color:var(--accent);outline:none}
+.mcorps .biblioLieu{width:100%;padding:7px 9px;font-size:13.5px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--surface-2);color:var(--ink)}
+.mcorps .biblioVue{display:block;width:100%;max-height:240px;margin:10px 0 6px}
+.biblioVue path{fill:var(--surface-2);stroke:var(--ink-3);stroke-width:1.2;
+  vector-effect:non-scaling-stroke;cursor:pointer}
+.biblioVue path:hover{stroke:var(--accent)}
+.biblioVue path.choisi{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.biblioVue path.deja{fill:var(--line);stroke:var(--line-strong);cursor:default}
+.biblioHalls{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:2px 12px;
+  max-height:220px;overflow:auto;font-size:13px}
+.biblioHall{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer}
+.biblioHall input{accent-color:var(--accent)}
+.biblioHall.deja{color:var(--ink-3);cursor:default}
+.biblioHall i{font-style:normal;font-size:11px}
+.biblioNote{margin:10px 0 0;font-size:12.5px;color:var(--ink-2)}
+.biblioRecale{display:inline-flex;align-items:center;gap:6px;margin-top:4px;cursor:pointer}
+.biblioMention{margin:6px 0 0;font-size:11px;color:var(--ink-3)}
 .calq .sup{width:18px;height:18px;border:none;color:var(--ink-3);font-size:14px;line-height:1}
 .calq .sup:hover{color:#C2372B}
 /* Le cadenas d'un calque de dessin. Fermé, il prend la couleur d'accent et son
@@ -895,6 +912,11 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .scalebar{position:absolute;left:60px;bottom:18px;font-size:11px;color:var(--ink-3);
   font-family:"IBM Plex Mono",monospace;display:flex;align-items:center;gap:7px}
 .scalebar i{display:block;height:6px;border:1px solid var(--ink-3);border-top:none}
+/* Sous l'échelle, dont elle partage la discrétion : une obligation de la
+   licence, pas une information qu'on vient chercher. */
+.mention-osm{position:absolute;left:60px;bottom:3px;font-size:10px;color:var(--ink-3);
+  pointer-events:none;white-space:nowrap}
+.mention-osm[hidden]{display:none}
 
 .detail{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
   border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;z-index:4;
@@ -2292,6 +2314,16 @@ html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
 .viseur[hidden]{display:none}
 .viseur button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
 html.vise-plan #plan{cursor:crosshair}
+html.cale-plan #plan{cursor:crosshair}
+.viseur.calage button.fort{color:#fff;background:var(--accent);text-decoration:none;
+  padding:3px 12px;border-radius:999px}
+.viseur.calage button[hidden]{display:none}
+/* Le contour proposé pendant le calage : en pointillés, comme tout ce qui
+   n'est pas encore posé, et d'un trait qui ne grossit pas au zoom. */
+#calageApercu{pointer-events:none}
+#calageApercu .contour{fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:2;
+  stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+#calageApercu .coin{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke}
 
 /* Le tracé. Son épaisseur est donnée en pixels et ne suit pas le zoom : un
    trait qui grossit avec le plan finit par masquer les stands qu'il longe,
@@ -3764,10 +3796,19 @@ html.tuto-retrait .dcal .forme{opacity:.22}
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <div class="mention-osm" id="mentionOsm" hidden>© les contributeurs d'OpenStreetMap</div>
     <div class="poi" id="poi" hidden></div>
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
+    </div>
+    <!-- Le calage d'un bâtiment de la bibliothèque : où l'on en est, et
+         les deux issues. Voir « _batiments.html ». -->
+    <div class="viseur calage" id="calageBat" hidden>
+      <span id="calageTxt"></span>
+      <button type="button" id="calageRefait">Recommencer</button>
+      <button type="button" id="calageStop">Annuler</button>
+      <button type="button" class="fort" id="calageValide">Valider</button>
     </div>
     <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
          s'efface dès qu'elle le sait, et ne reparaît plus. -->
@@ -7285,6 +7326,7 @@ svg.addEventListener("pointerup", e => {
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
+  if (calagePointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
@@ -11907,6 +11949,7 @@ function dessineDessins(){
   }
   ordonneDom();
   cartouchePoi();
+  mentionOsm();
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
      fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
   rafraichitStandsDessines();
@@ -14371,6 +14414,361 @@ function appliqueDimension(quoi){
   enregistreDessins(); dessineDessins(); dessinePoignees();
   ecritDimensions(f);
 }
+/* ============================================================
+   11 quinquies. Bâtiments de la bibliothèque
+
+   Le contour d'un hall ne change pas d'un salon à l'autre, et on le retraçait
+   pourtant à la main sur chaque plan : une après-midi, pour un tracé moins
+   juste que le cadastre. La bibliothèque (`outils/lieux.js`) garde les halls
+   des lieux où l'on expose le plus souvent ; on les pose ici en calques de
+   dessin ordinaires — un par hall, verrouillés, qu'on masque ou recolore
+   comme les autres.
+
+   Reste le calage. Chaque plan Klipso a son origine et son orientation : le
+   Pavillon 6 regarde le nord dans OpenStreetMap et le sud sur le plan de
+   Franchise Expo. On le rattrape en montrant deux coins — un sur le contour
+   proposé, le même sur le plan, deux fois. L'échelle ne se règle pas : les
+   deux repères sont en mètres, et l'écart qui reste sert de contrôle.
+
+   Le calage se retient par pavillon. Les autres halls du même lieu se posent
+   ensuite sans un clic : ils partagent le repère du premier.
+   ============================================================ */
+
+/* Réservée à l'administration : la construction ne la verse que dans
+   `plan-admin.html`. Ailleurs, le bouton qui l'ouvre ne paraît pas. */
+const LIEUX = /*__LIEUX__*/null;
+
+const CLE_CALAGE = () => "_calage:" + P().id;
+const bibliothequeDispo = () => ADMIN && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.length);
+
+/* Le gris des murs, plutôt que l'accent des calques neufs : un contour de
+   bâtiment est un fond, il ne doit pas passer devant les stands. */
+const COULEUR_BATIMENT = "#77787e";
+
+/** Les bâtiments déjà posés sur ce pavillon, par leur référence OSM. */
+function batimentsPoses(){
+  const s = new Set();
+  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
+  return s;
+}
+
+/** Un point du lieu, porté dans le repère du plan. */
+function poseCalage(t, p){
+  const co = Math.cos(t.a), si = Math.sin(t.a);
+  return [+(co * p[0] - si * p[1] + t.x).toFixed(2),
+          +(si * p[0] + co * p[1] + t.y).toFixed(2)];
+}
+
+/* ------------------------------------------------------------
+   La fenêtre : quel lieu, quels halls
+   ------------------------------------------------------------ */
+function ouvreBibliotheque(){
+  if (!bibliothequeDispo()) return;
+  const cale = CONF[CLE_CALAGE()];
+  let lieu = LIEUX.lieux.find(l => cale && l.cle === cale.lieu) || LIEUX.lieux[0];
+  const choisis = new Set();
+  let recaler = false;
+
+  ouvreModale("Bâtiments de la bibliothèque", corps => {
+    const rend = () => {
+      const poses = batimentsPoses();
+      const calage = cale && cale.lieu === lieu.cle;
+      corps.innerHTML = "";
+
+      const sel = document.createElement("select");
+      sel.className = "biblioLieu";
+      sel.setAttribute("aria-label", "Lieu");
+      LIEUX.lieux.forEach(l => {
+        const o = document.createElement("option");
+        o.value = l.cle; o.textContent = l.nom + " — " + l.ville;
+        o.selected = l === lieu;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { lieu = LIEUX.lieux.find(l => l.cle === sel.value); choisis.clear(); rend(); };
+      corps.appendChild(sel);
+
+      /* La vue d'ensemble se clique comme la liste : on reconnaît un hall à sa
+         place dans le lieu bien avant de savoir s'il s'appelle 2.1B ou 2.1C. */
+      corps.appendChild(vueDuLieu(lieu, choisis, poses, nom => {
+        choisis.has(nom) ? choisis.delete(nom) : choisis.add(nom); rend();
+      }));
+
+      const ul = document.createElement("div");
+      ul.className = "biblioHalls";
+      lieu.batiments.forEach(b => {
+        const deja = poses.has(b.osm);
+        const l = document.createElement("label");
+        l.className = "biblioHall" + (deja ? " deja" : "");
+        l.innerHTML = '<input type="checkbox"><span></span>' + (deja ? "<i>déjà sur le plan</i>" : "");
+        l.querySelector("span").textContent = b.nom;
+        const c = l.querySelector("input");
+        c.checked = choisis.has(b.nom);
+        c.disabled = deja;
+        c.onchange = () => { c.checked ? choisis.add(b.nom) : choisis.delete(b.nom); rend(); };
+        ul.appendChild(l);
+      });
+      corps.appendChild(ul);
+
+      const p = document.createElement("p");
+      p.className = "biblioNote";
+      if (calage){
+        p.textContent = "Ce pavillon est déjà calé sur ce lieu : les bâtiments se posent directement.";
+        const r = document.createElement("label");
+        r.className = "biblioRecale";
+        r.innerHTML = '<input type="checkbox"> Recaler sur le plan';
+        r.querySelector("input").checked = recaler;
+        r.querySelector("input").onchange = e => { recaler = e.target.checked; };
+        p.appendChild(document.createElement("br"));
+        p.appendChild(r);
+      } else {
+        p.textContent = "Vous montrerez ensuite deux coins du contour sur le plan pour le caler.";
+      }
+      corps.appendChild(p);
+
+      const m = document.createElement("p");
+      m.className = "biblioMention";
+      m.textContent = LIEUX.mention;
+      corps.appendChild(m);
+    };
+    rend();
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Placer sur le plan", ferme: false, action: () => {
+        const halls = lieu.batiments.filter(b => choisis.has(b.nom));
+        if (!halls.length) return;
+        fermeModale();
+        const t = CONF[CLE_CALAGE()];
+        if (t && t.lieu === lieu.cle && !recaler) ajouteBatiments(lieu, halls, t);
+        else lanceCalage(lieu, halls);
+      } },
+  ]);
+}
+
+/** Le lieu vu d'en haut, nord en haut ; un hall se coche en cliquant dessus. */
+function vueDuLieu(lieu, choisis, poses, bascule){
+  const pts = lieu.batiments.flatMap(b => b.contours.flat());
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  const m = Math.max(x1 - x0, y1 - y0) * .04;
+  const ns = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(ns, "svg");
+  s.setAttribute("class", "biblioVue");
+  s.setAttribute("viewBox", (x0 - m) + " " + (y0 - m) + " " + (x1 - x0 + 2 * m) + " " + (y1 - y0 + 2 * m));
+  s.setAttribute("aria-hidden", "true");
+  lieu.batiments.forEach(b => {
+    const g = document.createElementNS(ns, "path");
+    g.setAttribute("d", b.contours.map(c => "M" + c.map(p => p.join(" ")).join("L") + "Z").join(""));
+    g.setAttribute("class", poses.has(b.osm) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
+    const titre = document.createElementNS(ns, "title");
+    titre.textContent = b.nom;
+    g.appendChild(titre);
+    if (!poses.has(b.osm)) g.addEventListener("click", () => bascule(b.nom));
+    s.appendChild(g);
+  });
+  return s;
+}
+
+/* ------------------------------------------------------------
+   Le calage : deux coins, montrés deux fois
+   ------------------------------------------------------------ */
+let CALAGE = null;
+
+function lanceCalage(lieu, halls){
+  activeCalque(null);
+  const pts = halls.flatMap(b => b.contours.flat());
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
+  const cy = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
+  /* Posé au centre de la vue, nord en haut : on part de ce qu'on voit, et le
+     premier coin montré le déplacera de toute façon. */
+  CALAGE = { lieu: lieu, halls: halls, etape: 0,
+             t: { a: 0, x: view.x + view.w / 2 - cx, y: view.y + view.h / 2 - cy } };
+  racine.classList.add("cale-plan");
+  dessineCalage();
+}
+
+function finCalage(){
+  CALAGE = null;
+  racine.classList.remove("cale-plan");
+  apercuGuide(null);
+  montreAimants(null);
+  const g = $("calageApercu");
+  if (g) g.remove();
+  $("calageBat").hidden = true;
+}
+
+const TEXTES_CALAGE = [
+  "Cliquez un coin du contour en pointillés.",
+  "Cliquez maintenant ce même coin sur le plan.",
+  "Cliquez un second coin du contour, loin du premier.",
+  "Cliquez ce second coin sur le plan.",
+];
+
+function dessineCalage(message){
+  const c = CALAGE;
+  let g = $("calageApercu");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "calageApercu";
+    svg.appendChild(g);
+  }
+  const tol = toleranceTrace();
+  const croix = (q) => "M" + (q[0] - tol) + " " + q[1] + "h" + (2 * tol) +
+                       "M" + q[0] + " " + (q[1] - tol) + "v" + (2 * tol);
+  let h = c.halls.map(b => '<path class="contour" d="' +
+    b.contours.map(k => "M" + k.map(p => poseCalage(c.t, p).join(" ")).join("L") + "Z").join("") + '"/>').join("");
+  // les coins déjà retenus restent marqués : on voit sur quoi le calage s'appuie
+  [c.srcA, c.srcB].forEach(q => { if (q) h += '<path class="coin" d="' + croix(poseCalage(c.t, q)) + '"/>'; });
+  g.innerHTML = h;
+
+  $("calageBat").hidden = false;
+  const fini = c.etape === 4;
+  let txt = TEXTES_CALAGE[c.etape];
+  if (fini){
+    const pc = Math.round(Math.abs(c.ecart || 0) * 100);
+    /* L'échelle n'est pas corrigée : un écart de quelques pour cent vient d'un
+       coin mal visé, et le reporter sur le tracé déformerait tout le hall. */
+    txt = pc >= 3 ? "Contour calé, avec " + pc + " % d'écart entre les deux coins : vérifiez-les, ou recommencez."
+                  : "Contour calé. Vérifiez le tracé, puis validez.";
+  }
+  $("calageTxt").textContent = message || txt;
+  $("calageRefait").hidden = c.etape === 0;
+  $("calageValide").hidden = !fini;
+}
+
+/** Le sommet du contour proposé le plus proche du clic, dans le repère du lieu. */
+function coinVise(p){
+  const c = CALAGE, tol = toleranceTrace() * 1.5;
+  let mieux = null, d0 = tol;
+  c.halls.forEach(b => b.contours.forEach(k => k.forEach(q => {
+    const v = poseCalage(c.t, q);
+    const d = Math.hypot(v[0] - p[0], v[1] - p[1]);
+    if (d <= d0){ d0 = d; mieux = q; }
+  })));
+  return mieux;
+}
+
+/**
+ * Un clic pendant le calage. Le glisser reste à la vue — il faut pouvoir
+ * zoomer et se déplacer pour viser juste — : seul un appui sans mouvement
+ * compte. Rend « vrai » s'il a servi.
+ */
+function calagePointerUp(e){
+  if (!CALAGE || !drag || drag.bouge) return false;
+  drag = null;
+  svg.classList.remove("dragging");
+  const c = CALAGE, p = versPlan(e.clientX, e.clientY);
+  if (c.etape === 0 || c.etape === 2){
+    const q = coinVise(p);
+    if (!q || (c.etape === 2 && q === c.srcA)){
+      dessineCalage(c.etape === 2 && q === c.srcA
+        ? "Choisissez un autre coin que le premier."
+        : "Visez un coin du contour en pointillés : zoomez au besoin.");
+      return true;
+    }
+    c.etape === 0 ? c.srcA = q : c.srcB = q;
+    c.etape++;
+  } else if (c.etape === 1){
+    // l'accrochage vaut ici comme ailleurs : un coin de hall tombe souvent sur un tracé existant
+    c.dstA = aimante(p);
+    const v = poseCalage({ a: c.t.a, x: 0, y: 0 }, c.srcA);
+    c.t.x = c.dstA[0] - v[0]; c.t.y = c.dstA[1] - v[1];
+    c.etape = 2;
+  } else if (c.etape === 3){
+    const dst = aimante(p);
+    const s = [c.srcB[0] - c.srcA[0], c.srcB[1] - c.srcA[1]];
+    const d = [dst[0] - c.dstA[0], dst[1] - c.dstA[1]];
+    if (Math.hypot(d[0], d[1]) < 1){
+      dessineCalage("Ce point est trop près du premier : cliquez le second coin sur le plan.");
+      return true;
+    }
+    c.t.a = Math.atan2(d[1], d[0]) - Math.atan2(s[1], s[0]);
+    const v = poseCalage({ a: c.t.a, x: 0, y: 0 }, c.srcA);
+    c.t.x = c.dstA[0] - v[0]; c.t.y = c.dstA[1] - v[1];
+    c.ecart = Math.hypot(d[0], d[1]) / Math.hypot(s[0], s[1]) - 1;
+    c.etape = 4;
+  } else return true;
+  /* L'accrochage montre ses points et sa croix pendant le geste : le geste
+     est fini, ils n'ont plus rien à désigner. */
+  apercuGuide(null);
+  montreAimants(null);
+  dessineCalage();
+  return true;
+}
+
+/* ------------------------------------------------------------
+   La pose : un calque par hall
+   ------------------------------------------------------------ */
+function ajouteBatiments(lieu, halls, t){
+  memorise();
+  const neufs = halls.map((b, i) => {
+    const id = nouvelId() + i;
+    return {
+      id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
+      formes: b.contours.map((k, j) => ({
+        t: "poly", id: id + "f" + j, ep: 3,
+        /* La référence OSM voyage avec la forme : les colonnes du calque sont
+           fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
+           déjà posé, et appelle la mention de la source sur le plan public. */
+        osm: b.osm,
+        pts: k.map(p => poseCalage(t, p)),
+      })),
+    };
+  });
+  neufs.forEach(c => {
+    mesCalques().push(c);
+    // un mur ne se déplace pas d'un geste distrait
+    conf(cleVerrou(c.id)).verrou = true;
+  });
+  /* Tout au fond de la pile, derrière les stands : sans rang retenu, un
+     calque neuf passe devant tout le reste. Seuls les environs, le plan de
+     la ville autour du salon, restent derrière. */
+  const cles = neufs.map(c => "dessin:" + c.id);
+  const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
+  let i = 0;
+  while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
+  liste.splice(i, 0, ...cles);
+  CONF[clePile()] = liste;
+  CONF[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
+  enregistreConf();
+  enregistreDessins();
+  dessineDessins();
+  construitPanneau();
+}
+
+$("calageValide").onclick = () => {
+  const c = CALAGE;
+  if (!c || c.etape !== 4) return;
+  finCalage();
+  ajouteBatiments(c.lieu, c.halls, c.t);
+};
+$("calageRefait").onclick = () => {
+  if (!CALAGE) return;
+  const c = CALAGE;
+  lanceCalage(c.lieu, c.halls);
+  // on garde la position atteinte : recommencer ne doit pas renvoyer le contour ailleurs
+  CALAGE.t = c.t;
+  dessineCalage();
+};
+$("calageStop").onclick = finCalage;
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && CALAGE && !$("modale").classList.contains("open")) finCalage();
+});
+
+/* ------------------------------------------------------------
+   La mention de la source
+
+   La licence d'OpenStreetMap demande qu'on la cite partout où ses données se
+   montrent, et donc sur le plan public : la mention paraît dès qu'un calque
+   visible porte un contour qui en vient, et s'efface avec lui.
+   ------------------------------------------------------------ */
+function mentionOsm(){
+  const m = $("mentionOsm");
+  if (!m || !DATA) return;
+  m.hidden = !mesCalques().some(c => c.visible !== false &&
+    (c.formes || []).some(f => f.osm));
+}
 
 /* ============================================================
    Pile des calques
@@ -14458,6 +14856,15 @@ function boutonAjout(hote){
   plus.textContent = "+ Nouveau calque de dessin";
   plus.onclick = creeCalque;
   hote.appendChild(plus);
+  /* Les halls de la bibliothèque sont des calques de dessin comme les autres :
+     leur bouton vit à côté de celui qui en crée un vide. */
+  if (bibliothequeDispo()){
+    const b = document.createElement("button");
+    b.className = "ajout";
+    b.textContent = "+ Bâtiment de la bibliothèque…";
+    b.onclick = ouvreBibliotheque;
+    hote.appendChild(b);
+  }
 }
 
 /* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
