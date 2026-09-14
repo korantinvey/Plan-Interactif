@@ -218,28 +218,28 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1333 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1359 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
 `metresParDegre` 43 · `tourneEnvirons` 60 · `versTerre` 66 · `versLePlan` 73 · `reancre` 88
-`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 196 · `calageCourant` 208
-`fondCourant` 211 · `recul` 216 · `pixelsMercator` 221 · `latitudeDePixel` 230
-`metresParPixel` 238 · `echelleDesTuiles` 256 · `niveauDesTuiles` 268 · `adresseTuile` 275
-`tuilesDeLaVue` 285 · `chargeMapLibre` 345 · `vueGL` 372 · `styleDuFond` 391
-`poseCarteGL` 400 · `relanceCarteGL` 454 · `videCarteGL` 463 · `dessineFondCarte` 475
-`cleMasqueCarte` 556 · `masqueCarte` 557 · `basculeMasqueCarte` 559
-`boutonMasqueCarte` 570 · `pictoMasque` 581 · `formesMasquantes` 593 · `cheminDuHall` 615
-`poseMasqueCarte` 634 · `carreDeTerrain` 668 · `chercheBatiments` 684 · `aireDuContour` 711
-`centreDuContour` 720 · `axeDuContour` 733 · `empriseDesObjets` 750
-`batimentsCandidats` 768 · `caleSurBatiment` 789 · `retientLeHall` 815 · `manqueCalage` 837
-`enregistreCalage` 846 · `calageEnregistre` 859 · `litCoordonnees` 884
-`rafraichitCarte` 898 · `armeCalage` 940 · `pivotCalage` 951 · `glisseCarte` 955
-`calagePointerDown` 962 · `calagePointerMove` 976 · `calagePointerUp` 995 · `ditCalage` 1003
-`majCalage` 1011 · `appliqueCalage` 1026 · `tourneCalage` 1033 · `construitCalage` 1039
-`ouvreCalage` 1172 · `fermeCalage` 1181 · `voletEnvirons` 1209
+`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 199 · `calageCourant` 211
+`fondCourant` 214 · `recul` 219 · `pixelsMercator` 224 · `latitudeDePixel` 233
+`metresParPixel` 241 · `echelleDesTuiles` 259 · `niveauDesTuiles` 271 · `adresseTuile` 278
+`tuilesDeLaVue` 288 · `chargeMapLibre` 348 · `vueGL` 375 · `styleDuFond` 394
+`poseCarteGL` 403 · `diagnostiqueGL` 459 · `relanceCarteGL` 479 · `videCarteGL` 489
+`dessineFondCarte` 501 · `cleMasqueCarte` 582 · `masqueCarte` 583 · `basculeMasqueCarte` 585
+`boutonMasqueCarte` 596 · `pictoMasque` 607 · `formesMasquantes` 619 · `cheminDuHall` 641
+`poseMasqueCarte` 660 · `carreDeTerrain` 694 · `chercheBatiments` 710 · `aireDuContour` 737
+`centreDuContour` 746 · `axeDuContour` 759 · `empriseDesObjets` 776
+`batimentsCandidats` 794 · `caleSurBatiment` 815 · `retientLeHall` 841 · `manqueCalage` 863
+`enregistreCalage` 872 · `calageEnregistre` 885 · `litCoordonnees` 910
+`rafraichitCarte` 924 · `armeCalage` 966 · `pivotCalage` 977 · `glisseCarte` 981
+`calagePointerDown` 988 · `calagePointerMove` 1002 · `calagePointerUp` 1021
+`ditCalage` 1029 · `majCalage` 1037 · `appliqueCalage` 1052 · `tourneCalage` 1059
+`construitCalage` 1065 · `ouvreCalage` 1198 · `fermeCalage` 1207 · `voletEnvirons` 1235
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -250,7 +250,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3835 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3840 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 

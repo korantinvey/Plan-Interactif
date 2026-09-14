@@ -152,6 +152,9 @@ const CARTES = {
   vecteurDetail: { nom: "Vectoriel détaillé",
              style: "https://tiles.openfreemap.org/styles/liberty",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  vecteurAutre: { nom: "Vectoriel sobre (autre service)",
+             style: "https://tiles.versatiles.org/assets/styles/colorful/style.json",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles" },
   /* Les services à clé, en dernier et déclarés comme tels. Une clé posée dans
      une page publique est lisible de tous — c'est leur modèle, et ils s'en
      protègent en la liant à un domaine, non en la cachant. À régler chez eux,
@@ -430,15 +433,7 @@ function poseCarteGL(cal, fond){
     /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
        qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
        Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
-    _carteGL.on("error", ev => {
-      const m = ev && ev.error && ev.error.status;
-      if (!_echecGL) ditCalage(
-        m === 401 || m === 403
-          ? "Ce fond demande une clé : renseignez-la dans les réglages, ou " +
-            "prenez un fond sans clé."
-          : "Le fond vectoriel répond mal" + (m ? " (" + m + ")" : "") +
-            " : essayez une autre adresse de style.", true);
-    });
+    _carteGL.on("error", ev => diagnostiqueGL(ev));
   }).catch(e => {
     _monteGL = false;
     _echecGL = e.message;
@@ -448,11 +443,42 @@ function poseCarteGL(cal, fond){
   });
 }
 
+/* La première panne, et rien de plus : un style qui manque fait crier le moteur
+   à chaque tuile, et vingt messages identiques n'apprennent pas davantage que
+   le premier. */
+let _ditGL = "";
+
+/**
+ * Ce qui a échoué, dit avec l'adresse qui a échoué.
+ *
+ * Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce qu'on lui
+ * rend, fût-ce un carré gris barré de « API KEY REQUIRED ». Et les services de
+ * tuiles changent d'adresse sans prévenir. Sans le détail — le code, et surtout
+ * l'adresse qui n'a pas répondu — on cherche longtemps, et à l'aveugle.
+ */
+function diagnostiqueGL(ev){
+  const e = (ev && ev.error) || {};
+  const code = e.status;
+  const url = e.url || (e.request && e.request.url) || "";
+  const court = url ? url.replace(/^https?:\/\//, "").slice(0, 64) : "";
+  const quoi = code === 401 || code === 403
+    ? "Ce fond demande une clé : collez-la ci-dessus, ou prenez un fond sans clé."
+    : code === 404
+    ? "Adresse introuvable : le service a changé de chemin, collez-en une autre."
+    : "Le fond vectoriel n'a pas répondu" + (code ? " (" + code + ")" : "") + ".";
+  const dit = quoi + (court ? " — " + court : "") +
+    (e.message && !code ? " — " + String(e.message).slice(0, 80) : "");
+  if (dit === _ditGL) return;
+  _ditGL = dit;
+  ditCalage(dit, true);
+}
+
 /** Une adresse changée mérite un nouvel essai : sans cela un premier échec —
  *  une clé absente, un chemin faux — condamnerait le fond pour la session,
  *  alors qu'on vient justement de le corriger. */
 function relanceCarteGL(){
   _echecGL = "";
+  _ditGL = "";
   _monteGL = false;
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
   ditCalage("");

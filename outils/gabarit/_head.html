@@ -303,7 +303,12 @@ button{cursor:pointer;background:none;border:none}
    n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
    de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
    donc que la règle ne le touche pas. */
-.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* Le plan se positionne, et pour une seule raison : la toile de la carte
+   vectorielle est en position absolue, et une boîte positionnée se peint
+   au-dessus d'une boîte qui ne l'est pas. Sans ces deux rangs, la carte
+   recouvrait le plan au lieu de se glisser dessous. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+  position:relative;z-index:1}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -922,7 +927,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    quartier, et à pleine force il dispute l'œil aux stands. La force est un
    réglage du salon, posée en variable par le calage. */
 #fondCarte{opacity:var(--carte-force,.62)}
-.fondGL{position:absolute;inset:0;pointer-events:none;opacity:var(--carte-force,.62)}
+.fondGL{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--carte-force,.62)}
 .fondGL canvas{outline:none}
 /* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
    l'exploitant choisit, et qui suit le thème. */
