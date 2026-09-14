@@ -1,7 +1,5 @@
 <title>Plan du salon</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,400&family=Courier+Prime:wght@400;700&display=swap">
+<!--__POLICES__-->
 
 <script src="config.js"></script>
 
@@ -123,6 +121,8 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+/* Un texte écrit dans les deux langues ne montre que celui de la page. */
+html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
 /* Le compte de l'exploitant, en bout de barre. Il n'existe qu'en
    administration — la page publique n'a pas de session à montrer, et
@@ -255,6 +255,14 @@ button{cursor:pointer;background:none;border:none}
 .count{padding:9px 16px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);
   display:flex;justify-content:space-between}
 .list{overflow-y:auto;flex:1;min-height:0}
+/* Le pied de la liste porte la notice de confidentialité : une mention, pas
+   une commande. Discrète, mais toujours au même endroit — c'est là qu'on
+   cherche d'ordinaire ces choses, et la barre du haut n'a pas de place à
+   perdre sur un téléphone. */
+.side-pied{border-top:1px solid var(--line);padding:5px 16px;display:flex;justify-content:flex-end}
+.lien-discret{background:none;border:0;padding:4px 0;font:inherit;font-size:12px;color:var(--ink-3);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--line-strong)}
+.lien-discret:hover{color:var(--ink)}
 .row{display:grid;grid-template-columns:var(--caseL,48px) 1fr;gap:10px;align-items:center;width:100%;text-align:left;
   padding:9px 16px;border-bottom:1px solid var(--line)}
 .row:hover{background:var(--surface-2)}
@@ -2589,12 +2597,16 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 /* La couleur principale. Un nuancier de tons de charte plutôt qu'une roue :
    on choisit la couleur d'un salon, pas la nuance exacte d'un dégradé. La
    dernière pastille ouvre le nuancier du système pour ceux qui ont un
-   hexadécimal à respecter. */
-.reglage-coul{margin:2px 0 18px}
-.reglage-coul .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
-.reglage-coul .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3)}
-.reglage-coul .raz{margin-left:auto;font-size:12px;color:var(--ink-3);text-decoration:underline}
-.reglage-coul .raz:hover{color:var(--ink)}
+   hexadécimal à respecter.
+   La police des noms, qui le suit, en reprend la tête : ce qui est en place,
+   et de quoi revenir à ce que prévoit le modèle. */
+.reglage-coul,.reglage-police{margin:2px 0 18px}
+.reglage-coul .tete,.reglage-police .tete{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.reglage-coul .val,.reglage-police .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+  color:var(--ink-3)}
+.reglage-coul .raz,.reglage-police .raz{margin-left:auto;font-size:12px;color:var(--ink-3);
+  text-decoration:underline}
+.reglage-coul .raz:hover,.reglage-police .raz:hover{color:var(--ink)}
 .nuancier{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;max-width:352px}
 .nuancier button,.nuancier .perso{position:relative;display:block;width:100%;aspect-ratio:1;
   padding:0;border:1px solid rgba(0,0,0,.18);border-radius:6px}
@@ -2616,6 +2628,31 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
+   l'allure du bouton des critères de recherche une fois actif — c'en est un,
+   de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
+.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:600}
+.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+  color:var(--ink-3)}
+/* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
+   ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
+   sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
+   même rang s'alignent sur la plus haute, la grille s'en charge, et le nom
+   reste en haut de chacune pour que le rang se lise d'une traite. */
+.polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
+.pol{display:flex;flex-direction:column;gap:3px;min-width:0;
+  padding:8px 10px 7px;text-align:left;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px}
+.pol:hover{border-color:var(--line-strong)}
+.pol[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.pol .t{font-size:16px;line-height:1.2;color:var(--ink);overflow-wrap:anywhere}
+.pol .g{font-size:11px;line-height:1.3;color:var(--ink-3)}
 /* Un habillage ne se décrit pas, il se regarde : chaque modèle se choisit sur
    ses propres liste et fiche, réduites, remplies d'un exposant d'exemple. Le
    bas s'efface plutôt que de se couper net — l'aperçu montre le haut des deux,
@@ -2978,6 +3015,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La notice de confidentialité : des paragraphes qui respirent, et le refus
+   posé comme une réponse, à part du texte qui l'explique. */
+.mcorps .notice p + p{margin-top:8px}
+.mcorps label.refusMesure{display:flex;align-items:center;gap:9px;margin:14px 0 2px;padding:10px 12px;
+  font-size:13.5px;font-weight:500;color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);cursor:pointer}
+.mcorps label.refusMesure input{width:16px;height:16px;margin:0;flex:none;accent-color:var(--accent)}
+.mcorps p.noteRefus{margin-top:8px;font-size:12px;color:var(--ink-3)}
 /* Ce qu'un parcours reçu apporte, avant de l'accepter. */
 .mcorps ul.partListe{margin:10px 0 0;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
@@ -2996,6 +3041,43 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mcorps p.etatRaz.err{color:#C2372B}
 .mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
 .mcorps .razMot span{color:var(--ink-2)}
+
+/* L'invitation à installer le plan.
+   Étroite comme celle de la suggestion : elle ne porte qu'une proposition. Sur
+   téléphone, la règle commune en fait une feuille posée en bas de l'écran — là
+   où le système pose les siennes, et où le pouce trouve « Installer ». La
+   largeur ne vaut donc qu'au-delà : posée sur la feuille, elle l'arrêtait à
+   quelques pixels du bord, et la liste dépassait dans l'interstice. */
+@media (min-width:901px){
+  .modale[data-genre="installe"] .mfen{width:min(400px,100%)}
+}
+.instTete{display:flex;align-items:center;gap:13px;margin:4px 0 12px}
+/* L'icône telle que l'écran d'accueil la montrera, avec l'ombre légère d'une
+   icône posée sur un fond : sans elle, le bleu se lirait comme un aplat de la
+   fenêtre. */
+.instIcone{flex:none;width:52px;height:52px;border-radius:12px;
+  box-shadow:0 5px 14px -7px rgba(0,0,0,.5)}
+.instTete b{display:block;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.instTete span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+.mcorps ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
+  line-height:1.5;color:var(--ink-2)}
+.mcorps ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ol.instEtapes b{color:var(--ink);font-weight:600}
+/* Le pictogramme se lit dans la phrase, à la hauteur du texte : c'est le même
+   dessin que dans la barre du navigateur, qu'on y cherchera des yeux. */
+.instPicto{white-space:nowrap}
+.instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
+  vertical-align:-.25em;color:var(--accent)}
+/* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
+   pleins — la case reste ce qu'on règle. */
+.reglages .aideR .apercuInst{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
@@ -3474,6 +3556,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
       <button class="iconbtn" id="btnReglages" title="Réglages du plan" aria-label="Réglages du plan">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
       </button>
+      <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
+           le drapeau de la langue vers laquelle il mène — c'est ce que
+           cherche des yeux quelqu'un qui ne lit pas la page. Il reste en
+           administration, où le thème part dans le menu du compte : la langue
+           n'y a pas de doublon. -->
+      <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
       <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
       </button>
@@ -3541,6 +3629,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
          sommaire du pavillon, et n'a pas de résultat à annoncer. -->
     <div class="count" id="count" hidden><span id="countTxt">—</span></div>
     <div class="list" id="list"></div>
+    <!-- Ce que la mesure fait d'une visite, et le moyen de la refuser. Il ne
+         paraît que sur une page qui mesure (voir `_mesure.html`). -->
+    <footer class="side-pied" id="piedSide" hidden>
+      <button type="button" class="lien-discret" id="btnConfidentialite"
+        aria-haspopup="dialog">Confidentialité</button>
+    </footer>
   </aside>
 
   <main class="stage" id="stage">
@@ -3863,6 +3957,30 @@ let view, emp;
 /* ============================================================
    1. Index global — la recherche porte sur tous les pavillons
    ============================================================ */
+/**
+ * Les libellés anglais que l'exploitant a donnés aux zones. Le moteur de
+ * langue les substitue au nom français partout où celui-ci paraît — sur le
+ * plan, dans la liste, sur la fiche, cité dans un itinéraire — sans que chacun
+ * de ces endroits ait à choisir entre les deux. À relancer après chaque
+ * enregistrement d'une zone : un libellé effacé doit disparaître aussi.
+ */
+/**
+ * Le nom d'une zone dans la langue de la page. Le dictionnaire ci-dessous ne
+ * suffit pas partout : le nom posé sur le plan est coupé en lignes, et une
+ * zone peut s'appeler comme l'exposant qu'elle abrite, dont le nom ne se
+ * traduit jamais. Là où la zone est nommée en tant que telle — sur le plan,
+ * dans la liste, en titre de sa fiche — le nom se choisit donc à la source.
+ */
+const nomDeLaZone = (z) => (LANGUE.code === "en" && z.nom_en) || z.nom;
+
+function nomsAnglaisDesZones(){
+  const t = {};
+  DATA.plans.forEach(p => (p.zones || []).forEach(z => {
+    if (z.nom && z.nom_en) t[z.nom] = z.nom_en;
+  }));
+  LANGUE.donnees("zones", t);
+}
+
 function indexe(d){
   DATA = d;
   DATA.plans.forEach((p, i) => {
@@ -3889,7 +4007,8 @@ function indexe(d){
        endroits du salon au même titre qu'un stand. */
     p.zones.forEach(z => {
       z.kind = "zone"; z.p = i;
-      z.rech = String(z.nom || "").toLowerCase();
+      // son libellé anglais aussi : un visiteur étranger tape celui qu'il lit
+      z.rech = (String(z.nom || "") + " " + String(z.nom_en || "")).toLowerCase();
     });
     /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
        toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
@@ -3908,8 +4027,38 @@ function indexe(d){
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
                 " " + texteCriteres(s)).toLowerCase();
+      /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
+         qui lit « Construction » tape « construction », pas « bâtiment ». */
+      const anglais = d.anglais || {};
+      const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
+        clesCriteres().flatMap(c => valeursCritere(s, c)))
+        .map(v => anglais[v]).filter(Boolean);
+      if (traduites.length) s.rech += " " + traduites.join(" ").toLowerCase();
     });
   });
+  /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
+     phrase : une enseigne « Mars » ou « Accueil » deviendrait sinon « March »
+     ou « Reception » dans la version anglaise. */
+  const noms = [];
+  DATA.plans.forEach(p => {
+    p.stands.forEach(s => {
+      noms.push(s.nom, s.plan);
+      (s.coex || []).forEach(c => noms.push(c.nom, c.plan));
+    });
+    p.conferences.forEach(c => (c.exposants || []).forEach(e => e && noms.push(e.nom)));
+  });
+  LANGUE.protege(noms);
+  nomsAnglaisDesZones();
+  /* L'anglais des valeurs des listes — secteurs, nomenclature, parcours de
+     visite — tel que la synchronisation l'a relevé dans les sources. */
+  LANGUE.donnees("sources", d.anglais || {});
+  /* Et l'intitulé anglais que l'exploitant a donné aux champs propres au
+     salon : il nomme la ligne de la fiche et le critère de recherche. */
+  const intitules = {};
+  (((DATA.fiche || {}).perso) || []).forEach(c => {
+    if (c && c.libelle && c.libelle_en) intitules[c.libelle] = c.libelle_en;
+  });
+  LANGUE.donnees("champs", intitules);
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
@@ -4410,7 +4559,7 @@ const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
 
 /** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
 function libelleZone(z, az, w, h, sel, pxParM, reg){
-  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  const a = habille(nomDeLaZone(z), w * .88, h * .7, 3.4, P_NOM);
   if (!a) return "";
   const f = a.f * facteurLibelle(reg);
   if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
@@ -5352,7 +5501,7 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
       '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan ||
+      '<span><span class="nm">' + esc((o.kind === "zone" ? nomDeLaZone(o) : o.nom) || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
@@ -6541,7 +6690,7 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const genre = zone ? typeZone(o) : null;
   $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
   $("dKind").hidden = zone && !genre;
-  const titre = soc.nom || soc.plan ||
+  const titre = (zone ? nomDeLaZone(o) : soc.nom) || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
@@ -6674,8 +6823,16 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
      n'en a pas. */
   if (zone){
-    met("description", LIBELLE_CORPS.description, o.description
-      ? '<div class="riche">' + assainitRiche(o.description) + '</div>' : "");
+    /* Deux descriptions quand l'exploitant a écrit l'anglaise : les deux sont
+       posées, et la langue de la page dit laquelle se voit — la bascule n'a
+       ainsi rien à redessiner. Ce que l'exploitant a écrit dans une langue ne
+       passe pas par le dictionnaire. Sans version anglaise, la française sert
+       aux deux. */
+    const riche = (h, lg) => '<div class="riche"' + (lg ? ' data-lg="' + lg + '" translate="no"' : "") +
+      '>' + assainitRiche(h) + '</div>';
+    met("description", LIBELLE_CORPS.description, !o.description && !o.description_en ? ""
+      : o.description && o.description_en ? riche(o.description, "fr") + riche(o.description_en, "en")
+      : riche(o.description || o.description_en));
     met("lien", LIBELLE_CORPS.lien, lien(o.lien));
   }
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
@@ -7251,6 +7408,22 @@ let montreTiroir = () => {};
   addEventListener("load", mesure);
 })();
 
+/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
+   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
+   dans la langue d'avant : les libellés taillés à leur largeur, les repères
+   dessinés autour de leur nom, ceux que la recherche balaie. */
+addEventListener("langue", () => {
+  if (!DATA || !view) return;
+  oublieReperes();
+  _lg.clear();
+  dessineDessins();
+  libelles();
+  liste();
+  // la fiche ouverte sur une zone porte son nom dans la langue d'avant
+  const o = state.sel && parId.get(state.sel);
+  if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
+});
+
 /* thème */
 const CLE_THEME = "plan-theme";
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
@@ -7806,8 +7979,212 @@ const POLICES_LIBELLE = {
   nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
 };
 
+/* Les polices qu'on peut préférer à celle du modèle, pour les noms du plan.
+
+   Le modèle décide d'abord, et en choisir un repose la sienne. Mais un salon
+   a souvent sa propre police — celle de sa charte, de ses kakémonos, de la
+   signalétique qu'on croise dans les allées — et un plan qui écrit les
+   enseignes dans une autre se lit comme une pièce rapportée. Le choix ne vaut
+   que pour les noms, des stands comme des zones : le numéro garde la chasse du
+   modèle, où les chiffres s'alignent d'un stand à l'autre.
+
+   Une liste plutôt qu'un nom saisi : chaque police est rapatriée de Google une
+   fois pour toutes par `npm run polices`, qui relit cette liste, et Google
+   répond en erreur à une famille qu'il ne sert pas sous la graisse demandée —
+   Lato n'a pas de 600. Chaque ligne porte donc une graisse qu'on sait servie,
+   retenue pour se lire petit sur une cloison. Une ligne ajoutée ici fait
+   échouer la construction tant que le script n'a pas été relancé.
+
+   Les cinq polices des modèles sont déjà déclarées par l'en-tête de la page, et
+   se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
+   par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
+   chargent qu'au besoin, depuis `polices/` : chez le visiteur, la seule de son
+   salon ; chez l'exploitant, celles du genre qu'il parcourt.
+
+   Rangées par genre, et par nom dans chacun : soixante polices ne se
+   parcourent pas d'un seul tenant, et c'est d'abord une allure qu'on cherche —
+   une étroite pour des enseignes longues, une manuscrite pour un salon des
+   vins —, puis un nom dans cette allure. Les genres vont du plus sûr sur une
+   cloison au plus singulier. Le repli ne sert qu'aux vignettes, le temps que
+   leur police arrive : le plan, lui, n'écrit jamais dans une police absente.
+
+   La table garde une ligne par police, son genre écrit dedans, plutôt qu'une
+   liste sous chaque genre : `npm run polices` et la construction la relisent
+   sous cette forme exacte (`policesAuChoix`, dans outils/polices.js). */
+const GENRES_POLICE = [
+  { cle: "sans", nom: "Sans serif", repli: "sans-serif" },
+  { cle: "etroite", nom: "Étroites", repli: "sans-serif" },
+  { cle: "serif", nom: "Serif", repli: "Georgia, serif" },
+  { cle: "arrondie", nom: "Arrondies", repli: "sans-serif" },
+  { cle: "lisible", nom: "Haute lisibilité", repli: "sans-serif" },
+  { cle: "affiche", nom: "Affiche", repli: "sans-serif" },
+  { cle: "manuscrite", nom: "Manuscrites", repli: "cursive" },
+  { cle: "chasse", nom: "Chasse fixe", repli: "monospace" },
+];
+const POLICES_NOMS = [
+  ["Archivo", "600", "sans", P_GROTESQUE],
+  ["Barlow", "600", "sans"],
+  ["DM Sans", "600", "sans"],
+  ["Fira Sans", "600", "sans"],
+  ["IBM Plex Sans", "600", "sans"],
+  ["Instrument Sans", "600", "sans", P_SANS],
+  ["Inter", "600", "sans"],
+  ["Jost", "600", "sans"],
+  ["Lato", "700", "sans"],
+  ["Manrope", "600", "sans"],
+  ["Montserrat", "600", "sans"],
+  ["Noto Sans", "600", "sans"],
+  ["Open Sans", "600", "sans"],
+  ["Plus Jakarta Sans", "600", "sans"],
+  ["Poppins", "600", "sans"],
+  ["Raleway", "600", "sans"],
+  ["Roboto", "600", "sans"],
+  ["Source Sans 3", "600", "sans"],
+  ["Space Grotesk", "600", "sans"],
+  ["Work Sans", "600", "sans"],
+
+  ["Anton", "400", "etroite"],
+  ["Archivo Narrow", "600", "etroite"],
+  ["Barlow Condensed", "600", "etroite"],
+  ["Bebas Neue", "400", "etroite"],
+  ["Fira Sans Condensed", "600", "etroite"],
+  ["Oswald", "500", "etroite"],
+  ["PT Sans Narrow", "700", "etroite"],
+  ["Roboto Condensed", "600", "etroite"],
+
+  ["Bitter", "600", "serif"],
+  ["Cormorant Garamond", "600", "serif"],
+  ["EB Garamond", "600", "serif"],
+  ["Fraunces", "600", "serif", P_SERIF],
+  ["Libre Baskerville", "700", "serif"],
+  ["Lora", "600", "serif"],
+  ["Merriweather", "700", "serif"],
+  ["Playfair Display", "600", "serif"],
+  ["PT Serif", "700", "serif"],
+  ["Roboto Slab", "600", "serif"],
+  ["Source Serif 4", "600", "serif"],
+
+  ["Comfortaa", "700", "arrondie"],
+  ["Fredoka", "600", "arrondie"],
+  ["Nunito", "700", "arrondie"],
+  ["Quicksand", "700", "arrondie"],
+  ["Varela Round", "400", "arrondie"],
+
+  ["Andika", "700", "lisible"],
+  ["Atkinson Hyperlegible Next", "600", "lisible"],
+  ["Lexend", "500", "lisible"],
+
+  ["Abril Fatface", "400", "affiche"],
+  ["Alfa Slab One", "400", "affiche"],
+  ["Archivo Black", "400", "affiche"],
+  ["Bungee", "400", "affiche"],
+  ["Righteous", "400", "affiche"],
+
+  ["Caveat", "600", "manuscrite"],
+  ["Dancing Script", "600", "manuscrite"],
+  ["Kalam", "700", "manuscrite"],
+  ["Patrick Hand", "400", "manuscrite"],
+
+  ["Courier Prime", "700", "chasse", P_MACHINE],
+  ["IBM Plex Mono", "500", "chasse", P_CHASSE],
+  ["Inconsolata", "600", "chasse"],
+  ["JetBrains Mono", "600", "chasse"],
+  ["Roboto Mono", "600", "chasse"],
+  ["Space Mono", "700", "chasse"],
+].map(([nom, graisse, genre, pile]) => ({
+  nom, graisse, genre,
+  // sans pile écrite, la police ne se demande qu'au besoin, à `polices/`
+  distante: !pile,
+  pile: pile || '"' + nom + '", ' + GENRES_POLICE.find(g => g.cle === genre).repli,
+}));
+
+/** La police que l'exploitant a préférée pour les noms, s'il en a retenu une. */
+const policeChoisie = () => {
+  const n = (CONF["_fiche"] || {}).police;
+  return POLICES_NOMS.find(p => p.nom === n) || null;
+};
+/** La police qu'un modèle pose sur les noms, telle que la liste la connaît. */
+const policeDuModele = (cle) => {
+  const pile = (POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre).nom[1];
+  return POLICES_NOMS.find(p => p.pile === pile) || null;
+};
+
+/* Une police distante n'est demandée qu'une fois par visite : l'onglet qui les
+   montre se rouvre, et l'exploitant qui hésite revient trois fois sur la même.
+   La promesse dit si la feuille est arrivée, sans jamais échouer : une police
+   qui ne vient pas laisse celle du modèle, ce qui n'a rien d'une erreur. */
+const FEUILLES_POLICE = new Map(), FEUILLES_ARRIVEES = new Set();
+function feuillePolice(p){
+  if (!p.distante) return Promise.resolve(true);
+  if (!FEUILLES_POLICE.has(p.nom)) FEUILLES_POLICE.set(p.nom, new Promise(ok => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    /* La feuille de la famille, rangée à côté de la page par `npm run polices`.
+       La demander à Google transmettrait à celui-ci l'adresse de chaque
+       visiteur du salon — et la construction le refuse. */
+    l.href = "polices/" + p.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".css";
+    l.onload = () => { FEUILLES_ARRIVEES.add(p.nom); ok(true); };
+    l.onerror = () => ok(false);
+    document.head.appendChild(l);
+  }));
+  return FEUILLES_POLICE.get(p.nom);
+}
+
+/* La feuille ne suffit pas : elle déclare la police, le fichier ne part qu'au
+   premier texte qui s'en sert. Le plan, lui, mesure avant d'écrire — dans une
+   police absente, le canevas prend celle de repli, et les noms se tailleraient
+   pour une autre que celle où ils s'affichent. On attend donc le fichier, et
+   les polices prêtes se retiennent pour que la question ne se repose plus. */
+const POLICES_PRETES = new Set(), CHARGEMENTS_POLICE = new Map();
+function chargePolice(p){
+  if (!CHARGEMENTS_POLICE.has(p.nom)) CHARGEMENTS_POLICE.set(p.nom, feuillePolice(p)
+    .then(arrivee => !arrivee ? false : !document.fonts ? true :
+      document.fonts.load(p.graisse + " 16px " + p.pile).then(f => f.length > 0))
+    .catch(() => false)
+    .then(prete => { if (prete) POLICES_PRETES.add(p.nom); return prete; }));
+  return CHARGEMENTS_POLICE.get(p.nom);
+}
+
 /**
- * Pose la police du modèle sur les libellés du plan.
+ * La police est-elle déjà là ? Souvent oui, sans rien avoir attendu : la
+ * vignette de l'onglet l'a fait venir en s'affichant. Le demander tout de suite
+ * épargne au plan, au clic, un aller-retour par la police du modèle le temps
+ * d'une promesse — un saut visible, et un tracé de trop.
+ *
+ * `check` ne se consulte qu'une fois la famille déclarée : pour une famille
+ * inconnue du document, Chrome répond qu'elle est prête, puisqu'il n'a rien à
+ * charger. D'où la feuille arrivée exigée d'une police distante — celles des
+ * modèles sont déclarées par l'en-tête.
+ */
+function policePrete(p){
+  if (POLICES_PRETES.has(p.nom)) return true;
+  if (p.distante && !FEUILLES_ARRIVEES.has(p.nom)) return false;
+  let prete = !document.fonts;
+  try { prete = prete || document.fonts.check(p.graisse + " 16px " + p.pile); } catch (e) {}
+  if (prete) POLICES_PRETES.add(p.nom);
+  return prete;
+}
+
+/**
+ * La police des noms : celle que l'exploitant a préférée dès qu'elle est prête,
+ * celle du modèle d'ici là — et pour de bon si elle ne vient jamais.
+ *
+ * Tant qu'elle manque, les noms restent dans la police du modèle, que la page
+ * a déjà. Poser l'autre sans l'avoir aurait écrit le plan dans la police de
+ * repli, puis l'aurait réécrit à l'arrivée du fichier : deux sauts au lieu
+ * d'un, dont le premier vers une police que personne n'a choisie.
+ */
+function policeDesNoms(duModele){
+  const p = policeChoisie();
+  if (!p || p.pile === duModele[1]) return duModele;
+  if (policePrete(p)) return [p.graisse, p.pile];
+  chargePolice(p).then(prete => { if (prete) posePoliceLibelles(modeleRetenu()); });
+  return duModele;
+}
+
+/**
+ * Pose la police du modèle sur les libellés du plan, et sur les noms celle que
+ * l'exploitant lui a préférée.
  *
  * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
  * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
@@ -7817,20 +8194,30 @@ const POLICES_LIBELLE = {
  *
  * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
  * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
- * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
- * que la case du numéro se taille elle aussi sur P_CODE.
+ * premier dessin plutôt que d'avoir à le reprendre. Une police préférée qui
+ * n'est pas encore là fait exception : elle rappelle la fonction à son arrivée,
+ * et le plan se retrace alors une fois. La liste n'est reprise que pour le
+ * numéro, parce que sa case se taille sur P_CODE et jamais sur le nom.
+ *
+ * Les polices se comparent par leur contenu : celle qu'on a préférée est une
+ * paire refaite à chaque appel, et comparée par identité elle aurait retracé
+ * le plan à chaque changement de pavillon.
  */
 function posePoliceLibelles(cle){
   const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
-  const change = P_NOM !== p.nom || P_CODE !== p.code;
-  P_NOM = p.nom; P_CODE = p.code;
-  racine.style.setProperty("--police-lab-nom", p.nom[1]);
-  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  const nom = policeDesNoms(p.nom);
+  const autre = (a, b) => a[0] !== b[0] || a[1] !== b[1];
+  const changeNom = autre(P_NOM, nom), changeCode = autre(P_CODE, p.code);
+  P_NOM = nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", nom[0]);
   racine.style.setProperty("--police-lab-code", p.code[1]);
   racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  if (!MONTE || !(changeNom || changeCode)) return;
   // les repères et les stands tracés à la main portent leur libellé dans leur
   // propre forme : ils se retracent, ils ne se restylent pas
-  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+  dessineDessins(); libelles();
+  if (changeCode) liste();
 }
 
 /**
@@ -8538,18 +8925,31 @@ function voletPlan(hote){
     const aide = document.createElement("p");
     aide.className = "aideR";
     bloc.appendChild(aide);
+    /* Chaque chapitre s'écrit dans son élément, et non fondu dans la phrase :
+       la version anglaise traduit un texte à la fois, et une liste composée à
+       la volée n'aurait été la clé d'aucune traduction. */
+    const morceau = (txt) => {
+      const s = document.createElement("span");
+      s.textContent = txt;
+      aide.appendChild(s);
+    };
     majTuto = () => {
-      const noms = chapitresTuto().map(ch => ch.nom);
-      l.classList.toggle("eteint", !noms.length);
-      c.disabled = !noms.length;
-      if (!noms.length){
-        aide.textContent = "Rien à présenter sur ce salon : ni programme rattaché à " +
-          "une zone, ni parcours de visite, ni itinéraire.";
+      const titres = chapitresTuto().map(ch => ch.titre);
+      l.classList.toggle("eteint", !titres.length);
+      c.disabled = !titres.length;
+      aide.textContent = "";
+      if (!titres.length){
+        morceau("Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.");
         return;
       }
-      aide.textContent = "Le visiteur y fait lui-même chaque geste : " +
-        (noms.length > 1 ? noms.slice(0, -1).join(", ") + " et " : "") +
-        noms[noms.length - 1] + ". Proposée une fois par appareil. ";
+      morceau("Le visiteur y fait lui-même chaque geste. Sur ce salon :");
+      titres.forEach((t, i) => {
+        aide.appendChild(document.createTextNode(i ? " · " : " "));
+        morceau(t);
+      });
+      aide.appendChild(document.createTextNode(". "));
+      morceau("Proposée une fois par appareil.");
+      aide.appendChild(document.createTextNode(" "));
       const essai = document.createElement("button");
       essai.type = "button";
       essai.className = "essaiTuto";
@@ -8623,6 +9023,10 @@ function voletPlan(hote){
       bloc.appendChild(l);
     });
   }
+
+  /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
+     visiteur : elle se règle avec ce qu'il voit (`_installation.html`). */
+  caseInstallation(bloc);
 
   hote.appendChild(bloc);
 
@@ -8905,16 +9309,18 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
- *  visite et l'itinéraire. */
+/** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
+ *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
+ *  détail, le parcours de visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
     "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
     "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
-    "l'itinéraire.";
+    "l'itinéraire. Il pose aussi sa police sur les noms des stands et des " +
+    "zones : une autre peut lui être préférée, jusqu'au prochain changement " +
+    "de modèle. Les numéros de stand gardent la sienne.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -8966,6 +9372,81 @@ function voletApparence(hote){
   hote.appendChild(coul);
   majPastilles();
 
+  /* La police des noms, avant les modèles et non après : leur planche est
+     longue, et un réglage rangé dessous ne se trouvait qu'en la faisant
+     défiler en entier. L'ordre des gestes n'en change pas — le modèle choisi
+     repose sa police, et la tête de ce bloc dit laquelle est en place. */
+  const blocPolice = document.createElement("div");
+  blocPolice.className = "reglage-police";
+  blocPolice.innerHTML = '<div class="tete"><span class="eyebrow">Police des noms</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Police du modèle</button></div>' +
+    '<div class="genresPol"></div><div class="polices"></div>';
+  const valPolice = blocPolice.querySelector(".val");
+  const genres = GENRES_POLICE.map(g => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = g.nom;
+    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.onclick = () => montreGenre(g.cle);
+    blocPolice.querySelector(".genresPol").appendChild(b);
+    return { b, g };
+  });
+  const tuiles = POLICES_NOMS.map(q => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pol";
+    b.innerHTML = '<span class="t"></span><span class="g">du modèle</span>';
+    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
+       c'est une enseigne qu'on choisit, et un intitulé dans la police de
+       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
+       d'un serif. */
+    const t = b.querySelector(".t");
+    t.textContent = q.nom;
+    t.style.fontFamily = q.pile;
+    t.style.fontWeight = q.graisse;
+    b.onclick = () => posePolice(q);
+    blocPolice.querySelector(".polices").appendChild(b);
+    return { b, q };
+  });
+  /* Un genre à la fois : soixante vignettes d'un seul bloc repoussaient les
+     modèles hors de vue. Celles des autres genres restent bâties mais cachées
+     — cachées, elles ne font rien télécharger —, et la feuille d'une police
+     n'est demandée qu'au premier passage sur son genre. */
+  const montreGenre = (cle) => {
+    genres.forEach(({ b, g }) => b.setAttribute("aria-pressed", String(g.cle === cle)));
+    tuiles.forEach(({ b, q }) => {
+      b.hidden = q.genre !== cle;
+      if (!b.hidden) feuillePolice(q);
+    });
+  };
+  const majPolices = () => {
+    const modele = policeDuModele(modeleRetenu());
+    const choisie = policeChoisie();
+    const courante = choisie && choisie !== modele ? choisie : modele;
+    tuiles.forEach(({ b, q }) => {
+      b.setAttribute("aria-pressed", String(q === courante));
+      b.querySelector(".g").hidden = q !== modele;
+    });
+    valPolice.textContent = !courante ? "" :
+      courante === modele ? courante.nom + " · modèle " +
+        (MODELES.find(m => m.cle === modeleRetenu()) || {}).nom : courante.nom;
+    // le genre montré suit la police en place : le modèle qui repose une serif
+    // ouvre les serifs, sans quoi la vignette cochée resterait hors de vue
+    montreGenre(courante ? courante.genre : GENRES_POLICE[0].cle);
+  };
+  const posePolice = (q) => {
+    const f = conf("_fiche");
+    // retenir celle du modèle, c'est revenir au modèle : le suivant reposera la sienne
+    if (!q || q === policeDuModele(modeleRetenu())) delete f.police;
+    else f.police = q.nom;
+    enregistreConf(); posePoliceLibelles(modeleRetenu()); majPolices();
+  };
+  blocPolice.querySelector(".raz").onclick = () => posePolice(null);
+  hote.appendChild(blocPolice);
+  majPolices();
+
   const titre = document.createElement("span");
   titre.className = "eyebrow";
   titre.textContent = "Modèle d'habillage";
@@ -8992,9 +9473,13 @@ function voletApparence(hote){
     b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
+      /* Choisir un modèle, c'est choisir sa police : celle qu'on avait
+         préférée à la précédente ne s'accordait qu'à elle. */
+      delete conf("_fiche").police;
       enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
+      majPolices();
     };
     grille.appendChild(b);
   });
@@ -9706,12 +10191,24 @@ function champZone(hote, titre, dedans, aide){
  * la publierait à moitié faite.
  */
 function champsZone(hote, o){
-  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+  /* Le libellé et la description se saisissent dans les deux langues, et les
+     deux champs paraissent quelle que soit la langue de l'écran : l'exploitant
+     qui travaille en anglais écrit aussi le français, et inversement. */
+  const libelle = champZone(hote, "Libellé en français", document.createElement("input"),
     "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
     "revenir au nom d'origine, s'il y en a un.");
   libelle.type = "text";
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+  libelle.lang = "fr";
+
+  const libelleEn = champZone(hote, "Libellé en anglais", document.createElement("input"),
+    "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le " +
+    "libellé en français qui s'y affiche.");
+  libelleEn.type = "text";
+  libelleEn.value = o.nom_en || "";
+  libelleEn.placeholder = "Agora, Childcare, Pitch Retail…";
+  libelleEn.lang = "en";
 
   /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
      visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
@@ -9744,9 +10241,16 @@ function champsZone(hote, o){
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
-  champZone(hote, "Description", riche.cadre,
+  riche.cadre.lang = "fr";
+  champZone(hote, "Description en français", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
     "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const richeEn = editeurRiche(o.description_en || "");
+  richeEn.cadre.lang = "en";
+  champZone(hote, "Description en anglais", richeEn.cadre,
+    "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche " +
+    "anglaise montre la description en français.");
 
   const lienZ = champZone(hote, "Lien", document.createElement("input"),
     "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
@@ -9755,8 +10259,9 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value,
+  return () => ({ libelle: libelle.value, libelleEn: libelleEn.value,
+                  type: type.value, logo: logo(),
+                  description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
@@ -10159,6 +10664,7 @@ let ficheZoneEnCours = null;
 /* Les salles cochées se comparent telles quelles : ce sont deux listes des
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.libelleEn === b.libelleEn && a.descriptionEn === b.descriptionEn &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
   a.logo === b.logo && a.traversable === b.traversable &&
   String(a.salles) === String(b.salles));
@@ -10226,6 +10732,11 @@ function ficheZone(o){
 async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  /* La version anglaise se range dans la fiche, avec le reste de ce que
+     l'exploitant écrit : elle ne s'applique pas au plan d'origine, elle
+     s'affiche à la place du français pour qui lit l'anglais. */
+  const nomEn = String(v.libelleEn || "").trim();
+  const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
   const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
@@ -10273,6 +10784,8 @@ async function enregistreZone(o, v, depart){
         if (genre) fiche.type = genre;
         if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
+        if (nomEn) fiche.nom_en = nomEn;
+        if (descriptionEn) fiche.description_en = descriptionEn;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
@@ -10304,11 +10817,14 @@ async function enregistreZone(o, v, depart){
     o.nom = nom || o.origine || null;
   }
   o.description = description;
+  o.nom_en = nomEn || undefined;
+  o.description_en = descriptionEn || undefined;
+  nomsAnglaisDesZones();
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
-  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
-  o.rech = String(o.nom || "").toLowerCase();
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
+  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();
@@ -11186,7 +11702,14 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
-const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+/* Le nom d'un type vit sous deux formes. En français, il sert de libellé
+   enregistré — un repère posé sans libellé prend celui de son type — et doit le
+   rester quelle que soit la langue de l'écran : posé depuis la version
+   anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
+   Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
  * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
@@ -11941,7 +12464,7 @@ function dessinPointerDown(e){
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
        cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
        rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
     ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
@@ -15546,8 +16069,10 @@ function boutonsPartage(lien){
     libelle: "Copier le lien", ferme: false, genre: partageable ? "" : "accent",
     action: () => {
       envoi();
+      /* Le libellé se relit à l'écran, où la version anglaise l'a peut-être
+         réécrit : c'est donc à sa traduction qu'on le compare. */
       bCopie = bCopie ||
-        [...$("mPied").children].find(x => x.textContent === "Copier le lien");
+        [...$("mPied").children].find(x => x.textContent === traduit("Copier le lien"));
       navigator.clipboard?.writeText(lien).then(
         () => { if (bCopie){ bCopie.textContent = "Copié";
                              setTimeout(() => bCopie.textContent = "Copier le lien", 1700); } },
@@ -15563,10 +16088,12 @@ function boutonsPartage(lien){
        pas d'un envoi réussi : la feuille ne dit pas où le lien est parti. */
     action: () => {
       envoi();
+      /* La feuille de partage est au système, hors de la page : la version
+         anglaise ne la voit pas passer, le texte part donc déjà traduit. */
       return navigator.share({
-        title: "Mon parcours de visite",
+        title: traduit("Mon parcours de visite"),
         text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
-              "voici les stands et les conférences que j'ai retenus.",
+              traduit("voici les stands et les conférences que j'ai retenus."),
         url: lien,
       }).catch(() => {});
     },
@@ -17666,8 +18193,10 @@ const typeLiaison = (f) =>
 
 /** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
  *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
- *  « WC », et non rien. */
-const nomRepere = (f) => String(f.txt || "").trim() ||
+ *  « WC », et non rien. Un libellé qui n'est que le nom d'un type — « Entrée »,
+ *  posé d'office — se lit dans la langue de l'écran, comme le type lui-même :
+ *  c'est ce nom-là qui remplit le champ de l'itinéraire. */
+const nomRepere = (f) => traduit(String(f.txt || "").trim()) ||
   nomTypeRepere(pictoForme(f));
 
 /**
@@ -19713,11 +20242,28 @@ $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
    refuser le stockage et gonfle les visiteurs uniques. Séparées, les quatre
    portes se lisent ; mélangées, aucune.
 
-   Trois choses qu'il ne fait pas, et c'est ce qui permet de le laisser tourner
-   sans bandeau de consentement : il ne pose pas de cookie, il n'envoie ni
-   adresse ni agent utilisateur — le serveur ne les enregistre pas davantage —
-   et le jeton de visiteur est tiré au hasard par le navigateur, propre à cet
-   événement. Il ne suit personne d'un salon à l'autre, encore moins ailleurs.
+   Pourquoi il tourne sans bandeau de consentement — et ce n'est pas faute de
+   cookie. La loi (article 82 de la loi Informatique et Libertés) vise tout ce
+   qu'une page écrit ou lit sur l'appareil du visiteur : le jeton rangé dans
+   `localStorage` en est, au même titre qu'un cookie. Ce qui dispense de
+   demander, c'est l'exemption que la CNIL accorde à la mesure d'audience, et
+   elle ne tient qu'à des conditions que chacune des lignes ci-dessous remplit :
+
+     — des statistiques pour le seul organisateur, et anonymes : le module
+       n'envoie ni adresse ni agent utilisateur, le serveur n'en enregistre pas
+       davantage, et les exposants ne reçoivent que des totaux ;
+     — un jeton tiré au hasard, propre à l'événement : il ne suit personne
+       d'un salon à l'autre, encore moins ailleurs ;
+     — treize mois de vie sur l'appareil au plus, sans que les visites les
+       prolongent (`MESURE_VIE_MOIS`) ;
+     — les données qui portent le jeton effacées au bout de quatre cents jours,
+       en base (`purge_presences`) ;
+     — une notice qui dit tout cela, et le moyen de refuser (en fin de module).
+
+   Croiser ces chiffres avec un autre fichier, remettre à un tiers autre chose
+   que des totaux, reconnaître un visiteur d'un salon à l'autre : chacun de ces
+   gestes ferait tomber l'exemption, et il faudrait alors un consentement.
+
    La porte n'y change rien : c'est la façon dont la page est affichée, pas une
    propriété de qui la regarde, et elle ne prend que quatre valeurs.
 
@@ -19728,6 +20274,18 @@ $("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };
 const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
 const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
   document.documentElement.dataset.role !== "admin");
+
+/* Le refus du visiteur, gardé sur son appareil. Une seule clé pour tous les
+   salons de ce domaine : qui a dit non sur un plan n'a pas à le redire sur le
+   suivant. Retenir ce choix ne demande pas davantage de consentement que la
+   mesure elle-même — c'est un traceur « conservant le choix exprimé ».
+
+   Quand le stockage est refusé, le choix ne survit pas à la page : il n'y a
+   rien pour le garder. Le jeton, lui non plus, n'y survit pas. */
+const CLE_REFUS = "plan-mesure-refusee";
+let MESURE_REFUSEE = false;
+try { MESURE_REFUSEE = localStorage.getItem(CLE_REFUS) === "1"; } catch (e) {}
+const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
 
 /** Un jeton de quelques caractères, tiré du générateur du navigateur. */
 function jetonMesure(){
@@ -19745,6 +20303,39 @@ function jetonMesure(){
    silence. C'est le cas ordinaire d'un cadre posé sur un site tiers. */
 let MESURE_RETENU = true;
 
+/* Treize mois : la durée de vie que la CNIL admet pour un traceur de mesure
+   d'audience dispensé de consentement. Elle court depuis le tirage, et revenir
+   sur le plan ne la prolonge pas — c'est la condition, et c'est pourquoi
+   l'échéance est écrite à côté du jeton plutôt que recalculée à chaque visite.
+   Passé ce délai, un autre jeton est tiré : le visiteur compte alors pour un
+   nouveau, ce qui est le prix de la règle, et n'arrive qu'entre deux éditions. */
+const MESURE_VIE_MOIS = 13;
+
+/* L'âge auquel la base efface ce qui porte un jeton : le défaut de
+   `purge_presences`. Il ne sert ici qu'à la notice, qui l'annonce — le changer
+   en base sans le changer ici ferait mentir la notice, et inversement. */
+const MESURE_CONSERVATION_JOURS = 400;
+
+/* Les jetons tirés avant que leur échéance soit écrite n'en portent pas. Aucun
+   n'est antérieur au 6 septembre 2026, jour où le module est né : les faire
+   expirer treize mois après ce jour-là tient la règle pour chacun d'eux, sans
+   avoir à les remplacer tous d'un coup — ce qui aurait compté chaque habitué
+   pour un nouveau visiteur, en plein salon. */
+const ECHEANCE_DES_ANCIENS = "2027-10-06";
+
+/* La date du jour, et celle de dans treize mois, au format `AAAA-MM-JJ` et
+   toutes deux en temps universel. Mêler le calendrier local et la date UTC
+   décalait l'échéance d'un jour autour d'un changement d'heure — et ce jour-là
+   pouvait tomber du mauvais côté des treize mois. */
+const jourIso = d => d.toISOString().slice(0, 10);
+function echeanceMesure(){
+  const d = new Date(), jour = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + MESURE_VIE_MOIS);
+  // du 31 au mois qui n'en a que 30, le calendrier déborderait sur le suivant
+  if (d.getUTCDate() !== jour) d.setUTCDate(0);
+  return jourIso(d);
+}
+
 /**
  * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
  *
@@ -19757,15 +20348,26 @@ let MESURE_RETENU = true;
  * `localStorage` qui lève, et l'évaluer à l'appel plaçait cette lecture hors
  * du `try`. L'exception remontait alors au corps de la page, dans le script
  * qui porte tout le plan : plus rien ne s'affichait, pour une mesure.
+ *
+ * Le jeton est rangé avec son échéance, `{"jeton": …, "echeance": "AAAA-MM-JJ"}`.
+ * Une valeur nue est un jeton d'avant l'échéance écrite : elle reçoit la sienne.
  */
 function jetonRetenu(cle, casier){
   try {
     const ou = window[casier];
-    const v = ou.getItem(cle);
-    if (v) return v;
-    const n = jetonMesure();
-    ou.setItem(cle, n);
-    return n;
+    const v = ou.getItem(cle), aujourdhui = jourIso(new Date());
+    let garde = null;
+    if (v) {
+      try { garde = JSON.parse(v); } catch (e) {}
+      if (!garde || typeof garde.jeton !== "string") {
+        garde = { jeton: v, echeance: ECHEANCE_DES_ANCIENS };
+        if (garde.echeance > aujourdhui) ou.setItem(cle, JSON.stringify(garde));
+      }
+    }
+    if (garde && garde.echeance > aujourdhui) return garde.jeton;
+    const n = { jeton: jetonMesure(), echeance: echeanceMesure() };
+    ou.setItem(cle, JSON.stringify(n));
+    return n.jeton;
   } catch (e) {
     MESURE_RETENU = false;
     return jetonMesure();
@@ -19824,9 +20426,12 @@ const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
    ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
    identifiant hors d'ici. Ce qui distinguait deux venues du même navigateur
    ne se transmet plus : le serveur ne le lisait pas, et une visite se compte
-   déjà par le geste qui porte ce nom. */
-const MESURE_VISITEUR = MESURE_ACTIVE
-  ? jetonRetenu("plan-visiteur:" + SLUG, "localStorage") : "";
+   déjà par le geste qui porte ce nom.
+
+   Un visiteur qui a refusé la mesure n'en reçoit pas : ce jeton-là ne sert
+   qu'à compter, et il n'y a plus rien à compter. */
+const CLE_VISITEUR = "plan-visiteur:" + SLUG;
+let MESURE_VISITEUR = mesureOuverte() ? jetonRetenu(CLE_VISITEUR, "localStorage") : "";
 
 /* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
    quand le paquet est plein, quand la main s'arrête, ou quand la page part.
@@ -19843,7 +20448,7 @@ let _gestes = [], _envoiDiffere = null;
 function envoieMesures(dernier){
   clearTimeout(_envoiDiffere);
   _envoiDiffere = null;
-  if (!_gestes.length) return;
+  if (!_gestes.length || !mesureOuverte()) return;
   /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
      propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
      répéter trente fois l'exposerait à se contredire. */
@@ -19883,7 +20488,7 @@ function envoieMesures(dernier){
  * cible que l'événement ne porte pas est écartée de même.
  */
 function mesure(genre, canal, cible, objet){
-  if (!MESURE_ACTIVE) return;
+  if (!mesureOuverte()) return;
   const g = { genre: genre };
   if (canal) g.canal = canal;
   if (cible) g.cible = cible;
@@ -19906,7 +20511,8 @@ if (MESURE_ACTIVE){
   const CLE_VUE = "plan-visite:" + SLUG;
   let dejaVue = false;
   try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
-  if (!dejaVue){
+  // un refus n'écrit rien, pas même la marque d'une visite qu'on ne compte pas
+  if (!dejaVue && mesureOuverte()){
     try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
     mesure("visite");
   }
@@ -19918,6 +20524,106 @@ if (MESURE_ACTIVE){
   addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") envoieMesures(true);
   });
+}
+
+/* ------------------------------------------------------------
+   La notice, et le refus
+
+   L'exemption tient aussi à cela : le visiteur doit pouvoir apprendre ce
+   qu'on mesure, et s'y opposer sans rien perdre du plan. La notice le dit en
+   mots de visiteur et porte le seul réglage qui compte. Elle ne s'offre que là
+   où la page mesure : ailleurs, elle décrirait ce qui n'a pas lieu.
+
+   Elle nomme l'organisateur du salon comme celui qui en répond : le plan est
+   son service, et le prestataire qui le réalise ne traite ces chiffres que
+   pour lui. Chaque phrase y est une promesse que le code doit tenir — changer
+   une durée ici sans la changer là-bas, et la notice mentirait.
+   ------------------------------------------------------------ */
+
+/** Efface les jetons de visiteur de tous les salons gardés sur l'appareil. */
+function effaceJetonsVisiteur(){
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--){
+      const cle = localStorage.key(i);
+      if (cle && cle.startsWith("plan-visiteur:")) localStorage.removeItem(cle);
+    }
+  } catch (e) {}
+}
+
+/**
+ * Refuser la mesure, ou revenir sur son refus.
+ *
+ * Le refus vaut aussi pour ce qui attendait de partir : les gestes du paquet
+ * en cours sont jetés, et le jeton s'efface — celui de ce salon comme ceux des
+ * autres, puisque le refus les couvre tous. Revenir sur son refus repart d'un
+ * jeton neuf : le visiteur compte alors pour un nouveau, et c'est juste, rien
+ * ne le relie plus à celui d'avant.
+ */
+function refuseMesure(refus){
+  MESURE_REFUSEE = !!refus;
+  try {
+    if (refus) localStorage.setItem(CLE_REFUS, "1");
+    else localStorage.removeItem(CLE_REFUS);
+  } catch (e) {}
+  if (refus){
+    clearTimeout(_envoiDiffere);
+    _envoiDiffere = null;
+    _gestes = [];
+    MESURE_VISITEUR = "";
+    effaceJetonsVisiteur();
+  } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
+    MESURE_RETENU = true;
+    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+  }
+}
+
+function ouvreConfidentialite(){
+  const salon = DATA && DATA.evenement;
+  ouvreModale("Confidentialité", fenetre => {
+    const corps = document.createElement("div");
+    corps.className = "notice";
+    fenetre.appendChild(corps);
+    const texte = (t, classe) => {
+      const p = document.createElement("p");
+      p.textContent = t;
+      if (classe) p.className = classe;
+      corps.appendChild(p);
+    };
+    texte((salon ? "L'organisateur de « " + salon + " »" : "L'organisateur du salon") +
+      " mesure l'usage de ce plan pour savoir s'il sert : ouvertures du plan, " +
+      "recherches, fiches consultées, itinéraires, parcours composés et partagés.");
+    texte("Aucun cookie n'est posé, et ni votre adresse IP ni votre navigateur ne " +
+      "sont enregistrés avec ces mesures. Pour compter chaque visiteur une seule " +
+      "fois, votre appareil garde un numéro tiré au hasard, propre à ce salon : il " +
+      "ne dit pas qui vous êtes, et ne vous suit nulle part ailleurs.");
+    texte("Ce numéro est remplacé au bout de " + MESURE_VIE_MOIS + " mois. Ce qui a " +
+      "été enregistré avec lui est effacé au bout de " + MESURE_CONSERVATION_JOURS +
+      " jours : seuls restent des totaux anonymes.");
+    texte("Ces chiffres servent à l'organisateur et au prestataire qui réalise le " +
+      "plan pour lui. Les exposants peuvent recevoir les totaux de leur stand, " +
+      "jamais le détail d'une visite. Vos réglages et votre parcours restent sur " +
+      "votre appareil, pour vous être rendus à la prochaine visite.");
+
+    const choix = document.createElement("label");
+    choix.className = "refusMesure";
+    const caseRefus = document.createElement("input");
+    caseRefus.type = "checkbox";
+    caseRefus.checked = MESURE_REFUSEE;
+    caseRefus.onchange = () => refuseMesure(caseRefus.checked);
+    choix.append(caseRefus, document.createTextNode("Ne pas mesurer mes visites"));
+    corps.appendChild(choix);
+
+    texte("Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce " +
+      "site. Pour toute question sur ces données, adressez-vous à l'organisateur " +
+      "du salon ; vous pouvez aussi saisir la CNIL.", "noteRefus");
+  }, [{ libelle: "Fermer" }]);
+}
+
+if (MESURE_ACTIVE){
+  // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un salon
+  if (MESURE_REFUSEE) effaceJetonsVisiteur();
+  $("piedSide").hidden = false;
+  $("btnConfidentialite").onclick = ouvreConfidentialite;
 }
 
 /* ============================================================
@@ -20461,9 +21167,12 @@ function ouvreRemiseAZero(){
 
     const saisie = l.querySelector("input");
     const bouton = () => $("mPied").querySelector(".danger");
+    /* En anglais, la consigne demande « reset » : le mot traduit vaut donc
+       autant que l'original, qui reste accepté — on demande une intention. */
+    const motJuste = (v) => [MOT_RAZ, traduit(MOT_RAZ)].some(m => aplati(v) === aplati(m));
     const relit = () => {
       const b = bouton();
-      if (b) b.disabled = aplati(saisie.value) !== aplati(MOT_RAZ) || !tally;
+      if (b) b.disabled = !motJuste(saisie.value) || !tally;
     };
     saisie.oninput = relit;
     saisie.onkeydown = (e) => {
@@ -20525,7 +21234,7 @@ async function lanceRemiseAZero(){
       method: "POST", body: JSON.stringify({ p_evenement: evt }),
     });
     const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
-              Number(r?.visiteurs || 0) + Number(r?.journal || 0);
+              Number(r?.visiteurs || 0);
 
     /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
        qui ne reposent plus sur rien. */
@@ -21232,7 +21941,450 @@ function voletSuggestion(hote){
   dessine();
 }
 /* ============================================================
-   16. La visite guidée — le tour du plan, geste par geste
+   16. L'invitation à installer le plan
+
+   Le plan public s'installe : ajouté à l'écran d'accueil, il s'ouvre d'un
+   geste, en plein écran, et se consulte sans réseau une fois ouvert
+   (`outils/pwa.js`, `_sw.js`). Encore faut-il le savoir. Chrome range
+   l'installation dans son menu, Safari au bas de sa feuille de partage — et le
+   visiteur qui en aurait le plus besoin, celui qui a photographié un code à
+   l'entrée et découvrira au fond du hall que la barre est tombée à zéro, est
+   précisément celui qui n'ira pas l'y chercher.
+
+   Une fenêtre le lui propose donc, si l'organisateur l'a voulu : la case est
+   dans l'onglet « Plan » des réglages, et reste décochée tant qu'on n'y a pas
+   touché. Une fenêtre qui interrompt ne s'ajoute pas d'elle-même à un salon
+   déjà en ligne.
+
+   Elle interrompt, et ce sont ses conditions qui en font une proposition
+   plutôt qu'une réclame. Toutes doivent tenir :
+
+   — le plan public, et lui seul : la page qui porte le manifeste. Ni
+     l'administration ni la démonstration figée n'ont rien à installer ;
+   — ouvert dans un navigateur : lancé depuis l'écran d'accueil, le plan est
+     déjà installé, et dans le cadre d'un site tiers ce n'est pas à nous de
+     proposer quoi que ce soit. La porte se lit comme pour la mesure ;
+   — sur un téléphone ou une tablette : c'est là que le plan sert au salon. Sur
+     un ordinateur, l'application n'apporte qu'une fenêtre sans barre
+     d'adresse, rien qui vaille d'interrompre qui prépare sa visite ;
+   — après usage, jamais à l'ouverture : une demi-minute de plan sous les yeux,
+     au moins un geste dessus, puis un moment où rien n'est en cours.
+     Accueillir par une fenêtre celui qui cherche un stand, c'est se faire
+     fermer sans être lu ;
+   — là où l'installation aboutit : d'un bouton quand le navigateur sait le
+     faire, en trois gestes décrits quand il ne le sait pas, et pas du tout là
+     où elle est impossible ;
+   — rarement : une fois par jour au plus, et plus jamais après deux refus, une
+     installation, ou des explications qu'on a dit avoir comprises.
+   ============================================================ */
+
+/* Une demi-minute sur le plan. C'est aussi ce que Chrome attend avant de juger
+   un site installable : plus tôt, il n'aurait rien à offrir. */
+const INSTALL_VU = 30000;
+/* Trois secondes sans geste : on ne se glisse pas sous un doigt qui fait
+   glisser le plan, ni entre deux frappes. */
+const INSTALL_CALME = 3000;
+/* Deux refus, puis plus rien : une troisième fois, ce ne serait plus proposer. */
+const INSTALL_REFUS = 2;
+
+const reglageInstallation = () => conf("_installation");
+const invitationVoulue = () => reglageInstallation().active === true;
+
+/* La page qui s'installe est celle qui porte le manifeste. Relevé plutôt que
+   redit : c'est `outils/genere.js` qui décide quelle page le porte, et ce
+   module suit sans rien savoir de plus.
+
+   Le sélecteur s'écrit sans guillemets, et ce n'est pas un détail : la
+   construction reconnaît la page installable à la chaîne de son lien, et ce
+   module part dans les trois pages du plan — écrit entre guillemets, il les
+   aurait toutes annoncées installables. */
+const INSTALL_PAGE = !!document.querySelector("link[rel=manifest]");
+
+const UA_INSTALL = navigator.userAgent || "";
+/* iPadOS se présente en Mac depuis sa version 13 : seul l'écran tactile le
+   trahit. */
+const IOS_INSTALL = /iPhone|iPad|iPod/.test(UA_INSTALL) ||
+  (/Macintosh/.test(UA_INSTALL) && navigator.maxTouchPoints > 1);
+
+/**
+ * Un téléphone ou une tablette : le pointeur principal est un doigt.
+ *
+ * La largeur de l'écran ne le dirait pas — une tablette en paysage est plus
+ * large que bien des portables — et un portable à écran tactile se pilote
+ * d'abord au pavé : il reste un ordinateur.
+ */
+function auDoigt(){
+  try { return matchMedia("(pointer: coarse)").matches; } catch (e) { return false; }
+}
+
+/* Tout ce qui ne bouge pas d'ici la fin de la page se juge une fois : ailleurs
+   qu'au doigt, dans un navigateur, sur le plan public, le module ne pose pas
+   même un écouteur. */
+const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web";
+
+/* ------------------------------------------------------------
+   Ce que le visiteur a répondu
+   ------------------------------------------------------------ */
+/* Rangé sous le nom du salon : chaque salon s'installe comme une application
+   à part (`outils/pwa.js`), et avoir refusé l'un ne dit rien de l'autre. Ce
+   que le salon voulait à la dernière visite y est gardé aussi — voir
+   `beforeinstallprompt`, plus bas. */
+const CLE_INSTALL = "plan-installation:" + SLUG;
+
+function reponsesInstallation(){
+  try { return JSON.parse(localStorage.getItem(CLE_INSTALL) || "{}") || {}; }
+  catch (e) { return {}; }
+}
+
+function retientInstallation(change){
+  try {
+    localStorage.setItem(CLE_INSTALL,
+      JSON.stringify(Object.assign(reponsesInstallation(), change)));
+  } catch (e) {}
+}
+
+/* Le jour du visiteur, et non celui du serveur : « une fois par jour » se
+   compte à sa montre. */
+const jourInstallation = () => new Date().toDateString();
+
+/** A-t-on déjà assez proposé ? */
+function invitationEcartee(){
+  const r = reponsesInstallation();
+  return r.installe === true || r.compris === true ||
+    (r.refus || 0) >= INSTALL_REFUS || r.vue === jourInstallation();
+}
+
+const refuseInstallation = () =>
+  retientInstallation({ refus: (reponsesInstallation().refus || 0) + 1 });
+
+/* ------------------------------------------------------------
+   Comment ce navigateur installe
+   ------------------------------------------------------------ */
+/* L'événement par lequel Chromium dit le plan installable, gardé pour le
+   moment choisi : c'est lui qui installe d'un clic. */
+let INSTALL_NATIVE = null;
+
+/**
+ * La façon d'installer que ce navigateur connaît, s'il en connaît une.
+ *
+ * « bouton » : Chromium a jugé le plan installable, et gardé de quoi le faire
+ * d'un clic. Tant que son événement n'est pas venu, il se tait — le plan y est
+ * déjà installé, ou n'y est pas encore installable — et la fenêtre attend avec
+ * lui : expliquer l'installation à qui a déjà l'application, ce serait lui
+ * dire qu'on ne la voit pas.
+ *
+ * « partage » : iOS et iPadOS, où tout navigateur installe depuis la feuille
+ * de partage du système, et n'en dit rien à la page. Les vues web des
+ * applications — un lien ouvert depuis un réseau social — n'ont pas cette
+ * entrée : elles ne se présentent pas en Safari, et on s'y tait.
+ *
+ * « menu » : les autres navigateurs d'Android, Firefox en tête, qui installent
+ * depuis leur menu sans rien en dire non plus. La vue web d'une application
+ * n'installe rien, elle, et se reconnaît à sa marque `wv`.
+ */
+function faconInstallation(){
+  if (INSTALL_NATIVE) return "bouton";
+  if ("onbeforeinstallprompt" in window) return null;
+  if (IOS_INSTALL) return /Safari\//.test(UA_INSTALL) ? "partage" : null;
+  if (/Android/.test(UA_INSTALL) && !/; wv\)/.test(UA_INSTALL)) return "menu";
+  return null;
+}
+
+/* ------------------------------------------------------------
+   Le moment
+   ------------------------------------------------------------ */
+/* Le temps passé sur la page, compté dès son ouverture : le chargement en fait
+   partie, et ne dure qu'un instant quand la demande du plan part de l'en-tête.
+   Un onglet laissé derrière un autre ne compte pas, lui : c'est une
+   demi-minute d'usage qu'on attend, pas d'horloge. */
+let installVu = 0;
+let installDepuis = document.visibilityState === "visible" ? performance.now() : null;
+/* L'instant du dernier geste — zéro tant qu'il n'y en a eu aucun — et les
+   doigts encore posés : un glissement qui dure plus que le calme exigé n'a
+   pas de geste nouveau à signaler, mais n'est pas fini pour autant. */
+let installGeste = 0;
+const installDoigts = new Set();
+let installMinuteur = null, installFini = !INSTALL_POSSIBLE;
+
+const tempsInstallation = () =>
+  installVu + (installDepuis === null ? 0 : performance.now() - installDepuis);
+
+function relanceInvitation(ms){
+  clearTimeout(installMinuteur);
+  installMinuteur = setTimeout(essaieInvitation, Math.max(0, ms));
+}
+
+function gesteInstallation(){
+  installGeste = performance.now();
+  relanceInvitation(INSTALL_CALME);
+}
+function doigtPose(e){ installDoigts.add(e.pointerId); gesteInstallation(); }
+function doigtLeve(e){ installDoigts.delete(e.pointerId); gesteInstallation(); }
+
+function vueInstallation(){
+  if (document.visibilityState === "visible"){
+    if (installDepuis === null) installDepuis = performance.now();
+    // de retour sur la page, on ne l'accueille pas par une fenêtre
+    relanceInvitation(INSTALL_CALME);
+  } else if (installDepuis !== null){
+    installVu += performance.now() - installDepuis;
+    installDepuis = null;
+  }
+}
+
+/**
+ * Ce qui retient la fenêtre maintenant : un doigt posé, une autre fenêtre, un
+ * tiroir ouvert, un stand qu'on vise pour un itinéraire, une saisie en cours.
+ *
+ * Aucun de ces états ne dure : le geste qui y met fin relance l'attente, et la
+ * fenêtre s'ouvre trois secondes après — jamais par-dessus ce qu'on faisait.
+ */
+function invitationRetenue(){
+  if (installDoigts.size || $("modale").classList.contains("open")) return true;
+  // une visite guidée en cours est un geste en train de se faire, sur toute sa durée
+  if (TUTO) return true;
+  if (["detail", "parcours", "itineraire"].some(id => {
+    const t = $(id);
+    return t && t.classList.contains("open");
+  })) return true;
+  const v = $("viseur");
+  if (v && !v.hidden) return true;
+  const f = document.activeElement;
+  return !!f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName);
+}
+
+function finInvitation(){
+  installFini = true;
+  clearTimeout(installMinuteur);
+  removeEventListener("pointerdown", doigtPose, true);
+  removeEventListener("pointerup", doigtLeve, true);
+  removeEventListener("pointercancel", doigtLeve, true);
+  removeEventListener("keydown", gesteInstallation, true);
+  document.removeEventListener("visibilitychange", vueInstallation);
+}
+
+/**
+ * Ouvre la fenêtre si tout le permet, ou dit ce qui la relancera.
+ *
+ * Appelée à chaque geste, trois secondes après ; à la fin de la demi-minute ;
+ * et quand Chromium annonce le plan installable. Tout ce qui l'empêche pour de
+ * bon — le réglage éteint, une réponse déjà donnée — arrête l'attente ; ce qui
+ * ne l'empêche que pour l'instant la laisse à l'appel suivant.
+ */
+function essaieInvitation(){
+  /* Onglet caché, le temps d'usage ne court plus : reprogrammer sur ce qu'il en
+     reste tournerait à vide. Le retour sur la page relance l'attente. */
+  if (installFini || document.visibilityState !== "visible") return;
+  // le réglage arrive avec les données : avant elles, rien ne dit s'il est voulu
+  if (!DATA) return;
+  const voulue = invitationVoulue();
+  /* Retenu pour la visite suivante, où l'événement de Chromium peut précéder
+     les données : il devra savoir sans elles s'il est attendu. */
+  if (reponsesInstallation().voulue !== voulue) retientInstallation({ voulue });
+  if (!voulue || invitationEcartee()) return finInvitation();
+  const facon = faconInstallation();
+  if (!facon) return;
+  const reste = INSTALL_VU - tempsInstallation();
+  if (reste > 0) return relanceInvitation(reste);
+  if (!installGeste) return;
+  const calme = INSTALL_CALME - (performance.now() - installGeste);
+  if (calme > 0) return relanceInvitation(calme);
+  if (invitationRetenue()) return;
+  finInvitation();
+  ouvreInvitation(facon, false);
+}
+
+if (INSTALL_POSSIBLE){
+  addEventListener("beforeinstallprompt", e => {
+    /* Retenu, l'événement retire le bandeau que Chrome aurait posé en bas de
+       l'écran : la fenêtre en tient lieu, au moment qu'elle choisit. Réglage
+       éteint, il passe — le navigateur garde sa manière de proposer, qui n'a
+       rien à nous demander.
+
+       Il peut précéder les données, chez qui a déjà passé du temps sur le site :
+       Chrome compte cet usage pour le domaine, pas pour la page. On se fie
+       alors à ce que ce salon voulait à la visite précédente, et, faute d'en
+       avoir eu une, on le garde — au pire, le bandeau du navigateur attend une
+       visite de plus. */
+    const voulue = DATA ? invitationVoulue() : reponsesInstallation().voulue !== false;
+    if (!voulue) return;
+    e.preventDefault();
+    INSTALL_NATIVE = e;
+    essaieInvitation();
+  });
+  /* Installé — par la fenêtre ou par le menu du navigateur, peu importe : on
+     ne le proposera plus. */
+  addEventListener("appinstalled", () => {
+    INSTALL_NATIVE = null;
+    retientInstallation({ installe: true });
+  });
+  addEventListener("pointerdown", doigtPose, true);
+  addEventListener("pointerup", doigtLeve, true);
+  addEventListener("pointercancel", doigtLeve, true);
+  addEventListener("keydown", gesteInstallation, true);
+  document.addEventListener("visibilitychange", vueInstallation);
+  relanceInvitation(INSTALL_VU);
+}
+
+/* ------------------------------------------------------------
+   La fenêtre
+   ------------------------------------------------------------ */
+/* Les pictogrammes des gestes à faire, dessinés comme ceux du système : c'est
+   ce dessin-là que l'œil ira chercher dans la barre du navigateur. */
+const PICTO_PARTAGE_IOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M12 14.5V3.5M8.5 7 12 3.5 15.5 7"/>' +
+  '<path d="M8.5 10H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1.5"/></svg>';
+const PICTO_ECRAN_ACCUEIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
+const PICTO_MENU = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+  '<circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/>' +
+  '<circle cx="12" cy="19" r="1.9"/></svg>';
+
+/* Ce qu'il faut faire, là où aucun bouton ne peut le faire à la place du
+   visiteur. Les intitulés sont ceux que le système affiche en français : on
+   les cherche des yeux, ils doivent être les mêmes. Safari range « Partager »
+   sous « ⋯ » dans sa barre compacte, d'où la précision. */
+const ETAPES_INSTALLATION = {
+  partage: [
+    'Touchez <b class="instPicto">' + PICTO_PARTAGE_IOS + "Partager</b>, " +
+      // l'espace insécable garde « sous » et « ⋯ » sur la même ligne
+      "dans la barre du navigateur — sous&nbsp;<b>⋯</b> s'il n'y paraît pas.",
+    'Choisissez <b class="instPicto">' + PICTO_ECRAN_ACCUEIL +
+      "Sur l'écran d'accueil</b>, plus bas dans la liste.",
+    "Validez par <b>Ajouter</b>.",
+  ],
+  menu: [
+    'Ouvrez le menu du navigateur <b class="instPicto">' + PICTO_MENU + "</b>.",
+    "Choisissez <b>Installer</b> ou <b>Ajouter à l'écran d'accueil</b>.",
+  ],
+};
+
+function remplitInvitation(corps, facon){
+  /* L'icône est celle que l'écran d'accueil montrera, et le nom du salon celui
+     que le visiteur a sous les yeux : les deux ensemble disent ce qu'on
+     installe, mieux qu'une phrase. */
+  const tete = document.createElement("div");
+  tete.className = "instTete";
+  tete.innerHTML = '<img class="instIcone" src="icone.svg" alt="" width="52" height="52">' +
+    "<div><b></b><span>Le plan, sur votre écran d'accueil</span></div>";
+  tete.querySelector("b").textContent =
+    String((DATA && DATA.evenement) || "").trim() || "Plan du salon";
+  corps.appendChild(tete);
+
+  const p = document.createElement("p");
+  p.textContent = "Ajoutez-le comme une application : il s'ouvrira d'un geste, " +
+    "en plein écran, et restera consultable sur place, même quand le réseau " +
+    "ne passe plus.";
+  corps.appendChild(p);
+
+  const etapes = ETAPES_INSTALLATION[facon];
+  if (!etapes) return;
+  const ol = document.createElement("ol");
+  ol.className = "instEtapes";
+  ol.innerHTML = etapes.map((t, i) =>
+    '<li><span class="n">' + (i + 1) + "</span><span>" + t + "</span></li>").join("");
+  corps.appendChild(ol);
+}
+
+/**
+ * La fenêtre, pour le visiteur ou en aperçu.
+ *
+ * Toute sortie qui n'accepte pas vaut « Plus tard » — la croix, le voile,
+ * « Échap » comme le bouton : fermer sans répondre, c'est répondre non pour
+ * aujourd'hui. « J'ai compris » clôt la question, puisqu'aucune page ne saura
+ * jamais si les gestes décrits ont été faits : l'application installée sur iOS
+ * ne partage même pas son stockage avec Safari.
+ *
+ * En aperçu, rien ne s'écrit, et toute sortie ramène aux réglages d'où l'on
+ * vient, sur la case qui l'a ouverte.
+ */
+function ouvreInvitation(facon, apercu){
+  /* Montrée, elle compte pour la journée, qu'on y réponde ou non : un plan
+     rechargé sous la fenêtre ne la ferait pas revenir. */
+  if (!apercu) retientInstallation({ vue: jourInstallation() });
+  let reponse = null;
+  const accepte = facon === "bouton"
+    ? { libelle: "Installer", genre: "accent", action: () => {
+        reponse = "installer";
+        const e = INSTALL_NATIVE;
+        if (apercu || !e) return;
+        // l'événement ne sert qu'une fois : le navigateur refuserait le second appel
+        INSTALL_NATIVE = null;
+        /* Le navigateur prend le relais, avec sa propre fenêtre : c'est là que
+           tout se décide. Un refus à cet endroit en vaut un ici. */
+        try {
+          /* Sa promesse peut être rejetée — un navigateur qui ne sait finalement
+             pas afficher sa fenêtre — et ce n'est pas une panne : la réponse, ou
+             son absence, arrive par `userChoice`. */
+          Promise.resolve(e.prompt()).catch(() => {});
+          e.userChoice.then(c => {
+            if (c && c.outcome === "accepted") retientInstallation({ installe: true });
+            else refuseInstallation();
+          }, () => {});
+        } catch (err) {}
+      } }
+    : { libelle: "J'ai compris", genre: "accent", action: () => { reponse = "compris"; } };
+
+  ouvreModale("Installer le plan", corps => remplitInvitation(corps, facon),
+    [{ libelle: "Plus tard" }, accepte], "installe");
+
+  avantFermeture = () => {
+    if (apercu){
+      /* Un temps plus tard : la fenêtre achève de se fermer après ce crochet, et
+         refermerait les réglages rouverts sur-le-champ. */
+      queueMicrotask(() => {
+        ouvreReglages("Plan");
+        const aide = $("mCorps").querySelector('[data-reglage="installation"]');
+        if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
+      });
+      return;
+    }
+    if (reponse === "compris") retientInstallation({ compris: true });
+    else if (!reponse) refuseInstallation();
+  };
+}
+
+/* ------------------------------------------------------------
+   Côté administration
+   ------------------------------------------------------------ */
+/**
+ * La case, dans l'onglet « Plan » des réglages : une fenêtre de plus, c'est
+ * encore ce que les visiteurs voient.
+ *
+ * Avec deux aperçus, parce que l'organisateur règle son salon depuis un
+ * ordinateur, où la fenêtre ne paraîtra jamais : sans eux, il allumerait une
+ * chose qu'il n'a jamais vue.
+ */
+function caseInstallation(bloc){
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Inviter les visiteurs à installer le plan";
+  const c = l.querySelector("input");
+  c.checked = invitationVoulue();
+  c.onchange = e => {
+    reglageInstallation().active = e.target.checked;
+    enregistreConf();
+  };
+  bloc.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.dataset.reglage = "installation";
+  aide.innerHTML = "Sur téléphone et tablette, quand le plan est ouvert dans le " +
+    "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, après " +
+    "une demi-minute d'usage. Une fois par jour au plus, et plus du tout après " +
+    "deux refus. Aperçu : " +
+    '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +
+    '<button type="button" class="apercuInst" data-facon="partage">iPhone</button>';
+  aide.querySelectorAll(".apercuInst").forEach(b => {
+    b.onclick = () => ouvreInvitation(b.dataset.facon, true);
+  });
+  bloc.appendChild(aide);
+}
+/* ============================================================
+   17. La visite guidée — le tour du plan, geste par geste
    ============================================================ */
 /**
  * Un visiteur ouvre le plan et voit un hall : cinq cents stands et une barre
@@ -21383,13 +22535,13 @@ function phraseTrajetTuto(){
  * `m` est la mémoire du chapitre : ce que la page montrait en y entrant, pour
  * reconnaître ce qui s'est passé depuis.
  *
- * `nom` sert à l'aide des réglages, `resume` à la fenêtre qui propose la visite.
+ * `titre` nomme le chapitre dans la bulle et dans l'aide des réglages, `resume`
+ * le décrit dans la fenêtre qui propose la visite.
  */
 const CHAPITRES_TUTO = [
   {
     cle: "zones",
     titre: "Le programme des zones",
-    nom: "le programme des zones",
     resume: "les conférences de chaque espace, heure par heure",
     actif: () => !!zoneDuTuto(),
     debut(m){
@@ -21435,7 +22587,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "itineraire",
     titre: "L'itinéraire",
-    nom: "l'itinéraire",
     resume: "le chemin d'un point du salon à un autre",
     actif: () => tutoItineraire(),
     debut(m){ m.route = ROUTE; },
@@ -21451,14 +22602,24 @@ const CHAPITRES_TUTO = [
         cible: $("iResultat").querySelector(".iBilan") || $("iResultat") };
       if (tiroir || visee){
         if (ITI.a && ITI.b) return { cle: "calcul", texte: "Recherche du chemin…" };
-        // la visée éteinte, c'est qu'on a choisi le clavier : le champ se désigne
-        const tape = visee ? "" : ", ou tapez son nom";
-        if (!ITI.a) return { cle: "depart", cible: visee ? null : $("iDepart"), texte:
-          (ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». Touchez maintenant" : "Touchez") +
-          " sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant " +
-          "lequel vous êtes" + tape + "." };
-        return { cle: "arrivee", cible: visee ? null : $("iArrivee"),
-          texte: "Touchez maintenant sur le plan l'endroit où vous allez" + tape + "." };
+        /* La visée éteinte, c'est qu'on a choisi le clavier : le champ se
+           désigne, et la consigne le dit. Des phrases entières plutôt qu'une
+           fin de phrase ajoutée : c'est chacune qui se traduit. */
+        const clavier = !visee;
+        if (!ITI.a){
+          const depart = ITI.b
+            ? (clavier
+              ? "Touchez maintenant sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes, ou tapez son nom."
+              : "Touchez maintenant sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes.")
+            : (clavier
+              ? "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes, ou tapez son nom."
+              : "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes.");
+          return { cle: "depart", cible: clavier ? $("iDepart") : null,
+            texte: ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». " + depart : depart };
+        }
+        return { cle: "arrivee", cible: clavier ? $("iArrivee") : null, texte: clavier
+          ? "Touchez maintenant sur le plan l'endroit où vous allez, ou tapez son nom."
+          : "Touchez maintenant sur le plan l'endroit où vous allez." };
       }
       /* Depuis une fiche, le trajet part avec son arrivée : c'est le chemin qu'on
          prend quand on vient de lire ce qu'on veut aller voir. */
@@ -21473,7 +22634,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "parcours",
     titre: "Mon parcours de visite",
-    nom: "le parcours de visite",
     resume: "les exposants et les conférences à ne pas manquer",
     actif: () => tutoParcours(),
     debut(m){ m.stands = new Set(PARCOURS.stands); },
@@ -21503,7 +22663,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "journee",
     titre: "Ma journée",
-    nom: "la journée organisée",
     resume: "votre parcours mis en ordre, avec les heures",
     /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
        l'itinéraire, le bouton n'est pas là (voir « _head.html »). */
@@ -21628,8 +22787,8 @@ function lanceTutoriel(){
   bulle.innerHTML = '<div class="tutoTete"><span class="eyebrow">Visite guidée</span>' +
     '<span class="tutoPoints" id="tutoPoints" role="img"></span>' +
     '<button type="button" class="tutoPasse" id="tutoPasse" title="Passer à la suite">Passer</button>' +
-    '<button type="button" class="tutoQuitte" id="tutoQuitte" title="Quitter la visite ' +
-    'guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
+    '<button type="button" class="tutoQuitte" id="tutoQuitte" ' +
+    'title="Quitter la visite guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
     '<h2 id="tutoTitre"></h2><p id="tutoTexte" aria-live="polite"></p>' +
     '<div class="tutoPied" id="tutoPied" hidden>' +
     '<button type="button" class="tutoSuite" id="tutoSuite"></button></div>';

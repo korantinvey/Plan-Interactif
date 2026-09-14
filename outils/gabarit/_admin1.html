@@ -540,8 +540,212 @@ const POLICES_LIBELLE = {
   nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
 };
 
+/* Les polices qu'on peut préférer à celle du modèle, pour les noms du plan.
+
+   Le modèle décide d'abord, et en choisir un repose la sienne. Mais un salon
+   a souvent sa propre police — celle de sa charte, de ses kakémonos, de la
+   signalétique qu'on croise dans les allées — et un plan qui écrit les
+   enseignes dans une autre se lit comme une pièce rapportée. Le choix ne vaut
+   que pour les noms, des stands comme des zones : le numéro garde la chasse du
+   modèle, où les chiffres s'alignent d'un stand à l'autre.
+
+   Une liste plutôt qu'un nom saisi : chaque police est rapatriée de Google une
+   fois pour toutes par `npm run polices`, qui relit cette liste, et Google
+   répond en erreur à une famille qu'il ne sert pas sous la graisse demandée —
+   Lato n'a pas de 600. Chaque ligne porte donc une graisse qu'on sait servie,
+   retenue pour se lire petit sur une cloison. Une ligne ajoutée ici fait
+   échouer la construction tant que le script n'a pas été relancé.
+
+   Les cinq polices des modèles sont déjà déclarées par l'en-tête de la page, et
+   se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
+   par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
+   chargent qu'au besoin, depuis `polices/` : chez le visiteur, la seule de son
+   salon ; chez l'exploitant, celles du genre qu'il parcourt.
+
+   Rangées par genre, et par nom dans chacun : soixante polices ne se
+   parcourent pas d'un seul tenant, et c'est d'abord une allure qu'on cherche —
+   une étroite pour des enseignes longues, une manuscrite pour un salon des
+   vins —, puis un nom dans cette allure. Les genres vont du plus sûr sur une
+   cloison au plus singulier. Le repli ne sert qu'aux vignettes, le temps que
+   leur police arrive : le plan, lui, n'écrit jamais dans une police absente.
+
+   La table garde une ligne par police, son genre écrit dedans, plutôt qu'une
+   liste sous chaque genre : `npm run polices` et la construction la relisent
+   sous cette forme exacte (`policesAuChoix`, dans outils/polices.js). */
+const GENRES_POLICE = [
+  { cle: "sans", nom: "Sans serif", repli: "sans-serif" },
+  { cle: "etroite", nom: "Étroites", repli: "sans-serif" },
+  { cle: "serif", nom: "Serif", repli: "Georgia, serif" },
+  { cle: "arrondie", nom: "Arrondies", repli: "sans-serif" },
+  { cle: "lisible", nom: "Haute lisibilité", repli: "sans-serif" },
+  { cle: "affiche", nom: "Affiche", repli: "sans-serif" },
+  { cle: "manuscrite", nom: "Manuscrites", repli: "cursive" },
+  { cle: "chasse", nom: "Chasse fixe", repli: "monospace" },
+];
+const POLICES_NOMS = [
+  ["Archivo", "600", "sans", P_GROTESQUE],
+  ["Barlow", "600", "sans"],
+  ["DM Sans", "600", "sans"],
+  ["Fira Sans", "600", "sans"],
+  ["IBM Plex Sans", "600", "sans"],
+  ["Instrument Sans", "600", "sans", P_SANS],
+  ["Inter", "600", "sans"],
+  ["Jost", "600", "sans"],
+  ["Lato", "700", "sans"],
+  ["Manrope", "600", "sans"],
+  ["Montserrat", "600", "sans"],
+  ["Noto Sans", "600", "sans"],
+  ["Open Sans", "600", "sans"],
+  ["Plus Jakarta Sans", "600", "sans"],
+  ["Poppins", "600", "sans"],
+  ["Raleway", "600", "sans"],
+  ["Roboto", "600", "sans"],
+  ["Source Sans 3", "600", "sans"],
+  ["Space Grotesk", "600", "sans"],
+  ["Work Sans", "600", "sans"],
+
+  ["Anton", "400", "etroite"],
+  ["Archivo Narrow", "600", "etroite"],
+  ["Barlow Condensed", "600", "etroite"],
+  ["Bebas Neue", "400", "etroite"],
+  ["Fira Sans Condensed", "600", "etroite"],
+  ["Oswald", "500", "etroite"],
+  ["PT Sans Narrow", "700", "etroite"],
+  ["Roboto Condensed", "600", "etroite"],
+
+  ["Bitter", "600", "serif"],
+  ["Cormorant Garamond", "600", "serif"],
+  ["EB Garamond", "600", "serif"],
+  ["Fraunces", "600", "serif", P_SERIF],
+  ["Libre Baskerville", "700", "serif"],
+  ["Lora", "600", "serif"],
+  ["Merriweather", "700", "serif"],
+  ["Playfair Display", "600", "serif"],
+  ["PT Serif", "700", "serif"],
+  ["Roboto Slab", "600", "serif"],
+  ["Source Serif 4", "600", "serif"],
+
+  ["Comfortaa", "700", "arrondie"],
+  ["Fredoka", "600", "arrondie"],
+  ["Nunito", "700", "arrondie"],
+  ["Quicksand", "700", "arrondie"],
+  ["Varela Round", "400", "arrondie"],
+
+  ["Andika", "700", "lisible"],
+  ["Atkinson Hyperlegible Next", "600", "lisible"],
+  ["Lexend", "500", "lisible"],
+
+  ["Abril Fatface", "400", "affiche"],
+  ["Alfa Slab One", "400", "affiche"],
+  ["Archivo Black", "400", "affiche"],
+  ["Bungee", "400", "affiche"],
+  ["Righteous", "400", "affiche"],
+
+  ["Caveat", "600", "manuscrite"],
+  ["Dancing Script", "600", "manuscrite"],
+  ["Kalam", "700", "manuscrite"],
+  ["Patrick Hand", "400", "manuscrite"],
+
+  ["Courier Prime", "700", "chasse", P_MACHINE],
+  ["IBM Plex Mono", "500", "chasse", P_CHASSE],
+  ["Inconsolata", "600", "chasse"],
+  ["JetBrains Mono", "600", "chasse"],
+  ["Roboto Mono", "600", "chasse"],
+  ["Space Mono", "700", "chasse"],
+].map(([nom, graisse, genre, pile]) => ({
+  nom, graisse, genre,
+  // sans pile écrite, la police ne se demande qu'au besoin, à `polices/`
+  distante: !pile,
+  pile: pile || '"' + nom + '", ' + GENRES_POLICE.find(g => g.cle === genre).repli,
+}));
+
+/** La police que l'exploitant a préférée pour les noms, s'il en a retenu une. */
+const policeChoisie = () => {
+  const n = (CONF["_fiche"] || {}).police;
+  return POLICES_NOMS.find(p => p.nom === n) || null;
+};
+/** La police qu'un modèle pose sur les noms, telle que la liste la connaît. */
+const policeDuModele = (cle) => {
+  const pile = (POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre).nom[1];
+  return POLICES_NOMS.find(p => p.pile === pile) || null;
+};
+
+/* Une police distante n'est demandée qu'une fois par visite : l'onglet qui les
+   montre se rouvre, et l'exploitant qui hésite revient trois fois sur la même.
+   La promesse dit si la feuille est arrivée, sans jamais échouer : une police
+   qui ne vient pas laisse celle du modèle, ce qui n'a rien d'une erreur. */
+const FEUILLES_POLICE = new Map(), FEUILLES_ARRIVEES = new Set();
+function feuillePolice(p){
+  if (!p.distante) return Promise.resolve(true);
+  if (!FEUILLES_POLICE.has(p.nom)) FEUILLES_POLICE.set(p.nom, new Promise(ok => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    /* La feuille de la famille, rangée à côté de la page par `npm run polices`.
+       La demander à Google transmettrait à celui-ci l'adresse de chaque
+       visiteur du salon — et la construction le refuse. */
+    l.href = "polices/" + p.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".css";
+    l.onload = () => { FEUILLES_ARRIVEES.add(p.nom); ok(true); };
+    l.onerror = () => ok(false);
+    document.head.appendChild(l);
+  }));
+  return FEUILLES_POLICE.get(p.nom);
+}
+
+/* La feuille ne suffit pas : elle déclare la police, le fichier ne part qu'au
+   premier texte qui s'en sert. Le plan, lui, mesure avant d'écrire — dans une
+   police absente, le canevas prend celle de repli, et les noms se tailleraient
+   pour une autre que celle où ils s'affichent. On attend donc le fichier, et
+   les polices prêtes se retiennent pour que la question ne se repose plus. */
+const POLICES_PRETES = new Set(), CHARGEMENTS_POLICE = new Map();
+function chargePolice(p){
+  if (!CHARGEMENTS_POLICE.has(p.nom)) CHARGEMENTS_POLICE.set(p.nom, feuillePolice(p)
+    .then(arrivee => !arrivee ? false : !document.fonts ? true :
+      document.fonts.load(p.graisse + " 16px " + p.pile).then(f => f.length > 0))
+    .catch(() => false)
+    .then(prete => { if (prete) POLICES_PRETES.add(p.nom); return prete; }));
+  return CHARGEMENTS_POLICE.get(p.nom);
+}
+
 /**
- * Pose la police du modèle sur les libellés du plan.
+ * La police est-elle déjà là ? Souvent oui, sans rien avoir attendu : la
+ * vignette de l'onglet l'a fait venir en s'affichant. Le demander tout de suite
+ * épargne au plan, au clic, un aller-retour par la police du modèle le temps
+ * d'une promesse — un saut visible, et un tracé de trop.
+ *
+ * `check` ne se consulte qu'une fois la famille déclarée : pour une famille
+ * inconnue du document, Chrome répond qu'elle est prête, puisqu'il n'a rien à
+ * charger. D'où la feuille arrivée exigée d'une police distante — celles des
+ * modèles sont déclarées par l'en-tête.
+ */
+function policePrete(p){
+  if (POLICES_PRETES.has(p.nom)) return true;
+  if (p.distante && !FEUILLES_ARRIVEES.has(p.nom)) return false;
+  let prete = !document.fonts;
+  try { prete = prete || document.fonts.check(p.graisse + " 16px " + p.pile); } catch (e) {}
+  if (prete) POLICES_PRETES.add(p.nom);
+  return prete;
+}
+
+/**
+ * La police des noms : celle que l'exploitant a préférée dès qu'elle est prête,
+ * celle du modèle d'ici là — et pour de bon si elle ne vient jamais.
+ *
+ * Tant qu'elle manque, les noms restent dans la police du modèle, que la page
+ * a déjà. Poser l'autre sans l'avoir aurait écrit le plan dans la police de
+ * repli, puis l'aurait réécrit à l'arrivée du fichier : deux sauts au lieu
+ * d'un, dont le premier vers une police que personne n'a choisie.
+ */
+function policeDesNoms(duModele){
+  const p = policeChoisie();
+  if (!p || p.pile === duModele[1]) return duModele;
+  if (policePrete(p)) return [p.graisse, p.pile];
+  chargePolice(p).then(prete => { if (prete) posePoliceLibelles(modeleRetenu()); });
+  return duModele;
+}
+
+/**
+ * Pose la police du modèle sur les libellés du plan, et sur les noms celle que
+ * l'exploitant lui a préférée.
  *
  * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
  * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
@@ -551,20 +755,30 @@ const POLICES_LIBELLE = {
  *
  * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
  * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
- * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
- * que la case du numéro se taille elle aussi sur P_CODE.
+ * premier dessin plutôt que d'avoir à le reprendre. Une police préférée qui
+ * n'est pas encore là fait exception : elle rappelle la fonction à son arrivée,
+ * et le plan se retrace alors une fois. La liste n'est reprise que pour le
+ * numéro, parce que sa case se taille sur P_CODE et jamais sur le nom.
+ *
+ * Les polices se comparent par leur contenu : celle qu'on a préférée est une
+ * paire refaite à chaque appel, et comparée par identité elle aurait retracé
+ * le plan à chaque changement de pavillon.
  */
 function posePoliceLibelles(cle){
   const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
-  const change = P_NOM !== p.nom || P_CODE !== p.code;
-  P_NOM = p.nom; P_CODE = p.code;
-  racine.style.setProperty("--police-lab-nom", p.nom[1]);
-  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  const nom = policeDesNoms(p.nom);
+  const autre = (a, b) => a[0] !== b[0] || a[1] !== b[1];
+  const changeNom = autre(P_NOM, nom), changeCode = autre(P_CODE, p.code);
+  P_NOM = nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", nom[0]);
   racine.style.setProperty("--police-lab-code", p.code[1]);
   racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  if (!MONTE || !(changeNom || changeCode)) return;
   // les repères et les stands tracés à la main portent leur libellé dans leur
   // propre forme : ils se retracent, ils ne se restylent pas
-  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+  dessineDessins(); libelles();
+  if (changeCode) liste();
 }
 
 /**
@@ -1272,18 +1486,31 @@ function voletPlan(hote){
     const aide = document.createElement("p");
     aide.className = "aideR";
     bloc.appendChild(aide);
+    /* Chaque chapitre s'écrit dans son élément, et non fondu dans la phrase :
+       la version anglaise traduit un texte à la fois, et une liste composée à
+       la volée n'aurait été la clé d'aucune traduction. */
+    const morceau = (txt) => {
+      const s = document.createElement("span");
+      s.textContent = txt;
+      aide.appendChild(s);
+    };
     majTuto = () => {
-      const noms = chapitresTuto().map(ch => ch.nom);
-      l.classList.toggle("eteint", !noms.length);
-      c.disabled = !noms.length;
-      if (!noms.length){
-        aide.textContent = "Rien à présenter sur ce salon : ni programme rattaché à " +
-          "une zone, ni parcours de visite, ni itinéraire.";
+      const titres = chapitresTuto().map(ch => ch.titre);
+      l.classList.toggle("eteint", !titres.length);
+      c.disabled = !titres.length;
+      aide.textContent = "";
+      if (!titres.length){
+        morceau("Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.");
         return;
       }
-      aide.textContent = "Le visiteur y fait lui-même chaque geste : " +
-        (noms.length > 1 ? noms.slice(0, -1).join(", ") + " et " : "") +
-        noms[noms.length - 1] + ". Proposée une fois par appareil. ";
+      morceau("Le visiteur y fait lui-même chaque geste. Sur ce salon :");
+      titres.forEach((t, i) => {
+        aide.appendChild(document.createTextNode(i ? " · " : " "));
+        morceau(t);
+      });
+      aide.appendChild(document.createTextNode(". "));
+      morceau("Proposée une fois par appareil.");
+      aide.appendChild(document.createTextNode(" "));
       const essai = document.createElement("button");
       essai.type = "button";
       essai.className = "essaiTuto";
@@ -1357,6 +1584,10 @@ function voletPlan(hote){
       bloc.appendChild(l);
     });
   }
+
+  /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
+     visiteur : elle se règle avec ce qu'il voit (`_installation.html`). */
+  caseInstallation(bloc);
 
   hote.appendChild(bloc);
 
@@ -1639,16 +1870,18 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
- *  visite et l'itinéraire. */
+/** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
+ *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
+ *  détail, le parcours de visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
     "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
     "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
-    "l'itinéraire.";
+    "l'itinéraire. Il pose aussi sa police sur les noms des stands et des " +
+    "zones : une autre peut lui être préférée, jusqu'au prochain changement " +
+    "de modèle. Les numéros de stand gardent la sienne.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -1700,6 +1933,81 @@ function voletApparence(hote){
   hote.appendChild(coul);
   majPastilles();
 
+  /* La police des noms, avant les modèles et non après : leur planche est
+     longue, et un réglage rangé dessous ne se trouvait qu'en la faisant
+     défiler en entier. L'ordre des gestes n'en change pas — le modèle choisi
+     repose sa police, et la tête de ce bloc dit laquelle est en place. */
+  const blocPolice = document.createElement("div");
+  blocPolice.className = "reglage-police";
+  blocPolice.innerHTML = '<div class="tete"><span class="eyebrow">Police des noms</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Police du modèle</button></div>' +
+    '<div class="genresPol"></div><div class="polices"></div>';
+  const valPolice = blocPolice.querySelector(".val");
+  const genres = GENRES_POLICE.map(g => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = g.nom;
+    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.onclick = () => montreGenre(g.cle);
+    blocPolice.querySelector(".genresPol").appendChild(b);
+    return { b, g };
+  });
+  const tuiles = POLICES_NOMS.map(q => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pol";
+    b.innerHTML = '<span class="t"></span><span class="g">du modèle</span>';
+    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
+       c'est une enseigne qu'on choisit, et un intitulé dans la police de
+       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
+       d'un serif. */
+    const t = b.querySelector(".t");
+    t.textContent = q.nom;
+    t.style.fontFamily = q.pile;
+    t.style.fontWeight = q.graisse;
+    b.onclick = () => posePolice(q);
+    blocPolice.querySelector(".polices").appendChild(b);
+    return { b, q };
+  });
+  /* Un genre à la fois : soixante vignettes d'un seul bloc repoussaient les
+     modèles hors de vue. Celles des autres genres restent bâties mais cachées
+     — cachées, elles ne font rien télécharger —, et la feuille d'une police
+     n'est demandée qu'au premier passage sur son genre. */
+  const montreGenre = (cle) => {
+    genres.forEach(({ b, g }) => b.setAttribute("aria-pressed", String(g.cle === cle)));
+    tuiles.forEach(({ b, q }) => {
+      b.hidden = q.genre !== cle;
+      if (!b.hidden) feuillePolice(q);
+    });
+  };
+  const majPolices = () => {
+    const modele = policeDuModele(modeleRetenu());
+    const choisie = policeChoisie();
+    const courante = choisie && choisie !== modele ? choisie : modele;
+    tuiles.forEach(({ b, q }) => {
+      b.setAttribute("aria-pressed", String(q === courante));
+      b.querySelector(".g").hidden = q !== modele;
+    });
+    valPolice.textContent = !courante ? "" :
+      courante === modele ? courante.nom + " · modèle " +
+        (MODELES.find(m => m.cle === modeleRetenu()) || {}).nom : courante.nom;
+    // le genre montré suit la police en place : le modèle qui repose une serif
+    // ouvre les serifs, sans quoi la vignette cochée resterait hors de vue
+    montreGenre(courante ? courante.genre : GENRES_POLICE[0].cle);
+  };
+  const posePolice = (q) => {
+    const f = conf("_fiche");
+    // retenir celle du modèle, c'est revenir au modèle : le suivant reposera la sienne
+    if (!q || q === policeDuModele(modeleRetenu())) delete f.police;
+    else f.police = q.nom;
+    enregistreConf(); posePoliceLibelles(modeleRetenu()); majPolices();
+  };
+  blocPolice.querySelector(".raz").onclick = () => posePolice(null);
+  hote.appendChild(blocPolice);
+  majPolices();
+
   const titre = document.createElement("span");
   titre.className = "eyebrow";
   titre.textContent = "Modèle d'habillage";
@@ -1726,9 +2034,13 @@ function voletApparence(hote){
     b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
+      /* Choisir un modèle, c'est choisir sa police : celle qu'on avait
+         préférée à la précédente ne s'accordait qu'à elle. */
+      delete conf("_fiche").police;
       enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
+      majPolices();
     };
     grille.appendChild(b);
   });
@@ -2440,12 +2752,24 @@ function champZone(hote, titre, dedans, aide){
  * la publierait à moitié faite.
  */
 function champsZone(hote, o){
-  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+  /* Le libellé et la description se saisissent dans les deux langues, et les
+     deux champs paraissent quelle que soit la langue de l'écran : l'exploitant
+     qui travaille en anglais écrit aussi le français, et inversement. */
+  const libelle = champZone(hote, "Libellé en français", document.createElement("input"),
     "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
     "revenir au nom d'origine, s'il y en a un.");
   libelle.type = "text";
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+  libelle.lang = "fr";
+
+  const libelleEn = champZone(hote, "Libellé en anglais", document.createElement("input"),
+    "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le " +
+    "libellé en français qui s'y affiche.");
+  libelleEn.type = "text";
+  libelleEn.value = o.nom_en || "";
+  libelleEn.placeholder = "Agora, Childcare, Pitch Retail…";
+  libelleEn.lang = "en";
 
   /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
      visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
@@ -2478,9 +2802,16 @@ function champsZone(hote, o){
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
-  champZone(hote, "Description", riche.cadre,
+  riche.cadre.lang = "fr";
+  champZone(hote, "Description en français", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
     "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const richeEn = editeurRiche(o.description_en || "");
+  richeEn.cadre.lang = "en";
+  champZone(hote, "Description en anglais", richeEn.cadre,
+    "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche " +
+    "anglaise montre la description en français.");
 
   const lienZ = champZone(hote, "Lien", document.createElement("input"),
     "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
@@ -2489,8 +2820,9 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value,
+  return () => ({ libelle: libelle.value, libelleEn: libelleEn.value,
+                  type: type.value, logo: logo(),
+                  description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
@@ -2893,6 +3225,7 @@ let ficheZoneEnCours = null;
 /* Les salles cochées se comparent telles quelles : ce sont deux listes des
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.libelleEn === b.libelleEn && a.descriptionEn === b.descriptionEn &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
   a.logo === b.logo && a.traversable === b.traversable &&
   String(a.salles) === String(b.salles));
@@ -2960,6 +3293,11 @@ function ficheZone(o){
 async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  /* La version anglaise se range dans la fiche, avec le reste de ce que
+     l'exploitant écrit : elle ne s'applique pas au plan d'origine, elle
+     s'affiche à la place du français pour qui lit l'anglais. */
+  const nomEn = String(v.libelleEn || "").trim();
+  const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
   const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
@@ -3007,6 +3345,8 @@ async function enregistreZone(o, v, depart){
         if (genre) fiche.type = genre;
         if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
+        if (nomEn) fiche.nom_en = nomEn;
+        if (descriptionEn) fiche.description_en = descriptionEn;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
@@ -3038,11 +3378,14 @@ async function enregistreZone(o, v, depart){
     o.nom = nom || o.origine || null;
   }
   o.description = description;
+  o.nom_en = nomEn || undefined;
+  o.description_en = descriptionEn || undefined;
+  nomsAnglaisDesZones();
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
-  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
-  o.rech = String(o.nom || "").toLowerCase();
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
+  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();

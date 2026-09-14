@@ -1,5 +1,5 @@
 /* ============================================================
-   16. La visite guidée — le tour du plan, geste par geste
+   17. La visite guidée — le tour du plan, geste par geste
    ============================================================ */
 /**
  * Un visiteur ouvre le plan et voit un hall : cinq cents stands et une barre
@@ -150,13 +150,13 @@ function phraseTrajetTuto(){
  * `m` est la mémoire du chapitre : ce que la page montrait en y entrant, pour
  * reconnaître ce qui s'est passé depuis.
  *
- * `nom` sert à l'aide des réglages, `resume` à la fenêtre qui propose la visite.
+ * `titre` nomme le chapitre dans la bulle et dans l'aide des réglages, `resume`
+ * le décrit dans la fenêtre qui propose la visite.
  */
 const CHAPITRES_TUTO = [
   {
     cle: "zones",
     titre: "Le programme des zones",
-    nom: "le programme des zones",
     resume: "les conférences de chaque espace, heure par heure",
     actif: () => !!zoneDuTuto(),
     debut(m){
@@ -202,7 +202,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "itineraire",
     titre: "L'itinéraire",
-    nom: "l'itinéraire",
     resume: "le chemin d'un point du salon à un autre",
     actif: () => tutoItineraire(),
     debut(m){ m.route = ROUTE; },
@@ -218,14 +217,24 @@ const CHAPITRES_TUTO = [
         cible: $("iResultat").querySelector(".iBilan") || $("iResultat") };
       if (tiroir || visee){
         if (ITI.a && ITI.b) return { cle: "calcul", texte: "Recherche du chemin…" };
-        // la visée éteinte, c'est qu'on a choisi le clavier : le champ se désigne
-        const tape = visee ? "" : ", ou tapez son nom";
-        if (!ITI.a) return { cle: "depart", cible: visee ? null : $("iDepart"), texte:
-          (ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». Touchez maintenant" : "Touchez") +
-          " sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant " +
-          "lequel vous êtes" + tape + "." };
-        return { cle: "arrivee", cible: visee ? null : $("iArrivee"),
-          texte: "Touchez maintenant sur le plan l'endroit où vous allez" + tape + "." };
+        /* La visée éteinte, c'est qu'on a choisi le clavier : le champ se
+           désigne, et la consigne le dit. Des phrases entières plutôt qu'une
+           fin de phrase ajoutée : c'est chacune qui se traduit. */
+        const clavier = !visee;
+        if (!ITI.a){
+          const depart = ITI.b
+            ? (clavier
+              ? "Touchez maintenant sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes, ou tapez son nom."
+              : "Touchez maintenant sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes.")
+            : (clavier
+              ? "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes, ou tapez son nom."
+              : "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes.");
+          return { cle: "depart", cible: clavier ? $("iDepart") : null,
+            texte: ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». " + depart : depart };
+        }
+        return { cle: "arrivee", cible: clavier ? $("iArrivee") : null, texte: clavier
+          ? "Touchez maintenant sur le plan l'endroit où vous allez, ou tapez son nom."
+          : "Touchez maintenant sur le plan l'endroit où vous allez." };
       }
       /* Depuis une fiche, le trajet part avec son arrivée : c'est le chemin qu'on
          prend quand on vient de lire ce qu'on veut aller voir. */
@@ -240,7 +249,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "parcours",
     titre: "Mon parcours de visite",
-    nom: "le parcours de visite",
     resume: "les exposants et les conférences à ne pas manquer",
     actif: () => tutoParcours(),
     debut(m){ m.stands = new Set(PARCOURS.stands); },
@@ -270,7 +278,6 @@ const CHAPITRES_TUTO = [
   {
     cle: "journee",
     titre: "Ma journée",
-    nom: "la journée organisée",
     resume: "votre parcours mis en ordre, avec les heures",
     /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
        l'itinéraire, le bouton n'est pas là (voir « _head.html »). */
@@ -395,8 +402,8 @@ function lanceTutoriel(){
   bulle.innerHTML = '<div class="tutoTete"><span class="eyebrow">Visite guidée</span>' +
     '<span class="tutoPoints" id="tutoPoints" role="img"></span>' +
     '<button type="button" class="tutoPasse" id="tutoPasse" title="Passer à la suite">Passer</button>' +
-    '<button type="button" class="tutoQuitte" id="tutoQuitte" title="Quitter la visite ' +
-    'guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
+    '<button type="button" class="tutoQuitte" id="tutoQuitte" ' +
+    'title="Quitter la visite guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
     '<h2 id="tutoTitre"></h2><p id="tutoTexte" aria-live="polite"></p>' +
     '<div class="tutoPied" id="tutoPied" hidden>' +
     '<button type="button" class="tutoSuite" id="tutoSuite"></button></div>';
