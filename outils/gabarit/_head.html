@@ -725,6 +725,12 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .verr:hover{color:var(--ink)}
 .calq .verr[aria-pressed="true"]{color:var(--accent)}
 .calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .masq{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .masq:hover{color:var(--ink)}
+.calq .masq[aria-pressed="true"]{color:var(--accent)}
+.pictoMasque{width:12px;height:12px;display:block;margin:auto}
+.pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
+.pictoMasque .trou{stroke-dasharray:1.7 1.2}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -3506,7 +3512,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
              et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
              contenu est refait à chaque changement de vue et ne s'enregistre
              nulle part — ce sont des tuiles, pas un dessin. -->
-        <g id="fondCarte"></g>
+        <!-- Le gabarit des trous, et le groupe qui les porte. Le découpage est
+             posé sur l'enveloppe, jamais sur `#fondCarte` : celui-ci porte la
+             rotation et l'échelle des tuiles, et un `clip-path` s'y lirait
+             dans ce repère-là au lieu de celui du plan. -->
+        <defs id="masqueCarte"></defs>
+        <g id="fondCarteClip"><g id="fondCarte"></g></g>
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>

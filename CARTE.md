@@ -172,7 +172,7 @@ Fonctions :
 
 - l.566 · Page de rapport
 
-### `_dessin.html` — 1797 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1801 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -183,22 +183,22 @@ Fonctions :
 `refais` 130 · `trouveCalque` 132 · `nouvelId` 133 · `cheminArrondi` 151 · `estCadre` 194
 `cheminForme` 196 · `styleTrait` 216 · `longueurFleche` 242 · `cheminFleche` 249
 `marqueFleche` 278 · `rafraichitFleches` 289 · `poseTrait` 305 · `dessineDessins` 313
-`versPlan` 356 · `apercu` 362 · `apercuGuide` 374 · `toleranceTrace` 398
-`aimanteContour` 403 · `rayonContour` 406 · `redresseTrace` 425 · `traceGuide` 459
-`fermeIci` 466 · `ajouteForme` 471 · `pictoDe` 571 · `nomTypeRepere` 616 · `typeZone` 642
-`pictoForme` 649 · `estPorte` 669 · `ouvreEntrant` 670 · `ouvreSortant` 671
-`traceRepere` 685 · `etiquetteSociete` 753 · `nomSurLePlan` 757 · `societeDeForme` 768
-`societesDuPlan` 779 · `remplitListeSocietes` 790 · `societeSaisie` 798
-`traceStandDessine` 814 · `texteStandDessine` 838 · `poseLibellesDessines` 856
-`decoupeStand` 877 · `marqueStandsDessines` 889 · `rafraichitStandsDessines` 904
-`oublieReperes` 934 · `reperesCherchables` 936 · `vaAuRepere` 980 · `clePoi` 1015
-`cartouchePoi` 1017 · `ouvrePoi` 1121 · `mesureCartouche` 1193 · `phareRepere` 1202
-`phareZone` 1204 · `eclairePoi` 1210 · `oublieChoixPoi` 1242 · `signale` 1251
-`calquePourImage` 1265 · `poseImage` 1282 · `importeImage` 1295 · `dessinPointerDown` 1346
-`dessinPointerMove` 1420 · `dessinPointerUp` 1458 · `termineTrace` 1494 · `aide` 1506
-`choisitOutil` 1531 · `enchaineStand` 1555 · `activeCalque` 1614 · `cleVerrou` 1670
-`verrouille` 1671 · `basculeVerrou` 1673 · `pictoVerrou` 1690 · `montreRoleIti` 1724
-`creeCalque` 1755 · `demandeNom` 1768 · `renommeCalque` 1787
+`versPlan` 360 · `apercu` 366 · `apercuGuide` 378 · `toleranceTrace` 402
+`aimanteContour` 407 · `rayonContour` 410 · `redresseTrace` 429 · `traceGuide` 463
+`fermeIci` 470 · `ajouteForme` 475 · `pictoDe` 575 · `nomTypeRepere` 620 · `typeZone` 646
+`pictoForme` 653 · `estPorte` 673 · `ouvreEntrant` 674 · `ouvreSortant` 675
+`traceRepere` 689 · `etiquetteSociete` 757 · `nomSurLePlan` 761 · `societeDeForme` 772
+`societesDuPlan` 783 · `remplitListeSocietes` 794 · `societeSaisie` 802
+`traceStandDessine` 818 · `texteStandDessine` 842 · `poseLibellesDessines` 860
+`decoupeStand` 881 · `marqueStandsDessines` 893 · `rafraichitStandsDessines` 908
+`oublieReperes` 938 · `reperesCherchables` 940 · `vaAuRepere` 984 · `clePoi` 1019
+`cartouchePoi` 1021 · `ouvrePoi` 1125 · `mesureCartouche` 1197 · `phareRepere` 1206
+`phareZone` 1208 · `eclairePoi` 1214 · `oublieChoixPoi` 1246 · `signale` 1255
+`calquePourImage` 1269 · `poseImage` 1286 · `importeImage` 1299 · `dessinPointerDown` 1350
+`dessinPointerMove` 1424 · `dessinPointerUp` 1462 · `termineTrace` 1498 · `aide` 1510
+`choisitOutil` 1535 · `enchaineStand` 1559 · `activeCalque` 1618 · `cleVerrou` 1674
+`verrouille` 1675 · `basculeVerrou` 1677 · `pictoVerrou` 1694 · `montreRoleIti` 1728
+`creeCalque` 1759 · `demandeNom` 1772 · `renommeCalque` 1791
 
 Éléments :
 
@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 830 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 930 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -228,13 +228,19 @@ Fonctions :
 `empriseDesPavillons` 97 · `centreDesPavillons` 110 · `calageCourant` 162
 `fondCourant` 165 · `recul` 170 · `pixelsMercator` 175 · `latitudeDePixel` 184
 `metresParPixel` 192 · `echelleDesTuiles` 210 · `niveauDesTuiles` 222 · `adresseTuile` 229
-`tuilesDeLaVue` 239 · `dessineFondCarte` 280 · `carreDeTerrain` 344 · `chercheBatiments` 360
-`aireDuContour` 387 · `centreDuContour` 396 · `axeDuContour` 409 · `empriseDesObjets` 426
-`batimentsCandidats` 444 · `caleSurBatiment` 465 · `manqueCalage` 489
-`enregistreCalage` 498 · `calageEnregistre` 511 · `litCoordonnees` 536
-`rafraichitCarte` 550 · `ditCalage` 568 · `majCalage` 576 · `appliqueCalage` 591
-`tourneCalage` 598 · `construitCalage` 604 · `ouvreCalage` 672 · `fermeCalage` 681
-`voletEnvirons` 706
+`tuilesDeLaVue` 239 · `dessineFondCarte` 280 · `cleMasqueCarte` 343 · `masqueCarte` 344
+`basculeMasqueCarte` 346 · `boutonMasqueCarte` 357 · `pictoMasque` 368
+`formesMasquantes` 380 · `poseMasqueCarte` 402 · `carreDeTerrain` 439
+`chercheBatiments` 455 · `aireDuContour` 482 · `centreDuContour` 491 · `axeDuContour` 504
+`empriseDesObjets` 521 · `batimentsCandidats` 539 · `caleSurBatiment` 560
+`manqueCalage` 584 · `enregistreCalage` 593 · `calageEnregistre` 606 · `litCoordonnees` 631
+`rafraichitCarte` 645 · `ditCalage` 668 · `majCalage` 676 · `appliqueCalage` 691
+`tourneCalage` 698 · `construitCalage` 704 · `ouvreCalage` 772 · `fermeCalage` 781
+`voletEnvirons` 806
+
+Éléments :
+
+`#trousDuFond`
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -245,7 +251,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3791 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3802 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -254,14 +260,15 @@ Fonctions :
 `#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail` · `#btnThemeCompte`
 `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side` · `#poignee` · `#q`
 `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#fondCarte` · `#zones` · `#stands` · `#labels` · `#zIn`
-`#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte` · `#poi` · `#viseur`
-`#viseurTxt` · `#viseurStop` · `#calage` · `#calageFerme` · `#calageCorps` · `#calageEtat`
-`#calageGarde` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils`
-`#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg`
-`#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle`
-`#traitFleche` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
-`#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
+`#stage` · `#plan` · `#couches` · `#masqueCarte` · `#fondCarteClip` · `#fondCarte`
+`#zones` · `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt`
+`#creditCarte` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#calage`
+`#calageFerme` · `#calageCorps` · `#calageEtat` · `#calageGarde` · `#outils`
+`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
+`#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`
+`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
 `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
 `#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
 `#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg`
@@ -439,19 +446,19 @@ Fonctions :
 `ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 547
 `adoptePartage` 633
 
-### `_pile.html` — 485 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 488 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : deux sections, chacune rangée par nom
-- l.301 · Repères
-- l.353 · Fond du plan
+- l.304 · Repères
+- l.356 · Fond du plan
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
 `nature` 75 · `boutonAjout` 82 · `boutonVerrou` 93 · `intertitre` 101
-`construitPanneau` 108 · `sectionSelection` 317 · `sectionFond` 373 · `ligneCouleur` 427
-`rangSecteur` 447 · `rangSous` 459 · `defautCouleur` 481
+`construitPanneau` 108 · `sectionSelection` 320 · `sectionFond` 376 · `ligneCouleur` 430
+`rangSecteur` 450 · `rangSous` 462 · `defautCouleur` 484
 
 ### `_pousse.html` — 631 l. → plan-admin.html, plan-smcl.html, plan.html
 

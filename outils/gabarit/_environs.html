@@ -321,6 +321,101 @@ function dessineFondCarte(){
 }
 
 /* ------------------------------------------------------------
+   Le trou sous le pavillon
+
+   La carte dessine le hall tel qu'il est bâti ; le plan, lui, ne couvre que
+   la part où il y a des stands — on ne trace pas les mètres carrés vides, qui
+   ne donneraient qu'une impression de vide. Les deux ne coïncident donc
+   jamais tout à fait, et la façade cartographiée dépasse du plan ou passe
+   dessous.
+
+   Plutôt que de deviner l'emprise du hall, on laisse l'exploitant la désigner
+   avec ce qu'il a déjà : le contour qu'il a dessiné. Un calque de dessin porte
+   un interrupteur de plus — « percer le fond de carte » — et ses surfaces
+   fermées deviennent des trous. La zone du hall redevient vide, et le dessin
+   s'y installe sans rien qui le contredise.
+
+   Comme le verrou, l'état vit dans la configuration plutôt qu'en table : elle
+   part aux autres postes avec le reste, et un calque supprimé ne laisse rien
+   derrière lui.
+   ------------------------------------------------------------ */
+
+const cleMasqueCarte = (id) => "_masqueCarte:" + id;
+const masqueCarte = (c) => !!c && !!(CONF[cleMasqueCarte(c.id)] || {}).masque;
+
+function basculeMasqueCarte(c){
+  const cle = cleMasqueCarte(c.id);
+  if (masqueCarte(c)) delete CONF[cle];
+  else conf(cle).masque = true;
+  enregistreConf();
+  poseMasqueCarte();
+  construitPanneau();
+}
+
+/** Le bouton du panneau. Il ne paraît qu'avec une carte dessous : sans elle il
+ *  ne percerait rien, et un réglage sans effet fait douter des autres. */
+function boutonMasqueCarte(c){
+  if (!fondCourant()) return "";
+  const on = masqueCarte(c);
+  return '<button class="masq" aria-pressed="' + on + '" title="' +
+    (on ? "Ne plus percer le fond de carte"
+        : "Percer le fond de carte : les surfaces de ce calque le laissent vide") +
+    '">' + pictoMasque(on) + '</button>';
+}
+
+/** Le picto : un cadre, et le trou qu'on y perce. Pointillé, parce qu'un trou
+ *  ne se voit pas — seul son bord se devine. */
+const pictoMasque = (on) =>
+  '<svg class="pictoMasque" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="1" y="2.2" width="10" height="7.6" rx="1"/>' +
+  (on ? '<rect class="trou" x="3.4" y="4.2" width="5.2" height="3.6" rx=".6"/>' : "") +
+  "</svg>";
+
+/* Les sortes de formes qui percent : celles qui ont une surface. Un trait, un
+   repère ou un texte désignent un endroit, ils n'en occupent pas. */
+const SORTES_MASQUE = { rect: 1, poly: 1, stand: 1 };
+
+/** Ce qui perce, sur le pavillon courant. Un calque éteint ne perce pas : il
+ *  ne se voit pas non plus, et le trou trahirait sa présence. */
+function formesMasquantes(){
+  const l = [];
+  for (const c of mesCalques()){
+    if (c.visible === false || !masqueCarte(c)) continue;
+    for (const f of (c.formes || []))
+      if (SORTES_MASQUE[f.t] && f.pts && f.pts.length > 1) l.push(f);
+  }
+  return l;
+}
+
+/* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
+   même gabarit — et un gabarit réécrit fait repeindre toute la carte. */
+let _masquePose = null;
+
+/**
+ * Le gabarit de découpe, posé sur l'enveloppe du fond.
+ *
+ * Un cadre immense percé des formes, en règle paire-impaire : un point sous une
+ * forme traverse deux bords, donc reste dehors. Le cadre couvre largement ce
+ * qu'un plan de salon peut atteindre — les coordonnées d'un parc tournent
+ * autour de dix mille, jamais du million.
+ */
+function poseMasqueCarte(){
+  const defs = $("masqueCarte"), enveloppe = $("fondCarteClip");
+  if (!defs || !enveloppe) return;
+  const trous = formesMasquantes().map(cheminForme).join("");
+  if (trous === _masquePose) return;
+  _masquePose = trous;
+  if (!trous){
+    defs.innerHTML = "";
+    enveloppe.removeAttribute("clip-path");
+    return;
+  }
+  defs.innerHTML = '<clipPath id="trousDuFond"><path clip-rule="evenodd" d="' +
+    "M-1000000 -1000000H1000000V1000000H-1000000Z" + trous + '"/></clipPath>';
+  enveloppe.setAttribute("clip-path", "url(#trousDuFond)");
+}
+
+/* ------------------------------------------------------------
    S'accrocher au bâtiment du parc
 
    Poser les trois nombres à la main demande de la patience, et ne tombe jamais
@@ -549,7 +644,12 @@ function litCoordonnees(txt){
 /** Le fond refait et la vue rendue : tout réglage passe par là. */
 function rafraichitCarte(){
   _fondPose = "";
+  /* Le bouton de perçage n'existe qu'avec une carte : le panneau des calques
+     le gagne ou le perd en même temps qu'elle. */
+  _masquePose = null;
+  poseMasqueCarte();
   dessineFondCarte();
+  if (ADMIN && typeof construitPanneau === "function" && MONTE) construitPanneau();
 }
 
 /* ------------------------------------------------------------

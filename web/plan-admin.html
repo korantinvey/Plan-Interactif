@@ -733,6 +733,12 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .verr:hover{color:var(--ink)}
 .calq .verr[aria-pressed="true"]{color:var(--accent)}
 .calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .masq{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .masq:hover{color:var(--ink)}
+.calq .masq[aria-pressed="true"]{color:var(--accent)}
+.pictoMasque{width:12px;height:12px;display:block;margin:auto}
+.pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
+.pictoMasque .trou{stroke-dasharray:1.7 1.2}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -3514,7 +3520,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
              et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
              contenu est refait à chaque changement de vue et ne s'enregistre
              nulle part — ce sont des tuiles, pas un dessin. -->
-        <g id="fondCarte"></g>
+        <!-- Le gabarit des trous, et le groupe qui les porte. Le découpage est
+             posé sur l'enveloppe, jamais sur `#fondCarte` : celui-ci porte la
+             rotation et l'échelle des tuiles, et un `clip-path` s'y lirait
+             dans ce repère-là au lieu de celui du plan. -->
+        <defs id="masqueCarte"></defs>
+        <g id="fondCarteClip"><g id="fondCarte"></g></g>
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>
@@ -10876,6 +10887,10 @@ function dessineDessins(){
     c.appendChild(g);
   }
   ordonneDom();
+  /* Un contour qui perce le fond de carte vient peut-être d'être tracé,
+     déplacé ou effacé : le gabarit de découpe suit le dessin, et lui seul sait
+     quand il a changé. */
+  if (typeof poseMasqueCarte === "function") poseMasqueCarte();
   cartouchePoi();
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
      fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
@@ -13479,7 +13494,7 @@ function construitPanneau(){
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
          modifie. */
-      (x.t === "dessin" ? boutonVerrou(x.ref) +
+      (x.t === "dessin" ? boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
                           '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
@@ -13534,6 +13549,9 @@ function construitPanneau(){
       nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
                      : "Cliquez pour dessiner dessus";
       d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
+      /* Le perçage du fond de carte : il n'y a de bouton que s'il y a une carte. */
+      const mq = d.querySelector(".masq");
+      if (mq) mq.onclick = ev => { ev.stopPropagation(); basculeMasqueCarte(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -21511,6 +21529,101 @@ function dessineFondCarte(){
 }
 
 /* ------------------------------------------------------------
+   Le trou sous le pavillon
+
+   La carte dessine le hall tel qu'il est bâti ; le plan, lui, ne couvre que
+   la part où il y a des stands — on ne trace pas les mètres carrés vides, qui
+   ne donneraient qu'une impression de vide. Les deux ne coïncident donc
+   jamais tout à fait, et la façade cartographiée dépasse du plan ou passe
+   dessous.
+
+   Plutôt que de deviner l'emprise du hall, on laisse l'exploitant la désigner
+   avec ce qu'il a déjà : le contour qu'il a dessiné. Un calque de dessin porte
+   un interrupteur de plus — « percer le fond de carte » — et ses surfaces
+   fermées deviennent des trous. La zone du hall redevient vide, et le dessin
+   s'y installe sans rien qui le contredise.
+
+   Comme le verrou, l'état vit dans la configuration plutôt qu'en table : elle
+   part aux autres postes avec le reste, et un calque supprimé ne laisse rien
+   derrière lui.
+   ------------------------------------------------------------ */
+
+const cleMasqueCarte = (id) => "_masqueCarte:" + id;
+const masqueCarte = (c) => !!c && !!(CONF[cleMasqueCarte(c.id)] || {}).masque;
+
+function basculeMasqueCarte(c){
+  const cle = cleMasqueCarte(c.id);
+  if (masqueCarte(c)) delete CONF[cle];
+  else conf(cle).masque = true;
+  enregistreConf();
+  poseMasqueCarte();
+  construitPanneau();
+}
+
+/** Le bouton du panneau. Il ne paraît qu'avec une carte dessous : sans elle il
+ *  ne percerait rien, et un réglage sans effet fait douter des autres. */
+function boutonMasqueCarte(c){
+  if (!fondCourant()) return "";
+  const on = masqueCarte(c);
+  return '<button class="masq" aria-pressed="' + on + '" title="' +
+    (on ? "Ne plus percer le fond de carte"
+        : "Percer le fond de carte : les surfaces de ce calque le laissent vide") +
+    '">' + pictoMasque(on) + '</button>';
+}
+
+/** Le picto : un cadre, et le trou qu'on y perce. Pointillé, parce qu'un trou
+ *  ne se voit pas — seul son bord se devine. */
+const pictoMasque = (on) =>
+  '<svg class="pictoMasque" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="1" y="2.2" width="10" height="7.6" rx="1"/>' +
+  (on ? '<rect class="trou" x="3.4" y="4.2" width="5.2" height="3.6" rx=".6"/>' : "") +
+  "</svg>";
+
+/* Les sortes de formes qui percent : celles qui ont une surface. Un trait, un
+   repère ou un texte désignent un endroit, ils n'en occupent pas. */
+const SORTES_MASQUE = { rect: 1, poly: 1, stand: 1 };
+
+/** Ce qui perce, sur le pavillon courant. Un calque éteint ne perce pas : il
+ *  ne se voit pas non plus, et le trou trahirait sa présence. */
+function formesMasquantes(){
+  const l = [];
+  for (const c of mesCalques()){
+    if (c.visible === false || !masqueCarte(c)) continue;
+    for (const f of (c.formes || []))
+      if (SORTES_MASQUE[f.t] && f.pts && f.pts.length > 1) l.push(f);
+  }
+  return l;
+}
+
+/* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
+   même gabarit — et un gabarit réécrit fait repeindre toute la carte. */
+let _masquePose = null;
+
+/**
+ * Le gabarit de découpe, posé sur l'enveloppe du fond.
+ *
+ * Un cadre immense percé des formes, en règle paire-impaire : un point sous une
+ * forme traverse deux bords, donc reste dehors. Le cadre couvre largement ce
+ * qu'un plan de salon peut atteindre — les coordonnées d'un parc tournent
+ * autour de dix mille, jamais du million.
+ */
+function poseMasqueCarte(){
+  const defs = $("masqueCarte"), enveloppe = $("fondCarteClip");
+  if (!defs || !enveloppe) return;
+  const trous = formesMasquantes().map(cheminForme).join("");
+  if (trous === _masquePose) return;
+  _masquePose = trous;
+  if (!trous){
+    defs.innerHTML = "";
+    enveloppe.removeAttribute("clip-path");
+    return;
+  }
+  defs.innerHTML = '<clipPath id="trousDuFond"><path clip-rule="evenodd" d="' +
+    "M-1000000 -1000000H1000000V1000000H-1000000Z" + trous + '"/></clipPath>';
+  enveloppe.setAttribute("clip-path", "url(#trousDuFond)");
+}
+
+/* ------------------------------------------------------------
    S'accrocher au bâtiment du parc
 
    Poser les trois nombres à la main demande de la patience, et ne tombe jamais
@@ -21739,7 +21852,12 @@ function litCoordonnees(txt){
 /** Le fond refait et la vue rendue : tout réglage passe par là. */
 function rafraichitCarte(){
   _fondPose = "";
+  /* Le bouton de perçage n'existe qu'avec une carte : le panneau des calques
+     le gagne ou le perd en même temps qu'elle. */
+  _masquePose = null;
+  poseMasqueCarte();
   dessineFondCarte();
+  if (ADMIN && typeof construitPanneau === "function" && MONTE) construitPanneau();
 }
 
 /* ------------------------------------------------------------
