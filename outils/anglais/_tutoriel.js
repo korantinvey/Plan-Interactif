@@ -9,8 +9,7 @@ module.exports = {
 
   // la bulle
   "Visite guidée": "Guided tour",
-  "Passer": "Skip",
-  "Passer à la suite": "Skip to the next step",
+  "Étape suivante": "Next step",
   "Quitter la visite guidée": "Leave the guided tour",
   "Suivant": "Next",
   "Terminer": "Finish",
@@ -77,15 +76,21 @@ module.exports = {
 
   // le parcours de visite
   "Mon parcours de visite": "My visit plan",
-  "les exposants et les conférences à ne pas manquer": "the exhibitors and conferences not to miss",
-  "Retenez les exposants à ne pas manquer : touchez un stand qui vous intéresse sur le plan, ou cherchez-le par son nom.":
-    "Keep the exhibitors you don't want to miss: tap a stand that interests you on the map, or search for it by name.",
+  "les exposants et les conférences à ne pas manquer, à garder ou à partager": "the exhibitors and conferences not to miss, to keep or to share",
+  "Ce signet, en haut de l'écran, ouvre votre parcours de visite : les exposants et les conférences que vous voulez voir, gardés sur cet appareil. Commençons par en retenir un.":
+    "This bookmark, at the top of the screen, opens your visit plan: the exhibitors and conferences you want to see, kept on this device. Let's start by adding one.",
+  "Touchez sur le plan un stand qui vous intéresse.": "Tap a stand that interests you on the map.",
   "Plusieurs sociétés partagent ce stand : choisissez celle qui vous intéresse.":
     "Several companies share this stand: choose the one that interests you.",
   "Touchez le signet pour ajouter « {nom} » à votre parcours.":
     "Tap the bookmark to add “{nom}” to your visit plan.",
   "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour retrouver ce que vous avez retenu.":
     "Noted. Tap “My visit” at the top of the screen to find what you have kept.",
+
+  "Vous venez à plusieurs ? « Partager » donne votre parcours à un autre téléphone, par un code ou un lien — sans compte, et sans rien envoyer sur nos serveurs.":
+    "Visiting with others? “Share” passes your visit plan to another phone, with a code or a link — no account, and nothing sent to our servers.",
+  "Faites photographier ce code à qui vous accompagne, ou envoyez-lui le lien : son plan s'ouvrira sur le même parcours. Refermez la fenêtre pour continuer.":
+    "Let whoever is with you photograph this code, or send them the link: their map will open on the same visit plan. Close the window to carry on.",
 
   // la journée
   "Ma journée": "My day",
@@ -94,6 +99,10 @@ module.exports = {
     "Your visit plan can become a planned day: open “My visit” at the top of the screen.",
   "Touchez « Organiser ma journée » : les conférences retenues gardent leur heure, et les stands se glissent entre elles dans l'ordre qui fait le moins de chemin.":
     "Tap “Plan my day”: the conferences you kept stay at their time, and the stands fit in between, in the order that means the least walking.",
+  "Touchez le signet pour ajouter « {nom} » à votre parcours : c'est lui que la journée met en ordre.":
+    "Tap the bookmark to add “{nom}” to your visit plan: that is what your day is built from.",
+  "« Organiser ma journée » met votre parcours en heures : les conférences retenues gardent la leur, les stands se glissent entre elles. Il lui faut un parcours : touchez un stand sur le plan, puis son signet.":
+    "“Plan my day” turns your visit plan into a schedule: the conferences you kept stay at their time, and the stands fit in between. It needs a visit plan: tap a stand on the map, then its bookmark.",
   "Indiquez votre heure d'arrivée, puis touchez « Organiser ».":
     "Enter your arrival time, then tap “Plan my day”.",
   "Voici votre journée : chaque étape a son heure, et le trajet est tracé sur le plan. Bonne visite !":

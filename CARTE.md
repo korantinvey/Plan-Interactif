@@ -230,7 +230,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3905 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3926 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -512,7 +512,7 @@ Fonctions :
 
 `range` 74 · `dabordCache` 84 · `dabordReseau` 102 · `navigation` 119
 
-### `_tutoriel.html` — 731 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 851 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -520,14 +520,15 @@ Fonctions :
 
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
-`zoneDuTuto` 91 · `insecable` 108 · `phraseTrajetTuto` 114 · `chapitresTuto` 319
-`proposeTutoriel` 339 · `lanceTutoriel` 384 · `quitteTutoriel` 461 · `chapitreTuto` 470
-`battementTuto` 481 · `finTuto` 499 · `afficheTuto` 516 · `boiteTuto` 556 · `repereTuto` 570
-`rameneTuto` 601 · `placeTuto` 633 · `rafaleTuto` 693 · `marqueZoneTuto` 713
+`zoneDuTuto` 91 · `insecable` 108 · `phraseTrajetTuto` 114 · `chapitresTuto` 358
+`proposeTutoriel` 378 · `lanceTutoriel` 423 · `quitteTutoriel` 509 · `chapitreTuto` 520
+`battementTuto` 529 · `finTuto` 547 · `afficheTuto` 564 · `boiteTuto` 610 · `repereTuto` 624
+`rameneTuto` 657 · `placeTuto` 695 · `voileTuto` 768 · `rafaleTuto` 785
+`marqueZoneTuto` 805 · `marqueLibelleTuto` 840
 
 Éléments :
 
-`#tutoPoints` · `#tutoPasse` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
+`#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
 ## Dans `web/`, mais que la construction ne produit pas

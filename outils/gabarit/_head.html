@@ -3458,7 +3458,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   animation:tutoParait .2s ease-out}
 @keyframes tutoParait{from{opacity:0}to{opacity:1}}
 /* Tout ce qui ne change pas d'une étape à l'autre tient sur la ligne du haut —
-   la progression, « Passer », la croix — et le pied n'existe que pour
+   la progression, « Suivant », la croix — et le pied n'existe que pour
    « Suivant ». Sur un téléphone, chaque ligne de la bulle est une ligne de plan
    en moins, précisément là où l'on demande de toucher. */
 .tutoTete{display:flex;align-items:center;gap:10px;min-height:22px}
@@ -3468,9 +3468,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .tutoPoints i{width:6px;height:6px;border-radius:999px;background:var(--line-strong)}
 .tutoPoints i.fait{background:color-mix(in srgb,var(--accent) 45%,var(--line-strong))}
 .tutoPoints i.ici{width:16px;background:var(--accent)}
-.tutoPasse{flex:none;padding:3px 2px;font-size:12px;color:var(--ink-3);
+.tutoAvance{flex:none;padding:3px 2px;font-size:12px;color:var(--ink-3);
   text-decoration:underline;text-underline-offset:3px}
-.tutoPasse:hover{color:var(--ink)}
+.tutoAvance:hover{color:var(--ink)}
 .tutoQuitte{flex:none;width:28px;height:28px;margin:-6px -8px -6px -6px;display:grid;
   place-items:center;font-size:19px;line-height:1;color:var(--ink-3);border-radius:var(--radius)}
 .tutoQuitte:hover{color:var(--ink);background:var(--surface-2)}
@@ -3491,6 +3491,26 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     0 0 22px 2px color-mix(in srgb,var(--accent) 42%,transparent);
   animation:tutoBat 1.5s ease-in-out infinite}
 @keyframes tutoBat{0%,100%{opacity:1}50%{opacity:.4}}
+/* Le voile : ce qui n'est pas désigné recule. Quatre bandes d'un pixel étirées
+   par la page autour de ce qui reste clair ; posé sous le repère et la bulle,
+   il ne prend aucun clic. Plus appuyé dans le thème sombre, où un gris léger
+   ne se distinguerait pas du fond. */
+.tutoVoile{position:fixed;inset:0;z-index:39;pointer-events:none;opacity:0;
+  transition:opacity .25s ease;--voile:rgba(8,10,12,.42)}
+.tutoVoile.on{opacity:1}
+.tutoVoile i{position:absolute;left:0;top:0;width:1px;height:1px;background:var(--voile);
+  transform-origin:0 0;will-change:transform}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .tutoVoile{--voile:rgba(0,0,0,.55)}
+}
+:root[data-theme="dark"] .tutoVoile{--voile:rgba(0,0,0,.55)}
+/* Autour d'une zone désignée, le plan recule comme sous le cartouche des points
+   d'intérêt : la zone et son nom restent entiers, le reste s'efface. */
+html.tuto-retrait #stands,
+html.tuto-retrait #couches .cal,
+html.tuto-retrait #zones g:not(.tutoCible),
+html.tuto-retrait #labels .lbl:not(.tutoCible),
+html.tuto-retrait .dcal .forme{opacity:.22}
 /* Sur le plan, la zone à toucher est recopiée au-dessus des couches, comme la
    sélection dans « #marques » : tracé sur la zone elle-même, son contour
    passerait sous les stands voisins. Elle ne prend aucun clic — c'est la zone,
@@ -3521,6 +3541,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 @media (prefers-reduced-motion:reduce){
   .tuto{transition:none;animation:none}
   .tutoRepere,#tutoZone{animation:none}
+  .tutoVoile{transition:none}
 }
 </style>
 

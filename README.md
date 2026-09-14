@@ -1037,9 +1037,9 @@ Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,
 la journée qu'on en tire : tout cela attend derrière des icônes que personne
 n'essaie une à une. À la première ouverture d'un salon, le plan propose donc
 d'en faire le tour — « Découvrir le plan » —, et le visiteur y fait **lui-même**
-chaque geste, sur le vrai plan. Une bulle dit quoi toucher, un repère lumineux
-encadre ce qu'il faut toucher, et la visite attend que ce soit fait pour passer
-à la suite. Rien n'est simulé : la conférence retenue en chemin est dans le
+chaque geste, sur le vrai plan. Une bulle posée à côté dit quoi toucher, un
+repère lumineux encadre ce qu'il faut toucher, tout le reste s'estompe, et la
+visite attend que ce soit fait pour passer à la suite. Rien n'est simulé : la conférence retenue en chemin est dans le
 parcours, la journée organisée aussi.
 
 Quatre chapitres, dans cet ordre :
@@ -1049,18 +1049,26 @@ Quatre chapitres, dans cet ordre :
    conférence par son signet.
 2. **L'itinéraire** — depuis la fiche de cette zone, « Itinéraire » : l'arrivée
    est remplie, le visiteur désigne son départ sur le plan, et lit le trajet.
-3. **Mon parcours de visite** — il touche un stand de son choix, le retient par
-   le signet, et ouvre « Mon parcours ».
+3. **Mon parcours de visite** — le signet de la barre du haut est présenté là où
+   il est ; le visiteur touche un stand de son choix, le retient, ouvre « Mon
+   parcours », et découvre « Partager », qui donne la liste à un autre téléphone
+   par un code ou un lien.
 4. **Ma journée** — « Organiser ma journée », une heure d'arrivée, et l'ordre de
-   visite apparaît.
+   visite apparaît. Sur un parcours encore vide, la fonction se présente quand
+   même, et dit qu'il lui faut d'abord un stand retenu.
 
 Chaque chapitre ne paraît que si sa fonction existe sur ce salon : sans
 conférence rattachée à une zone, la visite commence à l'itinéraire ; sans
 parcours, elle s'arrête avant ; sans itinéraire, la journée disparaît avec lui.
 La consigne se relit dans l'état de la page plutôt que dans une liste d'étapes
 franchies : le visiteur qui referme une fiche, trouve son stand par la liste ou
-touche une autre zone voit la consigne le suivre. « Passer » saute au chapitre
-suivant, la croix ou Échap quittent la visite.
+touche une autre zone voit la consigne le suivre. « Suivant », en haut de la
+bulle, saute au chapitre suivant ; la croix ou Échap quittent la visite.
+
+Le voile qui estompe le reste ne prend aucun clic : on garde la main sur la page
+entière. Autour d'une zone désignée, le plan recule comme sous le cartouche des
+points d'intérêt ; quand c'est le plan qu'on touche — un stand, un point de
+départ —, il reste clair et seuls la barre et la liste s'effacent.
 
 La visite ne choisit ni le stand ni la conférence à la place du visiteur : un
 exposant imposé verrait ses chiffres gonfler dans le rapport d'utilisation. Seule
