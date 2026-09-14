@@ -918,6 +918,11 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    quartier, et à pleine force il dispute l'œil aux stands. La force est un
    réglage du salon, posée en variable par le calage. */
 #fondCarte{opacity:var(--carte-force,.62)}
+.fondGL{position:absolute;inset:0;pointer-events:none;opacity:var(--carte-force,.62)}
+.fondGL canvas{outline:none}
+/* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
+   l'exploitant choisit, et qui suit le thème. */
+#trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
 #fondCarte image{image-rendering:auto}
 .creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
   background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
@@ -3523,6 +3528,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   </aside>
 
   <main class="stage" id="stage">
+    <!-- La carte vectorielle, quand c'est elle qu'on a choisie. Hors du SVG :
+         MapLibre peint sur sa propre toile WebGL, et c'est justement ce qui
+         garde les libellés droits quand le plan est tourné. Elle ne reçoit
+         aucun geste — tout passe par le SVG posé dessus. -->
+    <div class="fondGL" id="fondCarteGL" hidden></div>
     <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
       <g id="couches">
         <!-- Le fond de carte, sous tout le reste. Il ne participe pas à la
@@ -3530,12 +3540,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
              et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
              contenu est refait à chaque changement de vue et ne s'enregistre
              nulle part — ce sont des tuiles, pas un dessin. -->
-        <!-- Le gabarit des trous, et le groupe qui les porte. Le découpage est
-             posé sur l'enveloppe, jamais sur `#fondCarte` : celui-ci porte la
-             rotation et l'échelle des tuiles, et un `clip-path` s'y lirait
-             dans ce repère-là au lieu de celui du plan. -->
-        <defs id="masqueCarte"></defs>
-        <g id="fondCarteClip"><g id="fondCarte"></g></g>
+        <g id="fondCarte"></g>
+        <!-- Ce qui rend le hall vide : un aplat de la couleur du fond, posé
+             par-dessus la carte et sous tout le reste. Un aplat et non un
+             découpage — il n'y a rien derrière la carte que ce fond-là, le
+             rendu est le même, et il vaut aussi bien pour des tuiles que pour
+             une toile WebGL, qu'aucun `clip-path` du SVG n'atteint. -->
+        <path id="trouDuFond"></path>
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>

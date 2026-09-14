@@ -218,31 +218,28 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1128 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1255 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
 `metresParDegre` 43 · `tourneEnvirons` 60 · `versTerre` 66 · `versLePlan` 73 · `reancre` 88
-`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 173 · `calageCourant` 185
-`fondCourant` 188 · `recul` 193 · `pixelsMercator` 198 · `latitudeDePixel` 207
-`metresParPixel` 215 · `echelleDesTuiles` 233 · `niveauDesTuiles` 245 · `adresseTuile` 252
-`tuilesDeLaVue` 262 · `dessineFondCarte` 303 · `cleMasqueCarte` 375 · `masqueCarte` 376
-`basculeMasqueCarte` 378 · `boutonMasqueCarte` 389 · `pictoMasque` 400
-`formesMasquantes` 412 · `cheminDuHall` 434 · `poseMasqueCarte` 453 · `carreDeTerrain` 490
-`chercheBatiments` 506 · `aireDuContour` 533 · `centreDuContour` 542 · `axeDuContour` 555
-`empriseDesObjets` 572 · `batimentsCandidats` 590 · `caleSurBatiment` 611
-`retientLeHall` 637 · `manqueCalage` 659 · `enregistreCalage` 668 · `calageEnregistre` 681
-`litCoordonnees` 706 · `rafraichitCarte` 720 · `armeCalage` 762 · `pivotCalage` 773
-`glisseCarte` 777 · `calagePointerDown` 784 · `calagePointerMove` 798
-`calagePointerUp` 817 · `ditCalage` 825 · `majCalage` 833 · `appliqueCalage` 848
-`tourneCalage` 855 · `construitCalage` 861 · `ouvreCalage` 967 · `fermeCalage` 976
-`voletEnvirons` 1004
-
-Éléments :
-
-`#trousDuFond`
+`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 189 · `calageCourant` 201
+`fondCourant` 204 · `recul` 209 · `pixelsMercator` 214 · `latitudeDePixel` 223
+`metresParPixel` 231 · `echelleDesTuiles` 249 · `niveauDesTuiles` 261 · `adresseTuile` 268
+`tuilesDeLaVue` 278 · `chargeMapLibre` 338 · `vueGL` 365 · `poseCarteGL` 378
+`videCarteGL` 416 · `dessineFondCarte` 428 · `cleMasqueCarte` 509 · `masqueCarte` 510
+`basculeMasqueCarte` 512 · `boutonMasqueCarte` 523 · `pictoMasque` 534
+`formesMasquantes` 546 · `cheminDuHall` 568 · `poseMasqueCarte` 587 · `carreDeTerrain` 617
+`chercheBatiments` 633 · `aireDuContour` 660 · `centreDuContour` 669 · `axeDuContour` 682
+`empriseDesObjets` 699 · `batimentsCandidats` 717 · `caleSurBatiment` 738
+`retientLeHall` 764 · `manqueCalage` 786 · `enregistreCalage` 795 · `calageEnregistre` 808
+`litCoordonnees` 833 · `rafraichitCarte` 847 · `armeCalage` 889 · `pivotCalage` 900
+`glisseCarte` 904 · `calagePointerDown` 911 · `calagePointerMove` 925
+`calagePointerUp` 944 · `ditCalage` 952 · `majCalage` 960 · `appliqueCalage` 975
+`tourneCalage` 982 · `construitCalage` 988 · `ouvreCalage` 1094 · `fermeCalage` 1103
+`voletEnvirons` 1131
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -253,7 +250,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3820 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3831 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -262,8 +259,8 @@ Fonctions :
 `#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail` · `#btnThemeCompte`
 `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side` · `#poignee` · `#q`
 `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count` · `#countTxt` · `#list`
-`#stage` · `#plan` · `#couches` · `#masqueCarte` · `#fondCarteClip` · `#fondCarte`
-`#zones` · `#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt`
+`#stage` · `#fondCarteGL` · `#plan` · `#couches` · `#fondCarte` · `#trouDuFond` · `#zones`
+`#stands` · `#labels` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt`
 `#creditCarte` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#calage`
 `#calageFerme` · `#calageCorps` · `#calageEtat` · `#calageGarde` · `#outils`
 `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`

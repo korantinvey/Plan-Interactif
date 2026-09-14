@@ -918,6 +918,11 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    quartier, et à pleine force il dispute l'œil aux stands. La force est un
    réglage du salon, posée en variable par le calage. */
 #fondCarte{opacity:var(--carte-force,.62)}
+.fondGL{position:absolute;inset:0;pointer-events:none;opacity:var(--carte-force,.62)}
+.fondGL canvas{outline:none}
+/* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
+   l'exploitant choisit, et qui suit le thème. */
+#trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
 #fondCarte image{image-rendering:auto}
 .creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
   background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
@@ -3523,6 +3528,11 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   </aside>
 
   <main class="stage" id="stage">
+    <!-- La carte vectorielle, quand c'est elle qu'on a choisie. Hors du SVG :
+         MapLibre peint sur sa propre toile WebGL, et c'est justement ce qui
+         garde les libellés droits quand le plan est tourné. Elle ne reçoit
+         aucun geste — tout passe par le SVG posé dessus. -->
+    <div class="fondGL" id="fondCarteGL" hidden></div>
     <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
       <g id="couches">
         <!-- Le fond de carte, sous tout le reste. Il ne participe pas à la
@@ -3530,12 +3540,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
              et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
              contenu est refait à chaque changement de vue et ne s'enregistre
              nulle part — ce sont des tuiles, pas un dessin. -->
-        <!-- Le gabarit des trous, et le groupe qui les porte. Le découpage est
-             posé sur l'enveloppe, jamais sur `#fondCarte` : celui-ci porte la
-             rotation et l'échelle des tuiles, et un `clip-path` s'y lirait
-             dans ce repère-là au lieu de celui du plan. -->
-        <defs id="masqueCarte"></defs>
-        <g id="fondCarteClip"><g id="fondCarte"></g></g>
+        <g id="fondCarte"></g>
+        <!-- Ce qui rend le hall vide : un aplat de la couleur du fond, posé
+             par-dessus la carte et sous tout le reste. Un aplat et non un
+             découpage — il n'y a rien derrière la carte que ce fond-là, le
+             rendu est le même, et il vaut aussi bien pour des tuiles que pour
+             une toile WebGL, qu'aucun `clip-path` du SVG n'atteint. -->
+        <path id="trouDuFond"></path>
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>
@@ -21362,6 +21373,22 @@ const GEOPF = "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0" +
   "&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM" +
   "&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
 const CARTES = {
+  /* Les fonds vectoriels d'abord, et pour une raison qui n'a rien d'esthétique :
+     eux seuls gardent les libellés droits. Un plan de salon se dessine l'entrée
+     vers le bas, presque jamais le nord en haut ; la carte tourne donc avec
+     lui. Dans une image, le texte est cuit et tourne avec — aucun fournisseur
+     n'y peut rien, Google compris. Un moteur vectoriel, lui, replace ses
+     étiquettes à chaque changement d'orientation, parce qu'il les compose au
+     moment de peindre. C'est ce que fait tout plan de salon du métier. */
+  vecteur: { nom: "Vectoriel sobre",
+             style: "https://tiles.openfreemap.org/styles/positron",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  vecteurDetail: { nom: "Vectoriel détaillé",
+             style: "https://tiles.openfreemap.org/styles/liberty",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  vecteurSombre: { nom: "Vectoriel sombre",
+             style: "https://tiles.openfreemap.org/styles/dark",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
   /* Un fond sans un mot écrit, et en premier. Deux raisons, qui vont ensemble :
      un plan de salon se dessine l'entrée vers le bas, presque jamais le nord en
      haut — la carte tourne donc avec lui, et son texte se lit de travers ou à
@@ -21517,6 +21544,115 @@ function tuilesDeLaVue(cal, fond, vue, mParPx){
   return { z: z, k: k, tuiles: tuiles };
 }
 
+/* ------------------------------------------------------------
+   Le rendu vectoriel
+
+   Les tuiles d'images portent leur texte cuit : un plan tourné le tourne
+   aussi, et on lit les noms de rues à l'envers. Aucun fournisseur n'y change
+   rien. Un moteur vectoriel, lui, reçoit de la géométrie et compose ses
+   étiquettes au moment de peindre : elles restent droites quelle que soit
+   l'orientation. C'est le seul correctif qui existe, et c'est ce que font les
+   plans de salon du métier.
+
+   MapLibre peint sur sa propre toile, sous le SVG, et ne reçoit aucun geste :
+   c'est nous qui lui disons où regarder à chaque changement de vue. Notre
+   calage donne les trois nombres qu'il demande — le centre en longitude et
+   latitude, l'échelle, et le cap.
+   ------------------------------------------------------------ */
+
+/* La bibliothèque n'est chargée que lorsqu'un fond vectoriel est retenu : deux
+   cents kilo-octets qu'un salon sans carte n'a pas à télécharger. Une version
+   majeure plutôt qu'exacte — le CDN résout alors toujours vers quelque chose
+   qui existe, là où un numéro de correctif mal deviné ne rendrait qu'un 404
+   silencieux. */
+const MAPLIBRE_JS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js";
+const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css";
+
+let _biblioGL = null;
+function chargeMapLibre(){
+  if (_biblioGL) return _biblioGL;
+  _biblioGL = new Promise((ok, non) => {
+    if (window.maplibregl) return ok(window.maplibregl);
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = MAPLIBRE_CSS;
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = MAPLIBRE_JS;
+    js.onload = () => window.maplibregl
+      ? ok(window.maplibregl)
+      : non(new Error("bibliothèque chargée mais introuvable"));
+    js.onerror = () => non(new Error("bibliothèque de carte injoignable"));
+    document.head.appendChild(js);
+  });
+  return _biblioGL;
+}
+
+/**
+ * Où la carte vectorielle doit regarder, déduit de la vue du plan.
+ *
+ * Le cap est l'opposé de l'angle du calage : MapLibre nomme « cap » l'azimut
+ * qui se trouve en haut de l'écran, et le haut de notre plan pointe vers
+ * l'azimut −angle. L'échelle suit la convention du moteur, où le monde fait
+ * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
+ */
+function vueGL(cal){
+  const r = cadrePlan();
+  const mParPx = view.w / (r.width || 1);
+  return {
+    center: versTerre([view.x + view.w / 2, view.y + view.h / 2], cal),
+    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * mParPx)) / Math.LN2,
+    bearing: -cal.angle / DEG,
+  };
+}
+
+let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
+
+/** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
+function poseCarteGL(cal, fond){
+  const hote = $("fondCarteGL");
+  if (!hote || _echecGL) return;
+  hote.hidden = false;
+  if (_carteGL){
+    if (_styleGL !== fond.style){ _styleGL = fond.style; _carteGL.setStyle(fond.style); }
+    _carteGL.jumpTo(vueGL(cal));
+    return;
+  }
+  /* Le montage est asynchrone et la vue se refait à chaque image : sans ce
+     drapeau on empilerait trente cartes le temps d'un glissement. */
+  if (_monteGL) return;
+  _monteGL = true;
+  chargeMapLibre().then(gl => {
+    const v = vueGL(cal);
+    _styleGL = fond.style;
+    _carteGL = new gl.Map({
+      container: hote, style: fond.style,
+      center: v.center, zoom: v.zoom, bearing: v.bearing,
+      /* Aucun geste : tout passe par le SVG posé dessus. Et pas d'attribution
+         intégrée — la nôtre est déjà au coin du plan, à la même place pour
+         tous les fonds. */
+      interactive: false, attributionControl: false,
+      /* Les étiquettes n'apparaissent pas en fondu : la vue est recadrée à
+         chaque image du geste, et un fondu qui reprend sans cesse ferait
+         clignoter les noms de rues pendant qu'on cale. */
+      fadeDuration: 0,
+    });
+  }).catch(e => {
+    _monteGL = false;
+    _echecGL = e.message;
+    hote.hidden = true;
+    ditCalage("Carte vectorielle indisponible (" + e.message +
+              ") : prenez un fond en images.", true);
+  });
+}
+
+/** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
+function videCarteGL(){
+  const hote = $("fondCarteGL");
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
+  if (hote) hote.hidden = true;
+}
+
 /* Ce qui est déjà posé : sans cette empreinte, chaque image d'un glissement
    réécrirait les mêmes trente balises et redemanderait les mêmes tuiles. */
 let _fondPose = "";
@@ -21530,10 +21666,20 @@ function dessineFondCarte(){
   const credit = $("creditCarte");
   if (!cal || !fond || typeof view === "undefined" || !view){
     if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    videCarteGL();
     if (credit) credit.hidden = true;
     return;
   }
   racine.style.setProperty("--carte-force", forceCarte(cal));
+  if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
+  /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
+     c'est MapLibre qui regarde. */
+  if (fond.style){
+    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    poseCarteGL(cal, fond);
+    return;
+  }
+  videCarteGL();
   const r = cadrePlan();
   const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
 
@@ -21572,7 +21718,6 @@ function dessineFondCarte(){
   hote.querySelectorAll("image").forEach(im => {
     im.onerror = () => { _tuilesMuettes++; im.remove(); };
   });
-  if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
 }
 
 /* ------------------------------------------------------------
@@ -21662,31 +21807,24 @@ function cheminDuHall(){
 }
 
 /* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
-   même gabarit — et un gabarit réécrit fait repeindre toute la carte. */
+   même aplat — et un aplat réécrit fait repeindre toute la carte. */
 let _masquePose = null;
 
 /**
- * Le gabarit de découpe, posé sur l'enveloppe du fond.
+ * L'aplat qui vide, posé par-dessus la carte et sous tout le reste.
  *
- * Un cadre immense percé des formes, en règle paire-impaire : un point sous une
- * forme traverse deux bords, donc reste dehors. Le cadre couvre largement ce
- * qu'un plan de salon peut atteindre — les coordonnées d'un parc tournent
- * autour de dix mille, jamais du million.
+ * Un aplat de la couleur du fond, et non un découpage. Le rendu est le même —
+ * il n'y a rien derrière la carte que ce fond-là — et il vaut aussi bien pour
+ * des tuiles que pour la toile WebGL du rendu vectoriel, qu'aucun `clip-path`
+ * du SVG n'atteindrait.
  */
 function poseMasqueCarte(){
-  const defs = $("masqueCarte"), enveloppe = $("fondCarteClip");
-  if (!defs || !enveloppe) return;
+  const el = $("trouDuFond");
+  if (!el) return;
   const trous = cheminDuHall() + formesMasquantes().map(cheminForme).join("");
   if (trous === _masquePose) return;
   _masquePose = trous;
-  if (!trous){
-    defs.innerHTML = "";
-    enveloppe.removeAttribute("clip-path");
-    return;
-  }
-  defs.innerHTML = '<clipPath id="trousDuFond"><path clip-rule="evenodd" d="' +
-    "M-1000000 -1000000H1000000V1000000H-1000000Z" + trous + '"/></clipPath>';
-  enveloppe.setAttribute("clip-path", "url(#trousDuFond)");
+  el.setAttribute("d", trous);
 }
 
 /* ------------------------------------------------------------
