@@ -590,6 +590,7 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calage .cAvance input{width:100%;padding:5px 7px;font-size:11.5px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
 .calage .cAvance input:focus{border-color:var(--accent);outline:none}
+.calage .cAvance .cAide{font-size:10.5px;color:var(--ink-3);line-height:1.4;overflow-wrap:anywhere}
 /* Un mode armé change ce que la main fait du plan : le curseur est la seule
    chose qui le dise avant le premier geste. */
 html.cale-deplace #plan{cursor:grab}
@@ -22360,7 +22361,9 @@ function construitCalage(){
   avance.className = "cAvance";
   avance.innerHTML =
     '<input type="text" class="cCle" placeholder="Clé du service" autocomplete="off">' +
-    '<input type="text" class="cStyle" placeholder="Adresse du style, si autre" autocomplete="off">';
+    '<input type="text" class="cStyle" autocomplete="off"' +
+    ' placeholder="Autre style — laissez vide sinon">' +
+    '<span class="cAide"></span>';
   const iCle = avance.querySelector(".cCle");
   const iStyle = avance.querySelector(".cStyle");
   /* Une clé se tape ou se colle caractère par caractère : relancer à chacun
@@ -22377,13 +22380,25 @@ function construitCalage(){
     relanceCarteGL();
   });
 
+  const aideAvance = avance.querySelector(".cAide");
   const majAvance = () => {
     const f = CARTES[sel.value];
     avance.hidden = !(f && f.style);
     iCle.hidden = !(f && f.cle);
     iCle.value = ENV_CAL.cle || "";
     iStyle.value = ENV_CAL.style || "";
-    iStyle.title = f && f.style ? "Par défaut : " + f.style : "";
+    if (!f || !f.style) return;
+    /* Ce que sont ces deux champs, dit là où on les voit. « Style » est le mot
+       du métier et ne dit rien à qui ne le connaît pas : c'est l'adresse d'un
+       fichier que le service donne, et qui décrit l'allure de la carte —
+       couleurs, épaisseurs, ce qui s'affiche à quel zoom. Chaque fond de la
+       liste en a déjà une ; le champ ne sert qu'à en essayer une autre. */
+    aideAvance.textContent = (f.cle
+      ? "La clé vient de votre compte chez le service. "
+      : "Ce fond ne demande pas de clé. ") +
+      "Le champ suivant n'est utile que pour essayer un autre style que celui " +
+      "du fond choisi — l'adresse d'un fichier de style MapLibre, que le " +
+      "service vous donne. Par défaut : " + f.style.replace(/\?key=.*$/, "") + ".";
   };
 
   sel.onchange = () => {

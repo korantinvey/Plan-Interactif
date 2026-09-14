@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1392 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1406 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -239,8 +239,8 @@ Fonctions :
 `rafraichitCarte` 937 · `armeCalage` 979 · `pivotCalage` 990 · `glisseCarte` 994
 `calagePointerDown` 1001 · `calagePointerMove` 1015 · `calagePointerUp` 1034
 `ditCalage` 1042 · `ditCarte` 1051 · `majCalage` 1059 · `appliqueCalage` 1074
-`tourneCalage` 1081 · `construitCalage` 1087 · `ouvreCalage` 1231 · `fermeCalage` 1240
-`voletEnvirons` 1268
+`tourneCalage` 1081 · `construitCalage` 1087 · `ouvreCalage` 1245 · `fermeCalage` 1254
+`voletEnvirons` 1282
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
@@ -251,7 +251,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3852 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3853 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
