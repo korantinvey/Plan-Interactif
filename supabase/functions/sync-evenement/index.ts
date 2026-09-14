@@ -125,6 +125,29 @@ const client = () =>
     { auth: { persistSession: false } },
   );
 
+/**
+ * Une écriture dont l'échec ne peut pas passer inaperçu.
+ *
+ * `supabase-js` ne lève rien : une écriture refusée, expirée en chemin ou trop
+ * lourde rend `{ error }` que personne ne lisait. La synchronisation allait donc
+ * jusqu'au bout, annonçait « terminé » et son compte de stands, pendant que la
+ * base n'avait rien reçu — c'est le pire des deux mondes, puisque l'exploitant
+ * repart en croyant son plan à jour. Et ce n'est pas théorique : un calque pèse
+ * plusieurs mégaoctets, un instantané tout autant, et ce sont justement les
+ * écritures qu'un délai d'exécution ou une limite de taille arrête.
+ *
+ * L'erreur remonte donc, et le `catch` du flux la dit à l'écran et l'inscrit
+ * dans `derniere_err`. Une synchronisation à moitié écrite reste à moitié
+ * écrite — elles sont rejouables, et c'est le sens du bouton.
+ */
+async function ecrit(
+  requete: PromiseLike<{ error: { message: string } | null }>,
+  quoi: string,
+): Promise<void> {
+  const { error } = await requete;
+  if (error) throw new Error(quoi + " : " + error.message);
+}
+
 const gaia = (instance: string, eventId?: string) =>
   new Gaia({ instance, apiKey: Deno.env.get("KLIPSO_API_KEY") ?? "", eventId });
 
@@ -913,7 +936,7 @@ Deno.serve(async (req) => {
         etape("plan", "encours", String(plan.Libelle ?? ""));
         part(0.03, "Pavillon « " + String(plan.Libelle ?? "") + " »");
         /* --- le pavillon --- */
-        const { data: ligne } = await db.from("plan").upsert({
+        const { data: ligne, error: ePlan } = await db.from("plan").upsert({
           evenement_id: evt.id,
           id_klipso: plan.Id,
           libelle: String(plan.Libelle ?? "")
@@ -921,7 +944,13 @@ Deno.serve(async (req) => {
           hall: plan.HallExp ?? null,
           modifie_le: new Date().toISOString(),
         }, { onConflict: "evenement_id,id_klipso" }).select("id").single();
-        if (!ligne) continue;
+        /* Le pavillon qu'on n'a pas pu poser emportait tout le reste avec lui :
+           calques, stands, instantané, tout pendait de son identifiant. Le
+           sauter en silence rendait un résumé qui le comptait quand même. */
+        if (ePlan || !ligne) {
+          throw new Error("Écriture du pavillon « " + String(plan.Libelle ?? plan.Id) +
+            " » : " + (ePlan?.message ?? "la base n'a rien rendu"));
+        }
         const planId = ligne.id as string;
 
         /* --- calques d'habillage --- */
@@ -946,7 +975,7 @@ Deno.serve(async (req) => {
           tousTextes.push(...lus);
           if (CALQUES_TEXTE.includes(c.Libelle)) textesZone.push(...lus);
           const { svg } = allege(brut);
-          await db.from("calque").upsert({
+          await ecrit(db.from("calque").upsert({
             plan_id: planId,
             id_klipso: c.Id,
             cle: c.Libelle,
@@ -954,7 +983,7 @@ Deno.serve(async (req) => {
             type: c.Type ?? null,
             ordre_klipso: c.Ordre ?? null,
             svg,
-          }, { onConflict: "plan_id,id_klipso" });
+          }, { onConflict: "plan_id,id_klipso" }), "Écriture du calque « " + c.Libelle + " »");
         }
 
         /* --- stands ---
@@ -1256,18 +1285,18 @@ Deno.serve(async (req) => {
 
         part(0.92, "Enregistrement du pavillon");
         const emp = emprise([...stands, ...zones]);
-        await db.from("plan").update({
+        await ecrit(db.from("plan").update({
           emprise: emp,
           nb_stands: stands.length,
           nb_zones: zones.length,
           modifie_le: new Date().toISOString(),
-        }).eq("id", planId);
+        }).eq("id", planId), "Écriture de l'emprise du pavillon");
 
-        await db.from("instantane").upsert({
+        await ecrit(db.from("instantane").upsert({
           plan_id: planId,
           charge: { stands, zones, conferences, emprise: emp },
           genere_le: new Date().toISOString(),
-        }, { onConflict: "plan_id" });
+        }, { onConflict: "plan_id" }), "Écriture de l'instantané du pavillon");
 
         /* Ce qu'une mesure pourra désigner. Les compteurs ne retiennent qu'un
            identifiant : c'est ici que se conserve de quoi l'afficher — le
@@ -1293,7 +1322,10 @@ Deno.serve(async (req) => {
            envoi font échouer l'upsert entier : on ne garde que la première. */
         const uniques = [...new Map(cibles.map((c) => [c.genre + c.id, c])).values()];
         if (uniques.length) {
-          await db.from("cible").upsert(uniques, { onConflict: "evenement_id,genre,id" });
+          await ecrit(
+            db.from("cible").upsert(uniques, { onConflict: "evenement_id,genre,id" }),
+            "Écriture des cibles de mesure",
+          );
         }
 
         resume.push({
@@ -1328,8 +1360,10 @@ Deno.serve(async (req) => {
         resume.reduce((a, p) => a + Number(p.exposants ?? 0), 0) + " rattachés" +
         (detectes.length ? ", " + detectes.length + " champs relevés" : ""));
       if (confEm) {
-        await db.from("evenement")
-          .update({ salles: sallesConf }).eq("id", evt.id);
+        await ecrit(
+          db.from("evenement").update({ salles: sallesConf }).eq("id", evt.id),
+          "Écriture des salles du programme",
+        );
         const rattachees = Object.values(sallesConf).filter((s: any) => s.zone).length;
         etape("conferences", "fait",
           rattachees + " / " + Object.keys(sallesConf).length + " salles situées");
@@ -1376,17 +1410,20 @@ Deno.serve(async (req) => {
             : {}),
           detecteLe: new Date().toISOString(),
         };
-        await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
+        await ecrit(
+          db.from("evenement").update({ correspondances: corr }).eq("id", evt.id),
+          "Écriture du relevé des champs",
+        );
       }
 
       // une synchronisation partielle ne fait pas foi comme date de référence
       if (!corps.idPlan) {
-        await db.from("evenement").update({
+        await ecrit(db.from("evenement").update({
           derniere_sync: new Date().toISOString(),
           derniere_err: null,
           modifie_le: new Date().toISOString(),
           ...(anglaisComplet ? { libelles_en: libellesEn } : {}),
-        }).eq("id", evt.id);
+        }).eq("id", evt.id), "Écriture de la date de synchronisation");
       }
 
       /* Au passage, la purge des jetons de visiteur anciens.

@@ -99,4 +99,29 @@ module.exports = {
   "Pavillon introuvable.": "Hall not found.",
   "Aucun pavillon : lancez une synchronisation.": "No halls: run a synchronisation.",
   "Aucun pavillon publié.": "No published halls.",
+  "Le dessin de ce pavillon est absent : lancez une synchronisation.":
+    "This hall has no drawing: run a synchronisation.",
+
+  /* Une lecture ou une écriture qui n'a pas abouti, suivie de ce que la base en
+     a dit. Le détail reste dans la langue de la base — c'est le message d'un
+     moteur, non une phrase à nous — mais ce qui le précède dit en clair quelle
+     part du plan manque, et c'est cela qu'on lit en premier. */
+  "{quoi} : {detail}": "{quoi}: {detail}",
+  "Lecture du pavillon": "Reading the hall",
+  "Lecture des pavillons": "Reading the halls",
+  "Lecture du dessin du pavillon": "Reading the hall drawing",
+  "Lecture de l'apparence du pavillon": "Reading the hall appearance",
+  "Lecture de l'apparence": "Reading the appearance",
+  "Lecture des calques": "Reading the layers",
+  "Lecture des calques de dessin": "Reading the drawing layers",
+  "Lecture des instantanés": "Reading the snapshots",
+  "Écriture du pavillon « {pavillon} »": "Saving hall “{pavillon}”",
+  "Écriture du calque « {calque} »": "Saving layer “{calque}”",
+  "Écriture de l'emprise du pavillon": "Saving the hall extent",
+  "Écriture de l'instantané du pavillon": "Saving the hall snapshot",
+  "Écriture des cibles de mesure": "Saving the measurement targets",
+  "Écriture des salles du programme": "Saving the programme rooms",
+  "Écriture du relevé des champs": "Saving the field survey",
+  "Écriture de la date de synchronisation": "Saving the synchronisation date",
+  "la base n'a rien rendu": "the database returned nothing",
 };

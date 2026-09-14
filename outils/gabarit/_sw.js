@@ -82,12 +82,50 @@ function range(e, requete, reponse) {
   return reponse;
 }
 
+/**
+ * Les copies d'un même fond de plan sous une version révolue.
+ *
+ * Le fond porte sa version dans son adresse : une synchronisation en donne une
+ * neuve, et l'ancienne n'a plus rien à servir. Or rien ne l'effaçait — le nom
+ * du cache ne change qu'à une mise en ligne des pages, et entre deux le même
+ * pavillon s'y empilait une fois par synchronisation, à deux mégaoctets pièce.
+ * Un salon qui se resynchronise chaque matin remplissait ainsi le quota du
+ * téléphone d'un visiteur avec des plans que personne ne redemanderait, et le
+ * navigateur finissait par jeter le cache entier — la consultation hors ligne
+ * avec.
+ *
+ * On ne retient donc qu'une version par pavillon : la dernière servie.
+ */
+async function oublieLesFondsDAvant(cache, adresse) {
+  const memeFond = (u) =>
+    u.origin === adresse.origin && u.pathname === adresse.pathname &&
+    u.searchParams.get("slug") === adresse.searchParams.get("slug") &&
+    u.searchParams.get("fond") === adresse.searchParams.get("fond") &&
+    u.searchParams.get("v") !== adresse.searchParams.get("v");
+  for (const cle of await cache.keys()) {
+    let u;
+    try { u = new URL(cle.url); } catch (_) { continue; }
+    if (memeFond(u)) await cache.delete(cle);
+  }
+}
+
 /** Ce qui ne change jamais sous une même adresse : gardé d'abord, demandé après. */
 async function dabordCache(e, requete) {
   const garde = await caches.match(requete);
   if (garde) return garde;
   const reponse = await fetch(requete);
-  if (reponse.ok) range(e, requete, reponse);
+  if (!reponse.ok) return reponse;
+  const copie = reponse.clone();   // avant tout `await` : le corps ne se lit qu'une fois
+  const adresse = new URL(requete.url);
+  /* Ranger puis faire le ménage, dans cet ordre et d'un seul tenant : le
+     ménage reconnaît l'entrée qu'on vient de poser à sa version, et la
+     retiendrait pour une ancienne s'il passait avant. */
+  e.waitUntil(caches.open(CACHE).then(async (c) => {
+    await c.put(requete, copie);
+    if (adresse.pathname === "/api/plan" && adresse.searchParams.get("fond")) {
+      await oublieLesFondsDAvant(c, adresse);
+    }
+  }).catch(() => {}));
   return reponse;
 }
 
