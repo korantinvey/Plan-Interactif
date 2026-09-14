@@ -9100,6 +9100,10 @@ function ouvreReglages(ouvrir){
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
     voletMesure(volet(NOM_VOLET_MESURE));
+    /* « Admin » après tout le reste : l'organisateur ne le voit pas, et les
+       onglets qu'il partage avec l'administrateur gardent ainsi la même place
+       sous les yeux de l'un et de l'autre. */
+    if (PROFIL_ADMIN) voletAdmin(volet("Admin"));
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
        plutôt que sur le vide. */
@@ -9309,9 +9313,48 @@ function ficheZoneEnPlace(hote, o, apres){
   suitFicheZone(o, valeurs, etat, apres);
 }
 
-/** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
- *  le temps qu'on passe sur un stand. */
+/** La journée d'un visiteur : le temps qu'on passe sur un stand, et les heures
+ *  où le salon ouvre. Les commandes du plan sont passées dans « Admin ». */
 function voletPlan(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce qui règle la journée d'un visiteur. " +
+    "Publiez la configuration pour que le changement parvienne aux visiteurs.";
+  hote.appendChild(p);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+    '<span class="u">min</span></label><span class="aide"></span>';
+  duree.querySelector(".l").textContent = "Temps de visite par stand";
+  duree.querySelector(".aide").textContent =
+    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+    "qui décide combien de stands tiennent entre deux conférences.";
+  const n = duree.querySelector("input");
+  n.value = minutesVisite();
+  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+     on le quitte. */
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesVisite(); };
+  hote.appendChild(duree);
+
+  blocHoraires(hote);
+}
+
+/**
+ * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
+ * fenêtres qui s'ouvrent d'elles-mêmes.
+ *
+ * Réservé au profil administrateur. Ces cases changent la façon dont le plan
+ * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
+ * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
+ * que de quoi retirer une commande qu'on lui a vendue.
+ */
+function voletAdmin(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que les visiteurs voient sur le plan. " +
     "Publiez la configuration pour que le changement leur parvienne.";
@@ -9459,29 +9502,6 @@ function voletPlan(hote){
   }
 
   hote.appendChild(bloc);
-
-  const duree = document.createElement("div");
-  duree.className = "reglage-nb";
-  duree.innerHTML = '<label><span class="l"></span>' +
-    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
-    '<span class="u">min</span></label><span class="aide"></span>';
-  duree.querySelector(".l").textContent = "Temps de visite par stand";
-  duree.querySelector(".aide").textContent =
-    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
-    "qui décide combien de stands tiennent entre deux conférences.";
-  const n = duree.querySelector("input");
-  n.value = minutesVisite();
-  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
-     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
-     on le quitte. */
-  n.oninput = e => {
-    const v = Math.round(+e.target.value);
-    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
-  };
-  n.onblur = () => { n.value = minutesVisite(); };
-  hote.appendChild(duree);
-
-  blocHoraires(hote);
 }
 
 /**
@@ -10572,6 +10592,10 @@ const joli = (id) => String(id)
    du document. Un raccourci clavier ne serait pas une frontière.
    ============================================================ */
 let ADMIN = false;
+/* Le profil du compte, lu par `_auth-plan.html` : « admin » ou non. Il ne fait
+   qu'ajouter l'onglet « Admin » aux réglages — la base, elle, ne distingue pas
+   les deux profils sur un salon affecté. */
+let PROFIL_ADMIN = false;
 
 /**
  * Page publique : les commandes d'administration sont neutralisées.
@@ -22971,7 +22995,7 @@ function voletSuggestion(hote){
     const a = document.createElement("p");
     a.className = "alerte";
     a.textContent = "Le parcours de visite est retiré de ce plan, dans " +
-      "l'onglet « Plan » : sans lui, il n'y a ni liste à compléter ni tiroir " +
+      "l'onglet « Admin » : sans lui, il n'y a ni liste à compléter ni tiroir " +
       "où poser la proposition.";
     hote.appendChild(a);
   }
@@ -23270,7 +23294,7 @@ function voletSuggestion(hote){
    précisément celui qui n'ira pas l'y chercher.
 
    Une fenêtre le lui propose donc, si l'organisateur l'a voulu : la case est
-   dans l'onglet « Plan » des réglages, et reste décochée tant qu'on n'y a pas
+   dans l'onglet « Admin » des réglages, et reste décochée tant qu'on n'y a pas
    touché. Une fenêtre qui interrompt ne s'ajoute pas d'elle-même à un salon
    déjà en ligne.
 
@@ -23601,7 +23625,7 @@ function teteInvitation(corps, sousTitre){
    sur-le-champ. */
 function retourAuxReglages(){
   queueMicrotask(() => {
-    ouvreReglages("Plan");
+    ouvreReglages("Admin");
     const aide = $("mCorps").querySelector('[data-reglage="installation"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
@@ -23714,7 +23738,7 @@ function confirmeInstallation(essais){
    Côté administration
    ------------------------------------------------------------ */
 /**
- * La case, dans l'onglet « Plan » des réglages : une fenêtre de plus, c'est
+ * La case, dans l'onglet « Admin » des réglages : une fenêtre de plus, c'est
  * encore ce que les visiteurs voient.
  *
  * Avec deux aperçus, parce que l'organisateur règle son salon depuis un
@@ -23807,7 +23831,7 @@ const reglageTuto = () => conf("_tutoriel");
  * ouverture qu'elle sert, et un salon déjà en ligne a justement tous ses
  * visiteurs devant lui. Celui qui ne veut pas d'une fenêtre de plus devant son
  * plan — un salon d'habitués, qui reviennent chaque année — la retire dans
- * l'onglet « Plan » des réglages.
+ * l'onglet « Admin » des réglages.
  */
 const tutoPropose = () => reglageTuto().visible !== false;
 

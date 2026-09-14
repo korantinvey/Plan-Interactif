@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3796 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3820 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2762 · 10. Mode administration
-- l.2849 · La fiche d'une zone organisateur
-- l.3543 · Masquer une zone organisateur
-- l.3626 · Placer un libellé à la main
+- l.2782 · 10. Mode administration
+- l.2873 · La fiche d'une zone organisateur
+- l.3567 · Masquer une zone organisateur
+- l.3650 · Placer un libellé à la main
 
 Fonctions :
 
@@ -32,19 +32,19 @@ Fonctions :
 `posePoliceLibelles` 829 · `appliqueModele` 861 · `habilleModale` 902 · `texteCorps` 973
 `standApercu` 988 · `lignesApercu` 1012 · `contenuApercu` 1038 · `apercuFiche` 1075
 `apercuListe` 1153 · `apercuDuo` 1175 · `glisseFenetre` 1208 · `ouvreReglages` 1219
-`voletZones` 1318 · `champsFicheZone` 1420 · `ficheZoneEnPlace` 1490 · `voletPlan` 1508
-`blocHoraires` 1694 · `sallesSituees` 1827 · `voletPmr` 1843 · `nomDuTon` 1934
-`voletApparence` 1939 · `clesFiche` 2138 · `voletOrdre` 2155 · `enregistreConf` 2711
-`rgbHex` 2718 · `hexa` 2725 · `luminance` 2729 · `ecarte` 2743 · `joli` 2758
-`retireAdmin` 2775 · `activeAdmin` 2788 · `champZone` 2875 · `champsZone` 2900
-`champSalles` 2992 · `nomDeZone` 3044 · `reduitLogo` 3078 · `champLogo` 3119
-`editeurRiche` 3216 · `memeFicheZone` 3373 · `suitFicheZone` 3380 · `verseFicheZone` 3388
-`ficheZone` 3414 · `enregistreZone` 3439 · `basculeAffichageZone` 3554
-`marqueZonesMasquees` 3571 · `ecritColonnesEvenement` 3591 · `ecritColonneEvenement` 3622
-`cleLibelle` 3647 · `empreinteLibelle` 3663 · `placementLibelle` 3671 · `posePlacement` 3681
-`libelleAutomatique` 3698 · `modePlacementLibelles` 3707 · `majPaletteLibelle` 3724
-`choisitLibelle` 3741 · `pousseLibelle` 3748 · `libellePointerDown` 3756
-`libellePointerMove` 3771 · `libellePointerUp` 3780
+`voletZones` 1322 · `champsFicheZone` 1424 · `ficheZoneEnPlace` 1494 · `voletPlan` 1512
+`voletAdmin` 1551 · `blocHoraires` 1714 · `sallesSituees` 1847 · `voletPmr` 1863
+`nomDuTon` 1954 · `voletApparence` 1959 · `clesFiche` 2158 · `voletOrdre` 2175
+`enregistreConf` 2731 · `rgbHex` 2738 · `hexa` 2745 · `luminance` 2749 · `ecarte` 2763
+`joli` 2778 · `retireAdmin` 2799 · `activeAdmin` 2812 · `champZone` 2899 · `champsZone` 2924
+`champSalles` 3016 · `nomDeZone` 3068 · `reduitLogo` 3102 · `champLogo` 3143
+`editeurRiche` 3240 · `memeFicheZone` 3397 · `suitFicheZone` 3404 · `verseFicheZone` 3412
+`ficheZone` 3438 · `enregistreZone` 3463 · `basculeAffichageZone` 3578
+`marqueZonesMasquees` 3595 · `ecritColonnesEvenement` 3615 · `ecritColonneEvenement` 3646
+`cleLibelle` 3671 · `empreinteLibelle` 3687 · `placementLibelle` 3695 · `posePlacement` 3705
+`libelleAutomatique` 3722 · `modePlacementLibelles` 3731 · `majPaletteLibelle` 3748
+`choisitLibelle` 3765 · `pousseLibelle` 3772 · `libellePointerDown` 3780
+`libellePointerMove` 3795 · `libellePointerUp` 3804
 
 Éléments :
 
@@ -72,15 +72,15 @@ Fonctions :
 `aimante` 348 · `retientTaille` 362 · `reprendTaille` 376 · `dupliqueForme` 397
 `pousseForme` 422 · `ecritDimensions` 438 · `appliqueDimension` 457
 
-### `_auth-plan.html` — 182 l. → plan-admin.html
+### `_auth-plan.html` — 209 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
-`ecranAcces` 45 · `mailDuJeton` 120 · `initialesDe` 129 · `themeSombreA` 136
-`poseCompte` 141
+`ecranAcces` 45 · `contenuDuJeton` 122 · `mailDuJeton` 129 · `litProfilA` 140
+`initialesDe` 153 · `themeSombreA` 160 · `poseCompte` 165
 
 Éléments :
 

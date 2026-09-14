@@ -1,5 +1,5 @@
 /* `outils/gabarit/_installation.html` — l'invitation à installer le plan : la
-   fenêtre que lit le visiteur, et sa case dans l'onglet « Plan » des réglages.
+   fenêtre que lit le visiteur, et sa case dans l'onglet « Admin » des réglages.
    Les intitulés des gestes sont ceux que les systèmes affichent en anglais :
    on les cherche des yeux, ils doivent être les mêmes. */
 module.exports = {

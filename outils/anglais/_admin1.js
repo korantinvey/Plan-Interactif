@@ -85,6 +85,7 @@ module.exports = {
   // la fenêtre et ses onglets
   "Plan": "Map",
   "Recherche": "Search",
+  "Admin": "Admin",
   "Fiche Stand": "Stand details",
   "Apparence": "Appearance",
   "Zones": "Areas",
@@ -112,6 +113,10 @@ module.exports = {
   "Ce que vous écrivez est enregistré en quittant la fiche.": "What you write is saved when you leave these details.",
 
   // l'onglet « Plan »
+  "Ce qui règle la journée d'un visiteur. Publiez la configuration pour que le changement parvienne aux visiteurs.":
+    "What shapes a visitor's day. Publish the configuration for the change to reach visitors.",
+
+  // l'onglet « Admin »
   "Ce que les visiteurs voient sur le plan. Publiez la configuration pour que le changement leur parvienne.":
     "What visitors see on the map. Publish the configuration for the change to reach them.",
   "Montrer les secteurs — couleurs et filtre": "Show sectors — colours and filter",
@@ -352,7 +357,7 @@ module.exports = {
   "Glissez le libellé, ou ajustez-le aux flèches du clavier.": "Drag the label, or nudge it with the arrow keys.",
   "Glissez ce libellé pour le déplacer, ou tirez la taille.": "Drag this label to move it, or pull the size slider.",
 
-  // la visite guidée, dans l'onglet « Plan » — le reste vit dans `_tutoriel.js`
+  // la visite guidée, dans l'onglet « Admin » — le reste vit dans `_tutoriel.js`
   "Proposer la visite guidée au premier démarrage": "Offer the guided tour on first launch",
   "Le visiteur y fait lui-même chaque geste. Sur ce salon :": "Visitors make every move themselves. On this show:",
   "Proposée une fois par appareil.": "Offered once per device.",
