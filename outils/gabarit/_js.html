@@ -872,6 +872,27 @@ function coloreSecteurs(){
    à chaque glissement du sélecteur. */
 let _secteursOfferts = null;
 
+/**
+ * La teinte d'un seul secteur, posée sans relire tout le plan.
+ *
+ * `coloreSecteurs` balaie les stands du salon et rappelle la carte de chaleur :
+ * c'est ce qu'il faut quand la sectorisation change, et bien trop quand une
+ * seule couleur bouge — le nuancier en envoie une rafale, et le balayage
+ * complet ne tient pas ce rythme. Ici on ne touche que les stands concernés ;
+ * le reste est déjà en place et le restera.
+ */
+function peintSecteur(nom){
+  if (!secteursMontres()) return;
+  const c = couleurConf(conf("secteur:" + nom).couleur);
+  document.querySelectorAll("#stands g[data-sect], #couches .dcal .sdes[data-sect]")
+    .forEach(g => {
+      const o = parId.get(g.dataset.id);
+      if (!o || o.sect !== nom) return;
+      if (c) g.style.setProperty("--sect-c", c);
+      else g.style.removeProperty("--sect-c");
+    });
+}
+
 /** Les couleurs du plan et le critère suivent le même réglage. */
 function appliqueSecteurs(){
   coloreSecteurs();
