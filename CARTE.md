@@ -127,7 +127,7 @@ Fonctions :
 
 ### `_config.js` — 15 l. → config.js
 
-### `_console-base.html` — 484 l. → admin-plans.html, rapport.html
+### `_console-base.html` — 499 l. → admin-plans.html, rapport.html
 
 - l.10 · Socle commun de la console et du rapport — accès au projet
 
@@ -135,9 +135,9 @@ Fonctions :
 
 `$` 16 · `esc` 17 · `entetes` 38 · `contenuJeton` 47 · `resteJeton` 57 · `renouvelle` 67
 `appel` 101 · `rest` 112 · `verseModale` 142 · `ouvreModale` 148 · `verrouilleModale` 171
-`fermeModale` 173 · `demande` 186 · `confirme` 208 · `ecranConfig` 219 · `normaliseUrl` 255
-`ecranConnexion` 274 · `deconnecte` 337 · `signale` 348 · `bloc` 369 · `grille` 387
-`idCompte` 430 · `themeSombre` 440 · `initialesDe` 460
+`fermeModale` 173 · `gardeLaPlace` 196 · `demande` 201 · `confirme` 223 · `ecranConfig` 234
+`normaliseUrl` 270 · `ecranConnexion` 289 · `deconnecte` 352 · `signale` 363 · `bloc` 384
+`grille` 402 · `idCompte` 445 · `themeSombre` 455 · `initialesDe` 475
 
 Éléments :
 
