@@ -143,16 +143,17 @@ Fonctions :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 70 l. → admin-plans.html
+### `_console-head.html` — 74 l. → admin-plans.html
 
 Éléments :
 
 `#choixEvt` · `#etatEvt` · `#btnRecharger` · `#btnNouveau` · `#statut` · `#lienPublic`
-`#lienAdmin` · `#lienRapport` · `#btnExcel` · `#btnSources` · `#btnEtat` · `#btnDupliquer`
-`#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet` · `#btnExport` · `#btnLangue`
-`#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme` · `#btnSortir` · `#fiche`
+`#lienAdmin` · `#lienBorne` · `#lienRapport` · `#btnExcel` · `#btnSources` · `#btnEtat`
+`#btnDupliquer` · `#btnSupprimer` · `#sepActions` · `#btnComptes` · `#btnProjet`
+`#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
+`#btnSortir` · `#fiche`
 
-### `_console-js.html` — 2884 l. → admin-plans.html
+### `_console-js.html` — 2894 l. → admin-plans.html
 
 - l.929 · Provenance des données
 - l.1056 · Contenu de la fiche détail
@@ -172,11 +173,11 @@ Fonctions :
 `ouvreFiche` 1658 · `sousTitre` 1768 · `tableauChamps` 1783 · `encode` 1926 · `decode` 1928
 `correspondance` 1933 · `sansPrefixe` 1936 · `courte` 1937 · `intitule` 1952
 `intituleSuite` 1964 · `separeValeurs` 1978 · `aplani` 1999 · `memeStyle` 2009
-`autreFace` 2027 · `champOrigine` 2043 · `majLiens` 2310 · `majIntegration` 2337
-`majMsgSync` 2344 · `etapesPressenties` 2374 · `synchronise` 2388 · `dupliquer` 2439
-`litMonProfil` 2539 · `RETOUR_MDP` 2550 · `litComptes` 2552 · `ligneMessage` 2561
-`casesSalons` 2571 · `ouvreComptes` 2601 · `ouvreFicheCompte` 2693 · `videEcran` 2852
-`dessine` 2857 · `demarre` 2872
+`autreFace` 2027 · `champOrigine` 2043 · `majLiens` 2310 · `majIntegration` 2347
+`majMsgSync` 2354 · `etapesPressenties` 2384 · `synchronise` 2398 · `dupliquer` 2449
+`litMonProfil` 2549 · `RETOUR_MDP` 2560 · `litComptes` 2562 · `ligneMessage` 2571
+`casesSalons` 2581 · `ouvreComptes` 2611 · `ouvreFicheCompte` 2703 · `videEcran` 2862
+`dessine` 2867 · `demarre` 2882
 
 Éléments :
 

@@ -9,6 +9,7 @@ module.exports = {
   "Plan public": "Public map",
   "Administration": "Admin",
   "Actions": "Actions",
+  "Ouvrir en mode borne": "Open in kiosk mode",
   "Rapport d'utilisation": "Usage report",
   "Un classeur : une ligne par exposant, une colonne par provenance, depuis le début":
     "A spreadsheet: one row per exhibitor, one column per source, since the start",
