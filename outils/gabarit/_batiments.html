@@ -256,7 +256,9 @@ function dessineCalage(){
 
 function calagePointerDown(e){
   if (!CALAGE) return false;
-  const cible = e.target.closest && e.target.closest("#calageApercu .contour, #calageApercu .poignee");
+  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
+  const cible = GL.actif ? priseWebgl(e.clientX, e.clientY, "#calageApercu .contour, #calageApercu .poignee")
+    : e.target.closest && e.target.closest("#calageApercu .contour, #calageApercu .poignee");
   if (!cible) return false;
   gesteCalage = { mode: cible.classList.contains("poignee") ? "pivote" : "deplace",
                   p0: versPlan(e.clientX, e.clientY), t0: Object.assign({}, CALAGE.t) };

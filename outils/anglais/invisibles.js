@@ -25,4 +25,14 @@ module.exports = [
   // `_console-js.html` : le paramètre que le lien de la console ajoute à
   // l'adresse du plan pour l'ouvrir en borne — une adresse ne se traduit pas
   "&borne",
+
+  // `_webgl.html` : l'empreinte de la bibliothèque, du code de shader, le nom
+  // d'une extension, des suffixes d'identifiants de couches, une valeur
+  // d'attribut SVG et des classes de libellés — rien de tout cela ne s'affiche
+  "sha384-n9TufhIL8BMsQ8I/frAQGFsg2D/50T9gjWMitdG+F1HtTxSz62ol4tnA1nXOoeun",
+  "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
+  "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
+  "FiltreZoom", "-petit", "-grand", "-pleins-", "-textes-", "-image-",
+  "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
+  "DefileTirets", "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
 ];

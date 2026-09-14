@@ -586,6 +586,18 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
+  if (GL.actif){
+    libellesWebgl();
+    /* Ce qui garde sa taille à l'écran — pastilles de l'itinéraire, pointes
+       de flèche, point de la borne — suit la vue dans « appliqueVue », que le
+       rendu WebGL court-circuite pendant le geste. On le remet à l'échelle
+       ici, une fois le geste posé : le refaire à chaque image repeindrait les
+       calques qui les portent. */
+    if (typeof rafraichitBouts === "function") rafraichitBouts();
+    if (typeof rafraichitFleches === "function") rafraichitFleches();
+    if (typeof rafraichitBorne === "function") rafraichitBorne();
+    return;
+  }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
@@ -630,6 +642,10 @@ function libelles(){
                                         placementLibelle(s)));
   }
 
+  /* Retriés en plein geste — la main a marqué une pause —, les libellés sont
+     encore sur le calque du zoom. On le repeint à la vue du moment : les noms
+     qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
+  if (libPeints) peintLibelles(vueEcrite);
   l.innerHTML = out;
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
@@ -1677,17 +1693,113 @@ if (window.ResizeObserver) new ResizeObserver(oublieCadre).observe(svg);
    qu'il dure, et toujours quand il s'interrompt sans se poser. */
 let filetTextes = null;
 function figeTextes(){
+  // en WebGL les noms restent au dessin : il n'y a rien à taire
+  if (GL.actif) return;
+  detacheLibelles();
   svg.classList.add("fige");
   clearTimeout(filetTextes);
   filetTextes = setTimeout(rendTextes, 300);
 }
 function rendTextes(){
   clearTimeout(filetTextes); filetTextes = null;
+  rattacheLibelles();
   svg.classList.remove("fige");
 }
 
+/* Les libellés, eux, restent à l'écran pendant le geste.
+
+   Se taire avec le reste du plan les faisait disparaître au moment même où
+   l'on zoome pour lire un nom. Mais les garder dans le SVG coûtait une image
+   sur cinq, et ce n'était plus leur mise en page : c'était leur
+   rastérisation, reprise à chaque image pour une taille de glyphe neuve. Rien
+   ne l'évite tant qu'ils changent d'échelle dans le plan.
+
+   Ils le quittent donc le temps du geste, pour un calque promu que le
+   compositeur étire sans le repeindre — c'est « will-change » qui l'y
+   autorise ; sans lui, le navigateur re-rastérise à chaque image, et l'on
+   perd tout. Le groupe « #labels » déménage tel quel : ses règles de style
+   tiennent à son identifiant et le suivent, et « libelles » l'écrit où qu'il
+   soit. À la pose, il reprend sa place dans la pile, et s'y retrie comme
+   avant.
+
+   Deux prix, assumés. Une image étirée s'adoucit en zoom avant — jusqu'à la
+   pose, ou une pause de la main, qui repeignent le calque net. Et le calque
+   passe au-dessus de tout le plan : l'itinéraire, la sélection, un calque de
+   dessin rangé plus haut dans la pile repassent sous les noms le temps du
+   geste. */
+const calqueLib = $("calqueLibelles"), svgLib = calqueLib.firstElementChild;
+/* La vue pour laquelle le calque a été peint, tant que les libellés y sont ;
+   et le voisin devant lequel ils reprendront leur place dans la pile. */
+let libPeints = null, libAvant = null;
+/* La dernière vue écrite dans la « viewBox », c'est-à-dire celle que l'écran
+   montre. Pas « view » : le pincement la devance d'une image. */
+let vueEcrite = null;
+
+/** Où une vue tombe dans le cadre : « meet » garde ses proportions et la centre. */
+function cadrage(v, r){
+  const s = Math.min(r.width / v.w, r.height / v.h);
+  return { s, x: (r.width - v.w * s) / 2, y: (r.height - v.h * s) / 2 };
+}
+
+function peintLibelles(v){
+  libPeints = v;
+  svgLib.setAttribute("viewBox", v.x + " " + v.y + " " + v.w + " " + v.h);
+  calqueLib.style.transform = "";
+}
+
+function detacheLibelles(){
+  // appelée à chaque image du geste : une fois partis, rien à refaire
+  if (libPeints || !vueEcrite) return;
+  const g = $("labels");
+  // une couche masquée, ou vide à cette échelle, n'a rien à porter
+  if (!g.firstChild || g.style.display === "none") return;
+  libAvant = g.nextSibling;
+  peintLibelles(vueEcrite);
+  svgLib.appendChild(g);
+  calqueLib.hidden = false;
+}
+
+function rattacheLibelles(){
+  if (!libPeints) return;
+  const g = $("labels"), c = $("couches");
+  /* La pile a pu se réordonner pendant le geste : elle a alors déjà remis le
+     groupe chez elle, ou retiré le voisin devant lequel il devait revenir.
+     Seul ce dernier cas la fait rejouer : elle déplace tout le plan, fond
+     compris, et la pose en coûterait le double. Sans voisin, les textes
+     fermaient la pile — ils y reviennent en dernier. */
+  if (g.parentNode !== c){
+    if (!libAvant || libAvant.parentNode === c) c.insertBefore(g, libAvant);
+    else { c.appendChild(g); ordonneDom(); }
+  }
+  calqueLib.hidden = true;
+  calqueLib.style.transform = "";
+  libPeints = libAvant = null;
+}
+
+/** Amène ce que le calque a peint pour « libPeints » sur la vue écrite. */
+function etireLibelles(){
+  const r = cadrePlan();
+  const a = cadrage(libPeints, r), b = cadrage(vueEcrite, r), k = b.s / a.s;
+  calqueLib.style.transform =
+    "translate(" + ((libPeints.x - vueEcrite.x) * b.s + b.x - a.x * k) + "px," +
+    ((libPeints.y - vueEcrite.y) * b.s + b.y - a.y * k) + "px) scale(" + k + ")";
+}
+
 const appliqueVue = () => {
+  /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
+     part vers elle, et le SVG caché garde sa géométrie figée. */
+  if (RENDU_WEBGL && !GL.actif) monteWebgl();
+  if (GL.actif){
+    vueWebgl();
+    majEditionWebgl();
+    // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
+    if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
+    // tant que la première image n'est pas dessinée, le SVG montre le plan et suit la vue
+    if (GL.pret) return;
+  }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
+  vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
+  if (libPeints) etireLibelles();
   if (typeof dessinePoignees === "function") dessinePoignees();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
@@ -1890,6 +2002,7 @@ function glisseVers(but){
  */
 function rectVisee(n){
   if (!n) return null;
+  if (GL.actif) return rectEcranWebgl(n, vise || view);
   if (!vise) return n.getBoundingClientRect();
   const avant = view;
   view = vise; appliqueVue();
@@ -3092,7 +3205,7 @@ function ferme(){
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
      le découpage qu'il héberge. */
   const n = ouvert && id ? noeud(id, state.selSoc) : null;
-  const rect = n ? n.getBoundingClientRect() : null;
+  const rect = n ? (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()) : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
@@ -3188,7 +3301,9 @@ svg.addEventListener("pointerdown", e => {
   if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
-           cible: e.target.closest("[data-id],[data-poi]") };
+           // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
+           cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
+                           : e.target.closest("[data-id],[data-poi]") };
   svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
 });
 svg.addEventListener("pointermove", e => {
@@ -3235,6 +3350,7 @@ const MAX_ELARGIS = 150;
 
 function cibleElargie(x, y){
   if (!dernierAppuiTactile || !filtre() || retraitLeve) return null;
+  if (GL.actif) return cibleWebgl(x, y, DOIGT / 2);
   const allumes = svg.querySelectorAll("#stands g:not(.dim), #zones g:not(.dim)," +
     " #couches .dcal .sdes[data-id]:not(.dim)");
   if (!allumes.length || allumes.length > MAX_ELARGIS) return null;

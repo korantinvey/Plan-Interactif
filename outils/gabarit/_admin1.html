@@ -3755,9 +3755,10 @@ function pousseLibelle(dx, dy){
 /* --- le geste ; renvoie vrai si l'événement est consommé --- */
 function libellePointerDown(e){
   if (!PLACE_LIBELLES) return false;
-  const g = e.target.closest("#labels .lbl");
-  if (!g) return false;
-  const o = parId.get(g.dataset.lbl);
+  const g = GL.actif ? null : e.target.closest("#labels .lbl");
+  const id = GL.actif ? libelleSousWebgl(e.clientX, e.clientY) : g && g.dataset.lbl;
+  if (!id) return false;
+  const o = parId.get(id);
   if (!o) return false;
   e.preventDefault();
   choisitLibelle(o.id);

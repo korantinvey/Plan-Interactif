@@ -36,7 +36,7 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "bed0c39b82dd";
+const VERSION = "b6183aa83d15";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 
@@ -47,6 +47,8 @@ const HORS_LIGNE = "hors-ligne.html";
    leurs stands. Les feuilles `.css` du même dossier ne portent pas d'empreinte :
    elles suivent la règle commune. */
 const POLICES = /^\/polices\/[^/]+\.woff2$/;
+/* La bibliothèque du dessin WebGL porte de même sa version dans son nom. */
+const BIBLIOTHEQUES = /^\/bibliotheques\/[^/]+\.js$/;
 
 self.addEventListener("install", (e) => {
   /* La seule chose mise de côté d'avance : la page qui s'affiche quand tout le
@@ -157,7 +159,7 @@ self.addEventListener("fetch", (e) => {
 
     e.respondWith(requete.mode === "navigate"
       ? navigation(e, requete)
-      : POLICES.test(adresse.pathname)
+      : POLICES.test(adresse.pathname) || BIBLIOTHEQUES.test(adresse.pathname)
         ? dabordCache(e, requete)
         : dabordReseau(e, requete));
   }
