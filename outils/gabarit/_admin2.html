@@ -28,6 +28,10 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* La visite guidée passe après tout cela, et attend son tour : un lien vers
+     un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
+     propose que si rien d'autre n'a pris la place entre-temps. */
+  proposeTutoriel();
 }
 
 function annonce(txt, erreur){

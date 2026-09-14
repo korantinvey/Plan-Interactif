@@ -158,6 +158,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | ordre de visite, conférences, horaires | `_journee.html` |
+| visite guidée du premier démarrage | `_tutoriel.html` (chapitres `CHAPITRES_TUTO`), proposée par `_admin2.html` `demarre` ; case et « Essayer » dans `_admin1.html` `voletPlan` ; styles `_head.html` § La visite guidée ; anglais `outils/anglais/_tutoriel.js` |
 | comptage d'usage | `_mesure.html`, `supabase/functions/mesure/`, migration `compteurs` |
 | mesure sans bandeau : notice « Confidentialité », refus, vie du jeton, purge | `_mesure.html` § La notice, et le refus, `MESURE_VIE_MOIS` ; lien `_head.html` `#btnConfidentialite` ; `purge_presences` chaque nuit, migration `conservation_des_jetons` ; README « Sans bandeau de consentement » |
 | polices des pages | modèles en tête de `outils/polices.js`, polices au choix relues dans `_admin1.html` `POLICES_NOMS` ; puis `npm run polices` → `web/polices/` ; déclarées par `genere.js` `feuillePolices` à la place de `<!--__POLICES__-->`, les polices au choix chargées par `feuillePolice` |

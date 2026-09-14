@@ -199,6 +199,8 @@ function vueInstallation(){
  */
 function invitationRetenue(){
   if (installDoigts.size || $("modale").classList.contains("open")) return true;
+  // une visite guidée en cours est un geste en train de se faire, sur toute sa durée
+  if (TUTO) return true;
   if (["detail", "parcours", "itineraire"].some(id => {
     const t = $(id);
     return t && t.classList.contains("open");
