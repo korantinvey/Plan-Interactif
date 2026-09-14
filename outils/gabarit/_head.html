@@ -350,12 +350,56 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    Les textes se retirent donc le temps du geste. Le reste du plan — formes,
    couleurs, sélection — suit le zoom en temps réel, pour huit millisecondes.
    La plupart sont d'ailleurs ceux des calques importés du DAO, cotes d'allées
-   et numérotation, illisibles en plein mouvement ; et les libellés de l'appli
-   attendaient déjà la fin du geste pour se retrier.
+   et numérotation, illisibles en plein mouvement. Les libellés de l'appli,
+   eux, ne sont plus dans le plan quand la règle s'applique : ils passent sur
+   le calque qui suit.
 
    « display:none » et non « visibility », qui laisserait la mise en page —
    donc la dépense — intacte. */
 #plan.fige text{display:none}
+
+/* Le calque où passent les libellés le temps d'un zoom, pour rester à l'écran
+   sans être repeints à chaque image. Voir « detacheLibelles » dans le module
+   de la vue.
+
+   « will-change » n'est pas ici un conseil au navigateur, c'est le mécanisme :
+   sans lui, le calque est re-rastérisé à chaque étirement, et le zoom reperd
+   l'image sur cinq que coûtaient les libellés restés dans le plan. L'origine
+   en haut à gauche est celle que suppose le calcul de l'étirement. */
+.calque-libelles{position:absolute;inset:0;pointer-events:none;
+  transform-origin:0 0;will-change:transform}
+.calque-libelles > svg{display:block;width:100%;height:100%}
+
+/* Le plan peint par la carte graphique — le rendu par défaut, `?rendu=svg`
+   pour l'écarter ; voir « Le plan peint par la carte graphique ». Le SVG
+   reste en place et reçoit les gestes, mais
+   ne montre plus rien : « visibility » et non « display », pour que sa
+   géométrie et ses styles calculés restent lisibles par le peintre — et que
+   le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
+   dessin passe au-dessus sans prendre le clic.
+
+   Le plan ne paraît qu'une fois : le SVG reste caché pendant que le dessin se
+   prépare (« gl-attente »), et le dessin entre en fondu à sa première image
+   (« gl-pret »). Si rien ne vient, le script retire l'attente et le SVG se
+   montre en secours. */
+.plan-gl{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s ease-out}
+html.gl-pret .plan-gl{opacity:1}
+@media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
+html.gl-attente #plan > *,html.gl-pret #plan > *{visibility:hidden}
+html.rendu-webgl .calque-libelles{display:none}
+/* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
+   carte graphique qui dit ce qu'il vise. */
+html.rendu-webgl .stage > svg{position:relative}
+/* Une animation lue au vol figerait n'importe laquelle de ses images : un
+   calque encore à demi fondu, un repère saisi au creux de son battement. La
+   carte graphique rejoue elle-même les battements et le défilement. */
+html.rendu-webgl #plan *{animation:none!important}
+/* Le clavier parcourt le plan par ses stands, et un élément caché ne prend
+   pas le focus. Ceux qui peuvent le recevoir restent donc visibles, rognés à
+   rien : ni peints ni visés par le pointeur — la carte graphique les montre,
+   et leur liseré de focus avec eux. */
+html.gl-pret #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
+html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -3798,6 +3842,9 @@ html.tuto-retrait .dcal .forme{opacity:.22}
         <g id="labels"></g>
       </g>
     </svg>
+    <!-- Les libellés le temps d'un zoom : le compositeur étire ce calque au
+         lieu de les repeindre à chaque image. Voir « detacheLibelles ». -->
+    <div class="calque-libelles" id="calqueLibelles" aria-hidden="true" hidden><svg></svg></div>
 
     <div class="zoombar">
       <button id="zIn" aria-label="Zoom avant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
