@@ -359,7 +359,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 3860 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4012 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.386 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -368,9 +368,9 @@ Fonctions :
 - l.713 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1663 · 6. Vue
 - l.2037 · 7. Sélection et fiche
-- l.3228 · 8. Interactions du plan
-- l.3541 · Le tiroir de la liste — écrans étroits
-- l.3698 · Le tiroir de la fiche — écrans étroits
+- l.3380 · 8. Interactions du plan
+- l.3693 · Le tiroir de la liste — écrans étroits
+- l.3850 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -403,10 +403,10 @@ Fonctions :
 `jourLong` 2407 · `ficheConf` 2418 · `lien` 2512 · `adresseWeb` 2520 · `pictoRS` 2563
 `adresseSure` 2581 · `adresseImage` 2608 · `imageSure` 2621 · `assainitRiche` 2650
 `enBlocs` 2690 · `rangeRiche` 2703 · `ecarteClicFantome` 2731 · `nomSociete` 2740
-`societes` 2753 · `choisitExposant` 2764 · `poseMarque` 2802 · `poseCode` 2852
-`rangeMarque` 2893 · `ouvre` 2939 · `ferme` 3202 · `onglet` 3218 · `milieu` 3248
-`commencePince` 3254 · `suitPince` 3268 · `cibleElargie` 3351 · `mesureTiroir` 3552
-`montreTiroir` 3555
+`societes` 2753 · `choisitExposant` 2764 · `poseMarque` 2802 · `montreMarque` 2849
+`recadreMarque` 2879 · `decoupeMarque` 2911 · `poseCode` 2988 · `rangeMarque` 3029
+`ouvre` 3091 · `ferme` 3354 · `onglet` 3370 · `milieu` 3400 · `commencePince` 3406
+`suitPince` 3420 · `cibleElargie` 3503 · `mesureTiroir` 3704 · `montreTiroir` 3707
 
 Éléments :
 
