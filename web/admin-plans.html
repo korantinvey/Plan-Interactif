@@ -998,6 +998,21 @@ addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !modaleVerrou) fermeModale();
 });
 
+/**
+ * Redessiner une fenêtre sans la faire remonter en haut.
+ *
+ * Une fenêtre qui se rouvre se remplit de zéro, et son corps repart au
+ * premier réglage : les champs propres au salon sont tout en bas de la fiche
+ * détail, si bien qu'en ajouter un renvoyait l'exploitant à mille pixels de
+ * l'endroit où il travaillait. La place se relève au clic, et non au moment de
+ * redessiner : la fenêtre de saisie qui s'intercale réemploie le même corps, et
+ * l'aurait déjà effacée.
+ */
+function gardeLaPlace(redessine) {
+  const haut = $("mCorps").scrollTop;
+  return () => { redessine(); $("mCorps").scrollTop = haut; };
+}
+
 function demande(titre, libelle, valeur, suite) {
   let champ;
   ouvreModale(titre, (corps) => {
@@ -3268,9 +3283,9 @@ function lignesPerso(e, redessine) {
     critere: true,
     outils: [
       { titre: "Renommer", texte: "\u270E",
-        action: () => renommeChampPerso(c.cle, redessine) },
+        action: () => renommeChampPerso(c.cle, gardeLaPlace(redessine)) },
       { titre: "Retirer", texte: "\u00D7", genre: "danger",
-        action: () => retireChampPerso(c.cle, c.libelle, redessine) },
+        action: () => retireChampPerso(c.cle, c.libelle, gardeLaPlace(redessine)) },
     ],
   }));
 }
@@ -3484,7 +3499,7 @@ function ouvreFiche(apres) {
             b.type = "button";
             b.className = "btn petit";
             b.textContent = "Ajouter un champ";
-            b.onclick = () => ajouteChampPerso(redessine);
+            b.onclick = () => ajouteChampPerso(gardeLaPlace(redessine));
             pied.appendChild(b);
             if (!perso.length) {
               const p = document.createElement("span");

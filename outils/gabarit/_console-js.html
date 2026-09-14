@@ -1520,9 +1520,9 @@ function lignesPerso(e, redessine) {
     critere: true,
     outils: [
       { titre: "Renommer", texte: "\u270E",
-        action: () => renommeChampPerso(c.cle, redessine) },
+        action: () => renommeChampPerso(c.cle, gardeLaPlace(redessine)) },
       { titre: "Retirer", texte: "\u00D7", genre: "danger",
-        action: () => retireChampPerso(c.cle, c.libelle, redessine) },
+        action: () => retireChampPerso(c.cle, c.libelle, gardeLaPlace(redessine)) },
     ],
   }));
 }
@@ -1736,7 +1736,7 @@ function ouvreFiche(apres) {
             b.type = "button";
             b.className = "btn petit";
             b.textContent = "Ajouter un champ";
-            b.onclick = () => ajouteChampPerso(redessine);
+            b.onclick = () => ajouteChampPerso(gardeLaPlace(redessine));
             pied.appendChild(b);
             if (!perso.length) {
               const p = document.createElement("span");
