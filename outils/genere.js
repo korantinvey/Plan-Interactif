@@ -178,6 +178,10 @@ fs.writeFileSync(W + "hors-ligne.html",
    jour où l'on change une couleur. */
 fs.writeFileSync(W + "manifeste.webmanifest", pwa.manifeste());
 fs.writeFileSync(W + "icone.svg", icones.svg());
+/* Le monogramme entier ne tient pas dans un onglet — à seize pixels une
+   capitale fait quatre pixels de large. L'onglet reçoit donc la marque
+   réduite : même bloc, même réserve rose, le seul chiffre. */
+fs.writeFileSync(W + "icone-onglet.svg", icones.svgOnglet());
 fs.writeFileSync(W + "icone-192.png", icones.png(192));
 fs.writeFileSync(W + "icone-512.png", icones.png(512));
 fs.writeFileSync(W + "icone-masque-512.png", icones.png(512, "masquable"));
@@ -192,7 +196,8 @@ const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
   "config.js", "console.css", "manifeste.webmanifest",
-  "icone.svg", "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
+  "icone.svg", "icone-onglet.svg",
+  "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
 
 /* --- le service de second plan ---
