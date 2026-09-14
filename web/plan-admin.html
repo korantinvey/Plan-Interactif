@@ -1118,11 +1118,14 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    le clic, qui ne touche plus aucune forme cachée, arrive au SVG lui-même. Le
    dessin passe au-dessus sans prendre le clic.
 
-   Le SVG ne s'efface qu'à la première image effectivement dessinée
-   (« gl-pret ») : préparer les textes prend une à deux secondes, et le plan
-   disparaissait entre-temps pour reparaître. */
-.plan-gl{position:absolute;inset:0;pointer-events:none}
-html.gl-pret #plan > *{visibility:hidden}
+   Le plan ne paraît qu'une fois : le SVG reste caché pendant que le dessin se
+   prépare (« gl-attente »), et le dessin entre en fondu à sa première image
+   (« gl-pret »). Si rien ne vient, le script retire l'attente et le SVG se
+   montre en secours. */
+.plan-gl{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s ease-out}
+html.gl-pret .plan-gl{opacity:1}
+@media (prefers-reduced-motion:reduce){.plan-gl{transition:none}}
+html.gl-attente #plan > *,html.gl-pret #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
 /* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
    carte graphique qui dit ce qu'il vise. */
@@ -25149,10 +25152,18 @@ const GL = {
   let gl2 = null;
   try { gl2 = document.createElement("canvas").getContext("webgl2"); } catch (e) {}
   if (!gl2) return;
+  /* Le plan ne paraît qu'une fois. Montré d'abord en SVG puis remplacé par
+     le dessin, il semblait se charger deux fois — les noms n'étant pas les
+     mêmes d'un rendu à l'autre. Le SVG attend donc caché, et ne sert qu'en
+     secours : bibliothèque introuvable, ou dessin trop long à venir. */
+  const racine = document.documentElement;
+  racine.classList.add("gl-attente");
+  const secours = () => racine.classList.remove("gl-attente");
+  setTimeout(secours, 4000);
   const s = document.createElement("script");
   s.src = DECK_WEBGL.src; s.integrity = DECK_WEBGL.integrite; s.crossOrigin = "anonymous";
   s.onload = () => { GL.charge = true; monteWebgl(); };
-  s.onerror = () => console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG.");
+  s.onerror = () => { secours(); console.warn("Rendu WebGL : bibliothèque indisponible, le plan reste en SVG."); };
   document.head.appendChild(s);
 })();
 
@@ -25175,6 +25186,7 @@ function monteWebgl(){
       if (GL.pret || !GL.deck.props.layers.length) return;
       GL.pret = true;
       document.documentElement.classList.add("gl-pret");
+      document.documentElement.classList.remove("gl-attente");
     },
   });
   GL.actif = true;
@@ -25353,21 +25365,29 @@ const SEUIL_PETIT_TEXTE = 14;
 let CONST_TEXTE = null;
 function constTexte(){
   if (CONST_TEXTE) return CONST_TEXTE;
+  /* Le choix de l'atlas passe en réglage — 0 pour ce qui n'en a pas, 1 pour
+     les petits textes, 2 pour les grands — et non en variante du shader :
+     chaque variante est un programme que la carte graphique prépare avant la
+     première image, et six programmes coûtaient près de deux secondes. */
   class FiltreZoom extends deck.LayerExtension {
-    getShaders(extension){
-      const garde = extension.opts.tout ? "false"
-        : extension.opts.petit ? "z >= instanceZoomFiltre.z" : "z < instanceZoomFiltre.z";
-      return { inject: {
-        "vs:#decl": "in vec3 instanceZoomFiltre;",
-        "vs:DECKGL_FILTER_GL_POSITION":
-          "float z = log2(project.scale);\n" +
-          "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || " + garde + ") position = vec4(0.0, 0.0, 2.0, 1.0);",
-      } };
+    getShaders(){
+      return {
+        modules: [{ name: "filtreZoom", vs: "layout(std140) uniform filtreZoomUniforms {\n  float mode;\n} filtreZoom;\n",
+                    uniformTypes: { mode: "f32" } }],
+        inject: {
+          "vs:#decl": "in vec3 instanceZoomFiltre;",
+          "vs:DECKGL_FILTER_GL_POSITION":
+            "float z = log2(project.scale);\n" +
+            "bool garde = filtreZoom.mode > 1.5 ? z < instanceZoomFiltre.z : (filtreZoom.mode > 0.5 && z >= instanceZoomFiltre.z);\n" +
+            "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || garde) position = vec4(0.0, 0.0, 2.0, 1.0);",
+        },
+      };
     }
     initializeState(){
       const am = this.getAttributeManager();
       if (am) am.addInstanced({ instanceZoomFiltre: { size: 3, accessor: "getZoomFiltre" } });
     }
+    draw(){ this.setShaderModuleProps({ filtreZoom: { mode: this.props.modeFiltre || 0 } }); }
   }
   FiltreZoom.extensionName = "FiltreZoom";
   /* Les pointillés de l'itinéraire avancent : ils disent le sens du trajet.
@@ -25387,17 +25407,17 @@ function constTexte(){
   }
   DefileTirets.extensionName = "DefileTirets";
   DefileTirets.defaultProps = { decalage: 0 };
-  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] } };
+  FiltreZoom.defaultProps = { getZoomFiltre: { type: "accessor", value: [-100, 100, -100] }, modeFiltre: 0 };
   /* Des objets créés une fois pour toutes : la bibliothèque compare ces
      réglages par identité, et un nouvel objet — même identique — lui faisait
      régénérer l'atlas des polices et recompiler ses shaders. */
+  const textes = [new FiltreZoom()];
   return (CONST_TEXTE = {
-    petit: { ext: [new FiltreZoom({ petit: true })], atlas: { sdf: false, fontSize: 24, buffer: 2 } },
-    grand: { ext: [new FiltreZoom({ petit: false })], atlas: { sdf: true, fontSize: 64, buffer: 6 } },
-    // ce qui n'est pas du texte n'a pas d'atlas à choisir : seul l'intervalle compte
-    tout: { ext: [new FiltreZoom({ tout: true })] },
-    tirets: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true })],
-    defile: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new DefileTirets()],
+    petit: { ext: textes, mode: 1, atlas: { sdf: false, fontSize: 24, buffer: 2 } },
+    grand: { ext: textes, mode: 2, atlas: { sdf: true, fontSize: 64, buffer: 6 } },
+    /* Tous les traits partagent un seul programme : tirets — un trait plein
+       en a de longueur nulle —, défilement arrêté, filtre de zoom ouvert. */
+    traits: [new deck.PathStyleExtension({ dash: true, highPrecisionDash: true }), new DefileTirets(), new FiltreZoom()],
     sansDeclencheur: {},
   });
 }
@@ -25419,12 +25439,12 @@ function couchesTexte(id, items, famille, graisse, extra){
      n'en ont pas : quatre copies claires décalées d'un pixel le dessinent,
      ce qui est à peu près ce qu'un liseré mesure à cette taille. */
   const autour = halo ? [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([x, y], k) =>
-    new deck.TextLayer({ ...commun, id: id + "-petit-halo-" + k, fontSettings: K.petit.atlas, extensions: K.petit.ext,
+    new deck.TextLayer({ ...commun, id: id + "-petit-halo-" + k, fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode,
       getColor: halo.couleur, getPixelOffset: [x, y], updateTriggers: { ...commun.updateTriggers, getColor: halo.couleur.join() } })) : [];
   return [
     ...autour,
-    new deck.TextLayer({ ...commun, id: id + "-petit", fontSettings: K.petit.atlas, extensions: K.petit.ext }),
-    new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext,
+    new deck.TextLayer({ ...commun, id: id + "-petit", fontSettings: K.petit.atlas, extensions: K.petit.ext, modeFiltre: K.petit.mode }),
+    new deck.TextLayer({ ...commun, id: id + "-grand", fontSettings: K.grand.atlas, extensions: K.grand.ext, modeFiltre: K.grand.mode,
       ...(halo ? { outlineWidth: Math.min(.9, halo.largeur * 2.6), outlineColor: halo.couleur } : {}) }),
   ];
 }
@@ -25765,11 +25785,10 @@ function couchesDeBloc(acc, cle){
     const K = constTexte();
     [liste.filter(d => !d.defile), liste.filter(d => d.defile)].forEach((l, j) => {
       if (!l.length) return;
-      const tirets = l.some(d => d.dash[0] > 0);
       out.push(new L.PathLayer({ id: cle + "-" + suffixe + "-" + k + (j ? "-defile" : ""), data: l, pickable: k === 0,
         getPath: d => d.path, getColor: d => d.couleur, getWidth: d => d.largeur, widthUnits: unites,
         jointRounded: true, capRounded: false, widthMinPixels: unites === "common" ? .6 : 0, defile: j === 1,
-        ...(tirets ? { extensions: j ? K.defile : K.tirets, getDashArray: d => d.dash, dashJustified: false } : {}) }));
+        extensions: K.traits, getDashArray: d => d.dash, dashJustified: false }));
     });
   });
   let i = 0;
@@ -25986,7 +26005,7 @@ function couchesPastilles(){
   const liste = GL.pastilles.filter(d => (GL.modeles.get(d.cls) || {}).visible);
   if (!liste.length) return [];
   const commun = { data: liste, getPath: d => d.path, widthUnits: "common", capRounded: true,
-    extensions: K.tout.ext, getZoomFiltre: d => [d.z0, d.z1, -100],
+    extensions: K.traits, getZoomFiltre: d => [d.z0, d.z1, -100],
     updateTriggers: { getColor: GL.versionModeles } };
   return [
     new deck.PathLayer({ ...commun, id: "pastilles-trait", getWidth: d => d.largeur,
@@ -26091,7 +26110,7 @@ function coucheFocus(couches){
   if (!aplats.length) return [];
   const t = (GL.modeles.get("survol") || {}).trait || [0, 0, 0, 255];
   return [new deck.PathLayer({ id: "focus", data: aplats, getPath: d => [...d.polygon[0], d.polygon[0][0]],
-    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true })];
+    getColor: t, getWidth: 3, widthUnits: "pixels", jointRounded: true, extensions: constTexte().traits })];
 }
 
 /* ------------------------------------------------------------
