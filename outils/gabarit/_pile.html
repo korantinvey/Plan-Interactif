@@ -161,7 +161,7 @@ function construitPanneau(){
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
          modifie. */
-      (x.t === "dessin" ? boutonVerrou(x.ref) +
+      (x.t === "dessin" ? boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
                           '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
@@ -219,6 +219,9 @@ function construitPanneau(){
       nom.title = vr ? "Calque verrouillé : ouvrez son cadenas pour y dessiner."
                      : "Cliquez pour dessiner dessus";
       d.querySelector(".verr").onclick = ev => { ev.stopPropagation(); basculeVerrou(x.ref); };
+      /* Le perçage du fond de carte : il n'y a de bouton que s'il y a une carte. */
+      const mq = d.querySelector(".masq");
+      if (mq) mq.onclick = ev => { ev.stopPropagation(); basculeMasqueCarte(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");

@@ -1282,6 +1282,10 @@ function ouvreReglages(ouvrir){
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
+    /* Les environs suivent l'apparence : ils ne changent rien à ce que le
+       visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
+       de parc plutôt que de salon — posé une fois, repris rarement. */
+    voletEnvirons(volet("Environs"));
     /* Les zones n'ont d'onglet que là où il y en a : sur un salon qui n'en
        compte aucune, il n'ouvrirait que sur une liste vide. */
     if (TOUS.some(z => z.kind === "zone")) voletZones(volet("Zones"));

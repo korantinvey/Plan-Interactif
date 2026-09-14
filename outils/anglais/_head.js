@@ -2,6 +2,9 @@
    haut, la recherche, la boîte à outils de dessin, les tiroirs de la fiche, du
    parcours et de l'itinéraire. */
 module.exports = {
+  // la palette de calage du fond de carte (voir `_environs.html`)
+  "Caler la carte": "Align the base map",
+  "Enregistrer pour tous": "Save for everyone",
   "Plan du salon": "Floor plan",
   "Confidentialité": "Privacy",
   "Pavillons": "Halls",

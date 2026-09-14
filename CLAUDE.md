@@ -157,6 +157,10 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |
+| fond de carte sous le pavillon, calage du plan sur la Terre | `_environs.html` ; groupe `#fondCarte` posé par `_js.html` `appliqueVue`, limite de recul `recul` ; migration `calage_du_plan_sur_la_terre` |
+| placer et tourner la carte à la main | `_environs.html` § Placer à la main, branché dans la chaîne des gestes de `_js.html` |
+| rendu vectoriel du fond, libellés droits sur un plan tourné | `_environs.html` § Le rendu vectoriel — MapLibre chargé à la demande, toile `#fondCarteGL` |
+| vider le hall sous la carte | `_environs.html` § Le trou sous le pavillon — contour gelé par `retientLeHall`, aplat `#trouDuFond`, bouton par calque posé par `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |

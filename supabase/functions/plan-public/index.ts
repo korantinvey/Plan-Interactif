@@ -97,7 +97,7 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, zones, zones_masquees, zones_traversables, zones_fiches, salles, libelles_en",
+      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, calage, zones, zones_masquees, zones_traversables, zones_fiches, salles, libelles_en",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
@@ -452,6 +452,12 @@ Deno.serve(async (req) => {
       fiche: evt.fiche ?? {},
       // sans lui, une heure ISO se lirait dans le fuseau du visiteur
       fuseau: evt.fuseau ?? null,
+      /* Où tombe le repère du plan sur la Terre, et quel fond de carte glisser
+         dessous. Le visiteur en a besoin, et pas seulement l'exploitant : c'est
+         la page qui pose les tuiles, sous le plan, à chaque changement de vue.
+         Trois nombres et un nom : rien qui ne se lise déjà sur n'importe quelle
+         carte du même endroit. */
+      calage: evt.calage ?? null,
       /* L'anglais des valeurs des listes, relevé dans les sources : la version
          anglaise de la page traduit avec lui secteurs, nomenclature et champs
          à choix, partout où ils paraissent. */

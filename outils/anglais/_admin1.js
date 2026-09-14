@@ -1,6 +1,8 @@
 /* `outils/gabarit/_admin1.html` — la fenêtre « Réglages du plan » et ses
    onglets, la fiche d'une zone organisateur, le placement des libellés. */
 module.exports = {
+  // l'onglet du fond de carte, dans les réglages du plan
+  "Environs": "Surroundings",
   // les commandes du plan
   "Afficher les icônes de zoom": "Show the zoom buttons",
   "Afficher l'échelle": "Show the scale",

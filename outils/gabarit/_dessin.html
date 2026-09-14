@@ -346,6 +346,10 @@ function dessineDessins(){
     c.appendChild(g);
   }
   ordonneDom();
+  /* Un contour qui perce le fond de carte vient peut-être d'être tracé,
+     déplacé ou effacé : le gabarit de découpe suit le dessin, et lui seul sait
+     quand il a changé. */
+  if (typeof poseMasqueCarte === "function") poseMasqueCarte();
   cartouchePoi();
   mentionOsm();
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le

@@ -1786,6 +1786,10 @@ function etireLibelles(){
 }
 
 const appliqueVue = () => {
+  /* Le fond de carte, avant toute chose : il ne dépend que de la vue, et le
+     chemin du rendu par la carte graphique sort plus bas sans passer par la
+     « viewBox ». Posé là, il suit la vue quel que soit le rendu du plan. */
+  if (typeof dessineFondCarte === "function") dessineFondCarte();
   /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
      part vers elle, et le SVG caché garde sa géométrie figée. */
   if (RENDU_WEBGL && !GL.actif) monteWebgl();
@@ -2022,7 +2026,10 @@ function rectVisee(n){
  */
 function zoom(f, fx, fy){
   const base = vise || view;
-  const nw = Math.min((emp.x1 - emp.x0) * 2.5, Math.max(6, base.w * f)), k = nw / base.w;
+  /* Jusqu'où l'on recule : `recul()` ouvre la limite quand le quartier a été
+     dessiné autour du pavillon, et la garde serrée quand il n'y a rien à voir
+     au-delà des murs. */
+  const nw = Math.min((emp.x1 - emp.x0) * recul(), Math.max(6, base.w * f)), k = nw / base.w;
   glisseVers({ x: base.x + fx * (base.w - nw), y: base.y + fy * base.h * (1 - k),
                w: nw, h: base.h * k });
 }
@@ -3422,7 +3429,7 @@ function suitPince(){
   const r = cadrePlan();
   // le pincement change l'échelle : mêmes économies que la molette
   figeTextes();
-  const large = emp ? (emp.x1 - emp.x0) * 2.5 : pince.w * 8;
+  const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
   view = {
@@ -3448,6 +3455,9 @@ svg.addEventListener("pointerdown", e => {
   if (doigts.size > 2) return;
   /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
      l'emplacement qui est dessous ni la vue qu'on déplacerait. */
+  /* Caler la carte passe avant tout : tant qu'un mode est armé, la main saisit
+     le fond et non le plan — c'est le seul geste que la palette attend. */
+  if (typeof cartePointerDown === "function" && cartePointerDown(e)) return;
   if (libellePointerDown(e)) return;
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return;
@@ -3461,6 +3471,7 @@ svg.addEventListener("pointerdown", e => {
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
+  if (typeof cartePointerMove === "function" && cartePointerMove(e)) return;
   if (libellePointerMove(e)) return;
   if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
@@ -3529,6 +3540,7 @@ svg.addEventListener("pointerup", e => {
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;

@@ -1,0 +1,1528 @@
+/* ============================================================
+   16. Les environs — le pavillon dans son quartier
+
+   Un plan de salon s'arrête au mur. Le visiteur, lui, arrive par une rue, se
+   gare sur un parking, ressort par une porte qui donne quelque part.
+
+   Le hall est pourtant déjà situé. Klipso stocke sa géométrie en mètres dans
+   le repère monde du parc, l'import ne fait qu'en retourner le Y
+   (`_partage/geometrie.ts`), et l'échelle affichée dit des mètres parce que ce
+   sont des mètres. Il ne manque que trois nombres — où tombe un point du plan
+   sur la Terre, et vers où pointe l'axe des X — pour glisser une carte dessous.
+
+   Une carte, et non un quartier dessiné. La première version allait chercher
+   les rues et les bâtiments d'OpenStreetMap et les traçait elle-même : il a
+   fallu en écrire la classification, les largeurs, les tons, l'ordre de tracé
+   et le découpage, et chaque correction en découvrait une autre. Un style de
+   carte, ce sont des centaines de règles, et les réinventer une par une ne
+   converge pas. On pose donc des tuiles servies par des gens dont c'est le
+   métier, et il ne reste ici que ce que personne d'autre ne peut faire à notre
+   place : dire où le plan tombe sur la Terre.
+
+   Le fond vit hors de la pile des calques et ne s'enregistre nulle part : il
+   se refait à chaque changement de vue, comme la barre d'échelle. Ce qui
+   s'enregistre tient en une ligne — `evenement.calage` — et part au visiteur
+   avec le plan.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Le calage
+   ------------------------------------------------------------ */
+
+const DEG = Math.PI / 180;
+/* WGS84 : demi-grand axe, et première excentricité au carré. */
+const RAYON_TERRE = 6378137, EXCENTRICITE2 = 0.00669437999014;
+
+/**
+ * Ce que vaut un degré, en mètres, à cette latitude.
+ *
+ * L'ellipsoïde plutôt que la sphère : cela ne coûte qu'une racine, et l'écart
+ * atteint sept mètres au kilomètre sous nos latitudes — de quoi décaler d'une
+ * demi-rue le bord du quartier, précisément là où l'on vérifie le calage.
+ */
+function metresParDegre(lat){
+  const s = Math.sin(lat * DEG), w = 1 - EXCENTRICITE2 * s * s;
+  return {
+    lat: DEG * RAYON_TERRE * (1 - EXCENTRICITE2) / Math.pow(w, 1.5),
+    lon: DEG * RAYON_TERRE * Math.cos(lat * DEG) / Math.sqrt(w),
+  };
+}
+
+/**
+ * Le passage entre le repère du plan et l'est/nord local.
+ *
+ * Le plan a son Y vers le bas, la Terre son nord vers le haut : à la rotation
+ * s'ajoute un retournement, et la matrice qui en résulte se trouve être sa
+ * propre réciproque. Une seule fonction sert donc dans les deux sens — ce
+ * n'est pas une économie d'écriture mais une garantie : l'aller et le retour
+ * ne peuvent pas diverger.
+ */
+function tourneEnvirons(dx, dy, a){
+  const c = Math.cos(a), s = Math.sin(a);
+  return [dx * c + dy * s, dx * s - dy * c];
+}
+
+/** Un point du plan, en longitude et latitude. */
+function versTerre(pt, cal){
+  const m = metresParDegre(cal.lat);
+  const [e, n] = tourneEnvirons(pt[0] - cal.x, pt[1] - cal.y, cal.angle);
+  return [cal.lon + e / m.lon, cal.lat + n / m.lat];
+}
+
+/** Une longitude et une latitude, en mètres du plan. */
+function versLePlan(ll, cal){
+  const m = metresParDegre(cal.lat);
+  const [dx, dy] = tourneEnvirons((ll[0] - cal.lon) * m.lon,
+                                  (ll[1] - cal.lat) * m.lat, cal.angle);
+  return [cal.x + dx, cal.y + dy];
+}
+
+/**
+ * Le même calage, écrit depuis un autre point du plan.
+ *
+ * Tourner autour de l'origine ferait fuir la carte hors de l'écran dès le
+ * premier degré — elle est à sept kilomètres du hall. On ré-ancre donc sur le
+ * point qu'on regarde avant de toucher à l'angle : la rotation pivote alors
+ * là où l'œil est posé, et régler devient un geste au lieu d'une poursuite.
+ */
+function reancre(cal, pt){
+  const ll = versTerre(pt, cal);
+  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle,
+           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide };
+}
+
+/** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
+ *  c'est autour de l'ensemble qu'on se situe — sans quoi un salon sur deux
+ *  halls n'en placerait qu'un. */
+function empriseDesPavillons(){
+  let e = null;
+  for (const p of (DATA && DATA.plans ? DATA.plans : [])){
+    const q = p.emprise;
+    if (!q) continue;
+    e = e ? { x0: Math.min(e.x0, q.x0), y0: Math.min(e.y0, q.y0),
+              x1: Math.max(e.x1, q.x1), y1: Math.max(e.y1, q.y1) } : Object.assign({}, q);
+  }
+  return e;
+}
+
+/** Le milieu de ce que le salon occupe : le point sur lequel on cale, et
+ *  autour duquel on tourne. */
+function centreDesPavillons(){
+  const e = empriseDesPavillons();
+  return e ? [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2] : [0, 0];
+}
+
+/* ------------------------------------------------------------
+   Le fond de carte
+
+   Les tuiles d'une pyramide Web Mercator : un carré de 256 pixels par
+   (niveau, colonne, ligne), servi par un fournisseur.
+
+   Le placement tient en une rotation, et c'est la seule chose à comprendre
+   ici. Le passage plan ↔ est/nord retourne le Y ; les tuiles, elles, se
+   rangent en est/**sud**, comme les pixels d'une image. Deux retournements
+   s'annulent : de l'est/sud vers le plan, il ne reste qu'une rotation pure.
+   D'où un seul groupe SVG portant `rotate`, et des tuiles posées à l'équerre
+   dedans — pas de transformation par tuile, pas de trigonométrie répétée.
+   ------------------------------------------------------------ */
+
+const PX_TUILE = 256;
+/* Le tour de la Terre à l'équateur, dans la projection des tuiles. */
+const TOUR_MERCATOR = 40075016.686;
+
+/* Les fonds proposés. La Géoplateforme de l'IGN d'abord : ouverte, sans clé à
+   cacher dans une page publique, et couvrant le pays où se tiennent les salons
+   qui nous occupent. OpenStreetMap en recours, hors de France.
+
+   Chacun se cite : c'est la contrepartie d'un fond qu'on n'a pas dessiné. */
+const GEOPF = "https://data.geopf.fr/wmts?SERVICE=WMTS&VERSION=1.0.0" +
+  "&REQUEST=GetTile&STYLE=normal&TILEMATRIXSET=PM" +
+  "&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}";
+/* ------------------------------------------------------------
+   Notre style de carte
+
+   Après avoir visé trois adresses de style et manqué les trois, on cesse de
+   deviner : un style MapLibre n'est qu'un objet, et le moteur en prend un
+   aussi bien qu'une adresse. Celui-ci est écrit ici, une quinzaine de couches
+   au lieu des trois cents d'un style du commerce — un fond de salon situe, il
+   ne raconte pas le quartier — et il ne dépend plus que du serveur de tuiles.
+
+   Le schéma est « shortbread », et les noms de couches comme les valeurs
+   d'attributs ci-dessous ont été relevés dans le paquet `@versatiles/style`
+   plutôt que supposés. Les tuiles s'arrêtent au niveau 14 et se regardent de
+   plus près par sur-zoom : c'est la limite du service, pas la nôtre.
+   ------------------------------------------------------------ */
+
+const TUILES_VT = "https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}";
+const GLYPHES_VT = "https://tiles.versatiles.org/assets/glyphs/{fontstack}/{range}.pbf";
+const CREDIT_VT = "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles";
+
+/* Deux jeux de tons, clair et sombre. Pâles des deux côtés : ce fond passe
+   sous des stands, et doit se laisser oublier. */
+const TONS_CARTE = {
+  clair: { sol: "#F3F3EF", eau: "#CBDDE6", vert: "#E4EBDC", bati: "#E6E6E0",
+           voie: "#FFFFFF", bord: "#DEDED6", ruelle: "#FAFAF6",
+           encre: "#6E7478", halo: "rgba(255,255,255,.85)" },
+  sombre: { sol: "#11161A", eau: "#17262E", vert: "#182119", bati: "#1C2226",
+            voie: "#2B3339", bord: "#222A2F", ruelle: "#222930",
+            encre: "#8C9498", halo: "rgba(14,17,19,.85)" },
+};
+
+/* Les classes de voies qui méritent un trait large. Le reste passe en ruelle :
+   à l'échelle d'un salon, la hiérarchie fine d'OpenStreetMap n'apprend rien. */
+const GRANDES_VOIES = ["motorway", "trunk", "primary", "secondary", "tertiary"];
+
+/**
+ * Le style, tel que le moteur le prend — un objet, pas une adresse.
+ *
+ * Onze couches et trois kilo-octets, contre deux cents et soixante-quinze pour
+ * le plus sobre des styles du commerce : c'est la simplification qu'on
+ * cherchait, et elle tient à ce qu'on écarte, non à ce qu'on ajoute.
+ *
+ * Vérifié par le validateur officiel de la spécification, qui se relit sans
+ * navigateur :
+ *   npm i --no-save @maplibre/maplibre-gl-style-spec
+ *   node -e "…validateStyleMin(styleSobre(false))…"
+ */
+function styleSobre(sombre){
+  const t = TONS_CARTE[sombre ? "sombre" : "clair"];
+  const large = (a, b, c) => ["interpolate", ["exponential", 1.6], ["zoom"],
+                              10, a, 14, b, 18, c];
+  const couche = (id, source, type, peinture, extra) => Object.assign(
+    { id: id, type: type, source: "vt", "source-layer": source, paint: peinture }, extra || {});
+  return {
+    version: 8,
+    glyphs: GLYPHES_VT,
+    sources: { vt: { type: "vector", tiles: [TUILES_VT], maxzoom: 14,
+                     attribution: CREDIT_VT } },
+    layers: [
+      { id: "sol", type: "background", paint: { "background-color": t.sol } },
+      couche("vert", "land", "fill", { "fill-color": t.vert }, {
+        filter: ["match", ["get", "kind"],
+          ["park", "garden", "forest", "grass", "village_green", "recreation_ground",
+           "cemetery", "allotments", "meadow", "orchard", "farmland"], true, false] }),
+      couche("eau", "water_polygons", "fill", { "fill-color": t.eau }),
+      couche("ocean", "ocean", "fill", { "fill-color": t.eau }),
+      couche("esplanades", "street_polygons", "fill",
+             { "fill-color": t.ruelle, "fill-outline-color": t.bord }),
+      /* Les ruelles d'abord, les grandes voies par-dessus : un carrefour se lit
+         mal quand la petite rue passe sur l'avenue. */
+      couche("ruelles", "streets", "line",
+             { "line-color": t.ruelle, "line-width": large(0.4, 1.4, 6) }, {
+        filter: ["!", ["match", ["get", "kind"], GRANDES_VOIES, true, false]],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("voies-bord", "streets", "line",
+             { "line-color": t.bord, "line-width": large(1.6, 4.4, 17) }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("voies", "streets", "line",
+             { "line-color": t.voie, "line-width": large(1, 3.2, 14) }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "line-cap": "round", "line-join": "round" } }),
+      couche("bati", "buildings", "fill",
+             { "fill-color": t.bati, "fill-opacity": ["interpolate", ["linear"], ["zoom"],
+                                                     13, 0, 15, 1] }),
+      /* Les libellés, et toute la raison d'être du vectoriel : le moteur les
+         repose droits à chaque changement d'orientation, là où un texte cuit
+         dans une image tourne avec le plan et se lit à l'envers. */
+      couche("nomsRues", "street_labels", "symbol",
+             { "text-color": t.encre, "text-halo-color": t.halo, "text-halo-width": 1.2 }, {
+        filter: ["match", ["get", "kind"], GRANDES_VOIES, true, false],
+        layout: { "text-field": ["get", "name"], "text-font": ["noto_sans_regular"],
+                  "symbol-placement": "line", "text-size": 11, "text-letter-spacing": .02 } }),
+      couche("nomsLieux", "place_labels", "symbol",
+             { "text-color": t.encre, "text-halo-color": t.halo, "text-halo-width": 1.4 }, {
+        filter: ["match", ["get", "kind"],
+          ["city", "town", "village", "suburb", "quarter", "neighbourhood"], true, false],
+        layout: { "text-field": ["get", "name"], "text-font": ["noto_sans_bold"],
+                  "text-size": ["match", ["get", "kind"], ["city", "town"], 14, 11.5] } }),
+    ],
+  };
+}
+
+const CARTES = {
+  /* Le nôtre d'abord : aucune adresse de style à deviner, et deux fois moins
+     de couches qu'un style du commerce. */
+  maison: { nom: "Sobre (notre style)", objet: () => styleSobre(false), credit: CREDIT_VT },
+  maisonSombre: { nom: "Sobre sombre (notre style)", objet: () => styleSobre(true), credit: CREDIT_VT },
+  /* Les fonds vectoriels d'abord, et pour une raison qui n'a rien d'esthétique :
+     eux seuls gardent les libellés droits. Un plan de salon se dessine l'entrée
+     vers le bas, presque jamais le nord en haut ; la carte tourne donc avec
+     lui. Dans une image, le texte est cuit et tourne avec — aucun fournisseur
+     n'y peut rien, Google compris. Un moteur vectoriel, lui, replace ses
+     étiquettes à chaque changement d'orientation, parce qu'il les compose au
+     moment de peindre. C'est ce que fait tout plan de salon du métier. */
+  vecteur: { nom: "Vectoriel sobre (service libre)",
+             style: "https://tiles.openfreemap.org/styles/positron",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  vecteurDetail: { nom: "Vectoriel détaillé (service libre)",
+             style: "https://tiles.openfreemap.org/styles/liberty",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  vecteurAutre: { nom: "Vectoriel sobre (autre service libre)",
+             style: "https://tiles.versatiles.org/assets/styles/colorful/style.json",
+             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles" },
+  plan: { nom: "Plan IGN", max: 19,
+          url: GEOPF + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
+          credit: "Fond de plan © IGN — Géoplateforme" },
+  photo: { nom: "Vue aérienne", max: 20,
+           url: GEOPF + "&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg",
+           credit: "Vue aérienne © IGN — Géoplateforme" },
+  osm: { nom: "OpenStreetMap", max: 19,
+         url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+         credit: "Fond de plan © les contributeurs d'OpenStreetMap" },
+};
+
+/* Ce que vaut un fond « à pleine force », et ce qu'on prend par défaut. Un
+   fond de plan n'est pas la carte : il situe, il ne raconte pas, et il doit
+   passer derrière les stands sans leur disputer l'œil. Les plans du métier
+   sont tous pâlis ; on l'est donc d'office, et le curseur laisse le dernier
+   mot. */
+const FORCE_CARTE = 0.62;
+const forceCarte = (cal) =>
+  cal && isFinite(cal.force) ? Math.max(0.1, Math.min(1, cal.force)) : FORCE_CARTE;
+
+/* Jusqu'où l'on recule, en largeurs de pavillon : deux fois et demie tant
+   qu'il n'y a rien au-delà des murs, huit fois dès qu'une carte s'y trouve —
+   c'est pour la voir qu'on l'a posée, et la vue s'arrêtait au bord de la
+   première rue. L'emprise, elle, ne bouge pas : elle tient aussi la grille
+   d'itinéraire, au demi-mètre. */
+const RECUL_CARTE = 8;
+
+/** Le calage qui vaut à cet instant : celui qu'on règle s'il y en a un, celui
+ *  du salon sinon. Le visiteur n'a jamais que le second. */
+const calageCourant = () => ENV_CAL || (DATA && DATA.calage) || null;
+
+/** Le fond retenu, s'il en est un de connu. */
+const fondCourant = () => {
+  const c = calageCourant();
+  return c && CARTES[c.fond] ? CARTES[c.fond] : null;
+};
+
+function recul(){
+  return fondCourant() ? RECUL_CARTE : 2.5;
+}
+
+/** Un point du globe, en pixels de la pyramide, à ce niveau. */
+function pixelsMercator(lon, lat, z){
+  const n = PX_TUILE * Math.pow(2, z);
+  const s = Math.max(-0.9999, Math.min(0.9999, Math.sin(lat * DEG)));
+  return [(lon + 180) / 360 * n,
+          (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n];
+}
+
+/** La latitude d'une ligne de pixels — la réciproque de la précédente, dont on
+ *  n'a besoin que du Y. */
+function latitudeDePixel(py, z){
+  const n = PX_TUILE * Math.pow(2, z);
+  return Math.atan(Math.sinh(Math.PI * (1 - 2 * py / n))) / DEG;
+}
+
+/** Ce que vaut un pixel de la pyramide, en mètres au sol, par la formule
+ *  sphérique. Sert à choisir le niveau, et à rien d'autre : un écart de trois
+ *  millièmes ne change jamais un arrondi. */
+const metresParPixel = (lat, z) =>
+  TOUR_MERCATOR * Math.cos(lat * DEG) / (PX_TUILE * Math.pow(2, z));
+
+/**
+ * Ce que vaut un pixel de la pyramide, en mètres du plan — vers l'est, et vers
+ * le sud.
+ *
+ * Mesuré dans notre propre repère, et non déduit de la formule sphérique. Web
+ * Mercator projette depuis une sphère, `versLePlan` depuis l'ellipsoïde
+ * WGS84 ; et sur l'ellipsoïde la projection n'est plus conforme — un pixel ne
+ * vaut pas tout à fait le même terrain vers l'est et vers le nord. Supposer
+ * l'un et l'autre égaux à la valeur sphérique décalait la carte d'un mètre au
+ * bout du quartier : invisible sur un stand, et exactement là où l'œil vérifie
+ * que le calage tombe juste.
+ *
+ * Deux dérivées suffisent, et le reste du placement se fait alors en pixels
+ * entiers : le groupe porte l'échelle, les tuiles n'ont plus rien à calculer.
+ */
+function echelleDesTuiles(cal, z){
+  const m = metresParDegre(cal.lat);
+  const py = pixelsMercator(cal.lon, cal.lat, z)[1];
+  return {
+    x: 360 / (PX_TUILE * Math.pow(2, z)) * m.lon,
+    y: (cal.lat - latitudeDePixel(py + 1, z)) * m.lat,
+  };
+}
+
+/** Le niveau dont les tuiles tombent au plus près de l'échelle affichée : à un
+ *  niveau près on afficherait un fond deux fois trop grossier, ou quatre fois
+ *  trop de tuiles pour la même image. */
+function niveauDesTuiles(cal, mParPx, max){
+  const z = Math.round(
+    Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (PX_TUILE * mParPx)) / Math.LN2);
+  return Math.max(2, Math.min(max, z));
+}
+
+/** L'adresse d'une tuile. */
+const adresseTuile = (fond, z, x, y) => fond.url
+  .replace("{z}", z).replace("{x}", x).replace("{y}", y);
+
+/**
+ * Les tuiles à poser pour couvrir la vue, et où les poser.
+ *
+ * Rendu à part du dessin pour être éprouvé sans navigateur : c'est la seule
+ * arithmétique de ce module qu'une erreur de signe rendrait invisible à la
+ * lecture et évidente à l'écran.
+ */
+function tuilesDeLaVue(cal, fond, vue, mParPx){
+  const z = niveauDesTuiles(cal, mParPx, fond.max);
+  const k = echelleDesTuiles(cal, z);
+  const ancre = pixelsMercator(cal.lon, cal.lat, z);
+  /* Les quatre coins de la vue, ramenés en est/sud puis en pixels. La
+     transformation étant rigide, c'est encore un rectangle — tourné ; on
+     encadre donc ses coins. */
+  const co = Math.cos(cal.angle), si = Math.sin(cal.angle);
+  const coins = [[vue.x, vue.y], [vue.x + vue.w, vue.y],
+                 [vue.x + vue.w, vue.y + vue.h], [vue.x, vue.y + vue.h]]
+    .map(q => { const dx = q[0] - cal.x, dy = q[1] - cal.y;
+                return [ancre[0] + (dx * co + dy * si) / k.x,
+                        ancre[1] + (-dx * si + dy * co) / k.y]; });
+  const n = Math.pow(2, z);
+  const X0 = Math.floor(Math.min.apply(null, coins.map(q => q[0])) / PX_TUILE);
+  const X1 = Math.floor(Math.max.apply(null, coins.map(q => q[0])) / PX_TUILE);
+  const Y0 = Math.floor(Math.min.apply(null, coins.map(q => q[1])) / PX_TUILE);
+  const Y1 = Math.floor(Math.max.apply(null, coins.map(q => q[1])) / PX_TUILE);
+  const tuiles = [];
+  /* Un garde-fou, et non une limite de travail : le niveau étant choisi sur
+     l'échelle, il en tient toujours quelques dizaines. Passé ce compte, c'est
+     qu'un calage aberrant demande la moitié du globe. */
+  if ((X1 - X0 + 1) * (Y1 - Y0 + 1) > 400) return { z: z, k: k, tuiles: [] };
+  for (let X = X0; X <= X1; X++){
+    for (let Y = Y0; Y <= Y1; Y++){
+      if (X < 0 || Y < 0 || X >= n || Y >= n) continue;
+      /* En pixels de la pyramide, relatifs à l'ancre : des entiers, que le
+         groupe met à l'échelle et tourne d'un seul coup. */
+      tuiles.push({ z: z, x: X, y: Y,
+                    px: X * PX_TUILE - ancre[0], py: Y * PX_TUILE - ancre[1] });
+    }
+  }
+  return { z: z, k: k, tuiles: tuiles };
+}
+
+/* ------------------------------------------------------------
+   Le rendu vectoriel
+
+   Les tuiles d'images portent leur texte cuit : un plan tourné le tourne
+   aussi, et on lit les noms de rues à l'envers. Aucun fournisseur n'y change
+   rien. Un moteur vectoriel, lui, reçoit de la géométrie et compose ses
+   étiquettes au moment de peindre : elles restent droites quelle que soit
+   l'orientation. C'est le seul correctif qui existe, et c'est ce que font les
+   plans de salon du métier.
+
+   MapLibre peint sur sa propre toile, sous le SVG, et ne reçoit aucun geste :
+   c'est nous qui lui disons où regarder à chaque changement de vue. Notre
+   calage donne les trois nombres qu'il demande — le centre en longitude et
+   latitude, l'échelle, et le cap.
+   ------------------------------------------------------------ */
+
+/* La bibliothèque n'est chargée que lorsqu'un fond vectoriel est retenu : deux
+   cent sept kilo-octets compressés qu'un salon sans carte n'a pas à
+   télécharger. Une version majeure plutôt qu'exacte — le CDN résout alors
+   toujours vers quelque chose qui existe, là où un numéro de correctif mal
+   deviné ne rendrait qu'un 404 silencieux.
+
+   La quatre, et pas au-delà : à partir de la six le paquet ne publie plus de
+   « maplibre-gl.js », seulement des modules. Monter de majeure sans changer
+   aussi le nom du fichier ferait donc disparaître la carte en silence — le
+   404 d'un script ajouté à la main ne se remarque nulle part. */
+const MAPLIBRE_JS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js";
+const MAPLIBRE_CSS = "https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css";
+
+let _biblioGL = null;
+function chargeMapLibre(){
+  if (_biblioGL) return _biblioGL;
+  _biblioGL = new Promise((ok, non) => {
+    /* Une promesse rejetée se garde comme une autre : sans cet oubli, un
+       premier échec — le réseau au mauvais moment — condamnait la carte pour
+       toute la session, et chaque nouvel essai retombait dessus sans rien
+       redemander. */
+    if (window.maplibregl) return ok(window.maplibregl);
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = MAPLIBRE_CSS;
+    document.head.appendChild(css);
+    const js = document.createElement("script");
+    js.src = MAPLIBRE_JS;
+    js.onload = () => window.maplibregl
+      ? ok(window.maplibregl)
+      : non(new Error("bibliothèque chargée mais introuvable"));
+    js.onerror = () => { _biblioGL = null; non(new Error("bibliothèque de carte injoignable")); };
+    document.head.appendChild(js);
+  });
+  return _biblioGL;
+}
+
+/**
+ * Où la carte vectorielle doit regarder, déduit de la vue du plan.
+ *
+ * Le cap est l'opposé de l'angle du calage : MapLibre nomme « cap » l'azimut
+ * qui se trouve en haut de l'écran, et le haut de notre plan pointe vers
+ * l'azimut −angle. L'échelle suit la convention du moteur, où le monde fait
+ * 512 pixels au niveau zéro — d'où le 78 271 et non le 156 543 des tuiles.
+ */
+function vueGL(cal){
+  const r = cadrePlan();
+  const mParPx = view.w / (r.width || 1);
+  return {
+    center: versTerre([view.x + view.w / 2, view.y + view.h / 2], cal),
+    zoom: Math.log(TOUR_MERCATOR * Math.cos(cal.lat * DEG) / (512 * mParPx)) / Math.LN2,
+    bearing: -cal.angle / DEG,
+  };
+}
+
+/**
+ * L'adresse du style à charger : celle que l'exploitant a collée, sinon celle
+ * du fond retenu.
+ *
+ * L'adresse libre demeure, bien qu'aucun fond proposé n'en ait besoin : ces
+ * services bougent, un chemin qui marchait l'an dernier rend aujourd'hui une
+ * tuile grise, et il vaut mieux pouvoir en essayer un autre sur place que
+ * d'attendre une mise en ligne. Une adresse qui demande une clé la porte
+ * elle-même — il n'y a rien à y substituer.
+ */
+function styleDuFond(cal, fond){
+  if (cal && cal.style) return cal.style;
+  return (fond && fond.style) || "";
+}
+
+let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
+/* La minuterie du silence. Un service qui refuse proprement rend un code, et
+   l'on sait quoi dire ; un service qui ne répond pas du tout ne rend rien du
+   tout, et le moteur peint alors le fond du plan — un grand aplat uni qu'on
+   prend pour une carte absente sans savoir pourquoi. Au bout de ce délai, on
+   le dit. */
+const ATTENTE_GL = 9000;
+let _guetGL = null;
+
+function guetteLaCarte(style){
+  clearTimeout(_guetGL);
+  _guetGL = setTimeout(() => {
+    if (_ditGL) return;              // une erreur a déjà parlé, elle en dit plus
+    ditCarte("Ce service ne répond pas : essayez un autre fond, ou collez " +
+             "l'adresse d'un style qui marche. Demandé : " +
+             String(style).replace(/^https?:\/\//, "").slice(0, 52), true);
+  }, ATTENTE_GL);
+}
+
+/** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
+function poseCarteGL(cal, fond){
+  const hote = $("fondCarteGL");
+  if (!hote || _echecGL) return;
+  /* Une adresse collée l'emporte sur tout ; sinon c'est l'objet du fond, ou son
+     adresse. L'empreinte sert à savoir si le style a changé — un objet n'a pas
+     d'adresse à comparer, on prend le nom du fond. */
+  const style = (cal && cal.style) || (fond.objet ? fond.objet() : styleDuFond(cal, fond));
+  const sig = (cal && cal.style) || (fond.objet ? "objet:" + cal.fond : style);
+  if (!style) return;
+  hote.hidden = false;
+  if (_carteGL){
+    if (_styleGL !== sig){
+      _styleGL = sig;
+      _ditGL = "";
+      ditCarte("Chargement de la carte…");
+      guetteLaCarte(sig);
+      _carteGL.setStyle(style);
+    }
+    _carteGL.jumpTo(vueGL(cal));
+    return;
+  }
+  /* Le montage est asynchrone et la vue se refait à chaque image : sans ce
+     drapeau on empilerait trente cartes le temps d'un glissement. */
+  if (_monteGL) return;
+  _monteGL = true;
+  /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
+     demandée — et c'est la moitié du diagnostic. */
+  ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
+  guetteLaCarte(sig);
+  chargeMapLibre().then(gl => {
+    const v = vueGL(cal);
+    _styleGL = sig;
+    _carteGL = new gl.Map({
+      container: hote, style: style,
+      center: v.center, zoom: v.zoom, bearing: v.bearing,
+      /* Aucun geste : tout passe par le SVG posé dessus. Et pas d'attribution
+         intégrée — la nôtre est déjà au coin du plan, à la même place pour
+         tous les fonds. */
+      interactive: false, attributionControl: false,
+      /* Les étiquettes n'apparaissent pas en fondu : la vue est recadrée à
+         chaque image du geste, et un fondu qui reprend sans cesse ferait
+         clignoter les noms de rues pendant qu'on cale. */
+      fadeDuration: 0,
+    });
+    /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
+       qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
+       Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
+    _carteGL.on("error", ev => diagnostiqueGL(ev));
+    /* Et quand elle arrive, le dire aussi : sans ce mot, une carte pâlie par
+       la discrétion et posée sous le plan peut passer pour absente. */
+    _carteGL.on("load", () => {
+      clearTimeout(_guetGL);
+      if (!_ditGL) ditCarte("Carte chargée.");
+    });
+  }).catch(e => {
+    _monteGL = false;
+    _echecGL = e.message;
+    hote.hidden = true;
+    ditCarte("Carte vectorielle indisponible (" + e.message +
+             ") : prenez un fond en images.", true);
+  });
+}
+
+/* La première panne, et rien de plus : un style qui manque fait crier le moteur
+   à chaque tuile, et vingt messages identiques n'apprennent pas davantage que
+   le premier. */
+let _ditGL = "";
+
+/**
+ * Ce qui a échoué, dit avec l'adresse qui a échoué.
+ *
+ * Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce qu'on lui
+ * rend, fût-ce un carré gris barré de « API KEY REQUIRED ». Et les services de
+ * tuiles changent d'adresse sans prévenir. Sans le détail — le code, et surtout
+ * l'adresse qui n'a pas répondu — on cherche longtemps, et à l'aveugle.
+ */
+function diagnostiqueGL(ev){
+  const e = (ev && ev.error) || {};
+  const code = e.status;
+  const url = e.url || (e.request && e.request.url) || "";
+  const court = url ? url.replace(/^https?:\/\//, "").slice(0, 64) : "";
+  const quoi = code === 401 || code === 403
+    ? "Ce fond demande une clé : collez-la ci-dessus, ou prenez un fond sans clé."
+    : code === 404
+    ? "Adresse introuvable : le service a changé de chemin, collez-en une autre."
+    : "Le fond vectoriel n'a pas répondu" + (code ? " (" + code + ")" : "") + ".";
+  const dit = quoi + (court ? " — " + court : "") +
+    (e.message && !code ? " — " + String(e.message).slice(0, 80) : "");
+  if (dit === _ditGL) return;
+  _ditGL = dit;
+  ditCarte(dit, true);
+}
+
+/** Une adresse changée mérite un nouvel essai : sans cela un premier échec —
+ *  une clé absente, un chemin faux — condamnerait le fond pour la session,
+ *  alors qu'on vient justement de le corriger. */
+function relanceCarteGL(){
+  clearTimeout(_guetGL);
+  _echecGL = "";
+  _ditGL = "";
+  _monteGL = false;
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  ditCarte("");
+  dessineFondCarte();
+}
+
+/** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
+function videCarteGL(){
+  clearTimeout(_guetGL);
+  const hote = $("fondCarteGL");
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
+  if (hote) hote.hidden = true;
+}
+
+/* Ce qui est déjà posé : sans cette empreinte, chaque image d'un glissement
+   réécrirait les mêmes trente balises et redemanderait les mêmes tuiles. */
+let _fondPose = "";
+let _tuilesMuettes = 0;
+
+/** Le fond de carte, refait pour la vue courante. */
+function dessineFondCarte(){
+  const hote = typeof $ === "function" && $("fondCarte");
+  if (!hote) return;
+  const cal = calageCourant(), fond = fondCourant();
+  const credit = $("creditCarte");
+  if (!cal || !fond || typeof view === "undefined" || !view){
+    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    videCarteGL();
+    if (credit) credit.hidden = true;
+    return;
+  }
+  racine.style.setProperty("--carte-force", forceCarte(cal));
+  if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
+  /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
+     et se la voit poser ici, à chaque changement de vue. C'est le prix de
+     n'être pas repris par le rendu de la carte graphique. */
+  const cadre = $("fondTuiles");
+  if (cadre) cadre.setAttribute("viewBox",
+    view.x + " " + view.y + " " + view.w + " " + view.h);
+  /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
+     c'est MapLibre qui regarde. */
+  if (fond.style || fond.objet){
+    if (_fondPose){ hote.innerHTML = ""; hote.removeAttribute("transform"); _fondPose = ""; }
+    poseCarteGL(cal, fond);
+    return;
+  }
+  videCarteGL();
+  const r = cadrePlan();
+  const t = tuilesDeLaVue(cal, fond, view, view.w / (r.width || 1));
+
+  /* Le groupe suit toujours : la position de l'ancre, la rotation vers le
+     repère du plan, l'échelle est/sud. Ce n'est qu'une attribution, et c'est
+     elle qui rend le glissement fluide — déplacer la carte d'un mètre ne
+     redemande aucune image. */
+  const r6 = (v) => Math.round(v * 1e6) / 1e6;
+  hote.setAttribute("transform",
+    "translate(" + r6(cal.x) + " " + r6(cal.y) + ")" +
+    " rotate(" + r6(cal.angle / DEG) + ")" +
+    " scale(" + r6(t.k.x) + " " + r6(t.k.y) + ")");
+
+  /* Les tuiles, elles, ne se réécrivent que lorsque le carré change : les
+     recréer à chaque image les ferait redécoder, et la carte scintillerait
+     sous la main qui la déplace. */
+  const der = t.tuiles.length ? t.tuiles[t.tuiles.length - 1] : null;
+  const empreinte = !der ? cal.fond + "|vide" : [cal.fond, t.z,
+    t.tuiles[0].x, t.tuiles[0].y, der.x, der.y, t.tuiles.length].join("|");
+  if (empreinte === _fondPose) return;
+  _fondPose = empreinte;
+  _tuilesMuettes = 0;
+  ditCarte("");
+
+  /* Les tuiles n'ont que des pixels entiers à porter — le groupe fait le
+     reste — ce qui les pose exactement bord à bord. Un millième de
+     recouvrement malgré tout : le navigateur laisse entre deux bords calculés
+     en virgule flottante un cheveu de fond, et ce cheveu dessine une grille
+     sur toute la carte. */
+  const c = PX_TUILE * 1.001;
+  hote.innerHTML = t.tuiles.map(q =>
+    '<image x="' + q.px + '" y="' + q.py + '" width="' + c + '" height="' + c +
+    '" href="' + esc(adresseTuile(fond, q.z, q.x, q.y)) + '"/>').join("");
+  /* Une tuile qui ne répond pas s'efface : un cadre brisé sous le plan dirait
+     une panne du plan, quand seul le fond manque. On les compte, pour que le
+     volet de réglage puisse dire qu'aucune n'arrive. */
+  hote.querySelectorAll("image").forEach(im => {
+    im.onerror = () => {
+      im.remove();
+      /* Une tuile perdue n'est qu'une tuile ; trois, c'est le service. Et le
+         compte se dit sur la ligne de la carte, jamais sur celle des actions —
+         un reste d'ici s'affichait sinon au milieu d'un fond vectoriel qui,
+         lui, se chargeait très bien. */
+      if (++_tuilesMuettes === 3)
+        ditCarte("Ces tuiles ne répondent pas : essayez un autre fond.", true);
+    };
+  });
+}
+
+/* ------------------------------------------------------------
+   Le trou sous le pavillon
+
+   La carte dessine le hall tel qu'il est bâti ; le plan, lui, ne couvre que
+   la part où il y a des stands — on ne trace pas les mètres carrés vides, qui
+   ne donneraient qu'une impression de vide. Les deux ne coïncident donc
+   jamais tout à fait, et la façade cartographiée dépasse du plan ou passe
+   dessous.
+
+   Plutôt que de deviner l'emprise du hall, on laisse l'exploitant la désigner
+   avec ce qu'il a déjà : le contour qu'il a dessiné. Un calque de dessin porte
+   un interrupteur de plus — « percer le fond de carte » — et ses surfaces
+   fermées deviennent des trous. La zone du hall redevient vide, et le dessin
+   s'y installe sans rien qui le contredise.
+
+   Comme le verrou, l'état vit dans la configuration plutôt qu'en table : elle
+   part aux autres postes avec le reste, et un calque supprimé ne laisse rien
+   derrière lui.
+   ------------------------------------------------------------ */
+
+const cleMasqueCarte = (id) => "_masqueCarte:" + id;
+const masqueCarte = (c) => !!c && !!(CONF[cleMasqueCarte(c.id)] || {}).masque;
+
+function basculeMasqueCarte(c){
+  const cle = cleMasqueCarte(c.id);
+  if (masqueCarte(c)) delete CONF[cle];
+  else conf(cle).masque = true;
+  enregistreConf();
+  poseMasqueCarte();
+  construitPanneau();
+}
+
+/** Le bouton du panneau. Il ne paraît qu'avec une carte dessous : sans elle il
+ *  ne percerait rien, et un réglage sans effet fait douter des autres. */
+function boutonMasqueCarte(c){
+  if (!fondCourant()) return "";
+  const on = masqueCarte(c);
+  return '<button class="masq" aria-pressed="' + on + '" title="' +
+    (on ? "Ne plus percer le fond de carte"
+        : "Percer le fond de carte : les surfaces de ce calque le laissent vide") +
+    '">' + pictoMasque(on) + '</button>';
+}
+
+/** Le picto : un cadre, et le trou qu'on y perce. Pointillé, parce qu'un trou
+ *  ne se voit pas — seul son bord se devine. */
+const pictoMasque = (on) =>
+  '<svg class="pictoMasque" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="1" y="2.2" width="10" height="7.6" rx="1"/>' +
+  (on ? '<rect class="trou" x="3.4" y="4.2" width="5.2" height="3.6" rx=".6"/>' : "") +
+  "</svg>";
+
+/* Les sortes de formes qui percent : celles qui ont une surface. Un trait, un
+   repère ou un texte désignent un endroit, ils n'en occupent pas. */
+const SORTES_MASQUE = { rect: 1, poly: 1, stand: 1 };
+
+/** Ce qui perce, sur le pavillon courant. Un calque éteint ne perce pas : il
+ *  ne se voit pas non plus, et le trou trahirait sa présence. */
+function formesMasquantes(){
+  const l = [];
+  for (const c of mesCalques()){
+    if (c.visible === false || !masqueCarte(c)) continue;
+    for (const f of (c.formes || []))
+      if (SORTES_MASQUE[f.t] && f.pts && f.pts.length > 1) l.push(f);
+  }
+  return l;
+}
+
+/**
+ * Le tracé du hall, vidé de la carte.
+ *
+ * Sans lui une voie passe par-dessus le pavillon — le périphérique le franchit
+ * dans les données parce qu'il le franchit pour de bon — et le plan se
+ * retrouve barré d'une route. Le dessin de l'exploitant, lui, s'installe alors
+ * dans du vide.
+ *
+ * C'est aussi ce que ni l'enveloppe des stands ni le contour dessiné ne savent
+ * donner : le premier s'arrête au dernier stand, le second ne couvre que ce
+ * qu'on a bien voulu tracer.
+ */
+function cheminDuHall(){
+  const cal = calageCourant();
+  const pts = cal && cal.halls && DATA ? cal.halls[P().id] : null;
+  if (!pts || pts.length < 3 || cal.vide === false) return "";
+  return "M" + pts.map(q => q[0] + " " + q[1]).join("L") + "Z";
+}
+
+/* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
+   même aplat — et un aplat réécrit fait repeindre toute la carte. */
+let _masquePose = null;
+
+/**
+ * L'aplat qui vide, posé par-dessus la carte et sous tout le reste.
+ *
+ * Un aplat de la couleur du fond, et non un découpage. Le rendu est le même —
+ * il n'y a rien derrière la carte que ce fond-là — et il vaut aussi bien pour
+ * des tuiles que pour la toile WebGL du rendu vectoriel, qu'aucun `clip-path`
+ * du SVG n'atteindrait.
+ */
+function poseMasqueCarte(){
+  const el = $("trouDuFond");
+  if (!el) return;
+  /* Rien à cacher, rien à peindre. Sans cette porte, un salon dont la carte
+     n'a pas chargé — ou qu'on vient de retirer — gardait un grand aplat clair
+     posé sur rien, au milieu du plan. */
+  const trous = !fondCourant() ? ""
+    : cheminDuHall() + formesMasquantes().map(cheminForme).join("");
+  if (trous === _masquePose) return;
+  _masquePose = trous;
+  el.setAttribute("d", trous);
+}
+
+/* ------------------------------------------------------------
+   S'accrocher au bâtiment du parc
+
+   Poser les trois nombres à la main demande de la patience, et ne tombe jamais
+   tout à fait juste. Or le pavillon est cartographié : un parc des expositions
+   est bâti, donc relevé, et OpenStreetMap en rend le contour comme celui de
+   n'importe quelle maison. On s'y accroche — même orientation, même centre —
+   et il ne reste à trancher que ce qu'aucun calcul ne peut trancher : lequel
+   des bâtiments voisins, et lequel des quatre quarts de tour.
+
+   Un seul appel, au moment du calage, par un exploitant. Le visiteur ne voit
+   jamais passer cette requête : il reçoit trois nombres.
+   ------------------------------------------------------------ */
+
+const OVERPASS = "https://overpass-api.de/api/interpreter";
+/* Le terrain demandé, en largeurs de pavillon : de quoi contenir le hall et
+   ses voisins immédiats, quelle que soit la rotation — qui n'est justement pas
+   encore connue au moment où l'on demande. */
+const TERRAIN_BATIS = 3;
+
+/** Le carré de terrain à fouiller, en degrés : sud, ouest, nord, est. */
+function carreDeTerrain(cal, facteur){
+  const e = empriseDesPavillons();
+  if (!e) return null;
+  const c = centreDesPavillons();
+  const d = Math.max(e.x1 - e.x0, e.y1 - e.y0) * facteur / 2;
+  let sud = 90, ouest = 180, nord = -90, est = -180;
+  for (const q of [[c[0] - d, c[1] - d], [c[0] + d, c[1] - d],
+                   [c[0] + d, c[1] + d], [c[0] - d, c[1] + d]]){
+    const ll = versTerre(q, cal);
+    ouest = Math.min(ouest, ll[0]); est = Math.max(est, ll[0]);
+    sud = Math.min(sud, ll[1]);     nord = Math.max(nord, ll[1]);
+  }
+  return [sud, ouest, nord, est];
+}
+
+/** Les bâtiments du secteur, tels qu'OpenStreetMap les rend. */
+async function chercheBatiments(bbox){
+  /* `out geom` rend les coordonnées dans la réponse : sans lui il faudrait un
+     second appel pour résoudre les nœuds, un par un. */
+  const requete = "[out:json][timeout:60][bbox:" +
+    bbox.map(v => v.toFixed(6)).join(",") + '];way["building"];out geom;';
+  let r;
+  try {
+    r = await fetch(OVERPASS, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(requete),
+    });
+  } catch (e) {
+    throw new Error("OpenStreetMap est injoignable depuis ce poste.");
+  }
+  /* Le serveur public d'Overpass est partagé, et le dit : ces deux codes ne
+     signalent pas une requête fautive mais un serveur qui ne peut pas répondre
+     maintenant. Les confondre enverrait corriger des coordonnées justes. */
+  if (r.status === 429 || r.status === 504)
+    throw new Error("OpenStreetMap est saturé : réessayez dans une minute.");
+  if (!r.ok) throw new Error("OpenStreetMap a répondu " + r.status + ".");
+  const d = await r.json();
+  return (d.elements || []).filter(x =>
+    x.type === "way" && x.geometry && x.geometry.length > 3);
+}
+
+/** L'aire d'un contour fermé, par la formule du lacet. */
+function aireDuContour(pts){
+  let s = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++)
+    s += pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+  return Math.abs(s) / 2;
+}
+
+/** Le centre d'un contour fermé — le vrai, celui de la surface. La moyenne des
+ *  sommets pencherait du côté où le contributeur en a posé le plus. */
+function centreDuContour(pts){
+  let s = 0, cx = 0, cy = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){
+    const f = pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+    s += f;
+    cx += (pts[j][0] + pts[i][0]) * f;
+    cy += (pts[j][1] + pts[i][1]) * f;
+  }
+  return s ? [cx / (3 * s), cy / (3 * s)] : pts[0];
+}
+
+/** La direction dominante d'un contour, au quart de tour près — les façades
+ *  d'un hall, comme `anglePlan` fait de ses allées. */
+function axeDuContour(pts){
+  let sc = 0, ss = 0;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++){
+    const dx = pts[i][0] - pts[j][0], dy = pts[i][1] - pts[j][1];
+    const l = Math.hypot(dx, dy);
+    if (l < 2) continue;               // un pan coupé ne dit rien de la façade
+    const a = Math.atan2(dy, dx);
+    /* Quadruplées, comme les allées du plan dans `anglePlan` : au quart de tour
+       près, une direction fait alors le tour entier, et 89° se moyenne avec 1°
+       au lieu de tomber à 45°. */
+    sc += l * Math.cos(4 * a); ss += l * Math.sin(4 * a);
+  }
+  return (sc || ss) ? Math.atan2(ss, sc) / 4 : 0;
+}
+
+/** L'emprise réelle de ce qu'un pavillon contient — sans la marge de douze
+ *  mètres que porte `emprise`, qui fausserait la comparaison des aires. */
+function empriseDesObjets(p){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const o of p.stands.concat(p.zones)){
+    if (!o.c || !o.bb) continue;
+    x0 = Math.min(x0, o.c[0] - o.bb[0] / 2); x1 = Math.max(x1, o.c[0] + o.bb[0] / 2);
+    y0 = Math.min(y0, o.c[1] - o.bb[1] / 2); y1 = Math.max(y1, o.c[1] + o.bb[1] / 2);
+  }
+  return isFinite(x0) ? { x0: x0, y0: y0, x1: x1, y1: y1 } : p.emprise;
+}
+
+/**
+ * Les bâtiments qui pourraient être celui-ci, le plus vraisemblable d'abord.
+ *
+ * Le critère est l'aire : un pavillon de vingt mille mètres carrés ne se
+ * confond ni avec la loge d'accueil ni avec l'immeuble d'en face. On compare
+ * en logarithme pour que « deux fois trop grand » et « deux fois trop petit »
+ * se vaillent, et l'on écarte ce qui tient dans un quart du hall.
+ */
+function batimentsCandidats(elements, cal, p){
+  const e = empriseDesObjets(p);
+  const aire = Math.max(1, (e.x1 - e.x0) * (e.y1 - e.y0));
+  const l = [];
+  for (const w of elements){
+    const pts = w.geometry.map(g => versLePlan([g.lon, g.lat], cal));
+    const a = aireDuContour(pts);
+    if (a < aire / 4) continue;
+    l.push({ w: w, aire: a, ecart: Math.abs(Math.log(a / aire)) });
+  }
+  return l.sort((x, y) => x.ecart - y.ecart).slice(0, 8);
+}
+
+/**
+ * Le calage posé sur un bâtiment : même orientation, même centre.
+ *
+ * Augmenter l'angle du calage de δ fait tourner la carte de δ dans le repère
+ * du plan — la matrice de passage vaut R(a)·F, et R(a+δ) = R(δ)·R(a). On amène
+ * donc l'axe du bâtiment sur celui des allées, puis on fait glisser son centre
+ * sur celui du pavillon.
+ */
+function caleSurBatiment(cand, p){
+  const e = empriseDesObjets(p);
+  const centre = [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2];
+  ENV_CAL = reancre(ENV_CAL, centre);
+  const avant = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
+  ENV_CAL.angle += anglePlan(p) - axeDuContour(avant);
+  const apres = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
+  const c = centreDuContour(apres);
+  ENV_CAL.x += centre[0] - c[0];
+  ENV_CAL.y += centre[1] - c[1];
+  retientLeHall(p, cand);
+}
+
+/**
+ * Le contour du hall, retenu en mètres du plan.
+ *
+ * En mètres, et non en degrés — c'est tout le sujet. Le contour vient de la
+ * carte, mais ce qu'il décrit est l'emprise du hall sur le plan, et le plan
+ * ne bouge pas : c'est la carte qu'on recentre ensuite. Gardé en longitude et
+ * latitude, le trou suivait la carte et quittait le hall au premier
+ * ajustement. Gelé ici, il reste où le hall est.
+ *
+ * Un contour par pavillon : le repère est commun à tous, mais chacun a le
+ * sien, et un salon sur deux halls ne doit pas vider le premier sous le
+ * second.
+ */
+function retientLeHall(p, cand){
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const pts = cand.w.geometry.map(g => {
+    const q = versLePlan([g.lon, g.lat], ENV_CAL);
+    return [r2(q[0]), r2(q[1])];
+  });
+  ENV_CAL.halls = Object.assign({}, ENV_CAL.halls);
+  ENV_CAL.halls[p.id] = pts;
+}
+
+/* ------------------------------------------------------------
+   L'enregistrement
+   ------------------------------------------------------------ */
+
+/**
+ * Ce que dit une base qui ne connaît pas encore la colonne.
+ *
+ * Le message de PostgREST est juste et illisible — « column evenement.calage
+ * does not exist » ne dit pas quoi faire. Or le cas se rencontre pour de bon :
+ * un aperçu de branche est servi avant que les migrations ne partent, et une
+ * instance installée à la main peut n'avoir pas rejoué les siennes.
+ */
+function manqueCalage(e){
+  return /calage/.test(e.message) && /column|schema|PGRST/i.test(e.message)
+    ? new Error("la base ne connaît pas encore le calage : appliquez les " +
+                "migrations (`npm run bd`) ou attendez la mise en ligne.")
+    : e;
+}
+
+/** Le calage, enregistré pour tous. Une ligne, et rien d'autre : le fond n'est
+ *  pas un dessin qu'on stocke, ce sont des tuiles qu'on va chercher. */
+async function enregistreCalage(cal){
+  const acces = accesBase();
+  if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
+  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+    method: "PATCH", body: JSON.stringify({ calage: cal }),
+  }).catch(e => { throw manqueCalage(e); });
+  DATA.calage = cal;
+  oublieCache(acces);
+}
+
+/** Le calage déjà enregistré, s'il y en a un. Sans rattrapage : l'appelant
+ *  l'ignore, et une base qui ne connaît pas encore la colonne ne doit pas
+ *  empêcher d'ouvrir le volet — on y vient pour poser ce qui manque. */
+async function calageEnregistre(){
+  const acces = accesBase();
+  if (!acces) return null;
+  const l = await base(acces,
+    "evenement?select=calage&slug=eq." + encodeURIComponent(DATA.slug));
+  return l && l.length ? l[0].calage : null;
+}
+
+/* ------------------------------------------------------------
+   Le volet des réglages
+   ------------------------------------------------------------ */
+
+/* Le calage en cours de réglage, et les bâtiments auxquels s'accrocher. */
+let ENV_CAL = null;
+let ENV_BATIS = [];
+let ENV_BATI = 0;
+
+/**
+ * Deux nombres collés depuis une carte : « 48.830212, 2.287851 ».
+ *
+ * Deux nombres à virgule, séparés par ce qu'on voudra — le séparateur ne vaut
+ * pas qu'on le devine, et la virgule décimale française passe aussi bien que
+ * le point anglais puisqu'on ne lit que les nombres. Un entier n'est pas une
+ * coordonnée utile ici : à un degré près, on est à cent kilomètres.
+ */
+function litCoordonnees(txt){
+  const m = String(txt || "").match(/-?\d+[.,]\d+/g);
+  if (!m || m.length !== 2) return null;
+  const [a, b] = m.map(v => parseFloat(v.replace(",", ".")));
+  /* L'ordre est celui des cartes grand public : la latitude d'abord. Au-delà
+     de quatre-vingt-dix degrés ce ne peut plus en être une — on remet les deux
+     dans l'ordre plutôt que de refuser un copier-coller qui ne demandait qu'à
+     être lu. */
+  const [lat, lon] = Math.abs(a) > 90 ? [b, a] : [a, b];
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat: lat, lon: lon };
+}
+
+/** Le fond refait et la vue rendue : tout réglage passe par là. */
+function rafraichitCarte(){
+  _fondPose = "";
+  /* Le bouton de perçage n'existe qu'avec une carte : le panneau des calques
+     le gagne ou le perd en même temps qu'elle. */
+  _masquePose = null;
+  poseMasqueCarte();
+  dessineFondCarte();
+  if (ADMIN && typeof construitPanneau === "function" && MONTE) construitPanneau();
+}
+
+/* ------------------------------------------------------------
+   La palette de calage
+
+   Caler, c'est regarder : on fait glisser une carte sous le pavillon jusqu'à
+   ce que les deux coïncident. Les commandes vivent donc sur le plan, dans une
+   palette qui prend la place de celle du dessin — une fenêtre posée devant
+   rendait le réglage aveugle, ce qu'aucune quantité de boutons ne rattrape.
+
+   Les réglages, eux, gardent l'onglet « Environs » : c'est là qu'on explique,
+   qu'on colle un point et qu'on retire une carte — trois gestes qui ne
+   demandent pas de voir le plan.
+   ------------------------------------------------------------ */
+
+/* ------------------------------------------------------------
+   Placer à la main : on saisit la carte, on la pose
+
+   Trois boutons et quatre flèches disaient ce qu'un geste dit mieux. Tant que
+   la palette arme un mode, le plan ne se déplace plus : la main saisit la
+   carte dessous et la glisse, ou la fait tourner autour du milieu de l'écran.
+   « Naviguer » rend le plan à ses gestes ordinaires, le temps d'aller voir
+   ailleurs.
+
+   La touche majuscule bascule en rotation sans quitter le déplacement : c'est
+   l'aller-retour qu'on fait vingt fois en calant, et traverser la palette à
+   chaque fois use plus que le geste lui-même.
+   ------------------------------------------------------------ */
+
+let CALAGE_MODE = "";
+let _glisseCalage = null;
+
+/** Arme un mode, et le dit au document : le curseur en dépend, et c'est la
+ *  seule chose qui annonce que le plan ne répondra pas comme d'habitude. */
+function armeCalage(mode){
+  CALAGE_MODE = mode || "";
+  racine.classList.toggle("cale-deplace", CALAGE_MODE === "deplace");
+  racine.classList.toggle("cale-tourne", CALAGE_MODE === "tourne");
+  const corps = $("calageCorps");
+  if (corps) corps.querySelectorAll(".cMode button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.mode === CALAGE_MODE)));
+}
+
+/** Le milieu de la vue : le pivot des rotations. Tourner autour de l'ancre
+ *  ferait fuir la carte — elle est à sept kilomètres du hall. */
+const pivotCalage = () => [view.x + view.w / 2, view.y + view.h / 2];
+
+/** Pendant le geste, on ne refait que la carte et le chiffre de la rotation :
+ *  reconstruire le panneau des calques à chaque image le rendrait saccadé. */
+function glisseCarte(){
+  /* Le trou du hall n'est pas refait ici : il est en mètres du plan, et le
+     plan ne bouge pas sous la main — c'est la carte qui glisse dessous. */
+  dessineFondCarte();
+  majCalage();
+}
+
+function cartePointerDown(e){
+  if (!CALAGE_MODE || !ENV_CAL || !calageCourant()) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  const pivot = pivotCalage();
+  _glisseCalage = {
+    tourne: CALAGE_MODE === "tourne" || e.shiftKey,
+    p: p, pivot: pivot, angle0: ENV_CAL.angle,
+    a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
+  };
+  svg.setPointerCapture(e.pointerId);
+  svg.classList.add("dragging");
+  return true;
+}
+
+function cartePointerMove(e){
+  if (!_glisseCalage) return false;
+  const p = versPlan(e.clientX, e.clientY);
+  if (_glisseCalage.tourne){
+    /* L'angle du pointeur autour du pivot, et non son déplacement : on saisit
+       un point et on le fait tourner, ce que la main sait faire sans y penser.
+       Le ré-ancrage à chaque image tient le pivot immobile. */
+    const a = Math.atan2(p[1] - _glisseCalage.pivot[1], p[0] - _glisseCalage.pivot[0]);
+    ENV_CAL = reancre(ENV_CAL, _glisseCalage.pivot);
+    ENV_CAL.angle = _glisseCalage.angle0 + (a - _glisseCalage.a0);
+  } else {
+    ENV_CAL.x += p[0] - _glisseCalage.p[0];
+    ENV_CAL.y += p[1] - _glisseCalage.p[1];
+    _glisseCalage.p = p;
+  }
+  glisseCarte();
+  return true;
+}
+
+function cartePointerUp(e){
+  if (!_glisseCalage) return false;
+  _glisseCalage = null;
+  svg.classList.remove("dragging");
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
+function ditCalage(txt, mal){
+  const e = $("calageEtat");
+  if (!e) return;
+  e.textContent = txt || "";
+  e.classList.toggle("alerte", !!mal);
+}
+
+/** L'état de la carte, sur sa ligne à elle : un enregistrement raté ne doit
+ *  pas effacer ce qu'elle a à dire, ni l'inverse. */
+function ditCarte(txt, mal){
+  const e = $("calageCarte");
+  if (!e) return;
+  e.textContent = txt || "";
+  e.classList.toggle("alerte", !!mal);
+}
+
+/** Remet à jour ce que la palette affiche de l'état courant. */
+function majCalage(){
+  const corps = $("calageCorps");
+  if (!corps || !ENV_CAL) return;
+  const rot = corps.querySelector(".cRot");
+  if (rot) rot.value = Math.round(ENV_CAL.angle / DEG * 10) / 10;
+  const bat = corps.querySelector(".cBati");
+  if (bat){
+    bat.hidden = !ENV_BATIS.length;
+    bat.textContent = "Bâtiment suivant (" + (ENV_BATI + 1) + "/" + ENV_BATIS.length + ")";
+  }
+  const sel = corps.querySelector(".cFond");
+  if (sel) sel.value = ENV_CAL.fond && CARTES[ENV_CAL.fond] ? ENV_CAL.fond : "";
+}
+
+/** Le réglage appliqué et montré : toute commande de la palette finit ici. */
+function appliqueCalage(){
+  rafraichitCarte();
+  majCalage();
+}
+
+/** Tourner autour du point qu'on regarde, et non autour d'une origine à sept
+ *  kilomètres — sans quoi la carte fuit l'écran au premier degré. */
+function tourneCalage(a){
+  ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
+  ENV_CAL.angle = a;
+  appliqueCalage();
+}
+
+function construitCalage(){
+  const corps = $("calageCorps");
+  corps.innerHTML = "";
+
+  const fond = document.createElement("div");
+  fond.className = "cRang";
+  fond.innerHTML = '<span>Fond</span><select class="cFond"><option value="">Aucun</option></select>';
+  const sel = fond.querySelector("select");
+  for (const k of Object.keys(CARTES)){
+    const o = document.createElement("option");
+    o.value = k; o.textContent = CARTES[k].nom;
+    sel.appendChild(o);
+  }
+  /* La clé et l'adresse du style, sous le choix du fond et non dans les
+     réglages : on choisit un service, on colle sa clé, on regarde. Traverser
+     une fenêtre entre les deux ferait perdre le fil du seul geste qui compte
+     ici — voir si la carte arrive. */
+  const avance = document.createElement("div");
+  avance.className = "cAvance";
+  avance.innerHTML =
+    '<input type="text" class="cStyle" autocomplete="off"' +
+    ' placeholder="Autre style — laissez vide sinon">' +
+    '<span class="cAide"></span>';
+  const iStyle = avance.querySelector(".cStyle");
+  /* Une adresse se tape ou se colle caractère par caractère : relancer à
+     chacun monterait vingt cartes pour en garder une, et les dix-neuf
+     premières répondraient sur une adresse en cours d'écriture. */
+  let attente = null;
+  const plusTard = (f) => { clearTimeout(attente); attente = setTimeout(f, 600); };
+  iStyle.oninput = () => plusTard(() => {
+    ENV_CAL.style = iStyle.value.trim() || undefined;
+    relanceCarteGL();
+  });
+
+  const aideAvance = avance.querySelector(".cAide");
+  const majAvance = () => {
+    const f = CARTES[sel.value];
+    /* Le champ ne paraît que pour un fond vectoriel, et reste facultatif :
+       « style » est le mot du métier et ne dit rien à qui ne le connaît pas.
+       C'est l'adresse d'un fichier qui décrit l'allure d'une carte — couleurs,
+       épaisseurs, ce qui paraît à quel zoom. Les fonds « notre style » n'en ont
+       pas : ils sont écrits dans la page. */
+    avance.hidden = !(f && (f.style || f.objet));
+    iStyle.value = ENV_CAL.style || "";
+    if (avance.hidden) return;
+    aideAvance.textContent = f.objet
+      ? "Ce fond est écrit dans la page. Le champ ci-dessus ne sert qu'à " +
+        "essayer autre chose — l'adresse d'un fichier de style MapLibre."
+      : "Le champ ci-dessus ne sert qu'à essayer un autre style que celui du " +
+        "fond choisi. Par défaut : " + f.style + ".";
+  };
+
+  sel.onchange = () => {
+    ENV_CAL.fond = sel.value || undefined;
+    majAvance();
+    relanceCarteGL();
+    appliqueCalage();
+    /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
+       limite change sans que rien ne le montre. */
+    if (typeof poseVue === "function") poseVue();
+  };
+  corps.appendChild(fond);
+  corps.appendChild(avance);
+  majAvance();
+
+  const rot = document.createElement("div");
+  rot.className = "cRang";
+  rot.innerHTML = '<span>Rotation</span><input type="number" step="0.5" class="cRot"><span class="u">°</span>';
+  const nRot = rot.querySelector("input");
+  nRot.oninput = e => { const v = +e.target.value; if (isFinite(v)) tourneCalage(v * DEG); };
+  corps.appendChild(rot);
+
+  const ligne = document.createElement("div");
+  ligne.className = "cLigne";
+  const bBati = document.createElement("button");
+  bBati.type = "button";
+  bBati.className = "cBati";
+  bBati.onclick = () => {
+    if (!ENV_BATIS.length) return;
+    ENV_BATI = (ENV_BATI + 1) % ENV_BATIS.length;
+    caleSurBatiment(ENV_BATIS[ENV_BATI], P());
+    appliqueCalage();
+  };
+  const bQuart = document.createElement("button");
+  bQuart.type = "button";
+  bQuart.textContent = "Quart de tour";
+  bQuart.onclick = () => tourneCalage(ENV_CAL.angle + Math.PI / 2);
+  ligne.appendChild(bBati);
+  ligne.appendChild(bQuart);
+  corps.appendChild(ligne);
+
+  /* Le geste, et ce qu'il fait. Trois états plutôt que deux : sans
+     « Naviguer », aller regarder l'autre bout du plan demanderait de fermer la
+     palette, donc de perdre ce qu'on était en train de régler. */
+  const mode = document.createElement("div");
+  mode.className = "cMode";
+  [["", "Naviguer", "Le plan répond comme d'habitude"],
+   ["deplace", "Déplacer", "Glissez la carte sous le plan"],
+   ["tourne", "Tourner", "Faites tourner la carte autour du milieu de l'écran"]]
+    .forEach(([k, nom, aide]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.mode = k;
+      b.textContent = nom;
+      b.title = aide;
+      b.onclick = () => armeCalage(k);
+      mode.appendChild(b);
+    });
+  corps.insertBefore(mode, corps.firstChild);
+
+  const force = document.createElement("div");
+  force.className = "cRang";
+  force.innerHTML = '<span>Discrétion</span>' +
+    '<input type="range" class="cForce" min="10" max="100" step="5">';
+  const nForce = force.querySelector("input");
+  nForce.value = Math.round(forceCarte(ENV_CAL) * 100);
+  nForce.title = "À gauche le fond s'efface, à droite il reprend toute sa force";
+  nForce.oninput = () => {
+    ENV_CAL.force = +nForce.value / 100;
+    racine.style.setProperty("--carte-force", forceCarte(ENV_CAL));
+  };
+  corps.appendChild(force);
+
+  /* Vider le hall. Coché d'office : c'est presque toujours ce qu'on veut, et
+     le décocher se comprend tout de suite en voyant ce qui revient. */
+  const vide = document.createElement("label");
+  vide.className = "cCoche";
+  vide.innerHTML = '<input type="checkbox"><span>Vider le hall sous le plan</span>';
+  const cVide = vide.querySelector("input");
+  cVide.checked = ENV_CAL.vide !== false;
+  cVide.onchange = () => {
+    ENV_CAL.vide = cVide.checked;
+    poseMasqueCarte();
+  };
+  corps.appendChild(vide);
+
+  const aide = document.createElement("p");
+  aide.className = "calageAide";
+  aide.textContent = "Maintenez Majuscule pendant le glissement pour tourner " +
+    "sans changer de mode. Un plan dessiné l'entrée vers le bas fait tourner " +
+    "la carte avec lui : prenez un fond sans texte, ou la vue aérienne.";
+  corps.appendChild(aide);
+
+  armeCalage("deplace");
+  majCalage();
+}
+
+/** Ouvrir la palette, et refermer ce qui occupait sa place. */
+function ouvreCalage(){
+  if (!ENV_CAL) return;
+  if (typeof fermeModale === "function") fermeModale();
+  const o = $("outils");
+  if (o) o.classList.remove("open");
+  construitCalage();
+  $("calage").hidden = false;
+}
+
+function fermeCalage(){
+  const c = $("calage");
+  if (c) c.hidden = true;
+  /* Sans cela le plan resterait saisi par un réglage refermé : on cliquerait
+     sur un stand et c'est la carte qui bougerait. */
+  armeCalage("");
+}
+
+/** Branchements de la palette. Faits une fois, au chargement : ces trois
+ *  éléments sont dans le balisage, et non construits à l'ouverture. */
+if ($("calageFerme")) $("calageFerme").onclick = fermeCalage;
+if ($("calageGarde")) $("calageGarde").onclick = async () => {
+  const b = $("calageGarde");
+  b.disabled = true;
+  ditCalage("Enregistrement…");
+  try {
+    await enregistreCalage(ENV_CAL);
+    ditCalage("Les visiteurs voient la carte.");
+  } catch (e) { ditCalage("Échec : " + e.message, true); }
+  b.disabled = false;
+};
+
+/**
+ * Le volet « Environs ».
+ *
+ * Ce qui ne demande pas de voir le plan : l'explication, le point qu'on colle,
+ * le retrait. Le réglage, lui, s'ouvre sur le plan — c'est le bouton du bas.
+ */
+function voletEnvirons(hote){
+  const p = document.createElement("p");
+  p.textContent = "Le plan est déjà en mètres, dans le repère du parc : il ne " +
+    "lui manque que de savoir où il tombe sur la Terre. Donnez-lui un point, " +
+    "et une carte vient se glisser sous le pavillon — les rues, les accès, " +
+    "les parkings, dessinés par ceux dont c'est le métier.";
+  hote.appendChild(p);
+
+  const q = document.createElement("p");
+  q.textContent = "Le réglage se fait ensuite sur le plan lui-même, dans une " +
+    "palette posée à côté : on cale en regardant la carte glisser sous le " +
+    "pavillon, et cette fenêtre-ci serait devant.";
+  hote.appendChild(q);
+
+  const etat = document.createElement("p");
+  etat.className = "envEtat";
+  const dit = (txt, mal) => {
+    etat.textContent = txt || "";
+    etat.classList.toggle("alerte", !!mal);
+  };
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglage-nb envCoord";
+  bloc.innerHTML = '<label><span class="l">Coordonnées du centre du salon</span></label>' +
+    '<input type="text" inputmode="decimal" placeholder="48.830212, 2.287851">' +
+    '<span class="aide">Sur n\'importe quelle carte, clic droit au milieu du ' +
+    'bâtiment puis « copier les coordonnées ». À peu près suffit : ' +
+    'l\'accrochage au bâtiment fait le reste. Les tuiles sont chargées pendant ' +
+    'la visite et gardées par le navigateur une fois vues ; la page à données ' +
+    'figées, qui n\'appelle rien au dehors, n\'en affichera pas.</span>';
+  const champ = bloc.querySelector("input");
+  hote.appendChild(bloc);
+
+  const acts = document.createElement("div");
+  acts.className = "acts";
+  const bSitue = document.createElement("button");
+  bSitue.type = "button";
+  bSitue.className = "btn";
+  bSitue.textContent = "Situer le salon";
+  const bRegle = document.createElement("button");
+  bRegle.type = "button";
+  bRegle.className = "btn";
+  bRegle.textContent = "Régler sur le plan";
+  const bEfface = document.createElement("button");
+  bEfface.type = "button";
+  bEfface.className = "btn danger";
+  bEfface.textContent = "Retirer la carte";
+  acts.appendChild(bSitue);
+  acts.appendChild(bRegle);
+  acts.appendChild(bEfface);
+  hote.appendChild(acts);
+  hote.appendChild(etat);
+
+  const maj = () => {
+    bRegle.hidden = !ENV_CAL;
+    bEfface.hidden = !(DATA && DATA.calage);
+  };
+
+  bSitue.onclick = async () => {
+    const ll = litCoordonnees(champ.value);
+    if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
+    const centre = centreDesPavillons();
+    const fond = ENV_CAL && ENV_CAL.fond ? ENV_CAL.fond : "plan";
+    ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond };
+    const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
+    if (!bbox) return dit("Ce salon n'a pas d'emprise : synchronisez-le d'abord.", true);
+    bSitue.disabled = true;
+    dit("Recherche du bâtiment…");
+    /* La palette s'ouvre avant la réponse d'Overpass : la carte est déjà
+       posée, et l'on voit sans attendre si l'on est au bon endroit du monde. */
+    ouvreCalage();
+    appliqueCalage();
+    try {
+      ENV_BATIS = batimentsCandidats(await chercheBatiments(bbox), ENV_CAL, P());
+      ENV_BATI = 0;
+      if (ENV_BATIS.length){
+        caleSurBatiment(ENV_BATIS[0], P());
+        appliqueCalage();
+        ditCalage("Calé sur un bâtiment de " +
+          Math.round(ENV_BATIS[0].aire).toLocaleString("fr-FR") + " m².");
+      } else {
+        ditCalage("Aucun bâtiment à la bonne taille ici : tournez à la main.");
+      }
+    } catch (e) {
+      ditCalage("Bâtiment non cherché (" + e.message + ") : tournez à la main.", true);
+    }
+    bSitue.disabled = false;
+    majCalage();
+    maj();
+  };
+
+  bRegle.onclick = () => { ouvreCalage(); appliqueCalage(); };
+
+  bEfface.onclick = async () => {
+    bEfface.disabled = true;
+    dit("Retrait…");
+    try {
+      await enregistreCalage(null);
+      ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
+      champ.value = "";
+      fermeCalage();
+      rafraichitCarte();
+      if (typeof poseVue === "function") poseVue();
+      dit("La carte est retirée.");
+    } catch (e) { dit("Échec : " + e.message, true); }
+    bEfface.disabled = false;
+    maj();
+  };
+
+  /* Ce qui est déjà en place remplit l'écran : on revient le plus souvent pour
+     retoucher, et relever deux fois un point sur une carte n'apprend rien. */
+  const pose = calageCourant();
+  if (pose){
+    champ.value = pose.lat.toFixed(6) + ", " + pose.lon.toFixed(6);
+    ENV_CAL = Object.assign({}, pose);
+  }
+  maj();
+  calageEnregistre().then(cal => {
+    if (!cal || ENV_CAL) return;
+    champ.value = cal.lat.toFixed(6) + ", " + cal.lon.toFixed(6);
+    ENV_CAL = cal;
+    rafraichitCarte();
+    maj();
+  }).catch(() => {});
+}

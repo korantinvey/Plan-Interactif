@@ -326,7 +326,12 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    n'était plus qu'un carré de couleur. Un <svg> imbriqué tient ses dimensions
    de ses attributs, qu'aucune valeur CSS ne sait rendre après coup : il faut
    donc que la règle ne le touche pas. */
-.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+/* Le plan se positionne, et pour une seule raison : la toile de la carte
+   vectorielle est en position absolue, et une boîte positionnée se peint
+   au-dessus d'une boîte qui ne l'est pas. Sans ces deux rangs, la carte
+   recouvrait le plan au lieu de se glisser dessous. */
+.stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+  position:relative;z-index:1}
 .stage svg.dragging{cursor:grabbing}
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
@@ -623,6 +628,42 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
   box-shadow:var(--shadow);padding:12px 14px;width:264px;
   max-height:calc(100% - 24px);overflow-y:auto}
 .outils.open{display:flex}
+/* La palette de calage partage l'allure de celle du dessin — et sa place : les
+   deux ne servent jamais en même temps, ouvrir l'une ferme l'autre. Elle
+   s'affiche par `hidden`, non par une classe : rien d'autre ne la commande. */
+.calage:not([hidden]){display:flex}
+.calage .cRang{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cRang > span{flex:1;min-width:0}
+.calage select,.calage input[type="number"]{padding:5px 7px;font-size:12.5px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.calage input[type="number"]{width:74px;text-align:right}
+.calage .cGrille{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.calage .cGrille button,.calage .cLigne button{height:30px;border:1px solid var(--line);
+  border-radius:var(--radius);color:var(--ink-2);font-size:12px;padding:0 6px}
+.calage .cGrille button:hover,.calage .cLigne button:hover{border-color:var(--line-strong);color:var(--ink)}
+.calage .cLigne{display:flex;gap:4px}
+.calage .cLigne button{flex:1;min-width:0}
+.calage .cMode{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.calage .cMode button{height:26px;border:none;border-radius:999px;font-size:11.5px;
+  font-weight:600;color:var(--ink-2);padding:0}
+.calage .cMode button:hover{color:var(--ink)}
+.calage .cMode button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.calageAide{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
+.calage .cCoche{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2)}
+.calage .cCoche input{width:auto;margin:0}
+.calage input[type="range"]{flex:1;min-width:0;padding:0;background:none;border:none;accent-color:var(--accent)}
+.calage .cAvance{display:flex;flex-direction:column;gap:4px}
+.calage .cAvance input{width:100%;padding:5px 7px;font-size:11.5px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);color:var(--ink)}
+.calage .cAvance input:focus{border-color:var(--accent);outline:none}
+.calage .cAvance .cAide{font-size:10.5px;color:var(--ink-3);line-height:1.4;overflow-wrap:anywhere}
+/* Un mode armé change ce que la main fait du plan : le curseur est la seule
+   chose qui le dise avant le premier geste. */
+html.cale-deplace #plan{cursor:grab}
+html.cale-tourne #plan{cursor:crosshair}
+.calageEtat{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin:0}
+.calageEtat.alerte{color:var(--rouge)}
 .outilsTete{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .outilsActs{display:flex;align-items:center;gap:2px}
 .outilsTete button{color:var(--ink-3);font-size:17px;line-height:1;padding:0 3px}
@@ -792,6 +833,12 @@ html .dcal .forme.sdes:focus-visible path{stroke:var(--accent);stroke-width:3}
 .calq .verr:hover{color:var(--ink)}
 .calq .verr[aria-pressed="true"]{color:var(--accent)}
 .calq .verr[aria-pressed="true"] .pictoVerrou rect{fill:currentColor}
+.calq .masq{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .masq:hover{color:var(--ink)}
+.calq .masq[aria-pressed="true"]{color:var(--accent)}
+.pictoMasque{width:12px;height:12px;display:block;margin:auto}
+.pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
+.pictoMasque .trou{stroke-dasharray:1.7 1.2}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -961,6 +1008,36 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 .mention-osm{position:absolute;left:60px;bottom:3px;font-size:10px;color:var(--ink-3);
   pointer-events:none;white-space:nowrap}
 .mention-osm[hidden]{display:none}
+
+/* Le fond de carte. Les tuiles se posent bord à bord et le navigateur laisse
+   un cheveu blanc entre deux bords calculés au millième : elles se recouvrent
+   donc d'un pouce, ce qui ne se voit pas et supprime la couture. Une tuile qui
+   ne répond pas ne laisse rien — pas de cadre brisé sous le plan. */
+/* Le fond se tient en retrait : il situe le pavillon, il ne raconte pas le
+   quartier, et à pleine force il dispute l'œil aux stands. La force est un
+   réglage du salon, posée en variable par le calage. */
+#fondCarte{opacity:var(--carte-force,.62)}
+/* Par l'identifiant, et non par la classe : MapLibre pose sa propre classe sur
+   le conteneur qu'on lui donne, avec « position:relative », et sa feuille est
+   injectée après la nôtre. À spécificité égale la sienne l'emportait, le
+   conteneur perdait son positionnement absolu et s'effondrait à zéro de haut —
+   la carte se montait sans rien montrer. Un sélecteur d'identifiant tranche,
+   quel que soit l'ordre d'arrivée. */
+#fondCarteGL{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;opacity:var(--carte-force,.62)}
+#fondCarteGL canvas{outline:none}
+/* Le calque des tuiles : au-dessus de la carte vectorielle, au-dessous du
+   plan — que celui-ci soit peint en SVG ou par la carte graphique, tous deux
+   venant après lui dans la scène. */
+#fondTuiles{position:absolute;inset:0;width:100%;height:100%;z-index:0;
+  pointer-events:none;display:block}
+/* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
+   l'exploitant choisit, et qui suit le thème. */
+#trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
+#fondCarte image{image-rendering:auto}
+.creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
+  background:color-mix(in srgb,var(--surface) 72%,transparent);padding:1px 6px;
+  border-radius:3px;pointer-events:none;max-width:60%;text-align:right}
 
 .detail{position:absolute;top:0;right:0;bottom:0;width:340px;background:var(--surface);
   border-left:1px solid var(--line);transform:translateX(100%);display:flex;flex-direction:column;z-index:4;
@@ -2697,6 +2774,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .reglage-nb .hEfface[hidden]{display:inline-block !important;visibility:hidden}
 .reglage-nb .aide.alerte{color:var(--rouge)}
 
+/* Le volet des environs. Un champ de coordonnées se colle plutôt qu'il ne se
+   tape : il prend toute la largeur, là où les autres réglages n'ont qu'un
+   nombre à loger. */
+.envCoord input{width:100%;padding:6px 8px;font-size:13.5px;text-align:left;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.envCoord input:focus{border-color:var(--accent);outline:none}
+.envRot input{width:88px}
+.envFond select{width:100%;padding:6px 8px;font-size:13.5px}
+.envEtat{font-size:12.5px;color:var(--ink-3);line-height:1.5;margin:10px 0 0}
+.envEtat.alerte{color:var(--rouge)}
+.envFin{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+
 /* Les réglages tiennent en volets : ce que le plan montre, ce que la recherche
    remonte, ce qu'elle suggère, comment la fiche se range, de quoi le plan a
    l'air, ses zones, sa mesure. Séparés par des onglets plutôt qu'empilés —
@@ -3835,8 +3925,34 @@ html.tuto-retrait .dcal .forme{opacity:.22}
   </aside>
 
   <main class="stage" id="stage">
+    <!-- La carte vectorielle, quand c'est elle qu'on a choisie. Hors du SVG :
+         MapLibre peint sur sa propre toile WebGL, et c'est justement ce qui
+         garde les libellés droits quand le plan est tourné. Elle ne reçoit
+         aucun geste — tout passe par le SVG posé dessus. -->
+    <div class="fondGL" id="fondCarteGL" hidden></div>
+    <!-- Les tuiles d'images et l'aplat qui vide le hall, hors du plan.
+         Longtemps ils vivaient dans « #couches », ce qui était plus simple :
+         ils héritaient de sa « viewBox ». Le rendu par la carte graphique a
+         tranché autrement — il reprend chaque enfant de « #couches » pour en
+         faire une couche de dessin, et masque le SVG qu'il remplace. Un fond
+         n'a rien à y faire : il se pose dans la scène, sous le plan, quel que
+         soit le rendu de celui-ci. -->
+    <svg class="fondTuiles" id="fondTuiles" aria-hidden="true">
+      <g id="fondCarte"></g>
+      <!-- Ce qui rend le hall vide : un aplat de la couleur du fond, posé
+           par-dessus la carte et sous le plan. Un aplat et non un découpage —
+           il n'y a rien derrière la carte que ce fond-là, le rendu est le
+           même, et il vaut pour les tuiles comme pour la toile WebGL de la
+           carte vectorielle, qu'aucun découpage du SVG n'atteindrait. -->
+      <path id="trouDuFond"></path>
+    </svg>
     <svg id="plan" role="img" aria-label="Plan du pavillon 7.1">
       <g id="couches">
+        <!-- Le fond de carte, sous tout le reste. Il ne participe pas à la
+             pile des calques : `ordonneDom` n'y déplace que ce qu'elle connaît,
+             et ce groupe, jamais nommé, reste là où le balisage l'a mis. Son
+             contenu est refait à chaque changement de vue et ne s'enregistre
+             nulle part — ce sont des tuiles, pas un dessin. -->
         <g id="zones"></g>
         <g id="stands"></g>
         <g id="labels"></g>
@@ -3852,6 +3968,9 @@ html.tuto-retrait .dcal .forme{opacity:.22}
       <button id="zFit" aria-label="Ajuster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V4h5M21 9V4h-5M3 15v5h5M21 15v5h-5"/></svg></button>
     </div>
     <div class="scalebar"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+    <!-- Le fond de carte se cite. C'est la contrepartie de tuiles qu'on
+         n'a pas dessinées, et elle ne paraît que lorsqu'il y en a. -->
+    <div class="creditCarte" id="creditCarte" hidden></div>
     <div class="mention-osm" id="mentionOsm" hidden>© les contributeurs d'OpenStreetMap</div>
     <div class="poi" id="poi" hidden></div>
     <div class="viseur" id="viseur" hidden>
@@ -3873,6 +3992,27 @@ html.tuto-retrait .dcal .forme{opacity:.22}
     <div class="bornePose" id="bornePose" hidden>
       <span>Mode borne : cet écran ne sait pas encore où il est posé.</span>
       <button type="button" id="bornePoser">Poser la borne</button>
+    </div>
+
+    <!-- La palette de calage. Elle flotte sur le plan plutôt que d'occuper une
+         fenêtre : on cale en regardant la carte glisser sous le pavillon, et
+         une modale posée devant rend le réglage aveugle. Même place et même
+         allure que la palette de dessin, dont elle prend le tour de rôle. -->
+    <div class="outils calage" id="calage" hidden>
+      <div class="outilsTete">
+        <strong>Caler la carte</strong>
+        <div class="outilsActs"><button type="button" id="calageFerme" aria-label="Fermer">×</button></div>
+      </div>
+      <div id="calageCorps"></div>
+      <!-- Deux lignes, et non une. L'état de la carte et celui d'un
+           enregistrement ne se remplacent pas : le second masquait le premier,
+           et l'on cherchait pourquoi la carte manquait en lisant un message
+           qui parlait de la base. -->
+      <p class="calageEtat" id="calageCarte"></p>
+      <p class="calageEtat" id="calageEtat"></p>
+      <div class="acts">
+        <button type="button" class="btn" id="calageGarde">Enregistrer pour tous</button>
+      </div>
     </div>
 
     <div class="outils" id="outils">

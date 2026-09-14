@@ -6,6 +6,9 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  // `_environs.html` : le corps de la requête Overpass, qui part au serveur
+  // et ne s'affiche jamais
+  "[out:json][timeout:60][bbox:",
   // les noms de mois de `_js.html` : `_langue.js` traduit les dates entières,
   // « samedi 14 mars 2026 », sans passer par le dictionnaire
   "février", "août", "décembre",
