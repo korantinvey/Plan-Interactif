@@ -2628,12 +2628,25 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
+   l'allure du bouton des critères de recherche une fois actif — c'en est un,
+   de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
+.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:600}
+.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+  color:var(--ink-3)}
 /* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
    ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
    sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
-   même rang s'alignent sur la plus haute, la grille s'en charge. */
+   même rang s'alignent sur la plus haute, la grille s'en charge, et le nom
+   reste en haut de chacune pour que le rang se lise d'une traite. */
 .polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
-.pol{display:flex;flex-direction:column;justify-content:space-between;gap:3px;min-width:0;
+.pol{display:flex;flex-direction:column;gap:3px;min-width:0;
   padding:8px 10px 7px;text-align:left;background:var(--surface-2);
   border:1px solid var(--line);border-radius:6px}
 .pol:hover{border-color:var(--line-strong)}

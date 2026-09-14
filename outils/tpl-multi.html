@@ -2628,12 +2628,25 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
+   l'allure du bouton des critères de recherche une fois actif — c'en est un,
+   de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
+.genresPol{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px}
+.genresPol button{display:inline-flex;align-items:baseline;gap:5px;padding:4px 10px;
+  border:1px solid var(--line);border-radius:999px;background:var(--surface-2);
+  color:var(--ink-2);font-size:12px;font-weight:600}
+.genresPol button:hover{border-color:var(--line-strong);color:var(--ink)}
+.genresPol button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--ink)}
+.genresPol .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:500;
+  color:var(--ink-3)}
 /* Une vignette par police, le nom écrit dans sa propre face. Le nom passe à la
    ligne plutôt que de se couper : « Atkinson Hyperlegible Next » ne tient pas
    sur une vignette, et tronqué il ne se reconnaîtrait plus. Les vignettes d'un
-   même rang s'alignent sur la plus haute, la grille s'en charge. */
+   même rang s'alignent sur la plus haute, la grille s'en charge, et le nom
+   reste en haut de chacune pour que le rang se lise d'une traite. */
 .polices{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:7px}
-.pol{display:flex;flex-direction:column;justify-content:space-between;gap:3px;min-width:0;
+.pol{display:flex;flex-direction:column;gap:3px;min-width:0;
   padding:8px 10px 7px;text-align:left;background:var(--surface-2);
   border:1px solid var(--line);border-radius:6px}
 .pol:hover{border-color:var(--line-strong)}
@@ -7864,34 +7877,104 @@ const POLICES_LIBELLE = {
    Les cinq polices des modèles sont déjà déclarées par l'en-tête de la page, et
    se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
    par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
-   chargent qu'une fois choisies : chez le visiteur, la seule de son salon. */
-const REPLIS_POLICE = { "serif": "Georgia, serif", "chasse fixe": "monospace" };
+   chargent qu'au besoin, depuis `polices/` : chez le visiteur, la seule de son
+   salon ; chez l'exploitant, celles du genre qu'il parcourt.
+
+   Rangées par genre, et par nom dans chacun : soixante polices ne se
+   parcourent pas d'un seul tenant, et c'est d'abord une allure qu'on cherche —
+   une étroite pour des enseignes longues, une manuscrite pour un salon des
+   vins —, puis un nom dans cette allure. Les genres vont du plus sûr sur une
+   cloison au plus singulier. Le repli ne sert qu'aux vignettes, le temps que
+   leur police arrive : le plan, lui, n'écrit jamais dans une police absente.
+
+   La table garde une ligne par police, son genre écrit dedans, plutôt qu'une
+   liste sous chaque genre : `npm run polices` et la construction la relisent
+   sous cette forme exacte (`policesAuChoix`, dans outils/polices.js). */
+const GENRES_POLICE = [
+  { cle: "sans", nom: "Sans serif", repli: "sans-serif" },
+  { cle: "etroite", nom: "Étroites", repli: "sans-serif" },
+  { cle: "serif", nom: "Serif", repli: "Georgia, serif" },
+  { cle: "arrondie", nom: "Arrondies", repli: "sans-serif" },
+  { cle: "lisible", nom: "Haute lisibilité", repli: "sans-serif" },
+  { cle: "affiche", nom: "Affiche", repli: "sans-serif" },
+  { cle: "manuscrite", nom: "Manuscrites", repli: "cursive" },
+  { cle: "chasse", nom: "Chasse fixe", repli: "monospace" },
+];
 const POLICES_NOMS = [
-  ["Instrument Sans", "600", "sans serif", P_SANS],
-  ["Archivo", "600", "sans serif", P_GROTESQUE],
-  ["Inter", "600", "sans serif"],
-  ["Roboto", "600", "sans serif"],
-  ["Open Sans", "600", "sans serif"],
-  ["Lato", "700", "sans serif"],
-  ["Montserrat", "600", "sans serif"],
-  ["Poppins", "600", "sans serif"],
-  ["Raleway", "600", "sans serif"],
-  ["Nunito", "700", "arrondie"],
-  ["Atkinson Hyperlegible Next", "600", "haute lisibilité"],
-  ["Oswald", "500", "étroite"],
-  ["Roboto Condensed", "600", "étroite"],
-  ["Barlow Condensed", "600", "étroite"],
+  ["Archivo", "600", "sans", P_GROTESQUE],
+  ["Barlow", "600", "sans"],
+  ["DM Sans", "600", "sans"],
+  ["Fira Sans", "600", "sans"],
+  ["IBM Plex Sans", "600", "sans"],
+  ["Instrument Sans", "600", "sans", P_SANS],
+  ["Inter", "600", "sans"],
+  ["Jost", "600", "sans"],
+  ["Lato", "700", "sans"],
+  ["Manrope", "600", "sans"],
+  ["Montserrat", "600", "sans"],
+  ["Noto Sans", "600", "sans"],
+  ["Open Sans", "600", "sans"],
+  ["Plus Jakarta Sans", "600", "sans"],
+  ["Poppins", "600", "sans"],
+  ["Raleway", "600", "sans"],
+  ["Roboto", "600", "sans"],
+  ["Source Sans 3", "600", "sans"],
+  ["Space Grotesk", "600", "sans"],
+  ["Work Sans", "600", "sans"],
+
+  ["Anton", "400", "etroite"],
+  ["Archivo Narrow", "600", "etroite"],
+  ["Barlow Condensed", "600", "etroite"],
+  ["Bebas Neue", "400", "etroite"],
+  ["Fira Sans Condensed", "600", "etroite"],
+  ["Oswald", "500", "etroite"],
+  ["PT Sans Narrow", "700", "etroite"],
+  ["Roboto Condensed", "600", "etroite"],
+
+  ["Bitter", "600", "serif"],
+  ["Cormorant Garamond", "600", "serif"],
+  ["EB Garamond", "600", "serif"],
   ["Fraunces", "600", "serif", P_SERIF],
+  ["Libre Baskerville", "700", "serif"],
+  ["Lora", "600", "serif"],
   ["Merriweather", "700", "serif"],
   ["Playfair Display", "600", "serif"],
+  ["PT Serif", "700", "serif"],
   ["Roboto Slab", "600", "serif"],
-  ["IBM Plex Mono", "500", "chasse fixe", P_CHASSE],
-  ["Courier Prime", "700", "chasse fixe", P_MACHINE],
+  ["Source Serif 4", "600", "serif"],
+
+  ["Comfortaa", "700", "arrondie"],
+  ["Fredoka", "600", "arrondie"],
+  ["Nunito", "700", "arrondie"],
+  ["Quicksand", "700", "arrondie"],
+  ["Varela Round", "400", "arrondie"],
+
+  ["Andika", "700", "lisible"],
+  ["Atkinson Hyperlegible Next", "600", "lisible"],
+  ["Lexend", "500", "lisible"],
+
+  ["Abril Fatface", "400", "affiche"],
+  ["Alfa Slab One", "400", "affiche"],
+  ["Archivo Black", "400", "affiche"],
+  ["Bungee", "400", "affiche"],
+  ["Righteous", "400", "affiche"],
+
+  ["Caveat", "600", "manuscrite"],
+  ["Dancing Script", "600", "manuscrite"],
+  ["Kalam", "700", "manuscrite"],
+  ["Patrick Hand", "400", "manuscrite"],
+
+  ["Courier Prime", "700", "chasse", P_MACHINE],
+  ["IBM Plex Mono", "500", "chasse", P_CHASSE],
+  ["Inconsolata", "600", "chasse"],
+  ["JetBrains Mono", "600", "chasse"],
+  ["Roboto Mono", "600", "chasse"],
+  ["Space Mono", "700", "chasse"],
 ].map(([nom, graisse, genre, pile]) => ({
   nom, graisse, genre,
   // sans pile écrite, la police ne se demande qu'au besoin, à `polices/`
   distante: !pile,
-  pile: pile || '"' + nom + '", ' + (REPLIS_POLICE[genre] || "sans-serif"),
+  pile: pile || '"' + nom + '", ' + GENRES_POLICE.find(g => g.cle === genre).repli,
 }));
 
 /** La police que l'exploitant a préférée pour les noms, s'il en a retenu une. */
@@ -9117,21 +9200,60 @@ function voletApparence(hote){
   blocPolice.innerHTML = '<div class="tete"><span class="eyebrow">Police des noms</span>' +
     '<span class="val"></span>' +
     '<button type="button" class="raz">Police du modèle</button></div>' +
-    '<div class="polices"></div>';
+    '<div class="genresPol"></div><div class="polices"></div>';
   const valPolice = blocPolice.querySelector(".val");
-  const polices = blocPolice.querySelector(".polices");
+  const genres = GENRES_POLICE.map(g => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = g.nom;
+    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.onclick = () => montreGenre(g.cle);
+    blocPolice.querySelector(".genresPol").appendChild(b);
+    return { b, g };
+  });
+  const tuiles = POLICES_NOMS.map(q => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pol";
+    b.innerHTML = '<span class="t"></span><span class="g">du modèle</span>';
+    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
+       c'est une enseigne qu'on choisit, et un intitulé dans la police de
+       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
+       d'un serif. */
+    const t = b.querySelector(".t");
+    t.textContent = q.nom;
+    t.style.fontFamily = q.pile;
+    t.style.fontWeight = q.graisse;
+    b.onclick = () => posePolice(q);
+    blocPolice.querySelector(".polices").appendChild(b);
+    return { b, q };
+  });
+  /* Un genre à la fois : soixante vignettes d'un seul bloc repoussaient les
+     modèles hors de vue. Celles des autres genres restent bâties mais cachées
+     — cachées, elles ne font rien télécharger —, et la feuille d'une police
+     n'est demandée qu'au premier passage sur son genre. */
+  const montreGenre = (cle) => {
+    genres.forEach(({ b, g }) => b.setAttribute("aria-pressed", String(g.cle === cle)));
+    tuiles.forEach(({ b, q }) => {
+      b.hidden = q.genre !== cle;
+      if (!b.hidden) feuillePolice(q);
+    });
+  };
   const majPolices = () => {
     const modele = policeDuModele(modeleRetenu());
     const choisie = policeChoisie();
     const courante = choisie && choisie !== modele ? choisie : modele;
-    polices.querySelectorAll(".pol").forEach(b => {
-      const q = POLICES_NOMS.find(x => x.nom === b.dataset.police);
+    tuiles.forEach(({ b, q }) => {
       b.setAttribute("aria-pressed", String(q === courante));
-      b.querySelector(".g").textContent = q === modele ? q.genre + " · du modèle" : q.genre;
+      b.querySelector(".g").hidden = q !== modele;
     });
     valPolice.textContent = !courante ? "" :
       courante === modele ? courante.nom + " · modèle " +
         (MODELES.find(m => m.cle === modeleRetenu()) || {}).nom : courante.nom;
+    // le genre montré suit la police en place : le modèle qui repose une serif
+    // ouvre les serifs, sans quoi la vignette cochée resterait hors de vue
+    montreGenre(courante ? courante.genre : GENRES_POLICE[0].cle);
   };
   const posePolice = (q) => {
     const f = conf("_fiche");
@@ -9140,25 +9262,6 @@ function voletApparence(hote){
     else f.police = q.nom;
     enregistreConf(); posePoliceLibelles(modeleRetenu()); majPolices();
   };
-  POLICES_NOMS.forEach(q => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "pol";
-    b.dataset.police = q.nom;
-    b.innerHTML = '<span class="t"></span><span class="g"></span>';
-    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
-       c'est une enseigne qu'on choisit, et un intitulé dans la police de
-       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
-       d'un serif. D'où la feuille demandée pour toutes, dès l'onglet bâti —
-       le navigateur ne télécharge que ce qu'il affiche. */
-    const t = b.querySelector(".t");
-    t.textContent = q.nom;
-    t.style.fontFamily = q.pile;
-    t.style.fontWeight = q.graisse;
-    feuillePolice(q);
-    b.onclick = () => posePolice(q);
-    polices.appendChild(b);
-  });
   blocPolice.querySelector(".raz").onclick = () => posePolice(null);
   hote.appendChild(blocPolice);
   majPolices();
