@@ -593,14 +593,10 @@ function libelles(){
        rendu WebGL court-circuite pendant le geste. On le remet à l'échelle
        ici, une fois le geste posé : le refaire à chaque image repeindrait les
        calques qui les portent. */
-    if (!editionSvg()){
-      if (typeof rafraichitBouts === "function") rafraichitBouts();
-      if (typeof rafraichitFleches === "function") rafraichitFleches();
-      if (typeof rafraichitBorne === "function") rafraichitBorne();
-    }
-    /* Au placement à la main, les libellés s'écrivent aussi dans le SVG :
-       invisibles, ils y restent ce que le pointeur attrape. */
-    if (!PLACE_LIBELLES) return;
+    if (typeof rafraichitBouts === "function") rafraichitBouts();
+    if (typeof rafraichitFleches === "function") rafraichitFleches();
+    if (typeof rafraichitBorne === "function") rafraichitBorne();
+    return;
   }
   const l = $("labels"), p = P();
   const r = cadrePlan();
@@ -650,8 +646,7 @@ function libelles(){
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
      qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
   if (libPeints) peintLibelles(vueEcrite);
-  // les témoins de style du rendu WebGL restent à côté des libellés
-  l.innerHTML = out + (GL.actif ? modelesLibellesHtml() : "");
+  l.innerHTML = out;
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
      nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
@@ -1797,8 +1792,9 @@ const appliqueVue = () => {
   if (GL.actif){
     vueWebgl();
     majEditionWebgl();
-    // pendant l'édition, le SVG visible doit suivre la vue comme avant
-    if (!editionSvg()) return;
+    // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
+    if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
+    return;
   }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };

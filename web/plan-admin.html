@@ -1120,15 +1120,9 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .plan-gl{position:absolute;inset:0;pointer-events:none}
 html.rendu-webgl #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
-/* Pendant l'édition, ce que l'éditeur attrape — le calque ouvert, les
-   libellés qu'on place, les poignées — redevient atteignable, et reste
-   transparent : la carte graphique le peint à son rang. « filter » plutôt
-   qu'« opacity », que le rendu lit et recopierait. Le SVG passe au-dessus du
-   dessin pour recevoir le pointeur. */
+/* Le SVG passe au-dessus du dessin : c'est lui qui reçoit le pointeur, et la
+   carte graphique qui dit ce qu'il vise. */
 html.rendu-webgl .stage > svg{position:relative}
-html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
-html.rendu-webgl.edition-svg #couches > .dcal.editable,
-html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible;filter:opacity(0)}
 /* Une animation lue au vol figerait n'importe laquelle de ses images : un
    calque encore à demi fondu, un repère saisi au creux de son battement. La
    carte graphique rejoue elle-même les battements et le défilement. */
@@ -1138,8 +1132,7 @@ html.rendu-webgl #plan *{animation:none!important}
    rien : ni peints ni visés par le pointeur — la carte graphique les montre,
    et leur liseré de focus avec eux. */
 html.rendu-webgl #plan [tabindex]{visibility:visible;clip-path:inset(50%)}
-html.rendu-webgl.edition-svg #couches > .dcal.editable [tabindex]{clip-path:none}
-html.rendu-webgl .stage.survol-gl > svg{cursor:pointer}
+html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -5408,14 +5401,10 @@ function libelles(){
        rendu WebGL court-circuite pendant le geste. On le remet à l'échelle
        ici, une fois le geste posé : le refaire à chaque image repeindrait les
        calques qui les portent. */
-    if (!editionSvg()){
-      if (typeof rafraichitBouts === "function") rafraichitBouts();
-      if (typeof rafraichitFleches === "function") rafraichitFleches();
-      if (typeof rafraichitBorne === "function") rafraichitBorne();
-    }
-    /* Au placement à la main, les libellés s'écrivent aussi dans le SVG :
-       invisibles, ils y restent ce que le pointeur attrape. */
-    if (!PLACE_LIBELLES) return;
+    if (typeof rafraichitBouts === "function") rafraichitBouts();
+    if (typeof rafraichitFleches === "function") rafraichitFleches();
+    if (typeof rafraichitBorne === "function") rafraichitBorne();
+    return;
   }
   const l = $("labels"), p = P();
   const r = cadrePlan();
@@ -5465,8 +5454,7 @@ function libelles(){
      encore sur le calque du zoom. On le repeint à la vue du moment : les noms
      qui viennent de devenir lisibles naîtraient sinon déjà étirés. */
   if (libPeints) peintLibelles(vueEcrite);
-  // les témoins de style du rendu WebGL restent à côté des libellés
-  l.innerHTML = out + (GL.actif ? modelesLibellesHtml() : "");
+  l.innerHTML = out;
   /* Les stands dessinés à la main écrivent le leur dans leur propre forme, et
      non ici : un calque posé par-dessus celui des textes recouvrirait sinon le
      nom qu'il porte. La règle de lisibilité, elle, est la même — d'où cet
@@ -6612,8 +6600,9 @@ const appliqueVue = () => {
   if (GL.actif){
     vueWebgl();
     majEditionWebgl();
-    // pendant l'édition, le SVG visible doit suivre la vue comme avant
-    if (!editionSvg()) return;
+    // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
+    if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
+    return;
   }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
@@ -12425,9 +12414,10 @@ function pousseLibelle(dx, dy){
 /* --- le geste ; renvoie vrai si l'événement est consommé --- */
 function libellePointerDown(e){
   if (!PLACE_LIBELLES) return false;
-  const g = e.target.closest("#labels .lbl");
-  if (!g) return false;
-  const o = parId.get(g.dataset.lbl);
+  const g = GL.actif ? null : e.target.closest("#labels .lbl");
+  const id = GL.actif ? libelleSousWebgl(e.clientX, e.clientY) : g && g.dataset.lbl;
+  if (!id) return false;
+  const o = parId.get(id);
   if (!o) return false;
   e.preventDefault();
   choisitLibelle(o.id);
@@ -14699,7 +14689,8 @@ function editionPointerDown(e){
   if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
-  const pgn = e.target.closest(".pgn");
+  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
+  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
   if (pgn && formeSel){
     const cible = formeParId(formeSel);
     if (cible){
@@ -14712,7 +14703,7 @@ function editionPointerDown(e){
     }
   }
 
-  const g = e.target.closest(".dcal .forme");
+  const g = GL.actif ? priseWebgl(e.clientX, e.clientY, ".dcal .forme") : e.target.closest(".dcal .forme");
   if (g){
     const id = g.dataset.f;
     const cible = formeParId(id);
@@ -25243,28 +25234,24 @@ function blocDe(n){
    calque ouvert en SVG par-dessus aurait fait deux rendus à tenir d'accord —
    et le calque passait devant tout, quel que soit son rang dans la pile.
 
-   Les outils de dessin, eux, attrapent les poignées et les formes par le
-   pointage du navigateur. Pendant qu'un calque est ouvert, ou que l'on place
-   les libellés à la main, ce qui s'attrape redevient donc atteignable —
-   présent, calé sur la vue, mais transparent — et la carte graphique repeint
-   à chaque geste ce que l'éditeur y écrit. L'édition se fait sur un poste :
-   la remise en page du SVG à chaque image, que le zoom du visiteur ne
-   supporte pas, y reste acceptable.
-   ------------------------------------------------------------ */
-const editionSvg = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
+   Ce que les outils attrapent — une poignée, une forme du calque ouvert, un
+   libellé qu'on place — se demande aussi à la carte graphique, comme le clic
+   d'un visiteur : elle rend l'élément du SVG qu'elle a peint, et l'éditeur
+   le reçoit comme il recevait la cible du navigateur. Le SVG n'a donc jamais
+   à suivre la vue, pas plus en édition qu'ailleurs.
 
-/** Pose ou retire le mode ; en y entrant, le SVG retrouve la vue du moment —
- *  sa géométrie était restée figée là où on l'avait laissée. */
-let _majEdition = false;
+   Une forme décorative ne s'attrape que sur le calque ouvert : ailleurs elle
+   laisse passer le clic vers le stand qu'elle recouvre, comme en SVG où les
+   calques de dessin ne reçoivent pas le pointeur.
+   ------------------------------------------------------------ */
+const enEdition = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
+
+/** Entrer ou sortir de l'édition change ce qui s'attrape : tout se repeint. */
 function majEditionWebgl(){
-  if (!GL.actif || _majEdition) return;
-  const r = document.documentElement, ed = editionSvg(), lib = ed && PLACE_LIBELLES;
-  if (r.classList.contains("edition-svg") === ed && r.classList.contains("edition-libelles") === lib) return;
-  _majEdition = true;
-  r.classList.toggle("edition-svg", ed);
-  r.classList.toggle("edition-libelles", lib);
-  if (ed) appliqueVue();
-  _majEdition = false;
+  if (!GL.actif) return;
+  const r = document.documentElement, ed = enEdition();
+  if (r.classList.contains("en-edition") === ed) return;
+  r.classList.toggle("en-edition", ed);
   toutRepeindreWebgl();
 }
 
@@ -25406,7 +25393,7 @@ function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
   const commun = {
-    data: items, pickable: false, fontFamily: famille, fontWeight: graisse, characterSet: "auto",
+    data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: "auto",
     getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
@@ -25575,9 +25562,10 @@ function couleurGl(v, alpha){
   return a > 0 ? [c[0], c[1], c[2], a] : null;
 }
 
-const accVide = () => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map() });
+const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
-  const acc = accVide();
+  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la racine
+  const acc = accVide(enEdition() && (racine.classList.contains("editable") || racine.id === "poignees"));
   parcoursGl(racine, M_ID, 1, acc);
   const out = couchesDeBloc(acc, cle);
   let i = 0;
@@ -25590,7 +25578,7 @@ function convertitBloc(racine, cle){
 function accDe(el, acc){
   const ph = acc.phares && el.closest(".phare");
   if (!ph) return acc;
-  if (!acc.phares.has(ph)) acc.phares.set(ph, accVide());
+  if (!acc.phares.has(ph)) acc.phares.set(ph, accVide(acc.prises));
   return acc.phares.get(ph);
 }
 
@@ -25661,7 +25649,15 @@ function formeGl(el, cs, m, op, traces, acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible });
+    const prise = el.closest(".pgn, [data-f]");
+    for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise });
+  } else if (acc.prises && cs.pointerEvents === "all"){
+    /* Un contour seul s'attrape par son intérieur : c'est ce que
+       « pointer-events: all » donne en SVG au calque ouvert. Un aplat
+       d'opacité infime le rend visable sans rien montrer. */
+    const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
+    const prise = el.closest(".pgn, [data-f]");
+    if (prise) for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: [0, 0, 0, 1], el: cible, prise });
   }
   const trait = couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) * op);
   const sw = parseFloat(cs.strokeWidth);
@@ -25677,7 +25673,8 @@ function formeGl(el, cs, m, op, traces, acc){
       if (t.pts.length < 2) continue;
       const path = t.pts.map(p => appM(m, p));
       if (t.ferme) path.push(path[0]);
-      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible });
+      (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
+        prise: el.closest(".pgn, [data-f]") });
     }
   }
 }
@@ -25701,7 +25698,7 @@ function texteGl(el, cs, m, op, acc){
   acc.textes.get(cle).items.push({
     text: texte, position: pos, taille: taille * echelleM(m), angle: -angle,
     ancre: cs.textAnchor === "middle" ? "middle" : cs.textAnchor === "end" ? "end" : "start",
-    couleur: coul, el: el.closest("[data-id],[data-poi]"),
+    couleur: coul, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]"),
   });
 }
 
@@ -25729,24 +25726,28 @@ function imageGl(el, m, op, acc){
   }
   const a = appM(m, [x, y]), b = appM(m, [x + w, y + h]);
   acc.images.push({ href, bornes: [Math.min(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[0], b[0]), Math.min(a[1], b[1])],
-    op, el: el.closest("[data-id],[data-poi]") });
+    op, el: el.closest("[data-id],[data-poi]"), prise: el.closest("[data-f]") });
 }
 
 /* Une forme qui ne désigne rien laisse passer le clic, comme en SVG où les
    calques dessinés sont « pointer-events: none » : un aplat décoratif posé sur
    un stand ne doit pas empêcher d'ouvrir sa fiche. Chaque sorte de primitive
-   se partage donc en deux couches, l'une cliquable, l'autre non. */
-const partage = liste => [liste.filter(d => d.el), liste.filter(d => !d.el)];
+   se partage donc en deux couches, l'une cliquable, l'autre non. Sur le
+   calque ouvert, tout ce que l'éditeur peut saisir est cliquable. */
+const partage = (liste, prises) => {
+  const vise = d => d.el || (prises && d.prise);
+  return [liste.filter(vise), liste.filter(d => !vise(d))];
+};
 
 function couchesDeBloc(acc, cle){
   const L = deck, out = [];
-  partage(acc.pleins).forEach((liste, k) => {
+  partage(acc.pleins, acc.prises).forEach((liste, k) => {
     if (!liste.length) return;
     out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: liste, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
   });
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
-  partage(tous).forEach((liste, k) => {
+  partage(tous, acc.prises).forEach((liste, k) => {
     if (!liste.length) return;
     // les pointillés qui défilent ont leur couche : c'est elle seule qui bouge
     const K = constTexte();
@@ -25760,9 +25761,10 @@ function couchesDeBloc(acc, cle){
     });
   });
   let i = 0;
-  for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse, {}));
+  for (const g of acc.textes.values()) out.push(...couchesTexte(cle + "-textes-" + (i++), g.items, g.famille, g.graisse,
+    { pickable: g.items.some(d => d.el || (acc.prises && d.prise)) }));
   acc.images.forEach((d, k) => out.push(new L.BitmapLayer({ id: cle + "-image-" + k, image: d.href,
-    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el), el: d.el })));
+    bounds: d.bornes, opacity: d.op, pickable: Boolean(d.el || (acc.prises && d.prise)), el: d.el, prise: d.prise })));
   return out;
 }
 
@@ -25851,7 +25853,7 @@ function emplacementWebgl(s, xy, w, h, sel, reg, noms, pastilles){
   }
   const pick = Boolean(PLACE_LIBELLES && s.id && s.id === libSel);
   const pose = (lignes, f, x, y, cls, z0, z1) =>
-    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick });
+    noms.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1, pick, lbl: s.id });
   const bornes = [...new Set([-LOIN, zN, zC1, zC0, LOIN])].sort((a, b) => a - b);
   for (let i = 0; i + 1 < bornes.length; i++){
     const z0 = bornes[i], z1 = bornes[i + 1], zm = (Math.max(z0, -50) + Math.min(z1, 50)) / 2;
@@ -25891,7 +25893,7 @@ function libellesWebgl(){
     items.push({ text: a.lignes.join("\n"), position: xy, taille: f,
       cls: "zn" + (sel ? " sel" : "") + (z.masquee ? " masquee" : "") + (phareZone(z) ? " phare" : ""),
       z0: sel || libelleForce(reg) ? -LOIN : Math.log2(6.5 / f), z1: LOIN,
-      pick: Boolean(PLACE_LIBELLES && z.id === libSel) });
+      pick: Boolean(PLACE_LIBELLES && z.id === libSel), lbl: z.id });
   }
   const decoupe = Boolean(state.sel && decoupeStand(state.sel, state.selSoc));
   for (const s of p.stands){
@@ -25958,7 +25960,7 @@ function groupesNoms(cle, liste){
 function couchesNoms(prefixe, groupes){
   let i = 0;
   return groupes.flatMap(g => couchesTexte(prefixe + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES,
       getColor: d => d.pick ? (GL.modeles.get("pick") || g.mo).couleur : (GL.modeles.get(d.cls) || g.mo).couleur,
       updateTriggers: { getColor: GL.versionModeles } }));
 }
@@ -26009,6 +26011,7 @@ function couchesDessineesWebgl(b){
    du calque qui le porte.
    ------------------------------------------------------------ */
 const SURVOLABLE = ".stand, .zone, .dcal .forme.sdes.lie";
+const stage = () => svg.parentNode;
 const FOCALISABLE = ".stand, .zone, .dcal .forme.sdes";
 let _survolXY = null, _survolImage = 0;
 
@@ -26019,11 +26022,13 @@ function brancheSurvolWebgl(){
     if (!_survolImage) _survolImage = requestAnimationFrame(() => {
       _survolImage = 0;
       if (!_survolXY || !GL.actif) return;
-      const el = cibleWebgl(_survolXY[0], _survolXY[1]);
+      const o = objetSous(_survolXY[0], _survolXY[1], enEdition() ? 3 : 0);
+      const el = o && o.el;
       poseSurvolWebgl(el && el.matches(SURVOLABLE) ? el : null);
+      poseCurseurWebgl(o);
     });
   });
-  svg.addEventListener("pointerleave", () => { _survolXY = null; poseSurvolWebgl(null); });
+  svg.addEventListener("pointerleave", () => { _survolXY = null; poseSurvolWebgl(null); poseCurseurWebgl(null); });
   svg.addEventListener("focusin", e => {
     const el = e.target.closest && e.target.closest(FOCALISABLE);
     poseFocusWebgl(el && el.matches(":focus-visible") ? el : null);
@@ -26033,9 +26038,20 @@ function brancheSurvolWebgl(){
 function poseSurvolWebgl(el){
   if (el === GL.survol) return;
   GL.survol = el;
-  // le curseur suit la cible : la racine du SVG, seule sous la souris, le porte
-  svg.parentNode.classList.toggle("survol-gl", Boolean(el));
   GL.deck.setProps({ layers: assembleWebgl() });
+}
+/** Le curseur que la feuille de style donne à ce qui est visé — la main sur un
+ *  stand, la flèche de redimensionnement d'une poignée, le déplacement d'une
+ *  forme choisie. La racine du SVG, seule sous la souris, le porte ; un geste
+ *  en cours, qui écrit le sien sur elle, garde la main. */
+function poseCurseurWebgl(o){
+  let c = "";
+  if (o && PLACE_LIBELLES && o.lbl) c = "move";
+  else if (o && o.prise && enEdition()) c = getComputedStyle(o.prise).cursor;
+  else if (o && o.el) c = "pointer";
+  if (c === "auto" || c === "default") c = "";
+  stage().classList.toggle("survol-gl", Boolean(c));
+  if (c) stage().style.setProperty("--curseur-gl", c);
 }
 function poseFocusWebgl(el){
   if (el === GL.focus) return;
@@ -26104,7 +26120,7 @@ function couchesPhareNoms(){
   const pas = Math.round(p * 60);
   let i = 0;
   return groupesNoms("phare", GL.libellesPhare).flatMap(g => couchesTexte("phare-noms-" + (i++), g.items,
-    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo,
+    g.mo.famille, g.mo.graisse, { lineHeight: 1.18, ancre: "middle", halo: g.mo.halo, pickable: PLACE_LIBELLES,
       getColor: d => { const c = (GL.modeles.get(d.cls) || g.mo).couleur;
         return [0, 1, 2].map(k => Math.round(c[k] + (poi[k] - c[k]) * p)).concat(c[3]); },
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
@@ -26154,12 +26170,30 @@ function animeWebgl(now){
    code le reçoit comme avant — et l'on situe une forme par sa boîte, projetée
    avec la même règle que la vue.
    ------------------------------------------------------------ */
-function cibleWebgl(x, y, rayon){
+/** Ce qui est sous un point de l'écran : l'élément qui ouvre une fiche, celui
+ *  que l'éditeur saisit, le libellé qu'on place. */
+function objetSous(x, y, rayon){
   const r = cadrePlan();
   const o = GL.deck.pickObject({ x: x - r.left, y: y - r.top, radius: rayon || 0 });
   if (!o) return null;
-  const el = (o.object && o.object.el) || (o.layer && o.layer.props.el);
-  return el || null;
+  const d = o.object || {}, p = (o.layer && o.layer.props) || {};
+  return { el: d.el || p.el || null, prise: d.prise || p.prise || null, lbl: d.lbl || null };
+}
+function cibleWebgl(x, y, rayon){
+  const o = objetSous(x, y, rayon);
+  return o ? o.el : null;
+}
+/** Pour l'éditeur : le plus proche ancêtre de ce qui est visé qui réponde au
+ *  sélecteur — « .pgn », « .dcal .forme » —, là où il lisait la cible du
+ *  navigateur. Trois pixels de tolérance : une poignée est petite. */
+function priseWebgl(x, y, selecteur){
+  const o = objetSous(x, y, 3);
+  const n = o && (o.prise || o.el);
+  return n && n.closest ? n.closest(selecteur) : null;
+}
+function libelleSousWebgl(x, y){
+  const o = objetSous(x, y, 2);
+  return o && o.lbl ? o.lbl : null;
 }
 
 function rectEcranWebgl(n, v){
