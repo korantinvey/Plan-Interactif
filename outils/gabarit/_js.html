@@ -52,6 +52,30 @@ let view, emp;
 /* ============================================================
    1. Index global — la recherche porte sur tous les pavillons
    ============================================================ */
+/**
+ * Les libellés anglais que l'exploitant a donnés aux zones. Le moteur de
+ * langue les substitue au nom français partout où celui-ci paraît — sur le
+ * plan, dans la liste, sur la fiche, cité dans un itinéraire — sans que chacun
+ * de ces endroits ait à choisir entre les deux. À relancer après chaque
+ * enregistrement d'une zone : un libellé effacé doit disparaître aussi.
+ */
+/**
+ * Le nom d'une zone dans la langue de la page. Le dictionnaire ci-dessous ne
+ * suffit pas partout : le nom posé sur le plan est coupé en lignes, et une
+ * zone peut s'appeler comme l'exposant qu'elle abrite, dont le nom ne se
+ * traduit jamais. Là où la zone est nommée en tant que telle — sur le plan,
+ * dans la liste, en titre de sa fiche — le nom se choisit donc à la source.
+ */
+const nomDeLaZone = (z) => (LANGUE.code === "en" && z.nom_en) || z.nom;
+
+function nomsAnglaisDesZones(){
+  const t = {};
+  DATA.plans.forEach(p => (p.zones || []).forEach(z => {
+    if (z.nom && z.nom_en) t[z.nom] = z.nom_en;
+  }));
+  LANGUE.donnees("zones", t);
+}
+
 function indexe(d){
   DATA = d;
   DATA.plans.forEach((p, i) => {
@@ -78,7 +102,8 @@ function indexe(d){
        endroits du salon au même titre qu'un stand. */
     p.zones.forEach(z => {
       z.kind = "zone"; z.p = i;
-      z.rech = String(z.nom || "").toLowerCase();
+      // son libellé anglais aussi : un visiteur étranger tape celui qu'il lit
+      z.rech = (String(z.nom || "") + " " + String(z.nom_en || "")).toLowerCase();
     });
     /* Ce sur quoi porte la recherche, assemblé et abaissé ici une fois pour
        toutes. Chaque frappe balaie tout le salon — un millier d'objets — et
@@ -97,8 +122,38 @@ function indexe(d){
       s.rech = ((s.nom || "") + " " + (s.code || "") + " " + (s.plan || "") +
                 " " + (s.sect || "") + " " + (s.themes || []).join(" ") +
                 " " + texteCriteres(s)).toLowerCase();
+      /* Et l'anglais de ces valeurs, quand la source le donne : un visiteur
+         qui lit « Construction » tape « construction », pas « bâtiment ». */
+      const anglais = d.anglais || {};
+      const traduites = [s.sect].concat(s.themes || [], s.nomencl || [],
+        clesCriteres().flatMap(c => valeursCritere(s, c)))
+        .map(v => anglais[v]).filter(Boolean);
+      if (traduites.length) s.rech += " " + traduites.join(" ").toLowerCase();
     });
   });
+  /* Les noms des exposants ne se traduisent jamais, ni seuls ni cités dans une
+     phrase : une enseigne « Mars » ou « Accueil » deviendrait sinon « March »
+     ou « Reception » dans la version anglaise. */
+  const noms = [];
+  DATA.plans.forEach(p => {
+    p.stands.forEach(s => {
+      noms.push(s.nom, s.plan);
+      (s.coex || []).forEach(c => noms.push(c.nom, c.plan));
+    });
+    p.conferences.forEach(c => (c.exposants || []).forEach(e => e && noms.push(e.nom)));
+  });
+  LANGUE.protege(noms);
+  nomsAnglaisDesZones();
+  /* L'anglais des valeurs des listes — secteurs, nomenclature, parcours de
+     visite — tel que la synchronisation l'a relevé dans les sources. */
+  LANGUE.donnees("sources", d.anglais || {});
+  /* Et l'intitulé anglais que l'exploitant a donné aux champs propres au
+     salon : il nomme la ligne de la fiche et le critère de recherche. */
+  const intitules = {};
+  (((DATA.fiche || {}).perso) || []).forEach(c => {
+    if (c && c.libelle && c.libelle_en) intitules[c.libelle] = c.libelle_en;
+  });
+  LANGUE.donnees("champs", intitules);
   /* Les secteurs se relèvent avant les réglages, et non après : c'est la liste
      des secteurs de ce salon qui dit lesquelles de leurs couleurs, rangées
      dans la configuration, parlent bien de lui. */
@@ -599,7 +654,7 @@ const libelleForce = (reg) => Boolean(reg && PLACE_LIBELLES);
 
 /** Le libellé d'une zone organisateur : son nom, en grand, sur son ancrage. */
 function libelleZone(z, az, w, h, sel, pxParM, reg){
-  const a = habille(z.nom, w * .88, h * .7, 3.4, P_NOM);
+  const a = habille(nomDeLaZone(z), w * .88, h * .7, 3.4, P_NOM);
   if (!a) return "";
   const f = a.f * facteurLibelle(reg);
   if (!sel && !libelleForce(reg) && f * pxParM < 6.5) return "";
@@ -1541,7 +1596,7 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
       '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
-      '<span><span class="nm">' + esc(o.nom || o.plan ||
+      '<span><span class="nm">' + esc((o.kind === "zone" ? nomDeLaZone(o) : o.nom) || o.plan ||
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
@@ -2730,7 +2785,7 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   const genre = zone ? typeZone(o) : null;
   $("dKind").textContent = zone ? (genre ? genre.nom : "") : "Stand";
   $("dKind").hidden = zone && !genre;
-  const titre = soc.nom || soc.plan ||
+  const titre = (zone ? nomDeLaZone(o) : soc.nom) || soc.plan ||
     (zone ? "Zone sans nom" : ("Stand " + (o.code || "")).trim());
   $("dName").textContent = titre;
   /* Le logo, dans l'en-tête avec le type et le nom : c'est une marque, elle se
@@ -2863,8 +2918,16 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      paraît qu'avec lui — une zone sans description n'a pas à annoncer qu'elle
      n'en a pas. */
   if (zone){
-    met("description", LIBELLE_CORPS.description, o.description
-      ? '<div class="riche">' + assainitRiche(o.description) + '</div>' : "");
+    /* Deux descriptions quand l'exploitant a écrit l'anglaise : les deux sont
+       posées, et la langue de la page dit laquelle se voit — la bascule n'a
+       ainsi rien à redessiner. Ce que l'exploitant a écrit dans une langue ne
+       passe pas par le dictionnaire. Sans version anglaise, la française sert
+       aux deux. */
+    const riche = (h, lg) => '<div class="riche"' + (lg ? ' data-lg="' + lg + '" translate="no"' : "") +
+      '>' + assainitRiche(h) + '</div>';
+    met("description", LIBELLE_CORPS.description, !o.description && !o.description_en ? ""
+      : o.description && o.description_en ? riche(o.description, "fr") + riche(o.description_en, "en")
+      : riche(o.description || o.description_en));
     met("lien", LIBELLE_CORPS.lien, lien(o.lien));
   }
   /* Une zone ne se range pas dans l'ordre réglé pour les fiches : celui-ci
@@ -3439,6 +3502,22 @@ let montreTiroir = () => {};
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
   addEventListener("load", mesure);
 })();
+
+/* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
+   l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
+   dans la langue d'avant : les libellés taillés à leur largeur, les repères
+   dessinés autour de leur nom, ceux que la recherche balaie. */
+addEventListener("langue", () => {
+  if (!DATA || !view) return;
+  oublieReperes();
+  _lg.clear();
+  dessineDessins();
+  libelles();
+  liste();
+  // la fiche ouverte sur une zone porte son nom dans la langue d'avant
+  const o = state.sel && parId.get(state.sel);
+  if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
+});
 
 /* thème */
 const CLE_THEME = "plan-theme";

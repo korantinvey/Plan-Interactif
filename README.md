@@ -1403,10 +1403,13 @@ Ce qu'elle disait de vrai, en revanche : la propriété qui justifiait les
 compteurs — **ne pas grossir avec le trafic** — est perdue, et perdue
 entièrement. Cette table est linéaire en fréquentation. D'où une purge :
 `purge_presences()` retire les présences de plus de **400 jours** (et jamais
-moins de 31, contre l'erreur de manipulation), appelée à chaque synchronisation
-Klipso — le seul rendez-vous régulier du système à tenir la clé de service.
-Quatre cents jours et non trois cent soixante-cinq : un salon annuel se compare à
-l'édition précédente, et la comparaison se fait souvent quelques semaines après.
+moins de 31, contre l'erreur de manipulation), et avec elles les jetons de
+`visiteur_jour` du même âge — ce qui tient aussi la mesure dans son exemption de
+consentement (voir « Sans bandeau de consentement »). Elle tourne chaque nuit à
+01 h 43 UTC par `pg_cron`, une demi-heure avant la sauvegarde, et à chaque
+synchronisation Klipso en secours. Quatre cents jours et non trois cent
+soixante-cinq : un salon annuel se compare à l'édition précédente, et la
+comparaison se fait souvent quelques semaines après.
 
 Les compteurs, eux, ne se purgent jamais : ils sont bornés par construction, et
 c'est l'historique long d'un salon. Un salon purgé garde donc ses consultations
@@ -1452,6 +1455,43 @@ ouverte, seule sa provenance est illisible, et elle compte sous « autre ».
 La lecture passe par `rapport_utilisation()`, qui agrège tout en un appel, et
 par `audience_cibles()` pour le détail par stand.
 
+### Sans bandeau de consentement
+
+La page publique ne demande aucun consentement, et ce n'est pas parce qu'elle ne
+pose pas de cookie. La règle — article 82 de la loi Informatique et Libertés,
+qui transpose la directive ePrivacy — vise tout ce qu'une page écrit ou lit sur
+l'appareil du visiteur : le jeton rangé dans `localStorage` est un traceur au
+même titre qu'un cookie. Ce qui dispense de demander, c'est l'**exemption que la
+CNIL accorde à la mesure d'audience**, et elle tient à des conditions que le
+système remplit une à une.
+
+| Condition | Où elle est tenue |
+|---|---|
+| des statistiques anonymes, pour le seul organisateur | ni adresse IP ni agent utilisateur, envoyés ou enregistrés ; les exposants ne reçoivent que des totaux |
+| aucun suivi d'un site ou d'un salon à l'autre | un jeton tiré au hasard, rangé sous `plan-visiteur:<slug>` |
+| treize mois de vie au plus pour le traceur, sans que les visites les prolongent | l'échéance est écrite à côté du jeton, et un autre est tiré à son terme (`MESURE_VIE_MOIS`, `_mesure.html`) |
+| vingt-cinq mois au plus pour ce qu'il a permis de recueillir | `purge_presences()` efface les jetons de `visiteur_cible` et `visiteur_jour` à 400 jours, chaque nuit |
+| l'information du visiteur, et le moyen de refuser | la notice « Confidentialité », au pied de la liste, et sa case « Ne pas mesurer mes visites » |
+
+Le refus est gardé sur l'appareil (`plan-mesure-refusee`) et vaut pour tous les
+salons du domaine : il jette les gestes en attente et efface les jetons. Revenir
+dessus tire un jeton neuf, que rien ne relie à l'ancien. La notice nomme
+l'organisateur du salon comme celui qui répond de la mesure, et le prestataire
+comme agissant pour lui.
+
+Ce qui ferait tomber l'exemption, et exigerait alors un vrai consentement :
+croiser ces chiffres avec un autre fichier, remettre à un tiers autre chose que
+des totaux, reconnaître un visiteur d'un salon à l'autre, ou garder un jeton
+au-delà des durées ci-dessus. La notice annonce ces durées en toutes lettres :
+changer l'une sans l'autre la ferait mentir.
+
+Les **polices** relèvent du même souci par un autre chemin. Demandées à Google,
+elles lui transmettaient l'adresse IP de chaque visiteur à chaque ouverture,
+avant toute réponse possible — le tribunal régional de Munich l'a jugé contraire
+au RGPD le 20 janvier 2022. Elles sont désormais servies depuis `web/polices/`
+(voir « Fabriquer les pages »), et la construction échoue si une page en
+redemande une à Google.
+
 ### Remettre les compteurs à zéro
 
 La recette d'un plan se fait sur le plan : on ouvre des fiches, on cherche une
@@ -1477,13 +1517,11 @@ disposition de clavier.
 `reinitialise_compteurs()` efface en une transaction — un échec à mi-chemin
 laisserait un salon dont les visiteurs uniques ne correspondraient plus à ses
 visites, pire qu'un salon faux. Elle vide `compteur`, `compteur_cible`,
-`visiteur_jour`, et `mesure` pour ce salon. `cible` reste : ce n'est pas de la
-mesure mais le vocabulaire écrit par la synchronisation, et la vider priverait
-le rapport de ses libellés jusqu'à la synchronisation suivante. Le journal
-`mesure`, lui, part pour une raison qui n'est pas son poids : la reprise de
-`20260908000001_compteurs.sql` s'arme sur « compteur est vide », et l'épargner
-laisserait de quoi ressusciter les anciens gestes le jour où on rejoue cette
-migration.
+`visiteur_cible` et `visiteur_jour` pour ce salon. `cible` reste : ce n'est pas
+de la mesure mais le vocabulaire écrit par la synchronisation, et la vider
+priverait le rapport de ses libellés jusqu'à la synchronisation suivante. Elle
+vidait aussi l'ancien journal `mesure`, supprimé depuis avec tout ce qu'il
+gardait (`20260913223216_la_conservation_des_jetons_de_visiteur.sql`).
 
 Comme partout ici, la fonction est en « security invoker » : elle n'ajoute
 aucun pouvoir, ce sont les politiques d'effacement — bornées par
@@ -1557,6 +1595,131 @@ libellé que l'exploitant a pu régler est écartée pendant ce temps : elle ava
 
 Contrairement au reste du plan, la rampe ne suit pas le thème : une image
 thermique est la même de jour comme de nuit.
+
+## La version anglaise
+
+Un salon parisien reçoit des visiteurs qui ne lisent pas le français, et des
+exposants aussi. Toutes les pages — le plan public, son administration, la
+console, le rapport, la page de mot de passe, la page hors ligne — existent
+donc en anglais, et un drapeau en haut de chacune passe de l'une à l'autre
+sans recharger. Il montre toujours la langue vers laquelle il mène — le
+drapeau britannique sur une page en français, le français sur une page en
+anglais : c'est ce que cherche des yeux quelqu'un qui ne lit pas la page.
+Deux lettres, « EN », ne se comprenaient pas d'un coup d'œil. Le drapeau est
+dessiné et non tiré des emojis, que Windows n'affiche pas.
+
+**Quelle langue à l'ouverture.** L'adresse d'abord : `?lang=en` est ce qu'on
+imprime sur une affiche ou ce qu'on envoie à un exposant étranger, et vaut sur
+n'importe quel appareil — la racine le transmet au plan vers lequel elle
+redirige. Puis le choix déjà fait sur l'appareil, retenu dès qu'on a cliqué le
+drapeau. À la première visite enfin, la langue du navigateur : le français pour
+qui le lit, l'anglais pour les autres, car un visiteur allemand ou japonais lit
+plus souvent l'anglais que le français.
+
+**Pourquoi le code reste en français.** Les pages écrivent leurs textes de
+mille façons — `textContent`, un gabarit passé à `innerHTML`, un `title` posé à
+la volée — et plusieurs sessions les retouchent en même temps. Envelopper chaque
+chaîne dans un appel aurait réécrit des milliers de lignes, et chaque phrase
+nouvelle aurait dû se souvenir de l'appel. La version anglaise se pose donc
+par-dessus la page : `outils/gabarit/_langue.js`, injecté en tête de chaque page
+par `genere.js`, observe ce que la page écrit et remplace chaque phrase par sa
+traduction. En français, rien n'est observé ; la langue d'origine ne coûte
+rien. La page mesure parfois ce qu'elle vient d'écrire — la largeur d'un
+cartouche, d'une pastille — : toute mesure commence alors par traduire ce que
+l'observateur n'a pas encore vu, pour que la page mesure l'anglais qu'elle
+affichera.
+
+Trois cas passent malgré tout par un appel explicite, `traduit("…")` : ce qui
+quitte la page (l'export tableur, le texte de la feuille de partage du
+téléphone), ce que le code compare à l'écran (le texte d'un bouton relu), et
+ce qu'il cherche ou mesure lui-même (le nom d'un repère).
+
+**Le dictionnaire.** `outils/anglais/` tient un fichier par module du gabarit,
+qui associe chaque phrase française à sa version anglaise — un anglais
+britannique, celui des salons européens. Une phrase est une clé entière : une
+enseigne ne tombe jamais par hasard sur « Calculer un itinéraire ». Ce que la
+page compose se traduit par un modèle :
+
+```js
+"{n} exposants retenus": "{n} exhibitors match",
+"Retirer le critère {critere} {valeur}": "Remove filter {critere} {valeur}",
+```
+
+`{n}` accepte un nombre et le réécrit à l'anglaise (`1 234,5` → `1,234.5`) ;
+toute autre accolade accepte un texte, traduit à son tour s'il est lui-même une
+clé, gardé tel quel sinon — un nom de salle, un exposant. Zéro prend le pluriel
+en anglais : « 0 fiche ouverte » devient « 0 records opened » sans clé de plus.
+Les dates et les heures n'ont pas de clé : une chaîne faite seulement de jours,
+de mois, d'heures et de nombres se réécrit mot à mot (« lundi 14 septembre ·
+10h30 » → « Monday 14 September · 10:30 »). Et ce qui est mis bout à bout sans
+être une clé — des phrases à la suite, des morceaux séparés par `·`, `—` ou une
+virgule — se traduit morceau par morceau.
+
+Chaque page n'emporte que la part du dictionnaire qui la concerne :
+`outils/traductions.js` retient les entrées dont la page porte le module, ou
+dont les morceaux se lisent dans son code. `serveur.js` et `donnees.js`, qui
+traduisent ce que la synchronisation écrit, partent avec toute page qui
+interroge le serveur.
+
+**Ajouter une phrase.** Une phrase nouvelle affichée par le code s'ajoute avec
+sa traduction, dans le fichier du module. `npm run verifie` relève toutes les
+chaînes visibles du gabarit et refuse celles qui n'en ont pas, avec le fichier
+et la ligne ; le workflow `Pages` refait le même contrôle. Une chaîne que le
+relevé croit visible à tort — un nom de classe, un mot tenu par le code — se
+déclare dans `outils/anglais/invisibles.js`. Le relevé lit les sources, pas
+l'écran : pour voir ce qui reste en français sur une page réelle, ouvrez-la
+avec `?lang=en&manques`, parcourez-la, puis `LANGUE.manques()` dans la console
+du navigateur rend les textes restés en français, du plus fréquent au plus rare.
+
+**Les zones, dans les deux langues.** Le libellé et la description d'une zone
+organisateur sont écrits par l'exploitant : aucun dictionnaire ne les connaît.
+Leur fiche, dans les réglages du plan, les demande donc deux fois — en
+français et en anglais — et montre les quatre champs quelle que soit la langue
+de l'écran : on écrit l'anglais depuis la version française, et le français
+depuis l'anglaise. La version anglaise se range dans `zones_fiches`
+(`nom_en`, `description_en`) avec le reste de la fiche, et part au visiteur
+par l'API. Laissée vide, c'est la française qui s'affiche. Le nom se choisit à
+la source là où la zone est nommée pour elle-même — sur le plan, dans la
+liste, en titre de sa fiche — et passe par le moteur partout ailleurs, cité
+dans un itinéraire par exemple ; les deux descriptions sont posées dans la
+fiche, et la langue de la page dit laquelle se voit.
+
+**Les listes de valeurs, en anglais depuis les sources.** Secteurs,
+nomenclature, parcours de visite, offres de reprise : leurs valeurs viennent de
+Klipso ou d'Eventmaker, et les deux en tiennent l'anglais. La synchronisation
+le relève et l'écrit dans `evenement.libelles_en`, en une table valeur
+française → valeur anglaise, toutes listes confondues ; `plan-public` la sert
+sous `anglais`, et la page la confie au moteur (`LANGUE.donnees`), qui
+traduit ces valeurs partout où elles paraissent — fiche, critères de recherche,
+console. La recherche les connaît dans les deux langues.
+
+- **Klipso** rend chaque libellé de codification dans toutes les langues que le
+  salon a saisies (`label: { fr, en }`) : l'anglais vient du même appel que le
+  français (`Gaia.codificationLangues`).
+- **Eventmaker** ne pose pas la traduction sur le champ mais dans les
+  traductions de l'événement (`/events/:id/translations.json`), sous une clé
+  faite de l'identifiant du champ et de la valeur réduite — minuscules, chaque
+  suite de signes ni lettre ASCII ni chiffre remplacée par
+  `SPECIAL_HASH_KEY_CHARACTER` (`Eventmaker.listesEnAnglais`). Vérifié sur
+  Franchise Expo Paris 2027 : 23 secteurs sur 23, 118 sous-secteurs sur 119,
+  le parcours de visite en entier. Deux appels par synchronisation, pour toutes
+  les listes de l'événement.
+
+Une valeur que la source ne traduit pas reste en français. Un relevé incomplet
+— Eventmaker injoignable — ne remplace pas le précédent. L'intitulé des champs
+propres au salon, lui, est écrit par l'exploitant : il se donne en français et
+en anglais depuis la console, en renommant le champ (`fiche.perso[].libelle_en`).
+
+**Ce qui ne se traduit pas.** Ce que l'exploitant ou le visiteur tape — un
+éditeur, un champ de saisie — et tout élément marqué `translate="no"`. Et les
+données : les noms d'exposants, la nomenclature et les secteurs de Klipso, les
+titres et descriptions des conférences d'Eventmaker, les libellés que
+l'exploitant a saisis. Ils arrivent en français de leur source, et s'affichent
+tels quels. Les noms d'exposants sont de plus protégés : `_js.html` les confie
+au moteur (`LANGUE.protege`), qui n'y touche jamais — ni seuls, ni cités dans
+une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
+calendrier. Le manifeste de l'application installée, unique pour le domaine,
+reste lui aussi en français.
 
 ## Comptes et profils
 
@@ -1762,6 +1925,31 @@ npm run essai        # sert web/ sur http://localhost:4180
 à leurs sources. Le workflow Pages fait ce travail à votre place sur toute
 poussée ; lancer `verifie` localement reste plus rapide que d'attendre le
 retour de l'intégration, et évite un commit de reconstruction en plus du vôtre.
+
+### Les polices
+
+Les polices ne viennent pas de Google : chaque page ouverte lui aurait transmis
+l'adresse IP de son visiteur. Elles sont téléchargées une fois dans
+`web/polices/`, versionnées, et déclarées par la construction dans l'en-tête des
+pages qui portent `<!--__POLICES__-->` — en fichiers voisins pour les pages
+servies, embarquées en `data:` pour la page autonome (`plan-smcl.html`).
+
+```bash
+npm run polices      # télécharge les familles des modèles et celles au choix → web/polices/
+```
+
+Deux listes. Les familles des **modèles**, en tête de `outils/polices.js`, sont
+déclarées dans toutes les pages. Les polices **au choix** pour les noms du plan
+se lisent dans `POLICES_NOMS` (`_admin1.html`) — l'onglet qui les propose reste
+la seule liste — et ne se chargent qu'une fois choisies, par leur feuille
+`web/polices/<famille>.css`.
+
+Le téléchargement n'appartient pas à la construction, qui doit tourner sans
+réseau. On ne le relance que pour changer l'une des deux listes ; il écrit aussi
+`outils/polices.json`, que la construction relit. Deux garde-fous font échouer
+`npm run construire` : une page qui demanderait encore une police à Google, et
+une police proposée dans l'onglet qui n'aurait pas été rapatriée sous sa
+graisse.
 
 ## Vérifier les fonctions
 

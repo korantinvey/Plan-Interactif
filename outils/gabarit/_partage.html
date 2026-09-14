@@ -493,8 +493,10 @@ function boutonsPartage(lien){
     libelle: "Copier le lien", ferme: false, genre: partageable ? "" : "accent",
     action: () => {
       envoi();
+      /* Le libellé se relit à l'écran, où la version anglaise l'a peut-être
+         réécrit : c'est donc à sa traduction qu'on le compare. */
       bCopie = bCopie ||
-        [...$("mPied").children].find(x => x.textContent === "Copier le lien");
+        [...$("mPied").children].find(x => x.textContent === traduit("Copier le lien"));
       navigator.clipboard?.writeText(lien).then(
         () => { if (bCopie){ bCopie.textContent = "Copié";
                              setTimeout(() => bCopie.textContent = "Copier le lien", 1700); } },
@@ -510,10 +512,12 @@ function boutonsPartage(lien){
        pas d'un envoi réussi : la feuille ne dit pas où le lien est parti. */
     action: () => {
       envoi();
+      /* La feuille de partage est au système, hors de la page : la version
+         anglaise ne la voit pas passer, le texte part donc déjà traduit. */
       return navigator.share({
-        title: "Mon parcours de visite",
+        title: traduit("Mon parcours de visite"),
         text: (DATA && DATA.evenement ? DATA.evenement + " — " : "") +
-              "voici les stands et les conférences que j'ai retenus.",
+              traduit("voici les stands et les conférences que j'ai retenus."),
         url: lien,
       }).catch(() => {});
     },
