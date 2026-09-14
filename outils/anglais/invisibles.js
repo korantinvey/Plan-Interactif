@@ -33,5 +33,5 @@ module.exports = [
   "z >= instanceZoomFiltre.z", "z < instanceZoomFiltre.z",
   "if (z < instanceZoomFiltre.x || z >= instanceZoomFiltre.y || ",
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-textes-", "-image-",
-  "xMidYMid meet", "zn masquee", "zn sel masquee",
+  "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
 ];
