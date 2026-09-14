@@ -34,7 +34,6 @@ module.exports = {
   "Zoom arrière": "Zoom out",
   "Ajuster": "Fit to screen",
   "Annuler": "Cancel",
-  "Recommencer": "Start over",
   "© les contributeurs d'OpenStreetMap": "© OpenStreetMap contributors",
 
   "Renommer le calque": "Rename layer",
