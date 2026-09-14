@@ -10,9 +10,9 @@
 
    Reste le calage. Chaque plan Klipso a son origine et son orientation : le
    Pavillon 6 regarde le nord dans OpenStreetMap et le sud sur le plan de
-   Franchise Expo. On le rattrape en montrant deux coins — un sur le contour
-   proposé, le même sur le plan, deux fois. L'échelle ne se règle pas : les
-   deux repères sont en mètres, et l'écart qui reste sert de contrôle.
+   Franchise Expo. On le rattrape en glissant le contour à sa place et en le
+   faisant pivoter. L'échelle ne se règle pas : les deux repères sont en
+   mètres.
 
    Le calage se retient par pavillon. Les autres halls du même lieu se posent
    ensuite sans un clic : ils partagent le repère du premier.
@@ -105,7 +105,7 @@ function ouvreBibliotheque(){
         p.appendChild(document.createElement("br"));
         p.appendChild(r);
       } else {
-        p.textContent = "Vous montrerez ensuite deux coins du contour sur le plan pour le caler.";
+        p.textContent = "Vous le placerez ensuite sur le plan : glissez-le, puis faites-le pivoter.";
       }
       corps.appendChild(p);
 
@@ -123,7 +123,7 @@ function ouvreBibliotheque(){
         fermeModale();
         const t = CONF[CLE_CALAGE()];
         if (t && t.lieu === lieu.cle && !recaler) ajouteBatiments(lieu, halls, t);
-        else lanceCalage(lieu, halls);
+        else lanceCalage(lieu, halls, t && t.lieu === lieu.cle ? t : null);
       } },
   ]);
 }
@@ -154,130 +154,137 @@ function vueDuLieu(lieu, choisis, poses, bascule){
 }
 
 /* ------------------------------------------------------------
-   Le calage : deux coins, montrés deux fois
+   Le calage : glisser, faire pivoter
+
+   Le contour arrive au centre de la vue, nord en haut. On le glisse à sa
+   place, et sa poignée ronde le fait tourner autour de son centre ; l'angle se
+   saisit aussi au degré près dans le bandeau. Montrer deux coins, deux fois,
+   demandait de savoir d'avance lesquels se correspondent — on les cherchait
+   des yeux sur deux dessins qui ne regardent pas dans le même sens. Poser le
+   contour sur le plan, c'est ce qu'on fait déjà d'une feuille de calque.
+
+   Le glisser qui part d'ailleurs que du contour reste à la vue : il faut
+   pouvoir zoomer et se déplacer pour ajuster.
    ------------------------------------------------------------ */
 let CALAGE = null;
+let gesteCalage = null;
 
-function lanceCalage(lieu, halls){
+function lanceCalage(lieu, halls, depart){
   activeCalque(null);
   const pts = halls.flatMap(b => b.contours.flat());
   const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-  const cx = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
-  const cy = (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2;
-  /* Posé au centre de la vue, nord en haut : on part de ce qu'on voit, et le
-     premier coin montré le déplacera de toute façon. */
-  CALAGE = { lieu: lieu, halls: halls, etape: 0,
-             t: { a: 0, x: view.x + view.w / 2 - cx, y: view.y + view.h / 2 - cy } };
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  const centre = [(x0 + x1) / 2, (y0 + y1) / 2];
+  /* Un pavillon déjà calé sur ce lieu repart de sa position : recaler, c'est
+     retoucher, pas tout reprendre. Sinon au centre de la vue, nord en haut. */
+  const t = depart ? { a: depart.a, x: depart.x, y: depart.y }
+    : { a: 0, x: view.x + view.w / 2 - centre[0], y: view.y + view.h / 2 - centre[1] };
+  CALAGE = { lieu: lieu, halls: halls, centre: centre,
+             rayon: Math.max(x1 - x0, y1 - y0) / 2, t: t };
   racine.classList.add("cale-plan");
+  $("calageBat").hidden = false;
+  cadreCalage();
   dessineCalage();
+}
+
+/**
+ * La vue cadrée sur le contour, poignée comprise, quelle que soit sa rotation.
+ *
+ * Posé au zoom où l'on était, un pavillon de deux cent cinquante mètres
+ * débordait l'écran, et sa poignée tombait sous le bandeau : on ne voyait ni
+ * ce qu'on déplaçait, ni de quoi le tourner. Le cadre est un carré autour du
+ * cercle que le contour balaie en tournant ; il se centre entre le bandeau et
+ * ce que le tiroir cache en bas.
+ */
+function cadreCalage(){
+  const c = CALAGE, r = cadrePlan();
+  const haut = 64, bas = masque();
+  const hUtile = Math.max(60, r.height - haut - bas);
+  const centre = poseCalage(c.t, c.centre);
+  const cote = 2 * c.rayon * 1.3;
+  const k = Math.max(cote / (r.width || 1), cote / hUtile);
+  view = { x: centre[0] - (k * r.width) / 2,
+           y: centre[1] - (k * r.height) / 2 - (k * (haut - bas)) / 2,
+           w: k * r.width, h: k * r.height };
+  poseVue();
 }
 
 function finCalage(){
   CALAGE = null;
+  gesteCalage = null;
   racine.classList.remove("cale-plan");
-  apercuGuide(null);
-  montreAimants(null);
   const g = $("calageApercu");
   if (g) g.remove();
   $("calageBat").hidden = true;
 }
 
-const TEXTES_CALAGE = [
-  "Cliquez un coin du contour en pointillés.",
-  "Cliquez maintenant ce même coin sur le plan.",
-  "Cliquez un second coin du contour, loin du premier.",
-  "Cliquez ce second coin sur le plan.",
-];
+/** Tourne le contour autour de son centre, sans le déplacer. */
+function pivoteCalage(t, a){
+  // ramené à un tour : les quarts de tour enchaînés ne s'accumulent pas
+  a = Math.atan2(Math.sin(a), Math.cos(a));
+  const c = poseCalage(t, CALAGE.centre);
+  const v = poseCalage({ a: a, x: 0, y: 0 }, CALAGE.centre);
+  return { a: a, x: c[0] - v[0], y: c[1] - v[1] };
+}
 
-function dessineCalage(message){
+/** L'angle lisible, entre 0 et 360 degrés. */
+const degresCalage = (a) => +(((a * 180 / Math.PI) % 360 + 360) % 360).toFixed(1);
+
+function dessineCalage(){
   const c = CALAGE;
+  if (!c) return;
   let g = $("calageApercu");
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.id = "calageApercu";
     svg.appendChild(g);
   }
-  const tol = toleranceTrace();
-  const croix = (q) => "M" + (q[0] - tol) + " " + q[1] + "h" + (2 * tol) +
-                       "M" + q[0] + " " + (q[1] - tol) + "v" + (2 * tol);
-  let h = c.halls.map(b => '<path class="contour" d="' +
-    b.contours.map(k => "M" + k.map(p => poseCalage(c.t, p).join(" ")).join("L") + "Z").join("") + '"/>').join("");
-  // les coins déjà retenus restent marqués : on voit sur quoi le calage s'appuie
-  [c.srcA, c.srcB].forEach(q => { if (q) h += '<path class="coin" d="' + croix(poseCalage(c.t, q)) + '"/>'; });
-  g.innerHTML = h;
+  /* La poignée se mesure en pixels d'écran : à tout zoom elle se saisit du
+     même doigt, et reste juste au-delà du contour. */
+  const r = cadrePlan(), mpp = view.w / (r.width || 1);
+  const centre = poseCalage(c.t, c.centre);
+  const poignee = poseCalage(c.t, [c.centre[0], c.centre[1] - c.rayon - 28 * mpp]);
+  const rp = 8 * mpp;
+  g.innerHTML = c.halls.map(b => '<path class="contour" d="' +
+      b.contours.map(k => "M" + k.map(p => poseCalage(c.t, p).join(" ")).join("L") + "Z").join("") + '"/>').join("") +
+    '<path class="tige" d="M' + centre.join(" ") + "L" + poignee.join(" ") + '"/>' +
+    '<circle class="poignee" cx="' + poignee[0] + '" cy="' + poignee[1] + '" r="' + rp + '"/>';
+  const champ = $("calageAngle");
+  if (document.activeElement !== champ) champ.value = degresCalage(c.t.a);
+}
 
-  $("calageBat").hidden = false;
-  const fini = c.etape === 4;
-  let txt = TEXTES_CALAGE[c.etape];
-  if (fini){
-    const pc = Math.round(Math.abs(c.ecart || 0) * 100);
-    /* L'échelle n'est pas corrigée : un écart de quelques pour cent vient d'un
-       coin mal visé, et le reporter sur le tracé déformerait tout le hall. */
-    txt = pc >= 3 ? "Contour calé, avec " + pc + " % d'écart entre les deux coins : vérifiez-les, ou recommencez."
-                  : "Contour calé. Vérifiez le tracé, puis validez.";
+function calagePointerDown(e){
+  if (!CALAGE) return false;
+  const cible = e.target.closest && e.target.closest("#calageApercu .contour, #calageApercu .poignee");
+  if (!cible) return false;
+  gesteCalage = { mode: cible.classList.contains("poignee") ? "pivote" : "deplace",
+                  p0: versPlan(e.clientX, e.clientY), t0: Object.assign({}, CALAGE.t) };
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  racine.classList.add("cale-geste");
+  return true;
+}
+
+function calagePointerMove(e){
+  if (!CALAGE || !gesteCalage) return false;
+  const g = gesteCalage, p = versPlan(e.clientX, e.clientY);
+  if (g.mode === "deplace"){
+    CALAGE.t = { a: g.t0.a, x: g.t0.x + p[0] - g.p0[0], y: g.t0.y + p[1] - g.p0[1] };
+  } else {
+    const c = poseCalage(g.t0, CALAGE.centre);
+    let a = g.t0.a + Math.atan2(p[1] - c[1], p[0] - c[0]) - Math.atan2(g.p0[1] - c[1], g.p0[0] - c[0]);
+    // Maj tient le quart de tour et ses subdivisions, comme ailleurs
+    if (e.shiftKey) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12);
+    CALAGE.t = pivoteCalage(g.t0, a);
   }
-  $("calageTxt").textContent = message || txt;
-  $("calageRefait").hidden = c.etape === 0;
-  $("calageValide").hidden = !fini;
-}
-
-/** Le sommet du contour proposé le plus proche du clic, dans le repère du lieu. */
-function coinVise(p){
-  const c = CALAGE, tol = toleranceTrace() * 1.5;
-  let mieux = null, d0 = tol;
-  c.halls.forEach(b => b.contours.forEach(k => k.forEach(q => {
-    const v = poseCalage(c.t, q);
-    const d = Math.hypot(v[0] - p[0], v[1] - p[1]);
-    if (d <= d0){ d0 = d; mieux = q; }
-  })));
-  return mieux;
-}
-
-/**
- * Un clic pendant le calage. Le glisser reste à la vue — il faut pouvoir
- * zoomer et se déplacer pour viser juste — : seul un appui sans mouvement
- * compte. Rend « vrai » s'il a servi.
- */
-function calagePointerUp(e){
-  if (!CALAGE || !drag || drag.bouge) return false;
-  drag = null;
-  svg.classList.remove("dragging");
-  const c = CALAGE, p = versPlan(e.clientX, e.clientY);
-  if (c.etape === 0 || c.etape === 2){
-    const q = coinVise(p);
-    if (!q || (c.etape === 2 && q === c.srcA)){
-      dessineCalage(c.etape === 2 && q === c.srcA
-        ? "Choisissez un autre coin que le premier."
-        : "Visez un coin du contour en pointillés : zoomez au besoin.");
-      return true;
-    }
-    c.etape === 0 ? c.srcA = q : c.srcB = q;
-    c.etape++;
-  } else if (c.etape === 1){
-    // l'accrochage vaut ici comme ailleurs : un coin de hall tombe souvent sur un tracé existant
-    c.dstA = aimante(p);
-    const v = poseCalage({ a: c.t.a, x: 0, y: 0 }, c.srcA);
-    c.t.x = c.dstA[0] - v[0]; c.t.y = c.dstA[1] - v[1];
-    c.etape = 2;
-  } else if (c.etape === 3){
-    const dst = aimante(p);
-    const s = [c.srcB[0] - c.srcA[0], c.srcB[1] - c.srcA[1]];
-    const d = [dst[0] - c.dstA[0], dst[1] - c.dstA[1]];
-    if (Math.hypot(d[0], d[1]) < 1){
-      dessineCalage("Ce point est trop près du premier : cliquez le second coin sur le plan.");
-      return true;
-    }
-    c.t.a = Math.atan2(d[1], d[0]) - Math.atan2(s[1], s[0]);
-    const v = poseCalage({ a: c.t.a, x: 0, y: 0 }, c.srcA);
-    c.t.x = c.dstA[0] - v[0]; c.t.y = c.dstA[1] - v[1];
-    c.ecart = Math.hypot(d[0], d[1]) / Math.hypot(s[0], s[1]) - 1;
-    c.etape = 4;
-  } else return true;
-  /* L'accrochage montre ses points et sa croix pendant le geste : le geste
-     est fini, ils n'ont plus rien à désigner. */
-  apercuGuide(null);
-  montreAimants(null);
   dessineCalage();
+  return true;
+}
+
+function calagePointerUp(){
+  if (!CALAGE || !gesteCalage) return false;
+  gesteCalage = null;
+  racine.classList.remove("cale-geste");
   return true;
 }
 
@@ -323,16 +330,19 @@ function ajouteBatiments(lieu, halls, t){
 
 $("calageValide").onclick = () => {
   const c = CALAGE;
-  if (!c || c.etape !== 4) return;
+  if (!c) return;
   finCalage();
   ajouteBatiments(c.lieu, c.halls, c.t);
 };
-$("calageRefait").onclick = () => {
+$("calageQuart").onclick = () => {
   if (!CALAGE) return;
-  const c = CALAGE;
-  lanceCalage(c.lieu, c.halls);
-  // on garde la position atteinte : recommencer ne doit pas renvoyer le contour ailleurs
-  CALAGE.t = c.t;
+  CALAGE.t = pivoteCalage(CALAGE.t, CALAGE.t.a + Math.PI / 2);
+  dessineCalage();
+};
+$("calageAngle").oninput = () => {
+  const v = parseFloat($("calageAngle").value);
+  if (!CALAGE || !isFinite(v)) return;
+  CALAGE.t = pivoteCalage(CALAGE.t, v * Math.PI / 180);
   dessineCalage();
 };
 $("calageStop").onclick = finCalage;

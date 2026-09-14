@@ -2314,16 +2314,25 @@ html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
 .viseur[hidden]{display:none}
 .viseur button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
 html.vise-plan #plan{cursor:crosshair}
-html.cale-plan #plan{cursor:crosshair}
 .viseur.calage button.fort{color:#fff;background:var(--accent);text-decoration:none;
   padding:3px 12px;border-radius:999px}
 .viseur.calage button[hidden]{display:none}
 /* Le contour proposé pendant le calage : en pointillés, comme tout ce qui
    n'est pas encore posé, et d'un trait qui ne grossit pas au zoom. */
 #calageApercu{pointer-events:none}
+/* Le contour et sa poignée se saisissent ; ailleurs, le glisser reste à la
+   vue, qu'il faut pouvoir déplacer pour ajuster. */
+#calageApercu .contour{pointer-events:visiblePainted;cursor:move}
+#calageApercu .poignee{pointer-events:all;cursor:grab;fill:var(--surface);stroke:var(--accent);
+  stroke-width:2;vector-effect:non-scaling-stroke}
+#calageApercu .tige{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;
+  vector-effect:non-scaling-stroke}
+html.cale-geste #calageApercu .poignee{cursor:grabbing}
+.viseur.calage .calageAngle{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2)}
+.viseur.calage .calageAngle input{width:64px;padding:2px 5px;font-size:12.5px;text-align:right;
+  border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
 #calageApercu .contour{fill:var(--accent);fill-opacity:.08;stroke:var(--accent);stroke-width:2;
   stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
-#calageApercu .coin{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke}
 
 /* Le tracé. Son épaisseur est donnée en pixels et ne suit pas le zoom : un
    trait qui grossit avec le plan finit par masquer les stands qu'il longe,
@@ -3802,11 +3811,13 @@ html.tuto-retrait .dcal .forme{opacity:.22}
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
     </div>
-    <!-- Le calage d'un bâtiment de la bibliothèque : où l'on en est, et
-         les deux issues. Voir « _batiments.html ». -->
+    <!-- Le calage d'un bâtiment de la bibliothèque : le geste, l'angle au
+         degré près, et les deux issues. Voir « _batiments.html ». -->
     <div class="viseur calage" id="calageBat" hidden>
-      <span id="calageTxt"></span>
-      <button type="button" id="calageRefait">Recommencer</button>
+      <span>Glissez le contour à sa place, et sa poignée ronde pour le faire pivoter.</span>
+      <label class="calageAngle"><input type="number" id="calageAngle" step="0.5"
+        aria-label="Angle du contour, en degrés"> °</label>
+      <button type="button" id="calageQuart" title="Pivoter d'un quart de tour">↻ 90°</button>
       <button type="button" id="calageStop">Annuler</button>
       <button type="button" class="fort" id="calageValide">Valider</button>
     </div>
