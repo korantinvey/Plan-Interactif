@@ -183,9 +183,9 @@ Fonctions :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 636 l. → console.css
+### `_console.css` — 651 l. → console.css
 
-- l.577 · Page de rapport
+- l.592 · Page de rapport
 
 ### `_dessin.html` — 1813 l. → plan-admin.html, plan-smcl.html, plan.html
 
