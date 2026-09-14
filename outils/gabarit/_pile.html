@@ -85,6 +85,15 @@ function boutonAjout(hote){
   plus.textContent = "+ Nouveau calque de dessin";
   plus.onclick = creeCalque;
   hote.appendChild(plus);
+  /* Les halls de la bibliothèque sont des calques de dessin comme les autres :
+     leur bouton vit à côté de celui qui en crée un vide. */
+  if (bibliothequeDispo()){
+    const b = document.createElement("button");
+    b.className = "ajout";
+    b.textContent = "+ Bâtiment de la bibliothèque…";
+    b.onclick = ouvreBibliotheque;
+    hote.appendChild(b);
+  }
 }
 
 /* Le cadenas d'un calque de dessin : un interrupteur, donc « aria-pressed »
