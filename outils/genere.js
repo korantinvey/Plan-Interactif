@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const icones = require("./icones.js");
 const pwa = require("./pwa.js");
+const traductions = require("./traductions.js");
 const D = __dirname;
 // relatif au script : le dépôt doit se cloner n'importe où
 const W = path.join(D, "..", "web") + path.sep;
@@ -10,6 +11,37 @@ const W = path.join(D, "..", "web") + path.sep;
    Adresse relative : même origine que la page, donc aucun contrôle d'origine
    croisée, et un déplacement de domaine ne demande rien. */
 const API = "/api/plan";
+
+/**
+ * Les polices, déclarées dans l'en-tête des pages qui portent `<!--__POLICES__-->`.
+ *
+ * Elles venaient de Google, et chaque page ouverte lui transmettait l'adresse
+ * IP de son visiteur ; `outils/polices.js` les a rapatriées dans `web/polices/`.
+ * Les déclarations sont posées dans la page plutôt que dans une feuille à part :
+ * une feuille coûterait un aller-retour de plus avant le premier texte, pour
+ * quelques kilo-octets que la page porte sans peine. Le navigateur ne
+ * télécharge ensuite que les fichiers dont un texte se sert.
+ *
+ * La page autonome embarque les fichiers eux-mêmes, en `data:` : publiée
+ * seule, aucune adresse voisine ne lui répondrait.
+ *
+ * Seules les polices des modèles sont déclarées ainsi. Celles qu'un exploitant
+ * peut préférer pour les noms ne se chargent qu'une fois choisies, par leur
+ * feuille (`polices/<famille>.css`) : les déclarer toutes grossirait chaque
+ * page pour des familles qu'un salon sur vingt emploie.
+ */
+const POLICES_JSON = JSON.parse(fs.readFileSync(D + "/polices.json", "utf8"));
+const POLICES = POLICES_JSON.faces.filter((f) => !f.aLaDemande);
+function feuillePolices(autonome) {
+  return "<style>\n" + POLICES.map((f) =>
+    "@font-face{" +
+    Object.entries(f.descripteurs).map(([k, v]) => k + ":" + v).join(";") +
+    ";src:url(" + (autonome
+      ? "data:font/woff2;base64," +
+        fs.readFileSync(W + "polices" + path.sep + f.fichier).toString("base64")
+      : "polices/" + f.fichier) +
+    ") format('woff2')}").join("\n") + "\n</style>";
+}
 
 /**
  * Le squelette d'une page.
@@ -24,7 +56,8 @@ const API = "/api/plan";
  *   `application` — la page est installable : manifeste, icônes, service.
  *                   Le plan public, et lui seul (voir `outils/pwa.js`).
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
- *                   une icône, le fichier voisin n'existerait pas.
+ *                   une icône, le fichier voisin n'existerait pas. Ses
+ *                   polices viennent donc avec elle.
  */
 function page(contenu, options) {
   const { role, tete, application, autonome } = options || {};
@@ -32,10 +65,30 @@ function page(contenu, options) {
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    langue(contenu) +
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
     (application && !autonome ? pwa.APPLICATION : "") +
-    contenu + "\n</body>\n</html>\n";
+    contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome)) +
+    "\n</body>\n</html>\n";
+}
+
+/**
+ * La version anglaise, posée en tête de chaque page : le moteur
+ * (`gabarit/_langue.js`) et la part du dictionnaire que la page affiche.
+ *
+ * En tête, parce qu'il doit voir passer le balisage : demandée en anglais, la
+ * page ne se montre jamais d'abord en français. La part seulement, parce que
+ * le dictionnaire couvre toutes les pages — la console n'a que faire des
+ * phrases de l'itinéraire, ni le plan public de celles des comptes.
+ */
+const MOTEUR_LANGUE = fs.readFileSync(D + "/gabarit/_langue.js", "utf8");
+const DICTIONNAIRE = traductions.chargeDictionnaire();
+function langue(contenu) {
+  const table = traductions.dictionnairePour(contenu, DICTIONNAIRE);
+  // du texte JSON dans une chaîne JavaScript, où `</script>` ne doit pas paraître
+  const texte = JSON.stringify(JSON.stringify(table)).replace(/</g, "\\u003c");
+  return "<script>\n" + MOTEUR_LANGUE.replace("__DICTIONNAIRE__", () => texte) + "</script>\n";
 }
 
 const SLUG_DEFAUT = "smcl-2026";
@@ -75,8 +128,12 @@ fs.writeFileSync(W + "plan.html",
        { tete: PRECHARGE, application: true }));
 
 /* --- page d'administration : accès après authentification --- */
+/* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
+   n'en a que faire, elle ne part qu'avec l'administration. */
+const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth), { role: "admin" }));
+  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth)
+                    .replace("/*__LIEUX__*/null", () => LIEUX), { role: "admin" }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
@@ -125,6 +182,10 @@ fs.writeFileSync(W + "hors-ligne.html",
    jour où l'on change une couleur. */
 fs.writeFileSync(W + "manifeste.webmanifest", pwa.manifeste());
 fs.writeFileSync(W + "icone.svg", icones.svg());
+/* Le monogramme entier ne tient pas dans un onglet — à seize pixels une
+   capitale fait quatre pixels de large. L'onglet reçoit donc la marque
+   réduite : même bloc, même réserve rose, le seul chiffre. */
+fs.writeFileSync(W + "icone-onglet.svg", icones.svgOnglet());
 fs.writeFileSync(W + "icone-192.png", icones.png(192));
 fs.writeFileSync(W + "icone-512.png", icones.png(512));
 fs.writeFileSync(W + "icone-masque-512.png", icones.png(512, "masquable"));
@@ -139,7 +200,8 @@ const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
   "config.js", "console.css", "manifeste.webmanifest",
-  "icone.svg", "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
+  "icone.svg", "icone-onglet.svg",
+  "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
 
 /* --- le service de second plan ---
@@ -168,3 +230,33 @@ for (const f of FABRIQUEES.filter((n) => n.endsWith(".html"))) {
     (s.indexOf('rel="manifest"') > 0 ? "· application" : ""));
 }
 console.log("sw.js".padEnd(18), "version " + version);
+
+/* Aucune page ne demande plus rien aux serveurs de polices de Google. Le
+   relire ici plutôt qu'en relecture de code : une police ajoutée par l'ancienne
+   voie — un `<link>` recopié d'un exemple, un chargement à la demande —
+   referait partir l'adresse de chaque visiteur, et rien d'autre ne le dirait. */
+const CHEZ_GOOGLE = /fonts\.(googleapis|gstatic)\.com/;
+const fautives = FABRIQUEES.concat("sw.js")
+  .filter((f) => /\.(html|js)$/.test(f) && CHEZ_GOOGLE.test(fs.readFileSync(W + f, "utf8")));
+if (fautives.length) {
+  console.error("\nPolices demandées à Google dans : " + fautives.join(", ") + ".\n" +
+    "Déclarez la famille dans `outils/polices.js` (ou dans `POLICES_NOMS` pour une police\n" +
+    "au choix), lancez `npm run polices`, et servez-la depuis `polices/` : chaque visiteur\n" +
+    "transmettrait sinon son adresse IP à Google.");
+  process.exit(1);
+}
+
+/* Et chaque police que l'onglet propose pour les noms est bien rapatriée, sous
+   la graisse qu'il demande. Sans cela, la choisir laisserait le plan dans la
+   police du modèle sans rien dire — et la tentation reviendrait de la
+   redemander à Google. */
+const { policesAuChoix, nomDeFichier, couvre } = require("./polices.js");
+const absentes = policesAuChoix().filter((p) =>
+  !fs.existsSync(W + "polices" + path.sep + nomDeFichier(p.nom) + ".css") ||
+  !POLICES_JSON.faces.some((f) => f.aLaDemande && f.famille === p.nom &&
+    couvre(f.descripteurs["font-weight"], p.graisse)));
+if (absentes.length) {
+  console.error("\nPolices proposées pour les noms, mais pas rapatriées : " +
+    absentes.map((p) => p.nom + " " + p.graisse).join(", ") + ".\nLancez `npm run polices`.");
+  process.exit(1);
+}

@@ -101,6 +101,7 @@ function ecranAcces(message){
       localStorage.setItem(CLE_CFG_A, JSON.stringify({ url, anonKey }));
       localStorage.setItem(CLE_SESSION_A, JSON.stringify(j));
       voile.remove();
+      litProfilA({ url, anonKey }, j);
       activeAdmin();
       poseCompte();
       charge();
@@ -115,14 +116,37 @@ function ecranAcces(message){
 /* ------------------------------------------------------------------
    Le compte, une fois la porte franchie
    ------------------------------------------------------------------ */
-/** L'adresse est dans le jeton — la demander au serveur serait un aller-retour
- *  de plus pour une donnée que le navigateur tient déjà en main. */
-function mailDuJeton(session){
+/** L'adresse et l'identifiant sont dans le jeton — les demander au serveur
+ *  serait un aller-retour de plus pour une donnée que le navigateur tient déjà
+ *  en main. */
+function contenuDuJeton(session){
   try {
     const p = String(session?.access_token || "").split(".")[1];
-    if (!p) return "";
-    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))).email || "";
-  } catch (e) { return ""; }
+    if (!p) return {};
+    return JSON.parse(atob(p.replace(/-/g, "+").replace(/_/g, "/"))) || {};
+  } catch (e) { return {}; }
+}
+const mailDuJeton = (session) => contenuDuJeton(session).email || "";
+
+/**
+ * Le profil du compte, qui décide de l'onglet « Admin » des réglages.
+ *
+ * L'organisateur a sur son salon les mêmes droits d'écriture que
+ * l'administrateur : ce que la page lui retire ici est une offre, pas un
+ * droit. Ces réglages décident du comportement du plan plus que de son
+ * contenu, et l'on veut qu'un seul interlocuteur en décide. Sans réponse
+ * — réseau, profil illisible —, l'onglet reste caché : c'est l'état sûr.
+ */
+async function litProfilA(cfg, session){
+  const id = contenuDuJeton(session).sub;
+  if (!cfg?.url || !id) return;
+  try {
+    const r = await fetch(cfg.url + "/rest/v1/profil?select=role&id=eq." + encodeURIComponent(id), {
+      headers: { "apikey": cfg.anonKey, "Authorization": "Bearer " + session.access_token },
+    });
+    const j = r.ok ? await r.json() : [];
+    PROFIL_ADMIN = Array.isArray(j) && j[0]?.role === "admin";
+  } catch (e) { PROFIL_ADMIN = false; }
 }
 
 /** « korantin.vey@… » donne « KV » ; à défaut, les deux premières lettres. */
@@ -177,6 +201,9 @@ document.addEventListener("keydown", (ev) => {
 (async () => {
   const cfg = configuration();
   const session = litLocal(CLE_SESSION_A);
-  if (await sessionValide(cfg, session)){ activeAdmin(); poseCompte(); charge(); }
+  if (await sessionValide(cfg, session)){
+    litProfilA(cfg, session);
+    activeAdmin(); poseCompte(); charge();
+  }
   else ecranAcces(session ? "Session expirée, reconnectez-vous." : null);
 })();

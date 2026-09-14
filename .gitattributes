@@ -15,5 +15,8 @@
 # silencieusement à la fusion ligne à ligne : l'ancien comportement, pénible
 # mais pas faux.
 web/**                merge=ours
+# La bibliothèque du dessin est vérifiée par son empreinte au chargement : un
+# seul octet converti en fin de ligne, et le navigateur la refuse.
+web/bibliotheques/**  -text
 outils/tpl-multi.html merge=ours
 CARTE.md              merge=ours

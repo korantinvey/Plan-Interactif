@@ -162,7 +162,7 @@ function majElement(){
     if (estStandDessine){
       remplitListeSocietes();
       const l = societeDeForme(f);
-      cs.value = l ? etiquetteSociete(l.o.code, nomSurLePlan(l.soc)) : "";
+      cs.value = l ? etiquetteSociete(l.o, l.soc) : "";
     }
   }
 }
@@ -343,7 +343,7 @@ function appliqueSociete(){
   memorise();
   if (l){
     cible.f.stand = l.o.id; cible.f.soc = l.i;
-    ch.value = etiquetteSociete(l.o.code, nomSurLePlan(l.soc));
+    ch.value = etiquetteSociete(l.o, l.soc);
   } else {
     delete cible.f.stand; delete cible.f.soc;
     ch.value = "";
@@ -420,7 +420,8 @@ function editionPointerDown(e){
   if (!ADMIN || outil !== "main") return false;
   const p = versPlan(e.clientX, e.clientY);
 
-  const pgn = e.target.closest(".pgn");
+  // en WebGL, la cible se demande à la carte graphique : le SVG ne suit pas la vue
+  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
   if (pgn && formeSel){
     const cible = formeParId(formeSel);
     if (cible){
@@ -433,7 +434,7 @@ function editionPointerDown(e){
     }
   }
 
-  const g = e.target.closest(".dcal .forme");
+  const g = GL.actif ? priseWebgl(e.clientX, e.clientY, ".dcal .forme") : e.target.closest(".dcal .forme");
   if (g){
     const id = g.dataset.f;
     const cible = formeParId(id);

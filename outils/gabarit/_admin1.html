@@ -394,6 +394,68 @@ const salonPartage = () => (DATA?.plans || [])
   .some(p => (p.stands || []).some(s => (s.coex || []).length));
 
 /* ------------------------------------------------------------
+   La rafale du sélecteur de couleur
+
+   Un nuancier n'envoie pas un événement par couleur retenue : le sélecteur du
+   système en envoie une rafale pendant qu'on glisse, plusieurs dizaines par
+   seconde. Peindre à ce rythme se tient — c'est une variable CSS, ou la
+   couleur d'un groupe. Retenir, non : sérialiser toute la configuration ou
+   tous les dessins vers le poste, rebâtir le SVG des calques, refaire la
+   nappe d'itinéraire, cela demande plus de temps qu'il n'en reste entre deux
+   événements. Le retard s'accumule alors, et sur un salon chargé — mille
+   stands, des calques dessinés — la couleur traîne plusieurs secondes
+   derrière la souris.
+
+   On sépare donc les deux gestes : la peinture suit la main, la mémoire
+   attend qu'elle s'arrête. Rien ne part en base pour autant — la publication
+   reste un geste à part.
+   ------------------------------------------------------------ */
+
+/** Le temps d'immobilité, en millisecondes, au bout duquel la couleur est
+ *  retenue. Assez court pour qu'un clic sur une pastille paraisse immédiat,
+ *  assez long pour traverser une rafale sans en écrire une seule image. */
+const REPOS_NUANCIER = 200;
+
+/* Deux dixièmes de seconde suffisent à fermer un onglet : ce qui attend encore
+   est noté ici, et part avant que la page ne s'en aille. Aux deux moments que
+   `_pousse.html` guette, et avant lui — ce module le précède, donc la couleur
+   est écrite quand il presse l'envoi. */
+const NUANCIERS_EN_ATTENTE = new Set();
+const presseNuanciers = () => NUANCIERS_EN_ATTENTE.forEach(fixe => fixe());
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") presseNuanciers();
+});
+addEventListener("pagehide", presseNuanciers);
+
+/**
+ * Branche un sélecteur de couleur : `peint` à chaque événement reçu, `retient`
+ * une fois le glissement fini.
+ *
+ * `change` ne clôt pas le geste partout — certains navigateurs l'envoient au
+ * fil du glissement, comme `input`. On ne s'y fie donc pas : c'est le temps de
+ * repos qui décide, et quitter le champ presse ce qui attendait.
+ *
+ * Rend la fonction qui presse, pour qui a une autre raison de conclure.
+ */
+function suitNuancier(input, peint, retient){
+  let minuteur = null;
+  const fixe = () => {
+    if (!minuteur) return;
+    clearTimeout(minuteur); minuteur = null;
+    NUANCIERS_EN_ATTENTE.delete(fixe);
+    retient();
+  };
+  input.oninput = input.onchange = e => {
+    peint(e.target.value);
+    if (minuteur) clearTimeout(minuteur);
+    minuteur = setTimeout(fixe, REPOS_NUANCIER);
+    NUANCIERS_EN_ATTENTE.add(fixe);
+  };
+  input.onblur = fixe;
+  return fixe;
+}
+
+/* ------------------------------------------------------------
    Couleur principale et modèle de fiche
 
    Deux réglages d'apparence qui ne portent sur aucun calque : la teinte dont
@@ -540,8 +602,212 @@ const POLICES_LIBELLE = {
   nu:       { nom: ["600", P_SANS],      code: ["500", P_CHASSE] },
 };
 
+/* Les polices qu'on peut préférer à celle du modèle, pour les noms du plan.
+
+   Le modèle décide d'abord, et en choisir un repose la sienne. Mais un salon
+   a souvent sa propre police — celle de sa charte, de ses kakémonos, de la
+   signalétique qu'on croise dans les allées — et un plan qui écrit les
+   enseignes dans une autre se lit comme une pièce rapportée. Le choix ne vaut
+   que pour les noms, des stands comme des zones : le numéro garde la chasse du
+   modèle, où les chiffres s'alignent d'un stand à l'autre.
+
+   Une liste plutôt qu'un nom saisi : chaque police est rapatriée de Google une
+   fois pour toutes par `npm run polices`, qui relit cette liste, et Google
+   répond en erreur à une famille qu'il ne sert pas sous la graisse demandée —
+   Lato n'a pas de 600. Chaque ligne porte donc une graisse qu'on sait servie,
+   retenue pour se lire petit sur une cloison. Une ligne ajoutée ici fait
+   échouer la construction tant que le script n'a pas été relancé.
+
+   Les cinq polices des modèles sont déjà déclarées par l'en-tête de la page, et
+   se reconnaissent à la pile qu'elles partagent avec POLICES_LIBELLE — c'est
+   par elle que l'onglet sait laquelle est celle du modèle. Les autres ne se
+   chargent qu'au besoin, depuis `polices/` : chez le visiteur, la seule de son
+   salon ; chez l'exploitant, celles du genre qu'il parcourt.
+
+   Rangées par genre, et par nom dans chacun : soixante polices ne se
+   parcourent pas d'un seul tenant, et c'est d'abord une allure qu'on cherche —
+   une étroite pour des enseignes longues, une manuscrite pour un salon des
+   vins —, puis un nom dans cette allure. Les genres vont du plus sûr sur une
+   cloison au plus singulier. Le repli ne sert qu'aux vignettes, le temps que
+   leur police arrive : le plan, lui, n'écrit jamais dans une police absente.
+
+   La table garde une ligne par police, son genre écrit dedans, plutôt qu'une
+   liste sous chaque genre : `npm run polices` et la construction la relisent
+   sous cette forme exacte (`policesAuChoix`, dans outils/polices.js). */
+const GENRES_POLICE = [
+  { cle: "sans", nom: "Sans serif", repli: "sans-serif" },
+  { cle: "etroite", nom: "Étroites", repli: "sans-serif" },
+  { cle: "serif", nom: "Serif", repli: "Georgia, serif" },
+  { cle: "arrondie", nom: "Arrondies", repli: "sans-serif" },
+  { cle: "lisible", nom: "Haute lisibilité", repli: "sans-serif" },
+  { cle: "affiche", nom: "Affiche", repli: "sans-serif" },
+  { cle: "manuscrite", nom: "Manuscrites", repli: "cursive" },
+  { cle: "chasse", nom: "Chasse fixe", repli: "monospace" },
+];
+const POLICES_NOMS = [
+  ["Archivo", "600", "sans", P_GROTESQUE],
+  ["Barlow", "600", "sans"],
+  ["DM Sans", "600", "sans"],
+  ["Fira Sans", "600", "sans"],
+  ["IBM Plex Sans", "600", "sans"],
+  ["Instrument Sans", "600", "sans", P_SANS],
+  ["Inter", "600", "sans"],
+  ["Jost", "600", "sans"],
+  ["Lato", "700", "sans"],
+  ["Manrope", "600", "sans"],
+  ["Montserrat", "600", "sans"],
+  ["Noto Sans", "600", "sans"],
+  ["Open Sans", "600", "sans"],
+  ["Plus Jakarta Sans", "600", "sans"],
+  ["Poppins", "600", "sans"],
+  ["Raleway", "600", "sans"],
+  ["Roboto", "600", "sans"],
+  ["Source Sans 3", "600", "sans"],
+  ["Space Grotesk", "600", "sans"],
+  ["Work Sans", "600", "sans"],
+
+  ["Anton", "400", "etroite"],
+  ["Archivo Narrow", "600", "etroite"],
+  ["Barlow Condensed", "600", "etroite"],
+  ["Bebas Neue", "400", "etroite"],
+  ["Fira Sans Condensed", "600", "etroite"],
+  ["Oswald", "500", "etroite"],
+  ["PT Sans Narrow", "700", "etroite"],
+  ["Roboto Condensed", "600", "etroite"],
+
+  ["Bitter", "600", "serif"],
+  ["Cormorant Garamond", "600", "serif"],
+  ["EB Garamond", "600", "serif"],
+  ["Fraunces", "600", "serif", P_SERIF],
+  ["Libre Baskerville", "700", "serif"],
+  ["Lora", "600", "serif"],
+  ["Merriweather", "700", "serif"],
+  ["Playfair Display", "600", "serif"],
+  ["PT Serif", "700", "serif"],
+  ["Roboto Slab", "600", "serif"],
+  ["Source Serif 4", "600", "serif"],
+
+  ["Comfortaa", "700", "arrondie"],
+  ["Fredoka", "600", "arrondie"],
+  ["Nunito", "700", "arrondie"],
+  ["Quicksand", "700", "arrondie"],
+  ["Varela Round", "400", "arrondie"],
+
+  ["Andika", "700", "lisible"],
+  ["Atkinson Hyperlegible Next", "600", "lisible"],
+  ["Lexend", "500", "lisible"],
+
+  ["Abril Fatface", "400", "affiche"],
+  ["Alfa Slab One", "400", "affiche"],
+  ["Archivo Black", "400", "affiche"],
+  ["Bungee", "400", "affiche"],
+  ["Righteous", "400", "affiche"],
+
+  ["Caveat", "600", "manuscrite"],
+  ["Dancing Script", "600", "manuscrite"],
+  ["Kalam", "700", "manuscrite"],
+  ["Patrick Hand", "400", "manuscrite"],
+
+  ["Courier Prime", "700", "chasse", P_MACHINE],
+  ["IBM Plex Mono", "500", "chasse", P_CHASSE],
+  ["Inconsolata", "600", "chasse"],
+  ["JetBrains Mono", "600", "chasse"],
+  ["Roboto Mono", "600", "chasse"],
+  ["Space Mono", "700", "chasse"],
+].map(([nom, graisse, genre, pile]) => ({
+  nom, graisse, genre,
+  // sans pile écrite, la police ne se demande qu'au besoin, à `polices/`
+  distante: !pile,
+  pile: pile || '"' + nom + '", ' + GENRES_POLICE.find(g => g.cle === genre).repli,
+}));
+
+/** La police que l'exploitant a préférée pour les noms, s'il en a retenu une. */
+const policeChoisie = () => {
+  const n = (CONF["_fiche"] || {}).police;
+  return POLICES_NOMS.find(p => p.nom === n) || null;
+};
+/** La police qu'un modèle pose sur les noms, telle que la liste la connaît. */
+const policeDuModele = (cle) => {
+  const pile = (POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre).nom[1];
+  return POLICES_NOMS.find(p => p.pile === pile) || null;
+};
+
+/* Une police distante n'est demandée qu'une fois par visite : l'onglet qui les
+   montre se rouvre, et l'exploitant qui hésite revient trois fois sur la même.
+   La promesse dit si la feuille est arrivée, sans jamais échouer : une police
+   qui ne vient pas laisse celle du modèle, ce qui n'a rien d'une erreur. */
+const FEUILLES_POLICE = new Map(), FEUILLES_ARRIVEES = new Set();
+function feuillePolice(p){
+  if (!p.distante) return Promise.resolve(true);
+  if (!FEUILLES_POLICE.has(p.nom)) FEUILLES_POLICE.set(p.nom, new Promise(ok => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    /* La feuille de la famille, rangée à côté de la page par `npm run polices`.
+       La demander à Google transmettrait à celui-ci l'adresse de chaque
+       visiteur du salon — et la construction le refuse. */
+    l.href = "polices/" + p.nom.toLowerCase().replace(/[^a-z0-9]+/g, "-") + ".css";
+    l.onload = () => { FEUILLES_ARRIVEES.add(p.nom); ok(true); };
+    l.onerror = () => ok(false);
+    document.head.appendChild(l);
+  }));
+  return FEUILLES_POLICE.get(p.nom);
+}
+
+/* La feuille ne suffit pas : elle déclare la police, le fichier ne part qu'au
+   premier texte qui s'en sert. Le plan, lui, mesure avant d'écrire — dans une
+   police absente, le canevas prend celle de repli, et les noms se tailleraient
+   pour une autre que celle où ils s'affichent. On attend donc le fichier, et
+   les polices prêtes se retiennent pour que la question ne se repose plus. */
+const POLICES_PRETES = new Set(), CHARGEMENTS_POLICE = new Map();
+function chargePolice(p){
+  if (!CHARGEMENTS_POLICE.has(p.nom)) CHARGEMENTS_POLICE.set(p.nom, feuillePolice(p)
+    .then(arrivee => !arrivee ? false : !document.fonts ? true :
+      document.fonts.load(p.graisse + " 16px " + p.pile).then(f => f.length > 0))
+    .catch(() => false)
+    .then(prete => { if (prete) POLICES_PRETES.add(p.nom); return prete; }));
+  return CHARGEMENTS_POLICE.get(p.nom);
+}
+
 /**
- * Pose la police du modèle sur les libellés du plan.
+ * La police est-elle déjà là ? Souvent oui, sans rien avoir attendu : la
+ * vignette de l'onglet l'a fait venir en s'affichant. Le demander tout de suite
+ * épargne au plan, au clic, un aller-retour par la police du modèle le temps
+ * d'une promesse — un saut visible, et un tracé de trop.
+ *
+ * `check` ne se consulte qu'une fois la famille déclarée : pour une famille
+ * inconnue du document, Chrome répond qu'elle est prête, puisqu'il n'a rien à
+ * charger. D'où la feuille arrivée exigée d'une police distante — celles des
+ * modèles sont déclarées par l'en-tête.
+ */
+function policePrete(p){
+  if (POLICES_PRETES.has(p.nom)) return true;
+  if (p.distante && !FEUILLES_ARRIVEES.has(p.nom)) return false;
+  let prete = !document.fonts;
+  try { prete = prete || document.fonts.check(p.graisse + " 16px " + p.pile); } catch (e) {}
+  if (prete) POLICES_PRETES.add(p.nom);
+  return prete;
+}
+
+/**
+ * La police des noms : celle que l'exploitant a préférée dès qu'elle est prête,
+ * celle du modèle d'ici là — et pour de bon si elle ne vient jamais.
+ *
+ * Tant qu'elle manque, les noms restent dans la police du modèle, que la page
+ * a déjà. Poser l'autre sans l'avoir aurait écrit le plan dans la police de
+ * repli, puis l'aurait réécrit à l'arrivée du fichier : deux sauts au lieu
+ * d'un, dont le premier vers une police que personne n'a choisie.
+ */
+function policeDesNoms(duModele){
+  const p = policeChoisie();
+  if (!p || p.pile === duModele[1]) return duModele;
+  if (policePrete(p)) return [p.graisse, p.pile];
+  chargePolice(p).then(prete => { if (prete) posePoliceLibelles(modeleRetenu()); });
+  return duModele;
+}
+
+/**
+ * Pose la police du modèle sur les libellés du plan, et sur les noms celle que
+ * l'exploitant lui a préférée.
  *
  * Elle s'écrit à deux endroits qui doivent s'accorder : la feuille de style,
  * qui dessine, lit ces variables ; `habille` et `largeur`, qui taillent le
@@ -551,20 +817,30 @@ const POLICES_LIBELLE = {
  *
  * Le tracé ne se refait qu'au changement, et qu'une fois le pavillon monté :
  * la fonction est aussi appelée à l'ouverture d'un salon, où elle précède le
- * premier dessin plutôt que d'avoir à le reprendre. La liste en est, parce
- * que la case du numéro se taille elle aussi sur P_CODE.
+ * premier dessin plutôt que d'avoir à le reprendre. Une police préférée qui
+ * n'est pas encore là fait exception : elle rappelle la fonction à son arrivée,
+ * et le plan se retrace alors une fois. La liste n'est reprise que pour le
+ * numéro, parce que sa case se taille sur P_CODE et jamais sur le nom.
+ *
+ * Les polices se comparent par leur contenu : celle qu'on a préférée est une
+ * paire refaite à chaque appel, et comparée par identité elle aurait retracé
+ * le plan à chaque changement de pavillon.
  */
 function posePoliceLibelles(cle){
   const p = POLICES_LIBELLE[cle] || POLICES_LIBELLE.sobre;
-  const change = P_NOM !== p.nom || P_CODE !== p.code;
-  P_NOM = p.nom; P_CODE = p.code;
-  racine.style.setProperty("--police-lab-nom", p.nom[1]);
-  racine.style.setProperty("--graisse-lab-nom", p.nom[0]);
+  const nom = policeDesNoms(p.nom);
+  const autre = (a, b) => a[0] !== b[0] || a[1] !== b[1];
+  const changeNom = autre(P_NOM, nom), changeCode = autre(P_CODE, p.code);
+  P_NOM = nom; P_CODE = p.code;
+  racine.style.setProperty("--police-lab-nom", nom[1]);
+  racine.style.setProperty("--graisse-lab-nom", nom[0]);
   racine.style.setProperty("--police-lab-code", p.code[1]);
   racine.style.setProperty("--graisse-lab-code", p.code[0]);
+  if (!MONTE || !(changeNom || changeCode)) return;
   // les repères et les stands tracés à la main portent leur libellé dans leur
   // propre forme : ils se retracent, ils ne se restylent pas
-  if (change && MONTE){ dessineDessins(); libelles(); liste(); }
+  dessineDessins(); libelles();
+  if (changeCode) liste();
 }
 
 /**
@@ -816,6 +1092,7 @@ function apercuFiche(cle, vu){
     const l = separeValeurs(vu.vals[c]);
     if (!l.length) return;
     champs[c] = {
+      cle: c,
       libelle: esc(libelleCorps(c)),
       valeur: PICTO_RS[c] ? pictoRS(c, l[0])
         : l.length > 1
@@ -1021,6 +1298,10 @@ function ouvreReglages(ouvrir){
        les visiteurs voient ni de l'allure du plan, et ce qu'on y trouve — un
        effacement sans retour — n'a rien à faire au milieu de cases à cocher. */
     voletMesure(volet(NOM_VOLET_MESURE));
+    /* « Admin » après tout le reste : l'organisateur ne le voit pas, et les
+       onglets qu'il partage avec l'administrateur gardent ainsi la même place
+       sous les yeux de l'un et de l'autre. */
+    if (PROFIL_ADMIN) voletAdmin(volet("Admin"));
     /* Un nom qui ne désigne aucun volet — un onglet retiré depuis, un salon
        sans zones — laisserait la fenêtre sur rien : on retombe sur le premier
        plutôt que sur le vide. */
@@ -1230,9 +1511,48 @@ function ficheZoneEnPlace(hote, o, apres){
   suitFicheZone(o, valeurs, etat, apres);
 }
 
-/** Ce que les visiteurs voient sur le plan : les commandes, les secteurs, et
- *  le temps qu'on passe sur un stand. */
+/** La journée d'un visiteur : le temps qu'on passe sur un stand, et les heures
+ *  où le salon ouvre. Les commandes du plan sont passées dans « Admin ». */
 function voletPlan(hote){
+  const p = document.createElement("p");
+  p.textContent = "Ce qui règle la journée d'un visiteur. " +
+    "Publiez la configuration pour que le changement parvienne aux visiteurs.";
+  hote.appendChild(p);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
+    '<span class="u">min</span></label><span class="aide"></span>';
+  duree.querySelector(".l").textContent = "Temps de visite par stand";
+  duree.querySelector(".aide").textContent =
+    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
+    "qui décide combien de stands tiennent entre deux conférences.";
+  const n = duree.querySelector("input");
+  n.value = minutesVisite();
+  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
+     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
+     on le quitte. */
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesVisite(); };
+  hote.appendChild(duree);
+
+  blocHoraires(hote);
+}
+
+/**
+ * Ce que les visiteurs voient sur le plan : les commandes, les secteurs, les
+ * fenêtres qui s'ouvrent d'elles-mêmes.
+ *
+ * Réservé au profil administrateur. Ces cases changent la façon dont le plan
+ * se comporte, d'un salon à l'autre, bien plus que ce qu'il montre d'un
+ * salon : c'est l'exploitant qui en répond, et l'organisateur n'y trouverait
+ * que de quoi retirer une commande qu'on lui a vendue.
+ */
+function voletAdmin(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que les visiteurs voient sur le plan. " +
     "Publiez la configuration pour que le changement leur parvienne.";
@@ -1240,6 +1560,9 @@ function voletPlan(hote){
 
   const bloc = document.createElement("div");
   bloc.className = "reglages";
+  /* La visite guidée fait le tour des commandes qu'on coche ici : son aide dit
+     lesquelles, et se refait à chaque case touchée. */
+  let majTuto = () => {};
   COMMANDES.forEach(cmd => {
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
@@ -1251,6 +1574,7 @@ function voletPlan(hote){
       enregistreConf(); appliqueCommandes();
       // la couleur du parcours vit dans la pile : elle suit le réglage
       if (ADMIN) construitPanneau();
+      majTuto();
     };
     bloc.appendChild(l);
   });
@@ -1319,30 +1643,63 @@ function voletPlan(hote){
     });
   }
 
+  /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
+     visiteur : elle se règle avec ce qu'il voit (`_installation.html`). */
+  caseInstallation(bloc);
+
+  /* La visite guidée se propose d'elle-même à la première ouverture. C'est une
+     fenêtre de plus devant le plan, et tous les salons n'en veulent pas : d'où
+     la case, et de quoi l'essayer d'ici — l'exploitant ne la verrait jamais
+     autrement, l'administration ne la proposant pas. Éteinte plutôt que
+     décochée sur un salon qui n'a rien à présenter, comme les sortes de la
+     recherche : le choix fait vaudra le jour où quelque chose l'alimentera. */
+  {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = "Proposer la visite guidée au premier démarrage";
+    const c = l.querySelector("input");
+    c.checked = tutoPropose();
+    c.onchange = e => { reglageTuto().visible = e.target.checked; enregistreConf(); };
+    bloc.appendChild(l);
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    bloc.appendChild(aide);
+    /* Chaque chapitre s'écrit dans son élément, et non fondu dans la phrase :
+       la version anglaise traduit un texte à la fois, et une liste composée à
+       la volée n'aurait été la clé d'aucune traduction. */
+    const morceau = (txt) => {
+      const s = document.createElement("span");
+      s.textContent = txt;
+      aide.appendChild(s);
+    };
+    majTuto = () => {
+      const titres = chapitresTuto().map(ch => ch.titre);
+      l.classList.toggle("eteint", !titres.length);
+      c.disabled = !titres.length;
+      aide.textContent = "";
+      if (!titres.length){
+        morceau("Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.");
+        return;
+      }
+      morceau("Le visiteur y fait lui-même chaque geste. Sur ce salon :");
+      titres.forEach((t, i) => {
+        aide.appendChild(document.createTextNode(i ? " · " : " "));
+        morceau(t);
+      });
+      aide.appendChild(document.createTextNode(". "));
+      morceau("Proposée une fois par appareil.");
+      aide.appendChild(document.createTextNode(" "));
+      const essai = document.createElement("button");
+      essai.type = "button";
+      essai.className = "essaiTuto";
+      essai.textContent = "Essayer";
+      essai.onclick = () => { fermeModale(); lanceTutoriel(); };
+      aide.appendChild(essai);
+    };
+    majTuto();
+  }
+
   hote.appendChild(bloc);
-
-  const duree = document.createElement("div");
-  duree.className = "reglage-nb";
-  duree.innerHTML = '<label><span class="l"></span>' +
-    '<input type="number" min="' + VISITE_MIN + '" max="' + VISITE_MAX + '" step="5">' +
-    '<span class="u">min</span></label><span class="aide"></span>';
-  duree.querySelector(".l").textContent = "Temps de visite par stand";
-  duree.querySelector(".aide").textContent =
-    "Sert à organiser la journée d'un visiteur depuis son parcours : c'est ce " +
-    "qui décide combien de stands tiennent entre deux conférences.";
-  const n = duree.querySelector("input");
-  n.value = minutesVisite();
-  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient
-     que ce qui tient dans les bornes, et le champ se remet d'aplomb quand
-     on le quitte. */
-  n.oninput = e => {
-    const v = Math.round(+e.target.value);
-    if (v >= VISITE_MIN && v <= VISITE_MAX){ conf("_visite").minutes = v; enregistreConf(); }
-  };
-  n.onblur = () => { n.value = minutesVisite(); };
-  hote.appendChild(duree);
-
-  blocHoraires(hote);
 }
 
 /**
@@ -1600,16 +1957,18 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/** De quoi le plan a l'air : sa couleur principale, et l'habillage de ses
- *  quatre panneaux — la liste des exposants, la fiche détail, le parcours de
- *  visite et l'itinéraire. */
+/** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
+ *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
+ *  détail, le parcours de visite et l'itinéraire. */
 function voletApparence(hote){
   const p = document.createElement("p");
   p.textContent = "La couleur principale sert partout : sélection, liens, " +
     "boutons, pastilles, et les modèles s'en habillent. Le modèle décide de " +
     "l'allure de tout l'écran à la fois : le bandeau du haut, la liste des " +
     "exposants, la fiche qui s'ouvre sur un stand, le parcours de visite et " +
-    "l'itinéraire.";
+    "l'itinéraire. Il pose aussi sa police sur les noms des stands et des " +
+    "zones : une autre peut lui être préférée, jusqu'au prochain changement " +
+    "de modèle. Les numéros de stand gardent la sienne.";
   hote.appendChild(p);
 
   const coul = document.createElement("div");
@@ -1630,10 +1989,13 @@ function voletApparence(hote){
     const libre = nuancier.querySelector(".perso input");
     if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
   };
-  const choisit = (v) => {
+  /* Peindre : trois mélanges et six variables posées sur la racine, la page
+     s'y refait d'elle-même. C'est ce qui peut suivre la rafale du sélecteur. */
+  const peint = (v) => {
     conf("_accent").couleur = v;
-    enregistreConf(); appliqueAccent(); majPastilles();
+    appliqueAccent(); majPastilles();
   };
+  const choisit = (v) => { peint(v); enregistreConf(); };
   TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -1644,15 +2006,15 @@ function voletApparence(hote){
     b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
-     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
-     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
-     en base pour autant, la publication reste un geste à part. */
+  /* La pastille de couleur libre. On suit la rafale du sélecteur : c'est le
+     seul moyen de voir la couleur s'installer sur le plan pendant qu'on la
+     cherche. Seule l'écriture attend la fin du geste — voir « La rafale du
+     sélecteur de couleur ». */
   const libre = document.createElement("label");
   libre.className = "perso";
   libre.title = "Couleur libre";
   libre.innerHTML = '<input type="color"><span></span>';
-  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
     delete conf("_accent").couleur;
@@ -1660,6 +2022,81 @@ function voletApparence(hote){
   };
   hote.appendChild(coul);
   majPastilles();
+
+  /* La police des noms, avant les modèles et non après : leur planche est
+     longue, et un réglage rangé dessous ne se trouvait qu'en la faisant
+     défiler en entier. L'ordre des gestes n'en change pas — le modèle choisi
+     repose sa police, et la tête de ce bloc dit laquelle est en place. */
+  const blocPolice = document.createElement("div");
+  blocPolice.className = "reglage-police";
+  blocPolice.innerHTML = '<div class="tete"><span class="eyebrow">Police des noms</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Police du modèle</button></div>' +
+    '<div class="genresPol"></div><div class="polices"></div>';
+  const valPolice = blocPolice.querySelector(".val");
+  const genres = GENRES_POLICE.map(g => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span></span><span class="n"></span>';
+    b.firstChild.textContent = g.nom;
+    b.lastChild.textContent = POLICES_NOMS.filter(q => q.genre === g.cle).length;
+    b.onclick = () => montreGenre(g.cle);
+    blocPolice.querySelector(".genresPol").appendChild(b);
+    return { b, g };
+  });
+  const tuiles = POLICES_NOMS.map(q => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "pol";
+    b.innerHTML = '<span class="t"></span><span class="g">du modèle</span>';
+    /* Chaque nom s'écrit dans sa police, à la graisse où le plan la posera :
+       c'est une enseigne qu'on choisit, et un intitulé dans la police de
+       l'interface ne dirait rien de la chasse d'une étroite ni du contraste
+       d'un serif. */
+    const t = b.querySelector(".t");
+    t.textContent = q.nom;
+    t.style.fontFamily = q.pile;
+    t.style.fontWeight = q.graisse;
+    b.onclick = () => posePolice(q);
+    blocPolice.querySelector(".polices").appendChild(b);
+    return { b, q };
+  });
+  /* Un genre à la fois : soixante vignettes d'un seul bloc repoussaient les
+     modèles hors de vue. Celles des autres genres restent bâties mais cachées
+     — cachées, elles ne font rien télécharger —, et la feuille d'une police
+     n'est demandée qu'au premier passage sur son genre. */
+  const montreGenre = (cle) => {
+    genres.forEach(({ b, g }) => b.setAttribute("aria-pressed", String(g.cle === cle)));
+    tuiles.forEach(({ b, q }) => {
+      b.hidden = q.genre !== cle;
+      if (!b.hidden) feuillePolice(q);
+    });
+  };
+  const majPolices = () => {
+    const modele = policeDuModele(modeleRetenu());
+    const choisie = policeChoisie();
+    const courante = choisie && choisie !== modele ? choisie : modele;
+    tuiles.forEach(({ b, q }) => {
+      b.setAttribute("aria-pressed", String(q === courante));
+      b.querySelector(".g").hidden = q !== modele;
+    });
+    valPolice.textContent = !courante ? "" :
+      courante === modele ? courante.nom + " · modèle " +
+        (MODELES.find(m => m.cle === modeleRetenu()) || {}).nom : courante.nom;
+    // le genre montré suit la police en place : le modèle qui repose une serif
+    // ouvre les serifs, sans quoi la vignette cochée resterait hors de vue
+    montreGenre(courante ? courante.genre : GENRES_POLICE[0].cle);
+  };
+  const posePolice = (q) => {
+    const f = conf("_fiche");
+    // retenir celle du modèle, c'est revenir au modèle : le suivant reposera la sienne
+    if (!q || q === policeDuModele(modeleRetenu())) delete f.police;
+    else f.police = q.nom;
+    enregistreConf(); posePoliceLibelles(modeleRetenu()); majPolices();
+  };
+  blocPolice.querySelector(".raz").onclick = () => posePolice(null);
+  hote.appendChild(blocPolice);
+  majPolices();
 
   const titre = document.createElement("span");
   titre.className = "eyebrow";
@@ -1687,9 +2124,13 @@ function voletApparence(hote){
     b.querySelector(".vue").appendChild(apercuDuo(m.cle, vu));
     b.onclick = () => {
       conf("_fiche").modele = m.cle;
+      /* Choisir un modèle, c'est choisir sa police : celle qu'on avait
+         préférée à la précédente ne s'accordait qu'à elle. */
+      delete conf("_fiche").police;
       enregistreConf(); appliqueModele();
       grille.querySelectorAll(".mod").forEach(x =>
         x.setAttribute("aria-pressed", String(x === b)));
+      majPolices();
     };
     grille.appendChild(b);
   });
@@ -1697,92 +2138,139 @@ function voletApparence(hote){
 }
 
 /* ------------------------------------------------------------------
-   L'ordre de lecture de la fiche, et les groupes de champs
+   Ce que la fiche montre, dans quel ordre, et sous quels titres
 
-   Ce que la fiche montre se règle depuis la console, champ par champ, avec les
-   champs d'origine qui l'alimentent. Dans quel ordre elle le montre se règle
-   ici : l'ordre du code valait pour tous les salons, alors que c'est justement
-   là qu'ils diffèrent — ici le secteur est ce qu'on vient lire, là l'adresse,
-   là encore le champ que le salon s'est ajouté passe devant tout le reste.
+   Trois listes, et le geste qui va de l'une à l'autre : les champs dont le
+   salon dispose attendent à gauche, ceux que la fiche montre se rangent au
+   milieu, et la fiche telle qu'elle en sortira se lit à droite. Afficher un
+   champ, le masquer, le remonter, le réunir à d'autres : c'est le même geste,
+   et il se juge sur l'aperçu plutôt que sur une liste d'intitulés.
 
    Le réglage a quitté la console pour le plan parce que c'est ici qu'il se
    juge : l'aperçu porte l'habillage retenu — celui de l'onglet d'à côté — et
    les valeurs d'un vrai stand, là où la console ne pouvait montrer qu'une
-   fiche nue.
+   fiche nue. Elle garde ce qu'elle seule sait dire : d'où vient chaque champ,
+   et ce qui l'alimente.
 
-   Un groupe réunit des champs sous un titre écrit à la main : les intitulés
-   des membres s'effacent, et leurs valeurs se lisent l'une sous l'autre.
-   Trois lignes — l'adresse, la ville, le pays — en font une, « Adresse ».
+   Une section réunit des champs sous un titre écrit à la main. Trois lignes —
+   l'adresse, la ville, le pays — en font une, « Adresse ». Ce que la base en
+   retient s'appelle un groupe, et c'est la même chose : le mot n'a changé que
+   sur l'écran, où « section » dit mieux ce qu'on y fabrique.
    ------------------------------------------------------------------ */
 
-/** Les clés du corps de ce salon, dans l'ordre réglé. */
+/** Les clés du corps de ce salon, dans l'ordre réglé — affichées ou non. */
 const clesFiche = () => ordreCorps((((DATA || {}).fiche || {}).perso || [])
   .map(c => PREFIXE_PERSO + c.cle));
 
 /**
- * Le volet du rangement de la fiche.
+ * Le volet de la fiche d'un stand.
  *
  * Deux façons de déplacer un champ, et il en faut deux : la poignée, qu'on
- * attrape pour traverser la liste d'un geste, et les flèches, qui restent le
+ * attrape pour traverser les listes d'un geste, et les flèches, qui restent le
  * seul chemin au clavier — et le seul au doigt, le glisser-déposer du
- * navigateur ignorant le tactile.
+ * navigateur ignorant le tactile. Les flèches parcourent donc tout ce que le
+ * glissé atteint, sections comprises.
  *
- * La liste se redessine sur place plutôt que de rouvrir la fenêtre : remonter
- * un champ de six rangs demande six clics, et rouvrir à chacun d'eux
+ * Les listes se redessinent sur place plutôt que de rouvrir la fenêtre :
+ * remonter un champ de six rangs demande six clics, et rouvrir à chacun d'eux
  * ramènerait l'onglet en tête et la fenêtre en haut. Le bouton qu'on vient
  * d'actionner reprend le focus, pour que le clic suivant tombe au même endroit.
  */
 function voletOrdre(hote){
   const p = document.createElement("p");
-  p.textContent = "L'ordre dans lequel la fiche déroule ses champs, de haut en " +
-    "bas : ce que le visiteur vient lire en premier n'est pas le même d'un " +
-    "salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des " +
-    "flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le " +
-    "volet des conférences n'en font pas partie : ils ne se déplacent pas.";
+  p.textContent = "Ce que la fiche d'un stand montre, et dans quel ordre. Les " +
+    "champs dont ce salon dispose attendent à gauche : glissez-en un dans la " +
+    "fiche pour l'afficher, ressortez-le pour le masquer. Une section réunit " +
+    "plusieurs champs sous un même titre, et la case de chaque champ décide si " +
+    "son intitulé paraît devant sa valeur. L'en-tête — l'enseigne, le " +
+    "pavillon, le numéro de stand — et le volet des conférences n'en font pas " +
+    "partie : ils ne se déplacent pas.";
   hote.appendChild(p);
 
-  let ordre = clesFiche();
-  /* Les groupes sont recopiés : le volet les remanie au fil des gestes, et ce
-     qui est en base ne change qu'une fois l'écriture passée. */
-  let groupes = groupesFiche().map(g =>
-    ({ titre: String(g.titre || ""), cles: g.cles.slice() }));
-  const coches = new Set();
+  /* Tous les champs du salon, une fois pour toutes : c'est l'ensemble que les
+     deux listes se partagent, et il ne change pas tant que la fenêtre est
+     ouverte — un champ ne se crée que depuis la console. */
+  const toutes = clesFiche();
+
+  /**
+   * Ce que la fiche montre, en blocs : un champ seul, ou une section et ses
+   * membres. Le tableau est la copie de travail du volet — ce qui est en base
+   * ne change qu'une fois l'écriture passée.
+   */
+  let blocs = [];
+  /** Les champs que la fiche ne montre pas, rangés par intitulé. */
+  let caches = [];
+  /* Ce que l'exploitant a dit des intitulés, champ par champ. Une entrée
+     absente vaut l'usage : annoncé quand le champ est seul, tu quand il est
+     réuni sous un titre. */
+  const intitules = { ...((DATA.fiche || {}).intitules || {}) };
+  /* Une section vide n'a aucune clé à quoi se reconnaître : il lui en faut une
+     pour que le focus la retrouve après un déplacement. */
+  let nSection = 0;
 
   const deux = document.createElement("div");
-  deux.className = "ordreDeux";
+  deux.className = "ficheTrois";
   hote.appendChild(deux);
 
-  const colonne = document.createElement("div");
+  /** Une colonne du volet : son intitulé, sa liste, et ce qu'on y lit dessous. */
+  const colonne = (titre) => {
+    const c = document.createElement("div");
+    c.className = "ficheCol";
+    const e = document.createElement("span");
+    e.className = "eyebrow";
+    e.textContent = titre;
+    c.appendChild(e);
+    deux.appendChild(c);
+    return c;
+  };
+
+  const colDispo = colonne("Champs disponibles");
+  const dispo = document.createElement("div");
+  dispo.className = "ficheDispo";
+  colDispo.appendChild(dispo);
+  const videDispo = document.createElement("p");
+  videDispo.className = "videO";
+  videDispo.textContent = "Tous les champs du salon sont sur la fiche.";
+  colDispo.appendChild(videDispo);
+
+  const colFiche = colonne("Ce que la fiche montre");
   const liste = document.createElement("div");
   liste.className = "ordreListe";
-  colonne.appendChild(liste);
-  deux.appendChild(colonne);
-
-  /* L'aperçu se colle en haut : la liste est plus longue que lui, et le laisser
-     défiler reviendrait à ranger des champs sans plus rien voir de ce qu'on
-     range. */
-  const cadre = document.createElement("div");
-  cadre.className = "ordreApercu";
-  cadre.innerHTML = '<span class="eyebrow">Aperçu</span>' +
-    '<div class="vueO"></div><p class="aideO"></p>';
-  cadre.querySelector(".aideO").textContent = "La fiche telle que le visiteur " +
-    "la recevra : l'habillage retenu pour ce salon, et les valeurs du stand qui " +
-    "remplit le mieux les champs affichés. Sur téléphone, les champs qui " +
-    "tiennent en un mot se rangent deux par deux.";
-  const vue = cadre.querySelector(".vueO");
-  deux.appendChild(cadre);
+  colFiche.appendChild(liste);
+  const videListe = document.createElement("p");
+  videListe.className = "videO";
+  videListe.textContent = "Aucun champ : la fiche s'arrêtera à son en-tête.";
+  colFiche.appendChild(videListe);
 
   const pied = document.createElement("div");
   pied.className = "piedO";
-  const bGroupe = document.createElement("button");
-  bGroupe.type = "button";
-  bGroupe.className = "btn";
-  bGroupe.textContent = "Regrouper";
+  const bSection = document.createElement("button");
+  bSection.type = "button";
+  bSection.className = "btn";
+  bSection.textContent = "Nouvelle section";
+  bSection.title = "Réunir des champs sous un titre écrit à la main.";
   const etat = document.createElement("span");
   etat.className = "etatO";
-  pied.appendChild(bGroupe);
+  pied.appendChild(bSection);
   pied.appendChild(etat);
-  colonne.appendChild(pied);
+  colFiche.appendChild(pied);
+
+  /* L'aperçu se colle en haut : les listes sont plus longues que lui, et le
+     laisser défiler reviendrait à ranger des champs sans plus rien voir de ce
+     qu'on range. Il défile pour son compte — une fiche fournie passe sous le
+     bord de la fenêtre, et c'est justement le bas qu'on vient vérifier. */
+  const cadre = colonne("Aperçu");
+  cadre.classList.add("ordreApercu");
+  const vue = document.createElement("div");
+  vue.className = "vueO";
+  cadre.appendChild(vue);
+  const aide = document.createElement("p");
+  aide.className = "aideO";
+  aide.textContent = "La fiche telle que le visiteur la recevra : l'habillage " +
+    "retenu pour ce salon, et les valeurs du stand qui remplit le mieux les " +
+    "champs affichés. Sur téléphone, les champs qui tiennent en un mot se " +
+    "rangent deux par deux.";
+  cadre.appendChild(aide);
 
   const dit = (txt, mal) => { etat.textContent = txt; etat.dataset.mal = String(!!mal); };
 
@@ -1791,8 +2279,35 @@ function voletOrdre(hote){
      première. */
   let file = Promise.resolve();
 
+  /** Les champs que la fiche montre, dans l'ordre, sections aplaties. */
+  const aplati = (b) => {
+    const s = [];
+    b.forEach(x => x.membres ? x.membres.forEach(c => s.push(c)) : s.push(x.cle));
+    return s;
+  };
+
   /**
-   * Le rangement part en base, et paraît tout de suite.
+   * Pose le réglage du moment dans « DATA.fiche ».
+   *
+   * L'aperçu, les vignettes des modèles et la fiche ouverte derrière la fenêtre
+   * y lisent tous le réglage, par le même chemin que la vraie fiche : c'est en
+   * l'y posant qu'un geste se voit, sans attendre que la base ait répondu.
+   */
+  const pose = (d) => {
+    DATA.fiche = DATA.fiche || {};
+    const vus = aplati(d.blocs);
+    DATA.fiche.ordre = vus;
+    /* Une section vide ne réunit rien et n'a pas de place dans l'ordre — rien
+       n'y renvoie. Elle vit dans le volet le temps qu'on la remplisse. */
+    DATA.fiche.groupes = d.blocs.filter(b => b.membres && b.membres.length)
+      .map(b => ({ titre: String(b.titre || ""), cles: b.membres.slice() }));
+    DATA.fiche.stand = { ...(DATA.fiche.stand || {}) };
+    toutes.forEach(c => { DATA.fiche.stand[c] = vus.indexOf(c) >= 0; });
+    DATA.fiche.intitules = { ...intitules };
+  };
+
+  /**
+   * Le réglage part en base, et paraît tout de suite.
    *
    * Le poste prend les devants : l'aperçu, les vignettes des modèles et la
    * fiche ouverte derrière la fenêtre lisent tous « DATA.fiche », et attendre
@@ -1800,8 +2315,8 @@ function voletOrdre(hote){
    * dernier mot.
    */
   const enregistre = () => {
-    pose({ ordre, groupes });
-    /* La fiche ouverte derrière la fenêtre montre encore l'ancien rangement. On
+    pose(dessin());
+    /* La fiche ouverte derrière la fenêtre montre encore l'ancien réglage. On
        la redessine, sauf celle d'un stand partagé : la rouvrir sans dire quelle
        enseigne on lisait ramènerait le choix des exposants par-dessus. */
     const o = state.sel && parId.get(state.sel);
@@ -1810,123 +2325,141 @@ function voletOrdre(hote){
     file = file.then(() => ecritColonneEvenement("fiche", DATA.fiche, t => {
       t.ordre = (DATA.fiche.ordre || []).slice();
       const g = DATA.fiche.groupes || [];
-      // un salon qui n'a plus de groupe n'en garde pas la trace en creux
+      // un salon qui n'a plus de section n'en garde pas la trace en creux
       if (g.length) t.groupes = g; else delete t.groupes;
+      /* La visibilité se repose champ par champ : la même colonne porte ce qui
+         ne se range pas ici — l'en-tête, les conférences, les fiches de zone —
+         et l'écraser d'un bloc effacerait ce que la console y règle. */
+      t.stand = { ...(t.stand || {}) };
+      toutes.forEach(c => { t.stand[c] = DATA.fiche.stand[c]; });
+      const i = DATA.fiche.intitules || {};
+      if (Object.keys(i).length) t.intitules = i; else delete t.intitules;
     })).then(t => { DATA.fiche = t; dit("Enregistré."); })
       .catch(e => dit("Échec : " + e.message, true));
   };
 
-  const groupeDe = (cle) => groupes.find(g => g.cles.indexOf(cle) >= 0) || null;
+  /* Les champs en réserve se rangent par intitulé : leur ordre ne décide de
+     rien, et on vient y chercher un nom. */
+  const parLibelle = (a, b) => COLLATION.compare(libelleCorps(a), libelleCorps(b));
 
-  /**
-   * Remet l'ordre en blocs : les membres d'un groupe se suivent, à la place du
-   * premier d'entre eux. Sans quoi un champ qu'on vient de sortir d'un groupe
-   * resterait au milieu de ceux qui y restent, et la liste dessinée ne dirait
-   * plus ce que la fiche fera.
-   */
-  const range = () => {
-    const sortie = [], vus = [];
-    ordre.forEach(cle => {
-      const g = groupeDe(cle);
-      if (!g){ sortie.push(cle); return; }
-      if (vus.indexOf(g) >= 0) return;
-      vus.push(g);
-      ordre.filter(c => g.cles.indexOf(c) >= 0).forEach(c => sortie.push(c));
+  /** Les deux listes telles que le réglage enregistré les dicte. */
+  const litReglage = () => {
+    const vus = toutes.filter(c => montre("stand", c));
+    const grp = groupesFiche();
+    const faits = [];
+    blocs = [];
+    vus.forEach(c => {
+      const i = grp.findIndex(g => g.cles.indexOf(c) >= 0);
+      if (i < 0){ blocs.push({ cle: c }); return; }
+      if (faits.indexOf(i) >= 0) return;
+      faits.push(i);
+      blocs.push({ id: "s" + (++nSection), titre: String(grp[i].titre || ""),
+                   membres: vus.filter(x => grp[i].cles.indexOf(x) >= 0) });
     });
-    ordre = sortie;
+    caches = toutes.filter(c => !montre("stand", c)).sort(parLibelle);
   };
 
   /**
-   * L'ordre et les groupes tels que la liste les dessine à l'instant.
+   * Les deux listes telles que le dessin les montre à l'instant.
    *
-   * Pendant un glissé, c'est le dessin qui fait foi : le tableau n'est plus
-   * qu'un souvenir de ce qu'il était avant le geste, et l'aperçu doit suivre
-   * ce qui se passe sous le curseur. Un groupe qu'un retrait laisse à un seul
-   * membre n'en est plus un — le titre qu'on avait écrit ne réunit plus rien —
-   * et se défait de lui-même.
+   * Pendant un glissé, c'est le dessin qui fait foi : les tableaux ne sont plus
+   * qu'un souvenir de ce qu'ils étaient avant le geste, et l'aperçu doit suivre
+   * ce qui se passe sous le curseur.
    */
-  const dessin = () => {
-    const suite = [], grp = [];
-    [...liste.children].forEach(el => {
-      if (!el.classList.contains("ordreGrp")){ suite.push(el.dataset.cle); return; }
-      const cles = [...el.querySelector(".grpMembres").children].map(x => x.dataset.cle);
-      cles.forEach(c => suite.push(c));
-      if (cles.length > 1) grp.push({ titre: el.querySelector(".grpTitre").value, cles });
-    });
-    return { ordre: suite, groupes: grp };
-  };
+  const dessin = () => ({
+    blocs: [...liste.children].map(el => el.dataset.cle
+      ? { cle: el.dataset.cle }
+      : { id: el.dataset.ref, titre: el.querySelector(".grpTitre").value,
+          membres: [...el.querySelector(".grpMembres").children].map(x => x.dataset.cle) }),
+    caches: [...dispo.children].map(el => el.dataset.cle),
+  });
 
-  /* Relire le dessin refait les groupes : les boutons déjà posés tiennent les
-     anciens, et la liste se redessine donc dans la foulée. */
+  /* Relire le dessin refait les blocs : les boutons déjà posés tiennent les
+     anciens, et les listes se redessinent donc dans la foulée. */
   const litDessin = () => {
     const d = dessin();
-    ordre = d.ordre;
-    groupes = d.groupes;
-  };
-
-  /**
-   * Pose le rangement du moment dans « DATA.fiche ».
-   *
-   * L'aperçu, les vignettes des modèles et la fiche ouverte derrière la fenêtre
-   * y lisent tous le rangement, par le même chemin que la vraie fiche : c'est
-   * en l'y posant qu'un geste se voit, sans attendre que la base ait répondu.
-   */
-  const pose = (d) => {
-    DATA.fiche = DATA.fiche || {};
-    DATA.fiche.ordre = d.ordre.slice();
-    DATA.fiche.groupes = d.groupes.filter(g => g.cles.length > 1)
-      .map(g => ({ titre: String(g.titre || ""), cles: g.cles.slice() }));
-  };
-
-  /* Les flèches d'un bout de liste s'éteignent : sans elles, la première ligne
-     garderait un « monter » actif au milieu de la liste. Le rang, lui, ne
-     numérote que le premier rang — un groupe compte pour un champ, et ses
-     membres n'ont pas de place à eux dans la fiche. */
-  const majBouts = () => {
-    const bouts = (el) => el.classList.contains("ordreGrp")
-      ? el.querySelector(".grpTete").querySelectorAll("button.outil")
-      : el.querySelectorAll("button.outil");
-    const passe = (enfants) => enfants.forEach((el, i) => {
-      const b = bouts(el);
-      b[0].disabled = i === 0;
-      b[1].disabled = i === enfants.length - 1;
-    });
-    const premiers = [...liste.children];
-    passe(premiers);
-    premiers.forEach((el, i) => {
-      const r = el.querySelector(".rang");
-      if (r) r.textContent = String(i + 1);
-      if (el.classList.contains("ordreGrp")) passe([...el.querySelector(".grpMembres").children]);
-    });
-    majApercu();
+    blocs = d.blocs;
+    caches = d.caches.sort(parLibelle);
   };
 
   /* L'aperçu suit le glissé plutôt que d'attendre le lâcher : c'est lui qu'on
-     regarde en déplaçant, pas la liste. D'où le dessin plutôt que le tableau —
-     pendant le geste, le second est en retard d'un rang. */
+     regarde en déplaçant, pas la liste. D'où le dessin plutôt que les tableaux
+     — pendant le geste, les seconds sont en retard d'un rang. */
   const majApercu = () => {
     pose(dessin());
     vue.textContent = "";
     vue.appendChild(apercuFiche(modeleRetenu(), contenuApercu()));
   };
 
-  /** Déplace un bloc d'un rang parmi ses voisins, puis relit la liste. */
-  const deplace = (el, pas, sens) => {
-    const voisin = pas < 0 ? el.previousElementSibling
-      : (el.nextElementSibling && el.nextElementSibling.nextElementSibling);
-    if (pas < 0 && !voisin) return;
-    if (pas > 0 && el === el.parentElement.lastElementChild) return;
-    el.parentElement.insertBefore(el, voisin);
-    litDessin();
-    rendu({ cle: el.dataset.cle || el.dataset.ref, sens });
+  /* Les flèches d'un bout de liste s'éteignent : sans elles, la première ligne
+     garderait un « monter » actif en tête de fiche. Celles d'un membre ne
+     s'éteignent jamais — il lui reste toujours à sortir de sa section. */
+  const majBouts = () => {
+    const bouts = (el) => (el.querySelector(".grpTete") || el)
+      .querySelectorAll("button.fleche");
+    [...liste.children].forEach((el, i, tous) => {
+      const b = bouts(el);
+      if (b.length < 2) return;
+      b[0].disabled = i === 0;
+      b[1].disabled = i === tous.length - 1;
+    });
+    videListe.hidden = liste.children.length > 0;
+    videDispo.hidden = dispo.children.length > 0;
+    majApercu();
+  };
+
+  /**
+   * Monter d'un rang, dans la liste telle que l'œil la lit.
+   *
+   * Le rang au-dessus peut être une section : la ligne y entre plutôt que de
+   * l'enjamber, faute de quoi le clavier et le doigt — qui n'ont pas de glissé
+   * — ne pourraient jamais remplir une section. Le premier membre d'une
+   * section, lui, en sort par le haut. Une section entière, elle, enjambe :
+   * elle ne se range pas dans une autre.
+   */
+  const monte = (i, j) => {
+    if (j === null){
+      if (i === 0) return;
+      const bloc = blocs.splice(i, 1)[0];
+      const avant = blocs[i - 1];
+      if (avant.membres && !bloc.membres){ avant.membres.push(bloc.cle); return; }
+      blocs.splice(i - 1, 0, bloc);
+      return;
+    }
+    const s = blocs[i];
+    const cle = s.membres.splice(j, 1)[0];
+    if (j > 0){ s.membres.splice(j - 1, 0, cle); return; }
+    blocs.splice(i, 0, { cle });
+  };
+
+  /** Descendre d'un rang, par le même chemin en sens inverse. */
+  const descend = (i, j) => {
+    if (j === null){
+      if (i === blocs.length - 1) return;
+      const bloc = blocs.splice(i, 1)[0];
+      const apres = blocs[i];
+      if (apres.membres && !bloc.membres){ apres.membres.unshift(bloc.cle); return; }
+      blocs.splice(i + 1, 0, bloc);
+      return;
+    }
+    const s = blocs[i];
+    const cle = s.membres.splice(j, 1)[0];
+    if (j < s.membres.length){ s.membres.splice(j + 1, 0, cle); return; }
+    blocs.splice(i + 1, 0, { cle });
+  };
+
+  /** Déplace un bloc d'un rang, puis redessine là où le focus était. */
+  const deplace = (i, j, pas, sens, repere) => {
+    if (pas < 0) monte(i, j); else descend(i, j);
+    rendu({ cle: repere, sens });
     enregistre();
   };
 
-  /* Le conteneur d'où part le glissé : on ne dépose que parmi ses voisins.
-     Sortir un champ de son groupe en le tirant demanderait de deviner, au
-     pixel, si le lâcher voulait dire « en dessous du dernier membre » ou
-     « après le groupe » — la croix du membre le dit sans ambiguïté. */
-  let conteneurTire = null;
+  /* Le bloc qu'on déplace. Une section ne se dépose qu'au premier rang : elle
+     ne se range ni dans une autre section ni en réserve — on la défait par sa
+     croix, ce qui rend ses membres à la liste plutôt que de les emporter. */
+  let tire = null;
+  let tireSection = false;
 
   /**
    * La ligne devant laquelle déposer, d'après la hauteur du pointeur.
@@ -1935,26 +2468,29 @@ function voletOrdre(hote){
    * basculer l'insertion dès qu'on l'effleure, et la liste tremblerait sous le
    * curseur au lieu de suivre. « null » veut dire la fin de la liste.
    */
-  const accepteGlisse = (hote) => hote.addEventListener("dragover", ev => {
-    const tire = hote.querySelector(":scope > .tire");
-    if (!tire || conteneurTire !== hote) return;
+  const accepteGlisse = (hote, sections) => hote.addEventListener("dragover", ev => {
+    if (!tire || (tireSection && !sections)) return;
     // sans quoi le navigateur refuse le dépôt et rejoue l'animation de retour
     ev.preventDefault();
+    /* Les membres d'une section sont dans la liste : sans cet arrêt, le dépôt
+       qu'ils viennent d'accepter serait refait par la liste au rang du dessus. */
+    ev.stopPropagation();
     const apres = [...hote.children].find(d => {
       if (d === tire) return false;
       const r = d.getBoundingClientRect();
       return ev.clientY < r.top + r.height / 2;
     }) || null;
-    if (apres === tire.nextSibling || apres === tire) return;
+    if (tire.parentElement === hote && (apres === tire.nextSibling || apres === tire)) return;
     hote.insertBefore(tire, apres);
     majBouts();
   });
-  accepteGlisse(liste);
+  accepteGlisse(liste, true);
+  accepteGlisse(dispo, false);
 
   /**
    * Rend un bloc déplaçable au glisser.
    *
-   * Un groupe ne se prend que par sa poignée : son titre se saisit sur place,
+   * Une section ne se prend que par sa poignée : son titre se saisit sur place,
    * et dans un bloc déplaçable le navigateur remplace la sélection du texte par
    * un glissé — on ne pourrait plus double-cliquer sur un mot pour le corriger.
    * Une ligne de champ, elle, n'a rien à sélectionner et se prend n'importe où.
@@ -1971,7 +2507,8 @@ function voletOrdre(hote){
       ev.dataTransfer.setData("text/plain", libelle);
       ev.dataTransfer.effectAllowed = "move";
       ev.stopPropagation();
-      conteneurTire = el.parentElement;
+      tire = el;
+      tireSection = !el.dataset.cle;
       // la classe se pose au tour suivant : posée tout de suite, elle entrerait
       // dans l'image que le navigateur vient de prendre du bloc
       setTimeout(() => el.classList.add("tire"), 0);
@@ -1980,30 +2517,22 @@ function voletOrdre(hote){
       ev.stopPropagation();
       el.classList.remove("tire");
       el.draggable = !poignee;
-      conteneurTire = null;
-      const avant = ordre.join("|");
+      tire = null;
+      /* Les tableaux sont encore ceux d'avant le geste — le glissé n'a déplacé
+         que le dessin — et disent donc d'où l'on part. */
+      const avant = JSON.stringify({ blocs, caches });
       litDessin();
       // un glissé qui n'a rien déplacé n'a rien à enregistrer
-      if (ordre.join("|") === avant) return;
+      if (JSON.stringify({ blocs, caches }) === avant) return;
+      /* Les listes se refont : une ligne qui a changé de colonne n'a pas les
+         mêmes commandes — on n'affiche pas l'intitulé d'un champ en réserve, on
+         ne le remonte pas non plus. */
       rendu();
       enregistre();
     };
   };
 
-  const fleches = (hote, el, libelle) => {
-    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "outil";
-      b.textContent = pas < 0 ? "▲" : "▼";
-      b.title = titre;
-      b.setAttribute("aria-label", titre + " " + libelle);
-      b.onclick = () => deplace(el, pas, sens);
-      hote.appendChild(b);
-    });
-  };
-
-  /** Un bouton d'outil : la croix qui défait un groupe ou en sort un champ. */
+  /** Un bouton d'outil : une flèche, une croix, le plus qui affiche. */
   const outil = (hote, texte, titre, action, genre) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -2016,83 +2545,105 @@ function voletOrdre(hote){
     return b;
   };
 
-  /** La ligne d'un champ : seule au premier rang, ou membre d'un groupe. */
-  const ligne = (cle, groupe) => {
-    const libelle = libelleCorps(cle);
+  const fleches = (hote, libelle, repere, i, j) => {
+    [["Monter", -1, 0], ["Descendre", 1, 1]].forEach(([titre, pas, sens]) => {
+      const b = outil(hote, pas < 0 ? "▲" : "▼", titre + " " + libelle,
+        () => deplace(i, j, pas, sens, repere), "fleche");
+      b.title = titre;
+    });
+  };
+
+  /** Ce qui distingue deux champs de même intitulé : d'où le champ vient. */
+  const etiquette = (d, cle) => {
+    const e = document.createElement("span");
+    e.className = "etiq";
+    if (cle.indexOf(PREFIXE_PERSO) === 0) e.textContent = "propre au salon";
+    d.appendChild(e);
+  };
+
+  /** Le tronc commun d'une ligne de champ : la poignée, puis l'intitulé. */
+  const tronc = (cle) => {
     const d = document.createElement("div");
-    d.className = "ordreLigne" + (groupe ? " membre" : "");
+    d.className = "ordreLigne";
     d.dataset.cle = cle;
-    if (!groupe){
-      const r = document.createElement("span");
-      r.className = "rang";
-      d.appendChild(r);
-    }
     const poi = document.createElement("span");
     poi.className = "prise";
     poi.setAttribute("aria-hidden", "true");
     poi.textContent = "⠿";
     d.appendChild(poi);
+    return d;
+  };
 
-    /* La case sert à réunir, et rien d'autre : un champ ne s'affiche ou ne se
-       masque que depuis la console, où se règle aussi d'où il vient. */
-    const c = document.createElement("input");
-    c.type = "checkbox";
-    c.className = "cocheO";
-    c.checked = coches.has(cle);
-    c.setAttribute("aria-label", "Réunir " + libelle);
-    c.onchange = () => {
-      if (c.checked) coches.add(cle); else coches.delete(cle);
-      majGroupe();
-    };
-    d.appendChild(c);
-
+  const nomme = (d, cle) => {
     const l = document.createElement("span");
     l.className = "lib";
-    l.textContent = libelle;
+    l.textContent = libelleCorps(cle);
     d.appendChild(l);
+    etiquette(d, cle);
+  };
 
-    /* Deux champs peuvent porter le même intitulé — un salon qui s'ajoute sa
-       « Ville » à côté de celle de la fiche société — et rien d'autre ici ne
-       les distinguerait. */
-    const e = document.createElement("span");
-    e.className = "etiq";
-    if (cle.indexOf(PREFIXE_PERSO) === 0) e.textContent = "propre au salon";
-    d.appendChild(e);
-
-    /* Un champ masqué garde sa place : le remonter aujourd'hui pour l'afficher
-       demain doit rester possible, et le retirer d'ici ferait sauter un rang
-       sans qu'on sache lequel ni pourquoi. */
-    if (!montre("stand", cle)){
-      d.classList.add("eteint");
-      d.title = "Masqué : ce champ ne paraît pas sur la fiche.";
-    }
-
-    fleches(d, d, libelle);
-    if (groupe){
-      outil(d, "×", "Sortir « " + libelle + " » du groupe", () => {
-        groupe.cles = groupe.cles.filter(x => x !== cle);
-        if (groupe.cles.length < 2) groupes = groupes.filter(g => g !== groupe);
-        range();
-        rendu();
-        enregistre();
-      }, "danger");
-    }
+  /** La ligne d'un champ en réserve : rien à régler tant qu'il ne paraît pas. */
+  const ligneDispo = (cle) => {
+    const libelle = libelleCorps(cle);
+    const d = tronc(cle);
+    d.classList.add("dispo");
+    nomme(d, cle);
+    /* Le glissé ne suffit pas : au doigt comme au clavier, il n'existe pas. Le
+       champ rejoint alors la fin de la fiche, d'où les flèches le remontent. */
+    outil(d, "+", "Afficher « " + libelle + " » sur la fiche", () => {
+      caches = caches.filter(c => c !== cle);
+      blocs.push({ cle });
+      rendu({ cle, sens: 0 });
+      enregistre();
+    });
     prise(d, libelle);
     return d;
   };
 
-  /** Le bloc d'un groupe : son titre, ses membres, et de quoi le défaire. */
-  const blocGroupe = (g) => {
+  /**
+   * La ligne d'un champ de la fiche : seule au premier rang, ou membre d'une
+   * section.
+   *
+   * La case décide de son intitulé, et rien d'autre. Elle part de l'usage —
+   * annoncé quand le champ est seul, tu quand il est réuni — et ce que
+   * l'exploitant en fait se retient : un champ qu'on sort d'une section garde
+   * l'intitulé qu'on lui avait choisi.
+   */
+  const ligneFiche = (cle, i, j) => {
+    const libelle = libelleCorps(cle);
+    const d = tronc(cle);
+    if (j !== null) d.classList.add("membre");
+
+    const c = document.createElement("input");
+    c.type = "checkbox";
+    c.className = "cocheO";
+    c.checked = montreIntitule(cle, j !== null);
+    c.setAttribute("aria-label", "Afficher l'intitulé de " + libelle);
+    c.title = "Afficher l'intitulé devant la valeur.";
+    c.onchange = () => { intitules[cle] = c.checked; majApercu(); enregistre(); };
+    d.appendChild(c);
+
+    nomme(d, cle);
+    fleches(d, libelle, cle, i, j);
+    outil(d, "×", "Retirer « " + libelle + " » de la fiche", () => {
+      if (j === null) blocs.splice(i, 1); else blocs[i].membres.splice(j, 1);
+      caches = caches.concat([cle]).sort(parLibelle);
+      rendu();
+      enregistre();
+    }, "danger");
+    prise(d, libelle);
+    return d;
+  };
+
+  /** Le bloc d'une section : son titre, ses membres, et de quoi la défaire. */
+  const blocSection = (s, i) => {
     const d = document.createElement("div");
     d.className = "ordreGrp";
-    d.dataset.ref = "grp:" + g.cles[0];
+    d.dataset.ref = s.id;
     const tete = document.createElement("div");
     tete.className = "grpTete";
     d.appendChild(tete);
 
-    const r = document.createElement("span");
-    r.className = "rang";
-    tete.appendChild(r);
     const poi = document.createElement("span");
     poi.className = "prise";
     poi.setAttribute("aria-hidden", "true");
@@ -2107,12 +2658,13 @@ function voletOrdre(hote){
        le texte grisé du champ, et ce que fera la fiche. */
     const titre = document.createElement("input");
     titre.className = "grpTitre";
-    titre.value = g.titre;
-    titre.placeholder = libelleCorps(g.cles[0]);
-    titre.setAttribute("aria-label", "Titre du groupe");
+    titre.value = s.titre;
+    titre.placeholder = s.membres.length
+      ? libelleCorps(s.membres[0]) : "Titre de la section";
+    titre.setAttribute("aria-label", "Titre de la section");
     let frappe = null;
     titre.oninput = () => {
-      g.titre = titre.value;
+      s.titre = titre.value;
       majApercu();
       /* Le titre part quand la frappe s'arrête : à chaque lettre ce serait une
          écriture par caractère, et s'en remettre au seul « change » perdrait un
@@ -2122,80 +2674,49 @@ function voletOrdre(hote){
     };
     tete.appendChild(titre);
 
-    fleches(tete, d, g.titre || libelleCorps(g.cles[0]));
-    outil(tete, "×", "Défaire le groupe", () => {
-      groupes = groupes.filter(x => x !== g);
+    const nom = s.titre || (s.membres.length ? libelleCorps(s.membres[0]) : "");
+    fleches(tete, nom, s.id, i, null);
+    /* Défaire une section ne retire rien de la fiche : ses membres reprennent
+       leur rang là où elle était, dans l'ordre où on les y lisait. */
+    outil(tete, "×", "Défaire la section", () => {
+      blocs.splice(i, 1, ...s.membres.map(cle => ({ cle })));
       rendu();
       enregistre();
     }, "danger");
 
     const membres = document.createElement("div");
     membres.className = "grpMembres";
-    ordre.filter(c => g.cles.indexOf(c) >= 0)
-      .forEach(c => membres.appendChild(ligne(c, g)));
-    accepteGlisse(membres);
+    s.membres.forEach((cle, j) => membres.appendChild(ligneFiche(cle, i, j)));
+    accepteGlisse(membres, false);
     d.appendChild(membres);
-    prise(d, g.titre || libelleCorps(g.cles[0]), poi);
+    prise(d, nom, poi);
     return d;
   };
 
-  /**
-   * Réunit les champs cochés sous un même titre.
-   *
-   * Le bloc se pose à la place du premier coché, et ses membres s'y suivent :
-   * un groupe éparpillé dans la liste ne dirait pas ce que la fiche en fera.
-   *
-   * Cocher les membres d'un groupe et un champ de plus est la façon de
-   * l'agrandir : son titre se garde alors, faute de quoi ce qu'on avait écrit
-   * serait effacé par un geste qui ne demandait qu'à ajouter une ligne.
-   */
-  const regroupe = () => {
-    const choix = ordre.filter(c => coches.has(c));
-    if (choix.length < 2) return;
-    const anciens = groupes.filter(g => g.cles.some(c => choix.indexOf(c) >= 0));
-    const titre = anciens.length === 1 ? anciens[0].titre : "";
-    groupes.forEach(g => { g.cles = g.cles.filter(c => choix.indexOf(c) < 0); });
-    groupes = groupes.filter(g => g.cles.length > 1);
-    const debut = ordre.indexOf(choix[0]);
-    const avant = ordre.slice(0, debut).filter(c => choix.indexOf(c) < 0);
-    const apres = ordre.slice(debut).filter(c => choix.indexOf(c) < 0);
-    ordre = avant.concat(choix, apres);
-    groupes.push({ titre, cles: choix.slice() });
-    coches.clear();
-    range();
+  /* Une section naît vide, à la fin de la fiche : on la remplit en y glissant
+     des champs, ou en les y faisant entrer à la flèche. Tant qu'elle ne réunit
+     rien, elle n'a rien à enregistrer — un titre sans champ n'annonce rien, et
+     la fiche l'ignore. */
+  bSection.onclick = () => {
+    const s = { id: "s" + (++nSection), titre: "", membres: [] };
+    blocs.push(s);
     rendu();
-    enregistre();
-    // le titre attend d'être écrit : c'est la seule chose qui reste à faire
-    const champ = liste.querySelector('[data-ref="grp:' + choix[0] + '"] .grpTitre');
+    const champ = liste.querySelector('[data-ref="' + s.id + '"] .grpTitre');
     if (champ) champ.focus();
-  };
-  bGroupe.onclick = regroupe;
-
-  const majGroupe = () => {
-    const n = coches.size;
-    bGroupe.disabled = n < 2;
-    bGroupe.title = n < 2
-      ? "Cochez au moins deux champs pour les réunir sous un même titre."
-      : "Réunir " + n + " champs sous un même titre.";
   };
 
   const rendu = (focus) => {
+    dispo.textContent = "";
+    caches.forEach(cle => dispo.appendChild(ligneDispo(cle)));
     liste.textContent = "";
-    const vus = [];
-    ordre.forEach(cle => {
-      const g = groupeDe(cle);
-      if (!g){ liste.appendChild(ligne(cle, null)); return; }
-      if (vus.indexOf(g) >= 0) return;
-      vus.push(g);
-      liste.appendChild(blocGroupe(g));
-    });
+    blocs.forEach((b, i) => liste.appendChild(b.membres
+      ? blocSection(b, i) : ligneFiche(b.cle, i, null)));
     majBouts();
-    majGroupe();
     if (!focus) return;
     const el = liste.querySelector('[data-cle="' + focus.cle + '"]') ||
       liste.querySelector('[data-ref="' + focus.cle + '"]');
     if (!el) return;
-    const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.outil");
+    const b = (el.querySelector(".grpTete") || el).querySelectorAll("button.fleche");
     if (b[focus.sens] && !b[focus.sens].disabled) b[focus.sens].focus();
   };
 
@@ -2204,7 +2725,7 @@ function voletOrdre(hote){
      vient de quitter. */
   hote.rafraichit = majApercu;
 
-  range();
+  litReglage();
   rendu();
   dit("");
 }
@@ -2269,6 +2790,10 @@ const joli = (id) => String(id)
    du document. Un raccourci clavier ne serait pas une frontière.
    ============================================================ */
 let ADMIN = false;
+/* Le profil du compte, lu par `_auth-plan.html` : « admin » ou non. Il ne fait
+   qu'ajouter l'onglet « Admin » aux réglages — la base, elle, ne distingue pas
+   les deux profils sur un salon affecté. */
+let PROFIL_ADMIN = false;
 
 /**
  * Page publique : les commandes d'administration sont neutralisées.
@@ -2401,12 +2926,24 @@ function champZone(hote, titre, dedans, aide){
  * la publierait à moitié faite.
  */
 function champsZone(hote, o){
-  const libelle = champZone(hote, "Libellé", document.createElement("input"),
+  /* Le libellé et la description se saisissent dans les deux langues, et les
+     deux champs paraissent quelle que soit la langue de l'écran : l'exploitant
+     qui travaille en anglais écrit aussi le français, et inversement. */
+  const libelle = champZone(hote, "Libellé en français", document.createElement("input"),
     "Le nom de la zone, sur le plan comme sur sa fiche. Laissez vide pour " +
     "revenir au nom d'origine, s'il y en a un.");
   libelle.type = "text";
   libelle.value = (DATA.nomsZones || {})[o.id] || o.nom || "";
   libelle.placeholder = "Agora, Halte-garderie, Pitch Retail…";
+  libelle.lang = "fr";
+
+  const libelleEn = champZone(hote, "Libellé en anglais", document.createElement("input"),
+    "Le nom de la zone dans la version anglaise du plan. Laissé vide, c'est le " +
+    "libellé en français qui s'y affiche.");
+  libelleEn.type = "text";
+  libelleEn.value = o.nom_en || "";
+  libelleEn.placeholder = "Agora, Childcare, Pitch Retail…";
+  libelleEn.lang = "en";
 
   /* Le type ne décrit pas la zone, il dit à quoi elle sert : c'est ce qu'un
      visiteur cherche quand il cherche où déjeuner, et ce qu'aucun intitulé de
@@ -2439,9 +2976,16 @@ function champsZone(hote, o){
   const logo = champLogo(hote, o);
 
   const riche = editeurRiche(o.description || "");
-  champZone(hote, "Description", riche.cadre,
+  riche.cadre.lang = "fr";
+  champZone(hote, "Description en français", riche.cadre,
     "Ce qu'on trouve dans cette zone, ses horaires, ses conditions d'accès. " +
     "Le libellé « Description » ne paraît sur la fiche que si vous en écrivez une.");
+
+  const richeEn = editeurRiche(o.description_en || "");
+  richeEn.cadre.lang = "en";
+  champZone(hote, "Description en anglais", richeEn.cadre,
+    "Ce que lit le visiteur de la version anglaise. Laissée vide, la fiche " +
+    "anglaise montre la description en français.");
 
   const lienZ = champZone(hote, "Lien", document.createElement("input"),
     "Une page où en savoir plus. Elle s'ouvre dans un nouvel onglet, et " +
@@ -2450,8 +2994,9 @@ function champsZone(hote, o){
   lienZ.placeholder = "https://…";
   lienZ.value = o.lien || "";
 
-  return () => ({ libelle: libelle.value, type: type.value, logo: logo(),
-                  description: riche.lit(), lien: lienZ.value,
+  return () => ({ libelle: libelle.value, libelleEn: libelleEn.value,
+                  type: type.value, logo: logo(),
+                  description: riche.lit(), descriptionEn: richeEn.lit(), lien: lienZ.value,
                   traversable: traverse.checked,
                   salles: salles ? salles() : null });
 }
@@ -2854,6 +3399,7 @@ let ficheZoneEnCours = null;
 /* Les salles cochées se comparent telles quelles : ce sont deux listes des
    mêmes identifiants, dans l'ordre du programme, qui ne bouge pas. */
 const memeFicheZone = (a, b) => Boolean(a && b && a.libelle === b.libelle &&
+  a.libelleEn === b.libelleEn && a.descriptionEn === b.descriptionEn &&
   a.type === b.type && a.description === b.description && a.lien === b.lien &&
   a.logo === b.logo && a.traversable === b.traversable &&
   String(a.salles) === String(b.salles));
@@ -2921,6 +3467,11 @@ function ficheZone(o){
 async function enregistreZone(o, v, depart){
   const nom = String(v.libelle || "").trim();
   const description = String(v.description || "");
+  /* La version anglaise se range dans la fiche, avec le reste de ce que
+     l'exploitant écrit : elle ne s'applique pas au plan d'origine, elle
+     s'affiche à la place du français pour qui lit l'anglais. */
+  const nomEn = String(v.libelleEn || "").trim();
+  const descriptionEn = String(v.descriptionEn || "");
   // un type que la page ne connaît pas n'ouvrirait aucune entrée au cartouche
   const genre = TYPES_ZONE.some(t => t.v && t.v === v.type) ? v.type : "";
   // ce qui n'est pas une adresse tenable n'est pas enregistré : la fiche
@@ -2968,6 +3519,8 @@ async function enregistreZone(o, v, depart){
         if (genre) fiche.type = genre;
         if (blason) fiche.logo = blason;
         if (description) fiche.description = description;
+        if (nomEn) fiche.nom_en = nomEn;
+        if (descriptionEn) fiche.description_en = descriptionEn;
         if (adresse) fiche.lien = adresse;
         // une fiche vidée sort de la table plutôt que d'y rester en creux
         if (Object.keys(fiche).length) t[o.id] = fiche; else delete t[o.id];
@@ -2999,11 +3552,14 @@ async function enregistreZone(o, v, depart){
     o.nom = nom || o.origine || null;
   }
   o.description = description;
+  o.nom_en = nomEn || undefined;
+  o.description_en = descriptionEn || undefined;
+  nomsAnglaisDesZones();
   o.lien = adresse;
   o.logo = blason;
   o.type = genre;
-  // le nom se lit aussi sur le plan et dans la liste, où on le cherche
-  o.rech = String(o.nom || "").toLowerCase();
+  // le nom se lit aussi sur le plan et dans la liste, où on le cherche, dans les deux langues
+  o.rech = (String(o.nom || "") + " " + String(o.nom_en || "")).toLowerCase();
   libelles(); liste();
   // le cartouche gagne ou perd une entrée selon le type qu'on vient de poser
   cartouchePoi();
@@ -3227,9 +3783,10 @@ function pousseLibelle(dx, dy){
 /* --- le geste ; renvoie vrai si l'événement est consommé --- */
 function libellePointerDown(e){
   if (!PLACE_LIBELLES) return false;
-  const g = e.target.closest("#labels .lbl");
-  if (!g) return false;
-  const o = parId.get(g.dataset.lbl);
+  const g = GL.actif ? null : e.target.closest("#labels .lbl");
+  const id = GL.actif ? libelleSousWebgl(e.clientX, e.clientY) : g && g.dataset.lbl;
+  if (!id) return false;
+  const o = parId.get(id);
   if (!o) return false;
   e.preventDefault();
   choisitLibelle(o.id);

@@ -351,9 +351,19 @@ function dessineDessins(){
      quand il a changé. */
   if (typeof poseMasqueCarte === "function") poseMasqueCarte();
   cartouchePoi();
+  mentionOsm();
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
      fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
   rafraichitStandsDessines();
+}
+
+/** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
+ *  et ses tracés la prennent par `currentColor`. C'est ce dont le nuancier a
+ *  besoin pendant qu'on glisse — `dessineDessins` refait tous les nœuds de
+ *  tous les calques, ce qu'une rafale d'événements ne supporte pas. */
+function peintCalque(cal){
+  const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
+  if (g) g.style.color = cal.couleur || "var(--accent)";
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -617,7 +627,14 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
-const nomTypeRepere = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+/* Le nom d'un type vit sous deux formes. En français, il sert de libellé
+   enregistré — un repère posé sans libellé prend celui de son type — et doit le
+   rester quelle que soit la langue de l'écran : posé depuis la version
+   anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
+   Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
  * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
@@ -753,12 +770,26 @@ function traceRepere(f){
    pas jusqu'à un co-exposant, on marche jusqu'à son hôte.
    ------------------------------------------------------------ */
 
-/** L'étiquette sous laquelle une société se désigne : « G55 — SMC2 ». */
-const etiquetteSociete = (code, nom) => [code, nom].filter(Boolean).join(" — ");
-
 /** Le nom d'une société tel qu'il s'écrit sur le plan — vide s'il n'y en a
  *  pas, là où la fiche se rabat sur « Sans nom ». */
 const nomSurLePlan = (soc) => soc.nom || soc.plan || "";
+
+/**
+ * L'étiquette sous laquelle une société se désigne : « SMC2 — G55 », et pour
+ * un co-exposant « BERTRAND FRANCHISE - AU BUREAU — G55 ».
+ *
+ * Le nom vient d'abord, parce que c'est lui qu'on cherche des yeux dans une
+ * liste rangée par ordre alphabétique ; le titulaire préfixe ses hébergés pour
+ * qu'ils se lisent sous lui, et non dispersés au fil de l'alphabet. Le numéro
+ * reste en queue : deux enseignes portent parfois le même nom.
+ */
+function etiquetteSociete(o, soc){
+  const titulaire = nomSurLePlan(o);
+  const nom = nomSurLePlan(soc);
+  const tete = soc === o || !nom || nom === titulaire ? nom
+    : (titulaire || o.code) + " - " + nom;
+  return [tete, o.code].filter(Boolean).join(" — ");
+}
 
 /**
  * Ce qu'un stand dessiné désigne : l'emplacement, le rang de la société, la
@@ -778,16 +809,21 @@ function societeDeForme(f){
   return soc ? { o: o, i: i, soc: soc } : null;
 }
 
-/** Les sociétés du pavillon courant, titulaires et hébergées mêlées : c'est
- *  parmi elles que se choisit ce qu'un stand dessiné matérialise. */
+/** Les sociétés du pavillon courant, parmi lesquelles se choisit ce qu'un
+ *  stand dessiné matérialise : par ordre alphabétique des titulaires, chacun
+ *  suivi de ses co-exposants, rangés à leur tour. */
 function societesDuPlan(){
+  const range = (a, b) => a.localeCompare(b, "fr", { sensitivity: "base", numeric: true });
+  const cle = (s) => nomSurLePlan(s) || s.code || "";
   const out = [];
-  P().stands.forEach(s => societes(s).forEach(x => {
-    const nom = nomSurLePlan(x.soc);
-    if (!s.code && !nom) return;
-    out.push({ o: s, i: x.i, soc: x.soc,
-               etiquette: etiquetteSociete(s.code, nom) || s.id });
-  }));
+  P().stands.slice().sort((a, b) => range(cle(a), cle(b))).forEach(s => {
+    const liste = societes(s)
+      .filter(x => s.code || nomSurLePlan(x.soc))
+      .map(x => ({ o: s, i: x.i, soc: x.soc,
+                   etiquette: etiquetteSociete(s, x.soc) || s.id }));
+    out.push(...liste.filter(x => x.i < 0),
+             ...liste.filter(x => x.i >= 0).sort((a, b) => range(a.etiquette, b.etiquette)));
+  });
   return out;
 }
 
@@ -1221,8 +1257,9 @@ function eclairePoi(){
   /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
      retrait avec le reste du plan aurait effacé la seule chose qui distingue
      deux restaurations. Il se réécrit à chaque déplacement de la vue, et
-     reprend donc sa marque dans « libelles() ». */
-  $("labels").querySelectorAll(".lbl").forEach(g =>
+     reprend donc sa marque dans « libelles() ». Les témoins de style du rendu
+     WebGL, qui ne nomment rien, gardent la leur. */
+  $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }
@@ -1372,7 +1409,7 @@ function dessinPointerDown(e){
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
        cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
        rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepere(type) : "");
+    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
     ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });

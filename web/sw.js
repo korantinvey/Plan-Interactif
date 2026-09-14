@@ -36,15 +36,19 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "1d51507c6c0a";
+const VERSION = "1070d3c2fcf7";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 
-/* Les polices sont servies par Google, sous des adresses qui portent leur
-   empreinte : elles ne changent jamais sous une même adresse, et se gardent
-   donc telles quelles. Sans elles, le plan mesure ses libellés dans une police
-   de remplacement — les noms d'enseignes débordent de leurs stands. */
-const POLICES = ["https://fonts.googleapis.com", "https://fonts.gstatic.com"];
+/* Les polices sont servies depuis `polices/`, sous des noms qui portent leur
+   empreinte (voir `outils/polices.js`) : elles ne changent jamais sous une même
+   adresse, et se gardent donc telles quelles. Sans elles, le plan mesure ses
+   libellés dans une police de remplacement — les noms d'enseignes débordent de
+   leurs stands. Les feuilles `.css` du même dossier ne portent pas d'empreinte :
+   elles suivent la règle commune. */
+const POLICES = /^\/polices\/[^/]+\.woff2$/;
+/* La bibliothèque du dessin WebGL porte de même sa version dans son nom. */
+const BIBLIOTHEQUES = /^\/bibliotheques\/[^/]+\.js$/;
 
 self.addEventListener("install", (e) => {
   /* La seule chose mise de côté d'avance : la page qui s'affiche quand tout le
@@ -83,9 +87,7 @@ async function dabordCache(e, requete) {
   const garde = await caches.match(requete);
   if (garde) return garde;
   const reponse = await fetch(requete);
-  // une réponse opaque — une police, demandée sans contrôle d'origine — ne dit
-  // pas si elle a abouti ; elle se garde quand même, c'est tout ce qu'on aura
-  if (reponse.ok || reponse.type === "opaque") range(e, requete, reponse);
+  if (reponse.ok) range(e, requete, reponse);
   return reponse;
 }
 
@@ -157,9 +159,9 @@ self.addEventListener("fetch", (e) => {
 
     e.respondWith(requete.mode === "navigate"
       ? navigation(e, requete)
-      : dabordReseau(e, requete));
-    return;
+      : POLICES.test(adresse.pathname) || BIBLIOTHEQUES.test(adresse.pathname)
+        ? dabordCache(e, requete)
+        : dabordReseau(e, requete));
   }
-
-  if (POLICES.includes(adresse.origin)) e.respondWith(dabordCache(e, requete));
+  // une autre origine n'est rien que le plan demande : elle passe sans lui
 });

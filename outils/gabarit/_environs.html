@@ -641,6 +641,12 @@ function dessineFondCarte(){
   }
   racine.style.setProperty("--carte-force", forceCarte(cal));
   if (credit){ credit.textContent = fond.credit; credit.hidden = false; }
+  /* Le calque des tuiles vit hors du plan : il n'hérite plus de sa « viewBox »
+     et se la voit poser ici, à chaque changement de vue. C'est le prix de
+     n'être pas repris par le rendu de la carte graphique. */
+  const cadre = $("fondTuiles");
+  if (cadre) cadre.setAttribute("viewBox",
+    view.x + " " + view.y + " " + view.w + " " + view.h);
   /* Un fond vectoriel se peint ailleurs : le groupe des tuiles se vide, et
      c'est MapLibre qui regarde. */
   if (fond.style || fond.objet){
@@ -1124,7 +1130,7 @@ function glisseCarte(){
   majCalage();
 }
 
-function calagePointerDown(e){
+function cartePointerDown(e){
   if (!CALAGE_MODE || !ENV_CAL || !calageCourant()) return false;
   const p = versPlan(e.clientX, e.clientY);
   const pivot = pivotCalage();
@@ -1138,7 +1144,7 @@ function calagePointerDown(e){
   return true;
 }
 
-function calagePointerMove(e){
+function cartePointerMove(e){
   if (!_glisseCalage) return false;
   const p = versPlan(e.clientX, e.clientY);
   if (_glisseCalage.tourne){
@@ -1157,7 +1163,7 @@ function calagePointerMove(e){
   return true;
 }
 
-function calagePointerUp(e){
+function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
   svg.classList.remove("dragging");

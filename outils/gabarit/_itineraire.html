@@ -1963,8 +1963,10 @@ const typeLiaison = (f) =>
 
 /** Le nom sous lequel un repère se cherche des yeux : son libellé, et à
  *  défaut le nom de ce qu'il est — une pastille de WC sans libellé s'appelle
- *  « WC », et non rien. */
-const nomRepere = (f) => String(f.txt || "").trim() ||
+ *  « WC », et non rien. Un libellé qui n'est que le nom d'un type — « Entrée »,
+ *  posé d'office — se lit dans la langue de l'écran, comme le type lui-même :
+ *  c'est ce nom-là qui remplit le champ de l'itinéraire. */
+const nomRepere = (f) => traduit(String(f.txt || "").trim()) ||
   nomTypeRepere(pictoForme(f));
 
 /**
@@ -2518,6 +2520,8 @@ function fermeSugg(){
 }
 
 function montreSugg(r){
+  // le départ d'une borne ne se saisit pas : il n'y a rien à proposer
+  if (r === "a" && pointBorne()) return;
   champSugg = r;
   survolSugg = -1;
   const z = $("iSugg");
@@ -2559,6 +2563,8 @@ function choisitPoint(r, pt){
 /** Une saisie abandonnée sans choix : on tranche pour elle si c'est possible,
  *  on oublie le point sinon — mieux vaut un champ vide qu'un trajet faux. */
 function valideSaisie(r){
+  // une borne ne se ravise pas : le champ reprend ce qu'il disait
+  if (r === "a" && pointBorne()){ ecritDepartBorne(); return; }
   const v = champIti(r).value.trim();
   if (!v){ if (ITI[r]){ ITI[r] = null; relance(); } return; }
   if (ITI[r] && ITI[r].nom === v) return;
@@ -2569,13 +2575,18 @@ function valideSaisie(r){
 }
 
 function effaceItineraire(){
-  ITI.a = ITI.b = null;
+  /* Effacer, sur une borne, c'est revenir à elle : son départ n'a jamais été
+     saisi, et le vider laisserait l'écran incapable de dire d'où l'on part. */
+  const borne = pointBorne();
+  ITI.a = borne; ITI.b = null;
   ROUTE = TRACE = null;
   /* Deux champs vides dans un tiroir ouvert : c'est l'état d'une ouverture, et
-     il appelle la même visée. */
-  visee = "a";
+     il appelle la même visée — celle du seul champ qui reste à remplir. */
+  visee = borne ? "b" : "a";
   bandeauVisee();
-  $("iDepart").value = $("iArrivee").value = "";
+  $("iDepart").value = "";
+  $("iArrivee").value = "";
+  ecritDepartBorne();
   fermeSugg();
   dessineItineraire();
   montreResultat();
@@ -2671,9 +2682,11 @@ function montreResultat(etat){
     badge.textContent = "à définir";
     /* « iIntro » : la seule note que l'écran étroit peut taire — les invites
        des deux champs disent la même chose (voir « _head.html »). */
-    dit("iNote iIntro", "Choisissez un départ et une arrivée. Sans localisation, c'est " +
-                 "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
-                 "devant lequel vous êtes.");
+    dit("iNote iIntro", pointBorne()
+      ? "Choisissez votre destination : le trajet part de cette borne."
+      : "Choisissez un départ et une arrivée. Sans localisation, c'est " +
+        "vous qui dites d'où vous partez — l'entrée du hall, ou le stand " +
+        "devant lequel vous êtes.");
     return;
   }
   if (!ROUTE) return;
@@ -2801,15 +2814,22 @@ function bandeauVisee(){
     b.hidden = !visee;
     /* La visée n'est plus le geste du seul téléphone : le bandeau s'adresse
        aussi bien au doigt qu'au curseur. */
-    if (visee) $("viseurTxt").textContent =
-      "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
+    if (visee) $("viseurTxt").textContent = visee === "borne"
+      ? "Touchez le plan à l'endroit où cette borne est posée."
+      : "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
   $("iViseA").setAttribute("aria-pressed", String(visee === "a"));
   $("iViseB").setAttribute("aria-pressed", String(visee === "b"));
+  /* Le bandeau d'une borne à poser s'efface le temps du geste : c'est le même
+     état, dit deux fois, et deux bandeaux ne se lisent plus. */
+  montreBandeauBorne();
 }
 
 function armeVisee(r){
+  /* Une borne sait d'où elle part : sa cible de départ est retirée du tiroir
+     (voir « _borne.html »), et ce garde-fou vaut pour le clavier. */
+  if (r === "a" && pointBorne()) return;
   /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
      est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
      le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
@@ -2828,7 +2848,8 @@ function finVisee(){
   /* La cible referme le tiroir sur un téléphone : on ne le rouvre que si c'est
      bien lui qui l'a fermé. Ouvert, le rouvrir réarmait la visée que ces deux
      lignes viennent d'éteindre — et l'abandon n'aboutissait jamais. */
-  const rouvre = ETROIT() && !$("itineraire").classList.contains("open");
+  const rouvre = visee !== "borne" && ETROIT() &&
+                 !$("itineraire").classList.contains("open");
   visee = null;
   bandeauVisee();
   if (rouvre) ouvreItineraire(false);
@@ -2852,6 +2873,9 @@ function visePoi(id){
 
 function visePoint(pt){
   if (!visee) return false;
+  /* Poser une borne n'est pas désigner un bout de trajet : le point part
+     ailleurs (voir « _borne.html »). */
+  if (visee === "borne") return poseLaBorne(pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;
@@ -2920,7 +2944,11 @@ const versItineraire = (o) => versItineraireDe(pointObjet(o));
 function versItineraireDe(pt){
   ITI.b = pt;
   $("iArrivee").value = ITI.b.nom;
-  if (ITI.a && ITI.a.cle === ITI.b.cle){ ITI.a = null; $("iDepart").value = ""; }
+  /* Le départ d'une borne reste le sien même si l'on demande la route
+     jusqu'à elle : « vous y êtes déjà » se dit mieux qu'un champ vidé. */
+  if (ITI.a && ITI.a.cle === ITI.b.cle && !pointBorne()){
+    ITI.a = null; $("iDepart").value = "";
+  }
   ouvreItineraire();
   if (ITI.a) relance();
   /* Le tiroir s'ouvre à peine : le champ est encore hors du cadre le temps de
@@ -2960,6 +2988,8 @@ function versItineraireDe(pt){
 $("iSugg").addEventListener("pointerdown", e => e.preventDefault());
 
 $("iEchange").onclick = () => {
+  // une borne ne se déplace pas à l'arrivée d'un trajet
+  if (pointBorne()) return;
   const a = ITI.a;
   ITI.a = ITI.b; ITI.b = a;
   $("iDepart").value = ITI.a ? ITI.a.nom : "";

@@ -138,19 +138,39 @@ const gaia = (instance: string, eventId?: string) =>
  */
 async function libellesChoix(g: Gaia, entite: string, champ: string): Promise<{
   libelles: Record<string, string>;
+  /** les mêmes codes en anglais, quand le salon l'a saisi — du même appel */
+  anglais: Record<string, string>;
   chemin: string | null;
   erreur: string | null;
 }> {
-  if (!champ) return { libelles: {}, chemin: null, erreur: null };
+  if (!champ) return { libelles: {}, anglais: {}, chemin: null, erreur: null };
   try {
     const chemin = await g.cheminCodification(entite, champ);
-    return { libelles: await g.codification(chemin), chemin, erreur: null };
+    const t = await g.codificationLangues(chemin, ["fr", "en"]);
+    return { libelles: t.fr, anglais: t.en, chemin, erreur: null };
   } catch (e) {
     return {
       libelles: {},
+      anglais: {},
       chemin: null,
       erreur: e instanceof Error ? e.message : String(e),
     };
+  }
+}
+
+/**
+ * Range dans `vers` l'anglais d'une codification : libellé français →
+ * libellé anglais. Un code dont l'anglais manque retombe sur le français, et
+ * n'apprend rien : il n'est pas retenu.
+ */
+function retiensAnglais(
+  vers: Record<string, string>,
+  fr: Record<string, string>,
+  en: Record<string, string>,
+): void {
+  for (const [code, lib] of Object.entries(fr)) {
+    const anglais = en[code];
+    if (lib && anglais && anglais !== lib && !(lib in vers)) vers[lib] = anglais;
   }
 }
 
@@ -452,6 +472,12 @@ Deno.serve(async (req) => {
        celles de ses valeurs qui déclenchent. */
     const valeursEm = Object.fromEntries(
       ciblesEm.map((c) => [c.cle, valeursOui(evt.correspondances, "eventmaker", c.cle)]));
+    /* Les catégories d'invités que l'exploitant tient pour celles des
+       exposants. Vide, la détection reprend la main — c'est l'état de tous les
+       salons réglés avant que ce choix existe. */
+    const categoriesEm = ([] as unknown[])
+      .concat((evt.correspondances as any)?.eventmaker?.categories ?? [])
+      .map((c) => String(c ?? "").trim()).filter(Boolean);
 
     // La géométrie vient toujours de Klipso : c'est elle qui porte les stands
     // et leurs contours. Les conférences et les produits se configurent déjà
@@ -483,6 +509,11 @@ Deno.serve(async (req) => {
        serait absurde d'aller les redemander alors qu'on vient de lire les
        fiches où ils se trouvent. */
     let detectes: Record<string, unknown>[] = [];
+    /* Les catégories d'invités de l'événement, toutes, et celles qui ont été
+       retenues. La console les offre à cocher : sans elles, l'exploitant ne
+       peut désigner celle de ses exposants qu'en la devinant. */
+    let catalogueEm: { id: string; nom: string }[] = [];
+    let retenuesEm: string[] = [];
     // Ce qui peut être refusé tout de suite l'est avant d'ouvrir le flux :
     // un message d'erreur vaut mieux qu'une barre d'avancement qui s'arrête.
     if (srcStands === "eventmaker") {
@@ -612,6 +643,12 @@ Deno.serve(async (req) => {
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
       const resume: Record<string, unknown>[] = [];
+      /* L'anglais des valeurs des listes, relevé au passage dans les deux
+         sources : la page du plan le reçoit pour sa version anglaise. Un relevé
+         incomplet — une source qui n'a pas répondu — ne remplace pas le
+         précédent : il en effacerait la moitié. */
+      const libellesEn: Record<string, string> = {};
+      let anglaisComplet = true;
 
       /* Les exposants peuvent venir d'Eventmaker. Le rattachement se fait par
          le numéro de stand : Klipso le compose de l'allée et du numéro,
@@ -623,7 +660,8 @@ Deno.serve(async (req) => {
         avance("exposants", 0, null, "Recherche des catégories d'invités");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
-          champs: champsEm, valeurs: valeursEm, perso: persos });
+          champs: champsEm, valeurs: valeursEm, perso: persos,
+          categories: categoriesEm });
         // Les catégories déjà reconnues évitent de tout resonder : la première
         // synchronisation coûte trente-deux appels, les suivantes un seul.
         const connues: string[] = (evt.sources?.stands?.categories ?? []) as string[];
@@ -648,6 +686,8 @@ Deno.serve(async (req) => {
           tousParStand: r.tousParStand,
         };
         detectes = r.champs;
+        catalogueEm = r.catalogue;
+        retenuesEm = r.categoriesIds;
         resumeEm = {
           categories: r.categories,
           voie: r.voie,
@@ -692,11 +732,27 @@ Deno.serve(async (req) => {
           const detail = await new Eventmaker({
             jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
             champs: champsEm, valeurs: valeursEm, perso: persos,
+            categories: categoriesEm,
           }).evenement(idEvtEm);
           await db.from("evenement")
             .update({ fuseau_source: detail?.timezone ? String(detail.timezone) : null })
             .eq("id", evt.id);
         } catch (_) { /* l'ancien fuseau reste */ }
+        /* L'anglais des listes Eventmaker — parcours de visite, secteurs,
+           offres de reprise. Deux appels, et toutes les listes de l'événement
+           d'un coup : une liste qu'aucune fiche du plan ne montre encore ne
+           coûte rien de plus, et sera prête le jour où elle paraîtra. */
+        try {
+          const em = new Eventmaker({
+            jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+            champs: champsEm, valeurs: valeursEm, perso: persos,
+            categories: categoriesEm,
+          });
+          Object.assign(libellesEn, await em.listesEnAnglais(idEvtEm));
+        } catch (e) {
+          console.error("anglais des listes Eventmaker :", e);
+          anglaisComplet = false;
+        }
       }
 
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
@@ -709,7 +765,8 @@ Deno.serve(async (req) => {
         avance("conferences", 0, null, "Lecture du programme");
         const em = new Eventmaker({
           jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
-          champs: champsEm, valeurs: valeursEm, perso: persos });
+          champs: champsEm, valeurs: valeursEm, perso: persos,
+          categories: categoriesEm });
         const idEm = String((evt.cles ?? {}).eventmaker);
         confEm = await em.conferences(idEm);
         pese("conferences", confEm.length || 1);
@@ -774,7 +831,7 @@ Deno.serve(async (req) => {
       const aHall = (await g.proprietes("Stand")).some((x) => x.cle === CHAMP_HALL);
       const choixHall = aHall
         ? await libellesChoix(g, "Stand", CHAMP_HALL)
-        : { libelles: {}, chemin: null, erreur: null };
+        : { libelles: {}, anglais: {}, chemin: null, erreur: null };
       /* Un champ personnalisé peut être un champ « choix » comme la
          nomenclature : il ne porte alors qu'un code, et la fiche afficherait
          « FEP26_GAM102 » là où l'exploitant attend « Prêt-à-porter ». Sa
@@ -788,7 +845,14 @@ Deno.serve(async (req) => {
           if (!nom) continue;
           const t = await libellesChoix(g, origine === "stand" ? "Stand" : "DossierExp", nom);
           if (Object.keys(t.libelles).length) choixPerso[c.cle] = t.libelles;
+          retiensAnglais(libellesEn, t.libelles, t.anglais);
         }
+      }
+      /* Une codification en échec ne retient pas le relevé : elle échouerait
+         de même à la synchronisation suivante, et l'anglais ne se mettrait plus
+         jamais à jour. Ses valeurs restent en français, comme ses codes. */
+      for (const t of [nomencl, choixSect, choixHall]) {
+        retiensAnglais(libellesEn, t.libelles, t.anglais);
       }
 
       /** Le libellé s'il est connu ; sinon le code, dépouillé de son préfixe de
@@ -1304,6 +1368,12 @@ Deno.serve(async (req) => {
         corr[srcStands] = {
           ...(corr[srcStands] ?? {}),
           detectes, defauts, propose,
+          /* Le catalogue et ce qui a été retenu, mais jamais `categories` :
+             celui-là est le choix de l'exploitant, et la synchronisation
+             n'écrit que ce qu'elle a vu. */
+          ...(catalogueEm.length
+            ? { catalogue: catalogueEm, retenues: retenuesEm }
+            : {}),
           detecteLe: new Date().toISOString(),
         };
         await db.from("evenement").update({ correspondances: corr }).eq("id", evt.id);
@@ -1315,27 +1385,30 @@ Deno.serve(async (req) => {
           derniere_sync: new Date().toISOString(),
           derniere_err: null,
           modifie_le: new Date().toISOString(),
+          ...(anglaisComplet ? { libelles_en: libellesEn } : {}),
         }).eq("id", evt.id);
       }
 
-      /* Au passage, la purge des présences anciennes.
+      /* Au passage, la purge des jetons de visiteur anciens.
        *
        * `visiteur_cible` est la seule table de mesure qui grossisse avec la
        * fréquentation : sans rien pour l'élaguer, elle accumulerait édition
        * après édition, et le jour où le disque est plein le projet passe en
        * lecture seule — c'est exactement le défaut du journal que les compteurs
        * ont remplacé, dont le vrai tort n'était pas la taille mais que rien ne
-       * l'effaçait jamais.
+       * l'effaçait jamais. La purge efface aussi les jetons de `visiteur_jour` :
+       * garder un jeton plus de quatre cents jours ferait sortir la mesure de
+       * l'exemption de consentement dont elle vit (voir `_mesure.html`).
        *
-       * Ici plutôt qu'ailleurs parce que c'est le seul rendez-vous régulier du
-       * système à tenir la clé de service. Elle ne coûte rien : l'index sur
-       * `jour` va droit aux lignes à retirer, et il n'y en a aucune la plupart
-       * du temps. Elle ne porte sur aucun salon en particulier — quatre cents
-       * jours partout —, d'où sa place hors de tout ce qui précède.
+       * Son vrai rendez-vous est désormais nocturne, par `pg_cron`. Celui-ci
+       * reste en secours, pour une base où l'extension manquerait. Il ne coûte
+       * rien : l'index sur `jour` va droit aux lignes à retirer, et il n'y en a
+       * aucune la plupart du temps. Il ne porte sur aucun salon en particulier —
+       * quatre cents jours partout —, d'où sa place hors de tout ce qui précède.
        *
-       * Un échec se tait : une purge manquée se rattrape à la synchronisation
-       * suivante, et rien ne justifie de faire échouer pour cela une
-       * synchronisation qui, elle, a réussi.
+       * Un échec se tait : une purge manquée se rattrape la nuit suivante, et
+       * rien ne justifie de faire échouer pour cela une synchronisation qui,
+       * elle, a réussi.
        */
       await db.rpc("purge_presences").then(
         () => {},
