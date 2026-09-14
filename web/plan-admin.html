@@ -21318,8 +21318,8 @@ function versLePlan(ll, cal){
  */
 function reancre(cal, pt){
   const ll = versTerre(pt, cal);
-  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1],
-           angle: cal.angle, fond: cal.fond, contour: cal.contour, vide: cal.vide };
+  return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle,
+           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide };
 }
 
 /** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
@@ -21377,6 +21377,12 @@ const CARTES = {
      le situer. Les plans du métier sont tous pâles et muets. */
   muet: { nom: "Sobre, sans texte", max: 19,
           url: "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
+  muetColore: { nom: "Sobre coloré, sans texte", max: 19,
+          url: "https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
+          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
+  muetSombre: { nom: "Sobre sombre, sans texte", max: 19,
+          url: "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
           credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
   plan: { nom: "Plan IGN", max: 19,
           url: GEOPF + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
@@ -21647,24 +21653,20 @@ function formesMasquantes(){
 /**
  * Le tracé du hall, vidé de la carte.
  *
- * L'accrochage a retenu le contour du bâtiment : c'est l'emprise du hall telle
- * que la carte la connaît, et c'est elle qu'il faut évider. Sans quoi une voie
- * passe par-dessus — le périphérique franchit le pavillon dans les données,
- * parce qu'il le franchit pour de bon, et le plan se retrouve barré d'une
- * route. Le dessin de l'exploitant, lui, s'installe alors dans du vide.
+ * Sans lui une voie passe par-dessus le pavillon — le périphérique le franchit
+ * dans les données parce qu'il le franchit pour de bon — et le plan se
+ * retrouve barré d'une route. Le dessin de l'exploitant, lui, s'installe alors
+ * dans du vide.
  *
- * C'est aussi ce que ni l'enveloppe des stands ni le contour dessiné ne
- * savent donner : le premier s'arrête au dernier stand, le second ne couvre
- * que ce qu'on a bien voulu tracer.
+ * C'est aussi ce que ni l'enveloppe des stands ni le contour dessiné ne savent
+ * donner : le premier s'arrête au dernier stand, le second ne couvre que ce
+ * qu'on a bien voulu tracer.
  */
 function cheminDuHall(){
   const cal = calageCourant();
-  if (!cal || !cal.contour || cal.contour.length < 3 || cal.vide === false) return "";
-  const r2 = (v) => Math.round(v * 100) / 100;
-  return "M" + cal.contour.map(ll => {
-    const q = versLePlan(ll, cal);
-    return r2(q[0]) + " " + r2(q[1]);
-  }).join("L") + "Z";
+  const pts = cal && cal.halls && DATA ? cal.halls[P().id] : null;
+  if (!pts || pts.length < 3 || cal.vide === false) return "";
+  return "M" + pts.map(q => q[0] + " " + q[1]).join("L") + "Z";
 }
 
 /* Le contenu posé : sans cette empreinte, chaque tracé de dessin réécrirait le
@@ -21841,18 +21843,36 @@ function caleSurBatiment(cand, p){
   const e = empriseDesObjets(p);
   const centre = [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2];
   ENV_CAL = reancre(ENV_CAL, centre);
-  /* Le contour du bâtiment, retenu en longitude et latitude : c'est l'emprise
-     du hall telle que la carte la connaît, et elle sert ensuite à la vider. En
-     degrés et non en mètres du plan, pour qu'un calage retouché la déplace
-     avec le reste plutôt que de la laisser en arrière. */
-  ENV_CAL.contour = cand.w.geometry.map(g =>
-    [Math.round(g.lon * 1e6) / 1e6, Math.round(g.lat * 1e6) / 1e6]);
   const avant = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
   ENV_CAL.angle += anglePlan(p) - axeDuContour(avant);
   const apres = cand.w.geometry.map(g => versLePlan([g.lon, g.lat], ENV_CAL));
   const c = centreDuContour(apres);
   ENV_CAL.x += centre[0] - c[0];
   ENV_CAL.y += centre[1] - c[1];
+  retientLeHall(p, cand);
+}
+
+/**
+ * Le contour du hall, retenu en mètres du plan.
+ *
+ * En mètres, et non en degrés — c'est tout le sujet. Le contour vient de la
+ * carte, mais ce qu'il décrit est l'emprise du hall sur le plan, et le plan
+ * ne bouge pas : c'est la carte qu'on recentre ensuite. Gardé en longitude et
+ * latitude, le trou suivait la carte et quittait le hall au premier
+ * ajustement. Gelé ici, il reste où le hall est.
+ *
+ * Un contour par pavillon : le repère est commun à tous, mais chacun a le
+ * sien, et un salon sur deux halls ne doit pas vider le premier sous le
+ * second.
+ */
+function retientLeHall(p, cand){
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const pts = cand.w.geometry.map(g => {
+    const q = versLePlan([g.lon, g.lat], ENV_CAL);
+    return [r2(q[0]), r2(q[1])];
+  });
+  ENV_CAL.halls = Object.assign({}, ENV_CAL.halls);
+  ENV_CAL.halls[p.id] = pts;
 }
 
 /* ------------------------------------------------------------
@@ -21986,10 +22006,9 @@ const pivotCalage = () => [view.x + view.w / 2, view.y + view.h / 2];
 /** Pendant le geste, on ne refait que la carte et le chiffre de la rotation :
  *  reconstruire le panneau des calques à chaque image le rendrait saccadé. */
 function glisseCarte(){
+  /* Le trou du hall n'est pas refait ici : il est en mètres du plan, et le
+     plan ne bouge pas sous la main — c'est la carte qui glisse dessous. */
   dessineFondCarte();
-  /* Le trou du hall est tenu par le calage : il doit suivre la carte, sinon il
-     resterait où la carte était et découperait le plan à côté. */
-  poseMasqueCarte();
   majCalage();
 }
 

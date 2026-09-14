@@ -218,26 +218,27 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1109 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1128 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
 Fonctions :
 
 `metresParDegre` 43 · `tourneEnvirons` 60 · `versTerre` 66 · `versLePlan` 73 · `reancre` 88
-`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 167 · `calageCourant` 179
-`fondCourant` 182 · `recul` 187 · `pixelsMercator` 192 · `latitudeDePixel` 201
-`metresParPixel` 209 · `echelleDesTuiles` 227 · `niveauDesTuiles` 239 · `adresseTuile` 246
-`tuilesDeLaVue` 256 · `dessineFondCarte` 297 · `cleMasqueCarte` 369 · `masqueCarte` 370
-`basculeMasqueCarte` 372 · `boutonMasqueCarte` 383 · `pictoMasque` 394
-`formesMasquantes` 406 · `cheminDuHall` 429 · `poseMasqueCarte` 451 · `carreDeTerrain` 488
-`chercheBatiments` 504 · `aireDuContour` 531 · `centreDuContour` 540 · `axeDuContour` 553
-`empriseDesObjets` 570 · `batimentsCandidats` 588 · `caleSurBatiment` 609
-`manqueCalage` 639 · `enregistreCalage` 648 · `calageEnregistre` 661 · `litCoordonnees` 686
-`rafraichitCarte` 700 · `armeCalage` 742 · `pivotCalage` 753 · `glisseCarte` 757
-`calagePointerDown` 765 · `calagePointerMove` 779 · `calagePointerUp` 798 · `ditCalage` 806
-`majCalage` 814 · `appliqueCalage` 829 · `tourneCalage` 836 · `construitCalage` 842
-`ouvreCalage` 948 · `fermeCalage` 957 · `voletEnvirons` 985
+`empriseDesPavillons` 97 · `centreDesPavillons` 110 · `forceCarte` 173 · `calageCourant` 185
+`fondCourant` 188 · `recul` 193 · `pixelsMercator` 198 · `latitudeDePixel` 207
+`metresParPixel` 215 · `echelleDesTuiles` 233 · `niveauDesTuiles` 245 · `adresseTuile` 252
+`tuilesDeLaVue` 262 · `dessineFondCarte` 303 · `cleMasqueCarte` 375 · `masqueCarte` 376
+`basculeMasqueCarte` 378 · `boutonMasqueCarte` 389 · `pictoMasque` 400
+`formesMasquantes` 412 · `cheminDuHall` 434 · `poseMasqueCarte` 453 · `carreDeTerrain` 490
+`chercheBatiments` 506 · `aireDuContour` 533 · `centreDuContour` 542 · `axeDuContour` 555
+`empriseDesObjets` 572 · `batimentsCandidats` 590 · `caleSurBatiment` 611
+`retientLeHall` 637 · `manqueCalage` 659 · `enregistreCalage` 668 · `calageEnregistre` 681
+`litCoordonnees` 706 · `rafraichitCarte` 720 · `armeCalage` 762 · `pivotCalage` 773
+`glisseCarte` 777 · `calagePointerDown` 784 · `calagePointerMove` 798
+`calagePointerUp` 817 · `ditCalage` 825 · `majCalage` 833 · `appliqueCalage` 848
+`tourneCalage` 855 · `construitCalage` 861 · `ouvreCalage` 967 · `fermeCalage` 976
+`voletEnvirons` 1004
 
 Éléments :
 
