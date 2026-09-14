@@ -21525,33 +21525,6 @@ const CARTES = {
   vecteurAutre: { nom: "Vectoriel sobre (autre service libre)",
              style: "https://tiles.versatiles.org/assets/styles/colorful/style.json",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles" },
-  /* Les services à clé, en dernier et déclarés comme tels. Une clé posée dans
-     une page publique est lisible de tous — c'est leur modèle, et ils s'en
-     protègent en la liant à un domaine, non en la cachant. À régler chez eux,
-     pas ici. */
-  maptiler: { nom: "MapTiler sobre (clé requise)", cle: true,
-             style: "https://api.maptiler.com/maps/dataviz/style.json?key={cle}",
-             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
-  maptilerBase: { nom: "MapTiler standard (clé requise)", cle: true,
-             style: "https://api.maptiler.com/maps/basic-v2/style.json?key={cle}",
-             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
-  maptilerSombre: { nom: "MapTiler sombre (clé requise)", cle: true,
-             style: "https://api.maptiler.com/maps/dataviz-dark/style.json?key={cle}",
-             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
-  /* Un fond sans un mot écrit, et en premier. Deux raisons, qui vont ensemble :
-     un plan de salon se dessine l'entrée vers le bas, presque jamais le nord en
-     haut — la carte tourne donc avec lui, et son texte se lit de travers ou à
-     l'envers ; et un fond de salon n'a pas à raconter le quartier, seulement à
-     le situer. Les plans du métier sont tous pâles et muets. */
-  muet: { nom: "Sobre, sans texte", max: 19,
-          url: "https://basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
-  muetColore: { nom: "Sobre coloré, sans texte", max: 19,
-          url: "https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
-          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
-  muetSombre: { nom: "Sobre sombre, sans texte", max: 19,
-          url: "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png",
-          credit: "Fond de plan © les contributeurs d'OpenStreetMap, © CARTO" },
   plan: { nom: "Plan IGN", max: 19,
           url: GEOPF + "&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&FORMAT=image/png",
           credit: "Fond de plan © IGN — Géoplateforme" },
@@ -21760,18 +21733,18 @@ function vueGL(cal){
 }
 
 /**
- * L'adresse du style à charger.
+ * L'adresse du style à charger : celle que l'exploitant a collée, sinon celle
+ * du fond retenu.
  *
- * Trois sources, dans cet ordre : celle que l'exploitant a collée, celle du
- * fond retenu une fois sa clé posée, rien. L'adresse libre existe parce que
- * ces services bougent — un chemin qui marchait l'an dernier rend aujourd'hui
- * une tuile grise barrée de « API KEY REQUIRED », et il vaut mieux pouvoir la
- * corriger sur place que d'attendre une mise en ligne.
+ * L'adresse libre demeure, bien qu'aucun fond proposé n'en ait besoin : ces
+ * services bougent, un chemin qui marchait l'an dernier rend aujourd'hui une
+ * tuile grise, et il vaut mieux pouvoir en essayer un autre sur place que
+ * d'attendre une mise en ligne. Une adresse qui demande une clé la porte
+ * elle-même — il n'y a rien à y substituer.
  */
 function styleDuFond(cal, fond){
   if (cal && cal.style) return cal.style;
-  if (!fond || !fond.style) return "";
-  return fond.style.replace("{cle}", encodeURIComponent((cal && cal.cle) || ""));
+  return (fond && fond.style) || "";
 }
 
 let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
@@ -21957,6 +21930,7 @@ function dessineFondCarte(){
   if (empreinte === _fondPose) return;
   _fondPose = empreinte;
   _tuilesMuettes = 0;
+  ditCarte("");
 
   /* Les tuiles n'ont que des pixels entiers à porter — le groupe fait le
      reste — ce qui les pose exactement bord à bord. Un millième de
@@ -21971,7 +21945,15 @@ function dessineFondCarte(){
      une panne du plan, quand seul le fond manque. On les compte, pour que le
      volet de réglage puisse dire qu'aucune n'arrive. */
   hote.querySelectorAll("image").forEach(im => {
-    im.onerror = () => { _tuilesMuettes++; im.remove(); };
+    im.onerror = () => {
+      im.remove();
+      /* Une tuile perdue n'est qu'une tuile ; trois, c'est le service. Et le
+         compte se dit sur la ligne de la carte, jamais sur celle des actions —
+         un reste d'ici s'affichait sinon au milieu d'un fond vectoriel qui,
+         lui, se chargeait très bien. */
+      if (++_tuilesMuettes === 3)
+        ditCarte("Ces tuiles ne répondent pas : essayez un autre fond.", true);
+    };
   });
 }
 
@@ -22507,21 +22489,15 @@ function construitCalage(){
   const avance = document.createElement("div");
   avance.className = "cAvance";
   avance.innerHTML =
-    '<input type="text" class="cCle" placeholder="Clé du service" autocomplete="off">' +
     '<input type="text" class="cStyle" autocomplete="off"' +
     ' placeholder="Autre style — laissez vide sinon">' +
     '<span class="cAide"></span>';
-  const iCle = avance.querySelector(".cCle");
   const iStyle = avance.querySelector(".cStyle");
-  /* Une clé se tape ou se colle caractère par caractère : relancer à chacun
-     monterait vingt cartes pour en garder une, et les dix-neuf premières
-     répondraient « clé invalide » sur une clé qu'on était en train d'écrire. */
+  /* Une adresse se tape ou se colle caractère par caractère : relancer à
+     chacun monterait vingt cartes pour en garder une, et les dix-neuf
+     premières répondraient sur une adresse en cours d'écriture. */
   let attente = null;
   const plusTard = (f) => { clearTimeout(attente); attente = setTimeout(f, 600); };
-  iCle.oninput = () => plusTard(() => {
-    ENV_CAL.cle = iCle.value.trim() || undefined;
-    relanceCarteGL();
-  });
   iStyle.oninput = () => plusTard(() => {
     ENV_CAL.style = iStyle.value.trim() || undefined;
     relanceCarteGL();
@@ -22530,22 +22506,19 @@ function construitCalage(){
   const aideAvance = avance.querySelector(".cAide");
   const majAvance = () => {
     const f = CARTES[sel.value];
-    avance.hidden = !(f && f.style);
-    iCle.hidden = !(f && f.cle);
-    iCle.value = ENV_CAL.cle || "";
+    /* Le champ ne paraît que pour un fond vectoriel, et reste facultatif :
+       « style » est le mot du métier et ne dit rien à qui ne le connaît pas.
+       C'est l'adresse d'un fichier qui décrit l'allure d'une carte — couleurs,
+       épaisseurs, ce qui paraît à quel zoom. Les fonds « notre style » n'en ont
+       pas : ils sont écrits dans la page. */
+    avance.hidden = !(f && (f.style || f.objet));
     iStyle.value = ENV_CAL.style || "";
-    if (!f || !f.style) return;
-    /* Ce que sont ces deux champs, dit là où on les voit. « Style » est le mot
-       du métier et ne dit rien à qui ne le connaît pas : c'est l'adresse d'un
-       fichier que le service donne, et qui décrit l'allure de la carte —
-       couleurs, épaisseurs, ce qui s'affiche à quel zoom. Chaque fond de la
-       liste en a déjà une ; le champ ne sert qu'à en essayer une autre. */
-    aideAvance.textContent = (f.cle
-      ? "La clé vient de votre compte chez le service. "
-      : "Ce fond ne demande pas de clé. ") +
-      "Le champ suivant n'est utile que pour essayer un autre style que celui " +
-      "du fond choisi — l'adresse d'un fichier de style MapLibre, que le " +
-      "service vous donne. Par défaut : " + f.style.replace(/\?key=.*$/, "") + ".";
+    if (avance.hidden) return;
+    aideAvance.textContent = f.objet
+      ? "Ce fond est écrit dans la page. Le champ ci-dessus ne sert qu'à " +
+        "essayer autre chose — l'adresse d'un fichier de style MapLibre."
+      : "Le champ ci-dessus ne sert qu'à essayer un autre style que celui du " +
+        "fond choisi. Par défaut : " + f.style + ".";
   };
 
   sel.onchange = () => {
@@ -22556,7 +22529,6 @@ function construitCalage(){
     /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
        limite change sans que rien ne le montre. */
     if (typeof poseVue === "function") poseVue();
-    if (_tuilesMuettes) ditCalage("Ce fond ne répond pas : essayez-en un autre.", true);
   };
   corps.appendChild(fond);
   corps.appendChild(avance);
