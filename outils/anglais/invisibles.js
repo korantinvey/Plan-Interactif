@@ -21,4 +21,8 @@ module.exports = [
 
   // `_tutoriel.html` : un morceau de la transformation CSS qui étire le voile
   "px) scale(",
+
+  // `_console-js.html` : le paramètre que le lien de la console ajoute à
+  // l'adresse du plan pour l'ouvrir en borne — une adresse ne se traduit pas
+  "&borne",
 ];

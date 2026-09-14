@@ -199,8 +199,8 @@ module.exports = {
     "Source fields are collected during synchronisation: run one for them to be suggested here.",
   "Le nom et le pavillon sont toujours affichés : sans eux la fiche ne désigne plus rien.":
     "The name and the hall are always shown: without them the record no longer points to anything.",
-  "L'ordre dans lequel ces champs se lisent, et les groupes qui les réunissent sous un même titre, se règlent depuis le plan : engrenage, « Fiche Stand ». Ce qu'une fiche de zone organisateur montre — logo, description, lien, programme — s'y règle aussi : engrenage, « Zones ».":
-    "The order in which these fields read, and the groups that gather them under one title, are set from the map: gear icon, “Stand details”. What an organiser area's record shows — logo, description, link, programme — is set there too: gear icon, “Areas”.",
+  "Décocher un champ le renvoie en réserve sur le plan, où il attend d'être réaffiché. C'est là que se règle le reste de la fiche — l'ordre des champs, les sections qui les réunissent sous un même titre, les intitulés qui paraissent devant les valeurs : engrenage, « Fiche Stand ». Ce qu'une fiche de zone organisateur montre — logo, description, lien, programme — s'y règle aussi : engrenage, « Zones ».":
+    "Unticking a field sends it back to the reserve on the map, where it waits to be shown again. The rest of the details is set there — the order of the fields, the sections that gather them under one title, the labels that appear before the values: gear icon, “Stand details”. What an organiser area's details show — logo, description, link, programme — is set there too: gear icon, “Areas”.",
   "Afficher": "Show",
   "Sur la fiche": "On the record",
   "Champ d'origine": "Source field",
@@ -240,6 +240,8 @@ module.exports = {
 
   // les liens et la synchronisation
   "L'événement est en brouillon : le plan public n'est pas encore servi.": "The event is a draft: the public map is not served yet.",
+  "Le plan sur un écran posé dans le salon : il demande où il est, puis les itinéraires en partent":
+    "The map on a screen installed at the venue: it asks where it stands, then routes start from there",
   "Ouvrir le plan tel que le voient les visiteurs": "Open the map as visitors see it",
   "Ouvrir le plan avec les calques et les outils de dessin": "Open the map with the layers and drawing tools",
   "accessible même en brouillon": "available even as a draft",

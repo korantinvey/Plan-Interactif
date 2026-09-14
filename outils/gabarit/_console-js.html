@@ -1469,8 +1469,18 @@ function retireChampPerso(cle, libelle, redessine) {
         perso: champsPersos(e).filter((c) => c.cle !== cle),
         stand, criteres: crit,
         /* Le rang aussi : le garder ferait resurgir un champ recréé plus tard
-           sous le même intitulé à la place qu'occupait le premier. */
+           sous le même intitulé à la place qu'occupait le premier. Et avec lui
+           la section qui le réunissait et le sort réservé à son intitulé, qui
+           ne décrivent plus rien. */
         ordre: (((e.fiche || {}).ordre) || []).filter((c) => c !== cible),
+        groupes: (((e.fiche || {}).groupes) || [])
+          .map((g) => ({ ...g, cles: (g.cles || []).filter((c) => c !== cible) }))
+          .filter((g) => g.cles.length),
+        intitules: (() => {
+          const i = { ...((e.fiche || {}).intitules || {}) };
+          delete i[cible];
+          return i;
+        })(),
       });
       /* La correspondance se nettoie de son côté : elle est rangée par
          fournisseur, et le champ a pu être réglé sous plusieurs d'entre eux. */
@@ -1749,18 +1759,21 @@ function ouvreFiche(apres) {
         "désigne plus rien.";
     corps.appendChild(note);
 
-    /* Ce que la fiche d'un stand montre se décide ici ; dans quel ordre elle le
-       montre, et ce qu'une fiche de zone montre, se décident sur le plan — là
-       où l'aperçu porte l'habillage retenu et les valeurs d'un vrai stand, là
-       où les fiches des zones s'écrivent. Le dire, faute de quoi on chercherait
-       ces réglages dans cette fenêtre — c'est là qu'ils étaient. */
+    /* D'où vient un champ se décide ici, et nulle part ailleurs : c'est la
+       seule fenêtre qui voie le relevé de la source. Ce que la fiche en montre
+       se décide des deux côtés — la case ici, le glissé sur le plan — parce que
+       c'est le même réglage, et que le plan seul peut le faire juger : l'aperçu
+       y porte l'habillage retenu et les valeurs d'un vrai stand. Le dire, faute
+       de quoi on chercherait le reste dans cette fenêtre — c'est là qu'il
+       était. */
     const ou = document.createElement("p");
     ou.className = "aide";
-    ou.textContent = "L'ordre dans lequel ces champs se lisent, et les groupes " +
-      "qui les réunissent sous un même titre, se règlent depuis le plan : " +
-      "engrenage, « Fiche Stand ». Ce qu'une fiche de zone organisateur " +
-      "montre — logo, description, lien, programme — s'y règle aussi : " +
-      "engrenage, « Zones ».";
+    ou.textContent = "Décocher un champ le renvoie en réserve sur le plan, où " +
+      "il attend d'être réaffiché. C'est là que se règle le reste de la fiche " +
+      "— l'ordre des champs, les sections qui les réunissent sous un même " +
+      "titre, les intitulés qui paraissent devant les valeurs : engrenage, " +
+      "« Fiche Stand ». Ce qu'une fiche de zone organisateur montre — logo, " +
+      "description, lien, programme — s'y règle aussi : engrenage, « Zones ».";
     corps.appendChild(ou);
   }, [{ libelle: "Terminé", genre: "primaire" }], apres);
 }
@@ -2309,16 +2322,26 @@ function champOrigine(src, cible, apres, ouiNon) {
 
 function majLiens(e) {
   const q = "?plan=" + encodeURIComponent(e.slug || "");
+  // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
+  // laisser cliquer vers une page qui répondra « introuvable »
+  const brouillon = e.etat !== "publie";
+  const enBrouillon = "L'événement est en brouillon : le plan public n'est pas encore servi.";
   const pub = $("lienPublic"), adm = $("lienAdmin");
   if (pub) {
     pub.href = BASE_PAGES + "plan" + q;
-    // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
-    // laisser cliquer vers une page qui répondra « introuvable »
-    const brouillon = e.etat !== "publie";
     pub.classList.toggle("inactif", brouillon);
-    pub.title = brouillon
-      ? "L'événement est en brouillon : le plan public n'est pas encore servi."
-      : "Ouvrir le plan tel que le voient les visiteurs";
+    pub.title = brouillon ? enBrouillon : "Ouvrir le plan tel que le voient les visiteurs";
+  }
+  /* La borne n'est que le plan public avec un paramètre de plus. Le lien est
+     là pour qu'on n'ait pas à l'écrire de mémoire : on l'ouvre sur la tablette
+     posée dans le salon, ou l'on copie son adresse pour l'y porter. */
+  const bor = $("lienBorne");
+  if (bor) {
+    bor.href = BASE_PAGES + "plan" + q + "&borne";
+    bor.classList.toggle("inactif", brouillon);
+    bor.title = brouillon ? enBrouillon
+      : "Le plan sur un écran posé dans le salon : il demande où il est, " +
+        "puis les itinéraires en partent";
   }
   if (adm) {
     adm.href = BASE_PAGES + "plan-admin" + q;
