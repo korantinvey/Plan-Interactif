@@ -21410,13 +21410,13 @@ const CARTES = {
      n'y peut rien, Google compris. Un moteur vectoriel, lui, replace ses
      étiquettes à chaque changement d'orientation, parce qu'il les compose au
      moment de peindre. C'est ce que fait tout plan de salon du métier. */
-  vecteur: { nom: "Vectoriel sobre",
+  vecteur: { nom: "Vectoriel sobre (service libre)",
              style: "https://tiles.openfreemap.org/styles/positron",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
-  vecteurDetail: { nom: "Vectoriel détaillé",
+  vecteurDetail: { nom: "Vectoriel détaillé (service libre)",
              style: "https://tiles.openfreemap.org/styles/liberty",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
-  vecteurAutre: { nom: "Vectoriel sobre (autre service)",
+  vecteurAutre: { nom: "Vectoriel sobre (autre service libre)",
              style: "https://tiles.versatiles.org/assets/styles/colorful/style.json",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © VersaTiles" },
   /* Les services à clé, en dernier et déclarés comme tels. Une clé posée dans
@@ -21669,6 +21669,23 @@ function styleDuFond(cal, fond){
 }
 
 let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
+/* La minuterie du silence. Un service qui refuse proprement rend un code, et
+   l'on sait quoi dire ; un service qui ne répond pas du tout ne rend rien du
+   tout, et le moteur peint alors le fond du plan — un grand aplat uni qu'on
+   prend pour une carte absente sans savoir pourquoi. Au bout de ce délai, on
+   le dit. */
+const ATTENTE_GL = 9000;
+let _guetGL = null;
+
+function guetteLaCarte(style){
+  clearTimeout(_guetGL);
+  _guetGL = setTimeout(() => {
+    if (_ditGL) return;              // une erreur a déjà parlé, elle en dit plus
+    ditCarte("Ce service ne répond pas : essayez un autre fond, ou collez " +
+             "l'adresse d'un style qui marche. Demandé : " +
+             String(style).replace(/^https?:\/\//, "").slice(0, 52), true);
+  }, ATTENTE_GL);
+}
 
 /** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
 function poseCarteGL(cal, fond){
@@ -21678,7 +21695,13 @@ function poseCarteGL(cal, fond){
   if (!style) return;
   hote.hidden = false;
   if (_carteGL){
-    if (_styleGL !== style){ _styleGL = style; _carteGL.setStyle(style); }
+    if (_styleGL !== style){
+      _styleGL = style;
+      _ditGL = "";
+      ditCarte("Chargement de la carte…");
+      guetteLaCarte(style);
+      _carteGL.setStyle(style);
+    }
     _carteGL.jumpTo(vueGL(cal));
     return;
   }
@@ -21689,6 +21712,7 @@ function poseCarteGL(cal, fond){
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
   ditCarte("Chargement de la carte… " + style.replace(/^https?:\/\//, "").slice(0, 48));
+  guetteLaCarte(style);
   chargeMapLibre().then(gl => {
     const v = vueGL(cal);
     _styleGL = style;
@@ -21710,7 +21734,10 @@ function poseCarteGL(cal, fond){
     _carteGL.on("error", ev => diagnostiqueGL(ev));
     /* Et quand elle arrive, le dire aussi : sans ce mot, une carte pâlie par
        la discrétion et posée sous le plan peut passer pour absente. */
-    _carteGL.on("load", () => { if (!_ditGL) ditCarte("Carte chargée."); });
+    _carteGL.on("load", () => {
+      clearTimeout(_guetGL);
+      if (!_ditGL) ditCarte("Carte chargée.");
+    });
   }).catch(e => {
     _monteGL = false;
     _echecGL = e.message;
@@ -21754,6 +21781,7 @@ function diagnostiqueGL(ev){
  *  une clé absente, un chemin faux — condamnerait le fond pour la session,
  *  alors qu'on vient justement de le corriger. */
 function relanceCarteGL(){
+  clearTimeout(_guetGL);
   _echecGL = "";
   _ditGL = "";
   _monteGL = false;
@@ -21764,6 +21792,7 @@ function relanceCarteGL(){
 
 /** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
 function videCarteGL(){
+  clearTimeout(_guetGL);
   const hote = $("fondCarteGL");
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
   if (hote) hote.hidden = true;

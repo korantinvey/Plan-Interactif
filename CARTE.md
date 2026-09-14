@@ -218,7 +218,7 @@ Fonctions :
 `supprimeForme` 409 · `editionPointerDown` 419 · `editionPointerMove` 464
 `editionPointerUp` 516
 
-### `_environs.html` — 1406 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1435 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -229,18 +229,18 @@ Fonctions :
 `fondCourant` 217 · `recul` 222 · `pixelsMercator` 227 · `latitudeDePixel` 236
 `metresParPixel` 244 · `echelleDesTuiles` 262 · `niveauDesTuiles` 274 · `adresseTuile` 281
 `tuilesDeLaVue` 291 · `chargeMapLibre` 351 · `vueGL` 382 · `styleDuFond` 401
-`poseCarteGL` 410 · `diagnostiqueGL` 472 · `relanceCarteGL` 492 · `videCarteGL` 502
-`dessineFondCarte` 514 · `cleMasqueCarte` 595 · `masqueCarte` 596 · `basculeMasqueCarte` 598
-`boutonMasqueCarte` 609 · `pictoMasque` 620 · `formesMasquantes` 632 · `cheminDuHall` 654
-`poseMasqueCarte` 673 · `carreDeTerrain` 707 · `chercheBatiments` 723 · `aireDuContour` 750
-`centreDuContour` 759 · `axeDuContour` 772 · `empriseDesObjets` 789
-`batimentsCandidats` 807 · `caleSurBatiment` 828 · `retientLeHall` 854 · `manqueCalage` 876
-`enregistreCalage` 885 · `calageEnregistre` 898 · `litCoordonnees` 923
-`rafraichitCarte` 937 · `armeCalage` 979 · `pivotCalage` 990 · `glisseCarte` 994
-`calagePointerDown` 1001 · `calagePointerMove` 1015 · `calagePointerUp` 1034
-`ditCalage` 1042 · `ditCarte` 1051 · `majCalage` 1059 · `appliqueCalage` 1074
-`tourneCalage` 1081 · `construitCalage` 1087 · `ouvreCalage` 1245 · `fermeCalage` 1254
-`voletEnvirons` 1282
+`guetteLaCarte` 416 · `poseCarteGL` 427 · `diagnostiqueGL` 499 · `relanceCarteGL` 519
+`videCarteGL` 530 · `dessineFondCarte` 543 · `cleMasqueCarte` 624 · `masqueCarte` 625
+`basculeMasqueCarte` 627 · `boutonMasqueCarte` 638 · `pictoMasque` 649
+`formesMasquantes` 661 · `cheminDuHall` 683 · `poseMasqueCarte` 702 · `carreDeTerrain` 736
+`chercheBatiments` 752 · `aireDuContour` 779 · `centreDuContour` 788 · `axeDuContour` 801
+`empriseDesObjets` 818 · `batimentsCandidats` 836 · `caleSurBatiment` 857
+`retientLeHall` 883 · `manqueCalage` 905 · `enregistreCalage` 914 · `calageEnregistre` 927
+`litCoordonnees` 952 · `rafraichitCarte` 966 · `armeCalage` 1008 · `pivotCalage` 1019
+`glisseCarte` 1023 · `calagePointerDown` 1030 · `calagePointerMove` 1044
+`calagePointerUp` 1063 · `ditCalage` 1071 · `ditCarte` 1080 · `majCalage` 1088
+`appliqueCalage` 1103 · `tourneCalage` 1110 · `construitCalage` 1116 · `ouvreCalage` 1274
+`fermeCalage` 1283 · `voletEnvirons` 1311
 
 ### `_export.html` — 211 l. → admin-plans.html, rapport.html
 
