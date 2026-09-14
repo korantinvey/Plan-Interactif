@@ -1044,7 +1044,9 @@ l'appareil.
 **S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
 « Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
 Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur.
-Rien à faire pour l'exploitant : la page se déclare installable d'elle-même.
+Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
+peut en plus faire proposer l'installation au visiteur, par une fenêtre — voir
+plus bas, « Inviter à l'installer ».
 
 **Le plan public, et lui seul.** La console, le rapport, l'administration du
 plan et la page de mot de passe sont des outils de travail : on les ouvre dans
@@ -1125,6 +1127,60 @@ Tout cela s'essaie en local : `npm run essai` sert les pages **et** complète le
 manifeste comme le fait le Worker. Sans ce même geste, l'essai montrerait une
 application installable qui rouvre toujours le même salon — le seul défaut
 qu'on cherche justement à voir.
+
+### Inviter à l'installer
+
+S'installer suppose de savoir que c'est possible. Chrome range l'installation
+dans son menu, Safari au bas de sa feuille de partage — et le visiteur qui en
+aurait le plus besoin, celui qui a photographié un code à l'entrée et
+découvrira au fond du hall que la barre est tombée à zéro, est justement celui
+qui n'ira pas l'y chercher.
+
+Une fenêtre peut donc le lui proposer. Elle se règle dans l'onglet « Plan » des
+réglages — « Inviter les visiteurs à installer le plan » — et part aux
+visiteurs avec la publication, comme tout réglage. La case porte deux aperçus,
+Android et iPhone : l'organisateur règle son salon depuis un ordinateur, où la
+fenêtre ne paraîtra jamais. Elle est **décochée par défaut** : une fenêtre qui
+interrompt ne s'ajoute pas d'elle-même à un salon déjà en ligne.
+
+Elle interrompt, et ce sont ses conditions qui en font une proposition plutôt
+qu'une réclame. Toutes doivent tenir :
+
+- **le plan public, et lui seul** — la page qui porte le manifeste ;
+- **ouvert dans un navigateur** — lancé depuis l'écran d'accueil, le plan est
+  déjà installé, et dans le cadre d'un site tiers ce n'est pas à nous de
+  proposer quoi que ce soit. La porte se lit comme pour la mesure ;
+- **sur un téléphone ou une tablette** — sur un ordinateur, l'application
+  n'apporte qu'une fenêtre sans barre d'adresse ;
+- **après usage, jamais à l'ouverture** — une demi-minute de plan sous les
+  yeux, au moins un geste, puis trois secondes où rien n'est en cours : ni doigt
+  posé, ni autre fenêtre, ni fiche, parcours ou itinéraire ouvert, ni stand
+  visé, ni saisie ;
+- **là où l'installation aboutit** — voir le tableau ;
+- **rarement** — une fois par jour au plus, et plus jamais après deux refus,
+  une installation, ou « J'ai compris ».
+
+| navigateur | ce que propose la fenêtre |
+|---|---|
+| Chrome, Edge, Samsung Internet sur Android | un bouton « Installer », qui ouvre la fenêtre du navigateur — une fois seulement que celui-ci a jugé le plan installable, ce qu'il ne fait pas quand il l'est déjà |
+| Safari et les autres navigateurs d'iOS et d'iPadOS | les trois gestes : « Partager », « Sur l'écran d'accueil », « Ajouter » |
+| Firefox et les autres navigateurs d'Android | les deux gestes de leur menu |
+| la vue web d'une application — un lien ouvert depuis un réseau social | rien : l'installation y est impossible |
+
+Fermer sans répondre — la croix, le voile, « Échap » — vaut « Plus tard ». Les
+réponses restent sur l'appareil, rangées sous le nom du salon : chaque salon est
+sa propre application, et en avoir refusé une ne dit rien de l'autre. Rien ne
+remonte au serveur. Ce que la fenêtre produit se lit pourtant déjà dans le
+rapport d'utilisation : les lancements depuis l'écran d'accueil ont leur porte.
+
+Un détail de Chromium a demandé du soin. L'événement par lequel il annonce le
+plan installable peut arriver **avant les données**, chez qui a déjà passé du
+temps sur le site — Chrome compte cet usage pour le domaine, pas pour la page.
+Il faut pourtant décider sur-le-champ de le retenir, et le retenir retire le
+bandeau que Chrome aurait posé en bas de l'écran. L'appareil garde donc ce que
+le salon voulait à la visite précédente : réglage éteint, le bandeau du
+navigateur reste tel quel ; sans visite précédente, l'événement est retenu, et
+le bandeau attend au pire une visite de plus.
 
 ## Le rapport d'utilisation
 

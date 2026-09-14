@@ -3042,6 +3042,43 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mcorps .razMot{display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:13px}
 .mcorps .razMot span{color:var(--ink-2)}
 
+/* L'invitation à installer le plan.
+   Étroite comme celle de la suggestion : elle ne porte qu'une proposition. Sur
+   téléphone, la règle commune en fait une feuille posée en bas de l'écran — là
+   où le système pose les siennes, et où le pouce trouve « Installer ». La
+   largeur ne vaut donc qu'au-delà : posée sur la feuille, elle l'arrêtait à
+   quelques pixels du bord, et la liste dépassait dans l'interstice. */
+@media (min-width:901px){
+  .modale[data-genre="installe"] .mfen{width:min(400px,100%)}
+}
+.instTete{display:flex;align-items:center;gap:13px;margin:4px 0 12px}
+/* L'icône telle que l'écran d'accueil la montrera, avec l'ombre légère d'une
+   icône posée sur un fond : sans elle, le bleu se lirait comme un aplat de la
+   fenêtre. */
+.instIcone{flex:none;width:52px;height:52px;border-radius:12px;
+  box-shadow:0 5px 14px -7px rgba(0,0,0,.5)}
+.instTete b{display:block;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
+.instTete span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
+.mcorps ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
+  flex-direction:column;gap:9px}
+.mcorps ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
+  line-height:1.5;color:var(--ink-2)}
+.mcorps ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
+  display:grid;place-items:center;transform:translateY(-1px);
+  background:var(--accent-soft);color:var(--accent);
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+.mcorps ol.instEtapes b{color:var(--ink);font-weight:600}
+/* Le pictogramme se lit dans la phrase, à la hauteur du texte : c'est le même
+   dessin que dans la barre du navigateur, qu'on y cherchera des yeux. */
+.instPicto{white-space:nowrap}
+.instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
+  vertical-align:-.25em;color:var(--accent)}
+/* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
+   pleins — la case reste ce qu'on règle. */
+.reglages .aideR .apercuInst{padding:0;font-size:inherit;color:var(--accent);
+  text-decoration:underline;text-underline-offset:2px}
+
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
    nombre de fiches que chacune retient — sans lui, on coche à l'aveugle. Le

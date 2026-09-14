@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3590 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3594 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2556 · 10. Mode administration
-- l.2643 · La fiche d'une zone organisateur
-- l.3337 · Masquer une zone organisateur
-- l.3420 · Placer un libellé à la main
+- l.2560 · 10. Mode administration
+- l.2647 · La fiche d'une zone organisateur
+- l.3341 · Masquer une zone organisateur
+- l.3424 · Placer un libellé à la main
 
 Fonctions :
 
@@ -32,19 +32,19 @@ Fonctions :
 `habilleModale` 840 · `texteCorps` 911 · `standApercu` 926 · `lignesApercu` 950
 `contenuApercu` 976 · `apercuFiche` 1013 · `apercuListe` 1090 · `apercuDuo` 1112
 `glisseFenetre` 1145 · `ouvreReglages` 1156 · `voletZones` 1255 · `champsFicheZone` 1357
-`ficheZoneEnPlace` 1427 · `voletPlan` 1445 · `blocHoraires` 1571 · `sallesSituees` 1704
-`voletPmr` 1720 · `nomDuTon` 1811 · `voletApparence` 1816 · `clesFiche` 2010
-`voletOrdre` 2026 · `enregistreConf` 2505 · `rgbHex` 2512 · `hexa` 2519 · `luminance` 2523
-`ecarte` 2537 · `joli` 2552 · `retireAdmin` 2569 · `activeAdmin` 2582 · `champZone` 2669
-`champsZone` 2694 · `champSalles` 2786 · `nomDeZone` 2838 · `reduitLogo` 2872
-`champLogo` 2913 · `editeurRiche` 3010 · `memeFicheZone` 3167 · `suitFicheZone` 3174
-`verseFicheZone` 3182 · `ficheZone` 3208 · `enregistreZone` 3233
-`basculeAffichageZone` 3348 · `marqueZonesMasquees` 3365 · `ecritColonnesEvenement` 3385
-`ecritColonneEvenement` 3416 · `cleLibelle` 3441 · `empreinteLibelle` 3457
-`placementLibelle` 3465 · `posePlacement` 3475 · `libelleAutomatique` 3492
-`modePlacementLibelles` 3501 · `majPaletteLibelle` 3518 · `choisitLibelle` 3535
-`pousseLibelle` 3542 · `libellePointerDown` 3550 · `libellePointerMove` 3565
-`libellePointerUp` 3574
+`ficheZoneEnPlace` 1427 · `voletPlan` 1445 · `blocHoraires` 1575 · `sallesSituees` 1708
+`voletPmr` 1724 · `nomDuTon` 1815 · `voletApparence` 1820 · `clesFiche` 2014
+`voletOrdre` 2030 · `enregistreConf` 2509 · `rgbHex` 2516 · `hexa` 2523 · `luminance` 2527
+`ecarte` 2541 · `joli` 2556 · `retireAdmin` 2573 · `activeAdmin` 2586 · `champZone` 2673
+`champsZone` 2698 · `champSalles` 2790 · `nomDeZone` 2842 · `reduitLogo` 2876
+`champLogo` 2917 · `editeurRiche` 3014 · `memeFicheZone` 3171 · `suitFicheZone` 3178
+`verseFicheZone` 3186 · `ficheZone` 3212 · `enregistreZone` 3237
+`basculeAffichageZone` 3352 · `marqueZonesMasquees` 3369 · `ecritColonnesEvenement` 3389
+`ecritColonneEvenement` 3420 · `cleLibelle` 3445 · `empreinteLibelle` 3461
+`placementLibelle` 3469 · `posePlacement` 3479 · `libelleAutomatique` 3496
+`modePlacementLibelles` 3505 · `majPaletteLibelle` 3522 · `choisitLibelle` 3539
+`pousseLibelle` 3546 · `libellePointerDown` 3554 · `libellePointerMove` 3569
+`libellePointerUp` 3578
 
 Éléments :
 
@@ -230,7 +230,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 3784 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 3821 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -273,6 +273,20 @@ Fonctions :
 Éléments :
 
 `#secours`
+
+### `_installation.html` — 441 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 16. L'invitation à installer le plan
+
+Fonctions :
+
+`reglageInstallation` 48 · `invitationVoulue` 49 · `auDoigt` 74 · `reponsesInstallation` 92
+`retientInstallation` 97 · `jourInstallation` 106 · `invitationEcartee` 109
+`refuseInstallation` 115 · `faconInstallation` 143 · `tempsInstallation` 167
+`relanceInvitation` 170 · `gesteInstallation` 175 · `doigtPose` 179 · `doigtLeve` 180
+`vueInstallation` 182 · `invitationRetenue` 200 · `finInvitation` 212
+`essaieInvitation` 230 · `remplitInvitation` 320 · `ouvreInvitation` 359
+`caseInstallation` 416
 
 ### `_itineraire.html` — 2997 l. → plan-admin.html, plan-smcl.html, plan.html
 

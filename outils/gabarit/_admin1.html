@@ -1529,6 +1529,10 @@ function voletPlan(hote){
     });
   }
 
+  /* L'invitation à installer le plan est une fenêtre de plus sous les yeux du
+     visiteur : elle se règle avec ce qu'il voit (`_installation.html`). */
+  caseInstallation(bloc);
+
   hote.appendChild(bloc);
 
   const duree = document.createElement("div");
