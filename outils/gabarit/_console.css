@@ -7,16 +7,31 @@
  * ne pas payer deux fois.
  *
  * Elle est copiée dans `web/` par `genere.js`, comme `config.js`.
+ *
+ * **Les tons sont ceux de la marque** — la nuit `#071F3A`, le cyan `#35C2FF`,
+ * le rose `#FF4D6D` — et non plus le greige du plan public, qui, lui, n'a pas
+ * encore basculé. Les gris ne sont donc pas neutres : ils tirent vers la nuit,
+ * ce qui les fait tenir avec l'accent au lieu de le salir.
+ *
+ * Deux conséquences que le cyan impose, et qu'il vaut mieux connaître avant de
+ * retoucher un jeton. Il est trop clair pour porter du texte sur du blanc :
+ * en thème clair l'accent est donc un cyan profond, et le cyan de la marque ne
+ * revient qu'en thème sombre, où le fond le supporte. Et l'encre du bouton
+ * primaire est devenue un jeton (`--accent-encre`) au lieu d'un blanc en dur :
+ * du blanc sur le cyan vif ne fait que 1,9 pour 1, quand la nuit y fait 9,3.
+ *
+ * Le rose de la marque sert ce qui alerte. C'est le seul emploi qui lui donne
+ * un sens dans un écran sans plan : ailleurs il n'aurait rien à désigner.
  */
 :root{
-  --ground:#E9EAE4; --surface:#FBFBF8; --surface-2:#F1F2EC; --surface-3:#E4E6DE;
-  --line:#D2D5CB; --line-strong:#B4B9AC;
-  --ink:#15181A; --ink-2:#4A4F52; --ink-3:#7C8285;
-  --accent:#2F49D1; --accent-soft:#DCE1FA;
-  --vert:#17876B; --vert-soft:#D8EDE6;
-  --ambre:#C98A06; --ambre-soft:#F7EAC6;
-  --rouge:#C2372B; --rouge-soft:#F6DDDA;
-  --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
+  --ground:#EDF2F7; --surface:#FFFFFF; --surface-2:#F4F8FB; --surface-3:#E4EDF5;
+  --line:#D2DFEA; --line-strong:#AFC2D3;
+  --ink:#071F3A; --ink-2:#3C5670; --ink-3:#54708C;
+  --accent:#0A6C93; --accent-soft:#D7EFFB; --accent-encre:#FFFFFF;
+  --vert:#0E7460; --vert-soft:#D6EDE7;
+  --ambre:#8A6003; --ambre-soft:#F7E9C6;
+  --rouge:#C01B44; --rouge-soft:#FBDDE4;
+  --shadow:0 1px 2px rgba(7,31,58,.07), 0 8px 24px -12px rgba(7,31,58,.20);
   /* Deux rayons : celui des commandes, et celui des blocs qui les portent. Un
      rayon unique donnait soit des cartes à angle vif, soit des boutons en
      pastille — ils ne sont pas à la même échelle. */
@@ -24,31 +39,31 @@
   /* Le menu déroulant d'un « select » est peint par le système : ses tons ne
      peuvent venir que d'ici, et « --systeme » lui dit de quel côté peindre
      l'ascenseur et la surbrillance. */
-  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
+  --menu-fond:#FFFFFF; --menu-encre:#071F3A; --systeme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427; --surface-3:#272D31;
-    --line:#2A3034; --line-strong:#3B4348;
-    --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55;
-    --vert:#3FBF9B; --vert-soft:#12332B;
-    --ambre:#F0B429; --ambre-soft:#3A2F12;
-    --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
+    --ground:#04121F; --surface:#0A1E33; --surface-2:#102941; --surface-3:#183551;
+    --line:#1E3C58; --line-strong:#325975;
+    --ink:#DDEAF6; --ink-2:#9BB2C9; --ink-3:#7793AD;
+    --accent:#35C2FF; --accent-soft:#123A55; --accent-encre:#04121F;
+    --vert:#3FD3AC; --vert-soft:#0C3830;
+    --ambre:#F0B429; --ambre-soft:#3A2E12;
+    --rouge:#FF4D6D; --rouge-soft:#3E1424;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
+    --menu-fond:#102941; --menu-encre:#DDEAF6; --systeme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427; --surface-3:#272D31;
-  --line:#2A3034; --line-strong:#3B4348;
-  --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-  --accent:#7A8CFF; --accent-soft:#232C55;
-  --vert:#3FBF9B; --vert-soft:#12332B;
-  --ambre:#F0B429; --ambre-soft:#3A2F12;
-  --rouge:#FF8B7E; --rouge-soft:#3B1F1C;
+  --ground:#04121F; --surface:#0A1E33; --surface-2:#102941; --surface-3:#183551;
+  --line:#1E3C58; --line-strong:#325975;
+  --ink:#DDEAF6; --ink-2:#9BB2C9; --ink-3:#7793AD;
+  --accent:#35C2FF; --accent-soft:#123A55; --accent-encre:#04121F;
+  --vert:#3FD3AC; --vert-soft:#0C3830;
+  --ambre:#F0B429; --ambre-soft:#3A2E12;
+  --rouge:#FF4D6D; --rouge-soft:#3E1424;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
+  --menu-fond:#102941; --menu-encre:#DDEAF6; --systeme:dark;
 }
 
 *{box-sizing:border-box}
@@ -102,7 +117,7 @@ button{cursor:pointer;background:none;border:none}
 .btn{padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:500;
   border:1px solid var(--line);white-space:nowrap}
 .btn:hover{border-color:var(--line-strong)}
-.btn.primaire{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primaire{background:var(--accent);border-color:var(--accent);color:var(--accent-encre)}
 .btn.primaire:hover{filter:brightness(1.08)}
 .btn.danger{color:var(--rouge);border-color:var(--line)}
 .btn.danger:hover{background:var(--rouge-soft);border-color:var(--rouge)}
@@ -497,7 +512,7 @@ tr.eteint td{opacity:.45}
 .integration textarea{flex:1;min-height:56px;background:var(--surface-2);line-height:1.5}
 
 /* ---------- fenêtres ---------- */
-.modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
+.modale{position:fixed;inset:0;background:rgba(4,12,22,.55);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
 .mfen{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-bloc);
