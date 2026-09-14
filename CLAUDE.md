@@ -58,8 +58,18 @@ rattrape — un commit plus tard, à retirer avant la poussée suivante.
 suite : `npm run migration -- "Titre"` produit `AAAAMMJJHHMMSS_titre.sql`.
 Deviner « le numéro suivant » revenait à le prendre en même temps que l'autre
 session, puis à renommer un fichier peut-être déjà appliqué en production. Une
-migration partie sur `main` ne se renomme jamais : elle y est enregistrée sous
-son ancien nom, et rejouerait sous le nouveau.
+migration **appliquée** ne se renomme jamais : elle est enregistrée sous son
+ancien nom, et rejouerait sous le nouveau.
+
+L'horodatage a son revers, et il se paie à la fusion. Une branche qui vit
+plusieurs jours porte une migration datée du jour où on l'a créée ; `main` en
+reçoit d'autres pendant ce temps, plus récentes, et déjà appliquées. `supabase
+db push` refuse alors d'en insérer une avant la dernière posée — le déploiement
+échoue après la fusion, sur `main`, quand il est trop tard pour le voir venir.
+**Avant de fusionner une branche qui a vieilli, comparez votre migration à la
+dernière de `main`** : si elle lui est antérieure, réhorodatez-la. C'est sans
+risque tant qu'elle n'a jamais été appliquée — et le savoir se lit dans le
+journal du déploiement, qui la nomme.
 
 **Jamais de poussée forcée.** Le workflow `Pages` commite sur la branche poussée
 quand `web/` était en retard : le clone local se retrouve derrière sans l'avoir

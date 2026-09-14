@@ -697,10 +697,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913182428_le_partage_d_un_parcours_compte.sql` — compteur, fn enregistre_mesures, fn audience_cibles, fn rapport_utilisation
 - `20260913200617_le_fuseau_d_un_salon_au_format_iana.sql` — fn fuseau_iana, fn evenement_fuseau_iana, fn periode_salon, fn enregistre_mesures
 - `20260913205218_le_fuseau_d_un_salon_choisi_sinon_eventmaker_sinon_paris.sql` — evenement, fn evenement_fuseau_iana
-- `20260913220713_le_calage_du_plan_sur_la_terre.sql` — evenement
 - `20260913223216_la_conservation_des_jetons_de_visiteur.sql` — fn purge_presences, fn reinitialise_compteurs
 - `20260913234328_libelles_anglais_des_listes_de_valeurs.sql` — evenement
 - `20260914112229_intitules_des_champs_de_la_fiche.sql` — —
+- `20260914231027_le_calage_du_plan_sur_la_terre.sql` — evenement
 
 ## Le reste
 
