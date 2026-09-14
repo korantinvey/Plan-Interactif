@@ -821,6 +821,12 @@ if ("serviceWorker" in navigator){
      le plan à celle du navigateur. Deux polices sur un écran, pour le même
      nom d'exposant lu deux fois. */
   --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  /* La liste déroulante d'un « select » est peinte par le système, hors de la
+     page : ses tons ne peuvent donc pas être ceux d'un modèle, qui les pose
+     translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
+     redéfinit. « --systeme » dit au navigateur de quel côté peindre le reste
+     du menu — ascenseur, surbrillance, cadre. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -835,6 +841,7 @@ if ("serviceWorker" in navigator){
     --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -849,6 +856,7 @@ if ("serviceWorker" in navigator){
   --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
 }
 
 *{box-sizing:border-box}
@@ -856,6 +864,13 @@ body{margin:0;background:var(--ground);color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
+/* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
+   fond : sous « Verre » — encre blanche sur un carreau translucide — comme
+   dans le thème sombre, elles écrivaient du blanc sur le blanc du système, et
+   ne paraissaient qu'au survol. Elles reçoivent donc leurs propres tons, que
+   le champ soit habillé ou non. */
+select{color-scheme:var(--systeme)}
+option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
 /* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
@@ -5642,6 +5657,27 @@ function coloreSecteurs(){
    à chaque glissement du sélecteur. */
 let _secteursOfferts = null;
 
+/**
+ * La teinte d'un seul secteur, posée sans relire tout le plan.
+ *
+ * `coloreSecteurs` balaie les stands du salon et rappelle la carte de chaleur :
+ * c'est ce qu'il faut quand la sectorisation change, et bien trop quand une
+ * seule couleur bouge — le nuancier en envoie une rafale, et le balayage
+ * complet ne tient pas ce rythme. Ici on ne touche que les stands concernés ;
+ * le reste est déjà en place et le restera.
+ */
+function peintSecteur(nom){
+  if (!secteursMontres()) return;
+  const c = couleurConf(conf("secteur:" + nom).couleur);
+  document.querySelectorAll("#stands g[data-sect], #couches .dcal .sdes[data-sect]")
+    .forEach(g => {
+      const o = parId.get(g.dataset.id);
+      if (!o || o.sect !== nom) return;
+      if (c) g.style.setProperty("--sect-c", c);
+      else g.style.removeProperty("--sect-c");
+    });
+}
+
 /** Les couleurs du plan et le critère suivent le même réglage. */
 function appliqueSecteurs(){
   coloreSecteurs();
@@ -8837,6 +8873,68 @@ const salonPartage = () => (DATA?.plans || [])
   .some(p => (p.stands || []).some(s => (s.coex || []).length));
 
 /* ------------------------------------------------------------
+   La rafale du sélecteur de couleur
+
+   Un nuancier n'envoie pas un événement par couleur retenue : le sélecteur du
+   système en envoie une rafale pendant qu'on glisse, plusieurs dizaines par
+   seconde. Peindre à ce rythme se tient — c'est une variable CSS, ou la
+   couleur d'un groupe. Retenir, non : sérialiser toute la configuration ou
+   tous les dessins vers le poste, rebâtir le SVG des calques, refaire la
+   nappe d'itinéraire, cela demande plus de temps qu'il n'en reste entre deux
+   événements. Le retard s'accumule alors, et sur un salon chargé — mille
+   stands, des calques dessinés — la couleur traîne plusieurs secondes
+   derrière la souris.
+
+   On sépare donc les deux gestes : la peinture suit la main, la mémoire
+   attend qu'elle s'arrête. Rien ne part en base pour autant — la publication
+   reste un geste à part.
+   ------------------------------------------------------------ */
+
+/** Le temps d'immobilité, en millisecondes, au bout duquel la couleur est
+ *  retenue. Assez court pour qu'un clic sur une pastille paraisse immédiat,
+ *  assez long pour traverser une rafale sans en écrire une seule image. */
+const REPOS_NUANCIER = 200;
+
+/* Deux dixièmes de seconde suffisent à fermer un onglet : ce qui attend encore
+   est noté ici, et part avant que la page ne s'en aille. Aux deux moments que
+   `_pousse.html` guette, et avant lui — ce module le précède, donc la couleur
+   est écrite quand il presse l'envoi. */
+const NUANCIERS_EN_ATTENTE = new Set();
+const presseNuanciers = () => NUANCIERS_EN_ATTENTE.forEach(fixe => fixe());
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") presseNuanciers();
+});
+addEventListener("pagehide", presseNuanciers);
+
+/**
+ * Branche un sélecteur de couleur : `peint` à chaque événement reçu, `retient`
+ * une fois le glissement fini.
+ *
+ * `change` ne clôt pas le geste partout — certains navigateurs l'envoient au
+ * fil du glissement, comme `input`. On ne s'y fie donc pas : c'est le temps de
+ * repos qui décide, et quitter le champ presse ce qui attendait.
+ *
+ * Rend la fonction qui presse, pour qui a une autre raison de conclure.
+ */
+function suitNuancier(input, peint, retient){
+  let minuteur = null;
+  const fixe = () => {
+    if (!minuteur) return;
+    clearTimeout(minuteur); minuteur = null;
+    NUANCIERS_EN_ATTENTE.delete(fixe);
+    retient();
+  };
+  input.oninput = input.onchange = e => {
+    peint(e.target.value);
+    if (minuteur) clearTimeout(minuteur);
+    minuteur = setTimeout(fixe, REPOS_NUANCIER);
+    NUANCIERS_EN_ATTENTE.add(fixe);
+  };
+  input.onblur = fixe;
+  return fixe;
+}
+
+/* ------------------------------------------------------------
    Couleur principale et modèle de fiche
 
    Deux réglages d'apparence qui ne portent sur aucun calque : la teinte dont
@@ -10345,10 +10443,13 @@ function voletApparence(hote){
     const libre = nuancier.querySelector(".perso input");
     if (libre) libre.value = conf("_accent").couleur || jeton("--accent-base") || "#2F49D1";
   };
-  const choisit = (v) => {
+  /* Peindre : trois mélanges et six variables posées sur la racine, la page
+     s'y refait d'elle-même. C'est ce qui peut suivre la rafale du sélecteur. */
+  const peint = (v) => {
     conf("_accent").couleur = v;
-    enregistreConf(); appliqueAccent(); majPastilles();
+    appliqueAccent(); majPastilles();
   };
+  const choisit = (v) => { peint(v); enregistreConf(); };
   TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -10359,15 +10460,15 @@ function voletApparence(hote){
     b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* La pastille de couleur libre. Le sélecteur du système envoie une rafale
-     d'événements pendant qu'on glisse : on suit, c'est le seul moyen de voir
-     la couleur s'installer sur le plan pendant qu'on la cherche. Rien ne part
-     en base pour autant, la publication reste un geste à part. */
+  /* La pastille de couleur libre. On suit la rafale du sélecteur : c'est le
+     seul moyen de voir la couleur s'installer sur le plan pendant qu'on la
+     cherche. Seule l'écriture attend la fin du geste — voir « La rafale du
+     sélecteur de couleur ». */
   const libre = document.createElement("label");
   libre.className = "perso";
   libre.title = "Couleur libre";
   libre.innerHTML = '<input type="color"><span></span>';
-  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
     delete conf("_accent").couleur;
@@ -12443,6 +12544,15 @@ function dessineDessins(){
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
      fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
   rafraichitStandsDessines();
+}
+
+/** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
+ *  et ses tracés la prennent par `currentColor`. C'est ce dont le nuancier a
+ *  besoin pendant qu'on glisse — `dessineDessins` refait tous les nœuds de
+ *  tous les calques, ce qu'une rafale d'événements ne supporte pas. */
+function peintCalque(cal){
+  const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
+  if (g) g.style.color = cal.couleur || "var(--accent)";
 }
 
 /* --- conversion écran → repère du plan --- */
@@ -15077,14 +15187,17 @@ function construitPanneau(){
              x.t === "fond" ? styleFond(x.k.slice(5)) : styleDataGroupe(x.k.slice(5), on); }
     };
 
-    /* couleur */
+    /* couleur — peinte à chaque événement, retenue une fois le glissement
+       fini : voir « La rafale du sélecteur de couleur » dans `_admin1.html`. */
     const cc = d.querySelector(".cc");
     cc.value = (x.t === "dessin" ? x.ref.couleur : c.couleur) || defautCouleur(x);
-    cc.oninput = ev => {
-      if (x.t === "dessin"){ x.ref.couleur = ev.target.value; enregistreDessins(); dessineDessins(); }
-      else { c.couleur = ev.target.value; enregistreConf();
-             x.t === "fond" ? styleFond(x.k.slice(5)) : appliqueCouleursData(); }
-    };
+    suitNuancier(cc,
+      v => {
+        if (x.t === "dessin"){ x.ref.couleur = v; peintCalque(x.ref); }
+        else { c.couleur = v;
+               x.t === "fond" ? styleFond(x.k.slice(5)) : appliqueCouleursData(); }
+      },
+      () => { if (x.t === "dessin") enregistreDessins(); else enregistreConf(); });
 
     /* trait ou aplat */
     const fb = d.querySelector(".fillbtn");
@@ -15221,14 +15334,14 @@ function sectionSelection(hote){
 
   const c = conf("selection");
   bloc.appendChild(ligneCouleur("Élément sélectionné", c.couleur || jeton("--accent-soft"),
-    (v) => { c.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+    (v) => { c.couleur = v; appliqueCouleursData(); }));
 
   /* Le parcours retiré, sa couleur ne règle plus rien : la ligne s'efface avec
      lui, et revient si l'exploitant le rouvre. */
   if (conf("_parcours").visible !== false){
     const p = conf("parcours");
     bloc.appendChild(ligneCouleur("Parcours de visite", p.couleur || jeton("--accent"),
-      (v) => { p.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+      (v) => { p.couleur = v; appliqueCouleursData(); }));
   }
 
   /* Les points d'intérêt, comme les deux autres : une marque que le plan pose
@@ -15242,7 +15355,7 @@ function sectionSelection(hote){
   if ($("poi") && !$("poi").hidden){
     const i = conf("poi");
     bloc.appendChild(ligneCouleur("Points d'intérêt", i.couleur || jeton("--accent"),
-      (v) => { i.couleur = v; enregistreConf(); appliqueCouleursData(); }));
+      (v) => { i.couleur = v; appliqueCouleursData(); }));
   }
   hote.appendChild(bloc);
 }
@@ -15287,7 +15400,8 @@ function sectionFond(hote){
     const libre = nuancier.querySelector(".perso input");
     if (libre) libre.value = c.couleur || jeton("--ground") || "#E9EAE4";
   };
-  const choisit = (v) => { c.couleur = v; enregistreConf(); appliqueFond(); majPastilles(); };
+  const peint = (v) => { c.couleur = v; appliqueFond(); majPastilles(); };
+  const choisit = (v) => { peint(v); enregistreConf(); };
 
   FONDS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
@@ -15299,15 +15413,14 @@ function sectionFond(hote){
     b.onclick = () => choisit(ton);
     nuancier.appendChild(b);
   });
-  /* Le sélecteur du système envoie une rafale d'événements pendant qu'on
-     glisse : on suit, c'est le seul moyen de voir le fond s'installer sous le
-     plan pendant qu'on le cherche. Rien ne part en base pour autant — la
-     publication reste un geste à part. */
+  /* On suit la rafale du sélecteur : c'est le seul moyen de voir le fond
+     s'installer sous le plan pendant qu'on le cherche. Seule l'écriture attend
+     la fin du geste — voir « La rafale du sélecteur de couleur ». */
   const libre = document.createElement("label");
   libre.className = "perso";
   libre.title = "Couleur libre";
   libre.innerHTML = '<input type="color"><span></span>';
-  libre.querySelector("input").oninput = e => choisit(e.target.value);
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
 
   bloc.querySelector(".reset").onclick = () => {
@@ -15320,8 +15433,12 @@ function sectionFond(hote){
 
 /* Une ligne qui n'a qu'une couleur à régler : ni visibilité, ni remplissage,
    ni rang. C'est le cas de tout ce qui n'est pas un calque — la sélection, un
-   secteur — et qui n'a donc rien à masquer ni à empiler. */
-function ligneCouleur(libelle, valeur, applique){
+   secteur — et qui n'a donc rien à masquer ni à empiler.
+
+   `peint` ne fait que poser la couleur à l'écran, et se répète autant de fois
+   que le sélecteur l'envoie ; l'écriture sur le poste attend la fin du geste
+   et se fait ici, une fois pour toutes. */
+function ligneCouleur(libelle, valeur, peint){
   const d = document.createElement("div");
   d.className = "calq";
   d.innerHTML = '<label><span></span></label>' +
@@ -15329,7 +15446,7 @@ function ligneCouleur(libelle, valeur, applique){
   d.querySelector("label span").textContent = libelle;
   const cc = d.querySelector(".cc");
   cc.value = valeur;
-  cc.oninput = (e) => applique(e.target.value);
+  suitNuancier(cc, peint, enregistreConf);
   return d;
 }
 
@@ -15345,8 +15462,9 @@ function rangSecteur(hote, nom){
   const c = conf("secteur:" + nom);
   const d = ligneCouleur(nom, couleurSecteur(nom), (v) => {
     c.couleur = v;
-    enregistreConf();
-    appliqueSecteurs();
+    /* Seuls les stands de ce secteur changent de teinte : `appliqueSecteurs`
+       relit tout le salon, ce qui ne tient pas au rythme du sélecteur. */
+    peintSecteur(nom);
   });
   d.classList.add("sous");
   hote.appendChild(d);
@@ -15367,7 +15485,7 @@ function rangSous(hote, cle, libelle, defaut, applique){
   };
   const cc = d.querySelector(".cc");
   cc.value = c.couleur || defaut();
-  cc.oninput = e => { c.couleur = e.target.value; enregistreConf(); applique(); };
+  suitNuancier(cc, v => { c.couleur = v; applique(); }, enregistreConf);
   const fb = d.querySelector(".fillbtn");
   fb.setAttribute("aria-pressed", !!c.rempli);
   fb.onclick = () => { c.rempli = !c.rempli; fb.setAttribute("aria-pressed", !!c.rempli);
