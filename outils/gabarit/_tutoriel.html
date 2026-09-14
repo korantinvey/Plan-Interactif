@@ -376,7 +376,10 @@ const chapitresTuto = () => CHAPITRES_TUTO.filter(c => c.actif());
  * prochaine ouverture.
  */
 function proposeTutoriel(){
-  if (PLAN_ADMIN || TUTO || !tutoPropose()) return;
+  /* Une borne n'a pas de première visite : l'écran est à tout le monde, et la
+     seule personne à qui la fenêtre se proposerait est l'exploitant en train
+     de l'installer — après quoi elle ne reparaîtrait plus pour personne. */
+  if (PLAN_ADMIN || BORNE || TUTO || !tutoPropose()) return;
   try { if (localStorage.getItem(cleTuto()) !== null) return; } catch (e) { return; }
   setTimeout(() => {
     if (TUTO || !DATA || !tutoPropose()) return;

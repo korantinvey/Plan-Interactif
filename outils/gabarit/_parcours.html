@@ -366,27 +366,34 @@ function fermeParcours(){
 $("btnParcours").onclick = () =>
   $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
 $("closeParcours").onclick = fermeParcours;
+
+/**
+ * Tout oublier. Le visiteur le demande par le bouton ci-dessous, après
+ * confirmation ; une borne interactive le fait d'elle-même en se remettant
+ * pour le visiteur suivant, et n'a personne à qui demander.
+ */
+function videLeParcours(){
+  PARCOURS = { stands: [], confs: [] };
+  /* La journée n'était que cette liste, mise en heures : elle s'en va avec
+     elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
+     qui ne doit rien au parcours. */
+  if (JOURNEE && TRACE === JOURNEE.dessin){
+    TRACE = null;
+    dessineItineraire();
+  }
+  JOURNEE = null; vueJournee = false;
+  /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
+     repart de zéro, les refus avec elle. */
+  SUGG_ECARTES.clear();
+  SUGG_MONTREES.clear();
+  enregistreParcours();
+  appliqueVueParcours();
+}
+
 $("videParcours").onclick = () => confirme("Vider le parcours",
   "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
   "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
-  "Vider",
-  () => {
-    PARCOURS = { stands: [], confs: [] };
-    /* La journée n'était que cette liste, mise en heures : elle s'en va avec
-       elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
-       qui ne doit rien au parcours. */
-    if (JOURNEE && TRACE === JOURNEE.dessin){
-      TRACE = null;
-      dessineItineraire();
-    }
-    JOURNEE = null; vueJournee = false;
-    /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
-       repart de zéro, les refus avec elle. */
-    SUGG_ECARTES.clear();
-    SUGG_MONTREES.clear();
-    enregistreParcours();
-    appliqueVueParcours();
-  });
+  "Vider", videLeParcours);
 
 /* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
    le tiroir, pas avec lui. */

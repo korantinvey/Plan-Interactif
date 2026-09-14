@@ -542,6 +542,8 @@ function montePlan(){
   // le trajet vit hors des calques : il survit au montage, mais son tronçon
   // n'est pas celui du pavillon qu'on vient d'ouvrir
   dessineItineraire();
+  // et « Vous êtes ici » n'est posé que dans le pavillon où la borne l'est
+  dessineBorne();
   rafraichitApercu();
   MONTE = true;
   if (ADMIN) construitPanneau();
@@ -1691,6 +1693,8 @@ const appliqueVue = () => {
   if (typeof rafraichitBouts === "function") rafraichitBouts();
   // et la pointe des lignes fléchées, pas davantage
   if (typeof rafraichitFleches === "function") rafraichitFleches();
+  // le point de la borne, pas davantage non plus
+  if (typeof rafraichitBorne === "function") rafraichitBorne();
 };
 /* Rafraîchir la vue coûte deux choses de nature très différente. Poser le
    « viewBox » est immédiat. Recalculer les libellés parcourt les cinq cents
@@ -3227,6 +3231,10 @@ svg.addEventListener("pointerup", e => {
   oublieChoixPoi(cible);
   // et de même le retrait de la recherche, qu'un objet éteint fait tomber
   oublieRetrait(cible);
+  /* Poser une borne prend le clic avant tout le reste : ce n'est ni une fiche
+     qu'on ouvre ni un bout de trajet qu'on désigne, et l'endroit compte même
+     là où il n'y a rien (voir « _borne.html »). */
+  if (poseBorneIci(d.x, d.y, cible)) return;
   /* Une visée d'itinéraire en cours prend le clic avant la fiche : c'est un
      point qu'on désigne, pas un exposant qu'on veut lire. */
   if (cible){
