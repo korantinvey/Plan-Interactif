@@ -2548,10 +2548,22 @@ async function synchronise(e) {
     const suite = n.erreur
       ? " Nomenclature en codes : " + n.erreur
       : n.libelles ? " " + n.libelles + " libellés de nomenclature." : "";
+    /* Des fiches lues et aucun exposant reconnu n'est pas une réussite, quoi
+       qu'en disent les autres compteurs : c'est le réglage du champ de
+       rattachement qui est en cause, et il faut le nommer. Sans cela la
+       fenêtre annonçait « 84 emplacements, 0 apparié » en vert, et rien ne
+       disait quel champ avait été lu pour arriver là. */
+    const ex = j.exposantsSource || null;
+    const nomme = (l) => [].concat(l || []).filter(Boolean).join(" ou ") || "aucun";
+    const muet = ex && ex.lus && !ex.exposants
+      ? " Aucun exposant reconnu sur " + ex.lus + " fiches lues : aucune ne " +
+        "porte « " + nomme(ex.champStand) + " » ni « " + nomme(ex.champDossier) +
+        " ». Désignez les champs dans « Fiche détail »."
+      : "";
     const mot = pav.length + " pavillon" + (pav.length > 1 ? "s" : "") + ", " +
-      total + " emplacements" + app + "." + suite;
-    vue.fini(mot, n.erreur ? "alerte" : "ok");
-    signale(mot, !!n.erreur);
+      total + " emplacements" + app + "." + suite + muet;
+    vue.fini(mot, n.erreur || muet ? "alerte" : "ok");
+    signale(mot, !!(n.erreur || muet));
     await charge();
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée

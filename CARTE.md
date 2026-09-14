@@ -153,7 +153,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3011 l. → admin-plans.html
+### `_console-js.html` — 3023 l. → admin-plans.html
 
 - l.929 · Provenance des données
 - l.1056 · Contenu de la fiche détail
@@ -175,9 +175,9 @@ Fonctions :
 `intitule` 2069 · `intituleSuite` 2081 · `separeValeurs` 2095 · `aplani` 2116
 `memeStyle` 2126 · `autreFace` 2144 · `champOrigine` 2160 · `majLiens` 2427
 `majIntegration` 2464 · `majMsgSync` 2471 · `etapesPressenties` 2501 · `synchronise` 2515
-`dupliquer` 2566 · `litMonProfil` 2666 · `RETOUR_MDP` 2677 · `litComptes` 2679
-`ligneMessage` 2688 · `casesSalons` 2698 · `ouvreComptes` 2728 · `ouvreFicheCompte` 2820
-`videEcran` 2979 · `dessine` 2984 · `demarre` 2999
+`dupliquer` 2578 · `litMonProfil` 2678 · `RETOUR_MDP` 2689 · `litComptes` 2691
+`ligneMessage` 2700 · `casesSalons` 2710 · `ouvreComptes` 2740 · `ouvreFicheCompte` 2832
+`videEcran` 2991 · `dessine` 2996 · `demarre` 3011
 
 Éléments :
 
@@ -588,11 +588,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 49 · `db` 83 · `salon` 96 · `retraits` 174 · `ampute` 198 · `masquesDe` 238
 `masquesDuPlan` 258
 
-### `supabase/functions/sync-evenement/index.ts` — 1536 l.
+### `supabase/functions/sync-evenement/index.ts` — 1555 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `gaia` 128 · `libellesChoix` 139
 `retiensAnglais` 166 · `fournisseur` 184 · `raccourci` 192 · `enClair` 229 · `range` 255
-`champsKlipso` 276 · `hebergee` 1493 · `nettoieUrl` 1512 · `groupeTextes` 1522
+`champsKlipso` 276 · `hebergee` 1512 · `nettoieUrl` 1531 · `groupeTextes` 1541
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

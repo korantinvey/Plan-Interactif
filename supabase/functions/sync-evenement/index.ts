@@ -689,6 +689,10 @@ Deno.serve(async (req) => {
         catalogueEm = r.catalogue;
         retenuesEm = r.categoriesIds;
         resumeEm = {
+          // les champs retenus voyagent avec le compte : c'est le couple qui
+          // se lit, jamais l'un sans l'autre
+          champStand: champsEm.stand,
+          champDossier: champsEm.dossier,
           categories: r.categories,
           voie: r.voie,
           appels: r.appels,
@@ -704,7 +708,21 @@ Deno.serve(async (req) => {
           "Exposants retenus": r.retenus,
           ...(r.ecartesNonInscrits ? { "Écartés — non inscrits": r.ecartesNonInscrits } : {}),
         });
-        etape("exposants", "encours", r.retenus + " exposants lus");
+        /* Ce qu'on a lu, et avec quel champ.
+
+           « 87 fiches lues, 0 exposant retenu » ne dit pas où chercher : le
+           champ en cause est celui de la correspondance, et il reste invisible
+           tant qu'on ne le nomme pas. Un salon dont les champs s'appellent
+           « no_stand » et non « num_stand » rendait donc zéro sans que rien
+           n'indique que c'était le défaut qui s'appliquait encore. */
+        const nomme = (l: string[]) => l.filter(Boolean).join(" ou ") || "aucun";
+        etape("exposants", "encours", r.retenus
+          ? r.retenus + " exposants lus"
+          : r.lus
+          ? "0 exposant sur " + r.lus + " fiches : aucune ne porte « " +
+            nomme(champsEm.stand) + " » (numéro de stand) ni « " +
+            nomme(champsEm.dossier) + " » (dossier)"
+          : "aucune fiche lue");
 
         // On retient ce qu'on vient d'apprendre. Écriture ciblée : le reste de
         // la configuration appartient à l'exploitant, pas à la synchronisation.
@@ -1420,6 +1438,7 @@ Deno.serve(async (req) => {
       return emet({
         ok: true,
         pavillons: resume,
+        ...(resumeEm ? { exposantsSource: resumeEm } : {}),
         nomenclature: {
           libelles: Object.keys(nomencl.libelles).length,
           chemin: nomencl.chemin,

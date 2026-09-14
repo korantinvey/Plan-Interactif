@@ -299,6 +299,10 @@ module.exports = {
   "Vous ne pouvez pas retirer votre propre rôle.": "You cannot remove your own role.",
   "Salons": "Shows",
   "Chargement impossible : {raison}": "Could not load: {raison}",
+  /* Le bilan d'une synchronisation qui n'a reconnu aucun exposant. */
+  "Aucun exposant reconnu sur {n} fiches lues : aucune ne porte « {stand} » ni « {dossier} ». Désignez les champs dans « Fiche détail ».":
+    "No exhibitor recognised out of {n} records read: none carries “{stand}” or “{dossier}”. Set the fields under “Detail card”.",
+
   /* Les catégories d'invités qui portent les exposants. */
   "Catégories d'invités": "Guest categories",
   "Les fiches que la synchronisation lit. Une catégorie Eventmaker mêle souvent les sociétés et les personnes qui les représentent : cochez celles qui portent les exposants, et rien d'autre n'est lu. Tout décocher rend la main à la détection automatique. Le réglage prend effet à la synchronisation suivante.":
