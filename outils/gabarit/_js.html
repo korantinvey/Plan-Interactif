@@ -1716,6 +1716,8 @@ function rafraichitVue(){
     imageDemandee = requestAnimationFrame(() => {
       imageDemandee = null;
       appliqueVue(); echelle();
+      // la poignée du calage se mesure en pixels : elle suit la vue
+      if (CALAGE) dessineCalage();
     });
   }
   clearTimeout(libellesEnAttente);
@@ -1728,6 +1730,7 @@ function poseVue(){
   if (imageDemandee){ cancelAnimationFrame(imageDemandee); imageDemandee = null; }
   clearTimeout(libellesEnAttente); libellesEnAttente = null;
   appliqueVue(); echelle(); libelles();
+  if (CALAGE) dessineCalage();
 }
 
 /**
@@ -3181,6 +3184,8 @@ svg.addEventListener("pointerdown", e => {
   /* Placer un libellé passe avant tout le reste : le geste vise un nom, pas
      l'emplacement qui est dessous ni la vue qu'on déplacerait. */
   if (libellePointerDown(e)) return;
+  // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
+  if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
   drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, bouge: false,
            cible: e.target.closest("[data-id],[data-poi]") };
@@ -3190,6 +3195,7 @@ svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (libellePointerMove(e)) return;
+  if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
@@ -3257,6 +3263,7 @@ svg.addEventListener("pointerup", e => {
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
+  if (calagePointerUp(e)) return;
   const d = drag; drag = null; svg.classList.remove("dragging");
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }

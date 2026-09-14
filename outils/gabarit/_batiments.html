@@ -1,0 +1,365 @@
+/* ============================================================
+   11 quinquies. Bâtiments de la bibliothèque
+
+   Le contour d'un hall ne change pas d'un salon à l'autre, et on le retraçait
+   pourtant à la main sur chaque plan : une après-midi, pour un tracé moins
+   juste que le cadastre. La bibliothèque (`outils/lieux.js`) garde les halls
+   des lieux où l'on expose le plus souvent ; on les pose ici en calques de
+   dessin ordinaires — un par hall, verrouillés, qu'on masque ou recolore
+   comme les autres.
+
+   Reste le calage. Chaque plan Klipso a son origine et son orientation : le
+   Pavillon 6 regarde le nord dans OpenStreetMap et le sud sur le plan de
+   Franchise Expo. On le rattrape en glissant le contour à sa place et en le
+   faisant pivoter. L'échelle ne se règle pas : les deux repères sont en
+   mètres.
+
+   Le calage se retient par pavillon. Les autres halls du même lieu se posent
+   ensuite sans un clic : ils partagent le repère du premier.
+   ============================================================ */
+
+/* Réservée à l'administration : la construction ne la verse que dans
+   `plan-admin.html`. Ailleurs, le bouton qui l'ouvre ne paraît pas. */
+const LIEUX = /*__LIEUX__*/null;
+
+const CLE_CALAGE = () => "_calage:" + P().id;
+const bibliothequeDispo = () => ADMIN && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.length);
+
+/* Le gris des murs, plutôt que l'accent des calques neufs : un contour de
+   bâtiment est un fond, il ne doit pas passer devant les stands. */
+const COULEUR_BATIMENT = "#77787e";
+
+/** Les bâtiments déjà posés sur ce pavillon, par leur référence OSM. */
+function batimentsPoses(){
+  const s = new Set();
+  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
+  return s;
+}
+
+/** Un point du lieu, porté dans le repère du plan. */
+function poseCalage(t, p){
+  const co = Math.cos(t.a), si = Math.sin(t.a);
+  return [+(co * p[0] - si * p[1] + t.x).toFixed(2),
+          +(si * p[0] + co * p[1] + t.y).toFixed(2)];
+}
+
+/* ------------------------------------------------------------
+   La fenêtre : quel lieu, quels halls
+   ------------------------------------------------------------ */
+function ouvreBibliotheque(){
+  if (!bibliothequeDispo()) return;
+  const cale = CONF[CLE_CALAGE()];
+  let lieu = LIEUX.lieux.find(l => cale && l.cle === cale.lieu) || LIEUX.lieux[0];
+  const choisis = new Set();
+  let recaler = false;
+
+  ouvreModale("Bâtiments de la bibliothèque", corps => {
+    const rend = () => {
+      const poses = batimentsPoses();
+      const calage = cale && cale.lieu === lieu.cle;
+      corps.innerHTML = "";
+
+      const sel = document.createElement("select");
+      sel.className = "biblioLieu";
+      sel.setAttribute("aria-label", "Lieu");
+      LIEUX.lieux.forEach(l => {
+        const o = document.createElement("option");
+        o.value = l.cle; o.textContent = l.nom + " — " + l.ville;
+        o.selected = l === lieu;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { lieu = LIEUX.lieux.find(l => l.cle === sel.value); choisis.clear(); rend(); };
+      corps.appendChild(sel);
+
+      /* La vue d'ensemble se clique comme la liste : on reconnaît un hall à sa
+         place dans le lieu bien avant de savoir s'il s'appelle 2.1B ou 2.1C. */
+      corps.appendChild(vueDuLieu(lieu, choisis, poses, nom => {
+        choisis.has(nom) ? choisis.delete(nom) : choisis.add(nom); rend();
+      }));
+
+      const ul = document.createElement("div");
+      ul.className = "biblioHalls";
+      lieu.batiments.forEach(b => {
+        const deja = poses.has(b.osm);
+        const l = document.createElement("label");
+        l.className = "biblioHall" + (deja ? " deja" : "");
+        l.innerHTML = '<input type="checkbox"><span></span>' + (deja ? "<i>déjà sur le plan</i>" : "");
+        l.querySelector("span").textContent = b.nom;
+        const c = l.querySelector("input");
+        c.checked = choisis.has(b.nom);
+        c.disabled = deja;
+        c.onchange = () => { c.checked ? choisis.add(b.nom) : choisis.delete(b.nom); rend(); };
+        ul.appendChild(l);
+      });
+      corps.appendChild(ul);
+
+      const p = document.createElement("p");
+      p.className = "biblioNote";
+      if (calage){
+        p.textContent = "Ce pavillon est déjà calé sur ce lieu : les bâtiments se posent directement.";
+        const r = document.createElement("label");
+        r.className = "biblioRecale";
+        r.innerHTML = '<input type="checkbox"> Recaler sur le plan';
+        r.querySelector("input").checked = recaler;
+        r.querySelector("input").onchange = e => { recaler = e.target.checked; };
+        p.appendChild(document.createElement("br"));
+        p.appendChild(r);
+      } else {
+        p.textContent = "Vous le placerez ensuite sur le plan : glissez-le, puis faites-le pivoter.";
+      }
+      corps.appendChild(p);
+
+      const m = document.createElement("p");
+      m.className = "biblioMention";
+      m.textContent = LIEUX.mention;
+      corps.appendChild(m);
+    };
+    rend();
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Placer sur le plan", ferme: false, action: () => {
+        const halls = lieu.batiments.filter(b => choisis.has(b.nom));
+        if (!halls.length) return;
+        fermeModale();
+        const t = CONF[CLE_CALAGE()];
+        if (t && t.lieu === lieu.cle && !recaler) ajouteBatiments(lieu, halls, t);
+        else lanceCalage(lieu, halls, t && t.lieu === lieu.cle ? t : null);
+      } },
+  ]);
+}
+
+/** Le lieu vu d'en haut, nord en haut ; un hall se coche en cliquant dessus. */
+function vueDuLieu(lieu, choisis, poses, bascule){
+  const pts = lieu.batiments.flatMap(b => b.contours.flat());
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  const m = Math.max(x1 - x0, y1 - y0) * .04;
+  const ns = "http://www.w3.org/2000/svg";
+  const s = document.createElementNS(ns, "svg");
+  s.setAttribute("class", "biblioVue");
+  s.setAttribute("viewBox", (x0 - m) + " " + (y0 - m) + " " + (x1 - x0 + 2 * m) + " " + (y1 - y0 + 2 * m));
+  s.setAttribute("aria-hidden", "true");
+  lieu.batiments.forEach(b => {
+    const g = document.createElementNS(ns, "path");
+    g.setAttribute("d", b.contours.map(c => "M" + c.map(p => p.join(" ")).join("L") + "Z").join(""));
+    g.setAttribute("class", poses.has(b.osm) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
+    const titre = document.createElementNS(ns, "title");
+    titre.textContent = b.nom;
+    g.appendChild(titre);
+    if (!poses.has(b.osm)) g.addEventListener("click", () => bascule(b.nom));
+    s.appendChild(g);
+  });
+  return s;
+}
+
+/* ------------------------------------------------------------
+   Le calage : glisser, faire pivoter
+
+   Le contour arrive au centre de la vue, nord en haut. On le glisse à sa
+   place, et sa poignée ronde le fait tourner autour de son centre ; l'angle se
+   saisit aussi au degré près dans le bandeau. Montrer deux coins, deux fois,
+   demandait de savoir d'avance lesquels se correspondent — on les cherchait
+   des yeux sur deux dessins qui ne regardent pas dans le même sens. Poser le
+   contour sur le plan, c'est ce qu'on fait déjà d'une feuille de calque.
+
+   Le glisser qui part d'ailleurs que du contour reste à la vue : il faut
+   pouvoir zoomer et se déplacer pour ajuster.
+   ------------------------------------------------------------ */
+let CALAGE = null;
+let gesteCalage = null;
+
+function lanceCalage(lieu, halls, depart){
+  activeCalque(null);
+  const pts = halls.flatMap(b => b.contours.flat());
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+  const centre = [(x0 + x1) / 2, (y0 + y1) / 2];
+  /* Un pavillon déjà calé sur ce lieu repart de sa position : recaler, c'est
+     retoucher, pas tout reprendre. Sinon au centre de la vue, nord en haut. */
+  const t = depart ? { a: depart.a, x: depart.x, y: depart.y }
+    : { a: 0, x: view.x + view.w / 2 - centre[0], y: view.y + view.h / 2 - centre[1] };
+  CALAGE = { lieu: lieu, halls: halls, centre: centre,
+             rayon: Math.max(x1 - x0, y1 - y0) / 2, t: t };
+  racine.classList.add("cale-plan");
+  $("calageBat").hidden = false;
+  cadreCalage();
+  dessineCalage();
+}
+
+/**
+ * La vue cadrée sur le contour, poignée comprise, quelle que soit sa rotation.
+ *
+ * Posé au zoom où l'on était, un pavillon de deux cent cinquante mètres
+ * débordait l'écran, et sa poignée tombait sous le bandeau : on ne voyait ni
+ * ce qu'on déplaçait, ni de quoi le tourner. Le cadre est un carré autour du
+ * cercle que le contour balaie en tournant ; il se centre entre le bandeau et
+ * ce que le tiroir cache en bas.
+ */
+function cadreCalage(){
+  const c = CALAGE, r = cadrePlan();
+  const haut = 64, bas = masque();
+  const hUtile = Math.max(60, r.height - haut - bas);
+  const centre = poseCalage(c.t, c.centre);
+  const cote = 2 * c.rayon * 1.3;
+  const k = Math.max(cote / (r.width || 1), cote / hUtile);
+  view = { x: centre[0] - (k * r.width) / 2,
+           y: centre[1] - (k * r.height) / 2 - (k * (haut - bas)) / 2,
+           w: k * r.width, h: k * r.height };
+  poseVue();
+}
+
+function finCalage(){
+  CALAGE = null;
+  gesteCalage = null;
+  racine.classList.remove("cale-plan");
+  const g = $("calageApercu");
+  if (g) g.remove();
+  $("calageBat").hidden = true;
+}
+
+/** Tourne le contour autour de son centre, sans le déplacer. */
+function pivoteCalage(t, a){
+  // ramené à un tour : les quarts de tour enchaînés ne s'accumulent pas
+  a = Math.atan2(Math.sin(a), Math.cos(a));
+  const c = poseCalage(t, CALAGE.centre);
+  const v = poseCalage({ a: a, x: 0, y: 0 }, CALAGE.centre);
+  return { a: a, x: c[0] - v[0], y: c[1] - v[1] };
+}
+
+/** L'angle lisible, entre 0 et 360 degrés. */
+const degresCalage = (a) => +(((a * 180 / Math.PI) % 360 + 360) % 360).toFixed(1);
+
+function dessineCalage(){
+  const c = CALAGE;
+  if (!c) return;
+  let g = $("calageApercu");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "calageApercu";
+    svg.appendChild(g);
+  }
+  /* La poignée se mesure en pixels d'écran : à tout zoom elle se saisit du
+     même doigt, et reste juste au-delà du contour. */
+  const r = cadrePlan(), mpp = view.w / (r.width || 1);
+  const centre = poseCalage(c.t, c.centre);
+  const poignee = poseCalage(c.t, [c.centre[0], c.centre[1] - c.rayon - 28 * mpp]);
+  const rp = 8 * mpp;
+  g.innerHTML = c.halls.map(b => '<path class="contour" d="' +
+      b.contours.map(k => "M" + k.map(p => poseCalage(c.t, p).join(" ")).join("L") + "Z").join("") + '"/>').join("") +
+    '<path class="tige" d="M' + centre.join(" ") + "L" + poignee.join(" ") + '"/>' +
+    '<circle class="poignee" cx="' + poignee[0] + '" cy="' + poignee[1] + '" r="' + rp + '"/>';
+  const champ = $("calageAngle");
+  if (document.activeElement !== champ) champ.value = degresCalage(c.t.a);
+}
+
+function calagePointerDown(e){
+  if (!CALAGE) return false;
+  const cible = e.target.closest && e.target.closest("#calageApercu .contour, #calageApercu .poignee");
+  if (!cible) return false;
+  gesteCalage = { mode: cible.classList.contains("poignee") ? "pivote" : "deplace",
+                  p0: versPlan(e.clientX, e.clientY), t0: Object.assign({}, CALAGE.t) };
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  racine.classList.add("cale-geste");
+  return true;
+}
+
+function calagePointerMove(e){
+  if (!CALAGE || !gesteCalage) return false;
+  const g = gesteCalage, p = versPlan(e.clientX, e.clientY);
+  if (g.mode === "deplace"){
+    CALAGE.t = { a: g.t0.a, x: g.t0.x + p[0] - g.p0[0], y: g.t0.y + p[1] - g.p0[1] };
+  } else {
+    const c = poseCalage(g.t0, CALAGE.centre);
+    let a = g.t0.a + Math.atan2(p[1] - c[1], p[0] - c[0]) - Math.atan2(g.p0[1] - c[1], g.p0[0] - c[0]);
+    // Maj tient le quart de tour et ses subdivisions, comme ailleurs
+    if (e.shiftKey) a = Math.round(a / (Math.PI / 12)) * (Math.PI / 12);
+    CALAGE.t = pivoteCalage(g.t0, a);
+  }
+  dessineCalage();
+  return true;
+}
+
+function calagePointerUp(){
+  if (!CALAGE || !gesteCalage) return false;
+  gesteCalage = null;
+  racine.classList.remove("cale-geste");
+  return true;
+}
+
+/* ------------------------------------------------------------
+   La pose : un calque par hall
+   ------------------------------------------------------------ */
+function ajouteBatiments(lieu, halls, t){
+  memorise();
+  const neufs = halls.map((b, i) => {
+    const id = nouvelId() + i;
+    return {
+      id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
+      formes: b.contours.map((k, j) => ({
+        t: "poly", id: id + "f" + j, ep: 3,
+        /* La référence OSM voyage avec la forme : les colonnes du calque sont
+           fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
+           déjà posé, et appelle la mention de la source sur le plan public. */
+        osm: b.osm,
+        pts: k.map(p => poseCalage(t, p)),
+      })),
+    };
+  });
+  neufs.forEach(c => {
+    mesCalques().push(c);
+    // un mur ne se déplace pas d'un geste distrait
+    conf(cleVerrou(c.id)).verrou = true;
+  });
+  /* Tout au fond de la pile, derrière les stands : sans rang retenu, un
+     calque neuf passe devant tout le reste. Seuls les environs, le plan de
+     la ville autour du salon, restent derrière. */
+  const cles = neufs.map(c => "dessin:" + c.id);
+  const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
+  let i = 0;
+  while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
+  liste.splice(i, 0, ...cles);
+  CONF[clePile()] = liste;
+  CONF[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
+  enregistreConf();
+  enregistreDessins();
+  dessineDessins();
+  construitPanneau();
+}
+
+$("calageValide").onclick = () => {
+  const c = CALAGE;
+  if (!c) return;
+  finCalage();
+  ajouteBatiments(c.lieu, c.halls, c.t);
+};
+$("calageQuart").onclick = () => {
+  if (!CALAGE) return;
+  CALAGE.t = pivoteCalage(CALAGE.t, CALAGE.t.a + Math.PI / 2);
+  dessineCalage();
+};
+$("calageAngle").oninput = () => {
+  const v = parseFloat($("calageAngle").value);
+  if (!CALAGE || !isFinite(v)) return;
+  CALAGE.t = pivoteCalage(CALAGE.t, v * Math.PI / 180);
+  dessineCalage();
+};
+$("calageStop").onclick = finCalage;
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && CALAGE && !$("modale").classList.contains("open")) finCalage();
+});
+
+/* ------------------------------------------------------------
+   La mention de la source
+
+   La licence d'OpenStreetMap demande qu'on la cite partout où ses données se
+   montrent, et donc sur le plan public : la mention paraît dès qu'un calque
+   visible porte un contour qui en vient, et s'efface avec lui.
+   ------------------------------------------------------------ */
+function mentionOsm(){
+  const m = $("mentionOsm");
+  if (!m || !DATA) return;
+  m.hidden = !mesCalques().some(c => c.visible !== false &&
+    (c.formes || []).some(f => f.osm));
+}
