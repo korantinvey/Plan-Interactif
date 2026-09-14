@@ -490,10 +490,14 @@ function couleurGl(v, alpha){
   return a > 0 ? [c[0], c[1], c[2], a] : null;
 }
 
+/** Ce que les outils saisissent : une poignée, une forme, le cadrage d'un bâtiment. */
+const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
   // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la racine
-  const acc = accVide(enEdition() && (racine.classList.contains("editable") || racine.id === "poignees"));
+  // le cadrage d'un bâtiment de la bibliothèque s'attrape aussi, calque ouvert ou non
+  const acc = accVide((enEdition() && (racine.classList.contains("editable") || racine.id === "poignees")) ||
+    racine.id === "calageApercu");
   parcoursGl(racine, M_ID, 1, acc);
   const out = couchesDeBloc(acc, cle);
   let i = 0;
@@ -577,14 +581,14 @@ function formeGl(el, cs, m, op, traces, acc){
   const plein = couleurGl(cs.fill, parseFloat(cs.fillOpacity) * op);
   if (plein){
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(".pgn, [data-f]");
+    const prise = el.closest(PRISES);
     for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: plein, el: cible, prise });
   } else if (acc.prises && cs.pointerEvents === "all"){
     /* Un contour seul s'attrape par son intérieur : c'est ce que
        « pointer-events: all » donne en SVG au calque ouvert. Un aplat
        d'opacité infime le rend visable sans rien montrer. */
     const anneaux = traces.filter(t => t.pts.length >= 3).map(t => t.pts.map(p => appM(m, p)));
-    const prise = el.closest(".pgn, [data-f]");
+    const prise = el.closest(PRISES);
     if (prise) for (const polygon of avecTrous(anneaux)) acc.pleins.push({ polygon, couleur: [0, 0, 0, 1], el: cible, prise });
   }
   const trait = couleurGl(cs.stroke, parseFloat(cs.strokeOpacity) * op);
@@ -602,7 +606,7 @@ function formeGl(el, cs, m, op, traces, acc){
       const path = t.pts.map(p => appM(m, p));
       if (t.ferme) path.push(path[0]);
       (fixe ? acc.traitsPx : acc.traitsM).push({ path, couleur: trait, largeur, dash, defile, el: cible,
-        prise: el.closest(".pgn, [data-f]") });
+        prise: el.closest(PRISES) });
     }
   }
 }
@@ -975,7 +979,7 @@ function poseSurvolWebgl(el){
 function poseCurseurWebgl(o){
   let c = "";
   if (o && PLACE_LIBELLES && o.lbl) c = "move";
-  else if (o && o.prise && enEdition()) c = getComputedStyle(o.prise).cursor;
+  else if (o && o.prise) c = getComputedStyle(o.prise).cursor;
   else if (o && o.el) c = "pointer";
   if (c === "auto" || c === "default") c = "";
   stage().classList.toggle("survol-gl", Boolean(c));

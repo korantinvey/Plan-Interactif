@@ -128,8 +128,12 @@ fs.writeFileSync(W + "plan.html",
        { tete: PRECHARGE, application: true }));
 
 /* --- page d'administration : accès après authentification --- */
+/* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
+   n'en a que faire, elle ne part qu'avec l'administration. */
+const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 fs.writeFileSync(W + "plan-admin.html",
-  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth), { role: "admin" }));
+  page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth)
+                    .replace("/*__LIEUX__*/null", () => LIEUX), { role: "admin" }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
