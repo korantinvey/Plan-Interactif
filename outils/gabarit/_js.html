@@ -2088,6 +2088,11 @@ const libelleCorps = cle => cle.indexOf(PREFIXE_PERSO) === 0
  * rejeter à la fin le sortirait de son voisinage sans qu'on l'ait demandé : il
  * reprend donc la place que le défaut lui donne, derrière le champ qu'il y
  * suit.
+ *
+ * Un champ que le salon n'affiche pas n'est pas non plus dans la liste réglée
+ * — elle ne range que ce qui paraît — et revient par le même chemin le jour
+ * où on le rallume : à la place que le défaut lui donne, à moins qu'on ne
+ * l'ait déposé ailleurs, ce qui l'y inscrit.
  */
 function ordreCorps(persos){
   const defaut = ORDRE_CORPS_FICHE.concat(persos || []);
@@ -2125,6 +2130,21 @@ const groupesFiche = () => ((DATA && DATA.fiche && DATA.fiche.groupes) || [])
   .filter(g => g && Array.isArray(g.cles) && g.cles.length);
 
 /**
+ * L'intitulé d'un champ paraît-il devant sa valeur ?
+ *
+ * L'exploitant en décide champ par champ, depuis les réglages du plan. Ce qui
+ * n'est pas réglé suit l'usage : un champ seul annonce ce qu'il porte, un
+ * champ réuni sous un titre ne le répète pas — c'est même ce qui fait un
+ * groupe. La case existe parce que l'usage se dément : une adresse web ou un
+ * picto de réseau social se reconnaissent sans qu'on les nomme, et trois
+ * lignes réunies sous « Contact » ne disent plus laquelle est le téléphone.
+ */
+const montreIntitule = (cle, enGroupe) => {
+  const r = (DATA && DATA.fiche && DATA.fiche.intitules) || {};
+  return typeof r[cle] === "boolean" ? r[cle] : !enGroupe;
+};
+
+/**
  * La valeur d'un champ du corps, prête à poser dans la fiche.
  *
  * Une valeur unique s'écrit telle quelle, sur la ligne où l'intitulé l'attend.
@@ -2133,15 +2153,32 @@ const groupesFiche = () => ((DATA && DATA.fiche && DATA.fiche.groupes) || [])
  * nomenclature n'est que du texte. Dans un groupe, la valeur unique devient
  * une ligne à son tour : elle n'est plus seule sous l'intitulé, elle en côtoie
  * d'autres.
+ *
+ * Un membre qui garde son intitulé le pose devant sa valeur, sur la même
+ * ligne : au-dessus, il ferait un second titre sous celui du groupe. Quand il
+ * porte plusieurs valeurs, elles ont déjà leurs lignes et l'intitulé prend la
+ * sienne.
  */
-const valeurCorps = (c, enGroupe) => Array.isArray(c.valeur)
-  ? c.valeur.join("")
-  : enGroupe ? '<span class="ligne">' + c.valeur + '</span>' : c.valeur;
+const valeurCorps = (c, enGroupe) => {
+  if (!enGroupe) return Array.isArray(c.valeur) ? c.valeur.join("") : c.valeur;
+  const lib = montreIntitule(c.cle, true)
+    ? '<span class="lib">' + c.libelle + '</span>' : "";
+  if (Array.isArray(c.valeur)){
+    return (lib ? '<span class="ligne">' + lib + '</span>' : "") + c.valeur.join("");
+  }
+  return '<span class="ligne">' + lib + c.valeur + '</span>';
+};
 
-/** Un champ du corps : son intitulé, puis sa valeur. */
-const champCorps = c => '<div class="field' + (c.classe ? " " + c.classe : "") +
-  '"><span class="eyebrow">' + c.libelle + '</span>' +
-  '<span class="v">' + valeurCorps(c) + '</span></div>';
+/* Un champ du corps : son intitulé, puis sa valeur. Sans intitulé, il ne reste
+   que la valeur — et la classe, que les habillages qui rangent l'intitulé dans
+   une colonne à lui ont besoin de lire pour rendre la place. */
+const champCorps = c => {
+  const dit = montreIntitule(c.cle, false);
+  return '<div class="field' + (c.classe ? " " + c.classe : "") +
+    (dit ? "" : " muet") + '">' +
+    (dit ? '<span class="eyebrow">' + c.libelle + '</span>' : "") +
+    '<span class="v">' + valeurCorps(c) + '</span></div>';
+};
 
 /* Un groupe sans titre reprend l'intitulé de son premier membre : il vaut
    mieux le nom d'un des champs réunis qu'un intitulé vide au-dessus de trois
@@ -2873,11 +2910,14 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
    * La classe « court » marque les champs qui tiennent en un mot : sur mobile
    * ils se rangent deux par deux au lieu d'allonger la fiche d'autant de
    * lignes.
+   *
+   * La clé voyage avec le champ : c'est elle qui dit si son intitulé paraît,
+   * et le rangement la perdrait de vue une fois les champs réunis en groupes.
    */
   const met = (cle, libelle, valeur, classe) => {
     const v = Array.isArray(valeur) ? valeur.filter(Boolean) : valeur;
     if (!v || !v.length || !montre(t, cle)) return;
-    corps[cle] = { libelle: libelle, valeur: v, classe: classe || "" };
+    corps[cle] = { cle: cle, libelle: libelle, valeur: v, classe: classe || "" };
   };
   // la raison sociale n'apprend rien quand elle est déjà le titre
   if (!zone && soc.plan && soc.plan !== titre) met("raison", LIBELLE_CORPS.raison, esc(soc.plan));

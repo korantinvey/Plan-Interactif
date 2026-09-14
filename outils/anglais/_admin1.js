@@ -266,24 +266,27 @@ module.exports = {
   "Roboto Mono": "Roboto Mono",
   "Space Mono": "Space Mono",
   // l'onglet « Fiche Stand »
-  "L'ordre dans lequel la fiche déroule ses champs, de haut en bas : ce que le visiteur vient lire en premier n'est pas le même d'un salon à l'autre. Attrapez une ligne par sa poignée, ou servez-vous des flèches. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le volet des conférences n'en font pas partie : ils ne se déplacent pas.":
-    "The order in which the details list their fields, from top to bottom: what visitors come to read first differs from one show to the next. Grab a row by its handle, or use the arrows. The header — the brand, the hall, the stand number — and the conferences panel are not part of it: they don't move.",
+  "Ce que la fiche d'un stand montre, et dans quel ordre. Les champs dont ce salon dispose attendent à gauche : glissez-en un dans la fiche pour l'afficher, ressortez-le pour le masquer. Une section réunit plusieurs champs sous un même titre, et la case de chaque champ décide si son intitulé paraît devant sa valeur. L'en-tête — l'enseigne, le pavillon, le numéro de stand — et le volet des conférences n'en font pas partie : ils ne se déplacent pas.":
+    "What a stand's details show, and in what order. The fields this show has to hand wait on the left: drag one into the details to show it, drag it back out to hide it. A section gathers several fields under one title, and each field's tickbox decides whether its label appears before its value. The header — the brand, the hall, the stand number — and the conferences panel are not part of it: they don't move.",
+  "Champs disponibles": "Fields available",
+  "Tous les champs du salon sont sur la fiche.": "Every field of this show is in the details.",
+  "Aucun champ : la fiche s'arrêtera à son en-tête.": "No field: the details will stop at their header.",
+  "Nouvelle section": "New section",
+  "Réunir des champs sous un titre écrit à la main.": "Gather fields under a title of your own.",
   "Aperçu": "Preview",
   "La fiche telle que le visiteur la recevra : l'habillage retenu pour ce salon, et les valeurs du stand qui remplit le mieux les champs affichés. Sur téléphone, les champs qui tiennent en un mot se rangent deux par deux.":
     "The details as visitors will get them: the template chosen for this show, and the values of the stand that best fills the fields shown. On phones, fields that fit in one word are laid out two by two.",
-  "Regrouper": "Group",
   "Monter": "Move up",
   "Descendre": "Move down",
   "Monter {champ}": "Move up {champ}",
   "Descendre {champ}": "Move down {champ}",
-  "Réunir {champ}": "Group {champ}",
   "propre au salon": "specific to this show",
-  "Masqué : ce champ ne paraît pas sur la fiche.": "Hidden: this field does not appear in the details.",
-  "Sortir « {champ} » du groupe": "Take “{champ}” out of the group",
-  "Titre du groupe": "Group title",
-  "Défaire le groupe": "Ungroup",
-  "Cochez au moins deux champs pour les réunir sous un même titre.": "Tick at least two fields to group them under one title.",
-  "Réunir {n} champs sous un même titre.": "Group {n} fields under one title.",
+  "Afficher « {champ} » sur la fiche": "Show “{champ}” in the details",
+  "Afficher l'intitulé de {champ}": "Show the label of {champ}",
+  "Afficher l'intitulé devant la valeur.": "Show the label before the value.",
+  "Retirer « {champ} » de la fiche": "Take “{champ}” out of the details",
+  "Titre de la section": "Section title",
+  "Défaire la section": "Undo the section",
 
   // la barre d'administration
   "Télécharger une sauvegarde": "Download a backup",
