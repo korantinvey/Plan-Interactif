@@ -145,8 +145,12 @@ function phraseTrajetTuto(){
  * elle passe à la suite.
  *
  * `etape(m)` rend la consigne du moment : son `texte`, ce qu'elle désigne —
- * `cible`, un élément de la page, ou `zone`, une zone du plan —, `suite` quand
- * elle se lit plutôt qu'elle ne se fait, et `fini` quand le chapitre a eu lieu.
+ * `cible`, un élément de la page, `zone`, une zone du plan, ou `plan`, le plan
+ * entier quand c'est lui qu'on touche —, `suite` quand elle se lit plutôt
+ * qu'elle ne se fait, et `fini` quand le chapitre a eu lieu. `apres` dit ce que
+ * « Suivant » fait d'une étape qui se lit au milieu d'un chapitre, et `voile`
+ * ce qui reste clair quand ce n'est pas ce qu'on désigne : `"scene"`, le plan
+ * et ses tiroirs.
  * `m` est la mémoire du chapitre : ce que la page montrait en y entrant, pour
  * reconnaître ce qui s'est passé depuis.
  *
@@ -213,7 +217,8 @@ const CHAPITRES_TUTO = [
       if (pret && (ROUTE !== m.route || tiroir)) m.trace = true;
       // le trajet vu, le visiteur qui referme le tiroir est passé à autre chose
       if (m.trace && !tiroir && !visee) return { fini: true };
-      if (pret && tiroir) return { cle: "trajet", suite: true, texte: phraseTrajetTuto(),
+      // le trajet se lit sur le plan autant que dans le tiroir : l'un et l'autre restent clairs
+      if (pret && tiroir) return { cle: "trajet", suite: true, voile: "scene", texte: phraseTrajetTuto(),
         cible: $("iResultat").querySelector(".iBilan") || $("iResultat") };
       if (tiroir || visee){
         if (ITI.a && ITI.b) return { cle: "calcul", texte: "Recherche du chemin…" };
@@ -229,10 +234,10 @@ const CHAPITRES_TUTO = [
             : (clavier
               ? "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes, ou tapez son nom."
               : "Touchez sur le plan l'endroit d'où vous partez — une entrée, ou le stand devant lequel vous êtes.");
-          return { cle: "depart", cible: clavier ? $("iDepart") : null,
+          return { cle: "depart", cible: clavier ? $("iDepart") : null, plan: !clavier,
             texte: ITI.b ? "L'arrivée est « " + ITI.b.nom + " ». " + depart : depart };
         }
-        return { cle: "arrivee", cible: clavier ? $("iArrivee") : null, texte: clavier
+        return { cle: "arrivee", cible: clavier ? $("iArrivee") : null, plan: !clavier, texte: clavier
           ? "Touchez maintenant sur le plan l'endroit où vous allez, ou tapez son nom."
           : "Touchez maintenant sur le plan l'endroit où vous allez." };
       }
@@ -249,7 +254,7 @@ const CHAPITRES_TUTO = [
   {
     cle: "parcours",
     titre: "Mon parcours de visite",
-    resume: "les exposants et les conférences à ne pas manquer",
+    resume: "les exposants et les conférences à ne pas manquer, à garder ou à partager",
     actif: () => tutoParcours(),
     debut(m){ m.stands = new Set(PARCOURS.stands); },
     etape(m){
@@ -259,10 +264,34 @@ const CHAPITRES_TUTO = [
       const surStand = !!tutoFiche() && !sig.hidden && sig.dataset.mg === "stand";
       if (PARCOURS.stands.some(id => !m.stands.has(id)) ||
           (surStand && dansParcours("stand", sig.dataset.mi))) m.retenu = true;
-      if (m.retenu && tutoOuvert("parcours")) return { fini: true };
+      /* Le partage vient une fois la liste sous les yeux : on ne partage que ce
+         qu'on a retenu, et c'est le moment où l'on pense à celui qui vient avec
+         soi. Sa fenêtre ouverte, la consigne l'accompagne plutôt que de demander
+         de la refermer. */
+      const fenetrePartage = tutoModale() && $("modale").dataset.genre === "partage";
+      if (fenetrePartage) m.partage = true;
+      if (m.retenu && fenetrePartage) return { cle: "partage-fenetre",
+        cible: $("mCorps").querySelector(".qrPlaque") || $("mCorps").querySelector(".qrLien"),
+        texte: "Faites photographier ce code à qui vous accompagne, ou envoyez-lui le " +
+               "lien : son plan s'ouvrira sur le même parcours. Refermez la fenêtre pour continuer." };
+      if (m.retenu && tutoOuvert("parcours") && (m.partage || !$("btnPartage").getClientRects().length))
+        return { fini: true };
+      if (m.retenu && tutoOuvert("parcours")) return { cle: "partage", cible: $("btnPartage"),
+        suite: true, apres: () => { m.partage = true; },
+        texte: "Vous venez à plusieurs ? « Partager » donne votre parcours à un autre " +
+               "téléphone, par un code ou un lien — sans compte, et sans rien envoyer " +
+               "sur nos serveurs." };
       if (m.retenu) return { cle: "liste", cible: $("btnParcours"),
         texte: "C'est noté. Touchez « Mon parcours », en haut de l'écran, pour " +
                "retrouver ce que vous avez retenu." };
+      /* Le signet de la barre d'abord, montré là où il est. On retient un stand
+         pour le remplir ; commencer par là laissait le visiteur toucher un stand
+         sans savoir à quoi mènerait le signet qu'on allait lui montrer. */
+      if (!m.presente && !surStand) return { cle: "presente", cible: $("btnParcours"),
+        suite: true, apres: () => { m.presente = true; },
+        texte: "Ce signet, en haut de l'écran, ouvre votre parcours de visite : les " +
+               "exposants et les conférences que vous voulez voir, gardés sur cet " +
+               "appareil. Commençons par en retenir un." };
       // un stand partagé demande d'abord laquelle de ses sociétés on vient voir
       const societes = tutoModale() && $("mCorps").querySelector("ul.expos");
       if (societes) return { cle: "societes", cible: societes,
@@ -270,9 +299,8 @@ const CHAPITRES_TUTO = [
       if (surStand) return { cle: "signet", cible: sig,
         texte: "Touchez le signet pour ajouter « " + $("dName").textContent +
                " » à votre parcours." };
-      return { cle: "stand",
-        texte: "Retenez les exposants à ne pas manquer : touchez un stand qui vous " +
-               "intéresse sur le plan, ou cherchez-le par son nom." };
+      return { cle: "stand", plan: true,
+        texte: "Touchez sur le plan un stand qui vous intéresse." };
     },
   },
   {
@@ -282,14 +310,12 @@ const CHAPITRES_TUTO = [
     /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
        l'itinéraire, le bouton n'est pas là (voir « _head.html »). */
     actif: () => tutoParcours() && tutoItineraire(),
-    // une liste vide n'a rien à organiser, et son bouton est éteint
-    pret: () => PARCOURS.stands.length + PARCOURS.confs.length > 0,
     debut(m){ m.journee = JOURNEE; },
     etape(m){
       const tiroir = tutoOuvert("parcours");
       if (JOURNEE && vueJournee && JOURNEE !== m.journee) m.faite = true;
       if (m.faite) return tiroir && vueJournee && JOURNEE
-        ? { cle: "journee", cible: $("jCorps"), suite: true,
+        ? { cle: "journee", cible: $("jCorps"), suite: true, voile: "scene",
             texte: "Voici votre journée : chaque étape a son heure, et le trajet est " +
                    "tracé sur le plan. Bonne visite !" }
         : { fini: true };
@@ -301,7 +327,20 @@ const CHAPITRES_TUTO = [
       if (tutoModale() && $("mCorps").querySelector(".jForm")) return { cle: "heure",
         cible: $("mPied").querySelector(".btn:last-child"),
         texte: "Indiquez votre heure d'arrivée, puis touchez « Organiser »." };
-      if (!(PARCOURS.stands.length + PARCOURS.confs.length)) return { fini: true };
+      /* Une liste vide n'a rien à organiser, et son bouton est éteint. La
+         fonction se présente quand même — on ne sait pas qu'elle existe tant
+         qu'on ne l'a pas vue nommer — et dit ce qu'il lui faut. Un visiteur qui
+         a passé le parcours la découvrait sinon jamais. */
+      if (!(PARCOURS.stands.length + PARCOURS.confs.length)){
+        const sig = $("dMarque");
+        if (tutoFiche() && !sig.hidden && sig.dataset.mg === "stand") return { cle: "vide-signet",
+          cible: sig, texte: "Touchez le signet pour ajouter « " + $("dName").textContent +
+            " » à votre parcours : c'est lui que la journée met en ordre." };
+        return { cle: "vide", cible: $("btnParcours"), voile: "scene",
+          texte: "« Organiser ma journée » met votre parcours en heures : les conférences " +
+                 "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
+                 "faut un parcours : touchez un stand sur le plan, puis son signet." };
+      }
       if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
         texte: "Touchez « Changer l'heure d'arrivée » pour organiser à nouveau votre journée." };
       if (tiroir) return { cle: "organiser", cible: $("btnJournee"),
@@ -401,7 +440,7 @@ function lanceTutoriel(){
   bulle.setAttribute("aria-labelledby", "tutoTitre");
   bulle.innerHTML = '<div class="tutoTete"><span class="eyebrow">Visite guidée</span>' +
     '<span class="tutoPoints" id="tutoPoints" role="img"></span>' +
-    '<button type="button" class="tutoPasse" id="tutoPasse" title="Passer à la suite">Passer</button>' +
+    '<button type="button" class="tutoAvance" id="tutoAvance" title="Étape suivante">Suivant</button>' +
     '<button type="button" class="tutoQuitte" id="tutoQuitte" ' +
     'title="Quitter la visite guidée" aria-label="Quitter la visite guidée">&times;</button></div>' +
     '<h2 id="tutoTitre"></h2><p id="tutoTexte" aria-live="polite"></p>' +
@@ -413,6 +452,15 @@ function lanceTutoriel(){
   repere.id = "tutoRepere";
   repere.hidden = true;
   document.body.appendChild(repere);
+  /* Le voile : quatre bandes autour de ce qu'on met en avant, et non une
+     découpe. Chacune est un pixel de couleur étiré par « transform » — le
+     compositeur le déplace et l'étire sans rien repeindre, là où une ombre
+     portée géante aurait été redessinée à chaque changement de taille. */
+  const voile = document.createElement("div");
+  voile.className = "tutoVoile";
+  voile.id = "tutoVoile";
+  voile.innerHTML = "<i></i><i></i><i></i><i></i>";
+  document.body.appendChild(voile);
 
   /* Chaque geste fait relire la page, une fois ses propres gestionnaires
      passés : la fiche s'ouvre dans le clic, et c'est après qu'on la trouve. */
@@ -445,12 +493,12 @@ function lanceTutoriel(){
   TUTO.ecoutes.forEach(([t, f, c]) => addEventListener(t, f, c));
 
   $("tutoQuitte").onclick = quitteTutoriel;
-  // passer un chapitre, c'est aller au suivant ; passer le dernier, en finir
-  $("tutoPasse").onclick = () => {
-    if (TUTO.i >= TUTO.chapitres.length - 1) quitteTutoriel();
-    else chapitreTuto(TUTO.i + 1);
-  };
+  // aller au chapitre suivant sans faire celui-ci ; après le dernier, la fin
+  $("tutoAvance").onclick = () => chapitreTuto(TUTO.i + 1);
   $("tutoSuite").onclick = () => {
+    const e = TUTO.e;
+    // une étape qui se lit au milieu d'un chapitre mène à la suivante du même chapitre
+    if (e && e.apres){ e.apres(); battementTuto(); return; }
     if (TUTO.i >= TUTO.chapitres.length - 1){ quitteTutoriel(); return; }
     TUTO.m.suite = true;
     battementTuto();
@@ -463,14 +511,14 @@ function quitteTutoriel(){
   clearInterval(TUTO.pouls);
   cancelAnimationFrame(TUTO.raf);
   TUTO.ecoutes.forEach(([t, f, c]) => removeEventListener(t, f, c));
-  ["tuto", "tutoRepere", "tutoZone"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  ["tuto", "tutoRepere", "tutoZone", "tutoVoile"].forEach(id => { const e = $(id); if (e) e.remove(); });
+  racine.classList.remove("tuto-retrait");
+  if (TUTO.guet) TUTO.guet.disconnect();
   TUTO = null;
 }
 
 function chapitreTuto(i){
   const l = TUTO.chapitres;
-  // un chapitre qui n'a rien sur quoi s'appuyer en y entrant se saute
-  while (i < l.length && l[i].pret && !l[i].pret()) i++;
   TUTO.i = i;
   TUTO.m = {};
   if (i >= l.length){ finTuto(); return; }
@@ -522,9 +570,15 @@ function afficheTuto(e, ch){
   const texte = bloque ? "Refermez d'abord cette fenêtre : la visite reprend juste après."
                        : e.texte;
   const n = TUTO.chapitres.length;
-  const suite = e.suite && !bloque ? (TUTO.i >= n - 1 ? "Terminer" : "Suivant") : "";
+  const suite = e.suite && !bloque ? (!e.apres && TUTO.i >= n - 1 ? "Terminer" : "Suivant") : "";
   const cle = (ch ? ch.cle : "fin") + ":" + (bloque ? "bloque" : e.cle);
+  TUTO.e = bloque ? null : e;
   TUTO.cible = bloque ? null : e.cible || null;
+  /* Ce qui reste clair. Une fenêtre qui bloque a déjà son propre voile, et la
+     carte de fin ne désigne rien. */
+  TUTO.voile = bloque || !ch ? null
+    : e.voile !== undefined ? e.voile
+    : e.cible ? "cible" : (e.zone || e.plan) ? "scene" : null;
   marqueZoneTuto(bloque ? null : e.zone);
   if (cle === TUTO.cle && texte === TUTO.texte && suite === TUTO.suite){
     repereTuto();
@@ -539,9 +593,9 @@ function afficheTuto(e, ch){
   points.setAttribute("aria-label", ch ? "Étape " + (TUTO.i + 1) + " sur " + n : "Visite terminée");
   $("tutoTitre").textContent = insecable(e.titre || ch.titre);
   $("tutoTexte").textContent = insecable(texte);
-  /* « Passer » et « Suivant » mèneraient au même endroit : quand l'étape se
-     lit, seul le second reste. */
-  $("tutoPasse").hidden = !ch || !!suite;
+  /* Deux « Suivant » côte à côte ne diraient pas lequel écoute : quand l'étape
+     se lit, seul celui du pied reste. */
+  $("tutoAvance").hidden = !ch || !!suite;
   $("tutoPied").hidden = !suite;
   $("tutoSuite").textContent = suite;
   if (nouvelle && TUTO.cible) rameneTuto(TUTO.cible);
@@ -571,7 +625,8 @@ function repereTuto(){
   const r = $("tutoRepere");
   if (!r || !TUTO) return;
   const c = TUTO.cible, b = boiteTuto(c);
-  if (!b){ r.hidden = true; return; }
+  if (TUTO.voile !== "cible") voileTuto(TUTO.voile === "scene" ? boiteTuto($("stage")) : null);
+  if (!b){ r.hidden = true; if (TUTO.voile === "cible") voileTuto(null); return; }
   /* Le cadre s'écarte de quatre pixels de ce qu'il entoure, mais sans sortir
      de l'écran ni de ce qui défile : un tiroir pleine largeur le voyait sinon
      déborder des deux bords, et il n'en restait que deux traits. */
@@ -585,7 +640,8 @@ function repereTuto(){
     d = Math.min(d, q.right); bas = Math.min(bas, q.bottom);
   });
   // ce qui reste visible tient dans un trait : on n'encadre pas un fil
-  if (d - g < 12 || bas - h < 12){ r.hidden = true; return; }
+  if (d - g < 12 || bas - h < 12){ r.hidden = true; if (TUTO.voile === "cible") voileTuto(null); return; }
+  if (TUTO.voile === "cible") voileTuto({ left: g - 2, top: h - 2, right: d + 2, bottom: bas + 2 });
   r.hidden = false;
   r.style.width = Math.round(d - g) + "px";
   r.style.height = Math.round(bas - h) + "px";
@@ -618,10 +674,16 @@ function rameneTuto(el){
  * Aucune place fixe ne convenait à toutes les étapes. Le bas de l'écran cache
  * le tiroir où se trouve le signet, le haut la barre où se trouve le parcours,
  * et une zone du plan peut être n'importe où. On essaie donc quelques places —
- * à côté de ce qu'on désigne, puis les coins du plan — et on garde la première
- * qui ne recouvre rien, ou à défaut celle qui recouvre le moins. La cible pèse
- * plus lourd que le reste : on accepte de cacher un bout de tiroir, pas le
- * bouton qu'on demande de toucher.
+ * à côté de ce qu'on désigne, puis les coins du plan — et on retient celle qui
+ * recouvre le moins. La cible pèse plus lourd que le reste : on accepte de
+ * cacher un bout de tiroir, pas le bouton qu'on demande de toucher.
+ *
+ * La distance compte aussi. Posée dans un coin libre quand elle parlait du
+ * signet de la barre du haut, la bulle se lisait en bas de l'écran et
+ * désignait un bouton à l'autre bout : on cherchait des yeux de quoi elle
+ * parlait. Un tiroir qui ne porte pas la cible pèse donc peu — le voile
+ * l'estompe déjà — et chaque pixel qui éloigne la bulle de ce qu'elle désigne
+ * se paie.
  *
  * Sur un téléphone la bulle prend la largeur : il ne reste que le haut et le
  * bas, et c'est entre les deux qu'on tranche.
@@ -645,7 +707,7 @@ function placeTuto(force){
   // et le trajet tracé est ce que deux étapes montrent du doigt
   pese(boiteTuto($("itin")), .5);
   ["detail", "parcours", "itineraire"].forEach(id => {
-    if (tutoOuvert(id)) pese(boiteTuto($(id)), 1);
+    if (tutoOuvert(id)) pese(boiteTuto($(id)), TUTO.cible && $(id).contains(TUTO.cible) ? 1 : .15);
   });
   if (tutoModale()) pese(boiteTuto($("modale").querySelector(".mfen")), 1.5);
   pese(boiteTuto($("poi")), .5);
@@ -666,11 +728,16 @@ function placeTuto(force){
     places.push([s.left + 16, s.bottom - h - 16], [s.left + 16, s.top + 16],
                 [s.right - w - 16, s.top + 16], [s.right - w - 16, s.bottom - h - 16]);
   }
+  /* La distance ne vaut que pour un élément de la page : une zone du plan se
+     déplace avec lui, et la bulle la suivrait d'un coin à l'autre. */
+  const loin = (x, y) => !cible ? 0
+    : (Math.max(0, cible.left - (x + w), x - cible.right) +
+       Math.max(0, cible.top - (y + h), y - cible.bottom)) * 25;
   const cout = (x, y) => evite.reduce((t, { r, poids }) => {
     const dx = Math.min(x + w, r.right) - Math.max(x, r.left);
     const dy = Math.min(y + h, r.bottom) - Math.max(y, r.top);
     return dx > 0 && dy > 0 ? t + dx * dy * poids : t;
-  }, 0);
+  }, loin(x, y));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
     const x = Math.round(Math.max(bord, Math.min(vw - w - bord, p[0])));
@@ -687,6 +754,31 @@ function placeTuto(force){
   bulle.style.transform = "translate(" + choix[0] + "px," + choix[1] + "px)";
   if (premiere){ bulle.getBoundingClientRect(); bulle.style.transition = ""; }
   TUTO.pos = choix;
+}
+
+/**
+ * Le voile autour de ce qui reste clair, ou pas de voile du tout.
+ *
+ * Mettre une chose en avant ne suffisait pas : le repère battait, mais au milieu
+ * d'un écran où tout le reste gardait sa pleine couleur — une liste de deux
+ * cents exposants, un plan chargé — et l'œil ne savait où se poser. Tout ce qui
+ * n'est pas désigné recule. Le voile ne prend aucun clic : on garde la main sur
+ * la page entière, on sait seulement où regarder.
+ */
+function voileTuto(trou){
+  const v = $("tutoVoile");
+  if (!v) return;
+  v.classList.toggle("on", !!trou);
+  if (!trou) return;
+  const vw = innerWidth, vh = innerHeight;
+  const g = Math.max(0, Math.round(trou.left)), h = Math.max(0, Math.round(trou.top));
+  const d = Math.min(vw, Math.round(trou.right)), bas = Math.min(vh, Math.round(trou.bottom));
+  // en haut, en bas, puis les deux côtés de la bande du milieu
+  [[0, 0, vw, h], [0, bas, vw, vh - bas], [0, h, g, bas - h], [d, h, vw - d, bas - h]]
+    .forEach((b, i) => {
+      v.children[i].style.transform = "translate(" + b[0] + "px," + b[1] + "px) scale(" +
+        Math.max(0, b[2]) + "," + Math.max(0, b[3]) + ")";
+    });
 }
 
 /** Le repère suit la cible image par image, le temps que les choses se posent. */
@@ -712,7 +804,21 @@ function rafaleTuto(){
  */
 function marqueZoneTuto(z){
   let g = $("tutoZone");
-  if (!z || z.p !== state.plan){ if (g) g.remove(); return; }
+  const vue = !!z && z.p === state.plan;
+  /* Le reste du plan recule, comme sous le cartouche des points d'intérêt :
+     une zone désignée au milieu de cinq cents stands en pleine couleur ne se
+     trouvait pas du premier coup d'œil. Son nom reste clair avec elle — il vit
+     dans la couche des libellés, que chaque déplacement de la vue réécrit :
+     un observateur lui rend sa marque aussitôt. */
+  racine.classList.toggle("tuto-retrait", vue);
+  marqueLibelleTuto(vue ? z.id : null);
+  document.querySelectorAll("#zones g.tutoCible").forEach(n => {
+    if (!vue || n.dataset.id !== z.id) n.classList.remove("tutoCible");
+  });
+  if (!vue){ if (g) g.remove(); return; }
+  // la forme se réécrit avec le pavillon : sa marque se repose à chaque pouls
+  const forme = $("zones").querySelector('g[data-id="' + CSS.escape(z.id) + '"]');
+  if (forme) forme.classList.add("tutoCible");
   if (g && g.dataset.id === z.id) return;
   if (!g){
     g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -728,4 +834,18 @@ function marqueZoneTuto(z){
     p.setAttribute("d", z.d);
     g.appendChild(p);
   });
+}
+
+/** Le libellé de la zone désignée, gardé clair quand le plan recule. */
+function marqueLibelleTuto(id){
+  if (!TUTO) return;
+  const pose = () => $("labels").querySelectorAll(".lbl").forEach(l =>
+    l.classList.toggle("tutoCible", !!id && l.dataset.lbl === id));
+  if (TUTO.lbl === id) return;
+  TUTO.lbl = id;
+  if (TUTO.guet){ TUTO.guet.disconnect(); TUTO.guet = null; }
+  pose();
+  if (!id) return;
+  TUTO.guet = new MutationObserver(pose);
+  TUTO.guet.observe($("labels"), { childList: true });
 }

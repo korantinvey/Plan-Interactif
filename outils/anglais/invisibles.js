@@ -18,4 +18,7 @@ module.exports = [
   // `_suggestion.html` : des morceaux de la phrase de la suggestion, jamais
   // affichés seuls — la phrase entière a sa clé dans `_suggestion.js`
   "du secteur", "de la ville", "du pays", "de la nomenclature", "de la thématique",
+
+  // `_tutoriel.html` : un morceau de la transformation CSS qui étire le voile
+  "px) scale(",
 ];
