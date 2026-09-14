@@ -108,10 +108,21 @@ function sommets(o){
   return l;
 }
 
-/** Enveloppe convexe, parcours monotone d'Andrew. */
-const ENVELOPPES = new Map();
+/**
+ * Enveloppe convexe, parcours monotone d'Andrew.
+ *
+ * Gardée sur le pavillon lui-même, et non dans une table à côté rangée par
+ * identifiant. Elle ne dépend que des emplacements et des zones, que rien ne
+ * retouche en cours de visite : `oublieGrilles`, qui périme tout ce qui
+ * s'appuie sur les dessins, n'a donc pas à la jeter — la recalculer à chaque
+ * trait tracé coûterait un tri de tous les sommets du pavillon pour rendre le
+ * même contour. Mais ce qui la périmerait vraiment, c'est un jeu de données
+ * remplacé ; et une table rangée par identifiant aurait alors resservi
+ * l'enveloppe de l'ancien sous le nom du nouveau. Posée sur l'objet, elle s'en
+ * va avec lui, et il n'y a plus d'oubli à ne pas oublier.
+ */
 function enveloppe(p){
-  const garde = ENVELOPPES.get(p.id);
+  const garde = p.enveloppe;
   if (garde) return garde;
   const pts = [];
   for (const o of p.stands) pts.push(...sommets(o));
@@ -141,7 +152,7 @@ function enveloppe(p){
   const t = new Path2D();
   bord.forEach((q, i) => i ? t.lineTo(q[0], q[1]) : t.moveTo(q[0], q[1]));
   t.closePath();
-  ENVELOPPES.set(p.id, t);
+  p.enveloppe = t;
   return t;
 }
 

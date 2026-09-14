@@ -736,7 +736,15 @@ Deno.serve(async (req) => {
         if (!memes) {
           const src = { ...(evt.sources ?? {}) };
           src.stands = { ...(src.stands ?? {}), categories: r.categoriesIds };
-          await db.from("evenement").update({ sources: src }).eq("id", evt.id);
+          /* Ce n'est qu'un raccourci pour la fois d'avance, et pourtant son
+             échec se contrôle comme les autres : c'est la première écriture de
+             la synchronisation, et une base qui la refuse refusera le plan
+             trente secondes plus tard. Autant le dire avant d'avoir lu un
+             mégaoctet de dessin pour rien. */
+          await ecrit(
+            db.from("evenement").update({ sources: src }).eq("id", evt.id),
+            "Écriture des catégories reconnues",
+          );
         }
       }
 
@@ -751,16 +759,26 @@ Deno.serve(async (req) => {
          condition. */
       const idEvtEm = String((evt.cles ?? {}).eventmaker ?? "");
       if (idEvtEm && Deno.env.get("EVENTMAKER_TOKEN")) {
+        /* Seul l'appel est facultatif. L'écriture, elle, se contrôle : le
+           fuseau décale l'horaire de chaque conférence du plan, et le garder à
+           sa valeur d'hier parce que la base a refusé la nouvelle donne un
+           programme faux d'une heure que rien ne signale — exactement ce que
+           ce `catch` était censé ne couvrir que pour un Eventmaker muet. */
+        let fuseau: string | null | undefined;
         try {
           const detail = await new Eventmaker({
             jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
             champs: champsEm, valeurs: valeursEm, perso: persos,
             categories: categoriesEm,
           }).evenement(idEvtEm);
-          await db.from("evenement")
-            .update({ fuseau_source: detail?.timezone ? String(detail.timezone) : null })
-            .eq("id", evt.id);
+          fuseau = detail?.timezone ? String(detail.timezone) : null;
         } catch (_) { /* l'ancien fuseau reste */ }
+        if (fuseau !== undefined) {
+          await ecrit(
+            db.from("evenement").update({ fuseau_source: fuseau }).eq("id", evt.id),
+            "Écriture du fuseau du salon",
+          );
+        }
         /* L'anglais des listes Eventmaker — parcours de visite, secteurs,
            offres de reprise. Deux appels, et toutes les listes de l'événement
            d'un coup : une liste qu'aucune fiche du plan ne montre encore ne

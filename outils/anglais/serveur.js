@@ -122,6 +122,8 @@ module.exports = {
   "Écriture des cibles de mesure": "Saving the measurement targets",
   "Écriture des salles du programme": "Saving the programme rooms",
   "Écriture du relevé des champs": "Saving the field survey",
+  "Écriture des catégories reconnues": "Saving the recognised categories",
+  "Écriture du fuseau du salon": "Saving the show time zone",
   "Écriture de la date de synchronisation": "Saving the synchronisation date",
   "la base n'a rien rendu": "the database returned nothing",
 };

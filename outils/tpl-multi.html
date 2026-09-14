@@ -17793,10 +17793,21 @@ function sommets(o){
   return l;
 }
 
-/** Enveloppe convexe, parcours monotone d'Andrew. */
-const ENVELOPPES = new Map();
+/**
+ * Enveloppe convexe, parcours monotone d'Andrew.
+ *
+ * Gardée sur le pavillon lui-même, et non dans une table à côté rangée par
+ * identifiant. Elle ne dépend que des emplacements et des zones, que rien ne
+ * retouche en cours de visite : `oublieGrilles`, qui périme tout ce qui
+ * s'appuie sur les dessins, n'a donc pas à la jeter — la recalculer à chaque
+ * trait tracé coûterait un tri de tous les sommets du pavillon pour rendre le
+ * même contour. Mais ce qui la périmerait vraiment, c'est un jeu de données
+ * remplacé ; et une table rangée par identifiant aurait alors resservi
+ * l'enveloppe de l'ancien sous le nom du nouveau. Posée sur l'objet, elle s'en
+ * va avec lui, et il n'y a plus d'oubli à ne pas oublier.
+ */
 function enveloppe(p){
-  const garde = ENVELOPPES.get(p.id);
+  const garde = p.enveloppe;
   if (garde) return garde;
   const pts = [];
   for (const o of p.stands) pts.push(...sommets(o));
@@ -17826,7 +17837,7 @@ function enveloppe(p){
   const t = new Path2D();
   bord.forEach((q, i) => i ? t.lineTo(q[0], q[1]) : t.moveTo(q[0], q[1]));
   t.closePath();
-  ENVELOPPES.set(p.id, t);
+  p.enveloppe = t;
   return t;
 }
 
@@ -24302,6 +24313,20 @@ function styleDuFond(cal, fond){
 }
 
 let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
+/* Le montage en cours, numéroté.
+
+   Monter la carte demande d'aller chercher la bibliothèque, ce qui prend le
+   temps d'un aller-retour réseau. Or on peut changer de fond pendant ce
+   temps-là — c'est même ce qu'on fait quand le premier ne convient pas — et
+   chaque changement repart d'un montage neuf sans que le précédent sache qu'il
+   ne compte plus. Il aboutissait quand même : une deuxième carte s'installait
+   par-dessus la première, qui restait sur place, invisible, à tenir un contexte
+   graphique et à demander ses tuiles pour personne. Le drapeau `_monteGL` n'y
+   pouvait rien — ce qui annule un montage le remet justement à zéro.
+
+   Chaque montage prend donc un numéro, et ne s'installe que s'il porte encore
+   le dernier. */
+let _genGL = 0;
 /* La minuterie du silence. Un service qui refuse proprement rend un code, et
    l'on sait quoi dire ; un service qui ne répond pas du tout ne rend rien du
    tout, et le moteur peint alors le fond du plan — un grand aplat uni qu'on
@@ -24346,11 +24371,14 @@ function poseCarteGL(cal, fond){
      drapeau on empilerait trente cartes le temps d'un glissement. */
   if (_monteGL) return;
   _monteGL = true;
+  const gen = ++_genGL;
   /* L'adresse dans le message : si rien n'arrive, elle dit déjà laquelle a été
      demandée — et c'est la moitié du diagnostic. */
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
   guetteLaCarte(sig);
   chargeMapLibre().then(gl => {
+    // un autre fond a été choisi, ou la carte retirée, pendant le chargement
+    if (gen !== _genGL) return;
     const v = vueGL(cal);
     _styleGL = sig;
     _carteGL = new gl.Map({
@@ -24376,6 +24404,9 @@ function poseCarteGL(cal, fond){
       if (!_ditGL) ditCarte("Carte chargée.");
     });
   }).catch(e => {
+    /* Le montage annulé ne condamne rien : celui qui l'a remplacé est en cours,
+       et c'est à lui de dire s'il aboutit. */
+    if (gen !== _genGL) return;
     _monteGL = false;
     _echecGL = e.message;
     hote.hidden = true;
@@ -24419,6 +24450,7 @@ function diagnostiqueGL(ev){
  *  alors qu'on vient justement de le corriger. */
 function relanceCarteGL(){
   clearTimeout(_guetGL);
+  _genGL++;                 // ce qui est en vol ne compte plus
   _echecGL = "";
   _ditGL = "";
   _monteGL = false;
@@ -24430,6 +24462,9 @@ function relanceCarteGL(){
 /** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
 function videCarteGL(){
   clearTimeout(_guetGL);
+  /* Sans cela, une carte demandée puis retirée s'installait quand même, à
+     l'arrivée de la bibliothèque, sur un hôte devenu invisible. */
+  _genGL++;
   const hote = $("fondCarteGL");
   if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
   if (hote) hote.hidden = true;
