@@ -24,8 +24,12 @@
  * **Deux marques, pas une.** Trois signes dans un carré de seize pixels, cela
  * n'existe pas : à cette taille une capitale fait quatre pixels de large. La
  * marque complète sert donc à partir de 32 px — manifeste, écran d'accueil,
- * touche iOS — et une marque réduite, le bloc et le seul 2, porte l'onglet.
- * La silhouette ne change pas d'une à l'autre, seul le détail tombe.
+ * touche iOS — et l'onglet reçoit une marque réduite. Elle n'est pas le
+ * monogramme rogné : un chiffre seul dans un carré de couleur a la forme d'un
+ * compteur de notifications, et l'onglet avait l'air d'annoncer deux messages
+ * non lus. Ce qui reste est donc l'autre moitié du dessin, celle que le bloc
+ * couvrait — les allées et le repère posé dessus. Le monogramme tombe, le
+ * plan remonte : à seize pixels, une forme vaut mieux qu'une lettre.
  *
  * Le rendu se fait en deux temps : le dessin est échantillonné seize fois par
  * pixel, ce qui adoucit les bords, puis encodé en PNG à la main — l'encodage
@@ -87,21 +91,6 @@ const LETTRE_M =
   "Q70.952 51.160 70.812 51.673L68.480 60L65.121 60L62.765 51.673Q62.649 51.207 62.485 50.554" +
   "Q62.322 49.901 62.171 49.224Q62.019 48.548 61.902 48.082L61.716 48.082Q61.739 48.688 61.762 49.563" +
   "Q61.786 50.437 61.809 51.382Q61.832 52.327 61.832 53.166";
-
-/* Le 2 de la marque réduite : même dessin, capitale 36, centré sur son encre
-   et non sur sa chasse — un chiffre seul se cale sur ce qu'il montre. */
-const DEUX_SEUL =
-  "M63.854 68.341L36.146 68.341L36.146 66.190Q36.146 63.880 37.038 61.939Q37.930 59.997 39.452 58.318" +
-  "Q40.974 56.638 42.837 55.090Q44.700 53.542 46.589 52.125Q48.741 50.551 50.630 49.082" +
-  "Q52.519 47.612 53.700 45.985Q54.880 44.359 54.880 42.364Q54.880 41.315 54.382 40.344" +
-  "Q53.883 39.373 52.808 38.743Q51.732 38.114 49.948 38.114Q48.163 38.114 46.956 38.770" +
-  "Q45.749 39.426 45.120 40.580Q44.490 41.735 44.490 43.309L44.490 44.883L36.513 44.883" +
-  "Q36.461 44.569 36.434 44.175Q36.408 43.781 36.408 43.257Q36.408 39.478 38.140 36.907" +
-  "Q39.872 34.335 43.047 32.997Q46.222 31.659 50.630 31.659Q53.988 31.659 56.429 32.551" +
-  "Q58.869 33.443 60.443 34.965Q62.017 36.487 62.778 38.402Q63.539 40.318 63.539 42.364" +
-  "Q63.539 44.831 62.647 46.825Q61.755 48.819 60.181 50.577Q58.606 52.335 56.507 53.936" +
-  "Q54.408 55.536 51.994 57.163Q50.787 58.003 49.816 58.711Q48.845 59.420 48.268 59.945" +
-  "Q47.691 60.469 47.429 60.889L63.854 60.889";
 
 /* ------------------------------------------------------------------
    Les tracés, ramenés à des polygones
@@ -219,11 +208,24 @@ const MARQUE = [
   carre(48, 0, 4, 100, 0, PLAN),
 ];
 
-/** La marque réduite : le bloc, la réserve, le seul chiffre. */
+/**
+ * La marque réduite : les allées et le repère, que le bloc couvrait.
+ *
+ * Le repère est un disque et une pointe plutôt qu'un tracé d'un seul tenant :
+ * deux formes que la règle du non-nul recolle sans qu'on ait à les coudre, et
+ * dont l'une se déplace sans qu'il faille redessiner l'autre. Son creux prend
+ * la couleur du fond et non celle du bloc, pour la raison qui valait déjà à la
+ * marque complète : sur du cyan, le rose ne se détache pas.
+ *
+ * Les allées sont ici vives et non rabattues comme sous le bloc — plus rien ne
+ * passe devant elles, elles portent seules le cyan de la marque.
+ */
 const REDUITE = [
-  trace(DEUX_SEUL, ROSE),
-  carre(32, 26.6, 36, 46.8, 8, NUIT),
-  carre(10, 10, 80, 80, 18, CYAN),
+  disque(50, 40, 10, NUIT),                            // le creux du repère
+  disque(50, 40, 26, ROSE),
+  trace("M32.06 58.72L67.94 58.72L50 90.70Z", ROSE),   // sa pointe
+  carre(0, 44, 100, 12, 0, CYAN),                      // les allées, à découvert
+  carre(44, 0, 12, 100, 0, CYAN),
 ];
 
 /**
