@@ -140,6 +140,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` |
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `APPLICATION` pour le seul plan public ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
 | quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
+| fenêtre qui invite le visiteur à installer le plan | `_installation.html` — moment `essaieInvitation`, façon par navigateur `faconInstallation` ; case `caseInstallation`, posée par `_admin1.html` `voletPlan`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |
 | icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
