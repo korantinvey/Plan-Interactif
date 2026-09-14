@@ -117,7 +117,12 @@ Deno.serve(async (req) => {
     const ecritAcces = async (profilId: string, evenements: unknown) => {
       if (!Array.isArray(evenements)) return;
       const voulus = evenements.map((e) => String(e)).filter(Boolean);
-      await db.from("acces").delete().eq("profil_id", profilId);
+      /* L'effacement d'abord, et son échec compte autant que celui de l'ajout.
+         Tu, il laissait au profil les salons qu'on venait justement de lui
+         retirer, pendant que la console affichait la liste voulue : un droit
+         qu'on croit repris ne doit jamais rester ouvert en silence. */
+      const { error: eVieux } = await db.from("acces").delete().eq("profil_id", profilId);
+      if (eVieux) throw new Error(eVieux.message);
       if (voulus.length) {
         const { error } = await db.from("acces").insert(
           voulus.map((evenement_id) => ({ profil_id: profilId, evenement_id })));
@@ -133,10 +138,25 @@ Deno.serve(async (req) => {
       const { data: liens } = await db.from("acces").select("profil_id,evenement_id");
 
       /* Une invitation partie mais jamais ouverte se voit ici, et nulle part
-         ailleurs : c'est ce qui distingue « compte créé » de « compte actif ». */
-      const { data: comptes } = await db.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      const confirme = new Map(
-        (comptes?.users ?? []).map((u) => [u.id, Boolean(u.email_confirmed_at ?? u.last_sign_in_at)]));
+         ailleurs : c'est ce qui distingue « compte créé » de « compte actif ».
+
+         La liste se lit page par page. Une seule page de mille suffisait tant
+         qu'on comptait les comptes sur les doigts ; le millier passé, tous les
+         suivants se seraient affichés « invitation en attente » sans que rien
+         ne le dise — et relancer un compte actif n'aurait servi à personne. */
+      const PAR_PAGE = 200;
+      const confirme = new Map<string, boolean>();
+      // le plafond n'est qu'un garde-fou contre une boucle sans fin : c'est la
+      // page incomplète qui arrête la lecture, et elle arrive toujours
+      for (let page = 1; page <= 50; page++) {
+        const { data: comptes, error } = await db.auth.admin.listUsers({ page, perPage: PAR_PAGE });
+        if (error) throw new Error(error.message);
+        const lot = comptes?.users ?? [];
+        for (const u of lot) {
+          confirme.set(u.id, Boolean(u.email_confirmed_at ?? u.last_sign_in_at));
+        }
+        if (lot.length < PAR_PAGE) break;
+      }
 
       return repond({
         profils: (profils ?? []).map((p) => ({

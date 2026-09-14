@@ -92,6 +92,30 @@ const db = (req: Request) => {
     : createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, options);
 };
 
+/**
+ * Une lecture dont l'échec ne peut pas passer pour un vide.
+ *
+ * `supabase-js` ne lève rien : une lecture refusée, expirée en chemin ou trop
+ * lourde rend `{ data: null, error }`, et `data ?? []` la change en « ce
+ * pavillon n'a pas de calque ». La fonction répondait alors 200 avec un plan
+ * vide — et cette réponse-là part au cache : trente jours au relais, un an dans
+ * le navigateur pour un fond, que son adresse déclare immuable. Une seconde de
+ * panne en base gelait donc un plan blanc pour un an, sans que rien ne le dise
+ * ni ne permette de le défaire.
+ *
+ * L'erreur remonte donc, et le `catch` du gestionnaire en fait un 500 — jamais
+ * gardé, retenté à la visite suivante. Mieux vaut une panne qui se voit et se
+ * répare qu'un vide qui s'installe.
+ */
+async function lu<T>(
+  requete: PromiseLike<{ data: T; error: { message: string } | null }>,
+  quoi: string,
+): Promise<T> {
+  const { data, error } = await requete;
+  if (error) throw new Error(quoi + " : " + error.message);
+  return data;
+}
+
 /** Le salon : publié pour un visiteur, accessible pour un exploitant. */
 const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
@@ -260,11 +284,10 @@ async function masquesDuPlan(
   planId: string,
   calques: { cle: unknown }[],
 ): Promise<Record<string, boolean>> {
-  const { data } = await sb
-    .from("apparence")
-    .select("reglages")
-    .eq("plan_id", planId)
-    .maybeSingle();
+  const data = await lu(
+    sb.from("apparence").select("reglages").eq("plan_id", planId).maybeSingle(),
+    "Lecture de l'apparence du pavillon",
+  );
   return masquesDe(data?.reglages, calques);
 }
 
@@ -333,20 +356,31 @@ Deno.serve(async (req) => {
     // Second appel : uniquement le dessin d'un pavillon.
     const fond = new URL(req.url).searchParams.get("fond");
     if (fond) {
-      const { data: pl } = await publies(
-        sb.from("plan").select("id")
-          .eq("evenement_id", evt.id)
-          .eq("id_klipso", fond),
-        identifie,
-      ).maybeSingle();
+      const pl = await lu(
+        publies(
+          sb.from("plan").select("id")
+            .eq("evenement_id", evt.id)
+            .eq("id_klipso", fond),
+          identifie,
+        ).maybeSingle(),
+        "Lecture du pavillon",
+      );
       if (!pl) return repond({ erreur: "Pavillon introuvable." }, 404);
 
-      const { data: cal } = await sb
-        .from("calque")
-        .select("cle, svg, ordre_klipso")
-        .eq("plan_id", pl.id)
-        .not("svg", "is", null)
-        .order("ordre_klipso", { ascending: true });
+      const cal = await lu(
+        sb.from("calque")
+          .select("cle, svg, ordre_klipso")
+          .eq("plan_id", pl.id)
+          .not("svg", "is", null)
+          .order("ordre_klipso", { ascending: true }),
+        "Lecture du dessin du pavillon",
+      );
+      /* Un fond sans un seul calque n'est pas un fond : la lecture a abouti sur
+         rien, et la déclarer immuable pour un an graverait la page blanche.
+         Cela n'arrive que si la synchronisation n'a rien écrit — on le dit. */
+      if (!cal?.length) {
+        return repond({ erreur: "Le dessin de ce pavillon est absent : lancez une synchronisation." }, 404);
+      }
 
       /* Ce que l'exploitant a masqué ne part pas.
          Un visiteur n'a aucun moyen de le rallumer — le panneau des calques
@@ -369,12 +403,15 @@ Deno.serve(async (req) => {
       return repond({ plan: fond, calques: retenus });
     }
 
-    const { data: plans } = await publies(
-      sb.from("plan")
-        .select("id, id_klipso, libelle, hall, emprise")
-        .eq("evenement_id", evt.id),
-      identifie,
-    ).order("libelle", { ascending: true });
+    const plans = await lu(
+      publies(
+        sb.from("plan")
+          .select("id, id_klipso, libelle, hall, emprise")
+          .eq("evenement_id", evt.id),
+        identifie,
+      ).order("libelle", { ascending: true }),
+      "Lecture des pavillons",
+    );
     if (!plans?.length) {
       return repond({
         erreur: identifie
@@ -389,13 +426,25 @@ Deno.serve(async (req) => {
       // On filtre quand même dessus : un calque sans dessin n'a rien à lister.
       // L'empreinte, elle, tient en trente-deux octets et dit ce que pèse le
       // dessin sans le lire : c'est d'elle que sort la version du fond.
-      sb.from("calque")
-        .select("plan_id, id_klipso, cle, libelle, ordre_klipso, empreinte")
-        .in("plan_id", ids).not("svg", "is", null),
-      sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
-      sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
-        .in("plan_id", ids).order("rang", { ascending: true }),
-      sb.from("instantane").select("plan_id, charge, genere_le").in("plan_id", ids),
+      lu(
+        sb.from("calque")
+          .select("plan_id, id_klipso, cle, libelle, ordre_klipso, empreinte")
+          .in("plan_id", ids).not("svg", "is", null),
+        "Lecture des calques",
+      ),
+      lu(
+        sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
+        "Lecture de l'apparence",
+      ),
+      lu(
+        sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
+          .in("plan_id", ids).order("rang", { ascending: true }),
+        "Lecture des calques de dessin",
+      ),
+      lu(
+        sb.from("instantane").select("plan_id, charge, genere_le").in("plan_id", ids),
+        "Lecture des instantanés",
+      ),
     ]);
 
     const par = <T extends { plan_id: string }>(l: T[] | null) => {
@@ -403,10 +452,10 @@ Deno.serve(async (req) => {
       (l ?? []).forEach((x) => (m[x.plan_id] ??= []).push(x));
       return m;
     };
-    const parCalque = par(calques.data);
-    const parDessin = par(dessins.data);
-    const parApparence = Object.fromEntries((apparences.data ?? []).map((a) => [a.plan_id, a]));
-    const parInstantane = Object.fromEntries((instantanes.data ?? []).map((i) => [i.plan_id, i]));
+    const parCalque = par(calques);
+    const parDessin = par(dessins);
+    const parApparence = Object.fromEntries((apparences ?? []).map((a) => [a.plan_id, a]));
+    const parInstantane = Object.fromEntries((instantanes ?? []).map((i) => [i.plan_id, i]));
 
     // le même pour tout le salon : il ne dépend que de son réglage de fiche
     const retrait = identifie ? null : retraits((evt.fiche ?? {}) as Record<string, unknown>);
