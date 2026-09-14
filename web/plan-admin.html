@@ -778,6 +778,12 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      le plan à celle du navigateur. Deux polices sur un écran, pour le même
      nom d'exposant lu deux fois. */
   --sans:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+  /* La liste déroulante d'un « select » est peinte par le système, hors de la
+     page : ses tons ne peuvent donc pas être ceux d'un modèle, qui les pose
+     translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
+     redéfinit. « --systeme » dit au navigateur de quel côté peindre le reste
+     du menu — ascenseur, surbrillance, cadre. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -792,6 +798,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
     --plan-line:#3E474C; --plan-ink:#5A6469;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
   }
 }
 :root[data-theme="dark"]{
@@ -806,6 +813,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
   --plan-line:#3E474C; --plan-ink:#5A6469;
   --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
 }
 
 *{box-sizing:border-box}
@@ -813,6 +821,13 @@ body{margin:0;background:var(--ground);color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
+/* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
+   fond : sous « Verre » — encre blanche sur un carreau translucide — comme
+   dans le thème sombre, elles écrivaient du blanc sur le blanc du système, et
+   ne paraissaient qu'au survol. Elles reçoivent donc leurs propres tons, que
+   le champ soit habillé ou non. */
+select{color-scheme:var(--systeme)}
+option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
 /* « hidden » ne masque rien tant qu'une règle d'auteur pose un display : la
