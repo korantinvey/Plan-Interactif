@@ -7675,11 +7675,23 @@ function poseMarque(blason){
      Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
      ligne les couvre tous les deux. */
   marque.onerror = () => { marque.hidden = true; };
+  /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
+     l'image tenue : le rangement suit donc l'apparition, jamais avant. */
+  marque.onload = () => { marque.hidden = false; rangeMarque(); };
   if (!blason){
     marque.hidden = true;
+    marqueDemandee = "";
     /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
        montrerait la marque de la précédente le temps que la sienne arrive. */
     marque.removeAttribute("src");
+    return;
+  }
+  /* La même marque rouverte : posée, ou en route vers sa place. Une image
+     déjà tenue par le cache est complète et ne donnera aucun événement — elle
+     n'a pas à en attendre un pour paraître, et celle qui a déjà manqué n'en
+     attend pas non plus pour s'effacer. */
+  if (blason === marqueDemandee){
+    if (marque.getAttribute("src") && marque.complete) montreMarque(marque);
     return;
   }
   /* Changer `src` ne retire pas l'image déjà peinte : le navigateur garde la
@@ -7687,17 +7699,141 @@ function poseMarque(blason){
      qu'on vient d'ouvrir portait donc la marque de celle d'avant pendant tout
      le trajet — invisible sur un bureau, très visible sur le réseau d'un
      salon. On la cache donc le temps du trajet, et `onload` la ramène. */
-  if (marque.getAttribute("src") !== blason){
-    marque.hidden = true;
-    marque.src = blason;
+  marqueDemandee = blason;
+  marque.hidden = true;
+  marque.removeAttribute("src");
+  recadreMarque(blason).then(src => {
+    // une autre fiche a pu s'ouvrir pendant le recadrage : sa marque l'emporte
+    if (blason !== marqueDemandee) return;
+    marque.src = src;
+    if (marque.complete) montreMarque(marque);
+  });
+}
+
+/* La marque que la fiche attend, telle que la source la donne : c'est elle
+   qu'on compare, l'adresse posée sur l'image étant celle du recadrage. */
+let marqueDemandee = "";
+
+function montreMarque(marque){
+  marque.hidden = !marque.naturalWidth;
+  if (!marque.hidden) rangeMarque();
+}
+
+/**
+ * La marque sans le vide qui l'entoure.
+ *
+ * Eventmaker range chaque logo dans le carré d'un avatar : un logo en largeur
+ * n'y tient qu'une bande au milieu, et la hauteur que la feuille accorde à la
+ * marque allait au carré entier. Sur Franchise Expo 2027, ATTILA — 486 pixels
+ * de dessin sur 500 de large, 97 de haut — s'affichait en 69 × 13 ; recadré, il
+ * prend les 300 × 59 qu'on lui réserve. Un logo sur deux y gagnait au moins le
+ * double de surface. Ce n'est pas la finesse qui manque, c'est la place : le
+ * dessin tient déjà plus de pixels qu'il n'en occupera.
+ *
+ * Le vide se reconnaît à la transparence, ou à la couleur unie des quatre
+ * coins — trois logos sur quatre de ce salon ont un fond blanc opaque. Un fond
+ * qui change d'un coin à l'autre est une image pleine : on n'y touche pas.
+ *
+ * Lire les pixels demande que la source l'autorise (CORS) ; le dépôt
+ * d'Eventmaker le fait. Une source qui refuse renvoie l'adresse telle quelle,
+ * et le logo paraît comme avant, avec ses marges — jamais moins.
+ *
+ * Le résultat est gardé par adresse pour toute la visite : rouvrir une fiche ne
+ * refait ni le chargement ni l'analyse. Les images découpées ne sont pas
+ * libérées — une par logo regardé, de quelques dizaines de kilo-octets.
+ */
+const MARQUES_RECADREES = new Map();
+
+function recadreMarque(src){
+  let p = MARQUES_RECADREES.get(src);
+  if (p) return p;
+  p = new Promise(fin => {
+    const im = new Image();
+    im.crossOrigin = "anonymous";
+    im.onload = () => {
+      let toile = null;
+      try { toile = decoupeMarque(im); } catch (e) { /* pixels refusés */ }
+      if (!toile) return fin(src);
+      toile.toBlob(b => fin(b ? URL.createObjectURL(b) : src), "image/png");
+    };
+    // refusée en CORS, la même adresse sera redemandée sans, par l'image de la fiche
+    im.onerror = () => fin(src);
+    im.src = src;
+  });
+  MARQUES_RECADREES.set(src, p);
+  return p;
+}
+
+/* L'analyse se fait sur une réduction : le cadre d'un logo n'a pas besoin
+   d'être trouvé au pixel près, et un avatar de 1900 pixels de côté coûtait
+   quatorze mégaoctets à parcourir. La découpe, elle, se fait dans l'original,
+   bornée à trois fois la largeur affichée — de quoi rester net sur un écran
+   dense sans garder un original de 4000 pixels en mémoire. */
+const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
+
+/**
+ * La toile qui porte le dessin recadré, ou `null` quand il n'y a rien à
+ * retirer — un fond non uni, une image vide, des marges trop minces pour
+ * valoir une copie.
+ */
+function decoupeMarque(im){
+  const w = im.naturalWidth, h = im.naturalHeight;
+  if (!w || !h) return null;
+  const k = Math.min(1, MARQUE_ANALYSE / Math.max(w, h));
+  const aw = Math.max(1, Math.round(w * k)), ah = Math.max(1, Math.round(h * k));
+  const analyse = document.createElement("canvas");
+  analyse.width = aw; analyse.height = ah;
+  const cx = analyse.getContext("2d", { willReadFrequently: true });
+  cx.drawImage(im, 0, 0, aw, ah);
+  const d = cx.getImageData(0, 0, aw, ah).data; // lève si la source a refusé
+
+  const px = (x, y) => (y * aw + x) * 4;
+  const coins = [px(0, 0), px(aw - 1, 0), px(0, ah - 1), px(aw - 1, ah - 1)];
+  const transparent = d[coins[0] + 3] < 16;
+  // l'écart toléré couvre le bruit d'un JPEG, pas un dégradé
+  const ecart = (i, j) => Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) +
+                          Math.abs(d[i + 2] - d[j + 2]);
+  const fond = transparent
+    ? i => d[i + 3] < 16
+    : i => d[i + 3] >= 16 && ecart(i, coins[0]) < 48;
+  if (!coins.every(fond)) return null;
+
+  let x0 = aw, y0 = ah, x1 = -1, y1 = -1;
+  for (let y = 0; y < ah; y++){
+    for (let x = 0; x < aw; x++){
+      if (fond(px(x, y))) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
   }
-  /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
-     l'image tenue : le rangement suit donc l'apparition, jamais avant. */
-  marque.onload = () => { marque.hidden = false; rangeMarque(); };
-  /* Une image déjà tenue par le cache est complète dès l'affectation et ne
-     donnera aucun événement : elle n'a pas à en attendre un pour paraître, et
-     celle qui a déjà manqué n'en attend pas non plus pour s'effacer. */
-  if (marque.complete) marque.hidden = !marque.naturalWidth;
+  if (x1 < 0) return null;
+
+  /* Retour à l'original, avec un pixel d'analyse de plus de chaque côté : la
+     réduction a pu fondre dans le fond le bord adouci d'une lettre. */
+  let gx = Math.max(0, Math.floor((x0 - 1) / k)), gy = Math.max(0, Math.floor((y0 - 1) / k));
+  let dx = Math.min(w, Math.ceil((x1 + 2) / k)), dy = Math.min(h, Math.ceil((y1 + 2) / k));
+  /* Un fond opaque garde un liseré : collé au dessin, il en faisait une
+     étiquette découpée aux ciseaux. Un fond transparent n'a pas de bord à
+     montrer. */
+  if (!transparent){
+    const marge = Math.round(0.12 * Math.min(dx - gx, dy - gy));
+    gx = Math.max(0, gx - marge); gy = Math.max(0, gy - marge);
+    dx = Math.min(w, dx + marge); dy = Math.min(h, dy + marge);
+  }
+  const cw = dx - gx, ch = dy - gy;
+  // moins d'un dixième gagné sur chaque côté : la copie ne vaut pas sa peine
+  if (cw > 0.9 * w && ch > 0.9 * h) return null;
+
+  const r = Math.min(1, MARQUE_SORTIE / Math.max(cw, ch));
+  const sortie = document.createElement("canvas");
+  sortie.width = Math.max(1, Math.round(cw * r));
+  sortie.height = Math.max(1, Math.round(ch * r));
+  const sx = sortie.getContext("2d");
+  sx.imageSmoothingQuality = "high";
+  sx.drawImage(im, gx, gy, cw, ch, 0, 0, sortie.width, sortie.height);
+  return sortie;
 }
 
 /**
@@ -7770,6 +7906,16 @@ function rangeMarque(){
   // elle tient à côté du nom dès que les deux boîtes se croisent en hauteur
   if (marque.getBoundingClientRect().top < titre.getBoundingClientRect().bottom - 2) return;
 
+  /* Tombée dessous, elle tiendrait encore à côté du nom en y rétrécissant. Un
+     logo en largeur, une fois ses marges retirées, réclame ses trois cents
+     pixels et ne tient plus jamais à côté du nom — alors que, sous le numéro,
+     la pastille lui en prend la moitié. On la garde donc là où elle reste la
+     plus grande. La place à côté du nom se mesure maintenant, pendant que la
+     marque y est encore et que la réserve du coin est donc la sienne. */
+  const n = nom.getBoundingClientRect(), sn = getComputedStyle(nom);
+  const aCote = Math.floor(n.right - (parseFloat(sn.paddingRight) || 0) -
+    titre.getBoundingClientRect().right - (parseFloat(sn.columnGap) || 0)) - 1;
+
   bas.appendChild(marque);
   /* Ce qui reste sur la ligne du numéro : du bord droit de la dernière
      pastille au bord intérieur du bloc — celui-ci recule là où un modèle de
@@ -7780,8 +7926,14 @@ function rangeMarque(){
   const gauche = derniere ? derniere.getBoundingClientRect().right
                           : r.left + (parseFloat(st.paddingLeft) || 0);
   const droite = r.right - (parseFloat(st.paddingRight) || 0);
+  const dessous = droite - gauche - 10;
+  if (aCote >= 90 && aCote > dessous){
+    nom.appendChild(marque);
+    marque.style.maxWidth = aCote + "px";
+    return;
+  }
   // réduite à un trait elle ne se lit plus : mieux vaut alors la laisser passer
-  marque.style.maxWidth = Math.max(90, droite - gauche - 10) + "px";
+  marque.style.maxWidth = Math.max(90, dessous) + "px";
 }
 
 /* Le panneau ne fait pas la même largeur en colonne et en tiroir, et le pli
