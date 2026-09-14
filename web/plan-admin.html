@@ -1120,6 +1120,13 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .plan-gl{position:absolute;inset:0;pointer-events:none}
 html.rendu-webgl #plan > *{visibility:hidden}
 html.rendu-webgl .calque-libelles{display:none}
+/* L'édition reste au SVG : le calque ouvert, les libellés qu'on place et les
+   aides de l'éditeur redeviennent visibles. Le SVG passe alors au-dessus du
+   dessin — positionné, il se peint après lui dans l'ordre du document. */
+html.rendu-webgl .stage > svg{position:relative}
+html.rendu-webgl.edition-svg #plan > :not(#couches):not(#marques):not(#itin),
+html.rendu-webgl.edition-svg #couches > .dcal.editable,
+html.rendu-webgl.edition-libelles #couches > #labels{visibility:visible}
 
 /* Une zone se peignait à 22 % de la couleur choisie, quand un stand la prend
    telle quelle : le nuancier annonçait un ocre franc et le plan rendait un
@@ -5381,7 +5388,7 @@ const ancre = o => o.lc || o.c;
 const place = o => o.lb || o.bb;
 
 function libelles(){
-  if (GL.actif){ libellesWebgl(); return; }
+  if (GL.actif && !PLACE_LIBELLES){ libellesWebgl(); return; }
   const l = $("labels"), p = P();
   const r = cadrePlan();
   const pxParM = (r.width || 1) / view.w;
@@ -6573,7 +6580,12 @@ const appliqueVue = () => {
   /* Le plan peint par la carte graphique ne lit pas la « viewBox » : la vue
      part vers elle, et le SVG caché garde sa géométrie figée. */
   if (RENDU_WEBGL && !GL.actif) monteWebgl();
-  if (GL.actif){ vueWebgl(); return; }
+  if (GL.actif){
+    vueWebgl();
+    majEditionWebgl();
+    // pendant l'édition, le SVG visible doit suivre la vue comme avant
+    if (!editionSvg()) return;
+  }
   svg.setAttribute("viewBox", view.x + " " + view.y + " " + view.w + " " + view.h);
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
@@ -25145,11 +25157,13 @@ function monteWebgl(){
       if (b === "ordre") GL.ordre = true;
       else if (b) GL.sales.add(b);
     }
+    // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
+    majEditionWebgl();
     planifieWebgl();
   }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
   // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
   // classes posées sur la racine, que la feuille de style lit
-  new MutationObserver(toutRepeindreWebgl)
+  new MutationObserver(() => { majEditionWebgl(); toutRepeindreWebgl(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
   if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
@@ -25184,8 +25198,46 @@ function blocDe(n){
   if (n === couches) return "ordre";
   let x = n.nodeType === 1 ? n : n.parentNode;
   while (x && x.parentNode !== couches && x.parentNode !== svg) x = x.parentNode;
-  if (!x || x.id === "labels") return null;
+  if (!x || x.id === "labels" || blocSvgVisible(x)) return null;
   return x;
+}
+
+/* ------------------------------------------------------------
+   L'édition reste au SVG.
+
+   Les outils de dessin attrapent les poignées et les formes par le pointage du
+   navigateur, et posent leurs aides — poignées, aperçu du tracé, guides des
+   aimants, cotes — à la racine du SVG. Les rejouer dans la carte graphique
+   reviendrait à réécrire l'éditeur. Pendant qu'un calque est ouvert, ou que
+   l'on place les libellés à la main, ce qui s'édite redevient donc du SVG
+   visible, calé sur la vue et posé au-dessus du dessin ; le reste du plan
+   continue d'être peint par la carte graphique. L'édition se fait sur un
+   poste : la remise en page du SVG à chaque image, que le zoom du visiteur
+   ne supporte pas, y reste acceptable.
+   ------------------------------------------------------------ */
+const editionSvg = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
+
+/** Pose ou retire le mode ; en y entrant, le SVG retrouve la vue du moment —
+ *  sa géométrie était restée figée là où on l'avait laissée. */
+let _majEdition = false;
+function majEditionWebgl(){
+  if (!GL.actif || _majEdition) return;
+  const r = document.documentElement, ed = editionSvg(), lib = ed && PLACE_LIBELLES;
+  if (r.classList.contains("edition-svg") === ed && r.classList.contains("edition-libelles") === lib) return;
+  _majEdition = true;
+  r.classList.toggle("edition-svg", ed);
+  r.classList.toggle("edition-libelles", lib);
+  if (ed) appliqueVue();
+  _majEdition = false;
+  toutRepeindreWebgl();
+}
+
+/** Ce que le SVG montre lui-même pendant l'édition, et que la carte graphique
+ *  ne doit donc pas peindre une seconde fois. */
+function blocSvgVisible(b){
+  if (!document.documentElement.classList.contains("edition-svg")) return false;
+  if (b.parentNode === svg) return !["couches", "marques", "itin"].includes(b.id);
+  return b.classList.contains("editable") || (b.id === "labels" && PLACE_LIBELLES);
 }
 
 function planifieWebgl(){
@@ -25210,7 +25262,7 @@ function repeintWebgl(){
   let n = 0;
   for (const b of blocsDansLOrdre()){
     vus.add(b);
-    if (b.id === "labels") continue;
+    if (b.id === "labels" || blocSvgVisible(b)) continue;
     if (GL.tout || GL.sales.has(b) || !GL.blocs.has(b)){
       if (!GL.cles.has(b)) GL.cles.set(b, "b" + (++GL.compteur));
       GL.blocs.set(b, convertitBloc(b, GL.cles.get(b)));
@@ -25227,6 +25279,7 @@ function repeintWebgl(){
 function assembleWebgl(){
   const out = [];
   for (const b of blocsDansLOrdre()){
+    if (blocSvgVisible(b)) continue;
     if (b.id === "labels"){ out.push(...couchesLibellesWebgl()); continue; }
     out.push(...(GL.blocs.get(b) || []));
   }
@@ -25641,6 +25694,8 @@ function lisModelesLibelles(){
 
 function libellesWebgl(){
   if (!GL.actif) return;
+  // le placement à la main a réécrit « #labels » : les témoins de style y reviennent
+  if (!$("labels").querySelector("text[data-modele]")) poseModelesLibelles();
   const p = P(), items = [];
   const bloc = (lignes, f, x, y, cls, z0, z1) => { if (z1 > z0) items.push({ text: lignes.join("\n"), position: [x, y], taille: f, cls, z0, z1 }); };
   const LOIN = 99;
@@ -25692,6 +25747,8 @@ function libellesWebgl(){
 }
 
 function couchesLibellesWebgl(){
+  // pendant le placement à la main, les libellés sont ceux du SVG, qu'on attrape
+  if (PLACE_LIBELLES) return [];
   if (GL.couchesLibelles) return GL.couchesLibelles;
   /* Les noms se regroupent par police une fois, et non à chaque pas de zoom :
      un nouveau tableau, même au contenu identique, passe pour des données
