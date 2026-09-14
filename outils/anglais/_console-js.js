@@ -240,6 +240,8 @@ module.exports = {
 
   // les liens et la synchronisation
   "L'événement est en brouillon : le plan public n'est pas encore servi.": "The event is a draft: the public map is not served yet.",
+  "Le plan sur un écran posé dans le salon : il demande où il est, puis les itinéraires en partent":
+    "The map on a screen installed at the venue: it asks where it stands, then routes start from there",
   "Ouvrir le plan tel que le voient les visiteurs": "Open the map as visitors see it",
   "Ouvrir le plan avec les calques et les outils de dessin": "Open the map with the layers and drawing tools",
   "accessible même en brouillon": "available even as a draft",

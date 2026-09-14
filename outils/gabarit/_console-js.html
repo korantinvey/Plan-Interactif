@@ -2309,16 +2309,26 @@ function champOrigine(src, cible, apres, ouiNon) {
 
 function majLiens(e) {
   const q = "?plan=" + encodeURIComponent(e.slug || "");
+  // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
+  // laisser cliquer vers une page qui répondra « introuvable »
+  const brouillon = e.etat !== "publie";
+  const enBrouillon = "L'événement est en brouillon : le plan public n'est pas encore servi.";
   const pub = $("lienPublic"), adm = $("lienAdmin");
   if (pub) {
     pub.href = BASE_PAGES + "plan" + q;
-    // un brouillon n'est pas servi aux visiteurs : le dire plutôt que
-    // laisser cliquer vers une page qui répondra « introuvable »
-    const brouillon = e.etat !== "publie";
     pub.classList.toggle("inactif", brouillon);
-    pub.title = brouillon
-      ? "L'événement est en brouillon : le plan public n'est pas encore servi."
-      : "Ouvrir le plan tel que le voient les visiteurs";
+    pub.title = brouillon ? enBrouillon : "Ouvrir le plan tel que le voient les visiteurs";
+  }
+  /* La borne n'est que le plan public avec un paramètre de plus. Le lien est
+     là pour qu'on n'ait pas à l'écrire de mémoire : on l'ouvre sur la tablette
+     posée dans le salon, ou l'on copie son adresse pour l'y porter. */
+  const bor = $("lienBorne");
+  if (bor) {
+    bor.href = BASE_PAGES + "plan" + q + "&borne";
+    bor.classList.toggle("inactif", brouillon);
+    bor.title = brouillon ? enBrouillon
+      : "Le plan sur un écran posé dans le salon : il demande où il est, " +
+        "puis les itinéraires en partent";
   }
   if (adm) {
     adm.href = BASE_PAGES + "plan-admin" + q;
