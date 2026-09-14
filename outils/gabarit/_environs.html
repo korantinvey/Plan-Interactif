@@ -152,9 +152,16 @@ const CARTES = {
   vecteurDetail: { nom: "Vectoriel détaillé",
              style: "https://tiles.openfreemap.org/styles/liberty",
              credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
-  vecteurSombre: { nom: "Vectoriel sombre",
-             style: "https://tiles.openfreemap.org/styles/dark",
-             credit: "Fond de plan © les contributeurs d'OpenStreetMap, © OpenFreeMap" },
+  /* Les services à clé, en dernier et déclarés comme tels. Une clé posée dans
+     une page publique est lisible de tous — c'est leur modèle, et ils s'en
+     protègent en la liant à un domaine, non en la cachant. À régler chez eux,
+     pas ici. */
+  maptiler: { nom: "MapTiler (clé requise)", cle: true,
+             style: "https://api.maptiler.com/maps/dataviz-light/style.json?key={cle}",
+             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
+  maptilerSombre: { nom: "MapTiler sombre (clé requise)", cle: true,
+             style: "https://api.maptiler.com/maps/dataviz-dark/style.json?key={cle}",
+             credit: "Fond de plan © MapTiler, © les contributeurs d'OpenStreetMap" },
   /* Un fond sans un mot écrit, et en premier. Deux raisons, qui vont ensemble :
      un plan de salon se dessine l'entrée vers le bas, presque jamais le nord en
      haut — la carte tourne donc avec lui, et son texte se lit de travers ou à
@@ -372,15 +379,32 @@ function vueGL(cal){
   };
 }
 
+/**
+ * L'adresse du style à charger.
+ *
+ * Trois sources, dans cet ordre : celle que l'exploitant a collée, celle du
+ * fond retenu une fois sa clé posée, rien. L'adresse libre existe parce que
+ * ces services bougent — un chemin qui marchait l'an dernier rend aujourd'hui
+ * une tuile grise barrée de « API KEY REQUIRED », et il vaut mieux pouvoir la
+ * corriger sur place que d'attendre une mise en ligne.
+ */
+function styleDuFond(cal, fond){
+  if (cal && cal.style) return cal.style;
+  if (!fond || !fond.style) return "";
+  return fond.style.replace("{cle}", encodeURIComponent((cal && cal.cle) || ""));
+}
+
 let _carteGL = null, _styleGL = "", _monteGL = false, _echecGL = "";
 
 /** La carte vectorielle, créée puis recadrée à chaque changement de vue. */
 function poseCarteGL(cal, fond){
   const hote = $("fondCarteGL");
   if (!hote || _echecGL) return;
+  const style = styleDuFond(cal, fond);
+  if (!style) return;
   hote.hidden = false;
   if (_carteGL){
-    if (_styleGL !== fond.style){ _styleGL = fond.style; _carteGL.setStyle(fond.style); }
+    if (_styleGL !== style){ _styleGL = style; _carteGL.setStyle(style); }
     _carteGL.jumpTo(vueGL(cal));
     return;
   }
@@ -390,9 +414,9 @@ function poseCarteGL(cal, fond){
   _monteGL = true;
   chargeMapLibre().then(gl => {
     const v = vueGL(cal);
-    _styleGL = fond.style;
+    _styleGL = style;
     _carteGL = new gl.Map({
-      container: hote, style: fond.style,
+      container: hote, style: style,
       center: v.center, zoom: v.zoom, bearing: v.bearing,
       /* Aucun geste : tout passe par le SVG posé dessus. Et pas d'attribution
          intégrée — la nôtre est déjà au coin du plan, à la même place pour
@@ -403,6 +427,18 @@ function poseCarteGL(cal, fond){
          clignoter les noms de rues pendant qu'on cale. */
       fadeDuration: 0,
     });
+    /* Le moteur ne dit rien de lui-même d'une tuile refusée : il peint ce
+       qu'on lui rend, fût-ce un carré gris barré de « API KEY REQUIRED ».
+       Sans cette écoute, on cherche longtemps pourquoi la carte est laide. */
+    _carteGL.on("error", ev => {
+      const m = ev && ev.error && ev.error.status;
+      if (!_echecGL) ditCalage(
+        m === 401 || m === 403
+          ? "Ce fond demande une clé : renseignez-la dans les réglages, ou " +
+            "prenez un fond sans clé."
+          : "Le fond vectoriel répond mal" + (m ? " (" + m + ")" : "") +
+            " : essayez une autre adresse de style.", true);
+    });
   }).catch(e => {
     _monteGL = false;
     _echecGL = e.message;
@@ -410,6 +446,17 @@ function poseCarteGL(cal, fond){
     ditCalage("Carte vectorielle indisponible (" + e.message +
               ") : prenez un fond en images.", true);
   });
+}
+
+/** Une adresse changée mérite un nouvel essai : sans cela un premier échec —
+ *  une clé absente, un chemin faux — condamnerait le fond pour la session,
+ *  alors qu'on vient justement de le corriger. */
+function relanceCarteGL(){
+  _echecGL = "";
+  _monteGL = false;
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
+  ditCalage("");
+  dessineFondCarte();
 }
 
 /** La carte vectorielle, retirée — on repasse aux tuiles, ou à rien. */
@@ -587,7 +634,11 @@ let _masquePose = null;
 function poseMasqueCarte(){
   const el = $("trouDuFond");
   if (!el) return;
-  const trous = cheminDuHall() + formesMasquantes().map(cheminForme).join("");
+  /* Rien à cacher, rien à peindre. Sans cette porte, un salon dont la carte
+     n'a pas chargé — ou qu'on vient de retirer — gardait un grand aplat clair
+     posé sur rien, au milieu du plan. */
+  const trous = !fondCourant() ? ""
+    : cheminDuHall() + formesMasquantes().map(cheminForme).join("");
   if (trous === _masquePose) return;
   _masquePose = trous;
   el.setAttribute("d", trous);
@@ -998,8 +1049,33 @@ function construitCalage(){
     o.value = k; o.textContent = CARTES[k].nom;
     sel.appendChild(o);
   }
+  /* La clé et l'adresse du style, sous le choix du fond et non dans les
+     réglages : on choisit un service, on colle sa clé, on regarde. Traverser
+     une fenêtre entre les deux ferait perdre le fil du seul geste qui compte
+     ici — voir si la carte arrive. */
+  const avance = document.createElement("div");
+  avance.className = "cAvance";
+  avance.innerHTML =
+    '<input type="text" class="cCle" placeholder="Clé du service" autocomplete="off">' +
+    '<input type="text" class="cStyle" placeholder="Adresse du style, si autre" autocomplete="off">';
+  const iCle = avance.querySelector(".cCle");
+  const iStyle = avance.querySelector(".cStyle");
+  iCle.oninput = () => { ENV_CAL.cle = iCle.value.trim() || undefined; relanceCarteGL(); };
+  iStyle.oninput = () => { ENV_CAL.style = iStyle.value.trim() || undefined; relanceCarteGL(); };
+
+  const majAvance = () => {
+    const f = CARTES[sel.value];
+    avance.hidden = !(f && f.style);
+    iCle.hidden = !(f && f.cle);
+    iCle.value = ENV_CAL.cle || "";
+    iStyle.value = ENV_CAL.style || "";
+    iStyle.title = f && f.style ? "Par défaut : " + f.style : "";
+  };
+
   sel.onchange = () => {
     ENV_CAL.fond = sel.value || undefined;
+    majAvance();
+    relanceCarteGL();
     appliqueCalage();
     /* Le recul dépend de la présence d'un fond : sans cette remise en vue, la
        limite change sans que rien ne le montre. */
@@ -1007,6 +1083,8 @@ function construitCalage(){
     if (_tuilesMuettes) ditCalage("Ce fond ne répond pas : essayez-en un autre.", true);
   };
   corps.appendChild(fond);
+  corps.appendChild(avance);
+  majAvance();
 
   const rot = document.createElement("div");
   rot.className = "cRang";
