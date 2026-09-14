@@ -13689,8 +13689,9 @@ function eclairePoi(){
   /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
      retrait avec le reste du plan aurait effacé la seule chose qui distingue
      deux restaurations. Il se réécrit à chaque déplacement de la vue, et
-     reprend donc sa marque dans « libelles() ». */
-  $("labels").querySelectorAll(".lbl").forEach(g =>
+     reprend donc sa marque dans « libelles() ». Les témoins de style du rendu
+     WebGL, qui ne nomment rien, gardent la leur. */
+  $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }
@@ -26086,31 +26087,75 @@ function coucheFocus(couches){
 
    Le cartouche met une famille de repères en avant : le reste du plan
    s'estompe — la feuille de style le dit, le rendu le lit — et ce qui est
-   retenu gagne un halo et bat. Le halo était un « drop-shadow » que la carte
-   graphique ne connaît pas : deux traits larges et translucides autour de la
-   silhouette le remplacent, aux mêmes mesures en mètres. Le battement change
-   l'opacité d'une zone, la taille d'un repère, l'encre du nom d'une zone ;
-   les pointillés de l'itinéraire avancent. Rien de tout cela ne touche aux
-   données : les couches concernées sont redonnées avec un réglage neuf, et
-   seules elles changent d'une image à l'autre.
+   retenu gagne un halo et bat. Le battement change l'opacité d'une zone, la
+   taille d'un repère, l'encre du nom d'une zone ; les pointillés de
+   l'itinéraire avancent. Rien de tout cela ne touche aux données : les
+   couches concernées sont redonnées avec un réglage neuf, et seules elles
+   changent d'une image à l'autre.
+
+   Le halo est un flou gaussien — le « drop-shadow » de la feuille de style —
+   et chaque imitation par des traits laissait voir ses bandes ou ses angles.
+   Il se calcule donc une fois, en image, pour chaque élément mis en avant :
+   la silhouette y projette ses deux ombres floues, puis s'efface pour ne
+   laisser que la lueur autour. La carte graphique la pose sous l'élément
+   comme une texture, et la fait battre avec lui.
    ------------------------------------------------------------ */
 function couchesPhare(el, sous, cle){
   const couches = couchesDeBloc(sous, cle);
-  const anneaux = sous.pleins.map(d => d.polygon[0]);
-  const pts = anneaux.flat().concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path));
+  const pts = sous.pleins.flatMap(d => d.polygon[0]).concat(...sous.traitsM.map(d => d.path), ...sous.traitsPx.map(d => d.path));
   if (!pts.length) return couches;
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (const p of pts){ x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }
   const repere = el.classList.contains("repere");
-  // les deux passes du « drop-shadow » : la première cerne, la seconde diffuse
-  const passes = repere ? [[1.4, 170], [3.5, 60]] : [[2.5, 170], [6, 60]];
-  const poi = (GL.modeles.get("poi") || {}).couleur || [0, 0, 0, 255];
-  const lueurs = passes.map(([largeur, a], k) => new deck.PathLayer({ id: cle + "-lueur-" + k, data: anneaux,
-    getPath: an => [...an, an[0]], getWidth: largeur, widthUnits: "common", jointRounded: true, capRounded: true,
-    getColor: [poi[0], poi[1], poi[2], a] }));
   const phare = { sorte: repere ? "repere" : "zone", centre: [(x0 + x1) / 2, (y0 + y1) / 2] };
-  return [...lueurs.reverse(), ...couches].map(c => c.clone({ phare }));
+  const lueur = sous.pleins.length ? lueurDe(sous.pleins.map(d => d.polygon), [x0, y0, x1, y1], repere) : null;
+  const avant = lueur ? [new deck.BitmapLayer({ id: cle + "-lueur", image: lueur.image, bounds: lueur.bornes })] : [];
+  return [...avant, ...couches].map(c => c.clone({ phare }));
 }
+
+/* Les images de lueur se gardent : redonner la même à la bibliothèque lui
+   évite de la renvoyer à la carte graphique à chaque repeinte. */
+const LUEURS = new Map();
+function lueurDe(polygones, b, repere){
+  const poi = (GL.modeles.get("poi") || {}).couleur || [0, 0, 0, 255];
+  // les rayons des deux ombres de « #zones g.phare » et « .dcal .repere.phare », en mètres
+  const [r1, r2] = repere ? [1.2, 3.5] : [2, 7];
+  const marge = r2 * 2;
+  const w = b[2] - b[0] + 2 * marge, h = b[3] - b[1] + 2 * marge;
+  // assez de pixels pour un flou, jamais une image démesurée
+  const k = Math.min(16, 1024 / Math.max(w, h));
+  const cle = poi.join() + "|" + k.toFixed(3) + "|" + (repere ? 1 : 0) + "|" +
+    polygones.map(p => p.map(a => a.map(q => q[0].toFixed(2) + "," + q[1].toFixed(2)).join(" ")).join("/")).join(";");
+  if (LUEURS.has(cle)) return LUEURS.get(cle);
+  const toile = document.createElement("canvas");
+  toile.width = Math.max(1, Math.ceil(w * k)); toile.height = Math.max(1, Math.ceil(h * k));
+  const ctx = toile.getContext("2d");
+  const trace = () => {
+    ctx.beginPath();
+    for (const p of polygones) for (const a of p){
+      a.forEach((q, i) => ctx[i ? "lineTo" : "moveTo"]((q[0] - b[0] + marge) * k, (q[1] - b[1] + marge) * k));
+      ctx.closePath();
+    }
+  };
+  /* L'ombre d'un canevas se floute comme celle d'une feuille de style : son
+     rayon, en pixels, vaut deux écarts types. Les deux passes s'ajoutent. */
+  ctx.fillStyle = "#000";
+  ctx.shadowColor = "rgba(" + poi[0] + "," + poi[1] + "," + poi[2] + "," + (poi[3] / 255) + ")";
+  for (const r of [r2, r1]){ ctx.shadowBlur = r * k; trace(); ctx.fill("evenodd"); }
+  // la silhouette s'efface : il ne reste que la lueur autour
+  ctx.shadowBlur = 0; ctx.globalCompositeOperation = "destination-out";
+  trace(); ctx.fill("evenodd");
+  if (LUEURS.size > 64) LUEURS.clear();
+  const lueur = { image: toile,
+    bornes: [b[0] - marge, b[1] - marge + toile.height / k, b[0] - marge + toile.width / k, b[1] - marge] };
+  LUEURS.set(cle, lueur);
+  return lueur;
+}
+
+/** Le battement d'une zone et d'un repère à l'instant « t », en secondes : les
+ *  courbes de « pulseZone » et « pulsePoi » — 1 → 0,58 → 1, et 1 → 1,14 → 1. */
+const opacitePhare = t => .79 + .21 * Math.cos(2 * Math.PI * t / 1.5);
+const echellePhare = t => 1.07 - .07 * Math.cos(2 * Math.PI * t / 1.4);
 
 /** Les noms des zones mises en avant : leur encre bat avec elles. */
 function couchesPhareNoms(){
@@ -26131,8 +26176,8 @@ function animeCouche(c){
   const ph = c.props.phare;
   if (ph && GL.animePhare){
     // les courbes de « pulseZone » et « pulsePoi » : 1 → 0,58 → 1, et 1 → 1,14 → 1
-    if (ph.sorte === "zone") return c.clone({ opacity: .79 + .21 * Math.cos(2 * Math.PI * GL.temps / 1.5) });
-    const s = 1.07 - .07 * Math.cos(2 * Math.PI * GL.temps / 1.4), [x, y] = ph.centre;
+    if (ph.sorte === "zone") return c.clone({ opacity: opacitePhare(GL.temps) });
+    const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
   // « defile » : douze paliers d'un pixel en 1,1 seconde

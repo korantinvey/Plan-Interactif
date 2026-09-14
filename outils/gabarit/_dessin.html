@@ -1233,8 +1233,9 @@ function eclairePoi(){
   /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
      retrait avec le reste du plan aurait effacé la seule chose qui distingue
      deux restaurations. Il se réécrit à chaque déplacement de la vue, et
-     reprend donc sa marque dans « libelles() ». */
-  $("labels").querySelectorAll(".lbl").forEach(g =>
+     reprend donc sa marque dans « libelles() ». Les témoins de style du rendu
+     WebGL, qui ne nomment rien, gardent la leur. */
+  $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
     g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
   racine.classList.toggle("poi-actif", !!poiChoisi);
 }

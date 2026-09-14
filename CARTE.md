@@ -187,7 +187,7 @@ Fonctions :
 
 - l.592 · Page de rapport
 
-### `_dessin.html` — 1813 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1814 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -209,12 +209,12 @@ Fonctions :
 `marqueStandsDessines` 905 · `rafraichitStandsDessines` 920 · `oublieReperes` 950
 `reperesCherchables` 952 · `vaAuRepere` 996 · `clePoi` 1031 · `cartouchePoi` 1033
 `ouvrePoi` 1137 · `mesureCartouche` 1209 · `phareRepere` 1218 · `phareZone` 1220
-`eclairePoi` 1226 · `oublieChoixPoi` 1258 · `signale` 1267 · `calquePourImage` 1281
-`poseImage` 1298 · `importeImage` 1311 · `dessinPointerDown` 1362 · `dessinPointerMove` 1436
-`dessinPointerUp` 1474 · `termineTrace` 1510 · `aide` 1522 · `choisitOutil` 1547
-`enchaineStand` 1571 · `activeCalque` 1630 · `cleVerrou` 1686 · `verrouille` 1687
-`basculeVerrou` 1689 · `pictoVerrou` 1706 · `montreRoleIti` 1740 · `creeCalque` 1771
-`demandeNom` 1784 · `renommeCalque` 1803
+`eclairePoi` 1226 · `oublieChoixPoi` 1259 · `signale` 1268 · `calquePourImage` 1282
+`poseImage` 1299 · `importeImage` 1312 · `dessinPointerDown` 1363 · `dessinPointerMove` 1437
+`dessinPointerUp` 1475 · `termineTrace` 1511 · `aide` 1523 · `choisitOutil` 1548
+`enchaineStand` 1572 · `activeCalque` 1631 · `cleVerrou` 1687 · `verrouille` 1688
+`basculeVerrou` 1690 · `pictoVerrou` 1707 · `montreRoleIti` 1741 · `creeCalque` 1772
+`demandeNom` 1785 · `renommeCalque` 1804
 
 Éléments :
 
@@ -548,7 +548,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1113 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1157 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2, à l'essai
 
@@ -566,9 +566,10 @@ Fonctions :
 `couchesNoms` 865 · `couchesPastilles` 876 · `couchesLibellesWebgl` 891
 `couchesDessineesWebgl` 898 · `stage` 919 · `brancheSurvolWebgl` 923 · `poseSurvolWebgl` 943
 `poseCurseurWebgl` 952 · `poseFocusWebgl` 961 · `aplatsDe` 968 · `coucheSurvol` 971
-`coucheFocus` 980 · `couchesPhare` 1002 · `couchesPhareNoms` 1021 · `animeCouche` 1035
-`majAnimationWebgl` 1049 · `animeWebgl` 1057 · `objetSous` 1080 · `cibleWebgl` 1087
-`priseWebgl` 1094 · `libelleSousWebgl` 1099 · `rectEcranWebgl` 1104
+`coucheFocus` 980 · `couchesPhare` 1007 · `lueurDe` 1023 · `opacitePhare` 1061
+`echellePhare` 1062 · `couchesPhareNoms` 1065 · `animeCouche` 1079
+`majAnimationWebgl` 1093 · `animeWebgl` 1101 · `objetSous` 1124 · `cibleWebgl` 1131
+`priseWebgl` 1138 · `libelleSousWebgl` 1143 · `rectEcranWebgl` 1148
 
 ## Dans `web/`, mais que la construction ne produit pas
 
