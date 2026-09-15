@@ -6009,8 +6009,13 @@ function prechargeMarque(id, iSoc){
   const o = parId.get(id);
   if (!o || o.kind === "zone" || !montre("stand", "logo")) return;
   const soc = iSoc >= 0 ? (o.coex || [])[iSoc] : o;
-  const url = soc && adresseImage(soc.logo);
-  if (url) recadreMarque(url);
+  /* Une vignette n'a rien à préparer — elle arrive prête — mais la demander
+     ici la met en route, et le navigateur l'aura reçue quand la fiche
+     s'ouvrira. */
+  const url = soc && (adresseVignette(soc.vignette) || adresseImage(soc.logo));
+  if (!url) return;
+  if (url.indexOf("vignette=") >= 0) new Image().src = url;
+  else recadreMarque(url);
 }
 
 /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
@@ -6985,6 +6990,23 @@ function adresseSure(v){
 const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
 
 /**
+ * L'adresse d'une vignette fabriquée à la synchronisation.
+ *
+ * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
+ * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
+ * et le service worker. Recadrée et réduite là-bas, elle pèse trois
+ * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
+ * analyser ici.
+ *
+ * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
+ * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
+ */
+const adresseVignette = (cle) =>
+  API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
+    ? API + "?vignette=" + cle
+    : "";
+
+/**
  * Le logo d'une société, relu avant d'être affiché.
  *
  * Celui-ci n'est pas déposé mais lu chez la source — l'avatar d'une fiche
@@ -7282,6 +7304,9 @@ function montreMarque(marque){
 const MARQUES_RECADREES = new Map();
 
 function recadreMarque(src){
+  /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
+     trouver à retirer coûterait le décodage qu'on a justement déplacé. */
+  if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
   let p = MARQUES_RECADREES.get(src);
   if (p) return p;
   // toute panne rend l'adresse d'origine : la fiche montre alors le logo tel quel
@@ -7612,7 +7637,12 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
      ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
      Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
-  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
+  /* La vignette d'abord : fabriquée à la synchronisation, elle arrive recadrée
+     et légère, et se garde d'une visite à l'autre. L'adresse d'origine reste
+     le recours — un logo que la synchronisation n'a pas encore vu, ou dont la
+     source a refusé de se laisser lire, se charge chez elle comme avant. */
+  poseMarque(ok("logo", zone ? imageSure(o.logo)
+                             : adresseVignette(soc.vignette) || adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "", !zone ? o.hall : "");

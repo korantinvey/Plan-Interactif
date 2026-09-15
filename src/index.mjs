@@ -36,7 +36,7 @@ const MESURE = BASE + "mesure";
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
-const PARAMS = ["slug", "fond", "v"];
+const PARAMS = ["slug", "fond", "v", "vignette"];
 
 /* Un slug nomme un salon : des minuscules, des chiffres, des traits. Le
    contrôle n'est pas décoratif — la clé de cache se construit avec. */
@@ -48,7 +48,9 @@ const MESURE_MAX = 4096;
 
 /* Le plan sans son fond peut changer à chaque synchronisation : dix minutes de
    retard au plus, ce qui reste sous le rythme de synchronisation le plus vif.
-   Le fond, lui, porte sa version dans la clé : il ne peut pas être périmé. */
+   Le fond, lui, porte sa version dans la clé : il ne peut pas être périmé. La
+   vignette d'un logo non plus — elle est nommée par l'empreinte de l'adresse
+   d'où elle vient, et son contenu ne peut pas changer sans que sa clé change. */
 const TTL_PLAN = 600;
 const TTL_FOND = 2592000;
 
@@ -98,11 +100,12 @@ const gardable = (cache, r) =>
   Boolean(cache) && r.ok &&
   (r.headers.get("Cache-Control") || "").includes("public");
 
-/** Range la réponse. */
-const range = (cache, cle, reponse, corps, fond) =>
+/** Range la réponse. Ce qui porte sa version dans son adresse — un fond, une
+ *  vignette — est gardé longtemps et ne périme jamais. */
+const range = (cache, cle, reponse, corps, immuable) =>
   cache.put(cle, corps, {
-    expirationTtl: fond ? TTL_FOND : GARDE,
-    metadata: meta(reponse, fond ? null : Date.now() + TTL_PLAN * 1000),
+    expirationTtl: immuable ? TTL_FOND : GARDE,
+    metadata: meta(reponse, immuable ? null : Date.now() + TTL_PLAN * 1000),
   }).catch(() => {});   // un cache en panne ne doit pas casser une visite
 
 /** Refait une entrée périmée, sans faire attendre la visite qui l'a trouvée. */
@@ -278,7 +281,11 @@ export default {
     }
 
     const amont = amontPour(url.searchParams);
-    if (!amont.searchParams.get("slug")) {
+    /* Une vignette de logo ne pend d'aucun salon : elle est nommée par
+       l'empreinte de l'adresse d'où elle vient, et c'est tout ce qu'il faut
+       pour la rendre. Exiger un slug ici obligerait la page à en porter un
+       dans chaque adresse d'image, pour rien. */
+    if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette")) {
       return dit({ erreur: "Paramètre slug manquant." }, 400);
     }
 
@@ -287,7 +294,8 @@ export default {
     // la clé ne retient que les paramètres attendus : deux adresses qui ne
     // diffèrent que par un paramètre parasite partagent la même entrée
     const cle = cleDe(amont);
-    const fond = Boolean(amont.searchParams.get("fond"));
+    const immuable = Boolean(amont.searchParams.get("fond") ||
+                             amont.searchParams.get("vignette"));
 
     const entetes = new Headers();
     if (jeton) entetes.set("Authorization", jeton);
@@ -319,7 +327,7 @@ export default {
        qu'on ne lit pas oblige le runtime à tamponner toute la réponse, et un
        fond de plan pèse deux mégaoctets. */
     if (gardable(cache, reponse)) {
-      ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, fond));
+      ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, immuable));
     }
     return sortie;
   },
