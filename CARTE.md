@@ -166,7 +166,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3085 l. → admin-plans.html
+### `_console-js.html` — 3095 l. → admin-plans.html
 
 - l.937 · Provenance des données
 - l.1064 · Contenu de la fiche détail
@@ -188,9 +188,9 @@ Fonctions :
 `intitule` 2079 · `intituleSuite` 2091 · `separeValeurs` 2105 · `aplani` 2126
 `memeStyle` 2136 · `autreFace` 2154 · `champOrigine` 2170 · `majLiens` 2437
 `majIntegration` 2474 · `majMsgSync` 2481 · `etapesPressenties` 2511 · `synchronise` 2525
-`fabriqueLesVignettes` 2603 · `dupliquer` 2640 · `litMonProfil` 2740 · `RETOUR_MDP` 2751
-`litComptes` 2753 · `ligneMessage` 2762 · `casesSalons` 2772 · `ouvreComptes` 2802
-`ouvreFicheCompte` 2894 · `videEcran` 3053 · `dessine` 3058 · `demarre` 3073
+`fabriqueLesVignettes` 2603 · `dupliquer` 2650 · `litMonProfil` 2750 · `RETOUR_MDP` 2761
+`litComptes` 2763 · `ligneMessage` 2772 · `casesSalons` 2782 · `ouvreComptes` 2812
+`ouvreFicheCompte` 2904 · `videEcran` 3063 · `dessine` 3068 · `demarre` 3083
 
 Éléments :
 
