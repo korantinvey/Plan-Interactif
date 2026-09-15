@@ -647,6 +647,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `r2` 23 · `distSegment` 55 · `distBord` 64 · `poleInterieur` 83 · `portee` 104
 
+### `supabase/functions/_partage/octets.ts` — 18 l.
+
+(aucune fonction de premier niveau)
+
 ### `supabase/functions/_partage/svg.ts` — 216 l.
 
 `r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106
@@ -655,9 +659,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/_partage/vignette.ts` — 196 l.
+### `supabase/functions/_partage/vignette.ts` — 186 l.
 
-`cadre` 79 · `decoupe` 121
+`cadre` 69 · `decoupe` 111
 
 ### `supabase/functions/mesure/index.ts` — 155 l.
 
@@ -668,12 +672,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `cors` 50 · `db` 84 · `service` 99 · `rendVignette` 121 · `lu` 154 · `salon` 164
 `retraits` 242 · `ampute` 266 · `masquesDe` 306 · `masquesDuPlan` 326
 
-### `supabase/functions/sync-evenement/index.ts` — 1676 l.
+### `supabase/functions/sync-evenement/index.ts` — 1591 l.
 
-`cors` 43 · `bourre` 112 · `client` 122 · `ecrit` 144 · `gaia` 152 · `libellesChoix` 163
-`retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
-`champsKlipso` 300 · `hebergee` 1562 · `nettoieUrl` 1581 · `groupeTextes` 1591
-`poseVignettes` 1626
+`cors` 42 · `bourre` 111 · `client` 121 · `ecrit` 143 · `gaia` 151 · `libellesChoix` 162
+`retiensAnglais` 189 · `fournisseur` 207 · `raccourci` 215 · `enClair` 252 · `range` 278
+`champsKlipso` 299 · `hebergee` 1548 · `nettoieUrl` 1567 · `groupeTextes` 1577
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
