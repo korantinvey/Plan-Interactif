@@ -28,6 +28,7 @@ import {
   valeursRelevees,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
+import { cleDeVignette, fabriqueVignette } from "../_partage/vignette.ts";
 import { allege, textes } from "../_partage/svg.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -947,6 +948,16 @@ Deno.serve(async (req) => {
          comprise : un pavillon commencé n'est ni fini ni à faire, et c'est
          justement pendant qu'on l'ouvre — douze calques de plusieurs
          mégaoctets — que la barre resterait immobile le plus longtemps. */
+      /* Le temps qu'on accorde aux vignettes de logos pour toute cette
+         synchronisation, tous pavillons confondus. Fabriquer une vignette
+         coûte deux dixièmes de seconde, et un salon en compte cinq cents : on
+         n'en fait donc qu'un lot par passage, et les passages suivants
+         retrouvent ce qui est déjà fait. Rien n'attend ce lot — un logo sans
+         vignette se charge chez la source, comme avant. */
+      const budgetVignettes = {
+        reste: Number(Deno.env.get("MS_VIGNETTES") ?? 20000),
+      };
+
       let faits = 0;
       for (const plan of plans) {
         const part = (f: number, quoi: string) =>
@@ -1301,6 +1312,9 @@ Deno.serve(async (req) => {
           }
         }
 
+        part(0.90, "Vignettes des logos");
+        await poseVignettes(db, stands, budgetVignettes);
+
         part(0.92, "Enregistrement du pavillon");
         const emp = emprise([...stands, ...zones]);
         await ecrit(db.from("plan").update({
@@ -1588,4 +1602,75 @@ function groupeTextes(mots: { x: number; y: number; txt: string }[]) {
     txt: g.mots.sort((a, b) => a.y - b.y).map((m) => m.txt)
       .join(" ").replace(/\s+/g, " ").trim(),
   }));
+}
+
+/**
+ * Les vignettes des logos de ce pavillon, et la clé posée sur chaque stand.
+ *
+ * Le logo en tête de fiche était chargé chez la source, tel qu'elle le tient —
+ * un avatar de mille neuf cents pixels pour une vignette de trois cents. Le
+ * visiteur payait le trajet, puis son téléphone le décodage et le recadrage, à
+ * l'ouverture de la fiche. Ce travail donne le même résultat pour tout le
+ * monde : il se fait ici, une fois, et le stand ne porte plus qu'une clé.
+ *
+ * La table est commune à tous les salons — deux salons du même organisateur
+ * partagent leurs enseignes — et la clé est l'empreinte de l'adresse : ce qui
+ * est déjà fait ne se refait jamais.
+ *
+ * Le budget est commun à toute la synchronisation. Épuisé, on s'arrête là :
+ * les stands servis gardent leur clé, les autres gardent leur adresse, et le
+ * passage suivant reprend où celui-ci s'est arrêté. Rien n'attend ce lot, et
+ * aucune panne d'ici n'en est une — un logo sans vignette se charge chez la
+ * source, comme avant.
+ */
+async function poseVignettes(
+  db: ReturnType<typeof client>,
+  stands: Record<string, unknown>[],
+  budget: { reste: number },
+): Promise<void> {
+  /* Les adresses distinctes, chacune sous sa clé : un même logo revient sur
+     tous les stands d'une enseigne qui en loue plusieurs. */
+  const parCle = new Map<string, string>();
+  for (const s of stands) {
+    const logo = typeof s.logo === "string" ? s.logo : "";
+    if (logo) parCle.set(await cleDeVignette(logo), logo);
+  }
+  if (!parCle.size) return;
+
+  const cles = [...parCle.keys()];
+  const connues = new Set<string>();
+  /* Par tranches : une requête qui porte cinq cents clés dans son adresse
+     dépasse ce qu'un intermédiaire accepte de transmettre. */
+  for (let i = 0; i < cles.length; i += 100) {
+    const { data } = await db.from("vignette_de_logo")
+      .select("cle").in("cle", cles.slice(i, i + 100));
+    for (const v of data ?? []) connues.add(String((v as { cle: string }).cle));
+  }
+
+  for (const [cle, source] of parCle) {
+    if (connues.has(cle) || budget.reste <= 0) continue;
+    const t = Date.now();
+    const v = await fabriqueVignette(source);
+    budget.reste -= Date.now() - t;
+    if (!v) continue;
+    const { error } = await db.from("vignette_de_logo").upsert({
+      cle,
+      source,
+      image: v.image,
+      largeur: v.largeur,
+      hauteur: v.hauteur,
+      pose: new Date().toISOString(),
+    }, { onConflict: "cle" });
+    if (!error) connues.add(cle);
+  }
+
+  /* La clé rejoint le stand, à côté de l'adresse et non à sa place : la page
+     garde de quoi charger le logo chez la source le jour où la vignette
+     manque — pendant le lot suivant, ou parce que la source a refusé. */
+  for (const s of stands) {
+    const logo = typeof s.logo === "string" ? s.logo : "";
+    if (!logo) continue;
+    const cle = await cleDeVignette(logo);
+    if (connues.has(cle)) s.vignette = cle;
+  }
 }
