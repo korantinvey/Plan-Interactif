@@ -596,8 +596,15 @@ html.poi-actif #marques .parc{display:none}
   font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
-   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
-#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré.
+
+   La couleur, et elle seule : le nom du stand choisi était aussi mis en gras,
+   et cette graisse-là coûtait cher. Le rendu WebGL groupe les noms par police
+   et par graisse, une couche par groupe ; un seul nom en 700 créait donc deux
+   couches de texte qui n'existaient pas — police du nom et police du numéro —
+   à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
+   trente millisecondes pour une nuance que l'accent disait déjà. */
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Sur la carte de chaleur, l'emplacement ne porte plus la couleur du thème
    mais sa température, la même de jour comme de nuit. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
