@@ -317,4 +317,10 @@ module.exports = {
     "records in this category carry a stand number",
   "aucune fiche de cette catégorie ne portait de numéro de stand":
     "no record in this category carried a stand number",
+  "{n} logos préparés pour les fiches.": "{n} logos prepared for the cards.",
+  "Préparation des logos : {n} sur {t}…": "Preparing logos: {n} of {t}…",
+  "{n} logos préparés, {r} illisibles chez leur source.":
+    "{n} logos prepared, {r} unreadable at their source.",
+  "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
+  "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
 };
