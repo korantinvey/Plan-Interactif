@@ -40,16 +40,6 @@ export interface Vignette {
   hauteur: number;
 }
 
-/** Les octets d'une vignette, tels que l'API publique les rend — un tampon,
- *  que la réponse prend pour corps sans le recopier. */
-export function octetsDeVignette(base64: string): ArrayBuffer {
-  const brut = atob(base64);
-  const tampon = new ArrayBuffer(brut.length);
-  const out = new Uint8Array(tampon);
-  for (let i = 0; i < brut.length; i++) out[i] = brut.charCodeAt(i);
-  return tampon;
-}
-
 /**
  * L'empreinte d'une adresse, qui nomme sa vignette.
  *

@@ -36,7 +36,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionFond } from "../_partage/version.ts";
-import { octetsDeVignette } from "../_partage/vignette.ts";
+import { octetsDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
