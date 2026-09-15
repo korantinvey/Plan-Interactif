@@ -36,6 +36,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionFond } from "../_partage/version.ts";
+import { octetsDeVignette } from "../_partage/vignette.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -91,6 +92,49 @@ const db = (req: Request) => {
     })
     : createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, options);
 };
+
+/** Le même client, mais toujours celui du service : certaines tables ne sont
+ *  ouvertes à personne d'autre, et une identité n'y donne pas plus de droits
+ *  qu'elle n'en retire. */
+const service = () =>
+  createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+
+/**
+ * La vignette d'un logo d'exposant, en octets.
+ *
+ * Elle est nommée par l'empreinte de l'adresse d'origine : son contenu ne peut
+ * pas changer sans que sa clé change, et tout ce qui la garde — le relais, le
+ * navigateur, le service worker — peut donc la garder pour toujours.
+ *
+ * Elle passe avant la lecture du salon, et sans la faire : une vignette ne dit
+ * rien de plus que le logo public qu'elle montre, il n'y a donc rien à y
+ * vérifier, et ce chemin-là doit rester le plus court possible — c'est une
+ * requête par fiche ouverte.
+ *
+ * Une vignette inconnue n'est pas une panne : la page garde l'adresse
+ * d'origine à côté de la clé, et charge le logo chez la source comme avant.
+ * D'où un 404 que rien ne garde, pour que le lot suivant de la synchronisation
+ * se voie sans attendre.
+ */
+async function rendVignette(cle: string, entetes: Record<string, string>) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  if (!/^[0-9a-f]{8,64}$/.test(cle)) {
+    return new Response("Clé de vignette invalide.", { status: 400, headers: nu });
+  }
+  const { data, error } = await service()
+    .from("vignette_de_logo").select("image").eq("cle", cle).maybeSingle();
+  if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
+  if (!data) return new Response("Vignette inconnue.", { status: 404, headers: nu });
+  return new Response(octetsDeVignette(String((data as { image: string }).image)), {
+    headers: {
+      ...entetes,
+      "Content-Type": "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
 
 /**
  * Une lecture dont l'échec ne peut pas passer pour un vide.
@@ -327,6 +371,11 @@ Deno.serve(async (req) => {
     });
 
   try {
+    /* Une vignette de logo se rend avant tout le reste : elle ne dépend
+       d'aucun salon, et c'est une requête par fiche ouverte. */
+    const vignette = new URL(req.url).searchParams.get("vignette");
+    if (vignette) return await rendVignette(vignette, CORS);
+
     const slug = new URL(req.url).searchParams.get("slug");
     if (!slug) return repond({ erreur: "Paramètre slug manquant." }, 400);
 
