@@ -86,6 +86,24 @@ const GROUPES = ["Champ personnalisé", "Fiche invité · champ standard"];
    désinscrite ne doit pas paraître sur le plan public. */
 const INSCRIT = "registered";
 
+/* Les thématiques d'un salon sont une ressource d'Eventmaker et non un champ
+   de fiche : la fiche n'en porte que les identifiants, dans ce champ natif, et
+   c'est `/thematics.json` qui les nomme. Sur Moove On comme sur Open Source
+   Experience, rien d'autre ne range les exposants — aucun champ personnalisé
+   ne les reprend —, si bien que la cible « Thématiques » n'avait rien à
+   désigner : le relevé écarte les valeurs qui sont des listes, et une liste
+   d'identifiants MongoDB n'aurait de toute façon rien affiché.
+
+   On les résout donc en noms sur la fiche, à la place des identifiants, et le
+   champ redevient un champ à choix multiple comme les autres — relevé avec un
+   exemple lisible, désignable depuis la console, séparé par les points-virgules
+   que la source emploie partout ailleurs. */
+const CHAMP_THEMATIQUES = "thematic_ids";
+
+/* Ce que la console affiche à côté du nom technique. Sans lui, « thematic_ids »
+   se lit comme une clé technique de plus dans une liste qui en compte cent. */
+const LIBELLE_THEMATIQUES = "Thématiques du salon";
+
 /**
  * Un exposant tel que le plan en a besoin, débarrassé du reste.
  *
@@ -208,15 +226,25 @@ export class Eventmaker {
    * Une valeur sans traduction n'y est pas, et reste en français.
    */
   async listesEnAnglais(id: string): Promise<Record<string, string>> {
-    const [champs, traductions] = await Promise.all([
+    const [champs, traductions, themes] = await Promise.all([
       this.json<Record<string, any>[]>(`/events/${id}/guest_fields.json`, { per_page: 1000 }),
       this.json<Record<string, any>[]>(`/events/${id}/translations.json`),
+      /* Les thématiques rangent les exposants sans être un champ : leur anglais
+         est dans les mêmes traductions, sous un autre type de parent. */
+      this.thematiques(id).catch(() => new Map<string, string>()),
     ]);
     const parChamp = new Map<string, Record<string, unknown>>();
+    /* Une thématique porte son propre intitulé, et non une liste de valeurs :
+       sa traduction tient dans une seule clé, composée de son identifiant. */
+    const parTheme = new Map<string, string>();
     for (const t of traductions ?? []) {
-      if (t?.locale !== "en" || t?.translatable_parent_type !== "GuestField") continue;
-      const idChamp = String(t.translatable_parent_id);
-      parChamp.set(idChamp, { ...(parChamp.get(idChamp) ?? {}), ...(t.table ?? {}) });
+      if (t?.locale !== "en") continue;
+      const parent = String(t.translatable_parent_id);
+      if (t?.translatable_parent_type === "GuestField") {
+        parChamp.set(parent, { ...(parChamp.get(parent) ?? {}), ...(t.table ?? {}) });
+      } else if (t?.translatable_parent_type === "Thematic") {
+        parTheme.set(parent, String((t.table ?? {})[`${parent}__name`] ?? "").trim());
+      }
     }
     const reduit = (v: unknown) =>
       String(v).toLowerCase().replace(/[^a-z0-9]+/g, "SPECIAL_HASH_KEY_CHARACTER");
@@ -234,6 +262,14 @@ export class Eventmaker {
           if (cle && cle !== en.trim() && !(cle in out)) out[cle] = en.trim();
         }
       }
+    }
+    /* Après les listes de valeurs, et non avant : celles-ci sont le chemin
+       ordinaire, et une thématique qui reprend une de leurs valeurs — sur
+       Franchise Expo, les thématiques sont la nomenclature — n'a pas à
+       reprendre la main sur sa traduction. */
+    for (const [theme, en] of parTheme) {
+      const fr = themes.get(theme);
+      if (fr && en && fr !== en && !(fr in out)) out[fr] = en;
     }
     return out;
   }
@@ -254,6 +290,56 @@ export class Eventmaker {
     );
     return l.map((c) => ({ _id: String(c._id), name: String(c.name ?? "") }))
       .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  }
+
+  /**
+   * Les thématiques de l'événement, par identifiant.
+   *
+   * Elles ne sont pas un champ de fiche mais une ressource de l'événement, que
+   * les fiches désignent par identifiant. Sans ce catalogue, `thematic_ids` ne
+   * porte que des `69bd1a54db9dabf30d7e3ca7` : illisibles sur une fiche, et
+   * impossibles à reconnaître dans la liste des champs de la console.
+   *
+   * Un salon en range parfois deux cents — Eurocoat en a 232, Franchise Expo
+   * 133 — et rien ne garantit qu'une page suffise : on pagine comme partout
+   * ailleurs. Un salon qui n'en tient aucune rend une liste vide, et c'est son
+   * état normal, pas une panne.
+   */
+  async thematiques(id: string): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    for (let page = 1; ; page++) {
+      const l = await this.json<Record<string, any>[]>(
+        `/events/${id}/thematics.json`,
+        { per_page: PAR_PAGE, page },
+      );
+      for (const t of l) {
+        const nom = String(t.name ?? t.localized_name ?? "").trim();
+        if (nom) out.set(String(t._id), nom);
+      }
+      if (l.length < PAR_PAGE) return out;
+    }
+  }
+
+  /**
+   * Remplace sur une fiche les identifiants de thématiques par leurs noms.
+   *
+   * En place, et avant toute lecture : le relevé comme la cible lisent la fiche
+   * telle qu'elle se présente, et c'est le seul endroit où le catalogue est
+   * sous la main. Les noms se joignent par un point-virgule, comme Eventmaker
+   * joint partout ailleurs les valeurs d'un champ à choix multiple — la règle
+   * commune les sépare ensuite sans rien savoir d'ici.
+   *
+   * Une thématique que le catalogue ne nomme pas est laissée de côté plutôt que
+   * rendue par son identifiant : un identifiant sur une fiche publique ne dit
+   * rien à personne.
+   */
+  private nommeThematiques(g: Record<string, any>, noms: Map<string, string>): void {
+    const ids = g[CHAMP_THEMATIQUES];
+    if (!Array.isArray(ids)) return;
+    g[CHAMP_THEMATIQUES] = ids
+      .map((i) => noms.get(String(i)))
+      .filter(Boolean)
+      .join(";");
   }
 
   /**
@@ -584,8 +670,18 @@ export class Eventmaker {
        et de ses hébergés mêlées : c'est la synchronisation qui les départage,
        elle seule sachant quel dossier le stand porte côté Klipso. */
     const tousParStand = new Map<string, ExposantEm[]>();
-    const { retenues: cats, catalogue, appels, voie } =
-      await this.categoriesExposants(id, connues, codes);
+    /* Le catalogue des thématiques se charge de front avec les catégories : il
+       ne dépend pas d'elles, et la lecture des fiches attend les deux. */
+    const [{ retenues: cats, catalogue, appels, voie }, themes] = await Promise.all([
+      this.categoriesExposants(id, connues, codes),
+      /* Un salon sans thématiques est le cas courant : son catalogue est vide,
+         et une panne de cet appel-là n'a pas à emporter la synchronisation
+         entière — les exposants, eux, sont bien là. */
+      this.thematiques(id).catch((e) => {
+        console.error("catalogue des thématiques :", e);
+        return new Map<string, string>();
+      }),
+    ]);
     let lus = 0, ecartesNonInscrits = 0;
     const releve = new Releve();
 
@@ -609,6 +705,7 @@ export class Eventmaker {
 
     for (const g of paquets.flat()) {
       lus++;
+      this.nommeThematiques(g, themes);
       const m = champs(g.guest_metadata);
       const stand = this.stand(g, m);
       const dossier = this.dossier(g, m);
@@ -675,7 +772,7 @@ export class Eventmaker {
       lus,
       retenus: new Set([...parStand.values(), ...parDossier.values()]).size,
       ecartesNonInscrits,
-      champs: lus ? releve.liste() : await this.champsAuHasard(id, releve),
+      champs: lus ? releve.liste() : await this.champsAuHasard(id, releve, themes),
     };
   }
 
@@ -688,7 +785,7 @@ export class Eventmaker {
    * une correspondance qu'il ne peut pas corriger, faute de liste. On lit donc
    * quelques fiches au hasard, juste pour savoir ce qu'une fiche porte ici.
    */
-  private async champsAuHasard(id: string, releve: Releve) {
+  private async champsAuHasard(id: string, releve: Releve, themes: Map<string, string>) {
     try {
       const cats = (await this.categories(id)).slice(0, DE_FRONT);
       const paquets = await enParallele(cats, DE_FRONT, (c) =>
@@ -697,6 +794,7 @@ export class Eventmaker {
           { per_page: ECHANTILLON, page: 1, guest_metadata: "true", "category[]": c._id },
         ));
       for (const g of paquets.flat()) {
+        this.nommeThematiques(g, themes);
         const m = champs(g.guest_metadata);
         releve.ajoute(g, m, this.exposant(g, m));
       }
@@ -791,7 +889,11 @@ class Releve {
       // ne s'affiche sur une fiche détail
       if (v && typeof v === "object") continue;
       if (/^_|(^|_)id$|_at$/.test(k)) continue;
-      this.note("invite:" + k, k, GROUPES[1], v, exposant);
+      /* Seul champ natif dont le nom ne dit pas ce qu'il porte : les autres
+         s'appellent `city` ou `company_name`, celui-là annonce des
+         identifiants alors qu'on y a posé des noms de thématiques. */
+      const libelle = k === CHAMP_THEMATIQUES ? LIBELLE_THEMATIQUES : k;
+      this.note("invite:" + k, libelle, GROUPES[1], v, exposant);
     }
     for (const [k, v] of Object.entries(m)) this.note(k, k, GROUPES[0], v, exposant);
   }

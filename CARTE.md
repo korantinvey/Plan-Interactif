@@ -166,7 +166,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3019 l. → admin-plans.html
+### `_console-js.html` — 3021 l. → admin-plans.html
 
 - l.937 · Provenance des données
 - l.1064 · Contenu de la fiche détail
@@ -178,19 +178,19 @@ Fonctions :
 `majAdresse` 470 · `majBarre` 485 · `dessineChoix` 527 · `champ` 547 · `reduitIcone` 601
 `champFavicon` 642 · `fuseauConnu` 738 · `champFuseau` 750 · `dessineFiche` 813
 `fournisseurUtilise` 999 · `source` 1003 · `champCle` 1008 · `ligneSource` 1043
-`paraitSurFiche` 1173 · `origineConferences` 1179 · `resumeProvenance` 1244
-`resumeFiche` 1261 · `caseFiche` 1306 · `champsPersos` 1348 · `criteres` 1354
-`ecritFiche` 1357 · `caseCritere` 1372 · `clePerso` 1391 · `ajouteChampPerso` 1399
-`renommeChampPerso` 1417 · `retireChampPerso` 1465 · `lignesPerso` 1523 · `ligneOutil` 1543
-`ligneReglage` 1559 · `ouvreProvenance` 1571 · `ouvreSources` 1594 · `cadreFiche` 1646
-`ouvreFiche` 1676 · `cadreCategories` 1814 · `sousTitre` 1893 · `tableauChamps` 1908
-`encode` 2051 · `decode` 2053 · `correspondance` 2058 · `sansPrefixe` 2061 · `courte` 2062
-`intitule` 2077 · `intituleSuite` 2089 · `separeValeurs` 2103 · `aplani` 2124
-`memeStyle` 2134 · `autreFace` 2152 · `champOrigine` 2168 · `majLiens` 2435
-`majIntegration` 2472 · `majMsgSync` 2479 · `etapesPressenties` 2509 · `synchronise` 2523
-`dupliquer` 2574 · `litMonProfil` 2674 · `RETOUR_MDP` 2685 · `litComptes` 2687
-`ligneMessage` 2696 · `casesSalons` 2706 · `ouvreComptes` 2736 · `ouvreFicheCompte` 2828
-`videEcran` 2987 · `dessine` 2992 · `demarre` 3007
+`paraitSurFiche` 1175 · `origineConferences` 1181 · `resumeProvenance` 1246
+`resumeFiche` 1263 · `caseFiche` 1308 · `champsPersos` 1350 · `criteres` 1356
+`ecritFiche` 1359 · `caseCritere` 1374 · `clePerso` 1393 · `ajouteChampPerso` 1401
+`renommeChampPerso` 1419 · `retireChampPerso` 1467 · `lignesPerso` 1525 · `ligneOutil` 1545
+`ligneReglage` 1561 · `ouvreProvenance` 1573 · `ouvreSources` 1596 · `cadreFiche` 1648
+`ouvreFiche` 1678 · `cadreCategories` 1816 · `sousTitre` 1895 · `tableauChamps` 1910
+`encode` 2053 · `decode` 2055 · `correspondance` 2060 · `sansPrefixe` 2063 · `courte` 2064
+`intitule` 2079 · `intituleSuite` 2091 · `separeValeurs` 2105 · `aplani` 2126
+`memeStyle` 2136 · `autreFace` 2154 · `champOrigine` 2170 · `majLiens` 2437
+`majIntegration` 2474 · `majMsgSync` 2481 · `etapesPressenties` 2511 · `synchronise` 2525
+`dupliquer` 2576 · `litMonProfil` 2676 · `RETOUR_MDP` 2687 · `litComptes` 2689
+`ligneMessage` 2698 · `casesSalons` 2708 · `ouvreComptes` 2738 · `ouvreFicheCompte` 2830
+`videEcran` 2989 · `dessine` 2994 · `demarre` 3009
 
 Éléments :
 
@@ -625,13 +625,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 474 l.
+### `supabase/functions/_partage/champs.ts` — 480 l.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/_partage/eventmaker.ts` — 890 l.
+### `supabase/functions/_partage/eventmaker.ts` — 992 l.
 
-`grapheJson` 159 · `enParallele` 711 · `texteSeul` 731 · `champs` 855
+`grapheJson` 177 · `enParallele` 809 · `texteSeul` 829 · `champs` 957
 
 ### `supabase/functions/_partage/gaia.ts` — 305 l.
 

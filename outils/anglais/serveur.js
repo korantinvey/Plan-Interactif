@@ -21,6 +21,10 @@ module.exports = {
   "{n} conférences lues": "{n} conferences read",
   "{n} conférences lues, {n2} tenues par un exposant": "{n} conferences read, {n2} run by an exhibitor",
   "Codification des champs à choix": "Decoding choice fields",
+  /* Le libellé que le relevé pose à côté de « thematic_ids », le champ natif
+     d'Eventmaker où vivent les thématiques d'un salon qui n'en fait pas un
+     champ de fiche. */
+  "Thématiques du salon": "Show themes",
   "Aucun pavillon à traiter.": "No halls to process.",
   "pavillons": "halls",
   "Pavillon « {pavillon} »": "Hall “{pavillon}”",
