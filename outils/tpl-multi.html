@@ -22642,9 +22642,11 @@ if (BORNE){
    **Ce n'est pas une borne.** Le mode réutilise le départ imposé de
    `_borne.html` — c'est le même besoin, et l'itinéraire n'a qu'une question à
    poser — mais rien du reste : un téléphone n'est pas un écran public, il
-   garde son jeton de mesure, son parcours, sa visite guidée et son
-   invitation à installer. Une borne se remet à zéro toutes les quatre-vingt-dix
-   secondes ; un téléphone à qui l'on ferait cela passerait pour cassé.
+   garde son jeton de mesure, son parcours et son invitation à installer. Une
+   borne se remet à zéro toutes les quatre-vingt-dix secondes ; un téléphone à
+   qui l'on ferait cela passerait pour cassé. Seule la visite guidée cède la
+   place, et pour la raison inverse : arriver par un code dit pourquoi on est
+   là, et « Première visite ? » passerait devant (voir `_tutoriel.html`).
 
    **Cela s'éteint.** Le visiteur avance, et le point cesse d'être vrai au bout
    de quelques allées. Le rappel au bas de l'écran porte donc « Désactiver »,
@@ -28383,6 +28385,14 @@ function proposeTutoriel(){
      seule personne à qui la fenêtre se proposerait est l'exploitant en train
      de l'installer — après quoi elle ne reparaîtrait plus pour personne. */
   if (PLAN_ADMIN || BORNE || TUTO || !tutoPropose()) return;
+  /* Celui qui vient de photographier un code affiché dans le hall sait lui
+     aussi pourquoi il est là : il est debout au milieu d'une allée, et ce
+     qu'il cherche des yeux est le point qu'on vient de poser sous la fenêtre
+     (`_ici.html`). C'est le cas du lien vers un stand, à ceci près que rien
+     ne s'ouvre pour le dire — les lignes plus bas n'ont donc pas de tiroir à
+     voir. Comme pour lui, la chance n'est pas consommée : on n'écrit rien, et
+     la visite guidée se proposera à l'ouverture suivante. */
+  if (ICI_ACTIF) return;
   try { if (localStorage.getItem(cleTuto()) !== null) return; } catch (e) { return; }
   setTimeout(() => {
     if (TUTO || !DATA || !tutoPropose()) return;

@@ -325,18 +325,18 @@ Fonctions :
 
 `#reessaie`
 
-### `_ici.html` — 570 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_ici.html` — 572 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 septies. « Vous êtes ici » — le code affiché dans le hall
 
 Fonctions :
 
-`prefixePlan` 81 · `coteIci` 93 · `nomCodeIci` 109 · `codeIci` 128 · `litCodeIci` 143
-`lienIci` 163 · `poseIci` 189 · `retireIci` 216 · `oublieIciDeLAdresse` 246
-`montreBandeauIci` 262 · `demarreIci` 296 · `pointTouche` 322 · `codeIciAuPoint` 334
-`armeCodeIci` 340 · `afficheIci` 362 · `ligneAffiche` 402 · `nomFichierIci` 411
-`ouvreCodeIci` 426 · `boutonsCodeIci` 478 · `telechargeAfficheIci` 502
-`imprimeAfficheIci` 520 · `boutonCodeIci` 549
+`prefixePlan` 83 · `coteIci` 95 · `nomCodeIci` 111 · `codeIci` 130 · `litCodeIci` 145
+`lienIci` 165 · `poseIci` 191 · `retireIci` 218 · `oublieIciDeLAdresse` 248
+`montreBandeauIci` 264 · `demarreIci` 298 · `pointTouche` 324 · `codeIciAuPoint` 336
+`armeCodeIci` 342 · `afficheIci` 364 · `ligneAffiche` 404 · `nomFichierIci` 413
+`ouvreCodeIci` 428 · `boutonsCodeIci` 480 · `telechargeAfficheIci` 504
+`imprimeAfficheIci` 522 · `boutonCodeIci` 551
 
 ### `_index.html` — 46 l. → index.html
 
@@ -624,7 +624,7 @@ Fonctions :
 `range` 76 · `oublieLesFondsDAvant` 99 · `dabordCache` 113 · `dabordReseau` 142
 `navigation` 159
 
-### `_tutoriel.html` — 868 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 876 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -633,10 +633,10 @@ Fonctions :
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `zoneDuTuto` 91 · `insecable` 108 · `phraseTrajetTuto` 114 · `chapitresTuto` 358
-`proposeTutoriel` 378 · `lanceTutoriel` 428 · `quitteTutoriel` 514 · `chapitreTuto` 525
-`battementTuto` 534 · `finTuto` 552 · `afficheTuto` 569 · `pxTuto` 624 · `boiteTuto` 627
-`repereTuto` 641 · `rameneTuto` 674 · `placeTuto` 712 · `voileTuto` 785 · `rafaleTuto` 802
-`marqueZoneTuto` 822 · `marqueLibelleTuto` 857
+`proposeTutoriel` 378 · `lanceTutoriel` 436 · `quitteTutoriel` 522 · `chapitreTuto` 533
+`battementTuto` 542 · `finTuto` 560 · `afficheTuto` 577 · `pxTuto` 632 · `boiteTuto` 635
+`repereTuto` 649 · `rameneTuto` 682 · `placeTuto` 720 · `voileTuto` 793 · `rafaleTuto` 810
+`marqueZoneTuto` 830 · `marqueLibelleTuto` 865
 
 Éléments :
 

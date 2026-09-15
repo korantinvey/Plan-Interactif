@@ -1010,9 +1010,14 @@ part pas avec elle.
 rempli : « Itinéraire » depuis une fiche donne le trajet sans rien demander de
 plus, et « Organiser ma journée » ne demande plus par où l'on commence. C'est le
 départ imposé de la borne, et rien du reste — un téléphone n'est pas un écran
-public : il garde son jeton de mesure, son parcours, sa visite guidée et son
-invitation à installer, et ne se remet pas à zéro toutes les quatre-vingt-dix
-secondes.
+public : il garde son jeton de mesure, son parcours et son invitation à
+installer, et ne se remet pas à zéro toutes les quatre-vingt-dix secondes.
+
+La visite guidée, elle, cède la place : celui qui vient de photographier un code
+est debout au milieu d'une allée, et ce qu'il cherche des yeux est le point
+qu'on vient de poser — « Première visite ? » passerait devant. C'est la règle
+qui vaut déjà pour un lien vers un stand ou un parcours partagé, et comme eux,
+elle ne consomme pas sa chance : la visite se proposera à l'ouverture suivante.
 
 **Et cela s'éteint.** Le visiteur avance, et le point cesse d'être vrai au bout
 de quelques allées. Un rappel au bas de l'écran porte donc **« Désactiver »** :
