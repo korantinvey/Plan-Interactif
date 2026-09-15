@@ -1,7 +1,10 @@
 /* `outils/gabarit/_console-head.html` — la barre du haut de la console. */
 module.exports = {
   "Console des plans de salon": "Show map console",
-  "Console des plans": "Map console",
+  /* Le nom du produit, en toutes lettres à côté de sa marque : il ne se
+     traduit pas, mais il paraît dans la page et le contrôle veut donc le
+     trouver ici. */
+  "Event2Map": "Event2Map",
   "Salon": "Show",
   "Recharger depuis le serveur": "Reload from the server",
   "Recharger": "Reload",
