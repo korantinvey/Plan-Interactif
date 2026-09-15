@@ -12,7 +12,7 @@
     "migration": "node outils/migration.js",
     "polices": "node outils/polices.js",
     "bd": "supabase db push",
-    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes",
+    "fonctions": "supabase functions deploy sync-evenement && supabase functions deploy plan-public && supabase functions deploy mesure && supabase functions deploy comptes && supabase functions deploy vignettes",
     "sup": "supabase"
   },
   "type": "commonjs",

@@ -2563,6 +2563,10 @@ async function synchronise(e) {
     vue.fini(mot, n.erreur ? "alerte" : "ok");
     signale(mot, !!n.erreur);
     await charge();
+    /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
+       elles ne font pas partie du plan, rien ne les attend, et leur fabrication
+       peut durer plusieurs minutes sur un gros salon. */
+    fabriqueLesVignettes(e);
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
     if (enCours) vue.pas({ etape: enCours, etat: "echec", info: err.message });
@@ -2571,6 +2575,44 @@ async function synchronise(e) {
   } finally {
     if ($("btnSync")) $("btnSync").disabled = false;
   }
+}
+
+/**
+ * Les vignettes des logos, par petits lots, après la synchronisation.
+ *
+ * Fabriquer une vignette est du calcul pur, et une fonction n'a qu'une part
+ * bornée de temps processeur : la synchronisation s'y faisait tuer quand elle
+ * s'en chargeait. Chaque appel repart donc avec sa propre part, et la console
+ * en redemande tant qu'il en reste.
+ *
+ * Rien n'attend ces vignettes : on ne bloque ni la fenêtre d'avancement, qui
+ * vient d'annoncer la fin, ni l'exploitant, qui peut fermer la console — le
+ * lot suivant reprendra où celui-ci s'est arrêté. Un échec ne se signale même
+ * pas : un logo sans vignette se charge chez la source, comme il l'a toujours
+ * fait.
+ *
+ * Le plafond de tours n'est pas une limite du salon mais une garde : un
+ * serveur qui répondrait toujours « il en reste » ferait tourner cette boucle
+ * sans fin. À quatre logos par tour, il couvre largement un salon de mille
+ * enseignes.
+ */
+const TOURS_VIGNETTES = 300;
+
+async function fabriqueLesVignettes(e) {
+  let faites = 0;
+  for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
+    let r;
+    try {
+      r = await fonction("vignettes", { evenementId: e.id });
+    } catch (err) {
+      return;   // la prochaine synchronisation reprendra
+    }
+    faites += r.faites || 0;
+    if (!r.reste) break;
+  }
+  // on ne le dit que s'il s'est passé quelque chose, et sans réveiller
+  // l'exploitant qui est passé à autre chose
+  if (faites) signale(traduit("{n} logos préparés pour les fiches.").replace("{n}", faites));
 }
 
 function dupliquer(e) {

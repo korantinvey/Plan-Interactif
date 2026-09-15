@@ -317,4 +317,5 @@ module.exports = {
     "records in this category carry a stand number",
   "aucune fiche de cette catégorie ne portait de numéro de stand":
     "no record in this category carried a stand number",
+  "{n} logos préparés pour les fiches.": "{n} logos prepared for the cards.",
 };
