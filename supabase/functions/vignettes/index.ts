@@ -81,7 +81,12 @@ Deno.serve(async (req) => {
 
   try {
     /* Fabriquer écrit dans la base et va chercher des images chez des tiers :
-       on exige un utilisateur authentifié, et le droit sur ce salon-là. */
+       on exige un utilisateur authentifié, et le droit sur ce salon-là.
+
+       Le contrôle est fait ici et non par la passerelle — « verify_jwt =
+       false » dans `config.toml`, comme pour la synchronisation : un refus de
+       la passerelle rend un corps que l'appelant ne sait pas lire, quand
+       celui-ci nomme ce qui manque. */
     const commeUtilisateur = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
