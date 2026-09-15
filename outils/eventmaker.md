@@ -52,15 +52,57 @@ qu'un appel au graphe suffit à établir.
 
 `companyName` porte l'enseigne sur les trois rôles, y compris les conférenciers
 sans stand — de quoi rattacher au jugé une session dont l'intervenant vient
-d'une enseigne exposante, si l'on veut aller au-delà des 70.
+d'une enseigne exposante, si l'on veut aller au-delà des 70. Mesuré sur FEP
+2026 : 58 intervenants sur 289 portent une enseigne déjà citée comme exposante,
+et 27 sessions sans rôle « Exposants » y gagneraient un stand — 70 deviendrait
+97. Ce n'est pas fait : apparier sur une raison sociale est la fragilité qu'on
+écarte plus bas pour les titres de session, et 231 intervenants sur 289 ne
+mèneraient nulle part.
+
+## Les intervenants et les animateurs
+
+Ils viennent du **même appel** que les exposants, et ne coûtent rien de plus :
+le graphe dit d'eux tout ce que la fiche affiche, là où un exposant se paie
+d'une relecture REST par personne pour retrouver son dossier. `speakers` et
+`moderators` rendent les six mêmes champs que `ProgramExhibitor`.
+
+**Aucun n'est une fiche d'exposant** — `speakers ∩ exhibitors` : 0 identifiant
+sur FEP 2026. Pas de dossier, donc pas de stand, jamais : la fiche les nomme, et
+rien ne s'y clique. Sept personnes sont à la fois intervenant et animateur d'une
+même session ; les deux rôles restent deux listes, chacune dédoublonnée par
+identifiant de fiche.
+
+Trois choses relevées sur les données, qui expliquent ce que le code en fait.
+
+**`name` est « Prénom NOM » d'un bloc**, et il n'y a ni prénom ni patronyme
+séparés. `nameSortValue` est la même chaîne pivotée — « NOM Prénom » — et
+permettrait de les recouper : sur 392 fiches de FEP 2026, 391 se découpent sans
+ambiguïté, la dernière portant `name === nameSortValue`, donc rien à pivoter.
+On ne le fait pas : la fiche affiche, elle ne trie pas de personnes. La casse,
+elle, ne sert à rien — 289 patronymes sur 289 en capitales sur FEP, aucun sur
+Event Automation Day. C'est une convention de saisie, pas une règle.
+
+**`position` dépend entièrement de l'organisateur** : 285 sur 289 sur FEP, 4 sur
+117 sur Learning Show 2026. La fiche l'affiche quand elle est là et ne laisse
+rien quand elle manque ; elle n'entre pas dans la recherche, où « directeur
+général » ferait répondre la moitié du programme.
+
+**`illustrationUrl` ne vaut rien pour un conférencier**, et c'est le piège des
+variantes carrées rejoué : elle n'est jamais nulle, et rend à défaut une
+pastille d'initiales fabriquée par `ui-avatars.com`. Sur FEP 2026, 287 des 289
+intervenants n'ont que cela — contre 55 sur 55 de vraies images pour les
+exposants, qui sont des logos de société. La fiche ne montre donc pas de
+portrait ; si elle en montrait un, il passerait par `IMAGE_FABRIQUEE`
+(`_partage/champs.ts`), qui écarte déjà ce domaine.
 
 ## Ce que la synchronisation en fait
 
-`_partage/eventmaker.ts` porte la méthode `exposantsParConference()`, appelée
+`_partage/eventmaker.ts` porte la méthode `rolesParConference()`, appelée
 par `sync-evenement` quand le domaine « conférences » d'un événement est réglé
-sur Eventmaker. Chaque conférence de la charge gagne un champ `exposants`, liste
-de `{ stand, nom }` où `stand` est l'identifiant d'un stand du plan — vide quand
-le salon ne renseigne pas le rôle.
+sur Eventmaker. Elle rend les trois rôles d'un seul parcours du graphe. Chaque
+conférence de la charge gagne un champ `exposants`, liste de `{ stand, nom }` où
+`stand` est l'identifiant d'un stand du plan — vide quand le salon ne renseigne
+pas le rôle —, et, quand le salon les nomme, `intervenants` et `animateurs`.
 
 **L'appariement se fait sur le dossier, jamais sur le numéro de stand.** Klipso
 porte `IdDossierExpAff` sur chaque stand, Eventmaker le recopie dans le champ

@@ -1434,6 +1434,12 @@ button.expo:hover{background:var(--line)}
 /* Un stand hors du plan se lit, mais ne mène nulle part : rien ne doit le
    faire passer pour un bouton. */
 .expo.statique{background:none;padding:0}
+/* Qui parle, et qui anime. Ni l'un ni l'autre ne tient de stand : il n'y a
+   rien à suivre, donc pas de bouton — un nom, et sous lui ce qui le situe. */
+.gens{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.gens li{display:flex;flex-direction:column;gap:1px}
+.gens .n{font-size:13px;line-height:1.35;color:var(--ink);overflow-wrap:anywhere}
+.gens .q{font-size:11.5px;line-height:1.3;color:var(--ink-2);overflow-wrap:anywhere}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
@@ -4822,17 +4828,21 @@ function indexe(d){
   }));
   /* Ce qu'on tape pour retrouver une conférence : son titre d'abord, puis ce
      qui la fait reconnaître quand on ne l'a pas en tête — sa salle, son type,
-     sa thématique, et l'exposant qui la tient, souvent le seul nom dont on se
-     souvienne. Sa présentation n'y entre pas : un paragraphe entier ferait
-     répondre la moitié du programme au premier mot courant venu. */
+     sa thématique, et les noms qu'elle porte : l'exposant qui la tient, ceux
+     qui y parlent et l'animent, souvent les seuls dont on se souvienne. Ce que
+     la fiche montre doit se retrouver en le tapant. Leur fonction en est
+     exclue, comme la présentation : « directeur général » ferait répondre la
+     moitié du programme, et un paragraphe entier tout le reste. */
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
+    const dits = [...(c.intervenants || []), ...(c.animateurs || [])]
+      .map(p => (p.nom || "") + " " + (p.societe || "")).join(" ");
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
     c.rech = ((c.nom || "") + " " + (c.salle || "") + " " + (c.type || "") +
-              " " + (c.theme || "") + " " +
+              " " + (c.theme || "") + " " + dits + " " +
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
   });
@@ -7193,6 +7203,31 @@ function ficheConf(id, canal){
       });
       corps.appendChild(w);
     }
+    /* Qui parle, et qui anime. Un intervenant n'a pas de stand — c'est ce qui
+       le sépare d'un exposant : on le lit, on ne le suit nulle part. Un salon
+       sur deux laisse ces rôles vides, et la fiche n'en montre alors rien. */
+    const gens = (libelle, liste) => {
+      if (!liste || !liste.length) return;
+      const w = document.createElement("div");
+      w.className = "field";
+      w.innerHTML = '<span class="eyebrow"></span><ul class="gens"></ul>';
+      w.querySelector(".eyebrow").textContent = libelle;
+      const ul = w.querySelector(".gens");
+      liste.forEach(p => {
+        const li = document.createElement("li");
+        li.innerHTML = '<span class="n"></span><span class="q"></span>';
+        li.querySelector(".n").textContent = p.nom;
+        // sa fonction dit ce qu'il fait, son enseigne d'où il vient : les deux
+        // quand le salon les tient, l'une ou l'autre sinon, et la ligne
+        // disparaît quand il n'a ni l'une ni l'autre
+        li.querySelector(".q").textContent =
+          [p.fonction, p.societe].filter(Boolean).join(" · ");
+        ul.appendChild(li);
+      });
+      corps.appendChild(w);
+    };
+    gens("Intervenants", c.intervenants);
+    gens("Animée par", c.animateurs);
     bloc("Thématique", c.theme);
     bloc("Présentation", c.texte, "large");
     const acts = document.createElement("div");

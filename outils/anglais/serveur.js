@@ -18,6 +18,7 @@ module.exports = {
   "Rattachement des exposants": "Linking exhibitors",
   "conférences": "conferences",
   "Conférences tenues par un exposant": "Conferences run by an exhibitor",
+  "Conférences avec intervenants": "Conferences with speakers",
   "{n} conférences lues": "{n} conferences read",
   "{n} conférences lues, {n2} tenues par un exposant": "{n} conferences read, {n2} run by an exhibitor",
   "Codification des champs à choix": "Decoding choice fields",
