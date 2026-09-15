@@ -1380,8 +1380,15 @@ html.poi-actif #marques .parc{display:none}
   font-weight:var(--graisse-lab-nom,600);fill:var(--c-lab-zone,var(--zone))}
 #labels text.zn.masquee{opacity:.45}
 /* La couleur d'un élément sélectionné se règle depuis la pile ; le numéro du
-   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré. */
-#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent));font-weight:700}
+   stand, écrit par-dessus l'aplat, suit le liseré qui en est tiré.
+
+   La couleur, et elle seule : le nom du stand choisi était aussi mis en gras,
+   et cette graisse-là coûtait cher. Le rendu WebGL groupe les noms par police
+   et par graisse, une couche par groupe ; un seul nom en 700 créait donc deux
+   couches de texte qui n'existaient pas — police du nom et police du numéro —
+   à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
+   trente millisecondes pour une nuance que l'accent disait déjà. */
+#labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
 /* Sur la carte de chaleur, l'emplacement ne porte plus la couleur du thème
    mais sa température, la même de jour comme de nuit. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
@@ -29251,11 +29258,44 @@ function constTexte(){
     sansDeclencheur: {},
   });
 }
+/**
+ * Les caractères que la bibliothèque doit savoir dessiner : l'union de tous
+ * ceux déjà rencontrés, et qui ne fait que grandir.
+ *
+ * `characterSet: "auto"` laissait chaque couche de texte réclamer les seuls
+ * caractères de ses propres noms. Deux couches n'en demandaient donc jamais
+ * les mêmes, et la bibliothèque refabriquait son atlas — mesurer, dessiner et
+ * téléverser mille glyphes — à chaque fois que l'une d'elles recevait un nom
+ * de plus. Ouvrir une fiche, qui rapproche la vue et fait paraître des noms
+ * jusque-là trop petits, coûtait ainsi cent vingt millisecondes d'atlas.
+ *
+ * Une seule chaîne pour toutes les couches, et la même d'une image à l'autre :
+ * l'atlas est fabriqué une fois par police, puis resservi. Elle ne rétrécit
+ * jamais — un caractère retiré du plan ne vaut pas de tout refaire — et son
+ * contenu est trié, pour que deux salons aux mêmes noms donnent la même chaîne.
+ *
+ * Un jeu fixe et généreux, posé d'avance, coûtait plus cher que « auto » : on
+ * y payait les accents et les symboles que le salon n'emploie pas. C'est bien
+ * l'union exacte qu'il faut, pas un sur-ensemble commode.
+ */
+const CARACTERES_VUS = new Set();
+let JEU_CARACTERES = "";
+function jeuDeCaracteres(items){
+  let neuf = false;
+  for (const it of items){
+    const t = it && it.text;
+    if (!t) continue;
+    for (const c of t) if (!CARACTERES_VUS.has(c)){ CARACTERES_VUS.add(c); neuf = true; }
+  }
+  if (neuf) JEU_CARACTERES = [...CARACTERES_VUS].sort().join("");
+  return JEU_CARACTERES;
+}
+
 function couchesTexte(id, items, famille, graisse, extra){
   const K = constTexte();
   const halo = extra.halo;
   const commun = {
-    data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: "auto",
+    data: items, pickable: Boolean(extra.pickable), fontFamily: famille, fontWeight: graisse, characterSet: jeuDeCaracteres(items),
     getText: d => d.text, getPosition: d => d.position, getSize: d => d.taille, sizeUnits: "common",
     getAngle: d => d.angle || 0, getColor: extra.getColor || (d => d.couleur),
     getTextAnchor: extra.ancre || (d => d.ancre), getAlignmentBaseline: "center",
