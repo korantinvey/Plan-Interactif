@@ -658,10 +658,10 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `r2` 23 · `distSegment` 55 · `distBord` 64 · `poleInterieur` 83 · `portee` 104
 
-### `supabase/functions/_partage/push.ts` — 218 l.
+### `supabase/functions/_partage/push.ts` — 229 l.
 
-`colle` 52 · `texte` 60 · `cleDeSignature` 72 · `jetonVapid` 94 · `derive` 120
-`chiffre` 134
+`colle` 63 · `texte` 71 · `cleDeSignature` 83 · `jetonVapid` 105 · `derive` 131
+`chiffre` 145
 
 ### `supabase/functions/_partage/svg.ts` — 216 l.
 

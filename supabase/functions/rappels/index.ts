@@ -181,7 +181,12 @@ async function envoie() {
   }
 
   for (const mort of disparus) {
-    await bd.rpc("oublie_abonnement", { p_abonnement: mort }).catch(() => {});
+    /* Ce que rend `rpc` n'est pas une promesse ordinaire : l'échec se lit dans
+       la réponse, non par un `catch`. Il ne remet pas l'envoi en cause — les
+       messages sont partis — mais il laisse des adresses mortes derrière lui,
+       et cela vaut une ligne au journal. */
+    const { error: oubli } = await bd.rpc("oublie_abonnement", { p_abonnement: mort });
+    if (oubli) console.error("Abonnement non oublié :", mort, oubli.message);
   }
   console.log("Rappels : " + partis + " partis, " + manques + " manqués, " +
               disparus.size + " appareils oubliés.");

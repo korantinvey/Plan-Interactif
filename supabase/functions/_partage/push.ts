@@ -32,10 +32,21 @@
  * fonction qui tourne à la minute.
  */
 
+/**
+ * Des octets que WebCrypto accepte.
+ *
+ * Le paramètre se dit en toutes lettres parce que `Uint8Array` nu désigne
+ * depuis TypeScript 5.7 un tableau qui peut être adossé à de la mémoire
+ * partagée — que `BufferSource` refuse. Tout ce qui passe ici vient d'un
+ * `ArrayBuffer` ordinaire ; l'écrire évite au contrôle de typage de devoir le
+ * deviner, et au déploiement de s'arrêter dessus.
+ */
+type Octets = Uint8Array<ArrayBuffer>;
+
 /* ------------------------------------------------------------------
    Base64url — la monnaie du protocole, sans remplissage
    ------------------------------------------------------------------ */
-export function octets(b64: string): Uint8Array {
+export function octets(b64: string): Octets {
   const net = b64.replace(/-/g, "+").replace(/_/g, "/");
   const brut = atob(net + "=".repeat((4 - (net.length % 4)) % 4));
   const sortie = new Uint8Array(brut.length);
@@ -49,7 +60,7 @@ export function base64url(o: Uint8Array): string {
   return btoa(brut).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function colle(...morceaux: Uint8Array[]): Uint8Array {
+function colle(...morceaux: Uint8Array[]): Octets {
   const total = morceaux.reduce((n, m) => n + m.length, 0);
   const sortie = new Uint8Array(total);
   let i = 0;
@@ -69,7 +80,7 @@ const texte = (s: string) => new TextEncoder().encode(s);
  * les coordonnées du point public, qui sont précisément les soixante-quatre
  * octets qui suivent le préfixe de la clé publique.
  */
-async function cleDeSignature(publique: Uint8Array, privee: Uint8Array) {
+async function cleDeSignature(publique: Octets, privee: Octets) {
   return await crypto.subtle.importKey(
     "jwk",
     {
@@ -91,7 +102,7 @@ async function cleDeSignature(publique: Uint8Array, privee: Uint8Array) {
  * la moitié laisse de la marge à une horloge qui dérive, dans un sens comme
  * dans l'autre, sans qu'un jeton traîne pour autant.
  */
-async function jetonVapid(origine: string, sujet: string, publique: Uint8Array, privee: Uint8Array) {
+async function jetonVapid(origine: string, sujet: string, publique: Octets, privee: Octets) {
   const tete = base64url(texte(JSON.stringify({ typ: "JWT", alg: "ES256" })));
   const corps = base64url(texte(JSON.stringify({
     aud: origine,
@@ -117,7 +128,7 @@ const INFO_JETABLE = texte("Content-Encoding: nonce\0");
 
 /** `HKDF(sel, matière, info)` en un appel : WebCrypto enchaîne extraction et
  *  expansion, ce qui est exactement la suite que décrit la RFC. */
-async function derive(sel: Uint8Array, matiere: Uint8Array, info: Uint8Array, n: number) {
+async function derive(sel: Octets, matiere: Octets, info: Octets, n: number): Promise<Octets> {
   const k = await crypto.subtle.importKey("raw", matiere, "HKDF", false, ["deriveBits"]);
   return new Uint8Array(await crypto.subtle.deriveBits(
     { name: "HKDF", hash: "SHA-256", salt: sel, info }, k, n * 8));
@@ -131,7 +142,7 @@ async function derive(sel: Uint8Array, matiere: Uint8Array, info: Uint8Array, n:
  * même secret partagé de son côté. En changer à chaque fois est ce qui fait
  * que deux notifications au même appareil ne partagent aucune clé.
  */
-async function chiffre(charge: Uint8Array, p256dh: Uint8Array, auth: Uint8Array) {
+async function chiffre(charge: Octets, p256dh: Octets, auth: Octets): Promise<Octets> {
   const paire = await crypto.subtle.generateKey(
     { name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]) as CryptoKeyPair;
   const noteur = new Uint8Array(await crypto.subtle.exportKey("raw", paire.publicKey));
