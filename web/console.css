@@ -14,11 +14,19 @@
  * ce qui les fait tenir avec l'accent au lieu de le salir.
  *
  * Deux conséquences que le cyan impose, et qu'il vaut mieux connaître avant de
- * retoucher un jeton. Il est trop clair pour porter du texte sur du blanc :
+ * retoucher un jeton. Il est trop clair pour porter du *texte* sur du blanc :
  * en thème clair l'accent est donc un cyan profond, et le cyan de la marque ne
- * revient qu'en thème sombre, où le fond le supporte. Et l'encre du bouton
- * primaire est devenue un jeton (`--accent-encre`) au lieu d'un blanc en dur :
- * du blanc sur le cyan vif ne fait que 1,9 pour 1, quand la nuit y fait 9,3.
+ * revient qu'en thème sombre, où le fond le supporte. Il reste en revanche
+ * parfait en *aplat*, encre de nuit par-dessus — c'est ce que fait le bouton
+ * plein, et c'est pour cela que l'encre est un jeton (`--accent-encre`) au lieu
+ * d'un blanc en dur : du blanc sur le cyan vif ne fait que 1,9 pour 1, quand la
+ * nuit y fait 9,3.
+ *
+ * Ces tons restaient pourtant invisibles en thème clair : l'accent ne servait
+ * qu'aux liserés de focus, et tout le reste était blanc sur gris. Trois choses
+ * lui rendent ses occasions — la barre du haut passe à la nuit de la marque,
+ * comme la bande d'administration du plan ; le bouton plein prend le cyan vif ;
+ * les intertitres sont écrits à l'accent plutôt qu'en gris.
  *
  * Le rose de la marque sert ce qui alerte. C'est le seul emploi qui lui donne
  * un sens dans un écran sans plan : ailleurs il n'aurait rien à désigner.
@@ -40,6 +48,12 @@
      peuvent venir que d'ici, et « --systeme » lui dit de quel côté peindre
      l'ascenseur et la surbrillance. */
   --menu-fond:#FFFFFF; --menu-encre:#071F3A; --systeme:light;
+  /* Les tons de la marque, tenus hors du jeu des thèmes : ils disent le
+     produit, non l'heure qu'il est. « --accent » les suit déjà — c'est le même
+     cyan, rabattu pour rester lisible sur du blanc — mais il ne peignait que
+     les boutons pleins et les liserés de focus, si bien qu'un écran clair ne
+     rappelait la marque nulle part. Ce qui suit lui rend ses occasions. */
+  --m-nuit:#071F3A; --m-cyan:#35C2FF; --m-cyan-profond:#0A6C93; --m-rose:#FF4D6D;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -82,8 +96,10 @@ option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 button{cursor:pointer;background:none;border:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+/* Les intertitres reprennent l'accent, qui est ici celui du produit : ils
+   sont partout dans la console, et un gris de plus n'y disait rien. */
 .eyebrow{font-family:"Archivo",sans-serif;font-size:10px;font-weight:600;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
 
 /* Une seule colonne, et deux rangs : la barre du haut, puis la fiche. La
    liste des salons tenait une colonne de gauche entière pour un choix qu'on
@@ -92,8 +108,27 @@ button{cursor:pointer;background:none;border:none}
    le bas de la console passerait dessous. `100dvh` suit cette barre. */
 .app{display:grid;grid-template-rows:auto 1fr;
   height:100vh;height:100dvh;min-height:520px}
+/* La barre de l'outil, dans la nuit de la marque — la même que la bande
+   d'administration du plan, pour que les deux écrans du produit se
+   reconnaissent. Aucun salon ne la revendique : ici, contrairement au bandeau
+   du plan, il n'y a pas d'habillage d'exploitant à respecter.
+
+   Elle redéfinit les jetons pour sa hauteur seulement, ce qui évite de
+   repeindre un à un les boutons, l'avatar, les menus et le badge d'état :
+   ce sont les mêmes qu'ailleurs, ils suivent. Les valeurs sont celles du thème
+   sombre — sur la nuit, c'est ce thème-là qui a raison, quelle que soit
+   l'heure choisie pour le reste de l'écran. */
 .topbar{display:flex;align-items:center;gap:12px;padding:0 18px;height:58px;
-  background:var(--surface);border-bottom:1px solid var(--line);z-index:5}
+  background:var(--m-nuit);border-bottom:1px solid var(--m-nuit);z-index:5;
+  --surface:#0E2E4E; --surface-2:#16334C; --surface-3:#183551;
+  --line:#1E3C58; --line-strong:#325975;
+  --ink:#FFFFFF; --ink-2:#9BB2C9; --ink-3:#7793AD;
+  --accent:var(--m-cyan); --accent-soft:#123A55; --accent-encre:var(--m-nuit);
+  --vert:#3FD3AC; --vert-soft:#0C3830;
+  --ambre:#F0B429; --ambre-soft:#3A2E12;
+  --rouge:var(--m-rose); --rouge-soft:#3E1424;
+  --menu-fond:#0E2E4E; --menu-encre:#DDEAF6; --systeme:dark;
+  color:var(--ink)}
 .topbar h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:16px;margin:0;
   letter-spacing:-.02em;white-space:nowrap}
 /* La marque du produit. Ces écrans-ci sont les siens : la console, le rapport
@@ -124,7 +159,12 @@ button{cursor:pointer;background:none;border:none}
 .btn{padding:8px 14px;border-radius:var(--radius);font-size:13.5px;font-weight:500;
   border:1px solid var(--line);white-space:nowrap}
 .btn:hover{border-color:var(--line-strong)}
-.btn.primaire{background:var(--accent);border-color:var(--accent);color:var(--accent-encre)}
+/* Le bouton qui porte l'action principale est le cyan de la marque, et non
+   l'accent rabattu : sur du blanc, un aplat cyan à encre de nuit fait 9,3 pour
+   1 — c'est du texte sombre sur fond clair, la contrainte qui interdisait le
+   cyan vif ne joue pas ici. C'est le seul aplat de couleur d'un écran clair,
+   et donc le rappel qui manquait. */
+.btn.primaire{background:var(--m-cyan);border-color:var(--m-cyan);color:var(--m-nuit)}
 .btn.primaire:hover{filter:brightness(1.08)}
 .btn.danger{color:var(--rouge);border-color:var(--line)}
 .btn.danger:hover{background:var(--rouge-soft);border-color:var(--rouge)}

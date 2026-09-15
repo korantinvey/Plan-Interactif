@@ -946,6 +946,21 @@ html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
   --surface:#FFFFFF;--surface-2:#F4F8FB;
   --line:#D2DFEA;--line-strong:#AFC2D3;
   --ink:#071F3A;--ink-2:#3C5670;--ink-3:#54708C}
+/* Des gris bleutés ne se remarquent pas : à côté du greige du plan, l'écart
+   est de quelques points et ne dit rien. Deux choses le disent vraiment — un
+   filet de cyan en tête de chaque panneau de l'outil, et ses intertitres
+   écrits à l'accent de la marque au lieu du gris. C'est le cyan profond et non
+   le vif : ici, ils portent du texte sur du blanc.
+
+   Et c'est `--m-cyan-profond` en dur, non `--accent` : sur cette page,
+   l'accent appartient au salon. */
+html.mode-admin :is(#panel,#outils,#libReg){border-top:2px solid var(--m-cyan)}
+html.mode-admin :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan-profond)}
+@media (prefers-color-scheme: dark){
+  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg) .eyebrow{
+    color:var(--m-cyan)}
+}
+html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan)}
 @media (prefers-color-scheme: dark){
   html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg),
   html.mode-admin:not([data-theme="light"]) .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
