@@ -166,7 +166,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3095 l. → admin-plans.html
+### `_console-js.html` — 3113 l. → admin-plans.html
 
 - l.937 · Provenance des données
 - l.1064 · Contenu de la fiche détail
@@ -188,9 +188,10 @@ Fonctions :
 `intitule` 2079 · `intituleSuite` 2091 · `separeValeurs` 2105 · `aplani` 2126
 `memeStyle` 2136 · `autreFace` 2154 · `champOrigine` 2170 · `majLiens` 2437
 `majIntegration` 2474 · `majMsgSync` 2481 · `etapesPressenties` 2511 · `synchronise` 2525
-`fabriqueLesVignettes` 2603 · `dupliquer` 2650 · `litMonProfil` 2750 · `RETOUR_MDP` 2761
-`litComptes` 2763 · `ligneMessage` 2772 · `casesSalons` 2782 · `ouvreComptes` 2812
-`ouvreFicheCompte` 2904 · `videEcran` 3063 · `dessine` 3068 · `demarre` 3083
+`fabriqueLesVignettes` 2606 · `envoieVignettes` 2659 · `dupliquer` 2668
+`litMonProfil` 2768 · `RETOUR_MDP` 2779 · `litComptes` 2781 · `ligneMessage` 2790
+`casesSalons` 2800 · `ouvreComptes` 2830 · `ouvreFicheCompte` 2922 · `videEcran` 3081
+`dessine` 3086 · `demarre` 3101
 
 Éléments :
 
@@ -389,7 +390,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4269 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4070 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -398,9 +399,9 @@ Fonctions :
 - l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1739 · 6. Vue
 - l.2120 · 7. Sélection et fiche
-- l.3604 · 8. Interactions du plan
-- l.3945 · Le tiroir de la liste — écrans étroits
-- l.4102 · Le tiroir de la fiche — écrans étroits
+- l.3405 · 8. Interactions du plan
+- l.3746 · Le tiroir de la liste — écrans étroits
+- l.3903 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -434,11 +435,10 @@ Fonctions :
 `pictoRS` 2666 · `adresseSure` 2684 · `adresseVignette` 2714 · `adresseImage` 2728
 `imageSure` 2741 · `assainitRiche` 2770 · `enBlocs` 2810 · `rangeRiche` 2823
 `ecarteClicFantome` 2851 · `nomSociete` 2860 · `societes` 2873 · `choisitExposant` 2884
-`poseMarque` 2922 · `montreMarque` 2982 · `recadreMarque` 3016 · `marqueRecadree` 3042
-`imageChargee` 3071 · `vignetteMarque` 3087 · `boiteMarque` 3108 · `toileMarque` 3174
-`poseCode` 3204 · `rangeMarque` 3245 · `ouvre` 3308 · `ferme` 3576 · `onglet` 3594
-`milieu` 3624 · `commencePince` 3630 · `suitPince` 3644 · `saisitPlan` 3678
-`cibleElargie` 3754 · `mesureTiroir` 3956 · `montreTiroir` 3959
+`poseMarque` 2922 · `montreMarque` 2982 · `poseCode` 3005 · `rangeMarque` 3046
+`ouvre` 3109 · `ferme` 3377 · `onglet` 3395 · `milieu` 3425 · `commencePince` 3431
+`suitPince` 3445 · `saisitPlan` 3479 · `cibleElargie` 3555 · `mesureTiroir` 3757
+`montreTiroir` 3760
 
 Éléments :
 
@@ -447,6 +447,15 @@ Fonctions :
 ### `_langue.js` — 712 l. → admin-plans.html, hors-ligne.html, index.html, motdepasse.html, plan-admin.html, plan-smcl.html, plan.html, rapport.html
 
 - l.1 · La langue de la page — le français d'origine, l'anglais sur demande
+
+### `_marque.html` — 269 l. → admin-plans.html, plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · La marque sans le vide qui l'entoure
+
+Fonctions :
+
+`recadreMarque` 47 · `marqueRecadree` 73 · `imageChargee` 102 · `vignetteMarque` 118
+`boiteMarque` 144 · `toileMarque` 210 · `vignetteDeLogo` 234
 
 ### `_mesure.html` — 429 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -678,9 +687,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `condense` 73
 
-### `supabase/functions/_partage/vignette.ts` — 186 l.
+### `supabase/functions/_partage/vignette.ts` — 28 l.
 
-`cadre` 69 · `decoupe` 111
+(aucune fonction de premier niveau)
 
 ### `supabase/functions/mesure/index.ts` — 155 l.
 
