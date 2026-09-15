@@ -600,7 +600,7 @@ Fonctions :
 `range` 76 · `oublieLesFondsDAvant` 99 · `dabordCache` 113 · `dabordReseau` 142
 `navigation` 159
 
-### `_tutoriel.html` — 854 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 866 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -610,9 +610,9 @@ Fonctions :
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `zoneDuTuto` 91 · `insecable` 108 · `phraseTrajetTuto` 114 · `chapitresTuto` 358
 `proposeTutoriel` 378 · `lanceTutoriel` 426 · `quitteTutoriel` 512 · `chapitreTuto` 523
-`battementTuto` 532 · `finTuto` 550 · `afficheTuto` 567 · `boiteTuto` 613 · `repereTuto` 627
-`rameneTuto` 660 · `placeTuto` 698 · `voileTuto` 771 · `rafaleTuto` 788
-`marqueZoneTuto` 808 · `marqueLibelleTuto` 843
+`battementTuto` 532 · `finTuto` 550 · `afficheTuto` 567 · `pxTuto` 622 · `boiteTuto` 625
+`repereTuto` 639 · `rameneTuto` 672 · `placeTuto` 710 · `voileTuto` 783 · `rafaleTuto` 800
+`marqueZoneTuto` 820 · `marqueLibelleTuto` 855
 
 Éléments :
 
