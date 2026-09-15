@@ -2331,6 +2331,22 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
+   plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
+   et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
+   rangée. Le pouce doit l'atteindre — la ligne entière est la commande, pas la
+   seule case. */
+.rapBloc{margin:2px 0 4px;padding:9px 10px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2)}
+.rapBascule{display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink)}
+.rapBascule input{width:16px;height:16px;flex:none;accent-color:var(--accent);cursor:pointer}
+.rapBascule input:disabled{cursor:progress}
+.rapBascule .t{min-width:0}
+.rapAide{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+/* Seule dans son cadre — un iPhone non installé, des notifications refusées —
+   l'explication n'a pas d'intitulé au-dessus d'elle à qui s'aligner. */
+.rapBloc > .rapAide:first-child{margin-top:0}
 /* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
    proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
    disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,

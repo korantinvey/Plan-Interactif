@@ -38,4 +38,9 @@ module.exports = [
   "FiltreZoom", "-petit", "-grand", "-pleins-", "-textes-", "-image-",
   "xMidYMid meet", "zn masquee", "zn sel masquee", "-noms-",
   "DefileTirets", "-petit-halo-", "-phare-", "-defile", "lbl phare", "lbl pick", "-lueur", "gl-pret", "gl-attente",
+
+  // `_rappels.html` : le motif de deux pannes internes, porté par une
+  // exception que la page rattrape sans jamais l'afficher — ce que le visiteur
+  // lit alors est « Le rappel n'a pas pu être posé », qui a sa clé
+  "clé indisponible", "clé absente",
 ];

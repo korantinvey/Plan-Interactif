@@ -1,18 +1,21 @@
 /**
- * Les vignettes des logos d'un salon, par petits lots.
+ * Les vignettes des logos d'un salon : ce qu'il reste à faire, et ce qui vient
+ * d'être fait.
  *
- * Fabriquer une vignette est du calcul pur — décoder, recadrer, réduire,
- * encoder — et une fonction n'a qu'une part bornée de temps processeur. Ce
- * travail a d'abord été tenté au milieu de la synchronisation : elle s'y
- * faisait tuer avant la fin. Il vit donc ici, où chaque appel repart avec sa
- * propre part : c'est le nombre de logos par appel qui tient dans cette part,
- * et l'appelant en redemande tant qu'il en reste.
+ * Cette fonction ne fabrique rien. Elle l'a tenté, en WebAssembly, et la
+ * plateforme a refusé l'appel avant même le premier logo décodé : une fonction
+ * n'a pas le temps de calcul qu'il faut pour décoder des images. C'est le
+ * navigateur de l'exploitant qui s'en charge — il a la puissance, et il ne le
+ * fait qu'une fois par salon.
  *
- * Rien n'attend ces vignettes. Un logo qui n'en a pas encore se charge chez la
- * source, comme il l'a toujours fait ; aucune panne d'ici n'en est une.
+ * Il reste donc deux gestes, et aucun calcul : dire quelles adresses n'ont pas
+ * encore leur vignette, et enregistrer celles qu'on lui rend. C'est ici, et
+ * non chez l'appelant, que se calcule la clé qui les nomme : une vignette
+ * envoyée par la console et une vignette demandée par la page doivent porter
+ * le même nom.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { cleDeVignette, fabriqueVignette } from "../_partage/vignette.ts";
+import { cleDeVignette } from "../_partage/vignette.ts";
 
 const ORIGINES = [
   ...(Deno.env.get("ORIGINES_AUTORISEES") ?? "")
@@ -30,21 +33,11 @@ const cors = (req: Request) => {
 };
 const METHODES = { "Access-Control-Allow-Methods": "POST, OPTIONS" };
 
-/* Combien de logos par appel, et combien de temps au plus.
- *
- * La part de calcul d'une fonction se compte en secondes, et c'est du calcul
- * pur qu'on fait ici. Deux logos, parce que le premier d'un isolat froid paie
- * la mise en route des codecs — une seconde et demie — quand les suivants
- * coûtent deux dixièmes : un lot plus gros passerait tant qu'il passe, et plus
- * du tout le jour où la plateforme resserre. C'est déjà l'erreur qui a tué la
- * synchronisation.
- *
- * La garde de temps double le compte parce qu'ils ne mesurent pas la même
- * chose : le lot borne le travail prévu, la garde arrête celui qui s'éternise
- * — une source lente à répondre, une image plus lourde que prévu. Ce qui reste
- * part au tour suivant, et l'appelant en redemande. */
-const LOT = Number(Deno.env.get("LOT_VIGNETTES") ?? 2);
-const MS_MAX = Number(Deno.env.get("MS_VIGNETTES") ?? 1200);
+/* Combien d'adresses on rend à la fois. La console les traite une par une et
+   revient en redemander : un lot plus gros ne ferait que retarder son premier
+   coup de pioche, et un lot plus petit multiplierait les allers-retours pour
+   rien. */
+const LOT = Number(Deno.env.get("LOT_VIGNETTES") ?? 40);
 
 const service = () =>
   createClient(
@@ -99,7 +92,10 @@ Deno.serve(async (req) => {
       return repond({ erreur: "Authentification requise." }, 401);
     }
 
-    const corps = await req.json().catch(() => ({})) as { evenementId?: string };
+    const corps = await req.json().catch(() => ({})) as {
+      evenementId?: string;
+      vignettes?: { source: string; image: string; largeur: number; hauteur: number }[];
+    };
     if (!corps.evenementId) return repond({ erreur: "evenementId manquant." }, 400);
 
     /* La suite écrit avec la clé de service, qui ignore les politiques de la
@@ -111,15 +107,37 @@ Deno.serve(async (req) => {
 
     const db = service();
 
+    /* Ce que la console vient de fabriquer. Elle l'envoie par petits paquets,
+       et repart aussitôt chercher la suite : c'est le seul geste qui écrit. */
+    if (corps.vignettes?.length) {
+      const lignes = [];
+      for (const v of corps.vignettes) {
+        if (!v?.source || !v.image) continue;
+        lignes.push({
+          cle: await cleDeVignette(v.source),
+          source: v.source,
+          image: v.image,
+          largeur: v.largeur | 0,
+          hauteur: v.hauteur | 0,
+          pose: new Date().toISOString(),
+        });
+      }
+      if (!lignes.length) return repond({ enregistrees: 0 });
+      const { error } = await db.from("vignette_de_logo")
+        .upsert(lignes, { onConflict: "cle" });
+      if (error) return repond({ erreur: error.message }, 500);
+      return repond({ enregistrees: lignes.length });
+    }
+
     const { data: plans } = await db.from("plan")
       .select("id").eq("evenement_id", corps.evenementId);
     const ids = (plans ?? []).map((p) => (p as { id: string }).id);
-    if (!ids.length) return repond({ faites: 0, reste: 0, total: 0 });
+    if (!ids.length) return repond({ aFaire: [], reste: 0, total: 0 });
 
     const { data: instantanes } = await db.from("instantane")
       .select("charge").in("plan_id", ids);
     const adresses = adressesDeLogos((instantanes ?? []) as { charge: unknown }[]);
-    if (!adresses.length) return repond({ faites: 0, reste: 0, total: 0 });
+    if (!adresses.length) return repond({ aFaire: [], reste: 0, total: 0 });
 
     /* Ce qui est déjà fait, demandé par adresse : la table porte les deux, et
        c'est l'adresse que l'instantané connaît. Par tranches — une requête qui
@@ -132,38 +150,10 @@ Deno.serve(async (req) => {
     }
 
     const aFaire = adresses.filter((a) => !connues.has(a));
-    let faites = 0;
-    /* Les échecs comptent comme faits pour l'appelant : sans cela il
-       redemanderait sans fin le même logo qu'aucune source ne rend. Ils ne
-       sont pas enregistrés pour autant — une source qui revient sera reprise
-       au passage suivant. */
-    let refusees = 0;
-    const debut = Date.now();
-    for (const source of aFaire.slice(0, LOT)) {
-      /* On ne commence jamais un logo qu'on n'a plus le temps de finir : le
-         premier passe toujours, quoi qu'il coûte, et c'est ce qui garantit
-         qu'on avance même sur un isolat froid. */
-      if (faites + refusees > 0 && Date.now() - debut > MS_MAX) break;
-      const v = await fabriqueVignette(source);
-      if (!v) { refusees++; continue; }
-      const cle = await cleDeVignette(source);
-      const { error } = await db.from("vignette_de_logo").upsert({
-        cle,
-        source,
-        image: v.image,
-        largeur: v.largeur,
-        hauteur: v.hauteur,
-        pose: new Date().toISOString(),
-      }, { onConflict: "cle" });
-      if (!error) faites++;
-    }
-
     return repond({
-      faites,
-      refusees,
-      reste: Math.max(0, aFaire.length - faites - refusees),
+      aFaire: aFaire.slice(0, LOT),
+      reste: aFaire.length,
       total: adresses.length,
-      ms: Date.now() - debut,
     });
   } catch (err) {
     return repond({ erreur: err instanceof Error ? err.message : String(err) }, 500);
