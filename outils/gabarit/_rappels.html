@@ -325,6 +325,30 @@ function poseRappels(hote){
   }
 
   const n = minutesRappel();
+
+  /**
+   * Ce que l'interrupteur ne doit pas promettre.
+   *
+   * Il paraissait dès qu'une conférence retenue n'avait pas commencé. Mais ce
+   * qui s'enregistre passe un second filtre — le rappel lui-même doit encore
+   * être à venir — et une conférence qui commence dans dix minutes, avec un
+   * quart d'heure d'avance réglé, n'en produit aucun. Le visiteur cochait,
+   * accordait l'autorisation, lisait la promesse, et ne recevait rien.
+   *
+   * C'est le cas ordinaire d'une fin de journée : on repère une table ronde qui
+   * commence tout à l'heure, et c'est précisément celle-là qu'on aurait voulu
+   * ne pas manquer. Mieux vaut dire qu'il est trop tard que faire semblant.
+   *
+   * L'interrupteur reste, en revanche, s'il est déjà allumé : sans quoi on ne
+   * pourrait plus l'éteindre.
+   */
+  if (!rappelsDuParcours().length && !RAPPELS_ACTIFS){
+    aideRappel(bloc, "Vos conférences retenues commencent dans moins de " + n +
+      " min : il est trop tard pour un rappel.");
+    hote.appendChild(bloc);
+    return;
+  }
+
   const l = document.createElement("label");
   l.className = "rapBascule";
   l.innerHTML = '<input type="checkbox"><span class="t"></span>';
