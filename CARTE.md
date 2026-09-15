@@ -593,7 +593,7 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1212 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1229 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
@@ -606,15 +606,16 @@ Fonctions :
 `lisTrace` 410 · `lisPoints` 478 · `num` 484 · `anneau` 486 · `rectArrondi` 492
 `couleurGl` 506 · `accVide` 523 · `convertitBloc` 524 · `accDe` 538 · `parcoursGl` 545
 `avecTrous` 585 · `formeGl` 606 · `texteGl` 642 · `imageGl` 665 · `partage` 697
-`couchesDeBloc` 702 · `modelesLibellesHtml` 749 · `poseModelesLibelles` 759
-`lisModelesLibelles` 764 · `emplacementWebgl` 793 · `libellesWebgl` 841 · `groupesNoms` 904
-`couchesNoms` 920 · `couchesPastilles` 931 · `couchesLibellesWebgl` 946
-`couchesDessineesWebgl` 953 · `stage` 974 · `brancheSurvolWebgl` 978 · `poseSurvolWebgl` 998
-`poseCurseurWebgl` 1007 · `poseFocusWebgl` 1016 · `aplatsDe` 1023 · `coucheSurvol` 1026
-`coucheFocus` 1035 · `couchesPhare` 1062 · `lueurDe` 1078 · `opacitePhare` 1116
-`echellePhare` 1117 · `couchesPhareNoms` 1120 · `animeCouche` 1134
-`majAnimationWebgl` 1148 · `animeWebgl` 1156 · `objetSous` 1179 · `cibleWebgl` 1186
-`priseWebgl` 1193 · `libelleSousWebgl` 1198 · `rectEcranWebgl` 1203
+`designeGl` 703 · `couchesDeBloc` 705 · `modelesLibellesHtml` 766
+`poseModelesLibelles` 776 · `lisModelesLibelles` 781 · `emplacementWebgl` 810
+`libellesWebgl` 858 · `groupesNoms` 921 · `couchesNoms` 937 · `couchesPastilles` 948
+`couchesLibellesWebgl` 963 · `couchesDessineesWebgl` 970 · `stage` 991
+`brancheSurvolWebgl` 995 · `poseSurvolWebgl` 1015 · `poseCurseurWebgl` 1024
+`poseFocusWebgl` 1033 · `aplatsDe` 1040 · `coucheSurvol` 1043 · `coucheFocus` 1052
+`couchesPhare` 1079 · `lueurDe` 1095 · `opacitePhare` 1133 · `echellePhare` 1134
+`couchesPhareNoms` 1137 · `animeCouche` 1151 · `majAnimationWebgl` 1165 · `animeWebgl` 1173
+`objetSous` 1196 · `cibleWebgl` 1203 · `priseWebgl` 1210 · `libelleSousWebgl` 1215
+`rectEcranWebgl` 1220
 
 ## Dans `web/`, mais que la construction ne produit pas
 
