@@ -2331,6 +2331,22 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
+   plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
+   et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
+   rangée. Le pouce doit l'atteindre — la ligne entière est la commande, pas la
+   seule case. */
+.rapBloc{margin:2px 0 4px;padding:9px 10px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2)}
+.rapBascule{display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink)}
+.rapBascule input{width:16px;height:16px;flex:none;accent-color:var(--accent);cursor:pointer}
+.rapBascule input:disabled{cursor:progress}
+.rapBascule .t{min-width:0}
+.rapAide{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+/* Seule dans son cadre — un iPhone non installé, des notifications refusées —
+   l'explication n'a pas d'intitulé au-dessus d'elle à qui s'aligner. */
+.rapBloc > .rapAide:first-child{margin-top:0}
 /* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
    proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
    disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,
@@ -7426,205 +7442,6 @@ function montreMarque(marque){
 }
 
 /**
- * La marque sans le vide qui l'entoure.
- *
- * Eventmaker range chaque logo dans le carré d'un avatar : un logo en largeur
- * n'y tient qu'une bande au milieu, et la hauteur que la feuille accorde à la
- * marque allait au carré entier. Sur Franchise Expo 2027, ATTILA — 486 pixels
- * de dessin sur 500 de large, 97 de haut — s'affichait en 69 × 13 ; recadré, il
- * prend les 300 × 59 qu'on lui réserve. Un logo sur deux y gagnait au moins le
- * double de surface. Ce n'est pas la finesse qui manque, c'est la place : le
- * dessin tient déjà plus de pixels qu'il n'en occupera.
- *
- * Le vide se reconnaît à la transparence, ou à la couleur unie des quatre
- * coins — trois logos sur quatre de ce salon ont un fond blanc opaque. Un fond
- * qui change d'un coin à l'autre est une image pleine : on n'y touche pas.
- *
- * Lire les pixels demande que la source l'autorise (CORS) ; le dépôt
- * d'Eventmaker le fait. Une source qui refuse renvoie l'adresse telle quelle,
- * et le logo paraît comme avant, avec ses marges — jamais moins.
- *
- * Le résultat est gardé par adresse pour toute la visite : rouvrir une fiche ne
- * refait ni le chargement ni l'analyse. Il n'est pas libéré — une image par
- * logo regardé, quelques kilo-octets quand elle est découpée, les octets reçus
- * quand il n'y avait rien à retirer. C'est ce que le cache du navigateur
- * gardait de toute façon, à ceci près qu'on ne peut plus se le faire reprendre
- * au milieu d'une visite.
- */
-const MARQUES_RECADREES = new Map();
-
-function recadreMarque(src){
-  /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
-     trouver à retirer coûterait le décodage qu'on a justement déplacé. */
-  if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
-  let p = MARQUES_RECADREES.get(src);
-  if (p) return p;
-  // toute panne rend l'adresse d'origine : la fiche montre alors le logo tel quel
-  p = marqueRecadree(src).catch(() => src);
-  MARQUES_RECADREES.set(src, p);
-  return p;
-}
-
-/**
- * Le trajet d'un logo, des octets à l'image que la fiche montre.
- *
- * Les octets, et non une adresse posée sur une image : ils se décodent à la
- * taille où on les veut, et resservent ensuite à tout. Le décodeur ne rend
- * alors que ce qu'on lui demande — l'ancienne voie rasterisait l'avatar entier
- * pour n'en lire qu'une vignette de 256 pixels, quatre-vingts millisecondes de
- * fil principal sur un avatar de 1900, et elles tombaient pile à l'ouverture
- * de la fiche.
- *
- * Ils évitent aussi un second voyage. L'image de la fiche redemandait
- * l'adresse dès qu'il n'y avait rien à recadrer — une requête de plus quand la
- * source ne dit pas de la garder.
- */
-async function marqueRecadree(src){
-  let octets = null;
-  try {
-    /* Sans identité : le dépôt d'un logo n'a rien à savoir du visiteur, et la
-       mesure du plan tient à ne rien laisser fuir qu'on n'ait voulu. */
-    const r = await fetch(src, { mode: "cors", credentials: "omit" });
-    if (r.ok) octets = await r.blob();
-  } catch (e) { /* la source refuse le partage */ }
-  // refusée en CORS, la même adresse sera redemandée sans, par l'image de la fiche
-  if (!octets) return src;
-
-  const adresse = URL.createObjectURL(octets);
-  /* L'image ne sert ici qu'à donner ses dimensions — l'analyse a besoin de
-     savoir dans quel sens réduire — et de recours si le décodeur refuse de
-     découper lui-même. */
-  const im = await imageChargee(adresse);
-  if (!im) return src;
-  const boite = await boiteMarque(octets, im);
-  // rien à retirer : les octets déjà en main valent mieux qu'un second voyage
-  if (!boite) return adresse;
-  const toile = await toileMarque(octets, im, boite);
-  const b = toile && await new Promise(f => toile.toBlob(f, "image/webp"));
-  if (!b) return adresse;
-  // l'original ne sert plus : le garder doublerait la mémoire de chaque logo
-  URL.revokeObjectURL(adresse);
-  return URL.createObjectURL(b);
-}
-
-/** Une image chargée, ou `null` — jamais un rejet, l'appelant n'en ferait rien. */
-const imageChargee = (src) => new Promise(fin => {
-  const im = new Image();
-  im.onload = () => fin(im);
-  im.onerror = () => fin(null);
-  im.src = src;
-});
-
-/**
- * Le décodage à la taille voulue, quand le navigateur le sait faire.
- *
- * `createImageBitmap` accepte une taille de sortie, et les navigateurs qui
- * l'honorent ne décodent jamais l'image en grand. Ceux qui l'ignorent rendent
- * l'original, que le dessin met de toute façon à l'échelle : ils n'y perdent
- * que la vitesse, jamais le résultat. Celui qui refuse tout net rend `null`,
- * et l'appelant retombe sur l'image.
- */
-const vignetteMarque = async (octets, w, h, coupe) => {
-  try {
-    const opts = { resizeWidth: w, resizeHeight: h, resizeQuality: coupe ? "high" : "low" };
-    return coupe
-      ? await createImageBitmap(octets, coupe.x, coupe.y, coupe.w, coupe.h, opts)
-      : await createImageBitmap(octets, opts);
-  } catch (e) { return null; }
-};
-
-/* L'analyse se fait sur une réduction : le cadre d'un logo n'a pas besoin
-   d'être trouvé au pixel près, et un avatar de 1900 pixels de côté coûtait
-   quatorze mégaoctets à parcourir. La découpe, elle, se fait dans l'original,
-   bornée à trois fois la largeur affichée — de quoi rester net sur un écran
-   dense sans garder un original de 4000 pixels en mémoire. */
-const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
-
-/**
- * Le cadre du dessin dans l'image, en pixels de l'original — ou `null` quand
- * il n'y a rien à retirer : un fond non uni, une image vide, des marges trop
- * minces pour valoir une copie.
- */
-async function boiteMarque(octets, im){
-  const w = im.naturalWidth, h = im.naturalHeight;
-  if (!w || !h) return null;
-  const k = Math.min(1, MARQUE_ANALYSE / Math.max(w, h));
-  const aw = Math.max(1, Math.round(w * k)), ah = Math.max(1, Math.round(h * k));
-  const analyse = document.createElement("canvas");
-  analyse.width = aw; analyse.height = ah;
-  const cx = analyse.getContext("2d", { willReadFrequently: true });
-  /* La vignette décodée à sa taille plutôt que l'original réduit au dessin :
-     c'est là que se jouait le quatre-vingts millisecondes. La taille est
-     redite au dessin, pour que le navigateur qui aurait ignoré la demande
-     donne quand même la bonne vignette. */
-  const vue = await vignetteMarque(octets, aw, ah) || im;
-  cx.drawImage(vue, 0, 0, aw, ah);
-  if (vue !== im) vue.close();
-  const d = cx.getImageData(0, 0, aw, ah).data; // lève si la source a refusé
-
-  const px = (x, y) => (y * aw + x) * 4;
-  const coins = [px(0, 0), px(aw - 1, 0), px(0, ah - 1), px(aw - 1, ah - 1)];
-  const transparent = d[coins[0] + 3] < 16;
-  // l'écart toléré couvre le bruit d'un JPEG, pas un dégradé
-  const ecart = (i, j) => Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) +
-                          Math.abs(d[i + 2] - d[j + 2]);
-  const fond = transparent
-    ? i => d[i + 3] < 16
-    : i => d[i + 3] >= 16 && ecart(i, coins[0]) < 48;
-  if (!coins.every(fond)) return null;
-
-  let x0 = aw, y0 = ah, x1 = -1, y1 = -1;
-  for (let y = 0; y < ah; y++){
-    for (let x = 0; x < aw; x++){
-      if (fond(px(x, y))) continue;
-      if (x < x0) x0 = x;
-      if (x > x1) x1 = x;
-      if (y < y0) y0 = y;
-      if (y > y1) y1 = y;
-    }
-  }
-  if (x1 < 0) return null;
-
-  /* Retour à l'original, avec un pixel d'analyse de plus de chaque côté : la
-     réduction a pu fondre dans le fond le bord adouci d'une lettre. */
-  let gx = Math.max(0, Math.floor((x0 - 1) / k)), gy = Math.max(0, Math.floor((y0 - 1) / k));
-  let dx = Math.min(w, Math.ceil((x1 + 2) / k)), dy = Math.min(h, Math.ceil((y1 + 2) / k));
-  /* Un fond opaque garde un liseré : collé au dessin, il en faisait une
-     étiquette découpée aux ciseaux. Un fond transparent n'a pas de bord à
-     montrer. */
-  if (!transparent){
-    const marge = Math.round(0.12 * Math.min(dx - gx, dy - gy));
-    gx = Math.max(0, gx - marge); gy = Math.max(0, gy - marge);
-    dx = Math.min(w, dx + marge); dy = Math.min(h, dy + marge);
-  }
-  const cw = dx - gx, ch = dy - gy;
-  // moins d'un dixième gagné sur chaque côté : la copie ne vaut pas sa peine
-  if (cw > 0.9 * w && ch > 0.9 * h) return null;
-  return { x: gx, y: gy, w: cw, h: ch };
-}
-
-/**
- * La toile qui porte le dessin recadré.
- *
- * Le découpage est demandé au décodeur : il ne rend que la part utile, à la
- * taille où elle s'affichera. Un navigateur qui ne sait pas découper à la
- * volée rend `null`, et l'on redessine depuis l'image — ce que faisait
- * l'ancienne voie, et qui reste juste.
- */
-async function toileMarque(octets, im, b){
-  const r = Math.min(1, MARQUE_SORTIE / Math.max(b.w, b.h));
-  const sortie = document.createElement("canvas");
-  sortie.width = Math.max(1, Math.round(b.w * r));
-  sortie.height = Math.max(1, Math.round(b.h * r));
-  const sx = sortie.getContext("2d");
-  sx.imageSmoothingQuality = "high";
-  const part = await vignetteMarque(octets, sortie.width, sortie.height, b);
-  if (part){ sx.drawImage(part, 0, 0, sortie.width, sortie.height); part.close(); }
-  else sx.drawImage(im, b.x, b.y, b.w, b.h, 0, 0, sortie.width, sortie.height);
-  return sortie;
-}
-
-/**
  * La pastille de situation, et le filigrane que les modèles de fiche lisent
  * sous elle.
  *
@@ -8706,6 +8523,275 @@ $("btnTheme").onclick = () => {
      qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
   appliqueAccent();
 };
+/* ============================================================
+   La marque sans le vide qui l'entoure
+
+   Ce module est partagé par deux écrans qui n'en font pas le même usage : le
+   plan, qui recadre le logo d'une fiche quand aucune vignette n'a encore été
+   fabriquée pour lui, et la console, qui les fabrique toutes une fois pour
+   toutes et les envoie à la base.
+
+   Il vit ici plutôt qu'en double parce que la règle du recadrage doit être la
+   même des deux côtés : une vignette fabriquée autrement que ne l'aurait fait
+   la page changerait de cadrage le jour où elle remplace le logo d'origine.
+
+   Il a d'abord été écrit pour une fonction du serveur, en WebAssembly. La
+   plateforme n'accorde pas assez de temps de calcul à une fonction pour
+   décoder des images : c'est le navigateur de l'exploitant qui s'en charge,
+   une fois par salon, avec la puissance qu'une fonction n'a pas.
+   ============================================================ */
+
+/**
+ * La marque sans le vide qui l'entoure.
+ *
+ * Eventmaker range chaque logo dans le carré d'un avatar : un logo en largeur
+ * n'y tient qu'une bande au milieu, et la hauteur que la feuille accorde à la
+ * marque allait au carré entier. Sur Franchise Expo 2027, ATTILA — 486 pixels
+ * de dessin sur 500 de large, 97 de haut — s'affichait en 69 × 13 ; recadré, il
+ * prend les 300 × 59 qu'on lui réserve. Un logo sur deux y gagnait au moins le
+ * double de surface. Ce n'est pas la finesse qui manque, c'est la place : le
+ * dessin tient déjà plus de pixels qu'il n'en occupera.
+ *
+ * Le vide se reconnaît à la transparence, ou à la couleur unie des quatre
+ * coins — trois logos sur quatre de ce salon ont un fond blanc opaque. Un fond
+ * qui change d'un coin à l'autre est une image pleine : on n'y touche pas.
+ *
+ * Lire les pixels demande que la source l'autorise (CORS) ; le dépôt
+ * d'Eventmaker le fait. Une source qui refuse renvoie l'adresse telle quelle,
+ * et le logo paraît comme avant, avec ses marges — jamais moins.
+ *
+ * Le résultat est gardé par adresse pour toute la visite : rouvrir une fiche ne
+ * refait ni le chargement ni l'analyse. Il n'est pas libéré — une image par
+ * logo regardé, quelques kilo-octets quand elle est découpée, les octets reçus
+ * quand il n'y avait rien à retirer. C'est ce que le cache du navigateur
+ * gardait de toute façon, à ceci près qu'on ne peut plus se le faire reprendre
+ * au milieu d'une visite.
+ */
+const MARQUES_RECADREES = new Map();
+
+function recadreMarque(src){
+  /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
+     trouver à retirer coûterait le décodage qu'on a justement déplacé. */
+  if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
+  let p = MARQUES_RECADREES.get(src);
+  if (p) return p;
+  // toute panne rend l'adresse d'origine : la fiche montre alors le logo tel quel
+  p = marqueRecadree(src).catch(() => src);
+  MARQUES_RECADREES.set(src, p);
+  return p;
+}
+
+/**
+ * Le trajet d'un logo, des octets à l'image que la fiche montre.
+ *
+ * Les octets, et non une adresse posée sur une image : ils se décodent à la
+ * taille où on les veut, et resservent ensuite à tout. Le décodeur ne rend
+ * alors que ce qu'on lui demande — l'ancienne voie rasterisait l'avatar entier
+ * pour n'en lire qu'une vignette de 256 pixels, quatre-vingts millisecondes de
+ * fil principal sur un avatar de 1900, et elles tombaient pile à l'ouverture
+ * de la fiche.
+ *
+ * Ils évitent aussi un second voyage. L'image de la fiche redemandait
+ * l'adresse dès qu'il n'y avait rien à recadrer — une requête de plus quand la
+ * source ne dit pas de la garder.
+ */
+async function marqueRecadree(src){
+  let octets = null;
+  try {
+    /* Sans identité : le dépôt d'un logo n'a rien à savoir du visiteur, et la
+       mesure du plan tient à ne rien laisser fuir qu'on n'ait voulu. */
+    const r = await fetch(src, { mode: "cors", credentials: "omit" });
+    if (r.ok) octets = await r.blob();
+  } catch (e) { /* la source refuse le partage */ }
+  // refusée en CORS, la même adresse sera redemandée sans, par l'image de la fiche
+  if (!octets) return src;
+
+  const adresse = URL.createObjectURL(octets);
+  /* L'image ne sert ici qu'à donner ses dimensions — l'analyse a besoin de
+     savoir dans quel sens réduire — et de recours si le décodeur refuse de
+     découper lui-même. */
+  const im = await imageChargee(adresse);
+  if (!im) return src;
+  const boite = await boiteMarque(octets, im);
+  // rien à retirer : les octets déjà en main valent mieux qu'un second voyage
+  if (!boite) return adresse;
+  const toile = await toileMarque(octets, im, boite);
+  const b = toile && await new Promise(f => toile.toBlob(f, "image/webp"));
+  if (!b) return adresse;
+  // l'original ne sert plus : le garder doublerait la mémoire de chaque logo
+  URL.revokeObjectURL(adresse);
+  return URL.createObjectURL(b);
+}
+
+/** Une image chargée, ou `null` — jamais un rejet, l'appelant n'en ferait rien. */
+const imageChargee = (src) => new Promise(fin => {
+  const im = new Image();
+  im.onload = () => fin(im);
+  im.onerror = () => fin(null);
+  im.src = src;
+});
+
+/**
+ * Le décodage à la taille voulue, quand le navigateur le sait faire.
+ *
+ * `createImageBitmap` accepte une taille de sortie, et les navigateurs qui
+ * l'honorent ne décodent jamais l'image en grand. Ceux qui l'ignorent rendent
+ * l'original, que le dessin met de toute façon à l'échelle : ils n'y perdent
+ * que la vitesse, jamais le résultat. Celui qui refuse tout net rend `null`,
+ * et l'appelant retombe sur l'image.
+ */
+const vignetteMarque = async (octets, w, h, coupe) => {
+  try {
+    const opts = { resizeWidth: w, resizeHeight: h, resizeQuality: coupe ? "high" : "low" };
+    return coupe
+      ? await createImageBitmap(octets, coupe.x, coupe.y, coupe.w, coupe.h, opts)
+      : await createImageBitmap(octets, opts);
+  } catch (e) { return null; }
+};
+
+/* L'analyse se fait sur une réduction : le cadre d'un logo n'a pas besoin
+   d'être trouvé au pixel près, et un avatar de 1900 pixels de côté coûtait
+   quatorze mégaoctets à parcourir. La découpe, elle, se fait dans l'original,
+   bornée à trois fois la largeur affichée — de quoi rester net sur un écran
+   dense sans garder un original de 4000 pixels en mémoire. */
+const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
+/* La vignette qu'on fabrique une fois pour toutes vise plus serré que le
+   recadrage de secours : elle sera servie telle quelle à tous les visiteurs,
+   et la fiche ne lui accorde que trois cents pixels sur soixante-douze. Six
+   cents couvrent un écran dense sans peser trois kilo-octets de plus. */
+const VIGNETTE_SORTIE = 600;
+
+/**
+ * Le cadre du dessin dans l'image, en pixels de l'original — ou `null` quand
+ * il n'y a rien à retirer : un fond non uni, une image vide, des marges trop
+ * minces pour valoir une copie.
+ */
+async function boiteMarque(octets, im){
+  const w = im.naturalWidth, h = im.naturalHeight;
+  if (!w || !h) return null;
+  const k = Math.min(1, MARQUE_ANALYSE / Math.max(w, h));
+  const aw = Math.max(1, Math.round(w * k)), ah = Math.max(1, Math.round(h * k));
+  const analyse = document.createElement("canvas");
+  analyse.width = aw; analyse.height = ah;
+  const cx = analyse.getContext("2d", { willReadFrequently: true });
+  /* La vignette décodée à sa taille plutôt que l'original réduit au dessin :
+     c'est là que se jouait le quatre-vingts millisecondes. La taille est
+     redite au dessin, pour que le navigateur qui aurait ignoré la demande
+     donne quand même la bonne vignette. */
+  const vue = await vignetteMarque(octets, aw, ah) || im;
+  cx.drawImage(vue, 0, 0, aw, ah);
+  if (vue !== im) vue.close();
+  const d = cx.getImageData(0, 0, aw, ah).data; // lève si la source a refusé
+
+  const px = (x, y) => (y * aw + x) * 4;
+  const coins = [px(0, 0), px(aw - 1, 0), px(0, ah - 1), px(aw - 1, ah - 1)];
+  const transparent = d[coins[0] + 3] < 16;
+  // l'écart toléré couvre le bruit d'un JPEG, pas un dégradé
+  const ecart = (i, j) => Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) +
+                          Math.abs(d[i + 2] - d[j + 2]);
+  const fond = transparent
+    ? i => d[i + 3] < 16
+    : i => d[i + 3] >= 16 && ecart(i, coins[0]) < 48;
+  if (!coins.every(fond)) return null;
+
+  let x0 = aw, y0 = ah, x1 = -1, y1 = -1;
+  for (let y = 0; y < ah; y++){
+    for (let x = 0; x < aw; x++){
+      if (fond(px(x, y))) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+
+  /* Retour à l'original, avec un pixel d'analyse de plus de chaque côté : la
+     réduction a pu fondre dans le fond le bord adouci d'une lettre. */
+  let gx = Math.max(0, Math.floor((x0 - 1) / k)), gy = Math.max(0, Math.floor((y0 - 1) / k));
+  let dx = Math.min(w, Math.ceil((x1 + 2) / k)), dy = Math.min(h, Math.ceil((y1 + 2) / k));
+  /* Un fond opaque garde un liseré : collé au dessin, il en faisait une
+     étiquette découpée aux ciseaux. Un fond transparent n'a pas de bord à
+     montrer. */
+  if (!transparent){
+    const marge = Math.round(0.12 * Math.min(dx - gx, dy - gy));
+    gx = Math.max(0, gx - marge); gy = Math.max(0, gy - marge);
+    dx = Math.min(w, dx + marge); dy = Math.min(h, dy + marge);
+  }
+  const cw = dx - gx, ch = dy - gy;
+  // moins d'un dixième gagné sur chaque côté : la copie ne vaut pas sa peine
+  if (cw > 0.9 * w && ch > 0.9 * h) return null;
+  return { x: gx, y: gy, w: cw, h: ch };
+}
+
+/**
+ * La toile qui porte le dessin recadré.
+ *
+ * Le découpage est demandé au décodeur : il ne rend que la part utile, à la
+ * taille où elle s'affichera. Un navigateur qui ne sait pas découper à la
+ * volée rend `null`, et l'on redessine depuis l'image — ce que faisait
+ * l'ancienne voie, et qui reste juste.
+ */
+async function toileMarque(octets, im, b, cote){
+  const r = Math.min(1, (cote || MARQUE_SORTIE) / Math.max(b.w, b.h));
+  const sortie = document.createElement("canvas");
+  sortie.width = Math.max(1, Math.round(b.w * r));
+  sortie.height = Math.max(1, Math.round(b.h * r));
+  const sx = sortie.getContext("2d");
+  sx.imageSmoothingQuality = "high";
+  const part = await vignetteMarque(octets, sortie.width, sortie.height, b);
+  if (part){ sx.drawImage(part, 0, 0, sortie.width, sortie.height); part.close(); }
+  else sx.drawImage(im, b.x, b.y, b.w, b.h, 0, 0, sortie.width, sortie.height);
+  return sortie;
+}
+
+
+/**
+ * La vignette d'un logo, telle que la console l'envoie à la base.
+ *
+ * Le même recadrage que pour une fiche, mais rendu en octets plutôt qu'en
+ * adresse : c'est le producteur, quand `recadreMarque` est le consommateur.
+ *
+ * `null` quand la source ne rend rien d'utilisable — injoignable, partage
+ * refusé, format qu'on ne sait pas lire. Ce n'est pas une panne : le logo se
+ * chargera chez sa source, comme il l'a toujours fait.
+ */
+async function vignetteDeLogo(source){
+  let octets = null;
+  try {
+    const r = await fetch(source, { mode: "cors", credentials: "omit" });
+    if (r.ok) octets = await r.blob();
+  } catch (e) { /* la source refuse le partage */ }
+  if (!octets) return null;
+
+  const adresse = URL.createObjectURL(octets);
+  try {
+    const im = await imageChargee(adresse);
+    if (!im || !im.naturalWidth) return null;
+    const boite = await boiteMarque(octets, im);
+    /* Rien à retirer : on recadre quand même au format de sortie, pour que ce
+       qui part en base soit toujours une vignette et jamais l'original —
+       c'est tout l'intérêt de la fabriquer. */
+    const toile = await toileMarque(octets, im,
+      boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight },
+      VIGNETTE_SORTIE);
+    if (!toile) return null;
+    const b = await new Promise(f => toile.toBlob(f, "image/webp"));
+    if (!b) return null;
+    const tampon = new Uint8Array(await b.arrayBuffer());
+    /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
+       et une image entière en dépasserait la limite. */
+    let brut = "";
+    for (let i = 0; i < tampon.length; i += 8192){
+      brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
+    }
+    return { source, image: btoa(brut), largeur: toile.width, hauteur: toile.height };
+  } catch (e) {
+    return null;
+  } finally {
+    URL.revokeObjectURL(adresse);
+  }
+}
 
 /* ============================================================
    9. Apparence des calques
@@ -10249,7 +10335,62 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
+  blocRappel(hote);
   blocHoraires(hote);
+}
+
+/**
+ * Le rappel avant une conférence.
+ *
+ * Deux commandes, parce que ce sont deux décisions : offrir la chose, et à
+ * quelle avance. Un salon qui n'a pas de programme n'a rien à rappeler ; un
+ * salon tenu dans un hall de cinq cents mètres ne prévient pas à la même
+ * minute qu'un salon de trois allées.
+ *
+ * L'aide dit ce que le visiteur devra accepter, et ce que certains n'auront
+ * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
+ * ici ne marchera pas pour tout le monde, et une promesse faite sur la
+ * plaquette du salon se retournerait contre lui.
+ */
+function blocRappel(hote){
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Rappeler les conférences retenues";
+  const c = l.querySelector("input");
+  c.checked = rappelsVoulus();
+  hote.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Le visiteur qui a retenu une conférence peut demander à " +
+    "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
+    "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
+    "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
+    "la conférence.";
+  hote.appendChild(aide);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + RAPPEL_MIN + '" max="' + RAPPEL_MAX + '" step="5">' +
+    '<span class="u">min</span></label>';
+  duree.querySelector(".l").textContent = "Prévenir avant le début";
+  const n = duree.querySelector("input");
+  n.value = minutesRappel();
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= RAPPEL_MIN && v <= RAPPEL_MAX){ reglageRappel().minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesRappel(); };
+  hote.appendChild(duree);
+
+  const suit = () => {
+    const actif = rappelsVoulus();
+    duree.hidden = !actif;
+    n.value = minutesRappel();
+  };
+  c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
+  suit();
 }
 
 /**
@@ -17193,11 +17334,19 @@ function chargeParcours(){
   PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
   PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
   rafraichitParcours();
+  /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
+     la liste relue : ils ne portent que sur des conférences qu'elle contient
+     encore. */
+  reprendRappels();
 }
 
 function enregistreParcours(){
   // navigation privée, stockage plein : la visite continue sans le parcours
   try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+  /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
+     elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
+     se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
+  synchroniseRappels();
 }
 
 /**
@@ -17601,6 +17750,11 @@ function remplitParcours(){
      le reste de la journée se range. */
   if (confs.length){
     const g = groupeParcours(hote, "Conférences");
+    /* L'interrupteur du rappel se pose en tête du groupe qu'il concerne, et
+       nulle part ailleurs : il ne veut rien dire pour un parcours qui n'a que
+       des stands, et le proposer en tête du tiroir l'aurait fait lire comme un
+       réglage du parcours entier. */
+    poseRappels(g);
     let jour = null;
     confs.forEach(c => {
       const d = instantConf(c);
@@ -18325,6 +18479,397 @@ function adoptePartage(stands, confs, remplace){
 }
 
 $("btnPartage").onclick = ouvrePartageParcours;
+/* ============================================================
+   11 sexies. Le rappel avant une conférence
+   ============================================================ */
+/**
+ * Le visiteur retient trois conférences le matin, puis passe sa journée dans
+ * les allées. À quinze heures moins le quart il est à l'autre bout du hall, le
+ * téléphone dans la poche, et la conférence qu'il avait notée commence sans
+ * lui. Le parcours savait l'heure ; personne ne la lui a rappelée.
+ *
+ * Ce module est la moitié visible du réveil. L'autre moitié est un serveur, et
+ * il faut dire pourquoi, parce que ce n'était pas le choix qu'on aurait voulu
+ * faire : une page n'a aucun moyen de se réveiller elle-même. Ses minuteries
+ * meurent avec l'onglet — gelé en quelques secondes dès qu'il passe en
+ * arrière-plan sur un téléphone — le service de second plan est arrêté après
+ * quelques secondes d'inactivité, et l'API qui aurait comblé ce manque
+ * (*Notification Triggers*) n'a jamais quitté l'essai d'origine de Chrome. Un
+ * rappel « local » ne serait donc parti qu'avec le plan ouvert sous les yeux,
+ * c'est-à-dire au moment précis où il ne sert à rien.
+ *
+ * D'où la contrepartie, que le tiroir dit maintenant en toutes lettres : ce qui
+ * est rappelé quitte l'appareil. Pas la liste — les stands retenus restent où
+ * ils sont, et les conférences non plus ne partent pas d'elles-mêmes. Il faut
+ * deux gestes : toucher l'interrupteur, puis accorder au navigateur
+ * l'autorisation qu'il demande. Ce qui part alors est un abonnement — une
+ * adresse opaque que le navigateur vient de tirer —, une heure, et la phrase à
+ * afficher, déjà écrite.
+ *
+ * Déjà écrite, et c'est le point : la notification est composée ici, dans la
+ * langue que le visiteur lisait, avec le nom que la conférence portait alors.
+ * Le serveur la chiffre et la poste sans la relire, et le service de poussée du
+ * navigateur ne peut pas la lire du tout.
+ *
+ * Ce qui ne marchera pas, et qu'il vaut mieux savoir. Sur iPhone, le Web Push
+ * n'existe que pour un plan ajouté à l'écran d'accueil : dans un onglet Safari,
+ * dans Chrome iOS, dans le navigateur intégré de LinkedIn ou d'Instagram, il
+ * n'y a pas de `PushManager` du tout — l'interrupteur ne se montre alors pas,
+ * et une ligne dit ce qu'il faudrait faire. Sur Android, les notifications de
+ * Chrome lui-même peuvent être coupées au niveau du système, et les gestionnaires
+ * de batterie de certains constructeurs retardent le réveil. Enfin un mode de
+ * concentration retient le rappel sans que la page puisse rien y faire : le web
+ * ne dispose pas du niveau d'interruption qu'une application native réclame.
+ * Les horaires restent donc lisibles dans le tiroir, pour tous.
+ */
+
+/* ------------------------------------------------------------
+   Le réglage du salon
+   ------------------------------------------------------------ */
+/**
+ * Un quart d'heure par défaut : le temps de finir une conversation sur un stand
+ * et de traverser un hall. Trop court, le visiteur est prévenu alors qu'il ne
+ * peut plus y être ; trop long, il oublie entre le rappel et la conférence.
+ * Cela dépend de la taille du lieu, ce qui ne se devine pas depuis le plan —
+ * d'où le réglage, à côté du temps de visite par stand.
+ */
+const RAPPEL_DEFAUT = 15;      // minutes
+const RAPPEL_MIN = 2, RAPPEL_MAX = 120;
+const reglageRappel = () => conf("_rappel");
+const rappelsVoulus = () => reglageRappel().actif === true;
+function minutesRappel(){
+  const v = Math.round(+reglageRappel().minutes);
+  return v >= RAPPEL_MIN && v <= RAPPEL_MAX ? v : RAPPEL_DEFAUT;
+}
+
+/* ------------------------------------------------------------
+   Ce que l'appareil sait faire
+   ------------------------------------------------------------ */
+const RAPPELS_API = API ? API.replace(/[^/]*$/, "rappels") : "";
+
+/** Le consentement se retient ici, à côté du parcours qu'il accompagne.
+ *  L'autorisation du navigateur ne suffit pas à le dire : elle a pu être
+ *  accordée pour ce salon-ci et l'interrupteur éteint depuis. */
+const cleRappels = () => "plan-rappels:" + (SLUG || (DATA && DATA.evenement) || "");
+let RAPPELS_ACTIFS = false;
+
+function chargeRappels(){
+  try { RAPPELS_ACTIFS = localStorage.getItem(cleRappels()) === "1"; }
+  catch (e) { RAPPELS_ACTIFS = false; }
+}
+function retientRappels(){
+  try {
+    if (RAPPELS_ACTIFS) localStorage.setItem(cleRappels(), "1");
+    else localStorage.removeItem(cleRappels());
+  } catch (e) {}
+}
+
+/** L'appareil peut-il recevoir un rappel ? Trois objets doivent exister, et
+ *  leur absence est la façon dont un iPhone non installé se signale. */
+const poussePossible = () => !!(
+  "serviceWorker" in navigator && "PushManager" in window && "Notification" in window);
+
+/** Le rappel a-t-il lieu d'être proposé ici ? La page à données figées n'a pas
+ *  d'API, l'administration n'a pas de visiteur, et l'exploitant peut ne pas
+ *  vouloir de la commande. */
+const rappelsOfferts = () => !!(
+  RAPPELS_API && SLUG && rappelsVoulus() && !BORNE &&
+  document.documentElement.dataset.role !== "admin");
+
+/** Un plan ouvert dans un onglet iOS : le seul cas où l'absence de `PushManager`
+ *  se répare, et où dire comment vaut mieux que se taire. */
+const iOSsansInstallation = () => !poussePossible() &&
+  /iP(hone|od|ad)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document &&
+  supportMesure() === "web";
+
+/* ------------------------------------------------------------
+   L'instant d'une conférence
+   ------------------------------------------------------------ */
+/**
+ * L'heure absolue, alors que tout le reste de la page raisonne en heure locale
+ * du salon.
+ *
+ * Il le faut : une minuterie se pose sur un instant, pas sur un cadran.
+ *
+ * On part de l'heure que la page affiche, et non de la forme ISO que les
+ * données portent parfois à côté. C'est délibéré : le tiroir annonce « 14h30 »,
+ * et un rappel calculé sur une autre source tomberait à une autre minute le
+ * jour où les deux se contrediraient — un programme ressaisi à la main, un
+ * décalage mal posé à la source. Ce qui est promis est ce qui est écrit.
+ *
+ * Reste à savoir ce que le fuseau du salon valait *ce jour-là*, changement
+ * d'heure compris. D'où l'aller-retour : on suppose l'heure murale exprimée en
+ * UTC, on regarde ce que le fuseau en aurait affiché, et on corrige de l'écart.
+ * Deux tours, parce que la correction peut elle-même franchir le changement
+ * d'heure — un dimanche de mars à deux heures et demie du matin.
+ *
+ * Un fuseau que le navigateur ne connaît pas ne donne pas d'instant du tout, et
+ * la conférence ne se rappelle pas : c'est la règle que `momentLocal` applique
+ * déjà en refusant d'afficher une heure plutôt que d'en afficher une fausse.
+ */
+function instantAbsolu(c){
+  const p = instantConf(c);
+  if (!p) return NaN;
+  const mural = Date.UTC(p.an, p.mois - 1, p.jour, +p.h, +p.min);
+  let t = mural;
+  for (let i = 0; i < 2; i++){
+    const lu = momentLocal(new Date(t).toISOString(), DATA.fuseau);
+    if (!lu) return NaN;
+    t = mural - (Date.UTC(lu.an, lu.mois - 1, lu.jour, +lu.h, +lu.min) - t);
+  }
+  return t;
+}
+
+/** Les conférences retenues qui n'ont pas encore commencé. Le reste du tiroir
+ *  les montre toutes — on ne retire pas de sa liste ce qu'on vient de voir —
+ *  mais il n'y a rien à rappeler d'une conférence commencée. */
+function confsARappeler(){
+  const maintenant = Date.now();
+  return PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ c: c, t: instantAbsolu(c) }))
+    .filter(r => !isNaN(r.t) && r.t > maintenant);
+}
+
+/**
+ * Ce qu'on demande au serveur de garder, et rien de plus.
+ *
+ * Un rappel dont l'heure est déjà passée ne part pas : le visiteur a pu poser
+ * son interrupteur dix minutes avant une conférence qu'il a de toute façon
+ * sous les yeux. La durée de vie du message vaut le délai lui-même — passé ce
+ * point, un téléphone rallumé annoncerait une conférence commencée, et mieux
+ * vaut que le message soit jeté que délivré.
+ */
+function rappelsDuParcours(){
+  const n = minutesRappel(), avant = n * 60000, maintenant = Date.now();
+  return confsARappeler()
+    .filter(r => r.t - avant > maintenant)
+    .map(r => {
+      const d = instantConf(r.c);
+      const detail = [traduit("Dans " + n + " min"),
+                      d ? d.h + "h" + d.min : "",
+                      r.c.salle || ""].filter(Boolean).join(" · ");
+      return {
+        conf: String(r.c.id),
+        envoi_a: new Date(r.t - avant).toISOString(),
+        titre: r.c.nom || traduit("Conférence"),
+        corps: detail,
+        adresse: adresseDuRappel(r.c.id),
+        vie: n * 60,
+      };
+    });
+}
+
+/** Où mène la notification : cette page, ce salon, cette conférence. L'adresse
+ *  est absolue — le service de second plan l'ouvrira sans contexte. */
+function adresseDuRappel(id){
+  const u = new URL(location.href);
+  u.hash = "";
+  u.searchParams.set("conf", id);
+  return u.href;
+}
+
+/* ------------------------------------------------------------
+   S'abonner, et se tenir à jour
+   ------------------------------------------------------------ */
+/** La clé publique du serveur, sous la forme d'octets : Safari n'accepte pas
+ *  la chaîne base64url que Chrome tolère. */
+function octetsDeCle(b64){
+  const net = String(b64).replace(/-/g, "+").replace(/_/g, "/");
+  const brut = atob(net + "=".repeat((4 - net.length % 4) % 4));
+  const o = new Uint8Array(brut.length);
+  for (let i = 0; i < brut.length; i++) o[i] = brut.charCodeAt(i);
+  return o;
+}
+
+async function abonnementCourant(){
+  const reg = await navigator.serviceWorker.getRegistration();
+  return reg ? await reg.pushManager.getSubscription() : null;
+}
+
+async function abonne(){
+  const reg = await navigator.serviceWorker.ready;
+  const deja = await reg.pushManager.getSubscription();
+  if (deja) return deja;
+  const r = await fetch(RAPPELS_API + "/cle");
+  if (!r.ok) throw new Error("clé indisponible");
+  const cle = (await r.json()).cle;
+  if (!cle) throw new Error("clé absente");
+  /* `userVisibleOnly` n'est pas négociable : le navigateur n'accorde le Web
+     Push qu'à qui s'engage à montrer chaque message reçu. Cela tombe bien —
+     c'est exactement ce qu'on veut en faire. */
+  return await reg.pushManager.subscribe({
+    userVisibleOnly: true, applicationServerKey: octetsDeCle(cle) });
+}
+
+let _syncRappels = null;
+
+/**
+ * Renvoyer la liste entière plutôt que ce qui a changé.
+ *
+ * C'est la même idée que le tiroir, qui se relit en entier à chaque affichage :
+ * une conférence retirée disparaît d'elle-même, et il n'y a pas de geste à ne
+ * pas manquer. L'envoi est différé de quelques instants parce qu'il suit le
+ * rafraîchissement du parcours, qui peut se produire trois fois de suite pour
+ * un seul geste.
+ */
+function synchroniseRappels(){
+  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
+  clearTimeout(_syncRappels);
+  _syncRappels = setTimeout(async () => {
+    try {
+      const ab = await abonnementCourant();
+      if (!ab) return;
+      await fetch(RAPPELS_API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: SLUG, abonnement: ab.toJSON(), rappels: rappelsDuParcours() }),
+      });
+    } catch (e) {
+      /* Une panne réseau ne se dit pas : le visiteur n'y peut rien, et ce qu'il
+         a demandé reste demandé — la prochaine ouverture du plan renverra la
+         liste. Le pire cas est un rappel qui ne part pas, pas une visite gâchée. */
+    }
+  }, 400);
+}
+
+/** Éteindre : l'abonnement est rendu au navigateur, et le serveur oublie ce
+ *  qu'il gardait. Dans cet ordre — un abonnement rendu avant l'effacement
+ *  laisserait des rangs qu'on ne saurait plus nommer. */
+async function eteintRappels(){
+  const ab = await abonnementCourant().catch(() => null);
+  if (ab){
+    try {
+      await fetch(RAPPELS_API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: SLUG, abonnement: ab.toJSON(), rappels: [] }),
+      });
+    } catch (e) {}
+    try { await ab.unsubscribe(); } catch (e) {}
+  }
+  RAPPELS_ACTIFS = false;
+  retientRappels();
+}
+
+async function allumeRappels(){
+  /* La demande doit suivre le geste sans rien attendre entre les deux : un
+     `await` placé avant ferait perdre au navigateur le lien entre l'appui et
+     la question, et Safari refuse alors d'afficher quoi que ce soit. */
+  const reponse = await Notification.requestPermission();
+  if (reponse !== "granted") return false;
+  await abonne();
+  RAPPELS_ACTIFS = true;
+  retientRappels();
+  synchroniseRappels();
+  return true;
+}
+
+/* ------------------------------------------------------------
+   L'interrupteur, au pied des conférences retenues
+   ------------------------------------------------------------ */
+/** Une ligne d'explication, du même gris que le reste du tiroir. */
+function aideRappel(hote, texte){
+  const p = document.createElement("p");
+  p.className = "rapAide";
+  p.textContent = texte;
+  hote.appendChild(p);
+  return p;
+}
+
+/**
+ * Ce que le tiroir montre, selon ce que l'appareil permet.
+ *
+ * Quatre états, et un seul porte un interrupteur. Un interrupteur mort — grisé,
+ * inerte — en dirait moins qu'une phrase : le visiteur d'un iPhone non installé
+ * a quelque chose à faire, celui qui a refusé les notifications a un réglage à
+ * rouvrir, et ni l'un ni l'autre ne se lit dans une case qui ne bouge pas.
+ */
+function poseRappels(hote){
+  if (!rappelsOfferts()) return;
+  if (!confsARappeler().length) return;
+
+  const bloc = document.createElement("div");
+  bloc.className = "rapBloc";
+
+  if (iOSsansInstallation()){
+    aideRappel(bloc, "Pour être prévenu avant vos conférences, ajoutez le plan " +
+      "à votre écran d'accueil : sur iPhone, les notifications n'existent que là.");
+    hote.appendChild(bloc);
+    return;
+  }
+  if (!poussePossible()) return;   // ni rappel ni remède : rien à dire
+
+  if (Notification.permission === "denied"){
+    aideRappel(bloc, "Les notifications sont bloquées pour ce site. Vous pouvez " +
+      "les réautoriser dans les réglages de votre navigateur.");
+    hote.appendChild(bloc);
+    return;
+  }
+
+  const n = minutesRappel();
+  const l = document.createElement("label");
+  l.className = "rapBascule";
+  l.innerHTML = '<input type="checkbox"><span class="t"></span>';
+  l.querySelector(".t").textContent = "Me prévenir " + n + " min avant";
+  const case_ = l.querySelector("input");
+  case_.checked = RAPPELS_ACTIFS;
+  bloc.appendChild(l);
+
+  const aide = aideRappel(bloc, RAPPELS_ACTIFS
+    ? "Une notification par conférence retenue, même plan fermé."
+    : "Une notification par conférence retenue, même plan fermé. Les heures " +
+      "et les titres retenus partent alors sur nos serveurs, et s'effacent " +
+      "après le salon.");
+
+  case_.onchange = async () => {
+    case_.disabled = true;
+    try {
+      if (case_.checked){
+        const ok = await allumeRappels();
+        if (!ok){
+          case_.checked = false;
+          aide.textContent = Notification.permission === "denied"
+            ? "Les notifications sont bloquées pour ce site. Vous pouvez les " +
+              "réautoriser dans les réglages de votre navigateur."
+            : "Les notifications n'ont pas été autorisées.";
+        } else {
+          aide.textContent = "Une notification par conférence retenue, même plan fermé.";
+        }
+      } else {
+        await eteintRappels();
+        aide.textContent = "Une notification par conférence retenue, même plan fermé. " +
+          "Les heures et les titres retenus partent alors sur nos serveurs, et " +
+          "s'effacent après le salon.";
+      }
+    } catch (e) {
+      case_.checked = false;
+      aide.textContent = "Le rappel n'a pas pu être posé. Réessayez dans un instant.";
+    }
+    case_.disabled = false;
+  };
+
+  hote.appendChild(bloc);
+}
+
+/**
+ * Au démarrage : reprendre ce qui avait été demandé.
+ *
+ * L'abonnement peut avoir été renouvelé par le navigateur entre deux visites,
+ * ou perdu — des données de site effacées, une icône retirée puis remise. On
+ * refait donc le tour plutôt que de faire confiance à ce qu'on avait retenu, et
+ * la liste repart avec, à jour des conférences ajoutées depuis.
+ */
+async function reprendRappels(){
+  chargeRappels();
+  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
+  if (Notification.permission !== "granted"){
+    // l'autorisation a été retirée depuis : l'interrupteur ne ment pas
+    RAPPELS_ACTIFS = false;
+    retientRappels();
+    return;
+  }
+  try { await abonne(); } catch (e) { return; }
+  synchroniseRappels();
+}
 /* ============================================================
    11 ter. Itinéraire — d'un point du salon à un autre
    ============================================================ */
@@ -28731,6 +29276,11 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* Un rappel touché sur l'écran de veille ouvre la page sur sa conférence :
+     c'est la seule raison pour laquelle elle vient de s'ouvrir, et la fiche est
+     ce que le visiteur venait y lire. */
+  const rc = new URLSearchParams(location.search).get("conf");
+  if (rc && CONFS.has(String(rc))) setTimeout(() => ficheConf(rc, "lien"), 80);
   /* La visite guidée passe après tout cela, et attend son tour : un lien vers
      un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
      propose que si rien d'autre n'a pris la place entre-temps. */

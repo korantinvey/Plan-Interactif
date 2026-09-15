@@ -36,7 +36,7 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "07e507260e93";
+const VERSION = "dbba399f18bc";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 
@@ -205,4 +205,68 @@ self.addEventListener("fetch", (e) => {
         : dabordReseau(e, requete));
   }
   // une autre origine n'est rien que le plan demande : elle passe sans lui
+});
+
+/* ------------------------------------------------------------
+   Les rappels de conférence
+   ------------------------------------------------------------ */
+/**
+ * Ce module est la seule chose qui tourne encore quand le plan est fermé — et
+ * c'est pour cela que le rappel passe par lui. Le serveur tient l'heure et
+ * poste le message ; le navigateur réveille ce service le temps de l'afficher,
+ * puis l'arrête aussitôt. Rien n'attend ici entre deux réveils : une minuterie
+ * posée dans ce fichier ne survivrait pas plus que dans la page.
+ *
+ * Le texte arrive tout écrit. Ce n'est pas de la paresse : il a été composé par
+ * la page au moment où le visiteur a posé son rappel, donc dans la langue qu'il
+ * lisait, et avec le nom que la conférence portait alors. Ce service ne sait ni
+ * lire le programme, ni traduire, et n'a pas à l'apprendre.
+ */
+self.addEventListener("push", (e) => {
+  /* Une charge illisible n'est pas une raison de ne rien montrer : le
+     navigateur exige qu'un message reçu se voie — faute de quoi il affiche
+     lui-même « ce site a été mis à jour en arrière-plan », ce qui n'apprend
+     rien à personne. */
+  let m = {};
+  try { m = (e.data && e.data.json()) || {}; } catch (err) {}
+  const titre = m.titre || "Conférence à venir";
+  e.waitUntil(self.registration.showNotification(titre, {
+    body: m.corps || "",
+    icon: "icone-192.png",
+    badge: "icone-onglet.svg",
+    lang: m.langue || "fr",
+    /* Une conférence ne se rappelle qu'une fois : si deux messages se
+       croisaient — une reprise du service de poussée, un envoi rejoué — le
+       second remplacerait le premier au lieu de s'empiler sous lui. */
+    tag: "conf:" + (m.conf || titre),
+    renotify: true,
+    /* Le rappel vaut pour un instant précis. Le laisser vibrer sans qu'on l'ait
+       demandé, alors que le visiteur est peut-être déjà dans la salle, n'aurait
+       rien ajouté ; mais il doit rester à l'écran jusqu'à ce qu'on le voie. */
+    requireInteraction: true,
+    data: { adresse: m.adresse || "./" },
+  }));
+});
+
+/**
+ * Toucher la notification ouvre le plan sur la conférence.
+ *
+ * Un onglet déjà ouvert est repris plutôt que doublé — un visiteur qui avait le
+ * plan sous la main ne veut pas s'en retrouver deux. `navigate` le mène au bon
+ * endroit ; si le navigateur le refuse, la fenêtre reprise vaut mieux qu'une
+ * nouvelle, et le plan y est déjà.
+ */
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const adresse = (e.notification.data && e.notification.data.adresse) || "./";
+  e.waitUntil((async () => {
+    const cible = new URL(adresse, self.location.origin);
+    const ouverts = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const c of ouverts) {
+      if (new URL(c.url).pathname !== cible.pathname) continue;
+      try { await c.navigate(cible.href); } catch (err) {}
+      return c.focus();
+    }
+    return self.clients.openWindow(cible.href);
+  })());
 });
