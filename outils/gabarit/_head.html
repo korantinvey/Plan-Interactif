@@ -332,7 +332,11 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    recouvrait le plan au lieu de se glisser dessous. */
 .stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
   position:relative;z-index:1}
-.stage svg.dragging{cursor:grabbing}
+/* Le curseur de la main qui tient le plan est posé en style en ligne, et non
+   par une classe : « cursor » s'hérite, et une règle qui en dépend fait
+   remettre en cause le style des sept mille nœuds du plan — cent cinquante
+   millisecondes, à chaque doigt posé et à chaque doigt levé. La même valeur
+   écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */

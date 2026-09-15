@@ -3582,7 +3582,7 @@ function commencePince(){
             view.y + (m.y - r.top) / r.height * view.h],
   };
   drag = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
 }
 
 function suitPince(){
@@ -3600,6 +3600,29 @@ function suitPince(){
   };
   rafraichitVue();
 }
+
+/**
+ * La main qui tient le plan, ou qui le lâche.
+ *
+ * Le curseur ne change que pour une souris, parce qu'il s'hérite : le poser
+ * sur le plan remet en cause le style de ses sept mille nœuds — cent cinquante
+ * millisecondes, au doigt posé, puis autant au doigt levé. Sur un écran
+ * tactile, ces trois cents millisecondes étaient dépensées pour un curseur que
+ * personne ne voit ; elles retardaient tout le reste, et la fiche du stand
+ * suivant semblait attendre une animation qui n'a pas lieu.
+ *
+ * Lâcher écrit quand même, quelle que soit la main : une souris qui a saisi le
+ * plan avant qu'un doigt s'y pose doit retrouver son curseur. Réécrire la
+ * valeur qui est déjà là ne coûte rien — c'est la changer qui coûte.
+ *
+ * Il vit en style en ligne plutôt qu'en classe pour la même raison : une règle
+ * qui parle de « cursor » ferait le même travail, sans qu'on puisse choisir
+ * quand.
+ */
+const saisitPlan = (tenu) => {
+  if (tenu && dernierAppuiTactile) return;
+  svg.style.cursor = tenu ? "grabbing" : "";
+};
 
 svg.addEventListener("pointerdown", e => {
   dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
@@ -3627,7 +3650,7 @@ svg.addEventListener("pointerdown", e => {
            // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
            cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                            : e.target.closest("[data-id],[data-poi]") };
-  svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+  svg.setPointerCapture(e.pointerId); saisitPlan(true);
 });
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -3705,7 +3728,7 @@ svg.addEventListener("pointerup", e => {
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
-  const d = drag; drag = null; svg.classList.remove("dragging");
+  const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
@@ -3742,7 +3765,7 @@ svg.addEventListener("pointercancel", e => {
   if (doigts.size < 2) pince = null;
   glisseLib = null;
   drag = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
 });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
@@ -4050,7 +4073,12 @@ let montreTiroir = () => {};
     if (!etroit()) return;
     const hd = fiche.querySelector(".detail-hd");
     const h = prise.offsetHeight + (hd ? hd.offsetHeight : 0);
-    if (h > 0) document.documentElement.style.setProperty("--fiche-replie", h + "px");
+    /* Sur la fiche, et non sur la racine. Une variable posée sur la racine est
+       offerte à toute la page en héritage : le navigateur remet alors en cause
+       le style de ses sept mille nœuds — cent quatre-vingts millisecondes dès
+       que la valeur change, c'est-à-dire chaque fois qu'un nom de stand tient
+       sur un nombre de lignes différent. Seule la fiche lit celle-ci. */
+    if (h > 0) fiche.style.setProperty("--fiche-replie", h + "px");
   }
 
   function pose(nom){
@@ -4060,7 +4088,7 @@ let montreTiroir = () => {};
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
   const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fiche-replie")) || 132;
+    parseFloat(getComputedStyle(fiche).getPropertyValue("--fiche-replie")) || 132;
 
   /** Hauteur de la fiche à un cran donné, en pixels — les parts du CSS. */
   function hauteur(nom){

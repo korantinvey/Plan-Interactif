@@ -282,7 +282,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4267 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4271 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -388,7 +388,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4185 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4213 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -398,8 +398,8 @@ Fonctions :
 - l.1723 · 6. Vue
 - l.2104 · 7. Sélection et fiche
 - l.3548 · 8. Interactions du plan
-- l.3866 · Le tiroir de la liste — écrans étroits
-- l.4023 · Le tiroir de la fiche — écrans étroits
+- l.3889 · Le tiroir de la liste — écrans étroits
+- l.4046 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -436,8 +436,8 @@ Fonctions :
 `montreMarque` 2936 · `recadreMarque` 2969 · `marqueRecadree` 2992 · `imageChargee` 3021
 `vignetteMarque` 3037 · `boiteMarque` 3058 · `toileMarque` 3124 · `poseCode` 3154
 `rangeMarque` 3195 · `ouvre` 3257 · `ferme` 3520 · `onglet` 3538 · `milieu` 3568
-`commencePince` 3574 · `suitPince` 3588 · `cibleElargie` 3675 · `mesureTiroir` 3877
-`montreTiroir` 3880
+`commencePince` 3574 · `suitPince` 3588 · `saisitPlan` 3622 · `cibleElargie` 3698
+`mesureTiroir` 3900 · `montreTiroir` 3903
 
 Éléments :
 
