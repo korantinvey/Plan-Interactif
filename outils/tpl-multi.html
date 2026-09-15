@@ -27765,6 +27765,18 @@ function afficheTuto(e, ch){
 /* ------------------------------------------------------------
    Désigner
    ------------------------------------------------------------ */
+/**
+ * Une longueur en pixels, au centième près — et non au pixel entier.
+ *
+ * Le cadre s'arrondissait deux fois, par son coin puis par sa taille. Un bouton
+ * posé sur un demi-pixel — ceux de la barre du haut, centrés dans une bande de
+ * hauteur impaire, ceux du pied d'un tiroir — voyait alors tout son jeu passer
+ * du même côté : trois pixels au-dessus, quatre en dessous, et un cadre qui
+ * paraissait glisser sur ce qu'il entoure. Un bord à demi allumé se remarque
+ * moins qu'un cadre décalé.
+ */
+const pxTuto = (v) => Math.round(v * 100) / 100 + "px";
+
 /** La boîte d'un élément à l'écran, ou rien s'il n'y occupe aucune place. */
 function boiteTuto(el){
   if (!el || !el.isConnected) return null;
@@ -27802,9 +27814,9 @@ function repereTuto(){
   if (d - g < 12 || bas - h < 12){ r.hidden = true; if (TUTO.voile === "cible") voileTuto(null); return; }
   if (TUTO.voile === "cible") voileTuto({ left: g - 2, top: h - 2, right: d + 2, bottom: bas + 2 });
   r.hidden = false;
-  r.style.width = Math.round(d - g) + "px";
-  r.style.height = Math.round(bas - h) + "px";
-  r.style.transform = "translate(" + Math.round(g) + "px," + Math.round(h) + "px)";
+  r.style.width = pxTuto(d - g);
+  r.style.height = pxTuto(bas - h);
+  r.style.transform = "translate(" + pxTuto(g) + "," + pxTuto(h) + ")";
 }
 
 /**
