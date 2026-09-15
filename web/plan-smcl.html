@@ -19338,7 +19338,12 @@ $("btnPartage").onclick = ouvrePartageParcours;
  * d'où le réglage, à côté du temps de visite par stand.
  */
 const RAPPEL_DEFAUT = 15;      // minutes
-const RAPPEL_MIN = 2, RAPPEL_MAX = 120;
+/* Cinq minutes est le plancher, et non deux : au-dessous, le rappel arrive
+   alors qu'il n'y a plus rien à en faire. Le temps de sortir une notification
+   de sa poche, de la lire et de traverser une allée ne se compte pas en
+   secondes — prévenir trop tard revient à ne pas prévenir, en ajoutant le
+   désagrément de savoir ce qu'on manque. */
+const RAPPEL_MIN = 5, RAPPEL_MAX = 120;
 const reglageRappel = () => conf("_rappel");
 const rappelsVoulus = () => reglageRappel().actif === true;
 function minutesRappel(){
