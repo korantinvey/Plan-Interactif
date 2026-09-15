@@ -4034,16 +4034,40 @@ html.tuto-retrait .dcal .forme{opacity:.22}
    l'horizontale — les deux tiennent par la même règle. */
 .sponsorLogo img{display:block;max-width:100%;max-height:min(42vh,240px);
   width:auto;height:auto;object-fit:contain}
+/* La marque du produit est un dessin, non une image déposée : elle se donne une
+   taille plutôt que d'en recevoir une. Un carré, comme sur l'écran d'accueil
+   d'un téléphone — c'est là qu'on l'a vue pour la dernière fois. */
+.sponsorMarque{width:104px;height:104px}
+.sponsorMarque svg{display:block;width:100%;height:100%}
 a.sponsorLogo{cursor:pointer}
-a.sponsorLogo:hover img{filter:brightness(1.05)}
+a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 .sponsorNom{font-family:"Archivo",sans-serif;font-size:15px;font-weight:700;
   letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){
   .sponsor{animation:none}
 }
 
-/* Le volet « Sponsor » des réglages : les champs suivent la case, et le premier
-   se détache d'elle comme dans le volet de la suggestion. */
+/* Le volet « Démarrage » des réglages.
+
+   Le choix des trois modes en boutons plutôt qu'en cases : ils s'excluent, et
+   c'est le geste des modèles d'habillage — un rang par mode, la coche à droite,
+   le cadre d'accent sur celui qu'on tient. La marque se montre dans le sien :
+   personne ne sait de mémoire à quoi elle ressemble. */
+.choixDem{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+.dem{display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;
+  text-align:left;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px}
+.dem:hover{border-color:var(--line-strong)}
+.dem[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.dem .v{flex:0 0 auto;width:34px;height:34px}
+.dem .v svg{display:block;width:100%;height:100%}
+.dem .x{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dem .t{font-size:13px;font-weight:600;color:var(--ink)}
+.dem .d{font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+.dem .coche{flex:0 0 auto;color:var(--accent);font-size:13px;visibility:hidden}
+.dem[aria-pressed="true"] .coche{visibility:visible}
+/* Les champs du sponsor ne paraissent qu'à son mode, et se détachent du choix
+   comme le premier champ du volet de la suggestion. */
 .voletSpons{margin-top:16px}
 .sponsActs{display:flex;justify-content:flex-end;margin-top:14px}
 .sponsActs button{padding:7px 14px;border:1px solid var(--line);
@@ -10207,10 +10231,10 @@ function ouvreReglages(ouvrir){
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
-    /* Le sponsor suit l'apparence : lui aussi habille le plan, et se pose une
-       fois pour le salon. Il vient après, parce qu'il ne parle pas du plan
-       mais de ce qui le précède — le générique du démarrage. */
-    voletSponsor(volet("Sponsor"));
+    /* Le démarrage suit l'apparence : lui aussi habille le plan, et se pose une
+       fois pour le salon. Il vient après, parce qu'il ne parle pas du plan mais
+       de ce qui le précède — le générique, et ce qu'on y montre. */
+    voletSponsor(volet("Démarrage"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
        de parc plutôt que de salon — posé une fois, repris rarement. */
@@ -29571,12 +29595,31 @@ const SPONSOR_BUTOIR = 12000;
    pendant ce temps — le minuteur, lui, vient toujours. */
 const SPONSOR_ESTOMPE = 700;
 
-/* Les mentions proposées au-dessus du logo. Une liste fermée, et non un champ
-   libre : ce qui s'écrit ici paraît sur l'écran d'un visiteur qui peut lire le
-   plan en anglais, et une phrase tapée à la main n'aurait pas de traduction.
-   Le nom du sponsor, lui, est un nom propre et se saisit. */
+/* Les mentions proposées au-dessus du logo d'un sponsor. Une liste fermée, et
+   non un champ libre : ce qui s'écrit ici paraît sur l'écran d'un visiteur qui
+   peut lire le plan en anglais, et une phrase tapée à la main n'aurait pas de
+   traduction. Le nom du sponsor, lui, est un nom propre et se saisit. */
 const MENTIONS_SPONSOR = ["Avec le soutien de", "Partenaire officiel",
   "Sponsor officiel", "En partenariat avec"];
+
+/* Les trois façons de commencer, dans l'ordre où le volet les propose. La
+   première est le défaut, et c'est voulu : un salon déjà en ligne ne se met pas
+   à montrer un écran de plus sans que personne l'ait demandé. */
+const MODES_SPONSOR = ["", "marque", "sponsor"];
+
+/* La marque du produit, posée par la construction à la place du commentaire
+   (`outils/genere.js`, `outils/icones.js`). Celle qui garde son carré de nuit,
+   et non la nue : le générique se pose sur le fond du plan, clair ou sombre
+   selon le thème du visiteur, et une marque qui porte son propre fond est la
+   seule qui tienne sur les deux — c'est exactement ce qu'on conseille au
+   sponsor pour son logo.
+
+   C'est le seul endroit où la marque paraisse devant un visiteur. Ailleurs elle
+   se tient dans ce qui appartient à l'outil — la bande d'administration, la
+   console, l'écran d'accès — pour ne pas déguiser le salon en Event2Map. Ici
+   elle ne le déguise pas non plus : elle passe, elle dit « powered by », et
+   elle cède la place au hall. */
+const MARQUE_SPONSOR = '<!--__MARQUE__-->';
 
 const reglageSponsor = () => conf("_sponsor");
 
@@ -29587,26 +29630,51 @@ function secondesSponsor(r){
 }
 
 /**
- * Le sponsor tel qu'il paraîtra, ou rien du tout.
+ * Lequel des trois modes ce salon a retenu.
  *
- * Tout y est relu plutôt que recopié. Le logo vient de la base et finit dans
- * une balise « img » chez chaque visiteur : c'est le chemin qu'a déjà le logo
- * d'une zone, et il mérite la même méfiance. Le lien de même — « javascript: »
- * est une adresse valide, et celle-ci est posée sur un écran que tout le monde
- * traverse.
+ * `actif` est ce que la première version écrivait, du temps où le choix n'était
+ * qu'une case à cocher. Un salon réglé avant ce jour porte cela en base, et
+ * voulait dire un logo de sponsor : il le garde jusqu'à ce qu'on touche au
+ * choix, qui écrit `mode` et décide seul à partir de là.
+ */
+function modeSponsor(r){
+  const c = r || reglageSponsor();
+  if (typeof c.mode === "string")
+    return MODES_SPONSOR.indexOf(c.mode) > 0 ? c.mode : "";
+  return c.actif === true ? "sponsor" : "";
+}
+
+/**
+ * Ce qui paraîtra au démarrage, ou rien du tout.
+ *
+ * Tout y est relu plutôt que recopié. Le logo d'un sponsor vient de la base et
+ * finit dans une balise « img » chez chaque visiteur : c'est le chemin qu'a déjà
+ * le logo d'une zone, et il mérite la même méfiance. Le lien de même —
+ * « javascript: » est une adresse valide, et celle-ci est posée sur un écran que
+ * tout le monde traverse.
+ *
+ * La marque, elle, n'a rien à relire : elle ne vient pas de la base mais de la
+ * construction, et ce qu'elle dit ne se règle pas.
  */
 function sponsorRetenu(source){
   const r = source || reglageSponsor();
-  if (!r || r.actif !== true) return null;
+  if (!r) return null;
+  const mode = modeSponsor(r);
+  if (!mode) return null;
+  const secondes = secondesSponsor(r);
+  if (mode === "marque")
+    return { mode: mode, mention: "powered by", nom: "Event2Map",
+             lien: "", secondes: secondes };
   const logo = imageSure(r.logo);
   // sans logo il n'y a pas de générique : une mention seule n'est pas un écran
   if (!logo) return null;
   return {
+    mode: mode,
     logo: logo,
     nom: String(r.nom || "").trim().slice(0, 80),
     mention: MENTIONS_SPONSOR.indexOf(r.mention) >= 0 ? r.mention : "",
     lien: adresseSure(r.lien),
-    secondes: secondesSponsor(r),
+    secondes: secondes,
   };
 }
 
@@ -29621,12 +29689,12 @@ function sponsorRetenu(source){
    ------------------------------------------------------------ */
 const cleSponsor = () => "plan-sponsor:" + SLUG;
 
-/** Le sponsor laissé par la visite précédente, déjà relu. */
+/** Ce que la visite précédente a laissé, déjà relu. */
 function sponsorEnCache(){
   if (!SLUG) return null;
   try {
     const garde = JSON.parse(localStorage.getItem(cleSponsor()) || "null");
-    return garde ? sponsorRetenu(Object.assign({ actif: true }, garde)) : null;
+    return garde ? sponsorRetenu(garde) : null;
   } catch (e) { return null; }
 }
 
@@ -29689,12 +29757,20 @@ function ouvreSponsor(s, horsDemarrage){
     porte.target = "_blank";
     porte.rel = "noopener noreferrer";
   }
-  const img = document.createElement("img");
-  img.src = s.logo;
-  /* Le nom est écrit juste dessous : le répéter en texte de remplacement le
-     ferait lire deux fois. Sans nom, l'image doit se dire elle-même. */
-  img.alt = s.nom ? "" : "Logo du sponsor";
-  porte.appendChild(img);
+  if (s.mode === "marque"){
+    /* La marque est un dessin, non une image déposée : elle vient de la
+       construction, elle est nette à toute taille, et elle est déjà muette —
+       « Event2Map » est écrit juste dessous, en texte. */
+    porte.classList.add("sponsorMarque");
+    porte.innerHTML = MARQUE_SPONSOR;
+  } else {
+    const img = document.createElement("img");
+    img.src = s.logo;
+    /* Le nom est écrit juste dessous : le répéter en texte de remplacement le
+       ferait lire deux fois. Sans nom, l'image doit se dire elle-même. */
+    img.alt = s.nom ? "" : "Logo du sponsor";
+    porte.appendChild(img);
+  }
   bloc.appendChild(porte);
 
   if (s.nom){
@@ -29826,58 +29902,104 @@ function accueilleSponsor(){
 if (!PLAN_ADMIN) ouvreSponsor(sponsorEnCache());
 
 /* ------------------------------------------------------------
-   Le volet « Sponsor » des réglages
+   Le volet « Démarrage » des réglages
    ------------------------------------------------------------ */
+/* Ce que chaque mode propose, dans l'ordre du volet. Le résumé tient en une
+   ligne : c'est un choix qu'on fait une fois, et trois paragraphes à comparer
+   le rendraient plus difficile qu'il n'est. */
+const CHOIX_SPONSOR = [
+  { mode: "",
+    titre: "Aucun logo",
+    resume: "Le plan s'ouvre droit sur le hall." },
+  { mode: "marque",
+    titre: "Le logo Event2Map",
+    resume: "Avec la mention « powered by ». Rien à déposer, rien à régler." },
+  { mode: "sponsor",
+    titre: "Le logo d'un sponsor",
+    resume: "Celui d'un partenaire du salon, avec son nom et son lien." },
+];
+
 /**
- * Où l'exploitant compose le générique et le regarde avant de le vendre.
+ * Où l'exploitant choisit ce qui paraît au démarrage, et le regarde avant de
+ * le vendre.
  *
- * Le corps ne paraît qu'une fois la case cochée : décochée, elle dit « pas de
- * sponsor sur ce salon », et quatre champs sous une case éteinte ne se règlent
- * pour rien. L'aperçu est là parce que l'administration ne montre jamais le
- * générique d'elle-même : sans lui, l'exploitant vendrait un écran qu'il n'a
- * jamais vu.
+ * Trois boutons plutôt que trois cases : les modes s'excluent, et une case
+ * cochée à côté d'une autre aurait posé la question de ce qui l'emporte. Les
+ * champs du sponsor ne paraissent qu'une fois son mode retenu — quatre champs
+ * sous un choix qui ne les concerne pas ne se règlent pour rien.
+ *
+ * L'aperçu est là parce que l'administration ne montre jamais le générique
+ * d'elle-même : sans lui, l'exploitant vendrait un écran qu'il n'a jamais vu.
  */
 function voletSponsor(hote){
   const r = reglageSponsor();
 
   const p = document.createElement("p");
-  p.textContent = "Un logo posé sur le plan au démarrage, le temps qu'il " +
-    "s'affiche, puis qui s'efface de lui-même. C'est le seul écran que tous " +
-    "les visiteurs traversent, et il ne retarde personne : l'attente qu'il " +
-    "occupe avait lieu de toute façon. Publiez la configuration pour que le " +
-    "changement leur parvienne.";
+  p.textContent = "Ce que le visiteur voit le temps que le plan s'affiche, " +
+    "puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs " +
+    "traversent — chaque visite comptée dans le rapport d'utilisation le voit " +
+    "— et il ne retarde personne : l'attente qu'il occupe avait lieu de toute " +
+    "façon. Publiez la configuration pour que le changement leur parvienne.";
   hote.appendChild(p);
 
-  const bloc = document.createElement("div");
-  bloc.className = "reglages";
-  const l = document.createElement("label");
-  l.innerHTML = '<input type="checkbox"><span></span>';
-  l.querySelector("span").textContent = "Montrer un logo de sponsor au démarrage";
-  const marche = l.querySelector("input");
-  marche.checked = r.actif === true;
-  bloc.appendChild(l);
-
-  const aide = document.createElement("p");
-  aide.className = "aideR";
-  aide.textContent = "Sur le plan public et sur la borne, jamais dans " +
-    "l'administration. Chaque visite comptée dans le rapport d'utilisation le " +
-    "voit. Un doigt posé dessus l'efface aussitôt, et une panne de chargement " +
-    "aussi : le message passe avant le logo.";
-  bloc.appendChild(aide);
-  hote.appendChild(bloc);
-
+  /* Le corps des réglages du sponsor, et celui de la durée : déclarés ici, ils
+     sont garnis plus bas et montrés par le choix, qui est posé avant eux. */
   const corps = document.createElement("div");
   corps.className = "voletSpons";
-  hote.appendChild(corps);
-
-  /* Sans logo il n'y a pas de générique : l'aperçu reste éteint tant qu'on n'en
-     a pas déposé un. Déclaré ici, il est posé plus bas — le cadre du logo le
-     rappelle à chaque dépôt. */
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
   let majEssai = () => {};
 
-  /* Le logo s'enregistre au choix, et non à la sortie de la fenêtre comme
-     celui d'une zone : un volet de réglages n'a pas de bouton « Enregistrer »,
-     chaque retouche y part d'elle-même. */
+  const choix = document.createElement("div");
+  choix.className = "choixDem";
+  hote.appendChild(choix);
+
+  const boutons = CHOIX_SPONSOR.map(c => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dem";
+    b.innerHTML = '<span class="v"></span><span class="x">' +
+      '<span class="t"></span><span class="d"></span></span>' +
+      '<span class="coche">✓</span>';
+    b.querySelector(".t").textContent = c.titre;
+    b.querySelector(".d").textContent = c.resume;
+    /* La marque se montre dans son propre bouton : c'est elle qu'on choisit, et
+       personne ne sait de mémoire à quoi elle ressemble. Les deux autres n'ont
+       rien à montrer — l'un ne montre rien, l'autre montre ce qu'on n'a pas
+       encore déposé. */
+    if (c.mode === "marque") b.querySelector(".v").innerHTML = MARQUE_SPONSOR;
+    else b.querySelector(".v").remove();
+    b.onclick = () => pose(c.mode);
+    choix.appendChild(b);
+    return { b: b, c: c };
+  });
+
+  hote.appendChild(corps);
+
+  const suit = () => {
+    const mode = modeSponsor(r);
+    boutons.forEach(({ b, c }) => b.setAttribute("aria-pressed", String(c.mode === mode)));
+    corps.hidden = mode !== "sponsor";
+    // la durée vaut pour l'un comme pour l'autre : c'est le même générique
+    duree.hidden = !mode;
+    actes.hidden = !mode;
+    majEssai();
+  };
+  const pose = (mode) => {
+    if (modeSponsor(r) === mode) return;
+    r.mode = mode;
+    /* Ce que la case d'avant écrivait ne doit plus rien décider : laissé là, il
+       contredirait le choix pour qui relit l'enregistrement. */
+    delete r.actif;
+    enregistreConf();
+    glisseFenetre(suit);
+    // le générique posé depuis le cache, ou l'aperçu qu'on vient d'ouvrir
+    if (mode !== "sponsor") fermeSponsor();
+  };
+
+  /* Le logo s'enregistre au choix, et non à la sortie de la fenêtre comme celui
+     d'une zone : un volet de réglages n'a pas de bouton « Enregistrer », chaque
+     retouche y part d'elle-même. */
   const logo = cadreLogo(r.logo, src => {
     r.logo = src;
     enregistreConf();
@@ -29921,8 +30043,6 @@ function voletSponsor(hote){
   lien.value = String(r.lien || "");
   lien.oninput = () => { r.lien = lien.value.trim(); enregistreConf(); };
 
-  const duree = document.createElement("div");
-  duree.className = "reglage-nb";
   duree.innerHTML = '<label><span class="l"></span>' +
     '<input type="number" min="' + SPONSOR_MIN + '" max="' + SPONSOR_MAX + '" step="1">' +
     '<span class="u">s</span></label><span class="aide"></span>';
@@ -29930,7 +30050,9 @@ function voletSponsor(hote){
   duree.querySelector(".aide").textContent =
     "Comptée depuis l'ouverture de la page, et non depuis que le logo " +
     "paraît : le chargement est compris dedans. Le logo s'efface dès que le " +
-    "plan est là et que ces secondes sont passées.";
+    "plan est là et que ces secondes sont passées. Sur le plan public et sur " +
+    "la borne, jamais dans l'administration ; un doigt posé dessus l'efface " +
+    "aussitôt, et une panne de chargement aussi.";
   const n = duree.querySelector("input");
   n.value = secondesSponsor(r);
   /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient que
@@ -29940,7 +30062,7 @@ function voletSponsor(hote){
     if (v >= SPONSOR_MIN && v <= SPONSOR_MAX){ r.secondes = v; enregistreConf(); }
   };
   n.onblur = () => { n.value = secondesSponsor(r); };
-  corps.appendChild(duree);
+  hote.appendChild(duree);
 
   /* L'aperçu ferme la fenêtre pour se montrer : le générique se joue sur le
      plan, et une fenêtre posée devant cacherait ce qu'on est venu voir. Sans
@@ -29952,25 +30074,15 @@ function voletSponsor(hote){
   essai.type = "button";
   essai.textContent = "Aperçu";
   essai.onclick = () => {
-    const s = sponsorRetenu(Object.assign({}, r, { actif: true }));
+    const s = sponsorRetenu(r);
     if (!s) return;
     fermeModale();
     ouvreSponsor(s, true);
   };
   actes.appendChild(essai);
-  corps.appendChild(actes);
-  majEssai = () => { essai.disabled = !imageSure(r.logo); };
-  majEssai();
+  hote.appendChild(actes);
+  majEssai = () => { essai.disabled = !sponsorRetenu(r); };
 
-  const suit = () => { corps.hidden = r.actif !== true; };
-  marche.onchange = e => {
-    r.actif = e.target.checked;
-    enregistreConf();
-    glisseFenetre(suit);
-    /* Le générique posé depuis le cache n'a plus lieu d'être si l'on vient de
-       l'éteindre — et l'aperçu qu'on vient d'ouvrir non plus. */
-    if (!r.actif) fermeSponsor();
-  };
   suit();
 }
 /* ============================================================
