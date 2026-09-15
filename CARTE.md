@@ -201,7 +201,7 @@ Fonctions :
 
 - l.647 · Page de rapport
 
-### `_dessin.html` — 1922 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 1929 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -223,13 +223,13 @@ Fonctions :
 `texteStandDessine` 962 · `poseLibellesDessines` 980 · `decoupeStand` 1001
 `marqueStandsDessines` 1013 · `rafraichitStandsDessines` 1028 · `oublieReperes` 1058
 `reperesCherchables` 1060 · `vaAuRepere` 1104 · `clePoi` 1139 · `cartouchePoi` 1141
-`ouvrePoi` 1245 · `mesureCartouche` 1317 · `phareRepere` 1326 · `phareZone` 1328
-`eclairePoi` 1334 · `oublieChoixPoi` 1367 · `signale` 1376 · `calquePourImage` 1390
-`poseImage` 1407 · `importeImage` 1420 · `dessinPointerDown` 1471 · `dessinPointerMove` 1545
-`dessinPointerUp` 1583 · `termineTrace` 1619 · `aide` 1631 · `choisitOutil` 1656
-`enchaineStand` 1680 · `activeCalque` 1739 · `cleVerrou` 1795 · `verrouille` 1796
-`basculeVerrou` 1798 · `pictoVerrou` 1815 · `montreRoleIti` 1849 · `creeCalque` 1880
-`demandeNom` 1893 · `renommeCalque` 1912
+`ouvrePoi` 1245 · `mesureCartouche` 1317 · `phareRepere` 1333 · `phareZone` 1335
+`eclairePoi` 1341 · `oublieChoixPoi` 1374 · `signale` 1383 · `calquePourImage` 1397
+`poseImage` 1414 · `importeImage` 1427 · `dessinPointerDown` 1478 · `dessinPointerMove` 1552
+`dessinPointerUp` 1590 · `termineTrace` 1626 · `aide` 1638 · `choisitOutil` 1663
+`enchaineStand` 1687 · `activeCalque` 1746 · `cleVerrou` 1802 · `verrouille` 1803
+`basculeVerrou` 1805 · `pictoVerrou` 1822 · `montreRoleIti` 1856 · `creeCalque` 1887
+`demandeNom` 1900 · `renommeCalque` 1919
 
 Éléments :
 
@@ -390,7 +390,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4127 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4133 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -401,7 +401,7 @@ Fonctions :
 - l.2177 · 7. Sélection et fiche
 - l.3462 · 8. Interactions du plan
 - l.3803 · Le tiroir de la liste — écrans étroits
-- l.3960 · Le tiroir de la fiche — écrans étroits
+- l.3966 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -619,31 +619,31 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1370 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1386 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`monteWebgl` 78 · `poseToileWebgl` 164 · `guetteContexteWebgl` 170
-`contextePerduWebgl` 180 · `verifieContexteWebgl` 187 · `perdContexteWebgl` 196
-`remonteWebgl` 217 · `vueDeck` 234 · `vueWebgl` 243 · `blocDe` 252 · `enEdition` 282
-`majEditionWebgl` 285 · `cleBloc` 297 · `planifieWebgl` 323 · `toutRepeindreWebgl` 327
-`blocsDansLOrdre` 334 · `repeintWebgl` 339 · `assembleWebgl` 363 · `constTexte` 397
-`jeuDeCaracteres` 477 · `couchesTexte` 488 · `mulM` 522 · `appM` 525 · `echelleM` 526
-`lisTransform` 528 · `lisTrace` 550 · `lisPoints` 618 · `num` 624 · `anneau` 626
-`rectArrondi` 632 · `couleurGl` 646 · `accVide` 663 · `convertitBloc` 664 · `accDe` 678
-`parcoursGl` 685 · `avecTrous` 725 · `formeGl` 746 · `texteGl` 782 · `imageGl` 805
-`partage` 837 · `designeGl` 843 · `couchesDeBloc` 845 · `modelesLibellesHtml` 906
-`poseModelesLibelles` 916 · `lisModelesLibelles` 922 · `emplacementWebgl` 951
-`libellesWebgl` 999 · `groupesNoms` 1062 · `couchesNoms` 1078 · `couchesPastilles` 1089
-`couchesLibellesWebgl` 1104 · `couchesDessineesWebgl` 1111 · `stage` 1132
-`brancheSurvolWebgl` 1136 · `poseSurvolWebgl` 1156 · `poseCurseurWebgl` 1165
-`poseFocusWebgl` 1174 · `aplatsDe` 1181 · `coucheSurvol` 1184 · `coucheFocus` 1193
-`couchesPhare` 1220 · `lueurDe` 1236 · `opacitePhare` 1274 · `echellePhare` 1275
-`couchesPhareNoms` 1278 · `animeCouche` 1292 · `majAnimationWebgl` 1306 · `animeWebgl` 1314
-`objetSous` 1337 · `cibleWebgl` 1344 · `priseWebgl` 1351 · `libelleSousWebgl` 1356
-`rectEcranWebgl` 1361
+`monteWebgl` 78 · `poseToileWebgl` 180 · `guetteContexteWebgl` 186
+`contextePerduWebgl` 196 · `verifieContexteWebgl` 203 · `perdContexteWebgl` 212
+`remonteWebgl` 233 · `vueDeck` 250 · `vueWebgl` 259 · `blocDe` 268 · `enEdition` 298
+`majEditionWebgl` 301 · `cleBloc` 313 · `planifieWebgl` 339 · `toutRepeindreWebgl` 343
+`blocsDansLOrdre` 350 · `repeintWebgl` 355 · `assembleWebgl` 379 · `constTexte` 413
+`jeuDeCaracteres` 493 · `couchesTexte` 504 · `mulM` 538 · `appM` 541 · `echelleM` 542
+`lisTransform` 544 · `lisTrace` 566 · `lisPoints` 634 · `num` 640 · `anneau` 642
+`rectArrondi` 648 · `couleurGl` 662 · `accVide` 679 · `convertitBloc` 680 · `accDe` 694
+`parcoursGl` 701 · `avecTrous` 741 · `formeGl` 762 · `texteGl` 798 · `imageGl` 821
+`partage` 853 · `designeGl` 859 · `couchesDeBloc` 861 · `modelesLibellesHtml` 922
+`poseModelesLibelles` 932 · `lisModelesLibelles` 938 · `emplacementWebgl` 967
+`libellesWebgl` 1015 · `groupesNoms` 1078 · `couchesNoms` 1094 · `couchesPastilles` 1105
+`couchesLibellesWebgl` 1120 · `couchesDessineesWebgl` 1127 · `stage` 1148
+`brancheSurvolWebgl` 1152 · `poseSurvolWebgl` 1172 · `poseCurseurWebgl` 1181
+`poseFocusWebgl` 1190 · `aplatsDe` 1197 · `coucheSurvol` 1200 · `coucheFocus` 1209
+`couchesPhare` 1236 · `lueurDe` 1252 · `opacitePhare` 1290 · `echellePhare` 1291
+`couchesPhareNoms` 1294 · `animeCouche` 1308 · `majAnimationWebgl` 1322 · `animeWebgl` 1330
+`objetSous` 1353 · `cibleWebgl` 1360 · `priseWebgl` 1367 · `libelleSousWebgl` 1372
+`rectEcranWebgl` 1377
 
 ## Dans `web/`, mais que la construction ne produit pas
 

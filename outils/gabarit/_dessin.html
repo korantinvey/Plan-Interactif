@@ -1317,7 +1317,14 @@ function ouvrePoi(id, depuis, recentrer){
 function mesureCartouche(){
   const z = $("poi");
   const h = z && !z.hidden ? z.offsetHeight + 8 : 0;
-  document.documentElement.style.setProperty("--cartouche", h + "px");
+  /* Sur le corps, et non sur la racine : le rendu WebGL guette les attributs
+     de la racine pour savoir quand le thème ou un calque change, et il y
+     repeignait tout le plan pour une hauteur d'habillage qui ne le concerne
+     pas. Ceux qui lisent cette variable — l'échelle, la barre de zoom — sont
+     tous dans le corps, la feuille de style y trouve donc son compte. */
+  const px = h + "px";
+  if (document.body.style.getPropertyValue("--cartouche") !== px)
+    document.body.style.setProperty("--cartouche", px);
 }
 
 /** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois,
