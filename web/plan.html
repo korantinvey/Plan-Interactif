@@ -6977,6 +6977,63 @@ function prechargeMarque(id, iSoc){
   else recadreMarque(url);
 }
 
+/**
+ * Les vignettes du salon, chargées en silence une fois le plan affiché.
+ *
+ * Une vignette pèse trois kilo-octets et vient de notre propre origine : les
+ * deux cent dix d'un salon comme Franchise Expo font six cents kilo-octets,
+ * une fois, et le navigateur comme le service les gardent pour la visite
+ * entière — leur adresse porte l'empreinte de ce qu'elles montrent, elles ne
+ * peuvent pas se périmer. Toute fiche ouverte ensuite trouve son logo déjà là.
+ *
+ * Ce n'était pas possible avant qu'elles existent : les mêmes logos pris chez
+ * leur source pèsent soixante-dix mégaoctets, et les précharger aurait ralenti
+ * ce qu'on voulait accélérer.
+ *
+ * Trois retenues, parce que ce chargement n'est demandé par personne :
+ *
+ * — il attend que le plan soit à l'écran et la main immobile ;
+ * — il renonce sur un réseau que le navigateur dit lent ou mesuré, où six
+ *   cents kilo-octets non réclamés ne se prennent pas ;
+ * — il y va par petits groupes, pour ne pas disputer la bande passante au fond
+ *   de plan, qui pèse cinquante fois plus et qu'on regarde déjà.
+ */
+const VIGNETTES_A_LA_FOIS = 6;
+
+function prechargeLesVignettes(){
+  if (!API) return;
+  /* Ce que le navigateur sait du réseau. Rien n'oblige à le dire : en
+     l'absence de réponse on charge, comme on le faisait avant de demander. */
+  const res = navigator.connection || {};
+  if (res.saveData) return;
+  if (/(^|-)2g$/.test(res.effectiveType || "")) return;
+
+  const cles = [];
+  const vues = new Set();
+  for (const o of TOUS){
+    if (o.kind !== "stand") continue;
+    for (const soc of [o].concat(o.coex || [])){
+      const c = soc && soc.vignette;
+      if (c && !vues.has(c)){ vues.add(c); cles.push(c); }
+    }
+  }
+  if (!cles.length) return;
+
+  let i = 0;
+  const suivante = () => {
+    if (i >= cles.length) return;
+    const url = adresseVignette(cles[i++]);
+    if (!url) return suivante();
+    const im = new Image();
+    /* Basse priorité : ces images ne sont pas attendues, et le fond de plan,
+       lui, l'est. */
+    if ("fetchPriority" in im) im.fetchPriority = "low";
+    im.onload = im.onerror = suivante;
+    im.src = url;
+  };
+  for (let n = 0; n < VIGNETTES_A_LA_FOIS; n++) suivante();
+}
+
 /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
    frappe, et aucune ne garderait le sien. */
 $("list").addEventListener("pointerdown", e => {
@@ -30082,6 +30139,11 @@ function demarre(d){
      la visite si l'écran est pris quand elle se propose, l'invitation sait
      attendre : c'est donc elle qui cède son tour. */
   accueilleInvitation();
+  /* Les vignettes des logos en dernier, et à tête reposée : le plan est
+     affiché, le fond en route, et ce chargement-là n'est demandé par personne.
+     Il rend instantané le logo de toute fiche ouverte ensuite. */
+  if (window.requestIdleCallback) requestIdleCallback(prechargeLesVignettes, { timeout: 4000 });
+  else setTimeout(prechargeLesVignettes, 1500);
 }
 
 function annonce(txt, erreur){

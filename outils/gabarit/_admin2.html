@@ -44,6 +44,11 @@ function demarre(d){
      la visite si l'écran est pris quand elle se propose, l'invitation sait
      attendre : c'est donc elle qui cède son tour. */
   accueilleInvitation();
+  /* Les vignettes des logos en dernier, et à tête reposée : le plan est
+     affiché, le fond en route, et ce chargement-là n'est demandé par personne.
+     Il rend instantané le logo de toute fiche ouverte ensuite. */
+  if (window.requestIdleCallback) requestIdleCallback(prechargeLesVignettes, { timeout: 4000 });
+  else setTimeout(prechargeLesVignettes, 1500);
 }
 
 function annonce(txt, erreur){
