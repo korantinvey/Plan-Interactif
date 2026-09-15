@@ -288,24 +288,47 @@ export function imageDistante(v: unknown): string | null {
 /**
  * Lit une cible dans un jeu de sources, chacune désignée par son préfixe.
  *
- * Le premier champ renseigné l'emporte ; une cible multiple les cumule, en
- * aplatissant les valeurs qui sont déjà des listes — Klipso rend une
- * nomenclature à plusieurs entrées comme un tableau.
+ * Le premier champ renseigné l'emporte ; une cible multiple les cumule.
+ *
+ * C'est ici, et nulle part ailleurs, qu'une cible multiple est séparée en
+ * valeurs — parce que c'est le seul endroit qui sache encore de quelle forme
+ * chaque source l'a rendue. Une chaîne est une liste jointe par un
+ * point-virgule, comme Eventmaker joint ses champs à choix multiple ; un
+ * tableau porte déjà ses valeurs une à une, qu'il vienne de Klipso ou des
+ * thématiques d'Eventmaker, et re-couper ses éléments ne ferait que hacher une
+ * valeur qui contiendrait un point-virgule.
+ *
+ * Séparer plus loin revenait à devoir deviner : une fois les sources cumulées,
+ * une chaîne à couper et une valeur entière se ressemblent trait pour trait.
  */
 export function lit(
   liste: string[],
   sources: Record<string, Record<string, unknown> | undefined>,
   multiple = false,
 ): unknown {
-  const valeurs: unknown[] = [];
+  const valeurs: string[] = [];
   for (const c of liste) {
     const { origine, nom } = decoupe(c);
     const v = sources[origine]?.[nom];
     if (v === undefined || v === null || v === "") continue;
     if (!multiple) return v;
-    valeurs.push(...([] as unknown[]).concat(v));
+    valeurs.push(...valeursDe(v));
   }
   return multiple ? valeurs : null;
+}
+
+/**
+ * Les valeurs que porte une lecture, selon la forme sous laquelle elle vient.
+ *
+ * Un tableau porte une valeur par entrée, entière ; une chaîne porte une liste
+ * jointe par un point-virgule. C'est la seule différence, et elle ne se lit
+ * qu'ici.
+ */
+function valeursDe(v: unknown): string[] {
+  const entier = (x: unknown) => String(x ?? "").trim();
+  return Array.isArray(v)
+    ? v.map(entier).filter(Boolean)
+    : entier(v).split(";").map((x) => x.trim()).filter(Boolean);
 }
 
 /* ------------------------------------------------------------------
@@ -383,12 +406,17 @@ export function cibles(fournisseur: string, fiche: unknown): Cible[] {
 /**
  * Les valeurs d'un champ à choix multiple, séparées.
  *
- * Ni Klipso ni Eventmaker ne rendent une liste : ils rendent une chaîne où les
+ * Un champ à choix multiple ne rend pas une liste : il rend une chaîne où les
  * valeurs se suivent, séparées par un point-virgule — « Devenir
  * master-franchisé;Adhérent FFF ». Prise telle quelle, la chaîne entière
  * devient une valeur à part entière, et un exposant qui en porte deux ne se
  * retrouve avec personne : autant de valeurs distinctes que de combinaisons.
- * C'est la même règle pour les thématiques et la nomenclature.
+ *
+ * Elle coupe tout ce qu'on lui donne, y compris les entrées d'une liste : c'est
+ * ce qu'il faut pour comparer une valeur retenue à ce qu'une fiche porte, où
+ * les deux côtés peuvent être écrits de l'une ou l'autre façon. Ce qui vient
+ * d'une source, en revanche, est séparé par `lit` selon la forme qu'il avait —
+ * là, une liste garde ses entrées entières.
  */
 export function separeValeurs(v: unknown): string[] {
   return ([] as unknown[]).concat(v ?? [])
@@ -418,7 +446,9 @@ const VALEUR_LONGUE = 60;
  * multiple montre autant d'entrées que de combinaisons cochées — « Nouveaux
  * exposants;Exposants internationaux » en est une, « Exposants
  * internationaux » une autre — et dépasse le seuil du texte libre alors qu'il
- * n'offre que trois choix.
+ * n'offre que trois choix. La séparation suit ici la règle de `lit` et pour la
+ * même raison : une liste porte déjà ses valeurs une à une, et recouper ses
+ * entrées hacherait celle qui contient un point-virgule.
  *
  * Un compte, et pas une liste : c'est la répétition qui dira si le champ est
  * une liste de choix ou du texte libre, et le nombre de valeurs distinctes n'y
@@ -427,7 +457,7 @@ const VALEUR_LONGUE = 60;
  * d'autant d'entrées qu'il y a de fiches.
  */
 export function noteValeurs(compte: Map<string, number>, v: unknown): void {
-  for (const val of separeValeurs(v)) {
+  for (const val of valeursDe(v)) {
     if (val.length > VALEUR_LONGUE) continue;
     const vu = compte.get(val);
     if (vu !== undefined) compte.set(val, vu + 1);
