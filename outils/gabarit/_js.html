@@ -2904,12 +2904,13 @@ function poseMarque(blason){
      s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
      Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
      ligne les couvre tous les deux. */
-  marque.onerror = () => { marque.hidden = true; };
+  marque.onerror = () => { marque.hidden = true; delete marque.dataset.attend; };
   /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
      l'image tenue : le rangement suit donc l'apparition, jamais avant. */
-  marque.onload = () => { marque.hidden = false; rangeMarque(); };
+  marque.onload = () => { marque.hidden = false; delete marque.dataset.attend; rangeMarque(); };
   if (!blason){
     marque.hidden = true;
+    delete marque.dataset.attend;
     marqueDemandee = "";
     /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
        montrerait la marque de la précédente le temps que la sienne arrive. */
@@ -2930,7 +2931,19 @@ function poseMarque(blason){
      le trajet — invisible sur un bureau, très visible sur le réseau d'un
      salon. On la cache donc le temps du trajet, et `onload` la ramène. */
   marqueDemandee = blason;
-  marque.hidden = true;
+  /* Elle tient sa place au lieu de disparaître : l'en-tête garde la hauteur
+     qu'il aura, et ce qu'on lit dessous ne saute plus à son arrivée. Voir
+     « logoZone[data-attend] » dans la feuille de style.
+
+     Sur la ligne du numéro, et non là où la fiche d'avant l'avait laissée :
+     une place tenue au hasard n'en est pas une. C'est aussi là que la plupart
+     des marques finissent — un logo en largeur, une fois ses marges retirées,
+     ne tient plus à côté d'un nom. */
+  marque.hidden = false;
+  marque.dataset.attend = "";
+  const bas = $("dBadges");
+  if (bas && marque.parentNode !== bas) bas.appendChild(marque);
+  marque.style.maxWidth = "";
   marque.removeAttribute("src");
   recadreMarque(blason).then(src => {
     // une autre fiche a pu s'ouvrir pendant le recadrage : sa marque l'emporte
@@ -2946,6 +2959,7 @@ let marqueDemandee = "";
 
 function montreMarque(marque){
   marque.hidden = !marque.naturalWidth;
+  delete marque.dataset.attend;
   if (!marque.hidden) rangeMarque();
 }
 
@@ -3205,7 +3219,8 @@ function poseCode(pl, num, filigrane, salle){
  */
 function rangeMarque(){
   const marque = $("dLogo");
-  if (!marque || marque.hidden) return;
+  // rien à ranger tant qu'elle n'est qu'une place tenue : sa largeur décidera
+  if (!marque || marque.hidden || marque.dataset.attend !== undefined) return;
   const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
   const titre = nom && nom.querySelector("h2");
   if (!titre || !bas) return;

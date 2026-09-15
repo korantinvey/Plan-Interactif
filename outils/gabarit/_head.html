@@ -1091,8 +1091,19 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    plus à côté d'un nom un peu long — il rejoint alors la ligne du numéro, où
    la page le pose et le borne, faute pour la feuille de connaître la longueur
    d'un numéro de stand. */
+.detail-hd{--marque-h:72px}
 .detail-hd .logoZone{width:auto;height:auto;object-fit:contain;
-  max-width:min(300px,100%);max-height:72px}
+  max-width:min(300px,100%);max-height:var(--marque-h)}
+/* La place de la marque est tenue dès qu'on sait qu'il y en a une, et avant
+   même de l'avoir reçue : sans cela l'en-tête grandissait de vingt à trente
+   pixels à son arrivée, et tout ce qu'on lisait dessous sautait d'autant.
+
+   Une hauteur, et une largeur nulle : c'est la hauteur qui fait sauter la
+   page. La largeur, elle, déciderait du pli — à côté du nom ou sous le
+   numéro — et on ne la connaît pas encore ; la taire jusque-là évite de
+   choisir deux fois. */
+.detail-hd .logoZone[data-attend]{visibility:hidden;width:0;min-width:0;
+  height:var(--marque-h)}
 /* Sur la ligne du nom, la marque est un élément de la ligne flex, qui la
    replie sous le nom quand elle n'y tient pas — c'est ce repli que la page
    guette pour la déménager. Le « :not » de chaque règle laisse l'attribut
@@ -3589,7 +3600,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail-hd h2{margin:6px 0 5px}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : la marque s'y fait plus
      discrète, pour laisser la place à ce qu'on est venu lire. */
-  .detail-hd .logoZone{max-height:56px;max-width:min(240px,100%)}
+  .detail-hd{--marque-h:56px}
+  .detail-hd .logoZone{max-width:min(240px,100%)}
   /* seul le corps défile : le nom et le code restent sous les yeux */
   .detail-bd{padding:14px 16px 18px;overflow-y:auto}
   /* La fiche n'a plus qu'une demi-hauteur d'écran : elle se resserre. Les

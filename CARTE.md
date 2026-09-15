@@ -282,7 +282,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4278 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4290 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -388,7 +388,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4224 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4239 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -397,9 +397,9 @@ Fonctions :
 - l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1734 · 6. Vue
 - l.2115 · 7. Sélection et fiche
-- l.3559 · 8. Interactions du plan
-- l.3900 · Le tiroir de la liste — écrans étroits
-- l.4057 · Le tiroir de la fiche — écrans étroits
+- l.3574 · 8. Interactions du plan
+- l.3915 · Le tiroir de la liste — écrans étroits
+- l.4072 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -433,11 +433,11 @@ Fonctions :
 `pictoRS` 2661 · `adresseSure` 2679 · `adresseImage` 2706 · `imageSure` 2719
 `assainitRiche` 2748 · `enBlocs` 2788 · `rangeRiche` 2801 · `ecarteClicFantome` 2829
 `nomSociete` 2838 · `societes` 2851 · `choisitExposant` 2862 · `poseMarque` 2900
-`montreMarque` 2947 · `recadreMarque` 2980 · `marqueRecadree` 3003 · `imageChargee` 3032
-`vignetteMarque` 3048 · `boiteMarque` 3069 · `toileMarque` 3135 · `poseCode` 3165
-`rangeMarque` 3206 · `ouvre` 3268 · `ferme` 3531 · `onglet` 3549 · `milieu` 3579
-`commencePince` 3585 · `suitPince` 3599 · `saisitPlan` 3633 · `cibleElargie` 3709
-`mesureTiroir` 3911 · `montreTiroir` 3914
+`montreMarque` 2960 · `recadreMarque` 2994 · `marqueRecadree` 3017 · `imageChargee` 3046
+`vignetteMarque` 3062 · `boiteMarque` 3083 · `toileMarque` 3149 · `poseCode` 3179
+`rangeMarque` 3220 · `ouvre` 3283 · `ferme` 3546 · `onglet` 3564 · `milieu` 3594
+`commencePince` 3600 · `suitPince` 3614 · `saisitPlan` 3648 · `cibleElargie` 3724
+`mesureTiroir` 3926 · `montreTiroir` 3929
 
 Éléments :
 
