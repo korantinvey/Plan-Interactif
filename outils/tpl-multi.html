@@ -165,15 +165,19 @@ button{cursor:pointer;background:none;border:none}
    le cyan de la marque et non celui du salon — c'est la seule bande de
    l'écran qui ne parle pas du salon.
    ------------------------------------------------------------------ */
-.bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:10px;
-  padding:5px 18px;min-height:40px;background:var(--m-nuit);color:var(--ink);
+.bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
+  padding:5px 18px;min-height:66px;background:var(--m-nuit);color:var(--ink);
   --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
   --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
   --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
   --rouge:var(--m-rose)}
 /* La bande prend un rang de la grille, et seulement quand elle existe. */
 html.mode-admin .app{grid-template-rows:auto auto 1fr}
-.bandeMarque{flex:0 0 auto;width:26px;height:26px;display:block}
+/* La marque se lit, ou elle ne sert à rien. À vingt-six pixels, le bloc cyan
+   en faisait dix-sept et chaque capitale du monogramme quatre — `icones.js` le
+   dit d'ailleurs lui-même : la marque complète ne vaut qu'à partir de trente-
+   deux. C'est donc la bande qui s'ajuste à elle. */
+.bandeMarque{flex:0 0 auto;width:54px;height:54px;display:block}
 .bandeMarque svg{width:100%;height:100%;display:block}
 .bandeNom{font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
@@ -3363,8 +3367,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    c'est le moment où l'on s'adresse à l'exploitant, avant que le plan derrière
    ne redevienne celui de son salon. Le titre vient contre elle plutôt qu'à
    l'autre bout de la fenêtre. */
-.mfen header.teteMarque{justify-content:flex-start;gap:10px}
-.marqueE2M{flex:0 0 auto;width:28px;height:28px;display:block}
+.mfen header.teteMarque{justify-content:flex-start;gap:12px}
+.marqueE2M{flex:0 0 auto;width:58px;height:58px;display:block}
 .marqueE2M svg{width:100%;height:100%;display:block}
 /* L'accent de cet écran est celui de la marque et non celui du salon : on n'a
    pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
@@ -3380,6 +3384,10 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
    savent se tenir : faute de règle ici, l'intitulé et son champ se suivaient
    sur la même ligne et se chevauchaient — sur le premier écran que voit un
    exploitant. */
+/* Le bouton plein prend le cyan vif, comme celui de la console : l'accent
+   rabattu reste pour les bordures et les liserés de focus, qui portent leur
+   contraste sur du blanc, mais un aplat n'a pas cette contrainte. */
+#acces .btn.accent{background:var(--m-cyan);border-color:var(--m-cyan);color:var(--m-nuit)}
 #acces .astuce{margin:0 0 4px;font-size:12.5px;color:var(--ink-3)}
 #acces label{display:flex;flex-direction:column;gap:4px;margin-top:11px}
 #acces label span{font-size:12.5px;color:var(--ink-2)}
@@ -3629,7 +3637,8 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
      « Administration » cède la place — la nuit et la marque le disent déjà. */
-  .bandeAdmin{padding:4px 12px;min-height:36px;gap:8px}
+  .bandeAdmin{padding:4px 12px;min-height:56px;gap:10px}
+  .bandeMarque{width:46px;height:46px}
   .bandeNom{display:none}
   /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
      le bouton cède du texte plutôt que de pousser les autres hors de l'écran. */

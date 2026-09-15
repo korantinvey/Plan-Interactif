@@ -118,7 +118,7 @@ button{cursor:pointer;background:none;border:none}
    ce sont les mêmes qu'ailleurs, ils suivent. Les valeurs sont celles du thème
    sombre — sur la nuit, c'est ce thème-là qui a raison, quelle que soit
    l'heure choisie pour le reste de l'écran. */
-.topbar{display:flex;align-items:center;gap:12px;padding:0 18px;height:58px;
+.topbar{display:flex;align-items:center;gap:12px;padding:0 18px;min-height:76px;
   background:var(--m-nuit);border-bottom:1px solid var(--m-nuit);z-index:5;
   --surface:#0E2E4E; --surface-2:#16334C; --surface-3:#183551;
   --line:#1E3C58; --line-strong:#325975;
@@ -137,7 +137,12 @@ button{cursor:pointer;background:none;border:none}
    de l'onglet et de l'écran d'accueil, au trait près. */
 .marqueE2M{display:block}
 .marqueE2M svg{width:100%;height:100%;display:block}
-.topbar .marqueE2M{flex:0 0 auto;width:28px;height:28px;margin-right:-4px}
+/* Vingt-huit pixels ne suffisaient pas : le monogramme y tient dans un carré
+   où chaque capitale fait quatre pixels de large, et `icones.js` prévient que
+   la marque complète ne vaut qu'à partir de trente-deux. À soixante, les
+   lettres se lisent, et le bloc cyan porte enfin la couleur qu'on cherchait —
+   c'est la barre qui s'est ajustée à la marque, et non l'inverse. */
+.topbar .marqueE2M{flex:0 0 auto;width:60px;height:60px;margin-right:-2px}
 /* La barre porte tout ce qui commande : le salon ouvert, ses sorties vers le
    plan, et le menu. Elle se replie sur deux rangs quand l'écran ne suit plus,
    mais le titre s'efface avant — c'est la liste déroulante qui nomme la page. */
@@ -627,7 +632,10 @@ table.comptes tr[data-actif="non"] td:first-child{box-shadow:inset 2px 0 var(--a
    pavillons, lui, garde ses colonnes et défile pour son compte : empilé, ses
    deux nombres n'auraient plus dit de quoi ils parlent. */
 @media (max-width:620px){
-  .topbar{height:auto;min-height:58px;flex-wrap:wrap;gap:6px 10px;padding:9px 14px}
+  .topbar{height:auto;min-height:68px;flex-wrap:wrap;gap:6px 10px;padding:9px 14px}
+  /* Un cran plus petite sur un écran étroit, mais toujours au-dessus du seuil
+     où le monogramme redevient une tache. */
+  .topbar .marqueE2M{width:46px;height:46px}
   .topbar .statut{max-width:100%}
   /* En colonne, l'alignement transversal devient l'horizontal : sans cette
      reprise, le titre et ses boutons se centreraient. */
