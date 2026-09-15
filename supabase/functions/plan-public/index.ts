@@ -36,6 +36,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
 import { versionFond } from "../_partage/version.ts";
+import { octetsDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
  *  une liste séparée par des virgules — pour qu'un changement de domaine ne
@@ -91,6 +92,117 @@ const db = (req: Request) => {
     })
     : createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, options);
 };
+
+/** Le même client, mais toujours celui du service : certaines tables ne sont
+ *  ouvertes à personne d'autre, et une identité n'y donne pas plus de droits
+ *  qu'elle n'en retire. */
+const service = () =>
+  createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+
+/**
+ * Les vignettes déjà fabriquées pour les logos d'un salon, par adresse.
+ *
+ * On interroge par adresse et non par empreinte : la table porte les deux, et
+ * calculer cinq cents empreintes à chaque demande du plan coûterait pour rien
+ * sur le chemin le plus fréquenté du service.
+ *
+ * Une table vide ne change rien : la page garde l'adresse d'origine à côté de
+ * la clé, et charge le logo chez la source comme elle l'a toujours fait. C'est
+ * ce qui permet aux vignettes d'apparaître au fil de leur fabrication, sans
+ * que rien ne les attende.
+ */
+async function vignettesParAdresse(
+  instantanes: { charge?: unknown }[],
+): Promise<Map<string, string>> {
+  const adresses = new Set<string>();
+  for (const inst of instantanes) {
+    const charge = (inst?.charge ?? {}) as Record<string, unknown>;
+    for (const st of (charge.stands ?? []) as Record<string, unknown>[]) {
+      if (typeof st.logo === "string" && st.logo) adresses.add(st.logo);
+      for (const c of (st.coex ?? []) as Record<string, unknown>[]) {
+        if (c && typeof c.logo === "string" && c.logo) adresses.add(c.logo);
+      }
+    }
+  }
+  const par = new Map<string, string>();
+  if (!adresses.size) return par;
+  const liste = [...adresses];
+  const sb = service();
+  // par tranches : une requête qui porte cinq cents adresses dépasse ce qu'un
+  // intermédiaire accepte de transmettre
+  for (let i = 0; i < liste.length; i += 50) {
+    const { data } = await sb.from("vignette_de_logo")
+      .select("cle,source").in("source", liste.slice(i, i + 50));
+    for (const v of data ?? []) {
+      const r = v as { cle: string; source: string };
+      par.set(String(r.source), String(r.cle));
+    }
+  }
+  return par;
+}
+
+/**
+ * Le stand, augmenté de la clé de vignette de son logo — et de celle de chaque
+ * société qu'il héberge, qui a le sien.
+ *
+ * La clé s'ajoute à l'adresse et ne la remplace pas : elle peut manquer, et la
+ * page a besoin des deux pour savoir sur quoi retomber.
+ */
+function avecVignette(
+  st: Record<string, unknown>,
+  par: Map<string, string>,
+): Record<string, unknown> {
+  if (!par.size) return st;
+  const cle = typeof st.logo === "string" ? par.get(st.logo) : undefined;
+  const coex = (st.coex ?? []) as Record<string, unknown>[];
+  const heberges = coex.map((c) => {
+    const k = c && typeof c.logo === "string" ? par.get(c.logo) : undefined;
+    return k ? { ...c, vignette: k } : c;
+  });
+  if (!cle && !heberges.some((c, i) => c !== coex[i])) return st;
+  return {
+    ...st,
+    ...(cle ? { vignette: cle } : {}),
+    ...(coex.length ? { coex: heberges } : {}),
+  };
+}
+
+/**
+ * La vignette d'un logo d'exposant, en octets.
+ *
+ * Elle est nommée par l'empreinte de l'adresse d'origine : son contenu ne peut
+ * pas changer sans que sa clé change, et tout ce qui la garde — le relais, le
+ * navigateur, le service worker — peut donc la garder pour toujours.
+ *
+ * Elle passe avant la lecture du salon, et sans la faire : une vignette ne dit
+ * rien de plus que le logo public qu'elle montre, il n'y a donc rien à y
+ * vérifier, et ce chemin-là doit rester le plus court possible — c'est une
+ * requête par fiche ouverte.
+ *
+ * Une vignette inconnue n'est pas une panne : la page garde l'adresse
+ * d'origine à côté de la clé, et charge le logo chez la source comme avant.
+ * D'où un 404 que rien ne garde, pour que le lot suivant de la synchronisation
+ * se voie sans attendre.
+ */
+async function rendVignette(cle: string, entetes: Record<string, string>) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  if (!/^[0-9a-f]{8,64}$/.test(cle)) {
+    return new Response("Clé de vignette invalide.", { status: 400, headers: nu });
+  }
+  const { data, error } = await service()
+    .from("vignette_de_logo").select("image").eq("cle", cle).maybeSingle();
+  if (error) return new Response("Vignette indisponible.", { status: 503, headers: nu });
+  if (!data) return new Response("Vignette inconnue.", { status: 404, headers: nu });
+  return new Response(octetsDeVignette(String((data as { image: string }).image)), {
+    headers: {
+      ...entetes,
+      "Content-Type": "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
 
 /**
  * Une lecture dont l'échec ne peut pas passer pour un vide.
@@ -327,6 +439,11 @@ Deno.serve(async (req) => {
     });
 
   try {
+    /* Une vignette de logo se rend avant tout le reste : elle ne dépend
+       d'aucun salon, et c'est une requête par fiche ouverte. */
+    const vignette = new URL(req.url).searchParams.get("vignette");
+    if (vignette) return await rendVignette(vignette, CORS);
+
     const slug = new URL(req.url).searchParams.get("slug");
     if (!slug) return repond({ erreur: "Paramètre slug manquant." }, 400);
 
@@ -489,6 +606,11 @@ Deno.serve(async (req) => {
       );
     }
 
+    /* Les vignettes de ce salon, relevées une fois pour toute la réponse : la
+       page les préférera à l'adresse d'origine, et n'aura plus rien à décoder
+       ni à recadrer. */
+    const vignettes = await vignettesParAdresse(instantanes ?? []);
+
     const sortie = {
       evenement: evt.nom,
       slug: evt.slug,
@@ -559,10 +681,8 @@ Deno.serve(async (req) => {
              Le visiteur ne reçoit que ce que la fiche montre — le reste ne lui
              servirait à rien, et un salon qui a décoché les coordonnées ne les
              publie plus du tout. */
-          stands: retrait
-            ? ((charge.stands ?? []) as Record<string, unknown>[])
-              .map((s) => ampute(s, retrait))
-            : charge.stands ?? [],
+          stands: ((charge.stands ?? []) as Record<string, unknown>[])
+            .map((s) => avecVignette(retrait ? ampute(s, retrait) : s, vignettes)),
           // le nom choisi par l'exploitant l'emporte, et s'applique ici plutôt
           // qu'à la synchronisation : renommer doit se voir tout de suite
           /* Ce que l'exploitant a masqué ne part pas chez le visiteur : une

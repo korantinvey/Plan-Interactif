@@ -1719,8 +1719,13 @@ function prechargeMarque(id, iSoc){
   const o = parId.get(id);
   if (!o || o.kind === "zone" || !montre("stand", "logo")) return;
   const soc = iSoc >= 0 ? (o.coex || [])[iSoc] : o;
-  const url = soc && adresseImage(soc.logo);
-  if (url) recadreMarque(url);
+  /* Une vignette n'a rien à préparer — elle arrive prête — mais la demander
+     ici la met en route, et le navigateur l'aura reçue quand la fiche
+     s'ouvrira. */
+  const url = soc && (adresseVignette(soc.vignette) || adresseImage(soc.logo));
+  if (!url) return;
+  if (url.indexOf("vignette=") >= 0) new Image().src = url;
+  else recadreMarque(url);
 }
 
 /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
@@ -2695,6 +2700,23 @@ function adresseSure(v){
 const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
 
 /**
+ * L'adresse d'une vignette fabriquée à la synchronisation.
+ *
+ * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
+ * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
+ * et le service worker. Recadrée et réduite là-bas, elle pèse trois
+ * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
+ * analyser ici.
+ *
+ * Elle ne dit rien de plus que le logo public qu'elle montre : aucun slug ne
+ * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
+ */
+const adresseVignette = (cle) =>
+  API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
+    ? API + "?vignette=" + cle
+    : "";
+
+/**
  * Le logo d'une société, relu avant d'être affiché.
  *
  * Celui-ci n'est pas déposé mais lu chez la source — l'avatar d'une fiche
@@ -2904,12 +2926,13 @@ function poseMarque(blason){
      s'efface, plutôt que de laisser une vignette brisée en tête de fiche.
      Celui d'une zone voyage dans la fiche et ne connaît pas ce sort ; la même
      ligne les couvre tous les deux. */
-  marque.onerror = () => { marque.hidden = true; };
+  marque.onerror = () => { marque.hidden = true; delete marque.dataset.attend; };
   /* Où elle se range dépend de sa largeur, qu'on ne connaît qu'une fois
      l'image tenue : le rangement suit donc l'apparition, jamais avant. */
-  marque.onload = () => { marque.hidden = false; rangeMarque(); };
+  marque.onload = () => { marque.hidden = false; delete marque.dataset.attend; rangeMarque(); };
   if (!blason){
     marque.hidden = true;
+    delete marque.dataset.attend;
     marqueDemandee = "";
     /* L'adresse est retirée avec l'image cachée, sinon la fiche suivante
        montrerait la marque de la précédente le temps que la sienne arrive. */
@@ -2930,7 +2953,19 @@ function poseMarque(blason){
      le trajet — invisible sur un bureau, très visible sur le réseau d'un
      salon. On la cache donc le temps du trajet, et `onload` la ramène. */
   marqueDemandee = blason;
-  marque.hidden = true;
+  /* Elle tient sa place au lieu de disparaître : l'en-tête garde la hauteur
+     qu'il aura, et ce qu'on lit dessous ne saute plus à son arrivée. Voir
+     « logoZone[data-attend] » dans la feuille de style.
+
+     Sur la ligne du numéro, et non là où la fiche d'avant l'avait laissée :
+     une place tenue au hasard n'en est pas une. C'est aussi là que la plupart
+     des marques finissent — un logo en largeur, une fois ses marges retirées,
+     ne tient plus à côté d'un nom. */
+  marque.hidden = false;
+  marque.dataset.attend = "";
+  const bas = $("dBadges");
+  if (bas && marque.parentNode !== bas) bas.appendChild(marque);
+  marque.style.maxWidth = "";
   marque.removeAttribute("src");
   recadreMarque(blason).then(src => {
     // une autre fiche a pu s'ouvrir pendant le recadrage : sa marque l'emporte
@@ -2946,6 +2981,7 @@ let marqueDemandee = "";
 
 function montreMarque(marque){
   marque.hidden = !marque.naturalWidth;
+  delete marque.dataset.attend;
   if (!marque.hidden) rangeMarque();
 }
 
@@ -2978,6 +3014,9 @@ function montreMarque(marque){
 const MARQUES_RECADREES = new Map();
 
 function recadreMarque(src){
+  /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
+     trouver à retirer coûterait le décodage qu'on a justement déplacé. */
+  if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
   let p = MARQUES_RECADREES.get(src);
   if (p) return p;
   // toute panne rend l'adresse d'origine : la fiche montre alors le logo tel quel
@@ -3205,7 +3244,8 @@ function poseCode(pl, num, filigrane, salle){
  */
 function rangeMarque(){
   const marque = $("dLogo");
-  if (!marque || marque.hidden) return;
+  // rien à ranger tant qu'elle n'est qu'une place tenue : sa largeur décidera
+  if (!marque || marque.hidden || marque.dataset.attend !== undefined) return;
   const nom = $("detail").querySelector(".hdNom"), bas = $("dBadges");
   const titre = nom && nom.querySelector("h2");
   if (!titre || !bas) return;
@@ -3307,7 +3347,12 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      sien. Celui-là ne se charge qu'à l'ouverture de la fiche, ce qui le garde
      ici et hors de la liste — les cinq cents logos d'un salon comme Franchise
      Expo pèsent soixante-dix mégaoctets, quand une fiche n'en charge qu'un. */
-  poseMarque(ok("logo", zone ? imageSure(o.logo) : adresseImage(soc.logo)));
+  /* La vignette d'abord : fabriquée à la synchronisation, elle arrive recadrée
+     et légère, et se garde d'une visite à l'autre. L'adresse d'origine reste
+     le recours — un logo que la synchronisation n'a pas encore vu, ou dont la
+     source a refusé de se laisser lire, se charge chez elle comme avant. */
+  poseMarque(ok("logo", zone ? imageSure(o.logo)
+                             : adresseVignette(soc.vignette) || adresseImage(soc.logo)));
   const pl = DATA.plans[o.p] || P();
   poseCode(pl, ok("code", o.code) ? String(o.code) : "",
            !zone && o.code ? String(o.code) : "", !zone ? o.hall : "");
