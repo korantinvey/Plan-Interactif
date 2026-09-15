@@ -3835,7 +3835,13 @@ let montreTiroir = () => {};
     const part = s => { const n = tiroir.querySelector(s); return n ? n.offsetHeight : 0; };
     const h = prise.offsetHeight + part(".search") + part(".actifs") +
               part(".count");
-    if (h > 0) document.documentElement.style.setProperty("--replie", h + "px");
+    /* Sur le corps, pour la même raison que « --cartouche » : posée sur la
+       racine, cette hauteur faisait repeindre les six cents stands chaque fois
+       que le tiroir replié changeait de taille — l'apparition de la ligne des
+       résultats, par exemple, au premier mot tapé dans la recherche. */
+    const px = h + "px";
+    if (h > 0 && document.body.style.getPropertyValue("--replie") !== px)
+      document.body.style.setProperty("--replie", px);
   }
 
   /* Trois crans, du plus bas au plus haut. Le milieu est le cran utile : la

@@ -102,6 +102,14 @@ function monteWebgl(){
     },
   });
   GL.actif = true;
+  /* La bibliothèque ne garde que trois atlas de police, et le plan en demande
+     un par famille, par graisse et par taille — deux tailles de rendu, autant
+     de familles que l'exploitant a choisies pour ses noms et ses numéros. Au
+     quatrième, les atlas se chassaient l'un l'autre et se refabriquaient en
+     boucle : mesuré à deux cent quatre-vingts millisecondes de plus par
+     ouverture de fiche, sur un salon qui n'employait que quatre combinaisons.
+     La limite est un simple nombre d'entrées gardées ; on la relève une fois. */
+  try { deck.TextLayer.fontAtlasCacheLimit = 24; } catch (e) {}
   document.documentElement.classList.add("rendu-webgl");
   poseModelesLibelles();
   guetteContexteWebgl();
@@ -126,8 +134,16 @@ function monteWebgl(){
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
     // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
     // classes posées sur la racine, que la feuille de style lit
-    new MutationObserver(() => { majEditionWebgl(); toutRepeindreWebgl(); })
-      .observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
+    /* Une écriture qui repose la même valeur n'est pas un changement, mais le
+       guet la signale quand même — et repeindre tout le plan coûte un demi-
+       millier de millisecondes. On compare donc l'avant et l'après : une frappe
+       dans la recherche remesurait le cartouche, réécrivait la même hauteur, et
+       faisait reconvertir les six cents stands à chaque lettre. */
+    new MutationObserver(notes => {
+      if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
+      majEditionWebgl(); toutRepeindreWebgl();
+    }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
+      attributeFilter: ["class", "style", "data-theme"] });
     matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
