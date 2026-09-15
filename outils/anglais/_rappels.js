@@ -17,6 +17,10 @@ module.exports = {
   "Une notification par conférence retenue, même plan fermé. Les heures et les titres retenus partent alors sur nos serveurs, et s'effacent après le salon.":
     "One notification per conference you picked, even with the map closed. The times and titles you picked then go to our servers, and are erased after the show.",
 
+  /* Trop tard : la conférence commence avant que le rappel n'ait pu tomber. */
+  "Vos conférences retenues commencent dans moins de {n} min : il est trop tard pour un rappel.":
+    "The conferences you picked start in less than {n} min: too late for a reminder.",
+
   /* Ce qui empêche, et ce qu'on peut y faire. */
   "Pour être prévenu avant vos conférences, ajoutez le plan à votre écran d'accueil : sur iPhone, les notifications n'existent que là.":
     "To be reminded before your conferences, add the map to your home screen: on iPhone, notifications only exist there.",
