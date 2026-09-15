@@ -194,8 +194,28 @@ function cleBloc(b){
   return GL.cles.get(b);
 }
 
+/**
+ * Le peintre, à la première occasion — mais après que la page a montré ce
+ * qu'elle vient d'écrire.
+ *
+ * Un « requestAnimationFrame » s'exécute dans la trame qui précède
+ * l'affichage : le peintre y passait donc avant que le navigateur ne peigne
+ * la fiche, et la reconversion du plan retardait ce qu'elle n'avait pas
+ * écrit. Changer de fiche coûte vingt millisecondes ; poser la classe « sel »
+ * sur un stand en salit le bloc entier, et le reconvertir — neuf cents
+ * formes, chacune interrogée sur son style — en coûte trente de plus. La
+ * fiche d'avant restait à l'écran tout ce temps, sur le seul écran où l'on
+ * voit les deux à la fois.
+ *
+ * Le délai posé depuis la trame laisse celle-ci se peindre, et le plan suit
+ * dans la suivante. Il ne rallonge rien : la reconversion coûte ce qu'elle
+ * coûte, elle ne la paie simplement plus avant ce qu'on regarde. La vue, elle,
+ * ne passe pas par là — un geste garde sa trame, « vueWebgl » la sert
+ * directement.
+ */
 function planifieWebgl(){
-  if (GL.actif && !GL.image) GL.image = requestAnimationFrame(repeintWebgl);
+  if (!GL.actif || GL.image) return;
+  GL.image = requestAnimationFrame(() => { GL.image = setTimeout(repeintWebgl, 0); });
 }
 function toutRepeindreWebgl(){
   GL.tout = true; GL.couchesLibelles = null;
