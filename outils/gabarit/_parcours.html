@@ -40,11 +40,19 @@ function chargeParcours(){
   PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
   PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
   rafraichitParcours();
+  /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
+     la liste relue : ils ne portent que sur des conférences qu'elle contient
+     encore. */
+  reprendRappels();
 }
 
 function enregistreParcours(){
   // navigation privée, stockage plein : la visite continue sans le parcours
   try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+  /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
+     elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
+     se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
+  synchroniseRappels();
 }
 
 /**
@@ -448,6 +456,11 @@ function remplitParcours(){
      le reste de la journée se range. */
   if (confs.length){
     const g = groupeParcours(hote, "Conférences");
+    /* L'interrupteur du rappel se pose en tête du groupe qu'il concerne, et
+       nulle part ailleurs : il ne veut rien dire pour un parcours qui n'a que
+       des stands, et le proposer en tête du tiroir l'aurait fait lire comme un
+       réglage du parcours entier. */
+    poseRappels(g);
     let jour = null;
     confs.forEach(c => {
       const d = instantConf(c);

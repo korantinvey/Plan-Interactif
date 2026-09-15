@@ -174,6 +174,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
 | ajouter d'un coup tout ce que la recherche retient | `_parcours.html` § Tout ce que la recherche a retenu, bouton posé au pied du panneau par `_js.html` `ouvreCriteres` |
+| rappel avant une conférence retenue — notification, délai, abonnement | `_rappels.html` ; interrupteur posé dans le tiroir par `_parcours.html` `remplitParcours`, réglage `_admin1.html` `blocRappel` ; réception `_sw.js` § Les rappels de conférence ; relais `src/index.mjs` `rappels` (`/api/rappels`), serveur `supabase/functions/rappels/`, chiffrement `_partage/push.ts`, migration `rappel_avant_une_conference` (tâche `pg_cron` à la minute) ; secrets `VAPID_*` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |
 | mode borne interactive — `?borne`, position de l'écran, remise à zéro | `_borne.html` ; départ figé dans `_itineraire.html` `pointBorne`, marqueur posé par `_js.html` `montePlan` |

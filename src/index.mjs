@@ -32,6 +32,7 @@
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
 const MESURE = BASE + "mesure";
+const RAPPELS = BASE + "rappels";
 /* Oublier n'est pas anonyme : on vérifie la session auprès du même projet que
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
@@ -45,6 +46,11 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 /* Un paquet de mesures pèse quelques centaines d'octets. Au-delà, ce n'est
    plus une visite qu'on décrit : on refuse sans même relayer. */
 const MESURE_MAX = 4096;
+
+/* Une liste de rappels porte, par conférence retenue, un titre et une phrase
+   déjà écrite : quelques centaines d'octets, soixante au plus. Au-delà, ce
+   n'est plus un parcours. */
+const RAPPELS_MAX = 32768;
 
 /* Le plan sans son fond peut changer à chaque synchronisation : dix minutes de
    retard au plus, ce qui reste sous le rythme de synchronisation le plus vif.
@@ -186,6 +192,63 @@ const CORS_MESURE = {
   // une page ne redemande pas la permission à chaque paquet de la visite
   "Access-Control-Max-Age": "86400",
 };
+
+/* Les mêmes, la lecture de la clé en plus. Un plan posé sur l'écran d'accueil
+   d'un iPhone est servi depuis cette origine-ci et n'en aurait pas besoin ;
+   une coque d'application qui embarque la page, si. */
+const CORS_RAPPELS = {
+  ...CORS_MESURE,
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+};
+/**
+ * Relais des rappels de conférence.
+ *
+ * La page appelle `/api/rappels` sur sa propre origine, comme elle appelle le
+ * plan et la mesure : rien à configurer si le domaine change, et rien qui
+ * nomme le projet Supabase dans une page. Sans ce relais, l'appel tombait dans
+ * les fichiers statiques et rendait un 404 — la fonction ne recevait rien, et
+ * le visiteur lisait « Le rappel n'a pas pu être posé » sans que rien ne dise
+ * pourquoi.
+ *
+ * Deux chemins seulement, ceux dont la page a besoin : la clé publique qu'on
+ * vient lire pour s'abonner, et la liste qu'on vient poser. L'envoi, lui, est
+ * l'affaire de `pg_cron` et n'a rien à faire ici : il ne s'ouvre sur rien,
+ * mais l'ouvrir aussi sous ce domaine n'ajouterait qu'une porte à surveiller.
+ *
+ * Ni lu ni mis en cache dans un sens comme dans l'autre — sauf la clé, que le
+ * serveur laisse garder une heure et qui ne change qu'à une rotation.
+ */
+async function rappels(requete, url) {
+  if (requete.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: CORS_RAPPELS });
+  }
+  const cle = url.pathname === "/api/rappels/cle";
+  if (cle ? requete.method !== "GET" : requete.method !== "POST") {
+    return new Response("Méthode non permise", { status: 405, headers: CORS_RAPPELS });
+  }
+
+  let amont = RAPPELS, envoi = { method: "GET" };
+  if (!cle) {
+    const corps = await requete.text();
+    if (corps.length > RAPPELS_MAX) {
+      return new Response(null, { status: 413, headers: CORS_RAPPELS });
+    }
+    envoi = { method: "POST", headers: { "Content-Type": "application/json" }, body: corps };
+  } else {
+    amont = RAPPELS + "/cle";
+  }
+
+  const reponse = await fetch(amont, envoi);
+  return new Response(reponse.body, {
+    status: reponse.status,
+    headers: {
+      ...CORS_RAPPELS,
+      "Content-Type": "application/json",
+      "Cache-Control": cle ? "public, max-age=3600" : "no-store",
+    },
+  });
+}
+
 /**
  * Le manifeste, complété de l'adresse à rouvrir.
  *
@@ -273,6 +336,11 @@ export default {
        répond en outre à toute origine, pour les portes qui ne sont pas servies
        d'ici : voir `mesure` plus haut. */
     if (url.pathname === "/api/mesure") return mesure(requete);
+    /* Les rappels de conférence prennent le même chemin, pour la même raison :
+       l'origine de la page, et rien à reconfigurer si le domaine change. */
+    if (url.pathname === "/api/rappels" || url.pathname === "/api/rappels/cle") {
+      return rappels(requete, url);
+    }
     // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
     if (url.pathname === "/api/oublie") return oublie(requete, env);
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
