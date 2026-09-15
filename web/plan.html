@@ -28445,20 +28445,37 @@ function imageGl(el, m, op, acc){
    un stand ne doit pas empêcher d'ouvrir sa fiche. Chaque sorte de primitive
    se partage donc en deux couches, l'une cliquable, l'autre non. Sur le
    calque ouvert, tout ce que l'éditeur peut saisir est cliquable. */
-const partage = (liste, prises) => {
-  const vise = d => d.el || (prises && d.prise);
+const partage = (liste, prises, deja) => {
+  const vise = d => Boolean(d.el || (prises && d.prise)) && !(deja && deja.has(d.el || d.prise));
   return [liste.filter(vise), liste.filter(d => !vise(d))];
 };
 
+/** Ce qu'une couche désigne quand on la vise. */
+const designeGl = (d) => d.el || d.prise;
+
 function couchesDeBloc(acc, cle){
   const L = deck, out = [];
-  partage(acc.pleins, acc.prises).forEach((liste, k) => {
+  const pleins = partage(acc.pleins, acc.prises);
+  pleins.forEach((liste, k) => {
     if (!liste.length) return;
     out.push(new L.SolidPolygonLayer({ id: cle + "-pleins-" + k, data: liste, pickable: k === 0,
       getPolygon: d => d.polygon, getFillColor: d => d.couleur }));
   });
+  /* Ce qu'un aplat désigne déjà, son contour n'a pas à le redésigner.
+     Désigner se fait en rendant chaque couche cliquable dans un tampon qu'on
+     relit ensuite — et le contour des neuf cents stands y coûtait à lui seul
+     cent millisecondes sur les cent dix, quand les aplats en coûtent dix.
+     C'était payé au doigt posé, avant même de savoir s'il s'agit d'un appui ou
+     d'un déplacement, et cela se voyait : la fiche du stand suivant paraissait
+     attendre une animation qui n'avait pas lieu.
+
+     L'aplat couvre la forme entière ; il ne reste dehors que la moitié
+     extérieure d'un trait, large d'un pixel. Une forme qui n'a pas d'aplat —
+     un trait, un contour ouvert, un stand qu'un thème laisse vide — garde le
+     sien : c'est tout ce qu'elle a pour répondre. */
+  const repondus = new Set(pleins[0].map(designeGl).filter(Boolean));
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
-  partage(tous, acc.prises).forEach((liste, k) => {
+  partage(tous, acc.prises, repondus).forEach((liste, k) => {
     if (!liste.length) return;
     // les pointillés qui défilent ont leur couche : c'est elle seule qui bouge
     const K = constTexte();
