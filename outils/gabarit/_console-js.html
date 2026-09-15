@@ -2580,56 +2580,63 @@ async function synchronise(e) {
 }
 
 /**
- * Les vignettes des logos, par petits lots, après la synchronisation.
+ * Les vignettes des logos, fabriquées ici, après la synchronisation.
  *
- * Fabriquer une vignette est du calcul pur, et une fonction n'a qu'une part
- * bornée de temps processeur : la synchronisation s'y faisait tuer quand elle
- * s'en chargeait. Chaque appel repart donc avec sa propre part, et la console
- * en redemande tant qu'il en reste.
+ * Elles se faisaient au serveur : la plateforme n'accorde pas à une fonction
+ * le temps de calcul qu'il faut pour décoder des images, et elle refusait
+ * l'appel avant même le premier logo. Ce navigateur, lui, a la puissance — et
+ * il ne le fait qu'une fois par salon, pour tous les visiteurs qui suivront.
  *
- * Rien n'attend ces vignettes : on ne bloque ni la fenêtre d'avancement, qui
- * vient d'annoncer la fin, ni l'exploitant, qui peut fermer la console — le
- * lot suivant reprendra où celui-ci s'est arrêté. Un échec ne se signale même
- * pas : un logo sans vignette se charge chez la source, comme il l'a toujours
- * fait.
+ * Le recadrage est celui du plan, emprunté au même module : une vignette doit
+ * être cadrée comme la page l'aurait fait, puisqu'elle prend sa place.
  *
- * Le plafond de tours n'est pas une limite du salon mais une garde : un
- * serveur qui répondrait toujours « il en reste » ferait tourner cette boucle
- * sans fin. À quatre logos par tour, il couvre largement un salon de mille
- * enseignes.
+ * La fonction ne fait que dire ce qui manque et enregistrer ce qu'on lui rend.
+ * On lui renvoie par paquets plutôt qu'un par un : chaque envoi est un
+ * aller-retour, et cent allers-retours pour cent logos doubleraient la durée.
+ *
+ * Rien n'attend ces vignettes. Un logo qui n'en a pas se charge chez sa
+ * source, comme il l'a toujours fait, et fermer la console ne fait que
+ * repousser le reste à la prochaine synchronisation.
  */
-const TOURS_VIGNETTES = 300;
+const PAQUET_VIGNETTES = 8;
+/* Une garde, non une limite du salon : un serveur qui répondrait toujours
+   « il en reste » ferait tourner cette boucle sans fin. */
+const TOURS_VIGNETTES = 200;
 
 async function fabriqueLesVignettes(e) {
   let faites = 0, refusees = 0, total = 0;
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
-    let r;
+    let lot;
     try {
-      r = await fonction("vignettes", { evenementId: e.id });
+      lot = await fonction("vignettes", { evenementId: e.id });
     } catch (err) {
-      /* L'échec se dit, et ne se déduit pas d'une absence. Un logo sans
-         vignette n'est pas une panne — il se charge chez sa source, comme il
-         l'a toujours fait — mais une préparation qui ne commence jamais sans
-         rien annoncer en est une, et c'est la seule chose qu'on ne puisse pas
-         voir de l'extérieur : la table reste vide, et rien ne dit pourquoi. */
+      /* L'échec se dit, et ne se déduit pas d'une absence : une préparation
+         qui ne commence jamais sans rien annoncer laisse chercher du mauvais
+         côté. */
       signale(traduit("Préparation des logos impossible : {e}")
         .replace("{e}", err.message), true);
       return;
     }
-    faites += r.faites || 0;
-    refusees += r.refusees || 0;
-    total = r.total || total;
-    /* L'avancement dans la barre du haut, à chaque lot. Elle s'efface seule au
-       bout de quelques secondes, et le lot suivant la réécrit : c'est ce qui
-       fait un compteur qui bat, sans rien qui clignote ni qui s'empile. Le
-       travail dure plusieurs minutes sur un gros salon — le taire reviendrait
-       à demander de garder la console ouverte sans dire pourquoi. */
-    if (r.reste) {
-      signale(traduit("Préparation des logos : {n} sur {t}…")
-        .replace("{n}", faites + refusees).replace("{t}", total));
+    total = lot.total || total;
+    if (!lot.aFaire || !lot.aFaire.length) break;
+
+    const paquet = [];
+    for (const source of lot.aFaire) {
+      const v = await vignetteDeLogo(source);
+      if (v) paquet.push(v);
+      else refusees++;
+      if (paquet.length >= PAQUET_VIGNETTES) {
+        faites += await envoieVignettes(e, paquet);
+        paquet.length = 0;
+        signale(traduit("Préparation des logos : {n} sur {t}…")
+          .replace("{n}", faites + refusees).replace("{t}", total));
+      }
     }
-    if (!r.reste) break;
+    if (paquet.length) faites += await envoieVignettes(e, paquet);
+    signale(traduit("Préparation des logos : {n} sur {t}…")
+      .replace("{n}", faites + refusees).replace("{t}", total));
   }
+
   /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
      premier cas surprend quand on attend le contraire — un champ de logo non
      désigné dans la correspondance, et pas une fiche n'en porte — et le taire
@@ -2645,6 +2652,17 @@ async function fabriqueLesVignettes(e) {
       .replace("{n}", faites).replace("{r}", refusees)
     : traduit("{n} logos préparés pour les fiches.").replace("{n}", faites);
   signale(mot);
+}
+
+/** Un paquet de vignettes à enregistrer. Un envoi qui échoue ne perd que son
+ *  paquet : le tour suivant redemandera les mêmes adresses. */
+async function envoieVignettes(e, paquet) {
+  try {
+    const r = await fonction("vignettes", { evenementId: e.id, vignettes: paquet });
+    return r.enregistrees || 0;
+  } catch (err) {
+    return 0;
+  }
 }
 
 function dupliquer(e) {
