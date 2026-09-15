@@ -703,6 +703,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260913234328_libelles_anglais_des_listes_de_valeurs.sql` — evenement
 - `20260914112229_intitules_des_champs_de_la_fiche.sql` — —
 - `20260914231027_le_calage_du_plan_sur_la_terre.sql` — evenement
+- `20260915000013_la_presence_par_stand_ne_se_lit_que_sur_ses_salons.sql` — —
 
 ## Le reste
 
