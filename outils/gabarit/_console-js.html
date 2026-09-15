@@ -2565,7 +2565,9 @@ async function synchronise(e) {
     await charge();
     /* Les vignettes des logos, une fois la synchronisation finie et annoncée :
        elles ne font pas partie du plan, rien ne les attend, et leur fabrication
-       peut durer plusieurs minutes sur un gros salon. */
+       peut durer plusieurs minutes sur un gros salon. Elle se suit dans la
+       barre du haut, et s'arrête si l'on quitte la console — le lot suivant
+       reprendra où celui-ci s'est arrêté. */
     fabriqueLesVignettes(e);
   } catch (err) {
     // marquer l'étape où l'on s'est arrêté vaut mieux qu'une barre figée
@@ -2599,20 +2601,40 @@ async function synchronise(e) {
 const TOURS_VIGNETTES = 300;
 
 async function fabriqueLesVignettes(e) {
-  let faites = 0;
+  let faites = 0, refusees = 0, total = 0;
   for (let tour = 0; tour < TOURS_VIGNETTES; tour++) {
     let r;
     try {
       r = await fonction("vignettes", { evenementId: e.id });
     } catch (err) {
-      return;   // la prochaine synchronisation reprendra
+      /* On s'arrête là, sans rien dire de plus que ce qui a été fait : la
+         prochaine synchronisation reprendra, et un logo sans vignette se
+         charge chez la source comme il l'a toujours fait. */
+      break;
     }
     faites += r.faites || 0;
+    refusees += r.refusees || 0;
+    total = r.total || total;
+    /* L'avancement dans la barre du haut, à chaque lot. Elle s'efface seule au
+       bout de quelques secondes, et le lot suivant la réécrit : c'est ce qui
+       fait un compteur qui bat, sans rien qui clignote ni qui s'empile. Le
+       travail dure plusieurs minutes sur un gros salon — le taire reviendrait
+       à demander de garder la console ouverte sans dire pourquoi. */
+    if (r.reste) {
+      signale(traduit("Préparation des logos : {n} sur {t}…")
+        .replace("{n}", faites + refusees).replace("{t}", total));
+    }
     if (!r.reste) break;
   }
-  // on ne le dit que s'il s'est passé quelque chose, et sans réveiller
-  // l'exploitant qui est passé à autre chose
-  if (faites) signale(traduit("{n} logos préparés pour les fiches.").replace("{n}", faites));
+  if (!faites && !refusees) return;
+  /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
+     un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte
+     qui n'atteint jamais son total sans explication en serait une. */
+  const mot = refusees
+    ? traduit("{n} logos préparés, {r} illisibles chez leur source.")
+      .replace("{n}", faites).replace("{r}", refusees)
+    : traduit("{n} logos préparés pour les fiches.").replace("{n}", faites);
+  signale(mot);
 }
 
 function dupliquer(e) {
