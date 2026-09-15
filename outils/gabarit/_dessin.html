@@ -1217,7 +1217,7 @@ function ouvrePoi(id, depuis, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   if (recentrer) centrePoint(f.pts[0]);
-  anime(rectVisee(depuis), 1);
+  anime(() => rectVisee(depuis), 1);
 }
 
 /**

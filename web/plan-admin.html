@@ -6668,6 +6668,30 @@ function liste(){
   });
 }
 
+/**
+ * La ligne de la liste qui porte la fiche ouverte.
+ *
+ * Ouvrir une fiche ne change rien à ce que la liste montre : mêmes résultats,
+ * même ordre, même compte — seule la ligne marquée change. La reconstruire
+ * entière pour déplacer cette marque coûtait pourtant neuf millisecondes sur
+ * un salon de mille stands, cinq cents lignes réécrites et autant de clics
+ * rebranchés, à chaque ouverture comme à chaque fermeture. On repose donc
+ * l'attribut là où il est.
+ *
+ * Ce qui, lui, change vraiment la liste passe toujours par « liste » : un
+ * mot-clé, un critère, et le pavillon — celui-ci décidant de la pastille de
+ * hall que portent les lignes d'ailleurs.
+ */
+function marqueChoisie(){
+  $("list").querySelectorAll(".row").forEach(b => {
+    /* Une conférence et un repère ne sont pas des emplacements : la sélection
+       du plan ne les désigne pas, et « liste » ne les marque jamais. */
+    const emplacement = b.dataset.sorte !== "conf" && b.dataset.sorte !== "poi";
+    b.setAttribute("aria-current", String(emplacement && b.dataset.id === state.sel &&
+      Number(b.dataset.soc) === state.selSoc));
+  });
+}
+
 /* ============================================================
    6. Vue
    ============================================================ */
@@ -7057,12 +7081,26 @@ let anim = null;
 /** Écran étroit : la liste et la fiche sont des tiroirs, pas des panneaux. */
 const ETROIT = () => matchMedia("(max-width:900px)").matches;
 
-function anime(rect, sens){
+/**
+ * L'étirement de la fiche depuis la forme qu'on a choisie.
+ *
+ * `mesure` est une fonction, et non le rectangle qu'elle rend : la mesure
+ * coûte, et l'étirement n'a pas toujours lieu. Sur un téléphone la fiche glisse
+ * depuis le bas — une mise à l'échelle depuis la forme cliquée se battrait avec
+ * ce glissement, et la transition CSS suffit ; on n'y mesurait donc rien, mais
+ * on le mesurait quand même, à l'appel. C'était les trois quarts du temps
+ * d'ouverture d'une fiche : soixante millisecondes sur un salon de mille
+ * stands, parce que lire la boîte d'une forme oblige le navigateur à remettre
+ * en page le plan entier — que les libellés, réécrits juste avant, viennent de
+ * salir. La fiche s'ouvrait avec un temps de retard, sur l'écran même où elle
+ * n'en avait aucun usage.
+ */
+function anime(mesure, sens){
   const p = $("detail");
   if (anim){ anim.cancel(); anim = null; }
-  /* Sur mobile la fiche glisse depuis le bas : une mise à l'échelle depuis la
-     forme cliquée se battrait avec ce glissement. La transition CSS suffit. */
-  if (REDUIT || !rect || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }
+  if (REDUIT || ETROIT()){ if (sens < 0) p.classList.remove("open"); return; }
+  const rect = mesure();
+  if (!rect){ if (sens < 0) p.classList.remove("open"); return; }
   const b = p.getBoundingClientRect();
   p.style.transformOrigin = (rect.left + rect.width / 2 - b.left) + "px " +
                             (rect.top + rect.height / 2 - b.top) + "px";
@@ -7111,7 +7149,12 @@ const rangSociete = (el) =>
 function select(id, recentrer, canal, iSoc){
   const o = parId.get(id);
   if (!o) return;
-  if (o.p !== state.plan){          // l'objet vit dans un autre pavillon
+  /* Changer de pavillon change la liste elle-même — son sommaire est celui du
+     pavillon ouvert, et les lignes d'ailleurs portent une pastille de hall :
+     elle se refait alors, quand une simple sélection se contente de déplacer
+     sa marque. */
+  const ailleurs = o.p !== state.plan;
+  if (ailleurs){
     state.plan = o.p; montePlan(); fit();
   }
   document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
@@ -7120,7 +7163,8 @@ function select(id, recentrer, canal, iSoc){
   const n = noeud(id, state.selSoc); if (n) n.classList.add("sel");
   dessineMarques();
   marqueStandsDessines();
-  liste(); libelles();
+  if (ailleurs) liste(); else marqueChoisie();
+  libelles();
   /* Le cadrage est passé dans « ouvre » plutôt que de l'encadrer ici : il
      demandait deux ordres — après la fiche sur un téléphone, avant elle sur un
      grand écran — et l'un des deux cadrait toujours sur une géométrie qu'il ne
@@ -8362,7 +8406,7 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      qu'après l'avoir remplie — dit enfin au cadrage ce qu'elle couvre. Un seul
      ordre pour les deux écrans, là où il en fallait un par écran. */
   if (recentrer) centre(o);
-  anime(rectVisee(depuis), 1);
+  anime(() => rectVisee(depuis), 1);
   // une zone organisateur n'est pas un exposant : elle ne compte pas ici
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
@@ -8370,15 +8414,17 @@ function ferme(){
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   /* La forme d'où la fiche est partie, relevée tant que la sélection tient
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
-     le découpage qu'il héberge. */
+     le découpage qu'il héberge. Sa boîte, elle, se mesure plus bas et
+     seulement si l'on anime — la classe « sel » qu'on retire ici ne change
+     qu'un remplissage, jamais le contour qui la donne. */
   const n = ouvert && id ? noeud(id, state.selSoc) : null;
-  const rect = n ? (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()) : null;
   document.querySelectorAll(".sel").forEach(x => x.classList.remove("sel"));
   state.sel = null; state.selSoc = -1;
   dessineMarques();
   marqueStandsDessines();
-  liste(); libelles(); $("voile").classList.remove("on");
-  if (ouvert) anime(rect, -1);
+  // fermer ne change que la ligne marquée : la liste reste ce qu'elle montrait
+  marqueChoisie(); libelles(); $("voile").classList.remove("on");
+  if (ouvert) anime(() => n && (GL.actif ? rectEcranWebgl(n) : n.getBoundingClientRect()), -1);
 }
 /* Les onglets ne font que choisir ce qu'on regarde : la fiche est construite
    entière, et la bascule ne relit rien. */
@@ -14073,7 +14119,7 @@ function ouvrePoi(id, depuis, recentrer){
   $("voile").classList.add("on");
   ecarteClicFantome();
   if (recentrer) centrePoint(f.pts[0]);
-  anime(rectVisee(depuis), 1);
+  anime(() => rectVisee(depuis), 1);
 }
 
 /**
