@@ -157,8 +157,12 @@ async function oublie(requete, env) {
   if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
 
   if (env.CACHE) {
-    await env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug }))))
-      .catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
+    /* Le plan, et le nom que porte l'application installée : renommer un salon
+       dans la console doit se voir au même moment que le reste. */
+    await Promise.all([
+      env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
+      env.CACHE.delete("nom1:" + slug),
+    ]).catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
@@ -249,33 +253,81 @@ async function rappels(requete, url) {
   });
 }
 
+/* Le nom que porte l'application installée : le salon d'abord, la marque en
+   signature — « Plan SMCL by Event2Plan ». */
+const MARQUE = "Event2Plan";
+/* Un nom de salon tient en une ligne. Au-delà, ce n'est plus un nom, et rien
+   ne l'afficherait de toute façon : les systèmes coupent bien avant. */
+const NOM_MAX = 64;
+
 /**
- * Le manifeste, complété de l'adresse à rouvrir.
+ * Le nom du salon, pour le manifeste de l'application installée.
+ *
+ * Le manifeste est lu avant que la page ait appelé l'API : elle ne peut pas y
+ * écrire le nom du salon, elle ne le sait pas encore. Elle nomme donc le slug,
+ * et c'est d'ici que le nom vient — d'une lecture à part, qui ne rend que deux
+ * colonnes là où le plan entier pèse ses stands, ses zones et son icône
+ * d'onglet. On ne s'en sert que pour nommer : ce que le système ouvrira,
+ * `start_url`, continue de sortir de ce que la page a demandé.
+ *
+ * Gardé le temps qu'on garde le plan lui-même : un salon renommé dans la
+ * console porte son nouveau nom à la visite d'après, comme le reste. Un nom
+ * introuvable — salon inconnu, brouillon, base muette — n'est pas gardé : le
+ * cache ne doit pas retenir l'absence, et un slug inventé n'y écrit donc rien.
+ */
+async function nomDuSalon(slug, env, ctx) {
+  const cle = "nom1:" + slug;
+  if (env.CACHE) {
+    const garde = await env.CACHE.get(cle).catch(() => null);
+    if (garde) return garde;
+  }
+  const rep = await fetch(AMONT + "?slug=" + encodeURIComponent(slug) + "&nom=1")
+    .catch(() => null);
+  if (!rep || !rep.ok) return null;
+  const corps = await rep.json().catch(() => null);
+  const nom = String(corps?.evenement ?? "").trim().slice(0, NOM_MAX);
+  if (!nom) return null;
+  if (env.CACHE) {
+    ctx.waitUntil(env.CACHE.put(cle, nom, { expirationTtl: TTL_PLAN }).catch(() => {}));
+  }
+  return nom;
+}
+
+/**
+ * Le manifeste, complété du salon d'où l'on installe : son nom, et l'adresse
+ * que l'application rouvrira.
  *
  * Une même page sert tous les salons — `?plan=` tranche — et le manifeste, lui,
  * est fabriqué une fois pour toutes : l'application installée depuis un salon
- * rouvrait donc celui d'un autre. Le laisser sans adresse de départ, comme la
- * spécification l'autorise, revenait à n'être plus installable du tout :
- * Chromium refuse une adresse qu'il n'a pas encore remplacée.
+ * rouvrait donc celui d'un autre, sous le nom du produit. Le laisser sans
+ * adresse de départ, comme la spécification l'autorise, revenait à n'être plus
+ * installable du tout : Chromium refuse une adresse qu'il n'a pas encore
+ * remplacée.
  *
- * Le fichier construit est donc repris tel quel, et rien n'y change que
- * `start_url`. Un manifeste à tenir, aucun à fabriquer par salon, et aucune
- * lecture en base : la page dit l'adresse qu'elle veut rouvrir, on la vérifie.
+ * Le fichier construit est donc repris tel quel, et rien n'y change que le nom
+ * et `start_url`. Un manifeste à tenir, aucun à fabriquer par salon.
  *
- * Vérifier n'est pas une politesse. `start_url` désigne ce que le système
- * ouvrira ensuite, seul, sans la page : une adresse venue de l'extérieur y
- * entre sans être relue par personne. Seul un chemin de ce site passe — même
- * origine, une fois normalisé — et son ancre est retirée, une application ne
- * s'ouvrant pas au milieu d'un document.
+ * Deux choses arrivent de l'extérieur, et aucune n'entre telle quelle.
+ * L'adresse est vérifiée : `start_url` désigne ce que le système ouvrira
+ * ensuite, seul, sans la page, et seul un chemin de ce site passe — même
+ * origine, une fois normalisé — son ancre retirée, une application ne s'ouvrant
+ * pas au milieu d'un document. Le nom, lui, n'est pas reçu mais cherché : la
+ * page ne donne qu'un slug, et un lien fabriqué ne peut donc pas faire poser
+ * sur un écran d'accueil une application au nom qu'il aurait choisi.
+ *
+ * Le tour de phrase est écrit ici, et nulle part ailleurs : le salon d'abord,
+ * c'est lui qu'on cherche du regard, et la marque en signature.
  *
  * Un fichier de `web/` est servi avant que ce script ne tourne : sans le
  * `run_worker_first` de `wrangler.jsonc`, ce chemin-ci ne viendrait jamais
  * jusqu'ici, et le manifeste partirait tel quel sans que rien ne le dise.
  */
-async function manifeste(requete, env) {
+async function manifeste(requete, env, ctx) {
   const fichier = new URL("/manifeste.webmanifest", requete.url);
   const rep = await env.ASSETS.fetch(new Request(fichier.toString(), { method: "GET" }));
-  const depart = new URL(requete.url).searchParams.get("depart");
+  const params = new URL(requete.url).searchParams;
+  const depart = params.get("depart");
+  const salon = params.get("salon") || "";
   if (!rep.ok) return rep;
 
   const contenu = await rep.json().catch(() => null);
@@ -287,6 +339,15 @@ async function manifeste(requete, env) {
        est écarté, et le manifeste repart avec son adresse par défaut. */
     const cible = new URL(depart, fichier);
     if (cible.origin === fichier.origin) contenu.start_url = cible.pathname + cible.search;
+  }
+  /* Le contrôle du slug n'est pas décoratif non plus : il construit une clé de
+     cache, et part en amont. Muet sur un salon qu'on ne sait pas nommer, le
+     manifeste garde le nom du produit — mieux vaut une application mal nommée
+     qu'une application qui ne s'installe pas. */
+  const nom = SLUG.test(salon) ? await nomDuSalon(salon, env, ctx) : null;
+  if (nom) {
+    contenu.name = "Plan " + nom + " by " + MARQUE;
+    contenu.short_name = nom;
   }
   return new Response(JSON.stringify(contenu), {
     headers: {
@@ -329,7 +390,7 @@ export default {
     const url = new URL(requete.url);
     /* Le manifeste est un fichier construit, mais l'adresse qu'il fait rouvrir
        dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
-    if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env);
+    if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env, ctx);
     /* Les mesures d'utilisation prennent le même chemin que le plan : même
        origine que la page, donc rien à configurer si le domaine change. Elles
        ne sont ni lues ni mises en cache — elles ne font que passer. Le relais

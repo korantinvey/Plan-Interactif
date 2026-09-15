@@ -85,6 +85,28 @@ function auDoigt(){
 const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" && !BORNE;
 
 /* ------------------------------------------------------------
+   Le nom que l'appareil retiendra
+   ------------------------------------------------------------ */
+/**
+ * Nommer l'application du salon qu'on regarde.
+ *
+ * Le manifeste le porte déjà : la page y nomme le salon, le relais va chercher
+ * son nom et l'écrit — « Plan SMCL by Event2Plan » (`outils/pwa.js`,
+ * `src/index.mjs`). iOS, lui, ne lit pas le manifeste pour l'écran d'accueil :
+ * il prend `apple-mobile-web-app-title`, une balise écrite avec la page, donc
+ * avant que le salon soit connu, et l'icône se posait sous « Plan » quel que
+ * soit le salon. Elle est relue au moment de l'ajout — la corriger dès les
+ * données arrivées suffit à ce que l'icône porte le bon nom.
+ *
+ * Le salon seul, comme dans le manifeste : sous une icône, la place est d'une
+ * douzaine de signes, et c'est le salon qu'on y cherche.
+ */
+function nommeApplication(nom){
+  const balise = document.querySelector("meta[name=apple-mobile-web-app-title]");
+  if (balise && nom) balise.content = nom;
+}
+
+/* ------------------------------------------------------------
    Ce que le visiteur a répondu
    ------------------------------------------------------------ */
 /* Rangé sous le nom du salon : chaque salon s'installe comme une application

@@ -3,6 +3,7 @@
  *
  *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
  *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
+ *   GET /plan-public?slug=…&nom=1               le nom du salon, seul
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
@@ -240,6 +241,24 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
 };
 
 /**
+ * Le nom du salon, et rien d'autre.
+ *
+ * Ce que vient chercher le manifeste de l'application installée, pour que
+ * l'icône posée sur l'écran d'accueil porte le salon et non le produit
+ * (`src/index.mjs` `nomDuSalon`). Une lecture à part, et non la précédente :
+ * celle-là ramène les zones, les fiches et l'icône d'onglet du salon, là où
+ * deux colonnes suffisent — et elle est demandée au chargement de chaque page
+ * du plan, avant même que le visiteur ait rien vu.
+ *
+ * Publié pour le visiteur, comme tout le reste : un brouillon ne nomme pas une
+ * application.
+ */
+const nomDuSalon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
+  const q = sb.from("evenement").select("nom, slug").eq("slug", slug);
+  return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
+};
+
+/**
  * Ses pavillons : publiés pour un visiteur, tous pour un exploitant.
  *
  * Le filtre est posé sur la lecture des pavillons et non sur celles qui
@@ -448,6 +467,18 @@ Deno.serve(async (req) => {
     if (!slug) return repond({ erreur: "Paramètre slug manquant." }, 400);
 
     const sb = db(req);
+
+    /* Le nom seul, pour nommer l'application installée : avant la lecture
+       complète, puisqu'il n'en a besoin de rien. Gardé dix minutes comme le
+       plan — un salon renommé se voit au même rythme que le reste. */
+    if (new URL(req.url).searchParams.get("nom")) {
+      const { data: nomme, error: mal } = await nomDuSalon(sb, slug, identifie);
+      if (mal) return repond({ erreur: mal.message }, 500);
+      if (!nomme) {
+        return repond({ erreur: "Événement introuvable ou non publié." }, 404);
+      }
+      return repond({ evenement: nomme.nom, slug: nomme.slug }, 200, 600);
+    }
 
     // seuls les événements publiés passent, sauf à l'exploitant dont la
     // session est valide : la politique de sécurité tranche pour lui

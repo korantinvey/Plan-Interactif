@@ -195,7 +195,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | export tableur des exposants | `_export.html` (console **et** rapport), écriture `.xlsx` dans `_classeur.html` — mêmes chiffres que la carte de chaleur, par `audience_cibles` |
 | accès administrateur d'un plan | `_auth-plan.html` |
 | consultation hors ligne, ce que le navigateur garde | `_sw.js`, page de secours `_hors-ligne.html` |
-| installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `APPLICATION` pour le seul plan public ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
+| installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `application()` pour le seul plan public ; nom et adresse de départ par salon dans `src/index.mjs` `manifeste`, `nomDuSalon` (`MARQUE`), qui les tient de `plan-public?slug=…&nom=1` ; nom sur l'écran d'accueil d'iOS par `_installation.html` `nommeApplication` |
 | quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
 | fenêtre qui invite le visiteur à installer le plan | `_installation.html` — moment `essaieInvitation` (lancé par `_admin2.html` `demarre`), façon par navigateur `faconInstallation`, confirmation après installation `ouvreInstalle` ; case `caseInstallation`, posée par `_admin1.html` `voletPlan`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |
 | icône de l'application | `outils/icones.js` — un dessin, six sorties |
