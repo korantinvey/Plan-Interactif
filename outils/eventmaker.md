@@ -313,13 +313,23 @@ et l'aurait-il fait qu'il n'aurait offert que des identifiants MongoDB, que rien
 ne résout côté fiche.
 
 **Le catalogue est donc chargé avec les exposants, et les identifiants
-remplacés par les noms sur la fiche même**, joints par le point-virgule dont
-Eventmaker se sert partout ailleurs. Le champ redevient alors un champ à choix
-multiple comme les autres : relevé avec un exemple lisible — « Après-Vente;
-Commerce » —, désignable depuis la console, et séparé par la règle commune. Un
-appel de plus par synchronisation, qui part de front avec les catégories ; un
-salon qui n'en tient aucune rend un catalogue vide, et une panne de cet appel-là
-est journalisée sans emporter la synchronisation.
+remplacés par les noms sur la fiche même.** Le champ redevient alors un champ à
+choix multiple comme les autres : relevé avec un exemple lisible — « Après-Vente,
+Commerce » —, et désignable depuis la console. Un appel de plus par
+synchronisation, qui part de front avec les catégories ; un salon qui n'en tient
+aucune rend un catalogue vide, et une panne de cet appel-là est journalisée sans
+emporter la synchronisation.
+
+**La liste reste une liste tout du long**, et ce n'est pas un détail. La joindre
+par un point-virgule pour la laisser recouper par la règle commune marchait —
+aucune des 5 430 thématiques du compte n'en porte dans son nom — mais tenait à
+cela seul : une thématique nommée « Vente; réparation » se serait retrouvée
+coupée en deux, et un organisateur peut la nommer ainsi demain. La séparation
+se fait donc une seule fois, dans `lit`, qui est le dernier endroit à savoir
+sous quelle forme chaque source a rendu sa valeur : une chaîne est une liste
+jointe et se coupe, un tableau porte déjà ses valeurs une à une et passe entier.
+Plus loin, les sources sont cumulées et les deux se ressemblent trait pour
+trait.
 
 **Ce n'est pas pour autant un défaut**, alors que le nom, lui, ne varie pas d'un
 salon à l'autre. Sur Franchise Expo, les thématiques natives *sont* la
@@ -355,9 +365,10 @@ dont l'exemple se lit.
 
 **Un champ à choix multiple ne descend pas en liste.** Eventmaker joint ses
 valeurs par un point-virgule — `SIDO26_NOM101;SIDO26_NOM102;SIDO26_NOM204` — là
-où Klipso rend un tableau. Sans les séparer, la fiche afficherait la ligne
-entière comme une seule rubrique ; c'est ce que faisait la nomenclature sur les
-salons qui la tiennent ainsi.
+où Klipso rend un tableau, et où ses thématiques en rendent un aussi. Sans les
+séparer, la fiche afficherait la ligne entière comme une seule rubrique ; c'est
+ce que faisait la nomenclature sur les salons qui la tiennent ainsi. Les deux
+formes se séparent au même endroit, chacune selon sa règle — voir plus haut.
 
 Le graphe ne sert à rien ici : `publicViewer` ne porte que le programme, et ni
 `exhibitors` ni `themes` n'existent à sa racine. Tout se lit en REST, sur la

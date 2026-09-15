@@ -626,13 +626,13 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## `supabase/functions/` — synchronisation Klipso et API publique
 
-### `supabase/functions/_partage/champs.ts` — 480 l.
+### `supabase/functions/_partage/champs.ts` — 510 l.
 
-(aucune fonction de premier niveau)
+`valeursDe` 327
 
-### `supabase/functions/_partage/eventmaker.ts` — 992 l.
+### `supabase/functions/_partage/eventmaker.ts` — 1015 l.
 
-`grapheJson` 177 · `enParallele` 809 · `texteSeul` 829 · `champs` 957
+`grapheJson` 178 · `enParallele` 823 · `texteSeul` 843 · `champs` 980
 
 ### `supabase/functions/_partage/gaia.ts` — 305 l.
 

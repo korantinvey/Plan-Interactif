@@ -13,8 +13,8 @@
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
 import {
-  DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, separeValeurs,
-  valeurPerso, valeursRelevees, vrai,
+  DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, valeurPerso,
+  valeursRelevees, vrai,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -96,8 +96,9 @@ const INSCRIT = "registered";
 
    On les résout donc en noms sur la fiche, à la place des identifiants, et le
    champ redevient un champ à choix multiple comme les autres — relevé avec un
-   exemple lisible, désignable depuis la console, séparé par les points-virgules
-   que la source emploie partout ailleurs. */
+   exemple lisible, désignable depuis la console. La liste reste une liste tout
+   du long : la joindre par un point-virgule pour la recouper ensuite aurait
+   haché en deux une thématique qui en porte un dans son nom. */
 const CHAMP_THEMATIQUES = "thematic_ids";
 
 /* Ce que la console affiche à côté du nom technique. Sans lui, « thematic_ids »
@@ -332,14 +333,18 @@ export class Eventmaker {
    * Une thématique que le catalogue ne nomme pas est laissée de côté plutôt que
    * rendue par son identifiant : un identifiant sur une fiche publique ne dit
    * rien à personne.
+   *
+   * La liste reste une liste : c'est `lit` qui sépare les cibles multiples, et
+   * il garde les entrées d'un tableau entières. Les joindre ici pour les
+   * recouper là-bas aurait coupé en deux une thématique portant un
+   * point-virgule dans son nom.
    */
   private nommeThematiques(g: Record<string, any>, noms: Map<string, string>): void {
     const ids = g[CHAMP_THEMATIQUES];
     if (!Array.isArray(ids)) return;
     g[CHAMP_THEMATIQUES] = ids
       .map((i) => noms.get(String(i)))
-      .filter(Boolean)
-      .join(";");
+      .filter((n): n is string => Boolean(n));
   }
 
   /**
@@ -355,6 +360,15 @@ export class Eventmaker {
   ): unknown {
     const liste = this.cfg.champs?.[cible] ?? DEFAUTS.eventmaker[cible] ?? [];
     return lit(liste, { "": m, invite: g }, multiple);
+  }
+
+  /** Une cible multiple, déjà séparée en valeurs par `lit`. */
+  private multiple(
+    g: Record<string, any>,
+    m: Record<string, string>,
+    cible: string,
+  ): string[] {
+    return this.valeur(g, m, cible, true) as string[];
   }
 
   /**
@@ -736,8 +750,8 @@ export class Eventmaker {
         /* Une cible multiple ne descend pas en liste : Eventmaker joint ses
            valeurs par un point-virgule — « SIDO26_NOM101;SIDO26_NOM102 » —, et
            c'est la règle commune à tous les champs à choix qui la défait. */
-        nomencl: separeValeurs(this.valeur(g, m, "nomenclature", true)),
-        themes: separeValeurs(this.valeur(g, m, "thematiques", true)),
+        nomencl: this.multiple(g, m, "nomenclature"),
+        themes: this.multiple(g, m, "thematiques"),
         perso: this.perso(g, m),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
@@ -885,15 +899,18 @@ class Releve {
   /** Une fiche de plus, et si elle désigne un exposant. */
   ajoute(g: Record<string, any>, m: Record<string, string>, exposant: boolean): void {
     for (const [k, v] of Object.entries(g)) {
-      // ni les objets imbriqués, ni les clés techniques : rien de tout cela
-      // ne s'affiche sur une fiche détail
+      /* Les thématiques sont la seule liste qu'une fiche affiche : les autres
+         valeurs composées sont des objets imbriqués — quotas, badges, suivi
+         commercial — qui n'ont rien à faire sur une fiche détail. Et seul
+         champ natif dont le nom ne dit pas ce qu'il porte, puisqu'il annonce
+         des identifiants là où on a posé des noms. */
+      if (k === CHAMP_THEMATIQUES) {
+        this.note("invite:" + k, LIBELLE_THEMATIQUES, GROUPES[1], v, exposant);
+        continue;
+      }
       if (v && typeof v === "object") continue;
       if (/^_|(^|_)id$|_at$/.test(k)) continue;
-      /* Seul champ natif dont le nom ne dit pas ce qu'il porte : les autres
-         s'appellent `city` ou `company_name`, celui-là annonce des
-         identifiants alors qu'on y a posé des noms de thématiques. */
-      const libelle = k === CHAMP_THEMATIQUES ? LIBELLE_THEMATIQUES : k;
-      this.note("invite:" + k, libelle, GROUPES[1], v, exposant);
+      this.note("invite:" + k, k, GROUPES[1], v, exposant);
     }
     for (const [k, v] of Object.entries(m)) this.note(k, k, GROUPES[0], v, exposant);
   }
@@ -905,7 +922,13 @@ class Releve {
     valeur: unknown,
     exposant: boolean,
   ): void {
-    const ex = String(valeur ?? "").trim();
+    /* Une liste se montre comme on la lit — « Après-Vente, Commerce » — et non
+       jointe par le point-virgule d'un champ à choix multiple : ce
+       point-virgule-là est dans la source, celui-ci n'y serait pas, et
+       l'exemple sert justement à faire reconnaître ce que la fiche porte. */
+    const ex = Array.isArray(valeur)
+      ? valeur.map((x) => String(x ?? "").trim()).filter(Boolean).join(", ")
+      : String(valeur ?? "").trim();
     if (!ex) return;
     const court = ex.length > 60 ? ex.slice(0, 57) + "…" : ex;
     let d = this.vus.get(cle);
@@ -925,7 +948,7 @@ class Releve {
        qu'on reconnaît un champ à choix — « Nouveau Client », « Client N-1 »,
        « Retour » — et c'est parmi elles que l'exploitant désignera celles qui
        déclenchent. */
-    noteValeurs(d.compte, ex);
+    noteValeurs(d.compte, valeur);
   }
 
   /* Les champs personnalisés en tête : ce sont les seuls que l'organisateur
