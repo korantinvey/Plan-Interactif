@@ -361,10 +361,12 @@ function forme(f) {
   return '<path d="' + f.d + '"' + c;
 }
 
-function dessin(marque, titre) {
+function dessin(marque, titre, options) {
+  const { fond = true, muet = false } = options || {};
   return [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="' + titre + '">',
-    '<rect width="100" height="100" rx="22" fill="' + teinte(NUIT) + '"/>',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" ' +
+      (muet ? 'aria-hidden="true"' : 'role="img" aria-label="' + titre + '"') + ">",
+    ...(fond ? ['<rect width="100" height="100" rx="22" fill="' + teinte(NUIT) + '"/>'] : []),
     ...[...marque].reverse().map(forme),   // du fond vers le dessus, cette fois
     "</svg>",
     "",
@@ -377,4 +379,19 @@ const svg = () => dessin(MARQUE, "Event2Map");
 /** La marque réduite : celle que porte l'onglet, où E et M ne tiendraient pas. */
 const svgOnglet = () => dessin(REDUITE, "Event2Map");
 
-module.exports = { png, svg, svgOnglet };
+/**
+ * La marque posée dans une page — l'administration, la console, l'écran d'accès.
+ *
+ * Deux poses, parce qu'il y a deux fonds. `svgPage` garde le carré de nuit,
+ * pour une barre ou une carte claire ; `svgPageNu` le retire, pour une surface
+ * déjà dans la nuit — le bloc cyan y flotte, et les lettres restent lisibles
+ * puisqu'elles sont creusées dans le bloc et non dans le fond.
+ *
+ * Les deux sont muettes. Elles paraissent à côté du nom qu'elles désignent —
+ * « Console des plans », « Administration du plan » — et un lecteur d'écran
+ * qui annonce « Event2Map » avant de lire ce titre ne dit rien de plus.
+ */
+const svgPage = () => dessin(MARQUE, "Event2Map", { muet: true });
+const svgPageNu = () => dessin(MARQUE, "Event2Map", { fond: false, muet: true });
+
+module.exports = { png, svg, svgOnglet, svgPage, svgPageNu };

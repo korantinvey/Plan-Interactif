@@ -2607,10 +2607,14 @@ async function fabriqueLesVignettes(e) {
     try {
       r = await fonction("vignettes", { evenementId: e.id });
     } catch (err) {
-      /* On s'arrête là, sans rien dire de plus que ce qui a été fait : la
-         prochaine synchronisation reprendra, et un logo sans vignette se
-         charge chez la source comme il l'a toujours fait. */
-      break;
+      /* L'échec se dit, et ne se déduit pas d'une absence. Un logo sans
+         vignette n'est pas une panne — il se charge chez sa source, comme il
+         l'a toujours fait — mais une préparation qui ne commence jamais sans
+         rien annoncer en est une, et c'est la seule chose qu'on ne puisse pas
+         voir de l'extérieur : la table reste vide, et rien ne dit pourquoi. */
+      signale(traduit("Préparation des logos impossible : {e}")
+        .replace("{e}", err.message), true);
+      return;
     }
     faites += r.faites || 0;
     refusees += r.refusees || 0;
@@ -2626,6 +2630,12 @@ async function fabriqueLesVignettes(e) {
     }
     if (!r.reste) break;
   }
+  /* Aucun logo à préparer : le salon n'en a pas, ou ils sont tous faits. Le
+     premier cas surprend quand on attend le contraire — un champ de logo non
+     désigné dans la correspondance, et pas une fiche n'en porte — et le taire
+     laisse chercher du côté de la fabrication ce qui se règle du côté des
+     sources. */
+  if (!total) { signale(traduit("Aucun logo à préparer sur ce salon.")); return; }
   if (!faites && !refusees) return;
   /* Les refusés se disent avec les autres : une source qui ne rend rien laisse
      un logo qui se chargera chez elle, ce n'est pas une panne — mais un compte

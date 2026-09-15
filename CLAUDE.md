@@ -197,7 +197,9 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | installation, manifeste, couleur de la barre du système | `outils/pwa.js` — `TETE` pour toutes les pages, `APPLICATION` pour le seul plan public ; adresse de départ par salon dans `src/index.mjs` `manifeste` |
 | quelle page est installable | `outils/genere.js`, option `application` de `page()` — `plan.html` et rien d'autre |
 | fenêtre qui invite le visiteur à installer le plan | `_installation.html` — moment `essaieInvitation` (lancé par `_admin2.html` `demarre`), façon par navigateur `faconInstallation`, confirmation après installation `ouvreInstalle` ; case `caseInstallation`, posée par `_admin1.html` `voletPlan`. Ne jamais y écrire `rel="manifest"` entre guillemets : la construction y reconnaît la page installable |
-| icône de l'application | `outils/icones.js` — un dessin, quatre sorties |
+| icône de l'application | `outils/icones.js` — un dessin, six sorties |
+| marque du produit dans une page | `outils/icones.js` `svgPage` (fond nuit) et `svgPageNu` (sans fond), injectées par `genere.js` à la place de `<!--__MARQUE__-->` ; jetons `--m-nuit`, `--m-cyan`, `--m-rose` dans `_head.html` |
+| bande d'administration — marque, calques, réglages, compte, enregistrement | `_head.html` `.bandeAdmin`, garnie par `_admin1.html` `activeAdmin`, retirée du public par `retireAdmin` ; gris de l'outil sous `html.mode-admin` |
 | comptes, profils, salons affectés | `_console-js.html` § Comptes, `supabase/functions/comptes/`, migration `comptes` |
 | invitation, mot de passe oublié | `_motdepasse.html` |
 | anglais des listes de valeurs (secteurs, nomenclature, champs à choix) | relevé par `sync-evenement` (`Gaia.codificationLangues`, `Eventmaker.listesEnAnglais`), colonne `libelles_en`, servi par `plan-public` sous `anglais`, posé par `_js.html` `indexe` ; intitulé anglais des champs propres `_console-js.html` `renommeChampPerso` |

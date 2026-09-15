@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.mesure]
 verify_jwt = false
 
+[functions.vignettes]
+verify_jwt = false
+
 [functions.rappels]
 verify_jwt = false

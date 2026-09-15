@@ -321,4 +321,6 @@ module.exports = {
   "Préparation des logos : {n} sur {t}…": "Preparing logos: {n} of {t}…",
   "{n} logos préparés, {r} illisibles chez leur source.":
     "{n} logos prepared, {r} unreadable at their source.",
+  "Préparation des logos impossible : {e}": "Cannot prepare logos: {e}",
+  "Aucun logo à préparer sur ce salon.": "No logos to prepare for this event.",
 };
