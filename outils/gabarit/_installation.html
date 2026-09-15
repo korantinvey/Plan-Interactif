@@ -189,7 +189,9 @@ function accueilleInvitation(){
      même moment : elle renonce si l'écran est pris, quand l'invitation, elle,
      attend qu'il se libère. Passer la seconde ne coûte à l'invitation qu'un
      instant ; passer la première aurait coûté la visite guidée. */
-  if (!installFini) relanceInvitation(TUTO_DELAI + INSTALL_ACCUEIL);
+  /* Et après le générique du sponsor, pour la même raison qu'elle : ce qui se
+     pose sur le logo le fait payer pour l'écran d'un autre (`_sponsor.html`). */
+  if (!installFini) relanceInvitation(TUTO_DELAI + INSTALL_ACCUEIL + resteSponsor());
 }
 
 /**
@@ -203,6 +205,10 @@ function accueilleInvitation(){
  */
 function invitationRetenue(){
   if (installDoigts.size || $("modale").classList.contains("open")) return true;
+  /* Le générique du sponsor tient l'écran le temps qu'il dure. L'attente en
+     tient déjà compte ; ceci rattrape le cas où il reparaît entre-temps — une
+     borne remise au repos. */
+  if (resteSponsor()) return true;
   // une visite guidée en cours est un geste en train de se faire, sur toute sa durée
   if (TUTO) return true;
   if (["detail", "parcours", "itineraire"].some(id => {

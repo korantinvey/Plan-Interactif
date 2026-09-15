@@ -297,6 +297,11 @@ function reposeLaBorne(){
   dessineBorne();
   /* Le visiteur suivant est un autre visiteur : son jeton aussi. */
   renouvelleVisiteur();
+  /* Et c'est son démarrage à lui : l'écran qu'il trouve en arrivant est le
+     premier du plan, comme au chargement d'une page. Le générique du sponsor y
+     a donc la même place — sans chargement à couvrir cette fois, il compte ses
+     secondes depuis maintenant (`_sponsor.html`). */
+  ouvreSponsor(sponsorRetenu(), true);
 }
 
 /* ------------------------------------------------------------

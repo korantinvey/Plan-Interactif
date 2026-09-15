@@ -3432,6 +3432,11 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
+  /* Rien n'est ouvert tant que rien n'est chargé, et tout ce qui suit lit le
+     pavillon courant. La touche d'échappement passe pourtant ici pendant le
+     chargement — c'est par elle qu'on écarte le générique du sponsor, et c'est
+     aussi le réflexe de qui attend devant un plan qui tarde. */
+  if (!DATA) return;
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   /* La forme d'où la fiche est partie, relevée tant que la sélection tient
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers

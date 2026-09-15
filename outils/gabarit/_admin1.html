@@ -1283,6 +1283,10 @@ function ouvreReglages(ouvrir){
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
+    /* Le sponsor suit l'apparence : lui aussi habille le plan, et se pose une
+       fois pour le salon. Il vient après, parce qu'il ne parle pas du plan
+       mais de ce qui le précède — le générique du démarrage. */
+    voletSponsor(volet("Sponsor"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
        de parc plutôt que de salon — posé une fois, repris rarement. */
@@ -3211,18 +3215,20 @@ function reduitLogo(fichier){
 }
 
 /**
- * Le champ du logo : le choisir, le voir, le retirer.
+ * Le cadre où l'on dépose un logo : la vignette, les deux boutons, le poids de
+ * ce qu'on vient de choisir.
  *
- * Il se lit comme les autres champs de la fiche — on le remplit, on quitte, il
- * part — d'où la même forme : ce qu'il rend est relu à la sortie, et non écrit
- * au moment du choix. Une image posée puis retirée sans quitter la fiche n'aura
- * donc rien écrit du tout.
+ * Deux endroits déposent une image de la même façon — la fiche d'une zone et le
+ * sponsor du salon — et ne diffèrent que par le moment où elle s'écrit : la
+ * fiche relit la sienne en sortant, un réglage enregistre au choix. D'où
+ * « pose », appelée à chaque changement pour qui écrit tout de suite, et la
+ * lecture rendue pour qui relit à la fin.
  *
  * La vignette est aussi la cible du glisser-déposer : c'est le geste qu'on fait
  * devant elle, et il évite la boîte de dialogue du système.
  */
-function champLogo(hote, o){
-  let logo = imageSure(o.logo);
+function cadreLogo(depart, pose){
+  let logo = imageSure(depart);
 
   const cadre = document.createElement("div");
   cadre.className = "logoZ";
@@ -3264,7 +3270,7 @@ function champLogo(hote, o){
   const prend = (f) => {
     if (!f) return;
     peint("Lecture…");
-    reduitLogo(f).then(src => { logo = src; peint(); }).catch(e => {
+    reduitLogo(f).then(src => { logo = src; peint(); if (pose) pose(logo); }).catch(e => {
       dit.textContent = "Échec : " + e.message;
       dit.dataset.mal = "true";
     });
@@ -3272,7 +3278,7 @@ function champLogo(hote, o){
 
   choisir.onclick = () => fichier.click();
   fichier.onchange = () => { prend(fichier.files[0]); fichier.value = ""; };
-  oter.onclick = () => { logo = ""; peint(); };
+  oter.onclick = () => { logo = ""; peint(); if (pose) pose(logo); };
   vue.addEventListener("dragover", e => { e.preventDefault(); vue.dataset.survol = "1"; });
   vue.addEventListener("dragleave", () => { delete vue.dataset.survol; });
   vue.addEventListener("drop", e => {
@@ -3282,13 +3288,26 @@ function champLogo(hote, o){
   });
 
   peint();
-  champZone(hote, "Logo", cadre,
+  return { cadre: cadre, lit: () => logo };
+}
+
+/**
+ * Le champ du logo d'une zone.
+ *
+ * Il se lit comme les autres champs de la fiche — on le remplit, on quitte, il
+ * part — d'où la même forme : ce qu'il rend est relu à la sortie, et non écrit
+ * au moment du choix. Une image posée puis retirée sans quitter la fiche n'aura
+ * donc rien écrit du tout.
+ */
+function champLogo(hote, o){
+  const c = cadreLogo(o.logo);
+  champZone(hote, "Logo", c.cadre,
     "L'image paraît dans l'en-tête de la fiche, au-dessus du type et du nom. " +
     "Elle est " +
     "réduite puis enregistrée dans la fiche : elle part avec le plan, sans " +
     "dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou " +
     "choisissez-la.");
-  return () => logo;
+  return c.lit;
 }
 
 /* Ce que la barre de l'éditeur propose. Rien de plus que de la mise en forme :

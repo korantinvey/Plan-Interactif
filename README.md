@@ -952,7 +952,9 @@ oublié, itinéraire effacé, pavillon de la borne cadré. Une borne n'appartien
 personne, et le visiteur suivant ne doit pas trouver ce que le précédent a
 cherché. L'invitation à installer le plan et la visite guidée ne se proposent
 pas sur une borne : l'écran est déjà à demeure, et « première visite ? » ne veut
-rien dire adressé à un passant.
+rien dire adressé à un passant. Le générique du sponsor, lui, se rejoue à chaque
+remise : c'est le démarrage du visiteur suivant, et l'écran au repos d'une borne
+est justement celui qu'on regarde en s'approchant.
 
 **Et la mesure.** Une borne est un appareil, pas un visiteur : elle en voit
 passer des centaines dans la journée. Son jeton n'est donc pas retenu — un jeton
@@ -1198,6 +1200,56 @@ visite guidée au premier démarrage**, cochée par défaut. L'aide de la case d
 quels chapitres ce salon présentera, et **Essayer** la lance aussitôt, pour voir
 ce que les visiteurs verront. Comme les autres réglages, la case part aux
 visiteurs toute seule.
+
+## Le générique du sponsor
+
+Un salon se vend aussi par son plan : l'organisateur qui propose à un partenaire
+« le plan interactif du salon » lui promet l'écran que tous les visiteurs
+traversent. Il n'y avait, jusqu'ici, aucune place où le poser. Les seules
+disponibles étaient dans le plan lui-même — là où l'on cherche un exposant, et
+où une marque gêne la lecture.
+
+Le démarrage, lui, est une place vraie, et elle ne coûte rien à personne. La
+page s'ouvre, les données arrivent, le plan se dessine : cet intervalle est perdu
+de toute façon, et le visiteur le passait devant un rectangle vide. **Un logo
+l'occupe, puis s'efface de lui-même.** Rien n'est à fermer, rien n'attend un
+geste : un écran qui réclame un clic pour disparaître est une réclame, celui-ci
+est un générique.
+
+**Il ne retarde pas.** Ses secondes se comptent depuis l'ouverture de la page, et
+non depuis l'instant où le logo paraît : le temps de chargement est compris
+dedans, jamais ajouté après. Un plan qui met plus longtemps à venir que le
+générique ne devait durer n'en reçoit pas du tout — il n'y aurait plus d'attente
+à remplir, seulement de l'attente à ajouter.
+
+**Il ne bloque pas.** Un doigt posé dessus l'efface sur-le-champ, la touche
+d'échappement aussi, et une panne de chargement de même : le message qui dit ce
+qui ne va pas passe avant le logo qui le couvrirait. Il couvre le plan, et le
+plan seul — la barre du haut, la liste et sa ligne « Chargement du plan… »
+restent lisibles dessous, et le visiteur voit que quelque chose se fait.
+
+**Il paraît au premier trait de la page**, et non à l'arrivée des données : posé
+avec elles, il serait arrivé avec ce qu'il devait couvrir. Or à cet instant la
+page ne sait rien du salon qu'elle ouvre. Ce qu'il montre est donc relu sur
+l'appareil, sous la clé `plan-sponsor:<slug>` du stockage local, laissé là par la
+visite précédente. Une première ouverture sur un appareil neuf le montre à
+l'arrivée des données, si elles sont venues à temps, et pose le cache pour les
+suivantes.
+
+L'exploitant le compose dans « Réglages du plan », onglet **Sponsor** : le logo,
+le nom du sponsor, une mention choisie dans une liste — « Partenaire officiel »,
+« Avec le soutien de » — un lien facultatif, ouvert dans un nouvel onglet quand
+le visiteur touche le logo, et une durée de deux à dix secondes. Le logo est
+réduit puis enregistré avec la configuration, comme celui d'une zone : il part
+avec le plan, sans dépendre d'un fichier hébergé ailleurs. Il se pose sur le fond
+du plan, qui suit le thème clair ou sombre du visiteur tant qu'aucune couleur
+n'est réglée dans « Apparence » — un logo dessiné en noir sur fond transparent y
+disparaîtrait la moitié du temps.
+
+L'administration ne le joue jamais : l'exploitant y recharge son plan vingt fois
+par heure. **Aperçu**, au pied du volet, le montre à la demande. Et parce que
+chaque visite comptée dans le rapport d'utilisation le voit, le nombre de visites
+dit au sponsor combien de fois son logo a paru.
 
 ## Installer le plan, et le consulter hors ligne
 

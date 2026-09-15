@@ -4005,6 +4005,52 @@ html.tuto-retrait .dcal .forme{opacity:.22}
   .tutoRepere,#tutoZone{animation:none}
   .tutoVoile{transition:none}
 }
+
+/* ------------------------------------------------------------
+   Le générique du sponsor
+   Un logo posé sur la scène le temps que le plan vienne, puis qui s'estompe
+   (voir `_sponsor.html`). Dans la scène et non sur la page entière : la barre
+   du haut et la liste, avec sa ligne « Chargement du plan… », restent lisibles
+   dessous — le visiteur voit que quelque chose se fait. Même fond que la scène,
+   celui que l'exploitant a pu régler : le logo se pose sur la couleur du salon,
+   et non sur un gris qui n'est celui de personne.
+
+   Au-dessus du cartouche des points d'intérêt et du voile de la fiche, sous la
+   fenêtre modale : un générique ne passe pas devant une confirmation.
+   ------------------------------------------------------------ */
+.sponsor{position:absolute;inset:0;z-index:15;display:grid;place-items:center;
+  padding:24px;background:var(--c-fond,var(--ground));
+  transition:opacity .6s ease;animation:sponsorParait .25s ease-out}
+@keyframes sponsorParait{from{opacity:0}to{opacity:1}}
+/* L'estompe. Les clics la traversent aussitôt : le plan est déjà manipulable
+   derrière, et une demi-seconde d'attente sur un doigt posé se sent. */
+.sponsor.part{opacity:0;pointer-events:none}
+.sponsorBloc{display:flex;flex-direction:column;align-items:center;gap:11px;
+  max-width:min(420px,100%);text-align:center}
+.sponsorMention{color:var(--ink-3)}
+.sponsorLogo{display:block;max-width:100%}
+/* Le logo garde ses proportions et ne dépasse jamais la scène : un logo très
+   large sur un téléphone tenu debout, très haut sur un écran de borne posé à
+   l'horizontale — les deux tiennent par la même règle. */
+.sponsorLogo img{display:block;max-width:100%;max-height:min(42vh,240px);
+  width:auto;height:auto;object-fit:contain}
+a.sponsorLogo{cursor:pointer}
+a.sponsorLogo:hover img{filter:brightness(1.05)}
+.sponsorNom{font-family:"Archivo",sans-serif;font-size:15px;font-weight:700;
+  letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){
+  .sponsor{animation:none}
+}
+
+/* Le volet « Sponsor » des réglages : les champs suivent la case, et le premier
+   se détache d'elle comme dans le volet de la suggestion. */
+.voletSpons{margin-top:16px}
+.sponsActs{display:flex;justify-content:flex-end;margin-top:14px}
+.sponsActs button{padding:7px 14px;border:1px solid var(--line);
+  border-radius:var(--radius);font-size:12.5px;color:var(--ink-2);
+  background:var(--surface)}
+.sponsActs button:hover:not(:disabled){border-color:var(--line-strong);color:var(--ink)}
+.sponsActs button:disabled{opacity:.45;cursor:default}
 </style>
 
 <div class="app">

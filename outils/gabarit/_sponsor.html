@@ -1,0 +1,471 @@
+/* ============================================================
+   18. Le sponsor — un logo le temps du chargement
+   ============================================================ */
+/**
+ * Un salon se vend aussi par son plan. L'organisateur qui propose à un
+ * partenaire « le plan interactif du salon » lui promet l'écran que tous les
+ * visiteurs traversent — et il n'y avait, jusqu'ici, aucune place où le poser.
+ * Les seules disponibles étaient dans le plan lui-même, c'est-à-dire là où l'on
+ * cherche un exposant : une marque posée là gêne la lecture et se paie en
+ * confusion.
+ *
+ * Le démarrage, lui, est une place vraie, et elle ne coûte rien à personne. La
+ * page s'ouvre, les données arrivent, le plan se dessine : cet intervalle est
+ * perdu de toute façon, et le visiteur le passait devant un rectangle vide. Le
+ * logo l'occupe, puis s'efface de lui-même. Rien n'est à fermer, rien n'attend
+ * un geste — un écran qui réclame un clic pour disparaître est une réclame,
+ * celui-ci est un générique.
+ *
+ * Trois règles le tiennent à sa place, et ce sont elles qui font la différence.
+ *
+ * — **Il ne retarde pas.** Ses secondes se comptent depuis l'ouverture de la
+ *   page, jamais depuis l'instant où il paraît : le temps de chargement est
+ *   compris dedans, et non ajouté après. Un plan qui met plus longtemps à venir
+ *   que le générique ne devait durer n'en reçoit pas du tout — il n'y aurait
+ *   plus d'attente à remplir, seulement de l'attente à ajouter.
+ * — **Il ne bloque pas.** Un doigt posé dessus l'efface sur-le-champ, la touche
+ *   d'échappement aussi, et une panne de chargement de même : le message qui
+ *   dit ce qui ne va pas passe avant le logo qui le couvrirait.
+ * — **Il couvre le plan, et le plan seul.** La barre du haut, la liste et sa
+ *   ligne « Chargement du plan… » restent lisibles dessous ; le visiteur voit
+ *   que quelque chose se fait, et sur quoi.
+ *
+ * Reste le point qui décide de tout : il paraît **au premier trait de la page**,
+ * et non à l'arrivée des données — sans quoi il n'aurait rien couvert, étant
+ * arrivé avec ce qu'il devait couvrir. Or à cet instant la page ne sait rien du
+ * salon qu'elle ouvre. Ce qu'il montre est donc relu sur l'appareil, laissé là
+ * par la visite précédente : le stockage local est le seul endroit prêt avant
+ * l'API. Une première ouverture sur un appareil neuf le montre à l'arrivée des
+ * données, si elles sont venues à temps, et pose le cache pour les suivantes.
+ *
+ * L'administration ne le voit jamais : l'exploitant y recharge son plan vingt
+ * fois par heure, et le générique de son client lui passerait devant à chaque
+ * fois. Il l'essaie depuis son volet de réglages, où un bouton le joue.
+ */
+
+/* Ce que dure le générique, réglable entre ces bornes. Trois secondes par
+   défaut : le temps de reconnaître une marque, pas celui de s'impatienter.
+   Au-delà de dix, ce n'est plus un générique mais une page d'accueil — et le
+   visiteur qui a photographié un code à l'entrée du hall veut son plan. */
+const SPONSOR_DEFAUT = 3;
+const SPONSOR_MIN = 2;
+const SPONSOR_MAX = 10;
+
+/* Arrivé en retard — première ouverture sur cet appareil, réseau lent — le logo
+   garde au moins ceci sous les yeux : un logo vu deux dixièmes de seconde n'a
+   pas été vu, et un clignotement se remarque plus que la marque. */
+const SPONSOR_MINI = 1200;
+
+/* Le plan n'est pas venu, et ne viendra peut-être jamais — une API muette, un
+   pavillon vide. Au-delà, le générique s'efface quand même : ce qu'il couvre,
+   fût-ce un plan à moitié dessiné, vaut mieux qu'un logo qui ne part plus. */
+const SPONSOR_BUTOIR = 12000;
+
+/* L'estompe, accordée à la transition de « .sponsor » dans `_head.html` : la
+   boîte se retire une fois qu'elle a fini. On ne s'en remet pas à
+   « transitionend », qui ne vient pas si l'onglet passe en arrière-plan
+   pendant ce temps — le minuteur, lui, vient toujours. */
+const SPONSOR_ESTOMPE = 700;
+
+/* Les mentions proposées au-dessus du logo. Une liste fermée, et non un champ
+   libre : ce qui s'écrit ici paraît sur l'écran d'un visiteur qui peut lire le
+   plan en anglais, et une phrase tapée à la main n'aurait pas de traduction.
+   Le nom du sponsor, lui, est un nom propre et se saisit. */
+const MENTIONS_SPONSOR = ["Avec le soutien de", "Partenaire officiel",
+  "Sponsor officiel", "En partenariat avec"];
+
+const reglageSponsor = () => conf("_sponsor");
+
+/** Les secondes réglées, ramenées dans les bornes — trois par défaut. */
+function secondesSponsor(r){
+  const s = Math.round(+(r || reglageSponsor()).secondes);
+  return s >= SPONSOR_MIN && s <= SPONSOR_MAX ? s : SPONSOR_DEFAUT;
+}
+
+/**
+ * Le sponsor tel qu'il paraîtra, ou rien du tout.
+ *
+ * Tout y est relu plutôt que recopié. Le logo vient de la base et finit dans
+ * une balise « img » chez chaque visiteur : c'est le chemin qu'a déjà le logo
+ * d'une zone, et il mérite la même méfiance. Le lien de même — « javascript: »
+ * est une adresse valide, et celle-ci est posée sur un écran que tout le monde
+ * traverse.
+ */
+function sponsorRetenu(source){
+  const r = source || reglageSponsor();
+  if (!r || r.actif !== true) return null;
+  const logo = imageSure(r.logo);
+  // sans logo il n'y a pas de générique : une mention seule n'est pas un écran
+  if (!logo) return null;
+  return {
+    logo: logo,
+    nom: String(r.nom || "").trim().slice(0, 80),
+    mention: MENTIONS_SPONSOR.indexOf(r.mention) >= 0 ? r.mention : "",
+    lien: adresseSure(r.lien),
+    secondes: secondesSponsor(r),
+  };
+}
+
+/* ------------------------------------------------------------
+   Ce que l'appareil garde, pour la fois d'après
+
+   Le générique doit être là avant les données, et les données sont justement
+   ce qui le nomme. Le nœud se dénoue par le stockage local : chaque ouverture
+   y laisse le sponsor qu'elle a appris, la suivante le retrouve au premier
+   trait. Une clé par salon, comme le parcours — un même téléphone ouvre
+   plusieurs salons, et le partenaire de l'un n'est pas celui de l'autre.
+   ------------------------------------------------------------ */
+const cleSponsor = () => "plan-sponsor:" + SLUG;
+
+/** Le sponsor laissé par la visite précédente, déjà relu. */
+function sponsorEnCache(){
+  if (!SLUG) return null;
+  try {
+    const garde = JSON.parse(localStorage.getItem(cleSponsor()) || "null");
+    return garde ? sponsorRetenu(Object.assign({ actif: true }, garde)) : null;
+  } catch (e) { return null; }
+}
+
+/**
+ * Met le cache d'accord avec ce que les données viennent de dire.
+ *
+ * On n'écrit que ce qui change : le logo pèse quelques dizaines de kilo-octets,
+ * et le réécrire à chaque ouverture ferait travailler le disque d'un téléphone
+ * pour rien.
+ */
+function retientSponsor(s){
+  if (!SLUG) return;
+  try {
+    const neuf = s ? JSON.stringify(s) : "";
+    if ((localStorage.getItem(cleSponsor()) || "") === neuf) return;
+    if (neuf) localStorage.setItem(cleSponsor(), neuf);
+    else localStorage.removeItem(cleSponsor());
+  } catch (e) {}
+}
+
+/* ------------------------------------------------------------
+   Le générique lui-même
+   ------------------------------------------------------------ */
+/* Celui qui est à l'écran, ou rien. */
+let SPONSOR = null;
+
+/**
+ * Pose le générique sur le plan.
+ *
+ * `horsDemarrage` distingue les deux façons dont il peut paraître. À
+ * l'ouverture de la page, ses secondes se comptent depuis cette ouverture —
+ * c'est tout le principe : il occupe le chargement au lieu de s'y ajouter. Pour
+ * l'aperçu de l'exploitant et pour la borne qui se remet au repos, il n'y a
+ * aucun chargement en cours et le compte part d'ici.
+ */
+function ouvreSponsor(s, horsDemarrage){
+  if (!s || SPONSOR) return;
+  const hote = $("stage");
+  if (!hote) return;
+
+  const boite = document.createElement("div");
+  boite.className = "sponsor";
+  const bloc = document.createElement("div");
+  bloc.className = "sponsorBloc";
+  boite.appendChild(bloc);
+
+  if (s.mention){
+    const m = document.createElement("span");
+    m.className = "eyebrow sponsorMention";
+    m.textContent = s.mention;
+    bloc.appendChild(m);
+  }
+
+  /* Le logo porte le lien quand il y en a un, et rien d'autre ne le porte : un
+     visiteur qui touche l'écran veut son plan, pas la page d'un annonceur. */
+  const porte = document.createElement(s.lien ? "a" : "div");
+  porte.className = "sponsorLogo";
+  if (s.lien){
+    porte.href = s.lien;
+    porte.target = "_blank";
+    porte.rel = "noopener noreferrer";
+  }
+  const img = document.createElement("img");
+  img.src = s.logo;
+  /* Le nom est écrit juste dessous : le répéter en texte de remplacement le
+     ferait lire deux fois. Sans nom, l'image doit se dire elle-même. */
+  img.alt = s.nom ? "" : "Logo du sponsor";
+  porte.appendChild(img);
+  bloc.appendChild(porte);
+
+  if (s.nom){
+    const n = document.createElement("strong");
+    n.className = "sponsorNom";
+    n.textContent = s.nom;
+    bloc.appendChild(n);
+  }
+
+  /* Un doigt posé l'efface : rien de ce qu'il couvre ne doit attendre après
+     lui. Le logo fait exception quand il porte un lien — on l'a touché pour
+     aller voir le sponsor, pas pour s'en débarrasser. */
+  boite.addEventListener("pointerdown", e => {
+    if (s.lien && porte.contains(e.target)) return;
+    fermeSponsor();
+  });
+  /* Et pour qui n'a pas de doigt à poser : la touche qui ferme tout le reste
+     de la page ferme aussi celle-ci — et elle seule. Le générique est ce qui
+     est devant : posée sur `document`, l'écoute passe avant celle de la page,
+     qui refermerait du même coup la fiche qu'un lien vient d'ouvrir dessous. */
+  const touche = e => {
+    if (e.key !== "Escape") return;
+    e.stopPropagation();
+    fermeSponsor();
+  };
+  document.addEventListener("keydown", touche);
+
+  hote.appendChild(boite);
+  const pose = performance.now();
+  SPONSOR = {
+    boite: boite,
+    touche: touche,
+    pose: pose,
+    seul: !!horsDemarrage,
+    /* L'échéance, en millisecondes depuis l'ouverture de la page — ce que
+       `performance.now()` compte. Au démarrage elle part de cette ouverture, et
+       le minimum la repousse juste assez pour que le logo ne clignote pas. */
+    echeance: horsDemarrage ? pose + s.secondes * 1000
+                            : Math.max(s.secondes * 1000, pose + SPONSOR_MINI),
+    minuteur: 0,
+  };
+  suitSponsor();
+}
+
+/**
+ * Surveille l'échéance, et le plan qu'on attend derrière.
+ *
+ * Rappelée par `_admin2.html` quand le plan est dessiné : sans ce rappel, le
+ * générique attendrait son butoir pour s'apercevoir que ce qu'il couvrait est
+ * arrivé.
+ */
+function suitSponsor(){
+  if (!SPONSOR) return;
+  clearTimeout(SPONSOR.minuteur);
+  const t = performance.now();
+  // le plan n'est pas venu : on s'efface quand même plutôt que de rester dessus
+  if (t - SPONSOR.pose >= SPONSOR_BUTOIR) return fermeSponsor();
+  /* Le plan est dessiné — « view » le dit, comme partout ailleurs dans la page
+     — et les secondes sont passées : il n'y a plus rien à couvrir. */
+  const plan = SPONSOR.seul || !!(DATA && view);
+  if (plan && t >= SPONSOR.echeance) return fermeSponsor();
+  SPONSOR.minuteur = setTimeout(suitSponsor, Math.max(50,
+    plan ? SPONSOR.echeance - t : SPONSOR.pose + SPONSOR_BUTOIR - t));
+}
+
+/**
+ * Ce qu'il reste de générique à l'écran, en millisecondes — rien s'il n'y en a
+ * pas.
+ *
+ * Les deux fenêtres qui se proposent d'elles-mêmes au démarrage — la visite
+ * guidée, l'invitation à installer — s'en servent pour attendre leur tour.
+ * Elles passent devant tout, y compris devant ce générique : la première se
+ * serait posée sur le logo une seconde après qu'il paraît, et le sponsor aurait
+ * payé pour l'écran de quelqu'un d'autre. Elles ne renoncent pas pour autant —
+ * ce qui est devant part de lui-même, et à une date connue.
+ */
+function resteSponsor(){
+  if (!SPONSOR) return 0;
+  return Math.max(0, SPONSOR.echeance - performance.now()) + SPONSOR_ESTOMPE;
+}
+
+/** L'estompe, puis le retrait. Sans effet si rien n'est à l'écran. */
+function fermeSponsor(){
+  const s = SPONSOR;
+  if (!s) return;
+  SPONSOR = null;
+  clearTimeout(s.minuteur);
+  document.removeEventListener("keydown", s.touche);
+  s.boite.classList.add("part");
+  setTimeout(() => s.boite.remove(), SPONSOR_ESTOMPE);
+}
+
+/**
+ * Ce que les données disent du sponsor, au démarrage du plan.
+ *
+ * Appelée par `demarre` avant que le plan ne soit monté : c'est le dernier
+ * moment où poser un générique ait encore un sens.
+ */
+function accueilleSponsor(){
+  /* L'administration ne joue pas le générique, et n'en garde rien non plus : ce
+     qu'elle voit peut être un brouillon que les visiteurs n'ont pas encore, et
+     il paraîtrait sur le plan public ouvert depuis le même poste. */
+  if (PLAN_ADMIN) return;
+  const s = sponsorRetenu();
+  // ce qu'on vient d'apprendre servira à la prochaine ouverture, dès son premier trait
+  retientSponsor(s);
+
+  if (SPONSOR){
+    /* Déjà posé depuis le cache. Si l'exploitant a changé de sponsor depuis la
+       dernière visite, c'est l'ancien qui est sous les yeux : on le laisse
+       finir — un logo échangé en cours de générique se verrait plus que la
+       marque — et la prochaine ouverture montrera le bon. S'il a été retiré,
+       en revanche, il n'y a plus rien à laisser finir. */
+    if (!s) fermeSponsor();
+    return;
+  }
+  if (!s) return;
+  /* Trop tard pour couvrir quoi que ce soit : le plan a mis plus de temps à
+     venir que le générique ne devait durer. Le poser maintenant ajouterait à
+     l'attente au lieu de la remplir. Le cache, posé à l'instant, fera que la
+     prochaine ouverture le montrera dès le premier trait. */
+  if (performance.now() > s.secondes * 1000) return;
+  ouvreSponsor(s);
+}
+
+/* Le générique, au premier trait de la page : avant les données, avant le plan,
+   avant tout ce qu'il est censé couvrir. Il ne peut donc montrer que ce qu'une
+   visite précédente a laissé sur l'appareil — voir le cache, plus haut. */
+if (!PLAN_ADMIN) ouvreSponsor(sponsorEnCache());
+
+/* ------------------------------------------------------------
+   Le volet « Sponsor » des réglages
+   ------------------------------------------------------------ */
+/**
+ * Où l'exploitant compose le générique et le regarde avant de le vendre.
+ *
+ * Le corps ne paraît qu'une fois la case cochée : décochée, elle dit « pas de
+ * sponsor sur ce salon », et quatre champs sous une case éteinte ne se règlent
+ * pour rien. L'aperçu est là parce que l'administration ne montre jamais le
+ * générique d'elle-même : sans lui, l'exploitant vendrait un écran qu'il n'a
+ * jamais vu.
+ */
+function voletSponsor(hote){
+  const r = reglageSponsor();
+
+  const p = document.createElement("p");
+  p.textContent = "Un logo posé sur le plan au démarrage, le temps qu'il " +
+    "s'affiche, puis qui s'efface de lui-même. C'est le seul écran que tous " +
+    "les visiteurs traversent, et il ne retarde personne : l'attente qu'il " +
+    "occupe avait lieu de toute façon. Publiez la configuration pour que le " +
+    "changement leur parvienne.";
+  hote.appendChild(p);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Montrer un logo de sponsor au démarrage";
+  const marche = l.querySelector("input");
+  marche.checked = r.actif === true;
+  bloc.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Sur le plan public et sur la borne, jamais dans " +
+    "l'administration. Chaque visite comptée dans le rapport d'utilisation le " +
+    "voit. Un doigt posé dessus l'efface aussitôt, et une panne de chargement " +
+    "aussi : le message passe avant le logo.";
+  bloc.appendChild(aide);
+  hote.appendChild(bloc);
+
+  const corps = document.createElement("div");
+  corps.className = "voletSpons";
+  hote.appendChild(corps);
+
+  /* Sans logo il n'y a pas de générique : l'aperçu reste éteint tant qu'on n'en
+     a pas déposé un. Déclaré ici, il est posé plus bas — le cadre du logo le
+     rappelle à chaque dépôt. */
+  let majEssai = () => {};
+
+  /* Le logo s'enregistre au choix, et non à la sortie de la fenêtre comme
+     celui d'une zone : un volet de réglages n'a pas de bouton « Enregistrer »,
+     chaque retouche y part d'elle-même. */
+  const logo = cadreLogo(r.logo, src => {
+    r.logo = src;
+    enregistreConf();
+    majEssai();
+  });
+  champZone(corps, "Logo", logo.cadre,
+    "Réduite puis enregistrée avec la configuration du plan : elle part avec " +
+    "lui, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la " +
+    "vignette, ou choisissez-la. Elle se pose sur le fond du plan, qui suit le " +
+    "thème clair ou sombre du visiteur tant qu'aucune couleur n'est réglée " +
+    "dans « Apparence » : un logo dessiné en noir sur fond transparent y " +
+    "disparaîtra la moitié du temps.");
+
+  const nom = champZone(corps, "Nom du sponsor", document.createElement("input"),
+    "Écrit sous le logo. Laissez vide si le logo porte déjà le nom.");
+  nom.value = String(r.nom || "");
+  nom.oninput = () => { r.nom = nom.value.trim().slice(0, 80); enregistreConf(); };
+
+  const mention = champZone(corps, "Mention au-dessus du logo",
+    document.createElement("select"),
+    "Choisie dans cette liste, et non écrite : le plan se lit aussi en " +
+    "anglais, et une phrase tapée ici n'y serait pas traduite.");
+  const vide = document.createElement("option");
+  vide.value = "";
+  vide.textContent = "Aucune";
+  mention.appendChild(vide);
+  MENTIONS_SPONSOR.forEach(m => {
+    const o = document.createElement("option");
+    o.value = m;
+    o.textContent = m;
+    mention.appendChild(o);
+  });
+  mention.value = MENTIONS_SPONSOR.indexOf(r.mention) >= 0 ? r.mention : "";
+  mention.onchange = () => { r.mention = mention.value; enregistreConf(); };
+
+  const lien = champZone(corps, "Lien", document.createElement("input"),
+    "Ouvert dans un nouvel onglet quand le visiteur touche le logo. Laissez " +
+    "vide pour que le générique ne mène nulle part.");
+  lien.type = "url";
+  lien.placeholder = "https://";
+  lien.value = String(r.lien || "");
+  lien.oninput = () => { r.lien = lien.value.trim(); enregistreConf(); };
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + SPONSOR_MIN + '" max="' + SPONSOR_MAX + '" step="1">' +
+    '<span class="u">s</span></label><span class="aide"></span>';
+  duree.querySelector(".l").textContent = "Durée du générique";
+  duree.querySelector(".aide").textContent =
+    "Comptée depuis l'ouverture de la page, et non depuis que le logo " +
+    "paraît : le chargement est compris dedans. Le logo s'efface dès que le " +
+    "plan est là et que ces secondes sont passées.";
+  const n = duree.querySelector("input");
+  n.value = secondesSponsor(r);
+  /* Un champ vidé le temps de retaper ne doit rien écrire : on ne retient que
+     ce qui tient dans les bornes, et le champ se remet d'aplomb à la sortie. */
+  n.oninput = () => {
+    const v = Math.round(+n.value);
+    if (v >= SPONSOR_MIN && v <= SPONSOR_MAX){ r.secondes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = secondesSponsor(r); };
+  corps.appendChild(duree);
+
+  /* L'aperçu ferme la fenêtre pour se montrer : le générique se joue sur le
+     plan, et une fenêtre posée devant cacherait ce qu'on est venu voir. Sans
+     logo il n'y a rien à jouer — le bouton le dit en restant éteint plutôt
+     qu'en ouvrant un écran vide. */
+  const actes = document.createElement("div");
+  actes.className = "sponsActs";
+  const essai = document.createElement("button");
+  essai.type = "button";
+  essai.textContent = "Aperçu";
+  essai.onclick = () => {
+    const s = sponsorRetenu(Object.assign({}, r, { actif: true }));
+    if (!s) return;
+    fermeModale();
+    ouvreSponsor(s, true);
+  };
+  actes.appendChild(essai);
+  corps.appendChild(actes);
+  majEssai = () => { essai.disabled = !imageSure(r.logo); };
+  majEssai();
+
+  const suit = () => { corps.hidden = r.actif !== true; };
+  marche.onchange = e => {
+    r.actif = e.target.checked;
+    enregistreConf();
+    glisseFenetre(suit);
+    /* Le générique posé depuis le cache n'a plus lieu d'être si l'on vient de
+       l'éteindre — et l'aperçu qu'on vient d'ouvrir non plus. */
+    if (!r.actif) fermeSponsor();
+  };
+  suit();
+}
