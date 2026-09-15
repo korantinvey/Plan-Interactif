@@ -747,8 +747,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 334 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 66 · `amontPour` 75 · `cleDe` 83 · `meta` 86 · `gardable` 99 · `range` 105 `rafraichit` 112 · `oublie` 139 · `manifeste` 212 · `mesure` 238
+- `src/index.mjs` — 402 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 72 · `amontPour` 81 · `cleDe` 89 · `meta` 92 · `gardable` 105 · `range` 111 `rafraichit` 118 · `oublie` 145 · `rappels` 221 · `manifeste` 275 · `mesure` 301
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
