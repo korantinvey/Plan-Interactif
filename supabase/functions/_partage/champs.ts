@@ -77,11 +77,17 @@ const AFFICHAGE: Cible[] = [
  * et sa codification, et rien d'autre n'y range les exposants. Une cible qu'il
  * ne saurait pas alimenter n'a rien à faire dans sa liste.
  *
- * Elle est la seule cible d'affichage sans champ par défaut, et c'est voulu :
- * aucun nom ne revient d'un salon à l'autre — `categories` ici, `expertises`
- * là. Un défaut deviné signalerait en rouge « champ habituel introuvable » sur
- * tous les salons qui n'en tiennent pas, c'est-à-dire la plupart ; rester vide
- * est ici l'état normal, et c'est à l'exploitant de désigner le sien.
+ * Elle est la seule cible d'affichage sans champ par défaut, et c'est voulu.
+ * Un salon les range où il veut, et sous le nom qu'il veut : dans un champ de
+ * fiche — `categories` ici, `expertises` là —, ou dans les thématiques
+ * d'Eventmaker, que la fiche désigne alors par `thematic_ids`. Ce dernier, lui,
+ * s'appelle pareil partout et ferait un défaut tentant : il n'en est pas un.
+ * Sur Franchise Expo, les thématiques recopient la nomenclature, et la fiche
+ * afficherait deux fois les mêmes rubriques sans que personne l'ait demandé.
+ *
+ * Rester vide est donc ici l'état normal, et c'est à l'exploitant de désigner
+ * le sien — le relevé le lui montre, avec un exemple de valeur, sous l'un ou
+ * l'autre nom selon le salon.
  */
 const THEMATIQUES: Cible = {
   cle: "thematiques", libelle: "Thématiques", multiple: true,

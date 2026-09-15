@@ -128,8 +128,8 @@ module.exports = {
   "Rejoint l'adresse sur la même ligne, comme sur une enveloppe.": "Joins the address on the same line, as on an envelope.",
   "Téléphone société": "Company phone",
   "Les rubriques du catalogue. Plusieurs champs se cumulent.": "The catalogue categories. Several fields add up.",
-  "Ce que l'exposant vient chercher ou proposer, tel que le salon le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous à l'exemple, certains salons n'y portent que des codes.":
-    "What the exhibitor is looking for or offering, as the show classifies it. A multi-value field is split automatically; check the example, some shows only store codes there.",
+  "Ce que l'exposant vient chercher ou proposer, tel que le salon le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous à l'exemple, certains salons n'y portent que des codes. Un salon qui les tient dans Eventmaker même, et non dans un champ de fiche, les porte sous « thematic_ids ».":
+    "What the exhibitor is looking for or offering, as the show classifies it. A multi-value field is split automatically; check the example, some shows only store codes there. A show that keeps them in Eventmaker itself, rather than in a record field, carries them under \u201cthematic_ids\u201d.",
   "Pose une pastille en tête de fiche. Le champ n'existe que sur les salons qui distinguent leurs nouveaux venus.":
     "Adds a badge at the top of the record. The field only exists on shows that flag their newcomers.",
   "Les conférences tenues par l'exposant, où qu'elles se tiennent.": "The conferences run by the exhibitor, wherever they take place.",

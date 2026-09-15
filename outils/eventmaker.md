@@ -276,15 +276,63 @@ du titulaire.
 
 ## Les thématiques d'un exposant
 
-Elles n'ont pas de champ à elles : comme la nomenclature, ce sont des champs
-personnalisés que l'organisateur nomme, et il en nomme rarement deux pareil.
-Relevé sur trois salons du compte :
+Elles viennent de deux endroits, et c'est là tout le sujet.
+
+**Le plus souvent, d'un champ personnalisé** que l'organisateur nomme, et il en
+nomme rarement deux pareil. Relevé sur trois salons du compte :
 
 | salon | ce qui range ses exposants |
 |---|---|
 | Franchise Expo Paris 2026 | `rubriques2`, `rubriques`, `categories` |
 | SIDO & Lyon Cyber Expo | `nomenclatures`, `domaines_d_application`, `champs_d_intervention`, `mots_cles` |
 | Open Source Experience 2026 | `champs_d_intervention`, `expertises` |
+
+**Mais Eventmaker a aussi les siennes**, et certains salons n'ont que
+celles-là. Ce ne sont pas un champ de fiche : c'est une ressource de
+l'événement, sous `/events/{id}/thematics.json`, que les fiches désignent par
+identifiant dans le champ natif `thematic_ids`.
+
+```
+GET /api/v1/events/{id}/thematics.json     _id · name · uid · color · parent_thematic_id
+GET /api/v1/events/{id}/guests.json        thematic_ids: ["69bd1a54db9dabf30d7e3ca7", …]
+```
+
+Presque tous les salons du compte en tiennent un catalogue — six sur Moove On,
+133 sur Franchise Expo, 232 sur Eurocoat — mais l'affectation aux exposants,
+elle, est irrégulière : **69 fiches sur 87 sur Moove On, 19 sur 37 sur Open
+Source Experience 2026, deux sur 140 sur Funexpo, aucune sur SIDO & Lyon Cyber
+Expo**. Un catalogue rempli ne dit donc rien de ce que les exposants portent.
+
+Sur **Moove On**, c'est le seul rangement qui existe : ses six thématiques —
+Après-Vente, Commerce, Économie Circulaire & Environnement, Marketing, RH,
+Stratégie & Nouveaux Usages — ne se retrouvent dans aucun de ses quarante-sept
+champs personnalisés, dont pas un ne les reprend. La cible n'avait donc rien à
+désigner, et pour deux raisons superposées : le relevé écarte les valeurs qui
+sont des listes, si bien que `thematic_ids` n'apparaissait pas dans la console —
+et l'aurait-il fait qu'il n'aurait offert que des identifiants MongoDB, que rien
+ne résout côté fiche.
+
+**Le catalogue est donc chargé avec les exposants, et les identifiants
+remplacés par les noms sur la fiche même**, joints par le point-virgule dont
+Eventmaker se sert partout ailleurs. Le champ redevient alors un champ à choix
+multiple comme les autres : relevé avec un exemple lisible — « Après-Vente;
+Commerce » —, désignable depuis la console, et séparé par la règle commune. Un
+appel de plus par synchronisation, qui part de front avec les catégories ; un
+salon qui n'en tient aucune rend un catalogue vide, et une panne de cet appel-là
+est journalisée sans emporter la synchronisation.
+
+**Ce n'est pas pour autant un défaut**, alors que le nom, lui, ne varie pas d'un
+salon à l'autre. Sur Franchise Expo, les thématiques natives *sont* la
+nomenclature — « Restauration rapide food-truck », « 08. Hôtellerie et
+restauration », les mêmes valeurs que `rubriques` et `rubriques2` — et la fiche
+afficherait deux fois les mêmes rubriques sans que personne l'ait demandé. Le
+champ est proposé, pas imposé.
+
+L'anglais suit le même chemin que celui des listes de valeurs : les traductions
+de l'événement le portent sous le type de parent `Thematic`, une clé
+`<id>__name` par thématique. Elles sont posées après celles des champs, non
+avant — une thématique qui reprend une valeur de liste n'a pas à reprendre la
+main sur sa traduction.
 
 La cible `thematiques` de la correspondance est donc réglable comme les autres,
 mais c'est la seule cible d'affichage **sans champ par défaut** : un défaut
@@ -293,7 +341,10 @@ qui n'en tiennent pas, c'est-à-dire la plupart. À l'exploitant de désigner le
 sien depuis la console — *Fiche détail*, onglet *Stand* ; la
 liste des champs relevés lui montre un exemple de valeur pour chacun, et c'est
 lui qui décide, car les noms ne suffisent pas : `champs_d_intervention` et
-`domaines_d_application` ne se distinguent que par ce qu'ils contiennent.
+`domaines_d_application` ne se distinguent que par ce qu'ils contiennent. Les
+thématiques d'Eventmaker y figurent sous `thematic_ids`, avec pour libellé
+« Thématiques du salon » — seul champ natif dont le nom annonce autre chose que
+ce qu'il porte.
 
 Cet exemple sert aussi à éviter un piège. Un salon qui reprend la codification
 Klipso ne descend que des codes — `OSXPDEV26C12`, `SIDO26_NOM101` — quand un
@@ -310,7 +361,15 @@ salons qui la tiennent ainsi.
 
 Le graphe ne sert à rien ici : `publicViewer` ne porte que le programme, et ni
 `exhibitors` ni `themes` n'existent à sa racine. Tout se lit en REST, sur la
-fiche d'invité, avec les champs qu'on lisait déjà.
+fiche d'invité et sur le catalogue de l'événement.
+
+Une dernière chose à ne pas confondre : à côté de `thematic_ids`, une fiche
+porte `thematic_scorings` et `thematics_quartile`. Ceux-là ne sont pas ce que
+l'exposant a coché mais ce qu'Eventmaker lui calcule — une affinité par
+thématique, pour le rapprochement de visiteurs. Les deux listes ne coïncident
+pas, et le score ne les départage pas : sur Moove On, des thématiques hors
+`thematic_ids` montent plus haut que certaines qui y sont. C'est `thematic_ids`
+qui dit le rangement, et lui seul.
 
 ### Ce que la page en fait
 
