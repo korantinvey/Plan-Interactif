@@ -952,7 +952,7 @@ oublié, itinéraire effacé, pavillon de la borne cadré. Une borne n'appartien
 personne, et le visiteur suivant ne doit pas trouver ce que le précédent a
 cherché. L'invitation à installer le plan et la visite guidée ne se proposent
 pas sur une borne : l'écran est déjà à demeure, et « première visite ? » ne veut
-rien dire adressé à un passant. Le générique du sponsor, lui, se rejoue à chaque
+rien dire adressé à un passant. Le générique du démarrage, lui, se rejoue à chaque
 remise : c'est le démarrage du visiteur suivant, et l'écran au repos d'une borne
 est justement celui qu'on regarde en s'approchant.
 
@@ -1201,7 +1201,7 @@ quels chapitres ce salon présentera, et **Essayer** la lance aussitôt, pour vo
 ce que les visiteurs verront. Comme les autres réglages, la case part aux
 visiteurs toute seule.
 
-## Le générique du sponsor
+## Le générique du démarrage
 
 Un salon se vend aussi par son plan : l'organisateur qui propose à un partenaire
 « le plan interactif du salon » lui promet l'écran que tous les visiteurs
@@ -1236,20 +1236,41 @@ visite précédente. Une première ouverture sur un appareil neuf le montre à
 l'arrivée des données, si elles sont venues à temps, et pose le cache pour les
 suivantes.
 
-L'exploitant le compose dans « Réglages du plan », onglet **Sponsor** : le logo,
-le nom du sponsor, une mention choisie dans une liste — « Partenaire officiel »,
-« Avec le soutien de » — un lien facultatif, ouvert dans un nouvel onglet quand
-le visiteur touche le logo, et une durée de deux à dix secondes. Le logo est
-réduit puis enregistré avec la configuration, comme celui d'une zone : il part
-avec le plan, sans dépendre d'un fichier hébergé ailleurs. Il se pose sur le fond
-du plan, qui suit le thème clair ou sombre du visiteur tant qu'aucune couleur
-n'est réglée dans « Apparence » — un logo dessiné en noir sur fond transparent y
-disparaîtrait la moitié du temps.
+**Trois façons de commencer**, dans « Réglages du plan », onglet
+**Démarrage** :
+
+- **Aucun logo** — le plan s'ouvre droit sur le hall. C'est le réglage d'origine :
+  un salon déjà en ligne ne se met pas à montrer un écran de plus sans que
+  personne l'ait demandé.
+- **Le logo Event2Map**, avec la mention « powered by ». Rien à déposer, rien à
+  régler : la marque vient de la construction, elle est nette à toute taille, et
+  elle porte son propre carré de nuit — donc lisible sur les deux thèmes. C'est
+  le seul endroit où elle paraisse devant un visiteur ; ailleurs elle se tient
+  dans ce qui appartient à l'outil — la bande d'administration, la console,
+  l'écran d'accès — pour ne pas déguiser le salon en Event2Map. Ici elle ne le
+  déguise pas non plus : elle passe, elle le dit, et elle cède la place au hall.
+- **Le logo d'un sponsor** — celui d'un partenaire du salon, avec son nom, une
+  mention choisie dans une liste (« Partenaire officiel », « Avec le soutien
+  de »… ; une liste et non un champ libre, parce que le plan se lit aussi en
+  anglais) et un lien facultatif, ouvert dans un nouvel onglet quand le visiteur
+  touche le logo. Le logo est réduit puis enregistré avec la configuration, comme
+  celui d'une zone : il part avec le plan, sans dépendre d'un fichier hébergé
+  ailleurs. Il se pose sur le fond du plan, qui suit le thème clair ou sombre du
+  visiteur tant qu'aucune couleur n'est réglée dans « Apparence » — un logo
+  dessiné en noir sur fond transparent y disparaîtrait la moitié du temps.
+
+La durée, de deux à dix secondes, vaut pour l'un comme pour l'autre : c'est le
+même générique.
 
 L'administration ne le joue jamais : l'exploitant y recharge son plan vingt fois
 par heure. **Aperçu**, au pied du volet, le montre à la demande. Et parce que
 chaque visite comptée dans le rapport d'utilisation le voit, le nombre de visites
 dit au sponsor combien de fois son logo a paru.
+
+Un changement de mode met une visite à parvenir : l'appareil montre d'abord ce
+que sa visite précédente y a laissé, et pose le bon pour la suivante. C'est le
+prix du cache, et il vaut mieux que l'inverse — un logo échangé en cours de
+générique se verrait plus que la marque.
 
 ## Installer le plan, et le consulter hors ligne
 

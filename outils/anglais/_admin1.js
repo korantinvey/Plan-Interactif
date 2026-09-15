@@ -366,10 +366,8 @@ module.exports = {
   "Essayer": "Try it",
   "Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.":
     "Nothing to present on this show: no programme linked to an area, no visit plan, no directions.",
-  /* L'onglet du générique du sponsor. Le mot est le même dans les deux
-     langues, l'entrée reste : sans elle le contrôle signalerait la chaîne à
-     chaque construction. */
-  "Sponsor": "Sponsor",
+  // l'onglet du générique du démarrage
+  "Démarrage": "Startup",
 
   /* Le rappel avant une conférence : ce que l'exploitant offre, et à quelle
      avance. */

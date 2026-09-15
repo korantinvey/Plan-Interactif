@@ -4034,16 +4034,40 @@ html.tuto-retrait .dcal .forme{opacity:.22}
    l'horizontale — les deux tiennent par la même règle. */
 .sponsorLogo img{display:block;max-width:100%;max-height:min(42vh,240px);
   width:auto;height:auto;object-fit:contain}
+/* La marque du produit est un dessin, non une image déposée : elle se donne une
+   taille plutôt que d'en recevoir une. Un carré, comme sur l'écran d'accueil
+   d'un téléphone — c'est là qu'on l'a vue pour la dernière fois. */
+.sponsorMarque{width:104px;height:104px}
+.sponsorMarque svg{display:block;width:100%;height:100%}
 a.sponsorLogo{cursor:pointer}
-a.sponsorLogo:hover img{filter:brightness(1.05)}
+a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 .sponsorNom{font-family:"Archivo",sans-serif;font-size:15px;font-weight:700;
   letter-spacing:-.01em;line-height:1.3;color:var(--ink)}
 @media (prefers-reduced-motion:reduce){
   .sponsor{animation:none}
 }
 
-/* Le volet « Sponsor » des réglages : les champs suivent la case, et le premier
-   se détache d'elle comme dans le volet de la suggestion. */
+/* Le volet « Démarrage » des réglages.
+
+   Le choix des trois modes en boutons plutôt qu'en cases : ils s'excluent, et
+   c'est le geste des modèles d'habillage — un rang par mode, la coche à droite,
+   le cadre d'accent sur celui qu'on tient. La marque se montre dans le sien :
+   personne ne sait de mémoire à quoi elle ressemble. */
+.choixDem{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+.dem{display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;
+  text-align:left;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px}
+.dem:hover{border-color:var(--line-strong)}
+.dem[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.dem .v{flex:0 0 auto;width:34px;height:34px}
+.dem .v svg{display:block;width:100%;height:100%}
+.dem .x{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dem .t{font-size:13px;font-weight:600;color:var(--ink)}
+.dem .d{font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+.dem .coche{flex:0 0 auto;color:var(--accent);font-size:13px;visibility:hidden}
+.dem[aria-pressed="true"] .coche{visibility:visible}
+/* Les champs du sponsor ne paraissent qu'à son mode, et se détachent du choix
+   comme le premier champ du volet de la suggestion. */
 .voletSpons{margin-top:16px}
 .sponsActs{display:flex;justify-content:flex-end;margin-top:14px}
 .sponsActs button{padding:7px 14px;border:1px solid var(--line);

@@ -283,7 +283,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4518 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4542 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -581,15 +581,16 @@ Fonctions :
 
 `#lienPublic`
 
-### `_sponsor.html` — 471 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_sponsor.html` — 559 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
 
 Fonctions :
 
-`reglageSponsor` 77 · `secondesSponsor` 80 · `sponsorRetenu` 94 · `cleSponsor` 118
-`sponsorEnCache` 121 · `retientSponsor` 136 · `ouvreSponsor` 161 · `suitSponsor` 245
-`resteSponsor` 270 · `fermeSponsor` 276 · `accueilleSponsor` 292 · `voletSponsor` 336
+`reglageSponsor` 96 · `secondesSponsor` 99 · `modeSponsor` 112 · `sponsorRetenu` 131
+`cleSponsor` 162 · `sponsorEnCache` 165 · `retientSponsor` 180 · `ouvreSponsor` 205
+`suitSponsor` 297 · `resteSponsor` 322 · `fermeSponsor` 328 · `accueilleSponsor` 344
+`voletSponsor` 406
 
 ### `_suggestion.html` — 679 l. → plan-admin.html, plan-smcl.html, plan.html
 
