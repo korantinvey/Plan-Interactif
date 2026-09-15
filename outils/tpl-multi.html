@@ -7974,11 +7974,6 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
   if (!zone) mesure("fiche_stand", canal, o.id);
 }
 function ferme(){
-  /* Rien n'est ouvert tant que rien n'est chargé, et tout ce qui suit lit le
-     pavillon courant. La touche d'échappement passe pourtant ici pendant le
-     chargement — c'est par elle qu'on écarte le générique du sponsor, et c'est
-     aussi le réflexe de qui attend devant un plan qui tarde. */
-  if (!DATA) return;
   const id = state.sel, ouvert = $("detail").classList.contains("open");
   /* La forme d'où la fiche est partie, relevée tant que la sélection tient
      encore : c'est elle qui dit si l'on repliait vers un emplacement ou vers
@@ -8310,12 +8305,36 @@ $("zFit").onclick = fit;
    ne compte pas deux fois le même mot-clé — retirer une lettre puis la
    remettre reste la même recherche. */
 let _rechAttente = null, _rechDerniere = "";
+/* La lettre d'abord, le filtrage ensuite.
+ *
+ * Filtrer réécrit les six cents lignes de la liste et repeint le plan — les
+ * emplacements retenus s'y allument. Fait dans le gestionnaire de frappe, tout
+ * cela passait avant que le navigateur ne peigne le caractère qu'on venait de
+ * taper : trois cent trente millisecondes sur la première lettre, où la liste
+ * est encore entière. On voyait la touche s'enfoncer, puis la lettre venir.
+ *
+ * Un « requestAnimationFrame » ne suffirait pas : il s'exécute dans la trame
+ * qui précède l'affichage, donc encore avant la lettre. C'est le délai posé
+ * depuis cette trame qui rend la main — le même geste que « planifieWebgl ».
+ *
+ * Rien n'est perdu à attendre : le filtrage coûte ce qu'il coûte, il ne le
+ * fait plus payer à ce qu'on regarde. Et une frappe rapide n'en programme
+ * qu'un : seul le dernier état du champ compte, et il est déjà écrit dans
+ * « state » quand le report s'exécute. */
+let _filtreAttendu = 0;
+function planifieFiltre(){
+  if (_filtreAttendu) return;
+  _filtreAttendu = requestAnimationFrame(() => setTimeout(() => {
+    _filtreAttendu = 0;
+    reposeRetrait();
+    appliqueFiltre();
+  }, 0));
+}
 $("q").addEventListener("input", e => {
   state.q = e.target.value;
   state.qn = state.q.trim().toLowerCase();
   majVideQ();
-  reposeRetrait();
-  appliqueFiltre();
+  planifieFiltre();
   clearTimeout(_rechAttente);
   _rechAttente = setTimeout(() => {
     const q = state.qn;
