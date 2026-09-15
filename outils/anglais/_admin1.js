@@ -366,4 +366,10 @@ module.exports = {
   "Essayer": "Try it",
   "Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.":
     "Nothing to present on this show: no programme linked to an area, no visit plan, no directions.",
+  /* Le rappel avant une conférence : ce que l'exploitant offre, et à quelle
+     avance. */
+  "Rappeler les conférences retenues": "Remind about picked conferences",
+  "Prévenir avant le début": "Warn before the start",
+  "Le visiteur qui a retenu une conférence peut demander à en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à la conférence.":
+    "A visitor who picked a conference can ask to be reminded of it, with the map closed. They have to allow it, and on iPhone to have added the map to their home screen \u2014 otherwise nothing is offered. The times and titles they picked are then kept on our servers until the conference.",
 };

@@ -1086,6 +1086,63 @@ Organiser une journée, c'est calculer une vingtaine d'itinéraires : le bouton
 disparaît avec « Proposer le calcul d'itinéraire », dont il emprunte tout le
 moteur.
 
+### Le rappel avant une conférence
+
+Un visiteur retient trois conférences le matin, puis passe sa journée dans les
+allées. À quinze heures moins le quart il est à l'autre bout du hall, le
+téléphone dans la poche, et la conférence qu'il avait notée commence sans lui.
+Le parcours savait l'heure ; personne ne la lui a rappelée.
+
+Le réglage vit à côté du précédent : **Rappeler les conférences retenues**, et
+sous la case, **Prévenir avant le début** — en minutes, un quart d'heure par
+défaut. Le tiroir du parcours montre alors, en tête des conférences, un
+interrupteur « Me prévenir 15 min avant ». Il faut que le visiteur le touche,
+puis qu'il accorde au navigateur l'autorisation demandée : sans les deux gestes,
+rien ne part et rien n'est enregistré.
+
+**Ce que cela déplace.** Le tiroir promet, en toutes lettres, que le parcours ne
+quitte pas l'appareil. Le rappel est la seule exception, et la phrase le dit
+maintenant. Ce qui part est l'abonnement que le navigateur vient de tirer — une
+adresse opaque, qui ne désigne personne hors de ce service —, l'heure d'envoi et
+le texte tout prêt de la notification. Les stands retenus ne partent pas ; les
+conférences non rappelées non plus. Tout s'efface deux jours après la
+conférence, et d'un coup dès que le service de poussée signale un appareil
+disparu.
+
+La notification est composée par la page, dans la langue que le visiteur lisait.
+Le serveur la chiffre et la poste sans la relire — le service de poussée du
+navigateur, lui, ne peut pas la lire du tout.
+
+**Pourquoi un serveur pour une minuterie.** Parce qu'une page n'a aucun moyen de
+se réveiller elle-même : ses minuteries meurent avec l'onglet, gelé en quelques
+secondes dès qu'il passe en arrière-plan sur un téléphone ; le service de second
+plan est arrêté après quelques secondes d'inactivité ; et l'API qui aurait comblé
+ce manque — *Notification Triggers* — n'a jamais quitté l'essai d'origine de
+Chrome. Un rappel « local » ne serait parti qu'avec le plan ouvert sous les yeux,
+c'est-à-dire au moment précis où il ne sert à rien. Le Web Push est le seul
+mécanisme qui réveille une page fermée, et le service de poussée relaie sans
+attendre : `pg_cron` tient l'heure, à la minute, et appelle la fonction
+`rappels`.
+
+**Ce qui ne marchera pas, et qu'il vaut mieux savoir avant de le promettre sur
+une plaquette.** Sur iPhone, le Web Push n'existe que pour un plan ajouté à
+l'écran d'accueil : dans un onglet Safari, dans Chrome iOS, dans le navigateur
+intégré de LinkedIn ou d'Instagram, il n'y a pas de `PushManager` du tout —
+l'interrupteur ne se montre pas, et une ligne dit ce qu'il faudrait faire. C'est
+le cas qui mange le plus de visiteurs, pour un plan dont l'adresse circule par
+QR et par publication. Sur Android tout marche depuis un simple onglet, mais les
+notifications de Chrome lui-même peuvent être coupées au niveau du système, et
+les gestionnaires de batterie de certains constructeurs retardent le réveil.
+Partout, un mode de concentration retient le rappel : le web ne dispose pas du
+niveau d'interruption qu'une application native réclame pour le percer. Les
+horaires restent donc lisibles dans le tiroir, pour tous — le rappel est un
+bonus, pas la façon de connaître son programme.
+
+Enfin le message porte une durée de vie égale au délai du rappel. Passé ce
+point, le service de poussée le jette au lieu de le remettre : un téléphone
+rallumé en fin de journée n'annonce pas une conférence terminée depuis des
+heures.
+
 ## La visite guidée
 
 Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,
@@ -2026,6 +2083,20 @@ Les secrets des fonctions — `KLIPSO_API_KEY`, `EVENTMAKER_TOKEN`,
 `ORIGINES_AUTORISEES` — restent posés côté Supabase par `npx supabase secrets
 set`. Ils n'ont pas à transiter par GitHub, et le déploiement ne les touche
 pas.
+
+Trois de plus pour les rappels de conférence, sans quoi la fonction `rappels`
+répond 503 et aucun rappel ne part — le reste du plan ne s'en aperçoit pas :
+
+```bash
+npx web-push generate-vapid-keys        # une fois, et on les garde
+npx supabase secrets set \
+  VAPID_CLE_PUBLIQUE=… VAPID_CLE_PRIVEE=… VAPID_SUJET=mailto:contact@exemple.fr
+```
+
+La paire ne se régénère pas à la légère : changer la clé publique invalide
+tous les abonnements posés par les visiteurs, qui devront rouvrir le plan pour
+s'abonner de nouveau. `VAPID_SUJET` doit être un `mailto:` ou un `https:` —
+Apple refuse le jeton autrement, par un 403 sans explication.
 
 `workflow_dispatch` permet de relancer le déploiement Supabase à la main depuis
 l'onglet **Actions**, sans rien pousser.

@@ -1541,7 +1541,62 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
+  blocRappel(hote);
   blocHoraires(hote);
+}
+
+/**
+ * Le rappel avant une conférence.
+ *
+ * Deux commandes, parce que ce sont deux décisions : offrir la chose, et à
+ * quelle avance. Un salon qui n'a pas de programme n'a rien à rappeler ; un
+ * salon tenu dans un hall de cinq cents mètres ne prévient pas à la même
+ * minute qu'un salon de trois allées.
+ *
+ * L'aide dit ce que le visiteur devra accepter, et ce que certains n'auront
+ * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
+ * ici ne marchera pas pour tout le monde, et une promesse faite sur la
+ * plaquette du salon se retournerait contre lui.
+ */
+function blocRappel(hote){
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Rappeler les conférences retenues";
+  const c = l.querySelector("input");
+  c.checked = rappelsVoulus();
+  hote.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Le visiteur qui a retenu une conférence peut demander à " +
+    "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
+    "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
+    "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
+    "la conférence.";
+  hote.appendChild(aide);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + RAPPEL_MIN + '" max="' + RAPPEL_MAX + '" step="5">' +
+    '<span class="u">min</span></label>';
+  duree.querySelector(".l").textContent = "Prévenir avant le début";
+  const n = duree.querySelector("input");
+  n.value = minutesRappel();
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= RAPPEL_MIN && v <= RAPPEL_MAX){ reglageRappel().minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesRappel(); };
+  hote.appendChild(duree);
+
+  const suit = () => {
+    const actif = rappelsVoulus();
+    duree.hidden = !actif;
+    n.value = minutesRappel();
+  };
+  c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
+  suit();
 }
 
 /**
