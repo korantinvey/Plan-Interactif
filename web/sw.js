@@ -36,7 +36,7 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "8f2bb9d760cc";
+const VERSION = "b8d566f5bc74";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 
@@ -185,9 +185,12 @@ self.addEventListener("fetch", (e) => {
     if (adresse.pathname === "/api/plan") {
       /* Le fond de plan porte sa version dans son adresse : il ne peut pas être
          périmé, et pèse cinquante fois les stands — c'est lui qu'il faut garder
-         le plus jalousement. Le plan lui-même change à chaque synchronisation :
-         on le redemande, et la copie gardée ne sert que si le réseau manque. */
-      e.respondWith(adresse.searchParams.get("fond")
+         le plus jalousement. Une vignette de logo suit la même règle pour la
+         même raison : elle est nommée par l'empreinte de l'adresse d'où elle
+         vient, et son contenu ne peut pas changer sans que sa clé change. Le
+         plan lui-même change à chaque synchronisation : on le redemande, et la
+         copie gardée ne sert que si le réseau manque. */
+      e.respondWith(adresse.searchParams.get("fond") || adresse.searchParams.get("vignette")
         ? dabordCache(e, requete)
         : dabordReseau(e, requete));
       return;
