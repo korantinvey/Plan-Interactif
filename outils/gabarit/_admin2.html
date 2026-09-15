@@ -7,9 +7,18 @@
    ------------------------------------------------------------------ */
 function demarre(d){
   indexe(d);
+  /* Le générique du sponsor avant le plan, et non après : ce qu'il couvre,
+     c'est justement le temps que le plan met à se dessiner. Il sait déjà être
+     là depuis l'ouverture de la page, posé d'après ce que l'appareil garde du
+     salon ; cet appel-là lui apprend ce que les données en disent vraiment
+     (`_sponsor.html`). */
+  accueilleSponsor();
   montePlan();
   fit();
   liste();
+  /* Le plan est dessiné : le générique peut finir de compter ses secondes,
+     puis s'estomper. Sans ce rappel il attendrait son butoir. */
+  suitSponsor();
   // le plan chargé, le bouton peut dire où en est l'enregistrement
   majAttente();
   /* Et ce qu'une session précédente n'a pas réussi à enregistrer — onglet fermé
@@ -60,8 +69,13 @@ function annonce(txt, erreur){
      quand même, c'est là qu'on le lit. */
   $("count").hidden = false;
   $("countTxt").textContent = erreur ? "Indisponible" : "Chargement…";
-  // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
-  if (erreur) $("titre").classList.remove("attente");
+  if (erreur){
+    // plus rien n'arrivera : le titre neutre est définitif, il cesse d'attendre
+    $("titre").classList.remove("attente");
+    /* Et le générique du sponsor s'efface : il couvre le plan, donc la place où
+       l'on cherchera pourquoi il n'y en a pas. Le message passe avant le logo. */
+    fermeSponsor();
+  }
 }
 
 /**

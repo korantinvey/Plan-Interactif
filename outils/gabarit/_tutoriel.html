@@ -417,7 +417,9 @@ function proposeTutoriel(){
          ferait dire à la première consigne de la refermer. */
       { libelle: "Commencer", genre: "accent", action: () => setTimeout(lanceTutoriel, 0) },
     ]);
-  }, TUTO_DELAI);
+  /* Après le générique du sponsor s'il y en a un : la fenêtre passe devant
+     tout, et se serait posée sur le logo (`_sponsor.html`). */
+  }, TUTO_DELAI + resteSponsor());
 }
 
 /* ------------------------------------------------------------

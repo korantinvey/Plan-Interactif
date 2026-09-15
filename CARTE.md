@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3902 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3921 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2842 · 10. Mode administration
-- l.2954 · La fiche d'une zone organisateur
-- l.3648 · Masquer une zone organisateur
-- l.3731 · Placer un libellé à la main
+- l.2846 · 10. Mode administration
+- l.2958 · La fiche d'une zone organisateur
+- l.3667 · Masquer une zone organisateur
+- l.3750 · Placer un libellé à la main
 
 Fonctions :
 
@@ -32,33 +32,33 @@ Fonctions :
 `policeDesNoms` 801 · `posePoliceLibelles` 830 · `appliqueModele` 862 · `habilleModale` 903
 `texteCorps` 974 · `standApercu` 989 · `lignesApercu` 1013 · `contenuApercu` 1039
 `apercuFiche` 1076 · `apercuListe` 1154 · `apercuDuo` 1176 · `glisseFenetre` 1209
-`ouvreReglages` 1220 · `voletZones` 1327 · `champsFicheZone` 1429 · `ficheZoneEnPlace` 1499
-`voletPlan` 1517 · `blocRappel` 1561 · `voletAdmin` 1611 · `blocHoraires` 1774
-`sallesSituees` 1907 · `voletPmr` 1923 · `nomDuTon` 2014 · `voletApparence` 2019
-`clesFiche` 2218 · `voletOrdre` 2235 · `enregistreConf` 2791 · `rgbHex` 2798 · `hexa` 2805
-`luminance` 2809 · `ecarte` 2823 · `joli` 2838 · `retireAdmin` 2859 · `activeAdmin` 2872
-`champZone` 2980 · `champsZone` 3005 · `champSalles` 3097 · `nomDeZone` 3149
-`reduitLogo` 3183 · `champLogo` 3224 · `editeurRiche` 3321 · `memeFicheZone` 3478
-`suitFicheZone` 3485 · `verseFicheZone` 3493 · `ficheZone` 3519 · `enregistreZone` 3544
-`basculeAffichageZone` 3659 · `marqueZonesMasquees` 3676 · `ecritColonnesEvenement` 3696
-`ecritColonneEvenement` 3727 · `cleLibelle` 3752 · `empreinteLibelle` 3768
-`placementLibelle` 3776 · `posePlacement` 3786 · `libelleAutomatique` 3803
-`modePlacementLibelles` 3812 · `majPaletteLibelle` 3829 · `choisitLibelle` 3846
-`pousseLibelle` 3853 · `libellePointerDown` 3861 · `libellePointerMove` 3877
-`libellePointerUp` 3886
+`ouvreReglages` 1220 · `voletZones` 1331 · `champsFicheZone` 1433 · `ficheZoneEnPlace` 1503
+`voletPlan` 1521 · `blocRappel` 1565 · `voletAdmin` 1615 · `blocHoraires` 1778
+`sallesSituees` 1911 · `voletPmr` 1927 · `nomDuTon` 2018 · `voletApparence` 2023
+`clesFiche` 2222 · `voletOrdre` 2239 · `enregistreConf` 2795 · `rgbHex` 2802 · `hexa` 2809
+`luminance` 2813 · `ecarte` 2827 · `joli` 2842 · `retireAdmin` 2863 · `activeAdmin` 2876
+`champZone` 2984 · `champsZone` 3009 · `champSalles` 3101 · `nomDeZone` 3153
+`reduitLogo` 3187 · `cadreLogo` 3230 · `champLogo` 3302 · `editeurRiche` 3340
+`memeFicheZone` 3497 · `suitFicheZone` 3504 · `verseFicheZone` 3512 · `ficheZone` 3538
+`enregistreZone` 3563 · `basculeAffichageZone` 3678 · `marqueZonesMasquees` 3695
+`ecritColonnesEvenement` 3715 · `ecritColonneEvenement` 3746 · `cleLibelle` 3771
+`empreinteLibelle` 3787 · `placementLibelle` 3795 · `posePlacement` 3805
+`libelleAutomatique` 3822 · `modePlacementLibelles` 3831 · `majPaletteLibelle` 3848
+`choisitLibelle` 3865 · `pousseLibelle` 3872 · `libellePointerDown` 3880
+`libellePointerMove` 3896 · `libellePointerUp` 3905
 
 Éléments :
 
 `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 196 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 210 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 54 · `entetesApi` 72 · `chargeFond` 95 · `panneDuChargement` 142
-`charge` 149
+`demarre` 8 · `annonce` 63 · `entetesApi` 86 · `chargeFond` 109 · `panneDuChargement` 156
+`charge` 163
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -99,7 +99,7 @@ Fonctions :
 `calagePointerDown` 257 · `calagePointerMove` 270 · `calagePointerUp` 286
 `ajouteBatiments` 296 · `mentionOsm` 362
 
-### `_borne.html` — 355 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_borne.html` — 360 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. La borne interactive — un plan qui sait où il est
 
@@ -109,7 +109,7 @@ Fonctions :
 `lieuNomme` 117 · `pointLibre` 122 · `poseLaBorne` 130 · `remetLeDepart` 155
 `poseBorneIci` 169 · `armeLaPose` 178 · `montreBandeauBorne` 194 · `ecritDepartBorne` 208
 `rayonBorne` 221 · `dessineBorne` 226 · `rafraichitBorne` 242 · `rempliBorne` 247
-`relanceRepos` 276 · `reposeLaBorne` 283 · `demarreBorne` 314
+`relanceRepos` 276 · `reposeLaBorne` 283 · `demarreBorne` 319
 
 ### `_chaleur.html` — 636 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -283,7 +283,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4472 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4518 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -331,7 +331,7 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 491 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 497 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
@@ -341,10 +341,10 @@ Fonctions :
 `retientInstallation` 101 · `jourInstallation` 110 · `invitationEcartee` 113
 `refuseInstallation` 119 · `faconInstallation` 147 · `relanceInvitation` 165
 `gesteInstallation` 170 · `doigtPose` 174 · `doigtLeve` 175 · `vueInstallation` 178
-`accueilleInvitation` 187 · `invitationRetenue` 204 · `finInvitation` 218
-`essaieInvitation` 237 · `teteInvitation` 327 · `retourAuxReglages` 342
-`remplitInvitation` 350 · `ouvreInvitation` 380 · `ouvreInstalle` 430
-`confirmeInstallation` 446 · `caseInstallation` 464
+`accueilleInvitation` 187 · `invitationRetenue` 206 · `finInvitation` 224
+`essaieInvitation` 243 · `teteInvitation` 333 · `retourAuxReglages` 348
+`remplitInvitation` 356 · `ouvreInvitation` 386 · `ouvreInstalle` 436
+`confirmeInstallation` 452 · `caseInstallation` 470
 
 ### `_itineraire.html` — 3036 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -390,7 +390,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4127 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4132 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -399,9 +399,9 @@ Fonctions :
 - l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1796 · 6. Vue
 - l.2177 · 7. Sélection et fiche
-- l.3462 · 8. Interactions du plan
-- l.3803 · Le tiroir de la liste — écrans étroits
-- l.3960 · Le tiroir de la fiche — écrans étroits
+- l.3467 · 8. Interactions du plan
+- l.3808 · Le tiroir de la liste — écrans étroits
+- l.3965 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -437,8 +437,8 @@ Fonctions :
 `assainitRiche` 2827 · `enBlocs` 2867 · `rangeRiche` 2880 · `ecarteClicFantome` 2908
 `nomSociete` 2917 · `societes` 2930 · `choisitExposant` 2941 · `poseMarque` 2979
 `montreMarque` 3039 · `poseCode` 3062 · `rangeMarque` 3103 · `ouvre` 3166 · `ferme` 3434
-`onglet` 3452 · `milieu` 3482 · `commencePince` 3488 · `suitPince` 3502 · `saisitPlan` 3536
-`cibleElargie` 3612 · `mesureTiroir` 3814 · `montreTiroir` 3817
+`onglet` 3457 · `milieu` 3487 · `commencePince` 3493 · `suitPince` 3507 · `saisitPlan` 3541
+`cibleElargie` 3617 · `mesureTiroir` 3819 · `montreTiroir` 3822
 
 Éléments :
 
@@ -581,6 +581,16 @@ Fonctions :
 
 `#lienPublic`
 
+### `_sponsor.html` — 471 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 18. Le sponsor — un logo le temps du chargement
+
+Fonctions :
+
+`reglageSponsor` 77 · `secondesSponsor` 80 · `sponsorRetenu` 94 · `cleSponsor` 118
+`sponsorEnCache` 121 · `retientSponsor` 136 · `ouvreSponsor` 161 · `suitSponsor` 245
+`resteSponsor` 270 · `fermeSponsor` 276 · `accueilleSponsor` 292 · `voletSponsor` 336
+
 ### `_suggestion.html` — 679 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 15. La suggestion — un exposant de plus, pour compléter la visite
@@ -600,7 +610,7 @@ Fonctions :
 `range` 76 · `oublieLesFondsDAvant` 99 · `dabordCache` 113 · `dabordReseau` 142
 `navigation` 159
 
-### `_tutoriel.html` — 854 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 856 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -609,10 +619,10 @@ Fonctions :
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `zoneDuTuto` 91 · `insecable` 108 · `phraseTrajetTuto` 114 · `chapitresTuto` 358
-`proposeTutoriel` 378 · `lanceTutoriel` 426 · `quitteTutoriel` 512 · `chapitreTuto` 523
-`battementTuto` 532 · `finTuto` 550 · `afficheTuto` 567 · `boiteTuto` 613 · `repereTuto` 627
-`rameneTuto` 660 · `placeTuto` 698 · `voileTuto` 771 · `rafaleTuto` 788
-`marqueZoneTuto` 808 · `marqueLibelleTuto` 843
+`proposeTutoriel` 378 · `lanceTutoriel` 428 · `quitteTutoriel` 514 · `chapitreTuto` 525
+`battementTuto` 534 · `finTuto` 552 · `afficheTuto` 569 · `boiteTuto` 615 · `repereTuto` 629
+`rameneTuto` 662 · `placeTuto` 700 · `voileTuto` 773 · `rafaleTuto` 790
+`marqueZoneTuto` 810 · `marqueLibelleTuto` 845
 
 Éléments :
 
