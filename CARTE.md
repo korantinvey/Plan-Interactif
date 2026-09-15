@@ -166,7 +166,7 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3021 l. → admin-plans.html
+### `_console-js.html` — 3063 l. → admin-plans.html
 
 - l.937 · Provenance des données
 - l.1064 · Contenu de la fiche détail
@@ -188,9 +188,9 @@ Fonctions :
 `intitule` 2079 · `intituleSuite` 2091 · `separeValeurs` 2105 · `aplani` 2126
 `memeStyle` 2136 · `autreFace` 2154 · `champOrigine` 2170 · `majLiens` 2437
 `majIntegration` 2474 · `majMsgSync` 2481 · `etapesPressenties` 2511 · `synchronise` 2525
-`dupliquer` 2576 · `litMonProfil` 2676 · `RETOUR_MDP` 2687 · `litComptes` 2689
-`ligneMessage` 2698 · `casesSalons` 2708 · `ouvreComptes` 2738 · `ouvreFicheCompte` 2830
-`videEcran` 2989 · `dessine` 2994 · `demarre` 3009
+`fabriqueLesVignettes` 2601 · `dupliquer` 2618 · `litMonProfil` 2718 · `RETOUR_MDP` 2729
+`litComptes` 2731 · `ligneMessage` 2740 · `casesSalons` 2750 · `ouvreComptes` 2780
+`ouvreFicheCompte` 2872 · `videEcran` 3031 · `dessine` 3036 · `demarre` 3051
 
 Éléments :
 
@@ -667,10 +667,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 73 · `client` 76
 
-### `supabase/functions/plan-public/index.ts` — 692 l.
+### `supabase/functions/plan-public/index.ts` — 763 l.
 
-`cors` 50 · `db` 84 · `service` 99 · `rendVignette` 121 · `lu` 154 · `salon` 164
-`retraits` 242 · `ampute` 266 · `masquesDe` 306 · `masquesDuPlan` 326
+`cors` 50 · `db` 84 · `service` 99 · `vignettesParAdresse` 116 · `avecVignette` 153
+`rendVignette` 189 · `lu` 222 · `salon` 232 · `retraits` 310 · `ampute` 334
+`masquesDe` 374 · `masquesDuPlan` 394
 
 ### `supabase/functions/sync-evenement/index.ts` — 1591 l.
 
@@ -722,6 +723,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260914112229_intitules_des_champs_de_la_fiche.sql` — —
 - `20260914231027_le_calage_du_plan_sur_la_terre.sql` — evenement
 - `20260915103801_vignettes_des_logos_d_exposants.sql` — vignette_de_logo
+- `20260915113207_retrouver_une_vignette_par_son_adresse_d_origine.sql` — —
 
 ## Le reste
 
