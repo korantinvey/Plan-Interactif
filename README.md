@@ -964,6 +964,74 @@ sorte que le rapport sait qu'il recompte peut-être plutôt que de gonfler une
 audience en silence. C'est déjà la situation d'un cadre posé sur un site tiers ;
 voir *Combien de fois, et combien de qui*.
 
+### « Vous êtes ici » — le code affiché dans le hall
+
+La borne règle le cas de l'écran vissé au mur. Reste le visiteur, avec son
+téléphone, sous la même charpente métallique où le GPS ne situe rien : lui non
+plus ne sait pas nommer l'allée où il se tient, et la seule chose que le salon
+puisse lui dire, c'est *là où tu viens de photographier ce code*.
+
+**Produire un code.** Dans la page d'administration, le bouton **« Vous êtes
+ici »** de la bande du haut arme la visée ; un appui sur le plan désigne
+l'endroit, et une fenêtre rend le code, le lien en toutes lettres, et une
+affiche prête à tirer.
+
+L'endroit se désigne de trois façons, et le code n'est pas le même :
+
+| ce qu'on touche | ce que le code retient |
+|---|---|
+| un repère | son libellé — `?ici=Entrée%20Nord` |
+| un stand | son numéro — `?ici=A15` |
+| une zone, ou le fond de plan nu | le point exact du doigt — `?ici=@176f3930,-6750.4,8800.2` |
+
+Un repère est un lieu nommé, et c'est pour cela qu'on l'a posé. Un stand est
+petit : son centre est là où l'on se tient quand on est devant, et son numéro se
+relit sur l'affiche en cas de doute. Une zone, non — on est *dans* une zone, et
+son centre peut être à trente mètres du totem : c'est alors l'endroit du doigt
+qui compte, comme sur le fond de plan nu. Le pavillon y est désigné par le début
+de son identifiant et non par son rang : une synchronisation qui ajoute un hall
+décale les rangs, et l'affiche collée la veille désignerait le pavillon d'à
+côté.
+
+Un nom ne part dans le code que s'il en revient : le plan vérifie que ce nom-là
+retrouve bien ce point-là, et se rabat sur les coordonnées sinon. Un code
+imprimé une fois pour tout le salon n'a pas le droit de se tromper de voisin.
+
+**L'affiche.** Un SVG au format d'une feuille A4 : il s'agrandit sans grossir,
+ce qu'on demande à un code qu'on tirera peut-être en A3 sur un totem, et il part
+chez l'imprimeur tel quel. Elle porte le nom du salon, « Vous êtes ici »,
+l'endroit, le pavillon, le damier et le geste à faire — chaque ligne ramenée à
+la largeur de la feuille, parce qu'un nom de salon à rallonge déborderait là où
+un sigle flottait. « Imprimer » la tire directement ; le reste de la page ne
+part pas avec elle.
+
+**Ce que le visiteur reçoit.** Le plan s'ouvre sur le bon pavillon, un point
+« Vous êtes ici » posé à l'endroit du code, et le départ de l'itinéraire déjà
+rempli : « Itinéraire » depuis une fiche donne le trajet sans rien demander de
+plus, et « Organiser ma journée » ne demande plus par où l'on commence. C'est le
+départ imposé de la borne, et rien du reste — un téléphone n'est pas un écran
+public : il garde son jeton de mesure, son parcours, sa visite guidée et son
+invitation à installer, et ne se remet pas à zéro toutes les quatre-vingt-dix
+secondes.
+
+**Et cela s'éteint.** Le visiteur avance, et le point cesse d'être vrai au bout
+de quelques allées. Un rappel au bas de l'écran porte donc **« Désactiver »** :
+le point quitte le plan, le champ de départ redevient une liste déroulante qu'on
+remplit, et l'adresse cesse d'affirmer une position — ni le rechargement, ni le
+partage, ni la mise à l'écran d'accueil ne ramènent ce qu'on vient d'écarter.
+L'arrivée reste, elle : on n'a pas changé de destination en reprenant la main
+sur son départ. Il n'y a pas de bouton pour rallumer, et c'est volontaire —
+celui qui éteint est ailleurs, et l'affiche d'à côté, elle, est au bon endroit.
+
+Rien de tout cela ne passe par le serveur : la position tient dans l'adresse,
+comme le parcours partagé tient dans la sienne. Aucun code à créer, aucun à
+faire expirer, aucune table à purger après le salon, et une affiche qui se
+scanne hors ligne sur un plan déjà visité. Le revers est qu'un code déjà affiché
+ne se corrige pas à distance : si l'endroit change, on en refait un. Un code que
+le plan ne reconnaît plus — un stand démonté, un pavillon disparu d'une édition
+à l'autre — se dit au visiteur en une phrase, et le plan reste un plan ordinaire
+plutôt que d'affirmer une position tirée au sort.
+
 ## Organiser sa journée
 
 Une liste de douze stands et de deux conférences ne dit ni par où commencer, ni

@@ -2827,6 +2827,8 @@ function bandeauVisee(){
        aussi bien au doigt qu'au curseur. */
     if (visee) $("viseurTxt").textContent = visee === "borne"
       ? "Touchez le plan à l'endroit où cette borne est posée."
+      : visee === "ici"
+      ? "Touchez le plan à l'endroit où ce code sera affiché."
       : "Indiquez " + (visee === "a" ? "votre point de départ" : "votre arrivée") + " sur le plan.";
   }
   racine.classList.toggle("vise-plan", !!visee);
@@ -2835,6 +2837,9 @@ function bandeauVisee(){
   /* Le bandeau d'une borne à poser s'efface le temps du geste : c'est le même
      état, dit deux fois, et deux bandeaux ne se lisent plus. */
   montreBandeauBorne();
+  /* Le rappel du code affiché, lui, occupe la même place au bas de l'écran :
+     il cède le passage plutôt que de se superposer (voir `_ici.html`). */
+  montreBandeauIci();
 }
 
 function armeVisee(r){
@@ -2859,7 +2864,7 @@ function finVisee(){
   /* La cible referme le tiroir sur un téléphone : on ne le rouvre que si c'est
      bien lui qui l'a fermé. Ouvert, le rouvrir réarmait la visée que ces deux
      lignes viennent d'éteindre — et l'abandon n'aboutissait jamais. */
-  const rouvre = visee !== "borne" && ETROIT() &&
+  const rouvre = (visee === "a" || visee === "b") && ETROIT() &&
                  !$("itineraire").classList.contains("open");
   visee = null;
   bandeauVisee();
@@ -2885,8 +2890,11 @@ function visePoi(id){
 function visePoint(pt){
   if (!visee) return false;
   /* Poser une borne n'est pas désigner un bout de trajet : le point part
-     ailleurs (voir « _borne.html »). */
+     ailleurs (voir « _borne.html »). Désigner l'endroit d'un code non plus
+     (voir « _ici.html ») — et c'est par ici que passe le clavier, là où le
+     doigt est tranché plus tôt, dans la chaîne des appuis sur le plan. */
   if (visee === "borne") return poseLaBorne(pt);
+  if (visee === "ici") return ouvreCodeIci(pt);
   const r = visee;
   ITI[r] = pt;
   champIti(r).value = ITI[r].nom;

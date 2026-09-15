@@ -24,6 +24,9 @@ module.exports = [
 
   // `_tutoriel.html` : un morceau de la transformation CSS qui étire le voile
   "px) scale(",
+  // `_ici.html` : un morceau de la transformation SVG qui porte le damier du
+  // code à sa place sur l'affiche
+  ") scale(",
 
   // `_console-js.html` : le paramètre que le lien de la console ajoute à
   // l'adresse du plan pour l'ouvrir en borne — une adresse ne se traduit pas

@@ -2913,7 +2913,7 @@ function activeAdmin(){
      dessus, dans l'ordre où l'on s'en sert. Elles y portaient l'habillage
      choisi par l'exploitant — cerclées sous « Billet », à angle vif sous
      « Grille » — alors qu'elles ne sont pas de son plan. */
-  if (acts) [b, r, c].forEach(el => { if (el) acts.appendChild(el); });
+  if (acts) [b, boutonCodeIci(), r, c].forEach(el => { if (el) acts.appendChild(el); });
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste

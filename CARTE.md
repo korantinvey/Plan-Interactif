@@ -51,14 +51,14 @@ Fonctions :
 
 `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 210 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 214 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
-`demarre` 8 · `annonce` 63 · `entetesApi` 86 · `chargeFond` 109 · `panneDuChargement` 156
-`charge` 163
+`demarre` 8 · `annonce` 67 · `entetesApi` 90 · `chargeFond` 113 · `panneDuChargement` 160
+`charge` 167
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -99,17 +99,17 @@ Fonctions :
 `calagePointerDown` 257 · `calagePointerMove` 270 · `calagePointerUp` 286
 `ajouteBatiments` 296 · `mentionOsm` 362
 
-### `_borne.html` — 360 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_borne.html` — 370 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. La borne interactive — un plan qui sait où il est
 
 Fonctions :
 
 `pointBorne` 62 · `borneRetenue` 70 · `retientBorne` 76 · `oublieBorne` 79 · `lieuBorne` 98
-`lieuNomme` 117 · `pointLibre` 122 · `poseLaBorne` 130 · `remetLeDepart` 155
-`poseBorneIci` 169 · `armeLaPose` 178 · `montreBandeauBorne` 194 · `ecritDepartBorne` 208
-`rayonBorne` 221 · `dessineBorne` 226 · `rafraichitBorne` 242 · `rempliBorne` 247
-`relanceRepos` 276 · `reposeLaBorne` 283 · `demarreBorne` 319
+`lieuNomme` 117 · `pointLibre` 122 · `poseDepartImpose` 135 · `poseLaBorne` 146
+`remetLeDepart` 165 · `poseBorneIci` 179 · `armeLaPose` 188 · `montreBandeauBorne` 204
+`ecritDepartBorne` 218 · `rayonBorne` 231 · `dessineBorne` 236 · `rafraichitBorne` 252
+`rempliBorne` 257 · `relanceRepos` 286 · `reposeLaBorne` 293 · `demarreBorne` 329
 
 ### `_chaleur.html` — 636 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -283,7 +283,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4555 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4589 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -297,13 +297,13 @@ Fonctions :
 `#couches` · `#zones` · `#stands` · `#labels` · `#calqueLibelles` · `#zIn` · `#zOut`
 `#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte` · `#mentionOsm` · `#poi` · `#viseur`
 `#viseurTxt` · `#viseurStop` · `#calageBat` · `#calageAngle` · `#calageQuart`
-`#calageStop` · `#calageValide` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
-`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
-`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
-`#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
-`#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`
-`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
+`#calageStop` · `#calageValide` · `#iciRappel` · `#iciRappelTxt` · `#iciStop` · `#bornePose`
+`#bornePoser` · `#calage` · `#calageFerme` · `#calageCorps` · `#calageCarte` · `#calageEtat`
+`#calageGarde` · `#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils`
+`#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg`
+`#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle`
+`#traitFleche` · `#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc`
+`#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
 `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
 `#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
 `#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg`
@@ -324,6 +324,19 @@ Fonctions :
 Éléments :
 
 `#reessaie`
+
+### `_ici.html` — 570 l. → plan-admin.html, plan-smcl.html, plan.html
+
+- l.1 · 11 septies. « Vous êtes ici » — le code affiché dans le hall
+
+Fonctions :
+
+`prefixePlan` 81 · `coteIci` 93 · `nomCodeIci` 109 · `codeIci` 128 · `litCodeIci` 143
+`lienIci` 163 · `poseIci` 189 · `retireIci` 216 · `oublieIciDeLAdresse` 246
+`montreBandeauIci` 262 · `demarreIci` 296 · `pointTouche` 322 · `codeIciAuPoint` 334
+`armeCodeIci` 340 · `afficheIci` 362 · `ligneAffiche` 402 · `nomFichierIci` 411
+`ouvreCodeIci` 426 · `boutonsCodeIci` 478 · `telechargeAfficheIci` 502
+`imprimeAfficheIci` 520 · `boutonCodeIci` 549
 
 ### `_index.html` — 46 l. → index.html
 
@@ -346,7 +359,7 @@ Fonctions :
 `retourAuxReglages` 370 · `remplitInvitation` 378 · `ouvreInvitation` 408
 `ouvreInstalle` 458 · `confirmeInstallation` 474 · `caseInstallation` 492
 
-### `_itineraire.html` — 3036 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -374,9 +387,9 @@ Fonctions :
 `cadreItineraire` 2485 · `champIti` 2509 · `ecritDistance` 2513 · `ecritDuree` 2521
 `fermeSugg` 2526 · `montreSugg` 2533 · `choisitPoint` 2567 · `valideSaisie` 2576
 `effaceItineraire` 2588 · `relance` 2615 · `phraseLiaison` 2666 · `montreResultat` 2680
-`bandeauVisee` 2822 · `armeVisee` 2840 · `finVisee` 2857 · `viseItineraire` 2873
-`visePoi` 2879 · `visePoint` 2885 · `ouvreItineraire` 2914 · `fermeItineraire` 2942
-`versItineraire` 2952 · `versItineraireDe` 2955
+`bandeauVisee` 2822 · `armeVisee` 2845 · `finVisee` 2862 · `viseItineraire` 2878
+`visePoi` 2884 · `visePoint` 2890 · `ouvreItineraire` 2922 · `fermeItineraire` 2950
+`versItineraire` 2960 · `versItineraireDe` 2963
 
 ### `_journee.html` — 1004 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -390,7 +403,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4188 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4192 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.396 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -400,8 +413,8 @@ Fonctions :
 - l.1802 · 6. Vue
 - l.2183 · 7. Sélection et fiche
 - l.3493 · 8. Interactions du plan
-- l.3858 · Le tiroir de la liste — écrans étroits
-- l.4021 · Le tiroir de la fiche — écrans étroits
+- l.3862 · Le tiroir de la liste — écrans étroits
+- l.4025 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -438,7 +451,7 @@ Fonctions :
 `nomSociete` 2948 · `societes` 2961 · `choisitExposant` 2972 · `poseMarque` 3010
 `montreMarque` 3070 · `poseCode` 3093 · `rangeMarque` 3134 · `ouvre` 3197 · `ferme` 3465
 `onglet` 3483 · `milieu` 3513 · `commencePince` 3519 · `suitPince` 3533 · `saisitPlan` 3567
-`cibleElargie` 3643 · `planifieFiltre` 3814 · `mesureTiroir` 3869 · `montreTiroir` 3872
+`cibleElargie` 3643 · `planifieFiltre` 3818 · `mesureTiroir` 3873 · `montreTiroir` 3876
 
 Éléments :
 
@@ -506,7 +519,7 @@ Fonctions :
 `groupeParcours` 411 · `remplitParcours` 420 · `ouvreParcours` 499 · `fermeParcours` 511
 `videLeParcours` 527
 
-### `_partage.html` — 633 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 650 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -514,9 +527,9 @@ Fonctions :
 
 `codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
 `lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
-`qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrSvg` 402
-`ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 551
-`adoptePartage` 629
+`qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrChemin` 406
+`qrSvg` 428 · `ouvrePartageParcours` 445 · `boutonsPartage` 494
+`accueilleParcoursPartage` 568 · `adoptePartage` 646
 
 ### `_pile.html` — 505 l. → plan-admin.html, plan-smcl.html, plan.html
 

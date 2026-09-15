@@ -122,25 +122,35 @@ function lieuNomme(txt){
 function pointLibre(xy){ return lieuBorne(state.plan, xy, ""); }
 
 /**
- * Poser la borne, d'où que vienne le point.
+ * Imposer le départ, d'où que vienne le point.
  *
  * Un repère apporte son nom, un emplacement le sien ; un point nu n'en a pas,
- * et c'est très bien — le pavillon suffit à dire où l'écran est.
+ * et c'est très bien — le pavillon suffit à dire où l'on est.
+ *
+ * Ce qui suit vaut pour une borne comme pour le code affiché dans le hall
+ * (`_ici.html`) : le départ cesse d'être une question, le plan se porte sur le
+ * bon pavillon, le point paraît, et le tiroir reprend ce départ-là. Ce qui les
+ * sépare tient dans ce qui appelle — l'un enregistre sa position, l'autre non.
  */
-function poseLaBorne(pt){
-  if (!pt) return false;
+function poseDepartImpose(pt){
   LIEU_BORNE = lieuBorne(pt.p, pt.xy, pt.genre === "borne" ? pt.lieu : pt.nom);
-  /* Une position dictée par l'adresse ne s'enregistre pas : elle se relit à
-     chaque ouverture, et la retenir ferait deux vérités à corriger le jour
-     où l'écran change de place. */
-  if (!BORNE_LIEU_DIT)
-    retientBorne({ plan: DATA.plans[LIEU_BORNE.p].id, xy: LIEU_BORNE.xy, lieu: LIEU_BORNE.lieu });
   visee = null;
   bandeauVisee();
   if (state.plan !== LIEU_BORNE.p) changePlan(LIEU_BORNE.p);
   dessineBorne();
   remetLeDepart();
   fermeItineraire();
+}
+
+/** Poser la borne : le départ imposé, plus ce que l'appareil en retient. */
+function poseLaBorne(pt){
+  if (!pt) return false;
+  poseDepartImpose(pt);
+  /* Une position dictée par l'adresse ne s'enregistre pas : elle se relit à
+     chaque ouverture, et la retenir ferait deux vérités à corriger le jour
+     où l'écran change de place. */
+  if (!BORNE_LIEU_DIT)
+    retientBorne({ plan: DATA.plans[LIEU_BORNE.p].id, xy: LIEU_BORNE.xy, lieu: LIEU_BORNE.lieu });
   return true;
 }
 
