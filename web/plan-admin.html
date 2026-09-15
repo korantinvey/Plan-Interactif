@@ -1073,7 +1073,11 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    recouvrait le plan au lieu de se glisser dessous. */
 .stage > svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
   position:relative;z-index:1}
-.stage svg.dragging{cursor:grabbing}
+/* Le curseur de la main qui tient le plan est posé en style en ligne, et non
+   par une classe : « cursor » s'hérite, et une règle qui en dépend fait
+   remettre en cause le style des sept mille nœuds du plan — cent cinquante
+   millisecondes, à chaque doigt posé et à chaque doigt levé. La même valeur
+   écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
    noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
@@ -8590,7 +8594,7 @@ function commencePince(){
             view.y + (m.y - r.top) / r.height * view.h],
   };
   drag = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
 }
 
 function suitPince(){
@@ -8608,6 +8612,29 @@ function suitPince(){
   };
   rafraichitVue();
 }
+
+/**
+ * La main qui tient le plan, ou qui le lâche.
+ *
+ * Le curseur ne change que pour une souris, parce qu'il s'hérite : le poser
+ * sur le plan remet en cause le style de ses sept mille nœuds — cent cinquante
+ * millisecondes, au doigt posé, puis autant au doigt levé. Sur un écran
+ * tactile, ces trois cents millisecondes étaient dépensées pour un curseur que
+ * personne ne voit ; elles retardaient tout le reste, et la fiche du stand
+ * suivant semblait attendre une animation qui n'a pas lieu.
+ *
+ * Lâcher écrit quand même, quelle que soit la main : une souris qui a saisi le
+ * plan avant qu'un doigt s'y pose doit retrouver son curseur. Réécrire la
+ * valeur qui est déjà là ne coûte rien — c'est la changer qui coûte.
+ *
+ * Il vit en style en ligne plutôt qu'en classe pour la même raison : une règle
+ * qui parle de « cursor » ferait le même travail, sans qu'on puisse choisir
+ * quand.
+ */
+const saisitPlan = (tenu) => {
+  if (tenu && dernierAppuiTactile) return;
+  svg.style.cursor = tenu ? "grabbing" : "";
+};
 
 svg.addEventListener("pointerdown", e => {
   dernierAppuiTactile = e.pointerType === "touch" || e.pointerType === "pen";
@@ -8635,7 +8662,7 @@ svg.addEventListener("pointerdown", e => {
            // le SVG caché ne sait plus où tombent ses formes : on demande au dessin
            cible: GL.actif ? cibleWebgl(e.clientX, e.clientY)
                            : e.target.closest("[data-id],[data-poi]") };
-  svg.setPointerCapture(e.pointerId); svg.classList.add("dragging");
+  svg.setPointerCapture(e.pointerId); saisitPlan(true);
 });
 svg.addEventListener("pointermove", e => {
   if (doigts.has(e.pointerId)) doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -8713,7 +8740,7 @@ svg.addEventListener("pointerup", e => {
   if (libellePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
-  const d = drag; drag = null; svg.classList.remove("dragging");
+  const d = drag; drag = null; saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
@@ -8750,7 +8777,7 @@ svg.addEventListener("pointercancel", e => {
   if (doigts.size < 2) pince = null;
   glisseLib = null;
   drag = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
 });
 svg.addEventListener("wheel", e => {
   e.preventDefault();
@@ -9058,7 +9085,12 @@ let montreTiroir = () => {};
     if (!etroit()) return;
     const hd = fiche.querySelector(".detail-hd");
     const h = prise.offsetHeight + (hd ? hd.offsetHeight : 0);
-    if (h > 0) document.documentElement.style.setProperty("--fiche-replie", h + "px");
+    /* Sur la fiche, et non sur la racine. Une variable posée sur la racine est
+       offerte à toute la page en héritage : le navigateur remet alors en cause
+       le style de ses sept mille nœuds — cent quatre-vingts millisecondes dès
+       que la valeur change, c'est-à-dire chaque fois qu'un nom de stand tient
+       sur un nombre de lignes différent. Seule la fiche lit celle-ci. */
+    if (h > 0) fiche.style.setProperty("--fiche-replie", h + "px");
   }
 
   function pose(nom){
@@ -9068,7 +9100,7 @@ let montreTiroir = () => {};
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
   const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--fiche-replie")) || 132;
+    parseFloat(getComputedStyle(fiche).getPropertyValue("--fiche-replie")) || 132;
 
   /** Hauteur de la fiche à un cran donné, en pixels — les parts du CSS. */
   function hauteur(nom){
@@ -25975,7 +26007,7 @@ function cartePointerDown(e){
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
   svg.setPointerCapture(e.pointerId);
-  svg.classList.add("dragging");
+  saisitPlan(true);
   return true;
 }
 
@@ -26001,7 +26033,7 @@ function cartePointerMove(e){
 function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }

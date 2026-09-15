@@ -1164,7 +1164,7 @@ function cartePointerDown(e){
     a0: Math.atan2(p[1] - pivot[1], p[0] - pivot[0]),
   };
   svg.setPointerCapture(e.pointerId);
-  svg.classList.add("dragging");
+  saisitPlan(true);
   return true;
 }
 
@@ -1190,7 +1190,7 @@ function cartePointerMove(e){
 function cartePointerUp(e){
   if (!_glisseCalage) return false;
   _glisseCalage = null;
-  svg.classList.remove("dragging");
+  saisitPlan(false);
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   return true;
 }
