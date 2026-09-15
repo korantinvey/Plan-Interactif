@@ -197,9 +197,9 @@ Fonctions :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 658 l. → console.css
+### `_console.css` — 698 l. → console.css
 
-- l.599 · Page de rapport
+- l.639 · Page de rapport
 
 ### `_dessin.html` — 1922 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -283,7 +283,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4441 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4456 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -560,7 +560,7 @@ Fonctions :
 `abonnementCourant` 203 · `abonne` 208 · `synchroniseRappels` 234 · `eteintRappels` 257
 `allumeRappels` 272 · `aideRappel` 289 · `poseRappels` 305 · `reprendRappels` 380
 
-### `_rapport-head.html` — 29 l. → rapport.html
+### `_rapport-head.html` — 32 l. → rapport.html
 
 Éléments :
 
