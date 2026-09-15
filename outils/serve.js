@@ -42,19 +42,43 @@ http.createServer((q, s) => {
   }
 
   /* Le manifeste est complété en production par le Worker (`src/index.mjs`) :
-     il y reçoit l'adresse du salon d'où l'on installe. Sans ce même geste ici,
-     l'essai local montrerait une application installable qui rouvre toujours
-     le salon par défaut — le seul défaut qu'on cherche justement à voir. */
+     il y reçoit le salon d'où l'on installe, dont il tire le nom de
+     l'application et l'adresse qu'elle rouvrira. Sans ce même geste ici,
+     l'essai local montrerait une application au nom du produit, qui rouvre
+     toujours le salon par défaut — les deux défauts qu'on cherche à voir.
+
+     Le tour de phrase est celui du Worker, redit et non partagé : le Worker
+     s'exécute chez Cloudflare, ce fichier sous Node, et rien ne circule de
+     l'un à l'autre. */
   if (u === "/manifeste.webmanifest"){
     const contenu = JSON.parse(fs.readFileSync(DIR + "manifeste.webmanifest", "utf8"));
-    const depart = new URLSearchParams(q.url.split("?")[1] || "").get("depart");
+    const params = new URLSearchParams(q.url.split("?")[1] || "");
     const base = "http://localhost:4180/";
+    const depart = params.get("depart");
     const cible = depart ? new URL(depart, base) : null;
     if (cible && cible.origin === new URL(base).origin){
       contenu.start_url = cible.pathname + cible.search;
     }
-    s.writeHead(200, { "Content-Type": TYPES.webmanifest, "Cache-Control": "no-store" });
-    return s.end(JSON.stringify(contenu));
+    const sert = () => {
+      s.writeHead(200, { "Content-Type": TYPES.webmanifest, "Cache-Control": "no-store" });
+      s.end(JSON.stringify(contenu));
+    };
+    const salon = params.get("salon") || "";
+    if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(salon)) return sert();
+    https.get(AMONT + "?slug=" + encodeURIComponent(salon) + "&nom=1", r => {
+      let texte = "";
+      r.on("data", (c) => { texte += c; });
+      r.on("end", () => {
+        let nom = "";
+        try { nom = String(JSON.parse(texte).evenement || "").trim(); } catch (e) {}
+        if (r.statusCode === 200 && nom){
+          contenu.name = "Plan " + nom + " by Event2Plan";
+          contenu.short_name = nom;
+        }
+        sert();
+      });
+    }).on("error", () => sert());   // sans réseau, le nom du produit fera l'essai
+    return;
   }
 
   if (u === "/") u = "/index.html";

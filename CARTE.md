@@ -331,20 +331,20 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 497 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 519 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 50 · `invitationVoulue` 51 · `auDoigt` 76 · `reponsesInstallation` 96
-`retientInstallation` 101 · `jourInstallation` 110 · `invitationEcartee` 113
-`refuseInstallation` 119 · `faconInstallation` 147 · `relanceInvitation` 165
-`gesteInstallation` 170 · `doigtPose` 174 · `doigtLeve` 175 · `vueInstallation` 178
-`accueilleInvitation` 187 · `invitationRetenue` 206 · `finInvitation` 224
-`essaieInvitation` 243 · `teteInvitation` 333 · `retourAuxReglages` 348
-`remplitInvitation` 356 · `ouvreInvitation` 386 · `ouvreInstalle` 436
-`confirmeInstallation` 452 · `caseInstallation` 470
+`reglageInstallation` 50 · `invitationVoulue` 51 · `auDoigt` 76 · `nommeApplication` 104
+`reponsesInstallation` 118 · `retientInstallation` 123 · `jourInstallation` 132
+`invitationEcartee` 135 · `refuseInstallation` 141 · `faconInstallation` 169
+`relanceInvitation` 187 · `gesteInstallation` 192 · `doigtPose` 196 · `doigtLeve` 197
+`vueInstallation` 200 · `accueilleInvitation` 209 · `invitationRetenue` 228
+`finInvitation` 246 · `essaieInvitation` 265 · `teteInvitation` 355
+`retourAuxReglages` 370 · `remplitInvitation` 378 · `ouvreInvitation` 408
+`ouvreInstalle` 458 · `confirmeInstallation` 474 · `caseInstallation` 492
 
 ### `_itineraire.html` — 3036 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -390,55 +390,55 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4157 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4159 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
-- l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
-- l.500 · 3. Rendu du pavillon courant
-- l.581 · 4. Libellés — le nom de l'exposant prime sur le numéro
-- l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1796 · 6. Vue
-- l.2177 · 7. Sélection et fiche
-- l.3462 · 8. Interactions du plan
-- l.3827 · Le tiroir de la liste — écrans étroits
-- l.3990 · Le tiroir de la fiche — écrans étroits
+- l.392 · 2. Mesure de texte — largeur réelle dans la police de rendu
+- l.502 · 3. Rendu du pavillon courant
+- l.583 · 4. Libellés — le nom de l'exposant prime sur le numéro
+- l.719 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
+- l.1798 · 6. Vue
+- l.2179 · 7. Sélection et fiche
+- l.3464 · 8. Interactions du plan
+- l.3829 · Le tiroir de la liste — écrans étroits
+- l.3992 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
 `$` 12 · `esc` 14 · `P` 49 · `nomDeLaZone` 69 · `nomsAnglaisDesZones` 71 · `indexe` 79
-`chronoConf` 309 · `rangeConferences` 330 · `poseFavicon` 377 · `largeur` 395
-`decoupe` 420 · `habille` 433 · `lignesSvg` 444 · `coexComptes` 461 · `coexChoisit` 462
-`ligneCode` 478 · `monteHabillage` 506 · `montePlan` 523 · `onglets` 557 · `changePlan` 573
-`ancre` 589 · `place` 590 · `libelles` 592 · `decaleLibelle` 673 · `facteurLibelle` 674
-`libelleForce` 675 · `libelleZone` 678 · `libelleEmplacement` 697 · `indexeSecteurs` 738
-`secteursMontres` 751 · `couleurConf` 755 · `hslHex` 759 · `couleurSecteur` 777
-`BANDES` 796 · `majFondus` 804 · `pastilleSecteur` 842 · `coloreSecteurs` 855
-`peintSecteur` 906 · `appliqueSecteurs` 919 · `filtreTheme` 936 · `themeFiltrable` 1014
-`clesCriteres` 1030 · `libelleCritere` 1037 · `separeValeurs` 1045 · `valeursCritere` 1062
-`texteCriteres` 1075 · `indexeCriteres` 1088 · `dansCriteres` 1115 · `critereActif` 1123
-`basculeCritere` 1125 · `videCriteres` 1134 · `majVideQ` 1143 · `videRecherche` 1156
-`nCriteres` 1171 · `majCriteres` 1180 · `ouvreCriteres` 1238 · `filtre` 1362
-`reposeRetrait` 1382 · `critParSociete` 1386 · `cherchable` 1396 · `visible` 1403
-`releveHotes` 1419 · `visibleSurPlan` 1427 · `visibleSociete` 1438 · `marqueRetrait` 1454
-`appliqueFiltre` 1466 · `oublieRetrait` 1478 · `reprendRecherche` 1487 · `rangSorte` 1500
-`codeCase` 1522 · `caseNumero` 1539 · `sousLigne` 1559 · `liste` 1573 · `marqueChoisie` 1692
-`prechargeMarque` 1718 · `prechargeLesVignettes` 1754 · `cadrePlan` 1811
-`oublieCadre` 1812 · `figeTextes` 1828 · `rendTextes` 1836 · `cadrage` 1872
-`peintLibelles` 1877 · `detacheLibelles` 1883 · `rattacheLibelles` 1895
-`etireLibelles` 1913 · `appliqueVue` 1921 · `rafraichitVue` 1963 · `poseVue` 1977
-`masque` 1997 · `masqueDroite` 2029 · `fit` 2040 · `stoppeZoom` 2070 · `glisseVersVise` 2076
-`glisseVers` 2118 · `rectVisee` 2140 · `zoom` 2160 · `echelle` 2169 · `ETROIT` 2183
-`anime` 2199 · `noeud` 2223 · `canalPlan` 2233 · `rangSociete` 2241 · `select` 2250
-`centre` 2275 · `centrePoint` 2279 · `montre` 2324 · `libelleCorps` 2356 · `ordreCorps` 2373
-`groupesFiche` 2405 · `montreIntitule` 2418 · `valeurCorps` 2438 · `champCorps` 2451
-`groupeCorps` 2463 · `corpsRange` 2476 · `momentLocal` 2511 · `programme` 2534
-`jourLong` 2567 · `ficheConf` 2578 · `lien` 2672 · `adresseWeb` 2680 · `pictoRS` 2723
-`adresseSure` 2741 · `adresseVignette` 2771 · `adresseImage` 2785 · `imageSure` 2798
-`assainitRiche` 2827 · `enBlocs` 2867 · `rangeRiche` 2880 · `ecarteClicFantome` 2908
-`nomSociete` 2917 · `societes` 2930 · `choisitExposant` 2941 · `poseMarque` 2979
-`montreMarque` 3039 · `poseCode` 3062 · `rangeMarque` 3103 · `ouvre` 3166 · `ferme` 3434
-`onglet` 3452 · `milieu` 3482 · `commencePince` 3488 · `suitPince` 3502 · `saisitPlan` 3536
-`cibleElargie` 3612 · `planifieFiltre` 3783 · `mesureTiroir` 3838 · `montreTiroir` 3841
+`chronoConf` 311 · `rangeConferences` 332 · `poseFavicon` 379 · `largeur` 397
+`decoupe` 422 · `habille` 435 · `lignesSvg` 446 · `coexComptes` 463 · `coexChoisit` 464
+`ligneCode` 480 · `monteHabillage` 508 · `montePlan` 525 · `onglets` 559 · `changePlan` 575
+`ancre` 591 · `place` 592 · `libelles` 594 · `decaleLibelle` 675 · `facteurLibelle` 676
+`libelleForce` 677 · `libelleZone` 680 · `libelleEmplacement` 699 · `indexeSecteurs` 740
+`secteursMontres` 753 · `couleurConf` 757 · `hslHex` 761 · `couleurSecteur` 779
+`BANDES` 798 · `majFondus` 806 · `pastilleSecteur` 844 · `coloreSecteurs` 857
+`peintSecteur` 908 · `appliqueSecteurs` 921 · `filtreTheme` 938 · `themeFiltrable` 1016
+`clesCriteres` 1032 · `libelleCritere` 1039 · `separeValeurs` 1047 · `valeursCritere` 1064
+`texteCriteres` 1077 · `indexeCriteres` 1090 · `dansCriteres` 1117 · `critereActif` 1125
+`basculeCritere` 1127 · `videCriteres` 1136 · `majVideQ` 1145 · `videRecherche` 1158
+`nCriteres` 1173 · `majCriteres` 1182 · `ouvreCriteres` 1240 · `filtre` 1364
+`reposeRetrait` 1384 · `critParSociete` 1388 · `cherchable` 1398 · `visible` 1405
+`releveHotes` 1421 · `visibleSurPlan` 1429 · `visibleSociete` 1440 · `marqueRetrait` 1456
+`appliqueFiltre` 1468 · `oublieRetrait` 1480 · `reprendRecherche` 1489 · `rangSorte` 1502
+`codeCase` 1524 · `caseNumero` 1541 · `sousLigne` 1561 · `liste` 1575 · `marqueChoisie` 1694
+`prechargeMarque` 1720 · `prechargeLesVignettes` 1756 · `cadrePlan` 1813
+`oublieCadre` 1814 · `figeTextes` 1830 · `rendTextes` 1838 · `cadrage` 1874
+`peintLibelles` 1879 · `detacheLibelles` 1885 · `rattacheLibelles` 1897
+`etireLibelles` 1915 · `appliqueVue` 1923 · `rafraichitVue` 1965 · `poseVue` 1979
+`masque` 1999 · `masqueDroite` 2031 · `fit` 2042 · `stoppeZoom` 2072 · `glisseVersVise` 2078
+`glisseVers` 2120 · `rectVisee` 2142 · `zoom` 2162 · `echelle` 2171 · `ETROIT` 2185
+`anime` 2201 · `noeud` 2225 · `canalPlan` 2235 · `rangSociete` 2243 · `select` 2252
+`centre` 2277 · `centrePoint` 2281 · `montre` 2326 · `libelleCorps` 2358 · `ordreCorps` 2375
+`groupesFiche` 2407 · `montreIntitule` 2420 · `valeurCorps` 2440 · `champCorps` 2453
+`groupeCorps` 2465 · `corpsRange` 2478 · `momentLocal` 2513 · `programme` 2536
+`jourLong` 2569 · `ficheConf` 2580 · `lien` 2674 · `adresseWeb` 2682 · `pictoRS` 2725
+`adresseSure` 2743 · `adresseVignette` 2773 · `adresseImage` 2787 · `imageSure` 2800
+`assainitRiche` 2829 · `enBlocs` 2869 · `rangeRiche` 2882 · `ecarteClicFantome` 2910
+`nomSociete` 2919 · `societes` 2932 · `choisitExposant` 2943 · `poseMarque` 2981
+`montreMarque` 3041 · `poseCode` 3064 · `rangeMarque` 3105 · `ouvre` 3168 · `ferme` 3436
+`onglet` 3454 · `milieu` 3484 · `commencePince` 3490 · `suitPince` 3504 · `saisitPlan` 3538
+`cibleElargie` 3614 · `planifieFiltre` 3785 · `mesureTiroir` 3840 · `montreTiroir` 3843
 
 Éléments :
 
@@ -706,11 +706,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 73 · `client` 76
 
-### `supabase/functions/plan-public/index.ts` — 763 l.
+### `supabase/functions/plan-public/index.ts` — 794 l.
 
-`cors` 50 · `db` 84 · `service` 99 · `vignettesParAdresse` 116 · `avecVignette` 153
-`rendVignette` 189 · `lu` 222 · `salon` 232 · `retraits` 310 · `ampute` 334
-`masquesDe` 374 · `masquesDuPlan` 394
+`cors` 51 · `db` 85 · `service` 100 · `vignettesParAdresse` 117 · `avecVignette` 154
+`rendVignette` 190 · `lu` 223 · `salon` 233 · `nomDuSalon` 256 · `retraits` 329
+`ampute` 353 · `masquesDe` 393 · `masquesDuPlan` 413
 
 ### `supabase/functions/sync-evenement/index.ts` — 1591 l.
 
@@ -768,8 +768,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 402 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 72 · `amontPour` 81 · `cleDe` 89 · `meta` 92 · `gardable` 105 · `range` 111 `rafraichit` 118 · `oublie` 145 · `rappels` 221 · `manifeste` 275 · `mesure` 301
+- `src/index.mjs` — 463 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 72 · `amontPour` 81 · `cleDe` 89 · `meta` 92 · `gardable` 105 · `range` 111 `rafraichit` 118 · `oublie` 145 · `rappels` 225 · `nomDuSalon` 278 · `manifeste` 325 `mesure` 362
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

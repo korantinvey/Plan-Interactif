@@ -296,6 +296,8 @@ function indexe(d){
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
   poseFavicon(DATA.favicon);
+  // et l'écran d'accueil d'iOS, le nom du salon plutôt que celui du produit
+  nommeApplication(nom);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
   $("nExpo").textContent = TOUS.filter(o => o.kind === "stand" && o.nom).length +

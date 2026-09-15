@@ -89,7 +89,7 @@ function page(contenu, options) {
     langue(contenu) +
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
-    (application && !autonome ? pwa.APPLICATION : "") +
+    (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
     "\n</body>\n</html>\n";
 }

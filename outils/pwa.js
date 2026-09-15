@@ -41,11 +41,23 @@
  * soit la racine du domaine. Tout le site reste donc dans l'application, d'un
  * plan à l'autre comme du plan à la console.
  *
- * Ce que le manifeste ne peut pas faire, en revanche, c'est porter le nom du
- * salon : il est lu avant que la page ait appelé l'API. L'onglet et son icône,
- * eux, prennent le nom et l'icône du salon dès que les données arrivent
- * (`_js.html` `poseFavicon`) ; ce qui est écrit ici n'est que ce qu'on voit
- * avant, et ce que l'installation retient.
+ * Le nom suit le même chemin que l'adresse de départ, et pour la même raison :
+ * l'icône posée sur l'écran d'accueil doit porter le salon qu'on installe — «
+ * Plan SMCL by Event2Plan » — non le produit qui le sert. La page ne peut pas
+ * le dire : le manifeste est lu avant qu'elle ait reçu quoi que ce soit de
+ * l'API. Elle nomme donc le salon, `salon=<slug>`, et c'est le relais qui va
+ * chercher son nom et l'écrit (`src/index.mjs` `manifeste`). Le slug, lui, est
+ * connu dès l'en-tête : il est dans l'adresse, ou c'est celui du salon par
+ * défaut, que la construction pose ici.
+ *
+ * Rien n'est donc pris à l'adresse de la page : un lien fabriqué ne peut pas
+ * faire installer une application au nom qu'il choisit. Le nom vient de la
+ * base, le tour de phrase du relais, et la page n'y met qu'un slug.
+ *
+ * iOS fait exception, et se corrige ailleurs : il ne lit pas le manifeste pour
+ * l'écran d'accueil mais `apple-mobile-web-app-title`, écrit ici même, avant
+ * que le salon soit connu. `_installation.html` `nommeApplication` le reprend
+ * dès les données arrivées — la balise est relue au moment de l'ajout.
  */
 
 /* La barre du système prend la couleur de la barre de la page — la surface, et
@@ -59,8 +71,13 @@ const FOND = "#E9EAE4";
 /** Le manifeste, tel qu'il part dans `web/`. */
 function manifeste() {
   return JSON.stringify({
+    /* Le nom du produit, pour le seul cas où le relais n'a pas su nommer le
+       salon : un manifeste demandé sans slug, ou une base muette. Autrement
+       c'est « Plan <salon> by Event2Plan » qui part (`src/index.mjs`). */
     name: "Plan interactif",
-    // ce que le système écrit sous l'icône : place pour une douzaine de signes
+    /* Ce que le système écrit sous l'icône : place pour une douzaine de signes.
+       Le relais y met le salon seul — c'est lui qu'on y cherche du regard, et
+       le reste du nom n'y tiendrait pas. */
     short_name: "Plan",
     description: "Le plan du salon : ses exposants, ses zones et son programme.",
     lang: "fr",
@@ -110,12 +127,15 @@ const TETE = [
  * Ce qui fait l'application, et que seule la page du plan public porte.
  *
  * Deux déclarations et deux scripts : le manifeste à installer, l'icône que
- * réclame iOS, l'adresse de départ propre au salon ouvert, et le service qui
+ * réclame iOS, le salon ouvert et son adresse de départ, et le service qui
  * gardera ce qui a servi. Sur toute autre page, ces lignes proposeraient
  * d'installer un outil de travail — et le service s'y installerait pour un
  * écran qui ne sait rien faire sans réseau.
+ *
+ * Le salon par défaut vient de `genere.js`, qui le connaît : c'est lui que la
+ * page ira chercher faute de `?plan=`, et donc lui qu'il faut nommer.
  */
-const APPLICATION = [
+const application = (slugDefaut) => [
   '<link rel="manifest" href="manifeste.webmanifest">',
   '<link rel="apple-touch-icon" href="icone-180.png">',
   /* iOS ne lit pas `display` du manifeste : sans cette ligne, le plan ajouté à
@@ -126,20 +146,32 @@ const APPLICATION = [
   '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
   '<meta name="apple-mobile-web-app-title" content="Plan">',
   "<script>",
-  "/* Le manifeste retenu à l'installation doit porter le salon qu'on regarde,",
-  "   sans quoi l'application rouvrirait le salon par défaut. Le relais complète",
-  "   le manifeste avec l'adresse demandée ici ; elle est reconstruite et non",
-  "   recopiée, pour que rien d'autre que le salon n'y entre — ni jeton de",
-  "   courriel, ni ancre, ni paramètre de passage. */",
+  "/* Le manifeste retenu à l'installation doit porter le salon qu'on regarde :",
+  "   son nom, que le système écrira sous l'icône, et son adresse, sans quoi",
+  "   l'application rouvrirait le salon par défaut. Le relais écrit l'un et",
+  "   l'autre ; ce qui est dit ici, c'est lequel. */",
   "{",
   "  /* Bloc fermé : les modules d'une page sont soudés dans un espace de noms",
-  "     unique, où deux noms identiques se marchent dessus. Ces deux-là n'ont",
-  "     rien à y faire. */",
+  "     unique, où deux noms identiques se marchent dessus. Ceux-là n'ont rien",
+  "     à y faire. */",
   '  const lienManifeste = document.querySelector(\'link[rel="manifest"]\');',
   '  const salon = new URLSearchParams(location.search).get("plan");',
-  "  if (lienManifeste && salon){",
-  '    lienManifeste.href = "manifeste.webmanifest?depart=" +',
-  '      encodeURIComponent(location.pathname + "?plan=" + salon);',
+  "  if (lienManifeste){",
+  "    /* Le salon est nommé même sans `?plan=` : la page montre alors celui que",
+  "       la construction a posé par défaut, et une application installée de là",
+  "       doit porter son nom comme les autres. */",
+  '    let adresse = "manifeste.webmanifest?salon=" +',
+  "      encodeURIComponent(salon || " + JSON.stringify(slugDefaut) + ");",
+  "    /* L'adresse de départ, elle, ne part que si la page en porte une : sans",
+  "       `?plan=`, `start_url` reste l'adresse nue, et c'est elle qui vaut",
+  "       identité pour ce qui est déjà installé. Elle est reconstruite et non",
+  "       recopiée, pour que rien d'autre que le salon n'y entre — ni jeton de",
+  "       courriel, ni ancre, ni paramètre de passage. */",
+  "    if (salon){",
+  '      adresse += "&depart=" +',
+  '        encodeURIComponent(location.pathname + "?plan=" + salon);',
+  "    }",
+  "    lienManifeste.href = adresse;",
   "  }",
   "}",
   "/* Le service de second plan s'inscrit une fois la page chargée : inscrit",
@@ -161,4 +193,4 @@ const APPLICATION = [
   "",
 ].join("\n");
 
-module.exports = { TETE, APPLICATION, manifeste };
+module.exports = { TETE, application, manifeste };

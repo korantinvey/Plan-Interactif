@@ -1319,21 +1319,38 @@ aurait tout réglé, mais Chromium refuse alors d'installer : il vérifie la
 validité d'une adresse qu'il n'a pas encore remplacée.
 
 Le manifeste versionné porte donc l'adresse nue — le salon par défaut — et la
-page demande le sien : `manifeste.webmanifest?depart=/plan?plan=…`. Le Worker
-reprend alors ce même fichier et n'y change que l'adresse de départ, qu'il
-vérifie : `start_url` désigne ce que le système ouvrira plus tard, seul, sans
-la page, et seul un chemin de ce site y entre. Un manifeste à tenir, aucun à
-fabriquer par salon, aucune lecture en base pour le servir — et, sans
-JavaScript, le fichier nu reste installable.
+page demande le sien : `manifeste.webmanifest?salon=…&depart=/plan?plan=…`. Le
+Worker reprend alors ce même fichier et n'y change que le nom et l'adresse de
+départ, qu'il vérifie : `start_url` désigne ce que le système ouvrira plus
+tard, seul, sans la page, et seul un chemin de ce site y entre. Un manifeste à
+tenir, aucun à fabriquer par salon — et, sans JavaScript, le fichier nu reste
+installable.
 
 Un détail qui se paie cher si on l'ignore : Cloudflare sert un fichier de
 `web/` **avant** d'exécuter le Worker. Le manifeste serait donc parti tel quel,
 sans que rien ne le signale — d'où le `run_worker_first` de `wrangler.jsonc`,
 qui fait passer le script devant pour ce seul chemin.
 
-Ce que le manifeste ne peut pas porter, c'est le nom du salon : il est lu avant
-que la page ait appelé l'API. L'onglet et son icône le prennent, eux, dès que
-les données arrivent.
+**Le nom du salon sur l'écran d'accueil.** L'application s'appelle « Plan SMCL
+by Event2Plan », et non du nom du produit : c'est le salon qu'on cherche du
+regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
+est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
+sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
+connaît dès son en-tête, et le Worker va chercher le nom : une lecture à part
+(`plan-public?slug=…&nom=1`), qui ne rend que deux colonnes là où le plan entier
+pèse ses stands et ses zones, et qu'il garde dix minutes comme le plan. Le nom
+n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué ne
+peut pas faire poser sur un écran d'accueil une application au nom qu'il aurait
+choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon seul.
+
+Une exception, iOS : il ne lit pas le manifeste pour l'écran d'accueil mais la
+balise `apple-mobile-web-app-title`, écrite avec la page. `nommeApplication`
+(`_installation.html`) la corrige dès les données arrivées — elle n'est relue
+qu'au moment de l'ajout. L'onglet et son icône, eux, prennent le nom du salon
+au même instant.
+
+Un salon renommé dans la console porte son nouveau nom à la visite d'après :
+l'enregistrement fait oublier au relais le plan **et** le nom.
 
 **Tenir sans réseau.** `web/sw.js`, inscrit depuis le plan public, s'installe
 au premier passage et se place entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est
@@ -1974,8 +1991,9 @@ l'exploitant a saisis. Ils arrivent en français de leur source, et s'affichent
 tels quels. Les noms d'exposants sont de plus protégés : `_js.html` les confie
 au moteur (`LANGUE.protege`), qui n'y touche jamais — ni seuls, ni cités dans
 une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
-calendrier. Le manifeste de l'application installée, unique pour le domaine,
-reste lui aussi en français.
+calendrier. Le manifeste de l'application installée reste lui aussi en
+français — et le nom qu'il porte est celui du salon, qui ne se traduit pas
+davantage.
 
 ## Comptes et profils
 
