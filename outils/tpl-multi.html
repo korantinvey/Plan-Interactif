@@ -14,6 +14,17 @@
      qu'ils choisissent, et un rouge d'imprimerie disparaît sur du noir. Même
      paire que la console, pour que les deux écrans parlent du même rouge. */
   --rouge:#C2372B;
+  /* Les tons de la marque : la nuit, le cyan et le rose d'Event2Map. Ils ne
+     suivent ni le thème ni le salon — une marque qui change de couleur selon
+     l'heure ou selon le client n'en est plus une. Ils ne peignent donc que ce
+     qui appartient à l'outil : la bande d'administration, l'écran d'accès.
+     Jamais le plan, dont les couleurs sont celles du salon.
+
+     Le cyan a deux valeurs, et pour la raison qu'a déjà notée `console.css` :
+     le cyan vif est trop clair pour porter du texte sur du blanc — il ne sert
+     donc que sur un fond sombre, et le cyan profond prend sa place en thème
+     clair. */
+  --m-nuit:#071F3A; --m-cyan:#35C2FF; --m-cyan-profond:#0A6C93; --m-rose:#FF4D6D;
   /* L'accent décliné : les modèles de fiche s'en servent pour composer un
      dégradé ou un aplat sans avoir à deviner la couleur choisie. « base »
      reste l'accent tel qu'il est peint, même là où un modèle redéfinit
@@ -136,6 +147,77 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+
+/* ------------------------------------------------------------------
+   La bande d'administration
+
+   Le bandeau du dessous appartient au salon : il porte l'habillage que
+   l'exploitant a choisi, et son rôle est de lui montrer ce que verront ses
+   visiteurs. Les commandes de l'outil — calques, réglages, compte,
+   enregistrement — s'y habillaient pourtant comme le reste, et la marque du
+   produit n'aurait pu s'y poser sans déguiser le salon en Event2Map. Elles
+   remontent donc dans une bande à elles, dans la nuit de la marque, d'où l'on
+   voit aussi d'un coup d'œil qu'on édite au lieu de regarder.
+
+   Elle redéfinit les jetons de surface pour son propre compte plutôt que de
+   repeindre chaque bouton : le bouton d'icône, l'avatar du compte et celui de
+   l'enregistrement sont ceux de partout ailleurs, et suivent. L'accent y est
+   le cyan de la marque et non celui du salon — c'est la seule bande de
+   l'écran qui ne parle pas du salon.
+   ------------------------------------------------------------------ */
+.bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:10px;
+  padding:5px 18px;min-height:40px;background:var(--m-nuit);color:var(--ink);
+  --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
+  --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
+  --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
+  --rouge:var(--m-rose)}
+/* La bande prend un rang de la grille, et seulement quand elle existe. */
+html.mode-admin .app{grid-template-rows:auto auto 1fr}
+.bandeMarque{flex:0 0 auto;width:26px;height:26px;display:block}
+.bandeMarque svg{width:100%;height:100%;display:block}
+.bandeNom{font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.bandeActs{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* Au pied du panneau, le bouton d'enregistrement prenait toute la largeur ;
+   ici il se mesure à son texte. */
+.bandeAdmin .reset.fort{width:auto;padding:5px 12px;font-size:12.5px}
+/* Du blanc sur le cyan vif ne fait que 1,9 pour 1 ; la nuit y fait 9,3. */
+.bandeAdmin .iconbtn[aria-pressed="true"]{color:var(--accent-ink)}
+
+/* ------------------------------------------------------------------
+   Les gris de l'outil
+
+   Le plan garde les siens, greiges : ce sont ceux du visiteur, et l'exploitant
+   qui travaille doit les voir tels qu'ils seront. Mais ce qui n'existe qu'en
+   administration n'a personne à qui ressembler — le panneau des calques, la
+   boîte à dessin, la palette des libellés et les fenêtres que `GENRES_OUTIL`
+   tient déjà à l'écart de l'habillage du salon. Ces surfaces passent aux gris
+   bleutés de la marque, ceux de la console : les deux écrans de l'outil
+   parlent enfin du même gris.
+
+   Les jetons sont redéfinis sur ces blocs, et non sur la racine : les règles
+   qui les peignent n'ont pas à savoir qu'elles ont changé de côté, et rien de
+   ce qui vit ailleurs n'est touché. L'accent n'en fait pas partie — il
+   appartient au salon.
+   ------------------------------------------------------------------ */
+html.mode-admin :is(#panel,#outils,#libReg),
+html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+  --surface:#FFFFFF;--surface-2:#F4F8FB;
+  --line:#D2DFEA;--line-strong:#AFC2D3;
+  --ink:#071F3A;--ink-2:#3C5670;--ink-3:#54708C}
+@media (prefers-color-scheme: dark){
+  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg),
+  html.mode-admin:not([data-theme="light"]) .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+    --surface:#0A1E33;--surface-2:#102941;
+    --line:#1E3C58;--line-strong:#325975;
+    --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
+}
+html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg),
+html.mode-admin[data-theme="dark"] .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+  --surface:#0A1E33;--surface-2:#102941;
+  --line:#1E3C58;--line-strong:#325975;
+  --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
+
 /* Un texte écrit dans les deux langues ne montre que celui de la page. */
 html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
@@ -2234,6 +2316,22 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
+   plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
+   et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
+   rangée. Le pouce doit l'atteindre — la ligne entière est la commande, pas la
+   seule case. */
+.rapBloc{margin:2px 0 4px;padding:9px 10px;border:1px dashed var(--line-strong);
+  border-radius:var(--radius);background:var(--surface-2)}
+.rapBascule{display:flex;align-items:center;gap:8px;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--ink)}
+.rapBascule input{width:16px;height:16px;flex:none;accent-color:var(--accent);cursor:pointer}
+.rapBascule input:disabled{cursor:progress}
+.rapBascule .t{min-width:0}
+.rapAide{margin:5px 0 0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+/* Seule dans son cadre — un iPhone non installé, des notifications refusées —
+   l'explication n'a pas d'intitulé au-dessus d'elle à qui s'aligner. */
+.rapBloc > .rapAide:first-child{margin-top:0}
 /* La même carte, au premier plan : une fenêtre étroite, qui ne tient qu'une
    proposition. Le fond et le trait discontinu n'ont plus lieu d'être — ils
    disaient « pas encore épinglé » dans une colonne de rangs qui, eux, l'étaient,
@@ -3246,6 +3344,33 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen .detail-hd h2{font-size:var(--titre)}
 .mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 4px}
 .mfen header button:hover{color:var(--ink)}
+/* L'écran d'accès porte la marque, et il est le seul de cette page à le faire :
+   c'est le moment où l'on s'adresse à l'exploitant, avant que le plan derrière
+   ne redevienne celui de son salon. Le titre vient contre elle plutôt qu'à
+   l'autre bout de la fenêtre. */
+.mfen header.teteMarque{justify-content:flex-start;gap:10px}
+.marqueE2M{flex:0 0 auto;width:28px;height:28px;display:block}
+.marqueE2M svg{width:100%;height:100%;display:block}
+/* L'accent de cet écran est celui de la marque et non celui du salon : on n'a
+   pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
+   connecte. */
+#acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
+@media (prefers-color-scheme: dark){
+  html:not([data-theme="light"]) #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
+    --accent-ink:var(--m-nuit)}
+}
+html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
+  --accent-ink:var(--m-nuit)}
+/* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
+   savent se tenir : faute de règle ici, l'intitulé et son champ se suivaient
+   sur la même ligne et se chevauchaient — sur le premier écran que voit un
+   exploitant. */
+#acces .astuce{margin:0 0 4px;font-size:12.5px;color:var(--ink-3)}
+#acces label{display:flex;flex-direction:column;gap:4px;margin-top:11px}
+#acces label span{font-size:12.5px;color:var(--ink-2)}
+#acces input{width:100%;padding:8px 10px;background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius)}
+#acces input:focus{border-color:var(--accent);outline:none}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
@@ -3255,6 +3380,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
   color:var(--accent-ink)}
 .mfen footer .btn.accent:hover{filter:brightness(1.08)}
+/* Un lien déguisé en bouton reste un bouton : souligné, il trahissait le
+   déguisement au pied de l'écran d'accès. */
+.mfen footer a.btn{text-decoration:none;color:var(--ink)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 /* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
@@ -3429,26 +3557,32 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   padding-top:10px;border-top:1px solid var(--line)}
 .panel .reset{font-size:12px;color:var(--ink-3);text-decoration:underline}
 /* Publier n'est pas un réglage parmi d'autres : c'est le geste qui rend le
-   travail visible aux visiteurs. Il se distingue des liens qui l'entourent. */
-.panel .reset.fort{display:block;width:100%;padding:7px 10px;
-  text-decoration:none;text-align:center;color:#fff;background:var(--accent);
+   travail visible aux visiteurs. Il se distingue des liens qui l'entourent.
+
+   Le bouton vit maintenant dans la bande d'administration et non plus au pied
+   du panneau : les règles valent pour les deux, le temps qu'une fenêtre
+   d'ancienne configuration en laisse encore un derrière elle. L'encre est le
+   jeton et non un blanc en dur — sur l'accent jaune d'un salon, du blanc ne
+   faisait que 1,9 pour 1. */
+:is(.panel,.bandeAdmin) .reset.fort{display:block;width:100%;padding:7px 10px;
+  text-decoration:none;text-align:center;color:var(--accent-ink);background:var(--accent);
   border-radius:var(--radius);font-weight:500}
-.panel .reset.fort:hover{opacity:.9;color:#fff}
+:is(.panel,.bandeAdmin) .reset.fort:hover{opacity:.9;color:var(--accent-ink)}
 .panel .reset:hover{color:var(--ink)}
 /* L'enregistrement se fait tout seul : le bouton en rend compte plus qu'il ne
    commande, et se tait dès qu'il n'y a plus rien à dire. Un aplat d'accent y
    réclamerait un clic qui n'a plus lieu d'être — il ne le garde donc que le
    temps d'un envoi qui attend son tour. */
-.panel .reset.fort[data-etat="envoi"],
-.panel .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"],
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
   font-weight:400}
-.panel .reset.fort[data-etat="envoi"]:hover,
-.panel .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"]:hover,
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
 /* Un échec doit se voir sans pour autant crier : le rouge du thème sombre est
    trop clair pour porter du blanc, il passe donc au trait et au texte. */
-.panel .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
   box-shadow:inset 0 0 0 1px var(--rouge)}
-.panel .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
 
 .voile{position:fixed;inset:0;background:rgba(8,10,12,.55);z-index:14;
   opacity:0;pointer-events:none;transition:opacity .2s;display:none}
@@ -3478,6 +3612,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
+  /* La bande de l'outil garde sa marque et ses commandes ; le mot
+     « Administration » cède la place — la nuit et la marque le disent déjà. */
+  .bandeAdmin{padding:4px 12px;min-height:36px;gap:8px}
+  .bandeNom{display:none}
+  /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
+     le bouton cède du texte plutôt que de pousser les autres hors de l'écran. */
+  .bandeAdmin .reset.fort{max-width:46vw;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap}
 
   /* Le plan est ce qu'on vient voir : il prend toute la hauteur restante, et
      la liste se replie en tiroir posé par-dessus. Elle occupait auparavant une
@@ -3835,6 +3977,15 @@ html.tuto-retrait .dcal .forme{opacity:.22}
 </style>
 
 <div class="app">
+  <!-- La bande de l'outil, au-dessus de celle du salon. Elle ne paraît qu'une
+       fois l'identité vérifiée — `activeAdmin` y range les commandes
+       d'édition — et la page publique la retire du document. -->
+  <div class="bandeAdmin" id="bandeAdmin" hidden>
+    <span class="bandeMarque"><!--__MARQUE_NU__--></span>
+    <span class="bandeNom">Administration</span>
+    <div class="bandeActs" id="bandeActs"></div>
+  </div>
+
   <header class="topbar" id="bandeau">
     <div class="brand">
       <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
@@ -10169,7 +10320,62 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
+  blocRappel(hote);
   blocHoraires(hote);
+}
+
+/**
+ * Le rappel avant une conférence.
+ *
+ * Deux commandes, parce que ce sont deux décisions : offrir la chose, et à
+ * quelle avance. Un salon qui n'a pas de programme n'a rien à rappeler ; un
+ * salon tenu dans un hall de cinq cents mètres ne prévient pas à la même
+ * minute qu'un salon de trois allées.
+ *
+ * L'aide dit ce que le visiteur devra accepter, et ce que certains n'auront
+ * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
+ * ici ne marchera pas pour tout le monde, et une promesse faite sur la
+ * plaquette du salon se retournerait contre lui.
+ */
+function blocRappel(hote){
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Rappeler les conférences retenues";
+  const c = l.querySelector("input");
+  c.checked = rappelsVoulus();
+  hote.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Le visiteur qui a retenu une conférence peut demander à " +
+    "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
+    "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
+    "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
+    "la conférence.";
+  hote.appendChild(aide);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + RAPPEL_MIN + '" max="' + RAPPEL_MAX + '" step="5">' +
+    '<span class="u">min</span></label>';
+  duree.querySelector(".l").textContent = "Prévenir avant le début";
+  const n = duree.querySelector("input");
+  n.value = minutesRappel();
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= RAPPEL_MIN && v <= RAPPEL_MAX){ reglageRappel().minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesRappel(); };
+  hote.appendChild(duree);
+
+  const suit = () => {
+    const actif = rappelsVoulus();
+    duree.hidden = !actif;
+    n.value = minutesRappel();
+  };
+  c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
+  suit();
 }
 
 /**
@@ -11430,7 +11636,7 @@ let PROFIL_ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte", "bandeAdmin"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -11447,6 +11653,13 @@ function activeAdmin(){
   ADMIN = true;
   // l'outil de départ est la sélection : les dessins deviennent cliquables
   racine.classList.add("mode-edition");
+  /* La bande de l'outil paraît, et la grille lui ouvre son rang. Elle attend
+     que l'identité soit vérifiée : avant, la page n'est que le plan public
+     derrière une fenêtre d'accès, et rien n'y est à nous. */
+  racine.classList.add("mode-admin");
+  const bande = $("bandeAdmin");
+  if (bande) bande.hidden = false;
+  const acts = $("bandeActs");
   const b = $("btnLayers");
   if (b){
     b.hidden = false;
@@ -11470,6 +11683,11 @@ function activeAdmin(){
      onglet ne s'appelant « [object PointerEvent] », la fenêtre s'ouvrait sur
      rien : ni onglet actif, ni contenu. */
   if (r){ r.hidden = false; r.onclick = () => ouvreReglages(); }
+  /* Les commandes de l'outil quittent le bandeau du salon pour la bande du
+     dessus, dans l'ordre où l'on s'en sert. Elles y portaient l'habillage
+     choisi par l'exploitant — cerclées sous « Billet », à angle vif sous
+     « Grille » — alors qu'elles ne sont pas de son plan. */
+  if (acts) [b, r, c].forEach(el => { if (el) acts.appendChild(el); });
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
@@ -11484,14 +11702,23 @@ function activeAdmin(){
      la base ni de ce navigateur, et le jour où les deux ont dit des choses
      différentes, c'est un fichier tenu à part qui a permis de trancher.
 
-     Le premier bouton dit où en est l'enregistrement — il se fait tout seul —
-     et permet de le relancer quand il a échoué. « majAttente » l'habille. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>' +
+     L'état de l'enregistrement, lui, n'est plus ici : il mène la bande de
+     l'outil. Au pied d'un panneau qui reste fermé la plupart du temps, il
+     s'annonçait à personne — c'est pour cela qu'un échec avait fallu doubler
+     d'une alerte en travers de l'écran (voir `ditAlerte`). « majAttente »
+     l'habille, où qu'il soit. */
+  barre.innerHTML =
     '<button class="reset" id="sauveConf">Télécharger une sauvegarde</button>' +
     '<button class="reset" id="restaureConf">Restaurer une sauvegarde…</button>' +
     '<input type="file" id="fichierConf" accept="application/json,.json" hidden>';
   $("panel").appendChild(barre);
-  $("pousseConf").onclick = () => pousseConfiguration();
+  const pousse = document.createElement("button");
+  pousse.className = "reset fort";
+  pousse.id = "pousseConf";
+  pousse.onclick = () => pousseConfiguration();
+  // en tête des commandes : c'est le seul qui dise ce qu'on n'a pas demandé
+  if (acts) acts.insertBefore(pousse, acts.firstChild);
+  else barre.prepend(pousse);
   brancheSauvegarde();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
@@ -17092,11 +17319,19 @@ function chargeParcours(){
   PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
   PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
   rafraichitParcours();
+  /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
+     la liste relue : ils ne portent que sur des conférences qu'elle contient
+     encore. */
+  reprendRappels();
 }
 
 function enregistreParcours(){
   // navigation privée, stockage plein : la visite continue sans le parcours
   try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+  /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
+     elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
+     se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
+  synchroniseRappels();
 }
 
 /**
@@ -17500,6 +17735,11 @@ function remplitParcours(){
      le reste de la journée se range. */
   if (confs.length){
     const g = groupeParcours(hote, "Conférences");
+    /* L'interrupteur du rappel se pose en tête du groupe qu'il concerne, et
+       nulle part ailleurs : il ne veut rien dire pour un parcours qui n'a que
+       des stands, et le proposer en tête du tiroir l'aurait fait lire comme un
+       réglage du parcours entier. */
+    poseRappels(g);
     let jour = null;
     confs.forEach(c => {
       const d = instantConf(c);
@@ -18224,6 +18464,397 @@ function adoptePartage(stands, confs, remplace){
 }
 
 $("btnPartage").onclick = ouvrePartageParcours;
+/* ============================================================
+   11 sexies. Le rappel avant une conférence
+   ============================================================ */
+/**
+ * Le visiteur retient trois conférences le matin, puis passe sa journée dans
+ * les allées. À quinze heures moins le quart il est à l'autre bout du hall, le
+ * téléphone dans la poche, et la conférence qu'il avait notée commence sans
+ * lui. Le parcours savait l'heure ; personne ne la lui a rappelée.
+ *
+ * Ce module est la moitié visible du réveil. L'autre moitié est un serveur, et
+ * il faut dire pourquoi, parce que ce n'était pas le choix qu'on aurait voulu
+ * faire : une page n'a aucun moyen de se réveiller elle-même. Ses minuteries
+ * meurent avec l'onglet — gelé en quelques secondes dès qu'il passe en
+ * arrière-plan sur un téléphone — le service de second plan est arrêté après
+ * quelques secondes d'inactivité, et l'API qui aurait comblé ce manque
+ * (*Notification Triggers*) n'a jamais quitté l'essai d'origine de Chrome. Un
+ * rappel « local » ne serait donc parti qu'avec le plan ouvert sous les yeux,
+ * c'est-à-dire au moment précis où il ne sert à rien.
+ *
+ * D'où la contrepartie, que le tiroir dit maintenant en toutes lettres : ce qui
+ * est rappelé quitte l'appareil. Pas la liste — les stands retenus restent où
+ * ils sont, et les conférences non plus ne partent pas d'elles-mêmes. Il faut
+ * deux gestes : toucher l'interrupteur, puis accorder au navigateur
+ * l'autorisation qu'il demande. Ce qui part alors est un abonnement — une
+ * adresse opaque que le navigateur vient de tirer —, une heure, et la phrase à
+ * afficher, déjà écrite.
+ *
+ * Déjà écrite, et c'est le point : la notification est composée ici, dans la
+ * langue que le visiteur lisait, avec le nom que la conférence portait alors.
+ * Le serveur la chiffre et la poste sans la relire, et le service de poussée du
+ * navigateur ne peut pas la lire du tout.
+ *
+ * Ce qui ne marchera pas, et qu'il vaut mieux savoir. Sur iPhone, le Web Push
+ * n'existe que pour un plan ajouté à l'écran d'accueil : dans un onglet Safari,
+ * dans Chrome iOS, dans le navigateur intégré de LinkedIn ou d'Instagram, il
+ * n'y a pas de `PushManager` du tout — l'interrupteur ne se montre alors pas,
+ * et une ligne dit ce qu'il faudrait faire. Sur Android, les notifications de
+ * Chrome lui-même peuvent être coupées au niveau du système, et les gestionnaires
+ * de batterie de certains constructeurs retardent le réveil. Enfin un mode de
+ * concentration retient le rappel sans que la page puisse rien y faire : le web
+ * ne dispose pas du niveau d'interruption qu'une application native réclame.
+ * Les horaires restent donc lisibles dans le tiroir, pour tous.
+ */
+
+/* ------------------------------------------------------------
+   Le réglage du salon
+   ------------------------------------------------------------ */
+/**
+ * Un quart d'heure par défaut : le temps de finir une conversation sur un stand
+ * et de traverser un hall. Trop court, le visiteur est prévenu alors qu'il ne
+ * peut plus y être ; trop long, il oublie entre le rappel et la conférence.
+ * Cela dépend de la taille du lieu, ce qui ne se devine pas depuis le plan —
+ * d'où le réglage, à côté du temps de visite par stand.
+ */
+const RAPPEL_DEFAUT = 15;      // minutes
+const RAPPEL_MIN = 2, RAPPEL_MAX = 120;
+const reglageRappel = () => conf("_rappel");
+const rappelsVoulus = () => reglageRappel().actif === true;
+function minutesRappel(){
+  const v = Math.round(+reglageRappel().minutes);
+  return v >= RAPPEL_MIN && v <= RAPPEL_MAX ? v : RAPPEL_DEFAUT;
+}
+
+/* ------------------------------------------------------------
+   Ce que l'appareil sait faire
+   ------------------------------------------------------------ */
+const RAPPELS_API = API ? API.replace(/[^/]*$/, "rappels") : "";
+
+/** Le consentement se retient ici, à côté du parcours qu'il accompagne.
+ *  L'autorisation du navigateur ne suffit pas à le dire : elle a pu être
+ *  accordée pour ce salon-ci et l'interrupteur éteint depuis. */
+const cleRappels = () => "plan-rappels:" + (SLUG || (DATA && DATA.evenement) || "");
+let RAPPELS_ACTIFS = false;
+
+function chargeRappels(){
+  try { RAPPELS_ACTIFS = localStorage.getItem(cleRappels()) === "1"; }
+  catch (e) { RAPPELS_ACTIFS = false; }
+}
+function retientRappels(){
+  try {
+    if (RAPPELS_ACTIFS) localStorage.setItem(cleRappels(), "1");
+    else localStorage.removeItem(cleRappels());
+  } catch (e) {}
+}
+
+/** L'appareil peut-il recevoir un rappel ? Trois objets doivent exister, et
+ *  leur absence est la façon dont un iPhone non installé se signale. */
+const poussePossible = () => !!(
+  "serviceWorker" in navigator && "PushManager" in window && "Notification" in window);
+
+/** Le rappel a-t-il lieu d'être proposé ici ? La page à données figées n'a pas
+ *  d'API, l'administration n'a pas de visiteur, et l'exploitant peut ne pas
+ *  vouloir de la commande. */
+const rappelsOfferts = () => !!(
+  RAPPELS_API && SLUG && rappelsVoulus() && !BORNE &&
+  document.documentElement.dataset.role !== "admin");
+
+/** Un plan ouvert dans un onglet iOS : le seul cas où l'absence de `PushManager`
+ *  se répare, et où dire comment vaut mieux que se taire. */
+const iOSsansInstallation = () => !poussePossible() &&
+  /iP(hone|od|ad)|Macintosh/.test(navigator.userAgent) && "ontouchend" in document &&
+  supportMesure() === "web";
+
+/* ------------------------------------------------------------
+   L'instant d'une conférence
+   ------------------------------------------------------------ */
+/**
+ * L'heure absolue, alors que tout le reste de la page raisonne en heure locale
+ * du salon.
+ *
+ * Il le faut : une minuterie se pose sur un instant, pas sur un cadran.
+ *
+ * On part de l'heure que la page affiche, et non de la forme ISO que les
+ * données portent parfois à côté. C'est délibéré : le tiroir annonce « 14h30 »,
+ * et un rappel calculé sur une autre source tomberait à une autre minute le
+ * jour où les deux se contrediraient — un programme ressaisi à la main, un
+ * décalage mal posé à la source. Ce qui est promis est ce qui est écrit.
+ *
+ * Reste à savoir ce que le fuseau du salon valait *ce jour-là*, changement
+ * d'heure compris. D'où l'aller-retour : on suppose l'heure murale exprimée en
+ * UTC, on regarde ce que le fuseau en aurait affiché, et on corrige de l'écart.
+ * Deux tours, parce que la correction peut elle-même franchir le changement
+ * d'heure — un dimanche de mars à deux heures et demie du matin.
+ *
+ * Un fuseau que le navigateur ne connaît pas ne donne pas d'instant du tout, et
+ * la conférence ne se rappelle pas : c'est la règle que `momentLocal` applique
+ * déjà en refusant d'afficher une heure plutôt que d'en afficher une fausse.
+ */
+function instantAbsolu(c){
+  const p = instantConf(c);
+  if (!p) return NaN;
+  const mural = Date.UTC(p.an, p.mois - 1, p.jour, +p.h, +p.min);
+  let t = mural;
+  for (let i = 0; i < 2; i++){
+    const lu = momentLocal(new Date(t).toISOString(), DATA.fuseau);
+    if (!lu) return NaN;
+    t = mural - (Date.UTC(lu.an, lu.mois - 1, lu.jour, +lu.h, +lu.min) - t);
+  }
+  return t;
+}
+
+/** Les conférences retenues qui n'ont pas encore commencé. Le reste du tiroir
+ *  les montre toutes — on ne retire pas de sa liste ce qu'on vient de voir —
+ *  mais il n'y a rien à rappeler d'une conférence commencée. */
+function confsARappeler(){
+  const maintenant = Date.now();
+  return PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ c: c, t: instantAbsolu(c) }))
+    .filter(r => !isNaN(r.t) && r.t > maintenant);
+}
+
+/**
+ * Ce qu'on demande au serveur de garder, et rien de plus.
+ *
+ * Un rappel dont l'heure est déjà passée ne part pas : le visiteur a pu poser
+ * son interrupteur dix minutes avant une conférence qu'il a de toute façon
+ * sous les yeux. La durée de vie du message vaut le délai lui-même — passé ce
+ * point, un téléphone rallumé annoncerait une conférence commencée, et mieux
+ * vaut que le message soit jeté que délivré.
+ */
+function rappelsDuParcours(){
+  const n = minutesRappel(), avant = n * 60000, maintenant = Date.now();
+  return confsARappeler()
+    .filter(r => r.t - avant > maintenant)
+    .map(r => {
+      const d = instantConf(r.c);
+      const detail = [traduit("Dans " + n + " min"),
+                      d ? d.h + "h" + d.min : "",
+                      r.c.salle || ""].filter(Boolean).join(" · ");
+      return {
+        conf: String(r.c.id),
+        envoi_a: new Date(r.t - avant).toISOString(),
+        titre: r.c.nom || traduit("Conférence"),
+        corps: detail,
+        adresse: adresseDuRappel(r.c.id),
+        vie: n * 60,
+      };
+    });
+}
+
+/** Où mène la notification : cette page, ce salon, cette conférence. L'adresse
+ *  est absolue — le service de second plan l'ouvrira sans contexte. */
+function adresseDuRappel(id){
+  const u = new URL(location.href);
+  u.hash = "";
+  u.searchParams.set("conf", id);
+  return u.href;
+}
+
+/* ------------------------------------------------------------
+   S'abonner, et se tenir à jour
+   ------------------------------------------------------------ */
+/** La clé publique du serveur, sous la forme d'octets : Safari n'accepte pas
+ *  la chaîne base64url que Chrome tolère. */
+function octetsDeCle(b64){
+  const net = String(b64).replace(/-/g, "+").replace(/_/g, "/");
+  const brut = atob(net + "=".repeat((4 - net.length % 4) % 4));
+  const o = new Uint8Array(brut.length);
+  for (let i = 0; i < brut.length; i++) o[i] = brut.charCodeAt(i);
+  return o;
+}
+
+async function abonnementCourant(){
+  const reg = await navigator.serviceWorker.getRegistration();
+  return reg ? await reg.pushManager.getSubscription() : null;
+}
+
+async function abonne(){
+  const reg = await navigator.serviceWorker.ready;
+  const deja = await reg.pushManager.getSubscription();
+  if (deja) return deja;
+  const r = await fetch(RAPPELS_API + "/cle");
+  if (!r.ok) throw new Error("clé indisponible");
+  const cle = (await r.json()).cle;
+  if (!cle) throw new Error("clé absente");
+  /* `userVisibleOnly` n'est pas négociable : le navigateur n'accorde le Web
+     Push qu'à qui s'engage à montrer chaque message reçu. Cela tombe bien —
+     c'est exactement ce qu'on veut en faire. */
+  return await reg.pushManager.subscribe({
+    userVisibleOnly: true, applicationServerKey: octetsDeCle(cle) });
+}
+
+let _syncRappels = null;
+
+/**
+ * Renvoyer la liste entière plutôt que ce qui a changé.
+ *
+ * C'est la même idée que le tiroir, qui se relit en entier à chaque affichage :
+ * une conférence retirée disparaît d'elle-même, et il n'y a pas de geste à ne
+ * pas manquer. L'envoi est différé de quelques instants parce qu'il suit le
+ * rafraîchissement du parcours, qui peut se produire trois fois de suite pour
+ * un seul geste.
+ */
+function synchroniseRappels(){
+  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
+  clearTimeout(_syncRappels);
+  _syncRappels = setTimeout(async () => {
+    try {
+      const ab = await abonnementCourant();
+      if (!ab) return;
+      await fetch(RAPPELS_API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: SLUG, abonnement: ab.toJSON(), rappels: rappelsDuParcours() }),
+      });
+    } catch (e) {
+      /* Une panne réseau ne se dit pas : le visiteur n'y peut rien, et ce qu'il
+         a demandé reste demandé — la prochaine ouverture du plan renverra la
+         liste. Le pire cas est un rappel qui ne part pas, pas une visite gâchée. */
+    }
+  }, 400);
+}
+
+/** Éteindre : l'abonnement est rendu au navigateur, et le serveur oublie ce
+ *  qu'il gardait. Dans cet ordre — un abonnement rendu avant l'effacement
+ *  laisserait des rangs qu'on ne saurait plus nommer. */
+async function eteintRappels(){
+  const ab = await abonnementCourant().catch(() => null);
+  if (ab){
+    try {
+      await fetch(RAPPELS_API, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: SLUG, abonnement: ab.toJSON(), rappels: [] }),
+      });
+    } catch (e) {}
+    try { await ab.unsubscribe(); } catch (e) {}
+  }
+  RAPPELS_ACTIFS = false;
+  retientRappels();
+}
+
+async function allumeRappels(){
+  /* La demande doit suivre le geste sans rien attendre entre les deux : un
+     `await` placé avant ferait perdre au navigateur le lien entre l'appui et
+     la question, et Safari refuse alors d'afficher quoi que ce soit. */
+  const reponse = await Notification.requestPermission();
+  if (reponse !== "granted") return false;
+  await abonne();
+  RAPPELS_ACTIFS = true;
+  retientRappels();
+  synchroniseRappels();
+  return true;
+}
+
+/* ------------------------------------------------------------
+   L'interrupteur, au pied des conférences retenues
+   ------------------------------------------------------------ */
+/** Une ligne d'explication, du même gris que le reste du tiroir. */
+function aideRappel(hote, texte){
+  const p = document.createElement("p");
+  p.className = "rapAide";
+  p.textContent = texte;
+  hote.appendChild(p);
+  return p;
+}
+
+/**
+ * Ce que le tiroir montre, selon ce que l'appareil permet.
+ *
+ * Quatre états, et un seul porte un interrupteur. Un interrupteur mort — grisé,
+ * inerte — en dirait moins qu'une phrase : le visiteur d'un iPhone non installé
+ * a quelque chose à faire, celui qui a refusé les notifications a un réglage à
+ * rouvrir, et ni l'un ni l'autre ne se lit dans une case qui ne bouge pas.
+ */
+function poseRappels(hote){
+  if (!rappelsOfferts()) return;
+  if (!confsARappeler().length) return;
+
+  const bloc = document.createElement("div");
+  bloc.className = "rapBloc";
+
+  if (iOSsansInstallation()){
+    aideRappel(bloc, "Pour être prévenu avant vos conférences, ajoutez le plan " +
+      "à votre écran d'accueil : sur iPhone, les notifications n'existent que là.");
+    hote.appendChild(bloc);
+    return;
+  }
+  if (!poussePossible()) return;   // ni rappel ni remède : rien à dire
+
+  if (Notification.permission === "denied"){
+    aideRappel(bloc, "Les notifications sont bloquées pour ce site. Vous pouvez " +
+      "les réautoriser dans les réglages de votre navigateur.");
+    hote.appendChild(bloc);
+    return;
+  }
+
+  const n = minutesRappel();
+  const l = document.createElement("label");
+  l.className = "rapBascule";
+  l.innerHTML = '<input type="checkbox"><span class="t"></span>';
+  l.querySelector(".t").textContent = "Me prévenir " + n + " min avant";
+  const case_ = l.querySelector("input");
+  case_.checked = RAPPELS_ACTIFS;
+  bloc.appendChild(l);
+
+  const aide = aideRappel(bloc, RAPPELS_ACTIFS
+    ? "Une notification par conférence retenue, même plan fermé."
+    : "Une notification par conférence retenue, même plan fermé. Les heures " +
+      "et les titres retenus partent alors sur nos serveurs, et s'effacent " +
+      "après le salon.");
+
+  case_.onchange = async () => {
+    case_.disabled = true;
+    try {
+      if (case_.checked){
+        const ok = await allumeRappels();
+        if (!ok){
+          case_.checked = false;
+          aide.textContent = Notification.permission === "denied"
+            ? "Les notifications sont bloquées pour ce site. Vous pouvez les " +
+              "réautoriser dans les réglages de votre navigateur."
+            : "Les notifications n'ont pas été autorisées.";
+        } else {
+          aide.textContent = "Une notification par conférence retenue, même plan fermé.";
+        }
+      } else {
+        await eteintRappels();
+        aide.textContent = "Une notification par conférence retenue, même plan fermé. " +
+          "Les heures et les titres retenus partent alors sur nos serveurs, et " +
+          "s'effacent après le salon.";
+      }
+    } catch (e) {
+      case_.checked = false;
+      aide.textContent = "Le rappel n'a pas pu être posé. Réessayez dans un instant.";
+    }
+    case_.disabled = false;
+  };
+
+  hote.appendChild(bloc);
+}
+
+/**
+ * Au démarrage : reprendre ce qui avait été demandé.
+ *
+ * L'abonnement peut avoir été renouvelé par le navigateur entre deux visites,
+ * ou perdu — des données de site effacées, une icône retirée puis remise. On
+ * refait donc le tour plutôt que de faire confiance à ce qu'on avait retenu, et
+ * la liste repart avec, à jour des conférences ajoutées depuis.
+ */
+async function reprendRappels(){
+  chargeRappels();
+  if (!RAPPELS_ACTIFS || !rappelsOfferts() || !poussePossible()) return;
+  if (Notification.permission !== "granted"){
+    // l'autorisation a été retirée depuis : l'interrupteur ne ment pas
+    RAPPELS_ACTIFS = false;
+    retientRappels();
+    return;
+  }
+  try { await abonne(); } catch (e) { return; }
+  synchroniseRappels();
+}
 /* ============================================================
    11 ter. Itinéraire — d'un point du salon à un autre
    ============================================================ */
@@ -28630,6 +29261,11 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* Un rappel touché sur l'écran de veille ouvre la page sur sa conférence :
+     c'est la seule raison pour laquelle elle vient de s'ouvrir, et la fiche est
+     ce que le visiteur venait y lire. */
+  const rc = new URLSearchParams(location.search).get("conf");
+  if (rc && CONFS.has(String(rc))) setTimeout(() => ficheConf(rc, "lien"), 80);
   /* La visite guidée passe après tout cela, et attend son tour : un lien vers
      un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
      propose que si rien d'autre n'a pris la place entre-temps. */

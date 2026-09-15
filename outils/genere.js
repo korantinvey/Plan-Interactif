@@ -44,6 +44,27 @@ function feuillePolices(autonome) {
 }
 
 /**
+ * La marque du produit, posée dans les pages qui portent `<!--__MARQUE__-->`
+ * ou `<!--__MARQUE_NU__-->` — la seconde pour une surface déjà dans la nuit.
+ *
+ * Elle est injectée plutôt que liée à `icone.svg` pour deux raisons. La page
+ * autonome n'a pas de fichier voisin à qui demander quoi que ce soit, et
+ * `icones.js` reste la seule description du dessin : un trait corrigé là se
+ * retrouve du même coup dans l'onglet, sur l'écran d'accueil et dans la barre
+ * d'administration.
+ *
+ * Sur une seule ligne, parce que deux des trois emplacements sont des chaînes
+ * JavaScript — la fenêtre d'accès, la connexion de la console — où un retour
+ * à la ligne couperait le littéral en deux.
+ */
+const uneLigne = (s) => s.replace(/\n/g, "");
+function marques(html) {
+  return html
+    .split("<!--__MARQUE_NU__-->").join(uneLigne(icones.svgPageNu()))
+    .split("<!--__MARQUE__-->").join(uneLigne(icones.svgPage()));
+}
+
+/**
  * Le squelette d'une page.
  *
  * Sans déclaration d'encodage, un navigateur suppose Windows-1252 : les accents
@@ -69,7 +90,7 @@ function page(contenu, options) {
     (tete || "") +
     (autonome ? "" : pwa.TETE) +
     (application && !autonome ? pwa.APPLICATION : "") +
-    contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome)) +
+    marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
     "\n</body>\n</html>\n";
 }
 

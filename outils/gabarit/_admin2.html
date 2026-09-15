@@ -31,6 +31,11 @@ function demarre(d){
     const cible = TOUS.find(o => String(o.code || "").toLowerCase() === v);
     if (cible) setTimeout(() => select(cible.id, true, "lien"), 80);
   }
+  /* Un rappel touché sur l'écran de veille ouvre la page sur sa conférence :
+     c'est la seule raison pour laquelle elle vient de s'ouvrir, et la fiche est
+     ce que le visiteur venait y lire. */
+  const rc = new URLSearchParams(location.search).get("conf");
+  if (rc && CONFS.has(String(rc))) setTimeout(() => ficheConf(rc, "lien"), 80);
   /* La visite guidée passe après tout cela, et attend son tour : un lien vers
      un stand ou un parcours partagé disent pourquoi on arrive, et elle ne se
      propose que si rien d'autre n'a pris la place entre-temps. */

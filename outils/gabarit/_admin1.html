@@ -1541,7 +1541,62 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
+  blocRappel(hote);
   blocHoraires(hote);
+}
+
+/**
+ * Le rappel avant une conférence.
+ *
+ * Deux commandes, parce que ce sont deux décisions : offrir la chose, et à
+ * quelle avance. Un salon qui n'a pas de programme n'a rien à rappeler ; un
+ * salon tenu dans un hall de cinq cents mètres ne prévient pas à la même
+ * minute qu'un salon de trois allées.
+ *
+ * L'aide dit ce que le visiteur devra accepter, et ce que certains n'auront
+ * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
+ * ici ne marchera pas pour tout le monde, et une promesse faite sur la
+ * plaquette du salon se retournerait contre lui.
+ */
+function blocRappel(hote){
+  const l = document.createElement("label");
+  l.innerHTML = '<input type="checkbox"><span></span>';
+  l.querySelector("span").textContent = "Rappeler les conférences retenues";
+  const c = l.querySelector("input");
+  c.checked = rappelsVoulus();
+  hote.appendChild(l);
+
+  const aide = document.createElement("p");
+  aide.className = "aideR";
+  aide.textContent = "Le visiteur qui a retenu une conférence peut demander à " +
+    "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
+    "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
+    "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
+    "la conférence.";
+  hote.appendChild(aide);
+
+  const duree = document.createElement("div");
+  duree.className = "reglage-nb";
+  duree.innerHTML = '<label><span class="l"></span>' +
+    '<input type="number" min="' + RAPPEL_MIN + '" max="' + RAPPEL_MAX + '" step="5">' +
+    '<span class="u">min</span></label>';
+  duree.querySelector(".l").textContent = "Prévenir avant le début";
+  const n = duree.querySelector("input");
+  n.value = minutesRappel();
+  n.oninput = e => {
+    const v = Math.round(+e.target.value);
+    if (v >= RAPPEL_MIN && v <= RAPPEL_MAX){ reglageRappel().minutes = v; enregistreConf(); }
+  };
+  n.onblur = () => { n.value = minutesRappel(); };
+  hote.appendChild(duree);
+
+  const suit = () => {
+    const actif = rappelsVoulus();
+    duree.hidden = !actif;
+    n.value = minutesRappel();
+  };
+  c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
+  suit();
 }
 
 /**
@@ -2802,7 +2857,7 @@ let PROFIL_ADMIN = false;
  * plan y touche encore, et ADMIN restant faux, rien ne peut les activer.
  */
 function retireAdmin(){
-  ["btnLayers", "btnReglages", "menuCompte"].forEach(id => { const b = $(id); if (b) b.remove(); });
+  ["btnLayers", "btnReglages", "menuCompte", "bandeAdmin"].forEach(id => { const b = $(id); if (b) b.remove(); });
   ["panel", "outils", "elemSel", "libReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
@@ -2819,6 +2874,13 @@ function activeAdmin(){
   ADMIN = true;
   // l'outil de départ est la sélection : les dessins deviennent cliquables
   racine.classList.add("mode-edition");
+  /* La bande de l'outil paraît, et la grille lui ouvre son rang. Elle attend
+     que l'identité soit vérifiée : avant, la page n'est que le plan public
+     derrière une fenêtre d'accès, et rien n'y est à nous. */
+  racine.classList.add("mode-admin");
+  const bande = $("bandeAdmin");
+  if (bande) bande.hidden = false;
+  const acts = $("bandeActs");
   const b = $("btnLayers");
   if (b){
     b.hidden = false;
@@ -2842,6 +2904,11 @@ function activeAdmin(){
      onglet ne s'appelant « [object PointerEvent] », la fenêtre s'ouvrait sur
      rien : ni onglet actif, ni contenu. */
   if (r){ r.hidden = false; r.onclick = () => ouvreReglages(); }
+  /* Les commandes de l'outil quittent le bandeau du salon pour la bande du
+     dessus, dans l'ordre où l'on s'en sert. Elles y portaient l'habillage
+     choisi par l'exploitant — cerclées sous « Billet », à angle vif sous
+     « Grille » — alors qu'elles ne sont pas de son plan. */
+  if (acts) [b, r, c].forEach(el => { if (el) acts.appendChild(el); });
   const barre = document.createElement("div");
   barre.className = "adminbar";
   /* Copier et importer une configuration servaient à la transporter d'un poste
@@ -2856,14 +2923,23 @@ function activeAdmin(){
      la base ni de ce navigateur, et le jour où les deux ont dit des choses
      différentes, c'est un fichier tenu à part qui a permis de trancher.
 
-     Le premier bouton dit où en est l'enregistrement — il se fait tout seul —
-     et permet de le relancer quand il a échoué. « majAttente » l'habille. */
-  barre.innerHTML = '<button class="reset fort" id="pousseConf"></button>' +
+     L'état de l'enregistrement, lui, n'est plus ici : il mène la bande de
+     l'outil. Au pied d'un panneau qui reste fermé la plupart du temps, il
+     s'annonçait à personne — c'est pour cela qu'un échec avait fallu doubler
+     d'une alerte en travers de l'écran (voir `ditAlerte`). « majAttente »
+     l'habille, où qu'il soit. */
+  barre.innerHTML =
     '<button class="reset" id="sauveConf">Télécharger une sauvegarde</button>' +
     '<button class="reset" id="restaureConf">Restaurer une sauvegarde…</button>' +
     '<input type="file" id="fichierConf" accept="application/json,.json" hidden>';
   $("panel").appendChild(barre);
-  $("pousseConf").onclick = () => pousseConfiguration();
+  const pousse = document.createElement("button");
+  pousse.className = "reset fort";
+  pousse.id = "pousseConf";
+  pousse.onclick = () => pousseConfiguration();
+  // en tête des commandes : c'est le seul qui dise ce qu'on n'a pas demandé
+  if (acts) acts.insertBefore(pousse, acts.firstChild);
+  else barre.prepend(pousse);
   brancheSauvegarde();
   /* Le plan a pu être monté avant que l'identité soit vérifiée : une page à
      données figées démarre sans rien attendre. Le panneau des calques n'a
