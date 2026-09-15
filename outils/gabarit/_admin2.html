@@ -30,6 +30,10 @@ function demarre(d){
   /* La borne, s'il s'agit d'une borne : elle sait d'où l'on part, et doit le
      savoir avant qu'un lien reçu n'ouvre une fiche et son « J'y vais ». */
   demarreBorne();
+  /* Puis le code affiché dans le hall, si l'adresse en porte un : même besoin,
+     et le même empressement — « J'y vais » depuis une fiche ouverte par un lien
+     reçu doit déjà savoir d'où l'on part (voir `_ici.html`). */
+  demarreIci();
   /* Un parcours reçu par lien se lit avant tout le reste : il est la raison
      pour laquelle cette page vient d'être ouverte, et il retire son fragment
      de l'adresse — sans quoi la recherche d'emplacement qui suit chercherait

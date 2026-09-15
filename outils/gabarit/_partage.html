@@ -398,9 +398,13 @@ function qrTrame(octets){
  * Un seul tracé, par plages horizontales, plutôt qu'un rectangle par module :
  * un code dense en compte plusieurs milliers, et autant d'éléments dans le
  * document se paierait à chaque redessin.
+ *
+ * Le tracé se rend à part de l'image qui l'encadre : l'affiche d'un code
+ * « Vous êtes ici » le pose dans une feuille A4, à côté de son texte, et
+ * n'avait que faire d'un second `<svg>` à l'intérieur du premier.
  */
-function qrSvg(m){
-  const q = 4, n = m.length, c = n + 2 * q;
+function qrChemin(m){
+  const q = 4, n = m.length;
   let d = "";
   for (let y = 0; y < n; y++){
     for (let x = 0; x < n; x++){
@@ -411,10 +415,23 @@ function qrSvg(m){
       x += l;
     }
   }
-  return '<svg viewBox="0 0 ' + c + ' ' + c + '" shape-rendering="crispEdges" ' +
-    'role="img" aria-label="Code à photographier qui ouvre ce parcours">' +
-    '<rect width="' + c + '" height="' + c + '" fill="#fff"/>' +
-    '<path d="' + d + '" fill="#000"/></svg>';
+  return { d: d, cote: n + 2 * q };
+}
+
+/**
+ * Le même damier, en une image à poser dans la page.
+ *
+ * L'étiquette se dit à l'appel : le code du parcours et celui d'un endroit du
+ * salon (voir `_ici.html`) n'ouvrent pas la même chose, et c'est la seule
+ * phrase qu'un lecteur d'écran aura de l'un ou de l'autre.
+ */
+function qrSvg(m, etiquette){
+  const t = qrChemin(m);
+  return '<svg viewBox="0 0 ' + t.cote + ' ' + t.cote + '" shape-rendering="crispEdges" ' +
+    'role="img" aria-label="' + esc(traduit(etiquette ||
+      "Code à photographier qui ouvre ce parcours")) + '">' +
+    '<rect width="' + t.cote + '" height="' + t.cote + '" fill="#fff"/>' +
+    '<path d="' + t.d + '" fill="#000"/></svg>';
 }
 
 /* ------------------------------------------------------------

@@ -2547,11 +2547,22 @@ button.expo:hover{background:var(--line)}
 .bornePose[hidden]{display:none}
 .bornePose button{font-size:12px;color:var(--accent);text-decoration:underline;padding:2px}
 /* Le départ d'une borne ne se choisit pas : sa cible et l'inversion quittent
-   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur. */
-html.mode-borne #iViseA,html.mode-borne #iEchange{display:none}
-html.mode-borne .iChamps{grid-template-columns:1fr}
-html.mode-borne .iChamp input[readonly]{background:var(--accent-soft);
+   le tiroir plutôt que d'y rester sans effet, et le champ reprend sa largeur.
+   Un plan ouvert par un code affiché dans le hall est dans le même cas, à ceci
+   près qu'il s'éteint — mais cela se dit au bas de l'écran, pas dans le tiroir
+   (voir « _ici.html »). */
+html:is(.mode-borne,.mode-ici) :is(#iViseA,#iEchange){display:none}
+html:is(.mode-borne,.mode-ici) .iChamps{grid-template-columns:1fr}
+html:is(.mode-borne,.mode-ici) .iChamp input[readonly]{background:var(--accent-soft);
   border-color:transparent;color:var(--ink);cursor:default}
+
+/* Le rappel du code affiché emprunte la pastille du bandeau de pose : c'est la
+   même forme au même endroit, et les deux ne paraissent jamais ensemble — une
+   borne sait où elle est, et n'a pas de code à scanner. Il passe en revanche
+   sous les tiroirs, qui montent du bas sur un écran étroit : la position du
+   visiteur peut attendre qu'il referme sa fiche. */
+.iciRappel{z-index:11}
+.iciRappel b{font-weight:600}
 
 /* « Vous êtes ici ». C'est la première chose qu'on cherche des yeux devant un
    écran qu'on n'a pas choisi : le point ne suit donc pas le zoom — il garde sa
@@ -3403,8 +3414,8 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 #acces input:focus{border-color:var(--accent);outline:none}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
-.mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
-  border-top:1px solid var(--line)}
+.mfen footer{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;
+  padding:12px 18px 16px;border-top:1px solid var(--line)}
 /* Le bouton qui porte ce pour quoi la fenêtre s'est ouverte. Le rouge du
    « danger » dit ce qu'on perd ; l'accent, ce vers quoi l'on va. */
 .mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
@@ -3438,6 +3449,22 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* L'endroit que le code désignera, entre la phrase et le damier : c'est la
+   seule ligne que l'exploitant relit avant d'imprimer trente affiches. */
+.mcorps p.iciOu{margin-top:10px;font-family:"Archivo",sans-serif;font-weight:600;
+  font-size:14px;color:var(--ink)}
+
+/* L'affiche à imprimer. Elle vit à la racine du corps, hors de la fenêtre qui
+   l'a produite, parce que la règle d'impression éteint les enfants du corps un
+   par un et n'aurait pas su distinguer l'affiche du voile qui la porte. Le cran
+   posé sur « html » ne dure que le temps du tirage : une impression ordinaire
+   de la page reste ce qu'elle était. */
+#afficheQr{display:none}
+@media print{
+  html.imprime-qr body > *{display:none}
+  html.imprime-qr body > #afficheQr{display:block}
+  html.imprime-qr #afficheQr svg{width:100%;height:auto}
+}
 /* La notice de confidentialité : des paragraphes qui respirent, et le refus
    posé comme une réponse, à part du texte qui l'explique. */
 .mcorps .notice p + p{margin-top:8px}
@@ -4268,6 +4295,13 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button type="button" id="calageQuart" title="Pivoter d'un quart de tour">↻ 90°</button>
       <button type="button" id="calageStop">Annuler</button>
       <button type="button" class="fort" id="calageValide">Valider</button>
+    </div>
+    <!-- Ce que le plan sait de la position du visiteur quand il est arrivé par
+         un code affiché dans le hall, et le seul endroit où l'éteindre. Il ne
+         s'efface pas une fois lu : il est l'état du mode. Voir « _ici.html ». -->
+    <div class="bornePose iciRappel" id="iciRappel" hidden>
+      <span id="iciRappelTxt"></span>
+      <button type="button" id="iciStop">Désactiver</button>
     </div>
     <!-- Une borne interactive qui ne sait pas encore où elle est posée. Elle
          s'efface dès qu'elle le sait, et ne reparaît plus. -->
