@@ -165,6 +165,10 @@ function indexe(d){
      cache, et de refuge si un enregistrement a échoué — celui de ce salon-ci,
      que la clé de rangement désigne maintenant. */
   ouvreConf(d);
+  /* Et les calques dessinés, rangés sous le même salon : la boucle qui suit
+     confronte la base à ce que le poste garde, et il faut que ce soit ce
+     salon-ci qu'il garde. */
+  ouvreDessins(d);
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
     // un enregistrement d'avant le cloisonnement porte les calques d'autres

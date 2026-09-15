@@ -14,8 +14,9 @@ let CONF = JSON.parse(JSON.stringify(DEFAUTS));
    masquer une gaine chez l'un la masquait chez le suivant, sans que rien ne
    l'annonce dans son panneau — et la publication emportait le mélange en
    base. Le salon ouvert nomme donc sa clé. */
-const cleConf = d => "plan-conf:" +
-  ((d && d.slug) || SLUG || (d && d.evenement) || "sans-salon");
+const salonRange = d =>
+  (d && d.slug) || SLUG || (d && d.evenement) || "sans-salon";
+const cleConf = d => "plan-conf:" + salonRange(d);
 let CLE_CONF = cleConf(null);
 
 /** Ouvre les réglages du salon qu'on vient de charger. */
