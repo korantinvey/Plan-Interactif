@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3921 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3922 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.2846 · 10. Mode administration
-- l.2958 · La fiche d'une zone organisateur
-- l.3667 · Masquer une zone organisateur
-- l.3750 · Placer un libellé à la main
+- l.2847 · 10. Mode administration
+- l.2959 · La fiche d'une zone organisateur
+- l.3668 · Masquer une zone organisateur
+- l.3751 · Placer un libellé à la main
 
 Fonctions :
 
@@ -32,20 +32,20 @@ Fonctions :
 `policeDesNoms` 801 · `posePoliceLibelles` 830 · `appliqueModele` 862 · `habilleModale` 903
 `texteCorps` 974 · `standApercu` 989 · `lignesApercu` 1013 · `contenuApercu` 1039
 `apercuFiche` 1076 · `apercuListe` 1154 · `apercuDuo` 1176 · `glisseFenetre` 1209
-`ouvreReglages` 1220 · `voletZones` 1331 · `champsFicheZone` 1433 · `ficheZoneEnPlace` 1503
-`voletPlan` 1521 · `blocRappel` 1565 · `voletAdmin` 1615 · `blocHoraires` 1778
-`sallesSituees` 1911 · `voletPmr` 1927 · `nomDuTon` 2018 · `voletApparence` 2023
-`clesFiche` 2222 · `voletOrdre` 2239 · `enregistreConf` 2795 · `rgbHex` 2802 · `hexa` 2809
-`luminance` 2813 · `ecarte` 2827 · `joli` 2842 · `retireAdmin` 2863 · `activeAdmin` 2876
-`champZone` 2984 · `champsZone` 3009 · `champSalles` 3101 · `nomDeZone` 3153
-`reduitLogo` 3187 · `cadreLogo` 3230 · `champLogo` 3302 · `editeurRiche` 3340
-`memeFicheZone` 3497 · `suitFicheZone` 3504 · `verseFicheZone` 3512 · `ficheZone` 3538
-`enregistreZone` 3563 · `basculeAffichageZone` 3678 · `marqueZonesMasquees` 3695
-`ecritColonnesEvenement` 3715 · `ecritColonneEvenement` 3746 · `cleLibelle` 3771
-`empreinteLibelle` 3787 · `placementLibelle` 3795 · `posePlacement` 3805
-`libelleAutomatique` 3822 · `modePlacementLibelles` 3831 · `majPaletteLibelle` 3848
-`choisitLibelle` 3865 · `pousseLibelle` 3872 · `libellePointerDown` 3880
-`libellePointerMove` 3896 · `libellePointerUp` 3905
+`ouvreReglages` 1220 · `voletZones` 1327 · `champsFicheZone` 1429 · `ficheZoneEnPlace` 1499
+`voletPlan` 1517 · `blocRappel` 1561 · `voletAdmin` 1611 · `blocHoraires` 1779
+`sallesSituees` 1912 · `voletPmr` 1928 · `nomDuTon` 2019 · `voletApparence` 2024
+`clesFiche` 2223 · `voletOrdre` 2240 · `enregistreConf` 2796 · `rgbHex` 2803 · `hexa` 2810
+`luminance` 2814 · `ecarte` 2828 · `joli` 2843 · `retireAdmin` 2864 · `activeAdmin` 2877
+`champZone` 2985 · `champsZone` 3010 · `champSalles` 3102 · `nomDeZone` 3154
+`reduitLogo` 3188 · `cadreLogo` 3231 · `champLogo` 3303 · `editeurRiche` 3341
+`memeFicheZone` 3498 · `suitFicheZone` 3505 · `verseFicheZone` 3513 · `ficheZone` 3539
+`enregistreZone` 3564 · `basculeAffichageZone` 3679 · `marqueZonesMasquees` 3696
+`ecritColonnesEvenement` 3716 · `ecritColonneEvenement` 3747 · `cleLibelle` 3772
+`empreinteLibelle` 3788 · `placementLibelle` 3796 · `posePlacement` 3806
+`libelleAutomatique` 3823 · `modePlacementLibelles` 3832 · `majPaletteLibelle` 3849
+`choisitLibelle` 3866 · `pousseLibelle` 3873 · `libellePointerDown` 3881
+`libellePointerMove` 3897 · `libellePointerUp` 3906
 
 Éléments :
 
@@ -283,7 +283,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4542 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4549 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -581,7 +581,7 @@ Fonctions :
 
 `#lienPublic`
 
-### `_sponsor.html` — 559 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_sponsor.html` — 570 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 18. Le sponsor — un logo le temps du chargement
 
@@ -590,7 +590,7 @@ Fonctions :
 `reglageSponsor` 96 · `secondesSponsor` 99 · `modeSponsor` 112 · `sponsorRetenu` 131
 `cleSponsor` 162 · `sponsorEnCache` 165 · `retientSponsor` 180 · `ouvreSponsor` 205
 `suitSponsor` 297 · `resteSponsor` 322 · `fermeSponsor` 328 · `accueilleSponsor` 344
-`voletSponsor` 406
+`blocSponsor` 412
 
 ### `_suggestion.html` — 679 l. → plan-admin.html, plan-smcl.html, plan.html
 

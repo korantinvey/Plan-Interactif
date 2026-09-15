@@ -4047,13 +4047,20 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
   .sponsor{animation:none}
 }
 
-/* Le volet « Démarrage » des réglages.
+/* Le générique du démarrage, dans l'onglet « Admin » des réglages.
+
+   Il ferme l'onglet, après une liste de cases : d'où l'intertitre, et le filet
+   qui l'en sépare — celui de « .reglage-nb », qui sépare déjà les réglages
+   chiffrés du reste partout ailleurs.
 
    Le choix des trois modes en boutons plutôt qu'en cases : ils s'excluent, et
    c'est le geste des modèles d'habillage — un rang par mode, la coche à droite,
    le cadre d'accent sur celui qu'on tient. La marque se montre dans le sien :
    personne ne sait de mémoire à quoi elle ressemble. */
-.choixDem{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+.titreDem{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.titreDem .eyebrow{display:block;margin-bottom:6px}
+.titreDem .d{display:block;font-size:12px;line-height:1.5;color:var(--ink-3)}
+.choixDem{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
 .dem{display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;
   text-align:left;background:var(--surface-2);border:1px solid var(--line);
   border-radius:8px}
@@ -10250,10 +10257,6 @@ function ouvreReglages(ouvrir){
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
-    /* Le démarrage suit l'apparence : lui aussi habille le plan, et se pose une
-       fois pour le salon. Il vient après, parce qu'il ne parle pas du plan mais
-       de ce qui le précède — le générique, et ce qu'on y montre. */
-    voletSponsor(volet("Démarrage"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
        de parc plutôt que de salon — posé une fois, repris rarement. */
@@ -10727,6 +10730,11 @@ function voletAdmin(hote){
   }
 
   hote.appendChild(bloc);
+
+  /* Le générique du démarrage ferme l'onglet. C'est le plus gros réglage qu'on
+     y trouve, et le seul qui ne soit pas une case : il passe donc après elles,
+     sous son propre intertitre (`_sponsor.html`). */
+  blocSponsor(hote);
 }
 
 /**
@@ -29921,7 +29929,7 @@ function accueilleSponsor(){
 if (!PLAN_ADMIN) ouvreSponsor(sponsorEnCache());
 
 /* ------------------------------------------------------------
-   Le volet « Démarrage » des réglages
+   Le générique dans l'onglet « Admin » des réglages
    ------------------------------------------------------------ */
 /* Ce que chaque mode propose, dans l'ordre du volet. Le résumé tient en une
    ligne : c'est un choix qu'on fait une fois, et trois paragraphes à comparer
@@ -29939,8 +29947,14 @@ const CHOIX_SPONSOR = [
 ];
 
 /**
- * Où l'exploitant choisit ce qui paraît au démarrage, et le regarde avant de
- * le vendre.
+ * Où l'on choisit ce qui paraît au démarrage, et où on le regarde avant de le
+ * vendre.
+ *
+ * Dans l'onglet « Admin », donc réservé au profil administrateur, comme les
+ * cases qui l'entourent. Ce n'est pas un réglage de salon mais un réglage de
+ * prestataire : la place du démarrage est celle qu'on vend, ou celle où l'on
+ * dit d'où vient le plan, et l'organisateur qui l'ouvrirait n'y trouverait que
+ * de quoi retirer la marque de qui le lui fournit.
  *
  * Trois boutons plutôt que trois cases : les modes s'excluent, et une case
  * cochée à côté d'une autre aurait posé la question de ce qui l'emporte. Les
@@ -29948,18 +29962,23 @@ const CHOIX_SPONSOR = [
  * sous un choix qui ne les concerne pas ne se règlent pour rien.
  *
  * L'aperçu est là parce que l'administration ne montre jamais le générique
- * d'elle-même : sans lui, l'exploitant vendrait un écran qu'il n'a jamais vu.
+ * d'elle-même : sans lui, on vendrait un écran qu'on n'a jamais vu.
  */
-function voletSponsor(hote){
+function blocSponsor(hote){
   const r = reglageSponsor();
 
-  const p = document.createElement("p");
-  p.textContent = "Ce que le visiteur voit le temps que le plan s'affiche, " +
-    "puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs " +
-    "traversent — chaque visite comptée dans le rapport d'utilisation le voit " +
-    "— et il ne retarde personne : l'attente qu'il occupe avait lieu de toute " +
-    "façon. Publiez la configuration pour que le changement leur parvienne.";
-  hote.appendChild(p);
+  /* Un intertitre, parce que le bloc arrive après une liste de cases : sans
+     lui, le premier des trois boutons se lirait comme une case de plus. */
+  const tete = document.createElement("div");
+  tete.className = "titreDem";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Au démarrage";
+  tete.querySelector(".d").textContent = "Ce que le visiteur voit le temps que " +
+    "le plan s'affiche, puis qui s'efface de lui-même. C'est le seul écran que " +
+    "tous les visiteurs traversent — chaque visite comptée dans le rapport " +
+    "d'utilisation le voit — et il ne retarde personne : l'attente qu'il occupe " +
+    "avait lieu de toute façon.";
+  hote.appendChild(tete);
 
   /* Le corps des réglages du sponsor, et celui de la durée : déclarés ici, ils
      sont garnis plus bas et montrés par le choix, qui est posé avant eux. */

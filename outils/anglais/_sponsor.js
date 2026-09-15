@@ -19,9 +19,10 @@ module.exports = {
   "powered by": "powered by",
   "Event2Map": "Event2Map",
 
-  // le volet des réglages
-  "Ce que le visiteur voit le temps que le plan s'affiche, puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs traversent — chaque visite comptée dans le rapport d'utilisation le voit — et il ne retarde personne : l'attente qu'il occupe avait lieu de toute façon. Publiez la configuration pour que le changement leur parvienne.":
-    "What the visitor sees while the map appears, then fading away on its own. It is the one screen every visitor goes through — every visit counted in the usage report sees it — and it holds nobody up: the wait it fills was happening anyway. Publish the configuration for the change to reach them.",
+  // le bloc, dans l'onglet « Admin » des réglages
+  "Au démarrage": "At startup",
+  "Ce que le visiteur voit le temps que le plan s'affiche, puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs traversent — chaque visite comptée dans le rapport d'utilisation le voit — et il ne retarde personne : l'attente qu'il occupe avait lieu de toute façon.":
+    "What the visitor sees while the map appears, then fading away on its own. It is the one screen every visitor goes through — every visit counted in the usage report sees it — and it holds nobody up: the wait it fills was happening anyway.",
 
   // les trois modes
   "Le plan s'ouvre droit sur le hall.": "The map opens straight onto the hall.",

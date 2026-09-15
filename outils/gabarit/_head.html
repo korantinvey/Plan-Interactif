@@ -4047,13 +4047,20 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
   .sponsor{animation:none}
 }
 
-/* Le volet « Démarrage » des réglages.
+/* Le générique du démarrage, dans l'onglet « Admin » des réglages.
+
+   Il ferme l'onglet, après une liste de cases : d'où l'intertitre, et le filet
+   qui l'en sépare — celui de « .reglage-nb », qui sépare déjà les réglages
+   chiffrés du reste partout ailleurs.
 
    Le choix des trois modes en boutons plutôt qu'en cases : ils s'excluent, et
    c'est le geste des modèles d'habillage — un rang par mode, la coche à droite,
    le cadre d'accent sur celui qu'on tient. La marque se montre dans le sien :
    personne ne sait de mémoire à quoi elle ressemble. */
-.choixDem{display:flex;flex-direction:column;gap:8px;margin:14px 0 4px}
+.titreDem{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.titreDem .eyebrow{display:block;margin-bottom:6px}
+.titreDem .d{display:block;font-size:12px;line-height:1.5;color:var(--ink-3)}
+.choixDem{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
 .dem{display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;
   text-align:left;background:var(--surface-2);border:1px solid var(--line);
   border-radius:8px}

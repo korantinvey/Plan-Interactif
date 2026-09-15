@@ -374,7 +374,7 @@ function accueilleSponsor(){
 if (!PLAN_ADMIN) ouvreSponsor(sponsorEnCache());
 
 /* ------------------------------------------------------------
-   Le volet « Démarrage » des réglages
+   Le générique dans l'onglet « Admin » des réglages
    ------------------------------------------------------------ */
 /* Ce que chaque mode propose, dans l'ordre du volet. Le résumé tient en une
    ligne : c'est un choix qu'on fait une fois, et trois paragraphes à comparer
@@ -392,8 +392,14 @@ const CHOIX_SPONSOR = [
 ];
 
 /**
- * Où l'exploitant choisit ce qui paraît au démarrage, et le regarde avant de
- * le vendre.
+ * Où l'on choisit ce qui paraît au démarrage, et où on le regarde avant de le
+ * vendre.
+ *
+ * Dans l'onglet « Admin », donc réservé au profil administrateur, comme les
+ * cases qui l'entourent. Ce n'est pas un réglage de salon mais un réglage de
+ * prestataire : la place du démarrage est celle qu'on vend, ou celle où l'on
+ * dit d'où vient le plan, et l'organisateur qui l'ouvrirait n'y trouverait que
+ * de quoi retirer la marque de qui le lui fournit.
  *
  * Trois boutons plutôt que trois cases : les modes s'excluent, et une case
  * cochée à côté d'une autre aurait posé la question de ce qui l'emporte. Les
@@ -401,18 +407,23 @@ const CHOIX_SPONSOR = [
  * sous un choix qui ne les concerne pas ne se règlent pour rien.
  *
  * L'aperçu est là parce que l'administration ne montre jamais le générique
- * d'elle-même : sans lui, l'exploitant vendrait un écran qu'il n'a jamais vu.
+ * d'elle-même : sans lui, on vendrait un écran qu'on n'a jamais vu.
  */
-function voletSponsor(hote){
+function blocSponsor(hote){
   const r = reglageSponsor();
 
-  const p = document.createElement("p");
-  p.textContent = "Ce que le visiteur voit le temps que le plan s'affiche, " +
-    "puis qui s'efface de lui-même. C'est le seul écran que tous les visiteurs " +
-    "traversent — chaque visite comptée dans le rapport d'utilisation le voit " +
-    "— et il ne retarde personne : l'attente qu'il occupe avait lieu de toute " +
-    "façon. Publiez la configuration pour que le changement leur parvienne.";
-  hote.appendChild(p);
+  /* Un intertitre, parce que le bloc arrive après une liste de cases : sans
+     lui, le premier des trois boutons se lirait comme une case de plus. */
+  const tete = document.createElement("div");
+  tete.className = "titreDem";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Au démarrage";
+  tete.querySelector(".d").textContent = "Ce que le visiteur voit le temps que " +
+    "le plan s'affiche, puis qui s'efface de lui-même. C'est le seul écran que " +
+    "tous les visiteurs traversent — chaque visite comptée dans le rapport " +
+    "d'utilisation le voit — et il ne retarde personne : l'attente qu'il occupe " +
+    "avait lieu de toute façon.";
+  hote.appendChild(tete);
 
   /* Le corps des réglages du sponsor, et celui de la durée : déclarés ici, ils
      sont garnis plus bas et montrés par le choix, qui est posé avant eux. */

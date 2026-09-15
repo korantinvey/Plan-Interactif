@@ -1236,8 +1236,12 @@ visite précédente. Une première ouverture sur un appareil neuf le montre à
 l'arrivée des données, si elles sont venues à temps, et pose le cache pour les
 suivantes.
 
-**Trois façons de commencer**, dans « Réglages du plan », onglet
-**Démarrage** :
+**Trois façons de commencer**, dans « Réglages du plan », onglet **Admin**, au
+bas de ce que voient les visiteurs. Réservé au profil administrateur, comme les
+cases qui l'entourent : ce n'est pas un réglage de salon mais un réglage de
+prestataire — la place du démarrage est celle qu'on vend, ou celle où l'on dit
+d'où vient le plan, et l'organisateur qui l'ouvrirait n'y trouverait que de quoi
+retirer la marque de qui le lui fournit.
 
 - **Aucun logo** — le plan s'ouvre droit sur le hall. C'est le réglage d'origine :
   un salon déjà en ligne ne se met pas à montrer un écran de plus sans que

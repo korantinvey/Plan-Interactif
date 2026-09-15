@@ -1283,10 +1283,6 @@ function ouvreReglages(ouvrir){
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
     voletApparence(volet("Apparence"));
-    /* Le démarrage suit l'apparence : lui aussi habille le plan, et se pose une
-       fois pour le salon. Il vient après, parce qu'il ne parle pas du plan mais
-       de ce qui le précède — le générique, et ce qu'on y montre. */
-    voletSponsor(volet("Démarrage"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
        de parc plutôt que de salon — posé une fois, repris rarement. */
@@ -1760,6 +1756,11 @@ function voletAdmin(hote){
   }
 
   hote.appendChild(bloc);
+
+  /* Le générique du démarrage ferme l'onglet. C'est le plus gros réglage qu'on
+     y trouve, et le seul qui ne soit pas une case : il passe donc après elles,
+     sous son propre intertitre (`_sponsor.html`). */
+  blocSponsor(hote);
 }
 
 /**
