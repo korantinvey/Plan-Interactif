@@ -77,6 +77,143 @@ function basculeParcours(genre, id, canal){
   if (i < 0 && genre === "stand") fenetreSuggestion();
 }
 
+/**
+ * Verser un lot de rangs dans la liste.
+ *
+ * Les ajouts se comptent un à un, comme s'ils avaient été faits signet par
+ * signet : c'est bien un visiteur de plus qui a ce stand à son programme, et
+ * l'exposant a raison de le voir dans ses chiffres. Le canal dit d'où le lot
+ * vient — un parcours reçu, une recherche prise en bloc — et permet de faire la
+ * part des uns et des autres.
+ *
+ * La suggestion ne s'invite pas ici, à la différence d'un signet posé à la
+ * main : un lot qui vient d'allonger la liste de vingt exposants n'appelle pas
+ * une fenêtre qui en propose un vingt et unième.
+ */
+function verseAuParcours(stands, confs, canal, remplace){
+  if (remplace) PARCOURS = { stands: [], confs: [] };
+  stands.forEach(id => {
+    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
+    mesure("parcours", canal, id, "fiche_stand");
+  });
+  confs.forEach(id => {
+    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
+    mesure("parcours", canal, id, "fiche_conf");
+  });
+  enregistreParcours();
+  rafraichitParcours();
+  /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
+     n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
+  ouvreParcours();
+}
+
+/** « 3 exposants », « 1 conférence » : un compte et son mot, accordés. */
+const plurielParcours = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+
+/**
+ * Ce qu'un lot contient, en toutes lettres.
+ *
+ * Les conférences ne se mentionnent que s'il y en a : « 5 exposants et 0
+ * conférence » fait lire un manque là où il n'y a rien à lire — et un salon
+ * sans programme du tout n'a pas à voir le mot.
+ */
+const contenuParcours = (nStands, nConfs) =>
+  [nStands ? plurielParcours(nStands, "exposant") : "",
+   nConfs ? plurielParcours(nConfs, "conférence") : ""].filter(Boolean).join(" et ");
+
+/* ------------------------------------------------------------
+   Tout ce que la recherche a retenu
+   ------------------------------------------------------------ */
+/* D'où viennent les rangs pris en bloc. Le canal existait déjà pour les fiches
+   ouvertes depuis la liste des résultats : un ajout venu de là raconte la même
+   chose, et n'avait pas besoin d'un mot de plus au vocabulaire mesuré. */
+const CANAL_RECHERCHE = "recherche";
+
+/**
+ * Ce que le filtre retient, et qui n'est pas déjà dans la liste.
+ *
+ * Le périmètre est celui de la colonne des résultats, aux deux sortes près
+ * qu'un parcours ne sait pas porter : une zone ne s'y retient que par les
+ * conférences qu'elle abrite, et un repère n'est pas un rendez-vous. Une
+ * société hébergée, elle, y entre sous l'emplacement où on la trouvera — c'est
+ * déjà ce que fait le signet de sa fiche, et deux hébergées d'un même stand
+ * n'ont donc qu'un rang à elles deux.
+ *
+ * Sans mot-clé ni critère, il n'y a pas de filtre à reprendre : le salon entier
+ * n'est pas un parcours de visite, et la fonction ne rend rien plutôt que de le
+ * proposer.
+ */
+function retenusPourParcours(){
+  if (!DATA || !filtre()) return { stands: [], confs: [] };
+  const vus = new Set(), stands = [];
+  TOUS.concat(HEBERGES).forEach(o => {
+    if (o.kind === "zone" || !visible(o)) return;
+    const id = String(o.id);
+    if (vus.has(id)) return;
+    vus.add(id);
+    if (!dansParcours("stand", id)) stands.push(id);
+  });
+  /* Une conférence ne répond qu'au mot-clé — les critères décrivent une société
+     et n'ont rien à lui opposer —, ce dont « visible » se charge déjà. */
+  const confs = CONFERENCES.filter(c => visible(c) && !dansParcours("conf", c.id))
+    .map(c => String(c.id));
+  return { stands: stands, confs: confs };
+}
+
+/**
+ * La fenêtre qui demande avant de verser.
+ *
+ * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
+ * sans qu'on l'ait dit : le compte est annoncé avant, et « Annuler » ramène au
+ * panneau des critères plutôt que de laisser le visiteur devant le plan nu —
+ * il y était pour régler sa recherche, pas pour la quitter.
+ */
+function ajouteToutAuParcours(retour){
+  const r = retenusPourParcours();
+  if (!r.stands.length && !r.confs.length) return;
+  ouvreModale("Ajouter à mon parcours", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ajouter " + contenuParcours(r.stands.length, r.confs.length) +
+      " à votre parcours de visite ?";
+    corps.appendChild(p);
+  }, [
+    /* « Annuler » rouvre le panneau plutôt que de refermer : la fenêtre est la
+       même, et la laisser se refermer par-dessus l'aurait emportée aussitôt
+       rouverte. Sans panneau où revenir, elle se referme comme n'importe quelle
+       fenêtre. */
+    { libelle: "Annuler", action: retour, ferme: !retour },
+    { libelle: "Ajouter", genre: "accent",
+      action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
+  ]);
+}
+
+/**
+ * Le bouton qui prend tout, posé au pied d'un panneau de recherche.
+ *
+ * Rend de quoi le remettre à jour : ce qu'il propose change à chaque critère
+ * coché, et le panneau qui le porte ne se réécrit pas pour autant. Il ne paraît
+ * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
+ * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
+ */
+function poseToutAuParcours(hote, retour){
+  if (conf("_parcours").visible === false) return () => {};
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn parc tout-parc";
+  b.innerHTML = SIGNET + '<span class="l"></span>';
+  b.onclick = () => ajouteToutAuParcours(retour);
+  hote.appendChild(b);
+  return () => {
+    const r = retenusPourParcours();
+    const reste = r.stands.length + r.confs.length;
+    b.hidden = !filtre();
+    b.disabled = !reste;
+    b.querySelector(".l").textContent = reste
+      ? "Ajouter tout à mon parcours"
+      : "Déjà dans votre parcours";
+  };
+}
+
 /* ------------------------------------------------------------
    La marque, partout la même
    ------------------------------------------------------------ */
@@ -279,10 +416,12 @@ function remplitParcours(){
   const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
     .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
 
-  const pluriel = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+  /* Le même compte que la fenêtre d'un lot reçu, au séparateur près : ici les
+     deux moitiés se lisent en tête d'une liste, non dans une phrase. */
   $("pResume").textContent = stands.length + confs.length
-    ? [stands.length ? pluriel(stands.length, "exposant") : "",
-       confs.length ? pluriel(confs.length, "conférence") : ""].filter(Boolean).join(" · ")
+    ? [stands.length ? plurielParcours(stands.length, "exposant") : "",
+       confs.length ? plurielParcours(confs.length, "conférence") : ""]
+        .filter(Boolean).join(" · ")
     : "rien pour l'instant";
   $("videParcours").hidden = !(stands.length + confs.length);
 

@@ -588,12 +588,8 @@ function accueilleParcoursPartage(){
   const sien = PARCOURS.stands.length + PARCOURS.confs.length;
   ouvreModale("Un parcours partagé", corps => {
     const p = document.createElement("p");
-    /* Les conférences ne se mentionnent que s'il y en a : « 5 exposants et 0
-       conférence » fait lire un manque là où il n'y a rien à lire. */
     p.textContent = "Le parcours qui vous a été partagé contient " +
-      [stands.length ? stands.length + " exposant" + (stands.length > 1 ? "s" : "") : "",
-       confs.length ? confs.length + " conférence" + (confs.length > 1 ? "s" : "") : ""]
-        .filter(Boolean).join(" et ") + ".";
+      contenuParcours(stands.length, confs.length) + ".";
     corps.appendChild(p);
 
     const ul = document.createElement("ul");
@@ -626,29 +622,12 @@ function accueilleParcoursPartage(){
 }
 
 /**
- * Ce que le visiteur a accepté entre dans sa liste.
- *
- * Les ajouts se comptent un à un, comme s'il les avait faits lui-même : c'est
- * bien un visiteur de plus qui a ce stand à son programme, et l'exposant a
- * raison de le voir dans ses chiffres. Le canal dit d'où cela vient, et permet
- * de faire la part des deux. Ce qui ne se compte pas, c'est le partage
- * lui-même : personne n'a encore rien visité.
+ * Ce que le visiteur a accepté entre dans sa liste, sous le canal qui dit d'où
+ * cela vient. Ce qui ne se compte pas ici, c'est le partage lui-même :
+ * personne n'a encore rien visité.
  */
 function adoptePartage(stands, confs, remplace){
-  if (remplace) PARCOURS = { stands: [], confs: [] };
-  stands.forEach(id => {
-    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
-    mesure("parcours", CANAL_PARTAGE, id, "fiche_stand");
-  });
-  confs.forEach(id => {
-    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
-    mesure("parcours", CANAL_PARTAGE, id, "fiche_conf");
-  });
-  enregistreParcours();
-  rafraichitParcours();
-  /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
-     n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
-  ouvreParcours();
+  verseAuParcours(stands, confs, CANAL_PARTAGE, remplace);
 }
 
 $("btnPartage").onclick = ouvrePartageParcours;
