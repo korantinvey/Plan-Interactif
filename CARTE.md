@@ -282,7 +282,7 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4271 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4278 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -388,18 +388,18 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4213 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4224 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.500 · 3. Rendu du pavillon courant
 - l.581 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1723 · 6. Vue
-- l.2104 · 7. Sélection et fiche
-- l.3548 · 8. Interactions du plan
-- l.3889 · Le tiroir de la liste — écrans étroits
-- l.4046 · Le tiroir de la fiche — écrans étroits
+- l.1734 · 6. Vue
+- l.2115 · 7. Sélection et fiche
+- l.3559 · 8. Interactions du plan
+- l.3900 · Le tiroir de la liste — écrans étroits
+- l.4057 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -415,29 +415,29 @@ Fonctions :
 `clesCriteres` 1030 · `libelleCritere` 1037 · `separeValeurs` 1045 · `valeursCritere` 1062
 `texteCriteres` 1075 · `indexeCriteres` 1088 · `dansCriteres` 1115 · `critereActif` 1123
 `basculeCritere` 1125 · `videCriteres` 1134 · `majVideQ` 1143 · `videRecherche` 1156
-`nCriteres` 1171 · `majCriteres` 1180 · `ouvreCriteres` 1238 · `filtre` 1351
-`reposeRetrait` 1371 · `critParSociete` 1375 · `cherchable` 1385 · `visible` 1392
-`releveHotes` 1408 · `visibleSurPlan` 1416 · `visibleSociete` 1427 · `marqueRetrait` 1443
-`appliqueFiltre` 1455 · `oublieRetrait` 1467 · `reprendRecherche` 1476 · `rangSorte` 1489
-`codeCase` 1511 · `caseNumero` 1528 · `sousLigne` 1548 · `liste` 1562 · `marqueChoisie` 1681
-`prechargeMarque` 1707 · `cadrePlan` 1738 · `oublieCadre` 1739 · `figeTextes` 1755
-`rendTextes` 1763 · `cadrage` 1799 · `peintLibelles` 1804 · `detacheLibelles` 1810
-`rattacheLibelles` 1822 · `etireLibelles` 1840 · `appliqueVue` 1848 · `rafraichitVue` 1890
-`poseVue` 1904 · `masque` 1924 · `masqueDroite` 1956 · `fit` 1967 · `stoppeZoom` 1997
-`glisseVersVise` 2003 · `glisseVers` 2045 · `rectVisee` 2067 · `zoom` 2087 · `echelle` 2096
-`ETROIT` 2110 · `anime` 2126 · `noeud` 2150 · `canalPlan` 2160 · `rangSociete` 2168
-`select` 2177 · `centre` 2202 · `centrePoint` 2206 · `montre` 2251 · `libelleCorps` 2283
-`ordreCorps` 2300 · `groupesFiche` 2332 · `montreIntitule` 2345 · `valeurCorps` 2365
-`champCorps` 2378 · `groupeCorps` 2390 · `corpsRange` 2403 · `momentLocal` 2438
-`programme` 2461 · `jourLong` 2494 · `ficheConf` 2505 · `lien` 2599 · `adresseWeb` 2607
-`pictoRS` 2650 · `adresseSure` 2668 · `adresseImage` 2695 · `imageSure` 2708
-`assainitRiche` 2737 · `enBlocs` 2777 · `rangeRiche` 2790 · `ecarteClicFantome` 2818
-`nomSociete` 2827 · `societes` 2840 · `choisitExposant` 2851 · `poseMarque` 2889
-`montreMarque` 2936 · `recadreMarque` 2969 · `marqueRecadree` 2992 · `imageChargee` 3021
-`vignetteMarque` 3037 · `boiteMarque` 3058 · `toileMarque` 3124 · `poseCode` 3154
-`rangeMarque` 3195 · `ouvre` 3257 · `ferme` 3520 · `onglet` 3538 · `milieu` 3568
-`commencePince` 3574 · `suitPince` 3588 · `saisitPlan` 3622 · `cibleElargie` 3698
-`mesureTiroir` 3900 · `montreTiroir` 3903
+`nCriteres` 1171 · `majCriteres` 1180 · `ouvreCriteres` 1238 · `filtre` 1362
+`reposeRetrait` 1382 · `critParSociete` 1386 · `cherchable` 1396 · `visible` 1403
+`releveHotes` 1419 · `visibleSurPlan` 1427 · `visibleSociete` 1438 · `marqueRetrait` 1454
+`appliqueFiltre` 1466 · `oublieRetrait` 1478 · `reprendRecherche` 1487 · `rangSorte` 1500
+`codeCase` 1522 · `caseNumero` 1539 · `sousLigne` 1559 · `liste` 1573 · `marqueChoisie` 1692
+`prechargeMarque` 1718 · `cadrePlan` 1749 · `oublieCadre` 1750 · `figeTextes` 1766
+`rendTextes` 1774 · `cadrage` 1810 · `peintLibelles` 1815 · `detacheLibelles` 1821
+`rattacheLibelles` 1833 · `etireLibelles` 1851 · `appliqueVue` 1859 · `rafraichitVue` 1901
+`poseVue` 1915 · `masque` 1935 · `masqueDroite` 1967 · `fit` 1978 · `stoppeZoom` 2008
+`glisseVersVise` 2014 · `glisseVers` 2056 · `rectVisee` 2078 · `zoom` 2098 · `echelle` 2107
+`ETROIT` 2121 · `anime` 2137 · `noeud` 2161 · `canalPlan` 2171 · `rangSociete` 2179
+`select` 2188 · `centre` 2213 · `centrePoint` 2217 · `montre` 2262 · `libelleCorps` 2294
+`ordreCorps` 2311 · `groupesFiche` 2343 · `montreIntitule` 2356 · `valeurCorps` 2376
+`champCorps` 2389 · `groupeCorps` 2401 · `corpsRange` 2414 · `momentLocal` 2449
+`programme` 2472 · `jourLong` 2505 · `ficheConf` 2516 · `lien` 2610 · `adresseWeb` 2618
+`pictoRS` 2661 · `adresseSure` 2679 · `adresseImage` 2706 · `imageSure` 2719
+`assainitRiche` 2748 · `enBlocs` 2788 · `rangeRiche` 2801 · `ecarteClicFantome` 2829
+`nomSociete` 2838 · `societes` 2851 · `choisitExposant` 2862 · `poseMarque` 2900
+`montreMarque` 2947 · `recadreMarque` 2980 · `marqueRecadree` 3003 · `imageChargee` 3032
+`vignetteMarque` 3048 · `boiteMarque` 3069 · `toileMarque` 3135 · `poseCode` 3165
+`rangeMarque` 3206 · `ouvre` 3268 · `ferme` 3531 · `onglet` 3549 · `milieu` 3579
+`commencePince` 3585 · `suitPince` 3599 · `saisitPlan` 3633 · `cibleElargie` 3709
+`mesureTiroir` 3911 · `montreTiroir` 3914
 
 Éléments :
 
@@ -480,20 +480,23 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 402 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 541 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 45 · `basculeParcours` 58 · `signetParcours` 87 · `boutonParcours` 93
-`rafraichitMarque` 98 · `brancheParcours` 111 · `calqueMarques` 143 · `dessineMarques` 159
-`marqueParcours` 189 · `rafraichitParcours` 203 · `instantConf` 231 · `cleTemps` 235
-`jourCourt` 241 · `nomDeStand` 248 · `rangParcours` 250 · `groupeParcours` 266
-`remplitParcours` 275 · `ouvreParcours` 347 · `fermeParcours` 359 · `videLeParcours` 375
+`enregistreParcours` 45 · `basculeParcours` 58 · `verseAuParcours` 93
+`plurielParcours` 111 · `contenuParcours` 120 · `retenusPourParcours` 146
+`ajouteToutAuParcours` 171 · `poseToutAuParcours` 198 · `signetParcours` 224
+`boutonParcours` 230 · `rafraichitMarque` 235 · `brancheParcours` 248 · `calqueMarques` 280
+`dessineMarques` 296 · `marqueParcours` 326 · `rafraichitParcours` 340 · `instantConf` 368
+`cleTemps` 372 · `jourCourt` 378 · `nomDeStand` 385 · `rangParcours` 387
+`groupeParcours` 403 · `remplitParcours` 412 · `ouvreParcours` 486 · `fermeParcours` 498
+`videLeParcours` 514
 
-### `_partage.html` — 654 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 633 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -503,7 +506,7 @@ Fonctions :
 `lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
 `qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrSvg` 402
 `ouvrePartageParcours` 428 · `boutonsPartage` 477 · `accueilleParcoursPartage` 551
-`adoptePartage` 637
+`adoptePartage` 629
 
 ### `_pile.html` — 505 l. → plan-admin.html, plan-smcl.html, plan.html
 

@@ -1239,9 +1239,14 @@ function ouvreCriteres(){
   ouvreModale("Critères de recherche", corps => {
     const compte = document.createElement("p");
     compte.className = "compte-crit";
+    /* Le pied du panneau se remplit en dernier — il parle de ce qui est coché
+       au-dessus — mais il se remet à jour à chaque puce touchée, d'où la
+       fonction que l'on garde sous la main. */
+    let majTout = () => {};
     const dis = () => {
       const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
       compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
+      majTout();
     };
 
     CRITERES.forEach(c => {
@@ -1338,8 +1343,14 @@ function ouvreCriteres(){
       corps.appendChild(g);
     });
 
-    dis();
     corps.appendChild(compte);
+    /* Retenir cinquante exposants d'un geste plutôt que d'ouvrir cinquante
+       fiches : ce que la recherche vient de circonscrire est précisément ce
+       qu'un visiteur voulait mettre à son programme. Le bouton se pose sous le
+       compte, dont il est la suite — et non au pied de la fenêtre, où il aurait
+       pris le rang de « Voir les résultats », qui reste le geste attendu. */
+    majTout = poseToutAuParcours(corps, ouvreCriteres);
+    dis();
   }, [
     { libelle: "Tout effacer", action: videCriteres },
     { libelle: "Voir les résultats", genre: "primaire" },
