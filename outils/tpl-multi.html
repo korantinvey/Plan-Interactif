@@ -27046,6 +27046,7 @@ const GL = {
   libelles: [], cleLibelles: "", couchesLibelles: null, pastilles: [], dessines: new Map(),
   groupes: new Map(), survol: null, focus: null, libellesPhare: [], temps: 0, imageAnim: 0, cleAnim: "",
   modeles: new Map(), tailles: new Map(), duree: 0,
+  hote: null, toile: null, branche: false, veille: false, aRemonter: false, attente: 0, remontes: 0, abandon: false,
   // la clé d'un bloc vit hors du DOM : l'écrire dans le SVG réveillerait le guet
   cles: new WeakMap(), compteur: 0, versionModeles: 0, signatureModeles: "",
 };
@@ -27075,15 +27076,22 @@ const GL = {
  *  posée. */
 function monteWebgl(){
   if (GL.actif || !GL.charge || !window.deck || typeof view === "undefined" || !view) return;
+  /* Après une perte de contexte, c'est « remonteWebgl » qui dit quand : la
+     vue repasse par ici à chaque geste, et remonterait le dessin sur-le-champ
+     — sur la mémoire qui vient justement de manquer. */
+  if (GL.aRemonter || GL.attente || GL.abandon) return;
   const hote = document.createElement("div");
   hote.className = "plan-gl";
   hote.setAttribute("aria-hidden", "true");
   svg.before(hote);
+  GL.hote = hote;
   GL.deck = new deck.Deck({
     parent: hote, controller: false,
     views: new deck.OrthographicView({ id: "plan", flipY: true }),
     viewState: vueDeck(), layers: [],
     onError: e => console.warn("Rendu WebGL :", e && e.message),
+    // la toile ne naît qu'avec la carte graphique, que la bibliothèque prépare à part
+    onLoad: poseToileWebgl,
     // le SVG reste à l'écran jusqu'à la première image du dessin : voir « gl-pret »
     onAfterRender: () => {
       if (GL.pret || !GL.deck.props.layers.length) return;
@@ -27095,30 +27103,129 @@ function monteWebgl(){
   GL.actif = true;
   document.documentElement.classList.add("rendu-webgl");
   poseModelesLibelles();
+  guetteContexteWebgl();
 
-  /* Ce qui change le dessin passe par le SVG caché : on le guette plutôt que
-     d'appeler le peintre depuis chaque fonction qui touche au plan. Seule la
-     vue n'y passe pas — elle ne s'écrit plus dans la « viewBox ». */
-  new MutationObserver(notes => {
-    for (const n of notes){
-      const b = blocDe(n.target);
-      if (b === "ordre") GL.ordre = true;
-      else if (b) GL.sales.add(b);
-    }
-    // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
-    majEditionWebgl();
-    planifieWebgl();
-  }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
-  // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
-  // classes posées sur la racine, que la feuille de style lit
-  new MutationObserver(() => { majEditionWebgl(); toutRepeindreWebgl(); })
-    .observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
-  if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
+  /* Le guet du SVG et les écoutes ne se posent qu'une fois : le dessin peut
+     remonter après une perte de contexte, le SVG qu'ils surveillent, lui, n'a
+     pas bougé. */
+  if (!GL.branche){
+    GL.branche = true;
+    /* Ce qui change le dessin passe par le SVG caché : on le guette plutôt que
+       d'appeler le peintre depuis chaque fonction qui touche au plan. Seule la
+       vue n'y passe pas — elle ne s'écrit plus dans la « viewBox ». */
+    new MutationObserver(notes => {
+      for (const n of notes){
+        const b = blocDe(n.target);
+        if (b === "ordre") GL.ordre = true;
+        else if (b) GL.sales.add(b);
+      }
+      // ouvrir un calque se lit ici : c'est lui qui prend la classe « editable »
+      majEditionWebgl();
+      planifieWebgl();
+    }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
+    // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
+    // classes posées sur la racine, que la feuille de style lit
+    new MutationObserver(() => { majEditionWebgl(); toutRepeindreWebgl(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
+    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
+    if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
-  brancheSurvolWebgl();
+    brancheSurvolWebgl();
+  }
   libellesWebgl();
   toutRepeindreWebgl();
+}
+
+/* ------------------------------------------------------------
+   Le contexte perdu.
+
+   Un téléphone à court de mémoire reprend la carte graphique aux onglets
+   qu'on a quittés. Au retour, la toile est morte — le navigateur y peint un
+   petit visage triste — et le plan reste blanc : le SVG, lui, est caché,
+   puisque le dessin était censé le montrer à sa place. C'est le seul endroit
+   où le rendu par la carte graphique peut laisser la page sans plan du tout.
+
+   On rend donc la main au SVG dès la perte : il n'a jamais cessé d'être tenu
+   à jour, il lui manque seulement la vue, que le dessin ne lui écrivait plus.
+   Puis le dessin remonte, sur une toile neuve — la bibliothèque ne refait pas
+   ses ressources sur un contexte rendu, et sa toile morte part avec elle.
+
+   Deux prudences. Remonter seulement quand la page est visible : un contexte
+   demandé pendant que l'onglet dort serait repris aussitôt. Et pas
+   indéfiniment : un appareil qui le reprend à chaque fois garde le SVG,
+   plutôt que de faire clignoter le plan.
+   ------------------------------------------------------------ */
+const REMONTES_WEBGL = 3;
+/* Le temps qu'il faut à la mémoire pour retomber. Redemandé dans la seconde,
+   le contexte se reperd. */
+const ATTENTE_REMONTE = 600;
+
+function poseToileWebgl(){
+  if (!GL.actif || GL.toile) return;
+  GL.toile = (GL.deck.getCanvas && GL.deck.getCanvas()) || (GL.hote && GL.hote.querySelector("canvas"));
+  if (GL.toile) GL.toile.addEventListener("webglcontextlost", perdContexteWebgl);
+}
+
+function guetteContexteWebgl(){
+  poseToileWebgl();
+  if (GL.veille) return;
+  GL.veille = true;
+  /* L'événement peut ne jamais venir : l'onglet dormait quand la carte
+     graphique lui a été reprise. Au retour, on regarde la toile nous-mêmes. */
+  document.addEventListener("visibilitychange", verifieContexteWebgl);
+  addEventListener("pageshow", verifieContexteWebgl);
+}
+
+const contextePerduWebgl = () => {
+  if (!GL.toile) return false;
+  let gl = null;
+  try { gl = GL.toile.getContext("webgl2"); } catch (e) {}
+  return !gl || gl.isContextLost();
+};
+
+function verifieContexteWebgl(){
+  if (document.visibilityState !== "visible") return;
+  if (!GL.actif){ remonteWebgl(); return; }
+  poseToileWebgl();
+  if (contextePerduWebgl()) perdContexteWebgl();
+}
+
+/** Le SVG reprend le plan, tel qu'il est : tout ce qui tenait à l'ancienne
+ *  carte graphique est jeté, couches comprises. */
+function perdContexteWebgl(){
+  if (!GL.actif) return;
+  console.warn("Rendu WebGL : contexte perdu, le plan repasse en SVG.");
+  GL.actif = false; GL.pret = false;
+  document.documentElement.classList.remove("rendu-webgl", "gl-pret", "gl-attente", "en-edition");
+  stage().classList.remove("survol-gl");
+  GL.survol = null; GL.focus = null;
+  try { GL.deck.finalize(); } catch (e) {}
+  GL.deck = null;
+  if (GL.hote) GL.hote.remove();
+  GL.hote = null; GL.toile = null;
+  GL.blocs.clear(); GL.sales.clear(); GL.groupes.clear();
+  GL.couchesLibelles = null; GL.cleLibelles = ""; GL.tout = true;
+  GL.aRemonter = true;
+  /* Le SVG ne suivait plus la vue depuis la première image du dessin, et ses
+     noms étaient éteints : il les retrouve pour la vue du moment. */
+  if (typeof appliqueVue === "function") appliqueVue();
+  if (typeof libelles === "function") libelles();
+  remonteWebgl();
+}
+
+function remonteWebgl(){
+  if (GL.actif || !GL.aRemonter || GL.attente || document.visibilityState !== "visible") return;
+  if (GL.remontes >= REMONTES_WEBGL){
+    GL.aRemonter = false; GL.abandon = true;
+    console.warn("Rendu WebGL : contexte repris trop souvent, le plan reste en SVG.");
+    return;
+  }
+  GL.remontes++;
+  GL.attente = setTimeout(() => {
+    GL.attente = 0; GL.aRemonter = false;
+    // la carte graphique peut refuser la toile suivante : le SVG garde alors le plan
+    monteWebgl();
+  }, ATTENTE_REMONTE);
 }
 
 /** La vue du plan, dite comme la bibliothèque l'attend : un centre et une
@@ -27774,7 +27881,8 @@ function modelesLibellesHtml(){
 }
 function poseModelesLibelles(){
   // ajoutés aux libellés du SVG, qui restent à l'écran jusqu'à la première image
-  $("labels").insertAdjacentHTML("beforeend", modelesLibellesHtml());
+  if (!$("labels").querySelector("[data-modele]"))
+    $("labels").insertAdjacentHTML("beforeend", modelesLibellesHtml());
   lisModelesLibelles();
 }
 function lisModelesLibelles(){
