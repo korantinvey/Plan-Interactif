@@ -547,7 +547,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 391 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 415 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -558,7 +558,7 @@ Fonctions :
 `iOSsansInstallation` 100 · `instantAbsolu` 129 · `confsARappeler` 145
 `rappelsDuParcours` 161 · `adresseDuRappel` 183 · `octetsDeCle` 195
 `abonnementCourant` 203 · `abonne` 208 · `synchroniseRappels` 234 · `eteintRappels` 257
-`allumeRappels` 272 · `aideRappel` 289 · `poseRappels` 305 · `reprendRappels` 380
+`allumeRappels` 272 · `aideRappel` 289 · `poseRappels` 305 · `reprendRappels` 404
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
@@ -753,6 +753,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260915103801_vignettes_des_logos_d_exposants.sql` — vignette_de_logo
 - `20260915113207_retrouver_une_vignette_par_son_adresse_d_origine.sql` — —
 - `20260915115829_le_rappel_avant_une_conference.sql` — rappel_de_conference, fn enregistre_rappels, fn rappels_dus, fn oublie_abonnement, fn purge_rappels
+- `20260915131103_programmer_vraiment_la_tache_des_rappels.sql` — —
 
 ## Le reste
 
