@@ -5216,6 +5216,10 @@ function indexe(d){
      cache, et de refuge si un enregistrement a échoué — celui de ce salon-ci,
      que la clé de rangement désigne maintenant. */
   ouvreConf(d);
+  /* Et les calques dessinés, rangés sous le même salon : la boucle qui suit
+     confronte la base à ce que le poste garde, et il faut que ce soit ce
+     salon-ci qu'il garde. */
+  ouvreDessins(d);
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
     // un enregistrement d'avant le cloisonnement porte les calques d'autres
@@ -9088,8 +9092,9 @@ let CONF = JSON.parse(JSON.stringify(DEFAUTS));
    masquer une gaine chez l'un la masquait chez le suivant, sans que rien ne
    l'annonce dans son panneau — et la publication emportait le mélange en
    base. Le salon ouvert nomme donc sa clé. */
-const cleConf = d => "plan-conf:" +
-  ((d && d.slug) || SLUG || (d && d.evenement) || "sans-salon");
+const salonRange = d =>
+  (d && d.slug) || SLUG || (d && d.evenement) || "sans-salon";
+const cleConf = d => "plan-conf:" + salonRange(d);
 let CLE_CONF = cleConf(null);
 
 /** Ouvre les réglages du salon qu'on vient de charger. */
@@ -12904,9 +12909,23 @@ if ($("libTaille")){
    il trace rectangles, polygones, lignes et textes. Le tracé est enregistré
    en mètres dans le repère du plan : il suit le zoom comme le reste.
    ============================================================ */
+/* Un rangement par salon, et non plus un seul pour tous — la même règle que
+   pour les réglages, et un dégât de plus.
+
+   Un pavillon se nomme ici par son identifiant Klipso, et deux éditions d'un
+   même salon se le partagent : l'édition suivante se prépare en dupliquant la
+   précédente, ses plans avec. Rangés sous ce seul nom, les calques d'une
+   édition devenaient donc ceux de la voisine — le chargement les prenait pour
+   un travail que la base n'avait pas encore vu, et l'enregistrement les y
+   écrivait. Un calque supprimé revenait ainsi au chargement d'après, republié
+   depuis le salon d'à côté ; supprimé de nouveau, il revenait encore.
+
+   Les trois rangements sont cloisonnés ensemble : séparer les dessins sans
+   séparer ce qui dit d'où ils viennent — la marque d'attente, la liste des
+   clés publiées — reviendrait à les comparer à la mémoire d'un autre salon. */
 const CLE_DESSINS = "plan-dessins";
+let cleDessins = CLE_DESSINS;
 let DESSINS = {};
-try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (e) {}
 
 /* Ce qui n'est pas encore parti en base.
    Les dessins vivent à deux endroits : la base, qui fait foi pour les
@@ -12920,8 +12939,8 @@ try { DESSINS = JSON.parse(localStorage.getItem(CLE_DESSINS) || "{}"); } catch (
    dernière publication. Ce travail-là l'emporte sur la base tant qu'il n'y est
    pas parti — lui seul n'existe nulle part ailleurs. */
 const CLE_ATTENTE = "plan-dessins-attente";
+let cleAttente = CLE_ATTENTE;
 let ATTENTE = {};
-try { ATTENTE = JSON.parse(localStorage.getItem(CLE_ATTENTE) || "{}"); } catch (e) {}
 
 /** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
 const enAttente = (id) => !!ATTENTE[id];
@@ -12940,13 +12959,83 @@ const enAttente = (id) => !!ATTENTE[id];
    qu'on y a vu et qui a disparu depuis. Un poste qui ne connaît rien n'efface
    rien, là où un « tout ce que je n'ai pas » emportait le travail d'à côté. */
 const CLE_PUBLIES = "plan-dessins-publies";
+let clePubliees = CLE_PUBLIES;
 let PUBLIES = {};
-try { PUBLIES = JSON.parse(localStorage.getItem(CLE_PUBLIES) || "{}"); } catch (e) {}
+
+/* Le témoin de l'adoption, un par salon. Il ne se déduit d'aucun des trois
+   rangements : un salon ouvert sans qu'on y dessine n'écrit ni ses calques ni
+   sa marque d'attente, et l'absence de ceux-là ne dit donc pas que l'ancien
+   rangement n'a pas encore été repris. */
+const CLE_REPRIS = "plan-dessins-repris";
+
+/** Un rangement du poste, ou rien de lisible : un stockage refusé — navigation
+ *  privée, quota plein — ne doit pas emporter le démarrage avec lui. */
+function litRange(cle){
+  try { return JSON.parse(localStorage.getItem(cle) || "{}") || {}; }
+  catch (e) { return {}; }
+}
+
+/**
+ * Ouvre les calques du salon qu'on vient de charger.
+ *
+ * Appelée avec les réglages, avant que le chargement ne confronte la base à ce
+ * que le poste garde : les trois rangements doivent être ceux de ce salon-ci
+ * au moment où la comparaison a lieu, sans quoi elle porterait sur le voisin.
+ */
+function ouvreDessins(d){
+  const s = salonRange(d);
+  cleDessins = CLE_DESSINS + ":" + s;
+  cleAttente = CLE_ATTENTE + ":" + s;
+  clePubliees = CLE_PUBLIES + ":" + s;
+  DESSINS = litRange(cleDessins);
+  ATTENTE = litRange(cleAttente);
+  PUBLIES = litRange(clePubliees);
+  reprendCommun(d, CLE_REPRIS + ":" + s);
+}
+
+/**
+ * Ce que l'ancien rangement commun gardait de ce salon.
+ *
+ * Il n'est pas jeté, à la différence de celui des réglages : un calque qui
+ * n'est jamais parti en base n'existe nulle part ailleurs que là, et un salon
+ * qu'on ne rouvrira qu'un jour prochain y a peut-être le sien. On n'y prend
+ * donc que les pavillons du salon ouvert, à sa première ouverture ; ensuite
+ * les deux rangements divergent, et c'est le nouveau qui fait foi.
+ *
+ * Deux éditions qui se partagent un pavillon le reprennent toutes les deux :
+ * rien ne dit à laquelle il appartenait. C'est le mélange d'avant, une
+ * dernière fois — et il se défait dès le premier enregistrement de chacune,
+ * chacune n'écrivant plus que dans le sien.
+ */
+function reprendCommun(d, temoin){
+  let fait = true;
+  try { fait = localStorage.getItem(temoin) !== null; } catch (e) {}
+  if (fait) return;
+  const miens = new Set(((d && d.plans) || []).map(p => p.id));
+  const prend = (cle, cible) => {
+    const vieux = litRange(cle);
+    Object.keys(vieux).forEach(id => { if (miens.has(id)) cible[id] = vieux[id]; });
+  };
+  prend(CLE_DESSINS, DESSINS);
+  prend(CLE_ATTENTE, ATTENTE);
+  prend(CLE_PUBLIES, PUBLIES);
+  /* Recopié dans le nouveau rangement sur-le-champ, et le témoin posé avec.
+     Sans la copie, l'adoption se perdrait au chargement suivant — un salon où
+     l'on ne dessine rien n'écrit rien de lui-même. Sans le témoin, elle se
+     referait à chaque fois, et rendrait chaque fois au salon les calques
+     qu'il a écartés depuis : c'est le retour qu'on vient de corriger. */
+  try {
+    localStorage.setItem(cleDessins, JSON.stringify(DESSINS));
+    localStorage.setItem(cleAttente, JSON.stringify(ATTENTE));
+    localStorage.setItem(clePubliees, JSON.stringify(PUBLIES));
+    localStorage.setItem(temoin, "1");
+  } catch (e) {}
+}
 
 /** Note ce que la base contient pour ce pavillon, à cet instant. */
 function notePubliees(id, cles){
   PUBLIES[id] = cles.slice();
-  try { localStorage.setItem(CLE_PUBLIES, JSON.stringify(PUBLIES)); } catch (e) {}
+  try { localStorage.setItem(clePubliees, JSON.stringify(PUBLIES)); } catch (e) {}
 }
 
 /** Ce calque a-t-il déjà été vu en base ? */
@@ -12958,7 +13047,7 @@ const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
    ce que la base, qui ne l'avait pas reçu, en disait. */
 function marqueAttente(id, oui){
   if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
-  try { localStorage.setItem(CLE_ATTENTE, JSON.stringify(ATTENTE)); } catch (e) {}
+  try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
   majAttente();
 }
 
@@ -12980,7 +13069,7 @@ const enregistreDessins = () => {
   /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
      dès la première forme tracée, et non au moment où l'on pense à publier. */
   marqueAttente(P().id, true);
-  try { localStorage.setItem(CLE_DESSINS, JSON.stringify(DESSINS)); }
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
   catch (e) {
     // les images sont encodées dans le document : le quota se remplit vite
     if ($("outilsAide")) $("outilsAide").textContent =
