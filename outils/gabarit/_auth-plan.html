@@ -49,7 +49,10 @@ function ecranAcces(message){
   voile.id = "acces";
   voile.innerHTML =
     '<div class="mfen" role="dialog" aria-modal="true">' +
-    '<header><h2>Administration du plan</h2></header>' +
+    /* La marque, ici et nulle part ailleurs sur cette page : derrière la
+       fenêtre, le plan est déjà celui du salon. */
+    '<header class="teteMarque"><span class="marqueE2M"><!--__MARQUE__--></span>' +
+    '<h2>Administration du plan</h2></header>' +
     '<div class="mcorps">' +
     '<p class="astuce" id="accesMsg"></p>' +
     '<label><span>Adresse du projet</span><input id="aUrl" placeholder="https://xxxx.supabase.co"></label>' +
@@ -59,7 +62,10 @@ function ecranAcces(message){
     '</div>' +
     '<footer><a class="btn" id="aPublic">Voir le plan public</a>' +
     '<a class="btn" id="aOubli" href="motdepasse">Mot de passe oublié</a>' +
-    '<button class="btn primaire" id="aOk">Se connecter</button></footer></div>';
+    /* « accent » et non « primaire » : c'est ainsi que cette page-ci
+       nomme le bouton qui porte ce pour quoi la fenêtre s'est ouverte — le
+       second nom est celui de la console, et ne peignait rien ici. */
+    '<button class="btn accent" id="aOk">Se connecter</button></footer></div>';
   document.body.appendChild(voile);
 
   $("aUrl").value = cfg.url || "";

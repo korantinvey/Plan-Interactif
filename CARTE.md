@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 3826 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 3847 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
 - l.2787 · 10. Mode administration
-- l.2878 · La fiche d'une zone organisateur
-- l.3572 · Masquer une zone organisateur
-- l.3655 · Placer un libellé à la main
+- l.2899 · La fiche d'une zone organisateur
+- l.3593 · Masquer une zone organisateur
+- l.3676 · Placer un libellé à la main
 
 Fonctions :
 
@@ -36,20 +36,20 @@ Fonctions :
 `voletPlan` 1517 · `voletAdmin` 1556 · `blocHoraires` 1719 · `sallesSituees` 1852
 `voletPmr` 1868 · `nomDuTon` 1959 · `voletApparence` 1964 · `clesFiche` 2163
 `voletOrdre` 2180 · `enregistreConf` 2736 · `rgbHex` 2743 · `hexa` 2750 · `luminance` 2754
-`ecarte` 2768 · `joli` 2783 · `retireAdmin` 2804 · `activeAdmin` 2817 · `champZone` 2904
-`champsZone` 2929 · `champSalles` 3021 · `nomDeZone` 3073 · `reduitLogo` 3107
-`champLogo` 3148 · `editeurRiche` 3245 · `memeFicheZone` 3402 · `suitFicheZone` 3409
-`verseFicheZone` 3417 · `ficheZone` 3443 · `enregistreZone` 3468
-`basculeAffichageZone` 3583 · `marqueZonesMasquees` 3600 · `ecritColonnesEvenement` 3620
-`ecritColonneEvenement` 3651 · `cleLibelle` 3676 · `empreinteLibelle` 3692
-`placementLibelle` 3700 · `posePlacement` 3710 · `libelleAutomatique` 3727
-`modePlacementLibelles` 3736 · `majPaletteLibelle` 3753 · `choisitLibelle` 3770
-`pousseLibelle` 3777 · `libellePointerDown` 3785 · `libellePointerMove` 3801
-`libellePointerUp` 3810
+`ecarte` 2768 · `joli` 2783 · `retireAdmin` 2804 · `activeAdmin` 2817 · `champZone` 2925
+`champsZone` 2950 · `champSalles` 3042 · `nomDeZone` 3094 · `reduitLogo` 3128
+`champLogo` 3169 · `editeurRiche` 3266 · `memeFicheZone` 3423 · `suitFicheZone` 3430
+`verseFicheZone` 3438 · `ficheZone` 3464 · `enregistreZone` 3489
+`basculeAffichageZone` 3604 · `marqueZonesMasquees` 3621 · `ecritColonnesEvenement` 3641
+`ecritColonneEvenement` 3672 · `cleLibelle` 3697 · `empreinteLibelle` 3713
+`placementLibelle` 3721 · `posePlacement` 3731 · `libelleAutomatique` 3748
+`modePlacementLibelles` 3757 · `majPaletteLibelle` 3774 · `choisitLibelle` 3791
+`pousseLibelle` 3798 · `libellePointerDown` 3806 · `libellePointerMove` 3822
+`libellePointerUp` 3831
 
 Éléments :
 
-`#pousseConf` · `#sauveConf` · `#restaureConf` · `#fichierConf`
+`#sauveConf` · `#restaureConf` · `#fichierConf`
 
 ### `_admin2.html` — 186 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -73,15 +73,15 @@ Fonctions :
 `aimante` 348 · `retientTaille` 362 · `reprendTaille` 376 · `dupliqueForme` 397
 `pousseForme` 422 · `ecritDimensions` 438 · `appliqueDimension` 457
 
-### `_auth-plan.html` — 209 l. → plan-admin.html
+### `_auth-plan.html` — 215 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
-`ecranAcces` 45 · `contenuDuJeton` 122 · `mailDuJeton` 129 · `litProfilA` 140
-`initialesDe` 153 · `themeSombreA` 160 · `poseCompte` 165
+`ecranAcces` 45 · `contenuDuJeton` 128 · `mailDuJeton` 135 · `litProfilA` 146
+`initialesDe` 159 · `themeSombreA` 166 · `poseCompte` 171
 
 Éléments :
 
@@ -156,7 +156,7 @@ Fonctions :
 
 `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
 
-### `_console-head.html` — 74 l. → admin-plans.html
+### `_console-head.html` — 78 l. → admin-plans.html
 
 Éléments :
 
@@ -196,9 +196,9 @@ Fonctions :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 651 l. → console.css
+### `_console.css` — 658 l. → console.css
 
-- l.592 · Page de rapport
+- l.599 · Page de rapport
 
 ### `_dessin.html` — 1922 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -282,40 +282,41 @@ Fonctions :
 `nb` 22 · `colonnesExport` 106 · `libellePeriode` 138 · `nomFichierExport` 144
 `nomFeuilleExport` 154 · `exporteExposants` 170
 
-### `_head.html` — 4290 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4425 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
-`#bandeau` · `#titre` · `#sub` · `#halls` · `#nStands` · `#nExpo` · `#nZones`
-`#btnItineraire` · `#btnParcours` · `#nParcours` · `#btnLayers` · `#btnReglages`
-`#btnLangue` · `#btnTheme` · `#menuCompte` · `#avatarCompte` · `#compteMail`
-`#btnThemeCompte` · `#btnSortir` · `#alerteEnr` · `#alerteTxt` · `#alerteAct` · `#side`
-`#poignee` · `#q` · `#videQ` · `#btnFiltres` · `#nFiltres` · `#actifs` · `#count`
-`#countTxt` · `#list` · `#piedSide` · `#btnConfidentialite` · `#stage` · `#fondCarteGL`
-`#fondTuiles` · `#fondCarte` · `#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands`
-`#labels` · `#calqueLibelles` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt`
-`#creditCarte` · `#mentionOsm` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop`
-`#calageBat` · `#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide`
-`#bornePose` · `#bornePoser` · `#calage` · `#calageFerme` · `#calageCorps` · `#calageCarte`
-`#calageEtat` · `#calageGarde` · `#outils` · `#outilsCalque` · `#renommeOutils`
-`#fermeOutils` · `#roleIti` · `#roleAide` · `#voirNappe` · `#aimants` · `#aimantPas`
-`#contourReg` · `#contourRayon` · `#contourAimant` · `#traitReg` · `#traitEpaisseur`
-`#traitStyle` · `#traitFleche` · `#texteADessiner` · `#repereType` · `#repereTexte`
-`#standSoc` · `#listeSoc` · `#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel`
-`#elemType` · `#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens`
-`#elemLiensListe` · `#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur`
-`#elemHauteur` · `#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon`
-`#elemTraitReg` · `#elemEpaisseur` · `#elemStyle` · `#elemFleche` · `#elemStand`
-`#listeStands` · `#elemSoc` · `#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom`
-`#libFerme` · `#libTaille` · `#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer`
-`#mCorps` · `#mPied` · `#panel` · `#pile` · `#voile` · `#detail` · `#poigneeFiche`
-`#dMarque` · `#closeDetail` · `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo`
-`#dBadges` · `#dCode` · `#dVis` · `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg`
-`#dOngNb` · `#dBody` · `#parcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume`
-`#pActs` · `#btnJournee` · `#btnPartage` · `#pCorps` · `#jCorps` · `#pPied`
-`#videParcours` · `#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire`
-`#iResume` · `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB`
-`#iPmr` · `#iResultat` · `#videItineraire`
+`#bandeAdmin` · `#bandeActs` · `#bandeau` · `#titre` · `#sub` · `#halls` · `#nStands`
+`#nExpo` · `#nZones` · `#btnItineraire` · `#btnParcours` · `#nParcours` · `#btnLayers`
+`#btnReglages` · `#btnLangue` · `#btnTheme` · `#menuCompte` · `#avatarCompte`
+`#compteMail` · `#btnThemeCompte` · `#btnSortir` · `#alerteEnr` · `#alerteTxt`
+`#alerteAct` · `#side` · `#poignee` · `#q` · `#videQ` · `#btnFiltres` · `#nFiltres`
+`#actifs` · `#count` · `#countTxt` · `#list` · `#piedSide` · `#btnConfidentialite`
+`#stage` · `#fondCarteGL` · `#fondTuiles` · `#fondCarte` · `#trouDuFond` · `#plan`
+`#couches` · `#zones` · `#stands` · `#labels` · `#calqueLibelles` · `#zIn` · `#zOut`
+`#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte` · `#mentionOsm` · `#poi` · `#viseur`
+`#viseurTxt` · `#viseurStop` · `#calageBat` · `#calageAngle` · `#calageQuart`
+`#calageStop` · `#calageValide` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
+`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
+`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
+`#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
+`#texteADessiner` · `#repereType` · `#repereTexte` · `#standSoc` · `#listeSoc`
+`#fichierImage` · `#choisirImage` · `#vignette` · `#elemSel` · `#elemType`
+`#elemSupprimer` · `#elemPicto` · `#elemTexte` · `#elemLiens` · `#elemLiensListe`
+`#elemLienAjout` · `#elemLienAide` · `#elemDim` · `#elemLargeur` · `#elemHauteur`
+`#elemTailleBloc` · `#elemTaille` · `#elemRayonBloc` · `#elemRayon` · `#elemTraitReg`
+`#elemEpaisseur` · `#elemStyle` · `#elemFleche` · `#elemStand` · `#listeStands` · `#elemSoc`
+`#outilsAide` · `#annuleDernier` · `#libReg` · `#libNom` · `#libFerme` · `#libTaille`
+`#libAuto` · `#libAide` · `#modale` · `#mTitre` · `#mFermer` · `#mCorps` · `#mPied`
+`#panel` · `#pile` · `#voile` · `#detail` · `#poigneeFiche` · `#dMarque` · `#closeDetail`
+`#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
+`#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
+`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee`
+`#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRefaire`
+`#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA`
+`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
+`#videItineraire`
 
 ### `_hors-ligne.html` — 47 l. → hors-ligne.html
 
@@ -466,14 +467,14 @@ Fonctions :
 `verseModale` 22 · `ouvreModale` 28 · `fermeModale` 48 · `confirme` 55 · `deplaceVers` 73
 `versExtremite` 85 · `remplitOrdre` 93 · `ouvreOrdre` 163
 
-### `_motdepasse.html` — 245 l. → motdepasse.html
+### `_motdepasse.html` — 249 l. → motdepasse.html
 
-- l.57 · Poser un mot de passe
+- l.61 · Poser un mot de passe
 
 Fonctions :
 
-`$` 73 · `CFG` 75 · `dit` 83 · `fragment` 89 · `garde` 96 · `lit` 100 · `demandeLien` 173
-`ouvreSaisie` 182
+`$` 77 · `CFG` 79 · `dit` 87 · `fragment` 93 · `garde` 100 · `lit` 104 · `demandeLien` 177
+`ouvreSaisie` 186
 
 Éléments :
 

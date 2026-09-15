@@ -8,6 +8,9 @@ module.exports = {
   "Plan du salon": "Floor plan",
   "Confidentialité": "Privacy",
   "Pavillons": "Halls",
+  // la bande de l'outil, au-dessus du bandeau du salon — même mot que le lien
+  // de la console vers cette page, et donc même traduction
+  "Administration": "Admin",
   "emplacements": "stands",
   "exposants": "exhibitors",
   "zones": "areas",

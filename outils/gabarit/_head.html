@@ -14,6 +14,17 @@
      qu'ils choisissent, et un rouge d'imprimerie disparaît sur du noir. Même
      paire que la console, pour que les deux écrans parlent du même rouge. */
   --rouge:#C2372B;
+  /* Les tons de la marque : la nuit, le cyan et le rose d'Event2Map. Ils ne
+     suivent ni le thème ni le salon — une marque qui change de couleur selon
+     l'heure ou selon le client n'en est plus une. Ils ne peignent donc que ce
+     qui appartient à l'outil : la bande d'administration, l'écran d'accès.
+     Jamais le plan, dont les couleurs sont celles du salon.
+
+     Le cyan a deux valeurs, et pour la raison qu'a déjà notée `console.css` :
+     le cyan vif est trop clair pour porter du texte sur du blanc — il ne sert
+     donc que sur un fond sombre, et le cyan profond prend sa place en thème
+     clair. */
+  --m-nuit:#071F3A; --m-cyan:#35C2FF; --m-cyan-profond:#0A6C93; --m-rose:#FF4D6D;
   /* L'accent décliné : les modèles de fiche s'en servent pour composer un
      dégradé ou un aplat sans avoir à deviner la couleur choisie. « base »
      reste l'accent tel qu'il est peint, même là où un modèle redéfinit
@@ -136,6 +147,77 @@ button{cursor:pointer;background:none;border:none}
 .iconbtn:hover{border-color:var(--line-strong);color:var(--ink)}
 .iconbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .iconbtn svg{width:15px;height:15px}
+
+/* ------------------------------------------------------------------
+   La bande d'administration
+
+   Le bandeau du dessous appartient au salon : il porte l'habillage que
+   l'exploitant a choisi, et son rôle est de lui montrer ce que verront ses
+   visiteurs. Les commandes de l'outil — calques, réglages, compte,
+   enregistrement — s'y habillaient pourtant comme le reste, et la marque du
+   produit n'aurait pu s'y poser sans déguiser le salon en Event2Map. Elles
+   remontent donc dans une bande à elles, dans la nuit de la marque, d'où l'on
+   voit aussi d'un coup d'œil qu'on édite au lieu de regarder.
+
+   Elle redéfinit les jetons de surface pour son propre compte plutôt que de
+   repeindre chaque bouton : le bouton d'icône, l'avatar du compte et celui de
+   l'enregistrement sont ceux de partout ailleurs, et suivent. L'accent y est
+   le cyan de la marque et non celui du salon — c'est la seule bande de
+   l'écran qui ne parle pas du salon.
+   ------------------------------------------------------------------ */
+.bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:10px;
+  padding:5px 18px;min-height:40px;background:var(--m-nuit);color:var(--ink);
+  --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
+  --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
+  --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
+  --rouge:var(--m-rose)}
+/* La bande prend un rang de la grille, et seulement quand elle existe. */
+html.mode-admin .app{grid-template-rows:auto auto 1fr}
+.bandeMarque{flex:0 0 auto;width:26px;height:26px;display:block}
+.bandeMarque svg{width:100%;height:100%;display:block}
+.bandeNom{font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
+.bandeActs{margin-left:auto;display:flex;align-items:center;gap:8px}
+/* Au pied du panneau, le bouton d'enregistrement prenait toute la largeur ;
+   ici il se mesure à son texte. */
+.bandeAdmin .reset.fort{width:auto;padding:5px 12px;font-size:12.5px}
+/* Du blanc sur le cyan vif ne fait que 1,9 pour 1 ; la nuit y fait 9,3. */
+.bandeAdmin .iconbtn[aria-pressed="true"]{color:var(--accent-ink)}
+
+/* ------------------------------------------------------------------
+   Les gris de l'outil
+
+   Le plan garde les siens, greiges : ce sont ceux du visiteur, et l'exploitant
+   qui travaille doit les voir tels qu'ils seront. Mais ce qui n'existe qu'en
+   administration n'a personne à qui ressembler — le panneau des calques, la
+   boîte à dessin, la palette des libellés et les fenêtres que `GENRES_OUTIL`
+   tient déjà à l'écart de l'habillage du salon. Ces surfaces passent aux gris
+   bleutés de la marque, ceux de la console : les deux écrans de l'outil
+   parlent enfin du même gris.
+
+   Les jetons sont redéfinis sur ces blocs, et non sur la racine : les règles
+   qui les peignent n'ont pas à savoir qu'elles ont changé de côté, et rien de
+   ce qui vit ailleurs n'est touché. L'accent n'en fait pas partie — il
+   appartient au salon.
+   ------------------------------------------------------------------ */
+html.mode-admin :is(#panel,#outils,#libReg),
+html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+  --surface:#FFFFFF;--surface-2:#F4F8FB;
+  --line:#D2DFEA;--line-strong:#AFC2D3;
+  --ink:#071F3A;--ink-2:#3C5670;--ink-3:#54708C}
+@media (prefers-color-scheme: dark){
+  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg),
+  html.mode-admin:not([data-theme="light"]) .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+    --surface:#0A1E33;--surface-2:#102941;
+    --line:#1E3C58;--line-strong:#325975;
+    --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
+}
+html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg),
+html.mode-admin[data-theme="dark"] .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
+  --surface:#0A1E33;--surface-2:#102941;
+  --line:#1E3C58;--line-strong:#325975;
+  --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
+
 /* Un texte écrit dans les deux langues ne montre que celui de la page. */
 html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
 
@@ -3246,6 +3328,33 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen .detail-hd h2{font-size:var(--titre)}
 .mfen header button{color:var(--ink-3);font-size:18px;line-height:1;padding:2px 4px}
 .mfen header button:hover{color:var(--ink)}
+/* L'écran d'accès porte la marque, et il est le seul de cette page à le faire :
+   c'est le moment où l'on s'adresse à l'exploitant, avant que le plan derrière
+   ne redevienne celui de son salon. Le titre vient contre elle plutôt qu'à
+   l'autre bout de la fenêtre. */
+.mfen header.teteMarque{justify-content:flex-start;gap:10px}
+.marqueE2M{flex:0 0 auto;width:28px;height:28px;display:block}
+.marqueE2M svg{width:100%;height:100%;display:block}
+/* L'accent de cet écran est celui de la marque et non celui du salon : on n'a
+   pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
+   connecte. */
+#acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
+@media (prefers-color-scheme: dark){
+  html:not([data-theme="light"]) #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
+    --accent-ink:var(--m-nuit)}
+}
+html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
+  --accent-ink:var(--m-nuit)}
+/* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
+   savent se tenir : faute de règle ici, l'intitulé et son champ se suivaient
+   sur la même ligne et se chevauchaient — sur le premier écran que voit un
+   exploitant. */
+#acces .astuce{margin:0 0 4px;font-size:12.5px;color:var(--ink-3)}
+#acces label{display:flex;flex-direction:column;gap:4px;margin-top:11px}
+#acces label span{font-size:12.5px;color:var(--ink-2)}
+#acces input{width:100%;padding:8px 10px;background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius)}
+#acces input:focus{border-color:var(--accent);outline:none}
 .mcorps{padding:12px 14px;overflow-y:auto;flex:1}
 .mcorps p{margin:0 0 4px;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .mfen footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 18px 16px;
@@ -3255,6 +3364,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .mfen footer .btn.accent{background:var(--accent);border-color:var(--accent);
   color:var(--accent-ink)}
 .mfen footer .btn.accent:hover{filter:brightness(1.08)}
+/* Un lien déguisé en bouton reste un bouton : souligné, il trahissait le
+   déguisement au pied de l'écran d'accès. */
+.mfen footer a.btn{text-decoration:none;color:var(--ink)}
 .mfen footer .btn.danger{background:#C2372B;border-color:#C2372B;color:#fff}
 .mfen footer .btn.danger:hover{filter:brightness(1.1)}
 /* Un bouton qui détruit et qu'on n'a pas encore le droit de cliquer. Il reste
@@ -3429,26 +3541,32 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   padding-top:10px;border-top:1px solid var(--line)}
 .panel .reset{font-size:12px;color:var(--ink-3);text-decoration:underline}
 /* Publier n'est pas un réglage parmi d'autres : c'est le geste qui rend le
-   travail visible aux visiteurs. Il se distingue des liens qui l'entourent. */
-.panel .reset.fort{display:block;width:100%;padding:7px 10px;
-  text-decoration:none;text-align:center;color:#fff;background:var(--accent);
+   travail visible aux visiteurs. Il se distingue des liens qui l'entourent.
+
+   Le bouton vit maintenant dans la bande d'administration et non plus au pied
+   du panneau : les règles valent pour les deux, le temps qu'une fenêtre
+   d'ancienne configuration en laisse encore un derrière elle. L'encre est le
+   jeton et non un blanc en dur — sur l'accent jaune d'un salon, du blanc ne
+   faisait que 1,9 pour 1. */
+:is(.panel,.bandeAdmin) .reset.fort{display:block;width:100%;padding:7px 10px;
+  text-decoration:none;text-align:center;color:var(--accent-ink);background:var(--accent);
   border-radius:var(--radius);font-weight:500}
-.panel .reset.fort:hover{opacity:.9;color:#fff}
+:is(.panel,.bandeAdmin) .reset.fort:hover{opacity:.9;color:var(--accent-ink)}
 .panel .reset:hover{color:var(--ink)}
 /* L'enregistrement se fait tout seul : le bouton en rend compte plus qu'il ne
    commande, et se tait dès qu'il n'y a plus rien à dire. Un aplat d'accent y
    réclamerait un clic qui n'a plus lieu d'être — il ne le garde donc que le
    temps d'un envoi qui attend son tour. */
-.panel .reset.fort[data-etat="envoi"],
-.panel .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"],
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]{background:var(--surface-2);color:var(--ink-3);
   font-weight:400}
-.panel .reset.fort[data-etat="envoi"]:hover,
-.panel .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"]:hover,
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
 /* Un échec doit se voir sans pour autant crier : le rouge du thème sombre est
    trop clair pour porter du blanc, il passe donc au trait et au texte. */
-.panel .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
   box-shadow:inset 0 0 0 1px var(--rouge)}
-.panel .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
+:is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
 
 .voile{position:fixed;inset:0;background:rgba(8,10,12,.55);z-index:14;
   opacity:0;pointer-events:none;transition:opacity .2s;display:none}
@@ -3478,6 +3596,14 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .halls{flex:1 1 0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
   .halls::-webkit-scrollbar{display:none}
   .stats,.brand .sub{display:none}
+  /* La bande de l'outil garde sa marque et ses commandes ; le mot
+     « Administration » cède la place — la nuit et la marque le disent déjà. */
+  .bandeAdmin{padding:4px 12px;min-height:36px;gap:8px}
+  .bandeNom{display:none}
+  /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
+     le bouton cède du texte plutôt que de pousser les autres hors de l'écran. */
+  .bandeAdmin .reset.fort{max-width:46vw;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap}
 
   /* Le plan est ce qu'on vient voir : il prend toute la hauteur restante, et
      la liste se replie en tiroir posé par-dessus. Elle occupait auparavant une
@@ -3835,6 +3961,15 @@ html.tuto-retrait .dcal .forme{opacity:.22}
 </style>
 
 <div class="app">
+  <!-- La bande de l'outil, au-dessus de celle du salon. Elle ne paraît qu'une
+       fois l'identité vérifiée — `activeAdmin` y range les commandes
+       d'édition — et la page publique la retire du document. -->
+  <div class="bandeAdmin" id="bandeAdmin" hidden>
+    <span class="bandeMarque"><!--__MARQUE_NU__--></span>
+    <span class="bandeNom">Administration</span>
+    <div class="bandeActs" id="bandeActs"></div>
+  </div>
+
   <header class="topbar" id="bandeau">
     <div class="brand">
       <!-- Le nom de l'événement n'arrive qu'avec les données : écrire ici
