@@ -390,7 +390,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4138 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4157 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.390 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -399,9 +399,9 @@ Fonctions :
 - l.717 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.1796 · 6. Vue
 - l.2177 · 7. Sélection et fiche
-- l.3467 · 8. Interactions du plan
-- l.3808 · Le tiroir de la liste — écrans étroits
-- l.3971 · Le tiroir de la fiche — écrans étroits
+- l.3462 · 8. Interactions du plan
+- l.3827 · Le tiroir de la liste — écrans étroits
+- l.3990 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -437,8 +437,8 @@ Fonctions :
 `assainitRiche` 2827 · `enBlocs` 2867 · `rangeRiche` 2880 · `ecarteClicFantome` 2908
 `nomSociete` 2917 · `societes` 2930 · `choisitExposant` 2941 · `poseMarque` 2979
 `montreMarque` 3039 · `poseCode` 3062 · `rangeMarque` 3103 · `ouvre` 3166 · `ferme` 3434
-`onglet` 3457 · `milieu` 3487 · `commencePince` 3493 · `suitPince` 3507 · `saisitPlan` 3541
-`cibleElargie` 3617 · `mesureTiroir` 3819 · `montreTiroir` 3822
+`onglet` 3452 · `milieu` 3482 · `commencePince` 3488 · `suitPince` 3502 · `saisitPlan` 3536
+`cibleElargie` 3612 · `planifieFiltre` 3783 · `mesureTiroir` 3838 · `montreTiroir` 3841
 
 Éléments :
 
