@@ -67,6 +67,8 @@ module.exports = {
   "Quand": "When",
   "Où": "Where",
   "Organisée par": "Hosted by",
+  "Intervenants": "Speakers",
+  "Animée par": "Moderated by",
   "Thématique": "Theme",
   "Présentation": "Presentation",
   "Situer sur le plan": "Show on map",

@@ -161,13 +161,33 @@ export interface ExposantConfEm {
   nom: string | null;
 }
 
-/* On ne demande au graphe que les exposants : les intervenants et les
-   animateurs y sont aussi, mais sans stand, donc sans place sur le plan. */
+/**
+ * Une personne que le programme cite sans lui connaître de stand : celle qui
+ * parle, celle qui anime. Elle ne désigne rien sur le plan — la fiche la nomme,
+ * et c'est tout ce qu'on lui demande.
+ *
+ * Le graphe rend `name` d'un bloc, « Prénom NOM » : il n'expose ni prénom ni
+ * patronyme à part. On le garde tel quel, n'ayant pas à trier des personnes.
+ */
+export interface IntervenantEm {
+  nom: string;
+  societe: string | null;
+  fonction: string | null;
+}
+
+/* Les trois rôles que le graphe range sous une session. Seuls les exposants
+   se posent sur le plan ; les deux autres ne coûtent pourtant rien de plus —
+   c'est la même page de la même requête, et eux n'ont aucune fiche à relire. */
 const REQUETE_PROGRAMME = `query Programme($eventId: ID!, $id: ID!, $cursor: String) {
   publicViewer(eventId: $eventId) {
     program(id: $id) {
       sessions(after: $cursor) {
-        edges { node { id exhibitors { id name companyName } } }
+        edges { node {
+          id
+          exhibitors { id name companyName }
+          speakers   { id name companyName position }
+          moderators { id name companyName position }
+        } }
         pageInfo { endCursor hasNextPage }
       }
     }
@@ -564,19 +584,25 @@ export class Eventmaker {
   }
 
   /**
-   * Les exposants qui tiennent une conférence, par identifiant de session.
+   * Qui tient une conférence, par identifiant de session.
    *
    * Le graphe range sous chaque session trois rôles — intervenants, animateurs,
-   * exposants. Seul le troisième nous intéresse : c'est le seul dont les fiches
-   * portent un numéro de stand, et donc le seul qui se pose sur le plan. Les
-   * deux autres nomment des conférenciers, qui n'ont pas de stand à eux.
+   * exposants — et les trois viennent du même appel. Seul le troisième se pose
+   * sur le plan : c'est le seul dont les fiches portent un numéro de stand, et
+   * il se paie d'une relecture REST par personne citée. Les deux autres nomment
+   * des conférenciers, qui n'ont pas de stand à eux ; le graphe dit d'eux tout
+   * ce que la fiche affichera, si bien qu'ils ne coûtent rien de plus.
    *
    * Le dossier n'est pas dans le graphe : l'exposant y vient avec l'identifiant
    * de sa fiche d'invité, qu'on relit en REST. Une fiche par exposant cité,
    * soit une cinquantaine sur un salon comme Franchise Expo — et rien du tout
    * sur un salon qui laisse le rôle vide, ce qui est fréquent.
    */
-  async exposantsParConference(id: string): Promise<Map<string, ExposantConfEm[]>> {
+  async rolesParConference(id: string): Promise<{
+    exposants: Map<string, ExposantConfEm[]>;
+    intervenants: Map<string, IntervenantEm[]>;
+    animateurs: Map<string, IntervenantEm[]>;
+  }> {
     const programmes = await this.json<Record<string, any>[]>(
       `/events/${id}/programs.json`,
       { per_page: PAR_PAGE, page: 1 },
@@ -585,6 +611,32 @@ export class Eventmaker {
     /* Un salon range souvent ses sessions dans plusieurs programmes — un
        complet, des thématiques qui y puisent : on dédoublonne par session. */
     const citesParSession = new Map<string, Map<string, string | null>>();
+    const parlent = new Map<string, Map<string, IntervenantEm>>();
+    const animent = new Map<string, Map<string, IntervenantEm>>();
+
+    /* Indexé par fiche, pour la même raison : une session que deux programmes
+       portent citerait deux fois les mêmes personnes. */
+    const retiens = (
+      table: Map<string, Map<string, IntervenantEm>>,
+      session: string,
+      cites: Record<string, unknown>[] | undefined,
+    ) => {
+      if (!cites?.length) return;
+      const m = table.get(session) ?? new Map<string, IntervenantEm>();
+      for (const g of cites) {
+        const nom = ou(g.name);
+        // sans nom, il n'y a rien à afficher — et l'afficher est tout l'usage
+        if (nom) {
+          m.set(String(g.id), {
+            nom,
+            societe: ou(g.companyName),
+            fonction: ou(g.position),
+          });
+        }
+      }
+      if (m.size) table.set(session, m);
+    };
+
     for (const p of programmes) {
       for (let curseur: string | null = null;;) {
         const r = await grapheJson(REQUETE_PROGRAMME, {
@@ -596,16 +648,28 @@ export class Eventmaker {
         // un programme peut être vide, ou refusé : ce n'est pas une panne
         if (!bloc) break;
         for (const { node } of bloc.edges ?? []) {
-          if (!node?.exhibitors?.length) continue;
-          const cites = citesParSession.get(String(node.id)) ?? new Map();
+          if (!node) continue;
+          const session = String(node.id);
+          retiens(parlent, session, node.speakers);
+          retiens(animent, session, node.moderators);
+          if (!node.exhibitors?.length) continue;
+          const cites = citesParSession.get(session) ?? new Map();
           for (const g of node.exhibitors) cites.set(String(g.id), g.companyName ?? g.name ?? null);
-          citesParSession.set(String(node.id), cites);
+          citesParSession.set(session, cites);
         }
         if (!bloc.pageInfo?.hasNextPage) break;
         curseur = bloc.pageInfo.endCursor;
       }
     }
-    if (!citesParSession.size) return new Map();
+    const listes = (t: Map<string, Map<string, IntervenantEm>>) =>
+      new Map<string, IntervenantEm[]>(
+        [...t].map(([session, m]) => [session, [...m.values()]] as [string, IntervenantEm[]]),
+      );
+    const intervenants = listes(parlent), animateurs = listes(animent);
+    /* Un salon nomme souvent ses conférenciers sans jamais renseigner le rôle
+       « Exposants » : on rend alors ce qu'on a, et on s'épargne des relectures
+       REST qui n'ont plus d'objet. */
+    if (!citesParSession.size) return { exposants: new Map(), intervenants, animateurs };
 
     /* Une fiche par exposant cité, quel que soit le nombre de sessions qu'il
        tient. On ne filtre pas sur l'inscription : ce qu'on publie ici désigne
@@ -634,7 +698,7 @@ export class Eventmaker {
       }
       if (l.length) out.set(session, l);
     }
-    return out;
+    return { exposants: out, intervenants, animateurs };
   }
 
   /**

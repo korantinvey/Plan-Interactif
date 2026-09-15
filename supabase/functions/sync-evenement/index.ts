@@ -20,7 +20,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { Gaia, egal } from "../_partage/gaia.ts";
 import {
   Eventmaker, cleStand, codeSalle,
-  type ExposantEm, type ConferenceEm, type ExposantConfEm,
+  type ExposantEm, type ConferenceEm, type ExposantConfEm, type IntervenantEm,
 } from "../_partage/eventmaker.ts";
 import {
   CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
@@ -800,6 +800,8 @@ Deno.serve(async (req) => {
          une fois, on les rattachera pavillon par pavillon. */
       let confEm: ConferenceEm[] | null = null;
       let exposantsConf = new Map<string, ExposantConfEm[]>();
+      let intervenantsConf = new Map<string, IntervenantEm[]>();
+      let animateursConf = new Map<string, IntervenantEm[]>();
       const sallesConf: Record<string, any> = JSON.parse(JSON.stringify(evt.salles ?? {}));
       if (fournisseur(evt, "conferences") === "eventmaker") {
         etape("conferences", "encours");
@@ -822,13 +824,17 @@ Deno.serve(async (req) => {
            rattachement n'est donc pas une anomalie, et ne doit pas faire
            échouer une synchronisation par ailleurs bonne. */
         try {
-          exposantsConf = await em.exposantsParConference(idEm);
+          const roles = await em.rolesParConference(idEm);
+          exposantsConf = roles.exposants;
+          intervenantsConf = roles.intervenants;
+          animateursConf = roles.animateurs;
         } catch (e) {
           console.error("rattachement des exposants aux conférences :", e);
         }
         chiffres({
           "Conférences": confEm.length,
           ...(exposantsConf.size ? { "Conférences tenues par un exposant": exposantsConf.size } : {}),
+          ...(intervenantsConf.size ? { "Conférences avec intervenants": intervenantsConf.size } : {}),
         });
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
@@ -1282,6 +1288,11 @@ Deno.serve(async (req) => {
             /* On ne garde d'un exposant que le stand qu'il occupe ici : sur un
                autre pavillon, la même conférence citera l'autre stand. */
             const cites = exposantsConf.get(c.id) ?? [];
+            /* Eux ne tiennent pas de stand : rien à filtrer par pavillon, la
+               même liste part avec la conférence partout où elle est remontée
+               — comme son titre ou sa salle. */
+            const intervenants = intervenantsConf.get(c.id) ?? [];
+            const animateurs = animateursConf.get(c.id) ?? [];
             const expos = cites
               .map((e) => ({ stand: parDossier.get(e.dossier), nom: e.nom }))
               .filter((e): e is { stand: string; nom: string | null } => Boolean(e.stand));
@@ -1296,6 +1307,10 @@ Deno.serve(async (req) => {
                 salle: c.salle, type: c.type, couleur: c.couleur, theme: c.theme,
                 zone: sienne ? fiche.zone : null,
                 exposants: expos,
+                // un salon sur deux ne renseigne aucun de ces deux rôles : la
+                // clé ne descend pas plutôt que de partir vide sur tout un salon
+                ...(intervenants.length ? { intervenants } : {}),
+                ...(animateurs.length ? { animateurs } : {}),
               });
             }
           }
