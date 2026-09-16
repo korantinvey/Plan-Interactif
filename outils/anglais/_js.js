@@ -69,6 +69,7 @@ module.exports = {
   "Organisée par": "Hosted by",
   "Intervenants": "Speakers",
   "Animée par": "Moderated by",
+  "animation": "moderator",
   "Thématique": "Theme",
   "Présentation": "Presentation",
   "Situer sur le plan": "Show on map",

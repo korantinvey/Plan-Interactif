@@ -1434,12 +1434,15 @@ button.expo:hover{background:var(--line)}
 /* Un stand hors du plan se lit, mais ne mène nulle part : rien ne doit le
    faire passer pour un bouton. */
 .expo.statique{background:none;padding:0}
-/* Qui parle, et qui anime. Ni l'un ni l'autre ne tient de stand : il n'y a
-   rien à suivre, donc pas de bouton — un nom, et sous lui ce qui le situe. */
-.gens{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
-.gens li{display:flex;flex-direction:column;gap:1px}
-.gens .n{font-size:13px;line-height:1.35;color:var(--ink);overflow-wrap:anywhere}
-.gens .q{font-size:11.5px;line-height:1.3;color:var(--ink-2);overflow-wrap:anywhere}
+/* Qui parle, et qui anime : le rang d'un exposant, en plus sobre. Ce qu'ils
+   portent au bout n'est pas un code d'emplacement mais une enseigne — elle se
+   lit donc dans la police du texte, non dans celle des numéros, et se borne en
+   largeur pour qu'un nom de société long ne comprime pas celui de la personne. */
+.gens{gap:3px}
+.gens .c{font-family:inherit;font-size:11.5px;text-align:right;
+  max-width:52%;overflow-wrap:anywhere}
+/* Qui anime plutôt que d'intervenir, dit au passage : une nuance, pas un titre. */
+.gens .r{font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
