@@ -345,20 +345,23 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 519 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 754 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 50 · `invitationVoulue` 51 · `auDoigt` 76 · `nommeApplication` 104
-`reponsesInstallation` 118 · `retientInstallation` 123 · `jourInstallation` 132
-`invitationEcartee` 135 · `refuseInstallation` 141 · `faconInstallation` 169
-`relanceInvitation` 187 · `gesteInstallation` 192 · `doigtPose` 196 · `doigtLeve` 197
-`vueInstallation` 200 · `accueilleInvitation` 209 · `invitationRetenue` 228
-`finInvitation` 246 · `essaieInvitation` 265 · `teteInvitation` 355
-`retourAuxReglages` 370 · `remplitInvitation` 378 · `ouvreInvitation` 408
-`ouvreInstalle` 458 · `confirmeInstallation` 474 · `caseInstallation` 492
+`reglageInstallation` 76 · `invitationVoulue` 77 · `auDoigt` 107 · `nommeApplication` 135
+`reponsesInstallation` 149 · `retientInstallation` 154 · `jourInstallation` 163
+`invitationEcartee` 166 · `refuseInstallation` 172 · `faconInstallation` 200
+`appliInstallee` 223 · `verifieApplication` 242 · `adresseApplication` 261
+`lanceApplication` 282 · `rappelEcarte` 299 · `refuseRappel` 305 · `relanceInvitation` 323
+`gesteInstallation` 328 · `doigtPose` 332 · `doigtLeve` 333 · `vueInstallation` 336
+`accueilleInvitation` 345 · `invitationRetenue` 371 · `finInvitation` 389
+`essaieInvitation` 413 · `teteInvitation` 523 · `retourAuxReglages` 538
+`remplitInvitation` 546 · `ouvreInvitation` 576 · `ouvreInstalle` 626
+`confirmeInstallation` 642 · `ouvreRappel` 666 · `ouvreRetrouve` 701
+`caseInstallation` 724
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -782,8 +785,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 597 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 84 · `amontPour` 93 · `cleDe` 101 · `cleDeLot` 107 · `cleVersion` 119 `rangeLaVersion` 122 · `ditVersion` 130 · `meta` 139 · `gardable` 155 · `range` 161 `rafraichit` 168 · `entete` 203 · `oublie` 245 · `rappels` 330 · `nomDuSalon` 383 `manifeste` 430 · `mesure` 467
+- `src/index.mjs` — 608 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 84 · `amontPour` 93 · `cleDe` 101 · `cleDeLot` 107 · `cleVersion` 119 `rangeLaVersion` 122 · `ditVersion` 130 · `meta` 139 · `gardable` 155 · `range` 161 `rafraichit` 168 · `entete` 203 · `oublie` 245 · `rappels` 330 · `nomDuSalon` 383 `manifeste` 430 · `mesure` 478
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

@@ -35,10 +35,25 @@ module.exports = {
     "Open it from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
   "Compris": "OK",
 
+  // le rappel, l'application installée et le plan lu dans le navigateur
+  "L'application est installée": "The app is installed",
+  "Déjà sur votre écran d'accueil": "Already on your home screen",
+  "Vous lisez le plan dans le navigateur. Ouvert depuis l'application, il s'affiche en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
+    "You are reading the map in the browser. Opened from the app, it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
+  "Rester ici": "Stay here",
+  "Ouvrir l'application": "Open the app",
+
+  // le bouton n'a rien ouvert
+  "Ouvrez-la depuis son icône": "Open it from its icon",
+  "Sur votre écran d'accueil": "On your home screen",
+  "Le navigateur n'a pas pu passer la main. Touchez cette icône sur votre écran d'accueil : le plan s'y ouvre en plein écran, et reste consultable même sans réseau.":
+    "The browser could not hand over. Tap this icon on your home screen: the map opens full screen there, and stays available even without a signal.",
+
   // la case des réglages
   "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
-  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une fois par jour au plus, et plus du tout après deux refus. Aperçu :":
-    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. At most once a day, and never again after two refusals. Preview:",
+  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Le plan déjà installé, une autre propose d'y passer, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu :":
+    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Where the map is already installed, another offers to switch to it, ten seconds in. At most once a day each, and never again after two refusals. Preview:",
   "Android": "Android",
   "une fois installé": "once installed",
+  "déjà installée": "already installed",
 };

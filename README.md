@@ -1471,12 +1471,12 @@ aurait le plus besoin, celui qui a photographié un code à l'entrée et
 découvrira au fond du hall que la barre est tombée à zéro, est justement celui
 qui n'ira pas l'y chercher.
 
-Une fenêtre peut donc le lui proposer. Elle se règle dans l'onglet « Plan » des
+Une fenêtre peut donc le lui proposer. Elle se règle dans l'onglet « Admin » des
 réglages — « Inviter les visiteurs à installer le plan » — et part aux
-visiteurs avec la publication, comme tout réglage. La case porte deux aperçus,
-Android et iPhone : l'organisateur règle son salon depuis un ordinateur, où la
-fenêtre ne paraîtra jamais. Elle est **décochée par défaut** : une fenêtre qui
-interrompt ne s'ajoute pas d'elle-même à un salon déjà en ligne.
+visiteurs avec la publication, comme tout réglage. La case porte ses aperçus :
+l'organisateur règle son salon depuis un ordinateur, où la fenêtre ne paraîtra
+jamais. Elle est **décochée par défaut** : une fenêtre qui interrompt ne
+s'ajoute pas d'elle-même à un salon déjà en ligne.
 
 Elle interrompt, et ce sont ses conditions qui en font une proposition plutôt
 qu'une réclame. Toutes doivent tenir :
@@ -1506,13 +1506,14 @@ qu'une réclame. Toutes doivent tenir :
 
 **Une fois installé**, une seconde fenêtre dit où le retrouver : sur l'écran
 d'accueil, sous le nom « Plan » — que rien ne relie au nom du salon qu'on vient
-de lire. Elle ne peut pas l'ouvrir à la place du visiteur : aucun lien ni aucune
-API ne passent de l'onglet à l'application installée, sur Android comme sur iOS.
-Seul Chromium annonce l'installation (`appinstalled`), qu'elle soit partie de la
-fenêtre ou du menu du navigateur ; la confirmation attend que la fenêtre
-d'installation du système se soit retirée, une minute au plus. Sur iOS la page
-n'en sait rien, et les trois gestes décrits disaient déjà où regarder. La case
-des réglages en porte un troisième aperçu, « une fois installé ».
+de lire. Elle ne l'ouvre pas à la place du visiteur : ni lien ni interface ne
+passent de l'onglet à l'application, et ce que le système sait faire malgré
+tout est l'objet de la section suivante. Seul Chromium annonce l'installation
+(`appinstalled`), qu'elle soit partie de la fenêtre ou du menu du navigateur ;
+la confirmation attend que la fenêtre d'installation du système se soit
+retirée, une minute au plus. Sur iOS la page n'en sait rien, et les trois
+gestes décrits disaient déjà où regarder. La case des réglages en porte un
+troisième aperçu, « une fois installé ».
 
 Fermer sans répondre — la croix, le voile, « Échap » — vaut « Plus tard ». Les
 réponses restent sur l'appareil, rangées sous le nom du salon : chaque salon est
@@ -1527,6 +1528,49 @@ bandeau que Chrome aurait posé en bas de l'écran. L'appareil garde donc ce que
 le salon voulait à la visite précédente : réglage éteint, le bandeau du
 navigateur reste tel quel ; sans visite précédente, l'événement est retenu, et
 le bandeau attend au pire une visite de plus.
+
+### Rappeler l'application à qui reste dans le navigateur
+
+Installer n'est pas utiliser. Le visiteur qui a l'application revient souvent
+par le navigateur sans y penser : un lien suivi depuis un message, un code relu
+à l'entrée, un onglet resté ouvert de la veille. Le plan s'ouvre alors dans un
+onglet parmi d'autres, barres comprises, et tombera avec le réseau — tout ce
+que l'installation devait éviter.
+
+Une fenêtre le lui dit **dix secondes après que le plan est à l'écran**, et lui
+propose d'y passer d'un bouton. Elle suit la même case que l'invitation, les
+mêmes garde-fous — jamais par-dessus une fiche ouverte, un doigt posé, une
+saisie — et la même discipline : une fois par jour au plus, plus rien après
+deux refus. Elle a ses compteurs à elle : avoir écarté l'une ne tait pas
+l'autre, et une installation les remet à zéro.
+
+Deux conditions de plus la rendent sincère.
+
+**Savoir qu'elle est installée.** Le plan retient l'installation qu'il a vue
+passer, mais une mémoire ne se corrige pas d'elle-même : l'application retirée
+le lendemain, il inviterait à ouvrir une icône qui n'est plus là.
+`getInstalledRelatedApps()` répond pour de bon — c'est à cela que sert le
+`related_applications` où l'application se nomme elle-même dans son manifeste,
+sous l'adresse exacte d'où elle a été posée, que le Worker écrit avec le reste.
+Son démenti n'est cru qu'après un aveu : cette adresse n'est pas toujours celle
+que la page demande, et une liste vide dirait sinon « retirée » d'une
+application bien présente.
+
+**Savoir l'ouvrir.** Une adresse ordinaire n'y suffit pas : elle reste dans
+l'onglet, un navigateur ne se dessaisissant jamais d'un site qu'il sait
+afficher. Sur Android, le raccourci qu'y pose Chromium est un vrai paquet, que
+le système enregistre parmi ceux qui ouvrent les adresses du site : une adresse
+`intent://` s'adresse à lui par-dessus le navigateur, et l'application s'ouvre.
+Sans nom de paquet — Chromium le fabrique sous un nom haché — et sans adresse
+de repli : sans preneur, l'intention retombe et il ne se passe rien, ce qui
+vaut mieux qu'un plan rechargé sous les yeux du visiteur. Le silence se lit une
+seconde et demie plus tard, à la page toujours là, et une dernière fenêtre dit
+alors où est l'icône — puis le bouton n'est plus proposé sur cet appareil.
+
+iOS n'a rien de tel, ni pour ouvrir l'application ni même pour savoir qu'elle
+existe : la fenêtre s'y tait, et les trois gestes de l'invitation disaient déjà
+où regarder. La case des réglages porte un quatrième aperçu, « déjà installée »,
+qui enchaîne les deux fenêtres.
 
 ## Le rapport d'utilisation
 
