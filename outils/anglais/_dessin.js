@@ -51,6 +51,14 @@ module.exports = {
   "{aide} ({n} point)": "{aide} ({n} point)",
   "Un clic simple repose {largeur} × {hauteur} m.": "A single click places {largeur} × {hauteur} m again.",
   "« {exposant} » matérialisé. Choisissez l'exposant suivant.": "“{exposant}” drawn. Choose the next exhibitor.",
+  /* Et ce que dit une image posée : à qui elle mène, ou qu'elle ne mène nulle
+     part — la seule chose que le plan ne montre pas d'elle. */
+  "Image posée sur « {exposant} » : la toucher ouvrira sa fiche.":
+    "Image placed on “{exposant}”: touching it will open their details.",
+  "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela.":
+    "Image placed. It opens no details: name an exhibitor for that.",
+  // et, là où le salon n'a pas pris le rattachement, sans renvoyer à un champ absent
+  "Image posée.": "Image placed.",
   "Dessin": "Drawing",
 
   // le rôle du calque dans les itinéraires

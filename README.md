@@ -819,6 +819,42 @@ et le dit ainsi qu'elle attend son exposant. Il en va de même quand la
 synchronisation retire la société qu'elle désignait : on ne se rabat pas sur le
 titulaire, ce serait donner à une enseigne la place d'une autre.
 
+### Poser le logo d'un exposant sur son stand
+
+L'outil **Image** dépose une image sur le plan — un logo, une affiche, un plan
+d'aménagement — et la réduit en data-URI avec le reste du dessin : une page
+publiée ne charge aucune ressource externe, et un lien vers un fichier ailleurs
+meurt le jour où l'ailleurs change.
+
+Son champ demande un **exposant**, comme celui de l'outil Stand, à une
+différence près : il est facultatif. Un stand dessiné n'existe que par la
+société qu'il désigne ; une image existe d'abord pour ce qu'elle montre. Nommé,
+l'exposant fait de l'image une porte — la toucher ouvre sa fiche, celle de
+l'enseigne désignée et non le choix entre les deux quand le stand est partagé,
+puisque la liste mêle titulaires et hébergés comme celle de l'outil Stand.
+Laissé vide, l'image reste un dessin et laisse passer le clic vers ce qui est
+dessous : un plan d'aménagement posé sur un hall n'a pas à empêcher d'ouvrir les
+stands qu'il recouvre.
+
+Le nom saisi vaut pour toutes les images posées ensuite, comme la vignette
+choisie : on aligne souvent plusieurs logos sur le même stand partagé. Et le
+rattachement se change après coup dans le panneau de la forme choisie, au même
+champ que celui d'un stand dessiné — les deux formes se rattachent à une société,
+elles n'ont pas à le demander de deux façons.
+
+Ce qu'une image liée n'est pas, c'est un stand dessiné : elle ne prend ni la
+teinte de son secteur, ni le filtre de la recherche. L'emplacement qu'elle
+recouvre porte déjà tout cela. Ce qu'elle ajoute est le geste qu'un visiteur
+fait de lui-même — toucher le logo qu'il reconnaît —, et la mesure le compte à
+part, sur le canal `image`.
+
+**Le rattachement est une option du plan**, et l'image ne l'est pas. Un salon
+qui n'a pas pris « Ajout d'images liées à un stand » garde l'outil et pose ses
+images comme n'importe quel dessin ; c'est le champ qui nomme l'exposant qui
+s'en va, du dessin comme du panneau d'édition, et plus aucune image ne se relie.
+Celles qui l'étaient gardent leur lien : on retire le geste, pas ce qu'il a
+produit.
+
 ### Passer d'un plan à l'autre
 
 Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
@@ -2067,6 +2103,51 @@ une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
 calendrier. Le manifeste de l'application installée reste lui aussi en
 français — et le nom qu'il porte est celui du salon, qui ne se traduit pas
 davantage.
+
+## Les options du plan
+
+Cinq fonctions du plan ne reviennent pas à tous les salons : elles se vendent à
+part, et se règlent salon par salon dans « Réglages du plan », onglet **Admin**,
+sous l'intertitre *Les options du plan*. Comme le générique du démarrage qui
+ferme le même onglet, elles sont réservées au profil administrateur : ce n'est
+pas un réglage de salon mais un réglage de prestataire, et l'organisateur n'y
+trouverait que de quoi fermer ce qu'on lui a vendu.
+
+| option | ce que fermer retire |
+|---|---|
+| **Dessin des stands** | l'outil qui matérialise un exposant, ou l'une de ses hébergées, sur sa part d'un emplacement |
+| **Ajout d'images liées à un stand** | le champ qui lie une image du dessin à un exposant. L'outil image reste : ce qui se vend est le lien, pas l'image |
+| **Organiser ma journée** | le bouton du tiroir du parcours qui met la visite en heures |
+| **Programme de conférences** | tout ce qui vient du programme : celui d'une zone, les conférences d'un exposant, la recherche par titre, les horaires du parcours, les rappels |
+| **Recommandations sponsorisées** | la proposition d'un exposant de plus, et l'onglet « Suggestion » avec elle |
+
+**Ouvertes par défaut.** Un réglage absent ne retire rien : les salons déjà en
+ligne gardent ce qu'ils ont, et l'option ne se remarque que le jour où on la
+ferme. C'est la règle des commandes du plan, qui vivent quelques lignes plus
+haut dans le même onglet.
+
+**Fermer retire la porte, pas ce qui est derrière.** Les stands déjà dessinés
+restent sur le plan, les images déjà liées gardent leur lien, les conférences
+restent dans l'instantané que la synchronisation continue de rapporter, ce qui
+était réglé pour la suggestion reste écrit : rouvrir l'option retrouve le tout. Une seule chose ne se rend pas,
+et la case le dit — le parcours d'un visiteur ne garde que ce que le plan connaît
+encore, si bien que celui qui rouvre le plan pendant que le programme est fermé y
+perd les conférences qu'il avait retenues.
+
+Deux façons de fermer, selon ce qu'il y a à retirer. Les trois premières se
+ferment par la feuille de style, sur une classe posée sur la racine : un
+élément part de l'écran — le bouton de l'outil Stand (`sans-dessin-stand`), le
+champ d'exposant de l'outil Image (`sans-image-stand`), le bouton de la journée
+(`sans-journee`). Le code refuse ensuite ce que la feuille de style a caché,
+plutôt que de s'y fier : une valeur restée dans un champ invisible ne relie
+rien. Le programme, lui, n'est pas une commande qu'on masque mais un index
+qu'on refait — `indexeConferences()` de `_js.html` le relit à chaque bascule, et
+la recherche, les fiches, le tiroir du parcours, la journée et les rappels
+suivent d'eux-mêmes, n'ayant plus rien à lire.
+
+Le réglage vit sous la clé `_options` de la configuration du salon, et se publie
+avec le reste : c'est l'enregistrement de la configuration qui le porte aux
+visiteurs.
 
 ## Comptes et profils
 
