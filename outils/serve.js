@@ -35,7 +35,13 @@ http.createServer((q, s) => {
     const entetes = {};
     ["authorization", "apikey"].forEach(h => { if (q.headers[h]) entetes[h] = q.headers[h]; });
     https.get(cible, { headers: entetes }, r => {
-      s.writeHead(r.statusCode, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      /* Le type vient de l'amont : ce chemin ne rend pas que du JSON — une
+         vignette de logo est une image, et l'annoncer en JSON la laissait
+         brisée en tête de fiche, ici seulement. */
+      s.writeHead(r.statusCode, {
+        "Content-Type": r.headers["content-type"] || "application/json",
+        "Cache-Control": "no-store",
+      });
       r.pipe(s);
     }).on("error", e => { s.writeHead(502); s.end(e.message); });
     return;

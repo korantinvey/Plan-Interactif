@@ -205,6 +205,59 @@ async function rendVignette(cle: string, entetes: Record<string, string>) {
   });
 }
 
+/* Combien de clés une demande groupée porte au plus. La même mesure que les
+   tranches d'adresses plus haut, et pour la même raison : au-delà, l'adresse
+   qu'on envoie à la base dépasse ce qu'un intermédiaire accepte de
+   transmettre. */
+const LOT_MAX = 64;
+
+/**
+ * Un lot de vignettes, en une seule demande.
+ *
+ * La page les demandait une par une : deux cent dix allers-retours jusqu'ici
+ * pour un salon comme Franchise Expo, dont chacun coûtait au relais une
+ * lecture de son stockage — là où le temps d'un salon se passe justement à
+ * attendre des allers-retours. Le préchargement qui devait rendre les fiches
+ * instantanées vidait ainsi le quota du relais en une journée.
+ *
+ * Elles voyagent donc groupées, telles qu'elles sont gardées : en base64, ce
+ * que la table contient déjà, et qui traverse un JSON sans être converti deux
+ * fois. Le tiers que cet encodage ajoute repart compressé, et n'en coûte
+ * presque rien.
+ *
+ * Le lot n'est immuable que s'il est complet. Chaque vignette l'est — sa clé
+ * est l'empreinte de ce qu'elle montre —, mais une clé qu'on ne trouve pas
+ * peut être fabriquée l'instant d'après, et un trou gardé un an ne se
+ * reboucherait jamais.
+ */
+async function rendVignettes(liste: string, entetes: Record<string, string>) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  const cles = liste.split(",").filter(Boolean);
+  if (!cles.length || cles.length > LOT_MAX) {
+    return new Response("Lot de vignettes hors mesure.", { status: 400, headers: nu });
+  }
+  if (cles.some((c) => !/^[0-9a-f]{8,64}$/.test(c))) {
+    return new Response("Clé de vignette invalide.", { status: 400, headers: nu });
+  }
+  const { data, error } = await service()
+    .from("vignette_de_logo").select("cle,image").in("cle", cles);
+  if (error) return new Response("Vignettes indisponibles.", { status: 503, headers: nu });
+
+  const par: Record<string, string> = {};
+  for (const v of (data ?? []) as { cle: string; image: string }[]) {
+    par[String(v.cle)] = String(v.image);
+  }
+  return new Response(JSON.stringify(par), {
+    headers: {
+      ...entetes,
+      "Content-Type": "application/json",
+      "Cache-Control": cles.every((c) => par[c])
+        ? "public, max-age=31536000, immutable"
+        : "no-store",
+    },
+  });
+}
+
 /**
  * Une lecture dont l'échec ne peut pas passer pour un vide.
  *
@@ -462,6 +515,10 @@ Deno.serve(async (req) => {
        d'aucun salon, et c'est une requête par fiche ouverte. */
     const vignette = new URL(req.url).searchParams.get("vignette");
     if (vignette) return await rendVignette(vignette, CORS);
+    /* Et le lot, à côté d'elle : c'est la même chose rendue en gros, pour la
+       visite qui les veut toutes. */
+    const lot = new URL(req.url).searchParams.get("vignettes");
+    if (lot) return await rendVignettes(lot, CORS);
 
     const slug = new URL(req.url).searchParams.get("slug");
     if (!slug) return repond({ erreur: "Paramètre slug manquant." }, 400);

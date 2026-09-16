@@ -36,7 +36,7 @@
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
  */
-const VERSION = "bd8e51d3036b";
+const VERSION = "a1e5dcf5fcbc";
 const CACHE = "plan-" + VERSION;
 const HORS_LIGNE = "hors-ligne.html";
 
@@ -115,6 +115,10 @@ async function dabordCache(e, requete) {
   if (garde) return garde;
   const reponse = await fetch(requete);
   if (!reponse.ok) return reponse;
+  /* Le service dit lui-même ce qui n'est pas à garder : un lot de vignettes
+     auquel il en manque une est complet demain, et le figer ici le laisserait
+     troué pour toute la vie du cache. */
+  if ((reponse.headers.get("Cache-Control") || "").includes("no-store")) return reponse;
   const copie = reponse.clone();   // avant tout `await` : le corps ne se lit qu'une fois
   const adresse = new URL(requete.url);
   /* Ranger puis faire le ménage, dans cet ordre et d'un seul tenant : le
@@ -187,10 +191,13 @@ self.addEventListener("fetch", (e) => {
          périmé, et pèse cinquante fois les stands — c'est lui qu'il faut garder
          le plus jalousement. Une vignette de logo suit la même règle pour la
          même raison : elle est nommée par l'empreinte de l'adresse d'où elle
-         vient, et son contenu ne peut pas changer sans que sa clé change. Le
-         plan lui-même change à chaque synchronisation : on le redemande, et la
-         copie gardée ne sert que si le réseau manque. */
-      e.respondWith(adresse.searchParams.get("fond") || adresse.searchParams.get("vignette")
+         vient, et son contenu ne peut pas changer sans que sa clé change — et
+         un lot de vignettes, qui n'est que des clés bout à bout, pas davantage.
+         Le plan lui-même change à chaque synchronisation : on le redemande, et
+         la copie gardée ne sert que si le réseau manque. */
+      e.respondWith(adresse.searchParams.get("fond") ||
+                    adresse.searchParams.get("vignette") ||
+                    adresse.searchParams.get("vignettes")
         ? dabordCache(e, requete)
         : dabordReseau(e, requete));
       return;

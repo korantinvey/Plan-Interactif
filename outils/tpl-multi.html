@@ -6341,11 +6341,13 @@ function prechargeMarque(id, iSoc){
   const o = parId.get(id);
   if (!o || o.kind === "zone" || !montre("stand", "logo")) return;
   const soc = iSoc >= 0 ? (o.coex || [])[iSoc] : o;
-  /* Une vignette n'a rien à préparer — elle arrive prête — mais la demander
-     ici la met en route, et le navigateur l'aura reçue quand la fiche
-     s'ouvrira. */
   const url = soc && (adresseVignette(soc.vignette) || adresseImage(soc.logo));
   if (!url) return;
+  /* Une vignette déjà reçue par lot porte ses octets : il n'y a rien à mettre
+     en route. Celle qu'on n'a pas encore n'a rien à préparer non plus — elle
+     arrive prête — mais la demander ici fait le trajet réseau d'avance, et le
+     navigateur l'aura quand la fiche s'ouvrira. */
+  if (url.indexOf("data:") === 0) return;
   if (url.indexOf("vignette=") >= 0) new Image().src = url;
   else recadreMarque(url);
 }
@@ -6355,23 +6357,39 @@ function prechargeMarque(id, iSoc){
  *
  * Une vignette pèse trois kilo-octets et vient de notre propre origine : les
  * deux cent dix d'un salon comme Franchise Expo font six cents kilo-octets,
- * une fois, et le navigateur comme le service les gardent pour la visite
- * entière — leur adresse porte l'empreinte de ce qu'elles montrent, elles ne
- * peuvent pas se périmer. Toute fiche ouverte ensuite trouve son logo déjà là.
+ * une fois. Toute fiche ouverte ensuite trouve son logo déjà là.
  *
  * Ce n'était pas possible avant qu'elles existent : les mêmes logos pris chez
  * leur source pèsent soixante-dix mégaoctets, et les précharger aurait ralenti
  * ce qu'on voulait accélérer.
+ *
+ * Elles se demandent groupées, et c'est tout le sujet. Une par une, c'étaient
+ * deux cent dix allers-retours jusqu'au relais — six en vol à la fois, donc
+ * trente-cinq vagues, et sur le réseau d'un salon une vague coûte plus que ce
+ * qu'elle rapporte. Le relais, lui, payait une lecture de son stockage par
+ * vignette, et le quota d'une journée entière y passait. Par lots de
+ * quarante-huit, il reste cinq demandes, et cinq lectures.
+ *
+ * Quarante-huit et pas davantage : c'est la tranche que la base accepte de
+ * recevoir d'un coup (voir `vignettesParAdresse`), et deux cents kilo-octets,
+ * un lot qu'on peut abandonner en route sans avoir tout perdu.
  *
  * Trois retenues, parce que ce chargement n'est demandé par personne :
  *
  * — il attend que le plan soit à l'écran et la main immobile ;
  * — il renonce sur un réseau que le navigateur dit lent ou mesuré, où six
  *   cents kilo-octets non réclamés ne se prennent pas ;
- * — il y va par petits groupes, pour ne pas disputer la bande passante au fond
- *   de plan, qui pèse cinquante fois plus et qu'on regarde déjà.
+ * — il y va deux lots à la fois, pour ne pas disputer la bande passante au
+ *   fond de plan, qui pèse cinquante fois plus et qu'on regarde déjà.
  */
-const VIGNETTES_A_LA_FOIS = 6;
+const VIGNETTES_PAR_LOT = 48;
+const LOTS_A_LA_FOIS = 2;
+
+/* Ce qui est arrivé, par clé : l'image elle-même, prête à poser. Le lot qui
+   l'a apportée reste, lui, dans le cache du navigateur et du service — son
+   adresse ne porte que des empreintes, il ne peut pas se périmer — si bien
+   que la visite d'après ne redemande rien. */
+const VIGNETTES = new Map();
 
 function prechargeLesVignettes(){
   if (!API) return;
@@ -6387,24 +6405,56 @@ function prechargeLesVignettes(){
     if (o.kind !== "stand") continue;
     for (const soc of [o].concat(o.coex || [])){
       const c = soc && soc.vignette;
-      if (c && !vues.has(c)){ vues.add(c); cles.push(c); }
+      if (c && !vues.has(c) && !VIGNETTES.has(c)){ vues.add(c); cles.push(c); }
     }
   }
   if (!cles.length) return;
 
+  /* Triées, et coupées toujours au même endroit : deux visites demandent alors
+     les mêmes lots, et celui que le navigateur garde d'hier n'a rien à
+     redemander. Dans l'ordre du plan, un stand déplacé suffisait à fabriquer
+     des adresses neuves — donc à tout retélécharger. */
+  cles.sort();
+  const lots = [];
+  for (let i = 0; i < cles.length; i += VIGNETTES_PAR_LOT){
+    lots.push(cles.slice(i, i + VIGNETTES_PAR_LOT));
+  }
+
   let i = 0;
-  const suivante = () => {
-    if (i >= cles.length) return;
-    const url = adresseVignette(cles[i++]);
-    if (!url) return suivante();
-    const im = new Image();
-    /* Basse priorité : ces images ne sont pas attendues, et le fond de plan,
-       lui, l'est. */
-    if ("fetchPriority" in im) im.fetchPriority = "low";
-    im.onload = im.onerror = suivante;
-    im.src = url;
+  const suivant = () => {
+    if (i >= lots.length) return Promise.resolve();
+    return chargeUnLot(lots[i++]).then(suivant);
   };
-  for (let n = 0; n < VIGNETTES_A_LA_FOIS; n++) suivante();
+  for (let n = 0; n < LOTS_A_LA_FOIS; n++) suivant();
+}
+
+/**
+ * Un lot demandé, et rangé.
+ *
+ * Ce qui revient est du texte reçu du réseau et finit dans une image de fiche :
+ * on ne garde donc que ce qu'on reconnaît — une clé qu'on a demandée, et une
+ * image que la page sait avoir fabriquée elle-même. Un lot qui n'aboutit pas
+ * ne se plaint pas : la fiche redemandera la vignette qui lui manque, une par
+ * une, comme avant.
+ */
+function chargeUnLot(lot){
+  return fetch(API + "?vignettes=" + lot.join(","), { priority: "low" })
+    .then(r => r.ok ? r.json() : null)
+    .then(recu => {
+      const attendues = new Set(lot);
+      for (const cle of Object.keys(recu || {})){
+        if (!attendues.has(cle)) continue;
+        const src = "data:image/webp;base64," + recu[cle];
+        if (!IMAGE_SURE.test(src)) continue;
+        VIGNETTES.set(cle, src);
+        /* Elle arrive déjà recadrée et à la taille : le dire évite à la fiche
+           de la relire pour n'y rien trouver à retirer. Sans cela, une
+           vignette qui ne porte plus « vignette= » dans son adresse — elle
+           porte ses octets — passerait pour un logo lu chez sa source. */
+        marquePrete(src);
+      }
+    })
+    .catch(() => {});
 }
 
 /* Un seul écouteur pour toutes les lignes : elles naissent et meurent à chaque
@@ -7436,7 +7486,8 @@ const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
  *
  * Elle est servie par notre propre API, nommée par l'empreinte de l'adresse
  * d'origine — donc immuable, gardée sans limite par le relais, le navigateur
- * et le service worker. Recadrée et réduite là-bas, elle pèse trois
+ * et le service worker. Le préchargement l'a le plus souvent déjà reçue par
+ * lot : on rend alors ses octets, et il n'y a plus d'adresse du tout. Recadrée et réduite là-bas, elle pèse trois
  * kilo-octets au lieu de cent cinquante, et n'a plus rien à faire décoder ni
  * analyser ici.
  *
@@ -7444,9 +7495,13 @@ const IMAGE_SURE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/;
  * l'accompagne, et la même vignette sert les salons qui partagent l'enseigne.
  */
 const adresseVignette = (cle) =>
-  API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
+  /* Déjà reçue par lot : ce sont ses octets qu'on rend, et la fiche n'a plus
+     rien à demander. Sinon son adresse, qui vaut pour celle qu'on n'a pas
+     encore — le lot peut n'être pas arrivé, ou ne jamais partir. */
+  VIGNETTES.get(cle) ||
+  (API && /^[0-9a-f]{8,64}$/.test(String(cle || ""))
     ? API + "?vignette=" + cle
-    : "";
+    : "");
 
 /**
  * Le logo d'une société, relu avant d'être affiché.
@@ -8878,6 +8933,18 @@ $("btnTheme").onclick = () => {
  * au milieu d'une visite.
  */
 const MARQUES_RECADREES = new Map();
+
+/**
+ * Une image dont on sait déjà qu'il n'y a rien à retirer.
+ *
+ * Les vignettes arrivées par lot portent leurs octets, non plus une adresse :
+ * rien ne les distinguerait d'un logo lu chez sa source, qu'il faut, lui,
+ * relire pour en retirer les marges. On le dit donc ici, une fois, plutôt que
+ * de reconnaître une vignette à la forme de son adresse — elle n'en a plus.
+ */
+function marquePrete(src){
+  MARQUES_RECADREES.set(src, Promise.resolve(src));
+}
 
 function recadreMarque(src){
   /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien

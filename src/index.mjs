@@ -37,7 +37,7 @@ const RAPPELS = BASE + "rappels";
    celui dont on relaie les fonctions — l'adresse en est déduite, pour qu'un
    changement de projet n'ait qu'un seul endroit à changer. */
 const AUTH = BASE.replace("/functions/v1/", "/auth/v1/") + "user";
-const PARAMS = ["slug", "fond", "v", "vignette"];
+const PARAMS = ["slug", "fond", "v", "vignette", "vignettes"];
 
 /* Un slug nomme un salon : des minuscules, des chiffres, des traits. Le
    contrôle n'est pas décoratif — la clé de cache se construit avec. */
@@ -87,6 +87,17 @@ function amontPour(parametres) {
   return u;
 }
 const cleDe = (amont) => "v1" + amont.search;
+
+/** La clé d'un lot de vignettes, qui ne peut pas être la liste elle-même :
+ *  quarante-huit empreintes font plus de mille octets, et le stockage n'accepte
+ *  pas une clé au-delà de cinq cent douze. On prend donc l'empreinte de la
+ *  liste — même lot, même clé, et sa longueur ne dépend plus de rien. */
+async function cleDeLot(amont) {
+  const liste = amont.searchParams.get("vignettes");
+  const e = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(liste));
+  return "v1lot:" + [...new Uint8Array(e)].slice(0, 16)
+    .map((n) => n.toString(16).padStart(2, "0")).join("");
+}
 
 /** Ce que l'on garde à côté de la valeur : de quoi reconstituer la réponse. */
 const meta = (r, frais) => ({
@@ -414,7 +425,8 @@ export default {
        l'empreinte de l'adresse d'où elle vient, et c'est tout ce qu'il faut
        pour la rendre. Exiger un slug ici obligerait la page à en porter un
        dans chaque adresse d'image, pour rien. */
-    if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette")) {
+    if (!amont.searchParams.get("slug") && !amont.searchParams.get("vignette") &&
+        !amont.searchParams.get("vignettes")) {
       return dit({ erreur: "Paramètre slug manquant." }, 400);
     }
 
@@ -422,9 +434,16 @@ export default {
     const cache = jeton ? null : env.CACHE;      // une identité contourne le cache
     // la clé ne retient que les paramètres attendus : deux adresses qui ne
     // diffèrent que par un paramètre parasite partagent la même entrée
-    const cle = cleDe(amont);
+    const cle = amont.searchParams.get("vignettes")
+      ? await cleDeLot(amont)
+      : cleDe(amont);
+    /* Un lot de vignettes vaut celles qu'il porte : nommé par leurs clés, qui
+       sont les empreintes de ce qu'elles montrent, il ne peut pas être périmé
+       — et la fonction le dit elle-même, en ne déclarant public qu'un lot
+       complet (voir `rendVignettes`). */
     const immuable = Boolean(amont.searchParams.get("fond") ||
-                             amont.searchParams.get("vignette"));
+                             amont.searchParams.get("vignette") ||
+                             amont.searchParams.get("vignettes"));
 
     const entetes = new Headers();
     if (jeton) entetes.set("Authorization", jeton);
