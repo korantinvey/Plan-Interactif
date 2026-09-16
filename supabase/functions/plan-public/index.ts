@@ -209,7 +209,41 @@ async function rendVignette(cle: string, entetes: Record<string, string>) {
    tranches d'adresses plus haut, et pour la même raison : au-delà, l'adresse
    qu'on envoie à la base dépasse ce qu'un intermédiaire accepte de
    transmettre. */
-const LOT_MAX = 64;
+const LOT_MAX = 128;
+
+/**
+ * Combien de temps le navigateur d'un visiteur garde le plan sans rien
+ * redemander.
+ *
+ * Trente secondes, jusqu'ici : l'exploitant enregistrait depuis
+ * l'administration, et le plan public devait suivre sans qu'on ait à
+ * l'attendre. Le relais, lui, oublie sur commande — la page le lui demande en
+ * finissant d'enregistrer —, mais le navigateur d'un visiteur ne peut rien
+ * oublier sur ordre de personne : sa part de cache était donc la plus courte
+ * des deux, et c'est elle qui décidait.
+ *
+ * Un plan ouvert aux visiteurs ne change plus qu'une fois par jour, et pas du
+ * tout pendant le salon : ces trente secondes coûtaient un aller-retour par
+ * ouverture de page, à des milliers de visiteurs, pour resservir à l'identique
+ * ce qu'on avait déjà. Douze heures couvrent une journée de salon d'un seul
+ * tenant.
+ *
+ * Ce que cela coûte, et qu'il faut savoir : une correction faite pendant la
+ * préparation n'atteint un visiteur déjà venu qu'au bout de douze heures. La
+ * grâce qui suit adoucit la reprise — la copie d'hier s'affiche pendant que la
+ * neuve arrive derrière, pour l'ouverture suivante.
+ *
+ * L'administration, elle, ne voit jamais de copie : elle appelle avec sa
+ * session et sans cache (voir `_admin2.html`).
+ */
+const CACHE_PLAN = 43200;
+/* Le nom du salon ne sert qu'à nommer l'application installée, et il ne change
+   pour ainsi dire jamais — un salon renommé se voit le lendemain. */
+const CACHE_NOM = 86400;
+/* Passé la fraîcheur, la copie sert encore pendant qu'on va en chercher une
+   neuve : personne n'attend le réseau, et la mise à jour est là au chargement
+   d'après. */
+const GRACE = 86400;
 
 /**
  * Un lot de vignettes, en une seule demande.
@@ -506,7 +540,7 @@ Deno.serve(async (req) => {
           ? `${identifie ? "private" : "public"}, max-age=31536000, immutable`
           : identifie
           ? "private, no-store"
-          : `public, max-age=${cache}, stale-while-revalidate=60`,
+          : `public, max-age=${cache}, stale-while-revalidate=${GRACE}`,
       },
     });
 
@@ -534,7 +568,7 @@ Deno.serve(async (req) => {
       if (!nomme) {
         return repond({ erreur: "Événement introuvable ou non publié." }, 404);
       }
-      return repond({ evenement: nomme.nom, slug: nomme.slug }, 200, 600);
+      return repond({ evenement: nomme.nom, slug: nomme.slug }, 200, CACHE_NOM);
     }
 
     // seuls les événements publiés passent, sauf à l'exploitant dont la
@@ -843,7 +877,7 @@ Deno.serve(async (req) => {
       }),
     };
 
-    return repond(sortie);
+    return repond(sortie, 200, CACHE_PLAN);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return repond({ erreur: message }, 500);

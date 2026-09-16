@@ -52,21 +52,33 @@ const MESURE_MAX = 4096;
    n'est plus un parcours. */
 const RAPPELS_MAX = 32768;
 
-/* Le plan sans son fond peut changer à chaque synchronisation : dix minutes de
-   retard au plus, ce qui reste sous le rythme de synchronisation le plus vif.
+/* Le plan sans son fond peut changer à chaque synchronisation. Dix minutes,
+   jusqu'ici — mais ce délai-là n'est pas ce qui fait la fraîcheur : c'est
+   `/api/oublie` qui la fait, appelé dès que l'administration a fini
+   d'enregistrer, et qui retire l'entrée à la seconde. Le délai n'est que le
+   filet, pour le jour où cet appel n'aboutit pas. Dix minutes le tendaient
+   très haut : le plan se réécrivait cent quarante fois par jour et par salon,
+   sur un stockage qui n'accepte que mille écritures quotidiennes. Un plan
+   ouvert aux visiteurs ne change qu'une fois par jour, et pas du tout pendant
+   le salon : une journée suffit.
    Le fond, lui, porte sa version dans la clé : il ne peut pas être périmé. La
    vignette d'un logo non plus — elle est nommée par l'empreinte de l'adresse
    d'où elle vient, et son contenu ne peut pas changer sans que sa clé change. */
-const TTL_PLAN = 600;
+const TTL_PLAN = 86400;
 const TTL_FOND = 2592000;
 
-/* Une entrée périmée n'est pas jetée : elle est servie telle quelle pendant
+/* Combien de temps l'entrée reste servable une fois sa fraîcheur passée. Elle
+   doit tenir bien au-delà : une entrée qui disparaît avant d'avoir été refaite
+   renvoie la visite jusqu'à la base, ce que la garde existe précisément pour
+   éviter.
+
+   Une entrée périmée n'est pas jetée : elle est servie telle quelle pendant
    qu'on la rafraîchit derrière. Sans cela l'expiration vide le cache au moment
    même où la charge est la plus forte — l'ouverture du salon — et toutes les
    visites arrivées dans cette seconde repartent ensemble jusqu'à la base, dont
    chacune rejoue les sept requêtes. La garde couvre du même coup une panne en
    amont : mieux vaut un plan d'hier qu'une page vide. */
-const GARDE = 86400;
+const GARDE = 604800;
 
 /** Une réponse de service, jamais gardée. */
 const dit = (corps, code) =>
@@ -364,7 +376,7 @@ async function manifeste(requete, env, ctx) {
     headers: {
       "Content-Type": "application/manifest+json; charset=utf-8",
       // il ne change qu'avec une mise en ligne, et n'est lu qu'à l'installation
-      "Cache-Control": "public, max-age=600",
+      "Cache-Control": "public, max-age=86400",
     },
   });
 }
@@ -451,7 +463,12 @@ export default {
     if (apikey) entetes.set("apikey", apikey);
 
     if (cache) {
-      const garde = await cache.getWithMetadata(cle, { type: "stream" });
+      /* Un stockage qui refuse — quota du jour épuisé, panne passagère — ne doit
+         pas emporter la visite avec lui : on descend alors jusqu'à la source,
+         comme si l'entrée manquait. C'est la règle que ce fichier suit partout
+         ailleurs, et cette lecture-ci était la seule à l'enfreindre. */
+      const garde = await cache.getWithMetadata(cle, { type: "stream" })
+                               .catch(() => null);
       if (garde && garde.value) {
         const perime = Boolean(garde.metadata?.frais) &&
                        Date.now() > garde.metadata.frais;

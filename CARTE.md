@@ -403,18 +403,18 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4275 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4278 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.396 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.506 · 3. Rendu du pavillon courant
 - l.587 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.723 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1852 · 6. Vue
-- l.2233 · 7. Sélection et fiche
-- l.3576 · 8. Interactions du plan
-- l.3945 · Le tiroir de la liste — écrans étroits
-- l.4108 · Le tiroir de la fiche — écrans étroits
+- l.1855 · 6. Vue
+- l.2236 · 7. Sélection et fiche
+- l.3579 · 8. Interactions du plan
+- l.3948 · Le tiroir de la liste — écrans étroits
+- l.4111 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -435,23 +435,23 @@ Fonctions :
 `releveHotes` 1425 · `visibleSurPlan` 1433 · `visibleSociete` 1444 · `marqueRetrait` 1460
 `appliqueFiltre` 1472 · `oublieRetrait` 1484 · `reprendRecherche` 1493 · `rangSorte` 1506
 `codeCase` 1528 · `caseNumero` 1545 · `sousLigne` 1565 · `liste` 1579 · `marqueChoisie` 1698
-`prechargeMarque` 1724 · `prechargeLesVignettes` 1778 · `chargeUnLot` 1824
-`cadrePlan` 1867 · `oublieCadre` 1868 · `figeTextes` 1884 · `rendTextes` 1892
-`cadrage` 1928 · `peintLibelles` 1933 · `detacheLibelles` 1939 · `rattacheLibelles` 1951
-`etireLibelles` 1969 · `appliqueVue` 1977 · `rafraichitVue` 2019 · `poseVue` 2033
-`masque` 2053 · `masqueDroite` 2085 · `fit` 2096 · `stoppeZoom` 2126 · `glisseVersVise` 2132
-`glisseVers` 2174 · `rectVisee` 2196 · `zoom` 2216 · `echelle` 2225 · `ETROIT` 2239
-`anime` 2255 · `noeud` 2279 · `canalPlan` 2289 · `rangSociete` 2297 · `select` 2306
-`centre` 2331 · `centrePoint` 2335 · `montre` 2380 · `libelleCorps` 2412 · `ordreCorps` 2429
-`groupesFiche` 2461 · `montreIntitule` 2474 · `valeurCorps` 2494 · `champCorps` 2507
-`groupeCorps` 2519 · `corpsRange` 2532 · `momentLocal` 2567 · `programme` 2590
-`jourLong` 2623 · `ficheConf` 2634 · `lien` 2781 · `adresseWeb` 2789 · `pictoRS` 2832
-`adresseSure` 2850 · `adresseVignette` 2881 · `adresseImage` 2899 · `imageSure` 2912
-`assainitRiche` 2941 · `enBlocs` 2981 · `rangeRiche` 2994 · `ecarteClicFantome` 3022
-`nomSociete` 3031 · `societes` 3044 · `choisitExposant` 3055 · `poseMarque` 3093
-`montreMarque` 3153 · `poseCode` 3176 · `rangeMarque` 3217 · `ouvre` 3280 · `ferme` 3548
-`onglet` 3566 · `milieu` 3596 · `commencePince` 3602 · `suitPince` 3616 · `saisitPlan` 3650
-`cibleElargie` 3726 · `planifieFiltre` 3901 · `mesureTiroir` 3956 · `montreTiroir` 3959
+`prechargeMarque` 1724 · `prechargeLesVignettes` 1781 · `chargeUnLot` 1827
+`cadrePlan` 1870 · `oublieCadre` 1871 · `figeTextes` 1887 · `rendTextes` 1895
+`cadrage` 1931 · `peintLibelles` 1936 · `detacheLibelles` 1942 · `rattacheLibelles` 1954
+`etireLibelles` 1972 · `appliqueVue` 1980 · `rafraichitVue` 2022 · `poseVue` 2036
+`masque` 2056 · `masqueDroite` 2088 · `fit` 2099 · `stoppeZoom` 2129 · `glisseVersVise` 2135
+`glisseVers` 2177 · `rectVisee` 2199 · `zoom` 2219 · `echelle` 2228 · `ETROIT` 2242
+`anime` 2258 · `noeud` 2282 · `canalPlan` 2292 · `rangSociete` 2300 · `select` 2309
+`centre` 2334 · `centrePoint` 2338 · `montre` 2383 · `libelleCorps` 2415 · `ordreCorps` 2432
+`groupesFiche` 2464 · `montreIntitule` 2477 · `valeurCorps` 2497 · `champCorps` 2510
+`groupeCorps` 2522 · `corpsRange` 2535 · `momentLocal` 2570 · `programme` 2593
+`jourLong` 2626 · `ficheConf` 2637 · `lien` 2784 · `adresseWeb` 2792 · `pictoRS` 2835
+`adresseSure` 2853 · `adresseVignette` 2884 · `adresseImage` 2902 · `imageSure` 2915
+`assainitRiche` 2944 · `enBlocs` 2984 · `rangeRiche` 2997 · `ecarteClicFantome` 3025
+`nomSociete` 3034 · `societes` 3047 · `choisitExposant` 3058 · `poseMarque` 3096
+`montreMarque` 3156 · `poseCode` 3179 · `rangeMarque` 3220 · `ouvre` 3283 · `ferme` 3551
+`onglet` 3569 · `milieu` 3599 · `commencePince` 3605 · `suitPince` 3619 · `saisitPlan` 3653
+`cibleElargie` 3729 · `planifieFiltre` 3904 · `mesureTiroir` 3959 · `montreTiroir` 3962
 
 Éléments :
 
@@ -617,12 +617,12 @@ Fonctions :
 `poseSuggestion` 298 · `fenetreSuggestion` 312 · `relevePalmares` 351 · `etiquetteSugg` 371
 `voletSuggestion` 381
 
-### `_sw.js` — 279 l. → sw.js
+### `_sw.js` — 336 l. → sw.js
 
 Fonctions :
 
-`range` 76 · `oublieLesFondsDAvant` 99 · `dabordCache` 113 · `dabordReseau` 146
-`navigation` 163
+`range` 101 · `oublieLesFondsDAvant` 124 · `dabordCache` 145 · `borneLesLots` 181
+`dabordReseau` 203 · `navigation` 220
 
 ### `_tutoriel.html` — 876 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -719,11 +719,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 73 · `client` 76
 
-### `supabase/functions/plan-public/index.ts` — 851 l.
+### `supabase/functions/plan-public/index.ts` — 885 l.
 
 `cors` 51 · `db` 85 · `service` 100 · `vignettesParAdresse` 117 · `avecVignette` 154
-`rendVignette` 190 · `rendVignettes` 233 · `lu` 276 · `salon` 286 · `nomDuSalon` 309
-`retraits` 382 · `ampute` 406 · `masquesDe` 446 · `masquesDuPlan` 466
+`rendVignette` 190 · `rendVignettes` 267 · `lu` 310 · `salon` 320 · `nomDuSalon` 343
+`retraits` 416 · `ampute` 440 · `masquesDe` 480 · `masquesDuPlan` 500
 
 ### `supabase/functions/sync-evenement/index.ts` — 1606 l.
 
@@ -781,8 +781,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 482 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 72 · `amontPour` 81 · `cleDe` 89 · `cleDeLot` 95 · `meta` 103 · `gardable` 116 `range` 122 · `rafraichit` 129 · `oublie` 156 · `rappels` 236 · `nomDuSalon` 289 `manifeste` 336 · `mesure` 373
+- `src/index.mjs` — 499 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 84 · `amontPour` 93 · `cleDe` 101 · `cleDeLot` 107 · `meta` 115 · `gardable` 128 `range` 134 · `rafraichit` 141 · `oublie` 168 · `rappels` 248 · `nomDuSalon` 301 `manifeste` 348 · `mesure` 385
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
