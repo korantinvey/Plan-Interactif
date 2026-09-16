@@ -83,6 +83,12 @@ function basculeParcours(genre, id, canal){
      lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
      par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
   if (i < 0 && genre === "stand") fenetreSuggestion();
+  /* Et, pour une conférence, la proposition du rappel : c'est le premier
+     horaire retenu qui donne au réveil quelque chose à faire, et celui qui
+     vient de le retenir est le seul à qui la question se pose. Un lot versé n'y
+     passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
+     vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
+  if (i < 0 && genre === "conf") fenetreRappel();
 }
 
 /**

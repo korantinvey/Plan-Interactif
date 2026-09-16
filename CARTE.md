@@ -484,14 +484,14 @@ Fonctions :
 `jetonRetenu` 128 · `supportMesure` 177 · `renouvelleVisiteur` 228 · `envoieMesures` 250
 `mesure` 292 · `effaceJetonsVisiteur` 346 · `refuseMesure` 364 · `ouvreConfidentialite` 382
 
-### `_modales.html` — 172 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_modales.html` — 189 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Fenêtres modales : confirmation et réorganisation des calques
 
 Fonctions :
 
-`verseModale` 22 · `ouvreModale` 28 · `fermeModale` 48 · `confirme` 55 · `deplaceVers` 73
-`versExtremite` 85 · `remplitOrdre` 93 · `ouvreOrdre` 163
+`verseModale` 22 · `ouvreModale` 37 · `fermeModale` 57 · `confirme` 72 · `deplaceVers` 90
+`versExtremite` 102 · `remplitOrdre` 110 · `ouvreOrdre` 180
 
 ### `_motdepasse.html` — 249 l. → motdepasse.html
 
@@ -507,21 +507,21 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 554 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 560 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
 `cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 49 · `basculeParcours` 66 · `verseAuParcours` 101
-`plurielParcours` 119 · `contenuParcours` 128 · `retenusPourParcours` 154
-`ajouteToutAuParcours` 179 · `poseToutAuParcours` 206 · `signetParcours` 232
-`boutonParcours` 238 · `rafraichitMarque` 243 · `brancheParcours` 256 · `calqueMarques` 288
-`dessineMarques` 304 · `marqueParcours` 334 · `rafraichitParcours` 348 · `instantConf` 376
-`cleTemps` 380 · `jourCourt` 386 · `nomDeStand` 393 · `rangParcours` 395
-`groupeParcours` 411 · `remplitParcours` 420 · `ouvreParcours` 499 · `fermeParcours` 511
-`videLeParcours` 527
+`enregistreParcours` 49 · `basculeParcours` 66 · `verseAuParcours` 107
+`plurielParcours` 125 · `contenuParcours` 134 · `retenusPourParcours` 160
+`ajouteToutAuParcours` 185 · `poseToutAuParcours` 212 · `signetParcours` 238
+`boutonParcours` 244 · `rafraichitMarque` 249 · `brancheParcours` 262 · `calqueMarques` 294
+`dessineMarques` 310 · `marqueParcours` 340 · `rafraichitParcours` 354 · `instantConf` 382
+`cleTemps` 386 · `jourCourt` 392 · `nomDeStand` 399 · `rangParcours` 401
+`groupeParcours` 417 · `remplitParcours` 426 · `ouvreParcours` 505 · `fermeParcours` 517
+`videLeParcours` 533
 
 ### `_partage.html` — 650 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -564,18 +564,20 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 420 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 537 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
 Fonctions :
 
-`reglageRappel` 62 · `rappelsVoulus` 63 · `minutesRappel` 64 · `cleRappels` 77
-`chargeRappels` 80 · `retientRappels` 84 · `poussePossible` 93 · `rappelsOfferts` 99
-`iOSsansInstallation` 105 · `instantAbsolu` 134 · `confsARappeler` 150
-`rappelsDuParcours` 166 · `adresseDuRappel` 188 · `octetsDeCle` 200
-`abonnementCourant` 208 · `abonne` 213 · `synchroniseRappels` 239 · `eteintRappels` 262
-`allumeRappels` 277 · `aideRappel` 294 · `poseRappels` 310 · `reprendRappels` 409
+`reglageRappel` 63 · `rappelsVoulus` 64 · `minutesRappel` 65 · `cleRappels` 78
+`chargeRappels` 81 · `retientRappels` 85 · `poussePossible` 94 · `rappelsOfferts` 100
+`iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151
+`rappelsDuParcours` 167 · `adresseDuRappel` 189 · `octetsDeCle` 201
+`abonnementCourant` 209 · `abonne` 214 · `synchroniseRappels` 240 · `eteintRappels` 263
+`allumeRappels` 278 · `aideRappel` 295 · `poseRappels` 311 · `cleInviteRappel` 425
+`inviteRappelFaite` 428 · `retientInviteRappel` 433 · `fenetreRappel` 455
+`proposeRappels` 485 · `reprendRappels` 526
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
