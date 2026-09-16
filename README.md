@@ -1410,11 +1410,12 @@ regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
 connaît dès son en-tête, et le Worker va chercher le nom : une lecture à part
-(`plan-public?slug=…&nom=1`), qui ne rend que deux colonnes là où le plan entier
-pèse ses stands et ses zones, et qu'il garde dix minutes comme le plan. Le nom
-n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué ne
-peut pas faire poser sur un écran d'accueil une application au nom qu'il aurait
-choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon seul.
+(`plan-public?slug=…&nom=1`), qui ne rend que quatre colonnes là où le plan
+entier pèse ses stands et ses zones, et qu'il garde un jour comme le plan. Le
+nom n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué
+ne peut pas faire poser sur un écran d'accueil une application au nom qu'il
+aurait choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon
+seul.
 
 Une exception, iOS : il ne lit pas le manifeste pour l'écran d'accueil mais la
 balise `apple-mobile-web-app-title`, écrite avec la page. `nommeApplication`
@@ -1424,6 +1425,41 @@ au même instant.
 
 Un salon renommé dans la console porte son nouveau nom à la visite d'après :
 l'enregistrement fait oublier au relais le plan **et** le nom.
+
+**Son icône et son nom, salon par salon.** Les deux se règlent dans l'onglet
+« Admin » des réglages du plan, réservé au profil administrateur, sous « Sur
+l'écran d'accueil ».
+
+L'icône se choisit entre deux : celle du produit, la même pour tous les salons,
+ou le logo du salon, déposé là. Rien de déposé, c'est celle du produit — il n'y
+a pas de mode à régler à côté de l'image, qui aurait pu la contredire. Le nom,
+lui, est un champ : vide, c'est « Plan SMCL by Event2Plan » ; écrit, c'est ce
+qui paraît sous l'icône, tel quel.
+
+Un seul fichier à choisir, deux images fabriquées. Android ne pose pas une
+icône telle quelle : il la rogne à la forme du système, cercle ou goutte selon
+l'appareil, et une image qui ne se déclare pas rognable finit en timbre-poste
+dans un carré blanc. L'administration fabrique donc, du même fichier, le logo
+au bord de son carré et le même logo rentré dans la zone sûre — le cercle des
+quatre cinquièmes — sur un fond opaque tiré du logo : son propre fond s'il en a
+un, le blanc sinon, la nuit du produit pour un logo clair qui sur du blanc
+disparaîtrait. L'aperçu montre les deux formes côte à côte, parce que personne
+ne devine ce qu'un rognage laisse.
+
+Ces images ne partent pas avec le plan : elles ne sont lues qu'à
+l'installation, et les faire voyager jusqu'à chaque visiteur aurait coûté un
+demi-mégaoctet pour rien. Le manifeste les désigne par une adresse que le
+Worker sert de la base — `/api/icone?salon=…&v=…` —, où `v` est l'empreinte que
+la base calcule de l'image. C'est elle qui fait qu'une icône remplacée se voit
+sur un écran d'accueil déjà installé : le navigateur relit le manifeste, y
+trouve une adresse inconnue, et va chercher l'image. Et comme l'adresse ne peut
+plus mentir sur son contenu, tout ce qui la garde peut la garder pour toujours.
+
+iOS, là encore, se corrige à part : `nommeApplication` y repose le nom et
+l'icône du salon dès les données arrivées. C'est la version opaque qui lui est
+donnée — il remplit de noir la transparence d'une icône d'écran d'accueil, où
+un logo sombre disparaissait. La fenêtre qui invite à installer montre la même,
+pour la même raison.
 
 **Tenir sans réseau.** `web/sw.js`, inscrit depuis le plan public, s'installe
 au premier passage et se place entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est

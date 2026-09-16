@@ -1757,9 +1757,12 @@ function voletAdmin(hote){
 
   hote.appendChild(bloc);
 
-  /* Le générique du démarrage ferme l'onglet. C'est le plus gros réglage qu'on
-     y trouve, et le seul qui ne soit pas une case : il passe donc après elles,
-     sous son propre intertitre (`_sponsor.html`). */
+  /* Les deux derniers réglages ne sont pas des cases : ils passent donc après
+     elles, chacun sous son intertitre. Ce que porte l'application installée
+     d'abord (`_application.html`) — c'est du même ordre que l'invitation à
+     l'installer, cochée juste au-dessus —, puis le générique du démarrage
+     (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  blocApplication(hote);
   blocSponsor(hote);
 }
 

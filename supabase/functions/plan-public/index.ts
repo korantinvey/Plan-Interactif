@@ -3,7 +3,8 @@
  *
  *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
  *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
- *   GET /plan-public?slug=…&nom=1               le nom du salon, seul
+ *   GET /plan-public?slug=…&nom=1               de quoi nommer l'application
+ *   GET /plan-public?slug=…&icone=1             l'icône de l'application
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
  * calques de dessin, et renvoie le document que la page sait déjà lire.
@@ -237,8 +238,10 @@ const LOT_MAX = 128;
  * session et sans cache (voir `_admin2.html`).
  */
 const CACHE_PLAN = 43200;
-/* Le nom du salon ne sert qu'à nommer l'application installée, et il ne change
-   pour ainsi dire jamais — un salon renommé se voit le lendemain. */
+/* Ce qui nomme et habille l'application installée ne change pour ainsi dire
+   jamais — un salon renommé, une icône remplacée se voient le lendemain. Et
+   l'icône elle-même n'est pas là : l'adresse qui la sert porte son empreinte,
+   et se garde donc indéfiniment. */
 const CACHE_NOM = 86400;
 /* Passé la fraîcheur, la copie sert encore pendant qu'on va en chercher une
    neuve : personne n'attend le réseau, et la mise à jour est là au chargement
@@ -321,29 +324,83 @@ const salon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
   const q = sb
     .from("evenement")
     .select(
-      "id, nom, slug, favicon, derniere_sync, fiche, fuseau, calage, zones, zones_masquees, zones_traversables, zones_fiches, salles, libelles_en",
+      "id, nom, slug, favicon, nom_app, icone_app_version, derniere_sync, fiche, fuseau, calage, zones, zones_masquees, zones_traversables, zones_fiches, salles, libelles_en",
     )
     .eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
 };
 
 /**
- * Le nom du salon, et rien d'autre.
+ * De quoi nommer et habiller l'application installée, et rien d'autre.
  *
- * Ce que vient chercher le manifeste de l'application installée, pour que
- * l'icône posée sur l'écran d'accueil porte le salon et non le produit
- * (`src/index.mjs` `nomDuSalon`). Une lecture à part, et non la précédente :
- * celle-là ramène les zones, les fiches et l'icône d'onglet du salon, là où
- * deux colonnes suffisent — et elle est demandée au chargement de chaque page
- * du plan, avant même que le visiteur ait rien vu.
+ * Ce que vient chercher le manifeste, pour que l'icône posée sur l'écran
+ * d'accueil porte le salon et non le produit (`src/index.mjs` `appDuSalon`).
+ * Une lecture à part, et non la précédente : celle-là ramène les zones, les
+ * fiches et l'icône d'onglet du salon, là où quatre colonnes suffisent — et
+ * elle est demandée au chargement de chaque page du plan, avant même que le
+ * visiteur ait rien vu.
+ *
+ * L'icône elle-même n'en fait pas partie : seule son empreinte, que la base
+ * calcule. Le manifeste n'a pas besoin des octets, il donne une adresse.
  *
  * Publié pour le visiteur, comme tout le reste : un brouillon ne nomme pas une
  * application.
  */
-const nomDuSalon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
-  const q = sb.from("evenement").select("nom, slug").eq("slug", slug);
+const appDuSalon = (sb: ReturnType<typeof db>, slug: string, identifie: boolean) => {
+  const q = sb.from("evenement")
+    .select("nom, slug, nom_app, icone_app_version").eq("slug", slug);
   return (identifie ? q : q.eq("etat", "publie")).maybeSingle();
 };
+
+/* Ce qu'une icône d'application est en base, et rien d'autre : la console du
+   plan la redessine en png quel que soit le format déposé. Ce qui ne porte pas
+   cette tête ne sort donc pas d'ici — une colonne qu'on aurait remplie à la
+   main ne devient pas une image en étant servie. */
+const PREFIXE_PNG = "data:image/png;base64,";
+
+/**
+ * L'icône de l'application, en octets.
+ *
+ * Le manifeste la désigne par une adresse plutôt que de la porter, et c'est
+ * cette adresse-là qui aboutit ici, par le relais. Elle porte l'empreinte de
+ * l'image (`v=`), sous laquelle la réponse est déclarée immuable : une icône
+ * remplacée change d'adresse, et rien de ce qui garde celle-ci ne peut donc
+ * servir l'ancienne.
+ *
+ * Deux images sous la même adresse, à un paramètre près : celle des systèmes
+ * qui posent l'icône telle quelle, et celle qu'Android rogne à sa forme
+ * (`masque=1`). Faute de la seconde — un salon dont l'icône a été déposée
+ * avant qu'on la fabrique — c'est la première qui part : mieux vaut une icône
+ * rognée de travers qu'une icône absente.
+ *
+ * Un salon sans icône n'est pas une panne : le manifeste ne demande cette
+ * adresse que là où la base en a une, et la page de secours du produit reste
+ * l'icône par défaut. D'où un 404 que rien ne garde.
+ */
+async function rendIconeApp(
+  sb: ReturnType<typeof db>,
+  slug: string,
+  masque: boolean,
+  identifie: boolean,
+  entetes: Record<string, string>,
+) {
+  const nu = { ...entetes, "Cache-Control": "no-store" };
+  const q = sb.from("evenement")
+    .select("icone_app, icone_app_masque").eq("slug", slug);
+  const { data, error } = await (identifie ? q : q.eq("etat", "publie")).maybeSingle();
+  if (error) return new Response("Icône indisponible.", { status: 503, headers: nu });
+  const ligne = data as { icone_app: string | null; icone_app_masque: string | null } | null;
+  const src = (masque ? ligne?.icone_app_masque : null) ?? ligne?.icone_app ?? "";
+  const base64 = src.startsWith(PREFIXE_PNG) ? src.slice(PREFIXE_PNG.length) : "";
+  if (!base64) return new Response("Ce salon n'a pas d'icône.", { status: 404, headers: nu });
+  return new Response(octetsDeVignette(base64), {
+    headers: {
+      ...entetes,
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
 
 /**
  * Ses pavillons : publiés pour un visiteur, tous pour un exploitant.
@@ -559,16 +616,31 @@ Deno.serve(async (req) => {
 
     const sb = db(req);
 
+    /* L'icône de l'application, avant tout le reste : c'est une image, elle ne
+       doit rien lire du plan pour partir. */
+    if (new URL(req.url).searchParams.get("icone")) {
+      const masque = Boolean(new URL(req.url).searchParams.get("masque"));
+      return await rendIconeApp(sb, slug, masque, identifie, CORS);
+    }
+
     /* Le nom seul, pour nommer l'application installée : avant la lecture
-       complète, puisqu'il n'en a besoin de rien. Gardé dix minutes comme le
-       plan — un salon renommé se voit au même rythme que le reste. */
+       complète, puisqu'il n'en a besoin de rien. Gardé un jour comme le plan —
+       un salon renommé se voit au même rythme que le reste. */
     if (new URL(req.url).searchParams.get("nom")) {
-      const { data: nomme, error: mal } = await nomDuSalon(sb, slug, identifie);
+      const { data: nomme, error: mal } = await appDuSalon(sb, slug, identifie);
       if (mal) return repond({ erreur: mal.message }, 500);
       if (!nomme) {
         return repond({ erreur: "Événement introuvable ou non publié." }, 404);
       }
-      return repond({ evenement: nomme.nom, slug: nomme.slug }, 200, CACHE_NOM);
+      return repond({
+        evenement: nomme.nom,
+        slug: nomme.slug,
+        /* Le nom choisi par l'exploitant, et l'empreinte de son icône : le
+           relais écrit l'un dans le manifeste et pose l'autre dans l'adresse
+           des icônes. Nuls, c'est le nom et l'icône du produit. */
+        app: nomme.nom_app ?? null,
+        icone: nomme.icone_app_version ?? null,
+      }, 200, CACHE_NOM);
     }
 
     // seuls les événements publiés passent, sauf à l'exploitant dont la
@@ -745,6 +817,13 @@ Deno.serve(async (req) => {
          comme à l'exploitant : les deux pages du plan la posent. Nulle tant
          que rien n'a été déposé — la page n'en pose alors aucune. */
       favicon: evt.favicon ?? null,
+      /* Ce que porte l'application installée, quand le salon l'a choisi : le
+         nom écrit sous l'icône, et l'empreinte de l'icône elle-même — jamais
+         l'image, qui pèse un demi-méga et ne se lit qu'à l'installation. La
+         page en a besoin pour ce que le manifeste ne couvre pas : l'écran
+         d'accueil d'iOS, qui ne le lit pas, et la fenêtre qui invite à
+         installer, qui montre ce qu'on installe. */
+      app: { nom: evt.nom_app ?? null, icone: evt.icone_app_version ?? null },
       genereLe: evt.derniere_sync,
       // ce que la fiche détail montre : décidé par l'exploitant, pas par la page
       fiche: evt.fiche ?? {},
