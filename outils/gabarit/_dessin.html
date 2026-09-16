@@ -407,16 +407,7 @@ function dessineDessins(){
     g.style.color = cal.couleur || "var(--accent)";
     g.style.display = cal.visible === false ? "none" : "";
     g.innerHTML = cal.formes.map(f => f.t === "image"
-      // Le clic sur le plan cherche l'ancêtre porteur d'un data-id : une image
-      // liée à un stand ouvre donc sa fiche sans code supplémentaire. C'est
-      // ainsi qu'on pose le logo d'un exposant sur son emplacement.
-      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") +
-        (f.stand && parId.has(f.stand) ? " lie" : "") + '" data-f="' + f.id + '"' +
-        (f.stand && parId.has(f.stand) ? ' data-id="' + esc(f.stand) + '"' : "") +
-        '><image href="' + f.src + '" x="' + f.pts[0][0] +
-        '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
-        '" height="' + (f.pts[1][1] - f.pts[0][1]) +
-        '" preserveAspectRatio="xMidYMid meet"/></g>'
+      ? traceImage(f)
       : f.t === "repere"
       ? traceRepere(f)
       : f.t === "stand"
@@ -875,8 +866,17 @@ function etiquetteSociete(o, soc){
   return [tete, o.code].filter(Boolean).join(" — ");
 }
 
+/* Les deux sortes de formes qui se rattachent à une société, et pour deux
+   raisons. Un stand dessiné découpe un emplacement : il n'existe que par la
+   société qu'il désigne, et sans elle il ne serait qu'un rectangle muet. Une
+   image se pose d'abord pour ce qu'elle montre — le logo d'un exposant, une
+   affiche, un plan d'aménagement — et son rattachement est ce qui la rend
+   cliquable : la toucher ouvre alors la fiche, comme toucher l'emplacement.
+   D'où un champ demandé, l'autre facultatif. */
+const FORMES_RATTACHEES = new Set(["stand", "image"]);
+
 /**
- * Ce qu'un stand dessiné désigne : l'emplacement, le rang de la société, la
+ * Ce qu'une forme rattachée désigne : l'emplacement, le rang de la société, la
  * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
  * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
  *
@@ -885,7 +885,7 @@ function etiquetteSociete(o, soc){
  * panneau d'édition invite à la rattacher de nouveau.
  */
 function societeDeForme(f){
-  if (!f || f.t !== "stand" || !f.stand) return null;
+  if (!f || !FORMES_RATTACHEES.has(f.t) || !f.stand) return null;
   const o = parId.get(f.stand);
   if (!o || o.kind !== "stand") return null;
   const i = Number.isInteger(f.soc) ? f.soc : -1;
@@ -926,6 +926,42 @@ function societeSaisie(txt){
   return l.find(x => x.etiquette.toLowerCase() === v)
       || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
       || null;
+}
+
+/**
+ * Une image posée sur le plan, et ce qu'elle désigne.
+ *
+ * Rattachée, elle porte l'identifiant de l'emplacement et le rang de la
+ * société : le clic sur le plan cherche l'ancêtre porteur d'un « data-id », et
+ * la fiche s'ouvre sans code supplémentaire — celle de l'enseigne désignée, et
+ * non le choix entre les deux, quand un stand est partagé. C'est ainsi qu'on
+ * pose le logo d'un exposant sur son emplacement.
+ *
+ * Détachée, elle reste ce qu'elle est — un dessin — et laisse passer le clic
+ * vers ce qui est dessous : un plan d'aménagement posé sur un hall n'a pas à
+ * empêcher d'ouvrir les stands qu'il recouvre.
+ *
+ * Elle n'ajoute pas de halte au clavier, là où un stand dessiné en pose une :
+ * celui-ci est le seul chemin vers une hébergée qui n'a pas de forme à elle,
+ * quand l'image, elle, est posée sur un emplacement que le clavier atteint
+ * déjà. Deux arrêts pour la même fiche ne feraient que doubler le parcours.
+ */
+function traceImage(f){
+  const l = societeDeForme(f);
+  const nom = l ? nomSurLePlan(l.soc) : "";
+  /* Le rang n'est posé que si la forme le porte. Une image d'avant le champ
+     désignait l'emplacement et non l'enseigne : sur un stand partagé, la fiche
+     doit continuer de demander laquelle on vient voir, plutôt que de trancher
+     pour le titulaire au nom d'un choix que personne n'a fait. */
+  const rang = Number.isInteger(f.soc) ? ' data-soc="' + f.soc + '"' : "";
+  return '<g class="forme' + (f.id === formeSel ? " pick" : "") + (l ? " lie" : "") +
+    '" data-f="' + f.id + '"' +
+    (l ? ' data-id="' + esc(l.o.id) + '"' + rang +
+         ' aria-label="' + esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
+    '><image href="' + f.src + '" x="' + f.pts[0][0] +
+    '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
+    '" height="' + (f.pts[1][1] - f.pts[0][1]) +
+    '" preserveAspectRatio="xMidYMid meet"/></g>';
 }
 
 /**
@@ -1409,6 +1445,33 @@ function calquePourImage(){
   return c;
 }
 
+/**
+ * L'exposant que le champ de l'outil image désigne, s'il en désigne un.
+ *
+ * Facultatif, à la différence de celui du stand dessiné : une image posée pour
+ * ce qu'elle montre — un plan d'aménagement, une affiche, une photo de hall —
+ * ne désigne personne et n'a aucune fiche à ouvrir. Nommé, il vaut pour toutes
+ * les images qu'on pose ensuite, comme la vignette choisie : on aligne souvent
+ * plusieurs logos sur le même stand partagé.
+ *
+ * Il rend ce qu'une forme retient — l'emplacement et le rang de la société —
+ * et non la société elle-même : c'est ce couple que « societeDeForme » relit,
+ * et le seul qui survive à une synchronisation.
+ */
+function lienImageSaisi(){
+  const ch = $("imageSoc");
+  const l = ch ? societeSaisie(ch.value) : null;
+  return l ? { stand: l.o.id, soc: l.i } : null;
+}
+
+/** L'image à poser, rattachée si le champ nomme quelqu'un. */
+function formeImage(pts){
+  const f = { t: "image", src: imageEnAttente.src, pts: pts };
+  const lien = lienImageSaisi();
+  if (lien){ f.stand = lien.stand; f.soc = lien.soc; }
+  return f;
+}
+
 /* Pose l'image autour d'un point, à une taille lisible au zoom courant.
    Plus besoin de tracer un cadre : on ajuste ensuite si besoin. */
 function poseImage(centre){
@@ -1417,11 +1480,28 @@ function poseImage(centre){
   const l = Math.max(4, view.w * .28);
   const ht = l / imageEnAttente.ratio;
   const c = centre || [view.x + view.w / 2, view.y + view.h / 2];
-  const id = ajouteForme({ t: "image", src: imageEnAttente.src,
-    pts: [[+(c[0] - l / 2).toFixed(2), +(c[1] - ht / 2).toFixed(2)],
-          [+(c[0] + l / 2).toFixed(2), +(c[1] + ht / 2).toFixed(2)]] });
-  signale(id);   // l'emplacement n'a pas été choisi : il faut le montrer
-  $("outilsAide").textContent = "Image posée au centre de la vue. Glissez sur le plan pour en poser une autre.";
+  const f = formeImage(
+    [[+(c[0] - l / 2).toFixed(2), +(c[1] - ht / 2).toFixed(2)],
+     [+(c[0] + l / 2).toFixed(2), +(c[1] + ht / 2).toFixed(2)]]);
+  signale(ajouteForme(f));   // l'emplacement n'a pas été choisi : il faut le montrer
+  $("outilsAide").textContent = ditImagePosee(f,
+    "Image posée au centre de la vue. Glissez sur le plan pour en poser une autre.");
+}
+
+/**
+ * Ce qu'on dit d'une image qui vient d'être posée : à qui elle mène, ou qu'elle
+ * ne mène nulle part.
+ *
+ * C'est la seule chose qui ne se voie pas sur le plan — deux images posées se
+ * ressemblent, l'une ouvre une fiche et l'autre non — et c'est précisément ce
+ * qu'on vient de décider en remplissant le champ, ou en le laissant vide.
+ */
+function ditImagePosee(f, sinon){
+  const l = societeDeForme(f);
+  return l
+    ? "Image posée sur « " + (nomSurLePlan(l.soc) || ("Stand " + (l.o.code || "")).trim()) +
+      " » : la toucher ouvrira sa fiche."
+    : sinon;
 }
 
 function importeImage(fichier, centre){
@@ -1526,7 +1606,7 @@ function dessinPointerDown(e){
   }
   if (outil === "image"){
     if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
-    enCours = { t: "image", pts: [p, p] };
+    enCours = formeImage([p, p]);
     return true;
   }
   /* Le contour est un polygone, tracé la main tenue : chaque sommet est
@@ -1622,7 +1702,11 @@ function dessinPointerUp(e){
        lequel vient d'être posé plutôt que de se vider en silence. Le reste
        reprend la palette, qui annonce alors la taille qu'un clic reposerait —
        appelée avant, elle aurait décrit un tracé qui n'existe plus. */
-    if (pose && pose.t === "stand") enchaineStand(pose); else aide();
+    if (pose && pose.t === "stand") enchaineStand(pose);
+    else if (pose && pose.t === "image" && $("outilsAide"))
+      $("outilsAide").textContent = ditImagePosee(pose,
+        "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela.");
+    else aide();
   }
   return true;   // polygone et ligne restent ouverts jusqu'à Entrée
 }
@@ -1693,6 +1777,9 @@ function choisitOutil(o){
   if (o === "texte") $("texteADessiner").focus();
   if (o === "repere") $("repereTexte").focus();
   if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
+  /* L'outil image remplit la même liste, sans prendre le curseur : son premier
+     geste est de choisir un fichier, et le champ n'est qu'une option. */
+  if (o === "image") remplitListeSocietes();
   aide();
 }
 
@@ -1747,12 +1834,8 @@ $("elemLienAjout").onchange = (e) => {
   e.target.value = "";
   if (id) changeLien(id, true);
 };
-// on valide la liaison à la sortie du champ, pas à chaque frappe : une saisie
-// partielle ne désigne aucun stand et effacerait le lien
-$("elemStand").onchange = appliqueLiaison;
-$("elemStand").onblur = appliqueLiaison;
-/* Le stand dessiné se rattache de même : à la sortie du champ, et non à
-   chaque frappe — « SM » ne désigne personne et effacerait le lien. */
+/* On valide le rattachement à la sortie du champ, et non à chaque frappe :
+   « SM » ne désigne personne et effacerait le lien. */
 $("elemSoc").onchange = appliqueSociete;
 $("elemSoc").onblur = appliqueSociete;
 

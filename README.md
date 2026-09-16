@@ -819,6 +819,36 @@ et le dit ainsi qu'elle attend son exposant. Il en va de même quand la
 synchronisation retire la société qu'elle désignait : on ne se rabat pas sur le
 titulaire, ce serait donner à une enseigne la place d'une autre.
 
+### Poser le logo d'un exposant sur son stand
+
+L'outil **Image** dépose une image sur le plan — un logo, une affiche, un plan
+d'aménagement — et la réduit en data-URI avec le reste du dessin : une page
+publiée ne charge aucune ressource externe, et un lien vers un fichier ailleurs
+meurt le jour où l'ailleurs change.
+
+Son champ demande un **exposant**, comme celui de l'outil Stand, à une
+différence près : il est facultatif. Un stand dessiné n'existe que par la
+société qu'il désigne ; une image existe d'abord pour ce qu'elle montre. Nommé,
+l'exposant fait de l'image une porte — la toucher ouvre sa fiche, celle de
+l'enseigne désignée et non le choix entre les deux quand le stand est partagé,
+puisque la liste mêle titulaires et hébergés comme celle de l'outil Stand.
+Laissé vide, l'image reste un dessin et laisse passer le clic vers ce qui est
+dessous : un plan d'aménagement posé sur un hall n'a pas à empêcher d'ouvrir les
+stands qu'il recouvre.
+
+Le nom saisi vaut pour toutes les images posées ensuite, comme la vignette
+choisie : on aligne souvent plusieurs logos sur le même stand partagé. Et le
+rattachement se change après coup dans le panneau de la forme choisie, au même
+champ que celui d'un stand dessiné — les deux formes se rattachent à une société,
+elles n'ont pas à le demander de deux façons.
+
+Ce qu'une image liée n'est pas, c'est un stand dessiné. Elle ne prend ni la
+teinte de son secteur, ni le filtre de la recherche, ni une halte au clavier :
+l'emplacement qu'elle recouvre est déjà tout cela, et deux arrêts pour la même
+fiche ne feraient que doubler le parcours. Ce qu'elle ajoute est le geste qu'un
+visiteur fait de lui-même — toucher le logo qu'il reconnaît. La mesure le compte
+d'ailleurs à part, sur le canal `image`.
+
 ### Passer d'un plan à l'autre
 
 Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
@@ -2080,7 +2110,7 @@ trouverait que de quoi fermer ce qu'on lui a vendu.
 | option | ce que fermer retire |
 |---|---|
 | **Dessin des stands** | l'outil qui matérialise un exposant, ou l'une de ses hébergées, sur sa part d'un emplacement |
-| **Ajout d'images liées à un stand** | l'outil d'image, et avec lui le glisser-déposer et le collage d'un fichier sur le plan |
+| **Ajout d'images liées à un stand** | l'outil d'image — son champ d'exposant compris — et avec lui le glisser-déposer et le collage d'un fichier sur le plan |
 | **Organiser ma journée** | le bouton du tiroir du parcours qui met la visite en heures |
 | **Programme de conférences** | tout ce qui vient du programme : celui d'une zone, les conférences d'un exposant, la recherche par titre, les horaires du parcours, les rappels |
 | **Recommandations sponsorisées** | la proposition d'un exposant de plus, et l'onglet « Suggestion » avec elle |

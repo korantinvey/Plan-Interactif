@@ -255,10 +255,12 @@ const OPTIONS = [
     apres: () => { if (outil === "stand") choisitOutil("main"); } },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
-    aide: "L'outil qui pose une image sur le plan : la photo d'un stand, un " +
-      "plan d'aménagement, une affiche déposée sur un emplacement. Fermée, " +
-      "l'outil quitte la boîte à outils et le plan n'accepte plus ni le " +
-      "glisser-déposer ni le collage ; les images déjà posées restent.",
+    aide: "L'outil qui pose une image sur le plan — le logo d'un exposant sur " +
+      "son emplacement, une affiche, un plan d'aménagement — et qui la lie à " +
+      "l'exposant qu'on nomme : la toucher ouvre alors sa fiche, celle de " +
+      "l'enseigne désignée même sur un stand partagé. Fermée, l'outil quitte " +
+      "la boîte à outils et le plan n'accepte plus ni le glisser-déposer ni " +
+      "le collage ; les images déjà posées restent, et gardent leur lien.",
     apres: () => { if (outil === "image") choisitOutil("main"); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",

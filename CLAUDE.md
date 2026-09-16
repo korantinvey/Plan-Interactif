@@ -163,6 +163,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | démarrage de la page, appel API, panne réseau | `_admin2.html` |
 | tracé des calques de dessin | `_dessin.html` |
 | halls d'un lieu connu (OSM), calage en deux coins, mention de la source | `_batiments.html` ; bibliothèque `outils/lieux.js` → `outils/lieux.json`, versée par `genere.js` dans `plan-admin.html` seul |
+| image posée sur le plan et liée à un exposant — clic sur le logo, fiche de l'enseigne | `_dessin.html` `lienImageSaisi`, `formeImage`, `traceImage`, `ditImagePosee` ; champ `#imageSoc` de la boîte à outils ; rattachement après coup `_edition.html` `appliqueSociete` (champ `#elemSoc`, partagé avec le stand dessiné) ; sortes concernées `FORMES_RATTACHEES` ; canal de mesure `image` par `_js.html` `canalPlan` |
 | verrouiller un calque de dessin | `_dessin.html` § Le verrou d'un calque, cadenas posé par `_pile.html` `boutonVerrou` |
 | déplacer, redimensionner une forme existante | `_edition.html` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
