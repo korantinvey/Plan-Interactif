@@ -2174,13 +2174,25 @@ button.expo:hover{background:var(--line)}
 .expo.statique{background:none;padding:0}
 /* Qui parle, et qui anime : le rang d'un exposant, en plus sobre. Ce qu'ils
    portent au bout n'est pas un code d'emplacement mais une enseigne — elle se
-   lit donc dans la police du texte, non dans celle des numéros, et se borne en
-   largeur pour qu'un nom de société long ne comprime pas celui de la personne. */
+   lit donc dans la police du texte, non dans celle des numéros.
+
+   La cellule du nom est elle-même une rangée, et c'est ce qui tient tout : la
+   mention y est un élément à part, insécable, qu'aucun manque de place ne peut
+   renvoyer à la ligne suivante. Rejetée seule sous un nom, elle se lisait comme
+   l'intitulé de la section d'en dessous — vingt-huit fois sur soixante-treize à
+   la largeur d'un téléphone. C'est l'enseigne qui cède maintenant, et elle le
+   fait sans tromper personne : un nom de société sur deux lignes reste un nom
+   de société. */
 .gens{gap:3px}
-.gens .c{font-family:inherit;font-size:11.5px;text-align:right;
-  max-width:52%;overflow-wrap:anywhere}
-/* Qui anime plutôt que d'intervenir, dit au passage : une nuance, pas un titre. */
-.gens .r{font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+.gens .n{display:flex;align-items:baseline;gap:7px;min-width:0;flex:1 1 auto}
+/* Un patronyme ne se coupe qu'entre deux mots — jamais au milieu, sauf s'il ne
+   tient pas seul sur la ligne. */
+.gens .n .nm{min-width:0;overflow-wrap:break-word}
+.gens .c{flex:0 1 auto;max-width:42%;font-family:inherit;font-size:11.5px;
+  text-align:right;overflow-wrap:anywhere}
+/* Qui anime plutôt que d'intervenir, dit au passage : une nuance, pas un titre
+   — d'où le bas de casse, qui la sépare de tous les intitulés de la fiche. */
+.gens .r{flex:none;white-space:nowrap;font-size:11px;color:var(--ink-3)}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .btn{padding:7px 12px;border-radius:var(--radius);font-size:12.5px;font-weight:500;border:1px solid var(--line)}
 .btn:hover{border-color:var(--line-strong)}
@@ -4069,6 +4081,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fuyait sous le curseur qui venait de la viser. Elle s'accroche donc par le
    haut, à distance fixe du bord : c'est le bas qui bouge, là où l'on ne
    regarde pas — et « glisseFenetre » y mène en glissant. */
+/* La fiche d'une conférence empile des blocs, comme celle d'un stand : elle les
+   espace donc pareil — `.detail-bd` s'en tient à 15 px. Sans cela un intitulé
+   touchait la valeur du bloc précédent, et se lisait comme sa suite. */
+.modale[data-genre="fiche"] .mcorps > * + *{margin-top:15px}
 .modale[data-genre="large"]{align-items:start;padding-block-start:min(7vh,54px)}
 .modale[data-genre="large"] .mfen{width:min(760px,100%);
   /* le haut mange sa part de l'écran : la hauteur maximale la lui rend, sans
@@ -8011,14 +8027,16 @@ function ficheConf(id, canal){
       gens.forEach(g => {
         const el = document.createElement("div");
         el.className = "expo statique";
-        el.innerHTML = '<span class="n"></span><span class="c"></span>';
-        const n = el.querySelector(".n");
-        n.textContent = g.p.nom;
+        /* Le nom et sa mention sont deux cellules, non un texte suivi : c'est
+           ce qui garde la seconde sur la ligne de la première quand la place
+           manque — seule sous le nom, elle passait pour un intitulé. */
+        el.innerHTML = '<span class="n"><span class="nm"></span></span><span class="c"></span>';
+        el.querySelector(".nm").textContent = g.p.nom;
         if (g.role && (c.intervenants || []).length){
           const r = document.createElement("span");
           r.className = "r";
           r.textContent = g.role;
-          n.append(" ", r);
+          el.querySelector(".n").appendChild(r);
         }
         el.querySelector(".c").textContent = g.p.societe || "";
         hote.appendChild(el);
@@ -8042,7 +8060,8 @@ function ficheConf(id, canal){
     }
     corps.appendChild(acts);
     brancheParcours(corps);
-  }, [{ libelle: "Fermer", genre: "primaire" }]);
+    // « fiche » espace les blocs comme le fait celle d'un stand
+  }, [{ libelle: "Fermer", genre: "primaire" }], "fiche");
 }
 
 /**
