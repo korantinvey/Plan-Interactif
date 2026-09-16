@@ -47,7 +47,7 @@
  * survit aux mises en ligne.
  *
  * Il ne peut pas enfler pour autant : ce qui y entre chasse ce qu'il remplace
- * — voir `oublieLesFondsDAvant` et `borneLesLots`.
+ * — voir `oublieLesVersionsDAvant` et `borneLesLots`.
  *
  * La mise en ligne qui apporte ce second cache emporte une dernière fois ce
  * qui était rangé sous la version d'avant : ces fonds et ces vignettes sont
@@ -108,10 +108,13 @@ function range(e, requete, reponse) {
 }
 
 /**
- * Les copies d'un même fond de plan sous une version révolue.
+ * Les copies d'un même document sous une version révolue.
  *
- * Le fond porte sa version dans son adresse : une synchronisation en donne une
- * neuve, et l'ancienne n'a plus rien à servir. Or rien ne l'effaçait — le nom
+ * Le fond de plan porte sa version dans son adresse, et le plan lui-même
+ * depuis qu'il a la sienne : une synchronisation en donne une neuve, et
+ * l'ancienne n'a plus rien à servir. La comparaison couvre les deux sans rien
+ * distinguer — un plan n'a pas de « fond » dans son adresse, et deux absences
+ * se valent. Or rien ne l'effaçait — le nom
  * du cache ne change qu'à une mise en ligne des pages, et entre deux le même
  * pavillon s'y empilait une fois par synchronisation, à deux mégaoctets pièce.
  * Un salon qui se resynchronise chaque matin remplissait ainsi le quota du
@@ -121,7 +124,7 @@ function range(e, requete, reponse) {
  *
  * On ne retient donc qu'une version par pavillon : la dernière servie.
  */
-async function oublieLesFondsDAvant(cache, adresse) {
+async function oublieLesVersionsDAvant(cache, adresse) {
   const memeFond = (u) =>
     u.origin === adresse.origin && u.pathname === adresse.pathname &&
     u.searchParams.get("slug") === adresse.searchParams.get("slug") &&
@@ -160,7 +163,7 @@ async function dabordCache(e, requete, ou) {
   e.waitUntil(caches.open(ou).then(async (c) => {
     await c.put(requete, copie);
     if (adresse.pathname !== "/api/plan") return;
-    if (adresse.searchParams.get("fond")) await oublieLesFondsDAvant(c, adresse);
+    if (adresse.searchParams.get("v")) await oublieLesVersionsDAvant(c, adresse);
     if (adresse.searchParams.get("vignettes")) await borneLesLots(c);
   }).catch(() => {}));
   return reponse;
@@ -244,15 +247,16 @@ self.addEventListener("fetch", (e) => {
 
   if (adresse.origin === location.origin) {
     if (adresse.pathname === "/api/plan") {
-      /* Le fond de plan porte sa version dans son adresse : il ne peut pas être
-         périmé, et pèse cinquante fois les stands — c'est lui qu'il faut garder
-         le plus jalousement. Une vignette de logo suit la même règle pour la
+      /* Le plan et son fond portent leur version dans leur adresse : ils ne
+         peuvent pas être périmés, et le fond pèse cinquante fois les stands —
+         c'est lui qu'il faut garder le plus jalousement. Une vignette de logo suit la même règle pour la
          même raison : elle est nommée par l'empreinte de l'adresse d'où elle
          vient, et son contenu ne peut pas changer sans que sa clé change — et
          un lot de vignettes, qui n'est que des clés bout à bout, pas davantage.
-         Le plan lui-même change à chaque synchronisation : on le redemande, et
-         la copie gardée ne sert que si le réseau manque. */
-      e.respondWith(adresse.searchParams.get("fond") ||
+         Ne reste au réseau que l'entête, qui dit quelle version se sert : il
+         est demandé à chaque ouverture de page, pèse cinquante octets, et sa
+         copie gardée est ce qui permet de retrouver le plan hors ligne. */
+      e.respondWith(adresse.searchParams.get("v") ||
                     adresse.searchParams.get("vignette") ||
                     adresse.searchParams.get("vignettes")
         ? dabordCache(e, requete, DURABLE)

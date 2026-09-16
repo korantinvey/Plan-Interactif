@@ -208,6 +208,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | version anglaise, bascule FR/EN | moteur `_langue.js`, dictionnaire `outils/anglais/`, contrôle et choix par page `outils/traductions.js`, injection `outils/genere.js` `langue` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
+| fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver1:`), demande `_admin2.html` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
 
 ## Déploiement
 

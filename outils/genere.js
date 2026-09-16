@@ -115,17 +115,36 @@ function langue(contenu) {
 const SLUG_DEFAUT = "smcl-2026";
 
 /**
- * Le plan est ce que le visiteur vient voir : la demande part depuis l'en-tête,
- * avant que le navigateur ait lu le reste du document. Cela gagne le temps de
- * lecture et d'analyse de la page — deux cents millisecondes environ.
+ * Le plan est ce que le visiteur vient voir : les demandes partent depuis
+ * l'en-tête, avant que le navigateur ait lu le reste du document. Cela gagne le
+ * temps de lecture et d'analyse de la page — deux cents millisecondes environ.
+ *
+ * Elles sont deux, et partent ensemble. L'entête dit quelle version du plan se
+ * sert aujourd'hui ; le plan, lui, est demandé sous la version qu'on avait la
+ * dernière fois — pari qui se gagne presque toujours, un plan ouvert aux
+ * visiteurs ne changeant qu'une fois par jour. Gagné, il sort du cache du
+ * navigateur sans toucher le réseau ; perdu, `_admin2.html` le redemande sous
+ * la bonne version.
  *
  * Réservé à la page publique : l'administration doit d'abord présenter sa
  * session, sans quoi les brouillons resteraient invisibles.
  */
 const PRECHARGE = [
   "<script>",
-  'window.__plan = fetch("' + API + '?slug=" + encodeURIComponent(',
-  '  new URLSearchParams(location.search).get("plan") || "' + SLUG_DEFAUT + '"));',
+  "{",
+  '  const slug = new URLSearchParams(location.search).get("plan") || "' + SLUG_DEFAUT + '";',
+  '  const q = "' + API + '?slug=" + encodeURIComponent(slug);',
+  "  /* L'entête dit quelle version se sert : cinquante octets, et c'est lui",
+  "     qui nomme l'adresse du plan. */",
+  '  window.__entete = fetch(q + "&entete=1")',
+  "    .then((r) => (r.ok ? r.json() : null)).catch(() => null);",
+  "  /* Et le plan sous la version qu'on avait la dernière fois, sans attendre",
+  "     la réponse : si c'est toujours elle, il sort du cache du navigateur",
+  "     sans toucher le réseau, et il est là quand l'entête répond. */",
+  "  let v = null;",
+  '  try { v = localStorage.getItem("plan-version:" + slug); } catch (e) {}',
+  '  if (v) window.__plan = fetch(q + "&v=" + encodeURIComponent(v));',
+  "}",
   "</" + "script>",
   "",
 ].join("\n");

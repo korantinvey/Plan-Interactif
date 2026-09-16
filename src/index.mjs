@@ -111,10 +111,37 @@ async function cleDeLot(amont) {
     .map((n) => n.toString(16).padStart(2, "0")).join("");
 }
 
+/* La version de ce que le plan porte, rangée à part.
+   L'entête la lit à chaque ouverture de page : la prendre dans la métadonnée du
+   plan obligerait à en relire les cinq cents kilo-octets pour en tirer seize
+   signes, et c'est précisément le temps qu'on cherche à rendre. Elle est écrite
+   avec le plan et retirée avec lui — voir `oublie`. */
+const cleVersion = (slug) => "ver1:" + slug;
+
+/** Range la version à côté du plan, sans faire attendre la visite. */
+const rangeLaVersion = (cache, slug, v) =>
+  cache.put(cleVersion(slug), v, { expirationTtl: GARDE }).catch(() => {});
+
+/** La version, et rien d'autre : une cinquantaine d'octets.
+ *
+ *  Trente secondes de cache : les ouvertures rapprochées ne repartent pas, et
+ *  ce que l'administration vient de publier atteint tout le monde dans la
+ *  demi-minute. C'est la seule chose qu'un visiteur redemande vraiment. */
+const ditVersion = (v) =>
+  new Response(JSON.stringify({ v }), {
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "public, max-age=30",
+    },
+  });
+
 /** Ce que l'on garde à côté de la valeur : de quoi reconstituer la réponse. */
 const meta = (r, frais) => ({
   ct: r.headers.get("Content-Type") || "application/json",
   cc: r.headers.get("Cache-Control") || "no-store",
+  // ce que le plan portait quand on l'a rangé : la page s'en sert pour savoir
+  // si ce qu'elle tient est encore ce qui se sert
+  v: r.headers.get("X-Version") || null,
   // au-delà, l'entrée est encore bonne à servir mais demande à être refaite ;
   // le fond, immuable, n'a pas de date de péremption du tout
   frais,
@@ -142,10 +169,60 @@ function rafraichit(cache, cle, adresse, entetes) {
   if (_enVol.has(cle)) return Promise.resolve();
   _enVol.add(cle);
   return fetch(adresse, { headers: entetes })
-    .then((r) => (gardable(cache, r) ? range(cache, cle, r, r.body, false) : null))
+    .then((r) => {
+      if (!gardable(cache, r)) return null;
+      /* Le plan qu'on vient de refaire ne porte pas forcément la même version :
+         sans ce geste, l'entête continuerait d'annoncer celle d'avant, et les
+         pages garderaient un plan que personne ne sert plus. */
+      const v = r.headers.get("X-Version");
+      const slug = new URL(adresse).searchParams.get("slug");
+      if (v && slug) rangeLaVersion(cache, slug, v);
+      return range(cache, cle, r, r.body, false);
+    })
     // l'amont muet laisse l'entrée périmée en place : elle resservira
     .catch(() => {})
     .finally(() => _enVol.delete(cle));
+}
+
+/**
+ * L'entête du plan : la version de ce qu'il porte, et rien d'autre.
+ *
+ * C'est elle qui rend le plan gardable pour de bon. Le plan lui-même part
+ * désormais sous une adresse qui la contient, déclarée immuable : un visiteur
+ * qui l'a déjà ne la redemande jamais, ni au relais ni à la base. Ne reste que
+ * cette question-ci, à chaque ouverture de page — « est-ce toujours la
+ * même ? » — et elle tient en cinquante octets là où le plan en pèse cinq cent
+ * mille.
+ *
+ * La réponse sort du stockage sans réveiller la base. Quand elle n'y est pas,
+ * on va chercher le plan une fois : cela le range, range sa version avec lui,
+ * et les ouvertures suivantes ne coûtent plus rien. Le plan ainsi ramené n'est
+ * pas rendu ici — la page le demandera à son adresse versionnée, seule à
+ * pouvoir entrer dans son cache.
+ */
+async function entete(url, env, ctx) {
+  const slug = url.searchParams.get("slug") || "";
+  if (!SLUG.test(slug)) return dit({ erreur: "Paramètre slug absent ou invalide." }, 400);
+
+  if (env.CACHE) {
+    const v = await env.CACHE.get(cleVersion(slug)).catch(() => null);
+    if (v) return ditVersion(v);
+  }
+
+  const amont = amontPour(new URLSearchParams({ slug }));
+  const rep = await fetch(amont.toString()).catch(() => null);
+  if (!rep || !rep.ok) {
+    return dit({ erreur: "Plan indisponible." }, rep ? rep.status : 502);
+  }
+  const neuve = rep.headers.get("X-Version");
+  if (gardable(env.CACHE, rep) && neuve) {
+    ctx.waitUntil(range(env.CACHE, cleDe(amont), rep, rep.body, false));
+    ctx.waitUntil(rangeLaVersion(env.CACHE, slug, neuve));
+  } else {
+    // rien à ranger : le corps ne doit pas rester en attente d'un lecteur
+    rep.body?.cancel().catch(() => {});
+  }
+  return neuve ? ditVersion(neuve) : dit({ erreur: "Version absente." }, 502);
 }
 
 /**
@@ -185,6 +262,11 @@ async function oublie(requete, env) {
     await Promise.all([
       env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
       env.CACHE.delete("nom1:" + slug),
+      /* Et la version : c'est elle que les pages interrogent, et la garder
+         reviendrait à leur dire que rien n'a changé. Les plans rangés sous une
+         version révolue restent, sans dommage — plus personne ne les demande,
+         et ils s'effacent d'eux-mêmes. */
+      env.CACHE.delete(cleVersion(slug)),
     ]).catch(() => {});   // un cache en panne ne doit pas faire échouer l'oubli
   }
   return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
@@ -428,6 +510,9 @@ export default {
     // l'administration vient d'enregistrer : ce qu'on gardait ne vaut plus
     if (url.pathname === "/api/oublie") return oublie(requete, env);
     if (url.pathname !== "/api/plan") return env.ASSETS.fetch(requete);
+    /* La question que chaque ouverture de page pose, et la seule : le plan
+       a-t-il changé. Elle se répond du stockage, sans rien relayer. */
+    if (url.searchParams.get("entete")) return entete(url, env, ctx);
     if (requete.method !== "GET" && requete.method !== "HEAD") {
       return new Response("Méthode non permise", { status: 405 });
     }
@@ -455,7 +540,12 @@ export default {
        complet (voir `rendVignettes`). */
     const immuable = Boolean(amont.searchParams.get("fond") ||
                              amont.searchParams.get("vignette") ||
-                             amont.searchParams.get("vignettes"));
+                             amont.searchParams.get("vignettes") ||
+                             /* Le plan sous sa version en fait partie : son
+                                adresse dit ce qu'elle contient, et la fonction
+                                ne la déclare publique que si elle porte bien
+                                la version qui se sert aujourd'hui. */
+                             amont.searchParams.get("v"));
 
     const entetes = new Headers();
     if (jeton) entetes.set("Authorization", jeton);
@@ -475,13 +565,15 @@ export default {
         if (perime) {
           ctx.waitUntil(rafraichit(cache, cle, amont.toString(), entetes));
         }
-        return new Response(garde.value, {
-          headers: {
-            "Content-Type": garde.metadata?.ct || "application/json",
-            "Cache-Control": garde.metadata?.cc || "public, max-age=60",
-            "X-Cache": perime ? "stale" : "hit",
-          },
-        });
+        const entetes = {
+          "Content-Type": garde.metadata?.ct || "application/json",
+          "Cache-Control": garde.metadata?.cc || "public, max-age=60",
+          "X-Cache": perime ? "stale" : "hit",
+        };
+        // la page compare ce qu'elle tient à ce qui se sert : elle doit la lire
+        // sur une copie gardée comme sur une réponse fraîche
+        if (garde.metadata?.v) entetes["X-Version"] = garde.metadata.v;
+        return new Response(garde.value, { headers: entetes });
       }
     }
 
@@ -493,6 +585,12 @@ export default {
        fond de plan pèse deux mégaoctets. */
     if (gardable(cache, reponse)) {
       ctx.waitUntil(range(cache, cle, reponse, sortie.clone().body, immuable));
+      /* La version se range à part, et depuis cet appel-ci seulement : c'est le
+         plan sans version qui dit ce qui se sert aujourd'hui, celui qui en
+         porte une disant seulement ce qu'il portait ce jour-là. */
+      const v = reponse.headers.get("X-Version");
+      const slug = amont.searchParams.get("slug");
+      if (v && slug && !immuable) ctx.waitUntil(rangeLaVersion(cache, slug, v));
     }
     return sortie;
   },

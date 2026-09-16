@@ -70,6 +70,29 @@ export async function versionFond(
   return FORMAT_FOND + "-" + await condense(FORMAT_FOND + "|" + lignes.join("|"));
 }
 
+/* À incrémenter quand ce que le plan porte change sans que son contenu bouge —
+   un champ qu'on cesse d'envoyer, un format qu'on réécrit. C'est le seul geste
+   qui force tous les visiteurs à reprendre le plan de tous les salons. */
+export const FORMAT_PLAN = "1";
+
+/**
+ * La version du plan : tout ce qu'il sert, sauf le fond qui a la sienne.
+ *
+ * Elle est prise sur le texte servi lui-même, et non sur des dates ou des
+ * empreintes de lignes : c'est la seule façon qu'elle ne mente ni dans un sens
+ * — une synchronisation qui ne change rien ne fait rien retélécharger — ni
+ * dans l'autre, puisque rien de ce qui part ne lui échappe.
+ *
+ * Cela suppose que le même contenu s'écrive toujours pareil. Les listes qui
+ * entrent dans ce texte sont donc triées jusqu'à départager les ex æquo : deux
+ * calques de même rang que la base rendrait dans l'ordre qu'elle veut auraient
+ * suffi à changer la version d'un plan que personne n'a touché, et à faire
+ * reprendre un demi-mégaoctet à tous les visiteurs.
+ */
+export async function versionDuPlan(texte: string): Promise<string> {
+  return FORMAT_PLAN + "-" + await condense(texte);
+}
+
 async function condense(texte: string): Promise<string> {
   const octets = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
   return [...new Uint8Array(octets)].slice(0, 8)
