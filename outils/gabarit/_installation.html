@@ -48,11 +48,17 @@
    — savoir qu'elle est installée : ce que le navigateur en a dit ici même, et
      ce que `getInstalledRelatedApps()` confirme ou dément — une application
      désinstallée entre deux visites ne se rappelle au souvenir de personne ;
-   — savoir l'ouvrir : un bouton qui ne tiendrait pas parole vaut moins que
-     pas de fenêtre du tout. Sur Android, le raccourci qu'y pose Chromium est
-     un paquet enregistré auprès du système comme celui qui ouvre les adresses
-     du site, et une intention le réveille. iOS n'a rien de tel — ni pour
-     l'ouvrir, ni même pour savoir qu'elle existe — et la fenêtre s'y tait.
+   — savoir à qui l'on parle, et ce qu'on peut lui offrir. Sur Android, la page
+     apprend du système que l'application est posée, et sait l'ouvrir : le
+     raccourci qu'y pose Chromium est un paquet enregistré comme celui qui
+     ouvre les adresses du site, et une intention le réveille. Elle l'affirme
+     donc, et un bouton y mène. iOS n'a ni l'un ni l'autre — rien n'y dit
+     qu'une application existe, rien ne l'y ouvre, et son stockage est séparé
+     de celui du navigateur. Ce que la page sait du visiteur s'y arrête à ce
+     qu'il a répondu ici : la fenêtre s'adresse donc à qui a lu les trois
+     gestes et dit les avoir compris — le seul à qui l'icône puisse parler —
+     et se borne à la lui suggérer. Un bouton qui ne tiendrait pas parole, ou
+     une fenêtre qui affirmerait ce qu'elle ignore, valent moins que rien.
    ============================================================ */
 
 /* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
@@ -295,6 +301,30 @@ function lanceApplication(){
   }, RAPPEL_LANCEMENT);
 }
 
+/**
+ * Ce que le rappel peut proposer sur cet appareil, s'il peut proposer quelque
+ * chose.
+ *
+ * « ouvrir » : l'application est là, et on sait l'ouvrir. Android et lui seul,
+ * où la page apprend du système l'une et l'autre chose.
+ *
+ * « suggerer » : iOS, où elle n'apprend ni l'une ni l'autre. Rien n'y dit
+ * qu'une application est posée, rien ne l'y ouvre, et le stockage de
+ * l'application y est séparé de celui du navigateur — ce que la page sait du
+ * visiteur s'arrête donc à ce qu'il a répondu ici. Elle s'adresse à celui qui
+ * a lu les trois gestes et dit les avoir compris : c'est le seul à qui
+ * l'icône puisse parler, et à lui elle ne promet rien — elle suggère.
+ *
+ * Ailleurs, rien. L'installation y est impossible, ou la page ne saurait pas
+ * à qui elle parle.
+ */
+function faconRappel(){
+  if (LANCEMENT_POSSIBLE) return appliInstallee() ? "ouvrir" : null;
+  if (IOS_INSTALL && faconInstallation() === "partage" &&
+      reponsesInstallation().compris === true) return "suggerer";
+  return null;
+}
+
 /** A-t-on déjà assez rappelé ? */
 function rappelEcarte(){
   const r = reponsesInstallation();
@@ -421,13 +451,13 @@ function essaieInvitation(){
   if (reponsesInstallation().voulue !== voulue) retientInstallation({ voulue });
   if (!voulue) return finInvitation();
 
-  const installee = appliInstallee();
-  /* Rappeler une application qu'on ne saurait pas ouvrir, ce serait renvoyer
-     le visiteur chercher lui-même ce qu'un bouton promettait de faire. */
-  if (installee && !LANCEMENT_POSSIBLE) return finInvitation();
-  if (installee ? rappelEcarte() : invitationEcartee()) return finInvitation();
+  /* Ce que le rappel aurait à proposer ici — rien, et c'est l'invitation qui
+     reprend la main. Une application installée qu'on ne saurait ni ouvrir ni
+     suggérer n'a pas de fenêtre : `invitationEcartee` se tait déjà pour elle. */
+  const rappel = faconRappel();
+  if (rappel ? rappelEcarte() : invitationEcartee()) return finInvitation();
 
-  if (installee){
+  if (rappel){
     // le plan pas encore affiché, ou pas depuis assez longtemps : on repasse
     if (!installAccueil) return;
     const reste = installAccueil + RAPPEL_DELAI - performance.now();
@@ -437,13 +467,13 @@ function essaieInvitation(){
      relancera. Il vient d'ordinaire dès le chargement, mais Chrome peut aussi
      attendre un premier geste et un peu d'usage — la fenêtre attend avec lui,
      puisqu'elle n'aurait rien à proposer sans. */
-  const facon = installee ? null : faconInstallation();
-  if (!installee && !facon) return;
+  const facon = rappel ? null : faconInstallation();
+  if (!rappel && !facon) return;
   const calme = installGeste ? INSTALL_CALME - (performance.now() - installGeste) : 0;
   if (calme > 0) return relanceInvitation(calme);
   if (invitationRetenue()) return;
   finInvitation();
-  if (installee) ouvreRappel(false);
+  if (rappel) ouvreRappel(rappel, false);
   else ouvreInvitation(facon, false);
 }
 
@@ -605,7 +635,14 @@ function ouvreInvitation(facon, apercu){
 
   avantFermeture = () => {
     if (apercu) return retourAuxReglages();
-    if (reponse === "compris") retientInstallation({ compris: true });
+    /* « J'ai compris » ouvre la porte du rappel sur iOS — c'est le seul signe
+       qu'y donne un visiteur d'avoir eu affaire à l'installation
+       (`faconRappel`). Pas aujourd'hui pour autant : il vient de lire les
+       gestes, et lui reparler de l'application dans la journée serait répéter
+       ce qu'il a dit avoir compris. */
+    if (reponse === "compris"){
+      retientInstallation({ compris: true, rappelVue: jourInstallation() });
+    }
     else if (!reponse) refuseInstallation();
   };
 }
@@ -647,44 +684,70 @@ function confirmeInstallation(essais){
 }
 
 /**
- * Le rappel : l'application est là, et c'est le navigateur qu'on lit.
+ * Le rappel : l'application est là — ou pourrait y être —, et c'est le
+ * navigateur qu'on lit.
  *
- * Elle ne vante que ce que l'application fait de plus — le plein écran, le
- * geste unique, le plan qui tient sans réseau — parce que c'est tout ce
- * qu'elle a à offrir, et que le visiteur, lui, ne voit aucune différence
+ * Deux façons, et ce qui les sépare n'est pas d'habillage (`faconRappel`).
+ * « ouvrir » affirme et propose : la page sait que l'application est posée,
+ * elle sait l'ouvrir, un bouton y mène. « suggerer » ne sait ni l'un ni
+ * l'autre : elle parle au conditionnel, à qui a lu les gestes d'installation,
+ * et ne propose rien d'autre que de préférer l'icône. Affirmer là ce qu'on
+ * ignore, ce serait se tromper une fois sur deux ; y poser un bouton, promettre
+ * ce qu'aucune page d'iOS ne peut tenir.
+ *
+ * L'une et l'autre ne vantent que ce que l'application fait de plus — le plein
+ * écran, le geste unique, le plan qui tient sans réseau — parce que c'est tout
+ * ce qu'elles ont à offrir, et que le visiteur, lui, ne voit aucune différence
  * depuis son onglet.
  *
- * « Rester ici » est une réponse, pas une porte de sortie : elle est écrite en
- * toutes lettres à côté du bouton d'accent, parce qu'une fenêtre qui n'offre
+ * Le bouton de gauche est une réponse, pas une porte de sortie : il est écrit
+ * en toutes lettres à côté de celui d'accent, parce qu'une fenêtre qui n'offre
  * que d'obéir n'est pas une proposition. Fermer sans répondre vaut la même
  * chose — la croix, le voile, « Échap » — et deux fois valent pour toutes.
  *
- * En aperçu, rien ne s'écrit, et le bouton enchaîne sur la fenêtre de repli :
- * l'organisateur règle son salon depuis un ordinateur, où celle-ci ne
- * paraîtra jamais, et les deux se lisent ensemble.
+ * En aperçu, rien ne s'écrit, et le bouton d'ouverture enchaîne sur la fenêtre
+ * de repli : l'organisateur règle son salon depuis un ordinateur, où aucune
+ * des deux ne paraîtra, et elles se lisent ensemble.
  */
-function ouvreRappel(apercu){
+function ouvreRappel(facon, apercu){
   /* Montrée, elle compte pour la journée, qu'on y réponde ou non : un plan
      rechargé sous la fenêtre ne la ferait pas revenir. */
   if (!apercu) retientInstallation({ rappelVue: jourInstallation() });
+  const ouvre = facon === "ouvrir";
   let demandee = false;
-  ouvreModale("L'application est installée", corps => {
-    teteInvitation(corps, "Déjà sur votre écran d'accueil");
+
+  ouvreModale(ouvre ? "L'application est installée" : "Le plan en application", corps => {
+    teteInvitation(corps, ouvre ? "Déjà sur votre écran d'accueil" : "Sur votre écran d'accueil");
     const p = document.createElement("p");
-    p.textContent = "Vous lisez le plan dans le navigateur. Ouvert depuis " +
-      "l'application, il s'affiche en plein écran, se lance d'un geste et " +
-      "reste consultable sur place, même quand le réseau ne passe plus.";
+    p.textContent = ouvre
+      ? "Vous lisez le plan dans le navigateur. Ouvert depuis l'application, " +
+        "il s'affiche en plein écran, se lance d'un geste et reste consultable " +
+        "sur place, même quand le réseau ne passe plus."
+      : "Si vous l'avez ajouté à votre écran d'accueil, ouvrez-le depuis son " +
+        "icône plutôt que depuis le navigateur : il s'affiche en plein écran, " +
+        "se lance d'un geste et reste consultable sur place, même quand le " +
+        "réseau ne passe plus.";
     corps.appendChild(p);
   }, [
-    { libelle: "Rester ici" },
-    { libelle: "Ouvrir l'application", genre: "accent", action: () => {
-        demandee = true;
-        if (!apercu) lanceApplication();
-      } },
+    { libelle: ouvre ? "Rester ici" : "Plus tard" },
+    ouvre
+      ? { libelle: "Ouvrir l'application", genre: "accent", action: () => {
+          demandee = true;
+          if (!apercu) lanceApplication();
+        } }
+      /* Rien à faire ici, et rien à vérifier plus tard : une suggestion qu'on
+         a lue et acquittée a dit tout ce qu'elle avait à dire. */
+      : { libelle: "Compris", genre: "accent", action: () => {
+          demandee = true;
+          if (!apercu) retientInstallation({ rappelClos: true });
+        } },
   ], "installe");
 
   avantFermeture = () => {
-    if (apercu) return demandee ? queueMicrotask(() => ouvreRetrouve(true)) : retourAuxReglages();
+    if (apercu){
+      return demandee && ouvre
+        ? queueMicrotask(() => ouvreRetrouve(true)) : retourAuxReglages();
+    }
     if (!demandee) refuseRappel();
   };
 }
@@ -738,14 +801,23 @@ function caseInstallation(bloc){
   aide.dataset.reglage = "installation";
   aide.innerHTML = "Sur téléphone et tablette, quand le plan est ouvert dans le " +
     "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès " +
-    "l'ouverture. Le plan déjà installé, une autre propose d'y passer, dix " +
+    "l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix " +
     "secondes après l'ouverture. Une fois par jour au plus chacune, et plus " +
-    "du tout après deux refus. Aperçu : " +
+    "du tout après deux refus. Aperçu de l'invitation : " +
     '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +
     '<button type="button" class="apercuInst" data-facon="partage">iPhone</button> · ' +
-    '<button type="button" class="apercuInst" data-facon="installe">une fois installé</button> · ' +
-    '<button type="button" class="apercuInst" data-facon="rappel">déjà installée</button>';
-  const APERCUS = { installe: () => ouvreInstalle(true), rappel: () => ouvreRappel(true) };
+    '<button type="button" class="apercuInst" data-facon="installe">une fois installé</button>' +
+    ". Du rappel : " +
+    '<button type="button" class="apercuInst" data-facon="rappel:ouvrir">Android</button> · ' +
+    '<button type="button" class="apercuInst" data-facon="rappel:suggerer">iPhone</button>';
+  /* Les deux rappels se montrent l'un comme l'autre : sur Android la page sait
+     l'application posée, sur iPhone elle ne peut que la suggérer, et
+     l'organisateur qui allume la case mérite de voir ce que chacun lira. */
+  const APERCUS = {
+    installe: () => ouvreInstalle(true),
+    "rappel:ouvrir": () => ouvreRappel("ouvrir", true),
+    "rappel:suggerer": () => ouvreRappel("suggerer", true),
+  };
   aide.querySelectorAll(".apercuInst").forEach(b => {
     const propre = APERCUS[b.dataset.facon];
     b.onclick = () => propre ? propre() : ouvreInvitation(b.dataset.facon, true);

@@ -1538,8 +1538,8 @@ onglet parmi d'autres, barres comprises, et tombera avec le réseau — tout ce
 que l'installation devait éviter.
 
 Une fenêtre le lui dit **dix secondes après que le plan est à l'écran**, et lui
-propose d'y passer d'un bouton. Elle suit la même case que l'invitation, les
-mêmes garde-fous — jamais par-dessus une fiche ouverte, un doigt posé, une
+propose d'y passer — d'un bouton là où c'est possible. Elle suit la même case
+que l'invitation, les mêmes garde-fous — jamais par-dessus une fiche ouverte, un doigt posé, une
 saisie — et la même discipline : une fois par jour au plus, plus rien après
 deux refus. Elle a ses compteurs à elle : avoir écarté l'une ne tait pas
 l'autre, et une installation les remet à zéro.
@@ -1567,10 +1567,23 @@ vaut mieux qu'un plan rechargé sous les yeux du visiteur. Le silence se lit une
 seconde et demie plus tard, à la page toujours là, et une dernière fenêtre dit
 alors où est l'icône — puis le bouton n'est plus proposé sur cet appareil.
 
-iOS n'a rien de tel, ni pour ouvrir l'application ni même pour savoir qu'elle
-existe : la fenêtre s'y tait, et les trois gestes de l'invitation disaient déjà
-où regarder. La case des réglages porte un quatrième aperçu, « déjà installée »,
-qui enchaîne les deux fenêtres.
+**Sur iOS, la même fenêtre parle autrement**, parce qu'elle sait moins. Rien
+n'y dit qu'une application est posée — pas d'`appinstalled`, pas de
+`getInstalledRelatedApps()`, et le stockage de l'application est séparé de
+celui du navigateur —, et rien ne l'y ouvre. Elle ne peut donc ni affirmer ni
+proposer : elle s'adresse à celui qui a lu les trois gestes d'ajout et dit les
+avoir compris — le seul dont on sache qu'il a eu affaire à l'installation — et
+se borne à lui suggérer l'icône, au conditionnel.
+
+| | Android | iOS |
+|---|---|---|
+| titre | « L'application est installée » | « Le plan en application » |
+| ce qu'elle sait | l'application est posée sur l'appareil | que les gestes d'ajout ont été lus et compris |
+| boutons | « Rester ici » · « Ouvrir l'application » | « Plus tard » · « Compris » |
+| après | l'application s'ouvre, ou la fenêtre dit où est l'icône | la suggestion est close, et ne revient pas |
+
+La case des réglages porte les aperçus des deux : l'organisateur règle son
+salon depuis un ordinateur, où aucune ne paraîtra.
 
 ## Le rapport d'utilisation
 

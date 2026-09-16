@@ -43,6 +43,12 @@ module.exports = {
   "Rester ici": "Stay here",
   "Ouvrir l'application": "Open the app",
 
+  /* iOS ne dit pas qu'une application est installée, et rien ne l'y ouvre : la
+     même fenêtre y parle au conditionnel, à qui a lu les gestes d'ajout. */
+  "Le plan en application": "The map as an app",
+  "Si vous l'avez ajouté à votre écran d'accueil, ouvrez-le depuis son icône plutôt que depuis le navigateur : il s'affiche en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
+    "If you added it to your home screen, open it from its icon rather than from the browser: it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
+
   // le bouton n'a rien ouvert
   "Ouvrez-la depuis son icône": "Open it from its icon",
   "Sur votre écran d'accueil": "On your home screen",
@@ -51,9 +57,9 @@ module.exports = {
 
   // la case des réglages
   "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
-  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Le plan déjà installé, une autre propose d'y passer, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu :":
-    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Where the map is already installed, another offers to switch to it, ten seconds in. At most once a day each, and never again after two refusals. Preview:",
+  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu de l'invitation :":
+    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Another reminds visitors who already have the app, ten seconds in. At most once a day each, and never again after two refusals. Preview of the invitation:",
+  ". Du rappel :": ". Of the reminder:",
   "Android": "Android",
   "une fois installé": "once installed",
-  "déjà installée": "already installed",
 };
