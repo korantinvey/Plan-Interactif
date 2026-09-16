@@ -2692,7 +2692,10 @@ function ficheConf(id, canal){
           r.textContent = g.role;
           el.querySelector(".n").appendChild(r);
         }
-        el.querySelector(".c").textContent = g.p.societe || "";
+        const ens = el.querySelector(".c");
+        ens.textContent = g.p.societe || "";
+        // coupée par une ellipse faute de place : elle se lit en entier ici
+        if (g.p.societe) ens.title = g.p.societe;
         hote.appendChild(el);
       });
       corps.appendChild(w);
