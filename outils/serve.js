@@ -29,6 +29,24 @@ const TYPES = {
 http.createServer((q, s) => {
   let u = q.url.split("?")[0];
 
+  /* L'entête du plan, rendu ici comme le Worker le rend (`src/index.mjs`) : la
+     fonction ne connaît pas ce paramètre — c'est le relais qui répond, de son
+     stockage. Sans ce détour, l'essai local recevrait le plan entier là où la
+     page attend sa version, et le seul geste qu'on voulait éprouver ne
+     s'éprouverait pas. Rien n'est gardé ici : un poste d'essai n'a pas de
+     stockage, et n'en a pas besoin. */
+  if (u === "/api/plan" && new URLSearchParams(q.url.split("?")[1] || "").get("entete")){
+    const p = new URLSearchParams(q.url.split("?")[1] || "");
+    https.get(AMONT + "?slug=" + encodeURIComponent(p.get("slug") || ""), r => {
+      const v = r.headers["x-version"];
+      r.resume();                      // on ne lit pas le plan, seulement son entête
+      s.writeHead(v ? 200 : 502, { "Content-Type": "application/json",
+                                   "Cache-Control": "no-store" });
+      s.end(JSON.stringify(v ? { v } : { erreur: "Version absente." }));
+    }).on("error", e => { s.writeHead(502); s.end(e.message); });
+    return;
+  }
+
   // même chemin qu'en production : les pages appellent /api/plan
   if (u === "/api/plan"){
     const cible = AMONT + "?" + (q.url.split("?")[1] || "");

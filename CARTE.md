@@ -51,14 +51,15 @@ Fonctions :
 
 `#sauveConf` · `#restaureConf` · `#fichierConf`
 
-### `_admin2.html` — 214 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin2.html` — 271 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 12. Démarrage
 
 Fonctions :
 
 `demarre` 8 · `annonce` 67 · `entetesApi` 90 · `chargeFond` 113 · `panneDuChargement` 160
-`charge` 167
+`CLE_VERSION` 170 · `versionRetenue` 171 · `retientVersion` 174 · `demandePlan` 198
+`charge` 222
 
 ### `_aimants.html` — 474 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -617,12 +618,12 @@ Fonctions :
 `poseSuggestion` 298 · `fenetreSuggestion` 312 · `relevePalmares` 351 · `etiquetteSugg` 371
 `voletSuggestion` 381
 
-### `_sw.js` — 336 l. → sw.js
+### `_sw.js` — 340 l. → sw.js
 
 Fonctions :
 
-`range` 101 · `oublieLesFondsDAvant` 124 · `dabordCache` 145 · `borneLesLots` 181
-`dabordReseau` 203 · `navigation` 220
+`range` 101 · `oublieLesVersionsDAvant` 127 · `dabordCache` 148 · `borneLesLots` 184
+`dabordReseau` 206 · `navigation` 223
 
 ### `_tutoriel.html` — 876 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -707,9 +708,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `r2` 24 · `points` 44 · `boite` 83 · `neDessineRien` 106
 
-### `supabase/functions/_partage/version.ts` — 77 l.
+### `supabase/functions/_partage/version.ts` — 100 l.
 
-`condense` 73
+`condense` 96
 
 ### `supabase/functions/_partage/vignette.ts` — 28 l.
 
@@ -719,7 +720,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 73 · `client` 76
 
-### `supabase/functions/plan-public/index.ts` — 885 l.
+### `supabase/functions/plan-public/index.ts` — 921 l.
 
 `cors` 51 · `db` 85 · `service` 100 · `vignettesParAdresse` 117 · `avecVignette` 154
 `rendVignette` 190 · `rendVignettes` 267 · `lu` 310 · `salon` 320 · `nomDuSalon` 343
@@ -781,8 +782,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 499 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 84 · `amontPour` 93 · `cleDe` 101 · `cleDeLot` 107 · `meta` 115 · `gardable` 128 `range` 134 · `rafraichit` 141 · `oublie` 168 · `rappels` 248 · `nomDuSalon` 301 `manifeste` 348 · `mesure` 385
+- `src/index.mjs` — 597 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 84 · `amontPour` 93 · `cleDe` 101 · `cleDeLot` 107 · `cleVersion` 119 `rangeLaVersion` 122 · `ditVersion` 130 · `meta` 139 · `gardable` 155 · `range` 161 `rafraichit` 168 · `entete` 203 · `oublie` 245 · `rappels` 330 · `nomDuSalon` 383 `manifeste` 430 · `mesure` 467
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.

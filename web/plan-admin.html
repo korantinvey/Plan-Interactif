@@ -31867,17 +31867,74 @@ function panneDuChargement(e){
     : "Plan indisponible : " + e.message;
 }
 
+/* La version du plan qu'on avait la dernière fois, par salon : c'est elle qui
+   nomme l'adresse qu'on redemande, et le navigateur la sert alors de son
+   cache. Un stockage qui refuse ne casse rien — on repart de l'entête. */
+const CLE_VERSION = () => "plan-version:" + SLUG;
+const versionRetenue = () => {
+  try { return localStorage.getItem(CLE_VERSION()) || ""; } catch (e) { return ""; }
+};
+const retientVersion = (v) => {
+  try { if (v) localStorage.setItem(CLE_VERSION(), v); } catch (e) {}
+};
+
+/**
+ * Le plan, à la version qui se sert aujourd'hui.
+ *
+ * Le plan pèse un demi-mégaoctet et ne change qu'une fois par jour. Le
+ * redemander à chaque ouverture de page était payer cinq cent mille octets pour
+ * apprendre que rien n'avait bougé ; le garder longtemps pour l'éviter, c'était
+ * ne plus pouvoir rien corriger avant l'expiration. L'entête tranche : il dit
+ * quelle version se sert, en cinquante octets, et le plan part sous une adresse
+ * qui la porte, déclarée immuable. Ce qu'un appareil a déjà, il le garde un an ;
+ * ce qui change lui parvient dans la demi-minute.
+ *
+ * Les deux demandes partent ensemble depuis l'en-tête de la page, le plan sous
+ * la version d'hier : le pari se gagne presque toujours, et le plan est là
+ * quand l'entête répond. Perdu, on le redemande une fois, sous la bonne.
+ *
+ * Un entête muet ne bloque rien : ce qu'on avait pris d'avance sert tel quel —
+ * mieux vaut le plan d'hier que pas de plan —, et à défaut on retombe sur
+ * l'adresse sans version, celle d'avant, qui reste servie. C'est aussi ce qui
+ * se passe hors ligne, où le service rend ce qu'il garde.
+ */
+function demandePlan(){
+  const q = (sup) => API + "?slug=" + encodeURIComponent(SLUG) + sup;
+  const attendu = versionRetenue();
+  const avance = window.__plan ||
+    (attendu ? fetch(q("&v=" + encodeURIComponent(attendu))) : null);
+  const dit = window.__entete ||
+    fetch(q("&entete=1")).then(r => r.ok ? r.json() : null).catch(() => null);
+  window.__plan = window.__entete = null;
+
+  return dit.then(async (e) => {
+    const v = e && e.v;
+    if (avance){
+      const r = await avance.catch(() => null);
+      if (r && r.ok && (!v || r.headers.get("X-Version") === v)){
+        retientVersion(r.headers.get("X-Version") || attendu);
+        return r;
+      }
+    }
+    const r = await fetch(v ? q("&v=" + encodeURIComponent(v)) : q(""));
+    if (r.ok) retientVersion(r.headers.get("X-Version"));
+    return r;
+  });
+}
+
 function charge(){
   annonce("Chargement du plan…");
   const entetes = entetesApi();
-  // La demande a pu partir dès l'en-tête de la page, avant même que le reste
-  // soit lu : on la récupère plutôt que d'en lancer une seconde. En
-  // administration elle n'existe pas — il faut y présenter sa session.
-  const depart = (!entetes.Authorization && window.__plan) || fetch(
-    API + "?slug=" + encodeURIComponent(SLUG),
-    // un brouillon ne doit pas rester dans le cache du navigateur
-    { headers: entetes, cache: entetes.Authorization ? "no-store" : "default" });
-  window.__plan = null;
+  /* En administration, la session passe dans la demande et le brouillon qu'elle
+     rend ne doit rester nulle part : ni version, ni cache, et donc pas d'entête
+     — l'exploitant regarde l'état réel, jamais une copie.
+     Pour le visiteur, les demandes sont déjà parties depuis l'en-tête de la
+     page : on les récupère plutôt que d'en lancer d'autres. */
+  const depart = entetes.Authorization
+    ? fetch(API + "?slug=" + encodeURIComponent(SLUG),
+            { headers: entetes, cache: "no-store" })
+    : demandePlan();
+  window.__plan = window.__entete = null;
   return depart
     .then(r => {
       // session périmée : on repasse par l'écran de connexion plutôt que

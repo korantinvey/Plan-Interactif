@@ -36,7 +36,7 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { sansMasques } from "../_partage/svg.ts";
-import { versionFond } from "../_partage/version.ts";
+import { versionDuPlan, versionFond } from "../_partage/version.ts";
 import { octetsDeVignette } from "../_partage/octets.ts";
 
 /** Origines autorisées. Complétées par la variable ORIGINES_AUTORISEES —
@@ -648,7 +648,10 @@ Deno.serve(async (req) => {
           .select("id, id_klipso, libelle, hall, emprise")
           .eq("evenement_id", evt.id),
         identifie,
-      ).order("libelle", { ascending: true }),
+      ).order("libelle", { ascending: true })
+       /* Départage : deux pavillons de même libellé sortiraient dans l'ordre
+          que la base veut, et la version du plan changerait toute seule. */
+       .order("id", { ascending: true }),
       "Lecture des pavillons",
     );
     if (!plans?.length) {
@@ -677,7 +680,9 @@ Deno.serve(async (req) => {
       ),
       lu(
         sb.from("calque_dessin").select("plan_id, id, cle, nom, couleur, rempli, visible, rang, formes")
-          .in("plan_id", ids).order("rang", { ascending: true }),
+          .in("plan_id", ids).order("rang", { ascending: true })
+          // départage, pour la même raison que les pavillons
+          .order("id", { ascending: true }),
         "Lecture des calques de dessin",
       ),
       lu(
@@ -791,7 +796,10 @@ Deno.serve(async (req) => {
           // pas, le navigateur ne redemande rien
           versionFond: versions.get(p.id),
           fond: (parCalque[p.id] ?? [])
-            .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0))
+            // la clé départage les calques de même rang : le tri de JavaScript
+            // garde l'ordre d'entrée, qui vient de la base et n'est pas garanti
+            .sort((a, b) => (a.ordre_klipso ?? 0) - (b.ordre_klipso ?? 0) ||
+                            String(a.cle).localeCompare(String(b.cle)))
             .map((c) => ({
               // l'identifiant Klipso est la clé stable : les libellés changent
               id: c.id_klipso,
@@ -877,7 +885,35 @@ Deno.serve(async (req) => {
       }),
     };
 
-    return repond(sortie, 200, CACHE_PLAN);
+    /* Le plan, et la version de ce qu'il porte.
+     *
+     * Elle est prise sur le texte qu'on s'apprête à envoyer, et voyage en
+     * en-tête plutôt que dans le corps : le relais la range à côté du plan, et
+     * la rend ensuite à qui demande l'entête sans avoir à relire un
+     * demi-mégaoctet pour en extraire un champ.
+     *
+     * Une version demandée qui n'est plus la nôtre reçoit le plan courant,
+     * mais elle le recevrait sous l'étiquette d'hier : on ne la laisse alors
+     * entrer dans aucun cache, et l'entête dira laquelle demander. */
+    const texte = JSON.stringify(sortie);
+    const version = await versionDuPlan(texte);
+    const demandee = new URL(req.url).searchParams.get("v");
+    return new Response(texte, {
+      headers: {
+        ...CORS,
+        "Content-Type": "application/json",
+        "X-Version": version,
+        // sans quoi une page servie depuis un cadre ou une coque ne la lirait pas
+        "Access-Control-Expose-Headers": "X-Version",
+        "Cache-Control": identifie
+          ? "private, no-store"
+          : demandee === version
+          ? "public, max-age=31536000, immutable"
+          : demandee
+          ? "no-store"
+          : `public, max-age=${CACHE_PLAN}, stale-while-revalidate=${GRACE}`,
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return repond({ erreur: message }, 500);
