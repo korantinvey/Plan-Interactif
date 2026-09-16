@@ -1450,8 +1450,16 @@ button.expo:hover{background:var(--line)}
 /* Un patronyme ne se coupe qu'entre deux mots — jamais au milieu, sauf s'il ne
    tient pas seul sur la ligne. */
 .gens .n .nm{min-width:0;overflow-wrap:break-word}
-.gens .c{flex:0 1 auto;max-width:42%;font-family:inherit;font-size:11.5px;
-  text-align:right;overflow-wrap:anywhere}
+/* L'enseigne se coupe par une ellipse plutôt que de passer à la ligne : une
+   rangée par personne était tout l'objet de ce bloc, et un nom de société sur
+   deux lignes le défaisait une fois sur quatre. C'est l'usage de la maison —
+   la liste latérale tronque de même —, et le nom complet reste sous le
+   pointeur, dans la recherche, et sur la fiche de l'exposant quand il en tient
+   un stand. Onze pixels plutôt que onze et demi : un tiers de troncatures en
+   moins sur le programme de Franchise Expo, sans que les noms cèdent
+   davantage. */
+.gens .c{flex:0 1 auto;max-width:44%;font-family:inherit;font-size:11px;
+  text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Qui anime plutôt que d'intervenir, dit au passage : une nuance, pas un titre
    — d'où le bas de casse, qui la sépare de tous les intitulés de la fiche. */
 .gens .r{flex:none;white-space:nowrap;font-size:11px;color:var(--ink-3)}
@@ -7300,7 +7308,10 @@ function ficheConf(id, canal){
           r.textContent = g.role;
           el.querySelector(".n").appendChild(r);
         }
-        el.querySelector(".c").textContent = g.p.societe || "";
+        const ens = el.querySelector(".c");
+        ens.textContent = g.p.societe || "";
+        // coupée par une ellipse faute de place : elle se lit en entier ici
+        if (g.p.societe) ens.title = g.p.societe;
         hote.appendChild(el);
       });
       corps.appendChild(w);
