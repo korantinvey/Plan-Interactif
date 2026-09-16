@@ -58,11 +58,12 @@ const CACHE = "plan-" + VERSION;
 const DURABLE = "plan-durable";
 const HORS_LIGNE = "hors-ligne.html";
 
-/* Combien de lots de vignettes on garde. Un lot pèse deux cents kilo-octets et
-   nomme les exposants qu'il porte : la liste change, l'adresse aussi, et
-   l'ancien lot n'a plus rien à servir. Quarante couvrent deux salons entiers,
-   et bornent ce cache à huit mégaoctets. */
-const LOTS_GARDES = 40;
+/* Combien de lots de vignettes on garde. Un lot pèse quatre cents kilo-octets
+   et nomme les exposants qu'il porte : la liste change, l'adresse aussi, et
+   l'ancien lot n'a plus rien à servir. Vingt-quatre bornent ce cache à dix
+   mégaoctets, et couvrent huit listes d'exposants successives — un salon n'en
+   demande que trois. */
+const LOTS_GARDES = 24;
 
 /* Les polices sont servies depuis `polices/`, sous des noms qui portent leur
    empreinte (voir `outils/polices.js`) : elles ne changent jamais sous une même

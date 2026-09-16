@@ -7163,12 +7163,15 @@ function prechargeMarque(id, iSoc){
  * deux cent dix allers-retours jusqu'au relais — six en vol à la fois, donc
  * trente-cinq vagues, et sur le réseau d'un salon une vague coûte plus que ce
  * qu'elle rapporte. Le relais, lui, payait une lecture de son stockage par
- * vignette, et le quota d'une journée entière y passait. Par lots de
- * quarante-huit, il reste cinq demandes, et cinq lectures.
+ * vignette, et le quota d'une journée entière y passait. Par lots, il en reste
+ * trois, et trois lectures.
  *
- * Quarante-huit et pas davantage : c'est la tranche que la base accepte de
- * recevoir d'un coup (voir `vignettesParAdresse`), et deux cents kilo-octets,
- * un lot qu'on peut abandonner en route sans avoir tout perdu.
+ * Quatre-vingt-seize par lot : deux demandes pour un salon comme Franchise
+ * Expo, une adresse de deux kilo-octets et demi — la chaîne en accepte cinq
+ * fois plus avant de rompre, la mesure a été faite — et quatre cents
+ * kilo-octets, un lot qu'on peut encore abandonner en route sans avoir tout
+ * perdu. Tout demander d'un coup tiendrait aussi, jusqu'au salon qui passe les
+ * trois cents exposants ; on garde la marge.
  *
  * Trois retenues, parce que ce chargement n'est demandé par personne :
  *
@@ -7178,7 +7181,7 @@ function prechargeMarque(id, iSoc){
  * — il y va deux lots à la fois, pour ne pas disputer la bande passante au
  *   fond de plan, qui pèse cinquante fois plus et qu'on regarde déjà.
  */
-const VIGNETTES_PAR_LOT = 48;
+const VIGNETTES_PAR_LOT = 96;
 const LOTS_A_LA_FOIS = 2;
 
 /* Ce qui est arrivé, par clé : l'image elle-même, prête à poser. Le lot qui
