@@ -255,13 +255,16 @@ const OPTIONS = [
     apres: () => { if (outil === "stand") choisitOutil("main"); } },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
-    aide: "L'outil qui pose une image sur le plan — le logo d'un exposant sur " +
-      "son emplacement, une affiche, un plan d'aménagement — et qui la lie à " +
-      "l'exposant qu'on nomme : la toucher ouvre alors sa fiche, celle de " +
-      "l'enseigne désignée même sur un stand partagé. Fermée, l'outil quitte " +
-      "la boîte à outils et le plan n'accepte plus ni le glisser-déposer ni " +
-      "le collage ; les images déjà posées restent, et gardent leur lien.",
-    apres: () => { if (outil === "image") choisitOutil("main"); } },
+    aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
+      "sur son emplacement ouvre sa fiche au toucher, celle de l'enseigne " +
+      "désignée même sur un stand partagé. C'est le lien qui se prend, non " +
+      "l'image : fermée, l'outil image reste et les images se posent comme " +
+      "n'importe quel dessin, mais le champ qui nomme l'exposant s'en va et " +
+      "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
+    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
+       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
+       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
+    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +

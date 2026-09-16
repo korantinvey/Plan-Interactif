@@ -876,6 +876,20 @@ function etiquetteSociete(o, soc){
 const FORMES_RATTACHEES = new Set(["stand", "image"]);
 
 /**
+ * Cette forme accepte-t-elle qu'on la rattache maintenant ?
+ *
+ * Le stand dessiné, toujours — il n'est que cela. L'image, seulement là où le
+ * salon a pris l'option : c'est le rattachement qui se vend, non l'image, et
+ * un plan qui ne l'a pas prise pose ses images comme n'importe quel dessin.
+ *
+ * Elle ne dit rien de ce qui est déjà rattaché : « societeDeForme » continue de
+ * lire les liens en place, et une image liée avant que l'option se ferme garde
+ * le sien. On retire le geste, pas ce qu'il a produit.
+ */
+const seRattache = (f) => !!f && FORMES_RATTACHEES.has(f.t) &&
+  (f.t !== "image" || optionActive("imageStand"));
+
+/**
  * Ce qu'une forme rattachée désigne : l'emplacement, le rang de la société, la
  * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
  * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
@@ -1459,6 +1473,10 @@ function calquePourImage(){
  * et le seul qui survive à une synchronisation.
  */
 function lienImageSaisi(){
+  /* Le rattachement est une option du salon : fermée, la feuille de style
+     retire le champ, mais ce qu'on y avait saisi avant y reste. C'est ici
+     qu'on refuse, plutôt que de lier depuis un champ que personne ne voit. */
+  if (!optionActive("imageStand")) return null;
   const ch = $("imageSoc");
   const l = ch ? societeSaisie(ch.value) : null;
   return l ? { stand: l.o.id, soc: l.i } : null;
@@ -1505,9 +1523,6 @@ function ditImagePosee(f, sinon){
 }
 
 function importeImage(fichier, centre){
-  /* Le glisser-déposer et le collage n'ont pas de bouton qu'on puisse retirer :
-     c'est ici que l'option fermée les arrête. */
-  if (!optionActive("imageStand")) return;
   if (!fichier || fichier.type.indexOf("image/") !== 0) return;
   const fr = new FileReader();
   fr.onload = () => {
@@ -1704,8 +1719,9 @@ function dessinPointerUp(e){
        appelée avant, elle aurait décrit un tracé qui n'existe plus. */
     if (pose && pose.t === "stand") enchaineStand(pose);
     else if (pose && pose.t === "image" && $("outilsAide"))
-      $("outilsAide").textContent = ditImagePosee(pose,
-        "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela.");
+      $("outilsAide").textContent = ditImagePosee(pose, optionActive("imageStand")
+        ? "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela."
+        : "Image posée.");
     else aide();
   }
   return true;   // polygone et ligne restent ouverts jusqu'à Entrée
@@ -1746,17 +1762,17 @@ function aide(){
   $("outilsAide").textContent = t[outil] + n + bis;
 }
 
-/* Les deux outils qui sont des options du plan : le salon qui ne les a pas
-   prises n'a pas leur bouton dans la palette (voir « OPTIONS » de
-   « _admin1.html »). */
-const OPTION_OUTIL = { stand: "dessinStand", image: "imageStand" };
+/* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
+   stands n'a pas son bouton dans la palette (voir « OPTIONS » de
+   « _admin1.html »). L'image, elle, n'est pas une option — c'en est une de la
+   rattacher à un exposant, et c'est son champ qui s'en va. */
+const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
 
 /* --- suppression au clic en mode sélection --- */
 function choisitOutil(o){
-  /* Le bouton retiré ne suffit pas : une image déposée sur le plan demande son
-     outil sans passer par la palette, et l'option peut se fermer alors qu'on
-     le tient. On retombe sur la sélection plutôt que de refuser le geste. */
+  /* Le bouton retiré ne suffit pas : l'option peut se fermer alors qu'on tient
+     l'outil. On retombe sur la sélection plutôt que de refuser le geste. */
   if (!outilOffert(o)) o = "main";
   termineTrace(false);
   // les points visés par l'outil qu'on quitte n'ont plus lieu d'être montrés
@@ -1778,8 +1794,9 @@ function choisitOutil(o){
   if (o === "repere") $("repereTexte").focus();
   if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
-     geste est de choisir un fichier, et le champ n'est qu'une option. */
-  if (o === "image") remplitListeSocietes();
+     geste est de choisir un fichier, et le champ n'est qu'une option — au sens
+     propre, puisque le salon peut ne pas l'avoir prise. */
+  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
   aide();
 }
 

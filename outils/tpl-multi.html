@@ -783,16 +783,15 @@ html.cale-tourne #plan{cursor:crosshair}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
    plutôt que de laisser les derniers déborder de la palette. Elle en range
-   sept ou huit aussi bien — le dessin des stands et les images sont deux
-   options du plan, et un salon qui ne les a pas prises n'a pas leurs boutons
-   (voir « OPTIONS » de « _admin1.html »). */
+   huit aussi bien — le dessin des stands est une option du plan, et un salon
+   qui ne l'a pas prise n'a pas son bouton (voir « OPTIONS » de
+   « _admin1.html »). */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-html.sans-dessin-stand .outilsBtns button[data-o="stand"],
-html.sans-image-stand .outilsBtns button[data-o="image"]{display:none}
+html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
@@ -838,8 +837,11 @@ html.sans-image-stand .outilsBtns button[data-o="image"]{display:none}
 .outils.mode-stand #standSoc{display:block}
 /* Celui de l'outil image demande la même société, sans l'exiger : une image
    existe d'abord pour ce qu'elle montre, et le rattachement n'en fait qu'une
-   porte de plus vers la fiche. */
+   porte de plus vers la fiche. C'est lui, et lui seul, que l'option retire —
+   l'outil reste, les images se posent toujours, elles ne mènent plus nulle
+   part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
+html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}
@@ -9467,13 +9469,16 @@ const OPTIONS = [
     apres: () => { if (outil === "stand") choisitOutil("main"); } },
   { cle: "imageStand", classe: "sans-image-stand",
     libelle: "Ajout d'images liées à un stand",
-    aide: "L'outil qui pose une image sur le plan — le logo d'un exposant sur " +
-      "son emplacement, une affiche, un plan d'aménagement — et qui la lie à " +
-      "l'exposant qu'on nomme : la toucher ouvre alors sa fiche, celle de " +
-      "l'enseigne désignée même sur un stand partagé. Fermée, l'outil quitte " +
-      "la boîte à outils et le plan n'accepte plus ni le glisser-déposer ni " +
-      "le collage ; les images déjà posées restent, et gardent leur lien.",
-    apres: () => { if (outil === "image") choisitOutil("main"); } },
+    aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
+      "sur son emplacement ouvre sa fiche au toucher, celle de l'enseigne " +
+      "désignée même sur un stand partagé. C'est le lien qui se prend, non " +
+      "l'image : fermée, l'outil image reste et les images se posent comme " +
+      "n'importe quel dessin, mais le champ qui nomme l'exposant s'en va et " +
+      "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
+    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
+       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
+       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
+    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
   { cle: "journee", classe: "sans-journee",
     libelle: "Organiser ma journée",
     aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
@@ -14177,6 +14182,20 @@ function etiquetteSociete(o, soc){
 const FORMES_RATTACHEES = new Set(["stand", "image"]);
 
 /**
+ * Cette forme accepte-t-elle qu'on la rattache maintenant ?
+ *
+ * Le stand dessiné, toujours — il n'est que cela. L'image, seulement là où le
+ * salon a pris l'option : c'est le rattachement qui se vend, non l'image, et
+ * un plan qui ne l'a pas prise pose ses images comme n'importe quel dessin.
+ *
+ * Elle ne dit rien de ce qui est déjà rattaché : « societeDeForme » continue de
+ * lire les liens en place, et une image liée avant que l'option se ferme garde
+ * le sien. On retire le geste, pas ce qu'il a produit.
+ */
+const seRattache = (f) => !!f && FORMES_RATTACHEES.has(f.t) &&
+  (f.t !== "image" || optionActive("imageStand"));
+
+/**
  * Ce qu'une forme rattachée désigne : l'emplacement, le rang de la société, la
  * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
  * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
@@ -14760,6 +14779,10 @@ function calquePourImage(){
  * et le seul qui survive à une synchronisation.
  */
 function lienImageSaisi(){
+  /* Le rattachement est une option du salon : fermée, la feuille de style
+     retire le champ, mais ce qu'on y avait saisi avant y reste. C'est ici
+     qu'on refuse, plutôt que de lier depuis un champ que personne ne voit. */
+  if (!optionActive("imageStand")) return null;
   const ch = $("imageSoc");
   const l = ch ? societeSaisie(ch.value) : null;
   return l ? { stand: l.o.id, soc: l.i } : null;
@@ -14806,9 +14829,6 @@ function ditImagePosee(f, sinon){
 }
 
 function importeImage(fichier, centre){
-  /* Le glisser-déposer et le collage n'ont pas de bouton qu'on puisse retirer :
-     c'est ici que l'option fermée les arrête. */
-  if (!optionActive("imageStand")) return;
   if (!fichier || fichier.type.indexOf("image/") !== 0) return;
   const fr = new FileReader();
   fr.onload = () => {
@@ -15005,8 +15025,9 @@ function dessinPointerUp(e){
        appelée avant, elle aurait décrit un tracé qui n'existe plus. */
     if (pose && pose.t === "stand") enchaineStand(pose);
     else if (pose && pose.t === "image" && $("outilsAide"))
-      $("outilsAide").textContent = ditImagePosee(pose,
-        "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela.");
+      $("outilsAide").textContent = ditImagePosee(pose, optionActive("imageStand")
+        ? "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela."
+        : "Image posée.");
     else aide();
   }
   return true;   // polygone et ligne restent ouverts jusqu'à Entrée
@@ -15047,17 +15068,17 @@ function aide(){
   $("outilsAide").textContent = t[outil] + n + bis;
 }
 
-/* Les deux outils qui sont des options du plan : le salon qui ne les a pas
-   prises n'a pas leur bouton dans la palette (voir « OPTIONS » de
-   « _admin1.html »). */
-const OPTION_OUTIL = { stand: "dessinStand", image: "imageStand" };
+/* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
+   stands n'a pas son bouton dans la palette (voir « OPTIONS » de
+   « _admin1.html »). L'image, elle, n'est pas une option — c'en est une de la
+   rattacher à un exposant, et c'est son champ qui s'en va. */
+const OPTION_OUTIL = { stand: "dessinStand" };
 const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
 
 /* --- suppression au clic en mode sélection --- */
 function choisitOutil(o){
-  /* Le bouton retiré ne suffit pas : une image déposée sur le plan demande son
-     outil sans passer par la palette, et l'option peut se fermer alors qu'on
-     le tient. On retombe sur la sélection plutôt que de refuser le geste. */
+  /* Le bouton retiré ne suffit pas : l'option peut se fermer alors qu'on tient
+     l'outil. On retombe sur la sélection plutôt que de refuser le geste. */
   if (!outilOffert(o)) o = "main";
   termineTrace(false);
   // les points visés par l'outil qu'on quitte n'ont plus lieu d'être montrés
@@ -15079,8 +15100,9 @@ function choisitOutil(o){
   if (o === "repere") $("repereTexte").focus();
   if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
-     geste est de choisir un fichier, et le champ n'est qu'une option. */
-  if (o === "image") remplitListeSocietes();
+     geste est de choisir un fichier, et le champ n'est qu'une option — au sens
+     propre, puisque le salon peut ne pas l'avoir prise. */
+  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
   aide();
 }
 
@@ -15474,7 +15496,7 @@ function majElement(){
      coup atteint les hébergées comme le reste. */
   const cs = $("elemSoc");
   if (cs){
-    const rattachable = FORMES_RATTACHEES.has(f.t);
+    const rattachable = seRattache(f);
     cs.hidden = !rattachable;
     if (rattachable){
       remplitListeSocietes();
@@ -15620,7 +15642,7 @@ function majLiens(f){
  */
 function appliqueSociete(){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || !FORMES_RATTACHEES.has(cible.f.t)) return;
+  if (!cible || !seRattache(cible.f)) return;
   const ch = $("elemSoc");
   const l = societeSaisie(ch.value);
   memorise();

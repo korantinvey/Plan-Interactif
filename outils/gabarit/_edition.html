@@ -148,7 +148,7 @@ function majElement(){
      coup atteint les hébergées comme le reste. */
   const cs = $("elemSoc");
   if (cs){
-    const rattachable = FORMES_RATTACHEES.has(f.t);
+    const rattachable = seRattache(f);
     cs.hidden = !rattachable;
     if (rattachable){
       remplitListeSocietes();
@@ -294,7 +294,7 @@ function majLiens(f){
  */
 function appliqueSociete(){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || !FORMES_RATTACHEES.has(cible.f.t)) return;
+  if (!cible || !seRattache(cible.f)) return;
   const ch = $("elemSoc");
   const l = societeSaisie(ch.value);
   memorise();

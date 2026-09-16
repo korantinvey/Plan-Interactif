@@ -783,16 +783,15 @@ html.cale-tourne #plan{cursor:crosshair}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
    plutôt que de laisser les derniers déborder de la palette. Elle en range
-   sept ou huit aussi bien — le dessin des stands et les images sont deux
-   options du plan, et un salon qui ne les a pas prises n'a pas leurs boutons
-   (voir « OPTIONS » de « _admin1.html »). */
+   huit aussi bien — le dessin des stands est une option du plan, et un salon
+   qui ne l'a pas prise n'a pas son bouton (voir « OPTIONS » de
+   « _admin1.html »). */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
-html.sans-dessin-stand .outilsBtns button[data-o="stand"],
-html.sans-image-stand .outilsBtns button[data-o="image"]{display:none}
+html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
@@ -838,8 +837,11 @@ html.sans-image-stand .outilsBtns button[data-o="image"]{display:none}
 .outils.mode-stand #standSoc{display:block}
 /* Celui de l'outil image demande la même société, sans l'exiger : une image
    existe d'abord pour ce qu'elle montre, et le rattachement n'en fait qu'une
-   porte de plus vers la fiche. */
+   porte de plus vers la fiche. C'est lui, et lui seul, que l'option retire —
+   l'outil reste, les images se posent toujours, elles ne mènent plus nulle
+   part. Le sélecteur porte « .outils » pour tenir devant celui du mode. */
 .outils.mode-image #imageSoc{display:block}
+html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
 .dcal .repere .glyphe path{fill:var(--surface);stroke:none}

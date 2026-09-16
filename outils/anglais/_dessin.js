@@ -57,6 +57,8 @@ module.exports = {
     "Image placed on “{exposant}”: touching it will open their details.",
   "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela.":
     "Image placed. It opens no details: name an exhibitor for that.",
+  // et, là où le salon n'a pas pris le rattachement, sans renvoyer à un champ absent
+  "Image posée.": "Image placed.",
   "Dessin": "Drawing",
 
   // le rôle du calque dans les itinéraires
