@@ -44,6 +44,18 @@
  */
 const MARQUES_RECADREES = new Map();
 
+/**
+ * Une image dont on sait déjà qu'il n'y a rien à retirer.
+ *
+ * Les vignettes arrivées par lot portent leurs octets, non plus une adresse :
+ * rien ne les distinguerait d'un logo lu chez sa source, qu'il faut, lui,
+ * relire pour en retirer les marges. On le dit donc ici, une fois, plutôt que
+ * de reconnaître une vignette à la forme de son adresse — elle n'en a plus.
+ */
+function marquePrete(src){
+  MARQUES_RECADREES.set(src, Promise.resolve(src));
+}
+
 function recadreMarque(src){
   /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
      trouver à retirer coûterait le décodage qu'on a justement déplacé. */
