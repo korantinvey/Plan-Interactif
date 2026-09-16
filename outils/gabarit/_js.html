@@ -2648,31 +2648,53 @@ function ficheConf(id, canal){
       });
       corps.appendChild(w);
     }
-    /* Qui parle, et qui anime. Un intervenant n'a pas de stand — c'est ce qui
-       le sépare d'un exposant : on le lit, on ne le suit nulle part. Un salon
-       sur deux laisse ces rôles vides, et la fiche n'en montre alors rien. */
-    const gens = (libelle, liste) => {
-      if (!liste || !liste.length) return;
+    /* Qui parle, et qui anime. Aucun des deux ne tient de stand — c'est ce qui
+       les sépare d'un exposant : on les lit, on ne les suit nulle part. Ils
+       prennent donc son rang, en plus sobre : une ligne par personne, le nom
+       puis l'enseigne au bout.
+
+       La fonction n'y paraît pas, et c'est délibéré : elle doublait la hauteur
+       du bloc — sept intervenants faisaient quatorze lignes, qui repoussaient la
+       présentation hors de l'écran — pour ce que « Franchisé », cinquante-sept
+       fois sur un même programme, apprend de chacun. L'enseigne, elle, est ce
+       qui rattache la personne au salon.
+
+       Les deux rôles tiennent un seul bloc : un intitulé de plus coûtait deux
+       lignes sur la moitié des fiches, quand l'animation se dit d'un mot. */
+    const gens = [];
+    (c.intervenants || []).forEach(p => gens.push({ p: p, role: "" }));
+    (c.animateurs || []).forEach(p => {
+      // la même personne peut parler et animer : elle ne paraît qu'une fois, et
+      // c'est l'animation qu'on retient, puisque c'est ce qui la distingue
+      const deja = gens.find(g => g.p.nom === p.nom);
+      if (deja) deja.role = "animation"; else gens.push({ p: p, role: "animation" });
+    });
+    if (gens.length){
       const w = document.createElement("div");
       w.className = "field";
-      w.innerHTML = '<span class="eyebrow"></span><ul class="gens"></ul>';
-      w.querySelector(".eyebrow").textContent = libelle;
-      const ul = w.querySelector(".gens");
-      liste.forEach(p => {
-        const li = document.createElement("li");
-        li.innerHTML = '<span class="n"></span><span class="q"></span>';
-        li.querySelector(".n").textContent = p.nom;
-        // sa fonction dit ce qu'il fait, son enseigne d'où il vient : les deux
-        // quand le salon les tient, l'une ou l'autre sinon, et la ligne
-        // disparaît quand il n'a ni l'une ni l'autre
-        li.querySelector(".q").textContent =
-          [p.fonction, p.societe].filter(Boolean).join(" · ");
-        ul.appendChild(li);
+      w.innerHTML = '<span class="eyebrow"></span><div class="expos gens"></div>';
+      // une conférence peut n'avoir qu'un animateur : l'appeler intervenant
+      // serait le seul endroit de la fiche à nommer quelqu'un de travers
+      w.querySelector(".eyebrow").textContent =
+        (c.intervenants || []).length ? "Intervenants" : "Animée par";
+      const hote = w.querySelector(".gens");
+      gens.forEach(g => {
+        const el = document.createElement("div");
+        el.className = "expo statique";
+        el.innerHTML = '<span class="n"></span><span class="c"></span>';
+        const n = el.querySelector(".n");
+        n.textContent = g.p.nom;
+        if (g.role && (c.intervenants || []).length){
+          const r = document.createElement("span");
+          r.className = "r";
+          r.textContent = g.role;
+          n.append(" ", r);
+        }
+        el.querySelector(".c").textContent = g.p.societe || "";
+        hote.appendChild(el);
       });
       corps.appendChild(w);
-    };
-    gens("Intervenants", c.intervenants);
-    gens("Animée par", c.animateurs);
+    }
     bloc("Thématique", c.theme);
     bloc("Présentation", c.texte, "large");
     const acts = document.createElement("div");
