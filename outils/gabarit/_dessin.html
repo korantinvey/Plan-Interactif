@@ -1425,6 +1425,9 @@ function poseImage(centre){
 }
 
 function importeImage(fichier, centre){
+  /* Le glisser-déposer et le collage n'ont pas de bouton qu'on puisse retirer :
+     c'est ici que l'option fermée les arrête. */
+  if (!optionActive("imageStand")) return;
   if (!fichier || fichier.type.indexOf("image/") !== 0) return;
   const fr = new FileReader();
   fr.onload = () => {
@@ -1659,8 +1662,18 @@ function aide(){
   $("outilsAide").textContent = t[outil] + n + bis;
 }
 
+/* Les deux outils qui sont des options du plan : le salon qui ne les a pas
+   prises n'a pas leur bouton dans la palette (voir « OPTIONS » de
+   « _admin1.html »). */
+const OPTION_OUTIL = { stand: "dessinStand", image: "imageStand" };
+const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
+
 /* --- suppression au clic en mode sélection --- */
 function choisitOutil(o){
+  /* Le bouton retiré ne suffit pas : une image déposée sur le plan demande son
+     outil sans passer par la palette, et l'option peut se fermer alors qu'on
+     le tient. On retombe sur la sélection plutôt que de refuser le geste. */
+  if (!outilOffert(o)) o = "main";
   termineTrace(false);
   // les points visés par l'outil qu'on quitte n'ont plus lieu d'être montrés
   montreAimants(null);

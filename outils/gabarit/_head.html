@@ -782,12 +782,17 @@ html.cale-tourne #plan{cursor:crosshair}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
-   plutôt que de laisser les derniers déborder de la palette. */
+   plutôt que de laisser les derniers déborder de la palette. Elle en range
+   sept ou huit aussi bien — le dessin des stands et les images sont deux
+   options du plan, et un salon qui ne les a pas prises n'a pas leurs boutons
+   (voir « OPTIONS » de « _admin1.html »). */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
 .outilsBtns button:hover{border-color:var(--line-strong);color:var(--ink)}
 .outilsBtns button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+html.sans-dessin-stand .outilsBtns button[data-o="stand"],
+html.sans-image-stand .outilsBtns button[data-o="image"]{display:none}
 .outils input{width:100%;padding:7px 9px;font-size:13px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius)}
 .outils input:focus{border-color:var(--accent);outline:none}
@@ -2670,6 +2675,9 @@ html.cale-geste #calageApercu .poignee{cursor:grabbing}
    journée, c'est calculer un itinéraire : sans le moteur, le bouton du
    parcours n'aurait rien à quoi s'adresser. */
 html.sans-itineraire .btn.itin,html.sans-itineraire #btnJournee{display:none}
+/* Et la journée a son option à elle : un salon peut vouloir l'itinéraire sans
+   vouloir qu'on lui organise sa visite. */
+html.sans-journee #btnJournee{display:none}
 
 /* L'exploitant peut retirer le parcours : il disparaît alors partout à la
    fois — la barre du haut, les fiches, le programme d'une zone — sans quoi il
@@ -4111,15 +4119,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 
    Il ferme l'onglet, après une liste de cases : d'où l'intertitre, et le filet
    qui l'en sépare — celui de « .reglage-nb », qui sépare déjà les réglages
-   chiffrés du reste partout ailleurs.
+   chiffrés du reste partout ailleurs. « .titreReg » sert les deux intertitres
+   de l'onglet, celui des options du plan comme celui-ci.
 
    Le choix des trois modes en boutons plutôt qu'en cases : ils s'excluent, et
    c'est le geste des modèles d'habillage — un rang par mode, la coche à droite,
    le cadre d'accent sur celui qu'on tient. La marque se montre dans le sien :
    personne ne sait de mémoire à quoi elle ressemble. */
-.titreDem{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
-.titreDem .eyebrow{display:block;margin-bottom:6px}
-.titreDem .d{display:block;font-size:12px;line-height:1.5;color:var(--ink-3)}
+.titreReg{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.titreReg .eyebrow{display:block;margin-bottom:6px}
+.titreReg .d{display:block;font-size:12px;line-height:1.5;color:var(--ink-3)}
 .choixDem{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
 .dem{display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;
   text-align:left;background:var(--surface-2);border:1px solid var(--line);

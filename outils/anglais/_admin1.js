@@ -372,4 +372,29 @@ module.exports = {
   "Prévenir avant le début": "Warn before the start",
   "Le visiteur qui a retenu une conférence peut demander à en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à la conférence.":
     "A visitor who picked a conference can ask to be reminded of it, with the map closed. They have to allow it, and on iPhone to have added the map to their home screen \u2014 otherwise nothing is offered. The times and titles they picked are then kept on our servers until the conference.",
+  /* Les options du plan, dans l'onglet « Admin » : ce que le salon a pris, et
+     ce que fermer une option retire. */
+  "Les options du plan": "The map's options",
+  "Ce que ce salon a pris. Une option fermée retire ce qui y mène — un outil de la boîte à outils, un bouton du plan, un onglet de ces réglages — sans défaire le travail fait dessous : la rouvrir le retrouve.":
+    "What this show has taken. A closed option removes the way in \u2014 a tool from the toolbox, a button on the map, a tab in these settings \u2014 without undoing the work done underneath: reopening it brings that back.",
+  "Dessin des stands": "Drawing stands",
+  "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il héberge, sur sa part d'un emplacement. Fermée, l'outil quitte la boîte à outils ; les découpages déjà tracés restent sur le plan.":
+    "The tool that marks out an exhibitor, or one of the brands it hosts, on its share of a stand. Closed, the tool leaves the toolbox; the shapes already drawn stay on the map.",
+  "Ajout d'images liées à un stand": "Adding images tied to a stand",
+  "L'outil qui pose une image sur le plan : la photo d'un stand, un plan d'aménagement, une affiche déposée sur un emplacement. Fermée, l'outil quitte la boîte à outils et le plan n'accepte plus ni le glisser-déposer ni le collage ; les images déjà posées restent.":
+    "The tool that places an image on the map: a photo of a stand, a layout drawing, a poster dropped on a stand. Closed, the tool leaves the toolbox and the map no longer accepts drag-and-drop or pasting; the images already placed stay.",
+  "Le bouton du tiroir du parcours, qui met en heures les stands et les conférences retenus et trace le trajet d'un bout à l'autre. Fermée, le parcours reste une liste. Elle se calcule avec le moteur de l'itinéraire : la commande retirée plus haut emporte le bouton avec elle.":
+    "The button in the visit plan drawer, which puts the stands and conferences picked into a timetable and traces the route from end to end. Closed, the visit plan stays a list. It is worked out with the directions engine: unticking that command above takes the button with it.",
+  "Programme de conférences": "Conference programme",
+  "Les conférences du salon : le programme d'une zone, celles qu'un exposant anime sur sa fiche, la recherche par titre, les horaires que le parcours retient et les rappels qui vont avec. Fermée, le plan se comporte comme un salon qui n'a pas de programme — la synchronisation continue pourtant de le rapporter. Un visiteur qui rouvre le plan entre-temps perd de son parcours les conférences qu'il avait retenues : il ne garde que ce que le plan connaît encore.":
+    "The show's conferences: an area's programme, the ones an exhibitor runs on their details, searching by title, the times the visit plan keeps and the reminders that go with them. Closed, the map behaves like a show that has no programme \u2014 the synchronisation keeps bringing it back all the same. A visitor who reopens the map meanwhile loses the conferences they had picked from their visit plan: it keeps only what the map still knows about.",
+  "Recommandations sponsorisées": "Sponsored recommendations",
+  "L'exposant de plus, proposé au visiteur quand plusieurs de ceux qu'il a retenus se ressemblent — le plus consulté du salon sur ce critère, ou celui que l'organisateur a désigné. Fermée, l'onglet « Suggestion » quitte ces réglages et plus rien n'est proposé ; ce qui y était réglé est gardé.":
+    "One more exhibitor, offered to a visitor when several of the ones they have picked look alike \u2014 the most viewed of the show on that criterion, or the one the organiser has named. Closed, the \u201cSuggestion\u201d tab leaves these settings and nothing is offered any more; what was set there is kept.",
+
+  /* Les deux endroits qui disent que l'option est fermée : la sorte
+     « Conférences » de la recherche, et le rappel qui n'a plus d'heure. */
+  "Le programme de conférences n'est pas pris sur ce salon.": "The conference programme is not taken on this show.",
+  "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas d'horaire à rappeler.":
+    "The conference programme is not taken on this show: there is no time to remind anyone of.",
 };

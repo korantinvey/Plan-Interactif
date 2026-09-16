@@ -2068,6 +2068,48 @@ calendrier. Le manifeste de l'application installée reste lui aussi en
 français — et le nom qu'il porte est celui du salon, qui ne se traduit pas
 davantage.
 
+## Les options du plan
+
+Cinq fonctions du plan ne reviennent pas à tous les salons : elles se vendent à
+part, et se règlent salon par salon dans « Réglages du plan », onglet **Admin**,
+sous l'intertitre *Les options du plan*. Comme le générique du démarrage qui
+ferme le même onglet, elles sont réservées au profil administrateur : ce n'est
+pas un réglage de salon mais un réglage de prestataire, et l'organisateur n'y
+trouverait que de quoi fermer ce qu'on lui a vendu.
+
+| option | ce que fermer retire |
+|---|---|
+| **Dessin des stands** | l'outil qui matérialise un exposant, ou l'une de ses hébergées, sur sa part d'un emplacement |
+| **Ajout d'images liées à un stand** | l'outil d'image, et avec lui le glisser-déposer et le collage d'un fichier sur le plan |
+| **Organiser ma journée** | le bouton du tiroir du parcours qui met la visite en heures |
+| **Programme de conférences** | tout ce qui vient du programme : celui d'une zone, les conférences d'un exposant, la recherche par titre, les horaires du parcours, les rappels |
+| **Recommandations sponsorisées** | la proposition d'un exposant de plus, et l'onglet « Suggestion » avec elle |
+
+**Ouvertes par défaut.** Un réglage absent ne retire rien : les salons déjà en
+ligne gardent ce qu'ils ont, et l'option ne se remarque que le jour où on la
+ferme. C'est la règle des commandes du plan, qui vivent quelques lignes plus
+haut dans le même onglet.
+
+**Fermer retire la porte, pas ce qui est derrière.** Les stands et les images
+déjà dessinés restent sur le plan, les conférences restent dans l'instantané que
+la synchronisation continue de rapporter, ce qui était réglé pour la suggestion
+reste écrit : rouvrir l'option retrouve le tout. Une seule chose ne se rend pas,
+et la case le dit — le parcours d'un visiteur ne garde que ce que le plan connaît
+encore, si bien que celui qui rouvre le plan pendant que le programme est fermé y
+perd les conférences qu'il avait retenues.
+
+Deux façons de fermer, selon ce qu'il y a à retirer. Les trois premières se
+ferment par la feuille de style, sur une classe posée sur la racine
+(`sans-dessin-stand`, `sans-image-stand`, `sans-journee`) : c'est un bouton qui
+part. Le programme, lui, n'est pas une commande qu'on masque mais un index qu'on
+refait — `indexeConferences()` de `_js.html` le relit à chaque bascule, et la
+recherche, les fiches, le tiroir du parcours, la journée et les rappels suivent
+d'eux-mêmes, n'ayant plus rien à lire.
+
+Le réglage vit sous la clé `_options` de la configuration du salon, et se publie
+avec le reste : c'est l'enregistrement de la configuration qui le porte aux
+visiteurs.
+
 ## Comptes et profils
 
 Il n'y a pas d'inscription libre : un compte est créé par quelqu'un qui en a
