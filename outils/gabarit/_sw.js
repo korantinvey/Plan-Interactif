@@ -35,10 +35,34 @@
  * change quand les pages changent, et pas autrement. Le cache est nommé avec
  * elle, si bien qu'une mise en ligne met au rebut tout ce qui précède plutôt
  * que de resservir la page d'avant sous les données d'après.
+ *
+ * Tout ne mérite pas ce sort, et c'est la raison du second cache. Ce que le
+ * relais sert et dont l'adresse porte sa propre version — un fond de plan, une
+ * vignette, un lot de vignettes — ne peut pas être périmé par une mise en
+ * ligne : son nom changerait avant son contenu. Or il partait au rebut avec le
+ * reste, et trois mises en ligne dans la journée faisaient retélécharger trois
+ * fois deux mégaoctets de fond et huit cents kilo-octets de vignettes pour
+ * retrouver exactement ce qu'on avait — trois fois, aussi, les lectures que le
+ * relais paie à son stockage. Ce cache-là ne porte donc pas de version, et
+ * survit aux mises en ligne.
+ *
+ * Il ne peut pas enfler pour autant : ce qui y entre chasse ce qu'il remplace
+ * — voir `oublieLesFondsDAvant` et `borneLesLots`.
+ *
+ * La mise en ligne qui apporte ce second cache emporte une dernière fois ce
+ * qui était rangé sous la version d'avant : ces fonds et ces vignettes sont
+ * dans le cache versionné, et c'est lui qu'on jette. C'est la dernière.
  */
 const VERSION = "__VERSION__";
 const CACHE = "plan-" + VERSION;
+const DURABLE = "plan-durable";
 const HORS_LIGNE = "hors-ligne.html";
+
+/* Combien de lots de vignettes on garde. Un lot pèse deux cents kilo-octets et
+   nomme les exposants qu'il porte : la liste change, l'adresse aussi, et
+   l'ancien lot n'a plus rien à servir. Quarante couvrent deux salons entiers,
+   et bornent ce cache à huit mégaoctets. */
+const LOTS_GARDES = 40;
 
 /* Les polices sont servies depuis `polices/`, sous des noms qui portent leur
    empreinte (voir `outils/polices.js`) : elles ne changent jamais sous une même
@@ -65,7 +89,7 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
       .then((noms) => Promise.all(
-        noms.filter((n) => n.startsWith("plan-") && n !== CACHE)
+        noms.filter((n) => n.startsWith("plan-") && n !== CACHE && n !== DURABLE)
             .map((n) => caches.delete(n))))
       // sans cela, les onglets déjà ouverts resteraient sans service jusqu'à
       // leur prochain rechargement — soit toute la durée d'une visite
@@ -109,9 +133,17 @@ async function oublieLesFondsDAvant(cache, adresse) {
   }
 }
 
-/** Ce qui ne change jamais sous une même adresse : gardé d'abord, demandé après. */
-async function dabordCache(e, requete) {
-  const garde = await caches.match(requete);
+/**
+ * Ce qui ne change jamais sous une même adresse : gardé d'abord, demandé après.
+ *
+ * Deux sortes s'y présentent, et `ou` dit laquelle. Ce que le relais sert va
+ * dans le cache durable, qu'une mise en ligne ne jette pas ; les polices et
+ * les bibliothèques restent dans celui des pages, dont elles suivent le sort —
+ * elles ne coûtent rien au relais, et se reprennent avec le reste.
+ */
+async function dabordCache(e, requete, ou) {
+  const cache = await caches.open(ou);
+  const garde = await cache.match(requete);
   if (garde) return garde;
   const reponse = await fetch(requete);
   if (!reponse.ok) return reponse;
@@ -124,13 +156,37 @@ async function dabordCache(e, requete) {
   /* Ranger puis faire le ménage, dans cet ordre et d'un seul tenant : le
      ménage reconnaît l'entrée qu'on vient de poser à sa version, et la
      retiendrait pour une ancienne s'il passait avant. */
-  e.waitUntil(caches.open(CACHE).then(async (c) => {
+  e.waitUntil(caches.open(ou).then(async (c) => {
     await c.put(requete, copie);
-    if (adresse.pathname === "/api/plan" && adresse.searchParams.get("fond")) {
-      await oublieLesFondsDAvant(c, adresse);
-    }
+    if (adresse.pathname !== "/api/plan") return;
+    if (adresse.searchParams.get("fond")) await oublieLesFondsDAvant(c, adresse);
+    if (adresse.searchParams.get("vignettes")) await borneLesLots(c);
   }).catch(() => {}));
   return reponse;
+}
+
+/**
+ * Les lots de vignettes en trop, les plus anciens d'abord.
+ *
+ * Un lot est nommé par les vignettes qu'il porte : un exposant de plus, et
+ * c'est une autre adresse — l'ancienne reste, sans plus rien à servir. Rien
+ * ne la jetterait désormais, le cache durable ne connaissant pas les mises en
+ * ligne ; et une synchronisation par jour y laisserait une génération de
+ * lots par jour, à un mégaoctet la génération.
+ *
+ * `keys()` les rend dans l'ordre où ils ont été rangés : les premiers sont
+ * ceux d'une liste d'exposants révolue, et c'est par eux qu'on commence.
+ */
+async function borneLesLots(cache) {
+  const lots = (await cache.keys()).filter((c) => {
+    try { return new URL(c.url).searchParams.has("vignettes"); } catch (_) { return false; }
+  });
+  /* Le compte d'abord, la coupe ensuite : `slice(0, -3)` ne rend pas un
+     tableau vide mais tout sauf les trois derniers, et le ménage se serait mis
+     à jeter des lots bien avant d'en avoir de trop. */
+  const trop = lots.length - LOTS_GARDES;
+  if (trop <= 0) return;
+  for (const vieux of lots.slice(0, trop)) await cache.delete(vieux);
 }
 
 /**
@@ -198,7 +254,7 @@ self.addEventListener("fetch", (e) => {
       e.respondWith(adresse.searchParams.get("fond") ||
                     adresse.searchParams.get("vignette") ||
                     adresse.searchParams.get("vignettes")
-        ? dabordCache(e, requete)
+        ? dabordCache(e, requete, DURABLE)
         : dabordReseau(e, requete));
       return;
     }
@@ -208,7 +264,7 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(requete.mode === "navigate"
       ? navigation(e, requete)
       : POLICES.test(adresse.pathname) || BIBLIOTHEQUES.test(adresse.pathname)
-        ? dabordCache(e, requete)
+        ? dabordCache(e, requete, CACHE)
         : dabordReseau(e, requete));
   }
   // une autre origine n'est rien que le plan demande : elle passe sans lui

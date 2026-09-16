@@ -617,12 +617,12 @@ Fonctions :
 `poseSuggestion` 298 · `fenetreSuggestion` 312 · `relevePalmares` 351 · `etiquetteSugg` 371
 `voletSuggestion` 381
 
-### `_sw.js` — 279 l. → sw.js
+### `_sw.js` — 335 l. → sw.js
 
 Fonctions :
 
-`range` 76 · `oublieLesFondsDAvant` 99 · `dabordCache` 113 · `dabordReseau` 146
-`navigation` 163
+`range` 100 · `oublieLesFondsDAvant` 123 · `dabordCache` 144 · `borneLesLots` 180
+`dabordReseau` 202 · `navigation` 219
 
 ### `_tutoriel.html` — 876 l. → plan-admin.html, plan-smcl.html, plan.html
 
