@@ -2681,14 +2681,16 @@ function ficheConf(id, canal){
       gens.forEach(g => {
         const el = document.createElement("div");
         el.className = "expo statique";
-        el.innerHTML = '<span class="n"></span><span class="c"></span>';
-        const n = el.querySelector(".n");
-        n.textContent = g.p.nom;
+        /* Le nom et sa mention sont deux cellules, non un texte suivi : c'est
+           ce qui garde la seconde sur la ligne de la première quand la place
+           manque — seule sous le nom, elle passait pour un intitulé. */
+        el.innerHTML = '<span class="n"><span class="nm"></span></span><span class="c"></span>';
+        el.querySelector(".nm").textContent = g.p.nom;
         if (g.role && (c.intervenants || []).length){
           const r = document.createElement("span");
           r.className = "r";
           r.textContent = g.role;
-          n.append(" ", r);
+          el.querySelector(".n").appendChild(r);
         }
         el.querySelector(".c").textContent = g.p.societe || "";
         hote.appendChild(el);
@@ -2712,7 +2714,8 @@ function ficheConf(id, canal){
     }
     corps.appendChild(acts);
     brancheParcours(corps);
-  }, [{ libelle: "Fermer", genre: "primaire" }]);
+    // « fiche » espace les blocs comme le fait celle d'un stand
+  }, [{ libelle: "Fermer", genre: "primaire" }], "fiche");
 }
 
 /**
