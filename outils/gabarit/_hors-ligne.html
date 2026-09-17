@@ -7,10 +7,11 @@
    dépend donc que d'elle-même, et des polices déjà présentes sur l'appareil. */
 :root{ --ground:#E9EAE4; --surface:#FBFBF8; --line:#D2D5CB;
   --ink:#15181A; --ink-3:#7C8285; --accent:#2F49D1; --accent-ink:#FFFFFF }
-@media (prefers-color-scheme: dark){
-  :root{ --ground:#0E1113; --surface:#171B1E; --line:#2A3034;
-    --ink:#EDEFEC; --ink-3:#767D80; --accent:#7A8CFF; --accent-ink:#0E1113 }
-}
+/* La nuit ne se peint que demandée, comme sur le plan : cette page-ci en tient
+   lieu quand le réseau manque, et elle n'a pas à arriver dans un thème que le
+   plan ne montre pas. */
+:root[data-theme="dark"]{ --ground:#0E1113; --surface:#171B1E; --line:#2A3034;
+  --ink:#EDEFEC; --ink-3:#767D80; --accent:#7A8CFF; --accent-ink:#0E1113 }
 body{margin:0;min-height:100vh;min-height:100dvh;background:var(--ground);color:var(--ink-3);
   font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5;
   display:grid;place-items:center;padding:24px}
@@ -27,6 +28,20 @@ button{font:inherit;font-weight:500;cursor:pointer;padding:9px 18px;border:0;bor
 button.langue{position:absolute;top:10px;right:10px;padding:5px 6px;line-height:0;
   background:none;border:1px solid var(--line)}
 </style>
+
+<script>
+/* Avant le moindre affichage : le thème choisi sur le plan dort dans le même
+   tiroir, et une page qui s'assombrit après coup se voit. */
+try {
+  const t = localStorage.getItem("plan-theme");
+  if (t) document.documentElement.setAttribute("data-theme", t);
+} catch (e) {}
+/* Et la barre du navigateur avec, pour la raison qu'explique `_js.html` : les
+   deux balises posées par `outils/pwa.js` suivent l'appareil, que cette page
+   ne suit plus. */
+const ton = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
+if (ton) document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { m.content = ton; });
+</script>
 
 <div class="bloc">
   <button class="langue" type="button" data-langue></button>

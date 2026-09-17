@@ -121,7 +121,10 @@ function manifeste() {
  * `/favicon.ico` qui n'existe pas. Sur les pages du plan, celle du salon la
  * remplace dès que les données arrivent : `poseFavicon` reprend ce même lien.
  * La couleur, elle, est celle dont un navigateur mobile peint sa barre
- * d'adresse, application ou pas.
+ * d'adresse, application ou pas. Les deux balises suivent la préférence de
+ * l'appareil, ce qui vaut pour la console et le rapport ; les pages du plan,
+ * qui ne la suivent plus, les réécrivent d'après leur propre thème
+ * (`_js.html` `poseTonDeBarre`).
  */
 const TETE = [
   // l'onglet prend la marque réduite : le monogramme entier s'y empâte

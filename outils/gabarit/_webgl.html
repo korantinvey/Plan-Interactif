@@ -144,7 +144,9 @@ function monteWebgl(){
       majEditionWebgl(); toutRepeindreWebgl();
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style", "data-theme"] });
-    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
+    /* Le guet de `data-theme` ci-dessus suffit : le plan ne suit plus la
+       préférence de l'appareil, et écouter celle-ci ne faisait plus que
+       reconvertir six cents stands pour rien. */
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
     brancheSurvolWebgl();

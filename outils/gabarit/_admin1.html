@@ -588,13 +588,12 @@ const melange = (a, b, t) => {
   return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
 };
 
-/** Le thème effectivement peint : celui qu'on a choisi, sinon celui du
- *  système. La couleur principale s'y adapte — un bleu d'imprimerie s'éteint
- *  sur un fond noir, et le même ton ne peut pas servir des deux côtés. */
-const themeSombre = () => {
-  const t = racine.getAttribute("data-theme");
-  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-};
+/** Le thème effectivement peint : la nuit seulement si on l'a demandée, le
+ *  clair partout ailleurs — c'est ce que dit la feuille de style, qui n'écoute
+ *  plus la préférence de l'appareil. La couleur principale s'y adapte : un bleu
+ *  d'imprimerie s'éteint sur un fond noir, et le même ton ne peut pas servir
+ *  des deux côtés. */
+const themeSombre = () => racine.getAttribute("data-theme") === "dark";
 
 /**
  * Pose la couleur principale et ses déclinaisons sur la racine.
@@ -623,8 +622,8 @@ function appliqueAccent(){
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
 }
-/* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+/* Le thème ne bascule plus que par le bouton, qui rappelle `appliqueAccent`
+   lui-même : l'appareil qui passe à la nuit de son côté ne change rien ici. */
 
 /**
  * Le fond du plan — le gris qui entoure le bâtiment.

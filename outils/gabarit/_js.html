@@ -4322,15 +4322,31 @@ addEventListener("langue", () => {
 
 /* thème */
 const CLE_THEME = "plan-theme";
+/* Le seul thème que la page connaisse est celui qu'on lui a demandé : sans cet
+   attribut, la feuille de style peint le clair. Le visiteur qui a choisi la
+   nuit la retrouve ici, et lui seul. */
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+
+/* La barre du navigateur suit désormais le thème de la page et non celui de
+   l'appareil. `outils/pwa.js` pose deux balises, une par préférence système :
+   sur un téléphone réglé en sombre, celle qui l'emporte peignait la nuit
+   au-dessus d'un plan resté clair. On leur écrit donc à toutes deux le ton du
+   thème ouvert — la surface, celle qui touche le haut de l'écran —, quelle que
+   soit celle que le navigateur retient. La page publiée en artefact n'en porte
+   aucune : il n'y a alors rien à réécrire. */
+function poseTonDeBarre(){
+  const ton = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
+  if (ton) document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = ton; });
+}
+poseTonDeBarre();
+
 $("btnTheme").onclick = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
   /* La couleur principale a deux versions, une par fond : celle du thème
      qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
   appliqueAccent();
+  poseTonDeBarre();
 };
 </script>

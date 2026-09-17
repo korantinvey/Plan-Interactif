@@ -55,22 +55,13 @@
      du menu — ascenseur, surbrillance, cadre. */
   --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
-    --line:#2A3034; --line-strong:#3B4348;
-    --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
-    --accent-base:#7A8CFF; --accent-clair:#A9B5FF; --accent-fort:#3F4E9E;
-    --rouge:#FF8B7E;
-    --zone:#F0B429; --zone-soft:#3A2F12;
-    --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
-    --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
-    --plan-line:#3E474C; --plan-ink:#5A6469;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
-  }
-}
+/* Le thème sombre ne s'ouvre que sur demande — jamais d'après la préférence du
+   système. Un plan de salon ne se lit pas le soir au fond d'un lit : il se
+   consulte debout dans un hall éclairé, le plus souvent sur un téléphone dont
+   le thème sombre a été posé une fois pour toutes et oublié, et à côté d'une
+   signalétique imprimée en noir sur blanc. Le premier regard doit tomber sur
+   le même clair qu'elle. Qui préfère la nuit la rallume du bouton de thème, et
+   son choix tient : `plan-theme` le garde d'une visite à l'autre. */
 :root[data-theme="dark"]{
   --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
   --line:#2A3034; --line-strong:#3B4348;
@@ -219,18 +210,7 @@ html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
    l'accent appartient au salon. */
 html.mode-admin :is(#panel,#outils,#libReg){border-top:2px solid var(--m-cyan)}
 html.mode-admin :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan-profond)}
-@media (prefers-color-scheme: dark){
-  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg) .eyebrow{
-    color:var(--m-cyan)}
-}
 html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan)}
-@media (prefers-color-scheme: dark){
-  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg),
-  html.mode-admin:not([data-theme="light"]) .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
-    --surface:#0A1E33;--surface-2:#102941;
-    --line:#1E3C58;--line-strong:#325975;
-    --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
-}
 html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg),
 html.mode-admin[data-theme="dark"] .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
   --surface:#0A1E33;--surface-2:#102941;
@@ -3454,10 +3434,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
    connecte. */
 #acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
-@media (prefers-color-scheme: dark){
-  html:not([data-theme="light"]) #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
-    --accent-ink:var(--m-nuit)}
-}
 html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
   --accent-ink:var(--m-nuit)}
 /* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
@@ -4053,9 +4029,6 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 .tutoVoile.on{opacity:1}
 .tutoVoile i{position:absolute;left:0;top:0;width:1px;height:1px;background:var(--voile);
   transform-origin:0 0;will-change:transform}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .tutoVoile{--voile:rgba(0,0,0,.55)}
-}
 :root[data-theme="dark"] .tutoVoile{--voile:rgba(0,0,0,.55)}
 /* Autour d'une zone désignée, le plan recule comme sous le cartouche des points
    d'intérêt : la zone et son nom restent entiers, le reste s'efface. */
@@ -9010,16 +8983,32 @@ addEventListener("langue", () => {
 
 /* thème */
 const CLE_THEME = "plan-theme";
+/* Le seul thème que la page connaisse est celui qu'on lui a demandé : sans cet
+   attribut, la feuille de style peint le clair. Le visiteur qui a choisi la
+   nuit la retrouve ici, et lui seul. */
 try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+
+/* La barre du navigateur suit désormais le thème de la page et non celui de
+   l'appareil. `outils/pwa.js` pose deux balises, une par préférence système :
+   sur un téléphone réglé en sombre, celle qui l'emporte peignait la nuit
+   au-dessus d'un plan resté clair. On leur écrit donc à toutes deux le ton du
+   thème ouvert — la surface, celle qui touche le haut de l'écran —, quelle que
+   soit celle que le navigateur retient. La page publiée en artefact n'en porte
+   aucune : il n'y a alors rien à réécrire. */
+function poseTonDeBarre(){
+  const ton = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
+  if (ton) document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = ton; });
+}
+poseTonDeBarre();
+
 $("btnTheme").onclick = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
+  const next = themeSombre() ? "light" : "dark";
   document.documentElement.setAttribute("data-theme", next);
   try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
   /* La couleur principale a deux versions, une par fond : celle du thème
      qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
   appliqueAccent();
+  poseTonDeBarre();
 };
 /* ============================================================
    La marque sans le vide qui l'entoure
@@ -9892,13 +9881,12 @@ const melange = (a, b, t) => {
   return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
 };
 
-/** Le thème effectivement peint : celui qu'on a choisi, sinon celui du
- *  système. La couleur principale s'y adapte — un bleu d'imprimerie s'éteint
- *  sur un fond noir, et le même ton ne peut pas servir des deux côtés. */
-const themeSombre = () => {
-  const t = racine.getAttribute("data-theme");
-  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-};
+/** Le thème effectivement peint : la nuit seulement si on l'a demandée, le
+ *  clair partout ailleurs — c'est ce que dit la feuille de style, qui n'écoute
+ *  plus la préférence de l'appareil. La couleur principale s'y adapte : un bleu
+ *  d'imprimerie s'éteint sur un fond noir, et le même ton ne peut pas servir
+ *  des deux côtés. */
+const themeSombre = () => racine.getAttribute("data-theme") === "dark";
 
 /**
  * Pose la couleur principale et ses déclinaisons sur la racine.
@@ -9927,8 +9915,8 @@ function appliqueAccent(){
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
 }
-/* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
+/* Le thème ne bascule plus que par le bouton, qui rappelle `appliqueAccent`
+   lui-même : l'appareil qui passe à la nuit de son côté ne change rien ici. */
 
 /**
  * Le fond du plan — le gris qui entoure le bâtiment.
@@ -30740,7 +30728,9 @@ function monteWebgl(){
       majEditionWebgl(); toutRepeindreWebgl();
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
       attributeFilter: ["class", "style", "data-theme"] });
-    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
+    /* Le guet de `data-theme` ci-dessus suffit : le plan ne suit plus la
+       préférence de l'appareil, et écouter celle-ci ne faisait plus que
+       reconvertir six cents stands pour rien. */
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
     brancheSurvolWebgl();

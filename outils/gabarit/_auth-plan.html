@@ -163,10 +163,9 @@ function initialesDe(mail){
   return (local.slice(0, 2) || "\u00b7\u00b7").toUpperCase();
 }
 
-const themeSombreA = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  return cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-};
+/* Comme sur le plan : la nuit ne se peint que demandée, jamais d'après
+   l'appareil. Le libellé du menu s'en déduit, et annonce donc bien où l'on va. */
+const themeSombreA = () => document.documentElement.getAttribute("data-theme") === "dark";
 
 function poseCompte(){
   const menu = $("menuCompte");

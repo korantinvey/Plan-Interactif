@@ -55,22 +55,13 @@
      du menu — ascenseur, surbrillance, cadre. */
   --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
-    --line:#2A3034; --line-strong:#3B4348;
-    --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-    --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
-    --accent-base:#7A8CFF; --accent-clair:#A9B5FF; --accent-fort:#3F4E9E;
-    --rouge:#FF8B7E;
-    --zone:#F0B429; --zone-soft:#3A2F12;
-    --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
-    --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
-    --plan-line:#3E474C; --plan-ink:#5A6469;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-    --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
-  }
-}
+/* Le thème sombre ne s'ouvre que sur demande — jamais d'après la préférence du
+   système. Un plan de salon ne se lit pas le soir au fond d'un lit : il se
+   consulte debout dans un hall éclairé, le plus souvent sur un téléphone dont
+   le thème sombre a été posé une fois pour toutes et oublié, et à côté d'une
+   signalétique imprimée en noir sur blanc. Le premier regard doit tomber sur
+   le même clair qu'elle. Qui préfère la nuit la rallume du bouton de thème, et
+   son choix tient : `plan-theme` le garde d'une visite à l'autre. */
 :root[data-theme="dark"]{
   --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
   --line:#2A3034; --line-strong:#3B4348;
@@ -219,18 +210,7 @@ html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
    l'accent appartient au salon. */
 html.mode-admin :is(#panel,#outils,#libReg){border-top:2px solid var(--m-cyan)}
 html.mode-admin :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan-profond)}
-@media (prefers-color-scheme: dark){
-  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg) .eyebrow{
-    color:var(--m-cyan)}
-}
 html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan)}
-@media (prefers-color-scheme: dark){
-  html.mode-admin:not([data-theme="light"]) :is(#panel,#outils,#libReg),
-  html.mode-admin:not([data-theme="light"]) .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
-    --surface:#0A1E33;--surface-2:#102941;
-    --line:#1E3C58;--line-strong:#325975;
-    --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
-}
 html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg),
 html.mode-admin[data-theme="dark"] .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
   --surface:#0A1E33;--surface-2:#102941;
@@ -3454,10 +3434,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
    connecte. */
 #acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
-@media (prefers-color-scheme: dark){
-  html:not([data-theme="light"]) #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
-    --accent-ink:var(--m-nuit)}
-}
 html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
   --accent-ink:var(--m-nuit)}
 /* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
@@ -4053,9 +4029,6 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 .tutoVoile.on{opacity:1}
 .tutoVoile i{position:absolute;left:0;top:0;width:1px;height:1px;background:var(--voile);
   transform-origin:0 0;will-change:transform}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .tutoVoile{--voile:rgba(0,0,0,.55)}
-}
 :root[data-theme="dark"] .tutoVoile{--voile:rgba(0,0,0,.55)}
 /* Autour d'une zone désignée, le plan recule comme sous le cartouche des points
    d'intérêt : la zone et son nom restent entiers, le reste s'efface. */

@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4178 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4177 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3101 · 10. Mode administration
-- l.3213 · La fiche d'une zone organisateur
-- l.3922 · Masquer une zone organisateur
-- l.4005 · Placer un libellé à la main
+- l.3100 · 10. Mode administration
+- l.3212 · La fiche d'une zone organisateur
+- l.3921 · Masquer une zone organisateur
+- l.4004 · Placer un libellé à la main
 
 Fonctions :
 
@@ -28,26 +28,26 @@ Fonctions :
 `suggestionOfferte` 306 · `appliqueOptions` 308 · `chercheSorte` 376 · `voletRecherche` 379
 `minutesVisite` 436 · `lueHeure` 463 · `lueDate` 467 · `datesSalon` 474
 `horairesSalon` 488 · `salonPartage` 501 · `presseNuanciers` 532 · `suitNuancier` 548
-`trio` 576 · `melange` 586 · `themeSombre` 594 · `appliqueAccent` 608 · `appliqueFond` 639
-`modeleRetenu` 677 · `policeChoisie` 833 · `policeDuModele` 838 · `feuillePolice` 848
-`chargePolice` 870 · `policePrete` 890 · `policeDesNoms` 908 · `posePoliceLibelles` 937
-`appliqueModele` 969 · `habilleModale` 1010 · `texteCorps` 1081 · `standApercu` 1096
-`lignesApercu` 1120 · `contenuApercu` 1146 · `apercuFiche` 1183 · `apercuListe` 1261
-`apercuDuo` 1283 · `glisseFenetre` 1316 · `ouvreReglages` 1327 · `voletZones` 1435
-`champsFicheZone` 1537 · `ficheZoneEnPlace` 1607 · `voletPlan` 1625 · `blocRappel` 1673
-`ditEssaiRappel` 1777 · `voletAdmin` 1802 · `blocOptions` 1985 · `blocHoraires` 2033
-`sallesSituees` 2166 · `voletPmr` 2182 · `nomDuTon` 2273 · `voletApparence` 2278
-`clesFiche` 2477 · `voletOrdre` 2494 · `enregistreConf` 3050 · `rgbHex` 3057 · `hexa` 3064
-`luminance` 3068 · `ecarte` 3082 · `joli` 3097 · `retireAdmin` 3118 · `activeAdmin` 3131
-`champZone` 3239 · `champsZone` 3264 · `champSalles` 3356 · `nomDeZone` 3408
-`reduitLogo` 3442 · `cadreLogo` 3485 · `champLogo` 3557 · `editeurRiche` 3595
-`memeFicheZone` 3752 · `suitFicheZone` 3759 · `verseFicheZone` 3767 · `ficheZone` 3793
-`enregistreZone` 3818 · `basculeAffichageZone` 3933 · `marqueZonesMasquees` 3950
-`ecritColonnesEvenement` 3970 · `ecritColonneEvenement` 4001 · `cleLibelle` 4026
-`empreinteLibelle` 4042 · `placementLibelle` 4050 · `posePlacement` 4060
-`libelleAutomatique` 4077 · `modePlacementLibelles` 4086 · `majPaletteLibelle` 4105
-`choisitLibelle` 4122 · `pousseLibelle` 4129 · `libellePointerDown` 4137
-`libellePointerMove` 4153 · `libellePointerUp` 4162
+`trio` 576 · `melange` 586 · `themeSombre` 596 · `appliqueAccent` 607 · `appliqueFond` 638
+`modeleRetenu` 676 · `policeChoisie` 832 · `policeDuModele` 837 · `feuillePolice` 847
+`chargePolice` 869 · `policePrete` 889 · `policeDesNoms` 907 · `posePoliceLibelles` 936
+`appliqueModele` 968 · `habilleModale` 1009 · `texteCorps` 1080 · `standApercu` 1095
+`lignesApercu` 1119 · `contenuApercu` 1145 · `apercuFiche` 1182 · `apercuListe` 1260
+`apercuDuo` 1282 · `glisseFenetre` 1315 · `ouvreReglages` 1326 · `voletZones` 1434
+`champsFicheZone` 1536 · `ficheZoneEnPlace` 1606 · `voletPlan` 1624 · `blocRappel` 1672
+`ditEssaiRappel` 1776 · `voletAdmin` 1801 · `blocOptions` 1984 · `blocHoraires` 2032
+`sallesSituees` 2165 · `voletPmr` 2181 · `nomDuTon` 2272 · `voletApparence` 2277
+`clesFiche` 2476 · `voletOrdre` 2493 · `enregistreConf` 3049 · `rgbHex` 3056 · `hexa` 3063
+`luminance` 3067 · `ecarte` 3081 · `joli` 3096 · `retireAdmin` 3117 · `activeAdmin` 3130
+`champZone` 3238 · `champsZone` 3263 · `champSalles` 3355 · `nomDeZone` 3407
+`reduitLogo` 3441 · `cadreLogo` 3484 · `champLogo` 3556 · `editeurRiche` 3594
+`memeFicheZone` 3751 · `suitFicheZone` 3758 · `verseFicheZone` 3766 · `ficheZone` 3792
+`enregistreZone` 3817 · `basculeAffichageZone` 3932 · `marqueZonesMasquees` 3949
+`ecritColonnesEvenement` 3969 · `ecritColonneEvenement` 4000 · `cleLibelle` 4025
+`empreinteLibelle` 4041 · `placementLibelle` 4049 · `posePlacement` 4059
+`libelleAutomatique` 4076 · `modePlacementLibelles` 4085 · `majPaletteLibelle` 4104
+`choisitLibelle` 4121 · `pousseLibelle` 4128 · `libellePointerDown` 4136
+`libellePointerMove` 4152 · `libellePointerUp` 4161
 
 Éléments :
 
@@ -87,7 +87,7 @@ Fonctions :
 `appDuSalon` 193 · `iconeDeLApplication` 196 · `nomAppDefaut` 206 · `ecritApplication` 221
 `blocApplication` 262
 
-### `_auth-plan.html` — 215 l. → plan-admin.html
+### `_auth-plan.html` — 214 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
@@ -95,7 +95,7 @@ Fonctions :
 
 `litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
 `ecranAcces` 45 · `contenuDuJeton` 128 · `mailDuJeton` 135 · `litProfilA` 146
-`initialesDe` 159 · `themeSombreA` 166 · `poseCompte` 171
+`initialesDe` 159 · `themeSombreA` 168 · `poseCompte` 170
 
 Éléments :
 
@@ -316,7 +316,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4688 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4661 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -353,7 +353,7 @@ Fonctions :
 `#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr`
 `#iResultat` · `#videItineraire`
 
-### `_hors-ligne.html` — 47 l. → hors-ligne.html
+### `_hors-ligne.html` — 62 l. → hors-ligne.html
 
 Éléments :
 
@@ -437,7 +437,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4336 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4352 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.52 · 1. Index global — la recherche porte sur tous les pavillons
 - l.430 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -487,6 +487,7 @@ Fonctions :
 `poseCode` 3218 · `rangeMarque` 3259 · `ouvre` 3322 · `ferme` 3590 · `onglet` 3608
 `milieu` 3638 · `commencePince` 3644 · `suitPince` 3658 · `saisitPlan` 3692
 `cibleElargie` 3772 · `planifieFiltre` 3962 · `mesureTiroir` 4017 · `montreTiroir` 4020
+`poseTonDeBarre` 4337
 
 Éléments :
 
@@ -684,31 +685,31 @@ Fonctions :
 `#tutoPoints` · `#tutoAvance` · `#tutoQuitte` · `#tutoTitre` · `#tutoTexte` · `#tutoPied`
 `#tutoSuite`
 
-### `_webgl.html` — 1389 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_webgl.html` — 1391 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13 bis. Le plan peint par la carte graphique — WebGL2
 
 Fonctions :
 
-`monteWebgl` 78 · `poseToileWebgl` 180 · `guetteContexteWebgl` 186
-`contextePerduWebgl` 196 · `verifieContexteWebgl` 203 · `perdContexteWebgl` 212
-`remonteWebgl` 233 · `vueDeck` 250 · `vueWebgl` 259 · `blocDe` 268 · `enEdition` 298
-`majEditionWebgl` 302 · `cleBloc` 314 · `planifieWebgl` 340 · `toutRepeindreWebgl` 344
-`blocsDansLOrdre` 351 · `repeintWebgl` 356 · `assembleWebgl` 380 · `constTexte` 414
-`jeuDeCaracteres` 494 · `couchesTexte` 505 · `mulM` 539 · `appM` 542 · `echelleM` 543
-`lisTransform` 545 · `lisTrace` 567 · `lisPoints` 635 · `num` 641 · `anneau` 643
-`rectArrondi` 649 · `couleurGl` 663 · `accVide` 680 · `convertitBloc` 681 · `accDe` 697
-`parcoursGl` 704 · `avecTrous` 744 · `formeGl` 765 · `texteGl` 801 · `imageGl` 824
-`partage` 856 · `designeGl` 862 · `couchesDeBloc` 864 · `modelesLibellesHtml` 925
-`poseModelesLibelles` 935 · `lisModelesLibelles` 941 · `emplacementWebgl` 970
-`libellesWebgl` 1018 · `groupesNoms` 1081 · `couchesNoms` 1097 · `couchesPastilles` 1108
-`couchesLibellesWebgl` 1123 · `couchesDessineesWebgl` 1130 · `stage` 1151
-`brancheSurvolWebgl` 1155 · `poseSurvolWebgl` 1175 · `poseCurseurWebgl` 1184
-`poseFocusWebgl` 1193 · `aplatsDe` 1200 · `coucheSurvol` 1203 · `coucheFocus` 1212
-`couchesPhare` 1239 · `lueurDe` 1255 · `opacitePhare` 1293 · `echellePhare` 1294
-`couchesPhareNoms` 1297 · `animeCouche` 1311 · `majAnimationWebgl` 1325 · `animeWebgl` 1333
-`objetSous` 1356 · `cibleWebgl` 1363 · `priseWebgl` 1370 · `libelleSousWebgl` 1375
-`rectEcranWebgl` 1380
+`monteWebgl` 78 · `poseToileWebgl` 182 · `guetteContexteWebgl` 188
+`contextePerduWebgl` 198 · `verifieContexteWebgl` 205 · `perdContexteWebgl` 214
+`remonteWebgl` 235 · `vueDeck` 252 · `vueWebgl` 261 · `blocDe` 270 · `enEdition` 300
+`majEditionWebgl` 304 · `cleBloc` 316 · `planifieWebgl` 342 · `toutRepeindreWebgl` 346
+`blocsDansLOrdre` 353 · `repeintWebgl` 358 · `assembleWebgl` 382 · `constTexte` 416
+`jeuDeCaracteres` 496 · `couchesTexte` 507 · `mulM` 541 · `appM` 544 · `echelleM` 545
+`lisTransform` 547 · `lisTrace` 569 · `lisPoints` 637 · `num` 643 · `anneau` 645
+`rectArrondi` 651 · `couleurGl` 665 · `accVide` 682 · `convertitBloc` 683 · `accDe` 699
+`parcoursGl` 706 · `avecTrous` 746 · `formeGl` 767 · `texteGl` 803 · `imageGl` 826
+`partage` 858 · `designeGl` 864 · `couchesDeBloc` 866 · `modelesLibellesHtml` 927
+`poseModelesLibelles` 937 · `lisModelesLibelles` 943 · `emplacementWebgl` 972
+`libellesWebgl` 1020 · `groupesNoms` 1083 · `couchesNoms` 1099 · `couchesPastilles` 1110
+`couchesLibellesWebgl` 1125 · `couchesDessineesWebgl` 1132 · `stage` 1153
+`brancheSurvolWebgl` 1157 · `poseSurvolWebgl` 1177 · `poseCurseurWebgl` 1186
+`poseFocusWebgl` 1195 · `aplatsDe` 1202 · `coucheSurvol` 1205 · `coucheFocus` 1214
+`couchesPhare` 1241 · `lueurDe` 1257 · `opacitePhare` 1295 · `echellePhare` 1296
+`couchesPhareNoms` 1299 · `animeCouche` 1313 · `majAnimationWebgl` 1327 · `animeWebgl` 1335
+`objetSous` 1358 · `cibleWebgl` 1365 · `priseWebgl` 1372 · `libelleSousWebgl` 1377
+`rectEcranWebgl` 1382
 
 ## Dans `web/`, mais que la construction ne produit pas
 
