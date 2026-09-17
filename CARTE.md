@@ -595,7 +595,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 537 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 558 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -603,12 +603,12 @@ Fonctions :
 
 `reglageRappel` 63 · `rappelsVoulus` 64 · `minutesRappel` 65 · `cleRappels` 78
 `chargeRappels` 81 · `retientRappels` 85 · `poussePossible` 94 · `rappelsOfferts` 100
-`iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151
-`rappelsDuParcours` 167 · `adresseDuRappel` 189 · `octetsDeCle` 201
-`abonnementCourant` 209 · `abonne` 214 · `synchroniseRappels` 240 · `eteintRappels` 263
-`allumeRappels` 278 · `aideRappel` 295 · `poseRappels` 311 · `cleInviteRappel` 425
-`inviteRappelFaite` 428 · `retientInviteRappel` 433 · `fenetreRappel` 455
-`proposeRappels` 485 · `reprendRappels` 526
+`iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151 · `heureVue` 175
+`empreinteDebut` 176 · `rappelsDuParcours` 187 · `adresseDuRappel` 210 · `octetsDeCle` 222
+`abonnementCourant` 230 · `abonne` 235 · `synchroniseRappels` 261 · `eteintRappels` 284
+`allumeRappels` 299 · `aideRappel` 316 · `poseRappels` 332 · `cleInviteRappel` 446
+`inviteRappelFaite` 449 · `retientInviteRappel` 454 · `fenetreRappel` 476
+`proposeRappels` 506 · `reprendRappels` 547
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
@@ -762,11 +762,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `rendVignette` 191 · `rendVignettes` 270 · `lu` 313 · `salon` 323 · `appDuSalon` 349
 `rendIconeApp` 380 · `retraits` 473 · `ampute` 497 · `masquesDe` 537 · `masquesDuPlan` 557
 
-### `supabase/functions/sync-evenement/index.ts` — 1606 l.
+### `supabase/functions/sync-evenement/index.ts` — 1627 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `ecrit` 143 · `gaia` 151 · `libellesChoix` 162
 `retiensAnglais` 189 · `fournisseur` 207 · `raccourci` 215 · `enClair` 252 · `range` 278
-`champsKlipso` 299 · `hebergee` 1563 · `nettoieUrl` 1582 · `groupeTextes` 1592
+`champsKlipso` 299 · `hebergee` 1584 · `nettoieUrl` 1603 · `groupeTextes` 1613
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -816,6 +816,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260915115829_le_rappel_avant_une_conference.sql` — rappel_de_conference, fn enregistre_rappels, fn rappels_dus, fn oublie_abonnement, fn purge_rappels
 - `20260915131103_programmer_vraiment_la_tache_des_rappels.sql` — —
 - `20260916232846_l_icone_et_le_nom_de_l_application_installee.sql` — evenement
+- `20260917004611_oublier_un_rappel_que_le_programme_a_dementi.sql` — rappel_de_conference, fn empreinte_debut, fn enregistre_rappels, fn oublie_rappels_perimes
 
 ## Le reste
 
