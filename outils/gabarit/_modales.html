@@ -25,6 +25,15 @@ function verseModale(){
   if (f) f();
 }
 
+/* Ce qui attend que la place se libère.
+ *
+ * Une proposition qui arrive pendant qu'une fenêtre est ouverte ne la remplace
+ * pas : on ne retire pas sous les yeux ce qu'on est en train de lire. Elle n'a
+ * pas à se perdre pour autant — elle se pose ici, et part quand la fenêtre se
+ * ferme. À la fermeture seulement : une fenêtre qui en remplace une autre ne
+ * libère rien, et ce qui attendait attend encore. */
+let apresFermeture = null;
+
 function ouvreModale(titre, remplitCorps, boutons, genre){
   verseModale();
   if (genre) $("modale").dataset.genre = genre;
@@ -45,7 +54,15 @@ function ouvreModale(titre, remplitCorps, boutons, genre){
   });
   $("modale").classList.add("open");
 }
-function fermeModale(){ verseModale(); $("modale").classList.remove("open"); }
+function fermeModale(){
+  verseModale();
+  $("modale").classList.remove("open");
+  /* Après le retrait, et non avant : ce qui attendait la place ouvre sa propre
+     fenêtre, et la trouverait sinon encore occupée. */
+  const f = apresFermeture;
+  apresFermeture = null;
+  if (f) f();
+}
 $("mFermer").onclick = fermeModale;
 $("modale").addEventListener("click", e => { if (e.target === $("modale")) fermeModale(); });
 addEventListener("keydown", e => {

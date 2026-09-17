@@ -1211,6 +1211,18 @@ interrupteur « Me prévenir 15 min avant ». Il faut que le visiteur le touche,
 puis qu'il accorde au navigateur l'autorisation demandée : sans les deux gestes,
 rien ne part et rien n'est enregistré.
 
+**La question, dès la première conférence retenue.** Un interrupteur au fond
+d'un tiroir n'appelle personne, et celui à qui le rappel sert vient justement de
+retenir une conférence sans se douter que le plan sait la lui rappeler. Une
+fenêtre le lui demande donc à ce moment-là — **« Pour ne pas la manquer »** —, et
+répondre oui vaut l'interrupteur : le navigateur demande son autorisation, et le
+rappel est posé. Elle ne se montre qu'une fois par salon, quelle que soit la
+réponse : refusée, elle ne revient pas, et le tiroir reste la porte pour changer
+d'avis. Elle se tait quand elle n'a rien à proposer — sur un iPhone non installé,
+quand les notifications ont déjà été autorisées ou bloquées, pendant la visite
+guidée, et quand les conférences retenues commencent avant le délai réglé. Une
+fiche ouverte n'est pas balayée pour autant : la fenêtre attend qu'on la referme.
+
 **Ce que cela déplace.** Le tiroir promet, en toutes lettres, que le parcours ne
 quitte pas l'appareil. Le rappel est la seule exception, et la phrase le dit
 maintenant. Ce qui part est l'abonnement que le navigateur vient de tirer — une
