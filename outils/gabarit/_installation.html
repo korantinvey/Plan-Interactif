@@ -263,12 +263,68 @@ const appliInstallee = () => reponsesInstallation().installe === true;
 function verifieApplication(){
   if (!navigator.getInstalledRelatedApps) return;
   navigator.getInstalledRelatedApps().then(liste => {
-    if ((liste || []).some(a => a && a.platform === "webapp")){
-      retientInstallation({ installe: true });
-    }
+    if (connaitLApplication(liste)) retientInstallation({ installe: true });
     essaieInvitation();
   }, () => {});
 }
+
+/** Ce que le système dit d'une application posée, quand il en dit quelque
+ *  chose : la plateforme qu'il nomme est celle du manifeste. */
+const connaitLApplication = (liste) =>
+  (liste || []).some(a => a && a.platform === "webapp");
+
+/* Ce qu'on laisse au système pour apprendre l'application qu'on vient
+   d'installer. Chromium fabrique son paquet après coup : l'événement qui
+   annonce l'installation précède de quelques secondes le moment où le système
+   sait qui ouvre les adresses de ce site, et un bouton touché avant cela
+   n'ouvrirait rien — le visiteur aurait touché « Ouvrir » pour voir s'ouvrir
+   une fenêtre qui lui dit d'ouvrir autrement.
+
+   On le lui demande donc, plutôt que de compter les secondes : `getInstalled…`
+   répond franchement dès qu'il sait. Le butoir n'est là que pour les cas où il
+   ne répond pas — l'intention peut aboutir quand même, et le repli est fait
+   pour le moment où personne ne la prend. */
+const OUVRIR_RYTHME = 700;
+const OUVRIR_BUTOIR = 6000;
+
+/**
+ * Montre le bouton qui ouvre l'application, une fois le système au courant.
+ *
+ * Le bouton attend dans la fenêtre plutôt que de s'y ajouter après coup : un
+ * pied de fenêtre qui s'allonge sous les yeux déplace ce qu'on s'apprêtait à
+ * toucher.
+ *
+ * Et il attend sans jamais rien imposer à la fenêtre suivante : la question
+ * s'arrête dès que le bouton n'est plus dans le document, ce qu'une fenêtre
+ * qui prend la place fait de lui (`_modales.html` vide son pied).
+ */
+function attendLOuverture(bouton){
+  const debut = performance.now();
+  const montre = () => { if (bouton.isConnected) bouton.hidden = false; };
+  const demande = () => {
+    if (!bouton.isConnected) return;
+    navigator.getInstalledRelatedApps().then(liste => {
+      if (!bouton.isConnected) return;
+      if (connaitLApplication(liste) || performance.now() - debut >= OUVRIR_BUTOIR) montre();
+      else setTimeout(demande, OUVRIR_RYTHME);
+    }, montre);
+  };
+  if (!navigator.getInstalledRelatedApps) return void setTimeout(montre, OUVRIR_BUTOIR);
+  setTimeout(demande, OUVRIR_RYTHME);
+}
+
+/**
+ * Le nom que l'écran d'accueil écrit sous l'icône.
+ *
+ * Celui que l'exploitant a choisi, sinon le salon — l'un et l'autre tels que le
+ * relais les met dans le manifeste (`src/index.mjs` `manifeste`). Le nom du
+ * produit ne sort d'ici que faute des deux, et c'est alors ce que le manifeste
+ * fabriqué porte lui aussi.
+ */
+const nomDeLApplication = () =>
+  (appDuSalon().nom || "").trim() ||
+  String((DATA && DATA.evenement) || "").trim() ||
+  "Plan";
 
 /**
  * L'adresse que l'application ouvre : son adresse de départ, qui est aussi tout
@@ -690,14 +746,50 @@ function ouvreInvitation(facon, apercu){
  * sait rien : les trois gestes décrits disaient déjà où regarder ensuite.
  */
 function ouvreInstalle(apercu){
+  /* Ouvrir d'ici ne va qu'à Android : lui seul remet une intention au paquet
+     installé (`lanceApplication`). L'aperçu le propose quel que soit l'appareil
+     — c'est la fenêtre du visiteur qu'on y regarde, pas celle de l'exploitant. */
+  const offreOuvrir = apercu || LANCEMENT_POSSIBLE;
+  let demandee = false;
+
   ouvreModale("Le plan est installé", corps => {
-    teteInvitation(corps, "Sur votre écran d'accueil, sous le nom « Plan »");
+    /* Le nom qu'elle porte vraiment : celui que l'exploitant a écrit, sinon
+       celui du salon (`_application.html`, `src/index.mjs`). « Plan » était le
+       nom du manifeste fabriqué, du temps où il valait pour tous les salons —
+       le dire encore reviendrait à envoyer le visiteur chercher une icône qui
+       n'existe pas. */
+    teteInvitation(corps, "Sur votre écran d'accueil, sous le nom « " +
+      nomDeLApplication() + " »");
     const p = document.createElement("p");
-    p.textContent = "Ouvrez-le depuis son icône : il s'affichera en plein écran, " +
-      "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
+    p.textContent = offreOuvrir
+      ? "Ouvrez-la d'ici, ou depuis son icône : elle s'affichera en plein " +
+        "écran, et restera consultable même sans réseau. Vous pouvez fermer " +
+        "cet onglet."
+      : "Ouvrez-le depuis son icône : il s'affichera en plein écran, " +
+        "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
     corps.appendChild(p);
-  }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = () => retourAuxReglages("installation");
+  }, [
+    { libelle: "Compris", genre: offreOuvrir ? "" : "accent" },
+    ...(offreOuvrir ? [{ libelle: "Ouvrir l'application", genre: "accent",
+      action: () => { demandee = true; if (!apercu) lanceApplication(); } }] : []),
+  ], "installe");
+
+  /* Le bouton ne paraît qu'une fois le système au courant : le paquet se
+     fabrique après l'annonce de l'installation. L'aperçu, lui, n'a rien à
+     attendre — il montre la fenêtre telle qu'elle finit par être. */
+  if (offreOuvrir && !apercu){
+    const bouton = $("mPied").lastChild;
+    bouton.hidden = true;
+    attendLOuverture(bouton);
+  }
+
+  avantFermeture = () => {
+    if (!apercu) return;
+    /* L'aperçu enchaîne sur le repli, comme celui du rappel : c'est ce que le
+       visiteur verrait si rien ne prenait la main. */
+    if (demandee) apresFermeture = () => ouvreRetrouve(true);
+    else retourAuxReglages("installation");
+  };
 }
 
 /* L'installation se termine quelques secondes après qu'on l'a acceptée — le
