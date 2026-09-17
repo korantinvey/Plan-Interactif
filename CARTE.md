@@ -180,40 +180,40 @@ Fonctions :
 `#btnExport` · `#btnLangue` · `#btnCompte` · `#initiales` · `#compteMail` · `#btnTheme`
 `#btnSortir` · `#fiche`
 
-### `_console-js.html` — 3113 l. → admin-plans.html
+### `_console-js.html` — 3228 l. → admin-plans.html
 
-- l.937 · Provenance des données
-- l.1064 · Contenu de la fiche détail
+- l.959 · Provenance des données
+- l.1086 · Contenu de la fiche détail
 
 Fonctions :
 
-`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 127 · `fonction` 402 · `slugifie` 416
-`courant` 420 · `charge` 422 · `chargePlans` 437 · `majEvenement` 442 · `selonAdresse` 462
-`majAdresse` 470 · `majBarre` 485 · `dessineChoix` 527 · `champ` 547 · `reduitIcone` 601
-`champFavicon` 642 · `fuseauConnu` 738 · `champFuseau` 750 · `dessineFiche` 813
-`fournisseurUtilise` 999 · `source` 1003 · `champCle` 1008 · `ligneSource` 1043
-`paraitSurFiche` 1175 · `origineConferences` 1181 · `resumeProvenance` 1246
-`resumeFiche` 1263 · `caseFiche` 1308 · `champsPersos` 1350 · `criteres` 1356
-`ecritFiche` 1359 · `caseCritere` 1374 · `clePerso` 1393 · `ajouteChampPerso` 1401
-`renommeChampPerso` 1419 · `retireChampPerso` 1467 · `lignesPerso` 1525 · `ligneOutil` 1545
-`ligneReglage` 1561 · `ouvreProvenance` 1573 · `ouvreSources` 1596 · `cadreFiche` 1648
-`ouvreFiche` 1678 · `cadreCategories` 1816 · `sousTitre` 1895 · `tableauChamps` 1910
-`encode` 2053 · `decode` 2055 · `correspondance` 2060 · `sansPrefixe` 2063 · `courte` 2064
-`intitule` 2079 · `intituleSuite` 2091 · `separeValeurs` 2105 · `aplani` 2126
-`memeStyle` 2136 · `autreFace` 2154 · `champOrigine` 2170 · `majLiens` 2437
-`majIntegration` 2474 · `majMsgSync` 2481 · `etapesPressenties` 2511 · `synchronise` 2525
-`fabriqueLesVignettes` 2606 · `envoieVignettes` 2659 · `dupliquer` 2668
-`litMonProfil` 2768 · `RETOUR_MDP` 2779 · `litComptes` 2781 · `ligneMessage` 2790
-`casesSalons` 2800 · `ouvreComptes` 2830 · `ouvreFicheCompte` 2922 · `videEcran` 3081
-`dessine` 3086 · `demarre` 3101
+`refus` 18 · `fluxFonction` 37 · `fenetreAvancement` 127 · `fonction` 424 · `slugifie` 438
+`courant` 442 · `charge` 444 · `chargePlans` 459 · `majEvenement` 464 · `selonAdresse` 484
+`majAdresse` 492 · `majBarre` 507 · `dessineChoix` 549 · `champ` 569 · `reduitIcone` 623
+`champFavicon` 664 · `fuseauConnu` 760 · `champFuseau` 772 · `dessineFiche` 835
+`fournisseurUtilise` 1021 · `source` 1025 · `champCle` 1030 · `ligneSource` 1065
+`paraitSurFiche` 1197 · `origineConferences` 1203 · `resumeProvenance` 1268
+`resumeFiche` 1285 · `caseFiche` 1330 · `champsPersos` 1372 · `criteres` 1378
+`ecritFiche` 1381 · `caseCritere` 1396 · `clePerso` 1415 · `ajouteChampPerso` 1423
+`renommeChampPerso` 1441 · `retireChampPerso` 1489 · `lignesPerso` 1547 · `ligneOutil` 1567
+`ligneReglage` 1583 · `ouvreProvenance` 1595 · `ouvreSources` 1618 · `cadreFiche` 1670
+`ouvreFiche` 1700 · `cadreCategories` 1838 · `sousTitre` 1917 · `tableauChamps` 1932
+`encode` 2075 · `decode` 2077 · `correspondance` 2082 · `sansPrefixe` 2085 · `courte` 2086
+`intitule` 2101 · `intituleSuite` 2113 · `separeValeurs` 2127 · `aplani` 2148
+`memeStyle` 2158 · `autreFace` 2176 · `champOrigine` 2192 · `majLiens` 2459
+`majIntegration` 2496 · `majMsgSync` 2503 · `etapesPressenties` 2533 · `suitAuServeur` 2582
+`synchronise` 2624 · `fabriqueLesVignettes` 2721 · `envoieVignettes` 2774 · `dupliquer` 2783
+`litMonProfil` 2883 · `RETOUR_MDP` 2894 · `litComptes` 2896 · `ligneMessage` 2905
+`casesSalons` 2915 · `ouvreComptes` 2945 · `ouvreFicheCompte` 3037 · `videEcran` 3196
+`dessine` 3201 · `demarre` 3216
 
 Éléments :
 
 `#fuseaux` · `#msgSync` · `#fragment` · `#btnCopier`
 
-### `_console.css` — 706 l. → console.css
+### `_console.css` — 709 l. → console.css
 
-- l.647 · Page de rapport
+- l.650 · Page de rapport
 
 ### `_dessin.html` — 2044 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -769,11 +769,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `rendVignette` 191 · `rendVignettes` 270 · `lu` 313 · `salon` 323 · `appDuSalon` 349
 `rendIconeApp` 380 · `retraits` 473 · `ampute` 497 · `masquesDe` 537 · `masquesDuPlan` 557
 
-### `supabase/functions/sync-evenement/index.ts` — 1627 l.
+### `supabase/functions/sync-evenement/index.ts` — 1724 l.
 
 `cors` 42 · `bourre` 111 · `client` 121 · `ecrit` 143 · `gaia` 151 · `libellesChoix` 162
 `retiensAnglais` 189 · `fournisseur` 207 · `raccourci` 215 · `enClair` 252 · `range` 278
-`champsKlipso` 299 · `hebergee` 1584 · `nettoieUrl` 1603 · `groupeTextes` 1613
+`champsKlipso` 299 · `hebergee` 1681 · `nettoieUrl` 1700 · `groupeTextes` 1710
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 
@@ -825,6 +825,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260916232846_l_icone_et_le_nom_de_l_application_installee.sql` — evenement
 - `20260916235956_les_mesures_qui_ont_attendu_le_reseau.sql` — fn enregistre_mesures
 - `20260917004611_oublier_un_rappel_que_le_programme_a_dementi.sql` — rappel_de_conference, fn empreinte_debut, fn enregistre_rappels, fn oublie_rappels_perimes
+- `20260917121232_l_avancement_d_une_synchronisation_releve_sur_la_fiche_du_salon.sql` — evenement
 
 ## Le reste
 
