@@ -30,9 +30,15 @@ module.exports = {
 
   // une fois installé
   "Le plan est installé": "The map is installed",
-  "Sur votre écran d'accueil, sous le nom « Plan »": "On your home screen, under the name “Plan”",
+  /* Le nom vient du salon : un modèle, comme toute phrase que le code compose
+     (voir `CLAUDE.md`, « La version anglaise »). */
+  "Sur votre écran d'accueil, sous le nom « {nom} »": "On your home screen, under the name “{nom}”",
   "Ouvrez-le depuis son icône : il s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
     "Open it from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
+  /* La même fenêtre, quand elle peut ouvrir l'application elle-même : sur
+     Android, un bouton s'y ajoute une fois le système au courant. */
+  "Ouvrez-la d'ici, ou depuis son icône : elle s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
+    "Open it from here, or from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
   "Compris": "OK",
 
   // le rappel, l'application installée et le plan lu dans le navigateur
