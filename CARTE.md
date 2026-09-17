@@ -601,7 +601,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 623 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 609 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -612,9 +612,9 @@ Fonctions :
 `iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151
 `rappelsDuParcours` 167 · `adresseDuRappel` 189 · `octetsDeCle` 201
 `abonnementCourant` 209 · `abonne` 218 · `synchroniseRappels` 244 · `eteintRappels` 267
-`allumeRappels` 282 · `aideRappel` 299 · `poseRappels` 315 · `cleInviteRappel` 436
-`inviteRappelFaite` 439 · `retientInviteRappel` 444 · `fenetreRappel` 479
-`proposeRappels` 512 · `essaieRappelReel` 574 · `reprendRappels` 612
+`allumeRappels` 282 · `aideRappel` 299 · `poseRappels` 315 · `cleInviteRappel` 422
+`inviteRappelFaite` 425 · `retientInviteRappel` 430 · `fenetreRappel` 465
+`proposeRappels` 498 · `essaieRappelReel` 560 · `reprendRappels` 598
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 

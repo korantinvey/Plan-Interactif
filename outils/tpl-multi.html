@@ -20324,66 +20324,52 @@ function poseRappels(hote){
   case_.checked = RAPPELS_ACTIFS;
   bloc.appendChild(l);
 
-  const aide = aideRappel(bloc, RAPPELS_ACTIFS
-    ? "Une notification par conférence retenue, même plan fermé."
-    : "Une notification par conférence retenue, même plan fermé. Les heures " +
-      "et les titres retenus partent alors sur nos serveurs, et s'effacent " +
-      "après le salon.");
-
-  /**
-   * Ce qui ne partira pas ce soir, dit à côté de l'interrupteur plutôt qu'à sa
-   * place.
+  /* Une ligne réservée à ce qui a mal tourné, et muette le reste du temps.
    *
-   * L'interrupteur disparaissait quand rien n'était rappelable — toutes les
-   * conférences retenues passées, ou commençant avant le délai réglé. C'était
-   * confondre la préférence et la promesse. « Prévenez-moi avant mes
-   * conférences » vaut pour celles qu'on ajoutera ensuite, et se pose une fois
-   * pour toutes ; le retirer laissait le visiteur devant un tiroir muet, sans
-   * rien à toucher ni rien à lire, et l'exploitant devant un salon terminé où
-   * la commande qu'il venait d'activer restait introuvable.
+   * Elle portait deux explications : ce que fait le rappel, et ce qui ne
+   * partirait pas ce soir — conférences passées, ou trop proches. Deux
+   * paragraphes de gris sous une case à cocher, dans un tiroir où l'on vient
+   * lire son parcours : l'option y prenait plus de place que ce qu'elle règle,
+   * et le visiteur qui a coché n'a plus rien à apprendre.
    *
-   * Reste à ne pas laisser croire qu'une notification part ce soir : c'est ce
-   * que dit cette seconde ligne, et elle se tait dès qu'il y a de quoi
-   * rappeler. Deux paragraphes et non une phrase composée — `_langue.js`
-   * traduit un texte d'un bloc, et une phrase recollée à la volée ne serait la
-   * clé d'aucune traduction.
+   * Ce qui se perd ne se perd pas vraiment. La fenêtre qui propose le rappel
+   * dit, elle, ce qu'il fait et ce qui part au serveur, et c'est là que la
+   * question se pose (`proposeRappels`). L'avertissement sur les conférences
+   * passées disparaît, lui : la case dit une préférence, qui vaut pour celles
+   * qu'on ajoutera ensuite, et personne ne va chercher dans un tiroir la
+   * raison d'une notification qu'il n'attendait pas encore.
+   *
+   * Restent les avaries, qu'on ne peut pas taire : une autorisation refusée,
+   * un site bloqué, un rappel qui n'a pas pu se poser. Là, la case revient
+   * d'elle-même à sa place, et il faut dire pourquoi.
    */
-  const attente = aideRappel(bloc, "");
-  const suitAttente = () => {
-    const t = rappelsDuParcours().length ? ""
-      : confsARappeler().length
-        ? "Vos conférences retenues commencent dans moins de " + n + " min : " +
-          "trop tard pour celles-là. Le rappel vaudra pour les prochaines."
-        : "Vos conférences retenues sont passées. Le rappel vaudra pour les " +
-          "prochaines que vous ajouterez.";
-    attente.textContent = t;
-    attente.hidden = !t;
-  };
-  suitAttente();
+  const aide = aideRappel(bloc, "");
+  aide.hidden = true;
+  const dit = (texte) => { aide.textContent = texte; aide.hidden = !texte; };
 
   case_.onchange = async () => {
     case_.disabled = true;
     try {
       if (case_.checked){
+        /* Allumer rejoue le parcours entier, et non les seuls signets à
+           venir : `synchroniseRappels` envoie `rappelsDuParcours()`, soit
+           toutes les conférences retenues dont le rappel est encore devant
+           nous. Cocher après les avoir ajoutées les couvre donc toutes. */
         const ok = await allumeRappels();
         if (!ok){
           case_.checked = false;
-          aide.textContent = Notification.permission === "denied"
+          dit(Notification.permission === "denied"
             ? "Les notifications sont bloquées pour ce site. Vous pouvez les " +
               "réautoriser dans les réglages de votre navigateur."
-            : "Les notifications n'ont pas été autorisées.";
-        } else {
-          aide.textContent = "Une notification par conférence retenue, même plan fermé.";
-        }
+            : "Les notifications n'ont pas été autorisées.");
+        } else dit("");
       } else {
         await eteintRappels();
-        aide.textContent = "Une notification par conférence retenue, même plan fermé. " +
-          "Les heures et les titres retenus partent alors sur nos serveurs, et " +
-          "s'effacent après le salon.";
+        dit("");
       }
     } catch (e) {
       case_.checked = false;
-      aide.textContent = "Le rappel n'a pas pu être posé. Réessayez dans un instant.";
+      dit("Le rappel n'a pas pu être posé. Réessayez dans un instant.");
     }
     case_.disabled = false;
   };

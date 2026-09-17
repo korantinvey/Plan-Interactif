@@ -10,12 +10,10 @@ module.exports = {
   "Dans {n} min": "In {n} min",
   "Conférence": "Conference",
 
-  /* L'interrupteur, et ce qu'il promet. */
+  /* L'interrupteur. Il n'a plus d'explication sous lui : ce qu'il fait et ce
+     qui part au serveur se disent dans la fenêtre qui le propose, là où la
+     question se pose. */
   "Me prévenir {n} min avant": "Remind me {n} min before",
-  "Une notification par conférence retenue, même plan fermé.":
-    "One notification per conference you picked, even with the map closed.",
-  "Une notification par conférence retenue, même plan fermé. Les heures et les titres retenus partent alors sur nos serveurs, et s'effacent après le salon.":
-    "One notification per conference you picked, even with the map closed. The times and titles you picked then go to our servers, and are erased after the show.",
 
   /* La fenêtre qui propose le rappel, à la première conférence retenue. */
   "Pour ne pas la manquer": "So you don't miss it",
@@ -25,12 +23,6 @@ module.exports = {
     "You will have to allow notifications. The times and titles you picked then go to our servers, and are erased after the show.",
   "Non merci": "No thanks",
   "Oui, me prévenir": "Yes, remind me",
-
-  /* Ce qui ne partira pas encore, dit sous l'interrupteur — qui reste, lui. */
-  "Vos conférences retenues commencent dans moins de {n} min : trop tard pour celles-là. Le rappel vaudra pour les prochaines.":
-    "The conferences you picked start in less than {n} min: too late for those. The reminder will hold for the next ones.",
-  "Vos conférences retenues sont passées. Le rappel vaudra pour les prochaines que vous ajouterez.":
-    "The conferences you picked are over. The reminder will hold for the next ones you add.",
 
   /* L'essai posé depuis les réglages : ce que la notification écrira. */
   "Essai — le rappel fonctionne": "Test — reminders are working",

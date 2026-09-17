@@ -1320,10 +1320,21 @@ préférence et la promesse : « prévenez-moi avant mes conférences » vaut po
 celles qu'on ajoutera ensuite, et se pose une fois pour toutes. Le visiteur
 restait devant un tiroir muet, sans rien à toucher ni rien à lire ; l'exploitant
 d'un salon terminé cherchait en vain la commande qu'il venait d'activer.
-L'interrupteur est donc toujours offert, et une seconde ligne dit ce qui ne
-partira pas encore : « Vos conférences retenues sont passées. Le rappel vaudra
-pour les prochaines que vous ajouterez. » Elle se tait dès qu'il y a de quoi
-rappeler.
+L'interrupteur est donc toujours offert.
+
+**Et il est seul.** Deux paragraphes de gris l'accompagnaient — ce que fait le
+rappel, et ce qui ne partirait pas ce soir — dans un tiroir où l'on vient lire
+son parcours : l'option y prenait plus de place que ce qu'elle règle. La case
+tient désormais sur une ligne, et la ligne au-dessous ne paraît que pour une
+avarie : autorisation refusée, site bloqué, rappel qui n'a pas pu se poser. Ce
+que le rappel fait et ce qui part au serveur se disent dans la fenêtre qui le
+propose, là où la question se pose.
+
+**Cocher après coup ne perd rien.** La case allumée renvoie le parcours entier,
+non les seuls signets qui suivraient : le visiteur qui retient trois
+conférences puis coche les couvre toutes les trois. C'est la même règle que
+partout ici — la liste part en entier à chaque changement, plutôt qu'en
+différences.
 
 Enfin, l'écran d'administration n'a pas de visiteur : la fenêtre ne s'y montre
 jamais. Deux liens dans l'aide de la case y répondent. **Aperçu** ouvre la
