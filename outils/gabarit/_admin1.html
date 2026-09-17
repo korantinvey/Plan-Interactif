@@ -588,14 +588,6 @@ const melange = (a, b, t) => {
   return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
 };
 
-/** Le thème effectivement peint : celui qu'on a choisi, sinon celui du
- *  système. La couleur principale s'y adapte — un bleu d'imprimerie s'éteint
- *  sur un fond noir, et le même ton ne peut pas servir des deux côtés. */
-const themeSombre = () => {
-  const t = racine.getAttribute("data-theme");
-  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-};
-
 /**
  * Pose la couleur principale et ses déclinaisons sur la racine.
  *
@@ -603,38 +595,33 @@ const themeSombre = () => {
  * pastilles, l'encre qui s'écrit sur un bouton plein et les deux nuances dont
  * les modèles de fiche composent leurs fonds s'en déduisent. Sans réglage, on
  * retire les variables plutôt que d'en réécrire : la feuille de style reprend
- * la main, et avec elle le bleu d'origine — qui a déjà ses deux versions.
+ * la main, et avec elle le bleu d'origine.
  */
 function appliqueAccent(){
   const noms = ["--accent", "--accent-base", "--accent-soft", "--accent-ink",
                 "--accent-clair", "--accent-fort"];
-  const choisie = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!choisie){ noms.forEach(n => racine.style.removeProperty(n)); return; }
-  const sombre = themeSombre();
-  /* Sur fond sombre, un ton franc s'éteint : on l'éclaircit d'un tiers, comme
-     le thème le fait de son propre bleu. */
-  const base = sombre ? melange(choisie, "#FFFFFF", 0.34) : choisie;
+  /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
+     sans la version éclaircie qu'un fond noir aurait réclamée. */
+  const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
+  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
-  pose("--accent-soft", melange(base, sombre ? "#0E1113" : "#FFFFFF", sombre ? 0.76 : 0.86));
+  pose("--accent-soft", melange(base, "#FFFFFF", 0.86));
   // le texte d'un bouton plein : noir sur un jaune, blanc sur un bleu
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
 }
-/* Le thème peut basculer sans qu'on rouvre les réglages : la couleur suit. */
-try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", appliqueAccent); } catch (e) {}
 
 /**
  * Le fond du plan — le gris qui entoure le bâtiment.
  *
  * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
- * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
- * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
- * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
- * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
- * le gris de chaque thème.
+ * n'a pas à le teinter. La teinte choisie se pose telle quelle : un exploitant
+ * qui met l'ivoire de sa charte veut cet ivoire-là, pas un ton recalculé. Sans
+ * réglage, on retire le jeton plutôt que d'en écrire un — la feuille de style
+ * reprend la main, avec le gris de la page.
  */
 function appliqueFond(){
   const v = conf("_fond").couleur;
@@ -662,7 +649,7 @@ const MODELES = [
   { cle: "magazine", nom: "Magazine",
     resume: "Serif à fort contraste et italiques : le catalogue et son sommaire." },
   { cle: "brut", nom: "Brut",
-    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir, sans rien emprunter au salon." },
   { cle: "verre", nom: "Verre",
     resume: "Un bloc de la couleur du salon, champs et lignes en carreaux translucides." },
   { cle: "kraft", nom: "Kraft",
@@ -1649,7 +1636,6 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
-  blocRappel(hote);
   blocHoraires(hote);
 }
 
@@ -1665,12 +1651,21 @@ function voletPlan(hote){
  * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
  * ici ne marchera pas pour tout le monde, et une promesse faite sur la
  * plaquette du salon se retournerait contre lui.
+ *
+ * La case vit dans un conteneur à elle, et pas nue dans le volet : le style
+ * des réglages est écrit sous `.reglages`, et une case posée à côté retombait
+ * au corps par défaut du navigateur — grosse, noire, désalignée au milieu de
+ * ses voisines.
  */
 function blocRappel(hote){
   /* Sans programme, il n'y a pas d'heure à rappeler. La case reste, éteinte
      plutôt que décochée, comme les sortes de la recherche : le choix fait
      vaudra le jour où l'option se rouvrira. */
   const offert = programmeOffert();
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  hote.appendChild(bloc);
+
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent = "Rappeler les conférences retenues";
@@ -1678,10 +1673,11 @@ function blocRappel(hote){
   const c = l.querySelector("input");
   c.checked = rappelsVoulus();
   c.disabled = !offert;
-  hote.appendChild(l);
+  bloc.appendChild(l);
 
   const aide = document.createElement("p");
   aide.className = "aideR";
+  aide.dataset.reglage = "rappel";
   aide.textContent = offert
     ? "Le visiteur qui a retenu une conférence peut demander à " +
       "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
@@ -1690,7 +1686,47 @@ function blocRappel(hote){
       "la conférence."
     : "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas " +
       "d'horaire à rappeler.";
-  hote.appendChild(aide);
+  bloc.appendChild(aide);
+
+  /* La fenêtre qui propose le rappel au visiteur ne paraît jamais ici : le plan
+     d'administration n'a pas de visiteur, et `rappelsOfferts` s'y refuse. Sans
+     cet aperçu, l'exploitant cocherait une fenêtre qu'il n'a jamais vue — c'est
+     le même besoin que l'invitation à installer, et la même réponse.
+
+     L'essai va plus loin, parce que la fenêtre ne prouve que la fenêtre : il
+     poste un vrai rappel sur cet appareil, pour dans une demi-minute, et ce
+     qui arrive alors dit d'un coup si les clés, la tâche de la minute et le
+     service de second plan répondent. */
+  if (offert){
+    aide.appendChild(document.createTextNode(" "));
+    const apercu = document.createElement("button");
+    apercu.type = "button";
+    apercu.className = "apercuRappel";
+    apercu.textContent = "Aperçu";
+    apercu.onclick = () => proposeRappels(true);
+    aide.appendChild(apercu);
+
+    aide.appendChild(document.createTextNode(" · "));
+    const essai = document.createElement("button");
+    essai.type = "button";
+    essai.className = "apercuRappel";
+    essai.textContent = "Essayer un vrai rappel";
+    aide.appendChild(essai);
+
+    /* Ce que l'essai a donné, sous l'aide plutôt que dedans : le texte change,
+       et une phrase qui remplace un morceau d'une autre se relit mal. */
+    const etat = document.createElement("p");
+    etat.className = "aideR";
+    etat.hidden = true;
+    bloc.appendChild(etat);
+
+    essai.onclick = async () => {
+      essai.disabled = true;
+      ditEssaiRappel(etat, "envoi");
+      ditEssaiRappel(etat, await essaieRappelReel());
+      essai.disabled = false;
+    };
+  }
 
   const duree = document.createElement("div");
   duree.className = "reglage-nb";
@@ -1714,6 +1750,31 @@ function blocRappel(hote){
   };
   c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
   suit();
+}
+
+/**
+ * Ce que l'essai a donné, en une phrase.
+ *
+ * Chaque issue en a une, et « sans service » en est une à part : ce n'est ni
+ * une panne ni un refus, mais le service de second plan qui n'est pas encore
+ * posé sur ce navigateur. Le plan public le pose en s'ouvrant ; la page
+ * d'administration ne le fait pas, et ne doit pas le faire — elle passerait
+ * sous son cache, et se servirait un jour périmée.
+ */
+function ditEssaiRappel(etat, issue){
+  const phrases = {
+    envoi: "Envoi…",
+    ok: "Posé. La notification doit arriver dans la minute qui suit.",
+    refus: "Les notifications n'ont pas été autorisées sur ce navigateur.",
+    sansService: "Ouvrez d'abord votre plan public une fois sur ce navigateur : " +
+      "c'est lui qui installe le service qui reçoit les notifications.",
+    nonPublie: "Le salon n'est pas publié : le serveur refuse d'enregistrer un rappel.",
+    impossible: "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, " +
+      "il faut avoir ajouté le plan à l'écran d'accueil.",
+    panne: "Le rappel n'a pas pu être posé. Réessayez dans un instant.",
+  };
+  etat.textContent = phrases[issue] || phrases.panne;
+  etat.hidden = false;
 }
 
 /**
@@ -1873,6 +1934,13 @@ function voletAdmin(hote){
   }
 
   hote.appendChild(bloc);
+
+  /* Le rappel avant une conférence ferme la série : c'est une proposition faite
+     au visiteur comme les deux précédentes — une fenêtre qui s'ouvre d'elle-même
+     —, mais elle traîne un délai derrière elle. D'où sa place au pied de la
+     liste plutôt qu'au milieu, où la ligne du délai aurait coupé les cases en
+     deux. */
+  blocRappel(hote);
 
   /* Les options viennent après les commandes, sous leur propre intertitre :
      les premières règlent un plan qu'on a, les secondes disent ce qu'on en a
@@ -3067,15 +3135,8 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
-  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
-     côté : il porte le même réglage dans son panneau, et deux commandes d'une
-     même chose dans la même barre ne disent pas laquelle écoute. */
   const c = $("menuCompte");
-  if (c){
-    c.hidden = false;
-    const th = $("btnTheme");
-    if (th) th.hidden = true;
-  }
+  if (c) c.hidden = false;
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
      argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun

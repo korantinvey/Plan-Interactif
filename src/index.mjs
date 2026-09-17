@@ -514,6 +514,18 @@ async function manifeste(requete, env, ctx) {
     contenu.short_name = app.choisi || app.nom;
     if (app.icone) contenu.icons = iconesDuSalon(salon, app.icone);
   }
+  /* L'application se nomme elle-même dans `related_applications`, et c'est ce
+     qui permet à la page de savoir, plus tard, qu'elle est installée
+     (`outils/pwa.js`, `_installation.html`). Encore faut-il qu'elle s'y nomme
+     par l'adresse exacte de ce manifeste-ci : le navigateur retient
+     l'application sous l'adresse d'où elle a été posée, paramètres compris, et
+     l'adresse nue du fichier construit ne désigne alors aucune application
+     installée. C'est donc ici qu'elle s'écrit, où la requête la porte. */
+  if (Array.isArray(contenu.related_applications)) {
+    contenu.related_applications = contenu.related_applications.map(parente =>
+      parente && parente.platform === "webapp"
+        ? { ...parente, url: requete.url } : parente);
+  }
   return new Response(JSON.stringify(contenu), {
     headers: {
       "Content-Type": "application/manifest+json; charset=utf-8",

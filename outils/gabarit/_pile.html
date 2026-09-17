@@ -486,9 +486,9 @@ function ligneCouleur(libelle, valeur, peint){
  * La couleur d'un secteur.
  *
  * Le sélecteur part de ce que le plan montre — la couleur choisie, ou la teinte
- * automatique résolue dans le thème courant — de sorte qu'on retouche ce qu'on
- * voit plutôt que de partir du noir. Elle vaut ensuite pour les deux thèmes,
- * comme celle des autres couches.
+ * automatique telle que le plan la résout — de sorte qu'on retouche ce qu'on
+ * voit plutôt que de partir du noir. Elle se pose ensuite telle quelle, comme
+ * celle des autres couches.
  */
 function rangSecteur(hote, nom){
   const c = conf("secteur:" + nom);

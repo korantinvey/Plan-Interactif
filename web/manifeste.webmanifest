@@ -13,6 +13,13 @@
     "navigation",
     "business"
   ],
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "manifeste.webmanifest"
+    }
+  ],
   "icons": [
     {
       "src": "icone.svg",

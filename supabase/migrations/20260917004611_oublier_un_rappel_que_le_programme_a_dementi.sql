@@ -36,9 +36,11 @@
 -- aucun instantané ne porte de conférence n'est pas jugé : une source qui a
 -- répondu à vide et quatre cents conférences annulées se ressemblent trop d'ici,
 -- et vider les rappels de tout un salon sur une mauvaise lecture serait un
--- dégât plus grand que celui qu'on répare. Et un rang posé avant cette
--- migration n'a pas d'heure relevée : faute de savoir ce qu'il promettait, on le
--- laisse partir.
+-- dégât plus grand que celui qu'on répare. Et un rang posé sans heure relevée
+-- n'est pas jugé non plus : faute de savoir ce qu'il promettait, on le laisse
+-- partir. Cela vaut pour les rangs posés avant cette migration, et pour le
+-- rappel d'essai que l'exploitant s'envoie depuis les réglages — il ne porte
+-- aucune conférence du programme, et serait effacé avant d'arriver.
 
 -- ------------------------------------------------------- ce qu'on a promis
 /*
@@ -78,9 +80,11 @@ comment on column rappel_de_conference.debut_vu is
 -- ------------------------------------------------------------ poser, encore
 /**
  * Inchangée, sauf le relevé de l'heure promise, que la page envoie désormais
- * avec chaque rang. Un rang sans relevé s'inscrit quand même : une page du
- * cache de la veille continue de poser des rappels, et refuser les siens
- * casserait le rappel pour réparer sa fraîcheur.
+ * avec chaque rang. Un rang sans relevé s'inscrit quand même, et ce n'est pas
+ * une tolérance : une page servie du cache de la veille continue de poser des
+ * rappels, et le rappel d'essai n'a pas d'heure au programme puisqu'il n'est
+ * pas au programme. Refuser les leurs casserait le rappel pour réparer sa
+ * fraîcheur — ils ne seront simplement jamais démentis.
  */
 create or replace function enregistre_rappels(
   p_slug       text,

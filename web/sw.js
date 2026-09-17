@@ -47,13 +47,20 @@
  * survit aux mises en ligne.
  *
  * Il ne peut pas enfler pour autant : ce qui y entre chasse ce qu'il remplace
- * — voir `oublieLesVersionsDAvant` et `borneLesLots`.
+ * — voir `oublieLesVersionsDAvant`, `borneLesLots` et `borneLesTuiles`.
+ *
+ * Le fond de carte y est entré ensuite, et c'est la seule chose qu'on garde
+ * d'ailleurs que de chez nous. Une tuile est nommée par son niveau et sa case :
+ * elle relève exactement de la règle précédente, à ceci près qu'elle vient d'un
+ * tiers, et qu'il faut la redemander pour que ce qu'on range soit lisible — voir
+ * `tuileDeCarte`. La liste des fournisseurs est close ; tout le reste du web
+ * passe toujours sans que ce service le voie.
  *
  * La mise en ligne qui apporte ce second cache emporte une dernière fois ce
  * qui était rangé sous la version d'avant : ces fonds et ces vignettes sont
  * dans le cache versionné, et c'est lui qu'on jette. C'est la dernière.
  */
-const VERSION = "0a077a5d076f";
+const VERSION = "ef41fe8abcf1";
 const CACHE = "plan-" + VERSION;
 const DURABLE = "plan-durable";
 const HORS_LIGNE = "hors-ligne.html";
@@ -74,6 +81,45 @@ const LOTS_GARDES = 24;
 const POLICES = /^\/polices\/[^/]+\.woff2$/;
 /* La bibliothèque du dessin WebGL porte de même sa version dans son nom. */
 const BIBLIOTHEQUES = /^\/bibliotheques\/[^/]+\.js$/;
+
+/* Les fournisseurs du fond de carte, et eux seuls. Liste close comme les
+   vocabulaires du reste du projet : ce service ne garde d'une autre origine
+   que ce que le plan lui a explicitement demandé d'afficher.
+
+   Les garder sert deux choses à la fois, et la seconde n'était pas cherchée.
+   Hors ligne, le pavillon ne flotte plus sur du vide — c'était la demande. En
+   ligne, le visiteur cesse de redemander vingt fois la même tuile à un tiers,
+   donc de lui redonner vingt fois son adresse IP. Le plan tient à ne rien
+   laisser fuir sans consentement ; un cache va dans ce sens, il ne s'y oppose
+   pas. */
+const FONDS_DE_CARTE = new Set([
+  "https://data.geopf.fr",            // la Géoplateforme de l'IGN — plan, vue aérienne
+  "https://tile.openstreetmap.org",   // OpenStreetMap en recours, hors de France
+  "https://tiles.versatiles.org",     // les tuiles vectorielles de notre style, et ses glyphes
+  "https://tiles.openfreemap.org",    // les styles vectoriels du commerce, en option
+  "https://cdn.jsdelivr.net",         // MapLibre, chargé à la demande
+]);
+
+/**
+ * Ce qui, chez ces fournisseurs, ne peut pas changer sous une même adresse.
+ *
+ * C'est la distinction déjà faite pour notre propre origine — n'échappe au
+ * réseau que ce dont l'adresse porte sa version — appliquée à leur vocabulaire
+ * à eux : une tuile est nommée par son niveau et sa case, un lot de glyphes par
+ * sa police et sa plage de caractères. Tout cela se garde et se ressert.
+ *
+ * Le reste — un style, la bibliothèque, dont l'adresse ne nomme qu'une majeure
+ * — suit la règle commune : le réseau d'abord, la copie en secours. Un style
+ * corrigé chez son éditeur arrive donc au chargement suivant, comme nos propres
+ * pages.
+ *
+ * La tuile d'un fond IGN ne se reconnaît pas au chemin : le service est un WMTS,
+ * et sa case voyage dans les paramètres.
+ */
+const TUILE_XYZ = /\/\d+\/\d+\/\d+(\.\w+)?$/;
+const GLYPHES = /\/glyphs\/[^/]+\/\d+-\d+\.pbf$/;
+const estUneTuile = (u) =>
+  u.searchParams.has("TILEROW") || TUILE_XYZ.test(u.pathname) || GLYPHES.test(u.pathname);
 
 self.addEventListener("install", (e) => {
   /* La seule chose mise de côté d'avance : la page qui s'affiche quand tout le
@@ -194,6 +240,165 @@ async function borneLesLots(cache) {
 }
 
 /**
+ * Les tuiles de fond de carte en trop, les plus anciennes d'abord.
+ *
+ * Une tuile ne se périme pas — son adresse porte son niveau et sa case — mais
+ * rien ne la jetterait non plus, le cache durable ne connaissant pas les mises
+ * en ligne. Or un visiteur qui dézoome en traverse des centaines, et le fond
+ * n'est que le décor autour du pavillon : il n'a pas à prendre la place du plan
+ * lui-même, dont l'éviction coûterait la consultation hors ligne.
+ *
+ * Cent vingt : six vues pleines du pavillon, soit de quoi retrouver sans réseau
+ * ce qu'on regardait et les zooms voisins, pour six mégaoctets au plus.
+ */
+const TUILES_GARDEES = 120;
+
+/* Le ménage coûte un parcours du cache, et une vue de carte range vingt tuiles
+   d'un coup : le faire à chacune reviendrait à parcourir vingt fois de suite ce
+   qu'on vient d'écrire, sur le téléphone de quelqu'un qui regarde un plan.
+
+   On l'espace donc, et le compteur part au seuil plutôt qu'à zéro : le premier
+   rangement qui suit un réveil du service fait le ménage. Sans quoi un service
+   arrêté entre deux poignées de tuiles — c'est la vie ordinaire d'un service de
+   second plan — n'en aurait jamais fait aucun, et la borne n'aurait borné que
+   le cas où elle ne servait pas. */
+const TUILES_ENTRE_MENAGES = 20;
+let _depuisLeMenage = TUILES_ENTRE_MENAGES;
+
+async function borneLesTuiles(cache) {
+  if (++_depuisLeMenage < TUILES_ENTRE_MENAGES) return;
+  _depuisLeMenage = 0;
+  /* Ce cache ne porte que deux sortes de choses : ce que le relais nous sert, et
+     les tuiles. Le reste de ce qui s'y trouve est donc à nous, et se borne
+     ailleurs. */
+  const tuiles = (await cache.keys()).filter((c) => {
+    try { return new URL(c.url).origin !== location.origin; } catch (_) { return false; }
+  });
+  const trop = tuiles.length - TUILES_GARDEES;
+  if (trop <= 0) return;
+  for (const vieille of tuiles.slice(0, trop)) await cache.delete(vieille);
+}
+
+/**
+ * Une tuile de fond de carte : gardée d'abord, et redemandée en notre nom.
+ *
+ * Ce détour tient à une chose, et elle vaut pour tout ce qui vient de ces
+ * fournisseurs. Le plan pose ses tuiles d'image dans des `<image>` du SVG et
+ * charge MapLibre par un `<script>` : deux demandes sans CORS, auxquelles un
+ * tiers ne peut répondre qu'une réponse opaque. On a le droit de la ranger, mais
+ * elle ne se lit pas — ni son état, ni sa taille — et le navigateur la compte
+ * dans le quota bien au-delà de ce qu'elle pèse, précisément pour qu'on ne
+ * puisse pas mesurer par le quota ce qu'on n'a pas le droit de lire. Cent vingt
+ * tuiles opaques feraient ainsi évincer tout ce que le plan avait gardé, et la
+ * consultation hors ligne avec — l'inverse de ce qu'on vient chercher.
+ *
+ * On redemande donc la même adresse pour notre compte, en CORS et sans cookie ;
+ * ces services l'accordent, MapLibre ne saurait pas s'en passer. Ce qui revient
+ * est lisible, pèse ce qu'il pèse, et se ressert aussi bien à l'`<image>` ou au
+ * `<script>` qui l'attendait — répondre plus largement que la demande est
+ * permis, c'est l'inverse qui ne l'est pas.
+ *
+ * Un fournisseur qui refuserait le CORS ne casse rien : on repasse par la
+ * demande d'origine, dont on ne garde rien. Le fond est alors là tant qu'il y a
+ * du réseau et manque sans, exactement comme avant ce service — le pire cas est
+ * de ne rien gagner, jamais de perdre.
+ *
+ * Encore ne doit-il pas se payer à chaque tuile. `fetch` lève de la même façon
+ * pour un CORS refusé et pour un réseau coupé, et rien dans la réponse ne les
+ * distingue ; mais la demande d'origine, elle, trace la ligne — si elle aboutit
+ * quand la nôtre a échoué, c'est le CORS qui manquait, pas le réseau. On note
+ * alors l'origine, et le détour cesse pour elle le temps que vit ce service.
+ */
+const _sansCors = new Set();
+
+/**
+ * Rend la réponse, quelle qu'elle soit, et `null` pour la seule demande qui n'a
+ * pas abouti.
+ *
+ * La distinction porte : une tuile hors emprise se voit refuser par un 404 chez
+ * certains fournisseurs, et confondre ce refus avec un CORS manquant aurait
+ * suffi à condamner le détour pour toute l'origine — le cache du fond perdu
+ * pour une case de carte que personne ne regardait.
+ */
+async function demandeTiers(cle) {
+  if (_sansCors.has(new URL(cle.url).origin)) return null;
+  try {
+    return await fetch(cle, { mode: "cors", credentials: "omit" });
+  } catch (panne) { return null; }
+}
+
+/** La demande telle que la page l'a faite, quand la nôtre n'a rien donné. */
+async function commePosee(requete) {
+  const brut = await fetch(requete);
+  // on n'arrive ici que si elle aboutit : le réseau est donc là, et c'est le
+  // CORS qui a manqué
+  _sansCors.add(new URL(requete.url).origin);
+  return brut;
+}
+
+/**
+ * Une tuile : gardée d'abord, demandée après — elle ne peut pas se périmer.
+ *
+ * Rangée sous l'adresse nue, parce que la même tuile est demandée tantôt par une
+ * `<image>`, tantôt par MapLibre, et que ce n'est pas deux images. `ignoreVary`
+ * pour la même raison : un fournisseur qui déclare varier selon l'encodage ou
+ * l'origine ferait manquer la copie à la demande d'après, qui veut pourtant
+ * exactement ce qu'on a rangé.
+ */
+async function tuileDeCarte(e, requete) {
+  const cle = new Request(requete.url);
+  /* Ouvrir plutôt que viser par son nom : `caches.match` à qui l'on nomme un
+     cache qui n'existe pas encore ne rend pas « rien », il rejette — et la
+     première tuile d'un plan peut très bien arriver avant le premier fond. */
+  const cache = await caches.open(DURABLE);
+  const garde = await cache.match(cle, { ignoreVary: true });
+  if (garde) return garde;
+
+  const recu = await demandeTiers(cle);
+  if (!recu) return commePosee(requete);
+  // le fournisseur a répondu, mais pas ce qu'on demandait : rien à garder, et
+  // l'`<image>` qui l'attendait sait s'effacer
+  if (!recu.ok) return recu;
+
+  const copie = recu.clone();   // avant tout `await` : le corps ne se lit qu'une fois
+  e.waitUntil(caches.open(DURABLE).then(async (c) => {
+    await c.put(cle, copie);
+    await borneLesTuiles(c);
+  }).catch(() => {}));
+  return recu;
+}
+
+/**
+ * Le reste du fond de carte — un style, la bibliothèque : le réseau d'abord et
+ * la copie en secours, la règle commune, puisque leur adresse ne nomme qu'une
+ * majeure et qu'un style se corrige chez son éditeur.
+ *
+ * Ils passent par le même détour que les tuiles, et il n'est pas facultatif :
+ * le fond qu'on sert par défaut est vectoriel, donc il lui faut MapLibre. Sans
+ * cela, le seul fond à manquer hors ligne aurait été celui que tout le monde a.
+ *
+ * Dans le cache des pages et non le durable : deux cent sept kilo-octets qu'une
+ * mise en ligne reprendra, comme les polices, plutôt qu'une bibliothèque gelée
+ * pour toujours sous une adresse qui, elle, ne l'est pas.
+ */
+async function fondDeCarte(e, requete) {
+  const cle = new Request(requete.url);
+  const recu = await demandeTiers(cle);
+  if (recu && recu.ok) {
+    const copie = recu.clone();   // avant tout `await` : le corps ne se lit qu'une fois
+    e.waitUntil(caches.open(CACHE).then((c) => c.put(cle, copie)).catch(() => {}));
+    return recu;
+  }
+  /* Une réponse d'erreur se rend telle quelle : la copie gardée est le secours
+     d'une panne de réseau, pas le rattrapage d'un style qu'on a mal nommé. */
+  if (recu) return recu;
+  /* La copie avant la demande nue, à l'inverse d'une tuile : c'est justement
+     hors ligne qu'elle sert, et `commePosee` y lèverait sans rien apprendre. */
+  const garde = await caches.match(cle, { ignoreVary: true });
+  return garde || commePosee(requete);
+}
+
+/**
  * Tout le reste : demandé d'abord, et la copie gardée ne sert qu'en secours.
  *
  * Une mise en ligne arrive donc au premier chargement qui suit, comme avant ce
@@ -271,8 +476,19 @@ self.addEventListener("fetch", (e) => {
       : POLICES.test(adresse.pathname) || BIBLIOTHEQUES.test(adresse.pathname)
         ? dabordCache(e, requete, CACHE)
         : dabordReseau(e, requete));
+    return;
   }
-  // une autre origine n'est rien que le plan demande : elle passe sans lui
+
+  /* Le fond de carte, seule autre origine que ce service connaisse. Sans lui,
+     le pavillon flottait sur du vide dès que le réseau manquait — le plan
+     tenait, son décor non. */
+  if (FONDS_DE_CARTE.has(adresse.origin)) {
+    e.respondWith(estUneTuile(adresse)
+      ? tuileDeCarte(e, requete)
+      : fondDeCarte(e, requete));
+    return;
+  }
+  // le reste d'une autre origine passe sans lui : le plan ne l'a pas demandé
 });
 
 /* ------------------------------------------------------------

@@ -132,8 +132,8 @@ function monteWebgl(){
       majEditionWebgl();
       planifieWebgl();
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
-    // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
-    // classes posées sur la racine, que la feuille de style lit
+    // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
+    // autant de classes et de jetons posés sur la racine, que la feuille lit
     /* Une écriture qui repose la même valeur n'est pas un changement, mais le
        guet la signale quand même — et repeindre tout le plan coûte un demi-
        millier de millisecondes. On compare donc l'avant et l'après : une frappe
@@ -143,8 +143,7 @@ function monteWebgl(){
       if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
       majEditionWebgl(); toutRepeindreWebgl();
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
-      attributeFilter: ["class", "style", "data-theme"] });
-    matchMedia("(prefers-color-scheme: dark)").addEventListener("change", toutRepeindreWebgl);
+      attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
     brancheSurvolWebgl();
@@ -879,7 +878,7 @@ function couchesDeBloc(acc, cle){
 
      L'aplat couvre la forme entière ; il ne reste dehors que la moitié
      extérieure d'un trait, large d'un pixel. Une forme qui n'a pas d'aplat —
-     un trait, un contour ouvert, un stand qu'un thème laisse vide — garde le
+     un trait, un contour ouvert, un stand laissé sans aplat — garde le
      sien : c'est tout ce qu'elle a pour répondre. */
   const repondus = new Set(pleins[0].map(designeGl).filter(Boolean));
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])

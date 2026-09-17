@@ -100,6 +100,24 @@ function manifeste() {
     background_color: FOND,
     theme_color: TON_CLAIR,
     categories: ["navigation", "business"],
+    /* L'application se déclare parente d'elle-même, et ce n'est pas un jeu de
+       mots : `getInstalledRelatedApps()` ne sait dire qu'une chose, « telle
+       application est-elle posée sur cet appareil ? », et c'est en se nommant
+       soi-même qu'une page obtient la réponse pour la sienne. Le plan s'en
+       sert pour savoir qu'il est lu dans le navigateur alors que
+       l'application est là, à côté (`_installation.html`).
+
+       L'adresse est relative, et le relais la remplace par celle du manifeste
+       qu'on lui a demandé — paramètres compris : l'application installée est
+       identifiée par l'adresse d'où elle l'a été, et `manifeste.webmanifest`
+       tout court n'est celle de personne (`src/index.mjs`).
+
+       `prefer_related_applications` est écrit alors qu'il vaut déjà faux : à
+       vrai, il ferait de cette parenté une raison de ne plus proposer
+       l'installation du tout, et le lecteur qui découvre la ligne au-dessus
+       mérite de voir tout de suite que ce n'est pas ce qui est dit. */
+    prefer_related_applications: false,
+    related_applications: [{ platform: "webapp", url: "manifeste.webmanifest" }],
     icons: [
       // la vectorielle d'abord : c'est la seule qui tienne à toutes les tailles
       { src: "icone.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
@@ -120,12 +138,27 @@ function manifeste() {
  * les pages n'en déclaraient aucune, et le navigateur réclamait un
  * `/favicon.ico` qui n'existe pas. Sur les pages du plan, celle du salon la
  * remplace dès que les données arrivent : `poseFavicon` reprend ce même lien.
- * La couleur, elle, est celle dont un navigateur mobile peint sa barre
- * d'adresse, application ou pas.
  */
 const TETE = [
   // l'onglet prend la marque réduite : le monogramme entier s'y empâte
   '<link rel="icon" href="icone-onglet.svg" type="image/svg+xml">',
+  "",
+].join("\n");
+
+/**
+ * La couleur dont un navigateur mobile peint sa barre d'adresse, application
+ * ou pas. Elle se décline en deux, parce que les pages du domaine ne se
+ * ressemblent plus sur ce point.
+ *
+ * Le plan n'a qu'un thème, le clair : une couleur, sans condition. Poser la
+ * paire lui laissait une barre nuit au-dessus d'une page claire, sur tout
+ * téléphone dont le thème sombre avait été réglé une fois puis oublié.
+ *
+ * La console, le rapport et l'invitation ont les deux thèmes et suivent la
+ * préférence de l'appareil : à eux la paire, une couleur par préférence.
+ */
+const BARRE_CLAIRE = '<meta name="theme-color" content="' + TON_CLAIR + '">\n';
+const BARRE_DEUX_THEMES = [
   '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + TON_CLAIR + '">',
   '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + TON_SOMBRE + '">',
   "",
@@ -205,4 +238,4 @@ const application = (slugDefaut) => [
   "",
 ].join("\n");
 
-module.exports = { TETE, application, manifeste };
+module.exports = { TETE, BARRE_CLAIRE, BARRE_DEUX_THEMES, application, manifeste };
