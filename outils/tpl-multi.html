@@ -10274,9 +10274,9 @@ const LECTURE_CORPS = {
    étroit : la vignette le montre, comme la fiche le fait. */
 const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
 
-/* De quoi remplir un champ qu'aucun stand ne renseigne. Le taire ferait
-   choisir un modèle sur une fiche plus courte que la vraie, et laisserait
-   croire le champ retiré. */
+/* De quoi remplir un champ que le stand retenu ne renseigne pas, quand
+   d'autres du salon le portent. Le taire ferait choisir un modèle sur une
+   fiche plus courte que la vraie, et laisserait croire le champ retiré. */
 const EXEMPLES_CORPS = {
   nom: "Ateliers Ligneron", code: "D14", pavillon: "Pavillon 2",
   raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
@@ -10305,6 +10305,36 @@ function texteCorps(o, cle){
   }
   const l = LECTURE_CORPS[cle];
   return l ? separeValeurs(l(o)).join(";") : "";
+}
+
+/**
+ * Les champs, parmi ceux-là, que ce salon renseigne vraiment.
+ *
+ * Un champ de fiche n'existe que si la console lui a désigné un champ
+ * d'origine, et que les fiches lues y portent quelque chose : sans cela, la
+ * page a beau le ranger, il ne paraîtra sur aucune fiche. Les proposer tous
+ * faisait ranger des lignes que personne ne verrait jamais, puis chercher dans
+ * le plan la cause d'une absence qui se règle dans la console.
+ *
+ * On lit donc le salon plutôt que le catalogue des champs possibles — les
+ * sociétés hébergées comprises : leur fiche porte les mêmes champs, et un site
+ * web qu'aucun titulaire ne renseigne peut n'être qu'à elles.
+ *
+ * Un salon dont aucun stand n'est encore lu ne prouve rien : avant la première
+ * synchronisation tout reste proposé, sans quoi le volet s'ouvrirait vide et
+ * le rangement attendrait les données.
+ */
+function clesPortees(cles){
+  let reste = cles.slice(), lus = 0;
+  const lit = (o) => { reste = reste.filter(c => !texteCorps(o, c)); };
+  Object.values((DATA || {}).plans || {}).forEach(pl => (pl.stands || []).forEach(o => {
+    if (!o.nom) return;
+    lus++;
+    if (!reste.length) return;
+    lit(o);
+    (o.coex || []).forEach(lit);
+  }));
+  return lus ? cles.filter(c => reste.indexOf(c) < 0) : cles;
 }
 
 /**
@@ -10360,14 +10390,18 @@ function lignesApercu(stand){
 /**
  * Ce que les onze vignettes montrent : relevé une fois, elles s'en partagent.
  *
- * Un champ propre au salon qu'aucun stand ne renseigne n'a pas d'exemple à
- * prêter — le code ne connaît pas son sujet — d'où la mention en clair plutôt
- * qu'une valeur inventée qui passerait pour une vraie.
+ * Un champ propre au salon que le stand retenu ne renseigne pas n'a pas
+ * d'exemple à prêter — le code ne connaît pas son sujet — d'où la mention en
+ * clair plutôt qu'une valeur inventée qui passerait pour une vraie.
+ *
+ * Ce que le salon ne renseigne nulle part n'y paraît pas du tout : la fiche ne
+ * le montrera jamais, et un habillage choisi sur une ligne qui n'existe pas se
+ * choisit sur une autre fiche que la sienne.
  */
 function contenuApercu(){
   const persos = (DATA.fiche && DATA.fiche.perso) || [];
-  const cles = ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
-    .filter(c => montre("stand", c));
+  const cles = clesPortees(ordreCorps(persos.map(c => PREFIXE_PERSO + c.cle))
+    .filter(c => montre("stand", c)));
   const { stand, pavillon, hall, neuf } = standApercu(cles);
   const vals = {};
   cles.forEach(c => {
@@ -11695,8 +11729,8 @@ function voletApparence(hote){
    ------------------------------------------------------------------ */
 
 /** Les clés du corps de ce salon, dans l'ordre réglé — affichées ou non. */
-const clesFiche = () => ordreCorps((((DATA || {}).fiche || {}).perso || [])
-  .map(c => PREFIXE_PERSO + c.cle));
+const clesFiche = () => clesPortees(ordreCorps((((DATA || {}).fiche || {}).perso || [])
+  .map(c => PREFIXE_PERSO + c.cle)));
 
 /**
  * Le volet de la fiche d'un stand.
@@ -11716,11 +11750,13 @@ function voletOrdre(hote){
   const p = document.createElement("p");
   p.textContent = "Ce que la fiche d'un stand montre, et dans quel ordre. Les " +
     "champs dont ce salon dispose attendent à gauche : glissez-en un dans la " +
-    "fiche pour l'afficher, ressortez-le pour le masquer. Une section réunit " +
-    "plusieurs champs sous un même titre, et la case de chaque champ décide si " +
-    "son intitulé paraît devant sa valeur. L'en-tête — l'enseigne, le " +
-    "pavillon, le numéro de stand — et le volet des conférences n'en font pas " +
-    "partie : ils ne se déplacent pas.";
+    "fiche pour l'afficher, ressortez-le pour le masquer. Un champ qu'aucune " +
+    "fiche du salon ne renseigne n'y figure pas : il n'aurait rien à montrer, " +
+    "et c'est dans la console qu'on lui désigne son champ d'origine. Une " +
+    "section réunit plusieurs champs sous un même titre, et la case de chaque " +
+    "champ décide si son intitulé paraît devant sa valeur. L'en-tête — " +
+    "l'enseigne, le pavillon, le numéro de stand — et le volet des " +
+    "conférences n'en font pas partie : ils ne se déplacent pas.";
   hote.appendChild(p);
 
   /* Tous les champs du salon, une fois pour toutes : c'est l'ensemble que les
