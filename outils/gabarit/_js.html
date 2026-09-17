@@ -246,7 +246,8 @@ function indexe(d){
   document.title = (document.documentElement.dataset.role === "admin"
     ? "Administration — " : "") + nom;
   poseFavicon(DATA.favicon);
-  // et l'écran d'accueil d'iOS, le nom du salon plutôt que celui du produit
+  /* Et l'écran d'accueil d'iOS, qui ne lit pas le manifeste : le nom et
+     l'icône du salon plutôt que ceux du produit. */
   nommeApplication(nom);
   $("sub").textContent = DATA.plans.length + (DATA.plans.length > 1 ? " pavillons" : " pavillon");
   $("nStands").textContent = TOUS.filter(o => o.kind === "stand").length;
