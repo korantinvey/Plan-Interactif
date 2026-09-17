@@ -380,6 +380,15 @@ const EMPREINTE = /^[0-9a-f]{8,32}$/;
 /** Où l'on garde ce que porte l'application d'un salon. */
 const cleApp = (slug) => "app1:" + slug;
 
+/* Combien de temps on garde ce que porte l'application — son nom, l'empreinte
+   de son icône. Bien moins que le plan, et pour une raison qui n'a rien à voir
+   avec le poids : c'est ce que l'exploitant change d'un geste, puis regarde
+   aussitôt. L'oubli demandé en fin d'enregistrement reste le chemin normal ;
+   ces minutes-ci sont le filet, pour le jour où cet appel n'aboutit pas — sans
+   elles, une icône déposée pouvait n'arriver que le lendemain. Le coût est une
+   lecture de deux colonnes par salon et par quart d'heure. */
+const TTL_APP = 900;
+
 /**
  * L'adresse d'un salon, celle que son application installée ouvre — et la
  * seule qu'elle ait le droit d'ouvrir.
@@ -435,12 +444,11 @@ const pageDuSalon = (requete, env) =>
  * pixels dans cette lecture-ci auraient traversé le réseau à chaque manifeste
  * demandé, pour finir dans un fichier qui n'en porte que les adresses.
  *
- * Gardé le temps qu'on garde le plan lui-même : un salon renommé dans la
- * console, une icône remplacée dans l'administration portent leur nouveauté à
- * la visite d'après, comme le reste — et tout de suite si l'administration a
- * pu demander l'oubli. Un salon qu'on ne sait pas nommer — inconnu, brouillon,
- * base muette — n'est pas gardé : le cache ne doit pas retenir l'absence, et
- * un slug inventé n'y écrit donc rien.
+ * Gardé peu de temps, et tout de suite oublié quand l'administration
+ * enregistre : c'est ce qu'un exploitant change puis regarde aussitôt. Un salon
+ * qu'on ne sait pas nommer — inconnu, brouillon, base muette — n'est pas gardé :
+ * le cache ne doit pas retenir l'absence, et un slug inventé n'y écrit donc
+ * rien.
  */
 async function appDuSalon(slug, env, ctx) {
   const cle = cleApp(slug);
@@ -448,7 +456,7 @@ async function appDuSalon(slug, env, ctx) {
     const garde = await env.CACHE.get(cle, { type: "json" }).catch(() => null);
     if (garde && garde.nom) return garde;
   }
-  const rep = await fetch(AMONT + "?slug=" + encodeURIComponent(slug) + "&nom=1")
+  const rep = await fetch(AMONT + "?slug=" + encodeURIComponent(slug) + "&app=1")
     .catch(() => null);
   if (!rep || !rep.ok) return null;
   const corps = await rep.json().catch(() => null);
@@ -463,7 +471,7 @@ async function appDuSalon(slug, env, ctx) {
     icone: EMPREINTE.test(empreinte) ? empreinte : "",
   };
   if (env.CACHE) {
-    ctx.waitUntil(env.CACHE.put(cle, JSON.stringify(app), { expirationTtl: TTL_PLAN })
+    ctx.waitUntil(env.CACHE.put(cle, JSON.stringify(app), { expirationTtl: TTL_APP })
       .catch(() => {}));
   }
   return app;

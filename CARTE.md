@@ -763,11 +763,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 `jeton` 80 · `client` 83
 
-### `supabase/functions/plan-public/index.ts` — 1000 l.
+### `supabase/functions/plan-public/index.ts` — 1021 l.
 
 `cors` 52 · `db` 86 · `service` 101 · `vignettesParAdresse` 118 · `avecVignette` 155
-`rendVignette` 191 · `rendVignettes` 270 · `lu` 313 · `salon` 323 · `appDuSalon` 349
-`rendIconeApp` 380 · `retraits` 473 · `ampute` 497 · `masquesDe` 537 · `masquesDuPlan` 557
+`rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
+`rendIconeApp` 392 · `retraits` 485 · `ampute` 509 · `masquesDe` 549 · `masquesDuPlan` 569
 
 ### `supabase/functions/sync-evenement/index.ts` — 1724 l.
 
@@ -829,8 +829,8 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 ## Le reste
 
-- `src/index.mjs` — 777 l. · Worker Cloudflare : relais et cache de `/api/plan`.
-  `dit` 85 · `amontPour` 94 · `cleDe` 102 · `cleDeLot` 108 · `condense` 115 · `cleVersion` 126 `rangeLaVersion` 129 · `ditVersion` 137 · `meta` 146 · `gardable` 162 · `range` 168 `rafraichit` 175 · `entete` 210 · `oublie` 252 · `rappels` 338 · `cleApp` 381 `cheminDuSalon` 403 · `pageDuSalon` 420 · `appDuSalon` 445 · `iconesDuSalon` 491 `manifeste` 531 · `iconeApp` 620 · `mesure` 641
+- `src/index.mjs` — 785 l. · Worker Cloudflare : relais et cache de `/api/plan`.
+  `dit` 85 · `amontPour` 94 · `cleDe` 102 · `cleDeLot` 108 · `condense` 115 · `cleVersion` 126 `rangeLaVersion` 129 · `ditVersion` 137 · `meta` 146 · `gardable` 162 · `range` 168 `rafraichit` 175 · `entete` 210 · `oublie` 252 · `rappels` 338 · `cleApp` 381 `cheminDuSalon` 412 · `pageDuSalon` 429 · `appDuSalon` 453 · `iconesDuSalon` 499 `manifeste` 539 · `iconeApp` 628 · `mesure` 649
 - `outils/assemble.js` — assemble `gabarit/` en `tpl-multi.html`.
 - `outils/genere.js` — écrit les pages de `web/` depuis `tpl-multi.html`.
 - `outils/pwa.js` — le manifeste et l'en-tête qui rendent les pages installables.
