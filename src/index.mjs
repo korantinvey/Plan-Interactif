@@ -377,8 +377,10 @@ const NOM_MAX = 64;
    forme. */
 const EMPREINTE = /^[0-9a-f]{8,32}$/;
 
-/** Où l'on garde ce que porte l'application d'un salon. */
-const cleApp = (slug) => "app1:" + slug;
+/** Où l'on garde ce que porte l'application d'un salon. Le rang change quand ce
+ *  qui est rangé dessous ne vaut plus : les entrées d'avant vivent leur vie et
+ *  s'effacent seules, sans que personne ait à les attendre. */
+const cleApp = (slug) => "app2:" + slug;
 
 /* Combien de temps on garde ce que porte l'application — son nom, l'empreinte
    de son icône. Bien moins que le plan, et pour une raison qui n'a rien à voir
