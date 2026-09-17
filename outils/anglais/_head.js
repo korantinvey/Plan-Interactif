@@ -19,11 +19,7 @@ module.exports = {
   "Mon parcours de visite": "My visit plan",
   "Calques": "Layers",
   "Réglages du plan": "Map settings",
-  "Thème clair / sombre": "Light / dark theme",
-  "Basculer le thème": "Switch theme",
   "Compte": "Account",
-  "Thème sombre": "Dark theme",
-  "Thème clair": "Light theme",
   "Se déconnecter": "Sign out",
 
   "Afficher la liste des stands": "Show the stand list",

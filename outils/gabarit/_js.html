@@ -813,9 +813,8 @@ function hslHex(h, s, l){
  * La couleur d'un secteur, telle que le plan la montre.
  *
  * Celle que l'exploitant a choisie s'il l'a fait ; sinon la teinte automatique,
- * résolue dans le thème courant — c'est bien la couleur qu'on voit à l'écran
- * que le sélecteur doit présenter, et non celle d'un thème qu'on ne regarde
- * pas.
+ * résolue comme le plan la résout — c'est bien la couleur qu'on voit à l'écran
+ * que le sélecteur doit présenter, et non la teinte brute d'où elle sort.
  */
 function couleurSecteur(nom){
   return couleurConf(conf("secteur:" + nom).couleur) ||
@@ -915,8 +914,8 @@ function coloreSecteurs(){
       g.setAttribute("data-sect", "");
       g.style.setProperty("--sect-h", h);
       /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
-         vaut pour les deux thèmes, comme celle des autres couches, et ne se
-         laisse donc pas ternir par la clarté du thème courant. */
+         se pose telle quelle, comme celle des autres couches, et ne se laisse
+         donc pas pâlir par la clarté dont le plan tient les secteurs. */
       const c = couleurConf(conf("secteur:" + nom).couleur);
       if (c) g.style.setProperty("--sect-c", c);
       else g.style.removeProperty("--sect-c");
@@ -4320,17 +4319,4 @@ addEventListener("langue", () => {
   if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
 });
 
-/* thème */
-const CLE_THEME = "plan-theme";
-try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-$("btnTheme").onclick = () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const sombre = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  const next = sombre ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
-  /* La couleur principale a deux versions, une par fond : celle du thème
-     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
-  appliqueAccent();
-};
 </script>

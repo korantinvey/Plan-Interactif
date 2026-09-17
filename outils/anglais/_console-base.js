@@ -14,4 +14,6 @@ module.exports = {
   "Projet : {adresse}": "Project: {adresse}",
   "non configuré": "not configured",
   "Changer de projet": "Change project",
+  "Thème sombre": "Dark theme",
+  "Thème clair": "Light theme",
 };

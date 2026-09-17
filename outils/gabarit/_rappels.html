@@ -211,8 +211,12 @@ async function abonnementCourant(){
   return reg ? await reg.pushManager.getSubscription() : null;
 }
 
-async function abonne(){
-  const reg = await navigator.serviceWorker.ready;
+/* L'inscription se passe de main en main quand on l'a déjà : `ready` ne répond
+   jamais là où rien n'est inscrit, et la page d'administration n'inscrit pas le
+   service — c'est le plan public qui le pose. L'essai des réglages va donc la
+   chercher lui-même, et la tend plutôt que de laisser attendre. */
+async function abonne(inscription){
+  const reg = inscription || await navigator.serviceWorker.ready;
   const deja = await reg.pushManager.getSubscription();
   if (deja) return deja;
   const r = await fetch(RAPPELS_API + "/cle");
@@ -310,7 +314,6 @@ function aideRappel(hote, texte){
  */
 function poseRappels(hote){
   if (!rappelsOfferts()) return;
-  if (!confsARappeler().length) return;
 
   const bloc = document.createElement("div");
   bloc.className = "rapBloc";
@@ -332,29 +335,6 @@ function poseRappels(hote){
 
   const n = minutesRappel();
 
-  /**
-   * Ce que l'interrupteur ne doit pas promettre.
-   *
-   * Il paraissait dès qu'une conférence retenue n'avait pas commencé. Mais ce
-   * qui s'enregistre passe un second filtre — le rappel lui-même doit encore
-   * être à venir — et une conférence qui commence dans dix minutes, avec un
-   * quart d'heure d'avance réglé, n'en produit aucun. Le visiteur cochait,
-   * accordait l'autorisation, lisait la promesse, et ne recevait rien.
-   *
-   * C'est le cas ordinaire d'une fin de journée : on repère une table ronde qui
-   * commence tout à l'heure, et c'est précisément celle-là qu'on aurait voulu
-   * ne pas manquer. Mieux vaut dire qu'il est trop tard que faire semblant.
-   *
-   * L'interrupteur reste, en revanche, s'il est déjà allumé : sans quoi on ne
-   * pourrait plus l'éteindre.
-   */
-  if (!rappelsDuParcours().length && !RAPPELS_ACTIFS){
-    aideRappel(bloc, "Vos conférences retenues commencent dans moins de " + n +
-      " min : il est trop tard pour un rappel.");
-    hote.appendChild(bloc);
-    return;
-  }
-
   const l = document.createElement("label");
   l.className = "rapBascule";
   l.innerHTML = '<input type="checkbox"><span class="t"></span>';
@@ -368,6 +348,37 @@ function poseRappels(hote){
     : "Une notification par conférence retenue, même plan fermé. Les heures " +
       "et les titres retenus partent alors sur nos serveurs, et s'effacent " +
       "après le salon.");
+
+  /**
+   * Ce qui ne partira pas ce soir, dit à côté de l'interrupteur plutôt qu'à sa
+   * place.
+   *
+   * L'interrupteur disparaissait quand rien n'était rappelable — toutes les
+   * conférences retenues passées, ou commençant avant le délai réglé. C'était
+   * confondre la préférence et la promesse. « Prévenez-moi avant mes
+   * conférences » vaut pour celles qu'on ajoutera ensuite, et se pose une fois
+   * pour toutes ; le retirer laissait le visiteur devant un tiroir muet, sans
+   * rien à toucher ni rien à lire, et l'exploitant devant un salon terminé où
+   * la commande qu'il venait d'activer restait introuvable.
+   *
+   * Reste à ne pas laisser croire qu'une notification part ce soir : c'est ce
+   * que dit cette seconde ligne, et elle se tait dès qu'il y a de quoi
+   * rappeler. Deux paragraphes et non une phrase composée — `_langue.js`
+   * traduit un texte d'un bloc, et une phrase recollée à la volée ne serait la
+   * clé d'aucune traduction.
+   */
+  const attente = aideRappel(bloc, "");
+  const suitAttente = () => {
+    const t = rappelsDuParcours().length ? ""
+      : confsARappeler().length
+        ? "Vos conférences retenues commencent dans moins de " + n + " min : " +
+          "trop tard pour celles-là. Le rappel vaudra pour les prochaines."
+        : "Vos conférences retenues sont passées. Le rappel vaudra pour les " +
+          "prochaines que vous ajouterez.";
+    attente.textContent = t;
+    attente.hidden = !t;
+  };
+  suitAttente();
 
   case_.onchange = async () => {
     case_.disabled = true;
@@ -439,27 +450,36 @@ function retientInviteRappel(){
  * Ce qui vaut la peine d'être demandé.
  *
  * Les conditions sont celles de l'interrupteur, à trois près : la question déjà
- * posée, l'autorisation déjà répondue, la visite guidée en cours.
+ * posée, le rappel déjà allumé, la visite guidée en cours.
  *
- * L'autorisation déjà répondue ferme la question des deux côtés : accordée, le
- * rappel se poserait sans que le navigateur demande quoi que ce soit — mais
- * l'interrupteur, lui, n'a pas été touché, et allumer un rappel dans le dos du
- * visiteur n'est pas ce qu'on propose ; refusée, aucune fenêtre de la page ne
- * rouvrira ce que le navigateur a fermé, et le tiroir dit déjà où le rouvrir.
+ * Et une qui n'en est pas une, contre toute attente : l'autorisation déjà
+ * accordée. Elle fermait la question — allumer un rappel dans le dos du
+ * visiteur n'est pas ce qu'on propose —, mais c'était confondre autoriser et
+ * demander. La fenêtre demande, justement ; ce qu'un accord déjà donné change,
+ * c'est seulement que le navigateur ne redemandera rien après le oui. Et
+ * l'autorisation est de son côté à lui rangée par origine, non par salon : tous
+ * les plans partagent la même, si bien qu'un visiteur ayant accepté les rappels
+ * d'un salon au printemps n'aurait plus rien vu à l'automne, sur un autre, et
+ * que l'exploitant qui vient d'essayer son interrupteur ne voyait jamais la
+ * fenêtre qu'il venait d'activer. Seul un refus ferme donc la question :
+ * aucune fenêtre de la page ne rouvre ce que le navigateur a fermé, et le
+ * tiroir dit déjà où le rouvrir.
  *
  * La visite guidée, enfin, mène le visiteur d'une étape à l'autre, et son
  * chapitre des zones finit justement sur une conférence retenue : une fenêtre
  * qui s'inviterait là lui ferait perdre le fil. La question reviendra à la
  * conférence suivante — rien n'a été répondu.
+ *
+ * Ce qu'on ne regarde plus, en revanche : qu'il y ait déjà de quoi rappeler.
+ * La question se pose sur la préférence, non sur telle conférence — celle
+ * qu'on vient de retenir a pu se tenir hier, et le oui vaudra pour celles
+ * qu'on ajoutera ensuite. C'est aussi ce qui rend la chose vérifiable sur un
+ * salon dont le programme est passé, où rien ne se montrait plus.
  */
 function fenetreRappel(){
   if (inviteRappelFaite() || TUTO) return;
   if (!rappelsOfferts() || !poussePossible()) return;
-  if (RAPPELS_ACTIFS || Notification.permission !== "default") return;
-  /* La même retenue que l'interrupteur : une conférence qui commence dans dix
-     minutes, avec un quart d'heure d'avance réglé, ne produit aucun rappel. Il
-     n'y a alors rien à proposer, et le tiroir le dit mieux qu'une fenêtre. */
-  if (!rappelsDuParcours().length) return;
+  if (RAPPELS_ACTIFS || Notification.permission === "denied") return;
   /* Une fenêtre ouverte a été demandée — la fiche de la conférence qu'on vient
      justement de retenir, le plus souvent. On ne la remplace pas : la
      proposition attend qu'elle se referme, et repasse alors par ici, ses
@@ -481,8 +501,15 @@ function fenetreRappel(){
  * Fermée par n'importe quelle porte — le pied, la croix, le voile, « Échap » —,
  * elle compte comme posée : la question a été vue, et c'est tout ce qu'on
  * voulait savoir.
+ *
+ * En aperçu, rien de tout cela : l'exploitant règle son salon depuis un écran
+ * d'administration, où la fenêtre ne paraît jamais — `rappelsOfferts` l'y
+ * refuse, faute de visiteur à qui la poser. Sans l'aperçu il allumerait une
+ * chose qu'il n'a jamais vue, comme pour l'invitation à installer le plan.
+ * L'aperçu ne retient donc pas la réponse, n'abonne personne, et ramène aux
+ * réglages d'où l'on vient.
  */
-function proposeRappels(){
+function proposeRappels(apercu){
   const n = minutesRappel();
   ouvreModale("Pour ne pas la manquer", corps => {
     const p = document.createElement("p");
@@ -498,10 +525,12 @@ function proposeRappels(){
   }, [
     { libelle: "Non merci" },
     { libelle: "Oui, me prévenir", genre: "accent", action: () => {
+      if (apercu) return;
       /* La demande du navigateur part dans le geste même — `allumeRappels`
          appelle `requestPermission` avant toute attente —, et la fenêtre se
          retire derrière elle : c'est celle du navigateur qui a la main
-         maintenant, et c'est là que la réponse se donne.
+         maintenant, et c'est là que la réponse se donne. Une autorisation déjà
+         accordée la rend muette, et le rappel se pose dans la foulée.
 
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
@@ -512,7 +541,64 @@ function proposeRappels(){
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  avantFermeture = retientInviteRappel;
+  avantFermeture = apercu ? () => retourAuxReglages("rappel") : retientInviteRappel;
+}
+
+/* ------------------------------------------------------------
+   L'essai, depuis les réglages
+   ------------------------------------------------------------ */
+/**
+ * Un vrai rappel, une minute plus tard.
+ *
+ * L'aperçu montre la fenêtre ; il ne prouve rien de ce qui vient après. Les
+ * clés VAPID posées dans les secrets, la tâche qui tient l'heure à la minute,
+ * le service de poussée du navigateur, le service de second plan qui affiche :
+ * rien de tout cela ne se voit autrement qu'à la notification reçue. Et une
+ * notification ne se reçoit que d'une conférence à venir — l'exploitant qui
+ * règle un salon dont le programme est passé, ou pas encore synchronisé, n'a
+ * rien à quoi l'accrocher. Il cochait donc une case sans pouvoir vérifier que
+ * la plomberie répondait, jusqu'au jour du salon.
+ *
+ * D'où cet essai, qui n'accroche rien : un rappel posé pour dans une demi-
+ * minute, sur cet appareil, avec le texte d'une conférence imaginaire. Il
+ * emprunte exactement le chemin des autres, et c'est tout l'intérêt.
+ *
+ * Deux précautions valent d'être dites. Les rappels déjà posés repartent avec
+ * lui : la liste envoyée remplace celle du serveur, et l'exploitant qui suit
+ * aussi son propre salon depuis ce navigateur — même origine, même abonnement
+ * — les perdrait sans cela. Et l'instant doit être à venir : la fonction SQL
+ * écarte un rappel déjà dû, ce qui est la bonne règle et vaut aussi ici.
+ */
+const ESSAI_RAPPEL_AVANCE = 30000;   // ms : le temps que la tâche de la minute passe
+
+async function essaieRappelReel(){
+  if (!RAPPELS_API || !SLUG || !poussePossible()) return "impossible";
+  const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+  if (!reg) return "sansService";
+  /* La demande suit le geste sans rien attendre entre les deux, comme pour
+     l'interrupteur : un `await` placé avant la ferait refuser par Safari. */
+  if (await Notification.requestPermission() !== "granted") return "refus";
+  let ab;
+  try { ab = await abonne(reg); } catch (e) { return "panne"; }
+  try {
+    const r = await fetch(RAPPELS_API, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: SLUG, abonnement: ab.toJSON(),
+        rappels: [{
+          conf: "essai",
+          envoi_a: new Date(Date.now() + ESSAI_RAPPEL_AVANCE).toISOString(),
+          titre: traduit("Essai — le rappel fonctionne"),
+          corps: traduit("Ce message vient de votre plan."),
+          // la page d'où l'on essaie, sans ancre : toucher le message la rouvre
+          adresse: location.href.split("#")[0],
+          vie: 600,
+        }].concat(rappelsDuParcours()),
+      }),
+    });
+    if (r.status === 404) return "nonPublie";
+    return r.ok ? "ok" : "panne";
+  } catch (e) { return "panne"; }
 }
 
 /**

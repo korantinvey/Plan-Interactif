@@ -570,8 +570,7 @@ const ETAPES_INSTALLATION = {
    le visiteur a sous les yeux : les deux ensemble disent ce qu'on installe,
    mieux qu'une phrase. Celle du salon quand il en a déposé une, et la version
    opaque pour la même raison qu'iOS la reçoit : c'est ici un carré arrondi
-   posé sur le fond de la fenêtre, où un logo transparent joue à cache-cache
-   avec le thème du visiteur. */
+   posé sur le fond de la fenêtre, où un logo transparent se perdrait. */
 function teteInvitation(corps, sousTitre){
   const tete = document.createElement("div");
   tete.className = "instTete";
@@ -588,11 +587,15 @@ function teteInvitation(corps, sousTitre){
 /* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
    qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
    achève de se fermer après lui, et refermerait les réglages rouverts
-   sur-le-champ. */
-function retourAuxReglages(){
+   sur-le-champ.
+
+   La marque dit quelle case a ouvert l'aperçu : deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences, et ils se ressemblent
+   assez pour qu'on revienne au mauvais si on ne le nomme pas. */
+function retourAuxReglages(marque){
   queueMicrotask(() => {
     ouvreReglages("Admin");
-    const aide = $("mCorps").querySelector('[data-reglage="installation"]');
+    const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
 }
@@ -658,7 +661,7 @@ function ouvreInvitation(facon, apercu){
     [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
-    if (apercu) return retourAuxReglages();
+    if (apercu) return retourAuxReglages("installation");
     /* « J'ai compris » ouvre la porte du rappel sur iOS — c'est le seul signe
        qu'y donne un visiteur d'avoir eu affaire à l'installation
        (`faconRappel`). Pas aujourd'hui pour autant : il vient de lire les
@@ -692,7 +695,7 @@ function ouvreInstalle(apercu){
       "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
     corps.appendChild(p);
   }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = retourAuxReglages;
+  if (apercu) avantFermeture = () => retourAuxReglages("installation");
 }
 
 /* L'installation se termine quelques secondes après qu'on l'a acceptée — le
@@ -773,7 +776,7 @@ function ouvreRappel(facon, apercu){
          libérée : ouverte plus tôt, elle la trouverait encore occupée
          (`_modales.html`). */
       if (demandee && ouvre) apresFermeture = () => ouvreRetrouve(true);
-      else retourAuxReglages();
+      else retourAuxReglages("installation");
       return;
     }
     if (!demandee) refuseRappel();
@@ -798,7 +801,7 @@ function ouvreRetrouve(apercu){
       "reste consultable même sans réseau.";
     corps.appendChild(p);
   }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = retourAuxReglages;
+  if (apercu) avantFermeture = () => retourAuxReglages("installation");
 }
 
 /* ------------------------------------------------------------

@@ -3,6 +3,7 @@ module.exports = {
   "Console des plans de salon": "Show map console",
   "Console des plans": "Map console",
   "Salon": "Show",
+  "Thème sombre": "Dark theme",
   "Recharger depuis le serveur": "Reload from the server",
   "Recharger": "Reload",
   "Nouveau": "New",

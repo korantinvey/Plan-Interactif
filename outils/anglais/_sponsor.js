@@ -34,8 +34,8 @@ module.exports = {
     "A show partner's, with their name and their link.",
 
   // les champs du sponsor
-  "Réduite puis enregistrée avec la configuration du plan : elle part avec lui, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou choisissez-la. Elle se pose sur le fond du plan, qui suit le thème clair ou sombre du visiteur tant qu'aucune couleur n'est réglée dans « Apparence » : un logo dessiné en noir sur fond transparent y disparaîtra la moitié du temps.":
-    "Resized, then saved with the map's configuration: it travels with the map, without depending on a file hosted elsewhere. Drag it onto the thumbnail, or choose it. It sits on the map's background, which follows the visitor's light or dark theme as long as no colour is set under “Appearance”: a logo drawn in black on a transparent background will vanish there half the time.",
+  "Réduite puis enregistrée avec la configuration du plan : elle part avec lui, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la vignette, ou choisissez-la. Elle se pose sur le fond du plan — le gris clair d'origine, ou la couleur réglée dans « Apparence » : un logo dessiné en blanc sur fond transparent y disparaîtra.":
+    "Resized, then saved with the map's configuration: it travels with the map, without depending on a file hosted elsewhere. Drag it onto the thumbnail, or choose it. It sits on the map's background — the original light grey, or the colour set under “Appearance”: a logo drawn in white on a transparent background will vanish there.",
   "Nom du sponsor": "Sponsor name",
   "Écrit sous le logo. Laissez vide si le logo porte déjà le nom.":
     "Written under the logo. Leave it empty if the logo already carries the name.",

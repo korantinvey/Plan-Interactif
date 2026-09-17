@@ -111,8 +111,8 @@ cinq cents logos d'un salon pèsent soixante-dix mégaoctets quand une fiche
 seule en charge vingt-huit kilo-octets — la médiane. Elle vient en tête du
 corps, dans le même cadre à fond clair que le logo d'une zone organisateur et
 pour la même raison : un logo est le plus souvent sombre sur transparent, et
-s'effacerait en thème sombre. L'adresse qui ne répond plus efface son cadre
-avec elle.
+s'effacerait sur le fond noir des modèles de fiche qui en portent un. L'adresse
+qui ne répond plus efface son cadre avec elle.
 
 Deux façons de dire oui, parce que les sources n'en offrent qu'une chacune.
 
@@ -602,6 +602,28 @@ premier jour.
 
 Retirer le parcours de visite retire la suggestion avec lui : il n'y a plus ni
 liste à compléter ni tiroir où poser la proposition, et l'onglet le signale.
+
+### Un seul thème, et c'est le clair
+
+Le plan n'a pas de mode sombre, ni pour le visiteur ni pour l'exploitant, et
+n'écoute pas la préférence de l'appareil. Il l'a eu : la feuille de style
+peignait la nuit dès que `prefers-color-scheme` la réclamait, et un bouton dans
+la barre permettait d'en changer.
+
+Un plan de salon ne se lit pas le soir au fond d'un lit. Il se consulte debout
+dans un hall éclairé, à côté d'une signalétique imprimée en noir sur blanc, le
+plus souvent sur un téléphone dont le thème sombre a été réglé une fois puis
+oublié — si bien que le plan arrivait noir chez des visiteurs qui n'avaient rien
+demandé. Deux jeux de couleurs, c'était aussi deux fois à vérifier pour chacun
+des onze habillages, et une raison de plus pour qu'une couleur réglée par
+l'exploitant tienne d'un côté et pas de l'autre.
+
+La console, elle, garde les deux et suit l'appareil : on y travaille la journée
+durant, devant un écran qu'on ne quitte pas. C'est le seul endroit du dépôt où
+la nuit subsiste — `_console.css` pour les tons, `_console-base.html` pour le
+bouton. La barre du navigateur suit la même partition : une couleur pour les
+pages du plan, deux pour la console (`outils/pwa.js`, option `deuxThemes` de
+`page()` dans `outils/genere.js`).
 
 ### Les fenêtres portent l'habillage, sauf les outils
 
@@ -1261,12 +1283,16 @@ allées. À quinze heures moins le quart il est à l'autre bout du hall, le
 téléphone dans la poche, et la conférence qu'il avait notée commence sans lui.
 Le parcours savait l'heure ; personne ne la lui a rappelée.
 
-Le réglage vit à côté du précédent : **Rappeler les conférences retenues**, et
-sous la case, **Prévenir avant le début** — en minutes, un quart d'heure par
-défaut. Le tiroir du parcours montre alors, en tête des conférences, un
-interrupteur « Me prévenir 15 min avant ». Il faut que le visiteur le touche,
-puis qu'il accorde au navigateur l'autorisation demandée : sans les deux gestes,
-rien ne part et rien n'est enregistré.
+Le réglage vit dans l'onglet **Admin**, au pied des cases qui disent ce que les
+visiteurs voient : **Rappeler les conférences retenues**, et sous elle
+**Prévenir avant le début** — en minutes, un quart d'heure par défaut. Il y est
+avec l'invitation à installer le plan et la visite guidée, parce que c'est la
+même sorte de décision, et parce que c'est l'exploitant qui en répond : ce qui
+est rappelé quitte l'appareil, et tout le monde ne le recevra pas. Le tiroir du
+parcours montre alors, en tête des conférences, un interrupteur « Me prévenir
+15 min avant ». Il faut que le visiteur le touche, puis qu'il accorde au
+navigateur l'autorisation demandée : sans les deux gestes, rien ne part et rien
+n'est enregistré.
 
 **La question, dès la première conférence retenue.** Un interrupteur au fond
 d'un tiroir n'appelle personne, et celui à qui le rappel sert vient justement de
@@ -1279,6 +1305,43 @@ d'avis. Elle se tait quand elle n'a rien à proposer — sur un iPhone non insta
 quand les notifications ont déjà été autorisées ou bloquées, pendant la visite
 guidée, et quand les conférences retenues commencent avant le délai réglé. Une
 fiche ouverte n'est pas balayée pour autant : la fenêtre attend qu'on la referme.
+
+Une autorisation **déjà accordée** ne la ferme pas, en revanche, et il a fallu
+s'y reprendre : la fenêtre demande, elle n'autorise pas, et un accord déjà donné
+ne change que ceci — le navigateur ne redemandera rien après le oui. L'écarter
+revenait à priver du rappel tout visiteur ayant accepté les notifications sur ce
+domaine, un autre salon ou une autre année, puisque le navigateur range cette
+permission par origine et non par salon. Seul un refus ferme la question.
+
+**L'interrupteur ne disparaît plus.** Il s'effaçait quand rien n'était
+rappelable — toutes les conférences retenues passées, ou commençant avant le
+délai réglé —, et la fenêtre se taisait avec lui. C'était confondre la
+préférence et la promesse : « prévenez-moi avant mes conférences » vaut pour
+celles qu'on ajoutera ensuite, et se pose une fois pour toutes. Le visiteur
+restait devant un tiroir muet, sans rien à toucher ni rien à lire ; l'exploitant
+d'un salon terminé cherchait en vain la commande qu'il venait d'activer.
+L'interrupteur est donc toujours offert, et une seconde ligne dit ce qui ne
+partira pas encore : « Vos conférences retenues sont passées. Le rappel vaudra
+pour les prochaines que vous ajouterez. » Elle se tait dès qu'il y a de quoi
+rappeler.
+
+Enfin, l'écran d'administration n'a pas de visiteur : la fenêtre ne s'y montre
+jamais. Deux liens dans l'aide de la case y répondent. **Aperçu** ouvre la
+fenêtre telle qu'elle paraîtra — sans rien allumer, sans consommer la question,
+et en ramenant aux réglages quand on la referme ; c'est le même geste que les
+aperçus de l'invitation à installer. **Essayer un vrai rappel** va plus loin :
+il pose sur cet appareil un rappel pour dans une demi-minute, par le chemin
+exact des autres, et la notification reçue dit d'un coup si les clés VAPID, la
+tâche de la minute et le service de second plan répondent. Sans lui, la
+plomberie ne se vérifiait qu'avec une conférence à venir — c'est-à-dire jamais,
+pour qui règle un salon dont le programme est passé ou pas encore synchronisé.
+
+Deux choses en découlent, et le bouton les dit plutôt que d'échouer en silence.
+L'essai a besoin du service de second plan, que seule la page publique
+installe : sur un navigateur qui n'a jamais ouvert le plan, il demande de le
+faire une fois. Et il **remplace** les rappels de cet appareil pour ce salon —
+c'est le contrat de l'API —, si bien qu'il renvoie avec lui ceux du parcours
+en cours, pour ne rien perdre de l'exploitant qui suit aussi son propre salon.
 
 **Ce que cela déplace.** Le tiroir promet, en toutes lettres, que le parcours ne
 quitte pas l'appareil. Le rappel est la seule exception, et la phrase le dit
@@ -1426,7 +1489,8 @@ retirer la marque de qui le lui fournit.
   personne l'ait demandé.
 - **Le logo Event2Map**, avec la mention « powered by ». Rien à déposer, rien à
   régler : la marque vient de la construction, elle est nette à toute taille, et
-  elle porte son propre carré de nuit — donc lisible sur les deux thèmes. C'est
+  elle porte son propre carré de nuit — donc lisible sur n'importe quel fond de
+  plan. C'est
   le seul endroit où elle paraisse devant un visiteur ; ailleurs elle se tient
   dans ce qui appartient à l'outil — la bande d'administration, la console,
   l'écran d'accès — pour ne pas déguiser le salon en Event2Map. Ici elle ne le
@@ -1437,9 +1501,9 @@ retirer la marque de qui le lui fournit.
   anglais) et un lien facultatif, ouvert dans un nouvel onglet quand le visiteur
   touche le logo. Le logo est réduit puis enregistré avec la configuration, comme
   celui d'une zone : il part avec le plan, sans dépendre d'un fichier hébergé
-  ailleurs. Il se pose sur le fond du plan, qui suit le thème clair ou sombre du
-  visiteur tant qu'aucune couleur n'est réglée dans « Apparence » — un logo
-  dessiné en noir sur fond transparent y disparaîtrait la moitié du temps.
+  ailleurs. Il se pose sur le fond du plan — le gris clair d'origine, ou la
+  couleur réglée dans « Apparence » : un logo dessiné en blanc sur fond
+  transparent y disparaîtrait.
 
 La durée, de deux à dix secondes, vaut pour l'un comme pour l'autre : c'est le
 même générique.
@@ -2137,8 +2201,8 @@ en `em` pour qu'il suive la taille du texte quand on dézoome. La couleur de
 libellé que l'exploitant a pu régler est écartée pendant ce temps : elle avait
 été accordée à ses stands, pas à une caméra thermique.
 
-Contrairement au reste du plan, la rampe ne suit pas le thème : une image
-thermique est la même de jour comme de nuit.
+Contrairement au reste du plan, la rampe ne suit aucun réglage de couleur : une
+image thermique ne se décline pas à la charte du salon.
 
 ## La version anglaise
 

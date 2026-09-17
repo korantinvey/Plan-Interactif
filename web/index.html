@@ -718,8 +718,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
 })();
 </script>
 <link rel="icon" href="icone-onglet.svg" type="image/svg+xml">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBFBF8">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171B1E">
+<meta name="theme-color" content="#FBFBF8">
 <title>Plan interactif</title>
 <meta name="robots" content="noindex">
 <style>
@@ -744,10 +743,9 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
 </style>
 
 <style>
+/* Le clair seul, comme le plan où elle mène le plus souvent : un aiguillage
+   qui s'assombrit le temps d'une redirection ne fait que battre de l'œil. */
 :root{ --ground:#E9EAE4; --ink-3:#7C8285; --accent:#2F49D1 }
-@media (prefers-color-scheme: dark){
-  :root{ --ground:#0E1113; --ink-3:#767D80; --accent:#7A8CFF }
-}
 body{margin:0;min-height:100vh;background:var(--ground);color:var(--ink-3);
   font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;font-size:14px;
   display:grid;place-items:center;padding:24px;text-align:center}
