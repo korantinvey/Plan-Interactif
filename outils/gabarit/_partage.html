@@ -117,7 +117,7 @@ function litCodeParcours(frag){
 function lienParcours(){
   const u = new URL(location.href);
   u.hash = "";
-  u.pathname = u.pathname.replace(/plan-admin(\.html)?$/, "plan$1");
+  u.pathname = cheminPartageable(u.pathname);
   /* Le salon est nommé même quand la page l'aurait deviné : le lien vaut alors
      ce qu'il dit, et n'ouvrira pas l'édition suivante le jour où c'est elle qui
      devient le salon par défaut. */

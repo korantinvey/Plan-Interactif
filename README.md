@@ -1583,12 +1583,41 @@ aurait tout réglé, mais Chromium refuse alors d'installer : il vérifie la
 validité d'une adresse qu'il n'a pas encore remplacée.
 
 Le manifeste versionné porte donc l'adresse nue — le salon par défaut — et la
-page demande le sien : `manifeste.webmanifest?salon=…&depart=/plan?plan=…`. Le
-Worker reprend alors ce même fichier et n'y change que le nom et l'adresse de
-départ, qu'il vérifie : `start_url` désigne ce que le système ouvrira plus
-tard, seul, sans la page, et seul un chemin de ce site y entre. Un manifeste à
-tenir, aucun à fabriquer par salon — et, sans JavaScript, le fichier nu reste
-installable.
+page nomme le sien : `manifeste.webmanifest?salon=…`. Le Worker reprend alors
+ce même fichier et y écrit ce qui revient au salon : son nom, ses icônes, et
+son adresse. Un manifeste à tenir, aucun à fabriquer par salon — et, sans
+JavaScript, le fichier nu reste installable. Rien n'est reçu de l'adresse que
+le nom du salon, et il sert à chercher, jamais à écrire tel quel : un lien
+fabriqué ne peut faire poser sur un écran d'accueil ni une application au nom
+qu'il aurait choisi, ni une application qui ouvrirait autre chose.
+
+**Et chaque salon a son chemin**, sans quoi les applications ne se séparent
+pas. La portée d'un manifeste — `scope`, ce que l'application a le droit
+d'ouvrir — ne connaît que des chemins : ce qui suit le point d'interrogation
+n'y compte pour rien. Tous les salons partageant `/plan`, l'application
+installée pour l'un revendiquait la racine du domaine, donc tout le site, et le
+système lui donnait le plan de n'importe quel autre salon — installé pour
+FEP 27, il ouvrait le plan du SMCL sous l'icône de FEP 27.
+
+Le Worker sert donc aussi `/plan-<salon>` : la même page, où le salon se lit
+dans le chemin plutôt que dans le paramètre. C'est cette adresse que le
+manifeste donne pour `start_url`, pour `scope` et pour `id`, et c'est donc
+elle, et elle seule, que l'application ouvre. Ce qui en sort — un autre salon,
+la console, l'administration — repart dans le navigateur.
+
+Le paramètre `?plan=`, lui, ne change pas de sens : c'est toujours lui qu'on
+imprime, qu'on partage et qu'on scanne, et le partage comme l'affiche « Vous
+êtes ici » le reprennent même depuis l'application. Le chemin du salon, lui,
+n'a qu'un seul segment, comme `/plan` : les adresses relatives de la page s'y
+résolvent pareil, et rien d'autre n'a bougé. Deux réserves, l'une et l'autre
+étroites — un salon nommé
+`admin` ou `smcl` n'aurait pas la sienne, ces adresses appartenant à des pages
+de `web/` ; et deux salons dont l'un des noms commence par l'autre partagent
+une portée, un préfixe ne sachant pas les séparer.
+
+Enfin, une application déjà posée garde la portée qu'elle avait à
+l'installation : elle est figée dans le paquet installé, et il faut la
+désinstaller puis la reposer pour qu'elle se cloisonne.
 
 Un détail qui se paie cher si on l'ignore : Cloudflare sert un fichier de
 `web/` **avant** d'exécuter le Worker. Le manifeste serait donc parti tel quel,

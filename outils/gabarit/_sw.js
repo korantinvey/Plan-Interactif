@@ -431,8 +431,14 @@ async function navigation(e, requete) {
      autre fichier — et en garder une copie par salon revenait à garder dix
      fois le même mégaoctet. Surtout, rien de ce qui passe par l'adresse
      n'entre ainsi dans le cache : le jeton d'un lien de mot de passe y serait
-     resté, sur un poste parfois partagé. */
-  const cle = new Request(new URL(requete.url).pathname);
+     resté, sur un poste parfois partagé.
+
+     L'adresse propre à un salon — `/plan-<salon>`, celle que son application
+     ouvre — est ramenée à ce même chemin nu : c'est le même fichier, servi par
+     le relais, et le ranger deux fois aurait rendu au visiteur qui installe la
+     copie qu'on venait justement d'éviter. */
+  const cle = new Request(new URL(requete.url).pathname
+    .replace(/^\/plan-[a-z0-9][a-z0-9-]{0,63}$/, "/plan"));
   try {
     return await dabordReseau(e, requete, cle);
   } catch (panne) {

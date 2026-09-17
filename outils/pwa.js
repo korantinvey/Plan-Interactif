@@ -32,14 +32,27 @@
  * validité d'une adresse qu'il n'a pas encore remplacée (`start-url-not-valid`).
  *
  * Le manifeste part donc avec l'adresse nue — `plan`, le salon par défaut — et
- * la page, elle, demande le sien : `manifeste.webmanifest?depart=…`. Le relais
- * (`src/index.mjs`) reprend alors ce même fichier et n'y change que l'adresse de
- * départ. Un seul manifeste à tenir, aucun à fabriquer par salon, et rien à lire
- * en base pour le servir. Sans JavaScript, le fichier nu reste installable.
+ * la page, elle, nomme le sien : `manifeste.webmanifest?salon=…`. Le relais
+ * (`src/index.mjs`) reprend alors ce même fichier et y écrit l'adresse du
+ * salon. Un seul manifeste à tenir, aucun à fabriquer par salon. Sans
+ * JavaScript, le fichier nu reste installable.
  *
- * `scope` est absent, lui : il se déduit de `start_url` privé de son fichier,
- * soit la racine du domaine. Tout le site reste donc dans l'application, d'un
- * plan à l'autre comme du plan à la console.
+ * **Chaque salon a son chemin**, et c'est ce qui sépare les applications les
+ * unes des autres : `/plan-smcl-2026` sert la même page que `/plan?plan=…`, le
+ * relais s'en charge. Le paramètre ne pouvait pas y suffire — la portée d'un
+ * manifeste ne connaît que des chemins, et ce qui suit le point
+ * d'interrogation ne compte pour rien. Tous les salons partageant `/plan`,
+ * l'application installée pour l'un revendiquait la racine du domaine, donc
+ * tout le site : le système lui donnait le plan de n'importe quel autre salon,
+ * et la console avec.
+ *
+ * `scope` est donc écrit, et vaut l'adresse du salon : l'application n'ouvre
+ * plus que lui. Ce qui en sort — un autre salon, la console, la page
+ * d'administration — repart dans le navigateur, comme il se doit.
+ *
+ * Le paramètre `?plan=`, lui, n'a pas changé de sens : c'est toujours lui
+ * qu'on imprime, qu'on partage et qu'on scanne. Il ouvre le navigateur, et le
+ * visiteur qui a l'application se la voit proposer (`_installation.html`).
  *
  * Le nom suit le même chemin que l'adresse de départ, et pour la même raison :
  * l'icône posée sur l'écran d'accueil doit porter le salon qu'on installe — «
@@ -192,31 +205,26 @@ const application = (slugDefaut) => [
   '<meta name="apple-mobile-web-app-title" content="Plan">',
   "<script>",
   "/* Le manifeste retenu à l'installation doit porter le salon qu'on regarde :",
-  "   son nom, que le système écrira sous l'icône, et son adresse, sans quoi",
-  "   l'application rouvrirait le salon par défaut. Le relais écrit l'un et",
-  "   l'autre ; ce qui est dit ici, c'est lequel. */",
+  "   son nom, ses icônes, et le territoire où l'application vivra. Le relais",
+  "   écrit tout cela ; ce qui est dit ici, c'est de quel salon il s'agit. */",
   "{",
   "  /* Bloc fermé : les modules d'une page sont soudés dans un espace de noms",
   "     unique, où deux noms identiques se marchent dessus. Ceux-là n'ont rien",
   "     à y faire. */",
   '  const lienManifeste = document.querySelector(\'link[rel="manifest"]\');',
-  '  const salon = new URLSearchParams(location.search).get("plan");',
+  "  /* Le salon se lit là où il se trouve : dans le paramètre qu'on imprime et",
+  "     qu'on partage, ou dans le chemin que l'application installée ouvre. La",
+  "     même règle que `_js.html` `SLUG`, réécrite ici faute de pouvoir la lui",
+  "     emprunter — ce bloc-ci tourne avant que rien d'autre ne soit là. */",
+  '  const chemin = location.pathname.match(/^\\/plan-([a-z0-9][a-z0-9-]{0,63})$/);',
+  '  const salon = new URLSearchParams(location.search).get("plan") ||',
+  "    (chemin && chemin[1]);",
   "  if (lienManifeste){",
   "    /* Le salon est nommé même sans `?plan=` : la page montre alors celui que",
   "       la construction a posé par défaut, et une application installée de là",
   "       doit porter son nom comme les autres. */",
-  '    let adresse = "manifeste.webmanifest?salon=" +',
+  '    lienManifeste.href = "manifeste.webmanifest?salon=" +',
   "      encodeURIComponent(salon || " + JSON.stringify(slugDefaut) + ");",
-  "    /* L'adresse de départ, elle, ne part que si la page en porte une : sans",
-  "       `?plan=`, `start_url` reste l'adresse nue, et c'est elle qui vaut",
-  "       identité pour ce qui est déjà installé. Elle est reconstruite et non",
-  "       recopiée, pour que rien d'autre que le salon n'y entre — ni jeton de",
-  "       courriel, ni ancre, ni paramètre de passage. */",
-  "    if (salon){",
-  '      adresse += "&depart=" +',
-  '        encodeURIComponent(location.pathname + "?plan=" + salon);',
-  "    }",
-  "    lienManifeste.href = adresse;",
   "  }",
   "}",
   "/* Le service de second plan s'inscrit une fois la page chargée : inscrit",

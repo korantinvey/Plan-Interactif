@@ -17,7 +17,31 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
 /* Deux origines possibles pour les données : figées dans la page, ou
    servies par l'API. La page est la même, seul le démarrage diffère. */
 const API = document.currentScript?.dataset.api || "";
-const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
+/* Le salon se nomme de deux façons, et la page ne préfère pas l'une à l'autre :
+   `?plan=` est ce qu'on imprime, qu'on partage et qu'on scanne ; `/plan-<salon>`
+   est le chemin que son application installée ouvre, et le seul qu'elle ait le
+   droit d'ouvrir — c'est ce qui sépare les salons les uns des autres, une
+   portée de manifeste ne connaissant que des chemins (`outils/pwa.js`,
+   `src/index.mjs`). Faute des deux, le salon que la construction a posé. */
+const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+const SLUG = new URLSearchParams(location.search).get("plan") ||
+  (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
+  document.currentScript?.dataset.slug || "";
+
+/** L'adresse d'un salon, celle que son application ouvre. */
+const cheminDuSalon = (slug) => "/plan-" + slug;
+
+/**
+ * Le chemin d'où ce plan se donne à quelqu'un d'autre.
+ *
+ * Deux adresses ne se partagent pas. Celle de l'administration, qui réclame une
+ * session que le visiteur d'en face n'a pas. Et celle qu'une application
+ * installée ouvre : elle est le territoire d'un salon, et un lien qui la porte
+ * n'ouvrirait chez l'autre qu'une adresse de plus à retenir. L'une et l'autre
+ * renvoient au plan public, où le salon se nomme dans le paramètre.
+ */
+const cheminPartageable = (chemin) =>
+  chemin.replace(/plan-admin(\.html)?$/, "plan$1").replace(CHEMIN_SALON, "/plan");
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
 /* Les sociétés hébergées sur le stand d'un autre. Elles n'ont ni forme ni

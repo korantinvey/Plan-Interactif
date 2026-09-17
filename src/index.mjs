@@ -381,6 +381,46 @@ const EMPREINTE = /^[0-9a-f]{8,32}$/;
 const cleApp = (slug) => "app1:" + slug;
 
 /**
+ * L'adresse d'un salon, celle que son application installée ouvre — et la
+ * seule qu'elle ait le droit d'ouvrir.
+ *
+ * Le paramètre `?plan=` ne pouvait pas servir à cela. La portée d'un manifeste
+ * ne connaît que des chemins : une adresse en est ou n'en est pas selon ce
+ * qu'il y a avant le point d'interrogation, et le reste ne compte pour rien.
+ * Tous les salons partageant le chemin `/plan`, l'application installée pour
+ * l'un revendiquait la racine du domaine, donc tout le site — et le système
+ * lui donnait le plan de n'importe quel autre salon, la console comprise.
+ *
+ * Chaque salon a donc son chemin, d'un seul segment comme `/plan` : les
+ * adresses relatives de la page — son manifeste, ses icônes, son service de
+ * second plan — s'y résolvent exactement pareil, et rien d'autre n'a bougé.
+ *
+ * Reste ce qu'un préfixe partagé ne sait pas séparer : deux salons dont l'un
+ * des noms commence par l'autre — `fep27` et `fep27-bis` — tombent dans la
+ * même portée, l'un attrapant les adresses de l'autre. C'est le cas d'avant,
+ * réduit à deux noms qui se ressemblent.
+ */
+const cheminDuSalon = (slug) => "/plan-" + slug;
+/* Ce que la page rend à ce chemin. Le nom du salon y répond aux mêmes règles
+   que partout : `SLUG` plus bas dit lesquelles. */
+const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+
+/**
+ * La page d'un salon, servie à son adresse à lui.
+ *
+ * C'est le même fichier qu'à `/plan` — la page y lit son salon dans le chemin
+ * plutôt que dans le paramètre (`_js.html` `SLUG`). Rien n'est fabriqué par
+ * salon, ni ici ni dans `web/`.
+ *
+ * Ce chemin-ci n'arrive jusqu'au script que faute de fichier à ce nom : une
+ * page de `web/` garde son adresse, et `plan-admin` comme `plan-smcl` sont
+ * servies avant que rien de ceci ne tourne. Un salon qui porterait l'un de ces
+ * deux noms n'aurait donc pas la sienne.
+ */
+const pageDuSalon = (requete, env) =>
+  env.ASSETS.fetch(new Request(new URL("/plan", requete.url).toString(), { method: "GET" }));
+
+/**
  * Ce que porte l'application installée du salon : son nom, et son icône.
  *
  * Le manifeste est lu avant que la page ait appelé l'API : elle ne peut pas y
@@ -458,8 +498,8 @@ function iconesDuSalon(slug, empreinte) {
 }
 
 /**
- * Le manifeste, complété du salon d'où l'on installe : son nom, et l'adresse
- * que l'application rouvrira.
+ * Le manifeste, complété du salon d'où l'on installe : son nom, ses icônes,
+ * l'adresse que l'application rouvrira et celles qu'elle a le droit d'ouvrir.
  *
  * Une même page sert tous les salons — `?plan=` tranche — et le manifeste, lui,
  * est fabriqué une fois pour toutes : l'application installée depuis un salon
@@ -468,16 +508,15 @@ function iconesDuSalon(slug, empreinte) {
  * installable du tout : Chromium refuse une adresse qu'il n'a pas encore
  * remplacée.
  *
- * Le fichier construit est donc repris tel quel, et rien n'y change que le nom
- * et `start_url`. Un manifeste à tenir, aucun à fabriquer par salon.
+ * Le fichier construit est donc repris tel quel, et rien n'y change que le nom,
+ * les icônes, et le territoire du salon. Un manifeste à tenir, aucun à
+ * fabriquer par salon.
  *
- * Deux choses arrivent de l'extérieur, et aucune n'entre telle quelle.
- * L'adresse est vérifiée : `start_url` désigne ce que le système ouvrira
- * ensuite, seul, sans la page, et seul un chemin de ce site passe — même
- * origine, une fois normalisé — son ancre retirée, une application ne s'ouvrant
- * pas au milieu d'un document. Le nom, lui, n'est pas reçu mais cherché : la
- * page ne donne qu'un slug, et un lien fabriqué ne peut donc pas faire poser
- * sur un écran d'accueil une application au nom qu'il aurait choisi.
+ * Rien n'arrive de l'extérieur que le nom du salon, et il n'entre pas tel quel
+ * non plus : il est vérifié, puis il sert à chercher — le nom de l'application
+ * en base, et l'adresse du salon, composée ici (`cheminDuSalon`). Un lien
+ * fabriqué ne peut donc faire poser sur un écran d'accueil ni une application
+ * au nom qu'il aurait choisi, ni une application qui ouvrirait autre chose.
  *
  * Le tour de phrase est écrit ici, et nulle part ailleurs : le salon d'abord,
  * c'est lui qu'on cherche du regard, et la marque en signature. Il ne sert
@@ -492,20 +531,24 @@ function iconesDuSalon(slug, empreinte) {
 async function manifeste(requete, env, ctx) {
   const fichier = new URL("/manifeste.webmanifest", requete.url);
   const rep = await env.ASSETS.fetch(new Request(fichier.toString(), { method: "GET" }));
-  const params = new URL(requete.url).searchParams;
-  const depart = params.get("depart");
-  const salon = params.get("salon") || "";
+  const salon = new URL(requete.url).searchParams.get("salon") || "";
   if (!rep.ok) return rep;
 
   const contenu = await rep.json().catch(() => null);
   if (!contenu) return rep;
-  if (depart) {
-    /* `new URL` résout et normalise — `//ailleurs.example` nomme un autre
-       domaine, `../..` remonte, un protocole glissé devant change de site — et
-       la comparaison d'origine tranche : ce qui n'atterrit pas sur ce domaine
-       est écarté, et le manifeste repart avec son adresse par défaut. */
-    const cible = new URL(depart, fichier);
-    if (cible.origin === fichier.origin) contenu.start_url = cible.pathname + cible.search;
+  /* Ce que le système ouvrira, et ce qu'il tiendra pour le territoire de
+     l'application : l'adresse du salon, et elle seule. Les trois se déduisent
+     du nom du salon, dont la page ne donne que le nom — rien n'est reçu ni à
+     vérifier, et un lien fabriqué ne peut pas faire poser une application qui
+     ouvrirait autre chose.
+
+     `id` est écrit, quand il vaudrait `start_url` de toute façon : c'est sous
+     lui que le navigateur reconnaît une application déjà posée, et le laisser
+     se déduire, c'était le voir changer le jour où l'adresse de départ change. */
+  if (SLUG.test(salon)) {
+    contenu.start_url = cheminDuSalon(salon);
+    contenu.scope = cheminDuSalon(salon);
+    contenu.id = cheminDuSalon(salon);
   }
   /* Le contrôle du slug n'est pas décoratif non plus : il construit une clé de
      cache, et part en amont. Muet sur un salon qu'on ne sait pas nommer, le
@@ -630,6 +673,9 @@ export default {
     /* Et l'icône que ce manifeste désigne : elle n'est pas un fichier de
        `web/` mais une colonne de la base, déposée salon par salon. */
     if (url.pathname === "/api/icone") return iconeApp(url);
+    /* L'adresse propre à un salon, celle que son application ouvre. Elle ne
+       nomme aucun fichier : c'est la page du plan qui s'y rend. */
+    if (CHEMIN_SALON.test(url.pathname)) return pageDuSalon(requete, env);
     /* Les mesures d'utilisation prennent le même chemin que le plan : même
        origine que la page, donc rien à configurer si le domaine change. Elles
        ne sont ni lues ni mises en cache — elles ne font que passer. Le relais

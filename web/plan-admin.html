@@ -5389,7 +5389,31 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
 /* Deux origines possibles pour les données : figées dans la page, ou
    servies par l'API. La page est la même, seul le démarrage diffère. */
 const API = document.currentScript?.dataset.api || "";
-const SLUG = new URLSearchParams(location.search).get("plan") || document.currentScript?.dataset.slug || "";
+/* Le salon se nomme de deux façons, et la page ne préfère pas l'une à l'autre :
+   `?plan=` est ce qu'on imprime, qu'on partage et qu'on scanne ; `/plan-<salon>`
+   est le chemin que son application installée ouvre, et le seul qu'elle ait le
+   droit d'ouvrir — c'est ce qui sépare les salons les uns des autres, une
+   portée de manifeste ne connaissant que des chemins (`outils/pwa.js`,
+   `src/index.mjs`). Faute des deux, le salon que la construction a posé. */
+const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+const SLUG = new URLSearchParams(location.search).get("plan") ||
+  (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
+  document.currentScript?.dataset.slug || "";
+
+/** L'adresse d'un salon, celle que son application ouvre. */
+const cheminDuSalon = (slug) => "/plan-" + slug;
+
+/**
+ * Le chemin d'où ce plan se donne à quelqu'un d'autre.
+ *
+ * Deux adresses ne se partagent pas. Celle de l'administration, qui réclame une
+ * session que le visiteur d'en face n'a pas. Et celle qu'une application
+ * installée ouvre : elle est le territoire d'un salon, et un lien qui la porte
+ * n'ouvrirait chez l'autre qu'une adresse de plus à retenir. L'une et l'autre
+ * renvoient au plan public, où le salon se nomme dans le paramètre.
+ */
+const cheminPartageable = (chemin) =>
+  chemin.replace(/plan-admin(\.html)?$/, "plan$1").replace(CHEMIN_SALON, "/plan");
 
 let DATA = null, TOUS = [], parId = new Map(), CONFS = new Map(), EXPOSANTS = new Map();
 /* Les sociétés hébergées sur le stand d'un autre. Elles n'ont ni forme ni
@@ -20187,7 +20211,7 @@ function litCodeParcours(frag){
 function lienParcours(){
   const u = new URL(location.href);
   u.hash = "";
-  u.pathname = u.pathname.replace(/plan-admin(\.html)?$/, "plan$1");
+  u.pathname = cheminPartageable(u.pathname);
   /* Le salon est nommé même quand la page l'aurait deviné : le lien vaut alors
      ce qu'il dit, et n'ouvrira pas l'édition suivante le jour où c'est elle qui
      devient le salon par défaut. */
@@ -24944,7 +24968,7 @@ function litCodeIci(txt){
 function lienIci(code){
   const u = new URL(location.href);
   u.hash = "";
-  u.pathname = u.pathname.replace(/plan-admin(\.html)?$/, "plan$1");
+  u.pathname = cheminPartageable(u.pathname);
   const q = new URLSearchParams();
   /* Le salon est nommé même quand la page l'aurait deviné : l'affiche vaut
      alors ce qu'elle dit, et n'ouvrira pas l'édition suivante le jour où c'est
@@ -30119,15 +30143,17 @@ function verifieApplication(){
 }
 
 /**
- * L'adresse que l'application ouvre : son adresse de départ.
+ * L'adresse que l'application ouvre : son adresse de départ, qui est aussi tout
+ * son territoire.
  *
- * Reconstruite et non recopiée, comme le fait l'en-tête qui désigne le
- * manifeste (`outils/pwa.js`) : ce qui part au système ne doit porter que le
- * salon — ni jeton de courriel, ni ancre, ni paramètre de passage.
+ * Composée et non recopiée, comme le fait le relais pour le manifeste
+ * (`src/index.mjs`) : ce qui part au système ne doit porter que le salon — ni
+ * jeton de courriel, ni ancre, ni paramètre de passage. Et ce doit être ce
+ * chemin-là, le seul que l'application revendique : l'intention lancée sur une
+ * adresse hors de sa portée ne trouverait personne pour la prendre.
  */
 function adresseApplication(){
-  const salon = new URLSearchParams(location.search).get("plan");
-  return location.pathname + (salon ? "?plan=" + encodeURIComponent(salon) : "");
+  return SLUG ? cheminDuSalon(SLUG) : location.pathname;
 }
 
 /**
