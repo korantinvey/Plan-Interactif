@@ -215,7 +215,7 @@ Fonctions :
 
 - l.650 · Page de rapport
 
-### `_dessin.html` — 2044 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2056 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -237,14 +237,14 @@ Fonctions :
 `traceStandDessine` 988 · `texteStandDessine` 1012 · `poseLibellesDessines` 1030
 `decoupeStand` 1051 · `marqueStandsDessines` 1063 · `rafraichitStandsDessines` 1078
 `oublieReperes` 1108 · `reperesCherchables` 1110 · `vaAuRepere` 1154 · `clePoi` 1189
-`cartouchePoi` 1191 · `ouvrePoi` 1295 · `mesureCartouche` 1367 · `phareRepere` 1383
-`phareZone` 1385 · `eclairePoi` 1391 · `oublieChoixPoi` 1424 · `signale` 1433
-`calquePourImage` 1447 · `lienImageSaisi` 1475 · `formeImage` 1486 · `poseImage` 1495
-`ditImagePosee` 1517 · `importeImage` 1525 · `dessinPointerDown` 1576
-`dessinPointerMove` 1650 · `dessinPointerUp` 1688 · `termineTrace` 1729 · `aide` 1741
-`outilOffert` 1770 · `choisitOutil` 1773 · `enchaineStand` 1804 · `activeCalque` 1859
-`cleVerrou` 1917 · `verrouille` 1918 · `basculeVerrou` 1920 · `pictoVerrou` 1937
-`montreRoleIti` 1971 · `creeCalque` 2002 · `demandeNom` 2015 · `renommeCalque` 2034
+`cartouchePoi` 1191 · `ouvrePoi` 1307 · `mesureCartouche` 1379 · `phareRepere` 1395
+`phareZone` 1397 · `eclairePoi` 1403 · `oublieChoixPoi` 1436 · `signale` 1445
+`calquePourImage` 1459 · `lienImageSaisi` 1487 · `formeImage` 1498 · `poseImage` 1507
+`ditImagePosee` 1529 · `importeImage` 1537 · `dessinPointerDown` 1588
+`dessinPointerMove` 1662 · `dessinPointerUp` 1700 · `termineTrace` 1741 · `aide` 1753
+`outilOffert` 1782 · `choisitOutil` 1785 · `enchaineStand` 1816 · `activeCalque` 1871
+`cleVerrou` 1929 · `verrouille` 1930 · `basculeVerrou` 1932 · `pictoVerrou` 1949
+`montreRoleIti` 1983 · `creeCalque` 2014 · `demandeNom` 2027 · `renommeCalque` 2046
 
 Éléments :
 
@@ -316,7 +316,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4632 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4691 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -328,11 +328,11 @@ Fonctions :
 `#piedSide` · `#btnConfidentialite` · `#stage` · `#fondCarteGL` · `#fondTuiles`
 `#fondCarte` · `#trouDuFond` · `#plan` · `#couches` · `#zones` · `#stands` · `#labels`
 `#calqueLibelles` · `#zIn` · `#zOut` · `#zFit` · `#scaleBar` · `#scaleTxt` · `#creditCarte`
-`#mentionOsm` · `#poi` · `#viseur` · `#viseurTxt` · `#viseurStop` · `#calageBat`
-`#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide` · `#iciRappel`
-`#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage` · `#calageFerme`
-`#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde` · `#outils`
-`#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
+`#mentionOsm` · `#poi` · `#poiDefile` · `#viseur` · `#viseurTxt` · `#viseurStop`
+`#calageBat` · `#calageAngle` · `#calageQuart` · `#calageStop` · `#calageValide`
+`#iciRappel` · `#iciRappelTxt` · `#iciStop` · `#bornePose` · `#bornePoser` · `#calage`
+`#calageFerme` · `#calageCorps` · `#calageCarte` · `#calageEtat` · `#calageGarde`
+`#outils` · `#outilsCalque` · `#renommeOutils` · `#fermeOutils` · `#roleIti` · `#roleAide`
 `#voirNappe` · `#aimants` · `#aimantPas` · `#contourReg` · `#contourRayon`
 `#contourAimant` · `#traitReg` · `#traitEpaisseur` · `#traitStyle` · `#traitFleche`
 `#texteADessiner` · `#repereType` · `#repereTexte` · `#imageSoc` · `#standSoc` · `#listeSoc`
@@ -441,18 +441,18 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4346 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4348 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.76 · 1. Index global — la recherche porte sur tous les pavillons
 - l.454 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.564 · 3. Rendu du pavillon courant
 - l.648 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.784 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.1915 · 6. Vue
-- l.2298 · 7. Sélection et fiche
-- l.3641 · 8. Interactions du plan
-- l.4029 · Le tiroir de la liste — écrans étroits
-- l.4192 · Le tiroir de la fiche — écrans étroits
+- l.1917 · 6. Vue
+- l.2300 · 7. Sélection et fiche
+- l.3643 · 8. Interactions du plan
+- l.4031 · Le tiroir de la liste — écrans étroits
+- l.4194 · Le tiroir de la fiche — écrans étroits
 
 Fonctions :
 
@@ -464,33 +464,33 @@ Fonctions :
 `ancre` 656 · `place` 657 · `libelles` 659 · `decaleLibelle` 740 · `facteurLibelle` 741
 `libelleForce` 742 · `libelleZone` 745 · `libelleEmplacement` 764 · `indexeSecteurs` 805
 `secteursMontres` 818 · `couleurConf` 822 · `hslHex` 826 · `couleurSecteur` 843
-`BANDES` 862 · `majFondus` 870 · `pastilleSecteur` 908 · `coloreSecteurs` 921
-`peintSecteur` 972 · `appliqueSecteurs` 985 · `filtreTheme` 1002 · `themeFiltrable` 1080
-`clesCriteres` 1096 · `libelleCritere` 1103 · `separeValeurs` 1111 · `valeursCritere` 1128
-`texteCriteres` 1141 · `indexeCriteres` 1154 · `dansCriteres` 1181 · `critereActif` 1189
-`basculeCritere` 1191 · `videCriteres` 1200 · `majVideQ` 1209 · `videRecherche` 1222
-`nCriteres` 1237 · `majCriteres` 1246 · `ouvreCriteres` 1304 · `filtre` 1428
-`reposeRetrait` 1448 · `critParSociete` 1452 · `cherchable` 1462 · `visible` 1469
-`releveHotes` 1485 · `visibleSurPlan` 1493 · `visibleSociete` 1504 · `marqueRetrait` 1520
-`appliqueFiltre` 1532 · `oublieRetrait` 1544 · `reprendRecherche` 1553 · `rangSorte` 1566
-`codeCase` 1588 · `caseNumero` 1605 · `sousLigne` 1625 · `liste` 1639 · `marqueChoisie` 1758
-`prechargeMarque` 1784 · `prechargeLesVignettes` 1841 · `chargeUnLot` 1887
-`cadrePlan` 1930 · `oublieCadre` 1931 · `figeTextes` 1947 · `rendTextes` 1955
-`cadrage` 1991 · `peintLibelles` 1996 · `detacheLibelles` 2002 · `rattacheLibelles` 2014
-`etireLibelles` 2032 · `appliqueVue` 2040 · `rafraichitVue` 2084 · `poseVue` 2098
-`masque` 2118 · `masqueDroite` 2150 · `fit` 2161 · `stoppeZoom` 2191 · `glisseVersVise` 2197
-`glisseVers` 2239 · `rectVisee` 2261 · `zoom` 2281 · `echelle` 2290 · `ETROIT` 2304
-`anime` 2320 · `noeud` 2344 · `canalPlan` 2354 · `rangSociete` 2362 · `select` 2371
-`centre` 2396 · `centrePoint` 2400 · `montre` 2445 · `libelleCorps` 2477 · `ordreCorps` 2494
-`groupesFiche` 2526 · `montreIntitule` 2539 · `valeurCorps` 2559 · `champCorps` 2572
-`groupeCorps` 2584 · `corpsRange` 2597 · `momentLocal` 2632 · `programme` 2655
-`jourLong` 2688 · `ficheConf` 2699 · `lien` 2846 · `adresseWeb` 2854 · `pictoRS` 2897
-`adresseSure` 2915 · `adresseVignette` 2946 · `adresseImage` 2964 · `imageSure` 2977
-`assainitRiche` 3006 · `enBlocs` 3046 · `rangeRiche` 3059 · `ecarteClicFantome` 3087
-`nomSociete` 3096 · `societes` 3109 · `choisitExposant` 3120 · `poseMarque` 3158
-`montreMarque` 3218 · `poseCode` 3241 · `rangeMarque` 3282 · `ouvre` 3345 · `ferme` 3613
-`onglet` 3631 · `milieu` 3661 · `commencePince` 3667 · `suitPince` 3681 · `saisitPlan` 3715
-`cibleElargie` 3795 · `planifieFiltre` 3985 · `mesureTiroir` 4040 · `montreTiroir` 4043
+`BANDES` 864 · `majFondus` 872 · `pastilleSecteur` 910 · `coloreSecteurs` 923
+`peintSecteur` 974 · `appliqueSecteurs` 987 · `filtreTheme` 1004 · `themeFiltrable` 1082
+`clesCriteres` 1098 · `libelleCritere` 1105 · `separeValeurs` 1113 · `valeursCritere` 1130
+`texteCriteres` 1143 · `indexeCriteres` 1156 · `dansCriteres` 1183 · `critereActif` 1191
+`basculeCritere` 1193 · `videCriteres` 1202 · `majVideQ` 1211 · `videRecherche` 1224
+`nCriteres` 1239 · `majCriteres` 1248 · `ouvreCriteres` 1306 · `filtre` 1430
+`reposeRetrait` 1450 · `critParSociete` 1454 · `cherchable` 1464 · `visible` 1471
+`releveHotes` 1487 · `visibleSurPlan` 1495 · `visibleSociete` 1506 · `marqueRetrait` 1522
+`appliqueFiltre` 1534 · `oublieRetrait` 1546 · `reprendRecherche` 1555 · `rangSorte` 1568
+`codeCase` 1590 · `caseNumero` 1607 · `sousLigne` 1627 · `liste` 1641 · `marqueChoisie` 1760
+`prechargeMarque` 1786 · `prechargeLesVignettes` 1843 · `chargeUnLot` 1889
+`cadrePlan` 1932 · `oublieCadre` 1933 · `figeTextes` 1949 · `rendTextes` 1957
+`cadrage` 1993 · `peintLibelles` 1998 · `detacheLibelles` 2004 · `rattacheLibelles` 2016
+`etireLibelles` 2034 · `appliqueVue` 2042 · `rafraichitVue` 2086 · `poseVue` 2100
+`masque` 2120 · `masqueDroite` 2152 · `fit` 2163 · `stoppeZoom` 2193 · `glisseVersVise` 2199
+`glisseVers` 2241 · `rectVisee` 2263 · `zoom` 2283 · `echelle` 2292 · `ETROIT` 2306
+`anime` 2322 · `noeud` 2346 · `canalPlan` 2356 · `rangSociete` 2364 · `select` 2373
+`centre` 2398 · `centrePoint` 2402 · `montre` 2447 · `libelleCorps` 2479 · `ordreCorps` 2496
+`groupesFiche` 2528 · `montreIntitule` 2541 · `valeurCorps` 2561 · `champCorps` 2574
+`groupeCorps` 2586 · `corpsRange` 2599 · `momentLocal` 2634 · `programme` 2657
+`jourLong` 2690 · `ficheConf` 2701 · `lien` 2848 · `adresseWeb` 2856 · `pictoRS` 2899
+`adresseSure` 2917 · `adresseVignette` 2948 · `adresseImage` 2966 · `imageSure` 2979
+`assainitRiche` 3008 · `enBlocs` 3048 · `rangeRiche` 3061 · `ecarteClicFantome` 3089
+`nomSociete` 3098 · `societes` 3111 · `choisitExposant` 3122 · `poseMarque` 3160
+`montreMarque` 3220 · `poseCode` 3243 · `rangeMarque` 3284 · `ouvre` 3347 · `ferme` 3615
+`onglet` 3633 · `milieu` 3663 · `commencePince` 3669 · `suitPince` 3683 · `saisitPlan` 3717
+`cibleElargie` 3797 · `planifieFiltre` 3987 · `mesureTiroir` 4042 · `montreTiroir` 4045
 
 Éléments :
 
