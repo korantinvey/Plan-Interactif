@@ -624,12 +624,13 @@ Fonctions :
 `poseSuggestion` 302 · `fenetreSuggestion` 316 · `relevePalmares` 355 · `etiquetteSugg` 375
 `voletSuggestion` 385
 
-### `_sw.js` — 340 l. → sw.js
+### `_sw.js` — 556 l. → sw.js
 
 Fonctions :
 
-`range` 101 · `oublieLesVersionsDAvant` 127 · `dabordCache` 148 · `borneLesLots` 184
-`dabordReseau` 206 · `navigation` 223
+`estUneTuile` 121 · `range` 147 · `oublieLesVersionsDAvant` 173 · `dabordCache` 194
+`borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
+`tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
 ### `_tutoriel.html` — 880 l. → plan-admin.html, plan-smcl.html, plan.html
 
