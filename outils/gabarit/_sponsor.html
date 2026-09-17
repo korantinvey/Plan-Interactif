@@ -81,10 +81,10 @@ const MODES_SPONSOR = ["", "marque", "sponsor"];
 
 /* La marque du produit, posée par la construction à la place du commentaire
    (`outils/genere.js`, `outils/icones.js`). Celle qui garde son carré de nuit,
-   et non la nue : le générique se pose sur le fond du plan, clair ou sombre
-   selon le thème du visiteur, et une marque qui porte son propre fond est la
-   seule qui tienne sur les deux — c'est exactement ce qu'on conseille au
-   sponsor pour son logo.
+   et non la nue : le générique se pose sur le fond du plan — le gris clair
+   d'origine, ou la couleur que l'exploitant a réglée —, et une marque qui
+   porte son propre fond est la seule qui tienne sur toutes. C'est exactement
+   ce qu'on conseille au sponsor pour son logo.
 
    C'est le seul endroit où la marque paraisse devant un visiteur. Ailleurs elle
    se tient dans ce qui appartient à l'outil — la bande d'administration, la
@@ -491,10 +491,9 @@ function blocSponsor(hote){
   champZone(corps, "Logo", logo.cadre,
     "Réduite puis enregistrée avec la configuration du plan : elle part avec " +
     "lui, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la " +
-    "vignette, ou choisissez-la. Elle se pose sur le fond du plan, qui suit le " +
-    "thème clair ou sombre du visiteur tant qu'aucune couleur n'est réglée " +
-    "dans « Apparence » : un logo dessiné en noir sur fond transparent y " +
-    "disparaîtra la moitié du temps.");
+    "vignette, ou choisissez-la. Elle se pose sur le fond du plan — le gris " +
+    "clair d'origine, ou la couleur réglée dans « Apparence » : un logo " +
+    "dessiné en blanc sur fond transparent y disparaîtra.");
 
   const nom = champZone(corps, "Nom du sponsor", document.createElement("input"),
     "Écrit sous le logo. Laissez vide si le logo porte déjà le nom.");

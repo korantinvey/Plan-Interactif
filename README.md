@@ -111,8 +111,8 @@ cinq cents logos d'un salon pèsent soixante-dix mégaoctets quand une fiche
 seule en charge vingt-huit kilo-octets — la médiane. Elle vient en tête du
 corps, dans le même cadre à fond clair que le logo d'une zone organisateur et
 pour la même raison : un logo est le plus souvent sombre sur transparent, et
-s'effacerait en thème sombre. L'adresse qui ne répond plus efface son cadre
-avec elle.
+s'effacerait sur le fond noir des modèles de fiche qui en portent un. L'adresse
+qui ne répond plus efface son cadre avec elle.
 
 Deux façons de dire oui, parce que les sources n'en offrent qu'une chacune.
 
@@ -602,6 +602,28 @@ premier jour.
 
 Retirer le parcours de visite retire la suggestion avec lui : il n'y a plus ni
 liste à compléter ni tiroir où poser la proposition, et l'onglet le signale.
+
+### Un seul thème, et c'est le clair
+
+Le plan n'a pas de mode sombre, ni pour le visiteur ni pour l'exploitant, et
+n'écoute pas la préférence de l'appareil. Il l'a eu : la feuille de style
+peignait la nuit dès que `prefers-color-scheme` la réclamait, et un bouton dans
+la barre permettait d'en changer.
+
+Un plan de salon ne se lit pas le soir au fond d'un lit. Il se consulte debout
+dans un hall éclairé, à côté d'une signalétique imprimée en noir sur blanc, le
+plus souvent sur un téléphone dont le thème sombre a été réglé une fois puis
+oublié — si bien que le plan arrivait noir chez des visiteurs qui n'avaient rien
+demandé. Deux jeux de couleurs, c'était aussi deux fois à vérifier pour chacun
+des onze habillages, et une raison de plus pour qu'une couleur réglée par
+l'exploitant tienne d'un côté et pas de l'autre.
+
+La console, elle, garde les deux et suit l'appareil : on y travaille la journée
+durant, devant un écran qu'on ne quitte pas. C'est le seul endroit du dépôt où
+la nuit subsiste — `_console.css` pour les tons, `_console-base.html` pour le
+bouton. La barre du navigateur suit la même partition : une couleur pour les
+pages du plan, deux pour la console (`outils/pwa.js`, option `deuxThemes` de
+`page()` dans `outils/genere.js`).
 
 ### Les fenêtres portent l'habillage, sauf les outils
 
@@ -1467,7 +1489,8 @@ retirer la marque de qui le lui fournit.
   personne l'ait demandé.
 - **Le logo Event2Map**, avec la mention « powered by ». Rien à déposer, rien à
   régler : la marque vient de la construction, elle est nette à toute taille, et
-  elle porte son propre carré de nuit — donc lisible sur les deux thèmes. C'est
+  elle porte son propre carré de nuit — donc lisible sur n'importe quel fond de
+  plan. C'est
   le seul endroit où elle paraisse devant un visiteur ; ailleurs elle se tient
   dans ce qui appartient à l'outil — la bande d'administration, la console,
   l'écran d'accès — pour ne pas déguiser le salon en Event2Map. Ici elle ne le
@@ -1478,9 +1501,9 @@ retirer la marque de qui le lui fournit.
   anglais) et un lien facultatif, ouvert dans un nouvel onglet quand le visiteur
   touche le logo. Le logo est réduit puis enregistré avec la configuration, comme
   celui d'une zone : il part avec le plan, sans dépendre d'un fichier hébergé
-  ailleurs. Il se pose sur le fond du plan, qui suit le thème clair ou sombre du
-  visiteur tant qu'aucune couleur n'est réglée dans « Apparence » — un logo
-  dessiné en noir sur fond transparent y disparaîtrait la moitié du temps.
+  ailleurs. Il se pose sur le fond du plan — le gris clair d'origine, ou la
+  couleur réglée dans « Apparence » : un logo dessiné en blanc sur fond
+  transparent y disparaîtrait.
 
 La durée, de deux à dix secondes, vaut pour l'un comme pour l'autre : c'est le
 même générique.
@@ -2121,8 +2144,8 @@ en `em` pour qu'il suive la taille du texte quand on dézoome. La couleur de
 libellé que l'exploitant a pu régler est écartée pendant ce temps : elle avait
 été accordée à ses stands, pas à une caméra thermique.
 
-Contrairement au reste du plan, la rampe ne suit pas le thème : une image
-thermique est la même de jour comme de nuit.
+Contrairement au reste du plan, la rampe ne suit aucun réglage de couleur : une
+image thermique ne se décline pas à la charte du salon.
 
 ## La version anglaise
 

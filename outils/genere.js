@@ -79,16 +79,21 @@ function marques(html) {
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
  *                   une icône, le fichier voisin n'existerait pas. Ses
  *                   polices viennent donc avec elle.
+ *   `deuxThemes`  — la page a un thème clair et un thème sombre, et suit la
+ *                   préférence de l'appareil : la barre du navigateur lui
+ *                   demande donc une couleur par préférence. C'est le cas de
+ *                   la console et de ce qui l'entoure. Les pages du plan n'ont
+ *                   que le clair et n'en veulent qu'une (voir `outils/pwa.js`).
  */
 function page(contenu, options) {
-  const { role, tete, application, autonome } = options || {};
+  const { role, tete, application, autonome, deuxThemes } = options || {};
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     langue(contenu) +
     (tete || "") +
-    (autonome ? "" : pwa.TETE) +
+    (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
     marques(contenu.replace("<!--__POLICES__-->", () => feuillePolices(autonome))) +
     "\n</body>\n</html>\n";
@@ -209,17 +214,18 @@ const assemble = (tete, ...corps) =>
    de recadrage, pour qu'une vignette soit cadrée comme la page l'aurait fait. */
 fs.writeFileSync(W + "admin-plans.html",
   page(assemble("_console-head.html", "_classeur.html", "_export.html", "_console-js.html") +
-    enScript("_marque.html")));
+    enScript("_marque.html"), { deuxThemes: true }));
 
 fs.writeFileSync(W + "rapport.html",
-  page(assemble("_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html")));
+  page(assemble("_rapport-head.html", "_classeur.html", "_export.html", "_rapport-js.html"),
+       { deuxThemes: true }));
 
 /* --- poser son mot de passe ---
    Elle n'emprunte pas le socle : on y arrive sans session, avec pour seul
    bagage le jeton d'un lien reçu par courriel. Un écran de connexion y serait
    un contresens. */
 fs.writeFileSync(W + "motdepasse.html",
-  page(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8")));
+  page(fs.readFileSync(D + "/gabarit/_motdepasse.html", "utf8"), { deuxThemes: true }));
 
 /* --- la page que le service rend quand le réseau manque --- */
 fs.writeFileSync(W + "hors-ligne.html",
