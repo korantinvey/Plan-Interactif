@@ -29968,14 +29968,20 @@ function voletEnvirons(hote){
      et se borne à la lui suggérer. Un bouton qui ne tiendrait pas parole, ou
      une fenêtre qui affirmerait ce qu'elle ignore, valent moins que rien.
 
-   Deux fenêtres, et pas une troisième : rien ne se dit au moment même de
+   Deux fenêtres, et pas une troisième : rien ne se dit dans la foulée de
    l'installation. Une fenêtre y annonçait l'application posée et offrait de
    l'ouvrir — trois fenêtres d'affilée sur Android, pour l'installation, le
    constat, puis le rappel, quand le visiteur n'en demandait qu'une. Le
    constat était le plus creux des trois : il apprenait au visiteur ce qu'il
    venait lui-même de faire, et son bouton doublait celui du rappel. Ce qui
-   reste dit donc chaque chose une fois — d'abord installez, plus tard
-   ouvrez —, et le navigateur annonce l'installation à sa façon, qui suffit.
+   reste dit donc chaque chose une fois — d'abord installez, puis ouvrez —,
+   et le navigateur annonce l'installation à sa façon, qui suffit.
+
+   Le « puis » est court, et c'est voulu : l'installation efface la marque du
+   jour au lieu de la poser, si bien que le premier rechargement qui suit
+   ramène le rappel, son bouton avec. Le taire jusqu'au lendemain aurait
+   laissé sans rien celui qui vient de poser l'icône et revient au navigateur
+   — c'est-à-dire justement celui à qui le constat parlait.
    ============================================================ */
 
 /* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
@@ -30437,14 +30443,21 @@ if (INSTALL_POSSIBLE){
      ne le proposera plus. */
   addEventListener("appinstalled", () => {
     INSTALL_NATIVE = null;
-    /* L'installation rouvre la question du rappel : ce qui en avait été refusé
-       l'avait été d'une application d'avant, retirée depuis. Pas aujourd'hui
-       pour autant : le visiteur vient de la poser lui-même, et on n'apprend
-       pas à quelqu'un ce qu'il achève de faire. Le rappel est pour la visite
-       d'après — celle où il rouvrira le plan au navigateur sans y penser, et
-       où l'application, elle, sera vraiment oubliée. */
+    /* L'installation rouvre la question du rappel, et l'ouvre entièrement :
+       ce qui en avait été refusé l'avait été d'une application d'avant,
+       retirée depuis, et la journée ne se garde pas non plus. Le rappel est
+       devenu le seul à savoir où est l'icône et à savoir l'ouvrir — le taire
+       jusqu'au lendemain laisserait sans rien celui qui recharge le plan au
+       navigateur une minute après l'avoir installé. */
     retientInstallation({ installe: true, rappelRefus: 0, rappelClos: false,
-      rappelVue: jourInstallation() });
+      rappelVue: null });
+    /* Et il se compte de l'installation, non de l'affichage du plan : Chromium
+       fabrique son paquet après coup, et le système met quelques secondes à
+       savoir qui ouvre les adresses de ce site. Un bouton touché avant cela
+       n'ouvrirait rien — et ne se repropose jamais (`lanceApplication`). Le
+       plan, lui, est à l'écran depuis un moment : sans ce report, le rappel
+       viendrait au geste suivant, avec un bouton encore sans preneur. */
+    installAccueil = performance.now();
   });
   // ce que le système sait de l'application, et qui décide laquelle des deux fenêtres
   verifieApplication();
