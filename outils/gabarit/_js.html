@@ -199,6 +199,13 @@ function indexe(d){
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
+  /* Les géométries que l'exploitant a reprises à la main, posées avant que
+     rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
+     marche lisent tous la forme de l'emplacement, et doivent lire celle qui
+     vaut. Une forme que la source a déplacée depuis reprend la sienne —
+     l'empreinte en décide (voir `_geometrie.html`). */
+  appliqueGeometries();
+
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
      police : reposée maintenant, elle vaut dès le premier tracé. Attendre
      « appliqueApparence » la mettait une fois de trop en retard — les stands
@@ -566,6 +573,9 @@ function montePlan(){
     esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
   emp = p.emprise;
   calqueActif = null;
+  /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
+     plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
+  if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
   { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
@@ -2016,6 +2026,7 @@ const appliqueVue = () => {
     majEditionWebgl();
     // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
     if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
+    if (enEdition() && typeof dessinePoigneesGeo === "function") dessinePoigneesGeo();
     // tant que la première image n'est pas dessinée, le SVG montre le plan et suit la vue
     if (GL.pret) return;
   }
@@ -2023,6 +2034,7 @@ const appliqueVue = () => {
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
   if (typeof dessinePoignees === "function") dessinePoignees();
+  if (typeof dessinePoigneesGeo === "function") dessinePoigneesGeo();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
   // et la pointe des lignes fléchées, pas davantage
@@ -3700,6 +3712,9 @@ svg.addEventListener("pointerdown", e => {
      le fond et non le plan — c'est le seul geste que la palette attend. */
   if (typeof cartePointerDown === "function" && cartePointerDown(e)) return;
   if (libellePointerDown(e)) return;
+  /* Reprendre la forme d'un emplacement passe avant sa fiche : le geste vise
+     la géométrie, pas l'exposant qui la loue. */
+  if (geometriePointerDown(e)) return;
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
@@ -3714,6 +3729,7 @@ svg.addEventListener("pointermove", e => {
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (typeof cartePointerMove === "function" && cartePointerMove(e)) return;
   if (libellePointerMove(e)) return;
+  if (geometriePointerMove(e)) return;
   if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
@@ -3783,6 +3799,7 @@ svg.addEventListener("pointerup", e => {
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
   if (libellePointerUp(e)) return;
+  if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
   const d = drag; drag = null; saisitPlan(false);
@@ -3825,6 +3842,7 @@ svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
   glisseLib = null;
+  glisseGeo = null;
   drag = null;
   saisitPlan(false);
 });
@@ -3879,6 +3897,15 @@ document.addEventListener("keydown", e => {
                   e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return;
   }
+  /* Un emplacement repris se règle du même pas, pour la même raison : la main
+     l'a posé à peu près, le clavier l'ajuste. */
+  if (SORTE_GEO && geoSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseGeometrie(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                    e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
      voisine, le clavier lui donne l'allée qui les sépare. */
   if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
@@ -3890,6 +3917,10 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape"){
     if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
+    /* Une forme choisie se relâche d'abord, le mode ensuite : deux crans pour
+       une même touche, comme ailleurs sur le plan. */
+    if (SORTE_GEO && geoSel){ choisitGeo(null); return; }
+    if (SORTE_GEO){ modeGeometrie(null); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }

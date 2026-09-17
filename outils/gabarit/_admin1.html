@@ -3033,7 +3033,7 @@ let PROFIL_ADMIN = false;
  */
 function retireAdmin(){
   ["btnLayers", "btnReglages", "menuCompte", "bandeAdmin"].forEach(id => { const b = $(id); if (b) b.remove(); });
-  ["panel", "outils", "elemSel", "libReg"].forEach(id => {
+  ["panel", "outils", "elemSel", "libReg", "geoReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
     e.hidden = true;
@@ -4002,9 +4002,11 @@ function libelleAutomatique(){
 function modePlacementLibelles(on){
   PLACE_LIBELLES = !!on && ADMIN;
   racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
-  /* Le placement et le dessin se disputeraient le glisser : entrer dans l'un
-     referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
+  /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le
+     glisser : entrer dans l'un referme les autres, plutôt que de laisser trois
+     gestes viser le même pointeur. */
   if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
+  if (PLACE_LIBELLES && SORTE_GEO) modeGeometrie(null);
   if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
   /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
      touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se

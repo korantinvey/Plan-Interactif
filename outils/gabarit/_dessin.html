@@ -1871,6 +1871,8 @@ function activeCalque(id){
      l'inverse manquait, et le crayon des textes serait resté allumé pour un
      mode qu'on venait de quitter. */
   if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
+  // et la reprise d'une géométrie, qui vise le même pointeur
+  if (calqueActif && SORTE_GEO) modeGeometrie(null);
   formeSel = null;
   termineTrace(false);
   montreAimants(null);

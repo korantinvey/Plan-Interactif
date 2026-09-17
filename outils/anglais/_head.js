@@ -90,6 +90,8 @@ module.exports = {
   "Terminer — Échap": "Done — Esc",
   "Terminer le placement des libellés": "Finish placing labels",
   "Placement automatique": "Automatic placement",
+  "Terminer la reprise des géométries": "Finish reshaping",
+  "Géométrie d'origine": "Original shape",
   "Fermer": "Close",
   "Ordre des calques": "Layer order",
 
