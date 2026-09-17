@@ -519,6 +519,9 @@ tr.eteint td{opacity:.45}
 .sync-nom[data-etat="fait"]{color:var(--ink-2)}
 .sync-nom[data-etat="echec"]{color:var(--rouge)}
 .sync-ecarte{font-size:11.5px;color:var(--ink-3);margin:13px 0 0}
+/* L'aveu d'un flux qui n'arrive pas : en ambre, parce que c'est une anomalie
+   du chemin et non un état de la synchronisation, qui se déroule bien. */
+.sync-relais{font-size:11.5px;color:var(--ambre);margin:13px 0 0}
 
 .sync-cours{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
   margin-top:20px;font-size:13px}
