@@ -28,19 +28,6 @@ module.exports = {
   "Ouvrez le menu du navigateur": "Open the browser menu",
   "Ajouter à l'écran d'accueil": "Add to Home screen",
 
-  // une fois installé
-  "Le plan est installé": "The map is installed",
-  /* Le nom vient du salon : un modèle, comme toute phrase que le code compose
-     (voir `CLAUDE.md`, « La version anglaise »). */
-  "Sur votre écran d'accueil, sous le nom « {nom} »": "On your home screen, under the name “{nom}”",
-  "Ouvrez-le depuis son icône : il s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
-    "Open it from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
-  /* La même fenêtre, quand elle peut ouvrir l'application elle-même : sur
-     Android, un bouton s'y ajoute une fois le système au courant. */
-  "Ouvrez-la d'ici, ou depuis son icône : elle s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
-    "Open it from here, or from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
-  "Compris": "OK",
-
   // le rappel, l'application installée et le plan lu dans le navigateur
   "L'application est installée": "The app is installed",
   "Déjà sur votre écran d'accueil": "Already on your home screen",
@@ -48,6 +35,7 @@ module.exports = {
     "You are reading the map in the browser. Opened from the app, it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
   "Rester ici": "Stay here",
   "Ouvrir l'application": "Open the app",
+  "Compris": "OK",
 
   /* iOS ne dit pas qu'une application est installée, et rien ne l'y ouvre : la
      même fenêtre y parle au conditionnel, à qui a lu les gestes d'ajout. */
@@ -67,5 +55,4 @@ module.exports = {
     "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Another reminds visitors who already have the app, ten seconds in. At most once a day each, and never again after two refusals. Preview of the invitation:",
   ". Du rappel :": ". Of the reminder:",
   "Android": "Android",
-  "une fois installé": "once installed",
 };
