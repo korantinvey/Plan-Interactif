@@ -12,6 +12,8 @@ module.exports = {
     "This number is replaced after {n} months. What was recorded with it is deleted after {n2} days: only anonymous totals remain.",
   "Ces chiffres servent à l'organisateur et au prestataire qui réalise le plan pour lui. Les exposants peuvent recevoir les totaux de leur stand, jamais le détail d'une visite. Vos réglages et votre parcours restent sur votre appareil, pour vous être rendus à la prochaine visite.":
     "These figures are for the organiser, and for the contractor who builds the map on their behalf. Exhibitors may receive their stand's totals, never the details of a visit. Your settings and your visit plan stay on your device, ready for your next visit.",
+  "Sans réseau, le plan reste consultable et ces mesures patientent sur votre appareil, le temps d'une reconnexion. Elles en repartent dès qu'elle a lieu, et s'effacent d'elles-mêmes au bout de {n} jours.":
+    "Without a network connection the map stays usable, and these measurements wait on your device until you are back online. They are sent as soon as that happens, and delete themselves after {n} days.",
   "Ne pas mesurer mes visites": "Don't measure my visits",
   "Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce site. Pour toute question sur ces données, adressez-vous à l'organisateur du salon ; vous pouvez aussi saisir la CNIL.":
     "This choice is kept on this device, and applies to every map on this site. For any question about this data, contact the show's organiser; you can also lodge a complaint with the CNIL, the French data protection authority.",

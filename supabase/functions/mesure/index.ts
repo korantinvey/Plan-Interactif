@@ -3,6 +3,7 @@
  *
  *   POST /mesure
  *   { "slug": "smcl-2026", "visiteur": "…", "support": "integre", "retenu": false,
+ *     "recul": 0,
  *     "gestes": [{ "genre": "fiche_stand", "canal": "plan", "cible": "s2e90eb0d" }, …] }
  *
  * `support` dit par quelle porte le plan a été atteint — navigateur, cadre posé
@@ -10,6 +11,12 @@
  * navigateur a accepté de retenir le jeton du visiteur. Les deux accompagnent le
  * paquet et non chacun de ses gestes : ce sont des propriétés de l'ouverture de
  * la page. La base écarte un support qu'elle ne connaît pas, comme un canal.
+ *
+ * `recul` dit depuis combien de secondes ces gestes attendaient le réseau. Il
+ * vaut zéro dans le cas ordinaire, et l'âge du paquet quand il revient d'un
+ * hall sans couverture — la page garde ce qui n'a pas pu partir et le renvoie à
+ * la reconnexion (`_mesure.html`). Sans lui, une matinée hors réseau se serait
+ * entassée à l'heure du retour de la barre.
  *
  * La page envoie ses gestes par paquets plutôt qu'un par un : un appui sur un
  * stand ne vaut pas un aller-retour réseau, et un visiteur qui fait trente
@@ -103,6 +110,7 @@ Deno.serve(async (req) => {
       session?: string;
       support?: string;
       retenu?: boolean;
+      recul?: number;
       gestes?: { genre?: string; canal?: string; cible?: string; objet?: string }[];
     } | null;
     if (!corps) return refus("Corps illisible.");
@@ -132,6 +140,15 @@ Deno.serve(async (req) => {
     // vidé par les filtres, et elle n'a rien à en faire
     if (!gestes.length) return new Response(null, { status: 204, headers: CORS });
 
+    /* Le temps que ce paquet a passé à attendre le réseau, en secondes.
+       C'est une différence entre deux lectures de la même horloge, jamais une
+       heure lue sur l'appareil : une horloge de téléphone mal réglée, ou réglée
+       sur le fuseau d'où vient son propriétaire, ne peut donc pas la fausser.
+       Borné ici pour que la base reçoive un entier, et borné là-bas pour de
+       bon — `enregistre_mesures` le ramène entre zéro et trente jours. */
+    const recul = Math.round(Number(corps.recul));
+    const attente = Number.isFinite(recul) && recul > 0 ? Math.min(recul, 90 * 86400) : 0;
+
     const { data, error } = await client().rpc("enregistre_mesures", {
       p_slug: slug,
       p_visiteur: visiteur,
@@ -143,6 +160,7 @@ Deno.serve(async (req) => {
          l'absence garde alors la confiance qu'on lui faisait. */
       p_support: jeton(corps.support, 20),
       p_retenu: corps.retenu !== false,
+      p_recul: attente,
     });
     if (error) return refus(error.message, 500);
     if (data === false) return refus("Événement introuvable ou non publié.", 404);
