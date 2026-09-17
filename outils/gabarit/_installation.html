@@ -250,20 +250,21 @@ const appliInstallee = () => reponsesInstallation().installe === true;
  * `related_applications` où l'application se nomme elle-même
  * (`outils/pwa.js`).
  *
- * Son démenti n'est cru qu'après un aveu. L'adresse du manifeste sous laquelle
- * l'application a été posée n'est pas toujours celle que la page demande —
- * installée depuis `?plan=<salon>`, relue depuis l'adresse nue du même salon —
- * et une liste vide dirait alors « retirée » d'une application bien présente.
- * Tant que l'API n'a rien reconnu ici, ce qu'on a vu de ses propres yeux fait
- * foi ; une fois qu'elle a reconnu, elle sait aussi dire que c'est fini.
+ * Elle ne sert qu'à reconnaître, jamais à démentir. Une liste vide ne dit pas
+ * qu'il n'y a rien : l'adresse du manifeste sous laquelle l'application a été
+ * posée n'est pas toujours celle que la page demande — installée depuis
+ * `?plan=<salon>`, relue depuis l'adresse nue du même salon — et le démenti
+ * porterait alors sur une application bien présente.
+ *
+ * Ce qui dément, c'est `beforeinstallprompt` : Chromium ne l'émet pas pour une
+ * application déjà posée, et le recevoir vaut donc constat qu'elle ne l'est
+ * plus. Le signal est direct, là où la liste vide n'était qu'une inférence.
  */
 function verifieApplication(){
   if (!navigator.getInstalledRelatedApps) return;
   navigator.getInstalledRelatedApps().then(liste => {
     if ((liste || []).some(a => a && a.platform === "webapp")){
-      retientInstallation({ installe: true, reconnue: true });
-    } else if (reponsesInstallation().reconnue){
-      retientInstallation({ installe: false, reconnue: false });
+      retientInstallation({ installe: true });
     }
     essaieInvitation();
   }, () => {});
@@ -491,6 +492,12 @@ function essaieInvitation(){
 
 if (INSTALL_POSSIBLE){
   addEventListener("beforeinstallprompt", e => {
+    /* Le plan est installable : c'est donc qu'il n'est pas installé. Un
+       `installe` resté d'une application retirée depuis condamnait tout —
+       `invitationEcartee` se taisant pour une application posée, le plan ne
+       proposait plus ni de l'installer ni de l'ouvrir, et rien ne venait
+       jamais le détromper. */
+    if (appliInstallee()) retientInstallation({ installe: false });
     /* Retenu, l'événement retire le bandeau que Chrome aurait posé en bas de
        l'écran : la fenêtre en tient lieu. Réglage éteint, il passe — le
        navigateur garde sa manière de proposer, qui n'a rien à nous demander.
