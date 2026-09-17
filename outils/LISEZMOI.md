@@ -69,6 +69,15 @@ et ses exposants. L'appariement se fait ensuite sur l'identifiant de dossier,
 que Klipso porte sur le stand et qu'Eventmaker recopie sur la fiche. C'est là
 qu'il faut aller avant de rouvrir la question.
 
+`eventmaker-sso.md` prolonge l'enquête du côté du visiteur : comment l'identifier
+— un OAuth 2 en marque blanche, que seul un administrateur Eventmaker peut
+ouvrir — et où vivent les rendez-vous qu'il a pris. Pas davantage dans l'API
+REST : sous `viewer`, la racine connectée du même graphe, où un rendez-vous
+nomme son exposant par le type que la synchronisation sait déjà poser sur un
+stand. Le document relève le schéma champ par champ, distingue ce qui est
+vérifié de ce qui attend un jeton, et décrit le montage retenu pour le parcours
+de visite.
+
 ## Serveur local
 
 ```bash

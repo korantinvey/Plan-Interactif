@@ -762,8 +762,12 @@ function ouvreRappel(facon, apercu){
 
   avantFermeture = () => {
     if (apercu){
-      return demandee && ouvre
-        ? queueMicrotask(() => ouvreRetrouve(true)) : retourAuxReglages();
+      /* La fenêtre de repli prend la place de celle-ci, une fois qu'elle l'a
+         libérée : ouverte plus tôt, elle la trouverait encore occupée
+         (`_modales.html`). */
+      if (demandee && ouvre) apresFermeture = () => ouvreRetrouve(true);
+      else retourAuxReglages();
+      return;
     }
     if (!demandee) refuseRappel();
   };

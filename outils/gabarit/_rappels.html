@@ -20,7 +20,8 @@
  * D'où la contrepartie, que le tiroir dit maintenant en toutes lettres : ce qui
  * est rappelé quitte l'appareil. Pas la liste — les stands retenus restent où
  * ils sont, et les conférences non plus ne partent pas d'elles-mêmes. Il faut
- * deux gestes : toucher l'interrupteur, puis accorder au navigateur
+ * deux gestes : dire oui — à l'interrupteur du tiroir, ou à la fenêtre qui le
+ * propose dès la première conférence retenue —, puis accorder au navigateur
  * l'autorisation qu'il demande. Ce qui part alors est un abonnement — une
  * adresse opaque que le navigateur vient de tirer —, une heure, et la phrase à
  * afficher, déjà écrite.
@@ -396,6 +397,122 @@ function poseRappels(hote){
   };
 
   hote.appendChild(bloc);
+}
+
+/* ------------------------------------------------------------
+   La proposition, dès la première conférence retenue
+   ------------------------------------------------------------ */
+/*
+ * L'interrupteur attend dans le tiroir, et le tiroir attend qu'on l'ouvre.
+ * Personne ne va chercher un réglage dont il ignore l'existence — et celui à
+ * qui le rappel sert vient précisément de retenir une conférence, sans se
+ * douter que le plan sait la lui rappeler. On le lui demande donc là, une
+ * fois, au moment où un horaire retenu donne enfin au réveil quelque chose à
+ * faire.
+ *
+ * Une fois, et pas une de plus. Refusée, la proposition ne revient pas : c'est
+ * une réponse, non un oubli, et la reposer au signet suivant serait insister.
+ * Acceptée, elle n'a plus lieu d'être. L'interrupteur du tiroir reste la porte
+ * pour revenir sur l'une comme sur l'autre.
+ */
+let INVITE_RAPPEL = false;   // la question a été posée pendant cette visite
+
+/* Rangée par salon, comme le consentement qu'elle amène : avoir refusé le
+   rappel d'un salon ne dit rien du suivant. Le drapeau de session double le
+   stockage plutôt que d'en dépendre — refusé, il ne reste que lui, et mieux
+   vaut une proposition perdue à la visite suivante qu'une proposition à chaque
+   conférence retenue. */
+const cleInviteRappel = () =>
+  "plan-rappel-invite:" + (SLUG || (DATA && DATA.evenement) || "");
+
+function inviteRappelFaite(){
+  if (INVITE_RAPPEL) return true;
+  try { return localStorage.getItem(cleInviteRappel()) === "1"; }
+  catch (e) { return false; }
+}
+function retientInviteRappel(){
+  INVITE_RAPPEL = true;
+  try { localStorage.setItem(cleInviteRappel(), "1"); } catch (e) {}
+}
+
+/**
+ * Ce qui vaut la peine d'être demandé.
+ *
+ * Les conditions sont celles de l'interrupteur, à trois près : la question déjà
+ * posée, l'autorisation déjà répondue, la visite guidée en cours.
+ *
+ * L'autorisation déjà répondue ferme la question des deux côtés : accordée, le
+ * rappel se poserait sans que le navigateur demande quoi que ce soit — mais
+ * l'interrupteur, lui, n'a pas été touché, et allumer un rappel dans le dos du
+ * visiteur n'est pas ce qu'on propose ; refusée, aucune fenêtre de la page ne
+ * rouvrira ce que le navigateur a fermé, et le tiroir dit déjà où le rouvrir.
+ *
+ * La visite guidée, enfin, mène le visiteur d'une étape à l'autre, et son
+ * chapitre des zones finit justement sur une conférence retenue : une fenêtre
+ * qui s'inviterait là lui ferait perdre le fil. La question reviendra à la
+ * conférence suivante — rien n'a été répondu.
+ */
+function fenetreRappel(){
+  if (inviteRappelFaite() || TUTO) return;
+  if (!rappelsOfferts() || !poussePossible()) return;
+  if (RAPPELS_ACTIFS || Notification.permission !== "default") return;
+  /* La même retenue que l'interrupteur : une conférence qui commence dans dix
+     minutes, avec un quart d'heure d'avance réglé, ne produit aucun rappel. Il
+     n'y a alors rien à proposer, et le tiroir le dit mieux qu'une fenêtre. */
+  if (!rappelsDuParcours().length) return;
+  /* Une fenêtre ouverte a été demandée — la fiche de la conférence qu'on vient
+     justement de retenir, le plus souvent. On ne la remplace pas : la
+     proposition attend qu'elle se referme, et repasse alors par ici, ses
+     conditions relues. */
+  if ($("modale").classList.contains("open")){ apresFermeture = fenetreRappel; return; }
+  proposeRappels();
+}
+
+/**
+ * La fenêtre.
+ *
+ * Elle annonce l'avance réglée pour ce salon, et non un chiffre écrit ici : ce
+ * qui est promis est ce qui sera posé, et l'exploitant qui a choisi cinq
+ * minutes ne doit pas lire quinze sur la fenêtre de ses visiteurs.
+ *
+ * La contrepartie se dit avant la réponse, comme au pied du tiroir : ce qui est
+ * rappelé quitte l'appareil, et on ne l'apprend pas après avoir dit oui.
+ *
+ * Fermée par n'importe quelle porte — le pied, la croix, le voile, « Échap » —,
+ * elle compte comme posée : la question a été vue, et c'est tout ce qu'on
+ * voulait savoir.
+ */
+function proposeRappels(){
+  const n = minutesRappel();
+  ouvreModale("Pour ne pas la manquer", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Le plan peut vous prévenir " + n + " min avant le début de " +
+      "chaque conférence de votre parcours, même fermé.";
+    corps.appendChild(p);
+    const a = document.createElement("p");
+    a.className = "rapAide";
+    a.textContent = "Il vous faudra autoriser les notifications. Les heures et " +
+      "les titres retenus partent alors sur nos serveurs, et s'effacent après " +
+      "le salon.";
+    corps.appendChild(a);
+  }, [
+    { libelle: "Non merci" },
+    { libelle: "Oui, me prévenir", genre: "accent", action: () => {
+      /* La demande du navigateur part dans le geste même — `allumeRappels`
+         appelle `requestPermission` avant toute attente —, et la fenêtre se
+         retire derrière elle : c'est celle du navigateur qui a la main
+         maintenant, et c'est là que la réponse se donne.
+
+         Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
+         sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
+         allumé. On rafraîchit donc, et on se tait. */
+      allumeRappels().then(() => rafraichitParcours(), () => {});
+    } },
+  ]);
+
+  /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
+     précédente avait laissé en train de se faire. */
+  avantFermeture = retientInviteRappel;
 }
 
 /**

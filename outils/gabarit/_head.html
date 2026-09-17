@@ -651,6 +651,16 @@ html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
 html.mode-libelles #labels .lbl:hover text,
 html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 
+/* Reprendre la géométrie d'un emplacement.
+   Une seule couche répond à la fois — celle dont on a ouvert le crayon — et
+   c'est ce que disent les deux classes. Ailleurs, le clic garde son sens
+   ordinaire : il ouvre la fiche, ou déplace la vue. La forme reprise se cerne
+   d'un liseré d'accent, le même que celui de ses poignées : sans lui, on ne
+   sait pas laquelle des deux voisines répondra au glisser. */
+html.mode-geo-stands #stands g,html.mode-geo-zones #zones g{cursor:move}
+html.mode-geo-stands #stands g.geopick path,
+html.mode-geo-zones #zones g.geopick path{stroke:var(--accent);stroke-width:2.5}
+
 /* --- calques de dessin --- */
 .dcal{pointer-events:none}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
@@ -886,8 +896,10 @@ html.sans-image-stand .outils #imageSoc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .elemChamp select:focus{border-color:var(--accent);outline:none}
 .elemChamp[hidden]{display:none}
-#elemDim{display:flex;flex-direction:column;gap:6px}
-#elemDim[hidden]{display:none}
+/* La palette de reprise des géométries emprunte celle des libellés : même
+   place, même allure, et les deux ne servent jamais en même temps. */
+#elemDim,#geoDim{display:flex;flex-direction:column;gap:6px}
+#elemDim[hidden],#geoDim[hidden]{display:none}
 #elemTraitReg{display:flex;flex-direction:column;gap:6px}
 #elemTraitReg[hidden]{display:none}
 /* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
@@ -910,12 +922,15 @@ html.sans-image-stand .outils #imageSoc{display:none}
   border:1px solid var(--line);border-radius:var(--radius)}
 .elem input:focus{border-color:var(--accent);outline:none}
 
-#poignees{pointer-events:none}
-#poignees .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
+/* Les poignées d'une forme dessinée et celles d'un emplacement repris se
+   ressemblent parce que c'est le même geste : chacune a son calque, les deux
+   modes ne s'ouvrant jamais ensemble. */
+#poignees,#poigneesGeo{pointer-events:none}
+#poignees .cadreSel,#poigneesGeo .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
   stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.8}
-#poignees .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
+#poignees .pgn,#poigneesGeo .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
   vector-effect:non-scaling-stroke;pointer-events:auto}
-#poignees .pgn:hover{fill:var(--accent-soft)}
+#poignees .pgn:hover,#poigneesGeo .pgn:hover{fill:var(--accent-soft)}
 .outilsPied{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-3)}
 .calq .mv{width:15px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1;padding:0}
 .calq .mv:hover{color:var(--ink)}
@@ -4532,6 +4547,27 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <input id="libTaille" type="range" min="0.4" max="3" step="0.05" value="1"></label>
       <button class="auto" id="libAuto">Placement automatique</button>
       <div class="outilsPied"><span id="libAide"></span></div>
+    </div>
+
+    <!-- Reprendre la géométrie d'un emplacement. La palette s'ouvre avec le
+         mode, avant même qu'une forme soit choisie : c'est elle qui dit qu'on
+         y est, et par où en sortir. -->
+    <div class="outils libreg" id="geoReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="geoNom"></span>
+        <span class="outilsActs">
+          <button id="geoFerme" title="Terminer — Échap"
+            aria-label="Terminer la reprise des géométries">&times;</button>
+        </span>
+      </div>
+      <div id="geoDim" hidden>
+        <label class="elemChamp"><span>Largeur</span>
+          <input id="geoLargeur" type="number" min="0.1" max="999" step="0.5"></label>
+        <label class="elemChamp"><span>Hauteur</span>
+          <input id="geoHauteur" type="number" min="0.1" max="999" step="0.5"></label>
+      </div>
+      <button class="auto" id="geoOrigine">Géométrie d'origine</button>
+      <div class="outilsPied"><span id="geoAide"></span></div>
     </div>
 
     <div class="modale" id="modale">
