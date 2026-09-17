@@ -20944,6 +20944,26 @@ function confsARappeler(){
 }
 
 /**
+ * L'heure que la source donne à une conférence, ramenée à la minute.
+ *
+ * Elle part avec le rappel, non pour être lue mais pour être relue : le serveur
+ * la compare au programme à chaque synchronisation, et oublie le rappel dont
+ * l'heure a bougé depuis (`oublie_rappels_perimes`). Sans ce relevé, un rappel
+ * posé dix jours avant le salon partirait à l'heure d'alors, et annoncerait un
+ * horaire qui n'existe plus.
+ *
+ * Les deux champs y entrent, et non celui que `instantConf` a retenu : ce qu'on
+ * cherche n'est pas l'instant — le serveur ne sait pas analyser une date comme
+ * la page — mais de savoir si la source a changé d'avis. À la minute, parce
+ * qu'un export qui ajoute des secondes ne déplace aucune conférence.
+ *
+ * La forme est celle que `empreinte_debut` refait côté base : les deux doivent
+ * écrire la même chaîne, sans quoi tout rappel passerait pour démenti.
+ */
+const heureVue = v => String(v || "").replace(/ /g, "T").slice(0, 16);
+const empreinteDebut = c => heureVue(c.debutLocal) + "|" + heureVue(c.debut);
+
+/**
  * Ce qu'on demande au serveur de garder, et rien de plus.
  *
  * Un rappel dont l'heure est déjà passée ne part pas : le visiteur a pu poser
@@ -20964,6 +20984,7 @@ function rappelsDuParcours(){
       return {
         conf: String(r.c.id),
         envoi_a: new Date(r.t - avant).toISOString(),
+        debut_vu: empreinteDebut(r.c),
         titre: r.c.nom || traduit("Conférence"),
         corps: detail,
         adresse: adresseDuRappel(r.c.id),

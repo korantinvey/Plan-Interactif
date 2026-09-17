@@ -1485,6 +1485,27 @@ Deno.serve(async (req) => {
         () => {},
       );
 
+      /* Et l'oubli des rappels que le programme vient de démentir.
+       *
+       * Sa place est ici, l'instantané tout juste réécrit : ce que la page
+       * servira est posé, et c'est à lui qu'un rappel en attente doit être
+       * confronté. Un rappel posé dix jours avant le salon porte l'heure de ce
+       * jour-là, et personne ne la relit si le visiteur ne rouvre pas le plan —
+       * une conférence décalée d'une heure partirait donc à l'ancienne, ce qui
+       * est pire que ne rien envoyer (voir la migration du même nom).
+       *
+       * Un échec se tait, comme la purge : la synchronisation, elle, a réussi,
+       * et la prochaine repassera par ici.
+       */
+      await db.rpc("oublie_rappels_perimes", { p_evenement: evt.id }).then(
+        ({ data, error }) => {
+          if (!error && data) {
+            console.log("Rappels démentis par le programme : " + data + " oubliés.");
+          }
+        },
+        () => {},
+      );
+
       // Le compte des libellés dit tout de suite si la codification a répondu :
       // sans lui, un plan rempli de codes passerait pour un plan correct.
       return emet({

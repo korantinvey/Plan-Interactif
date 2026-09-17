@@ -1386,6 +1386,28 @@ point, le service de poussée le jette au lieu de le remettre : un téléphone
 rallumé en fin de journée n'annonce pas une conférence terminée depuis des
 heures.
 
+**Un programme qui bouge sous un rappel déjà posé.** Ce qui part au serveur est
+figé : l'heure d'envoi et le texte tout prêt, composés le jour où le visiteur a
+dit oui. Rien ne les relit ensuite — seule la réouverture de la page repose la
+liste entière, et celui qui s'est abonné dix jours avant le salon ne rouvre
+parfois rien avant le jour même. Une conférence décalée d'une heure ou annulée
+entre-temps partirait donc à l'ancienne heure, et annoncerait un horaire qui
+n'existe plus : c'est pire qu'un rappel manquant, puisque le visiteur y croit.
+Chaque rappel emporte donc l'heure que la source donnait alors, et la
+synchronisation, une fois l'instantané réécrit, oublie ceux que le programme ne
+confirme plus. On efface plutôt qu'on ne corrige — le texte est composé par la
+page, dans la langue du visiteur, et le serveur ne sait pas le refaire ; la page
+en reposera un exact à la prochaine ouverture. La salle, elle, ne compte pas
+pour un démenti : la notification ouvre la fiche de la conférence, où la salle
+du jour s'affiche.
+
+Ce qui ne se rattrape pas, en revanche, c'est l'abonnement lui-même. Des données
+de site effacées, une icône retirée de l'écran d'accueil, une adresse que le
+service de poussée renouvelle de son côté : le rappel part alors dans le vide,
+le service répond 404 ou 410, et tout ce que cet appareil attendait s'efface.
+Rouvrir le plan répare tout — un abonnement neuf, une liste reposée —, et c'est
+la seule réparation qu'il y ait.
+
 ## La visite guidée
 
 Le programme d'une salle, le chemin jusqu'à elle, le parcours qu'on se compose,

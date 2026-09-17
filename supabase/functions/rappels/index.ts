@@ -9,7 +9,8 @@
  *                           "abonnement": { "endpoint": "…", "keys": { … } },
  *                           "rappels": [ { "conf": "…", "envoi_a": "…",
  *                                          "titre": "…", "corps": "…",
- *                                          "adresse": "…", "vie": 900 }, … ] }
+ *                                          "adresse": "…", "vie": 900,
+ *                                          "debut_vu": "…" }, … ] }
  *                         ce que cet appareil attend de ce salon, en entier —
  *                         une liste vide efface tout
  *   POST /rappels/envoi   ce qui est dû à cette minute part maintenant
@@ -118,6 +119,10 @@ async function enregistre(req: Request) {
       corps: String(r?.corps ?? "").slice(0, 400),
       adresse: String(r?.adresse ?? "").slice(0, 500),
       vie: Math.round(Number(r?.vie) || 900),
+      /* L'heure que la page a lue, telle que la source l'écrivait. Elle ne sert
+         pas à l'envoi : elle sert à reconnaître, des jours plus tard, un
+         programme qui a bougé sous un rappel déjà posé. */
+      debut_vu: String(r?.debut_vu ?? "").slice(0, 80),
     }))
     .filter((r) => r.conf && r.titre && !Number.isNaN(Date.parse(r.envoi_a)));
 
