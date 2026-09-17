@@ -24,7 +24,9 @@ L'adresse est `/api/graphql` — sur `app.eventmaker.io` comme sur le domaine du
 salon, indifféremment. Elle est **publique** : ni jeton, ni en-tête ; c'est ce
 que lit le programme du site public, où l'on voit bien les exposants sous
 chaque session. `publicViewer(eventId:)` est la vue du visiteur ; `viewer`, sa
-version connectée, dont nous n'avons pas besoin.
+version connectée, dont le programme n'a pas besoin — c'est elle, en revanche,
+qui porte les rendez-vous pris par un visiteur identifié, et `eventmaker-sso.md`
+dit par où on y entre.
 
 Chaque session y porte trois rôles :
 
