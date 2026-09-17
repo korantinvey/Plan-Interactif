@@ -140,26 +140,17 @@ function majElement(){
 
   majLiens(f.t === "repere" ? f : null);
 
-  /* Une image peut désigner un stand : le logo d'un exposant posé sur son
-     emplacement ouvre sa fiche au clic. */
-  const estImage = f.t === "image";
-  const ch = $("elemStand");
-  if (ch){
-    ch.hidden = !estImage;
-    if (estImage){
-      remplitListeStands();
-      const s = f.stand && parId.get(f.stand);
-      ch.value = s ? etiquetteStand(s) : "";
-    }
-  }
-
-  /* Un stand dessiné, lui, désigne une société et non un emplacement : c'est
-     tout l'objet du découpage, deux enseignes se partageant le même numéro. */
+  /* Le rattachement, pour les deux formes qui en ont un. Un stand dessiné
+     désigne une société et non un emplacement — c'est tout l'objet du
+     découpage, deux enseignes se partageant le même numéro ; une image désigne
+     la même chose pour la même raison, le logo d'une hébergée se posant sur sa
+     part du stand. Un seul champ les sert donc, et une image rattachée après
+     coup atteint les hébergées comme le reste. */
   const cs = $("elemSoc");
   if (cs){
-    const estStandDessine = f.t === "stand";
-    cs.hidden = !estStandDessine;
-    if (estStandDessine){
+    const rattachable = seRattache(f);
+    cs.hidden = !rattachable;
+    if (rattachable){
       remplitListeSocietes();
       const l = societeDeForme(f);
       cs.value = l ? etiquetteSociete(l.o, l.soc) : "";
@@ -292,52 +283,18 @@ function majLiens(f){
       "enchaîneront les plans au lieu de s'arrêter là.";
 }
 
-/** « G55 — SMC2 », ou le seul des deux qui existe. */
-const etiquetteStand = (s) =>
-  [s.code, s.nom].filter(Boolean).join(" — ") || s.id;
-
-/** La liste de choix suit le pavillon courant : un stand d'un autre pavillon
- *  ne pourrait pas porter une image posée ici. */
-function remplitListeStands(){
-  const l = $("listeStands");
-  if (!l) return;
-  l.innerHTML = P().stands
-    .filter(s => s.code || s.nom)
-    .map(s => '<option value="' + esc(etiquetteStand(s)) + '">').join("");
-}
-
-/** Retrouve le stand désigné par ce qui a été saisi. */
-function standSaisi(txt){
-  const v = String(txt || "").trim().toLowerCase();
-  if (!v) return null;
-  const st = P().stands;
-  return st.find(s => etiquetteStand(s).toLowerCase() === v)
-      || st.find(s => String(s.code || "").toLowerCase() === v)
-      || st.find(s => String(s.nom || "").toLowerCase() === v)
-      || null;
-}
-
-function appliqueLiaison(){
-  const cible = formeSel && formeParId(formeSel);
-  if (!cible || cible.f.t !== "image") return;
-  const ch = $("elemStand");
-  const s = standSaisi(ch.value);
-  memorise();
-  if (s){ cible.f.stand = s.id; ch.value = etiquetteStand(s); }
-  else { delete cible.f.stand; ch.value = ""; }
-  enregistreDessins(); dessineDessins(); dessinePoignees();
-}
-
 /**
- * Rattacher un stand dessiné à une société, ou l'en détacher.
+ * Rattacher une forme à une société, ou l'en détacher.
  *
- * Détaché, il reste sur le plan — il a été tracé, on ne l'efface pas dans le
- * dos de qui vient de mal saisir un nom — mais il n'ouvre plus rien et perd
- * son libellé : le plan dit ainsi qu'il attend encore son exposant.
+ * Détachée, elle reste sur le plan — elle a été tracée ou déposée, on ne
+ * l'efface pas dans le dos de qui vient de mal saisir un nom — mais elle
+ * n'ouvre plus rien. Un stand dessiné perd du même coup son libellé : le plan
+ * dit ainsi qu'il attend encore son exposant. Une image, elle, redevient
+ * simplement ce qu'elle montre.
  */
 function appliqueSociete(){
   const cible = formeSel && formeParId(formeSel);
-  if (!cible || cible.f.t !== "stand") return;
+  if (!cible || !seRattache(cible.f)) return;
   const ch = $("elemSoc");
   const l = societeSaisie(ch.value);
   memorise();

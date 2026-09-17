@@ -77,6 +77,7 @@ module.exports = {
   "Ce que le repère est": "What the landmark is",
   "Libellé — « Nord », « A »…": "Label — “North”, “A”…",
   "Exposant à matérialiser": "Exhibitor to draw",
+  "Exposant dont l'image ouvre la fiche — facultatif": "Exhibitor whose details the image opens — optional",
   "Choisir une image…": "Choose an image…",
   "Supprimer — Suppr": "Delete — Del",
   "Passages vers d'autres plans": "Links to other maps",

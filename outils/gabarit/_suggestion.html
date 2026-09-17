@@ -148,6 +148,10 @@ function valeursSugg(cle){
  * lui aussi le seuil.
  */
 function suggestionCourante(){
+  /* L'option d'abord, le réglage ensuite : le salon qui n'a pas pris la
+     recommandation n'a pas d'onglet où la régler, et un réglage écrit avant
+     qu'on la ferme ne doit pas continuer de proposer. */
+  if (!suggestionOfferte()) return null;
   const r = reglageSugg();
   if (r.active !== true) return null;
   // le parcours retiré, il n'y a plus de tiroir où poser la proposition
