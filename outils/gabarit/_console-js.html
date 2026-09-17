@@ -127,7 +127,7 @@ async function fluxFonction(nom, corps, surLigne, trace) {
 function fenetreAvancement(titre, etiquette) {
   let etapes = [], vivante = true, plafond = 0, annoncees = false;
   const compte = new Map();
-  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte, chrono;
+  let rail, noms, pctTxt, quoi, compteTxt, sous, sousJauge, dl, bilan, ecarte, chrono, relais;
   const nb = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
 
   /* Le temps écoulé depuis le clic, affiché en clair.
@@ -200,6 +200,7 @@ function fenetreAvancement(titre, etiquette) {
       '<div class="sync-noms"></div>' +
       '<div class="sync-rail"><span class="sync-depart"></span></div>' +
       '<p class="sync-ecarte" hidden></p>' +
+      '<p class="sync-relais" hidden></p>' +
       '<div class="sync-cours"><span class="sync-quoi"></span>' +
         '<span class="sync-compte mono"></span></div>' +
       '<div class="sync-sous" data-etat="battant"><span></span></div>' +
@@ -217,6 +218,7 @@ function fenetreAvancement(titre, etiquette) {
     bilan = d.querySelector(".sync-bilan");
     ecarte = d.querySelector(".sync-ecarte");
     chrono = d.querySelector(".sync-chrono");
+    relais = d.querySelector(".sync-relais");
     quoi.textContent = "Connexion au serveur…";
   }, [
     /* Le journal se télécharge aussi pendant que ça tourne, et pas seulement
@@ -287,6 +289,20 @@ function fenetreAvancement(titre, etiquette) {
     trace,
 
     /**
+     * Dire que l'avancement ne vient pas du flux, mais d'un relevé au serveur.
+     *
+     * Une fois, et sans plus disparaître : c'est la seule marque visible d'un
+     * flux retenu en chemin. Sans elle, on chercherait la panne du côté de la
+     * synchronisation — qui, elle, se déroule normalement — au lieu de la
+     * chercher entre le serveur et ce poste-là.
+     */
+    avoueReleve() {
+      if (!relais || !relais.hidden) return;
+      relais.hidden = false;
+      relais.textContent = "Flux retenu en chemin — avancement relevé au serveur.";
+    },
+
+    /**
      * La liste des étapes. `pressenties` distingue celle que la console a
      * devinée pour ne pas ouvrir sur une barre vide de celle que le serveur
      * annonce, qui seule fait foi et remplace la première.
@@ -310,7 +326,13 @@ function fenetreAvancement(titre, etiquette) {
         e.poids = Math.max(0, Number(o.poids) || 0);
         refaire = true;
       }
-      if (o.info !== undefined) e.det = String(o.info);
+      /* Le détail d'une étape sans segment s'affiche sous la barre, dans la
+         ligne des écartées : une étape qui pesait déjà zéro n'en refait pas
+         une, et son « non synchronisé » ne s'y serait jamais posé. */
+      if (o.info !== undefined && e.det !== String(o.info)) {
+        e.det = String(o.info);
+        if (e.poids <= 0) refaire = true;
+      }
       if (o.fait !== undefined) {
         /* Sans total connu — les catégories Eventmaker ne disent pas combien
            de fiches elles portent — l'estimation d'après la dernière
@@ -2522,6 +2544,83 @@ function etapesPressenties(e) {
   ];
 }
 
+/* Le rythme du relevé de secours.
+
+   Le silence se mesure sur le battement du flux, non sur ses lignes : la
+   lecture des fiches ou l'allègement d'un calque tiennent la ligne muette
+   pendant des dizaines de secondes sans que rien n'aille mal, et c'est
+   justement pour le dire que la fonction pousse du remplissage toutes les deux
+   secondes. Cinq secondes sans un octet, ce sont donc deux battements manqués
+   — un retard que la lenteur seule n'explique plus.
+
+   Puis deux secondes entre deux lectures, soit l'ordre de grandeur du dépôt
+   d'en face : une écriture par seconde et demie au plus. */
+const RELEVE_SILENCE = 5000, RELEVE_RYTHME = 2000;
+
+/**
+ * L'avancement relu sur la fiche du salon, quand le flux ne passe pas.
+ *
+ * Le flux ne parvient pas partout : un antivirus qui inspecte le TLS, un
+ * relais d'entreprise, un compresseur qui attend d'avoir de quoi remplir son
+ * bloc gardent la réponse entière et ne la rendent qu'à la fin. La fenêtre
+ * reste alors sur « Connexion au serveur… » toute la synchronisation durant,
+ * puis affiche le bilan d'un coup — sur un poste, quand le téléphone d'à côté
+ * déroule les étapes du même salon. Le serveur a déjà fait tout ce qu'il peut
+ * pour que le flux traverse ; ce qui le retient est de l'autre côté.
+ *
+ * On lit donc ailleurs ce qu'on n'arrive pas à recevoir : la fonction dépose
+ * où elle en est sur la ligne du salon, et une requête ordinaire va l'y
+ * chercher. Elle rejoue les mêmes lignes que le flux, si bien que la fenêtre
+ * ignore laquelle des deux voies la nourrit.
+ *
+ * Le relevé se reconnaît à un jeton tiré ici et passé à la fonction, non à sa
+ * date : comparer l'horloge du serveur à celle du poste reviendrait à confier
+ * l'affichage au réglage de ce dernier. Un jeton qui ne correspond pas — une
+ * fonction d'avant qui ne le renvoie pas encore, un relevé qu'une
+ * synchronisation morte a laissé là — laisse simplement le secours muet.
+ */
+function suitAuServeur(id, jeton, applique, vue) {
+  let vivant = true, minuteur = null, annonce = false;
+  let dernierSigne = Date.now();
+
+  const tour = async () => {
+    /* Le secours se retire tant que le flux donne signe de vie — mais il ne se
+       retire pas pour de bon : une réponse rendue par à-coups, ou dont seul le
+       premier tronçon passe avant qu'un tampon ne se referme, laisserait
+       sinon la fenêtre muette pour tout le reste. */
+    if (vivant && Date.now() - dernierSigne >= RELEVE_SILENCE) {
+      try {
+        const r = await rest("evenement?id=eq." + id + "&select=sync_avancement");
+        const etat = r?.[0]?.sync_avancement;
+        if (vivant && etat && etat.jeton === jeton) {
+          const lignes = etat.lignes || [];
+          vue.trace({ evt: "releve", lignes: lignes.length });
+          vue.avoueReleve();
+          lignes.forEach((o) => {
+            /* L'annonce des étapes refait la barre et remet chacune à zéro :
+               la rejouer à chaque tour la ferait clignoter pour rien. */
+            if (o.etapes && annonce) return;
+            if (o.etapes) annonce = true;
+            applique(o);
+          });
+        }
+      } catch (err) {
+        // une lecture manquée n'est qu'un tour perdu : la synchronisation, elle,
+        // suit son cours de son côté
+        vue.trace({ evt: "releve-refuse", message: err.message });
+      }
+    }
+    if (vivant) minuteur = setTimeout(tour, RELEVE_RYTHME);
+  };
+
+  minuteur = setTimeout(tour, RELEVE_SILENCE);
+  return {
+    /** Un octet est arrivé par le flux : c'est qu'il n'a pas été retenu. */
+    signeDeVie() { dernierSigne = Date.now(); },
+    arrete() { vivant = false; clearTimeout(minuteur); },
+  };
+}
+
 async function synchronise(e) {
   const b = $("btnSync");
   if (b) b.disabled = true;
@@ -2531,16 +2630,31 @@ async function synchronise(e) {
   const vue = fenetreAvancement("Synchronisation — " + (e.nom || "salon"), e.nom);
   vue.ouvre(etapesPressenties(e), true);
   let enCours = null;
+  // ce qu'une ligne change à la fenêtre, qu'elle vienne du flux ou du relevé
+  const suit = (o) => {
+    if (o.etapes) vue.ouvre(o.etapes);
+    else if (o.chiffres) vue.chiffres(o.chiffres);
+    else if (o.etape) {
+      if (o.etat === "encours") enCours = o.etape;
+      vue.pas(o);
+    }
+  };
+  /* Le secours est armé dès le départ et se tait tant que le flux coule : là
+     où celui-ci passe, il n'aura pas lu une seule fois. */
+  const jeton = (crypto.randomUUID && crypto.randomUUID()) ||
+    String(Date.now()) + String(Math.random()).slice(2);
+  const releve = suitAuServeur(e.id, jeton, suit, vue);
+  /* Ce qui tient le flux pour vivant, ce sont ses octets et non ses lignes :
+     une étape muette pendant une minute continue de recevoir le remplissage
+     que la fonction pousse toutes les deux secondes. */
+  const trace = (o) => {
+    if (o.evt === "troncon" || o.evt === "reponse") releve.signeDeVie();
+    vue.trace(o);
+  };
   signale("Synchronisation en cours…");
   try {
-    const j = await fluxFonction("sync-evenement", { evenementId: e.id }, (o) => {
-      if (o.etapes) vue.ouvre(o.etapes);
-      else if (o.chiffres) vue.chiffres(o.chiffres);
-      else if (o.etape) {
-        if (o.etat === "encours") enCours = o.etape;
-        vue.pas(o);
-      }
-    }, vue.trace);
+    const j = await fluxFonction("sync-evenement", { evenementId: e.id, jeton },
+      suit, trace);
     if (!j) throw new Error("Synchronisation interrompue avant la fin.");
     const pav = j.pavillons || [];
     const total = pav.reduce((a, p) => a + (p.stands || 0), 0);
@@ -2575,6 +2689,7 @@ async function synchronise(e) {
     vue.fini(err.message, "echec");
     signale(err.message, true);
   } finally {
+    releve.arrete();
     if ($("btnSync")) $("btnSync").disabled = false;
   }
 }
