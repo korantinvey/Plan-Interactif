@@ -505,15 +505,18 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 156 · `toileMarque` 222 · `vignetteDeLogo` 246
 
-### `_mesure.html` — 429 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 622 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
 
 Fonctions :
 
 `mesureOuverte` 61 · `jetonMesure` 64 · `jourIso` 103 · `echeanceMesure` 104
-`jetonRetenu` 128 · `supportMesure` 177 · `renouvelleVisiteur` 228 · `envoieMesures` 250
-`mesure` 292 · `effaceJetonsVisiteur` 346 · `refuseMesure` 364 · `ouvreConfidentialite` 382
+`jetonRetenu` 128 · `supportMesure` 177 · `renouvelleVisiteur` 228 · `fraisEnFile` 295
+`litLaFile` 299 · `ecritLaFile` 312 · `metEnFile` 327 · `retireDeLaFile` 338
+`chargeDe` 349 · `envoiePaquet` 362 · `beaconne` 387 · `pousseLaFile` 408
+`envoieMesures` 427 · `mesure` 464 · `effaceJetonsVisiteur` 530 · `refuseMesure` 548
+`ouvreConfidentialite` 568
 
 ### `_modales.html` — 189 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -654,12 +657,13 @@ Fonctions :
 `poseSuggestion` 302 · `fenetreSuggestion` 316 · `relevePalmares` 355 · `etiquetteSugg` 375
 `voletSuggestion` 385
 
-### `_sw.js` — 340 l. → sw.js
+### `_sw.js` — 556 l. → sw.js
 
 Fonctions :
 
-`range` 101 · `oublieLesVersionsDAvant` 127 · `dabordCache` 148 · `borneLesLots` 184
-`dabordReseau` 206 · `navigation` 223
+`estUneTuile` 121 · `range` 147 · `oublieLesVersionsDAvant` 173 · `dabordCache` 194
+`borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
+`tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
 ### `_tutoriel.html` — 880 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -752,9 +756,9 @@ corriger dans `outils/gabarit/` ne les changera pas.
 
 (aucune fonction de premier niveau)
 
-### `supabase/functions/mesure/index.ts` — 155 l.
+### `supabase/functions/mesure/index.ts` — 173 l.
 
-`jeton` 73 · `client` 76
+`jeton` 80 · `client` 83
 
 ### `supabase/functions/plan-public/index.ts` — 1000 l.
 
@@ -816,6 +820,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260915115829_le_rappel_avant_une_conference.sql` — rappel_de_conference, fn enregistre_rappels, fn rappels_dus, fn oublie_abonnement, fn purge_rappels
 - `20260915131103_programmer_vraiment_la_tache_des_rappels.sql` — —
 - `20260916232846_l_icone_et_le_nom_de_l_application_installee.sql` — evenement
+- `20260916235956_les_mesures_qui_ont_attendu_le_reseau.sql` — fn enregistre_mesures
 
 ## Le reste
 

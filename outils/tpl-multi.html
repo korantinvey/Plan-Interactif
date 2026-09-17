@@ -25761,30 +25761,202 @@ const MESURE_PAQUET = 20;
 const MESURE_DELAI = 30000;
 let _gestes = [], _envoiDiffere = null;
 
+/* ------------------------------------------------------------
+   La file : ce qui n'a pas pu partir
+
+   Le plan se consulte sans réseau — le service de second plan garde ce qui a
+   déjà servi (`_sw.js`) — et c'est justement là qu'on mesurait le moins :
+   `fetch` échouait, le `catch` se taisait, et la demi-journée passée au fond
+   d'un hall de béton ne comptait pour rien. L'organisateur lisait un salon
+   désert aux heures où il était plein, c'est-à-dire l'inverse de ce qui s'était
+   passé.
+
+   Un paquet qui n'aboutit pas est donc rangé sur l'appareil, et repart de
+   lui-même : au retour du réseau, ou à la prochaine ouverture du plan. C'est le
+   geste de `rattrapeRetard` (`_pousse.html`), et pour la même raison — personne
+   ne viendra cliquer à la place du visiteur.
+
+   Il emporte le temps qu'il a attendu, sans quoi une matinée sans réseau
+   s'entasserait à midi, à la minute où revient la barre.
+   ------------------------------------------------------------ */
+
+/* Une seule file pour tous les plans du domaine, et non une par salon : chaque
+   paquet porte déjà le sien, si bien que rouvrir n'importe quel plan renvoie
+   tout ce qui attend — y compris ce qu'a laissé un salon qu'on ne rouvrira
+   jamais. Le refus, qui vaut lui aussi pour tous, la vide d'un coup. */
+const CLE_FILE = "plan-mesures";
+
+/* Trente paquets de vingt gestes : de quoi tenir une visite entière sans
+   réseau, pour quelques dizaines de kilo-octets. Au-delà, c'est le plus ancien
+   qui cède — une mesure perdue vaut mieux qu'un stockage plein, où le
+   navigateur jetterait tout ce que le plan a rangé là, le parcours du visiteur
+   avec.
+
+   Sept jours : un salon en dure trois. Ce qui attend encore après cela ne sera
+   plus lu de personne — le rapport est rendu — et la base refuse de toute façon
+   de dater un paquet de plus d'un mois. */
+const MESURE_FILE_MAX = 30;
+const MESURE_FILE_JOURS = 7;
+
+/* Quand le stockage refuse — navigation privée, cadre tiers cloisonné, quota
+   plein — la file finit la visite en mémoire. Elle ne survivra pas à la
+   fermeture de l'onglet, mais elle survit à la coupure, et c'est l'essentiel de
+   ce qu'on venait chercher. */
+let _fileVolatile = null;
+
+/* Une entrée lisible, et pas encore périmée. Le contrôle porte sur ce qui vient
+   du stockage : une autre version de la page a pu y ranger autre chose. */
+const fraisEnFile = (e) =>
+  !!e && typeof e.pose === "number" && !!e.paquet && !!e.id &&
+  Date.now() - e.pose < MESURE_FILE_JOURS * 86400000;
+
+function litLaFile(){
+  if (_fileVolatile) return _fileVolatile;
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_FILE) || "[]");
+    return Array.isArray(v) ? v.filter(fraisEnFile) : [];
+  } catch (e) {
+    /* La lecture seule lève quand le navigateur refuse le stockage de site :
+       on bascule ici plutôt qu'à la première écriture, sans quoi chaque paquet
+       repasserait par l'exception. */
+    return (_fileVolatile = []);
+  }
+}
+
+function ecritLaFile(f){
+  if (_fileVolatile){ _fileVolatile = f; return; }
+  try {
+    if (f.length) localStorage.setItem(CLE_FILE, JSON.stringify(f));
+    else localStorage.removeItem(CLE_FILE);
+  } catch (e) {
+    /* Quota plein : ce qui reste rangé n'est plus à jour et repartirait en
+       double à la prochaine ouverture. On l'efface avant de continuer en
+       mémoire. */
+    try { localStorage.removeItem(CLE_FILE); } catch (err) {}
+    _fileVolatile = f;
+  }
+}
+
+/** Poser un paquet dans la file, et rendre l'entrée qui le porte. */
+function metEnFile(paquet){
+  const entree = { id: jetonMesure(), pose: Date.now(), paquet };
+  const f = litLaFile();
+  f.push(entree);
+  /* Le plus ancien cède quand la file déborde : ce qui vient d'être fait a le
+     plus de chances d'arriver, et le plus vieux est celui dont l'heure est déjà
+     la plus incertaine. */
+  ecritLaFile(f.slice(-MESURE_FILE_MAX));
+  return entree;
+}
+
+const retireDeLaFile = (id) => ecritLaFile(litLaFile().filter(e => e.id !== id));
+
+/**
+ * Le paquet tel qu'il part, avec le temps qu'il a attendu.
+ *
+ * Le recul est une différence entre deux lectures de la même horloge, jamais un
+ * instant : une horloge d'appareil mal réglée — le cas ordinaire d'un visiteur
+ * venu d'un autre fuseau — ne peut donc rien fausser, et le serveur n'a rien à
+ * savoir de l'heure qu'il est ici. Il est tu quand il ne dit rien, c'est-à-dire
+ * presque toujours : le cas courant reste l'envoi immédiat.
+ */
+function chargeDe(entree){
+  const recul = Math.round((Date.now() - entree.pose) / 1000);
+  return JSON.stringify(recul > 0 ? { ...entree.paquet, recul } : entree.paquet);
+}
+
+/**
+ * Un paquet vers le serveur. Rend vrai s'il n'a plus à attendre.
+ *
+ * Un refus du serveur en fait partie : un paquet illisible ou un salon qui
+ * n'est plus publié ne s'arrangeront pas en dormant une nuit, et le garder
+ * bloquerait derrière lui tout ce que la file a de bon. Seules une panne de
+ * réseau et une peine du serveur — dont il peut se relever — font attendre.
+ */
+async function envoiePaquet(entree){
+  try {
+    const r = await fetch(MESURE_API, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: chargeDe(entree), keepalive: true,
+    });
+    return r.ok || (r.status >= 400 && r.status < 500);
+  } catch (e) {
+    // la mesure ne doit jamais gêner la visite : une panne se tait, et attend
+    return false;
+  }
+}
+
+/**
+ * Le départ de la page : `fetch` y est coupé net, `sendBeacon` survit.
+ *
+ * Il ne dit pas si l'envoi est arrivé — il rend vrai dès qu'il a pris la
+ * charge — si bien qu'on retire de la file ce qu'on lui confie, faute d'une
+ * réponse que personne ne serait là pour lire. C'est ce qu'on faisait déjà, et
+ * ce qui se perd ainsi se perdait entièrement avant.
+ *
+ * Hors réseau, en revanche, rien ne part et tout reste en file. C'est le seul
+ * sens où `navigator.onLine` renseigne — « faux » est sûr, « vrai » ne promet
+ * rien (voir `panneDuChargement`) — et c'est celui dont on a besoin ici.
+ */
+function beaconne(){
+  if (!navigator.sendBeacon || navigator.onLine === false) return;
+  const restants = [];
+  for (const e of litLaFile()){
+    let parti = false;
+    // le navigateur borne ce qu'il accepte de garder : au-delà, il refuse
+    try { parti = navigator.sendBeacon(MESURE_API, chargeDe(e)); } catch (err) {}
+    if (!parti) restants.push(e);
+  }
+  ecritLaFile(restants);
+}
+
+let _pousseEnCours = false;
+
+/**
+ * Tout ce qui attend, dans l'ordre où c'est arrivé.
+ *
+ * On s'arrête au premier qui n'aboutit pas : si le réseau manque, il manque
+ * pour les trente, et les lancer tous reviendrait à les perdre tous au même
+ * instant — en trente requêtes.
+ */
+function pousseLaFile(dernier){
+  if (!mesureOuverte()) return;
+  const f = litLaFile();
+  /* La péremption s'applique même quand rien ne part : `litLaFile` l'écarte de
+     ce qu'elle rend, cette écriture-ci l'efface de l'appareil. */
+  ecritLaFile(f);
+  if (!f.length) return;
+  if (dernier) return beaconne();
+  if (_pousseEnCours) return;
+  _pousseEnCours = true;
+  (async () => {
+    for (const e of f){
+      if (!await envoiePaquet(e)) break;
+      retireDeLaFile(e.id);
+    }
+    _pousseEnCours = false;
+  })();
+}
+
 function envoieMesures(dernier){
   clearTimeout(_envoiDiffere);
   _envoiDiffere = null;
-  if (!_gestes.length || !mesureOuverte()) return;
-  /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
-     propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
-     répéter trente fois l'exposerait à se contredire. */
-  const charge = JSON.stringify({
-    slug: SLUG, visiteur: MESURE_VISITEUR,
-    support: MESURE_SUPPORT, retenu: MESURE_RETENU,
-    gestes: _gestes.splice(0, _gestes.length),
-  });
-  /* Au départ de la page, `fetch` est coupé net par le navigateur : le paquet
-     se perdrait, et avec lui les derniers gestes — souvent les plus parlants.
-     `sendBeacon` est fait pour cela, il survit à la fermeture de l'onglet. */
-  try {
-    if (dernier && navigator.sendBeacon &&
-        navigator.sendBeacon(MESURE_API, charge)) return;
-  } catch (e) {}
-  fetch(MESURE_API, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: charge, keepalive: true,
-    // la mesure ne doit jamais gêner la visite : une panne se tait
-  }).catch(() => {});
+  if (!mesureOuverte()) return;
+  if (_gestes.length){
+    /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
+       propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
+       répéter trente fois l'exposerait à se contredire. */
+    metEnFile({
+      slug: SLUG, visiteur: MESURE_VISITEUR,
+      support: MESURE_SUPPORT, retenu: MESURE_RETENU,
+      gestes: _gestes.splice(0, _gestes.length),
+    });
+  }
+  /* Rangé avant d'être tenté, et non après l'échec : au départ de la page, rien
+     de ce qui suit l'appel n'est assuré de s'exécuter — le navigateur peut
+     geler l'onglet entre les deux — et le paquet qu'on perdrait là est
+     justement le dernier, souvent le plus parlant. */
+  pousseLaFile(dernier);
 }
 
 /**
@@ -25840,6 +26012,18 @@ if (MESURE_ACTIVE){
   addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") envoieMesures(true);
   });
+
+  /* Le réseau qui revient est le moment qu'on attendait : ce qui dormait repart
+     sans que le visiteur ait rien à faire. Le contraire, `offline`, ne demande
+     rien — un envoi qui échoue laisse déjà son paquet en file. */
+  addEventListener("online", () => pousseLaFile());
+
+  /* Et ce qu'une visite précédente n'a pas réussi à envoyer — l'onglet fermé
+     dans le sous-sol, la journée entière sans couverture — repart à l'ouverture
+     suivante. À tête reposée : le plan se charge, et ces paquets-là ont déjà
+     attendu des heures. */
+  if (window.requestIdleCallback) requestIdleCallback(() => pousseLaFile(), { timeout: 8000 });
+  else setTimeout(() => pousseLaFile(), 3000);
 }
 
 /* ------------------------------------------------------------
@@ -25885,6 +26069,8 @@ function refuseMesure(refus){
     clearTimeout(_envoiDiffere);
     _envoiDiffere = null;
     _gestes = [];
+    // y compris ce qui attendait le réseau depuis une visite d'avant
+    ecritLaFile([]);
     MESURE_VISITEUR = "";
     effaceJetonsVisiteur();
   } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
@@ -25919,6 +26105,12 @@ function ouvreConfidentialite(){
       "plan pour lui. Les exposants peuvent recevoir les totaux de leur stand, " +
       "jamais le détail d'une visite. Vos réglages et votre parcours restent sur " +
       "votre appareil, pour vous être rendus à la prochaine visite.");
+    /* Le plan se consulte sans réseau, et ce qu'il mesure attend alors sur
+       l'appareil : la notice ne peut pas l'omettre — elle dit ce qui y est
+       écrit, et ces paquets-là en sont. */
+    texte("Sans réseau, le plan reste consultable et ces mesures patientent sur " +
+      "votre appareil, le temps d'une reconnexion. Elles en repartent dès qu'elle " +
+      "a lieu, et s'effacent d'elles-mêmes au bout de " + MESURE_FILE_JOURS + " jours.");
 
     const choix = document.createElement("label");
     choix.className = "refusMesure";
@@ -25936,8 +26128,9 @@ function ouvreConfidentialite(){
 }
 
 if (MESURE_ACTIVE){
-  // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un salon
-  if (MESURE_REFUSEE) effaceJetonsVisiteur();
+  // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un
+  // salon, et les paquets qu'un autre plan n'avait pas pu envoyer
+  if (MESURE_REFUSEE){ effaceJetonsVisiteur(); ecritLaFile([]); }
   $("piedSide").hidden = false;
   $("btnConfidentialite").onclick = ouvreConfidentialite;
 }
