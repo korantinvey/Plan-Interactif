@@ -965,13 +965,46 @@ html.sans-image-stand .outils #imageSoc{display:none}
    largeur était plafonnée à la moitié de l'écran. Le cartouche passait à la
    ligne pour deux pixels manquants, et le « max-width » annoncé plus bas ne
    servait à rien. Ancré des deux côtés, il dispose enfin de toute la largeur. */
+/* Le cartouche est le cadre, et les pastilles défilent dedans : c'est la
+   disposition qu'impose « .bande », dont il reprend le fondu et les flèches
+   (voir plus haut). Une bande estompée sur ses bords ne peut pas porter le
+   cartouche lui-même — le masque dissoudrait son fond et son liseré avec les
+   pastilles qu'il recouvre, et la flèche posée dessus s'effacerait avec.
+
+   « position » l'emporte sur le « relative » de « .bande » par l'ordre du
+   fichier, et ce n'est pas un hasard qu'on subit : le cartouche est ancré au
+   bas du plan, la règle qui le pose vient donc après celle qui le range parmi
+   les bandes. */
 .poi{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;bottom:16px;z-index:12;
-  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(760px,72%);
+  max-width:min(760px,72%);
   padding:7px 9px;background:var(--surface);border:1px solid var(--line);
   /* le rayon commun vaut 3 px : des angles presque vifs autour de pastilles
      entièrement rondes, et posés sur un tiroir aux coins adoucis */
   border-radius:12px;box-shadow:var(--shadow)}
 .poi[hidden]{display:none}
+.poiDefile{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+/* La flèche du cartouche est plus discrète que celle des bandes de critères.
+   Là elle surmonte un panneau, où un bouton de plus ne surprend personne ; ici
+   elle se pose sur le plan, au bas de l'écran, et le disque blanc bordé qui la
+   porte ailleurs ajoutait deux commandes à un cartouche qui n'en demandait pas
+   — on les prenait pour des pastilles muettes, entre celles qui le sont. Le
+   chevron seul donc, à demi effacé : assez pour dire par où pousser, trop peu
+   pour qu'on l'appuie en croyant choisir. C'est l'opacité qui répond au doigt,
+   faute de disque à peindre.
+
+   Sous lui un fondu rond, et non un disque : nu, le chevron se confondait avec
+   la dernière lettre de la pastille qu'il surmonte — on lisait
+   « Restauration› ». Une tache de la couleur du cartouche, sans bord ni ombre,
+   le détache sans rien dessiner. Elle est tirée du jeton et non du blanc : un
+   modèle qui repeint le cartouche repeint la tache avec, sinon elle resterait
+   claire sur un fond qui ne l'est plus. */
+.poi .fleche{width:25px;height:25px;margin-top:-12px;
+  border:0;box-shadow:none;color:var(--ink-2);opacity:.72;
+  background:radial-gradient(closest-side,var(--surface) 38%,transparent)}
+.poi .fleche svg{width:13px;height:13px;stroke-width:2.2}
+.poi .fleche:active{opacity:1}
+.poi[data-gauche] .fleche[data-vers="-1"]{left:1px}
+.poi[data-droite] .fleche[data-vers="1"]{right:1px}
 .poiBtn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
   border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
   font-size:12px;cursor:pointer}
@@ -1065,6 +1098,13 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    barre de défilement est masquée : elle aurait mangé, sous les pastilles, le
    tiers de ce qu'on venait de gagner.
 
+   Restait à le dire. Une pastille coupée net au bord du cartouche se lit comme
+   un défaut de cadrage et non comme une invitation à pousser : sans barre de
+   défilement, rien n'annonçait la moitié des points d'intérêt du hall. Le
+   cartouche est donc une « .bande » comme les critères retenus — le bord par
+   lequel il reste quelque chose s'estompe et porte une flèche, qui le dit et
+   le fait. Arrivé au bout, plus rien ne s'efface.
+
    « justify-content » repasse au début : centré, un contenu plus large que son
    cadre déborde des deux côtés et le premier bouton devient inatteignable.
    Tant que tout tient, le cartouche reste centré par ses marges automatiques —
@@ -1085,13 +1125,17 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
      « overscroll-behavior-x » retient le bout de course : arrivé à la dernière
      pastille, l'élan continuait sur la page et faisait revenir la barre par
      l'autre chemin. */
-  .poi{max-width:calc(100% - 24px);bottom:12px;
-    flex-wrap:nowrap;justify-content:flex-start;
+  /* Le cadre garde la même permission que la bande qu'il porte : le geste est
+     autorisé par l'intersection des valeurs rencontrées jusqu'à la zone qui
+     défile, et le plan la refuse juste au-dessus. */
+  .poi{max-width:calc(100% - 24px);bottom:12px;padding:6px 8px;
+    touch-action:pan-x pinch-zoom}
+  .poiDefile{flex-wrap:nowrap;justify-content:flex-start;
     overflow-x:auto;overflow-y:hidden;
     touch-action:pan-x pinch-zoom;overscroll-behavior-x:contain;
     scrollbar-width:none;-ms-overflow-style:none;
-    gap:5px;padding:6px 8px}
-  .poi::-webkit-scrollbar{display:none}
+    gap:5px}
+  .poiDefile::-webkit-scrollbar{display:none}
   /* Sans cela les pastilles se compriment au lieu de déborder : le libellé s'y
      coupait en deux lignes, et le cartouche regagnait la hauteur qu'on venait
      de lui retirer. */
@@ -4310,7 +4354,22 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
          n'a pas dessinées, et elle ne paraît que lorsqu'il y en a. -->
     <div class="creditCarte" id="creditCarte" hidden></div>
     <div class="mention-osm" id="mentionOsm" hidden>© les contributeurs d'OpenStreetMap</div>
-    <div class="poi" id="poi" hidden></div>
+    <!-- Le cartouche des points d'intérêt est une bande de pastilles dans un
+         cadre, comme les critères retenus : le cadre ne défile pas, c'est lui
+         qui porte les flèches. Elles sont hors de la bande, sinon le fondu les
+         effacerait avec les pastilles qu'elles surmontent. Voir « .bande » et
+         « majFondus ». -->
+    <div class="poi bande" id="poi" hidden>
+      <div class="poiDefile defile" id="poiDefile"></div>
+      <button class="fleche" type="button" data-vers="-1" tabindex="-1"
+        aria-label="Revenir au début">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <button class="fleche" type="button" data-vers="1" tabindex="-1"
+        aria-label="Voir la suite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </button>
+    </div>
     <div class="viseur" id="viseur" hidden>
       <span id="viseurTxt"></span>
       <button type="button" id="viseurStop">Annuler</button>
