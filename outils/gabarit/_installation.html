@@ -125,22 +125,34 @@ const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" 
    Le nom que l'appareil retiendra
    ------------------------------------------------------------ */
 /**
- * Nommer l'application du salon qu'on regarde.
+ * Nommer et habiller l'application du salon qu'on regarde.
  *
- * Le manifeste le porte déjà : la page y nomme le salon, le relais va chercher
- * son nom et l'écrit — « Plan SMCL by Event2Plan » (`outils/pwa.js`,
- * `src/index.mjs`). iOS, lui, ne lit pas le manifeste pour l'écran d'accueil :
- * il prend `apple-mobile-web-app-title`, une balise écrite avec la page, donc
- * avant que le salon soit connu, et l'icône se posait sous « Plan » quel que
- * soit le salon. Elle est relue au moment de l'ajout — la corriger dès les
- * données arrivées suffit à ce que l'icône porte le bon nom.
+ * Le manifeste porte déjà les deux : la page y nomme le salon, le relais va
+ * chercher son nom, ses icônes et l'écrit — « Plan SMCL by Event2Plan », ou ce
+ * que le salon a choisi (`outils/pwa.js`, `src/index.mjs`,
+ * `_application.html`). iOS, lui, ne lit pas le manifeste pour l'écran
+ * d'accueil : il prend `apple-mobile-web-app-title` et `apple-touch-icon`, des
+ * balises écrites avec la page, donc avant que le salon soit connu — l'icône
+ * se posait sous « Plan », et sous la marque du produit, quel que soit le
+ * salon. Les deux sont relues au moment de l'ajout : les corriger dès les
+ * données arrivées suffit.
  *
- * Le salon seul, comme dans le manifeste : sous une icône, la place est d'une
- * douzaine de signes, et c'est le salon qu'on y cherche.
+ * Le nom écrit par l'exploitant l'emporte, et à défaut le salon seul, comme
+ * dans le manifeste : sous une icône, la place est d'une douzaine de signes,
+ * et c'est le salon qu'on y cherche.
+ *
+ * L'icône posée est celle des deux que le système ne peut pas abîmer : la
+ * version opaque, faite pour être rognée. iOS ne garde pas la transparence
+ * d'une icône d'écran d'accueil — il la remplit de noir — et un logo sombre
+ * sur fond transparent y disparaissait.
  */
 function nommeApplication(nom){
   const balise = document.querySelector("meta[name=apple-mobile-web-app-title]");
-  if (balise && nom) balise.content = nom;
+  const choisi = appDuSalon().nom || nom;
+  if (balise && choisi) balise.content = choisi;
+  const lien = document.querySelector('link[rel="apple-touch-icon"]');
+  const sienne = iconeDeLApplication(true);
+  if (lien && sienne) lien.href = sienne;
 }
 
 /* ------------------------------------------------------------
@@ -549,12 +561,17 @@ const ETAPES_INSTALLATION = {
 
 /* L'icône est celle que l'écran d'accueil montre, et le nom du salon celui que
    le visiteur a sous les yeux : les deux ensemble disent ce qu'on installe,
-   mieux qu'une phrase. */
+   mieux qu'une phrase. Celle du salon quand il en a déposé une, et la version
+   opaque pour la même raison qu'iOS la reçoit : c'est ici un carré arrondi
+   posé sur le fond de la fenêtre, où un logo transparent joue à cache-cache
+   avec le thème du visiteur. */
 function teteInvitation(corps, sousTitre){
   const tete = document.createElement("div");
   tete.className = "instTete";
   tete.innerHTML = '<img class="instIcone" src="icone.svg" alt="" width="52" height="52">' +
     "<div><b></b><span></span></div>";
+  const sienne = iconeDeLApplication(true);
+  if (sienne) tete.querySelector("img").src = sienne;
   tete.querySelector("b").textContent =
     String((DATA && DATA.evenement) || "").trim() || "Plan du salon";
   tete.querySelector("span").textContent = sousTitre;

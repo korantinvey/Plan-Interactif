@@ -155,6 +155,7 @@ function appliqueApparence(){
                             conf(k).visible === false));
   appliqueCouleursData();
   appliqueCommandes();
+  appliqueOptions();
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
@@ -213,6 +214,104 @@ function appliqueCommandes(){
 }
 
 /**
+ * Les options du plan.
+ *
+ * Toutes les fonctions du plan ne reviennent pas à tous les salons. Le dessin
+ * des stands, les images posées sur un emplacement, la journée organisée, le
+ * programme de conférences et la recommandation d'un exposant se prennent à
+ * part : un salon de trente enseignes n'en veut aucune, un congrès les veut
+ * toutes. Jusqu'ici la seule façon d'en retirer une était de ne pas s'en
+ * servir — ce qui ne vaut rien, l'organisateur ayant la main sur son plan.
+ *
+ * D'où cette liste, dans l'onglet « Admin » et nulle part ailleurs : c'est
+ * l'exploitant qui l'ouvre à l'ouverture du salon, et l'organisateur n'y
+ * trouverait que de quoi fermer ce qu'on lui a vendu.
+ *
+ * Ouvertes par défaut, comme les commandes : un réglage absent ne doit rien
+ * retirer à un salon déjà en place.
+ *
+ * Fermer une option retire la porte, jamais ce qui est derrière — c'est la
+ * règle du parcours de visite, qui se retire sans vider les listes déjà
+ * constituées. Les stands et les images déjà dessinés restent sur le plan, les
+ * conférences restent dans l'instantané, ce qui était réglé pour la suggestion
+ * reste écrit : rouvrir l'option retrouve le tout.
+ *
+ * Une seule chose ne se rend pas, et la case le dit : le parcours d'un
+ * visiteur ne garde que ce que le plan connaît encore (« chargeParcours »).
+ * Celui qui rouvre le plan pendant que le programme est fermé y perd donc les
+ * conférences qu'il avait retenues.
+ *
+ * « classe » marque celles qui se ferment par la feuille de style — un bouton
+ * de la boîte à outils, celui du tiroir du parcours ; « apres » dit ce qui se
+ * refait sur-le-champ pour les autres.
+ */
+const OPTIONS = [
+  { cle: "dessinStand", classe: "sans-dessin-stand",
+    libelle: "Dessin des stands",
+    aide: "L'outil qui matérialise un exposant, ou l'une des enseignes qu'il " +
+      "héberge, sur sa part d'un emplacement. Fermée, l'outil quitte la boîte " +
+      "à outils ; les découpages déjà tracés restent sur le plan.",
+    // l'outil qu'on vient de fermer ne peut pas rester celui qu'on tient
+    apres: () => { if (outil === "stand") choisitOutil("main"); } },
+  { cle: "imageStand", classe: "sans-image-stand",
+    libelle: "Ajout d'images liées à un stand",
+    aide: "Le rattachement d'une image du dessin à un exposant : le logo posé " +
+      "sur son emplacement ouvre sa fiche au toucher, celle de l'enseigne " +
+      "désignée même sur un stand partagé. C'est le lien qui se prend, non " +
+      "l'image : fermée, l'outil image reste et les images se posent comme " +
+      "n'importe quel dessin, mais le champ qui nomme l'exposant s'en va et " +
+      "plus aucune ne se relie. Celles qui l'étaient gardent leur lien.",
+    /* Le champ paraît et s'en va tout seul, la feuille de style s'en charge.
+       Sa liste de choix, elle, n'est remplie qu'en prenant l'outil : on la
+       remplit ici pour l'exploitant qui ouvre l'option l'outil déjà en main. */
+    apres: () => { if (outil === "image" && optionActive("imageStand")) remplitListeSocietes(); } },
+  { cle: "journee", classe: "sans-journee",
+    libelle: "Organiser ma journée",
+    aide: "Le bouton du tiroir du parcours, qui met en heures les stands et " +
+      "les conférences retenus et trace le trajet d'un bout à l'autre. " +
+      "Fermée, le parcours reste une liste. Elle se calcule avec le moteur de " +
+      "l'itinéraire : la commande retirée plus haut emporte le bouton avec elle." },
+  { cle: "programme",
+    libelle: "Programme de conférences",
+    aide: "Les conférences du salon : le programme d'une zone, celles qu'un " +
+      "exposant anime sur sa fiche, la recherche par titre, les horaires que " +
+      "le parcours retient et les rappels qui vont avec. Fermée, le plan se " +
+      "comporte comme un salon qui n'a pas de programme — la synchronisation " +
+      "continue pourtant de le rapporter. Un visiteur qui rouvre le plan " +
+      "entre-temps perd de son parcours les conférences qu'il avait retenues : " +
+      "il ne garde que ce que le plan connaît encore.",
+    /* Le programme n'est pas une commande qu'on masque : c'est un index qu'on
+       refait, et tout ce qui le lit part de là. La liste affichée derrière la
+       fenêtre est peut-être un résultat de recherche, et le tiroir du parcours
+       peut être ouvert : les deux obéissent sur-le-champ. */
+    apres: () => { indexeConferences(); liste(); rafraichitParcours(); } },
+  { cle: "suggestion",
+    libelle: "Recommandations sponsorisées",
+    aide: "L'exposant de plus, proposé au visiteur quand plusieurs de ceux " +
+      "qu'il a retenus se ressemblent — le plus consulté du salon sur ce " +
+      "critère, ou celui que l'organisateur a désigné. Fermée, l'onglet " +
+      "« Suggestion » quitte ces réglages et plus rien n'est proposé ; ce qui " +
+      "y était réglé est gardé.",
+    apres: () => rafraichitParcours() },
+];
+
+/** Une option est-elle ouverte à ce salon ? Oui par défaut : un réglage absent
+ *  ne doit rien retirer à un salon déjà en place. */
+const optionActive = (cle) => conf("_options")[cle] !== false;
+
+/* Les deux options que d'autres modules interrogent portent un nom, plutôt que
+   la clé en toutes lettres à chaque appel : elles sont lues loin d'ici — le
+   programme jusque dans l'indexation, la suggestion dans sa propre fenêtre. */
+const programmeOffert = () => optionActive("programme");
+const suggestionOfferte = () => optionActive("suggestion");
+
+function appliqueOptions(){
+  OPTIONS.forEach(o => {
+    if (o.classe) racine.classList.toggle(o.classe, !optionActive(o.cle));
+  });
+}
+
+/**
  * Ce que la recherche a le droit de remonter.
  *
  * Le champ de recherche balaie tout ce que le salon porte, et cela ne convient
@@ -245,8 +344,13 @@ const SORTES_RECHERCHE = [
     aide: "Le titre d'une session, sa salle, son thème, et l'exposant qui " +
       "la tient — souvent le seul nom dont on se souvienne.",
     dispo: () => CONFERENCES.length > 0,
-    absent: "Le programme n'est pas synchronisé : sa source se règle depuis " +
-      "la console, dans « Source des données »." },
+    /* Deux raisons de n'en avoir aucune, et l'exploitant n'a pas le même geste
+       à faire selon celle qui vaut : une option fermée se rouvre d'ici, une
+       source non réglée se règle dans la console. */
+    absent: () => programmeOffert()
+      ? "Le programme n'est pas synchronisé : sa source se règle depuis " +
+        "la console, dans « Source des données »."
+      : "Le programme de conférences n'est pas pris sur ce salon." },
   /* Les produits se règlent déjà dans la console — « Produits », source au
      choix — mais la synchronisation les annonce « pas encore repris » et le
      plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
@@ -305,7 +409,10 @@ function voletRecherche(hote){
 
     const aide = document.createElement("p");
     aide.className = "aideR";
-    aide.textContent = dispo ? s.aide : s.absent;
+    /* « absent » est une phrase, ou de quoi en choisir une quand la sorte a
+       plusieurs façons de manquer. */
+    aide.textContent = dispo ? s.aide
+      : (typeof s.absent === "function" ? s.absent() : s.absent);
     bloc.appendChild(aide);
   });
   hote.appendChild(bloc);
@@ -1276,8 +1383,9 @@ function ouvreReglages(ouvrir){
     voletRecherche(volet("Recherche"));
     /* La suggestion suit la recherche pour la même raison : elle parle de ce
        que le visiteur obtient, et elle se lit dans la foulée des critères,
-       qu'elle emprunte. */
-    voletSuggestion(volet(NOM_VOLET_SUGGESTION));
+       qu'elle emprunte. Elle n'a d'onglet que là où le salon l'a prise : son
+       option se ferme depuis « Admin », et l'onglet part avec elle. */
+    if (suggestionOfferte()) voletSuggestion(volet(NOM_VOLET_SUGGESTION));
     /* « Fiche Stand » ferme la série de ce que le visiteur obtient : on ne
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
@@ -1559,20 +1667,29 @@ function voletPlan(hote){
  * plaquette du salon se retournerait contre lui.
  */
 function blocRappel(hote){
+  /* Sans programme, il n'y a pas d'heure à rappeler. La case reste, éteinte
+     plutôt que décochée, comme les sortes de la recherche : le choix fait
+     vaudra le jour où l'option se rouvrira. */
+  const offert = programmeOffert();
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent = "Rappeler les conférences retenues";
+  if (!offert) l.classList.add("eteint");
   const c = l.querySelector("input");
   c.checked = rappelsVoulus();
+  c.disabled = !offert;
   hote.appendChild(l);
 
   const aide = document.createElement("p");
   aide.className = "aideR";
-  aide.textContent = "Le visiteur qui a retenu une conférence peut demander à " +
-    "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
-    "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
-    "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
-    "la conférence.";
+  aide.textContent = offert
+    ? "Le visiteur qui a retenu une conférence peut demander à " +
+      "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
+      "ajouté le plan à son écran d'accueil — sans quoi rien n'est proposé. Les " +
+      "heures et les titres retenus sont alors gardés sur nos serveurs jusqu'à " +
+      "la conférence."
+    : "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas " +
+      "d'horaire à rappeler.";
   hote.appendChild(aide);
 
   const duree = document.createElement("div");
@@ -1591,7 +1708,7 @@ function blocRappel(hote){
   hote.appendChild(duree);
 
   const suit = () => {
-    const actif = rappelsVoulus();
+    const actif = offert && rappelsVoulus();
     duree.hidden = !actif;
     n.value = minutesRappel();
   };
@@ -1757,10 +1874,66 @@ function voletAdmin(hote){
 
   hote.appendChild(bloc);
 
-  /* Le générique du démarrage ferme l'onglet. C'est le plus gros réglage qu'on
-     y trouve, et le seul qui ne soit pas une case : il passe donc après elles,
-     sous son propre intertitre (`_sponsor.html`). */
+  /* Les options viennent après les commandes, sous leur propre intertitre :
+     les premières règlent un plan qu'on a, les secondes disent ce qu'on en a
+     pris. */
+  blocOptions(hote);
+
+  /* Les deux derniers réglages ne sont pas des cases : ils passent donc après
+     toutes celles-ci, chacun sous son intertitre. Ce que porte l'application
+     installée d'abord (`_application.html`) — c'est du même ordre que
+     l'invitation à l'installer, cochée plus haut —, puis le générique du
+     démarrage (`_sponsor.html`), le plus gros de l'onglet, qui le ferme. */
+  blocApplication(hote);
   blocSponsor(hote);
+}
+
+/**
+ * Les options prises par ce salon, dans l'onglet « Admin ».
+ *
+ * Elles ne se mêlent pas aux commandes du dessus, bien que les unes et les
+ * autres soient des cases : une commande retire du plan ce qu'il montre, une
+ * option retire ce qu'il sait faire. L'exploitant décoche les premières
+ * pour un salon qui s'en passe, et ferme les secondes pour un salon qui ne les
+ * a pas prises — deux gestes qu'on ne veut pas confondre en les alignant.
+ *
+ * Chaque case dit ce qu'elle ferme et ce qu'elle laisse en place : fermer une
+ * option n'efface jamais le travail fait sous elle, et c'est la première
+ * question que se pose celui qui s'apprête à la fermer.
+ */
+function blocOptions(hote){
+  const tete = document.createElement("div");
+  tete.className = "titreReg";
+  tete.innerHTML = '<span class="eyebrow"></span><span class="d"></span>';
+  tete.querySelector(".eyebrow").textContent = "Les options du plan";
+  tete.querySelector(".d").textContent = "Ce que ce salon a pris. Une option " +
+    "fermée retire ce qui y mène — un outil de la boîte à outils, un bouton du " +
+    "plan, un onglet de ces réglages — sans défaire le travail fait dessous : " +
+    "la rouvrir le retrouve.";
+  hote.appendChild(tete);
+
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  OPTIONS.forEach(o => {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"><span></span>';
+    l.querySelector("span").textContent = o.libelle;
+    const c = l.querySelector("input");
+    c.checked = optionActive(o.cle);
+    c.onchange = e => {
+      conf("_options")[o.cle] = e.target.checked;
+      enregistreConf();
+      appliqueOptions();
+      if (o.apres) o.apres();
+    };
+    bloc.appendChild(l);
+
+    const aide = document.createElement("p");
+    aide.className = "aideR";
+    aide.textContent = o.aide;
+    bloc.appendChild(aide);
+  });
+  hote.appendChild(bloc);
 }
 
 /**

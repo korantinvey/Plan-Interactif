@@ -81,6 +81,9 @@ const tutoParcours = () => conf("_parcours").visible !== false;
    « _itineraire.html ») : la visite n'a rien à en montrer. */
 const tutoItineraire = () =>
   conf("_itineraire").visible !== false && typeof Path2D !== "undefined";
+/* La journée organisée est une option du plan : le salon qui ne l'a pas prise
+   n'a pas son bouton, et la visite n'a pas de chapitre à lui consacrer. */
+const tutoJournee = () => optionActive("journee");
 
 /**
  * La zone qu'on fait toucher : une zone qui a un programme, et dont la fiche le
@@ -308,8 +311,9 @@ const CHAPITRES_TUTO = [
     titre: "Ma journée",
     resume: "votre parcours mis en ordre, avec les heures",
     /* Organiser sa journée, c'est calculer ses trajets : sans le moteur de
-       l'itinéraire, le bouton n'est pas là (voir « _head.html »). */
-    actif: () => tutoParcours() && tutoItineraire(),
+       l'itinéraire, le bouton n'est pas là (voir « _head.html »). Ni sans
+       l'option, qui le retire de son côté. */
+    actif: () => tutoParcours() && tutoItineraire() && tutoJournee(),
     debut(m){ m.journee = JOURNEE; },
     etape(m){
       const tiroir = tutoOuvert("parcours");

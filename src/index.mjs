@@ -27,7 +27,8 @@
  * pousse ses gestes, le Worker les passe à la fonction, sans rien garder.
  *
  * Reste un dernier détour, sans rapport avec le cache : le manifeste de
- * l'application installée, complété ici du salon d'où l'on installe.
+ * l'application installée, complété ici du salon d'où l'on installe — son nom,
+ * et l'adresse de ses icônes, que ce même script sert de la base.
  */
 const BASE = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/";
 const AMONT = BASE + "plan-public";
@@ -257,11 +258,12 @@ async function oublie(requete, env) {
   if (!qui || !qui.ok) return dit({ erreur: "Session refusée." }, 401);
 
   if (env.CACHE) {
-    /* Le plan, et le nom que porte l'application installée : renommer un salon
-       dans la console doit se voir au même moment que le reste. */
+    /* Le plan, et ce que porte l'application installée : renommer un salon dans
+       la console, y déposer une icône doivent se voir au même moment que le
+       reste. */
     await Promise.all([
       env.CACHE.delete(cleDe(amontPour(new URLSearchParams({ slug })))),
-      env.CACHE.delete("nom1:" + slug),
+      env.CACHE.delete(cleApp(slug)),
       /* Et la version : c'est elle que les pages interrogent, et la garder
          reviendrait à leur dire que rien n'a changé. Les plans rangés sous une
          version révolue restent, sans dommage — plus personne ne les demande,
@@ -358,33 +360,47 @@ async function rappels(requete, url) {
   });
 }
 
-/* Le nom que porte l'application installée : le salon d'abord, la marque en
-   signature — « Plan SMCL by Event2Plan ». */
+/* Le nom que porte l'application installée faute d'un autre : le salon
+   d'abord, la marque en signature — « Plan SMCL by Event2Plan ». */
 const MARQUE = "Event2Plan";
 /* Un nom de salon tient en une ligne. Au-delà, ce n'est plus un nom, et rien
    ne l'afficherait de toute façon : les systèmes coupent bien avant. */
 const NOM_MAX = 64;
+/* L'empreinte que la base calcule de l'icône du salon. Elle entre dans une
+   adresse servie à tous : on ne pose dans le manifeste que ce qui en a la
+   forme. */
+const EMPREINTE = /^[0-9a-f]{8,32}$/;
+
+/** Où l'on garde ce que porte l'application d'un salon. */
+const cleApp = (slug) => "app1:" + slug;
 
 /**
- * Le nom du salon, pour le manifeste de l'application installée.
+ * Ce que porte l'application installée du salon : son nom, et son icône.
  *
  * Le manifeste est lu avant que la page ait appelé l'API : elle ne peut pas y
  * écrire le nom du salon, elle ne le sait pas encore. Elle nomme donc le slug,
- * et c'est d'ici que le nom vient — d'une lecture à part, qui ne rend que deux
- * colonnes là où le plan entier pèse ses stands, ses zones et son icône
- * d'onglet. On ne s'en sert que pour nommer : ce que le système ouvrira,
- * `start_url`, continue de sortir de ce que la page a demandé.
+ * et c'est d'ici que le reste vient — d'une lecture à part, qui ne rend que
+ * quatre colonnes là où le plan entier pèse ses stands, ses zones et son icône
+ * d'onglet. On ne s'en sert que pour nommer et pour habiller : ce que le
+ * système ouvrira, `start_url`, continue de sortir de ce que la page a demandé.
+ *
+ * L'icône n'est pas ramenée, seule son empreinte : le manifeste la désigne par
+ * une adresse, et c'est `iconeApp` qui la sert. Deux images de cinq cents
+ * pixels dans cette lecture-ci auraient traversé le réseau à chaque manifeste
+ * demandé, pour finir dans un fichier qui n'en porte que les adresses.
  *
  * Gardé le temps qu'on garde le plan lui-même : un salon renommé dans la
- * console porte son nouveau nom à la visite d'après, comme le reste. Un nom
- * introuvable — salon inconnu, brouillon, base muette — n'est pas gardé : le
- * cache ne doit pas retenir l'absence, et un slug inventé n'y écrit donc rien.
+ * console, une icône remplacée dans l'administration portent leur nouveauté à
+ * la visite d'après, comme le reste — et tout de suite si l'administration a
+ * pu demander l'oubli. Un salon qu'on ne sait pas nommer — inconnu, brouillon,
+ * base muette — n'est pas gardé : le cache ne doit pas retenir l'absence, et
+ * un slug inventé n'y écrit donc rien.
  */
-async function nomDuSalon(slug, env, ctx) {
-  const cle = "nom1:" + slug;
+async function appDuSalon(slug, env, ctx) {
+  const cle = cleApp(slug);
   if (env.CACHE) {
-    const garde = await env.CACHE.get(cle).catch(() => null);
-    if (garde) return garde;
+    const garde = await env.CACHE.get(cle, { type: "json" }).catch(() => null);
+    if (garde && garde.nom) return garde;
   }
   const rep = await fetch(AMONT + "?slug=" + encodeURIComponent(slug) + "&nom=1")
     .catch(() => null);
@@ -392,10 +408,47 @@ async function nomDuSalon(slug, env, ctx) {
   const corps = await rep.json().catch(() => null);
   const nom = String(corps?.evenement ?? "").trim().slice(0, NOM_MAX);
   if (!nom) return null;
+  const empreinte = String(corps?.icone ?? "");
+  const app = {
+    nom,
+    /* Le nom que l'exploitant a écrit, borné comme celui du salon : c'est lui
+       qui l'emporte, et vide c'est le tour de phrase d'ici qui vaut. */
+    choisi: String(corps?.app ?? "").trim().slice(0, NOM_MAX),
+    icone: EMPREINTE.test(empreinte) ? empreinte : "",
+  };
   if (env.CACHE) {
-    ctx.waitUntil(env.CACHE.put(cle, nom, { expirationTtl: TTL_PLAN }).catch(() => {}));
+    ctx.waitUntil(env.CACHE.put(cle, JSON.stringify(app), { expirationTtl: TTL_PLAN })
+      .catch(() => {}));
   }
-  return nom;
+  return app;
+}
+
+/**
+ * Les icônes du salon, telles que le manifeste les déclare.
+ *
+ * Deux entrées pour deux façons de poser une icône : telle quelle, et rognée à
+ * la forme du système par Android — l'image de la seconde garde ses bords
+ * libres, sans quoi le rognage y mange le logo. Elles sortent du même fichier
+ * déposé (`_application.html`), et la base en tient les deux versions.
+ *
+ * Une seule taille déclarée, et c'est la vraie : cinq cent douze pixels, ce
+ * qu'un système demande au plus et bien au-delà du minimum qui rend une page
+ * installable. Annoncer la même image en 192 pour faire nombre aurait été
+ * déclarer une taille qu'elle n'a pas.
+ *
+ * L'empreinte dans l'adresse n'est pas un ornement : c'est elle qui fait
+ * qu'une icône remplacée se voit. Le navigateur d'un visiteur qui a déjà
+ * installé le plan relit le manifeste, y trouve une adresse qu'il ne connaît
+ * pas, et va chercher l'image — là où une adresse fixe lui aurait laissé
+ * l'ancienne, gardée pour toujours puisqu'elle est déclarée immuable.
+ */
+function iconesDuSalon(slug, empreinte) {
+  const adresse = (masque) => "/api/icone?salon=" + encodeURIComponent(slug) +
+    (masque ? "&masque=1" : "") + "&v=" + empreinte;
+  return [
+    { src: adresse(false), sizes: "512x512", type: "image/png", purpose: "any" },
+    { src: adresse(true), sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ];
 }
 
 /**
@@ -421,7 +474,10 @@ async function nomDuSalon(slug, env, ctx) {
  * sur un écran d'accueil une application au nom qu'il aurait choisi.
  *
  * Le tour de phrase est écrit ici, et nulle part ailleurs : le salon d'abord,
- * c'est lui qu'on cherche du regard, et la marque en signature.
+ * c'est lui qu'on cherche du regard, et la marque en signature. Il ne sert
+ * qu'à défaut : un salon qui a écrit le nom de son application le porte tel
+ * quel, et un salon qui a déposé son logo remplace du même coup les icônes du
+ * produit (`_application.html`).
  *
  * Un fichier de `web/` est servi avant que ce script ne tourne : sans le
  * `run_worker_first` de `wrangler.jsonc`, ce chemin-ci ne viendrait jamais
@@ -447,12 +503,16 @@ async function manifeste(requete, env, ctx) {
   }
   /* Le contrôle du slug n'est pas décoratif non plus : il construit une clé de
      cache, et part en amont. Muet sur un salon qu'on ne sait pas nommer, le
-     manifeste garde le nom du produit — mieux vaut une application mal nommée
-     qu'une application qui ne s'installe pas. */
-  const nom = SLUG.test(salon) ? await nomDuSalon(salon, env, ctx) : null;
-  if (nom) {
-    contenu.name = "Plan " + nom + " by " + MARQUE;
-    contenu.short_name = nom;
+     manifeste garde le nom et les icônes du produit — mieux vaut une
+     application mal nommée qu'une application qui ne s'installe pas. */
+  const app = SLUG.test(salon) ? await appDuSalon(salon, env, ctx) : null;
+  if (app) {
+    contenu.name = app.choisi || "Plan " + app.nom + " by " + MARQUE;
+    /* Ce que le système écrit sous l'icône : le salon seul, faute de mieux —
+       le reste du tour de phrase n'y tiendrait pas. Un nom écrit par
+       l'exploitant, lui, est déjà celui qu'il veut y lire. */
+    contenu.short_name = app.choisi || app.nom;
+    if (app.icone) contenu.icons = iconesDuSalon(salon, app.icone);
   }
   /* L'application se nomme elle-même dans `related_applications`, et c'est ce
      qui permet à la page de savoir, plus tard, qu'elle est installée
@@ -462,14 +522,53 @@ async function manifeste(requete, env, ctx) {
      l'adresse nue du fichier construit ne désigne alors aucune application
      installée. C'est donc ici qu'elle s'écrit, où la requête la porte. */
   if (Array.isArray(contenu.related_applications)) {
-    contenu.related_applications = contenu.related_applications.map(app =>
-      app && app.platform === "webapp" ? { ...app, url: requete.url } : app);
+    contenu.related_applications = contenu.related_applications.map(parente =>
+      parente && parente.platform === "webapp"
+        ? { ...parente, url: requete.url } : parente);
   }
   return new Response(JSON.stringify(contenu), {
     headers: {
       "Content-Type": "application/manifest+json; charset=utf-8",
       // il ne change qu'avec une mise en ligne, et n'est lu qu'à l'installation
       "Cache-Control": "public, max-age=86400",
+    },
+  });
+}
+
+/**
+ * L'icône de l'application d'un salon, relayée telle quelle.
+ *
+ * Le manifeste la désigne par cette adresse, et la page aussi — pour l'écran
+ * d'accueil d'iOS, qui ne lit pas le manifeste, et pour la fenêtre qui invite
+ * à installer. Deux images sous la même adresse, à un paramètre près :
+ * `masque=1` rend celle qu'Android rogne à sa forme.
+ *
+ * Rien n'est gardé ici, et c'est réfléchi : une icône n'est lue qu'à
+ * l'installation, une poignée de fois par salon, là où le plan l'est à chaque
+ * ouverture de page. L'aller-retour jusqu'à la fonction ne coûte donc qu'à
+ * celui qui installe, et l'adresse porte l'empreinte de l'image : le
+ * navigateur, lui, la garde pour toujours et ne revient pas.
+ *
+ * L'empreinte n'est pas vérifiée — elle ne désigne rien en base, c'est la
+ * colonne qui fait foi — mais son absence se paie : sans elle, l'adresse peut
+ * changer de contenu, et rien ne doit alors la garder.
+ */
+async function iconeApp(url) {
+  const nu = { "Cache-Control": "no-store" };
+  const salon = url.searchParams.get("salon") || "";
+  if (!SLUG.test(salon)) {
+    return new Response("Paramètre salon absent ou invalide.", { status: 400, headers: nu });
+  }
+  const amont = AMONT + "?slug=" + encodeURIComponent(salon) + "&icone=1" +
+    (url.searchParams.get("masque") ? "&masque=1" : "");
+  const rep = await fetch(amont).catch(() => null);
+  if (!rep) return new Response("Icône indisponible.", { status: 502, headers: nu });
+  const versionnee = rep.ok && EMPREINTE.test(url.searchParams.get("v") ?? "");
+  return new Response(rep.body, {
+    status: rep.status,
+    headers: {
+      "Content-Type": rep.headers.get("Content-Type") || "image/png",
+      "Cache-Control": versionnee ? "public, max-age=31536000, immutable" : "no-store",
     },
   });
 }
@@ -507,6 +606,9 @@ export default {
     /* Le manifeste est un fichier construit, mais l'adresse qu'il fait rouvrir
        dépend du salon d'où l'on installe : il passe par ici pour la recevoir. */
     if (url.pathname === "/manifeste.webmanifest") return manifeste(requete, env, ctx);
+    /* Et l'icône que ce manifeste désigne : elle n'est pas un fichier de
+       `web/` mais une colonne de la base, déposée salon par salon. */
+    if (url.pathname === "/api/icone") return iconeApp(url);
     /* Les mesures d'utilisation prennent le même chemin que le plan : même
        origine que la page, donc rien à configurer si le domaine change. Elles
        ne sont ni lues ni mises en cache — elles ne font que passer. Le relais

@@ -819,6 +819,42 @@ et le dit ainsi qu'elle attend son exposant. Il en va de même quand la
 synchronisation retire la société qu'elle désignait : on ne se rabat pas sur le
 titulaire, ce serait donner à une enseigne la place d'une autre.
 
+### Poser le logo d'un exposant sur son stand
+
+L'outil **Image** dépose une image sur le plan — un logo, une affiche, un plan
+d'aménagement — et la réduit en data-URI avec le reste du dessin : une page
+publiée ne charge aucune ressource externe, et un lien vers un fichier ailleurs
+meurt le jour où l'ailleurs change.
+
+Son champ demande un **exposant**, comme celui de l'outil Stand, à une
+différence près : il est facultatif. Un stand dessiné n'existe que par la
+société qu'il désigne ; une image existe d'abord pour ce qu'elle montre. Nommé,
+l'exposant fait de l'image une porte — la toucher ouvre sa fiche, celle de
+l'enseigne désignée et non le choix entre les deux quand le stand est partagé,
+puisque la liste mêle titulaires et hébergés comme celle de l'outil Stand.
+Laissé vide, l'image reste un dessin et laisse passer le clic vers ce qui est
+dessous : un plan d'aménagement posé sur un hall n'a pas à empêcher d'ouvrir les
+stands qu'il recouvre.
+
+Le nom saisi vaut pour toutes les images posées ensuite, comme la vignette
+choisie : on aligne souvent plusieurs logos sur le même stand partagé. Et le
+rattachement se change après coup dans le panneau de la forme choisie, au même
+champ que celui d'un stand dessiné — les deux formes se rattachent à une société,
+elles n'ont pas à le demander de deux façons.
+
+Ce qu'une image liée n'est pas, c'est un stand dessiné : elle ne prend ni la
+teinte de son secteur, ni le filtre de la recherche. L'emplacement qu'elle
+recouvre porte déjà tout cela. Ce qu'elle ajoute est le geste qu'un visiteur
+fait de lui-même — toucher le logo qu'il reconnaît —, et la mesure le compte à
+part, sur le canal `image`.
+
+**Le rattachement est une option du plan**, et l'image ne l'est pas. Un salon
+qui n'a pas pris « Ajout d'images liées à un stand » garde l'outil et pose ses
+images comme n'importe quel dessin ; c'est le champ qui nomme l'exposant qui
+s'en va, du dessin comme du panneau d'édition, et plus aucune image ne se relie.
+Celles qui l'étaient gardent leur lien : on retire le geste, pas ce qu'il a
+produit.
+
 ### Passer d'un plan à l'autre
 
 Un salon ne tient pas dans un plan : un hall a deux niveaux, et son premier
@@ -1410,11 +1446,12 @@ regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
 connaît dès son en-tête, et le Worker va chercher le nom : une lecture à part
-(`plan-public?slug=…&nom=1`), qui ne rend que deux colonnes là où le plan entier
-pèse ses stands et ses zones, et qu'il garde dix minutes comme le plan. Le nom
-n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué ne
-peut pas faire poser sur un écran d'accueil une application au nom qu'il aurait
-choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon seul.
+(`plan-public?slug=…&nom=1`), qui ne rend que quatre colonnes là où le plan
+entier pèse ses stands et ses zones, et qu'il garde un jour comme le plan. Le
+nom n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué
+ne peut pas faire poser sur un écran d'accueil une application au nom qu'il
+aurait choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon
+seul.
 
 Une exception, iOS : il ne lit pas le manifeste pour l'écran d'accueil mais la
 balise `apple-mobile-web-app-title`, écrite avec la page. `nommeApplication`
@@ -1424,6 +1461,41 @@ au même instant.
 
 Un salon renommé dans la console porte son nouveau nom à la visite d'après :
 l'enregistrement fait oublier au relais le plan **et** le nom.
+
+**Son icône et son nom, salon par salon.** Les deux se règlent dans l'onglet
+« Admin » des réglages du plan, réservé au profil administrateur, sous « Sur
+l'écran d'accueil ».
+
+L'icône se choisit entre deux : celle du produit, la même pour tous les salons,
+ou le logo du salon, déposé là. Rien de déposé, c'est celle du produit — il n'y
+a pas de mode à régler à côté de l'image, qui aurait pu la contredire. Le nom,
+lui, est un champ : vide, c'est « Plan SMCL by Event2Plan » ; écrit, c'est ce
+qui paraît sous l'icône, tel quel.
+
+Un seul fichier à choisir, deux images fabriquées. Android ne pose pas une
+icône telle quelle : il la rogne à la forme du système, cercle ou goutte selon
+l'appareil, et une image qui ne se déclare pas rognable finit en timbre-poste
+dans un carré blanc. L'administration fabrique donc, du même fichier, le logo
+au bord de son carré et le même logo rentré dans la zone sûre — le cercle des
+quatre cinquièmes — sur un fond opaque tiré du logo : son propre fond s'il en a
+un, le blanc sinon, la nuit du produit pour un logo clair qui sur du blanc
+disparaîtrait. L'aperçu montre les deux formes côte à côte, parce que personne
+ne devine ce qu'un rognage laisse.
+
+Ces images ne partent pas avec le plan : elles ne sont lues qu'à
+l'installation, et les faire voyager jusqu'à chaque visiteur aurait coûté un
+demi-mégaoctet pour rien. Le manifeste les désigne par une adresse que le
+Worker sert de la base — `/api/icone?salon=…&v=…` —, où `v` est l'empreinte que
+la base calcule de l'image. C'est elle qui fait qu'une icône remplacée se voit
+sur un écran d'accueil déjà installé : le navigateur relit le manifeste, y
+trouve une adresse inconnue, et va chercher l'image. Et comme l'adresse ne peut
+plus mentir sur son contenu, tout ce qui la garde peut la garder pour toujours.
+
+iOS, là encore, se corrige à part : `nommeApplication` y repose le nom et
+l'icône du salon dès les données arrivées. C'est la version opaque qui lui est
+donnée — il remplit de noir la transparence d'une icône d'écran d'accueil, où
+un logo sombre disparaissait. La fenêtre qui invite à installer montre la même,
+pour la même raison.
 
 **Tenir sans réseau.** `web/sw.js`, inscrit depuis le plan public, s'installe
 au premier passage et se place entre la page et le réseau. Il ne précharge rien : ce qui a servi une fois est
@@ -2124,6 +2196,51 @@ une phrase — même quand une enseigne tombe sur un mot du dictionnaire ou du
 calendrier. Le manifeste de l'application installée reste lui aussi en
 français — et le nom qu'il porte est celui du salon, qui ne se traduit pas
 davantage.
+
+## Les options du plan
+
+Cinq fonctions du plan ne reviennent pas à tous les salons : elles se vendent à
+part, et se règlent salon par salon dans « Réglages du plan », onglet **Admin**,
+sous l'intertitre *Les options du plan*. Comme le générique du démarrage qui
+ferme le même onglet, elles sont réservées au profil administrateur : ce n'est
+pas un réglage de salon mais un réglage de prestataire, et l'organisateur n'y
+trouverait que de quoi fermer ce qu'on lui a vendu.
+
+| option | ce que fermer retire |
+|---|---|
+| **Dessin des stands** | l'outil qui matérialise un exposant, ou l'une de ses hébergées, sur sa part d'un emplacement |
+| **Ajout d'images liées à un stand** | le champ qui lie une image du dessin à un exposant. L'outil image reste : ce qui se vend est le lien, pas l'image |
+| **Organiser ma journée** | le bouton du tiroir du parcours qui met la visite en heures |
+| **Programme de conférences** | tout ce qui vient du programme : celui d'une zone, les conférences d'un exposant, la recherche par titre, les horaires du parcours, les rappels |
+| **Recommandations sponsorisées** | la proposition d'un exposant de plus, et l'onglet « Suggestion » avec elle |
+
+**Ouvertes par défaut.** Un réglage absent ne retire rien : les salons déjà en
+ligne gardent ce qu'ils ont, et l'option ne se remarque que le jour où on la
+ferme. C'est la règle des commandes du plan, qui vivent quelques lignes plus
+haut dans le même onglet.
+
+**Fermer retire la porte, pas ce qui est derrière.** Les stands déjà dessinés
+restent sur le plan, les images déjà liées gardent leur lien, les conférences
+restent dans l'instantané que la synchronisation continue de rapporter, ce qui
+était réglé pour la suggestion reste écrit : rouvrir l'option retrouve le tout. Une seule chose ne se rend pas,
+et la case le dit — le parcours d'un visiteur ne garde que ce que le plan connaît
+encore, si bien que celui qui rouvre le plan pendant que le programme est fermé y
+perd les conférences qu'il avait retenues.
+
+Deux façons de fermer, selon ce qu'il y a à retirer. Les trois premières se
+ferment par la feuille de style, sur une classe posée sur la racine : un
+élément part de l'écran — le bouton de l'outil Stand (`sans-dessin-stand`), le
+champ d'exposant de l'outil Image (`sans-image-stand`), le bouton de la journée
+(`sans-journee`). Le code refuse ensuite ce que la feuille de style a caché,
+plutôt que de s'y fier : une valeur restée dans un champ invisible ne relie
+rien. Le programme, lui, n'est pas une commande qu'on masque mais un index
+qu'on refait — `indexeConferences()` de `_js.html` le relit à chaque bascule, et
+la recherche, les fiches, le tiroir du parcours, la journée et les rappels
+suivent d'eux-mêmes, n'ayant plus rien à lire.
+
+Le réglage vit sous la clé `_options` de la configuration du salon, et se publie
+avec le reste : c'est l'enregistrement de la configuration qui le porte aux
+visiteurs.
 
 ## Comptes et profils
 
