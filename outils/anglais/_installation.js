@@ -10,7 +10,7 @@ module.exports = {
     "Add it like an app: it will open in one tap, full screen, and stay available on site, even when there is no signal.",
   "Plus tard": "Not now",
   "Installer": "Install",
-  "J'ai compris": "Got it",
+  "Guidez-moi": "Show me how",
 
   /* Les gestes, là où aucun bouton ne peut les faire. Chaque pictogramme et
      chaque intitulé en gras coupe la phrase en nœuds de texte, traduits l'un
@@ -27,6 +27,10 @@ module.exports = {
   "Validez par": "Confirm with",
   "Ouvrez le menu du navigateur": "Open the browser menu",
   "Ajouter à l'écran d'accueil": "Add to Home screen",
+
+  /* Le guide, qui reste au bord de l'écran le temps des gestes. Son intitulé
+     et ses gestes sont ceux de la fenêtre : rien de plus à traduire ici. */
+  "Fermer le guide": "Close the guide",
 
   // le rappel, l'application installée et le plan lu dans le navigateur
   "L'application est installée": "The app is installed",
@@ -51,8 +55,8 @@ module.exports = {
 
   // la case des réglages
   "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
-  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu de l'invitation :":
-    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Another reminds visitors who already have the app, ten seconds in. At most once a day each, and never again after two refusals. Preview of the invitation:",
+  "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Là où le navigateur n'installe pas d'un bouton — sur iPhone, notamment —, les gestes restent ensuite au bord de l'écran, le temps de les faire. Une autre fenêtre rappelle l'application à qui l'a déjà, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu de l'invitation :":
+    "On phones and tablets, when the map is open in the browser: a window offers to add it to the home screen, as soon as it opens. Where the browser cannot install from a button — on iPhone in particular — the steps then stay at the edge of the screen, for as long as it takes. Another window reminds visitors who already have the app, ten seconds in. At most once a day each, and never again after two refusals. Preview of the invitation:",
   ". Du rappel :": ". Of the reminder:",
   "Android": "Android",
 };

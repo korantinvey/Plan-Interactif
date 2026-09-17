@@ -3572,20 +3572,67 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .instTete b{display:block;font-family:"Archivo",sans-serif;font-size:15.5px;font-weight:700;
   letter-spacing:-.01em;line-height:1.25;color:var(--ink)}
 .instTete span{display:block;margin-top:2px;font-size:12.5px;color:var(--ink-3)}
-.mcorps ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
+:is(.mcorps,.instGuide) ol.instEtapes{margin:12px 0 2px;padding:0;list-style:none;display:flex;
   flex-direction:column;gap:9px}
-.mcorps ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
+:is(.mcorps,.instGuide) ol.instEtapes li{display:flex;align-items:baseline;gap:10px;font-size:13.5px;
   line-height:1.5;color:var(--ink-2)}
-.mcorps ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
+:is(.mcorps,.instGuide) ol.instEtapes .n{flex:none;width:20px;height:20px;border-radius:999px;
   display:grid;place-items:center;transform:translateY(-1px);
   background:var(--accent-soft);color:var(--accent);
   font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
-.mcorps ol.instEtapes b{color:var(--ink);font-weight:600}
+:is(.mcorps,.instGuide) ol.instEtapes b{color:var(--ink);font-weight:600}
 /* Le pictogramme se lit dans la phrase, à la hauteur du texte : c'est le même
    dessin que dans la barre du navigateur, qu'on y cherchera des yeux. */
 .instPicto{white-space:nowrap}
 .instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
   vertical-align:-.25em;color:var(--accent)}
+/* Sans intitulé à sa suite — le menu d'un navigateur n'en porte pas —, la
+   marge du pictogramme laissait un blanc avant le point de la phrase. */
+.instPicto svg:only-child{margin-right:0}
+
+/* Le guide de l'ajout : là où aucun bouton ne peut installer, la fenêtre s'en
+   va et les gestes restent — au bord de l'écran, le temps qu'on les fasse. Il
+   passe sous le voile d'une fenêtre, qui reprend la main, et par-dessus le
+   tiroir de la liste, qu'il couvre un instant : c'est la barre du navigateur
+   qu'on regarde à ce moment-là, pas la recherche. */
+.instGuide{position:fixed;left:0;right:0;bottom:10px;z-index:29;margin-inline:auto;
+  width:min(360px,calc(100vw - 20px));display:flex;flex-direction:column;
+  padding:10px 13px 11px;background:var(--surface);border:1px solid var(--line-strong);
+  border-radius:12px;box-shadow:0 22px 55px -18px rgba(0,0,0,.5);
+  animation:instParait .2s ease-out}
+@keyframes instParait{from{opacity:0}to{opacity:1}}
+/* Sur un iPad, la barre du navigateur est en haut : le guide s'y pose aussi —
+   on ne lit pas en bas ce qu'on va toucher en haut. */
+.instGuide[data-vise="haut"]{bottom:auto;top:10px}
+.instGuideTete{display:flex;align-items:center;gap:10px;min-height:22px}
+.instGuideTete .eyebrow{flex:none;margin-right:auto;color:var(--accent)}
+.instGuideFin{flex:none;width:28px;height:28px;margin:-6px -8px -6px -6px;display:grid;
+  place-items:center;font-size:19px;line-height:1;color:var(--ink-3);border-radius:var(--radius)}
+.instGuideFin:hover{color:var(--ink);background:var(--surface-2)}
+.instGuide ol.instEtapes{margin:6px 0 0;gap:7px}
+.instGuide ol.instEtapes li{font-size:13px;line-height:1.45}
+/* La pointe vers le bouton de partage, au milieu de la barre de Safari : un
+   carré tourné, à demi sorti, qui prolonge la bande vers le bord de l'écran.
+   Elle descend et remonte pour se faire voir — « transform » seul, que le
+   compositeur tient sans rien repeindre. */
+.instGuide[data-vise="bas"]::after{content:"";position:absolute;left:0;right:0;bottom:-7px;
+  margin-inline:auto;width:13px;height:13px;background:var(--surface);
+  border:1px solid var(--line-strong);border-width:0 1px 1px 0;transform:rotate(45deg);
+  animation:instPointe 1.5s ease-in-out infinite}
+@keyframes instPointe{0%,100%{transform:rotate(45deg) translate(0,0)}
+  50%{transform:rotate(45deg) translate(3px,3px)}}
+/* Couché, un iPhone remonte la barre de Safari en haut de l'écran : la pointe
+   viserait le vide, et les gestes écrits restent seuls. */
+@media (orientation:landscape){.instGuide[data-vise="bas"]::after{display:none}}
+@media (max-width:900px){
+  /* Au-dessus du tiroir replié, comme les commandes du plan — sauf quand la
+     pointe doit rejoindre le bord de l'écran, où le guide la suit. */
+  .instGuide:not([data-vise]){bottom:calc(var(--replie,164px) + 12px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .instGuide{animation:none}
+  .instGuide[data-vise="bas"]::after{animation:none}
+}
 /* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
    pleins — la case reste ce qu'on règle. Deux réglages en offrent un,
    l'invitation à installer et le rappel des conférences : même geste, même

@@ -31,10 +31,34 @@
      attend alors que ce soit fini : c'est la raison de la venue, et elle passe
      avant ;
    — là où l'installation aboutit : d'un bouton quand le navigateur sait le
-     faire, en trois gestes décrits quand il ne le sait pas, et pas du tout là
-     où elle est impossible ;
+     faire, de gestes montrés quand il ne le sait pas, et pas du tout là où
+     elle est impossible ;
    — rarement : une fois par jour au plus, et plus jamais après deux refus, une
-     installation, ou des explications qu'on a dit avoir comprises.
+     installation, ou des gestes qu'on s'est fait montrer.
+
+   Les gestes décrits ne se lisaient pas là où ils se font, et c'est là qu'ils
+   se perdaient : la fenêtre occupe l'écran, on la referme pour agir, et il ne
+   reste du bouton de partage qu'un souvenir de trois lignes. Le bouton qui
+   clôt la fenêtre ne dit donc plus « J'ai compris » mais « Guidez-moi », et ce
+   qu'il laisse derrière lui est un guide — une bande au bord de l'écran, les
+   gestes numérotés, qui demeure le temps qu'on les fasse et ne s'en va qu'à la
+   croix. Aucune durée ne lui conviendrait : une feuille de partage n'en a pas,
+   on s'y reprend, on remonte la liste, et un guide qui s'efface au bout de
+   vingt secondes s'efface toujours entre le premier geste et le deuxième.
+
+   Sa pointe vise le bouton, là où l'on sait lequel c'est : la barre de Safari
+   sur un iPhone debout, dont le partage occupe le milieu. Couché, elle remonte
+   en haut de l'écran ; sur un iPad elle y est déjà, et le bouton y flotte à
+   droite d'une adresse dont la largeur le déplace ; dans les autres
+   navigateurs, le partage est au fond d'un menu que chacun ouvre où il veut.
+   Le guide s'y tait et laisse parler les gestes écrits — une pointe qui vise à
+   côté vaut moins que pas de pointe.
+
+   Et l'on ne dit plus à tout le monde la même chose. Chrome, Edge et Firefox
+   d'iOS se présentent en Safari — leur marque s'ajoute devant la sienne, et
+   rien d'autre ne les distingue —, si bien qu'ils recevaient ses gestes, qui
+   désignent dans la barre un bouton que la leur n'a pas. Le partage y est dans
+   leur menu ; c'est ce qu'ils lisent maintenant.
 
    Reste celui qui l'a installée et revient par le navigateur : un lien suivi
    depuis un message, un code relu à l'entrée, un onglet resté ouvert de la
@@ -55,9 +79,9 @@
      donc, et un bouton y mène. iOS n'a ni l'un ni l'autre — rien n'y dit
      qu'une application existe, rien ne l'y ouvre, et son stockage est séparé
      de celui du navigateur. Ce que la page sait du visiteur s'y arrête à ce
-     qu'il a répondu ici : la fenêtre s'adresse donc à qui a lu les trois
-     gestes et dit les avoir compris — le seul à qui l'icône puisse parler —
-     et se borne à la lui suggérer. Un bouton qui ne tiendrait pas parole, ou
+     qu'il a répondu ici : la fenêtre s'adresse donc à qui s'est fait montrer
+     les gestes de l'ajout — le seul à qui l'icône puisse parler — et se borne
+     à la lui suggérer. Un bouton qui ne tiendrait pas parole, ou
      une fenêtre qui affirmerait ce qu'elle ignore, valent moins que rien.
 
    Deux fenêtres, et pas une troisième : rien ne se dit dans la foulée de
@@ -117,6 +141,13 @@ const IOS_INSTALL = /iPhone|iPad|iPod/.test(UA_INSTALL) ||
    réveiller. Les deux choses qu'Android sait faire et qu'iOS ne sait pas
    tiennent à ce même test, et n'en font donc qu'un. */
 const ANDROID_INSTALL = /Android/.test(UA_INSTALL) && !/; wv\)/.test(UA_INSTALL);
+/* Un iPad plutôt qu'un iPhone : sa barre est en haut, et le guide s'y pose du
+   même côté que le bouton dont il parle. */
+const IPAD_INSTALL = IOS_INSTALL && !/iPhone|iPod/.test(UA_INSTALL);
+/* Les autres navigateurs d'iOS : même moteur, même feuille de partage, rangée
+   dans leur menu plutôt que posée dans la barre. Ils se nomment avant de se
+   dire Safari, et c'est le seul endroit où ils le disent. */
+const AUTRE_IOS = /CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo/.test(UA_INSTALL);
 
 /**
  * Un téléphone ou une tablette : le pointeur principal est un doigt.
@@ -221,10 +252,16 @@ let INSTALL_NATIVE = null;
  * lui : expliquer l'installation à qui a déjà l'application, ce serait lui
  * dire qu'on ne la voit pas.
  *
- * « partage » : iOS et iPadOS, où tout navigateur installe depuis la feuille
- * de partage du système, et n'en dit rien à la page. Les vues web des
- * applications — un lien ouvert depuis un réseau social — n'ont pas cette
- * entrée : elles ne se présentent pas en Safari, et on s'y tait.
+ * « partage » : Safari, sur iOS et iPadOS, où la feuille de partage du système
+ * installe et n'en dit rien à la page. Le bouton qui l'ouvre est dans la barre
+ * du navigateur. Les vues web des applications — un lien ouvert depuis un
+ * réseau social — n'ont pas cette entrée : elles ne se présentent pas en
+ * Safari, et on s'y tait.
+ *
+ * « partageMenu » : les autres navigateurs d'iOS, qui ouvrent la même feuille
+ * depuis leur menu. Ils se présentent en Safari, à leur marque près, et
+ * recevaient donc ses gestes : on y cherchait dans la barre un bouton qu'elle
+ * n'a pas.
  *
  * « menu » : les autres navigateurs d'Android, Firefox en tête, qui installent
  * depuis leur menu sans rien en dire non plus. La vue web d'une application
@@ -233,7 +270,10 @@ let INSTALL_NATIVE = null;
 function faconInstallation(){
   if (INSTALL_NATIVE) return "bouton";
   if ("onbeforeinstallprompt" in window) return null;
-  if (IOS_INSTALL) return /Safari\//.test(UA_INSTALL) ? "partage" : null;
+  if (IOS_INSTALL){
+    if (!/Safari\//.test(UA_INSTALL)) return null;
+    return AUTRE_IOS ? "partageMenu" : "partage";
+  }
   if (ANDROID_INSTALL) return "menu";
   return null;
 }
@@ -345,15 +385,16 @@ function lanceApplication(){
  * qu'une application est posée, rien ne l'y ouvre, et le stockage de
  * l'application y est séparé de celui du navigateur — ce que la page sait du
  * visiteur s'arrête donc à ce qu'il a répondu ici. Elle s'adresse à celui qui
- * a lu les trois gestes et dit les avoir compris : c'est le seul à qui
- * l'icône puisse parler, et à lui elle ne promet rien — elle suggère.
+ * s'est fait montrer les gestes de l'ajout, quel que soit le navigateur d'iOS
+ * qui les lui a fait faire : c'est le seul à qui l'icône puisse parler, et à
+ * lui elle ne promet rien — elle suggère.
  *
  * Ailleurs, rien. L'installation y est impossible, ou la page ne saurait pas
  * à qui elle parle.
  */
 function faconRappel(){
   if (LANCEMENT_POSSIBLE) return appliInstallee() ? "ouvrir" : null;
-  if (IOS_INSTALL && faconInstallation() === "partage" &&
+  if (IOS_INSTALL && faconInstallation() &&
       reponsesInstallation().compris === true) return "suggerer";
   return null;
 }
@@ -589,11 +630,30 @@ const ETAPES_INSTALLATION = {
       "Sur l'écran d'accueil</b>, plus bas dans la liste.",
     "Validez par <b>Ajouter</b>.",
   ],
+  /* La même feuille, ouverte d'ailleurs : Chrome, Edge et Firefox d'iOS n'ont
+     pas de bouton de partage dans leur barre, ils le rangent dans leur menu. */
+  partageMenu: [
+    'Ouvrez le menu du navigateur <b class="instPicto">' + PICTO_MENU + "</b>.",
+    "Choisissez <b>Partager</b>.",
+    'Choisissez <b class="instPicto">' + PICTO_ECRAN_ACCUEIL +
+      "Sur l'écran d'accueil</b>, plus bas dans la liste.",
+    "Validez par <b>Ajouter</b>.",
+  ],
   menu: [
     'Ouvrez le menu du navigateur <b class="instPicto">' + PICTO_MENU + "</b>.",
     "Choisissez <b>Installer</b> ou <b>Ajouter à l'écran d'accueil</b>.",
   ],
 };
+
+/* La même liste des deux côtés : la fenêtre la montre une fois, le guide la
+   garde sous les yeux pendant qu'on la suit. */
+function listeEtapes(facon){
+  const etapes = ETAPES_INSTALLATION[facon];
+  if (!etapes) return "";
+  return '<ol class="instEtapes">' + etapes.map((t, i) =>
+    '<li><span class="n">' + (i + 1) + "</span><span>" + t + "</span></li>").join("") +
+    "</ol>";
+}
 
 /* L'icône est celle que l'écran d'accueil montre, et le nom du salon celui que
    le visiteur a sous les yeux : les deux ensemble disent ce qu'on installe,
@@ -638,13 +698,7 @@ function remplitInvitation(corps, facon){
     "ne passe plus.";
   corps.appendChild(p);
 
-  const etapes = ETAPES_INSTALLATION[facon];
-  if (!etapes) return;
-  const ol = document.createElement("ol");
-  ol.className = "instEtapes";
-  ol.innerHTML = etapes.map((t, i) =>
-    '<li><span class="n">' + (i + 1) + "</span><span>" + t + "</span></li>").join("");
-  corps.appendChild(ol);
+  corps.insertAdjacentHTML("beforeend", listeEtapes(facon));
 }
 
 /**
@@ -652,12 +706,15 @@ function remplitInvitation(corps, facon){
  *
  * Toute sortie qui n'accepte pas vaut « Plus tard » — la croix, le voile,
  * « Échap » comme le bouton : fermer sans répondre, c'est répondre non pour
- * aujourd'hui. « J'ai compris » clôt la question, puisqu'aucune page ne saura
- * jamais si les gestes décrits ont été faits : l'application installée sur iOS
- * ne partage même pas son stockage avec Safari.
+ * aujourd'hui. « Guidez-moi » clôt la question et pose le guide : la fenêtre
+ * s'en va, les gestes restent au bord de l'écran. Elle est close parce
+ * qu'aucune page ne saura jamais si ces gestes ont été faits — l'application
+ * installée sur iOS ne partage même pas son stockage avec Safari — et parce
+ * qu'on a donné tout ce qu'on avait à donner.
  *
  * En aperçu, rien ne s'écrit, et toute sortie ramène aux réglages d'où l'on
- * vient, sur la case qui l'a ouverte.
+ * vient, sur la case qui l'a ouverte — sauf « Guidez-moi », qui enchaîne sur
+ * le guide, lequel y ramènera en partant.
  */
 function ouvreInvitation(facon, apercu){
   /* Montrée, elle compte pour la journée, qu'on y réponde ou non : un plan
@@ -684,23 +741,101 @@ function ouvreInvitation(facon, apercu){
           }, () => {});
         } catch (err) {}
       } }
-    : { libelle: "J'ai compris", genre: "accent", action: () => { reponse = "compris"; } };
+    : { libelle: "Guidez-moi", genre: "accent", action: () => {
+        reponse = "compris";
+        /* Le guide prend la place de la fenêtre une fois qu'elle l'a libérée :
+           posé plus tôt, il se glisserait sous elle (`_modales.html`). */
+        apresFermeture = () => ouvreGuide(facon, apercu);
+      } };
 
   ouvreModale("Installer le plan", corps => remplitInvitation(corps, facon),
     [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
-    if (apercu) return retourAuxReglages("installation");
-    /* « J'ai compris » ouvre la porte du rappel sur iOS — c'est le seul signe
+    if (apercu){
+      /* Le guide enchaîne, et ramènera lui-même aux réglages : y revenir ici
+         les rouvrirait par-dessus lui. */
+      if (reponse !== "compris") retourAuxReglages("installation");
+      return;
+    }
+    /* « Guidez-moi » ouvre la porte du rappel sur iOS — c'est le seul signe
        qu'y donne un visiteur d'avoir eu affaire à l'installation
-       (`faconRappel`). Pas aujourd'hui pour autant : il vient de lire les
-       gestes, et lui reparler de l'application dans la journée serait répéter
-       ce qu'il a dit avoir compris. */
+       (`faconRappel`). Pas aujourd'hui pour autant : il vient de se faire
+       montrer les gestes, et lui reparler de l'application dans la journée
+       serait répéter ce qu'il a sous les yeux. */
     if (reponse === "compris"){
       retientInstallation({ compris: true, rappelVue: jourInstallation() });
     }
     else if (!reponse) refuseInstallation();
   };
+}
+
+/* ------------------------------------------------------------
+   Le guide, quand aucun bouton ne peut installer
+   ------------------------------------------------------------ */
+/* Le guide posé sur la page, s'il y en a un, et ce qu'il reste à faire quand
+   il s'en va. */
+let GUIDE_INSTALL = null, guideFin = null;
+
+/**
+ * Ce que la pointe du guide peut désigner sur cet appareil.
+ *
+ * « bas » : la barre de Safari sur un iPhone, au bas de l'écran, dont le
+ * bouton de partage occupe le milieu — cinq boutons également répartis, le
+ * troisième au centre. La pointe le vise sans rien deviner. Couché, Safari
+ * remonte sa barre en haut : la feuille de style retire alors la pointe, et
+ * les gestes écrits restent seuls.
+ *
+ * « haut » : la barre d'un iPad, en haut. Le bouton y flotte à droite de
+ * l'adresse, à une place que la largeur de la fenêtre déplace : le guide s'y
+ * pose du même côté, sans rien viser.
+ *
+ * Rien ailleurs : un menu que chaque navigateur ouvre où il veut ne se montre
+ * pas du doigt.
+ */
+function viseInstallation(facon){
+  if (facon !== "partage") return "";
+  return IPAD_INSTALL ? "haut" : "bas";
+}
+
+function fermeGuide(){
+  if (!GUIDE_INSTALL) return;
+  GUIDE_INSTALL.remove();
+  GUIDE_INSTALL = null;
+  const f = guideFin;
+  guideFin = null;
+  if (f) f();
+}
+
+/**
+ * Le guide : les gestes, là où ils se font.
+ *
+ * La fenêtre a dit ce qu'on gagne à installer le plan ; elle ne pouvait pas
+ * dire où toucher, puisqu'elle occupait l'écran et s'en allait au moment même
+ * où les gestes commencent. Ce qu'elle laisse derrière elle reste : une bande
+ * au bord de l'écran, les gestes numérotés comme elle les numérotait, et une
+ * pointe vers le bouton du navigateur là où l'on sait lequel c'est.
+ *
+ * Sous le voile d'une fenêtre, et par-dessus le reste de la page : ce qui
+ * demande une réponse passe devant, le plan et son tiroir passent dessous.
+ */
+function ouvreGuide(facon, apercu){
+  fermeGuide();
+  const liste = listeEtapes(facon);
+  if (!liste) return;
+  const g = document.createElement("aside");
+  g.className = "instGuide";
+  g.id = "instGuide";
+  const vise = viseInstallation(facon);
+  if (vise) g.dataset.vise = vise;
+  g.innerHTML = '<div class="instGuideTete"><span class="eyebrow"></span>' +
+    '<button type="button" class="instGuideFin" aria-label="Fermer le guide">&times;</button>' +
+    "</div>" + liste;
+  g.querySelector(".eyebrow").textContent = "Sur votre écran d'accueil";
+  g.querySelector(".instGuideFin").onclick = fermeGuide;
+  document.body.appendChild(g);
+  GUIDE_INSTALL = g;
+  if (apercu) guideFin = () => retourAuxReglages("installation");
 }
 
 /**
@@ -825,7 +960,9 @@ function caseInstallation(bloc){
   aide.dataset.reglage = "installation";
   aide.innerHTML = "Sur téléphone et tablette, quand le plan est ouvert dans le " +
     "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès " +
-    "l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix " +
+    "l'ouverture. Là où le navigateur n'installe pas d'un bouton — sur iPhone, " +
+    "notamment —, les gestes restent ensuite au bord de l'écran, le temps de " +
+    "les faire. Une autre fenêtre rappelle l'application à qui l'a déjà, dix " +
     "secondes après l'ouverture. Une fois par jour au plus chacune, et plus " +
     "du tout après deux refus. Aperçu de l'invitation : " +
     '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +

@@ -316,7 +316,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4691 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4738 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -378,22 +378,23 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 848 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 985 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 97 · `invitationVoulue` 98 · `auDoigt` 128 · `nommeApplication` 164
-`reponsesInstallation` 182 · `retientInstallation` 187 · `jourInstallation` 196
-`invitationEcartee` 199 · `refuseInstallation` 205 · `faconInstallation` 233
-`appliInstallee` 256 · `verifieApplication` 278 · `connaitLApplication` 288
-`adresseApplication` 301 · `lanceApplication` 321 · `faconRappel` 354 · `rappelEcarte` 362
-`refuseRappel` 368 · `relanceInvitation` 386 · `gesteInstallation` 391 · `doigtPose` 395
-`doigtLeve` 396 · `vueInstallation` 399 · `accueilleInvitation` 408
-`invitationRetenue` 434 · `finInvitation` 452 · `essaieInvitation` 476
-`teteInvitation` 603 · `retourAuxReglages` 624 · `remplitInvitation` 632
-`ouvreInvitation` 662 · `ouvreRappel` 732 · `ouvreRetrouve` 788 · `caseInstallation` 811
+`reglageInstallation` 121 · `invitationVoulue` 122 · `auDoigt` 159 · `nommeApplication` 195
+`reponsesInstallation` 213 · `retientInstallation` 218 · `jourInstallation` 227
+`invitationEcartee` 230 · `refuseInstallation` 236 · `faconInstallation` 270
+`appliInstallee` 296 · `verifieApplication` 318 · `connaitLApplication` 328
+`adresseApplication` 341 · `lanceApplication` 361 · `faconRappel` 395 · `rappelEcarte` 403
+`refuseRappel` 409 · `relanceInvitation` 427 · `gesteInstallation` 432 · `doigtPose` 436
+`doigtLeve` 437 · `vueInstallation` 440 · `accueilleInvitation` 449
+`invitationRetenue` 475 · `finInvitation` 493 · `essaieInvitation` 517 · `listeEtapes` 650
+`teteInvitation` 663 · `retourAuxReglages` 684 · `remplitInvitation` 692
+`ouvreInvitation` 719 · `viseInstallation` 796 · `fermeGuide` 801 · `ouvreGuide` 822
+`ouvreRappel` 867 · `ouvreRetrouve` 923 · `caseInstallation` 946
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
