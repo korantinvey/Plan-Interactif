@@ -623,8 +623,12 @@ Deno.serve(async (req) => {
           // le client a pu fermer l'onglet : une file close n'est pas une erreur
           try { ctrl.enqueue(enc.encode(txt)); } catch (_) { ouvert = false; }
         };
-        const emet = (o: Record<string, unknown>) =>
-          pousse("data: " + JSON.stringify(o) + BLANC);
+        /* Tout passe par ici, et tout est donc gardé au passage : le relevé
+           déposé plus bas n'a rien à savoir des appelants. */
+        const emet = (o: Record<string, unknown>) => {
+          garde(o);
+          return pousse("data: " + JSON.stringify(o) + BLANC);
+        };
         const etape = (cle: string, etat: string, info?: unknown) =>
           emet({ etape: cle, etat, ...(info === undefined ? {} : { info }) });
         /* Où l'on en est *dans* l'étape : combien d'éléments sur combien, et
@@ -646,6 +650,88 @@ Deno.serve(async (req) => {
         // le poids d'une étape, corrigé dès qu'elle sait ce qu'elle avait à faire
         const pese = (cle: string, poids: number) => emet({ etape: cle, poids });
 
+        /* ------------------------------------------------------------------
+           Le même avancement, déposé sur la fiche du salon.
+
+           Le flux ne parvient pas partout. Un antivirus qui inspecte le TLS,
+           un relais d'entreprise, un compresseur qui attend d'avoir de quoi
+           remplir son bloc : tous gardent la réponse entière et ne la rendent
+           qu'à la fin. La fenêtre reste alors sur « Connexion au serveur… »
+           pendant toute la synchronisation, puis affiche le bilan d'un coup —
+           sur un poste, quand le téléphone d'à côté déroule les étapes du même
+           salon. Ce qui retient est chez celui qui regarde, et aucun en-tête
+           d'ici ne l'atteint.
+
+           D'où ce second chemin, qui ne doit rien au flux : ce qu'on émet est
+           aussi écrit là où la console ira le chercher par une requête
+           ordinaire, courte, qu'aucun tampon n'a de raison de retenir.
+
+           Les lignes y sont fondues par étape plutôt qu'empilées. La console
+           les applique champ par champ et ne relit que l'état courant : garder
+           les centaines de lignes d'une lecture de fiches ne lui apprendrait
+           rien et ferait grossir la colonne à chaque fiche.
+           ------------------------------------------------------------------ */
+        const ouvertLe = new Date().toISOString();
+        /* Le jeton vient de la console et lui revient tel quel : c'est à lui
+           qu'elle reconnaît son propre relevé. Comparer les dates aurait
+           confié l'affichage au réglage de l'horloge du poste. */
+        const jetonSuivi = String(corps.jeton ?? "");
+        let annonce: Record<string, unknown> | null = null;
+        const parEtape = new Map<string, Record<string, unknown>>();
+        const comptes: Record<string, number> = {};
+        let aDeposer = false, volEnCours = false;
+        let dernierVol: PromiseLike<unknown> = Promise.resolve();
+
+        const garde = (o: Record<string, unknown>) => {
+          if (o.etapes) annonce = o;
+          else if (o.chiffres) Object.assign(comptes, o.chiffres);
+          else if (typeof o.etape === "string") {
+            const avant = { ...(parEtape.get(o.etape) ?? {}) };
+            /* Un avancement chasse le précédent au lieu de s'y fondre : garder
+               un `total` que la ligne suivante n'a plus ferait remplir une
+               sous-barre qui doit battre. L'état et le poids, eux, restent —
+               ils sont posés par des lignes à part. */
+            if (o.fait !== undefined) {
+              delete avant.fait;
+              delete avant.total;
+              delete avant.detail;
+              delete avant.unite;
+            }
+            /* Une note sur l'étape — le pavillon qu'on attaque — prend la place
+               du libellé que comptait la sous-barre : c'est ce que fait la
+               fenêtre quand la ligne lui arrive par le flux, faute de quoi le
+               relevé afficherait « Stands » là où le flux dit « Hall 1 ». */
+            if (o.info !== undefined) delete avant.detail;
+            parEtape.set(o.etape, { ...avant, ...o });
+          } else return;  // le bilan et les refus passent par le flux, lui seul
+          aDeposer = true;
+        };
+
+        /* Une écriture à la fois, et pas plus d'une par seconde et demie. Le
+           relevé ne doit coûter ni un aller-retour de plus dans la boucle des
+           fiches, ni une file d'écritures qui se doublent : d'où un minuteur,
+           plutôt qu'un dépôt par ligne émise. */
+        const depose = () => {
+          if (!aDeposer || volEnCours) return;
+          aDeposer = false;
+          volEnCours = true;
+          dernierVol = db.from("evenement").update({
+            sync_avancement: {
+              ouvert: ouvertLe,
+              jeton: jetonSuivi,
+              lignes: [
+                ...(annonce ? [annonce] : []),
+                ...parEtape.values(),
+                ...(Object.keys(comptes).length ? [{ chiffres: comptes }] : []),
+              ],
+            },
+          }).eq("id", evt.id)
+            // un relevé perdu n'est pas une synchronisation perdue
+            .then(() => {}, () => {})
+            .then(() => { volEnCours = false; });
+        };
+        const depotRegulier = setInterval(depose, 1500);
+
         /* Huit mille octets illisibles, avant toute chose, puis un filet
            régulier tant que ça dure.
 
@@ -663,6 +749,9 @@ Deno.serve(async (req) => {
         pousse(bourre(8192));
         const battement = setInterval(() => pousse(bourre(512)), 2000);
         emet({ etapes: ETAPES });
+        // la liste des étapes tout de suite : c'est elle que la console
+        // attend, et un premier relevé vide ne lui apprendrait rien
+        depose();
         try {
       const g = gaia(evt.instance, evt.event_id ?? undefined);
       const resume: Record<string, unknown>[] = [];
@@ -1541,6 +1630,14 @@ Deno.serve(async (req) => {
           } catch (_) { /* la trace ne doit pas masquer l'erreur d'origine */ }
         } finally {
           clearInterval(battement);
+          clearInterval(depotRegulier);
+          /* La colonne ne porte que ce qui tourne : le bilan arrive par le
+             flux, et `derniere_sync` garde le reste. On attend le dépôt en vol
+             avant de vider, faute de quoi il se poserait après. */
+          aDeposer = false;
+          await dernierVol;
+          await db.from("evenement").update({ sync_avancement: null })
+            .eq("id", evt.id).then(() => {}, () => {});
           ouvert = false;
           try { ctrl.close(); } catch (_) { /* déjà close : rien à fermer */ }
         }

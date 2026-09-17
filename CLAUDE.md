@@ -214,6 +214,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | anglais des listes de valeurs (secteurs, nomenclature, champs à choix) | relevé par `sync-evenement` (`Gaia.codificationLangues`, `Eventmaker.listesEnAnglais`), colonne `libelles_en`, servi par `plan-public` sous `anglais`, posé par `_js.html` `indexe` ; intitulé anglais des champs propres `_console-js.html` `renommeChampPerso` |
 | version anglaise, bascule FR/EN | moteur `_langue.js`, dictionnaire `outils/anglais/`, contrôle et choix par page `outils/traductions.js`, injection `outils/genere.js` `langue` |
 | synchronisation Klipso | `supabase/functions/sync-evenement/`, `_partage/gaia.ts`, `champs.ts` |
+| fenêtre d'avancement d'une synchronisation, flux retenu en chemin | `_console-js.html` `fenetreAvancement` et `fluxFonction` ; secours qui relit l'avancement à la base `suitAuServeur`, déposé par `sync-evenement/` `garde` et `depose` dans la colonne `sync_avancement`, migration `l_avancement_d_une_synchronisation` |
 | API publique du plan, cache | `supabase/functions/plan-public/`, `src/index.mjs` |
 | fraîcheur du plan chez le visiteur — version, entête, publication immédiate | empreinte `_partage/version.ts` `versionDuPlan` (posée en en-tête `X-Version`), entête `src/index.mjs` `entete` (`?entete=1`, clé `ver1:`), demande `_admin2.html` `demandePlan`, amorce `outils/genere.js` `PRECHARGE` |
 
