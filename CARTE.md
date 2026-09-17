@@ -378,24 +378,22 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 951 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 835 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 82 · `invitationVoulue` 83 · `auDoigt` 113 · `nommeApplication` 149
-`reponsesInstallation` 167 · `retientInstallation` 172 · `jourInstallation` 181
-`invitationEcartee` 184 · `refuseInstallation` 190 · `faconInstallation` 218
-`appliInstallee` 241 · `verifieApplication` 263 · `connaitLApplication` 273
-`attendLOuverture` 301 · `nomDeLApplication` 324 · `adresseApplication` 339
-`lanceApplication` 359 · `faconRappel` 392 · `rappelEcarte` 400 · `refuseRappel` 406
-`relanceInvitation` 424 · `gesteInstallation` 429 · `doigtPose` 433 · `doigtLeve` 434
-`vueInstallation` 437 · `accueilleInvitation` 446 · `invitationRetenue` 472
-`finInvitation` 490 · `essaieInvitation` 514 · `teteInvitation` 632
-`retourAuxReglages` 653 · `remplitInvitation` 661 · `ouvreInvitation` 691
-`ouvreInstalle` 748 · `confirmeInstallation` 800 · `ouvreRappel` 833 · `ouvreRetrouve` 889
-`caseInstallation` 912
+`reglageInstallation` 91 · `invitationVoulue` 92 · `auDoigt` 122 · `nommeApplication` 158
+`reponsesInstallation` 176 · `retientInstallation` 181 · `jourInstallation` 190
+`invitationEcartee` 193 · `refuseInstallation` 199 · `faconInstallation` 227
+`appliInstallee` 250 · `verifieApplication` 272 · `connaitLApplication` 282
+`adresseApplication` 295 · `lanceApplication` 315 · `faconRappel` 348 · `rappelEcarte` 356
+`refuseRappel` 362 · `relanceInvitation` 380 · `gesteInstallation` 385 · `doigtPose` 389
+`doigtLeve` 390 · `vueInstallation` 393 · `accueilleInvitation` 402
+`invitationRetenue` 428 · `finInvitation` 446 · `essaieInvitation` 470
+`teteInvitation` 590 · `retourAuxReglages` 611 · `remplitInvitation` 619
+`ouvreInvitation` 649 · `ouvreRappel` 719 · `ouvreRetrouve` 775 · `caseInstallation` 798
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
