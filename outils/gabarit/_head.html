@@ -3572,9 +3572,11 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 .instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
   vertical-align:-.25em;color:var(--accent)}
 /* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
-   pleins — la case reste ce qu'on règle. */
-.reglages .aideR .apercuInst{padding:0;font-size:inherit;color:var(--accent);
-  text-decoration:underline;text-underline-offset:2px}
+   pleins — la case reste ce qu'on règle. Deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences : même geste, même
+   allure. */
+.reglages .aideR :is(.apercuInst, .apercuRappel){padding:0;font-size:inherit;
+  color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le

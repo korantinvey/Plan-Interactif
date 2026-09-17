@@ -439,13 +439,20 @@ function retientInviteRappel(){
  * Ce qui vaut la peine d'être demandé.
  *
  * Les conditions sont celles de l'interrupteur, à trois près : la question déjà
- * posée, l'autorisation déjà répondue, la visite guidée en cours.
+ * posée, le rappel déjà allumé, la visite guidée en cours.
  *
- * L'autorisation déjà répondue ferme la question des deux côtés : accordée, le
- * rappel se poserait sans que le navigateur demande quoi que ce soit — mais
- * l'interrupteur, lui, n'a pas été touché, et allumer un rappel dans le dos du
- * visiteur n'est pas ce qu'on propose ; refusée, aucune fenêtre de la page ne
- * rouvrira ce que le navigateur a fermé, et le tiroir dit déjà où le rouvrir.
+ * Et une qui n'en est pas une, contre toute attente : l'autorisation déjà
+ * accordée. Elle fermait la question — allumer un rappel dans le dos du
+ * visiteur n'est pas ce qu'on propose —, mais c'était confondre autoriser et
+ * demander. La fenêtre demande, justement ; ce qu'un accord déjà donné change,
+ * c'est seulement que le navigateur ne redemandera rien après le oui. Et
+ * l'autorisation est de son côté à lui rangée par origine, non par salon : tous
+ * les plans partagent la même, si bien qu'un visiteur ayant accepté les rappels
+ * d'un salon au printemps n'aurait plus rien vu à l'automne, sur un autre, et
+ * que l'exploitant qui vient d'essayer son interrupteur ne voyait jamais la
+ * fenêtre qu'il venait d'activer. Seul un refus ferme donc la question :
+ * aucune fenêtre de la page ne rouvre ce que le navigateur a fermé, et le
+ * tiroir dit déjà où le rouvrir.
  *
  * La visite guidée, enfin, mène le visiteur d'une étape à l'autre, et son
  * chapitre des zones finit justement sur une conférence retenue : une fenêtre
@@ -455,7 +462,7 @@ function retientInviteRappel(){
 function fenetreRappel(){
   if (inviteRappelFaite() || TUTO) return;
   if (!rappelsOfferts() || !poussePossible()) return;
-  if (RAPPELS_ACTIFS || Notification.permission !== "default") return;
+  if (RAPPELS_ACTIFS || Notification.permission === "denied") return;
   /* La même retenue que l'interrupteur : une conférence qui commence dans dix
      minutes, avec un quart d'heure d'avance réglé, ne produit aucun rappel. Il
      n'y a alors rien à proposer, et le tiroir le dit mieux qu'une fenêtre. */
@@ -481,8 +488,15 @@ function fenetreRappel(){
  * Fermée par n'importe quelle porte — le pied, la croix, le voile, « Échap » —,
  * elle compte comme posée : la question a été vue, et c'est tout ce qu'on
  * voulait savoir.
+ *
+ * En aperçu, rien de tout cela : l'exploitant règle son salon depuis un écran
+ * d'administration, où la fenêtre ne paraît jamais — `rappelsOfferts` l'y
+ * refuse, faute de visiteur à qui la poser. Sans l'aperçu il allumerait une
+ * chose qu'il n'a jamais vue, comme pour l'invitation à installer le plan.
+ * L'aperçu ne retient donc pas la réponse, n'abonne personne, et ramène aux
+ * réglages d'où l'on vient.
  */
-function proposeRappels(){
+function proposeRappels(apercu){
   const n = minutesRappel();
   ouvreModale("Pour ne pas la manquer", corps => {
     const p = document.createElement("p");
@@ -498,10 +512,12 @@ function proposeRappels(){
   }, [
     { libelle: "Non merci" },
     { libelle: "Oui, me prévenir", genre: "accent", action: () => {
+      if (apercu) return;
       /* La demande du navigateur part dans le geste même — `allumeRappels`
          appelle `requestPermission` avant toute attente —, et la fenêtre se
          retire derrière elle : c'est celle du navigateur qui a la main
-         maintenant, et c'est là que la réponse se donne.
+         maintenant, et c'est là que la réponse se donne. Une autorisation déjà
+         accordée la rend muette, et le rappel se pose dans la foulée.
 
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
@@ -512,7 +528,7 @@ function proposeRappels(){
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  avantFermeture = retientInviteRappel;
+  avantFermeture = apercu ? () => retourAuxReglages("rappel") : retientInviteRappel;
 }
 
 /**

@@ -383,11 +383,15 @@ function teteInvitation(corps, sousTitre){
 /* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
    qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
    achève de se fermer après lui, et refermerait les réglages rouverts
-   sur-le-champ. */
-function retourAuxReglages(){
+   sur-le-champ.
+
+   La marque dit quelle case a ouvert l'aperçu : deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences, et ils se ressemblent
+   assez pour qu'on revienne au mauvais si on ne le nomme pas. */
+function retourAuxReglages(marque){
   queueMicrotask(() => {
     ouvreReglages("Admin");
-    const aide = $("mCorps").querySelector('[data-reglage="installation"]');
+    const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
 }
@@ -453,7 +457,7 @@ function ouvreInvitation(facon, apercu){
     [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
-    if (apercu) return retourAuxReglages();
+    if (apercu) return retourAuxReglages("installation");
     if (reponse === "compris") retientInstallation({ compris: true });
     else if (!reponse) refuseInstallation();
   };
@@ -480,7 +484,7 @@ function ouvreInstalle(apercu){
       "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
     corps.appendChild(p);
   }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = retourAuxReglages;
+  if (apercu) avantFermeture = () => retourAuxReglages("installation");
 }
 
 /* L'installation se termine quelques secondes après qu'on l'a acceptée — le
