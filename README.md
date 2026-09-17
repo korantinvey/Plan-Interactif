@@ -338,9 +338,8 @@ juste pour un rectangle, et ce l'est moins dès que le plan sort du cas d'école
 les noms se touchent, une zone organisateur dont l'intitulé traverse une allée.
 L'exploitant voit ces cas-là ; le calcul, non.
 
-La case **« Placer les libellés à la main »**, sous la couche *Textes* du
-panneau des calques, ouvre un mode où l'on attrape un libellé et où on le pose
-ailleurs. Une palette s'ouvre sur celui qu'on retouche : sa taille, et de quoi
+Le **crayon** de la couche *Textes*, dans le panneau des calques, ouvre un mode
+où l'on attrape un libellé et où on le pose ailleurs. Une palette s'ouvre sur celui qu'on retouche : sa taille, et de quoi
 revenir au placement automatique. Les flèches du clavier l'ajustent au quart de
 mètre, au mètre touche majuscule tenue. Hors de ce mode, un libellé ne reçoit
 aucun clic — c'est le stand qui est dessous qu'on désigne à travers lui.
@@ -379,6 +378,64 @@ Le nom retenu dans l'empreinte est celui qui s'affiche, y compris quand
 l'exploitant l'a choisi lui-même sur une zone : renommer, c'est écrire autre
 chose, et cet autre chose n'a pas de raison de tenir à la même taille au même
 endroit.
+
+## Reprendre la forme d'un stand ou d'une zone
+
+Les emplacements et les zones organisateur viennent de la source du plan, et
+c'est bien ainsi : personne ne veut redessiner neuf cents stands. Mais la source
+se trompe, ou tarde. Un stand posé de travers, une zone qui déborde sur l'allée,
+un îlot recomposé la veille du montage et pas encore ressaisi : l'exploitant
+voit le plan, la source non.
+
+Le **crayon** des couches *Stands* et *Zones organisateur*, dans le panneau des
+calques, ouvre un mode où l'on reprend une forme à la main — comme celui de la
+couche *Textes* ouvre le placement des libellés. On clique l'emplacement, on le
+glisse pour le déplacer, on tire ses poignées pour le redimensionner ; les
+flèches du clavier l'ajustent au quart de mètre, au mètre touche majuscule
+tenue. Les trois modes — dessin, libellés, géométrie — se ferment l'un l'autre :
+leurs glissers viseraient le même pointeur.
+
+Deux choses commandent le geste :
+
+- **Les aimants sont ceux du dessin.** La forme s'accroche aux coins et aux
+  centres des emplacements voisins, à leur grille, et aux formes déjà
+  dessinées — c'est contre eux qu'on la range, et eux seuls sont justes au
+  centimètre. *Alt* relâche l'accrochage le temps d'un geste. Une forme ne
+  s'accroche jamais à elle-même.
+- **Un rectangle d'aplomb reste un rectangle.** Ses quatre coins commandent, la
+  poignée opposée tenant bon ; tirer un seul de ses sommets en aurait fait un
+  trapèze. Une forme quelconque — un L, une zone au contour libre — se reprend
+  sommet par sommet. Deux champs donnent la largeur et la hauteur exactes quand
+  la forme est rectangulaire.
+
+Le **cadenas** de la ligne, lui, est **fermé d'avance**, à l'inverse de celui
+d'un calque de dessin. Un calque de dessin naît ouvert parce que c'est pour y
+dessiner qu'on le crée ; les emplacements, eux, sont là depuis la
+synchronisation, et neuf fois sur dix on ne vient au panneau que pour les
+recolorer ou les masquer. Il faut donc avoir voulu ouvrir le cadenas — et le
+refermer referme le mode.
+
+Le réglage se range dans l'apparence du salon, comme le placement d'un libellé,
+et part aux visiteurs de lui-même : c'est la forme reprise qu'ils voient.
+**« Géométrie d'origine »**, dans la palette, rend à l'emplacement celle que la
+source lui donne et efface le réglage.
+
+### Ce qu'une synchronisation en fait
+
+Chaque reprise porte l'**empreinte** de la géométrie dont elle part — le tracé
+servi par la source, condensé. Si la source ne touche pas à l'emplacement,
+l'empreinte correspond encore et la forme reprise tient : c'est tout l'objet.
+Si elle le déplace ou le redécoupe, l'empreinte ne correspond plus et la reprise
+cesse de s'appliquer : **c'est la nouvelle géométrie de la source qui s'affiche**.
+La source a tranché, et la forme qu'elle décrit maintenant n'est plus celle
+qu'on avait reprise.
+
+Le réglage n'est pas effacé pour autant, il cesse de valoir — si la source
+revient sur ses pas, il revient avec elle.
+
+L'empreinte porte sur le tracé servi, et sur rien d'autre : elle ne sait pas
+d'où il vient et n'a pas à le savoir. Klipso aujourd'hui, une autre sorte de
+source demain, la règle est la même sans qu'on y touche.
 
 ## Verrouiller un calque de dessin
 

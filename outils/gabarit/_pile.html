@@ -150,6 +150,11 @@ function construitPanneau(){
 
     const c = x.t === "dessin" ? x.ref : conf(x.t === "fond" ? x.k.slice(5) : x.k);
     const coche = c.visible === false ? "" : " checked";
+    /* Les deux couches que la source dessine — emplacements et zones — se
+       reprennent à la main, forme par forme (`_geometrie.html`). Leur cadenas
+       est fermé d'avance : on ne touche pas à la géométrie d'un salon en
+       passant régler une couleur. */
+    const sorte = x.k === "data:stands" ? "stands" : x.k === "data:zones" ? "zones" : null;
     d.innerHTML = '<label><input type="checkbox"' + coche + '><span></span></label>' +
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
@@ -157,6 +162,9 @@ function construitPanneau(){
          les couleurs des couches de données forment une colonne, et un bouton
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
+      (sorte ? boutonVerrouGeo(sorte) +
+               '<button class="ren rgeo" data-geo="' + sorte +
+               '" title="Reprendre la géométrie à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
@@ -262,6 +270,25 @@ function construitPanneau(){
       const cr = d.querySelector(".rlib");
       cr.setAttribute("aria-pressed", PLACE_LIBELLES);
       cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!PLACE_LIBELLES); };
+    }
+
+    /* Le crayon des emplacements ouvre la reprise de leur géométrie, comme
+       celui des textes ouvre le placement des libellés : la même façon de
+       retoucher ce qu'une couche pose sur le plan, donc le même bouton au
+       même endroit. Le cadenas le précède, parce qu'on lit la ligne de gauche
+       à droite — ce qui protège avant ce qui modifie — et parce que c'est
+       justement lui qu'il éteint. */
+    if (sorte){
+      const ferme = geoVerrouille(sorte);
+      d.querySelector(".vgeo").onclick = ev => { ev.stopPropagation(); basculeVerrouGeo(sorte); };
+      const cr = d.querySelector(".rgeo");
+      cr.setAttribute("aria-pressed", SORTE_GEO === sorte);
+      cr.disabled = ferme;
+      if (ferme) cr.title = "Couche verrouillée : ouvrez son cadenas pour reprendre une forme.";
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        modeGeometrie(SORTE_GEO === sorte ? null : sorte);
+      };
     }
 
     hote.appendChild(d);

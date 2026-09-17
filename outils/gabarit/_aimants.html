@@ -76,16 +76,25 @@ function pointsAimants(pts){
 /**
  * Les sommets des emplacements et des zones du pavillon.
  *
- * Ils ne bougent qu'à la synchronisation, laquelle recharge la page : on les
- * relève une fois par pavillon et on n'y revient pas.
+ * Ils ne bougent qu'à la synchronisation, ou sous la main de l'exploitant qui
+ * reprend une forme (`_geometrie.html`) — auquel cas le relevé s'oublie à la
+ * fin du geste. On le refait donc une fois par pavillon, et pas davantage.
+ *
+ * `sauf` écarte un emplacement du relevé : celui qu'on est en train de
+ * déplacer, dont les propres coins le retiendraient sur place. Il a son
+ * entrée à lui pour que le geste ne rebâtisse pas le relevé à chaque image.
  */
 const AIMANTS_FOND = new Map();
-function aimantsDuPlan(){
+const oublieAimantsDuPlan = () => AIMANTS_FOND.clear();
+
+function aimantsDuPlan(sauf){
   const p = P();
-  let a = AIMANTS_FOND.get(p.id);
+  const cle = sauf ? p.id + "|" + sauf : p.id;
+  let a = AIMANTS_FOND.get(cle);
   if (a) return a;
   const pts = [], emprises = [];
   const releve = (o) => {
+    if (o.id === sauf) return;
     const s = sommets(o);
     if (!s.length) return;
     pts.push(...pointsAimants(s));
@@ -96,7 +105,7 @@ function aimantsDuPlan(){
   for (const o of p.stands) releve(o);
   for (const o of p.zones) releve(o);
   a = { pts: pts, xs: axesDe(pts, 0), ys: axesDe(pts, 1), emprises: emprises };
-  AIMANTS_FOND.set(p.id, a);
+  AIMANTS_FOND.set(cle, a);
   return a;
 }
 
@@ -135,11 +144,11 @@ const sousLeGeste = (c, e, tol) =>
  * Exiger les deux à la fois ne rattraperait alors ni l'une ni l'autre, là où
  * chacune séparément range ce qu'elle peut.
  */
-function cranGrille(coins, i, tol){
+function cranGrille(coins, i, tol, sauf){
   const s = pasAimant();
   let m = null;
   for (const c of coins)
-    for (const e of aimantsDuPlan().emprises){
+    for (const e of aimantsDuPlan(sauf).emprises){
       if (!sousLeGeste(c, e, tol)) continue;
       const v = cale(c[i], e[i], e[i + 2], s);
       const d = Math.abs(v - c[i]);
@@ -213,7 +222,7 @@ function montreAimants(coins, opts){
      voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on
      travaille sur un hall entier ou sur un stand. */
   const portee = u * PORTEE_VUE;
-  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const jeux = [aimantsDuPlan(o.saufPlan || null), aimantsDessines(o.sauf || null)];
   const vus = new Map();
   for (const c of coins)
     for (const jeu of jeux)
@@ -230,7 +239,7 @@ function montreAimants(coins, opts){
   const pg = Math.min(portee, pas * 8);
   const grille = new Map();
   for (const c of coins)
-    for (const e of aimantsDuPlan().emprises){
+    for (const e of aimantsDuPlan(o.saufPlan || null).emprises){
       if (!sousLeGeste(c, e, pg)) continue;
       const de = (v, a, b) => [Math.max(a, a + Math.ceil((v - pg - a) / pas) * pas),
                                Math.min(b, v + pg)];
@@ -302,14 +311,15 @@ const croixAimant = (q, tol) => {
  * quatre coins de sa boîte et son centre, et retient la plus petite
  * correction. `axes` vaut « x » quand la hauteur est commandée d'ailleurs —
  * les proportions d'une image — et que l'accrochage ne doit toucher qu'à la
- * largeur.
+ * largeur. `sauf` écarte une forme dessinée du relevé, `saufPlan` un
+ * emplacement du salon : celui qu'on reprend ne s'accroche pas à lui-même.
  */
 function correction(coins, opts){
   const o = opts || {};
   montreAimants(coins, o);
   if (!aimantsActifs() || o.alt){ apercuGuide(null); return [0, 0]; }
   const tol = toleranceTrace();
-  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const jeux = [aimantsDuPlan(o.saufPlan || null), aimantsDessines(o.sauf || null)];
   const seulX = o.axes === "x";
 
   /* Un sommet passe avant tout : c'est l'accrochage franc, celui qui pose un
@@ -331,7 +341,7 @@ function correction(coins, opts){
           if (e < ec){ ec = e; d = x - c[i]; v = x; }
         }
     // le cran de la grille de l'emplacement où l'on se trouve, s'il fait mieux
-    const g = cranGrille(coins, i, tol);
+    const g = cranGrille(coins, i, tol, o.saufPlan || null);
     if (g && g.d < ec){ d = g.v - g.dep; v = g.v; }
     return [d, v];
   };

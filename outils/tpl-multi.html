@@ -651,6 +651,16 @@ html.mode-libelles #labels .lbl .coexPast{pointer-events:all}
 html.mode-libelles #labels .lbl:hover text,
 html.mode-libelles #labels .lbl.pick text{fill:var(--accent)}
 
+/* Reprendre la géométrie d'un emplacement.
+   Une seule couche répond à la fois — celle dont on a ouvert le crayon — et
+   c'est ce que disent les deux classes. Ailleurs, le clic garde son sens
+   ordinaire : il ouvre la fiche, ou déplace la vue. La forme reprise se cerne
+   d'un liseré d'accent, le même que celui de ses poignées : sans lui, on ne
+   sait pas laquelle des deux voisines répondra au glisser. */
+html.mode-geo-stands #stands g,html.mode-geo-zones #zones g{cursor:move}
+html.mode-geo-stands #stands g.geopick path,
+html.mode-geo-zones #zones g.geopick path{stroke:var(--accent);stroke-width:2.5}
+
 /* --- calques de dessin --- */
 .dcal{pointer-events:none}
 .dcal path{fill:none;stroke:currentColor;stroke-width:2;vector-effect:non-scaling-stroke;
@@ -886,8 +896,10 @@ html.sans-image-stand .outils #imageSoc{display:none}
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .elemChamp select:focus{border-color:var(--accent);outline:none}
 .elemChamp[hidden]{display:none}
-#elemDim{display:flex;flex-direction:column;gap:6px}
-#elemDim[hidden]{display:none}
+/* La palette de reprise des géométries emprunte celle des libellés : même
+   place, même allure, et les deux ne servent jamais en même temps. */
+#elemDim,#geoDim{display:flex;flex-direction:column;gap:6px}
+#elemDim[hidden],#geoDim[hidden]{display:none}
 #elemTraitReg{display:flex;flex-direction:column;gap:6px}
 #elemTraitReg[hidden]{display:none}
 /* Le rôle du calque dans les itinéraires : on le règle là où l'on dessine,
@@ -910,12 +922,15 @@ html.sans-image-stand .outils #imageSoc{display:none}
   border:1px solid var(--line);border-radius:var(--radius)}
 .elem input:focus{border-color:var(--accent);outline:none}
 
-#poignees{pointer-events:none}
-#poignees .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
+/* Les poignées d'une forme dessinée et celles d'un emplacement repris se
+   ressemblent parce que c'est le même geste : chacune a son calque, les deux
+   modes ne s'ouvrant jamais ensemble. */
+#poignees,#poigneesGeo{pointer-events:none}
+#poignees .cadreSel,#poigneesGeo .cadreSel{fill:none;stroke:var(--accent);stroke-width:1;
   stroke-dasharray:5 4;vector-effect:non-scaling-stroke;opacity:.8}
-#poignees .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
+#poignees .pgn,#poigneesGeo .pgn{fill:var(--surface);stroke:var(--accent);stroke-width:1.6;
   vector-effect:non-scaling-stroke;pointer-events:auto}
-#poignees .pgn:hover{fill:var(--accent-soft)}
+#poignees .pgn:hover,#poigneesGeo .pgn:hover{fill:var(--accent-soft)}
 .outilsPied{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-3)}
 .calq .mv{width:15px;height:18px;border:none;color:var(--ink-3);font-size:11px;line-height:1;padding:0}
 .calq .mv:hover{color:var(--ink)}
@@ -4534,6 +4549,27 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <div class="outilsPied"><span id="libAide"></span></div>
     </div>
 
+    <!-- Reprendre la géométrie d'un emplacement. La palette s'ouvre avec le
+         mode, avant même qu'une forme soit choisie : c'est elle qui dit qu'on
+         y est, et par où en sortir. -->
+    <div class="outils libreg" id="geoReg">
+      <div class="outilsTete">
+        <span class="eyebrow" id="geoNom"></span>
+        <span class="outilsActs">
+          <button id="geoFerme" title="Terminer — Échap"
+            aria-label="Terminer la reprise des géométries">&times;</button>
+        </span>
+      </div>
+      <div id="geoDim" hidden>
+        <label class="elemChamp"><span>Largeur</span>
+          <input id="geoLargeur" type="number" min="0.1" max="999" step="0.5"></label>
+        <label class="elemChamp"><span>Hauteur</span>
+          <input id="geoHauteur" type="number" min="0.1" max="999" step="0.5"></label>
+      </div>
+      <button class="auto" id="geoOrigine">Géométrie d'origine</button>
+      <div class="outilsPied"><span id="geoAide"></span></div>
+    </div>
+
     <div class="modale" id="modale">
       <div class="mfen" role="dialog" aria-modal="true">
         <header><h2 id="mTitre"></h2><button id="mFermer" aria-label="Fermer">&times;</button></header>
@@ -4849,6 +4885,13 @@ function indexe(d){
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
+  /* Les géométries que l'exploitant a reprises à la main, posées avant que
+     rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
+     marche lisent tous la forme de l'emplacement, et doivent lire celle qui
+     vaut. Une forme que la source a déplacée depuis reprend la sienne —
+     l'empreinte en décide (voir `_geometrie.html`). */
+  appliqueGeometries();
+
   /* L'habillage est connu dès ici, et le plan écrit ses libellés dans sa
      police : reposée maintenant, elle vaut dès le premier tracé. Attendre
      « appliqueApparence » la mettait une fois de trop en retard — les stands
@@ -5217,6 +5260,9 @@ function montePlan(){
     esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
   emp = p.emprise;
   calqueActif = null;
+  /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
+     plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
+  if (SORTE_GEO) choisitGeo(null);
   HIST.length = REFAIRE.length = 0;
   { const o = $("outils"); if (o) o.classList.remove("open"); }
   monteHabillage();
@@ -6667,6 +6713,7 @@ const appliqueVue = () => {
     majEditionWebgl();
     // les poignées d'une forme choisie gardent leur taille à l'écran pendant le zoom
     if (enEdition() && typeof dessinePoignees === "function") dessinePoignees();
+    if (enEdition() && typeof dessinePoigneesGeo === "function") dessinePoigneesGeo();
     // tant que la première image n'est pas dessinée, le SVG montre le plan et suit la vue
     if (GL.pret) return;
   }
@@ -6674,6 +6721,7 @@ const appliqueVue = () => {
   vueEcrite = { x: view.x, y: view.y, w: view.w, h: view.h };
   if (libPeints) etireLibelles();
   if (typeof dessinePoignees === "function") dessinePoignees();
+  if (typeof dessinePoigneesGeo === "function") dessinePoigneesGeo();
   // le trait de l'itinéraire garde son épaisseur ; ses pastilles, non
   if (typeof rafraichitBouts === "function") rafraichitBouts();
   // et la pointe des lignes fléchées, pas davantage
@@ -8351,6 +8399,9 @@ svg.addEventListener("pointerdown", e => {
      le fond et non le plan — c'est le seul geste que la palette attend. */
   if (typeof cartePointerDown === "function" && cartePointerDown(e)) return;
   if (libellePointerDown(e)) return;
+  /* Reprendre la forme d'un emplacement passe avant sa fiche : le geste vise
+     la géométrie, pas l'exposant qui la loue. */
+  if (geometriePointerDown(e)) return;
   // le contour d'un bâtiment qu'on cale se saisit avant ce qui est dessous
   if (calagePointerDown(e)) return;
   if (dessinPointerDown(e)) return;
@@ -8365,6 +8416,7 @@ svg.addEventListener("pointermove", e => {
   if (pince && doigts.size >= 2){ e.preventDefault(); suitPince(); return; }
   if (typeof cartePointerMove === "function" && cartePointerMove(e)) return;
   if (libellePointerMove(e)) return;
+  if (geometriePointerMove(e)) return;
   if (calagePointerMove(e)) return;
   if (dessinPointerMove(e)) return;
   if (!drag) return;
@@ -8434,6 +8486,7 @@ svg.addEventListener("pointerup", e => {
   if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
   if (libellePointerUp(e)) return;
+  if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
   const d = drag; drag = null; saisitPlan(false);
@@ -8476,6 +8529,7 @@ svg.addEventListener("pointercancel", e => {
   doigts.delete(e.pointerId);
   if (doigts.size < 2) pince = null;
   glisseLib = null;
+  glisseGeo = null;
   drag = null;
   saisitPlan(false);
 });
@@ -8530,6 +8584,15 @@ document.addEventListener("keydown", e => {
                   e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
     return;
   }
+  /* Un emplacement repris se règle du même pas, pour la même raison : la main
+     l'a posé à peu près, le clavier l'ajuste. */
+  if (SORTE_GEO && geoSel && !saisie && e.key.indexOf("Arrow") === 0){
+    e.preventDefault();
+    const pas = e.shiftKey ? 1 : .25;
+    pousseGeometrie(e.key === "ArrowLeft" ? -pas : e.key === "ArrowRight" ? pas : 0,
+                    e.key === "ArrowUp" ? -pas : e.key === "ArrowDown" ? pas : 0);
+    return;
+  }
   /* Une forme choisie se règle du même pas : l'aimant l'a posée contre sa
      voisine, le clavier lui donne l'allée qui les sépare. */
   if (ADMIN && formeSel && !saisie && e.key.indexOf("Arrow") === 0){
@@ -8541,6 +8604,10 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape"){
     if (PLACE_LIBELLES){ modePlacementLibelles(false); return; }
+    /* Une forme choisie se relâche d'abord, le mode ensuite : deux crans pour
+       une même touche, comme ailleurs sur le plan. */
+    if (SORTE_GEO && geoSel){ choisitGeo(null); return; }
+    if (SORTE_GEO){ modeGeometrie(null); return; }
     if (enCours){ termineTrace(false); return; }
     if (formeSel){ choisitForme(null); return; }
     if (calqueActif){ activeCalque(calqueActif); return; }
@@ -12271,7 +12338,7 @@ let PROFIL_ADMIN = false;
  */
 function retireAdmin(){
   ["btnLayers", "btnReglages", "menuCompte", "bandeAdmin"].forEach(id => { const b = $(id); if (b) b.remove(); });
-  ["panel", "outils", "elemSel", "libReg"].forEach(id => {
+  ["panel", "outils", "elemSel", "libReg", "geoReg"].forEach(id => {
     const e = $(id);
     if (!e) return;
     e.hidden = true;
@@ -13240,9 +13307,11 @@ function libelleAutomatique(){
 function modePlacementLibelles(on){
   PLACE_LIBELLES = !!on && ADMIN;
   racine.classList.toggle("mode-libelles", PLACE_LIBELLES);
-  /* Le placement et le dessin se disputeraient le glisser : entrer dans l'un
-     referme l'autre, plutôt que de laisser deux gestes viser le même pointeur. */
+  /* Le placement, le dessin et la reprise d'une géométrie se disputeraient le
+     glisser : entrer dans l'un referme les autres, plutôt que de laisser trois
+     gestes viser le même pointeur. */
   if (PLACE_LIBELLES && calqueActif) activeCalque(calqueActif);
+  if (PLACE_LIBELLES && SORTE_GEO) modeGeometrie(null);
   if (!PLACE_LIBELLES){ libSel = null; glisseLib = null; }
   /* On sort d'ici par quatre chemins — le crayon, la croix de la palette, la
      touche d'échappement, l'ouverture d'un calque de dessin. Le crayon se
@@ -15201,6 +15270,8 @@ function activeCalque(id){
      l'inverse manquait, et le crayon des textes serait resté allumé pour un
      mode qu'on venait de quitter. */
   if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
+  // et la reprise d'une géométrie, qui vise le même pointeur
+  if (calqueActif && SORTE_GEO) modeGeometrie(null);
   formeSel = null;
   termineTrace(false);
   montreAimants(null);
@@ -15932,16 +16003,25 @@ function pointsAimants(pts){
 /**
  * Les sommets des emplacements et des zones du pavillon.
  *
- * Ils ne bougent qu'à la synchronisation, laquelle recharge la page : on les
- * relève une fois par pavillon et on n'y revient pas.
+ * Ils ne bougent qu'à la synchronisation, ou sous la main de l'exploitant qui
+ * reprend une forme (`_geometrie.html`) — auquel cas le relevé s'oublie à la
+ * fin du geste. On le refait donc une fois par pavillon, et pas davantage.
+ *
+ * `sauf` écarte un emplacement du relevé : celui qu'on est en train de
+ * déplacer, dont les propres coins le retiendraient sur place. Il a son
+ * entrée à lui pour que le geste ne rebâtisse pas le relevé à chaque image.
  */
 const AIMANTS_FOND = new Map();
-function aimantsDuPlan(){
+const oublieAimantsDuPlan = () => AIMANTS_FOND.clear();
+
+function aimantsDuPlan(sauf){
   const p = P();
-  let a = AIMANTS_FOND.get(p.id);
+  const cle = sauf ? p.id + "|" + sauf : p.id;
+  let a = AIMANTS_FOND.get(cle);
   if (a) return a;
   const pts = [], emprises = [];
   const releve = (o) => {
+    if (o.id === sauf) return;
     const s = sommets(o);
     if (!s.length) return;
     pts.push(...pointsAimants(s));
@@ -15952,7 +16032,7 @@ function aimantsDuPlan(){
   for (const o of p.stands) releve(o);
   for (const o of p.zones) releve(o);
   a = { pts: pts, xs: axesDe(pts, 0), ys: axesDe(pts, 1), emprises: emprises };
-  AIMANTS_FOND.set(p.id, a);
+  AIMANTS_FOND.set(cle, a);
   return a;
 }
 
@@ -15991,11 +16071,11 @@ const sousLeGeste = (c, e, tol) =>
  * Exiger les deux à la fois ne rattraperait alors ni l'une ni l'autre, là où
  * chacune séparément range ce qu'elle peut.
  */
-function cranGrille(coins, i, tol){
+function cranGrille(coins, i, tol, sauf){
   const s = pasAimant();
   let m = null;
   for (const c of coins)
-    for (const e of aimantsDuPlan().emprises){
+    for (const e of aimantsDuPlan(sauf).emprises){
       if (!sousLeGeste(c, e, tol)) continue;
       const v = cale(c[i], e[i], e[i + 2], s);
       const d = Math.abs(v - c[i]);
@@ -16069,7 +16149,7 @@ function montreAimants(coins, opts){
      voisinage du curseur tel qu'on le voit, et il doit rester le même qu'on
      travaille sur un hall entier ou sur un stand. */
   const portee = u * PORTEE_VUE;
-  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const jeux = [aimantsDuPlan(o.saufPlan || null), aimantsDessines(o.sauf || null)];
   const vus = new Map();
   for (const c of coins)
     for (const jeu of jeux)
@@ -16086,7 +16166,7 @@ function montreAimants(coins, opts){
   const pg = Math.min(portee, pas * 8);
   const grille = new Map();
   for (const c of coins)
-    for (const e of aimantsDuPlan().emprises){
+    for (const e of aimantsDuPlan(o.saufPlan || null).emprises){
       if (!sousLeGeste(c, e, pg)) continue;
       const de = (v, a, b) => [Math.max(a, a + Math.ceil((v - pg - a) / pas) * pas),
                                Math.min(b, v + pg)];
@@ -16158,14 +16238,15 @@ const croixAimant = (q, tol) => {
  * quatre coins de sa boîte et son centre, et retient la plus petite
  * correction. `axes` vaut « x » quand la hauteur est commandée d'ailleurs —
  * les proportions d'une image — et que l'accrochage ne doit toucher qu'à la
- * largeur.
+ * largeur. `sauf` écarte une forme dessinée du relevé, `saufPlan` un
+ * emplacement du salon : celui qu'on reprend ne s'accroche pas à lui-même.
  */
 function correction(coins, opts){
   const o = opts || {};
   montreAimants(coins, o);
   if (!aimantsActifs() || o.alt){ apercuGuide(null); return [0, 0]; }
   const tol = toleranceTrace();
-  const jeux = [aimantsDuPlan(), aimantsDessines(o.sauf || null)];
+  const jeux = [aimantsDuPlan(o.saufPlan || null), aimantsDessines(o.sauf || null)];
   const seulX = o.axes === "x";
 
   /* Un sommet passe avant tout : c'est l'accrochage franc, celui qui pose un
@@ -16187,7 +16268,7 @@ function correction(coins, opts){
           if (e < ec){ ec = e; d = x - c[i]; v = x; }
         }
     // le cran de la grille de l'emplacement où l'on se trouve, s'il fait mieux
-    const g = cranGrille(coins, i, tol);
+    const g = cranGrille(coins, i, tol, o.saufPlan || null);
     if (g && g.d < ec){ d = g.v - g.dep; v = g.v; }
     return [d, v];
   };
@@ -16328,6 +16409,653 @@ function appliqueDimension(quoi){
   enregistreDessins(); dessineDessins(); dessinePoignees();
   ecritDimensions(f);
 }
+
+/* ============================================================
+   11 octies. Reprendre à la main la géométrie d'un emplacement
+
+   Les stands et les zones organisateur viennent de la source du plan —
+   Klipso aujourd'hui, d'autres demain — et c'est bien ainsi : personne ne
+   veut redessiner neuf cents emplacements. Mais la source se trompe, ou
+   tarde : un stand posé de travers, une zone qui déborde sur l'allée, un
+   îlot recomposé la veille du montage et pas encore ressaisi. L'exploitant
+   voit le plan, la source non. Il lui faut pouvoir corriger la forme sans
+   attendre, et sans la reperdre à la synchronisation suivante.
+
+   La retouche se range donc dans l'apparence du salon, comme le placement
+   d'un libellé, et porte avec elle l'empreinte de la géométrie dont elle
+   part. Une synchronisation qui ne touche pas à l'emplacement la laisse en
+   place — c'est tout l'objet. Une qui le déplace ou le redécoupe la périme :
+   la source a tranché, et la forme qu'elle décrit maintenant n'est plus
+   celle qu'on avait reprise. Le réglage n'est pas effacé pour autant, il
+   cesse de s'appliquer — si la source revient sur ses pas, il revient avec
+   elle.
+
+   L'empreinte porte sur le tracé servi, et sur rien d'autre : elle ne sait
+   pas d'où il vient et n'a pas à le savoir. Une seconde sorte de source se
+   rangera derrière la même règle sans qu'on y touche.
+
+   Le geste, lui, est celui du dessin : on glisse la forme, on tire ses
+   poignées, et les aimants l'accrochent aux emplacements voisins — c'est
+   contre eux qu'on la range, et eux seuls sont justes au centimètre.
+   ============================================================ */
+const cleGeo = (id) => "_geo:" + id;
+
+/* Le mode est transitoire, comme celui des libellés : on y entre pour
+   corriger, on en sort. Il ne se retient pas d'une visite à l'autre. */
+let SORTE_GEO = null;    // « stands », « zones », ou rien
+let geoSel = null;       // l'emplacement dont on reprend la forme
+let glisseGeo = null;    // le geste en cours
+
+const arrondiGeo = (n) => Math.round(n * 100) / 100;
+
+/**
+ * L'empreinte de la géométrie servie par la source.
+ *
+ * Un condensé plutôt que le tracé lui-même : le tracé d'une zone fait
+ * plusieurs centaines de caractères, et le garder en double dans la
+ * configuration ferait payer à chaque visiteur une chaîne qui ne dessine
+ * rien. Ce qu'on lui demande est d'ailleurs plus étroit — non pas redire la
+ * forme, mais répondre « a-t-elle bougé ? ».
+ */
+function empreinteGeo(g){
+  const t = String((g && g.d) || "");
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) h = Math.imul(h ^ t.charCodeAt(i), 16777619) >>> 0;
+  return t.length.toString(36) + "-" + h.toString(36);
+}
+
+/* ------------------------------------------------------------
+   Anneaux et tracé
+
+   La source rend un polygone — un anneau, parfois plusieurs pour un stand en
+   deux morceaux — et le sert en tracé SVG. On refait le chemin inverse pour
+   l'éditer, puis celui-là pour l'afficher : mêmes conventions qu'à la
+   synchronisation (« _partage/geometrie.ts »), sans quoi la forme reprise ne
+   se lirait pas comme celle qu'on reprend.
+   ------------------------------------------------------------ */
+
+/** Le tracé « M x y L x y … Z » découpé en anneaux. Le sommet de fermeture,
+ *  que le relevé répète, est retiré : il ferait une poignée posée sur une
+ *  autre, et l'on tirerait l'une en croyant tenir l'autre. */
+function anneauxGeo(d){
+  const out = [];
+  for (const bout of String(d || "").split("M")){
+    const n = bout.match(/-?\d*\.?\d+/g) || [];
+    const a = [];
+    for (let i = 0; i + 1 < n.length; i += 2) a.push([+n[i], +n[i + 1]]);
+    const f = a.length;
+    if (f > 1 && a[0][0] === a[f - 1][0] && a[0][1] === a[f - 1][1]) a.pop();
+    if (a.length > 2) out.push(a);
+  }
+  return out;
+}
+
+const traceGeo = (a) =>
+  a.map(r => "M" + r.map(p => p[0] + " " + p[1]).join("L") + "Z").join("");
+
+/** La boîte englobante d'un jeu d'anneaux : [x0, y0, x1, y1]. */
+function boiteAnneaux(a){
+  const pts = a.flat();
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  return [Math.min.apply(null, xs), Math.min.apply(null, ys),
+          Math.max.apply(null, xs), Math.max.apply(null, ys)];
+}
+
+/* ------------------------------------------------------------
+   Où écrire le nom, et de quelle place on dispose
+
+   Ce qui suit refait, côté page, ce que la synchronisation calcule dans
+   « _partage/geometrie.ts » : l'ancrage intérieur d'une forme découpée et la
+   place réellement libre autour de lui. La même règle des deux côtés, parce
+   que le rendu, lui, n'en connaît qu'une — un stand repris à la main doit
+   écrire son nom là où il l'écrirait s'il venait ainsi de la source.
+   ------------------------------------------------------------ */
+
+/** Appartenance d'un point à un anneau, par lancer de rayon. */
+function dansAnneau(pt, anneau){
+  let ok = false;
+  for (let i = 0, j = anneau.length - 1; i < anneau.length; j = i++){
+    const a = anneau[i], b = anneau[j];
+    if ((a[1] > pt[1]) !== (b[1] > pt[1]) &&
+        pt[0] < ((b[0] - a[0]) * (pt[1] - a[1])) / (b[1] - a[1]) + a[0]) ok = !ok;
+  }
+  return ok;
+}
+
+/** Distance d'un point à un segment. */
+function distSegmentGeo(p, a, b){
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  const l = dx * dx + dy * dy;
+  let t = l ? ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
+}
+
+/** Distance au bord, négative à l'extérieur : c'est ce qu'on maximise. */
+function distBordGeo(p, a){
+  let d = Infinity;
+  for (const anneau of a)
+    for (let i = 0, j = anneau.length - 1; i < anneau.length; j = i++)
+      d = Math.min(d, distSegmentGeo(p, anneau[j], anneau[i]));
+  return dansAnneau(p, a[0]) ? d : -d;
+}
+
+/** Le point intérieur le plus éloigné des bords, par une grille qu'on
+ *  resserre autour du meilleur candidat. */
+function poleGeo(a, x0, y0, x1, y1){
+  let cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  let meilleur = distBordGeo([cx, cy], a);
+  let dx = (x1 - x0) / 2, dy = (y1 - y0) / 2;
+  for (let passe = 0; passe < 6; passe++){
+    const px = dx / 4, py = dy / 4;
+    for (let i = -2; i <= 2; i++)
+      for (let j = -2; j <= 2; j++){
+        if (!i && !j) continue;
+        const p = [cx + i * px, cy + j * py];
+        const d = distBordGeo(p, a);
+        if (d > meilleur){ meilleur = d; cx = p[0]; cy = p[1]; }
+      }
+    dx /= 2; dy /= 2;
+  }
+  return [cx, cy];
+}
+
+/** Jusqu'où l'on peut aller depuis un point dans une direction, sans sortir. */
+function porteeGeo(p, a, ux, uy, max){
+  const pas = max / 24;
+  let d = 0;
+  while (d + pas <= max && dansAnneau([p[0] + (d + pas) * ux, p[1] + (d + pas) * uy], a[0])) d += pas;
+  return d;
+}
+
+/** Le centre, la place, et l'ancrage du libellé quand le centre n'en est pas un. */
+function boiteGeo(a){
+  const [x0, y0, x1, y1] = boiteAnneaux(a);
+  const c = [arrondiGeo((x0 + x1) / 2), arrondiGeo((y0 + y1) / 2)];
+  const bb = [arrondiGeo(x1 - x0), arrondiGeo(y1 - y0)];
+
+  /* Un rectangle n'a rien à corriger : son centre est déjà le meilleur
+     ancrage, et sa boîte englobante décrit exactement sa place. */
+  if (a.length === 1 && a[0].length <= 4 && dansAnneau(c, a[0])) return { c: c, bb: bb };
+
+  const p = poleGeo(a, x0, y0, x1, y1);
+  const g = porteeGeo(p, a, -1, 0, bb[0]), d = porteeGeo(p, a, 1, 0, bb[0]);
+  const h = porteeGeo(p, a, 0, -1, bb[1]), b = porteeGeo(p, a, 0, 1, bb[1]);
+  const lc = [arrondiGeo(p[0] + (d - g) / 2), arrondiGeo(p[1] + (b - h) / 2)];
+  const lb = [arrondiGeo(Math.min(g + d, bb[0])), arrondiGeo(Math.min(h + b, bb[1]))];
+  // en deçà d'un cinquième de la boîte, la mesure n'est pas fiable : on renonce
+  return lb[0] > bb[0] / 5 && lb[1] > bb[1] / 5
+    ? { c: c, bb: bb, lc: lc, lb: lb } : { c: c, bb: bb };
+}
+
+/* ------------------------------------------------------------
+   Poser une géométrie, et se souvenir de celle qui vient de la source
+   ------------------------------------------------------------ */
+
+/** La géométrie servie par la source, relevée avant toute retouche. C'est
+ *  elle que l'empreinte décrit, et elle que « Géométrie d'origine » rend. */
+function geometrieSource(o){
+  if (!o.geoSource)
+    o.geoSource = { d: o.d, c: o.c, bb: o.bb, lc: o.lc, lb: o.lb, a: anneauxGeo(o.d) };
+  return o.geoSource;
+}
+
+/** Rendre à un emplacement la géométrie servie, telle quelle. Relue plutôt que
+ *  recalculée : l'ancrage du nom que la synchronisation a posé fait foi, et
+ *  refaire le calcul ici ne pourrait au mieux que retomber dessus. */
+function reposeSource(o){
+  const s = geometrieSource(o);
+  o.d = s.d; o.c = s.c; o.bb = s.bb;
+  if (s.lc){ o.lc = s.lc; o.lb = s.lb; }
+  else { delete o.lc; delete o.lb; }
+}
+
+/** Une géométrie posée sur un emplacement : son tracé, et tout ce qui s'en
+ *  déduit — l'ancrage de son nom, la place autour. */
+function poseGeometrie(o, anneaux){
+  /* Le relevé de la source se prend ici, et nulle part ailleurs : c'est le
+     seul passage obligé de tout ce qui touche à la forme, et le prendre après
+     coup relèverait la retouche en croyant relever la source. */
+  geometrieSource(o);
+  o.d = traceGeo(anneaux);
+  const b = boiteGeo(anneaux);
+  o.c = b.c; o.bb = b.bb;
+  if (b.lc){ o.lc = b.lc; o.lb = b.lb; }
+  else { delete o.lc; delete o.lb; }
+}
+
+/** La retouche retenue, si elle décrit encore ce que la source sert. */
+function retoucheGeo(o){
+  const r = CONF[cleGeo(o.id)];
+  return r && Array.isArray(r.p) && r.p.length &&
+         r.e === empreinteGeo(geometrieSource(o)) ? r : null;
+}
+
+/**
+ * L'emprise du pavillon s'élargit à ce qu'on a repris, jamais elle ne se
+ * resserre : un stand tiré hors du cadre d'origine doit rester atteignable
+ * par l'ajustement de vue, et un cadre resté un peu large ne coûte rien —
+ * alors qu'un cadre qui se referme déplacerait le plan sous la main qui
+ * travaille.
+ */
+function elargitEmprise(p, o){
+  const e = p.emprise;
+  if (!e || !o.c || !o.bb) return;
+  const m = 12;      // la marge que pose la synchronisation
+  e.x0 = Math.min(e.x0, arrondiGeo(o.c[0] - o.bb[0] / 2 - m));
+  e.y0 = Math.min(e.y0, arrondiGeo(o.c[1] - o.bb[1] / 2 - m));
+  e.x1 = Math.max(e.x1, arrondiGeo(o.c[0] + o.bb[0] / 2 + m));
+  e.y1 = Math.max(e.y1, arrondiGeo(o.c[1] + o.bb[1] / 2 + m));
+}
+
+/**
+ * Les retouches appliquées au plan qu'on vient de charger.
+ *
+ * Appelée par « indexe », une fois l'apparence lue et avant que rien ne soit
+ * dessiné : tout ce qui suit — le tracé, les noms, les aimants, la grille de
+ * marche — lit la géométrie de l'objet, et doit lire celle qui vaut.
+ *
+ * Un emplacement qu'on n'a jamais repris passe sans qu'on lise son tracé : la
+ * plupart des salons n'en reprennent aucun, et relever neuf cents contours
+ * pour n'en retoucher zéro se paierait à chaque ouverture de page.
+ */
+function appliqueGeometries(){
+  if (!DATA) return;
+  DATA.plans.forEach(p => {
+    for (const o of p.stands.concat(p.zones)){
+      if (!CONF[cleGeo(o.id)]) continue;
+      // `retoucheGeo` relève la géométrie servie avant d'y toucher : c'est
+      // elle que l'empreinte décrit, et c'est encore elle qui est en place
+      const r = retoucheGeo(o);
+      if (!r) continue;
+      poseGeometrie(o, r.p);
+      elargitEmprise(p, o);
+    }
+  });
+}
+
+/* ------------------------------------------------------------
+   Le verrou des deux couches de données
+
+   Un calque de dessin naît ouvert : c'est pour y dessiner qu'on le crée. Les
+   emplacements, eux, sont là depuis la synchronisation, et neuf fois sur dix
+   on ne vient au panneau que pour les recolorer ou les masquer. Leur cadenas
+   est donc fermé d'avance — la géométrie du salon ne se reprend pas par
+   inadvertance, il faut l'avoir voulu.
+
+   D'où la clé inversée : c'est l'ouverture qui s'écrit, et refermer efface
+   plutôt que d'écrire « non ». L'état ordinaire ne laisse rien derrière lui.
+   ------------------------------------------------------------ */
+const cleVerrouGeo = (sorte) => "_verrouGeo:" + sorte;
+const geoVerrouille = (sorte) => !(CONF[cleVerrouGeo(sorte)] || {}).ouvert;
+
+function basculeVerrouGeo(sorte){
+  const cle = cleVerrouGeo(sorte);
+  if (geoVerrouille(sorte)) conf(cle).ouvert = true;
+  else {
+    delete CONF[cle];
+    // on referme parfois la couche qu'on vient de reprendre : le mode se
+    // ferme avec elle, plutôt que de rester armé sur ce qu'on protège
+    if (SORTE_GEO === sorte) modeGeometrie(null);
+  }
+  enregistreConf();
+  construitPanneau();
+}
+
+/** Le cadenas d'une couche de données. Comme celui d'un calque de dessin :
+ *  un interrupteur, dont l'intitulé dit ce que le clic fera. */
+function boutonVerrouGeo(sorte){
+  const ferme = geoVerrouille(sorte);
+  return '<button class="verr vgeo" aria-pressed="' + ferme + '" title="' +
+    (ferme ? "Déverrouiller : la géométrie pourra être reprise"
+           : "Verrouiller : la géométrie ne se reprend plus") +
+    '">' + pictoVerrou(ferme) + '</button>';
+}
+
+/* ------------------------------------------------------------
+   Entrer et sortir du mode
+   ------------------------------------------------------------ */
+function modeGeometrie(sorte){
+  const avant = SORTE_GEO;
+  SORTE_GEO = (ADMIN && sorte && !geoVerrouille(sorte)) ? sorte : null;
+  racine.classList.toggle("mode-geo-stands", SORTE_GEO === "stands");
+  racine.classList.toggle("mode-geo-zones", SORTE_GEO === "zones");
+  /* Le dessin, le placement des libellés et la reprise d'une forme se
+     disputeraient le glisser : entrer dans l'un referme les autres, plutôt
+     que de laisser trois gestes viser le même pointeur. */
+  if (SORTE_GEO){
+    if (calqueActif) activeCalque(calqueActif);
+    if (PLACE_LIBELLES) modePlacementLibelles(false);
+  }
+  /* Passer d'une couche à l'autre ne garde pas le choix : ses poignées
+     seraient restées sur un stand alors qu'on reprend les zones. */
+  if (SORTE_GEO !== avant){ glisseGeo = null; choisitGeo(null); }
+  /* On sort d'ici par plusieurs chemins — le crayon, la croix de la palette,
+     la touche d'échappement, l'ouverture d'un calque, le cadenas qu'on
+     referme. Les crayons s'allument donc ici, une fois pour tous. */
+  document.querySelectorAll("#pile .rgeo").forEach(b =>
+    b.setAttribute("aria-pressed", b.dataset.geo === SORTE_GEO));
+  montreAimants(null); montreCote(null); apercuGuide(null);
+  dessinePoigneesGeo();
+  majPaletteGeo();
+}
+
+/** L'emplacement sous le pointeur, s'il est de la sorte qu'on reprend. */
+function objetGeoSous(e){
+  if (!SORTE_GEO) return null;
+  const g = GL.actif ? cibleWebgl(e.clientX, e.clientY)
+                     : e.target.closest("#stands > g[data-id], #zones > g[data-id]");
+  if (!g || !g.parentNode || g.parentNode.id !== SORTE_GEO) return null;
+  return parId.get(g.dataset.id) || null;
+}
+
+/** Le groupe qui porte le tracé d'un emplacement du pavillon affiché. */
+function groupeGeo(o){
+  const hote = $(o.kind === "zone" ? "zones" : "stands");
+  return hote ? hote.querySelector('g[data-id="' + CSS.escape(o.id) + '"]') : null;
+}
+
+function choisitGeo(id){
+  geoSel = id;
+  document.querySelectorAll("#stands > g, #zones > g")
+    .forEach(g => g.classList.toggle("geopick", Boolean(id) && g.dataset.id === id));
+  dessinePoigneesGeo();
+  majPaletteGeo();
+}
+
+/* ------------------------------------------------------------
+   Les poignées
+   ------------------------------------------------------------ */
+
+/** La géométrie est-elle un rectangle d'aplomb ? Alors ses coins commandent,
+ *  et la forme reste un rectangle. */
+function cadreGeo(a){
+  if (a.length !== 1 || a[0].length !== 4) return null;
+  const r = a[0];
+  for (let i = 0; i < 4; i++){
+    const b = r[(i + 1) % 4];
+    if (r[i][0] !== b[0] && r[i][1] !== b[1]) return null;       // un côté oblique
+  }
+  const xs = new Set(r.map(p => p[0])), ys = new Set(r.map(p => p[1]));
+  return xs.size === 2 && ys.size === 2 ? boiteAnneaux(a) : null;
+}
+
+/**
+ * Ce qu'on peut attraper sur une géométrie, et ce que chaque prise commande.
+ *
+ * Un rectangle d'aplomb se reprend par ses coins, la poignée opposée tenant
+ * bon : c'est ce qu'on attend d'un stand, et tirer un seul de ses quatre
+ * sommets en aurait fait un trapèze. Toute autre forme — un L, une zone au
+ * contour libre — se reprend sommet par sommet, faute d'une règle qui vaille
+ * pour toutes.
+ */
+function prisesGeo(o){
+  const a = anneauxGeo(o.d);
+  const b = cadreGeo(a);
+  if (b) return { a: a, cadre: true,
+                  mains: [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]]
+                           .map(p => ({ p: p })) };
+  return { a: a, cadre: false,
+           mains: a.flatMap((r, i) => r.map((p, j) => ({ p: p, r: i, i: j }))) };
+}
+
+/** Le curseur annonce ce que la poignée fera : un coin de rectangle tire en
+ *  diagonale, un sommet libre va où l'on veut. */
+const curseurGeo = (cadre, i) =>
+  cadre ? ["nwse-resize", "nesw-resize", "nwse-resize", "nesw-resize"][i] : "move";
+
+function dessinePoigneesGeo(){
+  let g = $("poigneesGeo");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "poigneesGeo";
+    svg.appendChild(g);
+  }
+  const o = SORTE_GEO && geoSel && parId.get(geoSel);
+  if (!o || !ADMIN){ g.innerHTML = ""; return; }
+  const pr = prisesGeo(o);
+  const r = cadrePlan();
+  const t = Math.max(.15, view.w / (r.width || 1) * 5);     // demi-côté, en mètres
+  const b = boiteAnneaux(pr.a);
+  g.innerHTML =
+    '<rect class="cadreSel" x="' + (b[0] - t) + '" y="' + (b[1] - t) +
+    '" width="' + (b[2] - b[0] + 2 * t) + '" height="' + (b[3] - b[1] + 2 * t) + '"/>' +
+    pr.mains.map((m, i) =>
+      '<rect class="pgn" data-i="' + i + '" style="cursor:' + curseurGeo(pr.cadre, i) + '"' +
+      ' x="' + (m.p[0] - t) + '" y="' + (m.p[1] - t) +
+      '" width="' + (2 * t) + '" height="' + (2 * t) + '"/>').join("");
+}
+
+/* ------------------------------------------------------------
+   La palette
+   ------------------------------------------------------------ */
+
+/** Ce que les deux champs disent de la forme reprise. On n'écrit que ce qui
+ *  change : réécrire un champ qu'on remplit y replacerait le curseur. */
+function ecritDimensionsGeo(o){
+  const z = $("geoDim");
+  if (!z) return;
+  const b = o && cadreGeo(anneauxGeo(o.d));
+  z.hidden = !b;
+  if (!b) return;
+  const met = (id, v) => { const c = $(id); if (+c.value !== v) c.value = v; };
+  met("geoLargeur", arrondiGeo(b[2] - b[0]));
+  met("geoHauteur", arrondiGeo(b[3] - b[1]));
+}
+
+/** Le nom de la couche qu'on reprend, tel que le panneau des calques l'écrit. */
+const nomSorteGeo = (sorte) => sorte === "zones" ? "Zones organisateur" : "Stands";
+
+function majPaletteGeo(){
+  const z = $("geoReg");
+  if (!z || !ADMIN || !$("geoNom")) return;
+  z.classList.toggle("open", Boolean(SORTE_GEO));
+  if (!SORTE_GEO) return;
+  const o = geoSel && parId.get(geoSel);
+  $("geoNom").textContent = o
+    ? (o.nom || o.code || (o.kind === "zone" ? "Zone sans nom" : "Stand"))
+    : nomSorteGeo(SORTE_GEO);
+  $("geoOrigine").disabled = !(o && CONF[cleGeo(o.id)]);
+  ecritDimensionsGeo(o);
+  $("geoAide").textContent = !o
+    ? (SORTE_GEO === "zones" ? "Cliquez une zone pour reprendre sa forme."
+                             : "Cliquez un emplacement pour reprendre sa forme.")
+    : (CONF[cleGeo(o.id)]
+        ? "Glissez la forme ou ses poignées, ou ajustez-la aux flèches du clavier."
+        : "Glissez la forme pour la déplacer, ou ses poignées pour la redimensionner. " +
+          "Elle s'accroche aux emplacements voisins — Alt pour relâcher.");
+}
+
+/* ------------------------------------------------------------
+   Enregistrer, et rendre sa forme d'origine
+   ------------------------------------------------------------ */
+
+/**
+ * Ce qu'une forme déplacée périme : les points d'accrochage du pavillon,
+ * l'enveloppe du hall et la grille de marche, qui la lisent tous les trois.
+ * Refait à la fin du geste, jamais pendant : relever les sommets de neuf
+ * cents emplacements à chaque image ne tiendrait pas la cadence.
+ */
+function finGesteGeo(o){
+  const p = DATA.plans[o.p];
+  oublieAimantsDuPlan();
+  if (p){ p.enveloppe = null; elargitEmprise(p, o); }
+  oublieGrilles();
+  dessineMarques();
+  libelles();
+}
+
+/** Retenir la forme reprise, avec l'empreinte de celle dont elle part. */
+function enregistreGeo(o){
+  const a = anneauxGeo(o.d);
+  const src = geometrieSource(o);
+  /* Une forme revenue sur celle de la source n'est pas une retouche : elle
+     sort de la configuration plutôt que d'y peser et d'y vieillir. */
+  if (traceGeo(a) === traceGeo(src.a)) delete CONF[cleGeo(o.id)];
+  else CONF[cleGeo(o.id)] = { e: empreinteGeo(src), p: a };
+  enregistreConf();
+  finGesteGeo(o);
+  majPaletteGeo();
+}
+
+/** Renoncer à une reprise : l'emplacement retrouve la forme de la source. */
+function geometrieOrigine(){
+  const o = geoSel && parId.get(geoSel);
+  if (!o) return;
+  reposeSource(o);
+  retraceGeo(o);
+  delete CONF[cleGeo(o.id)];
+  enregistreConf();
+  finGesteGeo(o);
+  dessinePoigneesGeo();
+  majPaletteGeo();
+}
+
+/** Le tracé du plan suit la géométrie qu'on vient de poser. Le liseré du
+ *  parcours et celui de la sélection sont recopiés ailleurs : ils ne suivent
+ *  que si l'emplacement en porte un. */
+function retraceGeo(o){
+  const g = groupeGeo(o);
+  if (!g) return;
+  const t = g.querySelector("path");
+  if (t) t.setAttribute("d", o.d);
+  if (g.classList.contains("enparcours") || g.classList.contains("sel")) dessineMarques();
+}
+
+/** Le clavier ajuste au quart de mètre ce que la main a posé à peu près, et
+ *  au mètre touche majuscule tenue : le pas des libellés et des formes
+ *  dessinées, pour n'avoir qu'une convention à retenir. */
+function pousseGeometrie(dx, dy){
+  const o = geoSel && parId.get(geoSel);
+  if (!o) return;
+  poseGeometrie(o, anneauxGeo(o.d).map(r =>
+    r.map(p => [arrondiGeo(p[0] + dx), arrondiGeo(p[1] + dy)])));
+  retraceGeo(o);
+  dessinePoigneesGeo();
+  enregistreGeo(o);
+}
+
+/**
+ * La taille exacte d'un emplacement rectangulaire.
+ *
+ * Le coin supérieur gauche ne bouge pas : on corrige une dimension, on ne
+ * déplace pas ce qui était déjà bien placé. C'est là qu'on rattrape les
+ * six mètres cinq d'un stand que la source dit six mètres.
+ */
+function appliqueDimensionGeo(){
+  const o = geoSel && parId.get(geoSel);
+  const b = o && cadreGeo(anneauxGeo(o.d));
+  if (!b) return;
+  const l = +$("geoLargeur").value, h = +$("geoHauteur").value;
+  // un champ vidé, ou en cours de frappe, n'est pas une taille
+  if (!(l > 0) || !(h > 0)) return;
+  const x1 = arrondiGeo(b[0] + l), y1 = arrondiGeo(b[1] + h);
+  poseGeometrie(o, [[[b[0], b[1]], [x1, b[1]], [x1, y1], [b[0], y1]]]);
+  retraceGeo(o);
+  dessinePoigneesGeo();
+  enregistreGeo(o);
+}
+
+/* ------------------------------------------------------------
+   Le geste ; chaque fonction renvoie vrai si l'événement est consommé
+   ------------------------------------------------------------ */
+function geometriePointerDown(e){
+  if (!SORTE_GEO) return false;
+  const o = geoSel && parId.get(geoSel);
+  const pgn = GL.actif ? priseWebgl(e.clientX, e.clientY, ".pgn") : e.target.closest(".pgn");
+  if (pgn && o){
+    e.preventDefault();
+    const pr = prisesGeo(o);
+    glisseGeo = { o: o, type: "poignee", i: +pgn.dataset.i, depart: versPlan(e.clientX, e.clientY),
+                  a: pr.a, cadre: pr.cadre, mains: pr.mains };
+    svg.style.cursor = curseurGeo(pr.cadre, glisseGeo.i);
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    return true;
+  }
+  const cible = objetGeoSous(e);
+  if (!cible){
+    // le vide déselectionne, et laisse le glisser à la vue
+    if (geoSel) choisitGeo(null);
+    return false;
+  }
+  e.preventDefault();
+  if (cible.id !== geoSel) choisitGeo(cible.id);
+  glisseGeo = { o: cible, type: "deplace", depart: versPlan(e.clientX, e.clientY),
+                a: anneauxGeo(cible.d) };
+  svg.style.cursor = "move";
+  try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  return true;
+}
+
+/** Une forme ne s'accroche pas à elle-même : ses propres coins la
+ *  retiendraient sur place à chaque tentative de la déplacer. */
+const accrocheGeo = (e, o) => ({ alt: e.altKey, saufPlan: o.id });
+
+function geometriePointerMove(e){
+  if (!glisseGeo) return false;
+  const o = glisseGeo.o;
+  const p = versPlan(e.clientX, e.clientY);
+  let dx = p[0] - glisseGeo.depart[0], dy = p[1] - glisseGeo.depart[1];
+  const acc = accrocheGeo(e, o);
+  let anneaux;
+
+  if (glisseGeo.type === "deplace"){
+    /* Le déplacement s'accroche par les coins de la forme et par son centre,
+       et retient la plus petite correction : glisser un stand contre son
+       voisin le range par celui de ses bords qui arrive le premier. */
+    const c = correction(coinsGeste(glisseGeo.a.flat(), false).map(q => [q[0] + dx, q[1] + dy]), acc);
+    dx += c[0]; dy += c[1];
+    anneaux = glisseGeo.a.map(r => r.map(q => [arrondiGeo(q[0] + dx), arrondiGeo(q[1] + dy)]));
+  } else if (glisseGeo.cadre){
+    // la poignée opposée reste fixe ; le rectangle reste un rectangle
+    const coins = glisseGeo.mains.map(m => m.p);
+    const fixe = coins[(glisseGeo.i + 2) % 4];
+    let mx = coins[glisseGeo.i][0] + dx, my = coins[glisseGeo.i][1] + dy;
+    const c = correction([[mx, my]], acc);
+    mx += c[0]; my += c[1];
+    /* Un emplacement réduit à rien n'est plus saisissable sur le plan, et
+       celui-là ne se redessine pas : on l'arrête avant qu'il ne disparaisse. */
+    const MINI = .2;
+    if (Math.abs(mx - fixe[0]) < MINI) mx = fixe[0] + Math.sign(mx - fixe[0] || 1) * MINI;
+    if (Math.abs(my - fixe[1]) < MINI) my = fixe[1] + Math.sign(my - fixe[1] || 1) * MINI;
+    const x0 = arrondiGeo(Math.min(fixe[0], mx)), y0 = arrondiGeo(Math.min(fixe[1], my));
+    const x1 = arrondiGeo(Math.max(fixe[0], mx)), y1 = arrondiGeo(Math.max(fixe[1], my));
+    anneaux = [[[x0, y0], [x1, y0], [x1, y1], [x0, y1]]];
+  } else {
+    const m = glisseGeo.mains[glisseGeo.i];
+    anneaux = glisseGeo.a.map(r => r.map(q => q.slice()));
+    anneaux[m.r][m.i] = aimante([arrondiGeo(m.p[0] + dx), arrondiGeo(m.p[1] + dy)], acc);
+  }
+
+  poseGeometrie(o, anneaux);
+  retraceGeo(o);
+  dessinePoigneesGeo();
+  /* Le nom suit la forme pendant qu'on la tire : c'est souvent pour lui qu'on
+     la reprend — un libellé à cheval sur l'allée dit un stand mal découpé. */
+  libelles();
+  /* La cote et les champs suivent le geste : c'est en le retenant qu'on
+     s'arrête sur douze mètres, pas en le vérifiant après coup. */
+  const b = boiteAnneaux(anneaux);
+  montreCote(coteCadre([b[0], b[1]], [b[2], b[3]]), [b[2], b[3]]);
+  ecritDimensionsGeo(o);
+  return true;
+}
+
+function geometriePointerUp(e){
+  if (!glisseGeo) return false;
+  const o = glisseGeo.o;
+  glisseGeo = null;
+  svg.style.cursor = "";
+  try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  apercuGuide(null); montreCote(null); montreAimants(null);
+  enregistreGeo(o);
+  return true;
+}
+
+if ($("geoFerme")) $("geoFerme").onclick = () => modeGeometrie(null);
+if ($("geoOrigine")) $("geoOrigine").onclick = geometrieOrigine;
+if ($("geoLargeur")) $("geoLargeur").oninput = appliqueDimensionGeo;
+if ($("geoHauteur")) $("geoHauteur").oninput = appliqueDimensionGeo;
 /* ============================================================
    11 quinquies. Bâtiments de la bibliothèque
 
@@ -16847,6 +17575,11 @@ function construitPanneau(){
 
     const c = x.t === "dessin" ? x.ref : conf(x.t === "fond" ? x.k.slice(5) : x.k);
     const coche = c.visible === false ? "" : " checked";
+    /* Les deux couches que la source dessine — emplacements et zones — se
+       reprennent à la main, forme par forme (`_geometrie.html`). Leur cadenas
+       est fermé d'avance : on ne touche pas à la géométrie d'un salon en
+       passant régler une couleur. */
+    const sorte = x.k === "data:stands" ? "stands" : x.k === "data:zones" ? "zones" : null;
     d.innerHTML = '<label><input type="checkbox"' + coche + '><span></span></label>' +
       '<span class="opts">' +
       (x.t === "data" ? "" : '<button class="fillbtn" title="Contour seul ou surface remplie"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="1.2"/></svg></button>') +
@@ -16854,6 +17587,9 @@ function construitPanneau(){
          les couleurs des couches de données forment une colonne, et un bouton
          glissé entre elles la romprait */
       (x.k === "data:labels" ? '<button class="ren rlib" title="Placer les libellés à la main">&#9998;</button>' : "") +
+      (sorte ? boutonVerrouGeo(sorte) +
+               '<button class="ren rgeo" data-geo="' + sorte +
+               '" title="Reprendre la géométrie à la main">&#9998;</button>' : "") +
       '<input type="color" class="cc">' +
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
@@ -16959,6 +17695,25 @@ function construitPanneau(){
       const cr = d.querySelector(".rlib");
       cr.setAttribute("aria-pressed", PLACE_LIBELLES);
       cr.onclick = ev => { ev.stopPropagation(); modePlacementLibelles(!PLACE_LIBELLES); };
+    }
+
+    /* Le crayon des emplacements ouvre la reprise de leur géométrie, comme
+       celui des textes ouvre le placement des libellés : la même façon de
+       retoucher ce qu'une couche pose sur le plan, donc le même bouton au
+       même endroit. Le cadenas le précède, parce qu'on lit la ligne de gauche
+       à droite — ce qui protège avant ce qui modifie — et parce que c'est
+       justement lui qu'il éteint. */
+    if (sorte){
+      const ferme = geoVerrouille(sorte);
+      d.querySelector(".vgeo").onclick = ev => { ev.stopPropagation(); basculeVerrouGeo(sorte); };
+      const cr = d.querySelector(".rgeo");
+      cr.setAttribute("aria-pressed", SORTE_GEO === sorte);
+      cr.disabled = ferme;
+      if (ferme) cr.title = "Couche verrouillée : ouvrez son cadenas pour reprendre une forme.";
+      cr.onclick = ev => {
+        ev.stopPropagation();
+        modeGeometrie(SORTE_GEO === sorte ? null : sorte);
+      };
     }
 
     hote.appendChild(d);
@@ -29770,7 +30525,8 @@ function blocDe(n){
    laisse passer le clic vers le stand qu'elle recouvre, comme en SVG où les
    calques de dessin ne reçoivent pas le pointeur.
    ------------------------------------------------------------ */
-const enEdition = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
+const enEdition = () => GL.actif && ADMIN &&
+  (Boolean(calqueActif) || PLACE_LIBELLES || Boolean(SORTE_GEO));
 
 /** Entrer ou sortir de l'édition change ce qui s'attrape : tout se repeint. */
 function majEditionWebgl(){
@@ -30153,9 +30909,11 @@ function couleurGl(v, alpha){
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
-  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la racine
+  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
+  // racine — celles d'une forme dessinée comme celles d'un emplacement repris
   // le cadrage d'un bâtiment de la bibliothèque s'attrape aussi, calque ouvert ou non
-  const acc = accVide((enEdition() && (racine.classList.contains("editable") || racine.id === "poignees")) ||
+  const acc = accVide((enEdition() && (racine.classList.contains("editable") ||
+      racine.id === "poignees" || racine.id === "poigneesGeo")) ||
     racine.id === "calageApercu");
   parcoursGl(racine, M_ID, 1, acc);
   const out = couchesDeBloc(acc, cle);

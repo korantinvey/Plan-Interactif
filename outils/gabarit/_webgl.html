@@ -295,7 +295,8 @@ function blocDe(n){
    laisse passer le clic vers le stand qu'elle recouvre, comme en SVG où les
    calques de dessin ne reçoivent pas le pointeur.
    ------------------------------------------------------------ */
-const enEdition = () => GL.actif && ADMIN && (Boolean(calqueActif) || PLACE_LIBELLES);
+const enEdition = () => GL.actif && ADMIN &&
+  (Boolean(calqueActif) || PLACE_LIBELLES || Boolean(SORTE_GEO));
 
 /** Entrer ou sortir de l'édition change ce qui s'attrape : tout se repeint. */
 function majEditionWebgl(){
@@ -678,9 +679,11 @@ function couleurGl(v, alpha){
 const PRISES = ".pgn, [data-f], #calageApercu .contour, #calageApercu .poignee";
 const accVide = prises => ({ pleins: [], traitsPx: [], traitsM: [], textes: new Map(), images: [], phares: new Map(), prises });
 function convertitBloc(racine, cle){
-  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la racine
+  // ce que l'éditeur attrape : le calque ouvert, et les poignées posées à la
+  // racine — celles d'une forme dessinée comme celles d'un emplacement repris
   // le cadrage d'un bâtiment de la bibliothèque s'attrape aussi, calque ouvert ou non
-  const acc = accVide((enEdition() && (racine.classList.contains("editable") || racine.id === "poignees")) ||
+  const acc = accVide((enEdition() && (racine.classList.contains("editable") ||
+      racine.id === "poignees" || racine.id === "poigneesGeo")) ||
     racine.id === "calageApercu");
   parcoursGl(racine, M_ID, 1, acc);
   const out = couchesDeBloc(acc, cle);
