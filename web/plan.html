@@ -30548,7 +30548,10 @@ if (INSTALL_POSSIBLE){
        pour autant — la fenêtre qui suit vient de dire où la trouver. */
     retientInstallation({ installe: true, rappelRefus: 0, rappelClos: false,
       rappelVue: jourInstallation() });
-    if (DATA && invitationVoulue()) confirmeInstallation(0);
+    if (DATA && invitationVoulue() && !confirmeFaite){
+      confirmeFaite = true;
+      confirmeInstallation(0);
+    }
   });
   // ce que le système sait de l'application, et qui décide laquelle des deux fenêtres
   verifieApplication();
@@ -30767,6 +30770,21 @@ function ouvreInstalle(apercu){
    occuper l'écran. On attend donc que la page soit visible et libre, une
    minute au plus : au-delà, le visiteur est parti ailleurs, et l'icône lui
    aura parlé d'elle-même. */
+/* Une confirmation, et une seule, pour toute la vie de cette page.
+
+   L'attente qui la porte dure jusqu'à une minute, le temps que l'écran se
+   libère : elle réessaie chaque seconde, et n'ouvre que sur un écran libre.
+   Deux annonces d'installation — ce qu'un essai qui désinstalle et réinstalle
+   produit sans peine, et ce que Chromium se permet aussi — lançaient donc deux
+   attentes. La première ouvrait la fenêtre ; la seconde, la trouvant occupée,
+   attendait qu'on la referme et rouvrait la même. Deux fenêtres pour une
+   installation, à l'identique, et c'est ce qu'on voyait.
+
+   Le drapeau se lève donc à la première annonce et ne retombe jamais : ce qui
+   est dit une fois n'a pas à être redit, et une réinstallation dans la même
+   page n'apprend rien à personne. */
+let confirmeFaite = false;
+
 function confirmeInstallation(essais){
   if (document.visibilityState === "visible" && !$("modale").classList.contains("open")){
     return ouvreInstalle(false);

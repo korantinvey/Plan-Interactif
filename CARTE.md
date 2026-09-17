@@ -378,7 +378,7 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 951 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 969 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
@@ -392,10 +392,10 @@ Fonctions :
 `lanceApplication` 359 · `faconRappel` 392 · `rappelEcarte` 400 · `refuseRappel` 406
 `relanceInvitation` 424 · `gesteInstallation` 429 · `doigtPose` 433 · `doigtLeve` 434
 `vueInstallation` 437 · `accueilleInvitation` 446 · `invitationRetenue` 472
-`finInvitation` 490 · `essaieInvitation` 514 · `teteInvitation` 632
-`retourAuxReglages` 653 · `remplitInvitation` 661 · `ouvreInvitation` 691
-`ouvreInstalle` 748 · `confirmeInstallation` 800 · `ouvreRappel` 833 · `ouvreRetrouve` 889
-`caseInstallation` 912
+`finInvitation` 490 · `essaieInvitation` 514 · `teteInvitation` 635
+`retourAuxReglages` 656 · `remplitInvitation` 664 · `ouvreInvitation` 694
+`ouvreInstalle` 751 · `confirmeInstallation` 818 · `ouvreRappel` 851 · `ouvreRetrouve` 907
+`caseInstallation` 930
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
