@@ -1261,12 +1261,16 @@ allées. À quinze heures moins le quart il est à l'autre bout du hall, le
 téléphone dans la poche, et la conférence qu'il avait notée commence sans lui.
 Le parcours savait l'heure ; personne ne la lui a rappelée.
 
-Le réglage vit à côté du précédent : **Rappeler les conférences retenues**, et
-sous la case, **Prévenir avant le début** — en minutes, un quart d'heure par
-défaut. Le tiroir du parcours montre alors, en tête des conférences, un
-interrupteur « Me prévenir 15 min avant ». Il faut que le visiteur le touche,
-puis qu'il accorde au navigateur l'autorisation demandée : sans les deux gestes,
-rien ne part et rien n'est enregistré.
+Le réglage vit dans l'onglet **Admin**, au pied des cases qui disent ce que les
+visiteurs voient : **Rappeler les conférences retenues**, et sous elle
+**Prévenir avant le début** — en minutes, un quart d'heure par défaut. Il y est
+avec l'invitation à installer le plan et la visite guidée, parce que c'est la
+même sorte de décision, et parce que c'est l'exploitant qui en répond : ce qui
+est rappelé quitte l'appareil, et tout le monde ne le recevra pas. Le tiroir du
+parcours montre alors, en tête des conférences, un interrupteur « Me prévenir
+15 min avant ». Il faut que le visiteur le touche, puis qu'il accorde au
+navigateur l'autorisation demandée : sans les deux gestes, rien ne part et rien
+n'est enregistré.
 
 **La question, dès la première conférence retenue.** Un interrupteur au fond
 d'un tiroir n'appelle personne, et celui à qui le rappel sert vient justement de
@@ -1279,6 +1283,19 @@ d'avis. Elle se tait quand elle n'a rien à proposer — sur un iPhone non insta
 quand les notifications ont déjà été autorisées ou bloquées, pendant la visite
 guidée, et quand les conférences retenues commencent avant le délai réglé. Une
 fiche ouverte n'est pas balayée pour autant : la fenêtre attend qu'on la referme.
+
+Une autorisation **déjà accordée** ne la ferme pas, en revanche, et il a fallu
+s'y reprendre : la fenêtre demande, elle n'autorise pas, et un accord déjà donné
+ne change que ceci — le navigateur ne redemandera rien après le oui. L'écarter
+revenait à priver du rappel tout visiteur ayant accepté les notifications sur ce
+domaine, un autre salon ou une autre année, puisque le navigateur range cette
+permission par origine et non par salon. Seul un refus ferme la question.
+
+Enfin, l'écran d'administration n'a pas de visiteur : la fenêtre ne s'y montre
+jamais. Un lien **Aperçu**, dans l'aide de la case, l'ouvre telle qu'elle
+paraîtra — sans rien allumer, sans consommer la question, et en ramenant aux
+réglages quand on la referme. C'est le même geste que les aperçus de
+l'invitation à installer.
 
 **Ce que cela déplace.** Le tiroir promet, en toutes lettres, que le parcours ne
 quitte pas l'appareil. Le rappel est la seule exception, et la phrase le dit

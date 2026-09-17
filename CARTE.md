@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4097 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4127 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3020 · 10. Mode administration
-- l.3132 · La fiche d'une zone organisateur
-- l.3841 · Masquer une zone organisateur
-- l.3924 · Placer un libellé à la main
+- l.3050 · 10. Mode administration
+- l.3162 · La fiche d'une zone organisateur
+- l.3871 · Masquer une zone organisateur
+- l.3954 · Placer un libellé à la main
 
 Fonctions :
 
@@ -34,20 +34,20 @@ Fonctions :
 `appliqueModele` 969 · `habilleModale` 1010 · `texteCorps` 1081 · `standApercu` 1096
 `lignesApercu` 1120 · `contenuApercu` 1146 · `apercuFiche` 1183 · `apercuListe` 1261
 `apercuDuo` 1283 · `glisseFenetre` 1316 · `ouvreReglages` 1327 · `voletZones` 1435
-`champsFicheZone` 1537 · `ficheZoneEnPlace` 1607 · `voletPlan` 1625 · `blocRappel` 1669
-`voletAdmin` 1728 · `blocOptions` 1904 · `blocHoraires` 1952 · `sallesSituees` 2085
-`voletPmr` 2101 · `nomDuTon` 2192 · `voletApparence` 2197 · `clesFiche` 2396
-`voletOrdre` 2413 · `enregistreConf` 2969 · `rgbHex` 2976 · `hexa` 2983 · `luminance` 2987
-`ecarte` 3001 · `joli` 3016 · `retireAdmin` 3037 · `activeAdmin` 3050 · `champZone` 3158
-`champsZone` 3183 · `champSalles` 3275 · `nomDeZone` 3327 · `reduitLogo` 3361
-`cadreLogo` 3404 · `champLogo` 3476 · `editeurRiche` 3514 · `memeFicheZone` 3671
-`suitFicheZone` 3678 · `verseFicheZone` 3686 · `ficheZone` 3712 · `enregistreZone` 3737
-`basculeAffichageZone` 3852 · `marqueZonesMasquees` 3869 · `ecritColonnesEvenement` 3889
-`ecritColonneEvenement` 3920 · `cleLibelle` 3945 · `empreinteLibelle` 3961
-`placementLibelle` 3969 · `posePlacement` 3979 · `libelleAutomatique` 3996
-`modePlacementLibelles` 4005 · `majPaletteLibelle` 4024 · `choisitLibelle` 4041
-`pousseLibelle` 4048 · `libellePointerDown` 4056 · `libellePointerMove` 4072
-`libellePointerUp` 4081
+`champsFicheZone` 1537 · `ficheZoneEnPlace` 1607 · `voletPlan` 1625 · `blocRappel` 1673
+`voletAdmin` 1751 · `blocOptions` 1934 · `blocHoraires` 1982 · `sallesSituees` 2115
+`voletPmr` 2131 · `nomDuTon` 2222 · `voletApparence` 2227 · `clesFiche` 2426
+`voletOrdre` 2443 · `enregistreConf` 2999 · `rgbHex` 3006 · `hexa` 3013 · `luminance` 3017
+`ecarte` 3031 · `joli` 3046 · `retireAdmin` 3067 · `activeAdmin` 3080 · `champZone` 3188
+`champsZone` 3213 · `champSalles` 3305 · `nomDeZone` 3357 · `reduitLogo` 3391
+`cadreLogo` 3434 · `champLogo` 3506 · `editeurRiche` 3544 · `memeFicheZone` 3701
+`suitFicheZone` 3708 · `verseFicheZone` 3716 · `ficheZone` 3742 · `enregistreZone` 3767
+`basculeAffichageZone` 3882 · `marqueZonesMasquees` 3899 · `ecritColonnesEvenement` 3919
+`ecritColonneEvenement` 3950 · `cleLibelle` 3975 · `empreinteLibelle` 3991
+`placementLibelle` 3999 · `posePlacement` 4009 · `libelleAutomatique` 4026
+`modePlacementLibelles` 4035 · `majPaletteLibelle` 4054 · `choisitLibelle` 4071
+`pousseLibelle` 4078 · `libellePointerDown` 4086 · `libellePointerMove` 4102
+`libellePointerUp` 4111
 
 Éléments :
 
@@ -316,7 +316,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4686 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4688 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -378,7 +378,7 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 536 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 540 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
@@ -390,8 +390,8 @@ Fonctions :
 `relanceInvitation` 199 · `gesteInstallation` 204 · `doigtPose` 208 · `doigtLeve` 209
 `vueInstallation` 212 · `accueilleInvitation` 221 · `invitationRetenue` 240
 `finInvitation` 258 · `essaieInvitation` 277 · `teteInvitation` 370
-`retourAuxReglages` 387 · `remplitInvitation` 395 · `ouvreInvitation` 425
-`ouvreInstalle` 475 · `confirmeInstallation` 491 · `caseInstallation` 509
+`retourAuxReglages` 391 · `remplitInvitation` 399 · `ouvreInvitation` 429
+`ouvreInstalle` 479 · `confirmeInstallation` 495 · `caseInstallation` 513
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -598,7 +598,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 537 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 553 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -610,8 +610,8 @@ Fonctions :
 `rappelsDuParcours` 167 · `adresseDuRappel` 189 · `octetsDeCle` 201
 `abonnementCourant` 209 · `abonne` 214 · `synchroniseRappels` 240 · `eteintRappels` 263
 `allumeRappels` 278 · `aideRappel` 295 · `poseRappels` 311 · `cleInviteRappel` 425
-`inviteRappelFaite` 428 · `retientInviteRappel` 433 · `fenetreRappel` 455
-`proposeRappels` 485 · `reprendRappels` 526
+`inviteRappelFaite` 428 · `retientInviteRappel` 433 · `fenetreRappel` 462
+`proposeRappels` 499 · `reprendRappels` 542
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 

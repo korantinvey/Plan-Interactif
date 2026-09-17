@@ -1649,7 +1649,6 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
-  blocRappel(hote);
   blocHoraires(hote);
 }
 
@@ -1665,12 +1664,21 @@ function voletPlan(hote){
  * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
  * ici ne marchera pas pour tout le monde, et une promesse faite sur la
  * plaquette du salon se retournerait contre lui.
+ *
+ * La case vit dans un conteneur à elle, et pas nue dans le volet : le style
+ * des réglages est écrit sous `.reglages`, et une case posée à côté retombait
+ * au corps par défaut du navigateur — grosse, noire, désalignée au milieu de
+ * ses voisines.
  */
 function blocRappel(hote){
   /* Sans programme, il n'y a pas d'heure à rappeler. La case reste, éteinte
      plutôt que décochée, comme les sortes de la recherche : le choix fait
      vaudra le jour où l'option se rouvrira. */
   const offert = programmeOffert();
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  hote.appendChild(bloc);
+
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent = "Rappeler les conférences retenues";
@@ -1678,10 +1686,11 @@ function blocRappel(hote){
   const c = l.querySelector("input");
   c.checked = rappelsVoulus();
   c.disabled = !offert;
-  hote.appendChild(l);
+  bloc.appendChild(l);
 
   const aide = document.createElement("p");
   aide.className = "aideR";
+  aide.dataset.reglage = "rappel";
   aide.textContent = offert
     ? "Le visiteur qui a retenu une conférence peut demander à " +
       "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
@@ -1690,7 +1699,21 @@ function blocRappel(hote){
       "la conférence."
     : "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas " +
       "d'horaire à rappeler.";
-  hote.appendChild(aide);
+  bloc.appendChild(aide);
+
+  /* La fenêtre qui propose le rappel au visiteur ne paraît jamais ici : le plan
+     d'administration n'a pas de visiteur, et `rappelsOfferts` s'y refuse. Sans
+     cet aperçu, l'exploitant cocherait une fenêtre qu'il n'a jamais vue — c'est
+     le même besoin que l'invitation à installer, et la même réponse. */
+  if (offert){
+    aide.appendChild(document.createTextNode(" "));
+    const apercu = document.createElement("button");
+    apercu.type = "button";
+    apercu.className = "apercuRappel";
+    apercu.textContent = "Aperçu";
+    apercu.onclick = () => proposeRappels(true);
+    aide.appendChild(apercu);
+  }
 
   const duree = document.createElement("div");
   duree.className = "reglage-nb";
@@ -1873,6 +1896,13 @@ function voletAdmin(hote){
   }
 
   hote.appendChild(bloc);
+
+  /* Le rappel avant une conférence ferme la série : c'est une proposition faite
+     au visiteur comme les deux précédentes — une fenêtre qui s'ouvre d'elle-même
+     —, mais elle traîne un délai derrière elle. D'où sa place au pied de la
+     liste plutôt qu'au milieu, où la ligne du délai aurait coupé les cases en
+     deux. */
+  blocRappel(hote);
 
   /* Les options viennent après les commandes, sous leur propre intertitre :
      les premières règlent un plan qu'on a, les secondes disent ce qu'on en a

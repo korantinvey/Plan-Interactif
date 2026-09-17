@@ -4328,9 +4328,11 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 .instPicto svg{display:inline-block;width:1.2em;height:1.2em;margin-right:3px;
   vertical-align:-.25em;color:var(--accent)}
 /* L'aperçu, depuis l'aide de la case : des liens plutôt que des boutons
-   pleins — la case reste ce qu'on règle. */
-.reglages .aideR .apercuInst{padding:0;font-size:inherit;color:var(--accent);
-  text-decoration:underline;text-underline-offset:2px}
+   pleins — la case reste ce qu'on règle. Deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences : même geste, même
+   allure. */
+.reglages .aideR :is(.apercuInst, .apercuRappel){padding:0;font-size:inherit;
+  color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 
 /* Le panneau des critères. Chaque groupe porte son intitulé et ses valeurs en
    puces : elles se touchent du pouce, se lisent d'un coup d'œil, et portent le
@@ -11692,7 +11694,6 @@ function voletPlan(hote){
   n.onblur = () => { n.value = minutesVisite(); };
   hote.appendChild(duree);
 
-  blocRappel(hote);
   blocHoraires(hote);
 }
 
@@ -11708,12 +11709,21 @@ function voletPlan(hote){
  * pas. L'exploitant a le droit de le savoir avant de cocher : ce qu'il active
  * ici ne marchera pas pour tout le monde, et une promesse faite sur la
  * plaquette du salon se retournerait contre lui.
+ *
+ * La case vit dans un conteneur à elle, et pas nue dans le volet : le style
+ * des réglages est écrit sous `.reglages`, et une case posée à côté retombait
+ * au corps par défaut du navigateur — grosse, noire, désalignée au milieu de
+ * ses voisines.
  */
 function blocRappel(hote){
   /* Sans programme, il n'y a pas d'heure à rappeler. La case reste, éteinte
      plutôt que décochée, comme les sortes de la recherche : le choix fait
      vaudra le jour où l'option se rouvrira. */
   const offert = programmeOffert();
+  const bloc = document.createElement("div");
+  bloc.className = "reglages";
+  hote.appendChild(bloc);
+
   const l = document.createElement("label");
   l.innerHTML = '<input type="checkbox"><span></span>';
   l.querySelector("span").textContent = "Rappeler les conférences retenues";
@@ -11721,10 +11731,11 @@ function blocRappel(hote){
   const c = l.querySelector("input");
   c.checked = rappelsVoulus();
   c.disabled = !offert;
-  hote.appendChild(l);
+  bloc.appendChild(l);
 
   const aide = document.createElement("p");
   aide.className = "aideR";
+  aide.dataset.reglage = "rappel";
   aide.textContent = offert
     ? "Le visiteur qui a retenu une conférence peut demander à " +
       "en être prévenu, plan fermé. Il lui faut l'autoriser, et sur iPhone avoir " +
@@ -11733,7 +11744,21 @@ function blocRappel(hote){
       "la conférence."
     : "Le programme de conférences n'est pas pris sur ce salon : il n'y a pas " +
       "d'horaire à rappeler.";
-  hote.appendChild(aide);
+  bloc.appendChild(aide);
+
+  /* La fenêtre qui propose le rappel au visiteur ne paraît jamais ici : le plan
+     d'administration n'a pas de visiteur, et `rappelsOfferts` s'y refuse. Sans
+     cet aperçu, l'exploitant cocherait une fenêtre qu'il n'a jamais vue — c'est
+     le même besoin que l'invitation à installer, et la même réponse. */
+  if (offert){
+    aide.appendChild(document.createTextNode(" "));
+    const apercu = document.createElement("button");
+    apercu.type = "button";
+    apercu.className = "apercuRappel";
+    apercu.textContent = "Aperçu";
+    apercu.onclick = () => proposeRappels(true);
+    aide.appendChild(apercu);
+  }
 
   const duree = document.createElement("div");
   duree.className = "reglage-nb";
@@ -11916,6 +11941,13 @@ function voletAdmin(hote){
   }
 
   hote.appendChild(bloc);
+
+  /* Le rappel avant une conférence ferme la série : c'est une proposition faite
+     au visiteur comme les deux précédentes — une fenêtre qui s'ouvre d'elle-même
+     —, mais elle traîne un délai derrière elle. D'où sa place au pied de la
+     liste plutôt qu'au milieu, où la ligne du délai aurait coupé les cases en
+     deux. */
+  blocRappel(hote);
 
   /* Les options viennent après les commandes, sous leur propre intertitre :
      les premières règlent un plan qu'on a, les secondes disent ce qu'on en a
@@ -21167,13 +21199,20 @@ function retientInviteRappel(){
  * Ce qui vaut la peine d'être demandé.
  *
  * Les conditions sont celles de l'interrupteur, à trois près : la question déjà
- * posée, l'autorisation déjà répondue, la visite guidée en cours.
+ * posée, le rappel déjà allumé, la visite guidée en cours.
  *
- * L'autorisation déjà répondue ferme la question des deux côtés : accordée, le
- * rappel se poserait sans que le navigateur demande quoi que ce soit — mais
- * l'interrupteur, lui, n'a pas été touché, et allumer un rappel dans le dos du
- * visiteur n'est pas ce qu'on propose ; refusée, aucune fenêtre de la page ne
- * rouvrira ce que le navigateur a fermé, et le tiroir dit déjà où le rouvrir.
+ * Et une qui n'en est pas une, contre toute attente : l'autorisation déjà
+ * accordée. Elle fermait la question — allumer un rappel dans le dos du
+ * visiteur n'est pas ce qu'on propose —, mais c'était confondre autoriser et
+ * demander. La fenêtre demande, justement ; ce qu'un accord déjà donné change,
+ * c'est seulement que le navigateur ne redemandera rien après le oui. Et
+ * l'autorisation est de son côté à lui rangée par origine, non par salon : tous
+ * les plans partagent la même, si bien qu'un visiteur ayant accepté les rappels
+ * d'un salon au printemps n'aurait plus rien vu à l'automne, sur un autre, et
+ * que l'exploitant qui vient d'essayer son interrupteur ne voyait jamais la
+ * fenêtre qu'il venait d'activer. Seul un refus ferme donc la question :
+ * aucune fenêtre de la page ne rouvre ce que le navigateur a fermé, et le
+ * tiroir dit déjà où le rouvrir.
  *
  * La visite guidée, enfin, mène le visiteur d'une étape à l'autre, et son
  * chapitre des zones finit justement sur une conférence retenue : une fenêtre
@@ -21183,7 +21222,7 @@ function retientInviteRappel(){
 function fenetreRappel(){
   if (inviteRappelFaite() || TUTO) return;
   if (!rappelsOfferts() || !poussePossible()) return;
-  if (RAPPELS_ACTIFS || Notification.permission !== "default") return;
+  if (RAPPELS_ACTIFS || Notification.permission === "denied") return;
   /* La même retenue que l'interrupteur : une conférence qui commence dans dix
      minutes, avec un quart d'heure d'avance réglé, ne produit aucun rappel. Il
      n'y a alors rien à proposer, et le tiroir le dit mieux qu'une fenêtre. */
@@ -21209,8 +21248,15 @@ function fenetreRappel(){
  * Fermée par n'importe quelle porte — le pied, la croix, le voile, « Échap » —,
  * elle compte comme posée : la question a été vue, et c'est tout ce qu'on
  * voulait savoir.
+ *
+ * En aperçu, rien de tout cela : l'exploitant règle son salon depuis un écran
+ * d'administration, où la fenêtre ne paraît jamais — `rappelsOfferts` l'y
+ * refuse, faute de visiteur à qui la poser. Sans l'aperçu il allumerait une
+ * chose qu'il n'a jamais vue, comme pour l'invitation à installer le plan.
+ * L'aperçu ne retient donc pas la réponse, n'abonne personne, et ramène aux
+ * réglages d'où l'on vient.
  */
-function proposeRappels(){
+function proposeRappels(apercu){
   const n = minutesRappel();
   ouvreModale("Pour ne pas la manquer", corps => {
     const p = document.createElement("p");
@@ -21226,10 +21272,12 @@ function proposeRappels(){
   }, [
     { libelle: "Non merci" },
     { libelle: "Oui, me prévenir", genre: "accent", action: () => {
+      if (apercu) return;
       /* La demande du navigateur part dans le geste même — `allumeRappels`
          appelle `requestPermission` avant toute attente —, et la fenêtre se
          retire derrière elle : c'est celle du navigateur qui a la main
-         maintenant, et c'est là que la réponse se donne.
+         maintenant, et c'est là que la réponse se donne. Une autorisation déjà
+         accordée la rend muette, et le rappel se pose dans la foulée.
 
          Le reste ne se dit pas ici : refusée, l'autorisation a été refusée
          sous les yeux du visiteur ; accordée, le tiroir montre l'interrupteur
@@ -21240,7 +21288,7 @@ function proposeRappels(){
 
   /* Posé après l'ouverture : `ouvreModale` verse d'abord ce que la fenêtre
      précédente avait laissé en train de se faire. */
-  avantFermeture = retientInviteRappel;
+  avantFermeture = apercu ? () => retourAuxReglages("rappel") : retientInviteRappel;
 }
 
 /**
@@ -30131,11 +30179,15 @@ function teteInvitation(corps, sousTitre){
 /* Un aperçu a pris la place des réglages : toute sortie y ramène, sur la case
    qui l'a ouvert. Un temps plus tard, et non dans le crochet : la fenêtre
    achève de se fermer après lui, et refermerait les réglages rouverts
-   sur-le-champ. */
-function retourAuxReglages(){
+   sur-le-champ.
+
+   La marque dit quelle case a ouvert l'aperçu : deux réglages en offrent un,
+   l'invitation à installer et le rappel des conférences, et ils se ressemblent
+   assez pour qu'on revienne au mauvais si on ne le nomme pas. */
+function retourAuxReglages(marque){
   queueMicrotask(() => {
     ouvreReglages("Admin");
-    const aide = $("mCorps").querySelector('[data-reglage="installation"]');
+    const aide = $("mCorps").querySelector('[data-reglage="' + marque + '"]');
     if (aide) requestAnimationFrame(() => aide.scrollIntoView({ block: "nearest" }));
   });
 }
@@ -30201,7 +30253,7 @@ function ouvreInvitation(facon, apercu){
     [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
-    if (apercu) return retourAuxReglages();
+    if (apercu) return retourAuxReglages("installation");
     if (reponse === "compris") retientInstallation({ compris: true });
     else if (!reponse) refuseInstallation();
   };
@@ -30228,7 +30280,7 @@ function ouvreInstalle(apercu){
       "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
     corps.appendChild(p);
   }, [{ libelle: "Compris", genre: "accent" }], "installe");
-  if (apercu) avantFermeture = retourAuxReglages;
+  if (apercu) avantFermeture = () => retourAuxReglages("installation");
 }
 
 /* L'installation se termine quelques secondes après qu'on l'a acceptée — le
