@@ -588,13 +588,6 @@ const melange = (a, b, t) => {
   return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
 };
 
-/** Le thème effectivement peint : la nuit seulement si on l'a demandée, le
- *  clair partout ailleurs — c'est ce que dit la feuille de style, qui n'écoute
- *  plus la préférence de l'appareil. La couleur principale s'y adapte : un bleu
- *  d'imprimerie s'éteint sur un fond noir, et le même ton ne peut pas servir
- *  des deux côtés. */
-const themeSombre = () => racine.getAttribute("data-theme") === "dark";
-
 /**
  * Pose la couleur principale et ses déclinaisons sur la racine.
  *
@@ -602,38 +595,33 @@ const themeSombre = () => racine.getAttribute("data-theme") === "dark";
  * pastilles, l'encre qui s'écrit sur un bouton plein et les deux nuances dont
  * les modèles de fiche composent leurs fonds s'en déduisent. Sans réglage, on
  * retire les variables plutôt que d'en réécrire : la feuille de style reprend
- * la main, et avec elle le bleu d'origine — qui a déjà ses deux versions.
+ * la main, et avec elle le bleu d'origine.
  */
 function appliqueAccent(){
   const noms = ["--accent", "--accent-base", "--accent-soft", "--accent-ink",
                 "--accent-clair", "--accent-fort"];
-  const choisie = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!choisie){ noms.forEach(n => racine.style.removeProperty(n)); return; }
-  const sombre = themeSombre();
-  /* Sur fond sombre, un ton franc s'éteint : on l'éclaircit d'un tiers, comme
-     le thème le fait de son propre bleu. */
-  const base = sombre ? melange(choisie, "#FFFFFF", 0.34) : choisie;
+  /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
+     sans la version éclaircie qu'un fond noir aurait réclamée. */
+  const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
+  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
-  pose("--accent-soft", melange(base, sombre ? "#0E1113" : "#FFFFFF", sombre ? 0.76 : 0.86));
+  pose("--accent-soft", melange(base, "#FFFFFF", 0.86));
   // le texte d'un bouton plein : noir sur un jaune, blanc sur un bleu
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
 }
-/* Le thème ne bascule plus que par le bouton, qui rappelle `appliqueAccent`
-   lui-même : l'appareil qui passe à la nuit de son côté ne change rien ici. */
 
 /**
  * Le fond du plan — le gris qui entoure le bâtiment.
  *
  * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
- * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
- * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
- * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
- * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
- * le gris de chaque thème.
+ * n'a pas à le teinter. La teinte choisie se pose telle quelle : un exploitant
+ * qui met l'ivoire de sa charte veut cet ivoire-là, pas un ton recalculé. Sans
+ * réglage, on retire le jeton plutôt que d'en écrire un — la feuille de style
+ * reprend la main, avec le gris de la page.
  */
 function appliqueFond(){
   const v = conf("_fond").couleur;
@@ -661,7 +649,7 @@ const MODELES = [
   { cle: "magazine", nom: "Magazine",
     resume: "Serif à fort contraste et italiques : le catalogue et son sommaire." },
   { cle: "brut", nom: "Brut",
-    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir, sans rien emprunter au salon." },
   { cle: "verre", nom: "Verre",
     resume: "Un bloc de la couleur du salon, champs et lignes en carreaux translucides." },
   { cle: "kraft", nom: "Kraft",
@@ -3147,15 +3135,8 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
-  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
-     côté : il porte le même réglage dans son panneau, et deux commandes d'une
-     même chose dans la même barre ne disent pas laquelle écoute. */
   const c = $("menuCompte");
-  if (c){
-    c.hidden = false;
-    const th = $("btnTheme");
-    if (th) th.hidden = true;
-  }
+  if (c) c.hidden = false;
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
      argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun

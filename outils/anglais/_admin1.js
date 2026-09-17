@@ -44,7 +44,7 @@ module.exports = {
   "Magazine": "Magazine",
   "Serif à fort contraste et italiques : le catalogue et son sommaire.": "High-contrast serif and italics: the catalogue and its contents page.",
   "Brut": "Raw",
-  "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes.": "Thick lines, hard shadows, flat colour. Paper and black in both themes.",
+  "Trait épais, ombre dure, aplat franc. Papier et noir, sans rien emprunter au salon.": "Thick lines, hard shadows, flat colour. Paper and black, borrowing nothing from the show.",
   "Verre": "Glass",
   "Un bloc de la couleur du salon, champs et lignes en carreaux translucides.": "A block in the show's colour, with fields and rows as translucent panes.",
   "Kraft": "Kraft",

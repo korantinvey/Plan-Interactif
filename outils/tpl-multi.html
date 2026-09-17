@@ -15,15 +15,15 @@
      paire que la console, pour que les deux écrans parlent du même rouge. */
   --rouge:#C2372B;
   /* Les tons de la marque : la nuit, le cyan et le rose d'Event2Map. Ils ne
-     suivent ni le thème ni le salon — une marque qui change de couleur selon
-     l'heure ou selon le client n'en est plus une. Ils ne peignent donc que ce
-     qui appartient à l'outil : la bande d'administration, l'écran d'accès.
-     Jamais le plan, dont les couleurs sont celles du salon.
+     suivent pas le salon — une marque qui change de couleur selon le client
+     n'en est plus une. Ils ne peignent donc que ce qui appartient à l'outil :
+     la bande d'administration, l'écran d'accès. Jamais le plan, dont les
+     couleurs sont celles du salon.
 
      Le cyan a deux valeurs, et pour la raison qu'a déjà notée `console.css` :
      le cyan vif est trop clair pour porter du texte sur du blanc — il ne sert
-     donc que sur un fond sombre, et le cyan profond prend sa place en thème
-     clair. */
+     donc qu'en aplat, ou sur le bleu de nuit de la bande, et le cyan profond
+     porte le texte sur le blanc de la page. */
   --m-nuit:#071F3A; --m-cyan:#35C2FF; --m-cyan-profond:#0A6C93; --m-rose:#FF4D6D;
   /* L'accent décliné : les modèles de fiche s'en servent pour composer un
      dégradé ou un aplat sans avoir à deviner la couleur choisie. « base »
@@ -32,9 +32,9 @@
   --accent-base:#2F49D1; --accent-clair:#6A80EE; --accent-fort:#1B2A8E;
   --zone:#C98A06; --zone-soft:#F7EAC6;
   --stand:#FFFFFF; --stand-line:#9AA095; --libre:#E3E5DD;
-  /* Un secteur n'a qu'une teinte : la saturation et la clarté viennent du
-     thème, sans quoi le libellé du stand — écrit à l'encre du texte —
-     deviendrait illisible sur l'un des deux. */
+  /* Un secteur n'a qu'une teinte : sa saturation et sa clarté sont posées ici,
+     les mêmes pour tous, sans quoi le libellé du stand — écrit à l'encre du
+     texte — deviendrait illisible sur les plus soutenus. */
   --sect-s:58%; --sect-l:87%; --sect-dot-l:40%;
   --plan-line:#A8AEA1; --plan-ink:#8A9082;
   --shadow:0 1px 2px rgba(20,24,26,.06), 0 8px 24px -12px rgba(20,24,26,.18);
@@ -51,31 +51,16 @@
   /* La liste déroulante d'un « select » est peinte par le système, hors de la
      page : ses tons ne peuvent donc pas être ceux d'un modèle, qui les pose
      translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
-     redéfinit. « --systeme » dit au navigateur de quel côté peindre le reste
-     du menu — ascenseur, surbrillance, cadre. */
-  --menu-fond:#FBFBF8; --menu-encre:#15181A; --systeme:light;
+     redéfinit. */
+  --menu-fond:#FBFBF8; --menu-encre:#15181A;
 }
-/* Le thème sombre ne s'ouvre que sur demande — jamais d'après la préférence du
-   système. Un plan de salon ne se lit pas le soir au fond d'un lit : il se
-   consulte debout dans un hall éclairé, le plus souvent sur un téléphone dont
-   le thème sombre a été posé une fois pour toutes et oublié, et à côté d'une
-   signalétique imprimée en noir sur blanc. Le premier regard doit tomber sur
-   le même clair qu'elle. Qui préfère la nuit la rallume du bouton de thème, et
-   son choix tient : `plan-theme` le garde d'une visite à l'autre. */
-:root[data-theme="dark"]{
-  --ground:#0E1113; --surface:#171B1E; --surface-2:#1F2427;
-  --line:#2A3034; --line-strong:#3B4348;
-  --ink:#EDEFEC; --ink-2:#A8AEB0; --ink-3:#767D80;
-  --accent:#7A8CFF; --accent-soft:#232C55; --accent-ink:#0E1113;
-  --accent-base:#7A8CFF; --accent-clair:#A9B5FF; --accent-fort:#3F4E9E;
-  --rouge:#FF8B7E;
-  --zone:#F0B429; --zone-soft:#3A2F12;
-  --stand:#252C30; --stand-line:#4C555A; --libre:#1C2124;
-  --sect-s:32%; --sect-l:26%; --sect-dot-l:64%;
-  --plan-line:#3E474C; --plan-ink:#5A6469;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
-  --menu-fond:#1F2427; --menu-encre:#EDEFEC; --systeme:dark;
-}
+/* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
+   fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
+   sur un téléphone dont le thème sombre a été posé une fois pour toutes et
+   oublié, et à côté d'une signalétique imprimée en noir sur blanc. Le plan est
+   de ce côté-là, et n'en change pas — ni d'après la préférence de l'appareil,
+   ni sur demande. La nuit reste à la console, où l'on travaille la journée
+   durant. */
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--ground);color:var(--ink);
@@ -83,11 +68,12 @@ body{margin:0;background:var(--ground);color:var(--ink);
   -webkit-font-smoothing:antialiased}
 button,input,textarea{font:inherit;color:inherit}
 /* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
-   fond : sous « Verre » — encre blanche sur un carreau translucide — comme
-   dans le thème sombre, elles écrivaient du blanc sur le blanc du système, et
-   ne paraissaient qu'au survol. Elles reçoivent donc leurs propres tons, que
-   le champ soit habillé ou non. */
-select{color-scheme:var(--systeme)}
+   fond : sous « Verre » — encre blanche sur un carreau translucide — elles
+   écrivaient du blanc sur le blanc du système, et ne paraissaient qu'au
+   survol. Elles reçoivent donc leurs propres tons, que le champ soit habillé
+   ou non, et le menu que le système peint hors de la page reste du côté clair
+   quoi qu'ait réglé l'appareil. */
+select{color-scheme:light}
 option,optgroup{background-color:var(--menu-fond);color:var(--menu-encre)}
 input,textarea,.detail-bd{user-select:text;-webkit-user-select:text}
 button{cursor:pointer;background:none;border:none}
@@ -210,12 +196,6 @@ html.mode-admin .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
    l'accent appartient au salon. */
 html.mode-admin :is(#panel,#outils,#libReg){border-top:2px solid var(--m-cyan)}
 html.mode-admin :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan-profond)}
-html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg) .eyebrow{color:var(--m-cyan)}
-html.mode-admin[data-theme="dark"] :is(#panel,#outils,#libReg),
-html.mode-admin[data-theme="dark"] .modale:is([data-genre="large"],[data-genre="outil"]) .mfen{
-  --surface:#0A1E33;--surface-2:#102941;
-  --line:#1E3C58;--line-strong:#325975;
-  --ink:#DDEAF6;--ink-2:#9BB2C9;--ink-3:#7793AD}
 
 /* Un texte écrit dans les deux langues ne montre que celui de la page. */
 html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none}
@@ -317,8 +297,8 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    s'efface, et l'on sait qu'on a tout vu.
 
    Un masque plutôt qu'un dégradé de couleur : il découpe au lieu de teindre, et
-   tient donc dans les deux thèmes sans avoir à être décliné, par-dessus le fond
-   du tiroir comme par-dessus celui de la bande. */
+   tient donc sur n'importe quel fond sans avoir à être décliné, par-dessus
+   celui du tiroir comme par-dessus celui de la bande. */
 .bande{position:relative;--fondu:44px}
 .bande[data-gauche] .defile,.bande[data-droite] .defile{
   -webkit-mask-image:var(--masque);mask-image:var(--masque)}
@@ -396,10 +376,10 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    pour l'amener sous les yeux, et rien ne la ramenait. On y voyait alors les
    tiroirs fermés exposés à droite, et il fallait recharger la page. `clip`
    refuse ce défilement ; `hidden` reste pour qui ne connaît pas `clip`. */
-/* Le fond du plan se règle : le gris du thème convient à la plupart des
+/* Le fond du plan se règle : le gris d'origine convient à la plupart des
    salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
-   au panneau, la teinte choisie vaut pour les deux thèmes ; sans réglage, le
-   jeton reste absent et le fond de la page reprend la main. */
+   au panneau, la teinte choisie se pose telle quelle ; sans réglage, le jeton
+   reste absent et le fond de la page reprend la main. */
 .stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
@@ -420,7 +400,7 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    écrite en ligne n'en coûte aucune. Voir « saisitPlan », _js.html. */
 
 /* Chaque sous-calque garde sa teinte Klipso, portée par `color` ; les tracés
-   noirs d'origine héritent de la couleur du thème et suivent clair / sombre. */
+   noirs d'origine héritent du gris de trait du plan, qui les tient en retrait. */
 #couches .cal{color:var(--plan-line)}
 #couches .cal path,#couches .cal polyline,#couches .cal circle{stroke-width:.7;vector-effect:non-scaling-stroke}
 /* Le groupe d'un calque porte stroke: currentColor pour ses tracés. Un texte
@@ -585,8 +565,8 @@ html.poi-actif #marques .parc{display:none}
    à chaque ouverture de fiche, et deux atlas de police à fabriquer. Cent
    trente millisecondes pour une nuance que l'accent disait déjà. */
 #labels text.sel,.dcal .lab text.sel{fill:var(--c-sel-trait,var(--accent))}
-/* Sur la carte de chaleur, l'emplacement ne porte plus la couleur du thème
-   mais sa température, la même de jour comme de nuit. Aucune encre unique ne
+/* Sur la carte de chaleur, l'emplacement ne porte plus les couleurs de la page
+   mais sa température. Aucune encre unique ne
    tient sur toute la rampe : noire, elle se perd sur le bleu ; blanche, sur le
    jaune. Le liseré la porte des deux côtés — c'est la solution des cartes
    posées sur photo, et elle dit au passage que le plan est en lecture.
@@ -1150,7 +1130,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
 #fondTuiles{position:absolute;inset:0;width:100%;height:100%;z-index:0;
   pointer-events:none;display:block}
 /* L'aplat qui vide le hall prend la couleur du fond du plan — celle que
-   l'exploitant choisit, et qui suit le thème. */
+   l'exploitant choisit, ou le gris de la page à défaut. */
 #trouDuFond{fill:var(--c-fond,var(--ground));stroke:none}
 #fondCarte image{image-rendering:auto}
 .creditCarte{position:absolute;right:10px;bottom:6px;font-size:10.5px;color:var(--ink-3);
@@ -1624,8 +1604,9 @@ button.expo:hover{background:var(--line)}
   font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
 
 /* Brut — trait de trois pixels, ombre portée dure, aplat franc. Elle ne se
-   fond dans rien : le noir et le papier ne bougent pas d'un thème à l'autre,
-   et l'aplat de l'en-tête est la couleur du salon, prise telle quelle. */
+   fond dans rien : le noir et le papier sont les siens, quoi que l'exploitant
+   règle par ailleurs, et l'aplat de l'en-tête est la couleur du salon, prise
+   telle quelle. */
 .modele-brut{color:var(--ink);
   --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
   --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
@@ -1862,7 +1843,7 @@ button.expo:hover{background:var(--line)}
     color-mix(in srgb,var(--accent-clair) 20%,transparent) 0 1px,transparent 1px 4px)}
 .liste-console .search{border-bottom-style:dashed}
 .liste-console .search :is(input,.champ){background:var(--surface-2);border-color:var(--line)}
-/* Le gris de repos du thème s'éteint sur le noir de la régie : le compteur y
+/* Le gris de repos de la page s'éteint sur le noir de la régie : le compteur y
    reprend l'encre secondaire, qui, elle, tient. */
 .liste-console .count{color:var(--ink-2);letter-spacing:.04em}
 .liste-console .count::before{content:"› ";color:var(--accent)}
@@ -1916,7 +1897,7 @@ button.expo:hover{background:var(--line)}
   font-style:italic;font-size:11px}
 
 /* Brut — le même trait de trois pixels, le même papier et le même noir que la
-   fiche : la liste ne se fond pas davantage qu'elle dans le thème. */
+   fiche : la liste ne se fond pas davantage qu'elle dans la page. */
 .liste-brut{color:var(--ink);
   --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
   --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
@@ -2172,7 +2153,7 @@ button.expo:hover{background:var(--line)}
 .bandeau-magazine :is(.iconbtn,.compte > summary){border-radius:0}
 
 /* Brut — le même papier, le même noir et la même ombre dure que la liste : la
-   barre est une pièce découpée et posée, pas une teinte du thème. */
+   barre est une pièce découpée et posée, pas une teinte de la page. */
 .bandeau-brut{color:var(--ink);
   --surface:#FFFDF5;--surface-2:#F1EEE0;--line:#111111;--line-strong:#111111;
   --ink:#111111;--ink-2:#3A3A34;--ink-3:#57574D;
@@ -2711,9 +2692,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    fond se seraient fait recouvrir par les deux panneaux.
    ------------------------------------------------------------ */
 
-/* Cinq modèles imposent leur fond sans regarder le thème de la page : trois
-   dans le noir, deux sur un papier clair. Le rouge des alertes suit le fond
-   qu'on lui donne, et non celui de la page. */
+/* Cinq modèles imposent leur fond sans rien demander à la page : trois dans le
+   noir, deux sur un papier clair. Le rouge des alertes suit le fond qu'on lui
+   donne, et non celui de la page. */
 .modele-console,.modele-signal,.modele-verre{--rouge:#FF8B7E}
 .modele-brut,.modele-kraft{--rouge:#C2372B}
 
@@ -3434,8 +3415,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    pas encore dit de quel salon il s'agit, et c'est à l'outil qu'on se
    connecte. */
 #acces{--accent:var(--m-cyan-profond);--accent-soft:#D7EFFB;--accent-ink:#FFFFFF}
-html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
-  --accent-ink:var(--m-nuit)}
 /* Et ses champs. Cette page ne charge pas `console.css`, où les libellés
    savent se tenir : faute de règle ici, l'intitulé et son champ se suivaient
    sur la même ligne et se chevauchaient — sur le premier écran que voit un
@@ -3472,8 +3451,9 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 
 /* La fenêtre de partage du parcours.
 
-   Le code se photographie : il reste noir sur blanc quel que soit le thème de
-   la page, et garde sa plaque blanche jusque dans le thème sombre. Un code
+   Le code se photographie : il reste noir sur blanc quelles que soient les
+   couleurs de la page, et garde sa plaque blanche jusque sous le modèle de
+   fiche le plus sombre. Un code
    inversé se lit encore sur un bon appareil, mal sur les autres, et rien
    n'obligeait à courir ce risque pour une image de dix secondes. */
 .qrPlaque{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;
@@ -3675,8 +3655,9 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
   font-weight:400}
 :is(.panel,.bandeAdmin) .reset.fort[data-etat="envoi"]:hover,
 :is(.panel,.bandeAdmin) .reset.fort[data-etat="fait"]:hover{color:var(--ink)}
-/* Un échec doit se voir sans pour autant crier : le rouge du thème sombre est
-   trop clair pour porter du blanc, il passe donc au trait et au texte. */
+/* Un échec doit se voir sans pour autant crier : le rouge passe au trait et au
+   texte plutôt qu'à l'aplat, qui aurait sonné l'alarme pour un envoi à
+   reprendre. */
 :is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]{background:transparent;color:var(--rouge);
   box-shadow:inset 0 0 0 1px var(--rouge)}
 :is(.panel,.bandeAdmin) .reset.fort[data-etat="echec"]:hover{color:var(--rouge)}
@@ -4022,14 +4003,12 @@ html[data-theme="dark"] #acces{--accent:var(--m-cyan);--accent-soft:#123A55;
 @keyframes tutoBat{0%,100%{opacity:1}50%{opacity:.4}}
 /* Le voile : ce qui n'est pas désigné recule. Quatre bandes d'un pixel étirées
    par la page autour de ce qui reste clair ; posé sous le repère et la bulle,
-   il ne prend aucun clic. Plus appuyé dans le thème sombre, où un gris léger
-   ne se distinguerait pas du fond. */
+   il ne prend aucun clic. */
 .tutoVoile{position:fixed;inset:0;z-index:39;pointer-events:none;opacity:0;
   transition:opacity .25s ease;--voile:rgba(8,10,12,.42)}
 .tutoVoile.on{opacity:1}
 .tutoVoile i{position:absolute;left:0;top:0;width:1px;height:1px;background:var(--voile);
   transform-origin:0 0;will-change:transform}
-:root[data-theme="dark"] .tutoVoile{--voile:rgba(0,0,0,.55)}
 /* Autour d'une zone désignée, le plan recule comme sous le cartouche des points
    d'intérêt : la zone et son nom restent entiers, le reste s'efface. */
 html.tuto-retrait #stands,
@@ -4212,21 +4191,13 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </button>
       <!-- La langue. Le bouton se dessine tout seul (`_langue.js`) : il porte
            le drapeau de la langue vers laquelle il mène — c'est ce que
-           cherche des yeux quelqu'un qui ne lit pas la page. Il reste en
-           administration, où le thème part dans le menu du compte : la langue
-           n'y a pas de doublon. -->
+           cherche des yeux quelqu'un qui ne lit pas la page. -->
       <button class="iconbtn langue" id="btnLangue" type="button" data-langue></button>
-      <button class="iconbtn" id="btnTheme" title="Thème clair / sombre" aria-label="Basculer le thème">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-      </button>
-      <!-- L'exploitant connecté, et par où sortir. Le thème le rejoint ici en
-           administration : deux commandes du même réglage côte à côte dans la
-           barre ne diraient pas laquelle écoute. -->
+      <!-- L'exploitant connecté, et par où sortir. -->
       <details class="compte" id="menuCompte" hidden>
         <summary id="avatarCompte" title="Compte" aria-label="Compte">··</summary>
         <div class="compte-pan">
           <div class="qui" id="compteMail">—</div>
-          <button id="btnThemeCompte">Thème sombre</button>
           <button class="sortie" id="btnSortir">Se déconnecter</button>
         </div>
       </details>
@@ -5474,9 +5445,8 @@ function hslHex(h, s, l){
  * La couleur d'un secteur, telle que le plan la montre.
  *
  * Celle que l'exploitant a choisie s'il l'a fait ; sinon la teinte automatique,
- * résolue dans le thème courant — c'est bien la couleur qu'on voit à l'écran
- * que le sélecteur doit présenter, et non celle d'un thème qu'on ne regarde
- * pas.
+ * résolue comme le plan la résout — c'est bien la couleur qu'on voit à l'écran
+ * que le sélecteur doit présenter, et non la teinte brute d'où elle sort.
  */
 function couleurSecteur(nom){
   return couleurConf(conf("secteur:" + nom).couleur) ||
@@ -5576,8 +5546,8 @@ function coloreSecteurs(){
       g.setAttribute("data-sect", "");
       g.style.setProperty("--sect-h", h);
       /* Une couleur choisie remplace la teinte au lieu de s'y ajouter : elle
-         vaut pour les deux thèmes, comme celle des autres couches, et ne se
-         laisse donc pas ternir par la clarté du thème courant. */
+         se pose telle quelle, comme celle des autres couches, et ne se laisse
+         donc pas pâlir par la clarté dont le plan tient les secteurs. */
       const c = couleurConf(conf("secteur:" + nom).couleur);
       if (c) g.style.setProperty("--sect-c", c);
       else g.style.removeProperty("--sect-c");
@@ -8981,35 +8951,6 @@ addEventListener("langue", () => {
   if (o && o.kind === "zone" && $("dName")) $("dName").textContent = nomDeLaZone(o) || "Zone sans nom";
 });
 
-/* thème */
-const CLE_THEME = "plan-theme";
-/* Le seul thème que la page connaisse est celui qu'on lui a demandé : sans cet
-   attribut, la feuille de style peint le clair. Le visiteur qui a choisi la
-   nuit la retrouve ici, et lui seul. */
-try { const t = localStorage.getItem(CLE_THEME); if (t) document.documentElement.setAttribute("data-theme", t); } catch (e) {}
-
-/* La barre du navigateur suit désormais le thème de la page et non celui de
-   l'appareil. `outils/pwa.js` pose deux balises, une par préférence système :
-   sur un téléphone réglé en sombre, celle qui l'emporte peignait la nuit
-   au-dessus d'un plan resté clair. On leur écrit donc à toutes deux le ton du
-   thème ouvert — la surface, celle qui touche le haut de l'écran —, quelle que
-   soit celle que le navigateur retient. La page publiée en artefact n'en porte
-   aucune : il n'y a alors rien à réécrire. */
-function poseTonDeBarre(){
-  const ton = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
-  if (ton) document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = ton; });
-}
-poseTonDeBarre();
-
-$("btnTheme").onclick = () => {
-  const next = themeSombre() ? "light" : "dark";
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem(CLE_THEME, next); } catch (e) {}
-  /* La couleur principale a deux versions, une par fond : celle du thème
-     qu'on vient de quitter s'éteindrait sur celui qu'on ouvre. */
-  appliqueAccent();
-  poseTonDeBarre();
-};
 /* ============================================================
    La marque sans le vide qui l'entoure
 
@@ -9881,13 +9822,6 @@ const melange = (a, b, t) => {
   return x && y ? hexa(x.map((c, i) => Math.round(c + (y[i] - c) * t))) : a;
 };
 
-/** Le thème effectivement peint : la nuit seulement si on l'a demandée, le
- *  clair partout ailleurs — c'est ce que dit la feuille de style, qui n'écoute
- *  plus la préférence de l'appareil. La couleur principale s'y adapte : un bleu
- *  d'imprimerie s'éteint sur un fond noir, et le même ton ne peut pas servir
- *  des deux côtés. */
-const themeSombre = () => racine.getAttribute("data-theme") === "dark";
-
 /**
  * Pose la couleur principale et ses déclinaisons sur la racine.
  *
@@ -9895,38 +9829,33 @@ const themeSombre = () => racine.getAttribute("data-theme") === "dark";
  * pastilles, l'encre qui s'écrit sur un bouton plein et les deux nuances dont
  * les modèles de fiche composent leurs fonds s'en déduisent. Sans réglage, on
  * retire les variables plutôt que d'en réécrire : la feuille de style reprend
- * la main, et avec elle le bleu d'origine — qui a déjà ses deux versions.
+ * la main, et avec elle le bleu d'origine.
  */
 function appliqueAccent(){
   const noms = ["--accent", "--accent-base", "--accent-soft", "--accent-ink",
                 "--accent-clair", "--accent-fort"];
-  const choisie = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!choisie){ noms.forEach(n => racine.style.removeProperty(n)); return; }
-  const sombre = themeSombre();
-  /* Sur fond sombre, un ton franc s'éteint : on l'éclaircit d'un tiers, comme
-     le thème le fait de son propre bleu. */
-  const base = sombre ? melange(choisie, "#FFFFFF", 0.34) : choisie;
+  /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
+     sans la version éclaircie qu'un fond noir aurait réclamée. */
+  const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
+  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
-  pose("--accent-soft", melange(base, sombre ? "#0E1113" : "#FFFFFF", sombre ? 0.76 : 0.86));
+  pose("--accent-soft", melange(base, "#FFFFFF", 0.86));
   // le texte d'un bouton plein : noir sur un jaune, blanc sur un bleu
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
 }
-/* Le thème ne bascule plus que par le bouton, qui rappelle `appliqueAccent`
-   lui-même : l'appareil qui passe à la nuit de son côté ne change rien ici. */
 
 /**
  * Le fond du plan — le gris qui entoure le bâtiment.
  *
  * Il ne se déduit de rien : c'est un aplat que rien ne recouvre, et l'accent
- * n'a pas à le teinter. Contrairement à l'accent, la teinte choisie ne
- * s'éclaircit pas sur fond sombre : un exploitant qui pose l'ivoire de sa
- * charte veut cet ivoire-là, pas un ton recalculé. Sans réglage, on retire le
- * jeton plutôt que d'en écrire un — la feuille de style reprend la main, avec
- * le gris de chaque thème.
+ * n'a pas à le teinter. La teinte choisie se pose telle quelle : un exploitant
+ * qui met l'ivoire de sa charte veut cet ivoire-là, pas un ton recalculé. Sans
+ * réglage, on retire le jeton plutôt que d'en écrire un — la feuille de style
+ * reprend la main, avec le gris de la page.
  */
 function appliqueFond(){
   const v = conf("_fond").couleur;
@@ -9954,7 +9883,7 @@ const MODELES = [
   { cle: "magazine", nom: "Magazine",
     resume: "Serif à fort contraste et italiques : le catalogue et son sommaire." },
   { cle: "brut", nom: "Brut",
-    resume: "Trait épais, ombre dure, aplat franc. Papier et noir dans les deux thèmes." },
+    resume: "Trait épais, ombre dure, aplat franc. Papier et noir, sans rien emprunter au salon." },
   { cle: "verre", nom: "Verre",
     resume: "Un bloc de la couleur du salon, champs et lignes en carreaux translucides." },
   { cle: "kraft", nom: "Kraft",
@@ -12440,15 +12369,8 @@ function activeAdmin(){
       b.setAttribute("aria-pressed", o);
     };
   }
-  /* Le compte prend la place du bouton de thème plutôt que de s'ajouter à
-     côté : il porte le même réglage dans son panneau, et deux commandes d'une
-     même chose dans la même barre ne disent pas laquelle écoute. */
   const c = $("menuCompte");
-  if (c){
-    c.hidden = false;
-    const th = $("btnTheme");
-    if (th) th.hidden = true;
-  }
+  if (c) c.hidden = false;
   const r = $("btnReglages");
   /* Sans la lambda, le gestionnaire passe l'événement de clic en premier
      argument — soit, pour « ouvreReglages », le nom du volet à ouvrir. Aucun
@@ -14838,7 +14760,7 @@ function mesureCartouche(){
   const z = $("poi");
   const h = z && !z.hidden ? z.offsetHeight + 8 : 0;
   /* Sur le corps, et non sur la racine : le rendu WebGL guette les attributs
-     de la racine pour savoir quand le thème ou un calque change, et il y
+     de la racine pour savoir quand une couleur ou un calque change, et il y
      repeignait tout le plan pour une hauteur d'habillage qui ne le concerne
      pas. Ceux qui lisent cette variable — l'échelle, la barre de zoom — sont
      tous dans le corps, la feuille de style y trouve donc son compte. */
@@ -17982,9 +17904,9 @@ function ligneCouleur(libelle, valeur, peint){
  * La couleur d'un secteur.
  *
  * Le sélecteur part de ce que le plan montre — la couleur choisie, ou la teinte
- * automatique résolue dans le thème courant — de sorte qu'on retouche ce qu'on
- * voit plutôt que de partir du noir. Elle vaut ensuite pour les deux thèmes,
- * comme celle des autres couches.
+ * automatique telle que le plan la résout — de sorte qu'on retouche ce qu'on
+ * voit plutôt que de partir du noir. Elle se pose ensuite telle quelle, comme
+ * celle des autres couches.
  */
 function rangSecteur(hote, nom){
   const c = conf("secteur:" + nom);
@@ -19799,7 +19721,8 @@ function qrTrame(octets){
 /**
  * La trame en SVG.
  *
- * Noir sur blanc, thème sombre ou non : le code n'est pas une illustration, il
+ * Noir sur blanc, quelles que soient les couleurs de la page : le code n'est
+ * pas une illustration, il
  * doit se photographier. Une marge de quatre modules l'entoure — le lecteur en
  * a besoin pour trouver les bords, et l'oublier est la panne la plus courante.
  *
@@ -29529,8 +29452,7 @@ const ETAPES_INSTALLATION = {
    le visiteur a sous les yeux : les deux ensemble disent ce qu'on installe,
    mieux qu'une phrase. Celle du salon quand il en a déposé une, et la version
    opaque pour la même raison qu'iOS la reçoit : c'est ici un carré arrondi
-   posé sur le fond de la fenêtre, où un logo transparent joue à cache-cache
-   avec le thème du visiteur. */
+   posé sur le fond de la fenêtre, où un logo transparent se perdrait. */
 function teteInvitation(corps, sousTitre){
   const tete = document.createElement("div");
   tete.className = "instTete";
@@ -30716,8 +30638,8 @@ function monteWebgl(){
       majEditionWebgl();
       planifieWebgl();
     }).observe(svg, { subtree: true, childList: true, attributes: true, characterData: true });
-    // le thème, le mode carte de chaleur, un calque de noms éteint : autant de
-    // classes posées sur la racine, que la feuille de style lit
+    // le mode carte de chaleur, un calque de noms éteint, une couleur réglée :
+    // autant de classes et de jetons posés sur la racine, que la feuille lit
     /* Une écriture qui repose la même valeur n'est pas un changement, mais le
        guet la signale quand même — et repeindre tout le plan coûte un demi-
        millier de millisecondes. On compare donc l'avant et l'après : une frappe
@@ -30727,10 +30649,7 @@ function monteWebgl(){
       if (notes.every(n => n.oldValue === document.documentElement.getAttribute(n.attributeName))) return;
       majEditionWebgl(); toutRepeindreWebgl();
     }).observe(document.documentElement, { attributes: true, attributeOldValue: true,
-      attributeFilter: ["class", "style", "data-theme"] });
-    /* Le guet de `data-theme` ci-dessus suffit : le plan ne suit plus la
-       préférence de l'appareil, et écouter celle-ci ne faisait plus que
-       reconvertir six cents stands pour rien. */
+      attributeFilter: ["class", "style"] });
     if (document.fonts) document.fonts.addEventListener("loadingdone", toutRepeindreWebgl);
 
     brancheSurvolWebgl();
@@ -31465,7 +31384,7 @@ function couchesDeBloc(acc, cle){
 
      L'aplat couvre la forme entière ; il ne reste dehors que la moitié
      extérieure d'un trait, large d'un pixel. Une forme qui n'a pas d'aplat —
-     un trait, un contour ouvert, un stand qu'un thème laisse vide — garde le
+     un trait, un contour ouvert, un stand laissé sans aplat — garde le
      sien : c'est tout ce qu'elle a pour répondre. */
   const repondus = new Set(pleins[0].map(designeGl).filter(Boolean));
   for (const [suffixe, tous, unites] of [["traits-px", acc.traitsPx, "pixels"], ["traits-m", acc.traitsM, "common"]])
@@ -32056,10 +31975,10 @@ const MODES_SPONSOR = ["", "marque", "sponsor"];
 
 /* La marque du produit, posée par la construction à la place du commentaire
    (`outils/genere.js`, `outils/icones.js`). Celle qui garde son carré de nuit,
-   et non la nue : le générique se pose sur le fond du plan, clair ou sombre
-   selon le thème du visiteur, et une marque qui porte son propre fond est la
-   seule qui tienne sur les deux — c'est exactement ce qu'on conseille au
-   sponsor pour son logo.
+   et non la nue : le générique se pose sur le fond du plan — le gris clair
+   d'origine, ou la couleur que l'exploitant a réglée —, et une marque qui
+   porte son propre fond est la seule qui tienne sur toutes. C'est exactement
+   ce qu'on conseille au sponsor pour son logo.
 
    C'est le seul endroit où la marque paraisse devant un visiteur. Ailleurs elle
    se tient dans ce qui appartient à l'outil — la bande d'administration, la
@@ -32466,10 +32385,9 @@ function blocSponsor(hote){
   champZone(corps, "Logo", logo.cadre,
     "Réduite puis enregistrée avec la configuration du plan : elle part avec " +
     "lui, sans dépendre d'un fichier hébergé ailleurs. Glissez-la sur la " +
-    "vignette, ou choisissez-la. Elle se pose sur le fond du plan, qui suit le " +
-    "thème clair ou sombre du visiteur tant qu'aucune couleur n'est réglée " +
-    "dans « Apparence » : un logo dessiné en noir sur fond transparent y " +
-    "disparaîtra la moitié du temps.");
+    "vignette, ou choisissez-la. Elle se pose sur le fond du plan — le gris " +
+    "clair d'origine, ou la couleur réglée dans « Apparence » : un logo " +
+    "dessiné en blanc sur fond transparent y disparaîtra.");
 
   const nom = champZone(corps, "Nom du sponsor", document.createElement("input"),
     "Écrit sous le logo. Laissez vide si le logo porte déjà le nom.");

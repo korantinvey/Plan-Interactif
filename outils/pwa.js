@@ -120,15 +120,27 @@ function manifeste() {
  * les pages n'en déclaraient aucune, et le navigateur réclamait un
  * `/favicon.ico` qui n'existe pas. Sur les pages du plan, celle du salon la
  * remplace dès que les données arrivent : `poseFavicon` reprend ce même lien.
- * La couleur, elle, est celle dont un navigateur mobile peint sa barre
- * d'adresse, application ou pas. Les deux balises suivent la préférence de
- * l'appareil, ce qui vaut pour la console et le rapport ; les pages du plan,
- * qui ne la suivent plus, les réécrivent d'après leur propre thème
- * (`_js.html` `poseTonDeBarre`).
  */
 const TETE = [
   // l'onglet prend la marque réduite : le monogramme entier s'y empâte
   '<link rel="icon" href="icone-onglet.svg" type="image/svg+xml">',
+  "",
+].join("\n");
+
+/**
+ * La couleur dont un navigateur mobile peint sa barre d'adresse, application
+ * ou pas. Elle se décline en deux, parce que les pages du domaine ne se
+ * ressemblent plus sur ce point.
+ *
+ * Le plan n'a qu'un thème, le clair : une couleur, sans condition. Poser la
+ * paire lui laissait une barre nuit au-dessus d'une page claire, sur tout
+ * téléphone dont le thème sombre avait été réglé une fois puis oublié.
+ *
+ * La console, le rapport et l'invitation ont les deux thèmes et suivent la
+ * préférence de l'appareil : à eux la paire, une couleur par préférence.
+ */
+const BARRE_CLAIRE = '<meta name="theme-color" content="' + TON_CLAIR + '">\n';
+const BARRE_DEUX_THEMES = [
   '<meta name="theme-color" media="(prefers-color-scheme: light)" content="' + TON_CLAIR + '">',
   '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="' + TON_SOMBRE + '">',
   "",
@@ -208,4 +220,4 @@ const application = (slugDefaut) => [
   "",
 ].join("\n");
 
-module.exports = { TETE, application, manifeste };
+module.exports = { TETE, BARRE_CLAIRE, BARRE_DEUX_THEMES, application, manifeste };

@@ -193,6 +193,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | visiteurs uniques par stand, par canal, par geste | table `visiteur_cible` et fn `audience_cibles` (clés `v_…`), migration `les_visiteurs_uniques_par_stand` ; colonnes `_export.html` `COL_TETE_V`, `COL_PIED_V` ; cartouche `_chaleur.html` `phraseChaleur` |
 | carte de chaleur du plan | `_chaleur.html`, migration `audience` |
 | remise à zéro des compteurs | `_chaleur.html` § Remise à zéro, `_admin1.html` `ouvreReglages`, migration `remise_a_zero` |
+| thème du plan — un seul, le clair ; pas de mode sombre ni de suivi de l'appareil | jetons `_head.html` `:root` ; la nuit ne vit plus que dans la console, `_console.css` et `_console-base.html` ; barre du navigateur `outils/pwa.js` `BARRE_CLAIRE` / `BARRE_DEUX_THEMES`, choisie par l'option `deuxThemes` de `outils/genere.js` `page()` |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
 | console multi-événements | `_console-js.html`, socle `_console-base.html` |
 | icône d'onglet des pages du plan | `_console-js.html` `champFavicon`, posée par `_js.html` `poseFavicon`, migration `icone_d_onglet_du_salon` |
