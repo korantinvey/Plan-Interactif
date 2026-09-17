@@ -28,9 +28,11 @@ module.exports = {
   "Ouvrez le menu du navigateur": "Open the browser menu",
   "Ajouter à l'écran d'accueil": "Add to Home screen",
 
-  // une fois installé
+  // une fois installé — le bouton l'ouvre là où l'intention réveille le paquet
   "Le plan est installé": "The map is installed",
-  "Sur votre écran d'accueil, sous le nom « Plan »": "On your home screen, under the name “Plan”",
+  "Ouvrez-le maintenant : il s'affiche en plein écran, se lance d'un geste et reste consultable sur place, même quand le réseau ne passe plus.":
+    "Open it now: it shows full screen, launches in one tap, and stays available on site, even when there is no signal.",
+  // et, là où rien ne l'ouvre, la phrase d'avant
   "Ouvrez-le depuis son icône : il s'affichera en plein écran, et restera consultable même sans réseau. Vous pouvez fermer cet onglet.":
     "Open it from its icon: it will show full screen, and stay available even without a signal. You can close this tab.",
   "Compris": "OK",

@@ -1720,15 +1720,26 @@ qu'une réclame. Toutes doivent tenir :
 | Firefox et les autres navigateurs d'Android | les deux gestes de leur menu |
 | la vue web d'une application — un lien ouvert depuis un réseau social | rien : l'installation y est impossible |
 
-**Une fois installé**, une seconde fenêtre dit où le retrouver : sur l'écran
-d'accueil, sous le nom « Plan » — que rien ne relie au nom du salon qu'on vient
-de lire. Elle ne l'ouvre pas à la place du visiteur : ni lien ni interface ne
-passent de l'onglet à l'application, et ce que le système sait faire malgré
-tout est l'objet de la section suivante. Seul Chromium annonce l'installation
-(`appinstalled`), qu'elle soit partie de la fenêtre ou du menu du navigateur ;
-la confirmation attend que la fenêtre d'installation du système se soit
-retirée, une minute au plus. Sur iOS la page n'en sait rien, et les trois
-gestes décrits disaient déjà où regarder. La case des réglages en porte un
+**Une fois installé**, une seconde fenêtre l'ouvre — elle ne se contente plus
+de dire où chercher. L'instant qui suit l'installation est le seul où le
+visiteur sait exactement ce qu'il vient de poser et pourquoi : lui faire
+traverser son écran d'accueil pour retrouver une icône qu'il n'a pas vue
+arriver, c'était perdre là ce qu'on venait de gagner. Le bouton y mène
+directement, par le même chemin que le rappel décrit plus bas, et le repli est
+le même quand rien ne s'ouvre.
+
+Le bouton tient parole partout où cette fenêtre paraît : elle naît
+d'`appinstalled`, que seul Chromium annonce — qu'on soit passé par la fenêtre
+ou par le menu du navigateur —, et Chromium sur un appareil au doigt est
+Android, où l'intention réveille le paquet posé. La confirmation attend que la
+fenêtre d'installation du système se soit retirée, une minute au plus ; l'écran
+libre, elle paraît sur-le-champ. Sur iOS la page n'apprend rien de
+l'installation, et les trois gestes décrits disaient déjà où regarder.
+
+Le nom n'est plus annoncé, en revanche. L'icône se posait « sous le nom Plan »,
+ce qui n'est vrai d'aucun salon depuis qu'ils nomment leur application : la
+tête de la fenêtre montre l'icône et le salon, et cela dit mieux ce qu'on
+cherchera du regard qu'un nom qui se trompe. La case des réglages en porte un
 troisième aperçu, « une fois installé ».
 
 Fermer sans répondre — la croix, le voile, « Échap » — vaut « Plus tard ». Les

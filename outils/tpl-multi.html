@@ -29748,26 +29748,44 @@ function ouvreInvitation(facon, apercu){
 }
 
 /**
- * Une fois installé : où le retrouver.
+ * Une fois installé : l'ouvrir, tout de suite.
  *
- * Aucune page ne peut ouvrir l'application à la place du visiteur — ni lien ni
- * API ne passent de l'onglet à l'application installée, sur Android comme sur
- * iOS. Ce qu'on peut faire, c'est lui dire où elle est, et sous quel nom : il
- * n'a pas vu l'icône se poser, et « Plan » ne ressemble pas au nom du salon
- * qu'il vient de lire.
+ * Elle ne faisait que dire où chercher, et c'était la laisser à mi-chemin.
+ * L'instant d'après l'installation est le seul où le visiteur sait exactement
+ * ce qu'il vient de poser et pourquoi : lui faire traverser son écran d'accueil
+ * pour retrouver une icône qu'il n'a pas vue arriver, c'était perdre là ce
+ * qu'on venait de gagner. Le bouton l'y mène directement (`lanceApplication`),
+ * et le rappel du navigateur — dix secondes après le plan, à une visite
+ * suivante — n'a plus à rattraper ce moment-ci.
  *
- * Seul Chromium dit qu'une installation a eu lieu (`appinstalled`), qu'elle
- * soit partie de la fenêtre ou du menu du navigateur. Sur iOS, la page n'en
- * sait rien : les trois gestes décrits disaient déjà où regarder ensuite.
+ * Le bouton tient parole partout où cette fenêtre paraît : elle naît
+ * d'`appinstalled`, que seul Chromium émet, et Chromium sur un appareil au
+ * doigt est Android, où l'intention réveille le paquet posé. La garde reste
+ * malgré tout — un navigateur qui annoncerait l'installation sans qu'on sache
+ * l'ouvrir aurait droit à la phrase d'avant, et non à un bouton mort.
+ *
+ * Le nom n'est plus annoncé. L'icône se posait « sous le nom Plan », ce qui
+ * n'est vrai d'aucun salon depuis qu'ils nomment leur application : la tête de
+ * la fenêtre montre l'icône et le salon, et cela dit mieux ce qu'on cherchera
+ * du regard qu'un nom qui se trompe.
  */
 function ouvreInstalle(apercu){
+  const ouvre = LANCEMENT_POSSIBLE || apercu;
   ouvreModale("Le plan est installé", corps => {
-    teteInvitation(corps, "Sur votre écran d'accueil, sous le nom « Plan »");
+    teteInvitation(corps, "Sur votre écran d'accueil");
     const p = document.createElement("p");
-    p.textContent = "Ouvrez-le depuis son icône : il s'affichera en plein écran, " +
-      "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
+    p.textContent = ouvre
+      ? "Ouvrez-le maintenant : il s'affiche en plein écran, se lance d'un " +
+        "geste et reste consultable sur place, même quand le réseau ne passe plus."
+      : "Ouvrez-le depuis son icône : il s'affichera en plein écran, " +
+        "et restera consultable même sans réseau. Vous pouvez fermer cet onglet.";
     corps.appendChild(p);
-  }, [{ libelle: "Compris", genre: "accent" }], "installe");
+  }, ouvre
+    ? [{ libelle: "Plus tard" },
+       { libelle: "Ouvrir l'application", genre: "accent", action: () => {
+           if (!apercu) lanceApplication();
+         } }]
+    : [{ libelle: "Compris", genre: "accent" }], "installe");
   if (apercu) avantFermeture = () => retourAuxReglages("installation");
 }
 
