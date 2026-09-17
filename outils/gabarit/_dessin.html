@@ -1191,6 +1191,9 @@ const clePoi = (nom, picto) => nom + "\u0000" + (picto || PICTO_SEUL.get(nom) ||
 function cartouchePoi(){
   const z = $("poi");
   if (!z) return;
+  /* Les pastilles vivent dans la bande, pas dans le cadre : celui-ci porte les
+     flèches, qu'un « innerHTML » remis à blanc emporterait avec elles. */
+  const d = $("poiDefile");
   const tout = [];
 
   for (const cal of mesCalques()){
@@ -1242,9 +1245,14 @@ function cartouchePoi(){
      plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
      sans que rien n'y soit mis en avant. */
   if (poiChoisi && !parCle.has(poiChoisi)) poiChoisi = null;
-  if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); return; }
+  if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); majFondus(); return; }
 
-  z.innerHTML = "";
+  /* Choisir une pastille reconstruit le cartouche, et un contenu remplacé
+     revient au début : la pastille qu'on venait d'aller chercher du doigt
+     sortait de l'écran au moment où on la retenait, et le geste était à
+     refaire. On repose donc le défilement là où il était. */
+  const defile = d.scrollLeft;
+  d.innerHTML = "";
   [...parCle.entries()]
     .sort((a, b) => libellePoi(a[1]).localeCompare(libellePoi(b[1]), "fr"))
     .forEach(([cle, o]) => {
@@ -1270,10 +1278,14 @@ function cartouchePoi(){
         if (choisit) fit();
         cartouchePoi();
       };
-      z.appendChild(b);
+      d.appendChild(b);
     });
+  d.scrollLeft = defile;
   eclairePoi();
   mesureCartouche();
+  /* Le bord à estomper se relit ici : une famille de repères en plus ou en
+     moins, et ce qui dépassait tient — ou l'inverse. */
+  majFondus();
 }
 
 /**
