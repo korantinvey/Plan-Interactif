@@ -271,15 +271,17 @@ function verifieApplication(){
 }
 
 /**
- * L'adresse que l'application ouvre : son adresse de départ.
+ * L'adresse que l'application ouvre : son adresse de départ, qui est aussi tout
+ * son territoire.
  *
- * Reconstruite et non recopiée, comme le fait l'en-tête qui désigne le
- * manifeste (`outils/pwa.js`) : ce qui part au système ne doit porter que le
- * salon — ni jeton de courriel, ni ancre, ni paramètre de passage.
+ * Composée et non recopiée, comme le fait le relais pour le manifeste
+ * (`src/index.mjs`) : ce qui part au système ne doit porter que le salon — ni
+ * jeton de courriel, ni ancre, ni paramètre de passage. Et ce doit être ce
+ * chemin-là, le seul que l'application revendique : l'intention lancée sur une
+ * adresse hors de sa portée ne trouverait personne pour la prendre.
  */
 function adresseApplication(){
-  const salon = new URLSearchParams(location.search).get("plan");
-  return location.pathname + (salon ? "?plan=" + encodeURIComponent(salon) : "");
+  return SLUG ? cheminDuSalon(SLUG) : location.pathname;
 }
 
 /**

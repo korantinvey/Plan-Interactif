@@ -165,7 +165,7 @@ function litCodeIci(txt){
 function lienIci(code){
   const u = new URL(location.href);
   u.hash = "";
-  u.pathname = u.pathname.replace(/plan-admin(\.html)?$/, "plan$1");
+  u.pathname = cheminPartageable(u.pathname);
   const q = new URLSearchParams();
   /* Le salon est nommé même quand la page l'aurait deviné : l'affiche vaut
      alors ce qu'elle dit, et n'ouvrira pas l'édition suivante le jour où c'est
