@@ -378,22 +378,23 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 848 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 884 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 97 · `invitationVoulue` 98 · `auDoigt` 128 · `nommeApplication` 164
-`reponsesInstallation` 182 · `retientInstallation` 187 · `jourInstallation` 196
-`invitationEcartee` 199 · `refuseInstallation` 205 · `faconInstallation` 233
-`appliInstallee` 256 · `verifieApplication` 278 · `connaitLApplication` 288
-`adresseApplication` 301 · `lanceApplication` 321 · `faconRappel` 354 · `rappelEcarte` 362
-`refuseRappel` 368 · `relanceInvitation` 386 · `gesteInstallation` 391 · `doigtPose` 395
-`doigtLeve` 396 · `vueInstallation` 399 · `accueilleInvitation` 408
-`invitationRetenue` 434 · `finInvitation` 452 · `essaieInvitation` 476
-`teteInvitation` 603 · `retourAuxReglages` 624 · `remplitInvitation` 632
-`ouvreInvitation` 662 · `ouvreRappel` 732 · `ouvreRetrouve` 788 · `caseInstallation` 811
+`reglageInstallation` 101 · `invitationVoulue` 102 · `auDoigt` 132 · `nommeApplication` 168
+`reponsesInstallation` 186 · `retientInstallation` 191 · `jourInstallation` 200
+`invitationEcartee` 203 · `refuseInstallation` 209 · `faconInstallation` 237
+`appliInstallee` 260 · `verifieApplication` 282 · `connaitLApplication` 292
+`adresseApplication` 305 · `lanceApplication` 325 · `faconRappel` 358 · `rappelEcarte` 366
+`refuseRappel` 372 · `relanceInvitation` 390 · `gesteInstallation` 395 · `doigtPose` 399
+`doigtLeve` 400 · `vueInstallation` 403 · `accueilleInvitation` 412
+`invitationRetenue` 438 · `ecouteInvitation` 461 · `finInvitation` 469
+`reprendInvitation` 489 · `essaieInvitation` 509 · `teteInvitation` 638
+`retourAuxReglages` 659 · `remplitInvitation` 667 · `ouvreInvitation` 697
+`ouvreRappel` 767 · `ouvreRetrouve` 823 · `caseInstallation` 846
 
 ### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
 
