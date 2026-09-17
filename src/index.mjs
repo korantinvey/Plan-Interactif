@@ -106,9 +106,15 @@ const cleDe = (amont) => "v1" + amont.search;
  *  pas une clé au-delà de cinq cent douze. On prend donc l'empreinte de la
  *  liste — même lot, même clé, et sa longueur ne dépend plus de rien. */
 async function cleDeLot(amont) {
-  const liste = amont.searchParams.get("vignettes");
-  const e = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(liste));
-  return "v1lot:" + [...new Uint8Array(e)].slice(0, 16)
+  return "v1lot:" + await condense(amont.searchParams.get("vignettes"), 16);
+}
+
+/** L'empreinte d'un texte, tronquée : de quoi distinguer deux états, non de
+ *  quoi garder un secret. Elle nomme une clé de cache, et étiquette ce que le
+ *  manifeste vient de composer. */
+async function condense(texte, octets) {
+  const e = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
+  return [...new Uint8Array(e)].slice(0, octets)
     .map((n) => n.toString(16).padStart(2, "0")).join("");
 }
 
@@ -526,13 +532,28 @@ async function manifeste(requete, env, ctx) {
       parente && parente.platform === "webapp"
         ? { ...parente, url: requete.url } : parente);
   }
-  return new Response(JSON.stringify(contenu), {
-    headers: {
-      "Content-Type": "application/manifest+json; charset=utf-8",
-      // il ne change qu'avec une mise en ligne, et n'est lu qu'à l'installation
-      "Cache-Control": "public, max-age=86400",
-    },
-  });
+  /* Ce manifeste-ci n'est plus le fichier fabriqué : il porte le nom et les
+     icônes que le salon s'est choisis, et ceux-là changent le jour où
+     l'exploitant les change. Un jour de cache, qui allait de soi tant que ce
+     fichier ne bougeait qu'avec une mise en ligne, lui faisait alors installer
+     l'ancienne icône sans que rien ne le dise — et sans moyen d'en sortir, le
+     navigateur ne revenant même pas demander.
+
+     Il se relit donc à chaque fois, mais ne se retélécharge que s'il a changé :
+     l'étiquette est l'empreinte de ce qui part, et une page déjà venue reçoit
+     trois lignes d'en-tête au lieu de sept cents octets. Les icônes, elles,
+     gardent leur éternité — leur adresse porte leur empreinte. */
+  const corps = JSON.stringify(contenu);
+  const etiquette = '"' + await condense(corps, 8) + '"';
+  const entetes = {
+    "Content-Type": "application/manifest+json; charset=utf-8",
+    "Cache-Control": "no-cache",
+    "ETag": etiquette,
+  };
+  if (requete.headers.get("If-None-Match") === etiquette) {
+    return new Response(null, { status: 304, headers: entetes });
+  }
+  return new Response(corps, { headers: entetes });
 }
 
 /**
