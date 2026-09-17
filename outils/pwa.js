@@ -46,7 +46,8 @@
  * Plan SMCL by Event2Plan » — non le produit qui le sert. La page ne peut pas
  * le dire : le manifeste est lu avant qu'elle ait reçu quoi que ce soit de
  * l'API. Elle nomme donc le salon, `salon=<slug>`, et c'est le relais qui va
- * chercher son nom et l'écrit (`src/index.mjs` `manifeste`). Le slug, lui, est
+ * chercher son nom et l'écrit (`src/index.mjs` `manifeste`) — ou celui que
+ * l'exploitant a écrit pour son application, qui l'emporte. Le slug, lui, est
  * connu dès l'en-tête : il est dans l'adresse, ou c'est celui du salon par
  * défaut, que la construction pose ici.
  *
@@ -54,10 +55,17 @@
  * faire installer une application au nom qu'il choisit. Le nom vient de la
  * base, le tour de phrase du relais, et la page n'y met qu'un slug.
  *
+ * Les icônes déclarées plus bas suivent la même règle que le nom : elles ne
+ * valent que par défaut. Un salon qui a déposé son logo depuis l'onglet
+ * « Admin » du plan (`_application.html`) voit le relais remplacer cette liste
+ * par des adresses qu'il sert de la base — celles d'ici restent la marque du
+ * produit, pour tous les salons qui n'ont rien déposé.
+ *
  * iOS fait exception, et se corrige ailleurs : il ne lit pas le manifeste pour
- * l'écran d'accueil mais `apple-mobile-web-app-title`, écrit ici même, avant
- * que le salon soit connu. `_installation.html` `nommeApplication` le reprend
- * dès les données arrivées — la balise est relue au moment de l'ajout.
+ * l'écran d'accueil mais `apple-mobile-web-app-title` et `apple-touch-icon`,
+ * écrits ici même, avant que le salon soit connu. `_installation.html`
+ * `nommeApplication` les reprend dès les données arrivées — les balises sont
+ * relues au moment de l'ajout.
  */
 
 /* La barre du système prend la couleur de la barre de la page — la surface, et
@@ -137,6 +145,10 @@ const TETE = [
  */
 const application = (slugDefaut) => [
   '<link rel="manifest" href="manifeste.webmanifest">',
+  /* L'icône que pose un ajout à l'écran d'accueil : iOS ne lit pas celles du
+     manifeste, celle-ci est tout ce qu'il a. `nommeApplication` la remplace
+     par celle du salon dès les données arrivées, comme il fait du nom plus
+     bas — les deux balises sont relues au moment de l'ajout. */
   '<link rel="apple-touch-icon" href="icone-180.png">',
   /* iOS ne lit pas `display` du manifeste : sans cette ligne, le plan ajouté à
      l'écran d'accueil s'y ouvre encore dans Safari, barres comprises. Sa

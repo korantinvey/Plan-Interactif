@@ -17,6 +17,15 @@ module.exports = {
   "Une notification par conférence retenue, même plan fermé. Les heures et les titres retenus partent alors sur nos serveurs, et s'effacent après le salon.":
     "One notification per conference you picked, even with the map closed. The times and titles you picked then go to our servers, and are erased after the show.",
 
+  /* La fenêtre qui propose le rappel, à la première conférence retenue. */
+  "Pour ne pas la manquer": "So you don't miss it",
+  "Le plan peut vous prévenir {n} min avant le début de chaque conférence de votre parcours, même fermé.":
+    "The map can remind you {n} min before each conference on your route starts, even when closed.",
+  "Il vous faudra autoriser les notifications. Les heures et les titres retenus partent alors sur nos serveurs, et s'effacent après le salon.":
+    "You will have to allow notifications. The times and titles you picked then go to our servers, and are erased after the show.",
+  "Non merci": "No thanks",
+  "Oui, me prévenir": "Yes, remind me",
+
   /* Trop tard : la conférence commence avant que le rappel n'ait pu tomber. */
   "Vos conférences retenues commencent dans moins de {n} min : il est trop tard pour un rappel.":
     "The conferences you picked start in less than {n} min: too late for a reminder.",
