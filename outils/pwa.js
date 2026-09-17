@@ -100,6 +100,24 @@ function manifeste() {
     background_color: FOND,
     theme_color: TON_CLAIR,
     categories: ["navigation", "business"],
+    /* L'application se déclare parente d'elle-même, et ce n'est pas un jeu de
+       mots : `getInstalledRelatedApps()` ne sait dire qu'une chose, « telle
+       application est-elle posée sur cet appareil ? », et c'est en se nommant
+       soi-même qu'une page obtient la réponse pour la sienne. Le plan s'en
+       sert pour savoir qu'il est lu dans le navigateur alors que
+       l'application est là, à côté (`_installation.html`).
+
+       L'adresse est relative, et le relais la remplace par celle du manifeste
+       qu'on lui a demandé — paramètres compris : l'application installée est
+       identifiée par l'adresse d'où elle l'a été, et `manifeste.webmanifest`
+       tout court n'est celle de personne (`src/index.mjs`).
+
+       `prefer_related_applications` est écrit alors qu'il vaut déjà faux : à
+       vrai, il ferait de cette parenté une raison de ne plus proposer
+       l'installation du tout, et le lecteur qui découvre la ligne au-dessus
+       mérite de voir tout de suite que ce n'est pas ce qui est dit. */
+    prefer_related_applications: false,
+    related_applications: [{ platform: "webapp", url: "manifeste.webmanifest" }],
     icons: [
       // la vectorielle d'abord : c'est la seule qui tienne à toutes les tailles
       { src: "icone.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
