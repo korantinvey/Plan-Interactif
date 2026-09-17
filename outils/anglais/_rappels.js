@@ -26,9 +26,15 @@ module.exports = {
   "Non merci": "No thanks",
   "Oui, me prévenir": "Yes, remind me",
 
-  /* Trop tard : la conférence commence avant que le rappel n'ait pu tomber. */
-  "Vos conférences retenues commencent dans moins de {n} min : il est trop tard pour un rappel.":
-    "The conferences you picked start in less than {n} min: too late for a reminder.",
+  /* Ce qui ne partira pas encore, dit sous l'interrupteur — qui reste, lui. */
+  "Vos conférences retenues commencent dans moins de {n} min : trop tard pour celles-là. Le rappel vaudra pour les prochaines.":
+    "The conferences you picked start in less than {n} min: too late for those. The reminder will hold for the next ones.",
+  "Vos conférences retenues sont passées. Le rappel vaudra pour les prochaines que vous ajouterez.":
+    "The conferences you picked are over. The reminder will hold for the next ones you add.",
+
+  /* L'essai posé depuis les réglages : ce que la notification écrira. */
+  "Essai — le rappel fonctionne": "Test — reminders are working",
+  "Ce message vient de votre plan.": "This message comes from your map.",
 
   /* Ce qui empêche, et ce qu'on peut y faire. */
   "Pour être prévenu avant vos conférences, ajoutez le plan à votre écran d'accueil : sur iPhone, les notifications n'existent que là.":

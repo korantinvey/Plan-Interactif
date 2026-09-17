@@ -1704,7 +1704,12 @@ function blocRappel(hote){
   /* La fenêtre qui propose le rappel au visiteur ne paraît jamais ici : le plan
      d'administration n'a pas de visiteur, et `rappelsOfferts` s'y refuse. Sans
      cet aperçu, l'exploitant cocherait une fenêtre qu'il n'a jamais vue — c'est
-     le même besoin que l'invitation à installer, et la même réponse. */
+     le même besoin que l'invitation à installer, et la même réponse.
+
+     L'essai va plus loin, parce que la fenêtre ne prouve que la fenêtre : il
+     poste un vrai rappel sur cet appareil, pour dans une demi-minute, et ce
+     qui arrive alors dit d'un coup si les clés, la tâche de la minute et le
+     service de second plan répondent. */
   if (offert){
     aide.appendChild(document.createTextNode(" "));
     const apercu = document.createElement("button");
@@ -1713,6 +1718,27 @@ function blocRappel(hote){
     apercu.textContent = "Aperçu";
     apercu.onclick = () => proposeRappels(true);
     aide.appendChild(apercu);
+
+    aide.appendChild(document.createTextNode(" · "));
+    const essai = document.createElement("button");
+    essai.type = "button";
+    essai.className = "apercuRappel";
+    essai.textContent = "Essayer un vrai rappel";
+    aide.appendChild(essai);
+
+    /* Ce que l'essai a donné, sous l'aide plutôt que dedans : le texte change,
+       et une phrase qui remplace un morceau d'une autre se relit mal. */
+    const etat = document.createElement("p");
+    etat.className = "aideR";
+    etat.hidden = true;
+    bloc.appendChild(etat);
+
+    essai.onclick = async () => {
+      essai.disabled = true;
+      ditEssaiRappel(etat, "envoi");
+      ditEssaiRappel(etat, await essaieRappelReel());
+      essai.disabled = false;
+    };
   }
 
   const duree = document.createElement("div");
@@ -1737,6 +1763,31 @@ function blocRappel(hote){
   };
   c.onchange = e => { reglageRappel().actif = e.target.checked; enregistreConf(); suit(); };
   suit();
+}
+
+/**
+ * Ce que l'essai a donné, en une phrase.
+ *
+ * Chaque issue en a une, et « sans service » en est une à part : ce n'est ni
+ * une panne ni un refus, mais le service de second plan qui n'est pas encore
+ * posé sur ce navigateur. Le plan public le pose en s'ouvrant ; la page
+ * d'administration ne le fait pas, et ne doit pas le faire — elle passerait
+ * sous son cache, et se servirait un jour périmée.
+ */
+function ditEssaiRappel(etat, issue){
+  const phrases = {
+    envoi: "Envoi…",
+    ok: "Posé. La notification doit arriver dans la minute qui suit.",
+    refus: "Les notifications n'ont pas été autorisées sur ce navigateur.",
+    sansService: "Ouvrez d'abord votre plan public une fois sur ce navigateur : " +
+      "c'est lui qui installe le service qui reçoit les notifications.",
+    nonPublie: "Le salon n'est pas publié : le serveur refuse d'enregistrer un rappel.",
+    impossible: "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, " +
+      "il faut avoir ajouté le plan à l'écran d'accueil.",
+    panne: "Le rappel n'a pas pu être posé. Réessayez dans un instant.",
+  };
+  etat.textContent = phrases[issue] || phrases.panne;
+  etat.hidden = false;
 }
 
 /**

@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4127 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4178 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3050 · 10. Mode administration
-- l.3162 · La fiche d'une zone organisateur
-- l.3871 · Masquer une zone organisateur
-- l.3954 · Placer un libellé à la main
+- l.3101 · 10. Mode administration
+- l.3213 · La fiche d'une zone organisateur
+- l.3922 · Masquer une zone organisateur
+- l.4005 · Placer un libellé à la main
 
 Fonctions :
 
@@ -35,19 +35,19 @@ Fonctions :
 `lignesApercu` 1120 · `contenuApercu` 1146 · `apercuFiche` 1183 · `apercuListe` 1261
 `apercuDuo` 1283 · `glisseFenetre` 1316 · `ouvreReglages` 1327 · `voletZones` 1435
 `champsFicheZone` 1537 · `ficheZoneEnPlace` 1607 · `voletPlan` 1625 · `blocRappel` 1673
-`voletAdmin` 1751 · `blocOptions` 1934 · `blocHoraires` 1982 · `sallesSituees` 2115
-`voletPmr` 2131 · `nomDuTon` 2222 · `voletApparence` 2227 · `clesFiche` 2426
-`voletOrdre` 2443 · `enregistreConf` 2999 · `rgbHex` 3006 · `hexa` 3013 · `luminance` 3017
-`ecarte` 3031 · `joli` 3046 · `retireAdmin` 3067 · `activeAdmin` 3080 · `champZone` 3188
-`champsZone` 3213 · `champSalles` 3305 · `nomDeZone` 3357 · `reduitLogo` 3391
-`cadreLogo` 3434 · `champLogo` 3506 · `editeurRiche` 3544 · `memeFicheZone` 3701
-`suitFicheZone` 3708 · `verseFicheZone` 3716 · `ficheZone` 3742 · `enregistreZone` 3767
-`basculeAffichageZone` 3882 · `marqueZonesMasquees` 3899 · `ecritColonnesEvenement` 3919
-`ecritColonneEvenement` 3950 · `cleLibelle` 3975 · `empreinteLibelle` 3991
-`placementLibelle` 3999 · `posePlacement` 4009 · `libelleAutomatique` 4026
-`modePlacementLibelles` 4035 · `majPaletteLibelle` 4054 · `choisitLibelle` 4071
-`pousseLibelle` 4078 · `libellePointerDown` 4086 · `libellePointerMove` 4102
-`libellePointerUp` 4111
+`ditEssaiRappel` 1777 · `voletAdmin` 1802 · `blocOptions` 1985 · `blocHoraires` 2033
+`sallesSituees` 2166 · `voletPmr` 2182 · `nomDuTon` 2273 · `voletApparence` 2278
+`clesFiche` 2477 · `voletOrdre` 2494 · `enregistreConf` 3050 · `rgbHex` 3057 · `hexa` 3064
+`luminance` 3068 · `ecarte` 3082 · `joli` 3097 · `retireAdmin` 3118 · `activeAdmin` 3131
+`champZone` 3239 · `champsZone` 3264 · `champSalles` 3356 · `nomDeZone` 3408
+`reduitLogo` 3442 · `cadreLogo` 3485 · `champLogo` 3557 · `editeurRiche` 3595
+`memeFicheZone` 3752 · `suitFicheZone` 3759 · `verseFicheZone` 3767 · `ficheZone` 3793
+`enregistreZone` 3818 · `basculeAffichageZone` 3933 · `marqueZonesMasquees` 3950
+`ecritColonnesEvenement` 3970 · `ecritColonneEvenement` 4001 · `cleLibelle` 4026
+`empreinteLibelle` 4042 · `placementLibelle` 4050 · `posePlacement` 4060
+`libelleAutomatique` 4077 · `modePlacementLibelles` 4086 · `majPaletteLibelle` 4105
+`choisitLibelle` 4122 · `pousseLibelle` 4129 · `libellePointerDown` 4137
+`libellePointerMove` 4153 · `libellePointerUp` 4162
 
 Éléments :
 
@@ -598,7 +598,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 553 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 623 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -608,10 +608,10 @@ Fonctions :
 `chargeRappels` 81 · `retientRappels` 85 · `poussePossible` 94 · `rappelsOfferts` 100
 `iOSsansInstallation` 106 · `instantAbsolu` 135 · `confsARappeler` 151
 `rappelsDuParcours` 167 · `adresseDuRappel` 189 · `octetsDeCle` 201
-`abonnementCourant` 209 · `abonne` 214 · `synchroniseRappels` 240 · `eteintRappels` 263
-`allumeRappels` 278 · `aideRappel` 295 · `poseRappels` 311 · `cleInviteRappel` 425
-`inviteRappelFaite` 428 · `retientInviteRappel` 433 · `fenetreRappel` 462
-`proposeRappels` 499 · `reprendRappels` 542
+`abonnementCourant` 209 · `abonne` 218 · `synchroniseRappels` 244 · `eteintRappels` 267
+`allumeRappels` 282 · `aideRappel` 299 · `poseRappels` 315 · `cleInviteRappel` 436
+`inviteRappelFaite` 439 · `retientInviteRappel` 444 · `fenetreRappel` 479
+`proposeRappels` 512 · `essaieRappelReel` 574 · `reprendRappels` 612
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
