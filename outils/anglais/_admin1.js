@@ -364,6 +364,20 @@ module.exports = {
   "Le visiteur y fait lui-même chaque geste. Sur ce salon :": "Visitors make every move themselves. On this show:",
   "Proposée une fois par appareil.": "Offered once per device.",
   "Essayer": "Try it",
+
+  /* L'essai d'un vrai rappel, à côté de l'aperçu de la fenêtre. */
+  "Essayer un vrai rappel": "Send a real reminder",
+  "Envoi…": "Sending…",
+  "Posé. La notification doit arriver dans la minute qui suit.":
+    "Sent. The notification should arrive within the next minute.",
+  "Les notifications n'ont pas été autorisées sur ce navigateur.":
+    "Notifications were not allowed in this browser.",
+  "Ouvrez d'abord votre plan public une fois sur ce navigateur : c'est lui qui installe le service qui reçoit les notifications.":
+    "Open your public map once in this browser first: it is what installs the worker that receives notifications.",
+  "Le salon n'est pas publié : le serveur refuse d'enregistrer un rappel.":
+    "The show is not published: the server refuses to store a reminder.",
+  "Ce navigateur ne sait pas recevoir de notifications. Sur iPhone, il faut avoir ajouté le plan à l'écran d'accueil.":
+    "This browser cannot receive notifications. On iPhone, the map must have been added to the home screen.",
   "Rien à présenter sur ce salon : ni programme rattaché à une zone, ni parcours de visite, ni itinéraire.":
     "Nothing to present on this show: no programme linked to an area, no visit plan, no directions.",
   /* Le rappel avant une conférence : ce que l'exploitant offre, et à quelle

@@ -1291,11 +1291,35 @@ revenait à priver du rappel tout visiteur ayant accepté les notifications sur 
 domaine, un autre salon ou une autre année, puisque le navigateur range cette
 permission par origine et non par salon. Seul un refus ferme la question.
 
+**L'interrupteur ne disparaît plus.** Il s'effaçait quand rien n'était
+rappelable — toutes les conférences retenues passées, ou commençant avant le
+délai réglé —, et la fenêtre se taisait avec lui. C'était confondre la
+préférence et la promesse : « prévenez-moi avant mes conférences » vaut pour
+celles qu'on ajoutera ensuite, et se pose une fois pour toutes. Le visiteur
+restait devant un tiroir muet, sans rien à toucher ni rien à lire ; l'exploitant
+d'un salon terminé cherchait en vain la commande qu'il venait d'activer.
+L'interrupteur est donc toujours offert, et une seconde ligne dit ce qui ne
+partira pas encore : « Vos conférences retenues sont passées. Le rappel vaudra
+pour les prochaines que vous ajouterez. » Elle se tait dès qu'il y a de quoi
+rappeler.
+
 Enfin, l'écran d'administration n'a pas de visiteur : la fenêtre ne s'y montre
-jamais. Un lien **Aperçu**, dans l'aide de la case, l'ouvre telle qu'elle
-paraîtra — sans rien allumer, sans consommer la question, et en ramenant aux
-réglages quand on la referme. C'est le même geste que les aperçus de
-l'invitation à installer.
+jamais. Deux liens dans l'aide de la case y répondent. **Aperçu** ouvre la
+fenêtre telle qu'elle paraîtra — sans rien allumer, sans consommer la question,
+et en ramenant aux réglages quand on la referme ; c'est le même geste que les
+aperçus de l'invitation à installer. **Essayer un vrai rappel** va plus loin :
+il pose sur cet appareil un rappel pour dans une demi-minute, par le chemin
+exact des autres, et la notification reçue dit d'un coup si les clés VAPID, la
+tâche de la minute et le service de second plan répondent. Sans lui, la
+plomberie ne se vérifiait qu'avec une conférence à venir — c'est-à-dire jamais,
+pour qui règle un salon dont le programme est passé ou pas encore synchronisé.
+
+Deux choses en découlent, et le bouton les dit plutôt que d'échouer en silence.
+L'essai a besoin du service de second plan, que seule la page publique
+installe : sur un navigateur qui n'a jamais ouvert le plan, il demande de le
+faire une fois. Et il **remplace** les rappels de cet appareil pour ce salon —
+c'est le contrat de l'API —, si bien qu'il renvoie avec lui ceux du parcours
+en cours, pour ne rien perdre de l'exploitant qui suit aussi son propre salon.
 
 **Ce que cela déplace.** Le tiroir promet, en toutes lettres, que le parcours ne
 quitte pas l'appareil. Le rappel est la seule exception, et la phrase le dit
