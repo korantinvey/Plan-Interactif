@@ -352,23 +352,29 @@ function indexeConferences(){
   }));
   /* Ce qu'on tape pour retrouver une conférence : son titre d'abord, puis ce
      qui la fait reconnaître quand on ne l'a pas en tête — sa salle, son type,
-     sa thématique, et les noms qu'elle porte : l'exposant qui la tient, ceux
-     qui y parlent et l'animent, souvent les seuls dont on se souvienne. Ce que
-     la fiche montre doit se retrouver en le tapant. Leur fonction en est
-     exclue, comme la présentation : « directeur général » ferait répondre la
-     moitié du programme, et un paragraphe entier tout le reste. */
+     sa thématique, et l'exposant qui la tient. Ce que la fiche montre doit se
+     retrouver en le tapant.
+
+     Les noms de ceux qui y parlent et l'animent tiennent un index à part. Ce
+     sont souvent les seuls dont on se souvienne, mais un congrès de trois
+     cents sessions en aligne un millier, qui répondent au premier homonyme
+     venu : l'exploitant les retire de la recherche sans retirer le programme,
+     par la case « Intervenants » de l'onglet « Recherche ». Leur fonction
+     reste exclue des deux index, comme la présentation : « directeur général »
+     ferait répondre la moitié du programme, et un paragraphe entier tout le
+     reste. */
   CONFERENCES = [...CONFS.values()];
   CONFERENCES.forEach(c => {
     const tenue = EXPOSANTS.get(String(c.id)) || [];
-    const dits = [...(c.intervenants || []), ...(c.animateurs || [])]
-      .map(p => (p.nom || "") + " " + (p.societe || "")).join(" ");
     /* L'exposant se cherche par le nom que la fiche lui donne, et c'est celui
        de son stand qui prime : le programme cite parfois une raison sociale là
        où le salon connaît une enseigne. */
     c.rech = ((c.nom || "") + " " + (c.salle || "") + " " + (c.type || "") +
-              " " + (c.theme || "") + " " + dits + " " +
+              " " + (c.theme || "") + " " +
               tenue.map(e => (parId.get(e.stand) || {}).nom || e.nom || "").join(" ")
              ).toLowerCase();
+    c.rechDits = [...(c.intervenants || []), ...(c.animateurs || [])]
+      .map(p => (p.nom || "") + " " + (p.societe || "")).join(" ").toLowerCase();
   });
   rangeConferences();
 }
@@ -1463,6 +1469,14 @@ const SORTE_RECHERCHE = { stand: "stands", coex: "stands", zone: "zones",
 /** L'exploitant laisse-t-il la recherche remonter cet objet ? */
 const cherchable = (o) => chercheSorte(SORTE_RECHERCHE[o.kind] || "stands");
 
+/* Ceux qui parlent répondent sous leur propre case, à travers la conférence
+   qui les cite : « Intervenants » les retire de la recherche sans en retirer
+   le programme. Le réglage se relit à chaque comparaison plutôt qu'à
+   l'indexation — la case se décoche pendant qu'un résultat est affiché
+   derrière la fenêtre, et celui-ci doit se refaire sans recharger le plan. */
+const citeQuiParle = (o) => Boolean(o.rechDits) &&
+  chercheSorte("intervenants") && o.rechDits.includes(state.qn);
+
 /* Une zone et une conférence répondent au mot-clé, jamais aux critères : ceux-ci
    décrivent une société — sa ville, ses rubriques — et rien de tout cela n'est
    d'elles. `dansCriteres` les écarte de lui-même, faute de valeur à opposer aux
@@ -1476,7 +1490,7 @@ function visible(o){
      pas de recherche, et la ligne au-dessus l'a déjà rendu tel quel. */
   if (!cherchable(o)) return false;
   return dansCriteres(o) &&
-    (!state.qn || (o.rech || "").includes(state.qn));
+    (!state.qn || (o.rech || "").includes(state.qn) || citeQuiParle(o));
 }
 
 /* Les stands qu'une société hébergée éclaire. Le plan doit rester allumé sur
