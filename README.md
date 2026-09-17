@@ -1630,8 +1630,12 @@ regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
 connaît dès son en-tête, et le Worker va chercher le nom : une lecture à part
-(`plan-public?slug=…&nom=1`), qui ne rend que quatre colonnes là où le plan
-entier pèse ses stands et ses zones, et qu'il garde un jour comme le plan. Le
+(`plan-public?slug=…&app=1`), qui ne rend que quatre colonnes là où le plan
+entier pèse ses stands et ses zones, et qu'il garde un quart d'heure dans son
+stockage — le temps d'absorber les ouvertures de page, pas celui d'avaler un
+changement. Cette lecture-là ne se garde d'ailleurs nulle part ailleurs : elle
+porte ce que l'exploitant change d'un geste, et le cache que Cloudflare pose
+devant tout appel sortant ne s'oublie pas sur commande. Le
 nom n'est donc jamais reçu de l'adresse, seulement cherché : un lien fabriqué
 ne peut pas faire poser sur un écran d'accueil une application au nom qu'il
 aurait choisi. Sous l'icône, où la place est d'une douzaine de signes, le salon

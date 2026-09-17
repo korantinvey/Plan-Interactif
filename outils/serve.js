@@ -7,6 +7,11 @@ const http = require("http"), https = require("https"), fs = require("fs");
 const path = require("path");
 const DIR = path.join(__dirname, "..", "web") + path.sep;
 const AMONT = "https://jylkfskotuafptaxujao.supabase.co/functions/v1/plan-public";
+/* La forme d'un nom de salon, la même qu'au relais : elle sert à reconnaître
+   l'adresse propre à un salon comme à contrôler ce qu'on relaie. */
+const SALON = /^[a-z0-9][a-z0-9-]{0,63}$/;
+/* Et l'adresse qu'un salon porte, celle que son application ouvre. */
+const CHEMIN_SALON = /^\/plan-[a-z0-9][a-z0-9-]{0,63}$/;
 
 /* La feuille de style ne peut pas tomber dans le type par défaut : un
    navigateur refuse un style qui n'arrive pas en `text/css`, sans rien dire
@@ -65,6 +70,24 @@ http.createServer((q, s) => {
     return;
   }
 
+  /* L'icône de l'application, relayée comme le fait le Worker : elle n'est pas
+     un fichier de `web/` mais une colonne de la base, et sans ce détour l'essai
+     local montrerait une application sans icône là où la production en a une. */
+  if (u === "/api/icone"){
+    const p = new URLSearchParams(q.url.split("?")[1] || "");
+    const salon = p.get("salon") || "";
+    if (!SALON.test(salon)){ s.writeHead(400); return s.end("salon invalide"); }
+    https.get(AMONT + "?slug=" + encodeURIComponent(salon) + "&icone=1" +
+      (p.get("masque") ? "&masque=1" : ""), r => {
+      s.writeHead(r.statusCode, {
+        "Content-Type": r.headers["content-type"] || "image/png",
+        "Cache-Control": "no-store",
+      });
+      r.pipe(s);
+    }).on("error", e => { s.writeHead(502); s.end(e.message); });
+    return;
+  }
+
   /* Le manifeste est complété en production par le Worker (`src/index.mjs`) :
      il y reçoit le salon d'où l'on installe, dont il tire le nom de
      l'application et l'adresse qu'elle rouvrira. Sans ce même geste ici,
@@ -77,33 +100,49 @@ http.createServer((q, s) => {
   if (u === "/manifeste.webmanifest"){
     const contenu = JSON.parse(fs.readFileSync(DIR + "manifeste.webmanifest", "utf8"));
     const params = new URLSearchParams(q.url.split("?")[1] || "");
-    const base = "http://localhost:4180/";
-    const depart = params.get("depart");
-    const cible = depart ? new URL(depart, base) : null;
-    if (cible && cible.origin === new URL(base).origin){
-      contenu.start_url = cible.pathname + cible.search;
-    }
     const sert = () => {
       s.writeHead(200, { "Content-Type": TYPES.webmanifest, "Cache-Control": "no-store" });
       s.end(JSON.stringify(contenu));
     };
     const salon = params.get("salon") || "";
-    if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(salon)) return sert();
-    https.get(AMONT + "?slug=" + encodeURIComponent(salon) + "&nom=1", r => {
+    if (!SALON.test(salon)) return sert();
+    /* Le territoire du salon, déduit de son nom comme le fait le Worker : c'est
+       lui qui sépare les applications les unes des autres, et l'essai local
+       doit pouvoir le montrer. */
+    contenu.start_url = "/plan-" + salon;
+    contenu.scope = "/plan-" + salon;
+    contenu.id = "/plan-" + salon;
+    https.get(AMONT + "?slug=" + encodeURIComponent(salon) + "&app=1", r => {
       let texte = "";
       r.on("data", (c) => { texte += c; });
       r.on("end", () => {
-        let nom = "";
-        try { nom = String(JSON.parse(texte).evenement || "").trim(); } catch (e) {}
+        let dit = {};
+        try { dit = JSON.parse(texte) || {}; } catch (e) {}
+        const nom = String(dit.evenement || "").trim();
+        const choisi = String(dit.app || "").trim();
         if (r.statusCode === 200 && nom){
-          contenu.name = "Plan " + nom + " by Event2Plan";
-          contenu.short_name = nom;
+          contenu.name = choisi || "Plan " + nom + " by Event2Plan";
+          contenu.short_name = choisi || nom;
+        }
+        const empreinte = String(dit.icone || "");
+        if (r.statusCode === 200 && /^[0-9a-f]{8,32}$/.test(empreinte)){
+          const adresse = (masque) => "/api/icone?salon=" + encodeURIComponent(salon) +
+            (masque ? "&masque=1" : "") + "&v=" + empreinte;
+          contenu.icons = [
+            { src: adresse(false), sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: adresse(true), sizes: "512x512", type: "image/png", purpose: "maskable" },
+          ];
         }
         sert();
       });
     }).on("error", () => sert());   // sans réseau, le nom du produit fera l'essai
     return;
   }
+
+  /* L'adresse propre à un salon rend la page du plan, comme chez le relais :
+     elle ne nomme aucun fichier. Les pages de `web/` qui commencent pareil —
+     `plan-admin`, `plan-smcl` — gardent la leur : le fichier passe d'abord. */
+  if (CHEMIN_SALON.test(u) && !fs.existsSync(DIR + u.slice(1) + ".html")) u = "/plan.html";
 
   if (u === "/") u = "/index.html";
   if (u.indexOf(".") < 0) u += ".html";

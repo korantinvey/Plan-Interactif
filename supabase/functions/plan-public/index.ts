@@ -3,7 +3,7 @@
  *
  *   GET /plan-public?slug=smcl-2026            l'essentiel, sans le fond
  *   GET /plan-public?slug=…&fond=<idPlan>&v=…   le fond d'un pavillon
- *   GET /plan-public?slug=…&nom=1               de quoi nommer l'application
+ *   GET /plan-public?slug=…&app=1               de quoi nommer l'application
  *   GET /plan-public?slug=…&icone=1             l'icône de l'application
  *
  * Assemble l'instantané, les calques d'habillage, l'apparence choisie et les
@@ -238,11 +238,23 @@ const LOT_MAX = 128;
  * session et sans cache (voir `_admin2.html`).
  */
 const CACHE_PLAN = 43200;
-/* Ce qui nomme et habille l'application installée ne change pour ainsi dire
-   jamais — un salon renommé, une icône remplacée se voient le lendemain. Et
-   l'icône elle-même n'est pas là : l'adresse qui la sert porte son empreinte,
-   et se garde donc indéfiniment. */
-const CACHE_NOM = 86400;
+/**
+ * Ce qui nomme et habille l'application installée ne se garde nulle part —
+ * sinon au relais, qui sait l'oublier.
+ *
+ * Cette lecture-ci était déclarée gardable un jour, du temps où elle ne rendait
+ * que le nom du salon : il ne change pour ainsi dire jamais. Elle rend
+ * maintenant l'empreinte de l'icône, que l'exploitant remplace d'un geste — et
+ * un jour de cache l'a fait installer l'ancienne longtemps après l'avoir
+ * changée. Pire, ce cache-là n'était pas celui du relais : c'est celui que
+ * Cloudflare pose devant tout appel sortant, et que `/api/oublie` ne touche
+ * pas. Le relais oubliait, redemandait, et recevait la même réponse périmée.
+ *
+ * Elle ne se garde donc plus du tout ici. Le relais, lui, en garde ce qu'il
+ * faut dans son stockage — quelques minutes, et il l'efface dès que
+ * l'administration enregistre.
+ */
+const CACHE_APP = 0;
 /* Passé la fraîcheur, la copie sert encore pendant qu'on va en chercher une
    neuve : personne n'attend le réseau, et la mise à jour est là au chargement
    d'après. */
@@ -597,6 +609,11 @@ Deno.serve(async (req) => {
           ? `${identifie ? "private" : "public"}, max-age=31536000, immutable`
           : identifie
           ? "private, no-store"
+          /* Zéro n'est pas « une seconde » : c'est « rien ne garde ceci ». La
+             grâce, qui resservirait l'ancienne copie le temps d'en chercher une
+             neuve, n'a pas de sens pour une réponse qu'on veut fraîche. */
+          : !cache
+          ? "no-store"
           : `public, max-age=${cache}, stale-while-revalidate=${GRACE}`,
       },
     });
@@ -623,10 +640,14 @@ Deno.serve(async (req) => {
       return await rendIconeApp(sb, slug, masque, identifie, CORS);
     }
 
-    /* Le nom seul, pour nommer l'application installée : avant la lecture
-       complète, puisqu'il n'en a besoin de rien. Gardé un jour comme le plan —
-       un salon renommé se voit au même rythme que le reste. */
-    if (new URL(req.url).searchParams.get("nom")) {
+    /* De quoi nommer et habiller l'application installée : avant la lecture
+       complète, puisqu'elle n'a besoin de rien. `nom=1` est l'ancien nom de
+       cette demande, du temps où elle ne rendait que le nom du salon ; il reste
+       reconnu, un relais pouvant être déployé après cette fonction. Et le
+       changement de nom a son utilité propre : il échappe à ce qu'un cache
+       garde encore sous l'ancien. */
+    if (new URL(req.url).searchParams.get("app") ||
+        new URL(req.url).searchParams.get("nom")) {
       const { data: nomme, error: mal } = await appDuSalon(sb, slug, identifie);
       if (mal) return repond({ erreur: mal.message }, 500);
       if (!nomme) {
@@ -640,7 +661,7 @@ Deno.serve(async (req) => {
            des icônes. Nuls, c'est le nom et l'icône du produit. */
         app: nomme.nom_app ?? null,
         icone: nomme.icone_app_version ?? null,
-      }, 200, CACHE_NOM);
+      }, 200, CACHE_APP);
     }
 
     // seuls les événements publiés passent, sauf à l'exploitant dont la
