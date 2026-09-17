@@ -21,6 +21,12 @@ module.exports = {
     "A session's title, its room, its theme, and the exhibitor running it — often the only name people remember.",
   "Le programme n'est pas synchronisé : sa source se règle depuis la console, dans « Source des données ».":
     "The programme is not synchronised: its source is set in the console, under “Data sources”.",
+  "Le nom de ceux qui parlent — intervenants et animateurs — et la société qu'ils représentent. Leur fonction en est exclue : « directeur général » ferait répondre la moitié du programme.":
+    "The names of those who speak — speakers and hosts — and the company they represent. Their job title is left out: “chief executive” would match half the programme.",
+  "Sans programme de conférences, il n'y a personne à nommer.": "With no conference programme, there is nobody to name.",
+  "Aucune conférence de ce salon ne cite d'intervenant.": "No conference on this show names a speaker.",
+  "Les conférences ne remontent pas dans la recherche : la case au-dessus les en a retirées.":
+    "Conferences do not come up in the search: the box above has taken them out of it.",
   "Produits": "Products",
   "Ce que les exposants présentent, nommé produit par produit.": "What exhibitors present, named product by product.",
   "Les produits ne sont pas encore repris par la synchronisation, quelle que soit la source réglée dans la console.":

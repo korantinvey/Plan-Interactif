@@ -311,6 +311,11 @@ function appliqueOptions(){
   });
 }
 
+/* Le programme cite-t-il quelqu'un ? Intervenants et animateurs confondus :
+   la fiche distingue les deux rôles, la recherche les trouve du même mot. */
+const confAvecDits = () => CONFERENCES.some(
+  c => (c.intervenants || []).length || (c.animateurs || []).length);
+
 /**
  * Ce que la recherche a le droit de remonter.
  *
@@ -351,6 +356,35 @@ const SORTES_RECHERCHE = [
       ? "Le programme n'est pas synchronisé : sa source se règle depuis " +
         "la console, dans « Source des données »."
       : "Le programme de conférences n'est pas pris sur ce salon." },
+  /* Les noms de ceux qui parlent affinent la ligne au-dessus plutôt que d'être
+     une sorte de plus : ils ne se cherchent qu'à travers les conférences, et
+     n'ont d'eux-mêmes rien à ouvrir sur le plan. D'où leur propre case, et le
+     décalage qui la range sous celle dont elle dépend.
+
+     Elle se règle à part parce qu'elle se paie à part : un congrès de trois
+     cents sessions aligne un millier de noms, qui répondent au premier
+     homonyme venu — « Martin » ramène alors quarante conférences par-dessus
+     le stand qu'on cherchait. Un salon qui tient son programme par ses
+     conférenciers veut au contraire qu'on les tape. */
+  { cle: "intervenants", libelle: "Intervenants", sous: true,
+    aide: "Le nom de ceux qui parlent — intervenants et animateurs — et la " +
+      "société qu'ils représentent. Leur fonction en est exclue : " +
+      "« directeur général » ferait répondre la moitié du programme.",
+    dispo: () => chercheSorte("conferences") && confAvecDits(),
+    /* Trois façons de ne rien pouvoir. Sans programme du tout, la ligne
+       au-dessus dit déjà lequel des deux manque — l'option ou la
+       synchronisation — et le répéter mot pour mot ne renseignait personne :
+       il suffit de dire ce qui s'ensuit ici. Les deux autres se lisent d'un
+       coup d'œil ailleurs, et la dernière se reprend d'un clic ; elle se dit
+       en dernier pour ne pas couvrir ce qui manque plus profondément. */
+    absent: () => {
+      if (!CONFERENCES.length)
+        return "Sans programme de conférences, il n'y a personne à nommer.";
+      if (!confAvecDits())
+        return "Aucune conférence de ce salon ne cite d'intervenant.";
+      return "Les conférences ne remontent pas dans la recherche : la case " +
+        "au-dessus les en a retirées.";
+    } },
   /* Les produits se règlent déjà dans la console — « Produits », source au
      choix — mais la synchronisation les annonce « pas encore repris » et le
      plan n'en reçoit aucun. La case garde son rang, éteinte : l'exploitant qui
@@ -386,21 +420,22 @@ function voletRecherche(hote){
 
   const bloc = document.createElement("div");
   bloc.className = "reglages";
+  /* Une sorte qui en affine une autre change d'état sans qu'on l'ait touchée :
+     décocher « Conférences » retire toute prise à « Intervenants ». Sa remise
+     à jour se garde donc de côté, et se rejoue à chaque case cochée — sinon
+     l'exploitant gardait sous les yeux une case allumée qui ne remontait plus
+     rien, et une phrase d'aide qui promettait le contraire. */
+  const suivent = [];
   SORTES_RECHERCHE.forEach(s => {
-    const dispo = s.dispo();
     const l = document.createElement("label");
     l.innerHTML = '<input type="checkbox"><span></span>';
     l.querySelector("span").textContent = s.libelle;
-    if (!dispo) l.classList.add("eteint");
     const c = l.querySelector("input");
     c.checked = chercheSorte(s.cle);
-    /* Éteinte, et non décochée : la case montre ce qui est réglé, et le
-       réglage vaudra le jour où quelque chose l'alimentera. La décocher
-       d'office effacerait un choix que l'exploitant a fait. */
-    c.disabled = !dispo;
     c.onchange = e => {
       conf("_rech")[s.cle] = e.target.checked;
       enregistreConf();
+      suivent.forEach(maj => maj());
       /* La liste affichée derrière la fenêtre est peut-être un résultat de
          recherche : elle obéit sur-le-champ, c'est le seul retour visible. */
       liste();
@@ -409,11 +444,23 @@ function voletRecherche(hote){
 
     const aide = document.createElement("p");
     aide.className = "aideR";
-    /* « absent » est une phrase, ou de quoi en choisir une quand la sorte a
-       plusieurs façons de manquer. */
-    aide.textContent = dispo ? s.aide
-      : (typeof s.absent === "function" ? s.absent() : s.absent);
     bloc.appendChild(aide);
+    if (s.sous){ l.classList.add("sousR"); aide.classList.add("sousR"); }
+
+    const maj = () => {
+      const dispo = s.dispo();
+      l.classList.toggle("eteint", !dispo);
+      /* Éteinte, et non décochée : la case montre ce qui est réglé, et le
+         réglage vaudra le jour où quelque chose l'alimentera. La décocher
+         d'office effacerait un choix que l'exploitant a fait. */
+      c.disabled = !dispo;
+      /* « absent » est une phrase, ou de quoi en choisir une quand la sorte a
+         plusieurs façons de manquer. */
+      aide.textContent = dispo ? s.aide
+        : (typeof s.absent === "function" ? s.absent() : s.absent);
+    };
+    maj();
+    if (s.sous) suivent.push(maj);
   });
   hote.appendChild(bloc);
 }
