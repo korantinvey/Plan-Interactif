@@ -165,7 +165,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | halls d'un lieu connu (OSM), calage en deux coins, mention de la source | `_batiments.html` ; bibliothèque `outils/lieux.js` → `outils/lieux.json`, versée par `genere.js` dans `plan-admin.html` seul |
 | image posée sur le plan et liée à un exposant — clic sur le logo, fiche de l'enseigne | `_dessin.html` `lienImageSaisi`, `formeImage`, `traceImage`, `ditImagePosee` ; champ `#imageSoc` de la boîte à outils ; rattachement après coup `_edition.html` `appliqueSociete` (champ `#elemSoc`, partagé avec le stand dessiné) ; sortes concernées `FORMES_RATTACHEES`, porte de l'option `seRattache` ; canal de mesure `image` par `_js.html` `canalPlan` |
 | verrouiller un calque de dessin | `_dessin.html` § Le verrou d'un calque, cadenas posé par `_pile.html` `boutonVerrou` |
-| déplacer, redimensionner une forme existante | `_edition.html` |
+| déplacer, redimensionner une forme existante | `_edition.html` ; le geste ne refait que la forme tirée, par `_dessin.html` `redessineForme` — `dessineDessins` refait tous les calques et remesure le cartouche, trop lourd pour une rafale de `pointermove` |
 | reprendre à la main la forme d'un stand ou d'une zone venue de la source | `_geometrie.html` — réglage `_geo:<id>` gardé tant que l'empreinte du tracé source ne bouge pas ; crayon et cadenas (fermé d'avance) posés par `_pile.html` sur les couches `data:stands` et `data:zones` |
 | cote, aimants, grille des stands, taille exacte, duplication | `_aimants.html` |
 | ordre des calques, pile, couleur du fond du plan | `_pile.html` |

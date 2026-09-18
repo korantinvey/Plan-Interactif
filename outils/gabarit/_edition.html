@@ -323,7 +323,8 @@ function appliqueRayon(){
   if (!cible) return;
   memorise();
   cible.f.r = Math.max(0, Math.min(10, +$("elemRayon").value || 0));
-  enregistreDessins(); dessineDessins();
+  // l'arrondi se règle au compte-gouttes, flèche tenue : rien d'autre ne bouge
+  enregistreDessins(); redessineForme(cible.f);
 }
 
 /** L'épaisseur, le style et la pointe du trait de la ligne choisie. Le trait
@@ -460,7 +461,9 @@ function editionPointerMove(e){
     q[geste.i] = aimante([+(q[geste.i][0] + dx).toFixed(2), +(q[geste.i][1] + dy).toFixed(2)], acc);
     f.pts = q;
   }
-  dessineDessins(); dessinePoignees();
+  /* Refaire le plan entier à chaque mouvement laissait la forme traîner une
+     demi-seconde derrière le pointeur : seule celle qu'on tire a changé. */
+  redessineForme(f); dessinePoignees();
   /* La cote et les champs suivent le geste : c'est en le retenant qu'on
      s'arrête sur douze mètres, pas en le vérifiant après coup. */
   if (estCadre(f)){
