@@ -150,6 +150,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | intention | où |
 |---|---|
 | recherche, index des exposants, liste | `_js.html` § 1 et 5 |
+| panneau des critères déplié sous la recherche | `_js.html` `remplitCriteres`, `ouvreCriteres`, `fermeCriteres`, relecture par `majCriteres` ; balisage `_head.html` `#panCrit` et styles `.pan-crit` |
 | sortes d'éléments que la recherche remonte | `_admin1.html` `voletRecherche`, porte dans `_js.html` `visible` ; repères cherchables dans `_dessin.html` |
 | rendu du plan, libellés, zoom, sélection, fiche | `_js.html` § 3, 4, 6, 7, 8 |
 | logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_js.html` `poseMarque`, `recadreMarque`, `rangeMarque` |
@@ -175,7 +176,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | vider le hall sous la carte | `_environs.html` § Le trou sous le pavillon — contour gelé par `retientLeHall`, aplat `#trouDuFond`, bouton par calque posé par `_pile.html` |
 | enregistrer la configuration pour tous | `_pousse.html` |
 | parcours de visite | `_parcours.html` |
-| ajouter d'un coup tout ce que la recherche retient | `_parcours.html` § Tout ce que la recherche a retenu, bouton posé au pied du panneau par `_js.html` `ouvreCriteres` |
+| ajouter d'un coup tout ce que la recherche retient | `_parcours.html` § Tout ce que la recherche a retenu, bouton posé au pied du panneau par `_js.html` `remplitCriteres` |
 | rappel avant une conférence retenue — notification, délai, abonnement | `_rappels.html` ; interrupteur posé dans le tiroir par `_parcours.html` `remplitParcours`, réglage `_admin1.html` `blocRappel` (onglet « Admin », profil administrateur, à côté de l'invitation à installer) ; fenêtre qui le propose à la première conférence retenue `fenetreRappel`, `proposeRappels`, appelée par `_parcours.html` `basculeParcours`, reportée par `_modales.html` `apresFermeture`, aperçu depuis les réglages par `proposeRappels(true)` et `_installation.html` `retourAuxReglages("rappel")`, essai réel par `essaieRappelReel` et `_admin1.html` `ditEssaiRappel` ; réception `_sw.js` § Les rappels de conférence ; relais `src/index.mjs` `rappels` (`/api/rappels`), serveur `supabase/functions/rappels/`, chiffrement `_partage/push.ts`, migration `rappel_avant_une_conference` (tâche `pg_cron` à la minute) ; secrets `VAPID_*` |
 | suggestion d'un exposant de plus, onglet « Suggestion » | `_suggestion.html` ; canal de mesure `suggestion`, migration `canal_de_mesure` |
 | itinéraire d'un point du salon à un autre | `_itineraire.html` |

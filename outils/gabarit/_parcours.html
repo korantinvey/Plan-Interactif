@@ -178,11 +178,11 @@ function retenusPourParcours(){
  * La fenêtre qui demande avant de verser.
  *
  * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
- * sans qu'on l'ait dit : le compte est annoncé avant, et « Annuler » ramène au
- * panneau des critères plutôt que de laisser le visiteur devant le plan nu —
- * il y était pour régler sa recherche, pas pour la quitter.
+ * sans qu'on l'ait dit : le compte est annoncé avant. « Annuler » referme, et
+ * l'on retrouve derrière le panneau des critères tel qu'on l'avait laissé — il
+ * est déplié dans la colonne, cette fenêtre-ci ne lui a jamais pris sa place.
  */
-function ajouteToutAuParcours(retour){
+function ajouteToutAuParcours(){
   const r = retenusPourParcours();
   if (!r.stands.length && !r.confs.length) return;
   ouvreModale("Ajouter à mon parcours", corps => {
@@ -191,11 +191,7 @@ function ajouteToutAuParcours(retour){
       " à votre parcours de visite ?";
     corps.appendChild(p);
   }, [
-    /* « Annuler » rouvre le panneau plutôt que de refermer : la fenêtre est la
-       même, et la laisser se refermer par-dessus l'aurait emportée aussitôt
-       rouverte. Sans panneau où revenir, elle se referme comme n'importe quelle
-       fenêtre. */
-    { libelle: "Annuler", action: retour, ferme: !retour },
+    { libelle: "Annuler" },
     { libelle: "Ajouter", genre: "accent",
       action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
   ]);
@@ -209,13 +205,13 @@ function ajouteToutAuParcours(retour){
  * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
  * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
  */
-function poseToutAuParcours(hote, retour){
+function poseToutAuParcours(hote){
   if (conf("_parcours").visible === false) return () => {};
   const b = document.createElement("button");
   b.type = "button";
   b.className = "btn parc tout-parc";
   b.innerHTML = SIGNET + '<span class="l"></span>';
-  b.onclick = () => ajouteToutAuParcours(retour);
+  b.onclick = () => ajouteToutAuParcours();
   hote.appendChild(b);
   return () => {
     const r = retenusPourParcours();

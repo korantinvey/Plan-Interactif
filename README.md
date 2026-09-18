@@ -239,13 +239,17 @@ cela, un champ créé, associé et coché semblerait n'avoir servi à rien alors
 qu'il attend seulement le prochain passage.
 
 Sur le plan, les critères tiennent derrière **un seul bouton**, à côté de la
-recherche : dépliés, ils prendraient sur un téléphone la place du plan. La
-fenêtre les montre repliés, un par ligne, avec ce qui est retenu dans chacun ;
-on en déplie un à la fois, et un critère à cent trente-neuf valeurs se tamise sur
-place plutôt que de repousser les autres hors de vue. Ce qui est retenu se relit
-sous la recherche, chaque valeur sur une puce qui la retire d'une pression —
-sans quoi, la fenêtre refermée, on ne saurait plus pourquoi la liste est si
-courte.
+recherche : dépliés d'office, ils prendraient sur un téléphone la place du plan.
+Le bouton les déplie **dans la colonne, juste sous la recherche**, et non dans
+une fenêtre posée à côté : celle-ci recouvrait la liste dont les critères
+décident, et l'on cochait sans voir ce qu'il restait. Le panneau les montre
+repliés, un par ligne, avec ce qui est retenu dans chacun ; on en déplie un à la
+fois, et un critère à cent trente-neuf valeurs se tamise sur place plutôt que de
+repousser les autres hors de vue. Le compte des exposants retenus et les deux
+boutons — tout effacer, voir les résultats — tiennent au pied du panneau, hors
+de ce qui défile. Ce qui est retenu se relit sous la recherche, chaque valeur
+sur une puce qui la retire d'une pression — sans quoi, le panneau refermé, on ne
+saurait plus pourquoi la liste est si courte.
 
 Les critères se cumulent entre eux, avec le mot-clé, avec le filtre par secteur
 et avec celui par thématique, et portent sur tout le salon : un exposant retenu peut être dans un
