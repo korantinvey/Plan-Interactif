@@ -2370,7 +2370,7 @@ button.expo:hover{background:var(--line)}
 
    « Organiser » prend la place qui reste : c'est la commande longue, et celle
    pour laquelle la liste a été faite. */
-.pActs{display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
+.pActs{flex:none;display:flex;align-items:stretch;gap:8px;padding:12px 18px 13px;
   border-bottom:1px solid var(--line)}
 .pActs[hidden]{display:none}
 .pActs .jOrg{flex:1;min-width:0}
@@ -2495,6 +2495,54 @@ button.expo:hover{background:var(--line)}
    le laisser disparaître sans un mot. */
 .jReste{display:flex;flex-direction:column;gap:7px}
 .jReste .pRang .pOuvre{opacity:.72}
+/* Le total de la visite entière, sous celui du jour : trois jours de marche ne
+   se devinent pas d'une journée. */
+.jBilan i{font-style:normal;font-size:11.5px;color:var(--ink-3)}
+
+/* ------------------------------------------------------------
+   Les jours d'une visite, et le passage de l'un à l'autre
+
+   Une rangée d'onglets sous les commandes, hors du corps qui défile : c'est le
+   seul endroit d'où l'on voit l'équilibre de la visite, et il ne doit pas
+   partir en haut de l'écran dès qu'on déroule une journée. Elle défile
+   latéralement — un salon de cinq jours ne tient pas en largeur sur un
+   téléphone, et rétrécir les onglets jusqu'à ce qu'ils tiennent les rendrait
+   illisibles.
+   ------------------------------------------------------------ */
+/* « flex:none » n'est pas une précaution : le tiroir est une colonne souple, et
+   un tiroir bas de téléphone y comprime ce qu'il peut. La rangée y perdait sa
+   seconde ligne — la distance du jour — et coupait la première en deux. */
+.jJours{flex:none;display:flex;gap:6px;padding:9px 18px 10px;
+  border-bottom:1px solid var(--line);
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.jJours::-webkit-scrollbar{display:none}
+.jJours[hidden]{display:none}
+.jOnglet{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:6px 11px;min-width:64px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:var(--radius);
+  color:var(--ink-2);transition:background .15s,border-color .15s,color .15s}
+.jOnglet:hover{border-color:var(--line-strong)}
+.jOnglet .t{font-size:12.5px;font-weight:600;white-space:nowrap;line-height:1.3}
+.jOnglet .s{font-size:10.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;
+  white-space:nowrap;line-height:1.3}
+/* Le jour qu'on regarde porte l'accent, comme le trait qu'il a posé sur le
+   plan : l'un désigne l'autre. */
+.jOnglet[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--accent)}
+.jOnglet[aria-pressed="true"] .s{color:var(--accent);opacity:.8}
+
+/* Changer un exposant de jour. Le bouton se pose à côté de l'arrêt et non
+   dessus — l'arrêt ouvre la fiche, c'est ce qu'on attend d'un nom sur lequel on
+   appuie — et sa cible fait la taille d'un pouce. */
+.jBouge{flex:none;width:30px;height:30px;display:grid;place-items:center;
+  border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--surface-2);color:var(--ink-3);transition:color .15s,border-color .15s}
+.jRang .jBouge{margin-top:5px}
+.jBouge:hover{color:var(--accent);border-color:var(--accent)}
+.jBouge svg{width:15px;height:15px}
+/* Un jour que le visiteur a imposé lui-même se voit : sans cela, il ne saurait
+   plus lequel de ses stands il a rangé à la main. */
+.jBouge.pose{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
 /* Les trois questions posées avant le calcul. Elles tiennent dans la fenêtre
    modale, où rien d'autre ne se règle par un champ. */
@@ -2505,6 +2553,37 @@ button.expo:hover{background:var(--line)}
   border-radius:var(--radius);color:var(--ink)}
 .jForm select:focus,.jForm input:focus{border-color:var(--accent);outline:none}
 .jSansPorte,.jHeures{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+/* Les jours de venue : une case par jour, pas une liste déroulante. On en coche
+   deux, et il faut voir d'un coup ceux qu'on a pris. */
+.jForm .jBloc{display:flex;flex-direction:column;gap:4px}
+.jCases{display:flex;flex-direction:column;gap:2px}
+.jForm .jCase{flex-direction:row;align-items:center;gap:10px;padding:7px 9px;
+  border-radius:var(--radius);cursor:pointer;font-size:13.5px;color:var(--ink)}
+.jForm .jCase:hover{background:var(--surface-2)}
+.jForm .jCase input{width:17px;height:17px;flex:none;padding:0;accent-color:var(--accent)}
+
+/* La feuille qui demande vers quel jour déplacer un exposant.
+
+   Un jour par bouton, pleine largeur : sur un téléphone, c'est la seule forme
+   qui se touche sans viser. Glisser un rang d'une liste à l'autre aurait
+   demandé de tenir, de viser et de lâcher au bon endroit dans un tiroir qui
+   défile — un geste de bureau, pas un geste de salon. */
+.jChoix{display:flex;flex-direction:column;gap:7px;margin-top:13px}
+.jChoixJour{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  width:100%;padding:11px 13px;text-align:left;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);
+  transition:background .15s,border-color .15s}
+.jChoixJour:hover{background:var(--line);border-color:var(--line-strong)}
+.jChoixJour .t{font-size:14px;font-weight:600;color:var(--ink)}
+.jChoixJour .s{font-size:11.5px;color:var(--ink-3)}
+/* Le jour où il est déjà : on le montre pour situer, on ne l'écarte pas — le
+   toucher revient à l'y retenir, ce que son sous-titre annonce. */
+.jChoixJour[aria-current="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.jChoixJour[aria-current="true"] .t{color:var(--accent)}
+.jChoixLibre,.jChoixOte{display:block;width:100%;margin-top:9px;padding:8px;
+  font-size:12.5px;text-align:center;text-decoration:underline;color:var(--ink-3)}
+.jChoixLibre:hover{color:var(--ink)}
+.jChoixOte:hover{color:var(--rouge)}
 
 /* Le signet rejoint la croix en haut de la fiche : il porte sur la fiche
    entière, et non sur ce qui suit les champs comme « Centrer sur le plan ». */
@@ -3907,6 +3986,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
+  /* La rangée des jours mange sur le peu de hauteur d'un tiroir bas : elle s'y
+     resserre, et laisse le premier arrêt visible sans dérouler. */
+  .jJours{padding:8px 16px 9px}
+  .jOnglet{padding:5px 10px;min-width:60px}
 
   /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
      lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
@@ -4632,6 +4715,7 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8 15.7 6.4M8.3 13.2l7.4 4.4"/></svg>
           Partager</button>
       </div>
+      <div class="jJours" id="jJours" hidden></div>
       <div class="pCorps" id="pCorps"></div>
       <div class="pCorps" id="jCorps" hidden></div>
       <div class="pPied" id="pPied">

@@ -317,7 +317,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4691 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4775 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -349,9 +349,9 @@ Fonctions :
 `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
 `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee`
-`#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRefaire`
-`#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA`
-`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
+`#btnPartage` · `#jJours` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied`
+`#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart`
+`#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
 `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
@@ -428,17 +428,22 @@ Fonctions :
 `visePoi` 2884 · `visePoint` 2890 · `ouvreItineraire` 2922 · `fermeItineraire` 2950
 `versItineraire` 2960 · `versItineraireDe` 2963
 
-### `_journee.html` — 1004 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 1779 l. → plan-admin.html, plan-smcl.html, plan.html
 
-- l.1 · 11 ter. Organiser sa journée
+- l.1 · 11 ter. Organiser sa visite
 
 Fonctions :
 
-`minutesDe` 51 · `finInstant` 52 · `ecritHeure` 54 · `ecritMinutes` 59 · `joursSalon` 70
-`jourPropose` 83 · `pointConf` 98 · `departsProposes` 117 · `matriceJournee` 145
-`rangeJournee` 247 · `calculeJournee` 364 · `rangJournee` 576 · `lienJournee` 588
-`arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
-`montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
+`minutesDe` 109 · `finInstant` 110 · `ecritHeure` 112 · `ecritMinutes` 117 · `dateDeCle` 130
+`jourBref` 136 · `joursSalon` 146 · `joursAVenir` 175 · `joursDefaut` 193 · `pointConf` 208
+`departsProposes` 227 · `matriceJournee` 260 · `ecartDesJours` 386 · `chargeDuJour` 408
+`rangeSejour` 417 · `derouleJournee` 670 · `calculeSejour` 809 · `rangJournee` 971
+`lienJournee` 983 · `boutonJour` 1006 · `arretJournee` 1019 · `remplitOnglets` 1066
+`jourDuStand` 1095 · `ouvreChoixJour` 1107 · `figeLaVisite` 1164 · `placeSurJour` 1173
+`rendAuPlan` 1181 · `retireDuSejour` 1187 · `remplitJournee` 1197
+`appliqueVueParcours` 1391 · `traceJournee` 1429 · `montreLeJour` 1438
+`perimeJournee` 1453 · `oublieSejour` 1467 · `ouvreOrganisation` 1481 · `essaieSejour` 1706
+`lanceSejour` 1733 · `refaitSejour` 1769
 
 ### `_js.html` — 4348 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -557,8 +562,8 @@ Fonctions :
 `boutonParcours` 244 · `rafraichitMarque` 249 · `brancheParcours` 262 · `calqueMarques` 294
 `dessineMarques` 310 · `marqueParcours` 340 · `rafraichitParcours` 354 · `instantConf` 382
 `cleTemps` 386 · `jourCourt` 392 · `nomDeStand` 399 · `rangParcours` 401
-`groupeParcours` 417 · `remplitParcours` 426 · `ouvreParcours` 505 · `fermeParcours` 517
-`videLeParcours` 533
+`groupeParcours` 421 · `remplitParcours` 430 · `ouvreParcours` 509 · `fermeParcours` 521
+`videLeParcours` 537
 
 ### `_partage.html` — 651 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -668,7 +673,7 @@ Fonctions :
 `borneLesLots` 230 · `borneLesTuiles` 268 · `demandeTiers` 323 · `commePosee` 331
 `tuileDeCarte` 348 · `fondDeCarte` 384 · `dabordReseau` 411 · `navigation` 428
 
-### `_tutoriel.html` — 880 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_tutoriel.html` — 891 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 17. La visite guidée — le tour du plan, geste par geste
 
@@ -677,10 +682,10 @@ Fonctions :
 `reglageTuto` 52 · `tutoPropose` 61 · `cleTuto` 65 · `tutoOuvert` 67 · `tutoModale` 68
 `tutoFicheOuverte` 74 · `tutoFiche` 77 · `tutoParcours` 79 · `tutoItineraire` 82
 `tutoJournee` 86 · `zoneDuTuto` 94 · `insecable` 111 · `phraseTrajetTuto` 117
-`chapitresTuto` 362 · `proposeTutoriel` 382 · `lanceTutoriel` 440 · `quitteTutoriel` 526
-`chapitreTuto` 537 · `battementTuto` 546 · `finTuto` 564 · `afficheTuto` 581 · `pxTuto` 636
-`boiteTuto` 639 · `repereTuto` 653 · `rameneTuto` 686 · `placeTuto` 724 · `voileTuto` 797
-`rafaleTuto` 814 · `marqueZoneTuto` 834 · `marqueLibelleTuto` 869
+`chapitresTuto` 373 · `proposeTutoriel` 393 · `lanceTutoriel` 451 · `quitteTutoriel` 537
+`chapitreTuto` 548 · `battementTuto` 557 · `finTuto` 575 · `afficheTuto` 592 · `pxTuto` 647
+`boiteTuto` 650 · `repereTuto` 664 · `rameneTuto` 697 · `placeTuto` 735 · `voileTuto` 808
+`rafaleTuto` 825 · `marqueZoneTuto` 845 · `marqueLibelleTuto` 880
 
 Éléments :
 
