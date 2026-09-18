@@ -394,6 +394,23 @@ function poseTrait(f){
   if (fl && fl.value) f.fleche = fl.value;
 }
 
+/** Le balisage d'une forme, seule. Sorti de « dessineDessins » pour qu'un
+ *  geste puisse refaire une forme sans refaire le plan. */
+function traceForme(f){
+  return f.t === "image"
+    ? traceImage(f)
+    : f.t === "repere"
+    ? traceRepere(f)
+    : f.t === "stand"
+    ? traceStandDessine(f)
+    : f.t === "texte"
+    ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
+      '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
+    : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
+      '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
+      marqueFleche(f) + '</g>';
+}
+
 function dessineDessins(){
   const c = $("couches");
   c.querySelectorAll(".dcal").forEach(g => g.remove());
@@ -406,18 +423,7 @@ function dessineDessins(){
     g.dataset.dcal = cal.id;
     g.style.color = cal.couleur || "var(--accent)";
     g.style.display = cal.visible === false ? "none" : "";
-    g.innerHTML = cal.formes.map(f => f.t === "image"
-      ? traceImage(f)
-      : f.t === "repere"
-      ? traceRepere(f)
-      : f.t === "stand"
-      ? traceStandDessine(f)
-      : f.t === "texte"
-      ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
-        '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
-      : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
-        '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
-        marqueFleche(f) + '</g>').join("");
+    g.innerHTML = cal.formes.map(traceForme).join("");
     c.appendChild(g);
   }
   ordonneDom();
@@ -430,6 +436,40 @@ function dessineDessins(){
   /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
      fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
   rafraichitStandsDessines();
+}
+
+/**
+ * Une seule forme refaite, à sa place dans son calque.
+ *
+ * C'est ce dont un geste a besoin. « dessineDessins » refait les nœuds de tous
+ * les calques, puis remesure le cartouche des repères et rallume les zones :
+ * soixante-dix millisecondes, dont soixante-huit pour un cartouche que
+ * déplacer une forme ne change pas — ni son libellé, ni son type, ni la
+ * visibilité de son calque. Appelé à chaque mouvement de souris, il faisait
+ * traîner la forme d'une bonne demi-seconde derrière le pointeur, là où le
+ * tracé d'une forme neuve, qui ne passe que par « apercu », suit la main.
+ *
+ * Ne s'en trouve ici que ce qu'un déplacement périme vraiment : le tracé, la
+ * découpe du fond de carte, et le nom d'un stand dessiné.
+ */
+function redessineForme(f){
+  const g = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
+  if (!g){ dessineDessins(); return; }
+  const hote = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  hote.innerHTML = traceForme(f);
+  const neuf = hote.firstElementChild;
+  if (!neuf){ dessineDessins(); return; }
+  g.replaceWith(neuf);
+  /* La mise en avant d'un point d'intérêt est posée par « eclairePoi », que
+     l'on ne rappelle pas : le nœud neuf la reprend ici, sans quoi le repère
+     qu'on déplace s'éteindrait sous le doigt. */
+  if (f.t === "repere") neuf.classList.toggle("phare", phareRepere(f));
+  // un stand dessiné porte son nom et le retrait de son secteur : tous deux
+  // se posent sur un nœud qui vient de naître
+  if (f.t === "stand") rafraichitStandsDessines();
+  /* Un contour qui perce le fond de carte vient de bouger : le gabarit de
+     découpe suit le dessin. Il se compare avant de se reposer. */
+  if (typeof poseMasqueCarte === "function") poseMasqueCarte();
 }
 
 /** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
