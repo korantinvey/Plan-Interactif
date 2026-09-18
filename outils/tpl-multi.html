@@ -29301,20 +29301,24 @@ function voletEnvirons(hote){
      et se borne à la lui suggérer. Un bouton qui ne tiendrait pas parole, ou
      une fenêtre qui affirmerait ce qu'elle ignore, valent moins que rien.
 
-   Deux fenêtres, et pas une troisième : rien ne se dit dans la foulée de
-   l'installation. Une fenêtre y annonçait l'application posée et offrait de
-   l'ouvrir — trois fenêtres d'affilée sur Android, pour l'installation, le
-   constat, puis le rappel, quand le visiteur n'en demandait qu'une. Le
-   constat était le plus creux des trois : il apprenait au visiteur ce qu'il
-   venait lui-même de faire, et son bouton doublait celui du rappel. Ce qui
-   reste dit donc chaque chose une fois — d'abord installez, puis ouvrez —,
-   et le navigateur annonce l'installation à sa façon, qui suffit.
+   Deux fenêtres, et pas une troisième : rien n'annonce l'installation faite.
+   Une fenêtre le faisait, et offrait d'ouvrir l'application dans la foulée —
+   trois fenêtres d'affilée sur Android, pour l'installation, le constat, puis
+   le rappel, quand le visiteur n'en demandait qu'une. Le constat était le plus
+   creux des trois : il apprenait au visiteur ce qu'il venait lui-même de
+   faire, et son bouton doublait celui du rappel. Ce qui reste dit donc chaque
+   chose une fois — d'abord installez, puis ouvrez —, et le navigateur annonce
+   l'installation à sa façon, qui suffit.
 
-   Le « puis » est court, et c'est voulu : l'installation efface la marque du
-   jour au lieu de la poser, si bien que le premier rechargement qui suit
-   ramène le rappel, son bouton avec. Le taire jusqu'au lendemain aurait
-   laissé sans rien celui qui vient de poser l'icône et revient au navigateur
-   — c'est-à-dire justement celui à qui le constat parlait.
+   Le « puis » est court, et c'est voulu : l'icône posée, le rappel vient dix
+   secondes plus tard, sur la page même d'où l'installation est partie. Deux
+   gestes le permettent, et il faut les deux — l'installation efface la marque
+   du jour au lieu de la poser, et rouvre l'attente que la fenêtre avait close
+   en s'ouvrant. Le second n'est pas une précaution : sans lui, seule une
+   installation partie du menu du navigateur ramenait le rappel, celle qui part
+   de la fenêtre le remettant à un rechargement que personne ne fait. Celui qui
+   venait de toucher « Installer » restait donc sans rien — lui, précisément, à
+   qui le constat parlait.
    ============================================================ */
 
 /* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
@@ -29690,6 +29694,19 @@ function invitationRetenue(){
   return !!f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName);
 }
 
+/* Ce qui tient l'attente en éveil : les gestes qui repoussent la fenêtre, et
+   le retour sur un onglet laissé de côté. Posé d'ici plutôt qu'au pied du
+   module, parce que l'installation le repose (`reprendInvitation`) — et le
+   reposer ne le double pas, un même couple fonction-capture ne s'inscrivant
+   qu'une fois. */
+function ecouteInvitation(){
+  addEventListener("pointerdown", doigtPose, true);
+  addEventListener("pointerup", doigtLeve, true);
+  addEventListener("pointercancel", doigtLeve, true);
+  addEventListener("keydown", gesteInstallation, true);
+  document.addEventListener("visibilitychange", vueInstallation);
+}
+
 function finInvitation(){
   installFini = true;
   clearTimeout(installMinuteur);
@@ -29701,11 +29718,27 @@ function finInvitation(){
 }
 
 /**
+ * Rouvrir l'attente que la fenêtre avait close en s'ouvrant.
+ *
+ * Une seule chose la rouvre, et c'est l'installation : elle ne répond pas à la
+ * proposition, elle la remplace. Le plan n'a qu'une chose à proposer par
+ * visite, et c'est pourquoi la fenêtre défait tout en s'ouvrant ; mais celui
+ * qui vient de poser l'icône n'a plus rien à faire de celle qu'il a lue, et
+ * tout à gagner de l'autre — il lui reste à ouvrir l'application, et le rappel
+ * est le seul à savoir le lui dire.
+ */
+function reprendInvitation(){
+  installFini = false;
+  ecouteInvitation();
+}
+
+/**
  * Ouvre la fenêtre si tout le permet, ou dit ce qui la relancera.
  *
  * Appelée à l'affichage du plan, à chaque geste un instant après, au retour
- * sur un onglet caché, quand Chromium annonce le plan installable, et quand le
- * système a dit si l'application est là. Tout ce qui l'empêche pour de bon —
+ * sur un onglet caché, quand Chromium annonce le plan installable, quand le
+ * système a dit si l'application est là, et quand elle vient d'être posée —
+ * c'est alors l'autre fenêtre qui suit. Tout ce qui l'empêche pour de bon —
  * le réglage éteint, une réponse déjà donnée — arrête l'attente ; ce qui ne
  * l'empêche que pour l'instant la laisse à l'appel suivant.
  *
@@ -29791,14 +29824,16 @@ if (INSTALL_POSSIBLE){
        plan, lui, est à l'écran depuis un moment : sans ce report, le rappel
        viendrait au geste suivant, avec un bouton encore sans preneur. */
     installAccueil = performance.now();
+    /* L'attente est à rouvrir quand l'installation est partie de la fenêtre :
+       celle-ci l'avait close en s'ouvrant, et tout ce qui vient d'être retenu
+       n'attendait plus personne. Une installation partie du menu du navigateur
+       la trouve en vie et n'y perd rien. */
+    reprendInvitation();
+    essaieInvitation();
   });
   // ce que le système sait de l'application, et qui décide laquelle des deux fenêtres
   verifieApplication();
-  addEventListener("pointerdown", doigtPose, true);
-  addEventListener("pointerup", doigtLeve, true);
-  addEventListener("pointercancel", doigtLeve, true);
-  addEventListener("keydown", gesteInstallation, true);
-  document.addEventListener("visibilitychange", vueInstallation);
+  ecouteInvitation();
 }
 
 /* ------------------------------------------------------------
@@ -30067,7 +30102,8 @@ function caseInstallation(bloc){
   aide.innerHTML = "Sur téléphone et tablette, quand le plan est ouvert dans le " +
     "navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès " +
     "l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix " +
-    "secondes après l'ouverture. Une fois par jour au plus chacune, et plus " +
+    "secondes après l'ouverture — ou après l'avoir installée. Une fois par " +
+    "jour au plus chacune, et plus " +
     "du tout après deux refus. Aperçu de l'invitation : " +
     '<button type="button" class="apercuInst" data-facon="bouton">Android</button> · ' +
     '<button type="button" class="apercuInst" data-facon="partage">iPhone</button>' +
