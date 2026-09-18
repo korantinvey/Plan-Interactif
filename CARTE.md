@@ -319,7 +319,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4735 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4756 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -351,11 +351,11 @@ Fonctions :
 `#panel` · `#pile` · `#voile` · `#detail` · `#poigneeFiche` · `#dMarque` · `#closeDetail`
 `#dKind` · `#dNeuf` · `#dName` · `#dRen` · `#dLogo` · `#dBadges` · `#dCode` · `#dVis`
 `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
-`#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs` · `#btnJournee`
-`#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours` · `#jPied` · `#jRefaire`
-`#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume` · `#iDepart` · `#iViseA`
-`#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat`
-`#videItineraire`
+`#poigneeParcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs`
+`#btnJournee` · `#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours`
+`#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume`
+`#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr`
+`#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -443,7 +443,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4433 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4453 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.76 · 1. Index global — la recherche porte sur tous les pavillons
 - l.454 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -454,7 +454,7 @@ Fonctions :
 - l.2368 · 7. Sélection et fiche
 - l.3711 · 8. Interactions du plan
 - l.4104 · Le tiroir de la liste — écrans étroits
-- l.4279 · Le tiroir de la fiche — écrans étroits
+- l.4279 · Les tiroirs de la fiche et du parcours — écrans étroits
 
 Fonctions :
 
@@ -494,7 +494,7 @@ Fonctions :
 `montreMarque` 3288 · `poseCode` 3311 · `rangeMarque` 3352 · `ouvre` 3415 · `ferme` 3683
 `onglet` 3701 · `milieu` 3731 · `commencePince` 3737 · `suitPince` 3751 · `saisitPlan` 3785
 `cibleElargie` 3865 · `planifieFiltre` 4060 · `mesureTiroir` 4115 · `montreTiroir` 4118
-`hisseTiroir` 4122
+`hisseTiroir` 4122 · `tiroirCrante` 4305
 
 Éléments :
 

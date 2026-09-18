@@ -3916,9 +3916,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .prog .conf .ty{order:1}
   .prog .conf .t{order:2;flex:0 0 100%}
 
-  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
-     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
-     lit — sans masquer le plan pour autant. */
+  /* Le parcours suit la fiche : même bande basse, même glissement, mêmes trois
+     crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
+     parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
   .parcours{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:68dvh;
@@ -3927,8 +3927,24 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
+       commandes et le pied passent sous le bord de l'écran, et le bord du
+       tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
+  .parcours.open[data-cran="replie"]{max-height:var(--parc-replie,132px)}
+  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .parcours.glisse{transition:none}
+  /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
+     leur taille et sortent par le bas, sinon ils s'écrasaient tous les trois
+     au profit d'une liste qu'on ne voit plus. */
+  .parcours > :is(.poignee,.detail-hd,.pActs,.pPied){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .parcours > .poignee{padding:9px 0 3px}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
@@ -4662,6 +4678,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <!-- Le parcours se hisse comme la fiche : même prise, même geste. Il
+           porte deux choses sur un téléphone — la liste retenue et la journée
+           organisée — et une hauteur figée ne pouvait convenir aux deux. -->
+      <button class="poignee" id="poigneeParcours" aria-expanded="false" aria-controls="pCorps jCorps"
+        aria-label="Agrandir le parcours"></button>
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
         <span class="eyebrow" id="pEyebrow">Mon parcours</span>

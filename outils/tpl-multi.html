@@ -3916,9 +3916,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .prog .conf .ty{order:1}
   .prog .conf .t{order:2;flex:0 0 100%}
 
-  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
-     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
-     lit — sans masquer le plan pour autant. */
+  /* Le parcours suit la fiche : même bande basse, même glissement, mêmes trois
+     crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
+     parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
   .parcours{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:68dvh;
@@ -3927,8 +3927,24 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
+       commandes et le pied passent sous le bord de l'écran, et le bord du
+       tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
+  .parcours.open[data-cran="replie"]{max-height:var(--parc-replie,132px)}
+  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .parcours.glisse{transition:none}
+  /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
+     leur taille et sortent par le bas, sinon ils s'écrasaient tous les trois
+     au profit d'une liste qu'on ne voit plus. */
+  .parcours > :is(.poignee,.detail-hd,.pActs,.pPied){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .parcours > .poignee{padding:9px 0 3px}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
@@ -4662,6 +4678,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <!-- Le parcours se hisse comme la fiche : même prise, même geste. Il
+           porte deux choses sur un téléphone — la liste retenue et la journée
+           organisée — et une hauteur figée ne pouvait convenir aux deux. -->
+      <button class="poignee" id="poigneeParcours" aria-expanded="false" aria-controls="pCorps jCorps"
+        aria-label="Agrandir le parcours"></button>
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
         <span class="eyebrow" id="pEyebrow">Mon parcours</span>
@@ -9012,56 +9033,69 @@ let hisseTiroir = () => {};
 })();
 
 /* ============================================================
-   Le tiroir de la fiche — écrans étroits
+   Les tiroirs de la fiche et du parcours — écrans étroits
 
    La fiche est une bande basse elle aussi, et elle tenait sur une hauteur
    fixe : un peu plus de la moitié de l'écran, quoi qu'elle porte. Une fiche
    bien remplie — champs, programme, actions — s'y lisait par une fente, en
-   faisant défiler son corps trois écrans durant.
+   faisant défiler son corps trois écrans durant. Le parcours retenu et la
+   journée organisée, qui se partagent l'autre tiroir, avaient le défaut
+   inverse : les deux tiers de l'écran pour trois exposants, et le plan qu'on
+   venait y chercher restait derrière.
 
-   Elle prend donc la prise de la liste et ses trois crans. Le cran ne la fait
-   pas glisser sous le bord de l'écran comme la liste, mais change sa hauteur :
-   c'est son corps qui défile, et un tiroir descendu aurait poussé sa fin hors
-   de vue. Au cran le plus bas ne reste que l'en-tête — assez pour savoir de
-   quel stand il s'agit en regardant le plan derrière.
+   Les deux prennent donc la prise de la liste et ses trois crans. Le cran ne
+   les fait pas glisser sous le bord de l'écran comme la liste, mais change
+   leur hauteur : c'est leur corps qui défile, et un tiroir descendu aurait
+   poussé sa fin hors de vue. Au cran le plus bas ne reste que l'en-tête —
+   assez pour savoir de quel stand, ou de quelle journée, il s'agit tout en
+   regardant le plan derrière.
    ============================================================ */
-(function tiroirFiche(){
-  const fiche = $("detail"), prise = $("poigneeFiche");
-  if (!fiche || !prise) return;
+/**
+ * Pose les trois crans sur un tiroir mené par la hauteur.
+ *
+ * @param panneau le tiroir — son en-tête est ce qui reste au cran le plus bas
+ * @param prise   la poignée qui le hisse
+ * @param cle     la variable CSS où déposer la hauteur repliée mesurée
+ * @param demi    la part de l'écran qu'il occupe au cran du milieu
+ */
+function tiroirCrante({ panneau, prise, cle, demi }){
+  const tiroir = $(panneau), poignee = $(prise);
+  if (!tiroir || !poignee) return;
   const etroit = ETROIT;
   const CRANS = ["replie", "demi", "plein"];
-  /* Le cran du milieu est celui d'avant les crans : une fiche qu'on ouvre sans
-     rien demander occupe la place qu'elle a toujours occupée. */
-  const cran = () => fiche.dataset.cran || "demi";
+  /* Le cran du milieu est celui d'avant les crans : un tiroir qu'on ouvre sans
+     rien demander occupe la place qu'il a toujours occupée. */
+  const cran = () => tiroir.dataset.cran || "demi";
 
-  /* La hauteur repliée se mesure : l'en-tête tient une ligne pour un numéro de
-     stand, trois pour une enseigne longue suivie de ses pastilles, davantage
-     quand la zone porte un logo. */
+  /* La hauteur repliée se mesure : l'en-tête de la fiche tient une ligne pour
+     un numéro de stand, trois pour une enseigne longue suivie de ses
+     pastilles, davantage quand la zone porte un logo ; celui du parcours
+     change de titre selon qu'on y lit sa liste ou sa journée. */
   function mesure(){
     if (!etroit()) return;
-    const hd = fiche.querySelector(".detail-hd");
-    const h = prise.offsetHeight + (hd ? hd.offsetHeight : 0);
-    /* Sur la fiche, et non sur la racine. Une variable posée sur la racine est
+    const hd = tiroir.querySelector(".detail-hd");
+    const h = poignee.offsetHeight + (hd ? hd.offsetHeight : 0);
+    /* Sur le tiroir, et non sur la racine. Une variable posée sur la racine est
        offerte à toute la page en héritage : le navigateur remet alors en cause
        le style de ses sept mille nœuds — cent quatre-vingts millisecondes dès
        que la valeur change, c'est-à-dire chaque fois qu'un nom de stand tient
-       sur un nombre de lignes différent. Seule la fiche lit celle-ci. */
-    if (h > 0) fiche.style.setProperty("--fiche-replie", h + "px");
+       sur un nombre de lignes différent. Seul le tiroir lit celle-ci. */
+    if (h > 0) tiroir.style.setProperty(cle, h + "px");
   }
 
   function pose(nom){
-    fiche.dataset.cran = nom;
-    prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
+    tiroir.dataset.cran = nom;
+    poignee.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
   const replieePx = () =>
-    parseFloat(getComputedStyle(fiche).getPropertyValue("--fiche-replie")) || 132;
+    parseFloat(getComputedStyle(tiroir).getPropertyValue(cle)) || 132;
 
-  /** Hauteur de la fiche à un cran donné, en pixels — les parts du CSS. */
+  /** Hauteur du tiroir à un cran donné, en pixels — les parts du CSS. */
   function hauteur(nom){
     if (nom === "plein") return Math.round(innerHeight * .92);
-    if (nom === "demi")  return Math.round(innerHeight * .56);
+    if (nom === "demi")  return Math.round(innerHeight * demi);
     return replieePx();
   }
 
@@ -9070,12 +9104,12 @@ let hisseTiroir = () => {};
      non une position : on s'accroche au cran le plus proche de celle atteinte. */
   let depart = null, aGlisse = false;
 
-  prise.addEventListener("pointerdown", e => {
+  poignee.addEventListener("pointerdown", e => {
     if (!etroit()) return;
     depart = { y: e.clientY, vu: hauteur(cran()) };
     aGlisse = false;
-    fiche.classList.add("glisse");
-    prise.setPointerCapture(e.pointerId);
+    tiroir.classList.add("glisse");
+    poignee.setPointerCapture(e.pointerId);
   });
 
   /** Hauteur pendant le geste, bornée aux deux crans extrêmes. */
@@ -9092,62 +9126,69 @@ let hisseTiroir = () => {};
     return choix;
   }
 
-  prise.addEventListener("pointermove", e => {
+  poignee.addEventListener("pointermove", e => {
     if (!depart) return;
     if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    fiche.style.maxHeight = suit(e) + "px";
+    tiroir.style.maxHeight = suit(e) + "px";
   });
 
   function relache(e){
     if (!depart) return;
     const vu = suit(e);
-    fiche.classList.remove("glisse");
+    tiroir.classList.remove("glisse");
     /* La hauteur repasse au CSS, qui la tient du cran : gardée en ligne, elle
-       aurait survécu à la fermeture et figé la fiche suivante. */
-    fiche.style.maxHeight = "";
+       aurait survécu à la fermeture et figé le tiroir suivant. */
+    tiroir.style.maxHeight = "";
     // un geste avorté laisse le cran d'avant
     pose(aGlisse ? proche(vu) : cran());
     depart = null;
   }
-  prise.addEventListener("pointerup", relache);
-  prise.addEventListener("pointercancel", relache);
+  poignee.addEventListener("pointerup", relache);
+  poignee.addEventListener("pointercancel", relache);
 
   /* Une pression fait le tour des crans. Le clic sert aussi le clavier — la
      poignée est un bouton — mais il suit tout glissement : on l'ignore alors. */
-  prise.addEventListener("click", () => {
+  poignee.addEventListener("click", () => {
     if (aGlisse){ aGlisse = false; return; }
     bascule();
   });
 
   /* Chaque ouverture repart du cran du milieu : le stand d'avant a pu demander
      toute la hauteur, celui-ci tient peut-être en trois lignes, et le plan
-     qu'on vient de désigner doit rester en vue. La fiche s'ouvre depuis deux
-     endroits — un stand, un repère de dessin — d'où la classe guettée plutôt
-     qu'un appel posé dans chacun. */
-  let ouverte = fiche.classList.contains("open");
+     qu'on vient de désigner doit rester en vue. Le tiroir s'ouvre depuis
+     plusieurs endroits — un stand, un repère de dessin, le bouton du
+     parcours — d'où la classe guettée plutôt qu'un appel posé dans chacun. */
+  let ouvert = tiroir.classList.contains("open");
   new MutationObserver(() => {
-    const o = fiche.classList.contains("open");
-    if (o && !ouverte){ pose("demi"); mesure(); }
-    ouverte = o;
-  }).observe(fiche, { attributes: true, attributeFilter: ["class"] });
+    const o = tiroir.classList.contains("open");
+    if (o && !ouvert){ pose("demi"); mesure(); }
+    ouvert = o;
+  }).observe(tiroir, { attributes: true, attributeFilter: ["class"] });
 
-  /* L'en-tête change de hauteur sans que la fiche se rouvre : un logo qui
-     arrive, les polices qui se posent, la bascule vers l'anglais. Le cran le
-     plus bas vaut ce qu'il mesure alors. */
+  /* L'en-tête change de hauteur sans que le tiroir se rouvre : un logo qui
+     arrive, les polices qui se posent, la bascule vers l'anglais, la journée
+     organisée qui prend la place de la liste retenue. Le cran le plus bas vaut
+     ce qu'il mesure alors. */
   if (window.ResizeObserver){
-    const hd = fiche.querySelector(".detail-hd");
+    const hd = tiroir.querySelector(".detail-hd");
     if (hd) new ResizeObserver(mesure).observe(hd);
   }
 
-  /* Au retour vers un grand écran, la fiche reprend sa colonne : ni hauteur
+  /* Au retour vers un grand écran, le tiroir reprend sa colonne : ni hauteur
      posée en ligne ni cran, qui s'y appliqueraient encore. */
   addEventListener("resize", () => {
-    if (!etroit()){ fiche.style.maxHeight = ""; pose("demi"); }
+    if (!etroit()){ tiroir.style.maxHeight = ""; pose("demi"); }
     else mesure();
   });
 
   mesure();
-})();
+}
+
+tiroirCrante({ panneau: "detail", prise: "poigneeFiche", cle: "--fiche-replie", demi: .56 });
+/* Le parcours monte plus haut au cran du milieu, et la feuille de style dit la
+   même part : une liste de rangs se parcourt du regard, quand une fiche se lit
+   ligne à ligne. */
+tiroirCrante({ panneau: "parcours", prise: "poigneeParcours", cle: "--parc-replie", demi: .68 });
 
 /* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
    l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé

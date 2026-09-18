@@ -24,6 +24,7 @@ module.exports = {
 
   "Afficher la liste des stands": "Show the stand list",
   "Agrandir la fiche": "Expand the details",
+  "Agrandir le parcours": "Expand my visit plan",
   "Exposant, stand…": "Exhibitor, stand…",
   "Effacer la recherche": "Clear search",
   "Critères de recherche": "Search filters",
