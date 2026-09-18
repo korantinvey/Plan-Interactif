@@ -985,6 +985,29 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
+   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
+.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+
+/* Le panneau des critères, déplié dans la colonne.
+
+   Il prend la bande sous la recherche plutôt que de flotter à côté du bouton :
+   une fenêtre posée là recouvrait la liste dont elle décide, et l'on cochait
+   sans voir ce qu'il restait. Il pousse donc la liste vers le bas au lieu de
+   passer devant, et défile pour son compte quand les critères sont nombreux —
+   sans jamais prendre plus de la moitié de la colonne, faute de quoi il ne
+   resterait rien de ce qu'il filtre. */
+.pan-crit{display:flex;flex-direction:column;max-height:56%;
+  padding:2px 16px 10px;border-bottom:1px solid var(--line)}
+/* Les critères défilent, le pied ne bouge pas : le compte qu'il porte parle de
+   ce qu'on est en train de cocher, et il ne le dirait plus s'il fallait
+   descendre le chercher sous deux cents valeurs. */
+.crit-corps{min-height:0;overflow-y:auto}
+.crit-pied{flex:0 0 auto}
+.crit-actes{display:flex;gap:8px;margin-top:9px}
+.crit-actes .btn{flex:1 1 0;text-align:center}
+.crit-actes .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
    replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
@@ -4161,14 +4184,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
-/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
-   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
-   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
-   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
-   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
-   fini avec les filtres. */
-.modale[data-genre="cote"]{background:none;place-items:center start}
-.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 /* « background-color » et non « background », comme sur le parcours et
    l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
@@ -4337,8 +4352,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
-/* Le titre est la prise : replié, un critère tient sur une ligne, et la
-   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+/* Le titre est la prise : replié, un critère tient sur une ligne, et le
+   panneau les montre tous plutôt qu'un seul déplié. */
 .grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
   cursor:pointer;list-style:none}
 .grp-crit > summary::-webkit-details-marker{display:none}
@@ -4358,9 +4373,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
-   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
-.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+/* Un critère à cent valeurs ne pousse plus rien hors de vue : le compte et les
+   boutons sont hors du cadre qui défile, et il n'en faut donc pas un second
+   ici — deux défilements emboîtés, le doigt se trompe toujours de l'un pour
+   l'autre. Le tamis au-dessus reste, qui raccourcit la liste plutôt que de la
+   faire défiler. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px}
 .puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
   padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
   background:var(--surface-2);border:1px solid transparent;border-radius:999px}
@@ -4514,10 +4532,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
-  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
-     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
-     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
-  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
@@ -5007,14 +5021,33 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vide-q" id="videQ" type="button" hidden
           title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
-      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
-           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
-           désigné des champs à proposer. -->
+      <!-- Les critères tiennent derrière ce bouton : dépliés d'office, ils
+           prendraient sur un téléphone la place du plan. Il les déplie et les
+           replie juste dessous, dans la colonne, et n'existe que si
+           l'exploitant a désigné des champs à proposer. -->
       <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
-        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        aria-expanded="false" aria-controls="panCrit"
+        title="Critères de recherche" aria-label="Critères de recherche">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
         <span class="compteur" id="nFiltres" hidden>0</span>
       </button>
+    </div>
+    <!-- Le panneau des critères, déplié dans la colonne même, sous le mot-clé
+         qu'il complète. Une fenêtre posée à côté du bouton recouvrait la liste
+         dont elle décide : on cochait sans voir ce qu'il restait. -->
+    <div class="pan-crit" id="panCrit" role="group"
+      aria-label="Critères de recherche" hidden>
+      <div class="crit-corps" id="critCorps"></div>
+      <!-- Le pied ne défile pas avec les valeurs : ce que la recherche retient
+           se lit pendant qu'on coche, et refermer est la sortie — on ne la
+           cherche pas au bout de cent puces. -->
+      <div class="crit-pied">
+        <div id="critPied"></div>
+        <div class="crit-actes">
+          <button class="btn" type="button" id="critVider">Tout effacer</button>
+          <button class="btn accent" type="button" id="critVoir">Voir les résultats</button>
+        </div>
+      </div>
     </div>
     <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
          pourquoi la liste est si courte, le panneau étant refermé. -->
@@ -6667,8 +6700,14 @@ function videRecherche(){
 /** Le nombre de valeurs retenues, tous critères confondus. */
 const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
 
+/* Ce que le panneau des critères, quand il est déplié, doit relire : une valeur
+   peut tomber ailleurs que sous ses puces — une puce retirée de la bande des
+   retenus, « Tout effacer » à son pied. Posé par le remplissage, oublié à la
+   fermeture ; refermé, le panneau n'a plus rien à relire. */
+let majPanneauCrit = null;
+
 /**
- * La barre : le bouton qui ouvre les critères, et ce qui est retenu.
+ * La barre : le bouton qui déplie les critères, et ce qui est retenu.
  *
  * Les valeurs retenues restent sous les yeux, chacune sur une puce qui la
  * retire d'une pression. Sans elles, on ne saurait plus pourquoi la liste est
@@ -6678,6 +6717,8 @@ function majCriteres(){
   const btn = $("btnFiltres"), barre = $("actifs");
   if (!btn || !barre) return;
   btn.hidden = !CRITERES.length;
+  // plus rien à offrir : le panneau qui portait ces critères n'a plus d'objet
+  if (btn.hidden) fermeCriteres();
   // un panneau qui n'offrirait que des critères vides n'a rien à filtrer : il
   // ne s'ouvre que pour dire ce qui manque, et le bouton le dit aussi
   btn.classList.toggle("vide", CRITERES.every(c => c.vide));
@@ -6686,6 +6727,10 @@ function majCriteres(){
   jeton.hidden = !n;
   jeton.textContent = n;
   btn.setAttribute("aria-pressed", String(n > 0));
+
+  /* Le panneau déplié se relit ici, quelle que soit la main qui a touché au
+     critère : la sienne, une puce de la bande, « Tout effacer ». */
+  if (majPanneauCrit) majPanneauCrit();
 
   barre.hidden = !n;
   barre.innerHTML = "";
@@ -6725,133 +6770,189 @@ function majCriteres(){
 const VALEURS_TAMIS = 12;
 
 /**
- * Le panneau des critères.
+ * Le panneau des critères, déplié dans la colonne.
  *
- * Une fenêtre plutôt qu'un dépliant sous la recherche : sur un téléphone elle
- * occupe l'écran qu'il faut sans pousser la liste hors de vue, et le pouce y
- * atteint tout. Chaque groupe se replie une fois choisi — on ne règle pas
- * douze critères d'affilée — et le pied dit combien de fiches restent.
+ * Sous le mot-clé qu'il complète, et de la largeur de la liste. Une fenêtre
+ * posée à côté du bouton recouvrait cette liste au moment même où l'on décidait
+ * de ce qu'elle garde : on cochait sans voir ce qu'il restait. Déplié à sa
+ * place, le panneau la pousse vers le bas au lieu de passer devant — on coche,
+ * la liste se raccourcit dessous, le plan s'éteint derrière. Chaque groupe se
+ * replie une fois choisi — on ne règle pas douze critères d'affilée — et le
+ * pied dit combien de fiches restent.
  */
-function ouvreCriteres(){
-  ouvreModale("Critères de recherche", corps => {
-    const compte = document.createElement("p");
-    compte.className = "compte-crit";
-    /* Le pied du panneau se remplit en dernier — il parle de ce qui est coché
-       au-dessus — mais il se remet à jour à chaque puce touchée, d'où la
-       fonction que l'on garde sous la main. */
-    let majTout = () => {};
-    const dis = () => {
-      const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
-      compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
-      majTout();
+function remplitCriteres(){
+  const corps = $("critCorps"), pied = $("critPied");
+  if (!corps || !pied) return;
+  corps.innerHTML = "";
+  pied.innerHTML = "";
+  /* Ce que chaque groupe redit de lui-même quand le panneau se relit. */
+  const rappels = [];
+  const compte = document.createElement("p");
+  compte.className = "compte-crit";
+  /* Le pied du panneau se remplit en dernier — il parle de ce qui est coché
+     au-dessus — mais il se remet à jour à chaque puce touchée, d'où la
+     fonction que l'on garde sous la main. */
+  let majTout = () => {};
+  const dis = () => {
+    const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
+    compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
+    majTout();
+  };
+
+  CRITERES.forEach(c => {
+    /* Un critère replié par défaut, sauf s'il est le seul et qu'il tient à
+       l'écran : cent trente-neuf rubriques dépliées d'office repoussaient
+       les autres critères et le pied du panneau hors de vue, sur
+       téléphone comme ailleurs. Le titre dit ce qui est retenu dedans, de
+       sorte qu'un critère replié ne cache jamais un choix fait. */
+    const g = document.createElement("details");
+    g.className = "grp-crit";
+    g.open = CRITERES.length === 1 && c.valeurs.length <= VALEURS_TAMIS;
+    const h = document.createElement("summary");
+    h.innerHTML = '<span class="t"></span><span class="r"></span>';
+    h.querySelector(".t").textContent = c.libelle;
+    const retenu = h.querySelector(".r");
+    /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
+       offertes n'aidait pas à choisir — on ne coche pas un critère parce
+       qu'il en propose quinze — et cette ligne-là devait rester libre pour
+       la seule chose qu'un critère replié ne doit jamais cacher. */
+    const disRetenu = () => {
+      const n = (state.crit.get(c.cle) || new Set()).size;
+      retenu.textContent = c.vide ? "aucune valeur relevée"
+        : !n ? ""
+        : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
+      retenu.dataset.on = String(n > 0);
+      retenu.dataset.manque = String(Boolean(c.vide));
     };
+    disRetenu();
+    rappels.push(disRetenu);
+    g.appendChild(h);
 
-    CRITERES.forEach(c => {
-      /* Un critère replié par défaut, sauf s'il est le seul et qu'il tient à
-         l'écran : cent trente-neuf rubriques dépliées d'office repoussaient
-         les autres critères et le pied de la fenêtre hors de vue, sur
-         téléphone comme ailleurs. Le titre dit ce qui est retenu dedans, de
-         sorte qu'un critère replié ne cache jamais un choix fait. */
-      const g = document.createElement("details");
-      g.className = "grp-crit";
-      g.open = CRITERES.length === 1 && c.valeurs.length <= VALEURS_TAMIS;
-      const h = document.createElement("summary");
-      h.innerHTML = '<span class="t"></span><span class="r"></span>';
-      h.querySelector(".t").textContent = c.libelle;
-      const retenu = h.querySelector(".r");
-      /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
-         offertes n'aidait pas à choisir — on ne coche pas un critère parce
-         qu'il en propose quinze — et cette ligne-là devait rester libre pour
-         la seule chose qu'un critère replié ne doit jamais cacher. */
-      const disRetenu = () => {
-        const n = (state.crit.get(c.cle) || new Set()).size;
-        retenu.textContent = c.vide ? "aucune valeur relevée"
-          : !n ? ""
-          : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
-        retenu.dataset.on = String(n > 0);
-        retenu.dataset.manque = String(Boolean(c.vide));
-      };
-      disRetenu();
-      g.appendChild(h);
+    const puces = document.createElement("div");
+    puces.className = "puces-crit";
 
-      const puces = document.createElement("div");
-      puces.className = "puces-crit";
+    /* Rien à cocher, mais quelque chose à dire : le champ est bien réglé
+       comme critère, ses valeurs se relèvent sur les fiches, et aucune n'y
+       a été trouvée. */
+    if (c.vide){
+      g.open = true;
+      const rien = document.createElement("p");
+      rien.className = "vide-crit";
+      rien.textContent = "Aucune valeur sur les fiches. Vérifiez le champ " +
+        "d'origine de ce champ dans la console, puis lancez une " +
+        "synchronisation : les valeurs proposées ici viennent d'elle.";
+      g.appendChild(rien);
+      corps.appendChild(g);
+      return;
+    }
 
-      /* Rien à cocher, mais quelque chose à dire : le champ est bien réglé
-         comme critère, ses valeurs se relèvent sur les fiches, et aucune n'y
-         a été trouvée. */
-      if (c.vide){
-        g.open = true;
-        const rien = document.createElement("p");
-        rien.className = "vide-crit";
-        rien.textContent = "Aucune valeur sur les fiches. Vérifiez le champ " +
-          "d'origine de ce champ dans la console, puis lancez une " +
-          "synchronisation : les valeurs proposées ici viennent d'elle.";
-        g.appendChild(rien);
-        corps.appendChild(g);
+    /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
+       et deux puces « oui » et « non » diraient deux fois la même chose. */
+    const offertes = c.ouiNon ? [c.valeurs[0]] : c.valeurs;
+
+    const dessine = (tamis) => {
+      puces.innerHTML = "";
+      const t = (tamis || "").trim().toLowerCase();
+      const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
+      if (!vues.length){
+        const vide = document.createElement("span");
+        vide.className = "aucune";
+        vide.textContent = "Aucune valeur ne correspond.";
+        puces.appendChild(vide);
         return;
       }
+      vues.forEach(x => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "puce-crit";
+        /* De quel critère et de quelle valeur : le panneau se relit de bout en
+           bout quand l'un d'eux tombe ailleurs, et ses puces ne lui survivent
+           pas — le tamis en refait d'autres à chaque lettre tapée. */
+        b.dataset.cle = c.cle;
+        b.dataset.val = x.v;
+        b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
+        b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
+          '<span class="l"></span><span class="n"></span>';
+        b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
+        b.querySelector(".n").textContent = x.n;
+        /* Cocher ne fait que cocher : ce que la puce change d'elle-même, son
+           titre de groupe et le compte du pied, leur revient par la relecture
+           du panneau — la bande des retenus, elle, coche déjà ainsi. */
+        b.onclick = () => basculeCritere(c.cle, x.v);
+        puces.appendChild(b);
+      });
+    };
 
-      /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
-         et deux puces « oui » et « non » diraient deux fois la même chose. */
-      const offertes = c.ouiNon ? [c.valeurs[0]] : c.valeurs;
+    if (!c.ouiNon && offertes.length > VALEURS_TAMIS){
+      const ch = document.createElement("input");
+      ch.type = "search";
+      ch.className = "tamis";
+      ch.placeholder = "Filtrer " + c.libelle.toLowerCase() + "…";
+      ch.autocomplete = "off";
+      ch.oninput = () => dessine(ch.value);
+      g.appendChild(ch);
+    }
+    dessine("");
+    g.appendChild(puces);
+    corps.appendChild(g);
+  });
 
-      const dessine = (tamis) => {
-        puces.innerHTML = "";
-        const t = (tamis || "").trim().toLowerCase();
-        const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
-        if (!vues.length){
-          const vide = document.createElement("span");
-          vide.className = "aucune";
-          vide.textContent = "Aucune valeur ne correspond.";
-          puces.appendChild(vide);
-          return;
-        }
-        vues.forEach(x => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "puce-crit";
-          b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-          b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
-            '<span class="l"></span><span class="n"></span>';
-          b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
-          b.querySelector(".n").textContent = x.n;
-          b.onclick = () => {
-            basculeCritere(c.cle, x.v);
-            b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-            disRetenu();
-            dis();
-          };
-          puces.appendChild(b);
-        });
-      };
+  pied.appendChild(compte);
+  /* Retenir cinquante exposants d'un geste plutôt que d'ouvrir cinquante
+     fiches : ce que la recherche vient de circonscrire est précisément ce
+     qu'un visiteur voulait mettre à son programme. Le bouton se pose sous le
+     compte, dont il est la suite — et non à côté de « Voir les résultats »,
+     dont il prendrait le rang, qui reste le geste attendu. */
+  majTout = poseToutAuParcours(pied);
+  dis();
 
-      if (!c.ouiNon && offertes.length > VALEURS_TAMIS){
-        const ch = document.createElement("input");
-        ch.type = "search";
-        ch.className = "tamis";
-        ch.placeholder = "Filtrer " + c.libelle.toLowerCase() + "…";
-        ch.autocomplete = "off";
-        ch.oninput = () => dessine(ch.value);
-        g.appendChild(ch);
-      }
-      dessine("");
-      g.appendChild(puces);
-      corps.appendChild(g);
-    });
-
-    corps.appendChild(compte);
-    /* Retenir cinquante exposants d'un geste plutôt que d'ouvrir cinquante
-       fiches : ce que la recherche vient de circonscrire est précisément ce
-       qu'un visiteur voulait mettre à son programme. Le bouton se pose sous le
-       compte, dont il est la suite — et non au pied de la fenêtre, où il aurait
-       pris le rang de « Voir les résultats », qui reste le geste attendu. */
-    majTout = poseToutAuParcours(corps, ouvreCriteres);
+  /* Relire plutôt que réécrire : réécrit, le panneau perdrait le groupe qu'on
+     vient de déplier, le tamis qu'on vient de taper et l'endroit où l'on en
+     était dans deux cents valeurs. */
+  majPanneauCrit = () => {
+    corps.querySelectorAll(".puce-crit").forEach(b =>
+      b.setAttribute("aria-pressed", String(critereActif(b.dataset.cle, b.dataset.val))));
+    rappels.forEach(f => f());
     dis();
-  }, [
-    { libelle: "Tout effacer", action: videCriteres },
-    { libelle: "Voir les résultats", genre: "primaire" },
-  ], "cote");
+  };
+}
+
+/** Le bouton est la même prise à l'aller et au retour : il déplie ce qu'il a
+ *  replié, et son état se lit sur lui. */
+function basculeCriteres(){
+  const pan = $("panCrit");
+  if (pan && pan.hidden) ouvreCriteres(); else fermeCriteres();
+}
+
+function ouvreCriteres(){
+  const pan = $("panCrit");
+  if (!pan) return;
+  remplitCriteres();
+  pan.hidden = false;
+  $("btnFiltres").setAttribute("aria-expanded", "true");
+  /* En tiroir, le panneau se déplie dans la seule bande qui dépasse, et
+     pousserait le compte et la liste sous le bord de l'écran. Le tiroir monte
+     donc, comme il monte lorsqu'on entre dans le champ de recherche : régler
+     ses critères, c'est vouloir la liste. */
+  hisseTiroir();
+}
+
+/** Replié, le panneau rend sa place à la liste. Ce qui est retenu continue de
+ *  se dire sous la recherche : les puces de la bande, elles, ne se replient
+ *  pas — sans quoi on ne saurait plus pourquoi la liste est si courte. */
+function fermeCriteres(){
+  const pan = $("panCrit");
+  if (!pan || pan.hidden) return;
+  /* Replié, le panneau emporte avec lui le bouton qu'on venait d'actionner, et
+     le clavier se retrouverait au début de la page. La main revient donc à la
+     prise, d'où elle pourra redéplier. */
+  const dedans = pan.contains(document.activeElement);
+  pan.hidden = true;
+  majPanneauCrit = null;
+  $("critCorps").innerHTML = "";
+  $("critPied").innerHTML = "";
+  $("btnFiltres").setAttribute("aria-expanded", "false");
+  if (dedans) $("btnFiltres").focus();
 }
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
@@ -9388,7 +9489,12 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
 });
 
-$("btnFiltres").onclick = ouvreCriteres;
+$("btnFiltres").onclick = basculeCriteres;
+/* « Tout effacer » ne referme pas : on efface pour recommencer, et le panneau
+   resté ouvert montre justement les critères redevenus libres. « Voir les
+   résultats » referme, lui — c'est la liste qu'on veut voir. */
+$("critVider").onclick = videCriteres;
+$("critVoir").onclick = fermeCriteres;
 $("zIn").onclick = () => zoom(.75, .5, .5);
 $("zOut").onclick = () => zoom(1.33, .5, .5);
 $("zFit").onclick = fit;
@@ -9472,6 +9578,10 @@ let mesureTiroir = () => {};
 /* De même, une thématique retenue depuis une fiche doit faire monter le tiroir :
    sur téléphone la liste qui vient de changer est sous le plan. */
 let montreTiroir = () => {};
+/* Et le panneau des critères, qui se déplie dans le tiroir, le veut tout en
+   haut : déplié dans la bande qui dépasse, il y prendrait la place de ce
+   qu'elle doit montrer. */
+let hisseTiroir = () => {};
 
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
@@ -9504,6 +9614,10 @@ let montreTiroir = () => {};
     tiroir.dataset.cran = nom;
     annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
+    /* Redescendu, le tiroir ne montre plus que la recherche, ce qui est retenu
+       et le compte : un panneau de critères resté déplié occuperait cette bande
+       à lui seul, et pousserait les trois sous le bord de l'écran. */
+    if (nom === "replie" && etroit()) fermeCriteres();
   }
 
   /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
@@ -9614,6 +9728,10 @@ let montreTiroir = () => {};
      thématique depuis le plan, et on veut voir la liste sans perdre de vue
      l'endroit d'où l'on part. */
   montreTiroir = () => { if (etroit() && cran() === "replie") pose("demi"); };
+  /* Le plein écran, et non le cran du milieu : régler ses critères, c'est
+     vouloir la liste — comme entrer dans le champ de recherche, qui hisse le
+     tiroir de la même façon. */
+  hisseTiroir = () => { if (etroit()) pose("plein"); };
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
@@ -19864,11 +19982,11 @@ function retenusPourParcours(){
  * La fenêtre qui demande avant de verser.
  *
  * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
- * sans qu'on l'ait dit : le compte est annoncé avant, et « Annuler » ramène au
- * panneau des critères plutôt que de laisser le visiteur devant le plan nu —
- * il y était pour régler sa recherche, pas pour la quitter.
+ * sans qu'on l'ait dit : le compte est annoncé avant. « Annuler » referme, et
+ * l'on retrouve derrière le panneau des critères tel qu'on l'avait laissé — il
+ * est déplié dans la colonne, cette fenêtre-ci ne lui a jamais pris sa place.
  */
-function ajouteToutAuParcours(retour){
+function ajouteToutAuParcours(){
   const r = retenusPourParcours();
   if (!r.stands.length && !r.confs.length) return;
   ouvreModale("Ajouter à mon parcours", corps => {
@@ -19877,11 +19995,7 @@ function ajouteToutAuParcours(retour){
       " à votre parcours de visite ?";
     corps.appendChild(p);
   }, [
-    /* « Annuler » rouvre le panneau plutôt que de refermer : la fenêtre est la
-       même, et la laisser se refermer par-dessus l'aurait emportée aussitôt
-       rouverte. Sans panneau où revenir, elle se referme comme n'importe quelle
-       fenêtre. */
-    { libelle: "Annuler", action: retour, ferme: !retour },
+    { libelle: "Annuler" },
     { libelle: "Ajouter", genre: "accent",
       action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
   ]);
@@ -19895,13 +20009,13 @@ function ajouteToutAuParcours(retour){
  * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
  * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
  */
-function poseToutAuParcours(hote, retour){
+function poseToutAuParcours(hote){
   if (conf("_parcours").visible === false) return () => {};
   const b = document.createElement("button");
   b.type = "button";
   b.className = "btn parc tout-parc";
   b.innerHTML = SIGNET + '<span class="l"></span>';
-  b.onclick = () => ajouteToutAuParcours(retour);
+  b.onclick = () => ajouteToutAuParcours();
   hote.appendChild(b);
   return () => {
     const r = retenusPourParcours();

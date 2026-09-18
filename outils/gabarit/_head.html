@@ -247,6 +247,29 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
+   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
+.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+
+/* Le panneau des critères, déplié dans la colonne.
+
+   Il prend la bande sous la recherche plutôt que de flotter à côté du bouton :
+   une fenêtre posée là recouvrait la liste dont elle décide, et l'on cochait
+   sans voir ce qu'il restait. Il pousse donc la liste vers le bas au lieu de
+   passer devant, et défile pour son compte quand les critères sont nombreux —
+   sans jamais prendre plus de la moitié de la colonne, faute de quoi il ne
+   resterait rien de ce qu'il filtre. */
+.pan-crit{display:flex;flex-direction:column;max-height:56%;
+  padding:2px 16px 10px;border-bottom:1px solid var(--line)}
+/* Les critères défilent, le pied ne bouge pas : le compte qu'il porte parle de
+   ce qu'on est en train de cocher, et il ne le dirait plus s'il fallait
+   descendre le chercher sous deux cents valeurs. */
+.crit-corps{min-height:0;overflow-y:auto}
+.crit-pied{flex:0 0 auto}
+.crit-actes{display:flex;gap:8px;margin-top:9px}
+.crit-actes .btn{flex:1 1 0;text-align:center}
+.crit-actes .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
    replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
@@ -3423,14 +3446,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
-/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
-   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
-   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
-   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
-   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
-   fini avec les filtres. */
-.modale[data-genre="cote"]{background:none;place-items:center start}
-.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 /* « background-color » et non « background », comme sur le parcours et
    l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
@@ -3599,8 +3614,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
-/* Le titre est la prise : replié, un critère tient sur une ligne, et la
-   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+/* Le titre est la prise : replié, un critère tient sur une ligne, et le
+   panneau les montre tous plutôt qu'un seul déplié. */
 .grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
   cursor:pointer;list-style:none}
 .grp-crit > summary::-webkit-details-marker{display:none}
@@ -3620,9 +3635,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
-   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
-.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+/* Un critère à cent valeurs ne pousse plus rien hors de vue : le compte et les
+   boutons sont hors du cadre qui défile, et il n'en faut donc pas un second
+   ici — deux défilements emboîtés, le doigt se trompe toujours de l'un pour
+   l'autre. Le tamis au-dessus reste, qui raccourcit la liste plutôt que de la
+   faire défiler. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px}
 .puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
   padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
   background:var(--surface-2);border:1px solid transparent;border-radius:999px}
@@ -3776,10 +3794,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
-  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
-     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
-     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
-  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
   .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
@@ -4269,14 +4283,33 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vide-q" id="videQ" type="button" hidden
           title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
-      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
-           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
-           désigné des champs à proposer. -->
+      <!-- Les critères tiennent derrière ce bouton : dépliés d'office, ils
+           prendraient sur un téléphone la place du plan. Il les déplie et les
+           replie juste dessous, dans la colonne, et n'existe que si
+           l'exploitant a désigné des champs à proposer. -->
       <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
-        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        aria-expanded="false" aria-controls="panCrit"
+        title="Critères de recherche" aria-label="Critères de recherche">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
         <span class="compteur" id="nFiltres" hidden>0</span>
       </button>
+    </div>
+    <!-- Le panneau des critères, déplié dans la colonne même, sous le mot-clé
+         qu'il complète. Une fenêtre posée à côté du bouton recouvrait la liste
+         dont elle décide : on cochait sans voir ce qu'il restait. -->
+    <div class="pan-crit" id="panCrit" role="group"
+      aria-label="Critères de recherche" hidden>
+      <div class="crit-corps" id="critCorps"></div>
+      <!-- Le pied ne défile pas avec les valeurs : ce que la recherche retient
+           se lit pendant qu'on coche, et refermer est la sortie — on ne la
+           cherche pas au bout de cent puces. -->
+      <div class="crit-pied">
+        <div id="critPied"></div>
+        <div class="crit-actes">
+          <button class="btn" type="button" id="critVider">Tout effacer</button>
+          <button class="btn accent" type="button" id="critVoir">Voir les résultats</button>
+        </div>
+      </div>
     </div>
     <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
          pourquoi la liste est si courte, le panneau étant refermé. -->
