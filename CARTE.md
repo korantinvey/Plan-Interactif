@@ -101,17 +101,19 @@ Fonctions :
 
 `#accesMsg` · `#aUrl` · `#aCle` · `#aMail` · `#aMdp` · `#aPublic` · `#aOubli` · `#aOk`
 
-### `_batiments.html` — 367 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_batiments.html` — 530 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Bâtiments de la bibliothèque
 
 Fonctions :
 
-`CLE_CALAGE` 25 · `bibliothequeDispo` 26 · `batimentsPoses` 33 · `poseCalage` 40
-`ouvreBibliotheque` 49 · `vueDuLieu` 132 · `lanceCalage` 172 · `cadreCalage` 200
-`finCalage` 213 · `pivoteCalage` 223 · `degresCalage` 232 · `dessineCalage` 234
-`calagePointerDown` 257 · `calagePointerMove` 270 · `calagePointerUp` 286
-`ajouteBatiments` 296 · `mentionOsm` 362
+`CLE_CALAGE` 26 · `bibliothequeDispo` 27 · `batimentsPoses` 34 · `estBatiment` 41
+`hallsPoses` 44 · `lieuDuCalque` 50 · `poseCalage` 56 · `ouvreBibliotheque` 65
+`vueDuLieu` 161 · `lanceCalage` 201 · `effaceLeTempsDuCalage` 229 · `cadreCalage` 248
+`finCalage` 261 · `pivoteCalage` 272 · `degresCalage` 284 · `dessineCalage` 289
+`calagePointerDown` 312 · `calagePointerMove` 325 · `calagePointerUp` 341
+`reposeBatiment` 354 · `ajouteBatiments` 370 · `boutonRecale` 454 · `pictoRecale` 463
+`calageRelu` 480 · `rouvreCalage` 506 · `mentionOsm` 525
 
 ### `_borne.html` — 370 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -317,7 +319,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4691 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4702 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -572,19 +574,19 @@ Fonctions :
 `qrSvg` 429 · `ouvrePartageParcours` 446 · `boutonsPartage` 495
 `accueilleParcoursPartage` 569 · `adoptePartage` 647
 
-### `_pile.html` — 532 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_pile.html` — 538 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Pile des calques
 - l.57 · Panneau : deux sections, chacune rangée par nom
-- l.343 · Repères
-- l.395 · Fond du plan
+- l.349 · Repères
+- l.401 · Fond du plan
 
 Fonctions :
 
 `clePile` 8 · `entrees` 10 · `pile` 21 · `groupe` 33 · `ordonneDom` 41 · `deplaceCouche` 46
 `nature` 75 · `boutonAjout` 82 · `boutonVerrou` 102 · `intertitre` 110
-`construitPanneau` 117 · `sectionSelection` 359 · `sectionFond` 415 · `ligneCouleur` 473
-`rangSecteur` 493 · `rangSous` 506 · `defautCouleur` 528
+`construitPanneau` 117 · `sectionSelection` 365 · `sectionFond` 421 · `ligneCouleur` 479
+`rangSecteur` 499 · `rangSous` 512 · `defautCouleur` 534
 
 ### `_pousse.html` — 631 l. → plan-admin.html, plan-smcl.html, plan.html
 
