@@ -434,7 +434,8 @@ function pousseForme(dx, dy){
   if (!cible || cible.c.id !== calqueActif) return;
   memorise();
   cible.f.pts = cible.f.pts.map(q => [+(q[0] + dx).toFixed(2), +(q[1] + dy).toFixed(2)]);
-  enregistreDessins(); dessineDessins(); dessinePoignees();
+  // une flèche tenue répète trente fois par seconde : seule la forme poussée a bougé
+  enregistreDessins(); redessineForme(cible.f); dessinePoignees();
   ecritDimensions(cible.f);
 }
 
@@ -479,6 +480,7 @@ function appliqueDimension(quoi){
   memorise();
   f.pts = [[b[0], b[1]], [+(b[0] + l).toFixed(2), +(b[1] + h).toFixed(2)]];
   retientTaille(f);
-  enregistreDessins(); dessineDessins(); dessinePoignees();
+  // le champ se relit à chaque frappe : refaire le plan entier y était de trop
+  enregistreDessins(); redessineForme(f); dessinePoignees();
   ecritDimensions(f);
 }
