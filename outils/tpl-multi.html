@@ -960,6 +960,13 @@ html.sans-image-stand .outils #imageSoc{display:none}
 .pictoMasque{width:12px;height:12px;display:block;margin:auto}
 .pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
 .pictoMasque .trou{stroke-dasharray:1.7 1.2}
+/* Reprendre le calage d'un hall de la bibliothèque. Il ne s'éteint pas avec le
+   cadenas qui le suit : voir « Reprendre le calage » dans `_batiments.html`. */
+.calq .recal{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .recal:hover{color:var(--accent)}
+.pictoRecale{width:12px;height:12px;display:block;margin:auto}
+.pictoRecale path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -2682,6 +2689,10 @@ html.vise-plan #plan{cursor:crosshair}
 #calageApercu .tige{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;
   vector-effect:non-scaling-stroke}
 html.cale-geste #calageApercu .poignee{cursor:grabbing}
+/* Le hall qu'on reprend s'efface le temps du geste : sans cela le contour en
+   pointillés part sur le gris qui l'attend, et l'on croit traîner une copie.
+   Posé sur les nœuds du plan seulement, il s'en va avec le bandeau. */
+#couches [data-cale]{display:none}
 .viseur.calage .calageAngle{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2)}
 .viseur.calage .calageAngle input{width:64px;padding:2px 5px;font-size:12.5px;text-align:right;
   border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
@@ -17362,7 +17373,8 @@ if ($("geoHauteur")) $("geoHauteur").oninput = appliqueDimensionGeo;
    mètres.
 
    Le calage se retient par pavillon. Les autres halls du même lieu se posent
-   ensuite sans un clic : ils partagent le repère du premier.
+   ensuite sans un clic : ils partagent le repère du premier — et le bouton de
+   leur ligne dans la pile le rouvre pour tous à la fois.
    ============================================================ */
 
 /* Réservée à l'administration : la construction ne la verse que dans
@@ -17381,6 +17393,21 @@ function batimentsPoses(){
   const s = new Set();
   mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
   return s;
+}
+
+/** Un calque venu de la bibliothèque : ses formes portent une référence OSM. */
+const estBatiment = (c) => !!c && (c.formes || []).some(f => f.osm);
+
+/** Les halls de ce lieu déjà sur le plan, dans l'ordre de la bibliothèque. */
+function hallsPoses(lieu){
+  const poses = batimentsPoses();
+  return lieu.batiments.filter(b => poses.has(b.osm));
+}
+
+/** Le lieu d'où vient un calque, reconnu à la référence OSM de ses formes. */
+function lieuDuCalque(c){
+  const refs = new Set((c.formes || []).map(f => f.osm).filter(Boolean));
+  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(b.osm))) || null;
 }
 
 /** Un point du lieu, porté dans le repère du plan. */
@@ -17446,7 +17473,11 @@ function ouvreBibliotheque(){
         p.textContent = "Ce pavillon est déjà calé sur ce lieu : les bâtiments se posent directement.";
         const r = document.createElement("label");
         r.className = "biblioRecale";
-        r.innerHTML = '<input type="checkbox"> Recaler sur le plan';
+        /* L'intitulé dit que le geste emporte les halls déjà là : cocher pour
+           « placer celui-ci autrement » et voir les autres bouger avec lui
+           surprendrait, alors que c'est justement ce qu'on veut — un seul
+           repère, et des halls qui restent entre eux. */
+        r.innerHTML = '<input type="checkbox"> Reprendre le calage — les bâtiments déjà posés se déplacent aussi';
         r.querySelector("input").checked = recaler;
         r.querySelector("input").onchange = e => { recaler = e.target.checked; };
         p.appendChild(document.createElement("br"));
@@ -17465,12 +17496,21 @@ function ouvreBibliotheque(){
   }, [
     { libelle: "Annuler" },
     { libelle: "Placer sur le plan", ferme: false, action: () => {
-        const halls = lieu.batiments.filter(b => choisis.has(b.nom));
+        const t = CONF[CLE_CALAGE()];
+        const cale = !!t && t.lieu === lieu.cle;
+        const reprise = cale && recaler;
+        /* Reprendre le calage emmène les halls déjà posés : ils partagent le
+           repère qu'on rouvre, et les laisser derrière les détacherait des
+           autres. C'est aussi ce qui rend le geste possible une fois tout le
+           lieu placé — sans eux il n'y avait plus rien à cocher, et le bouton
+           ne répondait à rien. */
+        const poses = batimentsPoses();
+        const halls = lieu.batiments.filter(b =>
+          choisis.has(b.nom) || (reprise && poses.has(b.osm)));
         if (!halls.length) return;
         fermeModale();
-        const t = CONF[CLE_CALAGE()];
-        if (t && t.lieu === lieu.cle && !recaler) ajouteBatiments(lieu, halls, t);
-        else lanceCalage(lieu, halls, t && t.lieu === lieu.cle ? t : null);
+        if (cale && !recaler) ajouteBatiments(lieu, halls, t);
+        else lanceCalage(lieu, halls, cale ? t : null);
       } },
   ]);
 }
@@ -17531,8 +17571,27 @@ function lanceCalage(lieu, halls, depart){
              rayon: Math.max(x1 - x0, y1 - y0) / 2, t: t };
   racine.classList.add("cale-plan");
   $("calageBat").hidden = false;
+  effaceLeTempsDuCalage(halls);
   cadreCalage();
   dessineCalage();
+}
+
+/**
+ * Les halls qu'on reprend s'effacent, le temps du geste.
+ *
+ * Le contour en pointillés part de l'endroit exact où le gris l'attend : on
+ * croyait traîner une copie, et la place visée se lisait mal entre deux tracés
+ * superposés. L'attribut ne s'écrit que sur les nœuds du plan — rien n'en
+ * arrive aux calques ni aux réglages, et annuler ne laisse rien derrière.
+ */
+function effaceLeTempsDuCalage(halls){
+  const refs = new Set(halls.map(b => b.osm));
+  const hote = $("couches");
+  mesCalques().forEach(c => (c.formes || []).forEach(f => {
+    if (!refs.has(f.osm)) return;
+    const n = hote.querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
+    if (n) n.dataset.cale = "1";
+  }));
 }
 
 /**
@@ -17563,6 +17622,7 @@ function finCalage(){
   racine.classList.remove("cale-plan");
   const g = $("calageApercu");
   if (g) g.remove();
+  $("couches").querySelectorAll("[data-cale]").forEach(n => delete n.dataset.cale);
   $("calageBat").hidden = true;
 }
 
@@ -17575,8 +17635,14 @@ function pivoteCalage(t, a){
   return { a: a, x: c[0] - v[0], y: c[1] - v[1] };
 }
 
-/** L'angle lisible, entre 0 et 360 degrés. */
-const degresCalage = (a) => +(((a * 180 / Math.PI) % 360 + 360) % 360).toFixed(1);
+/** L'angle lisible, entre 0 inclus et 360 exclu. Arrondi d'abord, ramené dans
+ *  le tour ensuite : un calage relu sur le plan rend un angle nul au dixième
+ *  de millionième de degré près, et du mauvais côté de zéro il s'affichait
+ *  « 360 » — un contour droit qu'on venait de reprendre avait l'air tourné. */
+const degresCalage = (a) => {
+  const d = +(a * 180 / Math.PI).toFixed(1);
+  return +((d % 360 + 360) % 360).toFixed(1);
+};
 
 function dessineCalage(){
   const c = CALAGE;
@@ -17640,9 +17706,33 @@ function calagePointerUp(){
 /* ------------------------------------------------------------
    La pose : un calque par hall
    ------------------------------------------------------------ */
+/** Repose les contours d'un hall déjà là. Ils se recalculent depuis la
+ *  bibliothèque plutôt que de subir le déplacement d'un calage au suivant :
+ *  un pavillon repris dix fois ne dérive pas d'un centimètre à chaque fois. */
+function reposeBatiment(b, t){
+  mesCalques().forEach(c => {
+    if (!(c.formes || []).some(f => f.osm === b.osm)) return;
+    let j = 0;
+    /* Des formes neuves, plutôt que leurs points réécrits : l'instantané de
+       l'historique copie les tableaux mais partage les formes, si bien qu'une
+       forme retouchée sur place l'est aussi dans le passé. Un calage repris
+       déplace tous les halls d'un coup — le rendre serait long à la main. */
+    c.formes = c.formes.map(f => {
+      if (f.osm !== b.osm) return f;
+      const k = b.contours[j++];
+      return k ? Object.assign({}, f, { pts: k.map(p => poseCalage(t, p)) }) : f;
+    });
+  });
+}
+
 function ajouteBatiments(lieu, halls, t){
   memorise();
-  const neufs = halls.map((b, i) => {
+  /* Reprendre un hall, c'est déplacer celui qui est là, non le poser une
+     seconde fois : son calque garde son nom, sa couleur, son rang et son
+     cadenas, et ne reçoit que de nouveaux points. */
+  const poses = batimentsPoses();
+  halls.filter(b => poses.has(b.osm)).forEach(b => reposeBatiment(b, t));
+  const neufs = halls.filter(b => !poses.has(b.osm)).map((b, i) => {
     const id = nouvelId() + i;
     return {
       id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
@@ -17663,13 +17753,16 @@ function ajouteBatiments(lieu, halls, t){
   });
   /* Tout au fond de la pile, derrière les stands : sans rang retenu, un
      calque neuf passe devant tout le reste. Seuls les environs, le plan de
-     la ville autour du salon, restent derrière. */
-  const cles = neufs.map(c => "dessin:" + c.id);
-  const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
-  let i = 0;
-  while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
-  liste.splice(i, 0, ...cles);
-  CONF[clePile()] = liste;
+     la ville autour du salon, restent derrière. Un calage repris n'a rien à
+     ranger — les calques sont les mêmes, et à leur place. */
+  if (neufs.length){
+    const cles = neufs.map(c => "dessin:" + c.id);
+    const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
+    let i = 0;
+    while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
+    liste.splice(i, 0, ...cles);
+    CONF[clePile()] = liste;
+  }
   CONF[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
   enregistreConf();
   enregistreDessins();
@@ -17698,6 +17791,87 @@ $("calageStop").onclick = finCalage;
 addEventListener("keydown", e => {
   if (e.key === "Escape" && CALAGE && !$("modale").classList.contains("open")) finCalage();
 });
+
+/* ------------------------------------------------------------
+   Reprendre le calage
+
+   Une fois validé, le contour n'avait plus de prise : le bandeau s'en allait
+   avec lui, et la fenêtre de la bibliothèque ne proposait plus un hall déjà
+   posé — ses cases s'y grisent. Le supprimer pour le remettre ne rendait rien
+   non plus : le calage du pavillon est retenu, et le hall revenait exactement
+   où il était, sans qu'on ait pu le tourner.
+
+   La prise vit donc là où vit le hall : sur sa ligne dans la pile. Elle rouvre
+   le même bandeau, et le rouvre pour tous les halls du lieu — ils partagent un
+   seul repère, en déplacer un seul le romprait.
+   ------------------------------------------------------------ */
+
+/** Le bouton du panneau, sur un calque venu de la bibliothèque. Le cadenas ne
+ *  l'éteint pas : il garde d'un glisser distrait, et c'est ici un geste nommé,
+ *  avec son aperçu, son angle et ses deux issues. */
+function boutonRecale(c){
+  if (!bibliothequeDispo() || !estBatiment(c)) return "";
+  const t = "Recaler les bâtiments : les glisser et les faire pivoter";
+  return '<button class="recal" title="' + t + '">' + pictoRecale() + "</button>";
+}
+
+/** Le picto : la flèche qui tourne, dans le sens du bouton « ↻ 90° » du
+ *  bandeau. Le contour du hall, essayé dessous, ne tenait pas dans douze
+ *  pixels : la boîte et la flèche s'y confondaient en une tache. */
+const pictoRecale = () =>
+  '<svg class="pictoRecale" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<path d="M9.44 3.59A4.2 4.2 0 1 1 5.27 1.86"/>' +
+  '<path d="M3.49 1.35 5.27 1.86 3.77 2.95"/></svg>';
+
+/**
+ * Le calage relu sur le plan.
+ *
+ * Le contour posé dit toujours où il est ; le réglage du pavillon, lui, n'en
+ * retient qu'un — celui du dernier lieu calé — et il ne suit ni une annulation
+ * ni un hall poussé à la main, calque ouvert. Reprendre un calage qu'il aurait
+ * seul dicté téléporterait donc le contour avant qu'on l'ait touché : on part
+ * de ce qui est à l'écran, et le réglage ne sert plus que de dernier recours.
+ *
+ * Deux points de la bibliothèque et leurs jumeaux sur le plan suffisent :
+ * l'échelle ne se règle pas, les deux repères sont en mètres.
+ */
+function calageRelu(lieu, c){
+  for (const b of lieu.batiments){
+    const f = (c.formes || []).find(x => x.osm === b.osm && x.pts && x.pts.length > 1);
+    const k = f && b.contours[0];
+    if (!k || k.length < 2) continue;
+    /* Le point le plus éloigné du premier, et non le premier qui s'en écarte :
+       les contours d'OpenStreetMap ont des segments d'un décimètre, où le
+       centimètre d'arrondi des points pèse six degrés. Sur la diagonale d'un
+       pavillon il n'en pèse plus un centième. */
+    let i = -1, d = 0;
+    k.forEach((p, j) => {
+      if (!j || !f.pts[j]) return;
+      const e = Math.hypot(p[0] - k[0][0], p[1] - k[0][1]);
+      if (e > d){ d = e; i = j; }
+    });
+    if (i < 0 || !d) continue;
+    const a = Math.atan2(f.pts[i][1] - f.pts[0][1], f.pts[i][0] - f.pts[0][0]) -
+              Math.atan2(k[i][1] - k[0][1], k[i][0] - k[0][0]);
+    const co = Math.cos(a), si = Math.sin(a);
+    return { a: a, x: f.pts[0][0] - (co * k[0][0] - si * k[0][1]),
+                   y: f.pts[0][1] - (si * k[0][0] + co * k[0][1]) };
+  }
+  return null;
+}
+
+/** Rouvre le calage sur les halls du lieu d'où vient ce calque. */
+function rouvreCalage(c){
+  if (!bibliothequeDispo()) return;
+  const lieu = lieuDuCalque(c);
+  if (!lieu) return;
+  const cale = CONF[CLE_CALAGE()];
+  const t = calageRelu(lieu, c) ||
+            (cale && cale.lieu === lieu.cle ? cale : null);
+  const halls = hallsPoses(lieu);
+  if (!t || !halls.length) return;
+  lanceCalage(lieu, halls, t);
+}
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -17883,7 +18057,7 @@ function construitPanneau(){
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
          modifie. */
-      (x.t === "dessin" ? boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
+      (x.t === "dessin" ? boutonRecale(x.ref) + boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
                           '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
@@ -17944,6 +18118,12 @@ function construitPanneau(){
       /* Le perçage du fond de carte : il n'y a de bouton que s'il y a une carte. */
       const mq = d.querySelector(".masq");
       if (mq) mq.onclick = ev => { ev.stopPropagation(); basculeMasqueCarte(x.ref); };
+      /* Reprendre le calage d'un hall de la bibliothèque. Le bouton précède le
+         cadenas parce que celui-ci ne l'éteint pas : le verrou garde d'un
+         glisser distrait, et rouvrir le calage est un geste nommé, qui se
+         valide ou s'annule. */
+      const rc = d.querySelector(".recal");
+      if (rc) rc.onclick = ev => { ev.stopPropagation(); rouvreCalage(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
