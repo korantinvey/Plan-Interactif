@@ -63,7 +63,7 @@ Fonctions :
 `CLE_VERSION` 170 · `versionRetenue` 171 · `retientVersion` 174 · `demandePlan` 198
 `charge` 222
 
-### `_aimants.html` — 484 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_aimants.html` — 486 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 quater. Dessiner juste — cote, aimants, répétition
 
@@ -74,8 +74,8 @@ Fonctions :
 `cale` 131 · `sousLeGeste` 136 · `cranGrille` 147 · `oublieAimants` 164
 `aimantsDessines` 166 · `coinsGeste` 192 · `montreAimants` 214 · `meilleurSommet` 279
 `croixAimant` 293 · `correction` 317 · `aimante` 358 · `retientTaille` 372
-`reprendTaille` 386 · `dupliqueForme` 407 · `pousseForme` 432 · `ecritDimensions` 448
-`appliqueDimension` 467
+`reprendTaille` 386 · `dupliqueForme` 407 · `pousseForme` 432 · `ecritDimensions` 449
+`appliqueDimension` 468
 
 ### `_application.html` — 453 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -215,7 +215,7 @@ Fonctions :
 
 - l.650 · Page de rapport
 
-### `_dessin.html` — 2056 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2096 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -226,31 +226,32 @@ Fonctions :
 `enregistreDessins` 153 · `instantane` 187 · `memorise` 188 · `restaure` 193 · `annule` 202
 `refais` 214 · `trouveCalque` 216 · `nouvelId` 217 · `cheminArrondi` 235 · `estCadre` 278
 `cheminForme` 280 · `styleTrait` 300 · `longueurFleche` 326 · `cheminFleche` 333
-`marqueFleche` 362 · `rafraichitFleches` 373 · `poseTrait` 389 · `dessineDessins` 397
-`peintCalque` 439 · `versPlan` 445 · `apercu` 451 · `apercuGuide` 463 · `toleranceTrace` 487
-`aimanteContour` 492 · `rayonContour` 495 · `redresseTrace` 514 · `traceGuide` 548
-`fermeIci` 555 · `ajouteForme` 560 · `pictoDe` 660 · `nomTypeRepereFr` 711
-`nomTypeRepere` 712 · `typeZone` 738 · `pictoForme` 745 · `estPorte` 765
-`ouvreEntrant` 766 · `ouvreSortant` 767 · `traceRepere` 781 · `nomSurLePlan` 850
-`etiquetteSociete` 861 · `seRattache` 889 · `societeDeForme` 901 · `societesDuPlan` 913
-`remplitListeSocietes` 928 · `societeSaisie` 936 · `traceImage` 963
-`traceStandDessine` 988 · `texteStandDessine` 1012 · `poseLibellesDessines` 1030
-`decoupeStand` 1051 · `marqueStandsDessines` 1063 · `rafraichitStandsDessines` 1078
-`oublieReperes` 1108 · `reperesCherchables` 1110 · `vaAuRepere` 1154 · `clePoi` 1189
-`cartouchePoi` 1191 · `ouvrePoi` 1307 · `mesureCartouche` 1379 · `phareRepere` 1395
-`phareZone` 1397 · `eclairePoi` 1403 · `oublieChoixPoi` 1436 · `signale` 1445
-`calquePourImage` 1459 · `lienImageSaisi` 1487 · `formeImage` 1498 · `poseImage` 1507
-`ditImagePosee` 1529 · `importeImage` 1537 · `dessinPointerDown` 1588
-`dessinPointerMove` 1662 · `dessinPointerUp` 1700 · `termineTrace` 1741 · `aide` 1753
-`outilOffert` 1782 · `choisitOutil` 1785 · `enchaineStand` 1816 · `activeCalque` 1871
-`cleVerrou` 1929 · `verrouille` 1930 · `basculeVerrou` 1932 · `pictoVerrou` 1949
-`montreRoleIti` 1983 · `creeCalque` 2014 · `demandeNom` 2027 · `renommeCalque` 2046
+`marqueFleche` 362 · `rafraichitFleches` 373 · `poseTrait` 389 · `traceForme` 399
+`dessineDessins` 414 · `redessineForme` 455 · `peintCalque` 479 · `versPlan` 485
+`apercu` 491 · `apercuGuide` 503 · `toleranceTrace` 527 · `aimanteContour` 532
+`rayonContour` 535 · `redresseTrace` 554 · `traceGuide` 588 · `fermeIci` 595
+`ajouteForme` 600 · `pictoDe` 700 · `nomTypeRepereFr` 751 · `nomTypeRepere` 752
+`typeZone` 778 · `pictoForme` 785 · `estPorte` 805 · `ouvreEntrant` 806 · `ouvreSortant` 807
+`traceRepere` 821 · `nomSurLePlan` 890 · `etiquetteSociete` 901 · `seRattache` 929
+`societeDeForme` 941 · `societesDuPlan` 953 · `remplitListeSocietes` 968
+`societeSaisie` 976 · `traceImage` 1003 · `traceStandDessine` 1028
+`texteStandDessine` 1052 · `poseLibellesDessines` 1070 · `decoupeStand` 1091
+`marqueStandsDessines` 1103 · `rafraichitStandsDessines` 1118 · `oublieReperes` 1148
+`reperesCherchables` 1150 · `vaAuRepere` 1194 · `clePoi` 1229 · `cartouchePoi` 1231
+`ouvrePoi` 1347 · `mesureCartouche` 1419 · `phareRepere` 1435 · `phareZone` 1437
+`eclairePoi` 1443 · `oublieChoixPoi` 1476 · `signale` 1485 · `calquePourImage` 1499
+`lienImageSaisi` 1527 · `formeImage` 1538 · `poseImage` 1547 · `ditImagePosee` 1569
+`importeImage` 1577 · `dessinPointerDown` 1628 · `dessinPointerMove` 1702
+`dessinPointerUp` 1740 · `termineTrace` 1781 · `aide` 1793 · `outilOffert` 1822
+`choisitOutil` 1825 · `enchaineStand` 1856 · `activeCalque` 1911 · `cleVerrou` 1969
+`verrouille` 1970 · `basculeVerrou` 1972 · `pictoVerrou` 1989 · `montreRoleIti` 2023
+`creeCalque` 2054 · `demandeNom` 2067 · `renommeCalque` 2086
 
 Éléments :
 
 `#dPaneInfos` · `#dGo` · `#dItin`
 
-### `_edition.html` — 484 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_edition.html` — 487 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · Édition des formes existantes
 
@@ -259,9 +260,9 @@ Fonctions :
 `formeParId` 11 · `boite` 19 · `curseurPoignee` 27 · `poignees` 32 · `dessinePoignees` 41
 `choisitForme` 64 · `majElement` 75 · `candidatsLiaison` 176 · `ecritDesDeuxCotes` 198
 `changeLien` 210 · `changeDureeLien` 226 · `majLiens` 243 · `appliqueSociete` 295
-`appliqueTexte` 311 · `appliqueRayon` 321 · `appliqueTrait` 333 · `appliquePicto` 351
-`supprimeForme` 366 · `editionPointerDown` 376 · `editionPointerMove` 422
-`editionPointerUp` 474
+`appliqueTexte` 311 · `appliqueRayon` 321 · `appliqueTrait` 334 · `appliquePicto` 352
+`supprimeForme` 367 · `editionPointerDown` 377 · `editionPointerMove` 423
+`editionPointerUp` 477
 
 ### `_environs.html` — 1552 l. → plan-admin.html, plan-smcl.html, plan.html
 
