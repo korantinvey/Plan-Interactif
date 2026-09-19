@@ -156,7 +156,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_js.html` `poseMarque`, `recadreMarque`, `rangeMarque` |
 | dessin WebGL du plan (rendu par défaut, `?rendu=svg` pour l'écarter) | `_webgl.html` — il relit le SVG caché : un effet visuel ajouté au plan en CSS (animation, filtre) doit y être rejoué, sans quoi il ne se voit qu'en SVG ; bibliothèque dans `web/bibliotheques/` |
 | ce que la fiche montre, ordre des champs, sections, intitulés | réglage `_admin1.html` `voletOrdre` (réserve à gauche, fiche au milieu, aperçu à droite) ; rendu `_js.html` `corpsRange`, `champCorps`, `montreIntitule` ; migrations `groupes_de_champs`, `intitules_des_champs` |
-| tiroirs de la liste et de la fiche sur écran étroit | `_js.html` § Le tiroir de la liste, § Le tiroir de la fiche ; crans et prise dans `_head.html` `.side`, `.detail`, `.poignee` |
+| tiroirs de la liste, de la fiche et du parcours sur écran étroit | `_js.html` § Le tiroir de la liste, § Les tiroirs de la fiche et du parcours (`tiroirCrante`, un appel par tiroir) ; crans et prise dans `_head.html` `.side`, `.detail`, `.parcours`, `.poignee` |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | lenteur d'un nuancier, couleur qui traîne derrière la souris | `_admin1.html` § La rafale du sélecteur de couleur, `suitNuancier` ; peintures ciblées `_dessin.html` `peintCalque`, `_js.html` `peintSecteur` |
 | police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS` (relue par `npm run polices`) et ses genres `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
