@@ -103,24 +103,26 @@ function manifeste() {
     description: "Le plan du salon : ses exposants, ses zones et son programme.",
     lang: "fr",
     dir: "ltr",
-    /* Plein écran, et non plus « standalone » : le système ne garde plus sa
-       barre d'heure au-dessus du plan, ni sa poignée de gestes en dessous. Un
-       plan de salon se lit sur toute la hauteur qu'on lui donne — c'est un
-       hall qu'on fait glisser du doigt, et les deux bandes du système lui
-       prenaient près d'un dixième de l'écran pour dire ce que le téléphone dit
-       partout ailleurs.
+    /* La fenêtre sans navigateur, et non le plein écran — qui a été essayé, et
+       qui ne tient pas ses promesses là où il compte.
 
-       Ce qui l'accompagne est déjà en place : les pages du plan s'étendent
-       jusqu'aux bords (`viewport-fit=cover`) et se retirent de ce que le
-       système occupe par leurs jetons `--sys-*` — lesquels retombent à zéro
-       ici, n'ayant plus rien à éviter, et rendent d'eux-mêmes la hauteur
-       gagnée.
+       Demandé, il masque bien l'horloge et la poignée de gestes. Mais sur
+       l'appareil où il a été éprouvé, la fenêtre de l'application ouverte
+       depuis son icône s'arrête sous la zone de la caméra : quarante-trois
+       points de noir au-dessus de la barre du salon, hors de la page et donc
+       impeignables, que seul un aller-retour hors de l'application lui rendait.
+       Le relevé pris là-bas était sans appel — écran haut de 835 points,
+       fenêtre de 792, aucun retrait annoncé alors que `viewport-fit=cover`
+       était là. Réécrire la balise pour faire revoir cette taille, trois fois
+       et à trois moments, n'y a rien changé.
 
-       Les modes se replient l'un sur l'autre : un navigateur qui ne sait pas
-       le plein écran retombe sur « standalone », puis sur « minimal-ui ».
-       iOS ne le lit pas du tout et garde sa barre d'état, faute de quoi que ce
-       soit qui la retire — la page y reste donc ce qu'elle était. */
-    display: "fullscreen",
+       Le compte est vite fait : noire, cette bande ne vaut pas mieux que
+       l'horloge qui l'occupait, et « standalone » rend la page à l'écran
+       entier — la barre du salon s'étend derrière l'heure, comme avant.
+       Ce qui a été bâti autour tient toujours : `viewport-fit=cover` et les
+       jetons `--sys-*` de `_head.html` restent ce qui fait que le plan va
+       jusqu'aux bords. */
+    display: "standalone",
     /* L'adresse par défaut, celle d'une visite sans `?plan=` : la page du plan,
        qui retombe alors sur le salon par défaut. Le relais la remplace par
        celle du salon d'où l'on installe. `id` n'est pas déclaré — il vaut
