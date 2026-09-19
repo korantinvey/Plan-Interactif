@@ -539,6 +539,10 @@ function rangParcours(hote, r){
   d.querySelector(".pOuvre").onclick = r.ouvre;
   d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
   hote.appendChild(d);
+  /* Le rang est rendu : la visite organisée y glisse un bouton de plus — celui
+     qui change l'exposant de jour — et ne veut pas réécrire la vignette pour
+     autant. */
+  return d;
 }
 
 function groupeParcours(hote, titre){
@@ -674,14 +678,10 @@ function videLeParcours(){
      vidage ferait mentir la phrase — jusqu'à reparaître le jour où les
      données reconnaissent à nouveau ce qu'elle gardait. */
   MIS_DE_COTE = { stands: [], confs: [] };
-  /* La journée n'était que cette liste, mise en heures : elle s'en va avec
-     elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
-     qui ne doit rien au parcours. */
-  if (JOURNEE && TRACE === JOURNEE.dessin){
-    TRACE = null;
-    dessineItineraire();
-  }
-  JOURNEE = null; vueJournee = false;
+  /* La visite organisée n'était que cette liste, mise en jours et en heures :
+     elle s'en va avec elle, et son tracé avec elle — mais pas un itinéraire
+     demandé à côté, qui ne doit rien au parcours. */
+  oublieSejour();
   /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
      repart de zéro, les refus avec elle. */
   SUGG_ECARTES.clear();

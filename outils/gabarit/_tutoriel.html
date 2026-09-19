@@ -345,12 +345,23 @@ const CHAPITRES_TUTO = [
                  "retenues gardent la leur, les stands se glissent entre elles. Il lui " +
                  "faut un parcours : touchez un stand sur le plan, puis son signet." };
       }
+      /* Le pied du tiroir ne porte pas le même mot selon qu'on a retenu un jour
+         ou plusieurs : le nommer de travers enverrait chercher un bouton qui
+         n'est pas là. */
       if (tiroir && vueJournee) return { cle: "refaire", cible: $("jRefaire"),
-        texte: "Touchez « Changer l'heure d'arrivée » pour organiser à nouveau votre journée." };
+        texte: SEJOUR && SEJOUR.jours.length > 1
+          ? "Touchez « Changer mes jours et mon heure » pour reprendre votre visite."
+          : "Touchez « Changer l'heure d'arrivée » pour organiser à nouveau votre journée." };
       if (tiroir) return { cle: "organiser", cible: $("btnJournee"),
-        texte: "Touchez « Organiser ma journée » : les conférences retenues gardent " +
-               "leur heure, et les stands se glissent entre elles dans l'ordre qui fait " +
-               "le moins de chemin." };
+        /* Sur un salon d'un seul jour, parler de jours de venue ferait chercher
+           une question qu'on ne posera pas. */
+        texte: joursAVenir().length > 1
+          ? "Touchez « Organiser ma journée » : on vous demandera vos jours de " +
+            "venue, puis les stands se répartiront entre eux autour des conférences " +
+            "retenues, qui gardent leur heure."
+          : "Touchez « Organiser ma journée » : les conférences retenues gardent " +
+            "leur heure, et les stands se glissent entre elles dans l'ordre qui fait " +
+            "le moins de chemin." };
       return { cle: "ouvrir", cible: $("btnParcours"),
         texte: "Votre parcours peut devenir une journée organisée : ouvrez « Mon " +
                "parcours », en haut de l'écran." };

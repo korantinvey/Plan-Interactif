@@ -109,6 +109,10 @@ module.exports = {
     "Here is your day: each stop has its time, and the route is drawn on the map. Enjoy your visit!",
   "Le calcul n'a pas abouti sur cet appareil. Votre parcours, lui, est intact.":
     "The calculation did not work on this device. Your visit plan is untouched.",
+  "Touchez « Changer mes jours et mon heure » pour reprendre votre visite.":
+    "Touch “Change my days and time” to plan your visit again.",
+  "Touchez « Organiser ma journée » : on vous demandera vos jours de venue, puis les stands se répartiront entre eux autour des conférences retenues, qui gardent leur heure.":
+    "Touch “Plan my day”: you will be asked which days you are coming, then the stands will be shared out between them around the conferences you picked, which keep their times.",
   "Touchez « Changer l'heure d'arrivée » pour organiser à nouveau votre journée.":
     "Tap “Change arrival time” to plan your day again.",
 
