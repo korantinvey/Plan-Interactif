@@ -812,6 +812,21 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   --sys-gauche:env(safe-area-inset-left,0px);
   --sys-droite:env(safe-area-inset-right,0px);
 }
+/* En plein écran, il n'y a plus de barres à éviter.
+
+   La page le demande au premier geste du visiteur (`demandePleinEcran`,
+   _js.html) : l'horloge et la poignée de gestes s'effacent, et les retraits
+   qu'elles valaient n'ont plus d'objet. Le navigateur continue pourtant de les
+   annoncer, et la barre du salon garderait la place d'une horloge qui n'est
+   plus là.
+
+   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
+   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
+   plein écran ou non. En haut, elle ne rencontre qu'un aplat de couleur — la
+   barre du salon — que la caméra traverse sans rien cacher. */
+@media (display-mode: fullscreen){
+  :root{--sys-haut:0px;--sys-bas:0px}
+}
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
    sur un téléphone dont le thème sombre a été posé une fois pour toutes et
@@ -9636,6 +9651,45 @@ function plieLaBarre(oui){
   b.classList.toggle("pliee", oui);
 }
 
+/* Le plein écran demandé par la page, et non par le manifeste.
+
+   Réclamé au manifeste, il faisait ouvrir par Android une fenêtre plus courte
+   que l'écran — quarante-trois points de noir au-dessus de la barre du salon,
+   hors de la page et impeignables, qu'aucune reprise n'a su récupérer (voir
+   `outils/pwa.js`). Demandé d'ici, une fois l'application ouverte, il n'y a
+   plus de fenêtre à ouvrir : elle est déjà à la taille de l'écran, et il ne
+   reste que les barres à masquer. Refusé, rien ne change — c'est un gain
+   qu'on tente, pas une mise en page qui en dépend.
+
+   Il lui faut un geste : un navigateur ne l'accorde qu'à une page qu'on vient
+   de toucher, jamais sur simple demande au chargement. Le premier appui sert
+   donc de clé, puis chaque geste qui vient de manœuvrer le plan. Un balayage
+   depuis le bord de l'écran en fait sortir, et c'est très bien ainsi : qui
+   veut lire l'heure la retrouve d'un geste, qui revient au plan retrouve le
+   hall entier.
+
+   Dans l'application posée sur l'écran d'accueil, et sur écran étroit
+   seulement : masquer la barre d'adresse d'un onglet au premier doigt posé
+   serait une impolitesse, et un grand écran n'a pas de hauteur à réclamer. */
+function pleinEcranVoulu(){
+  if (!ETROIT() || document.fullscreenElement) return false;
+  try {
+    return ["standalone", "fullscreen", "minimal-ui"]
+      .some(m => matchMedia("(display-mode: " + m + ")").matches);
+  } catch (e) { return false; }
+}
+function demandePleinEcran(){
+  if (!pleinEcranVoulu() || !document.documentElement.requestFullscreen) return;
+  /* `navigationUI: "hide"` demande la barre de navigation avec le reste ;
+     un système qui ne sait pas la masquer rend simplement ce qu'il peut. */
+  const promis = document.documentElement.requestFullscreen({ navigationUI: "hide" });
+  // refusé — iOS n'en veut pas hors vidéo, un réglage de l'appareil peut l'interdire
+  if (promis && promis.catch) promis.catch(() => {});
+}
+/* Le premier doigt posé sur la page, où qu'il tombe : c'est la première
+   occasion, et la seule qui ne demande rien au visiteur. */
+addEventListener("pointerdown", demandePleinEcran, { once: true });
+
 const saisitPlan = (tenu) => {
   // la main lâche : la barre revient, quelle que soit la façon dont le geste finit
   if (!tenu) plieLaBarre(false);
@@ -9746,13 +9800,18 @@ svg.addEventListener("pointerup", e => {
   doigts.delete(e.pointerId);
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
-  if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
+  if (pince){
+    if (doigts.size < 2){ pince = null; drag = null; poseVue(); demandePleinEcran(); }
+    return;
+  }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
   const d = drag; drag = null; saisitPlan(false);
+  // le plan vient d'être manœuvré : s'il en était sorti, le plein écran revient
+  if (d && d.bouge) demandePleinEcran();
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;

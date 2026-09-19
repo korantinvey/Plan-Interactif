@@ -323,7 +323,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4992 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5007 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -450,7 +450,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4716 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4760 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.509 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -460,9 +460,9 @@ Fonctions :
 - l.2040 · 6. Vue
 - l.2466 · 7. Sélection et fiche
 - l.3809 · 8. Interactions du plan
-- l.4230 · Ce que les tiroirs lisent d'un geste
-- l.4276 · Le tiroir de la liste — écrans étroits
-- l.4498 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4274 · Ce que les tiroirs lisent d'un geste
+- l.4320 · Le tiroir de la liste — écrans étroits
+- l.4542 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -502,9 +502,9 @@ Fonctions :
 `nomSociete` 3264 · `societes` 3277 · `choisitExposant` 3288 · `poseMarque` 3326
 `montreMarque` 3386 · `poseCode` 3409 · `rangeMarque` 3450 · `ouvre` 3513 · `ferme` 3781
 `onglet` 3799 · `milieu` 3829 · `commencePince` 3835 · `suitPince` 3849 · `plieLaBarre` 3899
-`saisitPlan` 3909 · `cibleElargie` 3991 · `planifieFiltre` 4186 · `traceurDeGeste` 4254
-`cranVoisin` 4273 · `retraitBas` 4299 · `mesureTiroir` 4313 · `montreTiroir` 4316
-`hisseTiroir` 4320 · `tiroirCrante` 4525
+`pleinEcranVoulu` 3929 · `demandePleinEcran` 3936 · `saisitPlan` 3948 · `cibleElargie` 4030
+`planifieFiltre` 4230 · `traceurDeGeste` 4298 · `cranVoisin` 4317 · `retraitBas` 4343
+`mesureTiroir` 4357 · `montreTiroir` 4360 · `hisseTiroir` 4364 · `tiroirCrante` 4569
 
 Éléments :
 
