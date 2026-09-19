@@ -138,6 +138,22 @@ function majElement(){
     }
   }
 
+  /* Le mode et la ligne d'un arrêt se reprennent comme son type : un 12 écrit
+     13 se corrige sans redessiner la pastille. La couleur montre celle de la
+     ligne — celle de la signalétique, ou celle qu'on a posée à sa place — et à
+     défaut celle du calque, qui est ce que la pastille porte alors. */
+  const ba = $("elemTransport");
+  if (ba){
+    const arret = f.t === "repere" && estTransport(f);
+    ba.hidden = !arret;
+    if (arret){
+      if (!$("elemMode").options.length) $("elemMode").innerHTML = optionsModes();
+      $("elemMode").value = (modeTransport(f) || MODES_TRANSPORT[0]).v;
+      $("elemLigne").value = f.ligne || "";
+      $("elemCouleur").value = couleurRepere(f) || cible.c.couleur || "#2F49D1";
+    }
+  }
+
   majLiens(f.t === "repere" ? f : null);
 
   /* Le rattachement, pour les deux formes qui en ont un. Un stand dessiné
@@ -346,6 +362,39 @@ function appliqueTrait(){
   enregistreDessins(); dessineDessins();
 }
 
+/**
+ * Ce qu'un arrêt dessert : son mode, sa ligne, et la couleur que la ligne lui
+ * donne.
+ *
+ * Le libellé posé d'office suit la ligne tant que personne ne l'a réécrit : un
+ * « Métro 12 » corrigé en 4 s'appelle « Métro 4 », et n'oblige pas à reprendre
+ * son nom à la main. Celui qu'un exploitant a écrit — « Métro 12, sortie
+ * Nord » — ne bouge pas.
+ *
+ * La couleur, elle, ne se lit dans le nuancier que si la ligne n'a pas bougé :
+ * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
+ * celle de la précédente.
+ */
+function appliqueTransport(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  const f = cible.f;
+  const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
+  const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
+  const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
+  memorise();
+  if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
+    f.txt = libelleDoffice(pictoForme(f), mode, ligne);
+  f.mode = mode;
+  if (ligne) f.ligne = ligne; else delete f.ligne;
+  const c = couleurEcrite(mode, ligne, choisie, cible.c);
+  if (c) f.couleur = c; else delete f.couleur;
+  enregistreDessins();
+  /* Le libellé a pu suivre, et la couleur avec lui : le panneau se relit, comme
+     après tout changement de ce qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
+}
+
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
  *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
  *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
@@ -353,7 +402,18 @@ function appliquePicto(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "repere") return;
   memorise();
+  const avant = pictoForme(cible.f);
   cible.f.picto = $("elemPicto").value;
+  /* Devenir un arrêt sans mode laisserait le pictogramme générique sous un
+     panneau qui en propose trois : on pose le premier, celui que le panneau
+     montre déjà. */
+  if (estTransport(cible.f) && !modeTransport(cible.f))
+    cible.f.mode = MODES_TRANSPORT[0].v;
+  /* Le libellé posé d'office suit le type : un repère nommé « WC » faute
+     d'avoir été nommé ne reste pas « WC » en devenant un ascenseur. Celui
+     qu'on a écrit à la main, lui, ne bouge pas. */
+  if (cible.f.txt === libelleDoffice(avant, cible.f.mode, cible.f.ligne))
+    cible.f.txt = libelleDoffice(cible.f.picto, cible.f.mode, cible.f.ligne);
   /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
      ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
      ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
