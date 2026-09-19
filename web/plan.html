@@ -5776,21 +5776,29 @@ if (!document.querySelector('meta[name="viewport"]')){
    courte que l'écran : ailleurs — un onglet de navigateur, une fenêtre sans
    barre à reprendre — il n'y a rien à corriger, et ce recalcul ne coûterait
    qu'une remise en page de plus. */
+let ESSAIS_BORD = 0;
 {
+  /* La fenêtre est-elle plus courte que l'écran ? Deux points de marge : les
+     hauteurs se comparent en points CSS, que le rapport de pixels arrondit.
+     Hors du plein écran, rien à reprendre — un navigateur garde ses barres
+     pour de bon. */
+  const manque = () =>
+    matchMedia("(display-mode: fullscreen)").matches && screen.height - innerHeight >= 2;
   const bordAbord = () => {
     const mv = document.querySelector('meta[name="viewport"]');
-    if (!mv || mv.content.indexOf("viewport-fit=cover") < 0) return;
-    if (!matchMedia("(display-mode: fullscreen)").matches) return;
-    /* Deux points de marge : les hauteurs se comparent en points CSS, que le
-       rapport de pixels de l'appareil arrondit. */
-    if (screen.height - innerHeight < 2) return;
+    if (!mv || mv.content.indexOf("viewport-fit=cover") < 0 || !manque()) return;
+    ESSAIS_BORD++;
     const plein = mv.content;
     mv.content = plein.replace("viewport-fit=cover", "viewport-fit=contain");
     requestAnimationFrame(() => { mv.content = plein; });
   };
-  /* Après le premier rendu : la fenêtre n'a de taille à corriger qu'une fois
-     ouverte, et le plan a mieux à faire pendant qu'il arrive. */
-  addEventListener("load", () => requestAnimationFrame(bordAbord));
+  /* Trois tentatives espacées plutôt qu'une. Le moment où le navigateur
+     accepte de revoir la taille qu'il a donnée à sa fenêtre ne s'annonce pas,
+     et la première passe tombe parfois avant qu'il ait fini de l'ouvrir. Elles
+     ne coûtent rien quand il n'y a rien à reprendre : la condition est relue
+     chaque fois, et la fenêtre qui a pris l'écran arrête les suivantes. */
+  addEventListener("load", () =>
+    [0, 600, 2000].forEach(delai => setTimeout(bordAbord, delai)));
 }
 
 const $ = id => document.getElementById(id);
@@ -6330,6 +6338,7 @@ function poseTonDeLaBarre(){
       "retraits h" + retrait("top") + " b" + retrait("bottom") +
         " g" + retrait("left") + " d" + retrait("right"),
       "bandeau y" + Math.round(b.top) + " h" + Math.round(b.height),
+      "reprises " + ESSAIS_BORD,
       "barre " + (meta ? meta.content : "-"),
     ];
     const boite = document.createElement("pre");
