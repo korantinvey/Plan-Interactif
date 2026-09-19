@@ -3859,7 +3859,46 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      contenu l'accepte, d'où les `min-width:0` qui suivent. */
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .topbar,.brand{min-width:0}
-  .topbar{gap:10px}
+  /* La barre se resserre : le plan est ce qu'on vient voir, et quatorze points
+     de moins sur elle sont quatorze de plus pour le hall. Les boutons passent
+     de trente-deux points à trente — au-dessus encore de ce qu'un doigt vise
+     sans s'y reprendre — et les marges du haut et du bas cèdent trois points
+     chacune. */
+  .topbar{gap:10px;padding:calc(5px + var(--sys-haut)) 12px 5px;
+    min-height:calc(46px + var(--sys-haut))}
+  .topbar .iconbtn{width:30px;height:30px}
+  .halls{padding:2px}
+  .halls button{padding:4px 11px}
+
+  /* La barre passe par-dessus le plan plutôt que de lui prendre un rang.
+
+     Deux choses viennent avec. Le hall occupe toute la hauteur de la scène —
+     la barre ne lui retire plus rien, elle se pose dessus. Et elle peut
+     s'effacer le temps d'un geste sans que rien ne soit remis en page : une
+     scène qui change de taille pendant un glissement, c'est le SVG entier
+     recalculé au doigt posé puis au doigt levé, et la saccade avec.
+
+     Le cadrage, lui, sait ce qu'elle couvre — voir `masqueHaut` dans
+     `_js.html` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
+     elle.
+
+     Pas en administration : la bande de l'outil tient le premier rang, et
+     deux bandes superposées ne se liraient plus. */
+  /* Rangée et colonne, toutes deux écrites : la scène placée à la main sur les
+     rangées mais laissée au placement automatique pour la colonne s'en voyait
+     offrir une nouvelle, à côté de la barre au lieu d'être dessous. */
+  html:not(.mode-admin) .stage{grid-row:1/-1;grid-column:1/-1}
+  /* La barre se place explicitement elle aussi : deux éléments posés à la main
+     se superposent, quand celui qu'on laisse au placement automatique se voit
+     offrir une rangée de plus — la barre se retrouvait alors au bas de
+     l'écran, sous le plan. */
+  html:not(.mode-admin) .topbar{grid-row:1/2;
+    transition:transform .22s ease,opacity .22s ease}
+  html:not(.mode-admin) .topbar.pliee{transform:translateY(-100%);opacity:0;
+    pointer-events:none}
+  /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
+     au-dessus d'eux dans la grille, mais devant eux sur l'écran. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -7193,6 +7232,46 @@ function poseVue(){
  * cours de glissement : `offsetHeight` ignore la transformation, et la fiche
  * qui s'ouvre replie le tiroir sous elle.
  */
+/* La hauteur de la barre du salon, redonnée à la feuille de style.
+
+   Sur écran étroit elle se pose par-dessus le plan : ce qui s'ancre en haut de
+   la scène — le bandeau de visée, le rappel « Vous êtes ici » — doit se ranger
+   dessous, et personne d'autre qu'elle ne sait ce qu'elle mesure. Un nom de
+   salon qui passe à la ligne la fait grandir, et la mesure suit.
+
+   Sur le corps, pour la même raison que « --replie » : posée sur la racine,
+   elle ferait repasser le style des sept mille nœuds du plan à chaque fois. */
+function mesureBarre(){
+  const b = $("bandeau");
+  if (!b) return;
+  const px = Math.round(b.getBoundingClientRect().height) + "px";
+  if (document.body.style.getPropertyValue("--barre") !== px)
+    document.body.style.setProperty("--barre", px);
+}
+mesureBarre();
+addEventListener("resize", mesureBarre);
+if (window.ResizeObserver && $("bandeau"))
+  new ResizeObserver(mesureBarre).observe($("bandeau"));
+
+/**
+ * Ce que la barre du salon cache du plan, en pixels.
+ *
+ * Sur écran étroit elle ne prend plus son rang dans la grille : elle se pose
+ * par-dessus la scène, qui occupe toute la hauteur. Le haut du plan passe donc
+ * dessous, et un cadrage qui l'ignorerait poserait derrière elle le stand
+ * qu'on vient d'ouvrir — la même faute que celle du tiroir en bas, dans
+ * l'autre sens.
+ *
+ * Ailleurs elle garde son rang et ne cache rien : écran large, administration,
+ * où la bande de l'outil tient le premier rang.
+ */
+function masqueHaut(){
+  const b = $("bandeau");
+  if (!ETROIT() || !b || document.documentElement.classList.contains("mode-admin")) return 0;
+  // au-delà, il ne resterait plus assez de plan pour que le cadrage ait un sens
+  return Math.max(0, Math.min(cadrePlan().height * .4, b.getBoundingClientRect().height));
+}
+
 function masque(){
   if (!ETROIT()) return 0;
   const r = cadrePlan();
@@ -7238,13 +7317,16 @@ function masqueDroite(){
 
 function fit(){
   const r = cadrePlan();
-  const cache = masque();
-  const hUtile = Math.max(60, r.height - cache);
+  const cache = masque(), haut = masqueHaut();
+  const hUtile = Math.max(60, r.height - cache - haut);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
   const k = Math.max(w / (r.width || 1), h / hUtile);
   view = { x: emp.x0 + w / 2 - (k * r.width) / 2,
-           // le plan se centre dans la bande visible, pas dans le cadre entier
-           y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           /* Le plan se centre dans la bande visible, pas dans le cadre
+              entier : le tiroir en mange le bas, la barre du salon le haut
+              depuis qu'elle se pose dessus, et le décalage est la différence
+              des deux. */
+           y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
@@ -7493,7 +7575,7 @@ function centrePoint(xy){
      Ces deux mesures ne valent qu'une fois la fiche posée : c'est « ouvre »
      qui appelle le cadrage, et non l'inverse. */
   const r = cadrePlan();
-  const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
+  const decale = r.height ? (h * (masque() - masqueHaut())) / (2 * r.height) : 0;
   const decaleX = r.width ? (w * masqueDroite()) / (2 * r.width) : 0;
   /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
      du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
@@ -8761,6 +8843,7 @@ function suitPince(){
   const r = cadrePlan();
   // le pincement change l'échelle : mêmes économies que la molette
   figeTextes();
+  plieLaBarre(true);
   const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -8790,7 +8873,34 @@ function suitPince(){
  * qui parle de « cursor » ferait le même travail, sans qu'on puisse choisir
  * quand.
  */
+/* La barre s'efface le temps qu'on manipule le plan.
+
+   Elle se pose par-dessus la scène sur écran étroit : glisser dessous cent
+   points de hall le temps d'un geste ne coûte donc aucune remise en page — le
+   plan ne change pas de taille, il se découvre. Elle revient dès que la main
+   lâche, et le plan n'a pas bougé d'un pixel entre-temps.
+
+   Pas au doigt posé : un appui qui ouvre un stand la ferait clignoter pour
+   rien. C'est le mouvement qui la plie — le glissement une fois passé le seuil
+   des deux points, le pincement dès la première image.
+
+   Un filet, comme pour les textes du plan : tous les chemins ne mènent pas à
+   un doigt levé — un `pointercancel` du système, une main qui sort de l'écran
+   — et la barre resterait pliée sur un plan qu'on ne manipule plus. */
+let barrePliee = false, filetBarre = null;
+function plieLaBarre(oui){
+  const b = $("bandeau");
+  if (!b || !ETROIT() || document.documentElement.classList.contains("mode-admin")) return;
+  clearTimeout(filetBarre);
+  filetBarre = oui ? setTimeout(() => plieLaBarre(false), 1200) : null;
+  if (barrePliee === oui) return;
+  barrePliee = oui;
+  b.classList.toggle("pliee", oui);
+}
+
 const saisitPlan = (tenu) => {
+  // la main lâche : la barre revient, quelle que soit la façon dont le geste finit
+  if (!tenu) plieLaBarre(false);
   if (tenu && dernierAppuiTactile) return;
   svg.style.cursor = tenu ? "grabbing" : "";
 };
@@ -8837,7 +8947,7 @@ svg.addEventListener("pointermove", e => {
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
-  if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
+  if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLaBarre(true); }
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
 /* ------------------------------------------------------------------
@@ -24694,14 +24804,14 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = cadrePlan();
-  const cache = masque(), cacheD = masqueDroite();
-  const hUtile = Math.max(60, r.height - cache);
+  const cache = masque(), cacheD = masqueDroite(), haut = masqueHaut();
+  const hUtile = Math.max(60, r.height - cache - haut);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
   const k = Math.max(w / lUtile, h / hUtile);
   view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
-           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
