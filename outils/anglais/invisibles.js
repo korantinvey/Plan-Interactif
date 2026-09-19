@@ -51,4 +51,8 @@ module.exports = [
   // l'application installée — des noms qu'Android lit, et que rien n'affiche
   ";action=android.intent.action.VIEW",
   ";category=android.intent.category.BROWSABLE;end",
+
+  // `_js.html` : le sélecteur qui reconnaît, dans l'en-tête d'un tiroir, ce qui
+  // se clique — et que la prise du tiroir doit donc laisser tranquille
+  "button,a,input,select,textarea,label,[role=tab]",
 ];

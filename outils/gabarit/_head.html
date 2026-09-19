@@ -3926,8 +3926,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .puce-crit{padding:8px 12px}
   .grp-crit > summary{padding:13px 2px}
 
-  .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
+  /* La cible du pouce, et non la barre qu'il vise : celle-ci fait quatre
+     pixels de haut, la prise en faisait vingt, et le doigt en demande
+     davantage. Elle prend donc huit pixels de la marge haute de la recherche,
+     qui les lui cède — la barre ne bouge pas d'un pixel, l'écart non plus,
+     seul l'appui porte plus loin. Par de la marge et non par un débord : ce
+     qui suit se peint par-dessus, et lui reprendrait ces huit pixels au
+     moment de désigner qui reçoit l'appui.
+
+     Les trois autres tiroirs se prennent en outre par leur en-tête, ce que la
+     liste ne peut pas offrir : on n'attrape pas un champ de recherche. */
+  .poignee{display:block;width:100%;padding:10px 0 14px;background:transparent;
     touch-action:none;cursor:grab}
+  .side .search{padding-top:6px}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
     border-radius:999px;background:var(--line-strong)}
 
@@ -4004,8 +4015,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      s'écrasait au profit d'un corps qu'on ne voit plus. */
   .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
   /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
-     qu'elle surmonte porte déjà sa propre marge. */
+     qu'elle surmonte porte déjà sa propre marge — et se saisit avec elle, ce
+     qui lui donne la hauteur que la pastille n'a pas. */
   .detail > .poignee{padding:9px 0 3px}
+  /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
+     sans quoi le navigateur voit un déplacement de page dans le geste. */
+  :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}

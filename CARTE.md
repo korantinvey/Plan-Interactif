@@ -319,7 +319,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4907 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4922 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -444,7 +444,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4556 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4645 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.509 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -454,8 +454,9 @@ Fonctions :
 - l.2040 · 6. Vue
 - l.2423 · 7. Sélection et fiche
 - l.3766 · 8. Interactions du plan
-- l.4159 · Le tiroir de la liste — écrans étroits
-- l.4372 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4159 · Ce que les tiroirs lisent d'un geste
+- l.4205 · Le tiroir de la liste — écrans étroits
+- l.4427 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -495,8 +496,9 @@ Fonctions :
 `societes` 3234 · `choisitExposant` 3245 · `poseMarque` 3283 · `montreMarque` 3343
 `poseCode` 3366 · `rangeMarque` 3407 · `ouvre` 3470 · `ferme` 3738 · `onglet` 3756
 `milieu` 3786 · `commencePince` 3792 · `suitPince` 3806 · `saisitPlan` 3840
-`cibleElargie` 3920 · `planifieFiltre` 4115 · `retraitBas` 4182 · `mesureTiroir` 4196
-`montreTiroir` 4199 · `hisseTiroir` 4203 · `tiroirCrante` 4399
+`cibleElargie` 3920 · `planifieFiltre` 4115 · `traceurDeGeste` 4183 · `cranVoisin` 4202
+`retraitBas` 4228 · `mesureTiroir` 4242 · `montreTiroir` 4245 · `hisseTiroir` 4249
+`tiroirCrante` 4454
 
 Éléments :
 
