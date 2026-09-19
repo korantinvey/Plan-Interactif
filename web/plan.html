@@ -6250,6 +6250,65 @@ function poseTonDeLaBarre(){
   });
 }
 
+/* ------------------------------------------------------------
+   Le relevé de l'appareil — temporaire
+
+   Ce qu'un téléphone fait de son encoche et de ses barres ne se reproduit sur
+   aucun écran de bureau : le navigateur y annonce des retraits nuls, et toute
+   hypothèse sur ce qui se passe à l'autre bout se vérifie au jugé. Le relevé
+   se prend donc là où la question se pose — un appui long sur le nom du salon,
+   un écran de valeurs, une capture, et la correction se décide sur des
+   chiffres.
+
+   À retirer dès la réponse obtenue : ce bloc n'a rien à faire dans un plan de
+   salon une fois la géométrie comprise.
+   ------------------------------------------------------------ */
+(function releveAppareil(){
+  const nom = $("titre");
+  if (!nom) return;
+  /* Les retraits ne se lisent qu'en les posant : `env()` appartient au moteur
+     de style, et rien de `window` ne les donne. */
+  const retrait = (cote) => {
+    const sonde = document.createElement("i");
+    sonde.style.cssText = "position:fixed;left:0;top:0;width:0;height:env(safe-area-inset-" +
+      cote + ",0px)";
+    document.body.appendChild(sonde);
+    const v = Math.round(sonde.getBoundingClientRect().height);
+    sonde.remove();
+    return v;
+  };
+  const mode = () => ["fullscreen", "standalone", "minimal-ui", "browser"]
+    .find(m => matchMedia("(display-mode: " + m + ")").matches) || "?";
+
+  function montre(){
+    const vv = window.visualViewport;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const b = $("bandeau").getBoundingClientRect();
+    const lignes = [
+      "mode " + mode(),
+      "ecran " + screen.width + "x" + screen.height + " dpr " + devicePixelRatio,
+      "fenetre " + innerWidth + "x" + innerHeight,
+      "visuel " + (vv ? Math.round(vv.width) + "x" + Math.round(vv.height) +
+        " y" + Math.round(vv.offsetTop) : "-"),
+      "retraits h" + retrait("top") + " b" + retrait("bottom") +
+        " g" + retrait("left") + " d" + retrait("right"),
+      "bandeau y" + Math.round(b.top) + " h" + Math.round(b.height),
+      "barre " + (meta ? meta.content : "-"),
+    ];
+    const boite = document.createElement("pre");
+    boite.style.cssText = "position:fixed;inset:0;z-index:999;margin:0;padding:16px;" +
+      "background:#fff;color:#000;font:13px/1.8 monospace;white-space:pre-wrap";
+    boite.textContent = lignes.join("\n");
+    boite.onclick = () => boite.remove();
+    document.body.appendChild(boite);
+  }
+
+  let compte = 0;
+  nom.addEventListener("pointerdown", () => { compte = setTimeout(montre, 800); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(quoi =>
+    nom.addEventListener(quoi, () => clearTimeout(compte)));
+})();
+
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu
    ============================================================ */
