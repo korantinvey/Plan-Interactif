@@ -72,6 +72,19 @@ module.exports = {
     "Your day could not be worked out on this device. Your visit plan is untouched.",
   /* — La visite sur plusieurs jours : le choix des jours, la répartition, et
        le déplacement d'un exposant de l'un à l'autre — */
+  /* — Le curseur de répartition, et son aperçu — */
+  "Répartition entre vos journées": "How to spread it across your days",
+  "premiers jours": "first days",
+  "derniers jours": "last days",
+  "Les premiers jours plus chargés": "Fuller at the start",
+  "Les derniers jours plus chargés": "Fuller at the end",
+  "Des journées également chargées": "Evenly loaded days",
+  "rien ce jour-là": "nothing that day",
+  "{n} exposants n'entrent dans aucune de ces journées.":
+    "{n} exhibitors fit into none of these days.",
+  "Un exposant n'entre dans aucune de ces journées.":
+    "One exhibitor fits into none of these days.",
+
   "Ma visite": "My visit",
   "Organiser ma visite": "Plan my visit",
   "{n} journée": "{n} day",
@@ -79,8 +92,8 @@ module.exports = {
   "Changer mes jours et mon heure": "Change my days and time",
   "Vos jours de visite": "The days you are coming",
   "Heure d'arrivée, chaque jour": "Arrival time, each day",
-  "On place d'abord les conférences que vous avez retenues — elles ont lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos journées, de façon qu'elles fassent marcher autant l'une que l'autre.":
-    "The conferences you picked go in first — each on the day it takes place — then the stands are shared out between your days, so that each one means about as much walking as the next.",
+  "On place d'abord les conférences que vous avez retenues — elles ont lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos journées. Le curseur, plus bas, dit si elles doivent se valoir ou non.":
+    "The conferences you picked go in first — each on the day it takes place — then the stands are shared out between your days. The slider below says whether those days should match one another or not.",
   "Les horaires changent d'un jour à l'autre : chaque journée commence à l'ouverture de son jour.":
     "Opening hours differ from day to day: each day starts when the show opens that day.",
   "Il ne reste que le {jour} : c'est cette journée qu'on organise.":

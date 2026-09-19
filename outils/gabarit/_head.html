@@ -2562,6 +2562,40 @@ button.expo:hover{background:var(--line)}
 .jForm .jCase:hover{background:var(--surface-2)}
 .jForm .jCase input{width:17px;height:17px;flex:none;padding:0;accent-color:var(--accent)}
 
+/* Le curseur de répartition, et ce qu'il donne à voir.
+
+   Un champ « range » n'est pas une boîte de saisie : la règle qui encadre les
+   champs du formulaire lui poserait un fond et une bordure autour de sa glissière.
+   On la défait ici, et on lui laisse une hauteur de pouce. */
+.jPente{display:flex;flex-direction:column;gap:4px}
+.jForm .jPente input[type="range"]{width:100%;height:26px;margin:0;padding:0;
+  background:none;border:none;border-radius:0;accent-color:var(--accent);cursor:pointer}
+/* Un seul jour retenu n'a rien à répartir : le bloc s'éteint sans disparaître,
+   pour que cocher un second jour le rallume là où on l'avait vu. */
+.jPente.eteint{opacity:.45}
+.jPente.eteint input[type="range"]{cursor:default}
+.jBornes{display:flex;justify-content:space-between;gap:10px;
+  font-size:11px;color:var(--ink-3)}
+.jPenteDit{margin:2px 0 0;font-size:12.5px;color:var(--ink-2);text-align:center}
+
+/* L'aperçu : une ligne par journée, le jour à gauche et ce qu'il porte à
+   droite. Pendant le recalcul il pâlit au lieu de se vider — un tableau qui
+   clignote à chaque cran du curseur se lit moins bien qu'un tableau en retard
+   d'un dixième de seconde. */
+.jApercu{display:flex;flex-direction:column;padding:8px 11px;
+  background:var(--surface-2);border-radius:var(--radius)}
+.jApercu[hidden]{display:none}
+.jApercu.calcul{opacity:.5}
+.jApercuRang{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:4px 0;font-size:12.5px}
+.jApercuRang + .jApercuRang{border-top:1px solid var(--line)}
+/* Un nom de jour ne passe pas à la ligne sous le compte : sur un écran étroit
+   il se coupe, et le compte reste lisible — c'est lui qui bouge. */
+.jApercuRang .j{min-width:0;color:var(--ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jApercuRang .n{flex:none;font-size:11.5px;color:var(--ink-3);text-align:right}
+.jApercuReste{margin:6px 0 0;font-size:11.5px;color:var(--ink-3);line-height:1.45}
+
 /* La feuille qui demande vers quel jour déplacer un exposant.
 
    Un jour par bouton, pleine largeur : sur un téléphone, c'est la seule forme

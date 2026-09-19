@@ -72,10 +72,19 @@ const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
  */
 const EQUILIBRE = 4;
 
-/* L'heure d'arrivée et les jours retenus, d'une visite à l'autre : celui qui
-   vient deux jours de suite vient rarement à deux heures différentes, et celui
-   qui rouvre le plan le soir venu reprend la visite qu'il préparait. */
+/* L'heure d'arrivée et la répartition voulue, d'une visite à l'autre : celui
+   qui vient deux jours de suite vient rarement à deux heures différentes, et
+   celui qui charge ses premiers jours a ses raisons — un train, un stand à
+   tenir — qui ne changent pas d'un soir à l'autre. */
 const CLE_ARRIVEE = "plan-journee-arrivee";
+const CLE_PENTE = "plan-journee-pente";
+
+/* Le temps d'immobilité du curseur au bout duquel l'aperçu se refait. Un
+   curseur envoie une rafale d'événements pendant qu'on le fait glisser, et
+   chacun demanderait une répartition entière : on laisse passer la rafale, et
+   l'on compte quand la main s'arrête. Deux dixièmes de seconde — le même repos
+   que le nuancier des calques, et pour la même raison. */
+const REPOS_APERCU = 180;
 
 let SEJOUR = null;       // tous les jours calculés, et ce qui n'entre dans aucun
 let JOURNEE = null;      // celui qu'on regarde — un élément de `SEJOUR.jours`
@@ -383,10 +392,41 @@ function matriceJournee(pts, pmr){
  * d'avant. Une visite d'un jour ne paie rien pour une mécanique qui ne la
  * concerne pas.
  */
-function ecartDesJours(charges){
-  let somme = 0, carres = 0;
-  for (const m of charges){ somme += m; carres += m * m; }
-  return somme > 0 ? carres / somme - somme / charges.length : 0;
+function ecartDesJours(charges, poids){
+  let somme = 0, pesee = 0, rapportes = 0;
+  for (let i = 0; i < charges.length; i++){
+    const w = poids && poids[i] > 0 ? poids[i] : 1;
+    somme += charges[i];
+    pesee += w;
+    rapportes += charges[i] * charges[i] / w;
+  }
+  return somme > 0 ? rapportes / somme - somme / pesee : 0;
+}
+
+/**
+ * Ce que chaque jour doit porter, les uns par rapport aux autres.
+ *
+ * « Égaux » n'est pas toujours ce qu'on veut. On arrive le premier jour avec
+ * de l'élan et l'envie d'avancer, et le dernier se finit souvent par un train
+ * à prendre ; à l'inverse, un visiteur qui n'arrive qu'à midi le premier jour
+ * préfère charger les suivants. Un curseur dit lequel, et se lit ici en un
+ * poids par jour : le calcul vise alors des charges proportionnelles à ces
+ * poids plutôt qu'égales, ce qui est la même chose quand ils valent tous un.
+ *
+ * L'amplitude est bornée, et ce n'est pas de la timidité : à poids nul, un
+ * jour retenu se viderait entièrement — or le visiteur a dit qu'il venait ce
+ * jour-là, et un programme vide n'est pas une réponse. Du simple au quadruple
+ * entre le premier et le dernier est déjà une pente franche.
+ */
+const PENTE_MAX = 0.6;
+/* La pente va de -1 à +1, dans le sens où on la fait glisser : à gauche, les
+   premiers jours portent plus ; à droite, les derniers. Le signe suit donc le
+   curseur, et non l'intuition arithmétique — c'est le curseur qu'on lit. */
+function poidsDesJours(n, pente){
+  const l = [];
+  for (let i = 0; i < n; i++)
+    l.push(n > 1 ? 1 - (pente || 0) * PENTE_MAX * (1 - 2 * i / (n - 1)) : 1);
+  return l;
 }
 
 /**
@@ -481,6 +521,8 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    * stand posé — poser puis défaire pour comparer coûterait un ordre de
    * grandeur de plus.
    */
+  /* La répartition visée : celle que le curseur a dite, ou l'égalité. */
+  const poids = jours.map(j => j.poids > 0 ? j.poids : 1);
   const total = (sauf, m, cout, n) => {
     const charges = [];
     let t = 0;
@@ -488,7 +530,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
       charges.push(chargeDuJour(j === sauf ? m : j.m, j === sauf ? n : j.n, visiteEnMetres));
       t += j === sauf ? cout : j.cout;
     }
-    return t + EQUILIBRE * ecartDesJours(charges);
+    return t + EQUILIBRE * ecartDesJours(charges, poids);
   };
 
   /* Ce qu'insérer un stand à une place ajoute au créneau : deux distances
@@ -802,11 +844,14 @@ function derouleJournee(j, ctx){
 }
 
 /**
- * Ce que le visiteur a demandé : des jours de venue, une heure d'arrivée, un
- * point de départ. Ce qu'on lui rend : un déroulé par jour, un tracé par jour,
- * et la liste franche de ce qui n'a trouvé sa place nulle part.
+ * Répartir, sans encore dérouler.
+ *
+ * C'est la moitié coûteuse du calcul — la matrice et le rangement — et c'est
+ * aussi la seule dont l'aperçu du curseur a besoin : pour dire combien chaque
+ * jour porte, il n'est pas utile de tracer les trajets ni d'écrire les heures.
+ * Les deux chemins passent donc par ici, et le second continue seul.
  */
-function calculeSejour(choix, fige){
+function prepareSejour(choix, fige){
   const pmr = ITI.pmr;
   const tv = minutesVisite();
   const allure = pmr ? ALLURE_PMR : ALLURE;
@@ -833,12 +878,13 @@ function calculeSejour(choix, fige){
      fermeture borne le dernier créneau comme une conférence borne les autres.
      Un salon change d'horaires d'un jour à l'autre — le dernier ferme plus
      tôt —, et c'est bien par jour que la question se pose. */
-  const jours = choix.jours.map(x => {
+  const poids = poidsDesJours(choix.jours.length, choix.pente);
+  const jours = choix.jours.map((x, i) => {
     const h = horairesSalon(x.cle);
     const avantOuverture = h.ouverture !== null && choix.arrivee < h.ouverture;
     return {
       cle: x.cle, nom: x.nom, court: x.court || jourBref(x.cle),
-      ouverture: h.ouverture, fermeture: h.fermeture,
+      ouverture: h.ouverture, fermeture: h.fermeture, poids: poids[i],
       demandee: choix.arrivee, avantOuverture: avantOuverture,
       arrivee: avantOuverture ? h.ouverture : choix.arrivee,
       rdv: [], creneaux: [], passees: [], chevauchent: [],
@@ -942,12 +988,25 @@ function calculeSejour(choix, fige){
   const restants = iStands.slice();
   rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe);
 
-  const ctx = { PTS: PTS, dist: dist, enMinutes: enMinutes, tv: tv, pmr: pmr,
-                depart: choix.depart, iDepart: iDepart, restants: restants };
+  return { choix: choix, jours: jours, PTS: PTS, dist: dist, enMinutes: enMinutes,
+           tv: tv, pmr: pmr, iDepart: iDepart, restants: restants,
+           imposeChoisi: imposeChoisi, horsJour: horsJour, sansLieu: sansLieu };
+}
+
+/**
+ * Ce que le visiteur a demandé : des jours de venue, une heure d'arrivée, un
+ * point de départ. Ce qu'on lui rend : un déroulé par jour, un tracé par jour,
+ * et la liste franche de ce qui n'a trouvé sa place nulle part.
+ */
+function calculeSejour(choix, fige){
+  const p = prepareSejour(choix, fige);
+  const jours = p.jours, PTS = p.PTS, restants = p.restants;
+  const ctx = { PTS: PTS, dist: p.dist, enMinutes: p.enMinutes, tv: p.tv, pmr: p.pmr,
+                depart: choix.depart, iDepart: p.iDepart, restants: restants };
   jours.forEach(j => derouleJournee(j, ctx));
 
   return {
-    choix: choix, jours: jours, pmr: pmr, tv: tv,
+    choix: choix, jours: jours, pmr: p.pmr, tv: p.tv,
     depart: choix.depart, arrivee: choix.arrivee,
     m: jours.reduce((a, j) => a + j.m, 0),
     /* Ce qui n'entre dans aucun jour appartient au séjour, non à l'un d'eux :
@@ -957,11 +1016,30 @@ function calculeSejour(choix, fige){
     /* Ce qui n'a pas tenu là où le visiteur l'avait mis se dit à part. Ce qui
        n'a pas tenu là où il était resté figé, non : il n'a rien demandé, et
        la liste générale suffit. */
-    refuses: restants.filter(i => imposeChoisi(i))
+    refuses: restants.filter(i => p.imposeChoisi(i))
       .map(i => parId.get(PTS[i].id)).filter(Boolean),
     /* La visite telle qu'elle est, pour la retouche suivante. */
     assignation: new Map(jours.flatMap(j => [...j.ids].map(id => [id, j.cle]))),
-    horsJour: horsJour, sansLieu: sansLieu,
+    horsJour: p.horsJour, sansLieu: p.sansLieu,
+  };
+}
+
+/**
+ * Ce que porterait chaque jour, sans rien calculer de plus.
+ *
+ * L'aperçu du curseur : le nombre de conférences et d'exposants par journée,
+ * et ce qui n'entre nulle part. On s'arrête juste après la répartition — le
+ * déroulé, les tracés et les heures coûtent le plus cher et ne diraient rien
+ * de neuf à quelqu'un qui fait glisser un curseur.
+ */
+function apercuRepartition(choix){
+  const p = prepareSejour(choix, null);
+  return {
+    jours: p.jours.map(j => ({
+      cle: j.cle, nom: j.nom, court: j.court, confs: j.rdv.length,
+      stands: j.creneaux.reduce((a, c) => a + c.stands.length, 0),
+    })),
+    restants: p.restants.length,
   };
 }
 
@@ -1383,6 +1461,40 @@ function remplitJournee(){
     "ni des files ni des pauses.");
 }
 
+/**
+ * L'aperçu de la répartition, écrit sous le curseur.
+ *
+ * Un jour par ligne, et ce qu'il porte en toutes lettres. C'est le seul retour
+ * possible à un curseur qui ne déplace rien à l'écran : sans lui, on le fait
+ * glisser sans savoir ce qu'on change. Les conférences y figurent avec les
+ * exposants bien qu'elles ne bougent pas — c'est justement ce qui explique
+ * qu'un jour reste chargé quand on le décharge.
+ */
+function ecritApercu(hote, r){
+  hote.innerHTML = "";
+  r.jours.forEach(j => {
+    const d = document.createElement("div");
+    d.className = "jApercuRang";
+    d.innerHTML = '<span class="j"></span><span class="n"></span>';
+    d.querySelector(".j").textContent = j.nom;
+    /* Le même compte qu'ailleurs, et dans les mêmes mots : « 7 exposants et
+       1 conférence ». Un jour vide se dit, il ne se laisse pas en blanc. */
+    d.querySelector(".n").textContent =
+      contenuParcours(j.stands, j.confs) || "rien ce jour-là";
+    hote.appendChild(d);
+  });
+  /* Ce qui n'entre nulle part appartient au réglage autant qu'aux journées :
+     c'est en chargeant trop un seul jour qu'on le fait apparaître. */
+  if (r.restants){
+    const p = document.createElement("p");
+    p.className = "jApercuReste";
+    p.textContent = r.restants > 1
+      ? r.restants + " exposants n'entrent dans aucune de ces journées."
+      : "Un exposant n'entre dans aucune de ces journées.";
+    hote.appendChild(p);
+  }
+}
+
 /* ------------------------------------------------------------
    Les deux vues du tiroir
    ------------------------------------------------------------ */
@@ -1479,6 +1591,12 @@ function oublieSejour(){
    La question posée avant le calcul
    ------------------------------------------------------------ */
 function ouvreOrganisation(){
+  /* La matrice gardée l'est pour les retouches, pas pour les demandes : un
+     plan dont les cloisons ont bougé entre-temps doit se rebalayer, et c'est
+     ici qu'on peut se le permettre. Ici, et non au moment d'organiser : entre
+     les deux, l'aperçu du curseur l'aura bâtie, et la jeter reviendrait à
+     refaire ce qu'on vient de faire sous les yeux du visiteur. */
+  MATRICE = null;
   const tous = joursSalon();
   const dispo = joursAVenir();
   /* Sans date connue, on organise une journée sans nom : c'était le cas avant
@@ -1496,8 +1614,12 @@ function ouvreOrganisation(){
     return;
   }
 
-  let arrivee = "09:00";
+  let arrivee = "09:00", pente = 0;
   try { arrivee = localStorage.getItem(CLE_ARRIVEE) || arrivee; } catch (e) {}
+  try {
+    const v = parseFloat(localStorage.getItem(CLE_PENTE));
+    if (isFinite(v)) pente = Math.max(-1, Math.min(1, v));
+  } catch (e) {}
   const departs = departsProposes();
   /* Les jours déjà retenus se reprennent tels quels : on rouvre souvent cette
      fenêtre pour changer l'heure, non les jours. */
@@ -1511,12 +1633,30 @@ function ouvreOrganisation(){
      qu'une réponse, et la poser ferait croire qu'il y en a d'autres. */
   const departImpose = departs.length === 1 ? departs[0] : null;
 
+  /* Ce que la fenêtre dit à l'instant. L'aperçu et le calcul le lisent au même
+     endroit : deux lectures séparées finiraient par diverger, et l'aperçu
+     montrerait alors une visite que le bouton ne rendrait pas. */
+  const choixCourant = () => {
+    // une heure illisible vaut mieux corrigée que refusée : le champ natif
+    // ne rend rien sur les navigateurs qui l'ignorent
+    const v = /^(\d{1,2}):(\d{2})$/.exec((champHeure && champHeure.value) || "");
+    /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
+       choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
+    const d = champDepart ? champDepart.value : null;
+    return {
+      arrivee: v ? Math.min(1439, +v[1] * 60 + +v[2]) : 9 * 60,
+      jours: proposables.filter(j => coches.has(j.cle)),
+      depart: d === null ? departImpose : d === "" ? null : departs[+d],
+      pente: pente,
+    };
+  };
+
   ouvreModale(proposables.length > 1 ? "Organiser ma visite" : "Organiser ma journée", corps => {
     const p = document.createElement("p");
     p.textContent = proposables.length > 1
       ? "On place d'abord les conférences que vous avez retenues — elles ont " +
         "lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos " +
-        "journées, de façon qu'elles fassent marcher autant l'une que l'autre."
+        "journées. Le curseur, plus bas, dit si elles doivent se valoir ou non."
       : "On place d'abord les conférences que vous avez retenues — elles ne se " +
         "déplacent pas — puis on glisse les stands entre elles, dans l'ordre qui " +
         "fait le moins de chemin.";
@@ -1549,7 +1689,7 @@ function ouvreOrganisation(){
       return champ;
     };
 
-    let majHeures = () => {};
+    let majHeures = () => {}, poseApercu = () => {};
 
     /**
      * Les jours de venue.
@@ -1572,6 +1712,7 @@ function ouvreOrganisation(){
           if (c.checked) coches.add(j.cle); else coches.delete(j.cle);
           majHeures();
           majValide();
+          poseApercu();
         };
         const s = document.createElement("span");
         s.textContent = j.nom;
@@ -1585,6 +1726,10 @@ function ouvreOrganisation(){
     champHeure = document.createElement("input");
     champHeure.type = "time";
     champHeure.value = arrivee;
+    /* L'heure change ce que chaque jour peut tenir : arriver à seize heures
+       vide les journées autant qu'un curseur poussé à fond. L'aperçu la suit
+       donc, comme il suit le reste. */
+    champHeure.oninput = () => poseApercu();
     bloc(proposables.length > 1 ? "Heure d'arrivée, chaque jour" : "Heure d'arrivée", champHeure);
     const heures = document.createElement("span");
     heures.className = "jHeures";
@@ -1645,6 +1790,7 @@ function ouvreOrganisation(){
         if (i === 0) o.selected = true;
         champDepart.appendChild(o);
       });
+      champDepart.onchange = () => poseApercu();
       bloc("Par où vous entrez", champDepart);
     } else if (departImpose){
       /* On dit quand même d'où l'on part : le visiteur retrouve le premier
@@ -1667,25 +1813,100 @@ function ouvreOrganisation(){
       form.appendChild(n);
     }
 
+    /**
+     * Le curseur, et ce qu'il donne à voir.
+     *
+     * « Des journées égales » n'est un bon réglage que pour qui a trois jours
+     * semblables devant lui. Le visiteur qui repart par le train de seize
+     * heures veut son gros jour en premier ; celui qui n'arrive que le soir du
+     * premier jour veut l'inverse. Le curseur dit lequel, et rien de plus : il
+     * ne promet pas un nombre de stands, il incline une répartition.
+     *
+     * Dessous, ce que chaque journée porterait, recalculé à mesure. C'est le
+     * seul retour possible — le curseur ne déplace rien à l'écran, et sans ce
+     * compte on le ferait glisser sans savoir ce qu'on change. Le calcul est
+     * celui de la vraie répartition, arrêté juste avant les trajets et les
+     * heures : ce qu'annonce l'aperçu est ce que « Organiser » rendra.
+     */
+    if (proposables.length > 1){
+      const g = document.createElement("div");
+      g.className = "jPente";
+      const champPente = document.createElement("input");
+      champPente.type = "range";
+      champPente.min = "-100";
+      champPente.max = "100";
+      champPente.step = "5";
+      champPente.value = String(Math.round(pente * 100));
+      champPente.setAttribute("aria-label", "Répartition entre vos journées");
+      const bornes = document.createElement("div");
+      bornes.className = "jBornes";
+      bornes.innerHTML = "<span></span><span></span>";
+      bornes.firstChild.textContent = "premiers jours";
+      bornes.lastChild.textContent = "derniers jours";
+      const dit = document.createElement("p");
+      dit.className = "jPenteDit";
+      g.appendChild(champPente);
+      g.appendChild(bornes);
+      g.appendChild(dit);
+      blocLibre("Répartition entre vos journées", g);
+
+      const apercu = document.createElement("div");
+      apercu.className = "jApercu";
+      form.appendChild(apercu);
+
+      /* Le milieu du curseur n'est pas une position parmi d'autres : c'est le
+         réglage par défaut, et il se nomme pour qu'on sache qu'on y est. */
+      const nommePente = () => {
+        dit.textContent = pente < -0.15 ? "Les premiers jours plus chargés"
+                        : pente > 0.15 ? "Les derniers jours plus chargés"
+                        : "Des journées également chargées";
+      };
+
+      let minuteur = null;
+      poseApercu = () => {
+        const pris = proposables.filter(j => coches.has(j.cle));
+        /* Un seul jour retenu n'a rien à répartir : le curseur s'éteint plutôt
+           que de promettre un réglage sans effet. */
+        const reglable = pris.length > 1;
+        g.classList.toggle("eteint", !reglable);
+        champPente.disabled = !reglable;
+        apercu.hidden = !pris.length;
+        if (!pris.length) return;
+        if (!apercu.children.length){
+          const a = document.createElement("p");
+          a.className = "jApercuReste";
+          a.textContent = "calcul…";
+          apercu.appendChild(a);
+        }
+        apercu.classList.add("calcul");
+        clearTimeout(minuteur);
+        minuteur = setTimeout(() => {
+          let r = null;
+          /* Une répartition qui n'aboutit pas ne se raconte pas ici : le
+             bouton, lui, le dira comme il faut. L'aperçu se tait. */
+          try { r = apercuRepartition(choixCourant()); } catch (e) { apercu.hidden = true; return; }
+          ecritApercu(apercu, r);
+          apercu.classList.remove("calcul");
+        }, REPOS_APERCU);
+      };
+
+      champPente.oninput = () => {
+        pente = (+champPente.value || 0) / 100;
+        nommePente();
+        poseApercu();
+      };
+      nommePente();
+    }
+
     corps.appendChild(form);
+    poseApercu();
   }, [
     { libelle: "Annuler" },
     { libelle: "Organiser", action: () => {
-      const v = /^(\d{1,2}):(\d{2})$/.exec(champHeure.value || "");
-      // une heure illisible vaut mieux corrigée que refusée : le champ natif
-      // ne rend rien sur les navigateurs qui l'ignorent
-      const min = v ? Math.min(1439, +v[1] * 60 + +v[2]) : 9 * 60;
-      try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(min).replace("h", ":")); } catch (e) {}
-      /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
-         choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
-      const choix = champDepart ? champDepart.value : null;
-      const depart = choix === null ? departImpose
-                   : choix === "" ? null : departs[+choix];
-      lanceSejour({
-        arrivee: min,
-        jours: proposables.filter(j => coches.has(j.cle)),
-        depart: depart,
-      });
+      const choix = choixCourant();
+      try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(choix.arrivee).replace("h", ":")); } catch (e) {}
+      try { localStorage.setItem(CLE_PENTE, String(choix.pente)); } catch (e) {}
+      lanceSejour(choix);
     } },
   ]);
 
@@ -1734,10 +1955,6 @@ function lanceSejour(choix){
   vueJournee = true;
   SEJOUR = null;
   JOURNEE = null;
-  /* La matrice gardée l'est pour les retouches, pas pour les demandes : un
-     plan dont les cloisons ont bougé entre-temps doit se rebalayer, et c'est
-     ici qu'on peut se le permettre. */
-  MATRICE = null;
   $("pCorps").hidden = $("pPied").hidden = $("pActs").hidden = true;
   $("jJours").hidden = true;
   $("jCorps").hidden = $("jPied").hidden = false;
