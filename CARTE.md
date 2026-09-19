@@ -319,7 +319,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4905 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4922 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -382,7 +382,7 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 848 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 905 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
@@ -396,8 +396,9 @@ Fonctions :
 `refuseRappel` 368 · `relanceInvitation` 386 · `gesteInstallation` 391 · `doigtPose` 395
 `doigtLeve` 396 · `vueInstallation` 399 · `accueilleInvitation` 408
 `invitationRetenue` 434 · `finInvitation` 452 · `essaieInvitation` 476
-`teteInvitation` 603 · `retourAuxReglages` 624 · `remplitInvitation` 632
-`ouvreInvitation` 662 · `ouvreRappel` 732 · `ouvreRetrouve` 788 · `caseInstallation` 811
+`teteInvitation` 603 · `retourAuxReglages` 624 · `poseGardeInstallation` 651
+`remplitInvitation` 674 · `ouvreInvitation` 704 · `ouvreRappel` 783 · `ouvreRetrouve` 845
+`caseInstallation` 868
 
 ### `_itineraire.html` — 3045 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -552,23 +553,24 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 556 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 702 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
 Fonctions :
 
-`cleParcours` 21 · `casierParcours` 24 · `dansParcours` 25 · `chargeParcours` 27
-`enregistreParcours` 49 · `basculeParcours` 66 · `verseAuParcours` 107
-`plurielParcours` 125 · `contenuParcours` 134 · `retenusPourParcours` 160
-`ajouteToutAuParcours` 185 · `poseToutAuParcours` 208 · `signetParcours` 234
-`boutonParcours` 240 · `rafraichitMarque` 245 · `brancheParcours` 258 · `calqueMarques` 290
-`dessineMarques` 306 · `marqueParcours` 336 · `rafraichitParcours` 350 · `instantConf` 378
-`cleTemps` 382 · `jourCourt` 388 · `nomDeStand` 395 · `rangParcours` 397
-`groupeParcours` 413 · `remplitParcours` 422 · `ouvreParcours` 501 · `fermeParcours` 513
-`videLeParcours` 529
+`cleParcours` 63 · `casierParcours` 66 · `dansParcours` 67 · `jourParcours` 70
+`attenduDepuisTropLongtemps` 75 · `trieParcours` 86 · `chargeParcours` 96
+`parcoursAEcrire` 126 · `enregistreParcours` 140 · `tientLeStockage` 169
+`basculeParcours` 190 · `verseAuParcours` 234 · `plurielParcours` 256
+`contenuParcours` 265 · `retenusPourParcours` 291 · `ajouteToutAuParcours` 316
+`poseToutAuParcours` 339 · `signetParcours` 365 · `boutonParcours` 371
+`rafraichitMarque` 376 · `brancheParcours` 389 · `calqueMarques` 421 · `dessineMarques` 437
+`marqueParcours` 467 · `rafraichitParcours` 481 · `instantConf` 509 · `cleTemps` 513
+`jourCourt` 519 · `nomDeStand` 526 · `rangParcours` 528 · `groupeParcours` 544
+`remplitParcours` 553 · `ouvreParcours` 642 · `fermeParcours` 654 · `videLeParcours` 670
 
-### `_partage.html` — 651 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 830 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -577,8 +579,11 @@ Fonctions :
 `codeIdParcours` 54 · `codeParcours` 72 · `champParcours` 84 · `litCodeParcours` 91
 `lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
 `qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrChemin` 407
-`qrSvg` 429 · `ouvrePartageParcours` 446 · `boutonsPartage` 495
-`accueilleParcoursPartage` 569 · `adoptePartage` 647
+`qrSvg` 429 · `ouvrePartageParcours` 446 · `boutonsPartage` 502
+`accueilleParcoursPartage` 580 · `adoptePartage` 658 · `parcoursACopier` 688
+`ouvreGardeParcours` 703 · `demandeGardeParcours` 733 · `poseGardeParcours` 746
+`cleGardeProposee` 773 · `gardeProposee` 776 · `retientGardeProposee` 784
+`fenetreGarde` 802
 
 ### `_pile.html` — 538 l. → plan-admin.html, plan-smcl.html, plan.html
 
