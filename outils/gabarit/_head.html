@@ -74,6 +74,21 @@
   --sys-gauche:env(safe-area-inset-left,0px);
   --sys-droite:env(safe-area-inset-right,0px);
 }
+/* En plein écran, il n'y a plus de barres à éviter.
+
+   La page le demande au premier geste du visiteur (`demandePleinEcran`,
+   _js.html) : l'horloge et la poignée de gestes s'effacent, et les retraits
+   qu'elles valaient n'ont plus d'objet. Le navigateur continue pourtant de les
+   annoncer, et la barre du salon garderait la place d'une horloge qui n'est
+   plus là.
+
+   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
+   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
+   plein écran ou non. En haut, elle ne rencontre qu'un aplat de couleur — la
+   barre du salon — que la caméra traverse sans rien cacher. */
+@media (display-mode: fullscreen){
+  :root{--sys-haut:0px;--sys-bas:0px}
+}
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
    sur un téléphone dont le thème sombre a été posé une fois pour toutes et

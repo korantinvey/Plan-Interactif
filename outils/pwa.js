@@ -119,6 +119,12 @@ function manifeste() {
        Le compte est vite fait : noire, cette bande ne vaut pas mieux que
        l'horloge qui l'occupait, et « standalone » rend la page à l'écran
        entier — la barre du salon s'étend derrière l'heure, comme avant.
+
+       Le plein écran n'est pas perdu pour autant : la page le demande
+       elle-même au premier geste du visiteur (`_js.html`
+       `demandePleinEcran`). La différence tient en une phrase — demandé au
+       manifeste, il fait ouvrir une fenêtre ; demandé d'ici, il ne fait que
+       masquer des barres sur une fenêtre déjà grande comme l'écran.
        Ce qui a été bâti autour tient toujours : `viewport-fit=cover` et les
        jetons `--sys-*` de `_head.html` restent ce qui fait que le plan va
        jusqu'aux bords. */
