@@ -21,8 +21,14 @@ module.exports = {
   "Salle de réunion": "Meeting room",
   "Secours": "First aid",
   "Sortie": "Exit",
+  "Transports en commun": "Public transport",
   "Vestiaire": "Cloakroom",
   "WC": "Toilets",
+  // le mode d'un arrêt, et le nom que sa ligne lui donne
+  "Bus": "Bus",
+  "Métro": "Metro",
+  "Tram": "Tram",
+  "Métro {ligne}": "Metro {ligne}",
   // ce qu'une zone est
   "Sans type": "No type",
 

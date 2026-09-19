@@ -902,6 +902,14 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Un arrêt demande deux précisions de plus — ce qui passe là, et quelle ligne
+   — puis la couleur, pour les réseaux que la table des lignes ne connaît pas.
+   Les trois ne paraissent que sous leur type : elles ne diraient rien d'un
+   vestiaire. */
+#repereTransport,#elemTransport{display:none;flex-direction:column;gap:6px}
+.outils.mode-repere.mode-transport #repereTransport{display:flex}
+#elemTransport:not([hidden]){display:flex}
+.elemChamp .cc{flex:1;height:22px;padding:2px}
 /* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
    n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
 .outils #standSoc,.outils #imageSoc{display:none}
@@ -915,8 +923,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-.dcal .repere .glyphe path{fill:var(--surface);stroke:none}
-.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
+   calque. Un arrêt que sa ligne colore la remplace : le jaune du 1 se lit en
+   noir, et c'est la pastille qui l'a calculé en se dessinant. */
+.dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
+.dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -4701,6 +4712,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
+      <div id="repereTransport">
+        <label class="elemChamp"><span>Mode</span>
+          <select id="repereMode" title="Ce qui passe à cet arrêt"></select></label>
+        <label class="elemChamp"><span>Ligne</span>
+          <input id="repereLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+            title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+        <label class="elemChamp"><span>Couleur</span>
+          <input type="color" class="cc" id="repereCouleur"
+            title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+      </div>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input id="imageSoc" list="listeSoc" spellcheck="false" autocomplete="off"
         placeholder="Exposant dont l'image ouvre la fiche — facultatif">
@@ -4714,6 +4735,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
+        <div id="elemTransport" hidden>
+          <label class="elemChamp"><span>Mode</span>
+            <select id="elemMode" title="Ce qui passe à cet arrêt"></select></label>
+          <label class="elemChamp"><span>Ligne</span>
+            <input id="elemLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+              title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+          <label class="elemChamp"><span>Couleur</span>
+            <input type="color" class="cc" id="elemCouleur"
+              title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+        </div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
           <span class="eyebrow">Passages vers d'autres plans</span>
@@ -14674,7 +14705,9 @@ function ajouteForme(f){
  * se consulte parfois sur un réseau de salon capricieux.
  *
  * Leur grille est celle de Material — 960 unités, origine en haut — d'où le
- * viewBox conservé tel quel et un <svg> imbriqué qui s'en charge.
+ * viewBox conservé tel quel et un <svg> imbriqué qui s'en charge. Chaque
+ * pictogramme porte donc la sienne, et celui qui vient d'ailleurs — le M du
+ * métro — garde celle de son recueil d'origine.
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
@@ -14699,6 +14732,22 @@ const PICTOS = {
   parking: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-720h280q100 0 170 70t70 170q0 100-70 170t-170 70H400v240H240Zm160-400h128q33 0 56.5-23.5T608-600q0-33-23.5-56.5T528-680H400v160Z\"/>" },
   distributeur: { vb: "0 -960 960 960", d: "<path d=\"M415-360v-180h-90v-60h240v60h-90v180h-60Zm-335 0v-200q0-17 11.5-28.5T120-600h120q17 0 28.5 11.5T280-560v200h-60v-60h-80v60H80Zm60-120h80v-60h-80v60Zm480 120v-200q0-17 11.5-28.5T660-600h180q17 0 28.5 11.5T880-560v200h-60v-180h-40v140h-60v-140h-40v180h-60Z\"/>" },
   reunion: { vb: "0 -960 960 960", d: "<path d=\"M120-120v-80h80v-640h400v40h160v600h80v80H680v-600h-80v600H120Zm160-640v560-560Zm160 320q17 0 28.5-11.5T480-480q0-17-11.5-28.5T440-520q-17 0-28.5 11.5T400-480q0 17 11.5 28.5T440-440ZM280-200h240v-560H280v560Z\"/>" },
+  /* Les transports en commun. Le premier sert le générique — la zone que
+     l'exploitant a dite « Transports en commun », le repère dont on n'a pas
+     précisé le mode ; les trois autres disent lequel, et c'est à cela qu'un
+     visiteur reconnaît de loin ce qui passe là.
+
+     Le métro fait exception au recueil : ce qui annonce une bouche n'est pas
+     un wagon vu de face, c'est le M dans son anneau, et c'est lui que le
+     visiteur cherche des yeux en sortant du hall. Il vient de Simple Icons,
+     qui le verse au domaine public (CC0) — sa grille est celle de ce
+     recueil-là, vingt-quatre unités, d'où un « vb » qui n'est pas celui des
+     autres. Le tram et le bus gardent les silhouettes de Material, faute
+     d'une marque équivalente : celle du bus est déjà celle des abris. */
+  transport: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-40l60-40q-59 0-99.5-40.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 59-40.5 99.5T660-200l60 40v40H240Zm0-440h200v-120H240v120Zm420 80H240h480-60Zm-140-80h200v-120H520v120ZM340-320q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320Zm-320 40h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm180-520q-86 0-142.5 10T258-760h448q-18-20-74.5-30T480-800Zm0 40h226-448 222Z\"/>" },
+  bus: { vb: "0 -960 960 960", d: "<path d=\"M240-120q-17 0-28.5-11.5T200-160v-82q-18-20-29-44.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 29-11 53.5T760-242v82q0 17-11.5 28.5T720-120h-40q-17 0-28.5-11.5T640-160v-40H320v40q0 17-11.5 28.5T280-120h-40Zm242-640h224-448 224Zm158 280H240h480-80Zm-400-80h480v-120H240v120Zm100 240q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320ZM258-760h448q-15-17-64.5-28.5T482-800q-107 0-156.5 12.5T258-760Zm62 480h320q33 0 56.5-23.5T720-360v-120H240v120q0 33 23.5 56.5T320-280Z\"/>" },
+  metro: { vb: "0 0 24 24", d: "<path d=\"M17.708 18.099c-.202.152-.44.228-.714.228-.242 0-.471-.076-.688-.228-.218-.152-.327-.373-.327-.66V9.626h-.023l-2.984 6.057a1.453 1.453 0 0 1-.385.505c-.145.112-.337.168-.578.168-.24 0-.433-.056-.577-.168a1.442 1.442 0 0 1-.385-.505L8.063 9.627H8.04v7.811a.748.748 0 0 1-.339.66 1.23 1.23 0 0 1-.7.229c-.275 0-.508-.076-.702-.228-.193-.152-.29-.373-.29-.66V6.958c0-.304.096-.589.29-.853.192-.264.537-.396 1.036-.396.37 0 .655.084.856.252.2.169.38.421.542.757l3.277 6.754h.024l3.253-6.754c.16-.336.342-.588.543-.757.2-.168.485-.252.855-.252.498 0 .844.132 1.036.396.193.265.29.55.29.854v10.478c0 .288-.101.509-.302.66zm-5.732 4.156c5.658 0 10.279-4.64 10.279-10.327 0-5.62-4.603-10.183-10.279-10.183-5.674 0-10.23 4.536-10.23 10.183 0 5.59 4.715 10.327 10.23 10.327zm0 1.745C5.495 24 0 18.48 0 11.928 0 5.315 5.34 0 11.976 0 18.613 0 24 5.34 24 11.928 24 18.577 18.6 24 11.976 24Z\"/>" },
+  tram: { vb: "0 -960 960 960", d: "<path d=\"M160-260v-380q0-97 85-127t195-33l30-60H280v-60h400v60H550l-30 60q119 3 199.5 32.5T800-640v380q0 59-40.5 99.5T660-120l60 60v20h-80l-80-80H400l-80 80h-80v-20l60-60q-59 0-99.5-40.5T160-260Zm500-140H240h480-60ZM480-240q25 0 42.5-17.5T540-300q0-25-17.5-42.5T480-360q-25 0-42.5 17.5T420-300q0 25 17.5 42.5T480-240Zm-2-440h228-450 222ZM240-480h480v-120H240v120Zm60 280h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm178-520q-134 0-172 14.5T256-680h450q-12-14-52-27t-176-13Z\"/>" },
 };
 
 /* Les libellés qui déclenchent un pictogramme. Un libellé libre reste
@@ -14749,6 +14798,15 @@ const PICTO_MOTS = {
   "salle de reunion": "reunion",
   "réunion": "reunion",
   "reunion": "reunion",
+  "transports en commun": "transport",
+  "transports": "transport",
+  "bus": "bus",
+  "arrêt de bus": "bus",
+  "arret de bus": "bus",
+  "métro": "metro",
+  "metro": "metro",
+  "tram": "tram",
+  "tramway": "tram",
 };
 
 /** Le pictogramme que suggère un libellé, s'il en existe un. */
@@ -14794,6 +14852,7 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "reunion",      nom: "Salle de réunion" },
   { v: "secours",      nom: "Secours" },
   { v: "sortie",       nom: "Sortie" },
+  { v: "transport",    nom: "Transports en commun" },
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
@@ -14802,8 +14861,13 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
    rester quelle que soit la langue de l'écran : posé depuis la version
    anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
    Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
-   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
-const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire.
+
+   Les modes de transport, plus bas, se nomment de la même façon : le
+   pictogramme d'un arrêt est celui de son mode, et c'est « Métro » qu'il faut
+   lire sous la pastille, non le type qui l'a posé. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) ||
+  MODES_TRANSPORT.find(m => m.v === v) || TYPES_REPERE[0]).nom;
 const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
@@ -14827,6 +14891,10 @@ const TYPES_ZONE = [
   { v: "conferences",  nom: "Conférences",  picto: "reunion" },
   { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
   { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+  /* Une gare routière, un parvis de tramway : ce que le salon a dessiné comme
+     une zone et qui est, pour le visiteur qui repart, la même chose qu'un
+     arrêt. Le pictogramme est le générique — une zone n'a pas de ligne. */
+  { v: "transport",    nom: "Transports en commun", picto: "transport" },
 ];
 
 /** Le type d'une zone, s'il lui en a été donné un. */
@@ -14861,6 +14929,159 @@ const estPorte     = (p) => p === "entree" || p === "entree_seule" || p === "sor
 const ouvreEntrant = (p) => p === "entree" || p === "entree_seule";
 const ouvreSortant = (p) => p === "entree" || p === "sortie";
 
+/* ------------------------------------------------------------
+   Les transports en commun
+   ------------------------------------------------------------
+   Un arrêt n'est pas un repère comme les autres : ce que le visiteur cherche
+   n'est pas « un transport », c'est sa ligne — le 12, le T3a, le 80. Le type
+   dit donc seulement qu'il s'agit d'un transport ; deux précisions le
+   complètent, et elles ne valent que pour lui.
+
+   Le mode — bus, métro, tram — décide du pictogramme : c'est celui que la
+   signalétique pose au-dessus de la bouche ou de l'abri, et celui qu'on
+   reconnaît de loin sans lire. La ligne nomme l'arrêt et lui donne sa
+   couleur : un visiteur ne cherche pas « le métro », il cherche le 12, et
+   c'est au vert du 12 qu'il le trouve.
+   ------------------------------------------------------------ */
+
+/* Les modes, dans l'ordre où on les rencontre en sortant d'un hall. La valeur
+   est aussi la clé du pictogramme : les deux ne se séparent jamais, et un
+   mode de plus n'a qu'un dessin à ajouter au recueil. */
+const MODES_TRANSPORT = [
+  { v: "bus",   nom: "Bus" },
+  /* L'initiale sert à reconnaître une ligne écrite de deux façons : « M4 » et
+     « 4 » sont la même, « T3a » et « 3a » aussi. Celle du métro est de plus
+     dans son symbole — l'anneau porte son M — et n'a donc pas à se réécrire à
+     côté ; celle du tram fait partie du nom de la ligne, que la signalétique
+     écrit « T3a », et le pictogramme ne la dit pas. */
+  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
+  { v: "tram",  nom: "Tram",  lettre: "t" },
+];
+
+const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) || {};
+const lettreMode = (mode) => modeDit(mode).lettre || "";
+
+/** Ce repère est-il un arrêt ? Le type le dit, et lui seul : un repère nommé
+ *  « Métro » d'avant les types reste ce que son libellé en a fait. */
+const estTransport = (f) => pictoForme(f) === "transport";
+
+/** Le mode d'un arrêt, s'il a été dit. */
+const modeTransport = (f) => MODES_TRANSPORT.find(m => m.v === (f && f.mode)) || null;
+
+
+/**
+ * Le pictogramme d'un repère : celui de son type, ou celui de son mode quand
+ * le type est un transport. C'est le seul endroit où les deux se rejoignent —
+ * partout ailleurs `pictoForme` dit le type, et lui seul, parce que c'est le
+ * type qui ouvre l'entrée du cartouche et qui se cherche à la frappe.
+ *
+ * Un arrêt dont personne n'a dit le mode garde le pictogramme générique : il
+ * vaut mieux un transport sans précision qu'un bus qui n'en est pas un.
+ */
+const glypheRepere = (f) => estTransport(f)
+  ? ((modeTransport(f) || {}).v || "transport") : pictoForme(f);
+
+/**
+ * Les couleurs des lignes, telles que la signalétique les porte.
+ *
+ * Une ligne n'a pas de couleur en propre : elle a celle que son réseau lui
+ * donne, et le 1 qui est jaune à Paris est bleu à Marseille. La table est donc
+ * celle d'un réseau — l'Île-de-France, où se tiennent les salons qui nous
+ * occupent — et elle ne prétend pas à davantage. Ailleurs, et pour une ligne
+ * ouverte depuis, la couleur se règle à la main : l'exploitant a la
+ * signalétique sous les yeux, ce que cette table n'aura jamais.
+ *
+ * Le bus n'y figure pas, et ce n'est pas un oubli : la signalétique ne donne
+ * pas une couleur à chaque ligne de bus, elle en donne une au réseau entier.
+ * Un arrêt de bus garde donc la couleur de son calque, à moins qu'on ne lui
+ * en pose une.
+ */
+const COULEURS_LIGNE = {
+  metro: {
+    "1": "#FFCD00", "2": "#003CA6", "3": "#837902", "3bis": "#6EC4E8",
+    "4": "#CF009E", "5": "#FF7E2E", "6": "#6ECA97", "7": "#FA9ABA",
+    "7bis": "#6ECA97", "8": "#E19BDF", "9": "#B6BD00", "10": "#C9910D",
+    "11": "#704B1C", "12": "#007852", "13": "#6EC4E8", "14": "#62259D",
+  },
+  tram: {
+    "1": "#0064B0", "2": "#CF009E", "3a": "#FF7E2E", "3b": "#00814F",
+    "4": "#FFBE00", "5": "#662483", "6": "#E3051C", "7": "#84329B",
+    "8": "#837902",
+  },
+};
+
+/* « T3a », « t 3A », « ligne 3 bis » nomment la même ligne : la clé ne garde
+   que ce qui la distingue. L'initiale du mode tombe avec les espaces et les
+   tirets — un tram appelé « T1 » est la ligne 1 de son réseau — mais jamais
+   seule, sans quoi une ligne qui ne s'appelle que « T » deviendrait un numéro
+   vide, et prendrait la couleur de la première venue. */
+function cleLigne(mode, ligne){
+  const s = String(ligne || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+    .replace(/^(?:ligne|line)/, "");
+  const i = lettreMode(mode);
+  return i && s.length > 1 && s[0] === i ? s.slice(1) : s;
+}
+
+/** Le numéro tel qu'il s'écrit à côté du symbole : « M4 » s'y lirait deux
+ *  fois, et devient « 4 ». Ce que le symbole ne dit pas reste tel que
+ *  l'exploitant l'a tapé — « T3a » garde son T, « 3 bis » son espace, qui sont
+ *  la façon dont ces lignes s'écrivent. */
+const ligneAffichee = (mode, ligne) => {
+  const s = String(ligne || "").trim();
+  const m = modeDit(mode);
+  return m.dansLeSymbole && s.length > 1 && s[0].toLowerCase() === m.lettre &&
+         /[0-9]/.test(s[1]) ? s.slice(1).trim() : s;
+};
+
+/** La couleur que la signalétique donne à cette ligne, quand on la connaît. */
+const couleurLigne = (mode, ligne) =>
+  (COULEURS_LIGNE[mode] || {})[cleLigne(mode, ligne)] || null;
+
+/** La couleur d'un arrêt : celle que l'exploitant a posée, celle de sa ligne à
+ *  défaut. Rien si les deux manquent — la pastille reprend alors la couleur de
+ *  son calque, comme tout repère. */
+const couleurRepere = (f) => !estTransport(f) ? null
+  : (trio(f.couleur) ? f.couleur : couleurLigne(f.mode, f.ligne));
+
+/** L'encre qui se lit sur une couleur : du blanc sur le vert du 12, du noir
+ *  sur le jaune du 1 — la signalétique en décide ainsi, et pour la même
+ *  raison. */
+const encreRepere = (c) => {
+  const v = trio(c);
+  return v && luminance(v) > 0.42 ? "#0E1113" : "#FFFFFF";
+};
+
+/**
+ * Le nom d'un arrêt : « Métro 12 », « Bus 80 ».
+ *
+ * En français, parce que c'est le libellé qui s'enregistre, et qu'il doit le
+ * rester quelle que soit la langue de l'écran — posé depuis la version
+ * anglaise, il ne s'appellerait pas « Metro 12 » chez les visiteurs français.
+ * Sans ligne, il ne reste que le mode, ce qui est encore quelque chose : on
+ * sait qu'un tram passe là.
+ */
+const nomLigneFr = (mode, ligne) => [
+  modeDit(mode).nom || nomTypeRepereFr("transport"),
+  String(ligne || "").trim(),
+].filter(Boolean).join(" ");
+
+/** Le libellé qu'un repère prend quand on ne lui en donne pas : le nom de son
+ *  type, ou celui de sa ligne quand c'est un arrêt — « Métro 12 » dit plus
+ *  que « Transports en commun », et c'est ce qu'on cherche à la frappe. */
+const libelleDoffice = (type, mode, ligne) => type === "transport"
+  ? nomLigneFr(mode, ligne) : (type ? nomTypeRepereFr(type) : "");
+
+/** La couleur qu'il vaut la peine d'écrire sur l'arrêt : celle qui dit quelque
+ *  chose de plus que la table des lignes et que le calque. Écrire les deux
+ *  autres les figerait — une table corrigée ne rattraperait plus rien, et un
+ *  calque repeint laisserait ses arrêts derrière lui. */
+function couleurEcrite(mode, ligne, choisie, calque){
+  const c = String(choisie || "").toLowerCase();
+  const dejaDit = [couleurLigne(mode, ligne), calque && calque.couleur]
+    .filter(Boolean).map(x => String(x).toLowerCase());
+  return c && !dejaDit.includes(c) ? choisie : "";
+}
+
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
@@ -14882,17 +15103,26 @@ function traceRepere(f){
   const dit = String(f.txt || "").trim();
   const type = pictoForme(f);
   const nom = dit || (type ? nomTypeRepere(type) : "Repère");
+  /* La couleur d'une ligne se pose sur le groupe et non sur l'aplat : la
+     pastille la prend par « currentColor », le pictogramme et le numéro
+     prennent l'encre qui se lit dessus. Sans ligne connue rien n'est posé, et
+     l'arrêt reste de la couleur de son calque comme n'importe quel repère. */
+  const fond = couleurRepere(f);
+  const teinte = fond
+    ? ' style="color:' + fond + ';--encre-poi:' + encreRepere(fond) + '"' : "";
   const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
-               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '">';
+               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
+               teinte + '>';
 
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[type];
+  const g = PICTOS[glypheRepere(f)];
   if (g){
-    /* La pastille ne porte que le pictogramme.
+    /* La pastille ne porte que le pictogramme — et le numéro de la ligne,
+     * quand c'est un arrêt.
      *
      * Le libellé s'écrivait à côté dès qu'il disait autre chose que lui —
      * « Entrée Nord » avait besoin de son nord. Mais un nom écrit à la taille
@@ -14903,13 +15133,26 @@ function traceRepere(f){
      * d'intérêt, lui, continue de les nommer tous.
      */
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+    /* Le numéro de la ligne s'écrit à côté du pictogramme, comme sur les
+       plaques : le dessin dit ce qui passe, le numéro dit lequel, et la
+       pastille s'allonge de ce qu'il mesure. Lui seul s'écrit — un arrêt
+       s'appelle « Métro 12 », et le mot « Métro » est déjà dans le dessin. */
+    const ligne = estTransport(f) ? ligneAffichee(f.mode, f.ligne) : "";
+    const corps = t * 1.1;
+    const lt = ligne ? largeur(ligne, P_NOM) * corps : 0;
+    const ecart = ligne ? cote * .12 : 0;
+    const w = cote + ecart + lt;
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (ligne ? '<text x="' + (x + cote - m + ecart + lt / 2).toFixed(2) +
+        '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
+        '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' : "") +
+      '</g>';
   }
 
   /* Sans pictogramme, le libellé est tout ce que le repère a à montrer : le
@@ -15295,7 +15538,10 @@ function cartouchePoi(){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      tout.push({ nom: f.txt.trim(), picto: pictoForme(f) || "" });
+      /* Le pictogramme est celui du mode pour un arrêt : deux pastilles
+         « Bus » et « Métro » ne se reconnaîtraient pas sous le même dessin
+         générique. La clé le suit, et la mise en avant avec elle. */
+      tout.push({ nom: f.txt.trim(), picto: glypheRepere(f) || "" });
     }
   }
   /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
@@ -15488,7 +15734,7 @@ function mesureCartouche(){
  *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
  *  sortie avec l'entrée qui porte son nom. */
 const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
-  clePoi(String(f.txt).trim(), pictoForme(f) || "") === poiChoisi);
+  clePoi(String(f.txt).trim(), glypheRepere(f) || "") === poiChoisi);
 const phareZone = (o) => {
   const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
   return Boolean(t && clePoi(t.nom, t.picto || "") === poiChoisi);
@@ -15702,13 +15948,24 @@ function dessinPointerDown(e){
   }
   if (outil === "repere"){
     const type = $("repereType").value;
+    const transport = type === "transport";
+    const mode = transport ? $("repereMode").value : "";
+    const ligne = transport ? $("repereLigne").value.trim() : "";
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
-       cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
-       rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
+       cas ordinaire d'un WC, et celui d'un arrêt que sa ligne nomme déjà.
+       Sans type ni libellé, en revanche, il n'y aurait rien à poser. */
+    const txt = $("repereTexte").value.trim() || libelleDoffice(type, mode, ligne);
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
-    ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
+    const f = { t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE };
+    if (transport){
+      f.mode = mode;
+      if (ligne) f.ligne = ligne;
+      const c = couleurEcrite(mode, ligne, $("repereCouleur").value,
+                              trouveCalque(calqueActif));
+      if (c) f.couleur = c;
+    }
+    ajouteForme(f);
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
@@ -15898,7 +16155,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
-  if (o === "repere") $("repereTexte").focus();
+  if (o === "repere") montreTransport(true);
   if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
      geste est de choisir un fichier, et le champ n'est qu'une option — au sens
@@ -15935,7 +16192,41 @@ $("renommeOutils").onclick = () => {
    ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
 $("repereType").innerHTML =
   TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
-$("repereType").onchange = () => $("repereTexte").focus();
+
+/** Les modes de transport, pour les deux listes qui les proposent — celle de
+ *  la boîte à outils et celle du panneau d'édition. */
+const optionsModes = () => MODES_TRANSPORT
+  .map(m => '<option value="' + esc(m.v) + '">' + esc(m.nom) + '</option>').join("");
+$("repereMode").innerHTML = optionsModes();
+
+/* La couleur d'une ligne connue s'impose dès que la ligne est écrite : c'est
+   celle de la signalétique, et personne n'a à la retrouver. Celle qu'on a
+   choisie à la main tient jusqu'à la prochaine ligne connue — on pose les
+   arrêts d'un réseau les uns après les autres, et redire sa couleur à chacun
+   serait une corvée. Le calque reprend la main quand ni l'une ni l'autre n'a
+   été dite. */
+let couleurALaMain = false;
+function proposeCouleurLigne(){
+  const c = couleurLigne($("repereMode").value, $("repereLigne").value);
+  if (c){ $("repereCouleur").value = c; couleurALaMain = false; return; }
+  if (couleurALaMain) return;
+  const cal = trouveCalque(calqueActif);
+  if (cal && cal.couleur) $("repereCouleur").value = cal.couleur;
+}
+
+/* Le mode et la ligne ne disent rien d'un vestiaire : ils ne paraissent que
+   sous le type qui les appelle. Et ce n'est pas le même champ qui prend la
+   suite — d'un arrêt on attend sa ligne, du reste son libellé. */
+function montreTransport(prendLaMain){
+  const on = $("repereType").value === "transport";
+  $("outils").classList.toggle("mode-transport", on);
+  if (on) proposeCouleurLigne();
+  if (prendLaMain) (on ? $("repereLigne") : $("repereTexte")).focus();
+}
+$("repereType").onchange = () => montreTransport(true);
+$("repereMode").onchange = proposeCouleurLigne;
+$("repereLigne").oninput = proposeCouleurLigne;
+$("repereCouleur").oninput = () => { couleurALaMain = true; };
 
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
@@ -15951,6 +16242,23 @@ if ($("elemFleche")) $("elemFleche").onchange = appliqueTrait;
 if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
 if ($("elemHauteur")) $("elemHauteur").oninput = () => appliqueDimension("h");
 $("elemPicto").onchange = appliquePicto;
+/* Le mode et la ligne d'un arrêt se reprennent comme son type, et dans le même
+   panneau : on juge une pastille sur le plan, pas dans une liste. */
+$("elemMode").onchange = appliqueTransport;
+$("elemLigne").oninput = appliqueTransport;
+/* La couleur, elle, se peint à chaque événement du nuancier et ne s'écrit
+   qu'au repos : la rafale ne refait que la forme tirée, jamais tous les
+   calques. Le retour en arrière tient le geste entier — on mémorise au premier
+   événement, pas à chacun. */
+let couleurEnCours = false;
+suitNuancier($("elemCouleur"), (v) => {
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  if (!couleurEnCours){ memorise(); couleurEnCours = true; }
+  const c = couleurEcrite(cible.f.mode, cible.f.ligne, v, cible.c);
+  if (c) cible.f.couleur = c; else delete cible.f.couleur;
+  redessineForme(cible.f);
+}, () => { couleurEnCours = false; enregistreDessins(); });
 /* La liste des passages revient à « Relier à… » dès que le choix est fait :
    c'est une action, pas un réglage — on en pose plusieurs à la suite. */
 $("elemLienAjout").onchange = (e) => {
@@ -16289,6 +16597,22 @@ function majElement(){
     }
   }
 
+  /* Le mode et la ligne d'un arrêt se reprennent comme son type : un 12 écrit
+     13 se corrige sans redessiner la pastille. La couleur montre celle de la
+     ligne — celle de la signalétique, ou celle qu'on a posée à sa place — et à
+     défaut celle du calque, qui est ce que la pastille porte alors. */
+  const ba = $("elemTransport");
+  if (ba){
+    const arret = f.t === "repere" && estTransport(f);
+    ba.hidden = !arret;
+    if (arret){
+      if (!$("elemMode").options.length) $("elemMode").innerHTML = optionsModes();
+      $("elemMode").value = (modeTransport(f) || MODES_TRANSPORT[0]).v;
+      $("elemLigne").value = f.ligne || "";
+      $("elemCouleur").value = couleurRepere(f) || cible.c.couleur || "#2F49D1";
+    }
+  }
+
   majLiens(f.t === "repere" ? f : null);
 
   /* Le rattachement, pour les deux formes qui en ont un. Un stand dessiné
@@ -16497,6 +16821,39 @@ function appliqueTrait(){
   enregistreDessins(); dessineDessins();
 }
 
+/**
+ * Ce qu'un arrêt dessert : son mode, sa ligne, et la couleur que la ligne lui
+ * donne.
+ *
+ * Le libellé posé d'office suit la ligne tant que personne ne l'a réécrit : un
+ * « Métro 12 » corrigé en 4 s'appelle « Métro 4 », et n'oblige pas à reprendre
+ * son nom à la main. Celui qu'un exploitant a écrit — « Métro 12, sortie
+ * Nord » — ne bouge pas.
+ *
+ * La couleur, elle, ne se lit dans le nuancier que si la ligne n'a pas bougé :
+ * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
+ * celle de la précédente.
+ */
+function appliqueTransport(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  const f = cible.f;
+  const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
+  const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
+  const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
+  memorise();
+  if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
+    f.txt = libelleDoffice(pictoForme(f), mode, ligne);
+  f.mode = mode;
+  if (ligne) f.ligne = ligne; else delete f.ligne;
+  const c = couleurEcrite(mode, ligne, choisie, cible.c);
+  if (c) f.couleur = c; else delete f.couleur;
+  enregistreDessins();
+  /* Le libellé a pu suivre, et la couleur avec lui : le panneau se relit, comme
+     après tout changement de ce qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
+}
+
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
  *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
  *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
@@ -16504,7 +16861,18 @@ function appliquePicto(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "repere") return;
   memorise();
+  const avant = pictoForme(cible.f);
   cible.f.picto = $("elemPicto").value;
+  /* Devenir un arrêt sans mode laisserait le pictogramme générique sous un
+     panneau qui en propose trois : on pose le premier, celui que le panneau
+     montre déjà. */
+  if (estTransport(cible.f) && !modeTransport(cible.f))
+    cible.f.mode = MODES_TRANSPORT[0].v;
+  /* Le libellé posé d'office suit le type : un repère nommé « WC » faute
+     d'avoir été nommé ne reste pas « WC » en devenant un ascenseur. Celui
+     qu'on a écrit à la main, lui, ne bouge pas. */
+  if (cible.f.txt === libelleDoffice(avant, cible.f.mode, cible.f.ligne))
+    cible.f.txt = libelleDoffice(cible.f.picto, cible.f.mode, cible.f.ligne);
   /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
      ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
      ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */

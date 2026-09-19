@@ -902,6 +902,14 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Un arrêt demande deux précisions de plus — ce qui passe là, et quelle ligne
+   — puis la couleur, pour les réseaux que la table des lignes ne connaît pas.
+   Les trois ne paraissent que sous leur type : elles ne diraient rien d'un
+   vestiaire. */
+#repereTransport,#elemTransport{display:none;flex-direction:column;gap:6px}
+.outils.mode-repere.mode-transport #repereTransport{display:flex}
+#elemTransport:not([hidden]){display:flex}
+.elemChamp .cc{flex:1;height:22px;padding:2px}
 /* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
    n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
 .outils #standSoc,.outils #imageSoc{display:none}
@@ -915,8 +923,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-.dcal .repere .glyphe path{fill:var(--surface);stroke:none}
-.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
+   calque. Un arrêt que sa ligne colore la remplace : le jaune du 1 se lit en
+   noir, et c'est la pastille qui l'a calculé en se dessinant. */
+.dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
+.dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -4701,6 +4712,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
+      <div id="repereTransport">
+        <label class="elemChamp"><span>Mode</span>
+          <select id="repereMode" title="Ce qui passe à cet arrêt"></select></label>
+        <label class="elemChamp"><span>Ligne</span>
+          <input id="repereLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+            title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+        <label class="elemChamp"><span>Couleur</span>
+          <input type="color" class="cc" id="repereCouleur"
+            title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+      </div>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input id="imageSoc" list="listeSoc" spellcheck="false" autocomplete="off"
         placeholder="Exposant dont l'image ouvre la fiche — facultatif">
@@ -4714,6 +4735,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
+        <div id="elemTransport" hidden>
+          <label class="elemChamp"><span>Mode</span>
+            <select id="elemMode" title="Ce qui passe à cet arrêt"></select></label>
+          <label class="elemChamp"><span>Ligne</span>
+            <input id="elemLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+              title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+          <label class="elemChamp"><span>Couleur</span>
+            <input type="color" class="cc" id="elemCouleur"
+              title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+        </div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
           <span class="eyebrow">Passages vers d'autres plans</span>
