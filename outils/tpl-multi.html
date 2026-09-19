@@ -76,11 +76,13 @@
 }
 /* En plein écran, il n'y a plus de barres à éviter.
 
-   La page le demande au premier geste du visiteur (`demandePleinEcran`,
-   _js.html) : l'horloge et la poignée de gestes s'effacent, et les retraits
-   qu'elles valaient n'ont plus d'objet. Le navigateur continue pourtant de les
-   annoncer, et la barre du salon garderait la place d'une horloge qui n'est
-   plus là.
+   Le plan ne le demande plus — `outils/pwa.js` dit au long pourquoi l'heure
+   sur la couleur du salon a été préférée à une bande noire comme à un bandeau
+   du navigateur. La règle reste pour les plein écran qui viennent d'ailleurs :
+   celui d'un navigateur de bureau, celui que le manifeste réclamerait si l'on
+   rebasculait. Le navigateur continue alors d'annoncer des retraits que plus
+   aucune barre ne justifie, et la barre du salon garderait la place d'une
+   horloge qui n'est plus là.
 
    Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
    les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,

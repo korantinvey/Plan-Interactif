@@ -1611,18 +1611,14 @@ et il va jusqu'aux bords de l'écran : la barre du salon passe derrière l'heure
 plutôt que de s'arrêter dessous, et son contenu se retire de ce que le système
 occupe (`viewport-fit=cover`, jetons `--sys-*`).
 
-L'application installée va plus loin : elle s'ouvre en plein écran, sans
-horloge au-dessus ni poignée de gestes en dessous. Une réserve, sur l'appareil
-où cela a été éprouvé : au lancement, Android ouvre une fenêtre un peu plus
-courte que l'écran, et la bande de la caméra reste noire jusqu'à ce qu'on sorte
-de l'application et qu'on y revienne — quarante-trois points sur huit cent
-trente-cinq.
-
-L'autre voie a été essayée : la page peut réclamer le plein écran elle-même, et
-les récupérer. Mais un navigateur annonce alors chaque passage en plein écran
-par un bandeau qu'aucune option n'abrège — c'est la garantie qu'une page ne se
-fera pas passer pour le système. Entre cette annonce à chaque ouverture et une
-bande noire au lancement, c'est la bande qui a été retenue. Un plein écran sans
+L'heure du système reste affichée, et c'est un choix : elle s'écrit sur la
+couleur du salon. Le plein écran a été essayé dans ses deux formes, et chacune
+se paie plus cher. Réclamé au manifeste, il fait ouvrir par Android une fenêtre
+plus courte que l'écran, et la bande de la caméra reste noire au lancement.
+Réclamé par la page, il rend bien ces points, mais le navigateur annonce alors
+chaque passage par un bandeau qu'aucune option n'abrège — la garantie qu'une
+page ne se fera pas passer pour le système. `outils/pwa.js` garde le relevé des
+trois voies : rebasculer tient au changement d'un mot. Un plein écran sans
 bandeau ni bande noire demanderait une application native, publiée sur un
 magasin.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
