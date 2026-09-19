@@ -9680,8 +9680,16 @@ function pleinEcranVoulu(){
       .some(m => matchMedia("(display-mode: " + m + ")").matches);
   } catch (e) { return false; }
 }
+let pleinEcranTente = false;
 function demandePleinEcran(){
-  if (!pleinEcranVoulu() || !document.documentElement.requestFullscreen) return;
+  if (pleinEcranTente || !pleinEcranVoulu() || !document.documentElement.requestFullscreen) return;
+  /* Une fois par ouverture, et pas une de plus. Le navigateur annonce chaque
+     passage en plein écran par un bandeau — « pour quitter, faites glisser »,
+     avec le nom du domaine — qui met plusieurs secondes à s'effacer. Une fois,
+     c'est le prix du plein écran ; à chaque geste, c'est le plan qu'on ne voit
+     plus. Qui en sort d'un balayage y reste donc jusqu'au prochain lancement :
+     c'est aussi ce qu'il a demandé en balayant. */
+  pleinEcranTente = true;
   /* `navigationUI: "hide"` demande la barre de navigation avec le reste ;
      un système qui ne sait pas la masquer rend simplement ce qu'il peut. */
   const promis = document.documentElement.requestFullscreen({ navigationUI: "hide" });
@@ -9689,8 +9697,10 @@ function demandePleinEcran(){
   if (promis && promis.catch) promis.catch(() => {});
 }
 /* Le premier doigt posé sur la page, où qu'il tombe : c'est la première
-   occasion, et la seule qui ne demande rien au visiteur. */
-addEventListener("pointerdown", demandePleinEcran, { once: true });
+   occasion, et la seule qui ne demande rien au visiteur. L'écouteur reste en
+   place — c'est le drapeau qui compte, non l'écoute : un premier appui venu
+   sur un grand écran ne doit pas fermer la porte au téléphone qu'on tourne. */
+addEventListener("pointerdown", demandePleinEcran);
 
 const saisitPlan = (tenu) => {
   // la main lâche : la barre revient, quelle que soit la façon dont le geste finit
@@ -9802,18 +9812,13 @@ svg.addEventListener("pointerup", e => {
   doigts.delete(e.pointerId);
   // un doigt levé met fin au pincement ; celui qui reste ne reprend pas la
   // main sur le déplacement, sans quoi la vue sauterait
-  if (pince){
-    if (doigts.size < 2){ pince = null; drag = null; poseVue(); demandePleinEcran(); }
-    return;
-  }
+  if (pince){ if (doigts.size < 2){ pince = null; drag = null; poseVue(); } return; }
   if (typeof cartePointerUp === "function" && cartePointerUp(e)) return;
   if (libellePointerUp(e)) return;
   if (geometriePointerUp(e)) return;
   if (dessinPointerUp(e)) return;
   if (calagePointerUp(e)) return;
   const d = drag; drag = null; saisitPlan(false);
-  // le plan vient d'être manœuvré : s'il en était sorti, le plein écran revient
-  if (d && d.bouge) demandePleinEcran();
   try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
   if (d && d.bouge){ poseVue(); return; }
   if (!d) return;
