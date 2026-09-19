@@ -1556,7 +1556,12 @@ l'appareil.
 
 **S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
 « Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
-Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur.
+Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur
+— et sur Android, sans les barres du système non plus : ni l'heure au-dessus,
+ni la poignée de gestes en dessous, le hall prend l'écran entier. Une
+application installée avant ce changement le reçoit quand le système la met à
+jour, ce qu'il fait de lui-même dans la journée ; la réinstaller l'obtient tout
+de suite. iOS garde sa barre d'état, rien ne permettant de la retirer là-bas.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
 peut en plus faire proposer l'installation au visiteur, par une fenêtre — voir
 plus bas, « Inviter à l'installer ».
