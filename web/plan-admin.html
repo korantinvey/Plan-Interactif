@@ -814,26 +814,6 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   --sys-gauche:env(safe-area-inset-left,0px);
   --sys-droite:env(safe-area-inset-right,0px);
 }
-/* En plein écran, il n'y a plus de barres à éviter — et le navigateur continue
-   pourtant d'annoncer leurs retraits.
-
-   L'application installée occupe l'écran entier (`display: fullscreen`,
-   `outils/pwa.js`) : ni horloge au-dessus, ni poignée de gestes en dessous. Le
-   plan gardait néanmoins la place des deux, la barre du salon commençant
-   quarante-six pixels plus bas que le bord de l'écran pour une horloge qui
-   n'était plus là — près d'un dixième de la hauteur réservé à rien.
-
-   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
-   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
-   plein écran ou non, et qu'elle y couperait un nom d'exposant. En haut, elle
-   ne rencontre qu'un aplat de couleur — la barre du salon — que la caméra
-   traverse sans rien cacher.
-
-   Le navigateur, lui, n'est pas concerné : sa page ne passe pas sous ses
-   barres, et la règle ne s'y applique pas. */
-@media (display-mode: fullscreen){
-  :root{--sys-haut:0px;--sys-bas:0px}
-}
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
    sur un téléphone dont le thème sombre a été posé une fois pour toutes et
@@ -5694,51 +5674,6 @@ if (!document.querySelector('meta[name="viewport"]')){
   document.head.appendChild(mv);
 }
 
-/* La fenêtre qui n'ose pas prendre l'écran entier, et ce qui l'y décide.
-
-   L'application lancée depuis son icône s'ouvre en plein écran, mais sa
-   fenêtre s'arrête sous la zone de la caméra : quarante-trois pixels de noir
-   au-dessus de la barre du salon, que la page ne peut pas peindre puisqu'ils
-   sont hors d'elle. Le relevé pris sur l'appareil le dit sans ambiguïté —
-   écran haut de 835 points, fenêtre de 792, et aucun retrait annoncé alors que
-   `viewport-fit=cover` est bien là. Le navigateur ne l'a donc pas appliqué au
-   moment d'ouvrir. Sortir de l'application et y revenir suffisait à le lui
-   faire reprendre, l'écran entier avec.
-
-   La balise est donc réécrite une fois la page affichée : `contain` le temps
-   d'une image, puis `cover` à nouveau. Le navigateur voit une valeur changer,
-   recalcule la géométrie qu'il avait fixée trop tôt, et la fenêtre prend la
-   bande sans qu'on ait à quitter l'application.
-
-   Seulement en plein écran, et seulement si la fenêtre est effectivement plus
-   courte que l'écran : ailleurs — un onglet de navigateur, une fenêtre sans
-   barre à reprendre — il n'y a rien à corriger, et ce recalcul ne coûterait
-   qu'une remise en page de plus. */
-let ESSAIS_BORD = 0;
-{
-  /* La fenêtre est-elle plus courte que l'écran ? Deux points de marge : les
-     hauteurs se comparent en points CSS, que le rapport de pixels arrondit.
-     Hors du plein écran, rien à reprendre — un navigateur garde ses barres
-     pour de bon. */
-  const manque = () =>
-    matchMedia("(display-mode: fullscreen)").matches && screen.height - innerHeight >= 2;
-  const bordAbord = () => {
-    const mv = document.querySelector('meta[name="viewport"]');
-    if (!mv || mv.content.indexOf("viewport-fit=cover") < 0 || !manque()) return;
-    ESSAIS_BORD++;
-    const plein = mv.content;
-    mv.content = plein.replace("viewport-fit=cover", "viewport-fit=contain");
-    requestAnimationFrame(() => { mv.content = plein; });
-  };
-  /* Trois tentatives espacées plutôt qu'une. Le moment où le navigateur
-     accepte de revoir la taille qu'il a donnée à sa fenêtre ne s'annonce pas,
-     et la première passe tombe parfois avant qu'il ait fini de l'ouvrir. Elles
-     ne coûtent rien quand il n'y a rien à reprendre : la condition est relue
-     chaque fois, et la fenêtre qui a pris l'écran arrête les suivantes. */
-  addEventListener("load", () =>
-    [0, 600, 2000].forEach(delai => setTimeout(bordAbord, delai)));
-}
-
 const $ = id => document.getElementById(id);
 const svg = $("plan");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
@@ -6232,66 +6167,6 @@ function poseTonDeLaBarre(){
     m.content = ton;
   });
 }
-
-/* ------------------------------------------------------------
-   Le relevé de l'appareil — temporaire
-
-   Ce qu'un téléphone fait de son encoche et de ses barres ne se reproduit sur
-   aucun écran de bureau : le navigateur y annonce des retraits nuls, et toute
-   hypothèse sur ce qui se passe à l'autre bout se vérifie au jugé. Le relevé
-   se prend donc là où la question se pose — un appui long sur le nom du salon,
-   un écran de valeurs, une capture, et la correction se décide sur des
-   chiffres.
-
-   À retirer dès la réponse obtenue : ce bloc n'a rien à faire dans un plan de
-   salon une fois la géométrie comprise.
-   ------------------------------------------------------------ */
-(function releveAppareil(){
-  const nom = $("titre");
-  if (!nom) return;
-  /* Les retraits ne se lisent qu'en les posant : `env()` appartient au moteur
-     de style, et rien de `window` ne les donne. */
-  const retrait = (cote) => {
-    const sonde = document.createElement("i");
-    sonde.style.cssText = "position:fixed;left:0;top:0;width:0;height:env(safe-area-inset-" +
-      cote + ",0px)";
-    document.body.appendChild(sonde);
-    const v = Math.round(sonde.getBoundingClientRect().height);
-    sonde.remove();
-    return v;
-  };
-  const mode = () => ["fullscreen", "standalone", "minimal-ui", "browser"]
-    .find(m => matchMedia("(display-mode: " + m + ")").matches) || "?";
-
-  function montre(){
-    const vv = window.visualViewport;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    const b = $("bandeau").getBoundingClientRect();
-    const lignes = [
-      "mode " + mode(),
-      "ecran " + screen.width + "x" + screen.height + " dpr " + devicePixelRatio,
-      "fenetre " + innerWidth + "x" + innerHeight,
-      "visuel " + (vv ? Math.round(vv.width) + "x" + Math.round(vv.height) +
-        " y" + Math.round(vv.offsetTop) : "-"),
-      "retraits h" + retrait("top") + " b" + retrait("bottom") +
-        " g" + retrait("left") + " d" + retrait("right"),
-      "bandeau y" + Math.round(b.top) + " h" + Math.round(b.height),
-      "reprises " + ESSAIS_BORD,
-      "barre " + (meta ? meta.content : "-"),
-    ];
-    const boite = document.createElement("pre");
-    boite.style.cssText = "position:fixed;inset:0;z-index:999;margin:0;padding:16px;" +
-      "background:#fff;color:#000;font:13px/1.8 monospace;white-space:pre-wrap";
-    boite.textContent = lignes.join("\n");
-    boite.onclick = () => boite.remove();
-    document.body.appendChild(boite);
-  }
-
-  let compte = 0;
-  nom.addEventListener("pointerdown", () => { compte = setTimeout(montre, 800); });
-  ["pointerup", "pointercancel", "pointerleave"].forEach(quoi =>
-    nom.addEventListener(quoi, () => clearTimeout(compte)));
-})();
 
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu

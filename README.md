@@ -1606,12 +1606,17 @@ l'appareil.
 
 **S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
 « Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
-Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur
-— et sur Android, sans les barres du système non plus : ni l'heure au-dessus,
-ni la poignée de gestes en dessous, le hall prend l'écran entier. Une
-application installée avant ce changement le reçoit quand le système la met à
-jour, ce qu'il fait de lui-même dans la journée ; la réinstaller l'obtient tout
-de suite. iOS garde sa barre d'état, rien ne permettant de la retirer là-bas.
+Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur,
+et il va jusqu'aux bords de l'écran : la barre du salon passe derrière l'heure
+plutôt que de s'arrêter dessous, et son contenu se retire de ce que le système
+occupe (`viewport-fit=cover`, jetons `--sys-*`).
+
+Le plein écran — masquer aussi l'horloge et la poignée de gestes — a été
+essayé, et écarté : sur l'appareil où il a été éprouvé, la fenêtre ouverte
+depuis l'icône s'arrêtait sous la zone de la caméra, et les quarante-trois
+points ainsi perdus restaient noirs, hors de la page, jusqu'à ce qu'on sorte de
+l'application et qu'on y revienne. Une bande noire ne vaut pas mieux qu'une
+horloge.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
 peut en plus faire proposer l'installation au visiteur, par une fenêtre — voir
 plus bas, « Inviter à l'installer ».
