@@ -1,0 +1,67 @@
+# Les en-têtes que Cloudflare pose sur les pages de `web/`.
+#
+# Source de `web/_headers` — copié par `outils/genere.js`, comme `config.js` et
+# `console.css`. Ne modifiez pas la copie.
+#
+# Rien n'en posait aucun jusqu'ici. Or les sessions de l'exploitant vivent dans
+# le stockage local du navigateur : la moindre injection sur une page
+# d'administration valait reprise du compte, sans second rempart.
+#
+# Ce qui suit est la part qui ne peut rien casser, et elle est vérifiée : aucune
+# page du gabarit ne porte de `<base>`, de `<form>`, d'`<object>` ni
+# d'`<embed>`.
+#
+# Ce qui manque et pourquoi : pas de `script-src`. Les pages assemblent tout
+# leur code en un seul script en ligne — c'est la chaîne de fabrication elle-même
+# (`outils/tpl-multi.html`) —, si bien qu'un `script-src` honnête demanderait
+# `'unsafe-inline'`, qui ne garde rien. Le rendre utile suppose un sceau posé
+# requête par requête par le Worker : un autre chantier, qui n'a pas sa place
+# dans une correction de sécurité. Les quatre directives ci-dessous, elles,
+# bornent déjà ce qu'une injection pourrait faire — détourner les adresses
+# relatives de la page, poster ailleurs, charger un greffon.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'
+
+# Les écrans d'exploitation ne s'encadrent pas.
+#
+# Le plan public, lui, doit pouvoir l'être — un cadre posé sur le site d'un
+# salon est une porte qu'on mesure (`_mesure.html` `supportMesure`). C'est
+# pourquoi la règle est écrite chemin par chemin, et jamais en `/plan-*` :
+# ce motif attraperait l'adresse propre d'un salon nommé « admin-… »
+# (`src/index.mjs` `cheminDuSalon`) et fermerait son cadre sans que rien ne le
+# dise.
+
+/plan-admin
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/plan-admin.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/admin-plans
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/admin-plans.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/rapport
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/rapport.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/motdepasse
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
+
+/motdepasse.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'

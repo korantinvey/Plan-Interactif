@@ -6375,6 +6375,84 @@ function ligneCode(s, xc, yBase, f, wMax, cls){
 /* ============================================================
    3. Rendu du pavillon courant
    ============================================================ */
+/** Une adresse qu'un dessin a le droit de viser : une forme du document, une
+ *  adresse relative, ou le web. Le reste nomme un protocole qui exécute —
+ *  `javascript:`, `data:` — et part. Les caractères que le navigateur ignore
+ *  sont retirés d'abord : sans quoi `java\0script:` serait lu ici comme une
+ *  adresse relative, et là-bas comme du code. */
+function viseeSure(v){
+  const u = String(v == null ? "" : v).replace(/[\u0000-\u0020]/g, "");
+  if (!u || u[0] === "#") return true;        // `use xlink:href="#forme"`
+  const i = u.search(/[/?#]/);
+  const protocole = u.slice(0, i < 0 ? u.length : i);
+  if (protocole.indexOf(":") < 0) return true;              // relative
+  return /^https?:$/i.test(protocole);
+}
+
+/**
+ * Ce qu'un calque d'habillage a le droit de porter : du dessin, et rien qui
+ * s'exécute.
+ *
+ * Le SVG sort d'AutoCAD, passe par Klipso, traverse la base et finit dans le
+ * document de chaque visiteur. `allege()` le réduit sans jamais le relire — il
+ * garde par principe ce qu'il ne sait pas lire, et c'est ce qu'on lui demande
+ * pour le dessin. Un gestionnaire d'événement posé sur un élément passait donc
+ * intact jusqu'au navigateur, où il s'exécute : `onload` sur une image,
+ * `onbegin` sur une animation. La page d'administration monte le même
+ * habillage, et un plan piégé y aurait couru sous la session de l'exploitant
+ * qui l'ouvre.
+ *
+ * Le nettoyage porte sur un arbre lu à part, et c'est tout le sujet : détaché
+ * ne suffit pas. Un `<img>` glissé dans un `foreignObject` part en chargement
+ * à la seconde où `innerHTML` l'écrit, avant que rien n'ait pu le relire, et
+ * son `onerror` se déclenche ensuite quand bien même on l'aurait retiré entre
+ * les deux — le chargement était déjà en vol. C'est `poseDessin` qui l'évite,
+ * en lisant le dessin dans un document sans page, où rien ne charge.
+ */
+function desamorce(g){
+  g.querySelectorAll("script, foreignObject").forEach(n => n.remove());
+  g.querySelectorAll("*").forEach(n => {
+    const at = n.attributes;
+    /* À rebours sur la liste vivante, et sans la recopier. Retirer décale ce
+       qui suit, si bien qu'un parcours à l'endroit sauterait l'attribut
+       d'après ; et un fond de plan porte treize mille éléments, où un tableau
+       jeté par élément se compte en dizaines de millisecondes. */
+    for (let i = at.length - 1; i >= 0; i--){
+      const nom = at[i].name;
+      /* « on… », quelle qu'en soit la casse : `| 32` rabat une capitale sur sa
+         minuscule sans fabriquer la chaîne que `toLowerCase` fabriquerait. La
+         lecture en HTML les rend déjà minuscules — mais le contrôle ne doit pas
+         dépendre de ce détail-là pour tenir. */
+      if ((nom.charCodeAt(0) | 32) === 111 && (nom.charCodeAt(1) | 32) === 110)
+        n.removeAttribute(nom);
+      else if ((nom === "href" || nom === "xlink:href") && !viseeSure(at[i].value))
+        n.removeAttribute(nom);
+    }
+  });
+}
+
+/**
+ * Le dessin d'un calque, posé dans le calque.
+ *
+ * Il se lit dans un document rendu par `DOMParser`, qui n'a pas de page : rien
+ * n'y charge, rien n'y anime, et le dessin peut donc être relu tout à loisir
+ * avant de rejoindre l'écran. C'est la même précaution qu'`assainitRiche` prend
+ * pour la description d'une zone, et pour la même raison.
+ *
+ * L'enveloppe `<svg>` n'est pas décorative : elle place la lecture en contenu
+ * étranger, où `<path>` et `<g>` prennent l'espace de noms du dessin plutôt
+ * que celui d'une page — c'est ce que faisait l'`innerHTML` d'un `<g>`.
+ */
+function poseDessin(g, svg){
+  const lu = new DOMParser().parseFromString(
+    '<svg xmlns="http://www.w3.org/2000/svg">' + (svg || "") + "</svg>", "text/html")
+    .querySelector("svg");
+  if (!lu) return;
+  desamorce(lu);
+  // `appendChild` adopte au passage : les nœuds changent de document tout seuls
+  while (lu.firstChild) g.appendChild(lu.firstChild);
+}
+
 /* Les calques d'habillage sont recréés à l'arrivée sur un pavillon ; ensuite
    ordonneDom() ne fait que déplacer les nœuds, ce qui rend le réordonnancement
    instantané malgré le poids du fond de plan. */
@@ -6385,7 +6463,7 @@ function monteHabillage(){
     const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
     g.setAttribute("class", "cal");
     g.dataset.cle = f.cle;
-    g.innerHTML = f.svg || "";
+    poseDessin(g, f.svg);
     c.appendChild(g);
   });
 }

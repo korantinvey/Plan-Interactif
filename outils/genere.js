@@ -204,6 +204,11 @@ fs.writeFileSync(W + "plan-smcl.html",
 fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
 // la console et le rapport la partagent : elle ne peut plus vivre dans l'une
 fs.copyFileSync(D + "/gabarit/_console.css", W + "console.css");
+/* Les en-têtes que Cloudflare pose sur ces pages — nosniff, politique de
+   référent, et le peu de CSP qui ne peut rien casser. Un fichier de
+   configuration de la couche statique, non un fichier servi : le fichier
+   lui-même dit ce qu'il porte et ce qu'il laisse de côté. */
+fs.copyFileSync(D + "/gabarit/_headers", W + "_headers");
 
 /* --- page d'accueil : la racine ne doit pas répondre 404 --- */
 fs.writeFileSync(W + "index.html",
@@ -269,7 +274,7 @@ fs.writeFileSync(W + "icone-180.png", icones.png(180, "pomme"));
 const FABRIQUEES = [
   "index.html", "plan.html", "plan-admin.html", "plan-smcl.html",
   "admin-plans.html", "rapport.html", "motdepasse.html", "hors-ligne.html",
-  "config.js", "console.css", "manifeste.webmanifest",
+  "config.js", "console.css", "_headers", "manifeste.webmanifest",
   "icone.svg", "icone-onglet.svg",
   "icone-192.png", "icone-512.png", "icone-masque-512.png", "icone-180.png",
 ];
