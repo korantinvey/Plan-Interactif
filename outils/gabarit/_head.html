@@ -70,10 +70,10 @@ body{margin:0;background:var(--ground);color:var(--ink);
 
    Un doigt qui tire vers le bas sur une page arrivée en haut de sa course la
    fait recharger. Sur un téléphone, c'est exactement le geste des tiroirs : on
-   saisit la liste, la fiche ou le parcours pour les redescendre, la prise est
-   manquée de quelques pixels ou le tiroir est déjà au plus bas, et le salon
-   repart pour un chargement complet — la recherche tapée, le stand ouvert et
-   le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
+   saisit la liste, la fiche, le parcours ou l'itinéraire pour les redescendre,
+   la prise est manquée de quelques pixels ou le tiroir est déjà au plus bas, et
+   le salon repart pour un chargement complet — la recherche tapée, le stand
+   ouvert et le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
    la page redemande ses données d'elle-même, et le plan tient dans la hauteur
    de l'écran sans jamais défiler.
 
@@ -3813,6 +3813,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .side[data-cran="plein"]{transform:translateY(0)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
+  /* Replié, ce tiroir garde tout de même sa bande de recherche au bas de
+     l'écran. La fiche et le parcours la recouvrent ; l'itinéraire descendu à
+     son cran le plus bas est plus court qu'elle, et elle dépassait derrière
+     lui — deux bords arrondis, deux prises, et rien pour dire laquelle mène
+     quoi. Il cède donc la bande tout entière, et la reprend en se refermant
+     (voir `_js.html`). */
+  .side.cede{transform:translateY(100%)}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
@@ -3967,11 +3974,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
 
-  /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
-     lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
-     le tiroir. À soixante-seize pour cent de l'écran il recouvrait le trajet
-     qu'il venait de tracer. La moitié lui suffit, à condition que ce qu'il
-     porte s'y resserre : c'est l'objet des règles qui suivent. */
+  /* L'itinéraire suit les deux autres, crans compris, mais son cran du milieu
+     ne monte pas comme le leur : on ne le lit pas, on le remplit — et ce qu'on
+     remplit se juge sur le plan, pas dans le tiroir. À soixante-seize pour cent
+     de l'écran il recouvrait le trajet qu'il venait de tracer. La moitié lui
+     suffit, à condition que ce qu'il porte s'y resserre : c'est l'objet des
+     règles qui suivent. */
   .itineraire{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:50dvh;
@@ -3980,8 +3988,22 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .itineraire.open{transform:translateY(0);pointer-events:auto}
+  /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
+     voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
+     liste des lieux proposés sous un champ. */
+  .itineraire.open[data-cran="replie"]{max-height:var(--itin-replie,64px)}
+  .itineraire.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .itineraire.glisse{transition:none}
+  /* Seul le corps se comprime : la prise et l'en-tête gardent leur taille, et
+     c'est l'en-tête qui reste quand le tiroir descend. */
+  .itineraire > :is(.poignee,.detail-hd){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .itineraire > .poignee{padding:9px 0 3px}
   /* L'en-tête tient sur une ligne : le titre, et le bilan du trajet à sa
      suite. Le sur-titre « Se rendre » redisait le titre, et la pastille sur sa
      propre ligne coûtait la hauteur d'un champ — trois lignes pour deux mots
@@ -3996,6 +4018,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      davantage — passages empruntés, option accessible. Sans trajet, elle
      reste : c'est alors le seul état affiché. */
   .itineraire:has(.iBilan) .detail-hd .badge{display:none}
+  /* Sauf tiroir descendu : le bloc qui en disait davantage est alors sous le
+     bord de l'écran, et la pastille redevient le seul endroit où lire ce que
+     coûte le trajet qu'on regarde. */
+  .itineraire[data-cran="replie"]:has(.iBilan) .detail-hd .badge{display:inline-flex}
   .iCorps{padding:12px 16px 14px;gap:10px}
   .iChamps{gap:6px}
   .iSugg{max-height:min(160px,30dvh)}
@@ -4727,13 +4753,18 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">
+      <!-- La prise de la fiche et du parcours. Celui-ci se juge plus que les
+           autres sur le plan : le baisser rend à l'œil le trajet qu'il
+           vient d'y tracer. -->
+      <button class="poignee" id="poigneeItineraire" aria-expanded="false" aria-controls="iCorps"
+        aria-label="Agrandir l'itinéraire"></button>
       <div class="detail-hd">
         <button class="close" id="closeItineraire" aria-label="Fermer">&times;</button>
         <span class="eyebrow">Se rendre</span>
         <h2>Itinéraire</h2>
         <span class="badge" id="iResume">à définir</span>
       </div>
-      <div class="iCorps">
+      <div class="iCorps" id="iCorps">
         <div class="iChamps">
           <div class="iChamp">
             <label class="eyebrow" for="iDepart">Départ</label>

@@ -319,7 +319,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 4774 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 4805 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
@@ -353,9 +353,9 @@ Fonctions :
 `#dPartage` · `#dOnglets` · `#dOngInfo` · `#dOngProg` · `#dOngNb` · `#dBody` · `#parcours`
 `#poigneeParcours` · `#closeParcours` · `#pEyebrow` · `#pTitre` · `#pResume` · `#pActs`
 `#btnJournee` · `#btnPartage` · `#pCorps` · `#jCorps` · `#pPied` · `#videParcours`
-`#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#closeItineraire` · `#iResume`
-`#iDepart` · `#iViseA` · `#iSugg` · `#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr`
-`#iResultat` · `#videItineraire`
+`#jPied` · `#jRefaire` · `#jRetour` · `#itineraire` · `#poigneeItineraire`
+`#closeItineraire` · `#iResume` · `#iCorps` · `#iDepart` · `#iViseA` · `#iSugg`
+`#iEchange` · `#iArrivee` · `#iViseB` · `#iPmr` · `#iResultat` · `#videItineraire`
 
 ### `_hors-ligne.html` — 45 l. → hors-ligne.html
 
@@ -399,7 +399,7 @@ Fonctions :
 `teteInvitation` 603 · `retourAuxReglages` 624 · `remplitInvitation` 632
 `ouvreInvitation` 662 · `ouvreRappel` 732 · `ouvreRetrouve` 788 · `caseInstallation` 811
 
-### `_itineraire.html` — 3044 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3045 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -427,9 +427,9 @@ Fonctions :
 `cadreItineraire` 2485 · `champIti` 2509 · `ecritDistance` 2513 · `ecritDuree` 2521
 `fermeSugg` 2526 · `montreSugg` 2533 · `choisitPoint` 2567 · `valideSaisie` 2576
 `effaceItineraire` 2588 · `relance` 2615 · `phraseLiaison` 2666 · `montreResultat` 2680
-`bandeauVisee` 2822 · `armeVisee` 2845 · `finVisee` 2862 · `viseItineraire` 2878
-`visePoi` 2884 · `visePoint` 2890 · `ouvreItineraire` 2922 · `fermeItineraire` 2950
-`versItineraire` 2960 · `versItineraireDe` 2963
+`bandeauVisee` 2822 · `armeVisee` 2845 · `finVisee` 2863 · `viseItineraire` 2879
+`visePoi` 2885 · `visePoint` 2891 · `ouvreItineraire` 2923 · `fermeItineraire` 2951
+`versItineraire` 2961 · `versItineraireDe` 2964
 
 ### `_journee.html` — 1004 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -443,7 +443,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4453 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4469 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.76 · 1. Index global — la recherche porte sur tous les pavillons
 - l.454 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -454,7 +454,7 @@ Fonctions :
 - l.2368 · 7. Sélection et fiche
 - l.3711 · 8. Interactions du plan
 - l.4104 · Le tiroir de la liste — écrans étroits
-- l.4279 · Les tiroirs de la fiche et du parcours — écrans étroits
+- l.4286 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -494,7 +494,7 @@ Fonctions :
 `montreMarque` 3288 · `poseCode` 3311 · `rangeMarque` 3352 · `ouvre` 3415 · `ferme` 3683
 `onglet` 3701 · `milieu` 3731 · `commencePince` 3737 · `suitPince` 3751 · `saisitPlan` 3785
 `cibleElargie` 3865 · `planifieFiltre` 4060 · `mesureTiroir` 4115 · `montreTiroir` 4118
-`hisseTiroir` 4122 · `tiroirCrante` 4305
+`hisseTiroir` 4122 · `tiroirCrante` 4313
 
 Éléments :
 
