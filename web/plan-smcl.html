@@ -26168,6 +26168,9 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
    */
   /* La répartition visée : celle que le curseur a dite, ou l'égalité. */
   const poids = jours.map(j => j.poids > 0 ? j.poids : 1);
+  /* L'écart se débraye le temps d'un départ — voir les deux essais, plus bas.
+     Il pèse toujours, lui, dans le compte qui les départage. */
+  let peseEcart = true;
   const total = (sauf, m, cout, n) => {
     const charges = [];
     let t = 0;
@@ -26175,7 +26178,7 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
       charges.push(chargeDuJour(j === sauf ? m : j.m, j === sauf ? n : j.n, visiteEnMetres));
       t += j === sauf ? cout : j.cout;
     }
-    return t + EQUILIBRE * ecartDesJours(charges, poids);
+    return t + (peseEcart ? EQUILIBRE * ecartDesJours(charges, poids) : 0);
   };
 
   /* Ce qu'insérer un stand à une place ajoute au créneau : deux distances
@@ -26328,19 +26331,70 @@ function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, impose
   const tours = Math.max(3, Math.min(30,
     Math.round(900 / Math.max(1, imposes.length + libres.length))));
 
-  if (imposes.length) insere(imposes);
-  insere(libres);
-  reprend(tours);
-  /* Sans heure de fermeture, tout finit posé au premier passage et la boucle
-     ne tourne pas. Avec, un créneau que les reprises ont raccourci peut
-     accueillir ce qu'on avait laissé dehors : on y revient, quelques fois
-     au plus, tant que cela pose quelque chose. */
-  for (let passe = 0; passe < 3 && libres.length && insere(libres); passe++) reprend(tours);
+  /**
+   * Deux départs plutôt qu'un.
+   *
+   * La construction au plus juste pose les stands un par un, et l'ordre dans
+   * lequel elle les pose dépend de ce qu'elle compte. Compter l'écart dès la
+   * pose oriente donc la recherche dès le premier stand — et pas toujours du
+   * bon côté : mesuré sur dix stands d'un pavillon du plan SMCL, l'arrangement
+   * ainsi construit faisait cinq cent trente-huit mètres là où le meilleur
+   * partage cinq-cinq en fait quatre cent quatre-vingt-dix. Dix pour cent de
+   * marche en trop, sans un gramme d'équilibre en plus : les deux journées
+   * étaient même un peu moins semblables. Les reprises ne l'en sortaient pas
+   * — il aurait fallu échanger trois stands à la fois, et chaque échange pris
+   *   seul aggrave.
+   *
+   * On part donc deux fois. Une fois en comptant l'écart dès la pose, une fois
+   * en ne comptant que les mètres — l'équilibre ne revenant qu'aux reprises,
+   * qui savent, elles, déplacer et échanger. Les deux arrangements sont ensuite
+   * jugés au même aune, l'écart compris, et le meilleur l'emporte. Sur l'essai
+   * ci-dessus, le second rend exactement le meilleur partage cinq-cinq.
+   *
+   * Cela double le temps de la recherche, non celui du calcul : la matrice,
+   * qui en est le gros, est bâtie une fois et sert aux deux.
+   */
+  const etat = () => creneaux.map(c => c.stands.slice());
+  const remonte = (e) => {
+    creneaux.forEach((c, i) => { c.stands = e[i].slice(); });
+    creneaux.forEach(remet);
+  };
+
+  const essai = (ecartALaPose) => {
+    creneaux.forEach(c => { c.stands = []; });
+    creneaux.forEach(remet);
+    const dehorsImposes = imposes.slice(), dehorsLibres = libres.slice();
+    peseEcart = ecartALaPose;
+    if (dehorsImposes.length) insere(dehorsImposes);
+    insere(dehorsLibres);
+    peseEcart = true;
+    reprend(tours);
+    /* Sans heure de fermeture, tout finit posé au premier passage et la boucle
+       ne tourne pas. Avec, un créneau que les reprises ont raccourci peut
+       accueillir ce qu'on avait laissé dehors : on y revient, quelques fois
+       au plus, tant que cela pose quelque chose. */
+    for (let passe = 0; passe < 3 && dehorsLibres.length && insere(dehorsLibres); passe++)
+      reprend(tours);
+    return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
+  };
+
+  const avec = essai(true);
+  /* Un seul jour n'a pas d'écart à compter : le second départ rendrait le
+     premier, au mot près, et coûterait le double pour rien. */
+  const sans = jours.length > 1 ? essai(false) : avec;
+  /* À égalité, celui qui comptait l'écart dès la pose : c'est le calcul
+     qu'on décrit partout ailleurs, et le second n'est là que s'il fait mieux.
+     Un stand de moins laissé dehors l'emporte sur des mètres, toujours : une
+     visite plus courte parce qu'on y voit moins n'est pas plus courte. */
+  const mieux = sans.dehors.length < avec.dehors.length ||
+                (sans.dehors.length === avec.dehors.length && sans.note < avec.note - 1e-9);
+  const gagnant = mieux ? sans : avec;
+  remonte(gagnant.etat);
 
   /* Ce qui n'a trouvé sa place nulle part. Les imposés en tête : ils n'ont pas
      tenu là où on les voulait, ce qui ne se dit pas comme le reste. */
   restants.length = 0;
-  restants.push(...imposes, ...libres);
+  restants.push(...gagnant.dehors);
   return restants;
 }
 

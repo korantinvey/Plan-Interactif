@@ -428,7 +428,7 @@ Fonctions :
 `visePoi` 2884 · `visePoint` 2890 · `ouvreItineraire` 2922 · `fermeItineraire` 2950
 `versItineraire` 2960 · `versItineraireDe` 2963
 
-### `_journee.html` — 1996 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2050 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -437,14 +437,14 @@ Fonctions :
 `minutesDe` 118 · `finInstant` 119 · `ecritHeure` 121 · `ecritMinutes` 126 · `dateDeCle` 139
 `jourBref` 145 · `joursSalon` 155 · `joursAVenir` 184 · `joursDefaut` 202 · `pointConf` 217
 `departsProposes` 236 · `matriceJournee` 269 · `ecartDesJours` 395 · `poidsDesJours` 425
-`chargeDuJour` 448 · `rangeSejour` 457 · `derouleJournee` 712 · `prepareSejour` 854
-`calculeSejour` 1001 · `apercuRepartition` 1035 · `rangJournee` 1049 · `lienJournee` 1061
-`boutonJour` 1084 · `arretJournee` 1097 · `remplitOnglets` 1144 · `jourDuStand` 1173
-`ouvreChoixJour` 1185 · `figeLaVisite` 1242 · `placeSurJour` 1251 · `rendAuPlan` 1259
-`retireDuSejour` 1265 · `remplitJournee` 1275 · `ecritApercu` 1473
-`appliqueVueParcours` 1503 · `traceJournee` 1541 · `montreLeJour` 1550
-`perimeJournee` 1565 · `oublieSejour` 1579 · `ouvreOrganisation` 1593 · `essaieSejour` 1927
-`lanceSejour` 1954 · `refaitSejour` 1986
+`chargeDuJour` 448 · `rangeSejour` 457 · `derouleJournee` 766 · `prepareSejour` 908
+`calculeSejour` 1055 · `apercuRepartition` 1089 · `rangJournee` 1103 · `lienJournee` 1115
+`boutonJour` 1138 · `arretJournee` 1151 · `remplitOnglets` 1198 · `jourDuStand` 1227
+`ouvreChoixJour` 1239 · `figeLaVisite` 1296 · `placeSurJour` 1305 · `rendAuPlan` 1313
+`retireDuSejour` 1319 · `remplitJournee` 1329 · `ecritApercu` 1527
+`appliqueVueParcours` 1557 · `traceJournee` 1595 · `montreLeJour` 1604
+`perimeJournee` 1619 · `oublieSejour` 1633 · `ouvreOrganisation` 1647 · `essaieSejour` 1981
+`lanceSejour` 2008 · `refaitSejour` 2040
 
 ### `_js.html` — 4348 l. → plan-admin.html, plan-smcl.html, plan.html
 
