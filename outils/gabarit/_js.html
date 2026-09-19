@@ -4331,12 +4331,18 @@ let hisseTiroir = () => {};
   $("list").addEventListener("click", () => { if (etroit()) replie(); });
 
   /* La fiche occupe le bas de l'écran quand elle s'ouvre — depuis la liste
-     comme depuis le plan ; le parcours prend la même bande. Le tiroir se
-     retire sous eux plutôt que de lutter pour la même place. */
-  const bandes = [$("detail"), $("parcours")].filter(Boolean);
-  const guette = new MutationObserver(() => {
-    if (etroit() && bandes.some(n => n.classList.contains("open"))) replie();
-  });
+     comme depuis le plan ; le parcours et l'itinéraire prennent la même bande.
+     Le tiroir se retire sous eux plutôt que de lutter pour la même place, et
+     s'efface entièrement : replié il garde sa bande de recherche, laquelle
+     dépassait derrière l'itinéraire descendu à son cran le plus bas — celui-ci
+     est plus court qu'elle. */
+  const bandes = [$("detail"), $("parcours"), $("itineraire")].filter(Boolean);
+  function cede(){
+    const pris = etroit() && bandes.some(n => n.classList.contains("open"));
+    if (pris) replie();
+    tiroir.classList.toggle("cede", pris);
+  }
+  const guette = new MutationObserver(cede);
   bandes.forEach(n => guette.observe(n, { attributes: true, attributeFilter: ["class"] }));
   addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
 
@@ -4345,6 +4351,7 @@ let hisseTiroir = () => {};
   addEventListener("resize", () => {
     if (!etroit()){ tiroir.style.transform = ""; replie(); }
     else mesure();
+    cede();
   });
 
   mesureTiroir = mesure;
@@ -4363,22 +4370,23 @@ let hisseTiroir = () => {};
 })();
 
 /* ============================================================
-   Les tiroirs de la fiche et du parcours — écrans étroits
+   Les tiroirs menés par la hauteur — écrans étroits
 
-   La fiche est une bande basse elle aussi, et elle tenait sur une hauteur
-   fixe : un peu plus de la moitié de l'écran, quoi qu'elle porte. Une fiche
-   bien remplie — champs, programme, actions — s'y lisait par une fente, en
-   faisant défiler son corps trois écrans durant. Le parcours retenu et la
-   journée organisée, qui se partagent l'autre tiroir, avaient le défaut
-   inverse : les deux tiers de l'écran pour trois exposants, et le plan qu'on
-   venait y chercher restait derrière.
+   Trois bandes basses partagent le pied de l'écran avec la liste, et toutes
+   trois tenaient sur une hauteur fixe. La fiche : un peu plus de la moitié de
+   l'écran, quoi qu'elle porte — bien remplie, champs, programme et actions s'y
+   lisaient par une fente, en faisant défiler son corps trois écrans durant. Le
+   parcours retenu et la journée organisée avaient le défaut inverse : les deux
+   tiers de l'écran pour trois exposants, et le plan qu'on venait y chercher
+   restait derrière. L'itinéraire, enfin, recouvrait de sa moitié d'écran le
+   trajet qu'il venait d'y tracer — celui-là même qu'on lui demandait.
 
-   Les deux prennent donc la prise de la liste et ses trois crans. Le cran ne
+   Les trois prennent donc la prise de la liste et ses trois crans. Le cran ne
    les fait pas glisser sous le bord de l'écran comme la liste, mais change
    leur hauteur : c'est leur corps qui défile, et un tiroir descendu aurait
    poussé sa fin hors de vue. Au cran le plus bas ne reste que l'en-tête —
-   assez pour savoir de quel stand, ou de quelle journée, il s'agit tout en
-   regardant le plan derrière.
+   assez pour savoir de quel stand, de quelle journée ou de quel trajet il
+   s'agit tout en regardant le plan derrière.
    ============================================================ */
 /**
  * Pose les trois crans sur un tiroir mené par la hauteur.
@@ -4419,6 +4427,10 @@ function tiroirCrante({ panneau, prise, cle, demi }){
   }
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
+  /* Le nombre n'est qu'un garde-fou : `mesure` pose la variable à la
+     construction et à chaque ouverture, si bien qu'elle est toujours lue
+     mesurée. La hauteur d'avant la première mesure, elle, est celle que la
+     feuille de style donne en secours à `var()`, tiroir par tiroir. */
   const replieePx = () =>
     parseFloat(getComputedStyle(tiroir).getPropertyValue(cle)) || 132;
 
@@ -4520,6 +4532,10 @@ tiroirCrante({ panneau: "detail", prise: "poigneeFiche", cle: "--fiche-replie", 
    même part : une liste de rangs se parcourt du regard, quand une fiche se lit
    ligne à ligne. */
 tiroirCrante({ panneau: "parcours", prise: "poigneeParcours", cle: "--parc-replie", demi: .68 });
+/* L'itinéraire s'arrête plus bas que les deux autres : la moitié de l'écran,
+   parce qu'on le remplit en regardant le plan. Les crans ne lui retirent pas
+   cette mesure — ils la lui rendent, le temps d'un geste. */
+tiroirCrante({ panneau: "itineraire", prise: "poigneeItineraire", cle: "--itin-replie", demi: .5 });
 
 /* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
    l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
