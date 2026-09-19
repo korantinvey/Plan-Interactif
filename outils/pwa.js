@@ -103,32 +103,34 @@ function manifeste() {
     description: "Le plan du salon : ses exposants, ses zones et son programme.",
     lang: "fr",
     dir: "ltr",
-    /* La fenêtre sans navigateur, et non le plein écran — qui a été essayé, et
-       qui ne tient pas ses promesses là où il compte.
+    /* Le plein écran, et ce qu'il a fallu essayer avant d'y revenir.
 
-       Demandé, il masque bien l'horloge et la poignée de gestes. Mais sur
-       l'appareil où il a été éprouvé, la fenêtre de l'application ouverte
-       depuis son icône s'arrête sous la zone de la caméra : quarante-trois
-       points de noir au-dessus de la barre du salon, hors de la page et donc
-       impeignables, que seul un aller-retour hors de l'application lui rendait.
-       Le relevé pris là-bas était sans appel — écran haut de 835 points,
-       fenêtre de 792, aucun retrait annoncé alors que `viewport-fit=cover`
-       était là. Réécrire la balise pour faire revoir cette taille, trois fois
-       et à trois moments, n'y a rien changé.
+       Demandé ici, il masque l'horloge et la poignée de gestes sans rien
+       annoncer : c'est l'installation qui l'a accordé une fois pour toutes, et
+       le système n'a personne à prévenir. Son défaut se paie au lancement —
+       sur l'appareil où tout cela a été éprouvé, Android ouvre alors une
+       fenêtre plus courte que l'écran, et les quarante-trois points de la zone
+       de la caméra restent noirs jusqu'à ce qu'on sorte de l'application et
+       qu'on y revienne. Le relevé pris là-bas le chiffre : écran de 835
+       points, fenêtre de 792, aucun retrait annoncé alors que
+       `viewport-fit=cover` est là. Trois reprises de la balise, à trois
+       moments, n'y ont rien changé.
 
-       Le compte est vite fait : noire, cette bande ne vaut pas mieux que
-       l'horloge qui l'occupait, et « standalone » rend la page à l'écran
-       entier — la barre du salon s'étend derrière l'heure, comme avant.
+       L'autre voie a été essayée et écartée. La page peut réclamer le plein
+       écran elle-même, une fois l'application ouverte : la fenêtre est alors
+       déjà grande comme l'écran, et les quarante-trois points reviennent au
+       plan. Mais un navigateur annonce chaque plein écran qu'une page lui
+       demande — « pour quitter, faites glisser », le nom du domaine avec —
+       trois à cinq secondes durant, et rien n'abrège ce bandeau : c'est la
+       garantie qu'une page ne se fera pas passer pour le système. Entre une
+       bande noire au lancement et cette annonce à chaque ouverture, c'est la
+       bande qui a été retenue.
 
-       Le plein écran n'est pas perdu pour autant : la page le demande
-       elle-même au premier geste du visiteur (`_js.html`
-       `demandePleinEcran`). La différence tient en une phrase — demandé au
-       manifeste, il fait ouvrir une fenêtre ; demandé d'ici, il ne fait que
-       masquer des barres sur une fenêtre déjà grande comme l'écran.
-       Ce qui a été bâti autour tient toujours : `viewport-fit=cover` et les
-       jetons `--sys-*` de `_head.html` restent ce qui fait que le plan va
-       jusqu'aux bords. */
-    display: "standalone",
+       Ce qui l'accompagne tient toujours : `viewport-fit=cover` et les jetons
+       `--sys-*` de `_head.html`, qui repassent à zéro sous
+       `display-mode: fullscreen` — la barre du salon ne garde plus la place
+       d'une horloge absente. */
+    display: "fullscreen",
     /* L'adresse par défaut, celle d'une visite sans `?plan=` : la page du plan,
        qui retombe alors sur le salon par défaut. Le relais la remplace par
        celle du salon d'où l'on installe. `id` n'est pas déclaré — il vaut

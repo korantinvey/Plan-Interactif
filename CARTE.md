@@ -450,7 +450,7 @@ Fonctions :
 `arretJournee` 595 · `remplitJournee` 620 · `appliqueVueParcours` 770 · `traceJournee` 800
 `montreJournee` 808 · `perimeJournee` 821 · `ouvreOrganisation` 830 · `lanceJournee` 969
 
-### `_js.html` — 4765 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4716 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.509 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -460,9 +460,9 @@ Fonctions :
 - l.2040 · 6. Vue
 - l.2466 · 7. Sélection et fiche
 - l.3809 · 8. Interactions du plan
-- l.4279 · Ce que les tiroirs lisent d'un geste
-- l.4325 · Le tiroir de la liste — écrans étroits
-- l.4547 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4230 · Ce que les tiroirs lisent d'un geste
+- l.4276 · Le tiroir de la liste — écrans étroits
+- l.4498 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -502,9 +502,9 @@ Fonctions :
 `nomSociete` 3264 · `societes` 3277 · `choisitExposant` 3288 · `poseMarque` 3326
 `montreMarque` 3386 · `poseCode` 3409 · `rangeMarque` 3450 · `ouvre` 3513 · `ferme` 3781
 `onglet` 3799 · `milieu` 3829 · `commencePince` 3835 · `suitPince` 3849 · `plieLaBarre` 3899
-`pleinEcranVoulu` 3929 · `demandePleinEcran` 3937 · `saisitPlan` 3958 · `cibleElargie` 4040
-`planifieFiltre` 4235 · `traceurDeGeste` 4303 · `cranVoisin` 4322 · `retraitBas` 4348
-`mesureTiroir` 4362 · `montreTiroir` 4365 · `hisseTiroir` 4369 · `tiroirCrante` 4574
+`saisitPlan` 3909 · `cibleElargie` 3991 · `planifieFiltre` 4186 · `traceurDeGeste` 4254
+`cranVoisin` 4273 · `retraitBas` 4299 · `mesureTiroir` 4313 · `montreTiroir` 4316
+`hisseTiroir` 4320 · `tiroirCrante` 4525
 
 Éléments :
 
