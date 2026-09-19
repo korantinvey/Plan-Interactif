@@ -485,6 +485,13 @@ function ouvrePartageParcours(){
 /**
  * Les boutons du pied, selon ce que l'appareil sait faire.
  *
+ * `compte` dit si le geste est un partage. Il l'est quand la liste part à
+ * quelqu'un d'autre, et pas quand elle part à soi-même : « huit parcours
+ * partagés » doit se lire « huit visiteurs ont donné leur liste à quelqu'un »,
+ * et une copie de sauvegarde n'est pas cela. Faute de quoi, la seule question
+ * que le chiffre sache trancher — est-ce que cela arrive à quelqu'un ? — se
+ * serait brouillée le jour même où l'on a posé la copie.
+ *
  * `navigator.share` est la feuille de partage du système : c'est elle qui
  * ouvre WhatsApp, Messenger, Teams ou le courrier, avec ce que le visiteur y a
  * déjà installé — nous n'avons aucune liste d'applications à tenir, et aucune
@@ -492,7 +499,7 @@ function ouvrePartageParcours(){
  * plupart des navigateurs de bureau ; la copie prend alors la tête, et le
  * lien se colle où l'on veut.
  */
-function boutonsPartage(lien){
+function boutonsPartage(lien, compte){
   const partageable = typeof navigator.share === "function";
   /* Le geste d'envoyer se compte à part des ajouts : envoyer sa liste ne
      l'allonge ni ne la raccourcit, et c'est l'autre moitié de la seule question
@@ -502,8 +509,12 @@ function boutonsPartage(lien){
      recopier parce qu'on a raté son collage, reste un seul parcours partagé.
      Copier compte comme envoyer — sur un ordinateur c'est le seul geste
      possible, et l'écarter ferait paraître la fonction inutilisée au bureau. */
-  let compte = false;
-  const envoi = () => { if (!compte){ compte = true; mesure("partage"); } };
+  let fait = false;
+  const envoi = () => {
+    if (compte === false || fait) return;
+    fait = true;
+    mesure("partage");
+  };
 
   // retrouvé une fois : son libellé change en route, et ne le désignerait plus
   let bCopie = null;
@@ -649,3 +660,171 @@ function adoptePartage(stands, confs, remplace){
 }
 
 $("btnPartage").onclick = ouvrePartageParcours;
+
+/* ------------------------------------------------------------
+   La copie qu'on se garde
+
+   Le lien du partage porte le parcours entier, sans serveur ni compte. On l'a
+   fait pour le donner à quelqu'un ; il sait faire une autre chose, et la même
+   à un détail près — se le donner à soi-même.
+
+   Ce détail est ce qui manquait à une liste préparée longtemps à l'avance. Elle
+   ne vit que dans le stockage du navigateur, et un navigateur fait le ménage :
+   Safari efface tout ce qu'une page a écrit après sept jours sans revenir sur
+   le site, Chrome et Firefox jettent sous la pression du disque, un téléphone
+   se change, et sur iOS l'application installée démarre avec une mémoire à
+   elle. Aucun de ces cas ne se répare depuis la page. Un lien posé dans une
+   conversation, un courrier ou une note, si : il ne dépend plus de rien de ce
+   que le navigateur garde, et il reste bon jusqu'au démontage des stands.
+
+   D'où trois entrées vers une seule fenêtre. Une note au pied de la liste, qui
+   est là tout le temps et ne se remarque pas ; une proposition, une fois, quand
+   la liste commence à valoir quelque chose ; et la fenêtre d'installation, qui
+   est le seul endroit où la perte est certaine et non probable.
+   ------------------------------------------------------------ */
+/** Y a-t-il une liste, et un visiteur à qui la rendre ? Une borne interactive
+ *  se remet à zéro pour le suivant : elle n'a personne à qui garder quoi que
+ *  ce soit. */
+const parcoursACopier = () => !BORNE && conf("_parcours").visible !== false &&
+  !!(PARCOURS.stands.length + PARCOURS.confs.length);
+
+/**
+ * La fenêtre.
+ *
+ * Sans code QR, à la différence du partage : un écran ne se photographie pas
+ * lui-même. Ce qui compte ici est le lien, et la feuille de partage du système
+ * qui le pose là où on le retrouvera — les messages qu'on s'envoie, les notes,
+ * le courrier.
+ *
+ * `apres` rend la main à la fenêtre d'où l'on vient : l'installation propose
+ * cette copie au milieu de ses gestes, et le visiteur doit retrouver la liste
+ * des gestes là où il l'avait laissée (`_modales.html`).
+ */
+function ouvreGardeParcours(apres){
+  const lien = lienParcours();
+  ouvreModale("Garder mon parcours", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Envoyez-vous ce lien : il porte votre parcours entier. " +
+      "Ouvert le jour du salon, il le remet en place — même sur un autre " +
+      "téléphone, même si ce navigateur a fait le ménage entre-temps.";
+    corps.appendChild(p);
+
+    const champ = document.createElement("textarea");
+    champ.className = "qrLien";
+    champ.readOnly = true;
+    champ.rows = 2;
+    champ.value = lien;
+    champ.onclick = () => champ.select();
+    corps.appendChild(champ);
+
+    const note = document.createElement("p");
+    note.className = "qrNote";
+    note.textContent = "Le parcours tient dans le lien lui-même : rien n'est " +
+      "enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.";
+    corps.appendChild(note);
+  }, boutonsPartage(lien, false), "partage");
+  if (apres) apresFermeture = apres;
+}
+
+/* Le geste qui demande que la liste tienne, et la fenêtre qui s'ensuit. Les
+   deux vont ensemble : c'est le seul moment où la question que Firefox pose
+   sur le stockage se comprend — le visiteur vient de dire qu'il y tient
+   (`tientLeStockage`). */
+const demandeGardeParcours = (apres) => {
+  tientLeStockage(true);
+  ouvreGardeParcours(apres);
+};
+
+/**
+ * La note du pied de liste.
+ *
+ * Elle dit ce qui est vrai et ce que le visiteur ne peut pas deviner : cette
+ * liste n'existe qu'ici. Pas d'alarme — la perte n'est pas certaine, et une
+ * fenêtre rouge à chaque ouverture du tiroir ferait fuir de la fonction plutôt
+ * que du risque. Une phrase, et le geste à côté.
+ */
+function poseGardeParcours(hote){
+  if (BORNE) return;
+  const bloc = document.createElement("div");
+  bloc.className = "pGarde";
+  const p = document.createElement("p");
+  p.textContent = "Ce parcours vit dans ce navigateur, et nulle part ailleurs : " +
+    "un ménage, un téléphone changé, et il n'y est plus.";
+  bloc.appendChild(p);
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn";
+  b.textContent = "En garder une copie";
+  b.onclick = () => demandeGardeParcours();
+  bloc.appendChild(b);
+  hote.appendChild(bloc);
+}
+
+/* ------------------------------------------------------------
+   La proposition, une fois
+   ------------------------------------------------------------ */
+/* À partir de combien de rangs la liste vaut qu'on interrompe pour elle. Trois :
+   deux stands se refont de mémoire, une liste de trois a demandé un moment, et
+   c'est à peu près là que le visiteur cesse de composer pour commencer à
+   compter dessus. */
+const SEUIL_GARDE = 3;
+
+let GARDE_PROPOSEE = false;
+const cleGardeProposee = () =>
+  "plan-garde:" + (SLUG || (DATA && DATA.evenement) || "");
+
+function gardeProposee(){
+  if (GARDE_PROPOSEE) return true;
+  try { return localStorage.getItem(cleGardeProposee()) === "1"; }
+  catch (e) { return false; }
+}
+/* Montrée, elle ne revient pas — même refusée, et même si la liste double
+   ensuite. Le visiteur a vu qu'on savait faire ; la note du pied de liste
+   l'attend le jour où il le voudra. */
+function retientGardeProposee(){
+  GARDE_PROPOSEE = true;
+  try { localStorage.setItem(cleGardeProposee(), "1"); } catch (e) {}
+}
+
+/**
+ * Ce qui vaut la peine d'être proposé, et le moment de le faire.
+ *
+ * Appelée à chaque rang ajouté, elle se tait presque toujours. Les conditions
+ * sont celles de la note — une liste, un visiteur — plus le seuil, la question
+ * déjà posée, et la visite guidée en cours.
+ *
+ * Une fenêtre déjà ouverte la fait attendre, mais seulement si personne
+ * n'attend déjà : la suggestion et le rappel se proposent au même instant,
+ * dans le même geste, et trois fenêtres à la file valent moins que la première
+ * bien lue. Celle-ci passe en dernier et cède la place — le signet suivant la
+ * ramènera, et le pied de la liste ne l'a jamais retirée.
+ */
+function fenetreGarde(){
+  if (gardeProposee() || TUTO || !parcoursACopier()) return;
+  if (PARCOURS.stands.length + PARCOURS.confs.length < SEUIL_GARDE) return;
+  if ($("modale").classList.contains("open")){
+    if (!apresFermeture) apresFermeture = fenetreGarde;
+    return;
+  }
+  retientGardeProposee();
+  ouvreModale("D'ici le jour du salon", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Votre parcours est enregistré sur cet appareil, et sur lui " +
+      "seul. Un navigateur qui fait le ménage, un téléphone changé, et la liste " +
+      "n'y est plus — c'est le lot d'une liste préparée longtemps à l'avance.";
+    corps.appendChild(p);
+    const a = document.createElement("p");
+    a.className = "rapAide";
+    a.textContent = "Une copie s'envoie en un geste, dans vos messages ou votre " +
+      "courrier. Elle tient dans un lien : rien ne part sur nos serveurs.";
+    corps.appendChild(a);
+  }, [
+    { libelle: "Non merci" },
+    /* La fenêtre suivante attend que celle-ci ait libéré la place : ouverte
+       dans le geste du bouton, elle serait refermée dans la foulée par la
+       fermeture de celle-ci (`_modales.html`). Le relais reste dans le même
+       geste, et la question du stockage garde donc l'appui qui l'autorise. */
+    { libelle: "Garder une copie", genre: "accent",
+      action: () => { apresFermeture = () => demandeGardeParcours(); } },
+  ]);
+}
