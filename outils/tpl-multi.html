@@ -53,6 +53,26 @@
      translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
      redéfinit. */
   --menu-fond:#FBFBF8; --menu-encre:#15181A;
+  /* Ce que le système garde pour lui.
+
+     Les pages du plan vont jusqu'aux bords de l'écran — `viewport-fit=cover`,
+     posé par `outils/genere.js` — au lieu de s'arrêter au bord des barres du
+     système. Le plan y gagne la bande de gris qu'il perdait en haut et en bas,
+     et la barre du salon monte enfin derrière l'heure : c'est tout l'objet de
+     la manœuvre. Mais l'horloge, la poignée de gestes et l'encoche se posent
+     alors sur la page, et ce qui se tenait là-dessous devient illisible ou
+     intouchable. Ces quatre jetons sont la mesure de ce qu'il faut leur
+     rendre.
+
+     Ils valent zéro partout où il n'y a rien à éviter — un écran de bureau, un
+     onglet de navigateur, un téléphone sans encoche — si bien qu'une règle qui
+     les ajoute ne déplace rien dans ces cas-là. Écrits en jetons plutôt qu'en
+     `env()` à chaque fois, parce qu'ils se lisent dans des `calc()` déjà longs
+     et qu'un nom y dit ce qu'une fonction n'expliquait pas. */
+  --sys-haut:env(safe-area-inset-top,0px);
+  --sys-bas:env(safe-area-inset-bottom,0px);
+  --sys-gauche:env(safe-area-inset-left,0px);
+  --sys-droite:env(safe-area-inset-right,0px);
 }
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
@@ -63,7 +83,10 @@
    durant. */
 
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);
+/* Le fond du plan, et non le gris de la page : c'est lui qui paraît dans la
+   bande rendue au système en bas de l'écran, et la couture ne doit pas se voir
+   entre la scène et son pourtour. Sans réglage, le gris reprend la main. */
+body{margin:0;background:var(--c-fond,var(--ground));color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
 /* Le rechargement par glissement, retiré au navigateur.
@@ -113,13 +136,38 @@ button{cursor:pointer;background:none;border:none}
    se manquaient de la hauteur exacte de la barre du navigateur, si bien que le
    cartouche recouvrait la recherche et que le bouton « ajuster » passait
    dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
-.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px}
+/* La grille s'arrête au bord de ce que le système garde — en bas la poignée
+   de gestes, sur les côtés l'encoche en paysage. Tout ce qui s'ancre au bas de
+   la scène suit alors sans qu'aucune de ses règles ait à le savoir : les
+   boutons de zoom, l'échelle, le cartouche des repères et la pile des calques
+   se mesurent à la scène, qui vient de raccourcir d'autant.
+
+   Le haut n'en est pas : c'est la barre du salon qui monte sous l'horloge, et
+   elle se retire elle-même — voir « .topbar » et « .bandeAdmin ». */
+.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px;
+  padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche)}
 /* La barre se mesure à son contenu au lieu de le rogner : un nom de salon
    long — « Franchise Expo Paris 2027 » — passe à la ligne et la barre grandit
    d'autant. Tronqué, il ne disait plus quel salon on regardait, et c'est la
    seule chose que cette barre ait à dire. */
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:8px 18px;min-height:60px;
-  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
+/* Elle est la première chose que l'écran porte, et c'est pour cela qu'elle
+   passe sous la barre du système : son fond continue derrière l'heure et la
+   batterie, et l'application cesse d'être un rectangle posé sur un liseré
+   blanc. Son contenu, lui, se retire de la hauteur de cette barre — un nom de
+   salon sous l'horloge ne se lit pas. La barre grandit donc d'autant plutôt
+   que de rogner ce qu'elle porte.
+
+   « --ton-barre » est la couleur dont le système peint la sienne, et c'est
+   `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
+   telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
+   nomment plus bas — leur fond ne vient pas de leur surface. */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;
+  padding:calc(8px + var(--sys-haut)) 18px 8px;min-height:calc(60px + var(--sys-haut));
+  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5;
+  --ton-barre:var(--surface)}
+/* Sauf en administration, où la bande de l'outil est au-dessus : c'est elle
+   qui touche le haut de l'écran, et le retrait lui revient. */
+html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
 .brand h1.attente{color:var(--ink-3)}
@@ -161,7 +209,12 @@ button{cursor:pointer;background:none;border:none}
    l'écran qui ne parle pas du salon.
    ------------------------------------------------------------------ */
 .bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
-  padding:5px 18px;min-height:66px;background:var(--m-nuit);color:var(--ink);
+  padding:calc(5px + var(--sys-haut)) 18px 5px;min-height:calc(66px + var(--sys-haut));
+  background:var(--m-nuit);color:var(--ink);
+  /* La nuit de la marque, et non la surface que la bande redéfinit juste en
+     dessous pour ses boutons : c'est le fond de la bande que le système doit
+     prolonger. */
+  --ton-barre:var(--m-nuit);
   --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
   --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
   --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
@@ -421,7 +474,14 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
    au panneau, la teinte choisie se pose telle quelle ; sans réglage, le jeton
    reste absent et le fond de la page reprend la main. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
+/* « min-height:0 » pour la même raison que la liste d'à côté : une piste de
+   grille ne descend pas sous la taille de son contenu tant qu'on ne l'y
+   autorise pas, et le plan qu'elle porte se mesure à elle — les deux
+   s'arc-boutaient. La scène gardait donc la hauteur qu'elle avait avant que la
+   grille ne rende sa bande au système, et le bas du plan, ses boutons de zoom
+   et son échelle passaient sous la poignée de gestes. */
+.stage{position:relative;overflow:hidden;overflow:clip;min-height:0;
+  background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -2210,6 +2270,9 @@ button.expo:hover{background:var(--line)}
    en détache. */
 .bandeau-billet{background-color:var(--accent);border-bottom:none;color:var(--accent-ink);
   --ink:var(--accent-ink);
+  /* La souche est peinte de l'accent, et la surface n'y sert qu'aux boutons
+     translucides : c'est l'accent que le système doit prolonger. */
+  --ton-barre:var(--accent);
   /* Le rouge du retrait se pose ici sur l'accent, et non sur une surface : il
      se tire donc de l'encre qui tient dessus, claire ou sombre selon le ton. */
   --rouge:color-mix(in srgb,var(--accent-ink) 58%,#E2483A);
@@ -2269,6 +2332,9 @@ button.expo:hover{background:var(--line)}
    dégradé file de gauche à droite, la barre étant large et basse là où le
    panneau est haut et étroit. */
 .bandeau-verre{color:var(--ink);--rouge:#FFB3A8;
+  /* Le dégradé part de l'accent clair, en haut à gauche : c'est lui qui touche
+     la barre du système, et non la surface que le carreau translucide pose. */
+  --ton-barre:var(--accent-clair);
   --surface:rgba(255,255,255,.14);--surface-2:rgba(255,255,255,.14);
   --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
   --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
@@ -3783,7 +3849,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
      « Administration » cède la place — la nuit et la marque le disent déjà. */
-  .bandeAdmin{padding:4px 12px;min-height:56px;gap:10px}
+  .bandeAdmin{padding:calc(4px + var(--sys-haut)) 12px 4px;
+    min-height:calc(56px + var(--sys-haut));gap:10px}
   .bandeMarque{width:46px;height:46px}
   .bandeNom{display:none}
   /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
@@ -3800,13 +3867,20 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      plus : on lit la liste sans perdre le plan de vue, et c'est là qu'on
      répond à « qu'y a-t-il près de l'entrée ». Tout ou rien obligeait à
      choisir entre les deux. */
+  /* Les tiroirs sont posés sur la fenêtre et non dans la grille : le retrait
+     que celle-ci s'impose ne les atteint pas, et ils le reprennent chacun pour
+     soi. Leur fond descend bien jusqu'au bord de l'écran — une bande de gris
+     sous un tiroir de couleur se verrait — mais ce qu'ils portent se retire de
+     la poignée de gestes. La part qui dépasse au repos grandit d'autant, sans
+     quoi la recherche serait passée dessous. */
   .side{
     position:fixed;left:0;right:0;bottom:0;z-index:12;
     height:82vh;height:82dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-right:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
-    transform:translateY(calc(100% - var(--replie,164px)));
+    transform:translateY(calc(100% - var(--replie,164px) - var(--sys-bas)));
     transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
   .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
@@ -3827,7 +3901,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
-  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
+  /* Posée contre le bord de l'écran, la fenêtre y descend son fond et remonte
+     ce qu'elle porte : son pied tombait sous la poignée de gestes. */
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none;
+    padding-bottom:var(--sys-bas)}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
   .grp-crit > summary{padding:13px 2px}
@@ -3895,6 +3972,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:56dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -3910,7 +3988,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
      corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
      s'agit tout en regardant le plan derrière. */
-  .detail.open[data-cran="replie"]{max-height:var(--fiche-replie,132px)}
+  /* La hauteur repliée est celle de l'en-tête, mesurée : la bande rendue au
+     système s'y ajoute, sinon c'est le nom du stand qui s'y perdrait. */
+  .detail.open[data-cran="replie"]{max-height:calc(var(--fiche-replie,132px) + var(--sys-bas))}
   .detail.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .detail.glisse{transition:none}
@@ -3962,6 +4042,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .parcours{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:68dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -3975,7 +4056,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
                max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
-  .parcours.open[data-cran="replie"]{max-height:var(--parc-replie,132px)}
+  .parcours.open[data-cran="replie"]{max-height:calc(var(--parc-replie,132px) + var(--sys-bas))}
   .parcours.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .parcours.glisse{transition:none}
@@ -3998,6 +4079,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .itineraire{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:50dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -4010,7 +4092,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
      voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
      liste des lieux proposés sous un champ. */
-  .itineraire.open[data-cran="replie"]{max-height:var(--itin-replie,64px)}
+  .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
   .itineraire.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .itineraire.glisse{transition:none}
@@ -4084,7 +4166,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    ------------------------------------------------------------ */
 .alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
-  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  /* Elle passe par-dessus la bande du salon, donc par-dessus l'horloge : son
+     fond couvre la barre du système, son texte se range dessous. */
+  padding:calc(9px + var(--sys-haut)) 16px 9px;
+  font-size:14px;font-weight:600;line-height:1.35;text-align:center;
   background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 /* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
    la couleur de l'encre plutôt que celle de l'alerte. */
@@ -4821,7 +4906,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 <script id="data" type="application/json">/*__DATA__*/</script>
 <script>
 /* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
-   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. */
+   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. Les
+   pages construites en portent une, posée par `outils/genere.js` avec ou sans
+   le `viewport-fit` qui les étend sous les barres du système : ce repli-ci ne
+   sert donc qu'au gabarit ouvert tel quel, et il demande la même chose. */
 if (!document.querySelector('meta[name="viewport"]')){
   const mv = document.createElement("meta");
   mv.name = "viewport";
@@ -5269,6 +5357,58 @@ function poseFavicon(src){
   }
   l.type = img.slice(5, img.indexOf(";"));
   l.href = img;
+}
+
+/**
+ * La couleur dont le système peint sa barre, celle de l'heure et de la
+ * batterie.
+ *
+ * La page va maintenant jusqu'aux bords de l'écran (`viewport-fit=cover`,
+ * posé par `outils/genere.js`) : la bande du salon monte derrière l'horloge,
+ * et le système ne sait rien de ce qu'elle porte. Il n'a qu'un indice,
+ * `theme-color`, dont il tire le fond qu'il peint sous ses pictogrammes et
+ * leur noir ou leur blanc. Écrite une fois pour toutes à la construction — le
+ * crème de la surface, voir `outils/pwa.js` — elle annonçait une barre claire
+ * au-dessus d'un bandeau que le modèle du salon peint en bleu profond :
+ * l'heure s'y écrivait en sombre sur du sombre.
+ *
+ * Elle suit donc la bande qui touche le haut de l'écran — celle de
+ * l'administration quand elle est là, celle du salon sinon.
+ *
+ * La couleur se lit sur une sonde plutôt que dans le jeton : un modèle compose
+ * la sienne avec `color-mix()`, un autre l'emprunte à l'accent du salon, et
+ * seul le navigateur sait ce que cela donne. Un élément vide, peint du jeton
+ * et grand comme rien, répond en `rgb(…)` — la seule forme qu'un
+ * `theme-color` accepte.
+ *
+ * La mesure attend l'image suivante, et une seule par image : l'accent se pose
+ * en rafale pendant qu'on le cherche au nuancier, et demander un style calculé
+ * au milieu du geste aurait fait recalculer la page entière à chaque
+ * mouvement du doigt. Le système, lui, ne repeint pas sa barre soixante fois
+ * par seconde.
+ */
+let tonPrevu = 0;
+function poseTonDeLaBarre(){
+  cancelAnimationFrame(tonPrevu);
+  tonPrevu = requestAnimationFrame(() => {
+    const bande = document.querySelector(".bandeAdmin:not([hidden])") || $("bandeau");
+    if (!bande) return;
+    const sonde = document.createElement("i");
+    sonde.style.cssText = "position:absolute;width:0;height:0;background:var(--ton-barre)";
+    bande.appendChild(sonde);
+    const ton = getComputedStyle(sonde).backgroundColor;
+    sonde.remove();
+    /* Un jeton absent ou translucide ne dit rien à un système qui peint un
+       aplat : la couleur de la construction vaut mieux qu'un noir deviné. */
+    if (!ton || /^rgba\(.*,\s*0\)$/.test(ton)) return;
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m){
+      m = document.createElement("meta");
+      m.name = "theme-color";
+      document.head.appendChild(m);
+    }
+    m.content = ton;
+  });
 }
 
 /* ============================================================
@@ -8975,6 +9115,32 @@ const cranVoisin = (crans, nom, sens) =>
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La bande que le système garde au bas de l'écran — la poignée de gestes, la
+   barre d'accueil.
+
+   Les tiroirs descendent leur fond jusqu'au bord de l'écran, une bande de gris
+   sous un tiroir de couleur se voyant de loin, mais ils remontent ce qu'ils
+   portent d'autant : leur part visible au cran le plus bas vaut donc ce qu'ils
+   montrent, plus cette bande. Le geste qui les mène doit compter pareil — il
+   posait sinon, au premier millimètre parcouru par le doigt, une hauteur
+   amputée de la bande, et le tiroir sautait avant de suivre.
+
+   Mesurée sur une sonde, et non lue : `env(safe-area-inset-bottom)` appartient
+   au moteur de style, et rien de `window` ne la donne. Gardée ensuite, parce
+   que le glissement la redemande à chaque image : elle ne change qu'avec
+   l'écran, et c'est ce que dit le `resize`. */
+let _retraitBas = null;
+function retraitBas(){
+  if (_retraitBas !== null) return _retraitBas;
+  const sonde = document.createElement("i");
+  sonde.style.cssText = "position:fixed;left:0;bottom:0;width:0;height:var(--sys-bas)";
+  document.body.appendChild(sonde);
+  _retraitBas = sonde.getBoundingClientRect().height;
+  sonde.remove();
+  return _retraitBas;
+}
+addEventListener("resize", () => { _retraitBas = null; });
+
 /* La mesure du tiroir appartient à ce module, mais les bandes qui dépassent —
    les secteurs, les critères retenus — paraissent et disparaissent ailleurs :
    on leur laisse de quoi la redemander. */
@@ -9035,15 +9201,20 @@ let hisseTiroir = () => {};
      connaître du glissement, et on revient au plan par la même touche. */
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
+  /* Sur le corps, là où « mesure » l'a posée : lue sur la racine, elle revenait
+     vide et le repli de 164 px tenait lieu de mesure. Le tiroir sautait alors
+     de l'écart au premier millimètre du glissement — soixante-quinze pixels
+     pour une bande repliée qui en fait quatre-vingt-dix. */
   const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 164;
+    parseFloat(getComputedStyle(document.body).getPropertyValue("--replie")) || 164;
 
   /* Hauteur visible du tiroir à un cran donné, en pixels. Le milieu suit la
-     règle du CSS — 46 % de la hauteur d'écran. */
+     règle du CSS — 46 % de la hauteur d'écran. Le plus bas montre ce qui a été
+     mesuré, posé au-dessus de la bande rendue au système. */
   function hauteur(nom){
     if (nom === "plein") return tiroir.offsetHeight;
     if (nom === "demi")  return Math.round(innerHeight * .46);
-    return replieePx();
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------
@@ -9227,7 +9398,8 @@ function tiroirCrante({ panneau, prise, cle, demi }){
   function hauteur(nom){
     if (nom === "plein") return Math.round(innerHeight * .92);
     if (nom === "demi")  return Math.round(innerHeight * demi);
-    return replieePx();
+    // l'en-tête mesuré, plus la bande que le tiroir rend au système sous lui
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------
@@ -10261,7 +10433,11 @@ function appliqueAccent(){
   /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
      sans la version éclaircie qu'un fond noir aurait réclamée. */
   const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
+  if (!base){
+    noms.forEach(n => racine.style.removeProperty(n));
+    poseTonDeLaBarre();
+    return;
+  }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
@@ -10270,6 +10446,10 @@ function appliqueAccent(){
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
+  /* Deux modèles peignent leur bandeau de l'accent, trois autres en tirent
+     leur surface : la barre du système, qui prolonge ce bandeau derrière
+     l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -10621,6 +10801,9 @@ function appliqueModele(){
   // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
   habilleModale();
   posePoliceLibelles(cle);
+  /* Le bandeau vient de changer de fond : la barre du système, qui le
+     prolonge derrière l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -12881,6 +13064,9 @@ function activeAdmin(){
      qui jusqu'ici ne servait à rien. */
   if (MONTE){ dessineDessins(); construitPanneau(); }
   majAttente();
+  /* La nuit de la marque touche désormais le haut de l'écran : c'est elle que
+     la barre du système prolonge, et non plus le bandeau du salon. */
+  poseTonDeLaBarre();
 }
 
 
@@ -31363,7 +31549,7 @@ function rameneTuto(el){
 function placeTuto(force){
   const bulle = $("tuto");
   if (!bulle || !TUTO) return;
-  const vw = document.documentElement.clientWidth, vh = innerHeight, bord = 10;
+  const vw = document.documentElement.clientWidth, bord = 10;
   const w = bulle.offsetWidth, h = bulle.offsetHeight;
   const cible = boiteTuto(TUTO.cible);
   const evite = [];
@@ -31382,17 +31568,21 @@ function placeTuto(force){
   if (ETROIT()) pese(boiteTuto($("side")), .3);
   else pese(boiteTuto(document.querySelector(".zoombar")), .5);
 
+  /* La scène, et non la fenêtre : la page descend maintenant sous les barres
+     du système, et une bulle posée au ras du bord aurait eu son bouton sous la
+     poignée de gestes. La scène, elle, s'arrête là où le système reprend la
+     main — c'est la grille qui lui rend cette bande (`_head.html` « .app »). */
+  const s = $("stage").getBoundingClientRect();
   const places = [];
   if (ETROIT()){
     const x = (vw - w) / 2;
     places.push([x, $("bandeau").getBoundingClientRect().bottom + 8]);
     const vis = boiteTuto($("viseur"));
     if (vis) places.push([x, vis.bottom + 8]);
-    places.push([x, vh - h - bord]);
+    places.push([x, s.bottom - h - bord]);
   } else {
     if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
                            [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
-    const s = $("stage").getBoundingClientRect();
     places.push([s.left + 16, s.bottom - h - 16], [s.left + 16, s.top + 16],
                 [s.right - w - 16, s.top + 16], [s.right - w - 16, s.bottom - h - 16]);
   }
@@ -31408,8 +31598,8 @@ function placeTuto(force){
   }, loin(x, y));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
-    const x = Math.round(Math.max(bord, Math.min(vw - w - bord, p[0])));
-    const y = Math.round(Math.max(bord, Math.min(vh - h - bord, p[1])));
+    const x = Math.round(Math.max(s.left + bord, Math.min(s.right - w - bord, p[0])));
+    const y = Math.round(Math.max(s.top + bord, Math.min(s.bottom - h - bord, p[1])));
     const c = cout(x, y);
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });
