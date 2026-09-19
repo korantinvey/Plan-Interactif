@@ -5694,6 +5694,43 @@ if (!document.querySelector('meta[name="viewport"]')){
   document.head.appendChild(mv);
 }
 
+/* La fenêtre qui n'ose pas prendre l'écran entier, et ce qui l'y décide.
+
+   L'application lancée depuis son icône s'ouvre en plein écran, mais sa
+   fenêtre s'arrête sous la zone de la caméra : quarante-trois pixels de noir
+   au-dessus de la barre du salon, que la page ne peut pas peindre puisqu'ils
+   sont hors d'elle. Le relevé pris sur l'appareil le dit sans ambiguïté —
+   écran haut de 835 points, fenêtre de 792, et aucun retrait annoncé alors que
+   `viewport-fit=cover` est bien là. Le navigateur ne l'a donc pas appliqué au
+   moment d'ouvrir. Sortir de l'application et y revenir suffisait à le lui
+   faire reprendre, l'écran entier avec.
+
+   La balise est donc réécrite une fois la page affichée : `contain` le temps
+   d'une image, puis `cover` à nouveau. Le navigateur voit une valeur changer,
+   recalcule la géométrie qu'il avait fixée trop tôt, et la fenêtre prend la
+   bande sans qu'on ait à quitter l'application.
+
+   Seulement en plein écran, et seulement si la fenêtre est effectivement plus
+   courte que l'écran : ailleurs — un onglet de navigateur, une fenêtre sans
+   barre à reprendre — il n'y a rien à corriger, et ce recalcul ne coûterait
+   qu'une remise en page de plus. */
+{
+  const bordAbord = () => {
+    const mv = document.querySelector('meta[name="viewport"]');
+    if (!mv || mv.content.indexOf("viewport-fit=cover") < 0) return;
+    if (!matchMedia("(display-mode: fullscreen)").matches) return;
+    /* Deux points de marge : les hauteurs se comparent en points CSS, que le
+       rapport de pixels de l'appareil arrondit. */
+    if (screen.height - innerHeight < 2) return;
+    const plein = mv.content;
+    mv.content = plein.replace("viewport-fit=cover", "viewport-fit=contain");
+    requestAnimationFrame(() => { mv.content = plein; });
+  };
+  /* Après le premier rendu : la fenêtre n'a de taille à corriger qu'une fois
+     ouverte, et le plan a mieux à faire pendant qu'il arrive. */
+  addEventListener("load", () => requestAnimationFrame(bordAbord));
+}
+
 const $ = id => document.getElementById(id);
 const svg = $("plan");
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g,
