@@ -217,7 +217,7 @@ Fonctions :
 
 - l.650 · Page de rapport
 
-### `_dessin.html` — 2373 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2396 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -242,16 +242,17 @@ Fonctions :
 `remplitListeSocietes` 1180 · `societeSaisie` 1188 · `traceImage` 1215
 `traceStandDessine` 1240 · `texteStandDessine` 1264 · `poseLibellesDessines` 1282
 `decoupeStand` 1303 · `marqueStandsDessines` 1315 · `rafraichitStandsDessines` 1330
-`oublieReperes` 1360 · `reperesCherchables` 1362 · `vaAuRepere` 1406 · `clePoi` 1441
-`cartouchePoi` 1443 · `ouvrePoi` 1562 · `mesureCartouche` 1634 · `phareRepere` 1650
-`phareZone` 1652 · `eclairePoi` 1658 · `oublieChoixPoi` 1691 · `signale` 1700
-`calquePourImage` 1714 · `lienImageSaisi` 1742 · `formeImage` 1753 · `poseImage` 1762
-`ditImagePosee` 1784 · `importeImage` 1792 · `dessinPointerDown` 1843
-`dessinPointerMove` 1928 · `dessinPointerUp` 1966 · `termineTrace` 2007 · `aide` 2019
-`outilOffert` 2048 · `choisitOutil` 2051 · `enchaineStand` 2082 · `optionsModes` 2112
-`proposeCouleurLigne` 2123 · `montreTransport` 2134 · `activeCalque` 2188 · `cleVerrou` 2246
-`verrouille` 2247 · `basculeVerrou` 2249 · `pictoVerrou` 2266 · `montreRoleIti` 2300
-`creeCalque` 2331 · `demandeNom` 2344 · `renommeCalque` 2363
+`oublieReperes` 1360 · `reperesCherchables` 1362 · `vaAuRepere` 1406 · `clePoi` 1449
+`pastillePoi` 1458 · `cartouchePoi` 1462 · `ouvrePoi` 1581 · `mesureCartouche` 1653
+`pharePoi` 1669 · `phareRepere` 1673 · `phareZone` 1675 · `eclairePoi` 1681
+`oublieChoixPoi` 1714 · `signale` 1723 · `calquePourImage` 1737 · `lienImageSaisi` 1765
+`formeImage` 1776 · `poseImage` 1785 · `ditImagePosee` 1807 · `importeImage` 1815
+`dessinPointerDown` 1866 · `dessinPointerMove` 1951 · `dessinPointerUp` 1989
+`termineTrace` 2030 · `aide` 2042 · `outilOffert` 2071 · `choisitOutil` 2074
+`enchaineStand` 2105 · `optionsModes` 2135 · `proposeCouleurLigne` 2146
+`montreTransport` 2157 · `activeCalque` 2211 · `cleVerrou` 2269 · `verrouille` 2270
+`basculeVerrou` 2272 · `pictoVerrou` 2289 · `montreRoleIti` 2323 · `creeCalque` 2354
+`demandeNom` 2367 · `renommeCalque` 2386
 
 Éléments :
 
