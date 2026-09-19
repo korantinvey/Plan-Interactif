@@ -103,7 +103,24 @@ function manifeste() {
     description: "Le plan du salon : ses exposants, ses zones et son programme.",
     lang: "fr",
     dir: "ltr",
-    display: "standalone",
+    /* Plein écran, et non plus « standalone » : le système ne garde plus sa
+       barre d'heure au-dessus du plan, ni sa poignée de gestes en dessous. Un
+       plan de salon se lit sur toute la hauteur qu'on lui donne — c'est un
+       hall qu'on fait glisser du doigt, et les deux bandes du système lui
+       prenaient près d'un dixième de l'écran pour dire ce que le téléphone dit
+       partout ailleurs.
+
+       Ce qui l'accompagne est déjà en place : les pages du plan s'étendent
+       jusqu'aux bords (`viewport-fit=cover`) et se retirent de ce que le
+       système occupe par leurs jetons `--sys-*` — lesquels retombent à zéro
+       ici, n'ayant plus rien à éviter, et rendent d'eux-mêmes la hauteur
+       gagnée.
+
+       Les modes se replient l'un sur l'autre : un navigateur qui ne sait pas
+       le plein écran retombe sur « standalone », puis sur « minimal-ui ».
+       iOS ne le lit pas du tout et garde sa barre d'état, faute de quoi que ce
+       soit qui la retire — la page y reste donc ce qu'elle était. */
+    display: "fullscreen",
     /* L'adresse par défaut, celle d'une visite sans `?plan=` : la page du plan,
        qui retombe alors sur le salon par défaut. Le relais la remplace par
        celle du salon d'où l'on installe. `id` n'est pas déclaré — il vaut

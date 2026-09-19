@@ -488,8 +488,58 @@ navigateur, sous une clé par événement (`plan-parcours:<slug>`), et ne contie
 que des identifiants. Rien n'est envoyé au serveur, aucun compte n'est demandé,
 et un exposant renommé entre deux visites s'affiche sous son nouveau nom — les
 libellés sont relus dans les données à chaque affichage. Ce que le plan ne
-connaît plus est écarté au chargement, pour qu'un stand démonté ne laisse pas
-un rang mort.
+connaît plus est écarté de l'affichage, pour qu'un stand démonté ne laisse pas
+un rang mort — écarté, et non effacé : voir ci-dessous.
+
+### Trois semaines avant le salon
+
+Une liste se prépare chez soi, longtemps à l'avance, et se relit sur place.
+Entre les deux il se passe des choses, et « le stockage local » n'est pas la
+promesse qu'on croit.
+
+**Le navigateur fait le ménage.** Safari efface tout ce qu'une page a écrit —
+stockage local, bases, caches — au bout de sept jours passés sans revenir sur le
+site ; la liste préparée en août n'existe plus en septembre, et rien ne
+l'annonce. Chrome et Firefox ne comptent pas les jours mais jettent, sous la
+pression du disque, les origines dont rien ne dit qu'elles comptent. Une
+application installée échappe au premier cas ; `navigator.storage.persist()`
+répond au second, et le plan le demande dès qu'il y a quelque chose à perdre
+(`tientLeStockage`). Chromium accorde ou refuse en silence ; Safari ne
+l'implémente pas ; Firefox pose la question au visiteur, et on ne la lui pose
+donc qu'au moment où il demande justement que sa liste tienne.
+
+**L'application installée démarre à vide, sur iOS.** Une icône posée sur l'écran
+d'accueil y a son propre stockage, séparé de celui de Safari : suivre
+l'invitation à installer, c'est perdre la liste composée dans l'onglet. C'est le
+seul endroit où la perte est certaine, et la fenêtre d'installation le dit
+maintenant, avec le geste qui l'évite (`_installation.html`,
+`poseGardeInstallation`).
+
+**Le plan ne s'ampute plus lui-même.** Une liste filtrée sur ce que les données
+connaissent était réécrite telle quelle au premier signet suivant. Or « le plan
+ne le connaît pas » n'est pas « il n'existe plus » : l'option du programme
+décochée une heure vide l'index des conférences, une synchronisation Klipso en
+cours rend un salon amputé, et les conférences retenues pour le mois suivant
+partaient pour de bon. Ce qui n'est plus reconnu est donc **mis de côté** avec
+sa date et le rang qu'il occupait (`MIS_DE_COTE`), réécrit avec le reste,
+invisible tant que les données l'ignorent, et remis à sa place le jour où elles
+le reconnaissent — définitivement oublié au bout de 120 jours, ou tout de suite
+si le visiteur vide sa liste.
+
+**Et, contre tout le reste, la copie qu'on se garde.** Le lien de partage porte
+déjà le parcours entier dans son fragment, sans serveur ni compte
+(`_partage.html`) ; il sait donc se donner à soi-même. Posé dans une
+conversation, un courrier ou une note, il ne dépend plus de rien de ce que le
+navigateur garde : il rouvre la liste le jour du salon, sur un autre téléphone,
+dans l'application fraîchement installée, ou après un nettoyage. Trois portes y
+mènent — une note au pied de la liste, une proposition au troisième rang retenu
+(une seule fois, `plan-garde:<slug>`), et la fenêtre d'installation. C'est le
+seul des quatre gestes qui tienne contre les sept jours de Safari, et le seul
+que le visiteur emporte.
+
+Ce qui s'envoie ainsi ne compte pas comme un partage : « huit parcours partagés »
+doit se lire « huit visiteurs ont donné leur liste à quelqu'un », et une copie de
+sauvegarde n'est pas cela.
 
 ## Compléter une visite — la suggestion
 
@@ -1556,7 +1606,12 @@ l'appareil.
 
 **S'installer.** Chrome propose « Installer » dans sa barre d'adresse, Android
 « Ajouter à l'écran d'accueil », iOS la même chose depuis le menu de partage.
-Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur.
+Le plan s'ouvre ensuite sans barre de navigateur, avec son icône et sa couleur
+— et sur Android, sans les barres du système non plus : ni l'heure au-dessus,
+ni la poignée de gestes en dessous, le hall prend l'écran entier. Une
+application installée avant ce changement le reçoit quand le système la met à
+jour, ce qu'il fait de lui-même dans la journée ; la réinstaller l'obtient tout
+de suite. iOS garde sa barre d'état, rien ne permettant de la retirer là-bas.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
 peut en plus faire proposer l'installation au visiteur, par une fenêtre — voir
 plus bas, « Inviter à l'installer ».
