@@ -3978,6 +3978,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      quoi. Il cède donc la bande tout entière, et la reprend en se refermant
      (voir `_js.html`). */
   .side.cede{transform:translateY(100%)}
+  /* Et il descend aussi le temps qu'on manœuvre le plan, comme la barre du
+     salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
+     bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
+     d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
+     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     l'emporte sur eux le temps qu'elle dure. */
+  .side.pliee{transform:translateY(100%)}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
