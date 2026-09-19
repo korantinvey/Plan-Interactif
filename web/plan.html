@@ -4780,6 +4780,13 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      quoi. Il cède donc la bande tout entière, et la reprend en se refermant
      (voir `_js.html`). */
   .side.cede{transform:translateY(100%)}
+  /* Et il descend aussi le temps qu'on manœuvre le plan, comme la barre du
+     salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
+     bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
+     d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
+     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     l'emporte sur eux le temps qu'elle dure. */
+  .side.pliee{transform:translateY(100%)}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
@@ -9662,7 +9669,7 @@ function suitPince(){
   const r = cadrePlan();
   // le pincement change l'échelle : mêmes économies que la molette
   figeTextes();
-  plieLaBarre(true);
+  plieLesBandes(true);
   const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -9692,34 +9699,41 @@ function suitPince(){
  * qui parle de « cursor » ferait le même travail, sans qu'on puisse choisir
  * quand.
  */
-/* La barre s'efface le temps qu'on manipule le plan.
+/* Les deux bandes s'effacent le temps qu'on manipule le plan.
 
-   Elle se pose par-dessus la scène sur écran étroit : glisser dessous cent
-   points de hall le temps d'un geste ne coûte donc aucune remise en page — le
-   plan ne change pas de taille, il se découvre. Elle revient dès que la main
-   lâche, et le plan n'a pas bougé d'un pixel entre-temps.
+   Celle du haut porte le salon, celle du bas la recherche ; ensemble elles
+   prennent près de deux cents points d'un écran de téléphone, et ce sont
+   exactement ceux qu'on veut voir quand on fait glisser un hall ou qu'on
+   l'agrandit. Elles se retirent donc le temps du geste et reviennent au doigt
+   levé — la barre par-dessus la scène, le tiroir sous le bord de l'écran, l'un
+   et l'autre sans que rien ne soit remis en page : le plan ne change pas de
+   taille, il se découvre.
 
-   Pas au doigt posé : un appui qui ouvre un stand la ferait clignoter pour
-   rien. C'est le mouvement qui la plie — le glissement une fois passé le seuil
-   des deux points, le pincement dès la première image.
+   Pas au doigt posé : un appui qui ouvre un stand les ferait clignoter pour
+   rien. C'est le mouvement qui les plie — le glissement une fois passé le
+   seuil des deux points, le pincement dès la première image.
 
    Un filet, comme pour les textes du plan : tous les chemins ne mènent pas à
    un doigt levé — un `pointercancel` du système, une main qui sort de l'écran
-   — et la barre resterait pliée sur un plan qu'on ne manipule plus. */
-let barrePliee = false, filetBarre = null;
-function plieLaBarre(oui){
-  const b = $("bandeau");
+   — et elles resteraient pliées sur un plan qu'on ne manipule plus. */
+let bandesPliees = false, filetBandes = null;
+function plieLesBandes(oui){
+  const b = $("bandeau"), tiroir = $("side");
   if (!b || !ETROIT() || document.documentElement.classList.contains("mode-admin")) return;
-  clearTimeout(filetBarre);
-  filetBarre = oui ? setTimeout(() => plieLaBarre(false), 1200) : null;
-  if (barrePliee === oui) return;
-  barrePliee = oui;
+  clearTimeout(filetBandes);
+  filetBandes = oui ? setTimeout(() => plieLesBandes(false), 1200) : null;
+  if (bandesPliees === oui) return;
+  bandesPliees = oui;
   b.classList.toggle("pliee", oui);
+  /* Le tiroir retrouve son cran en remontant : c'est une classe de plus sur
+     lui, non un cran de moins — celui qu'il avait est écrit dans son attribut,
+     et personne n'y touche ici. */
+  if (tiroir) tiroir.classList.toggle("pliee", oui);
 }
 
 const saisitPlan = (tenu) => {
-  // la main lâche : la barre revient, quelle que soit la façon dont le geste finit
-  if (!tenu) plieLaBarre(false);
+  // la main lâche : les bandes reviennent, quelle que soit la façon dont le geste finit
+  if (!tenu) plieLesBandes(false);
   if (tenu && dernierAppuiTactile) return;
   svg.style.cursor = tenu ? "grabbing" : "";
 };
@@ -9766,7 +9780,7 @@ svg.addEventListener("pointermove", e => {
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
-  if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLaBarre(true); }
+  if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
 /* ------------------------------------------------------------------
