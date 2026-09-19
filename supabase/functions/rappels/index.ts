@@ -35,7 +35,7 @@
  * plus qu'aucun journal ne le nommerait.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { pousse } from "../_partage/push.ts";
+import { hoteDe, pousse, pousseurConnu } from "../_partage/push.ts";
 
 /*
  * Toutes les origines, comme `mesure`, et pour la même raison : un plan posé
@@ -102,12 +102,19 @@ async function enregistre(req: Request) {
   const p256dh = String(corps.abonnement?.keys?.p256dh ?? "").slice(0, 200);
   const auth = String(corps.abonnement?.keys?.auth ?? "").slice(0, 100);
   if (!slug || !point || !p256dh || !auth) return refus("Paramètres manquants.");
-  /* L'abonnement est une adresse, et elle sert telle quelle à poster : on
-     refuse ici ce qui n'en est pas une, plutôt que de le découvrir à l'envoi. */
-  try {
-    if (new URL(point).protocol !== "https:") return refus("Abonnement invalide.");
-  } catch (_e) {
-    return refus("Abonnement invalide.");
+  /* L'abonnement est une adresse, et elle sert telle quelle à poster. On refuse
+     donc ici ce qui ne désigne pas un service de poussée connu, plutôt que de
+     le découvrir à l'envoi — et surtout plutôt que de poster où l'on nous dit.
+     Cette fonction ne demande aucune identité : sans ce contrôle, l'adresse de
+     n'importe qui faisait de ce service un émetteur à ses ordres, à l'heure
+     qu'il choisissait.
+
+     Le refus se dit, et il nomme l'hôte au journal : c'est ainsi qu'on
+     découvre un navigateur qui pousse ailleurs, et qu'on l'ajoute à
+     POUSSEURS_AUTORISES sans avoir à redéployer. */
+  if (!pousseurConnu(point)) {
+    console.error("Abonnement refusé, hôte inconnu :", hoteDe(point));
+    return refus("Service de poussée inconnu.");
   }
 
   const rappels = (Array.isArray(corps.rappels) ? corps.rappels : [])

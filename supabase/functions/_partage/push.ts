@@ -176,6 +176,68 @@ async function chiffre(charge: Octets, p256dh: Octets, auth: Octets): Promise<Oc
 /* ------------------------------------------------------------------
    L'envoi
    ------------------------------------------------------------------ */
+/*
+ * Les services de poussée des navigateurs, et rien d'autre.
+ *
+ * L'adresse d'abonnement arrive du navigateur d'un visiteur, par une fonction
+ * qui ne demande aucune identité — c'est ce qu'il faut pour que le plan posé
+ * sur un écran d'accueil sache s'abonner. Elle finissait pourtant telle quelle
+ * dans un `fetch`, sur le seul contrôle qu'elle soit en `https:` : n'importe
+ * qui pouvait donc faire poster cette fonction où il voulait, à l'heure qu'il
+ * choisissait, et se servir de nos adresses pour atteindre un tiers.
+ *
+ * L'hôte est donc relu. C'est le seul endroit du service qui sache à quoi
+ * ressemble un service de poussée, et le dernier avant le départ : un rang
+ * entré avant ce contrôle ne part pas davantage.
+ *
+ * La liste se complète par la variable POUSSEURS_AUTORISES — des hôtes séparés
+ * par des virgules, comme ORIGINES_AUTORISEES. C'est ce qui la rend tenable :
+ * un navigateur qui pousse ailleurs s'ajoute en un secret, sans déploiement, et
+ * le journal nomme l'hôte refusé pour qu'on sache lequel ajouter. Sans cela,
+ * une liste trop étroite aurait fait disparaître des abonnements légitimes en
+ * silence — la panne qu'on ne voit qu'au salon, quand le rappel ne vient pas.
+ */
+const POUSSEURS = [
+  ...(Deno.env.get("POUSSEURS_AUTORISES") ?? "")
+    .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
+  "fcm.googleapis.com",            // Chrome, Edge, Brave, Opera, Vivaldi
+  "android.googleapis.com",        // le même, sous son ancien nom
+  "updates.push.services.mozilla.com",   // Firefox
+  "web.push.apple.com",            // Safari, iOS et macOS
+  "notify.windows.com",            // Edge d'avant Chromium
+  "push.samsungosp.com",           // Samsung Internet
+  "push-api.cloud.huawei.com",     // Huawei
+];
+
+/** L'hôte d'une adresse, pour le journal. L'adresse entière vaut jeton — elle
+ *  suffit à poster sur l'appareil — et n'a rien à faire dans une trace. */
+export function hoteDe(adresse: string): string {
+  try {
+    return new URL(adresse).hostname;
+  } catch {
+    return "adresse illisible";
+  }
+}
+
+/**
+ * L'adresse désigne-t-elle un service de poussée connu ?
+ *
+ * En `https:` et sur un hôte de la liste, ou sous l'un de ses sous-domaines —
+ * Microsoft et Samsung en distribuent un par région, et les nommer un par un
+ * n'aurait fait que dater la liste.
+ */
+export function pousseurConnu(adresse: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(adresse);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  const h = u.hostname.toLowerCase();
+  return POUSSEURS.some((d) => h === d || h.endsWith("." + d));
+}
+
 export type Abonnement = { endpoint: string; p256dh: string; auth: string };
 
 export type Cles = { publique: string; privee: string; sujet: string };
@@ -204,6 +266,14 @@ export async function pousse(
   cles: Cles,
   vie: number,
 ): Promise<Issue> {
+  /* Le dernier contrôle avant le départ, et non le seul : `rappels` refuse déjà
+     à l'abonnement. Celui-ci couvre ce que l'autre ne peut plus atteindre — un
+     rang posé avant que cette liste existe. Tenu pour périmé, il s'efface avec
+     les adresses mortes au lieu d'être retenté chaque minute. */
+  if (!pousseurConnu(abonnement.endpoint)) {
+    console.error("Abonnement écarté, hôte inconnu :", hoteDe(abonnement.endpoint));
+    return { parti: false, statut: 0, perime: true };
+  }
   const origine = new URL(abonnement.endpoint).origin;
   const publique = octets(cles.publique);
   const corps = await chiffre(
