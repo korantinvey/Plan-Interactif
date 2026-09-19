@@ -6,6 +6,11 @@
    Chaque entrée dit pourquoi elle est là : une chaîne déclarée invisible à
    tort resterait en français sans que le contrôle le signale plus jamais. */
 module.exports = [
+  /* `_js.html` § Le relevé de l'appareil — temporaire. Des intitulés de
+     mesures, lus par qui tient le téléphone pour dire ce que le système laisse
+     à la page : ils s'en vont avec le relevé. */
+  "retraits h", "bandeau y",
+
   // `_environs.html` : le corps de la requête Overpass, qui part au serveur
   // et ne s'affiche jamais
   "[out:json][timeout:60][bbox:",
