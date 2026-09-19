@@ -4077,7 +4077,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
      voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
      liste des lieux proposés sous un champ. */
-  .itineraire.open[data-cran="replie"]{max-height:var(--itin-replie,64px)}
+  .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
   .itineraire.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .itineraire.glisse{transition:none}
