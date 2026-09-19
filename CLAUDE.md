@@ -156,7 +156,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | logo en tête de fiche, marges retirées, place à côté du nom ou sous le numéro | `_js.html` `poseMarque`, `recadreMarque`, `rangeMarque` |
 | dessin WebGL du plan (rendu par défaut, `?rendu=svg` pour l'écarter) | `_webgl.html` — il relit le SVG caché : un effet visuel ajouté au plan en CSS (animation, filtre) doit y être rejoué, sans quoi il ne se voit qu'en SVG ; bibliothèque dans `web/bibliotheques/` |
 | ce que la fiche montre, ordre des champs, sections, intitulés | réglage `_admin1.html` `voletOrdre` (réserve à gauche, fiche au milieu, aperçu à droite) ; rendu `_js.html` `corpsRange`, `champCorps`, `montreIntitule` ; migrations `groupes_de_champs`, `intitules_des_champs` |
-| tiroirs de la liste, de la fiche et du parcours sur écran étroit | `_js.html` § Le tiroir de la liste, § Les tiroirs de la fiche et du parcours (`tiroirCrante`, un appel par tiroir) ; crans et prise dans `_head.html` `.side`, `.detail`, `.parcours`, `.poignee` |
+| tiroirs du bas sur écran étroit — liste, fiche, parcours, itinéraire | `_js.html` § Le tiroir de la liste, § Les tiroirs menés par la hauteur (`tiroirCrante`, un appel par tiroir) ; crans et prise dans `_head.html` `.side`, `.detail`, `.parcours`, `.itineraire`, `.poignee` ; la liste cède la bande aux trois autres par `cede` |
 | couleurs, visibilité et réglages des calques | `_admin1.html` |
 | lenteur d'un nuancier, couleur qui traîne derrière la souris | `_admin1.html` § La rafale du sélecteur de couleur, `suitNuancier` ; peintures ciblées `_dessin.html` `peintCalque`, `_js.html` `peintSecteur` |
 | police des noms sur le plan, celle d'un modèle ou une autre de la liste | `_admin1.html` `POLICES_LIBELLE`, `POLICES_NOMS` (relue par `npm run polices`) et ses genres `GENRES_POLICE`, `posePoliceLibelles` ; vignettes et filtres dans `voletApparence` ; clé `_fiche.police` |
@@ -196,6 +196,7 @@ règlent cela — servez-vous-en avant d'ouvrir quoi que ce soit.
 | carte de chaleur du plan | `_chaleur.html`, migration `audience` |
 | remise à zéro des compteurs | `_chaleur.html` § Remise à zéro, `_admin1.html` `ouvreReglages`, migration `remise_a_zero` |
 | thème du plan — un seul, le clair ; pas de mode sombre ni de suivi de l'appareil | jetons `_head.html` `:root` ; la nuit ne vit plus que dans la console, `_console.css` et `_console-base.html` ; barre du navigateur `outils/pwa.js` `BARRE_CLAIRE` / `BARRE_DEUX_THEMES`, choisie par l'option `deuxThemes` de `outils/genere.js` `page()` |
+| plan d'un bord à l'autre de l'écran — sous l'heure, sous la poignée de gestes | option `pleinEcran` de `outils/genere.js` `page()` (`viewport-fit=cover`) ; jetons `--sys-*` de `_head.html` `:root`, repris par `.app`, `.topbar`, `.bandeAdmin`, les tiroirs et `_tutoriel.html` `placeTuto` ; couleur dont le système peint sa barre `_js.html` `poseTonDeLaBarre`, jeton `--ton-barre` posé par `.topbar` et par les modèles qui peignent le bandeau |
 | styles et structure de l'écran du plan | `_head.html` (CSS l. 8-1034, balisage l. 1035+) |
 | console multi-événements | `_console-js.html`, socle `_console-base.html` |
 | icône d'onglet des pages du plan | `_console-js.html` `champFavicon`, posée par `_js.html` `poseFavicon`, migration `icone_d_onglet_du_salon` |
