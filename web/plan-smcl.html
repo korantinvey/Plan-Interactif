@@ -9651,55 +9651,6 @@ function plieLaBarre(oui){
   b.classList.toggle("pliee", oui);
 }
 
-/* Le plein écran demandé par la page, et non par le manifeste.
-
-   Réclamé au manifeste, il faisait ouvrir par Android une fenêtre plus courte
-   que l'écran — quarante-trois points de noir au-dessus de la barre du salon,
-   hors de la page et impeignables, qu'aucune reprise n'a su récupérer (voir
-   `outils/pwa.js`). Demandé d'ici, une fois l'application ouverte, il n'y a
-   plus de fenêtre à ouvrir : elle est déjà à la taille de l'écran, et il ne
-   reste que les barres à masquer. Refusé, rien ne change — c'est un gain
-   qu'on tente, pas une mise en page qui en dépend.
-
-   Il lui faut un geste : un navigateur ne l'accorde qu'à une page qu'on vient
-   de toucher, jamais sur simple demande au chargement. Le premier appui sert
-   donc de clé, puis chaque geste qui vient de manœuvrer le plan. Un balayage
-   depuis le bord de l'écran en fait sortir, et c'est très bien ainsi : qui
-   veut lire l'heure la retrouve d'un geste, qui revient au plan retrouve le
-   hall entier.
-
-   Dans l'application posée sur l'écran d'accueil, et sur écran étroit
-   seulement : masquer la barre d'adresse d'un onglet au premier doigt posé
-   serait une impolitesse, et un grand écran n'a pas de hauteur à réclamer. */
-function pleinEcranVoulu(){
-  if (!ETROIT() || document.fullscreenElement) return false;
-  try {
-    return ["standalone", "fullscreen", "minimal-ui"]
-      .some(m => matchMedia("(display-mode: " + m + ")").matches);
-  } catch (e) { return false; }
-}
-let pleinEcranTente = false;
-function demandePleinEcran(){
-  if (pleinEcranTente || !pleinEcranVoulu() || !document.documentElement.requestFullscreen) return;
-  /* Une fois par ouverture, et pas une de plus. Le navigateur annonce chaque
-     passage en plein écran par un bandeau — « pour quitter, faites glisser »,
-     avec le nom du domaine — qui met plusieurs secondes à s'effacer. Une fois,
-     c'est le prix du plein écran ; à chaque geste, c'est le plan qu'on ne voit
-     plus. Qui en sort d'un balayage y reste donc jusqu'au prochain lancement :
-     c'est aussi ce qu'il a demandé en balayant. */
-  pleinEcranTente = true;
-  /* `navigationUI: "hide"` demande la barre de navigation avec le reste ;
-     un système qui ne sait pas la masquer rend simplement ce qu'il peut. */
-  const promis = document.documentElement.requestFullscreen({ navigationUI: "hide" });
-  // refusé — iOS n'en veut pas hors vidéo, un réglage de l'appareil peut l'interdire
-  if (promis && promis.catch) promis.catch(() => {});
-}
-/* Le premier doigt posé sur la page, où qu'il tombe : c'est la première
-   occasion, et la seule qui ne demande rien au visiteur. L'écouteur reste en
-   place — c'est le drapeau qui compte, non l'écoute : un premier appui venu
-   sur un grand écran ne doit pas fermer la porte au téléphone qu'on tourne. */
-addEventListener("pointerdown", demandePleinEcran);
-
 const saisitPlan = (tenu) => {
   // la main lâche : la barre revient, quelle que soit la façon dont le geste finit
   if (!tenu) plieLaBarre(false);

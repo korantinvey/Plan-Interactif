@@ -4,7 +4,7 @@
   "description": "Le plan du salon : ses exposants, ses zones et son programme.",
   "lang": "fr",
   "dir": "ltr",
-  "display": "standalone",
+  "display": "fullscreen",
   "start_url": "plan",
   "orientation": "any",
   "background_color": "#E9EAE4",

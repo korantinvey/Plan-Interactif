@@ -1611,12 +1611,20 @@ et il va jusqu'aux bords de l'écran : la barre du salon passe derrière l'heure
 plutôt que de s'arrêter dessous, et son contenu se retire de ce que le système
 occupe (`viewport-fit=cover`, jetons `--sys-*`).
 
-Le plein écran — masquer aussi l'horloge et la poignée de gestes — a été
-essayé, et écarté : sur l'appareil où il a été éprouvé, la fenêtre ouverte
-depuis l'icône s'arrêtait sous la zone de la caméra, et les quarante-trois
-points ainsi perdus restaient noirs, hors de la page, jusqu'à ce qu'on sorte de
-l'application et qu'on y revienne. Une bande noire ne vaut pas mieux qu'une
-horloge.
+L'application installée va plus loin : elle s'ouvre en plein écran, sans
+horloge au-dessus ni poignée de gestes en dessous. Une réserve, sur l'appareil
+où cela a été éprouvé : au lancement, Android ouvre une fenêtre un peu plus
+courte que l'écran, et la bande de la caméra reste noire jusqu'à ce qu'on sorte
+de l'application et qu'on y revienne — quarante-trois points sur huit cent
+trente-cinq.
+
+L'autre voie a été essayée : la page peut réclamer le plein écran elle-même, et
+les récupérer. Mais un navigateur annonce alors chaque passage en plein écran
+par un bandeau qu'aucune option n'abrège — c'est la garantie qu'une page ne se
+fera pas passer pour le système. Entre cette annonce à chaque ouverture et une
+bande noire au lancement, c'est la bande qui a été retenue. Un plein écran sans
+bandeau ni bande noire demanderait une application native, publiée sur un
+magasin.
 Rien à faire pour l'exploitant : la page se déclare installable d'elle-même. Il
 peut en plus faire proposer l'installation au visiteur, par une fenêtre — voir
 plus bas, « Inviter à l'installer ».
