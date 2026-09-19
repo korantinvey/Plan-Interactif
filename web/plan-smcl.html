@@ -804,6 +804,24 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
 body{margin:0;background:var(--ground);color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
+/* Le rechargement par glissement, retiré au navigateur.
+
+   Un doigt qui tire vers le bas sur une page arrivée en haut de sa course la
+   fait recharger. Sur un téléphone, c'est exactement le geste des tiroirs : on
+   saisit la liste, la fiche, le parcours ou l'itinéraire pour les redescendre,
+   la prise est manquée de quelques pixels ou le tiroir est déjà au plus bas, et
+   le salon repart pour un chargement complet — la recherche tapée, le stand
+   ouvert et le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
+   la page redemande ses données d'elle-même, et le plan tient dans la hauteur
+   de l'écran sans jamais défiler.
+
+   Sur la racine et sur le corps à la fois : les navigateurs ne s'accordent pas
+   sur celui des deux dont la valeur commande la fenêtre. */
+html,body{overscroll-behavior-y:none}
+/* Et le geste s'arrête au tiroir au lieu de remonter à la page : arrivé au bout
+   de sa liste, le doigt qui continue emportait ce qu'il y a derrière — un
+   sursaut du plan, pour un tiroir qui ne bougeait plus. */
+.list,.detail-bd,.pCorps,.iCorps{overscroll-behavior:contain}
 button,input,textarea{font:inherit;color:inherit}
 /* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
    fond : sous « Verre » — encre blanche sur un carreau translucide — elles
