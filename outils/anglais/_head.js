@@ -24,6 +24,8 @@ module.exports = {
 
   "Afficher la liste des stands": "Show the stand list",
   "Agrandir la fiche": "Expand the details",
+  "Agrandir le parcours": "Expand my visit plan",
+  "Agrandir l'itinéraire": "Expand the directions",
   "Exposant, stand…": "Exhibitor, stand…",
   "Effacer la recherche": "Clear search",
   "Critères de recherche": "Search filters",
@@ -71,6 +73,13 @@ module.exports = {
   "Aux deux bouts": "At both ends",
   "Texte à placer": "Text to place",
   "Ce que le repère est": "What the landmark is",
+  "Mode": "Mode",
+  "Ce qui passe à cet arrêt": "What stops here",
+  "Ligne": "Line",
+  "Le numéro de la ligne, tel que la signalétique l'écrit": "The line number, as the signage writes it",
+  "Couleur": "Colour",
+  "La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs":
+    "The line’s colour: filled in for Île-de-France lines, set by hand elsewhere",
   "Libellé — « Nord », « A »…": "Label — “North”, “A”…",
   "Exposant à matérialiser": "Exhibitor to draw",
   "Exposant dont l'image ouvre la fiche — facultatif": "Exhibitor whose details the image opens — optional",

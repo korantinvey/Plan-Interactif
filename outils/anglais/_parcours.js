@@ -10,8 +10,8 @@ module.exports = {
   "{n} conférence": "{n} conference",
   "{n} conférences": "{n} conferences",
   "rien pour l'instant": "nothing yet",
-  "Ouvrez la fiche d'un exposant, ou le programme d'une zone, et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet appareil et vous y retrouverez tout à votre prochaine visite.":
-    "Open an exhibitor's details, or an area's programme, and tap the bookmark to add it here. Your visit plan stays on this device, and you will find it all here on your next visit.",
+  "Ouvrez la fiche d'un exposant, ou le programme d'une zone, et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet appareil, et vous pourrez en garder une copie pour le jour du salon.":
+    "Open an exhibitor's details, or an area's programme, and tap the bookmark to add it here. Your visit plan stays on this device, and you will be able to keep a copy of it for the day of the show.",
   "Exposants": "Exhibitors",
   /* Ce qu'un lot versé d'un coup contient, et la question qui le précède. Les
      quatre accords se déclarent un à un : l'anglais ne met pas le pluriel aux

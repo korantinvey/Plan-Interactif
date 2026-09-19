@@ -629,6 +629,48 @@ function retourAuxReglages(marque){
   });
 }
 
+/**
+ * Ce que l'installation fait perdre sur iOS, et le geste qui l'évite.
+ *
+ * Une application posée sur l'écran d'accueil d'iOS a son propre stockage,
+ * séparé de celui de Safari (`faconRappel` le dit déjà pour une autre raison).
+ * Le parcours composé dans l'onglet ne la suit donc pas : le visiteur qui
+ * vient de suivre nos trois gestes ouvre une application vide, et rien ne lui
+ * dit où est passée sa liste — ni comment la reprendre, puisque l'onglet qui
+ * la porte encore l'effacera au septième jour.
+ *
+ * C'est le seul endroit du plan où la perte est certaine, et non probable :
+ * ailleurs le navigateur *peut* faire le ménage, ici l'application démarre à
+ * vide à coup sûr. Elle vaut donc qu'on interrompe la liste des gestes pour
+ * elle — et qu'on y revienne après, ce que fait `revient` : le visiteur était
+ * en train d'installer, il doit retrouver les gestes là où il les a laissés.
+ *
+ * `repond` note que la fenêtre a eu une réponse. Partir garder sa liste n'est
+ * pas la refuser, et ne doit pas se compter comme un « plus tard » de plus.
+ */
+function poseGardeInstallation(corps, repond, revient){
+  const bloc = document.createElement("div");
+  bloc.className = "pGarde";
+  const p = document.createElement("p");
+  p.textContent = "L'application aura sa propre mémoire : le parcours de visite " +
+    "que vous avez commencé ici n'y sera pas. Gardez-en une copie, vous l'y " +
+    "ouvrirez d'un lien.";
+  bloc.appendChild(p);
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn";
+  b.textContent = "Garder mon parcours";
+  b.onclick = () => {
+    repond();
+    /* La fenêtre de la copie attend que celle-ci ait libéré la place, et
+       rouvre celle-ci en partant (`_modales.html`). */
+    apresFermeture = () => demandeGardeParcours(revient);
+    fermeModale();
+  };
+  bloc.appendChild(b);
+  corps.appendChild(bloc);
+}
+
 function remplitInvitation(corps, facon){
   teteInvitation(corps, "Le plan, sur votre écran d'accueil");
 
@@ -686,8 +728,17 @@ function ouvreInvitation(facon, apercu){
       } }
     : { libelle: "J'ai compris", genre: "accent", action: () => { reponse = "compris"; } };
 
-  ouvreModale("Installer le plan", corps => remplitInvitation(corps, facon),
-    [{ libelle: "Plus tard" }, accepte], "installe");
+  ouvreModale("Installer le plan", corps => {
+    remplitInvitation(corps, facon);
+    /* Après les gestes, et non avant : la mise en garde ne vaut que pour qui
+       va les faire. Sur iOS seulement — ailleurs l'application installée
+       partage le stockage du navigateur, et la liste suit toute seule. Et
+       jamais en aperçu, où la fenêtre est montrée à l'organisateur pour ce
+       qu'elle est, et non pour être suivie. */
+    if (!apercu && facon === "partage" && parcoursACopier())
+      poseGardeInstallation(corps, () => { reponse = "copie"; },
+                            () => ouvreInvitation(facon, apercu));
+  }, [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
     if (apercu) return retourAuxReglages("installation");
@@ -748,6 +799,12 @@ function ouvreRappel(facon, apercu){
         "se lance d'un geste et reste consultable sur place, même quand le " +
         "réseau ne passe plus.";
     corps.appendChild(p);
+    /* Passer à l'icône, c'est changer de stockage : la liste composée dans cet
+       onglet reste dans cet onglet. La suggestion ne paraît que sur iOS, où
+       c'est justement vrai (`faconRappel`). */
+    if (!apercu && !ouvre && parcoursACopier())
+      poseGardeInstallation(corps, () => { demandee = true; },
+                            () => ouvreRappel(facon, apercu));
   }, [
     { libelle: ouvre ? "Rester ici" : "Plus tard" },
     ouvre

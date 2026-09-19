@@ -49,6 +49,11 @@ module.exports = {
   "Le navigateur n'a pas pu passer la main. Touchez cette icône sur votre écran d'accueil : le plan s'y ouvre en plein écran, et reste consultable même sans réseau.":
     "The browser could not hand over. Tap this icon on your home screen: the map opens full screen there, and stays available even without a signal.",
 
+  /* Ce que l'application installée ne reprend pas du navigateur, sur iOS. */
+  "L'application aura sa propre mémoire : le parcours de visite que vous avez commencé ici n'y sera pas. Gardez-en une copie, vous l'y ouvrirez d'un lien.":
+    "The app will have a memory of its own: the visit plan you started here will not be in it. Keep a copy, and you will open it there from a link.",
+  "Garder mon parcours": "Keep my visit plan",
+
   // la case des réglages
   "Inviter les visiteurs à installer le plan": "Invite visitors to install the map",
   "Sur téléphone et tablette, quand le plan est ouvert dans le navigateur : une fenêtre propose de l'ajouter à l'écran d'accueil, dès l'ouverture. Une autre rappelle l'application à qui l'a déjà, dix secondes après l'ouverture. Une fois par jour au plus chacune, et plus du tout après deux refus. Aperçu de l'invitation :":

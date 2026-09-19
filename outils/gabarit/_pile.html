@@ -169,7 +169,7 @@ function construitPanneau(){
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
          modifie. */
-      (x.t === "dessin" ? boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
+      (x.t === "dessin" ? boutonRecale(x.ref) + boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
                           '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
@@ -230,6 +230,12 @@ function construitPanneau(){
       /* Le perçage du fond de carte : il n'y a de bouton que s'il y a une carte. */
       const mq = d.querySelector(".masq");
       if (mq) mq.onclick = ev => { ev.stopPropagation(); basculeMasqueCarte(x.ref); };
+      /* Reprendre le calage d'un hall de la bibliothèque. Le bouton précède le
+         cadenas parce que celui-ci ne l'éteint pas : le verrou garde d'un
+         glisser distrait, et rouvrir le calage est un geste nommé, qui se
+         valide ou s'annule. */
+      const rc = d.querySelector(".recal");
+      if (rc) rc.onclick = ev => { ev.stopPropagation(); rouvreCalage(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");

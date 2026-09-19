@@ -53,6 +53,43 @@
      translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
      redéfinit. */
   --menu-fond:#FBFBF8; --menu-encre:#15181A;
+  /* Ce que le système garde pour lui.
+
+     Les pages du plan vont jusqu'aux bords de l'écran — `viewport-fit=cover`,
+     posé par `outils/genere.js` — au lieu de s'arrêter au bord des barres du
+     système. Le plan y gagne la bande de gris qu'il perdait en haut et en bas,
+     et la barre du salon monte enfin derrière l'heure : c'est tout l'objet de
+     la manœuvre. Mais l'horloge, la poignée de gestes et l'encoche se posent
+     alors sur la page, et ce qui se tenait là-dessous devient illisible ou
+     intouchable. Ces quatre jetons sont la mesure de ce qu'il faut leur
+     rendre.
+
+     Ils valent zéro partout où il n'y a rien à éviter — un écran de bureau, un
+     onglet de navigateur, un téléphone sans encoche — si bien qu'une règle qui
+     les ajoute ne déplace rien dans ces cas-là. Écrits en jetons plutôt qu'en
+     `env()` à chaque fois, parce qu'ils se lisent dans des `calc()` déjà longs
+     et qu'un nom y dit ce qu'une fonction n'expliquait pas. */
+  --sys-haut:env(safe-area-inset-top,0px);
+  --sys-bas:env(safe-area-inset-bottom,0px);
+  --sys-gauche:env(safe-area-inset-left,0px);
+  --sys-droite:env(safe-area-inset-right,0px);
+}
+/* En plein écran, il n'y a plus de barres à éviter.
+
+   Le plan ne le demande plus — `outils/pwa.js` dit au long pourquoi l'heure
+   sur la couleur du salon a été préférée à une bande noire comme à un bandeau
+   du navigateur. La règle reste pour les plein écran qui viennent d'ailleurs :
+   celui d'un navigateur de bureau, celui que le manifeste réclamerait si l'on
+   rebasculait. Le navigateur continue alors d'annoncer des retraits que plus
+   aucune barre ne justifie, et la barre du salon garderait la place d'une
+   horloge qui n'est plus là.
+
+   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
+   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
+   plein écran ou non. En haut, elle ne rencontre qu'un aplat de couleur — la
+   barre du salon — que la caméra traverse sans rien cacher. */
+@media (display-mode: fullscreen){
+  :root{--sys-haut:0px;--sys-bas:0px}
 }
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
@@ -63,9 +100,30 @@
    durant. */
 
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);
+/* Le fond du plan, et non le gris de la page : c'est lui qui paraît dans la
+   bande rendue au système en bas de l'écran, et la couture ne doit pas se voir
+   entre la scène et son pourtour. Sans réglage, le gris reprend la main. */
+body{margin:0;background:var(--c-fond,var(--ground));color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
+/* Le rechargement par glissement, retiré au navigateur.
+
+   Un doigt qui tire vers le bas sur une page arrivée en haut de sa course la
+   fait recharger. Sur un téléphone, c'est exactement le geste des tiroirs : on
+   saisit la liste, la fiche, le parcours ou l'itinéraire pour les redescendre,
+   la prise est manquée de quelques pixels ou le tiroir est déjà au plus bas, et
+   le salon repart pour un chargement complet — la recherche tapée, le stand
+   ouvert et le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
+   la page redemande ses données d'elle-même, et le plan tient dans la hauteur
+   de l'écran sans jamais défiler.
+
+   Sur la racine et sur le corps à la fois : les navigateurs ne s'accordent pas
+   sur celui des deux dont la valeur commande la fenêtre. */
+html,body{overscroll-behavior-y:none}
+/* Et le geste s'arrête au tiroir au lieu de remonter à la page : arrivé au bout
+   de sa liste, le doigt qui continue emportait ce qu'il y a derrière — un
+   sursaut du plan, pour un tiroir qui ne bougeait plus. */
+.list,.detail-bd,.pCorps,.iCorps{overscroll-behavior:contain}
 button,input,textarea{font:inherit;color:inherit}
 /* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
    fond : sous « Verre » — encre blanche sur un carreau translucide — elles
@@ -95,13 +153,38 @@ button{cursor:pointer;background:none;border:none}
    se manquaient de la hauteur exacte de la barre du navigateur, si bien que le
    cartouche recouvrait la recherche et que le bouton « ajuster » passait
    dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
-.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px}
+/* La grille s'arrête au bord de ce que le système garde — en bas la poignée
+   de gestes, sur les côtés l'encoche en paysage. Tout ce qui s'ancre au bas de
+   la scène suit alors sans qu'aucune de ses règles ait à le savoir : les
+   boutons de zoom, l'échelle, le cartouche des repères et la pile des calques
+   se mesurent à la scène, qui vient de raccourcir d'autant.
+
+   Le haut n'en est pas : c'est la barre du salon qui monte sous l'horloge, et
+   elle se retire elle-même — voir « .topbar » et « .bandeAdmin ». */
+.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px;
+  padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche)}
 /* La barre se mesure à son contenu au lieu de le rogner : un nom de salon
    long — « Franchise Expo Paris 2027 » — passe à la ligne et la barre grandit
    d'autant. Tronqué, il ne disait plus quel salon on regardait, et c'est la
    seule chose que cette barre ait à dire. */
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:8px 18px;min-height:60px;
-  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
+/* Elle est la première chose que l'écran porte, et c'est pour cela qu'elle
+   passe sous la barre du système : son fond continue derrière l'heure et la
+   batterie, et l'application cesse d'être un rectangle posé sur un liseré
+   blanc. Son contenu, lui, se retire de la hauteur de cette barre — un nom de
+   salon sous l'horloge ne se lit pas. La barre grandit donc d'autant plutôt
+   que de rogner ce qu'elle porte.
+
+   « --ton-barre » est la couleur dont le système peint la sienne, et c'est
+   `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
+   telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
+   nomment plus bas — leur fond ne vient pas de leur surface. */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;
+  padding:calc(8px + var(--sys-haut)) 18px 8px;min-height:calc(60px + var(--sys-haut));
+  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5;
+  --ton-barre:var(--surface)}
+/* Sauf en administration, où la bande de l'outil est au-dessus : c'est elle
+   qui touche le haut de l'écran, et le retrait lui revient. */
+html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
 .brand h1.attente{color:var(--ink-3)}
@@ -143,7 +226,12 @@ button{cursor:pointer;background:none;border:none}
    l'écran qui ne parle pas du salon.
    ------------------------------------------------------------------ */
 .bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
-  padding:5px 18px;min-height:66px;background:var(--m-nuit);color:var(--ink);
+  padding:calc(5px + var(--sys-haut)) 18px 5px;min-height:calc(66px + var(--sys-haut));
+  background:var(--m-nuit);color:var(--ink);
+  /* La nuit de la marque, et non la surface que la bande redéfinit juste en
+     dessous pour ses boutons : c'est le fond de la bande que le système doit
+     prolonger. */
+  --ton-barre:var(--m-nuit);
   --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
   --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
   --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
@@ -247,6 +335,29 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
+   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
+.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+
+/* Le panneau des critères, déplié dans la colonne.
+
+   Il prend la bande sous la recherche plutôt que de flotter à côté du bouton :
+   une fenêtre posée là recouvrait la liste dont elle décide, et l'on cochait
+   sans voir ce qu'il restait. Il pousse donc la liste vers le bas au lieu de
+   passer devant, et défile pour son compte quand les critères sont nombreux —
+   sans jamais prendre plus de la moitié de la colonne, faute de quoi il ne
+   resterait rien de ce qu'il filtre. */
+.pan-crit{display:flex;flex-direction:column;max-height:56%;
+  padding:2px 16px 10px;border-bottom:1px solid var(--line)}
+/* Les critères défilent, le pied ne bouge pas : le compte qu'il porte parle de
+   ce qu'on est en train de cocher, et il ne le dirait plus s'il fallait
+   descendre le chercher sous deux cents valeurs. */
+.crit-corps{min-height:0;overflow-y:auto}
+.crit-pied{flex:0 0 auto}
+.crit-actes{display:flex;gap:8px;margin-top:9px}
+.crit-actes .btn{flex:1 1 0;text-align:center}
+.crit-actes .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
    replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
@@ -380,7 +491,14 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
    au panneau, la teinte choisie se pose telle quelle ; sans réglage, le jeton
    reste absent et le fond de la page reprend la main. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
+/* « min-height:0 » pour la même raison que la liste d'à côté : une piste de
+   grille ne descend pas sous la taille de son contenu tant qu'on ne l'y
+   autorise pas, et le plan qu'elle porte se mesure à elle — les deux
+   s'arc-boutaient. La scène gardait donc la hauteur qu'elle avait avant que la
+   grille ne rende sa bande au système, et le bas du plan, ses boutons de zoom
+   et son échelle passaient sous la poignée de gestes. */
+.stage{position:relative;overflow:hidden;overflow:clip;min-height:0;
+  background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -801,6 +919,14 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Un arrêt demande deux précisions de plus — ce qui passe là, et quelle ligne
+   — puis la couleur, pour les réseaux que la table des lignes ne connaît pas.
+   Les trois ne paraissent que sous leur type : elles ne diraient rien d'un
+   vestiaire. */
+#repereTransport,#elemTransport{display:none;flex-direction:column;gap:6px}
+.outils.mode-repere.mode-transport #repereTransport{display:flex}
+#elemTransport:not([hidden]){display:flex}
+.elemChamp .cc{flex:1;height:22px;padding:2px}
 /* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
    n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
 .outils #standSoc,.outils #imageSoc{display:none}
@@ -814,8 +940,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-.dcal .repere .glyphe path{fill:var(--surface);stroke:none}
-.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
+   calque. Un arrêt que sa ligne colore la remplace : le jaune du 1 se lit en
+   noir, et c'est la pastille qui l'a calculé en se dessinant. */
+.dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
+.dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -937,6 +1066,13 @@ html.sans-image-stand .outils #imageSoc{display:none}
 .pictoMasque{width:12px;height:12px;display:block;margin:auto}
 .pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
 .pictoMasque .trou{stroke-dasharray:1.7 1.2}
+/* Reprendre le calage d'un hall de la bibliothèque. Il ne s'éteint pas avec le
+   cadenas qui le suit : voir « Reprendre le calage » dans `_batiments.html`. */
+.calq .recal{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .recal:hover{color:var(--accent)}
+.pictoRecale{width:12px;height:12px;display:block;margin:auto}
+.pictoRecale path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -2162,6 +2298,9 @@ button.expo:hover{background:var(--line)}
    en détache. */
 .bandeau-billet{background-color:var(--accent);border-bottom:none;color:var(--accent-ink);
   --ink:var(--accent-ink);
+  /* La souche est peinte de l'accent, et la surface n'y sert qu'aux boutons
+     translucides : c'est l'accent que le système doit prolonger. */
+  --ton-barre:var(--accent);
   /* Le rouge du retrait se pose ici sur l'accent, et non sur une surface : il
      se tire donc de l'encre qui tient dessus, claire ou sombre selon le ton. */
   --rouge:color-mix(in srgb,var(--accent-ink) 58%,#E2483A);
@@ -2221,6 +2360,9 @@ button.expo:hover{background:var(--line)}
    dégradé file de gauche à droite, la barre étant large et basse là où le
    panneau est haut et étroit. */
 .bandeau-verre{color:var(--ink);--rouge:#FFB3A8;
+  /* Le dégradé part de l'accent clair, en haut à gauche : c'est lui qui touche
+     la barre du système, et non la surface que le carreau translucide pose. */
+  --ton-barre:var(--accent-clair);
   --surface:rgba(255,255,255,.14);--surface-2:rgba(255,255,255,.14);
   --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
   --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
@@ -2402,6 +2544,19 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La copie qu'on se garde, au pied de la liste.
+
+   Un filet la sépare de ce qui précède : elle ne parle pas des rangs retenus,
+   elle parle de la liste elle-même, et sans ce trait on la lisait comme un
+   rang de plus mal rangé. Le gris et la petite taille sont ceux d'une mention,
+   non d'une alarme — ce qu'elle annonce n'arrivera peut-être pas. Le bouton,
+   lui, prend toute la largeur : c'est une réponse, et sur un téléphone elle se
+   touche au pouce. */
+.pGarde{margin-top:2px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px}
+.pGarde p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+.pGarde .btn{display:flex;align-items:center;justify-content:center;
+  padding:8px 12px;font-size:12.5px}
 /* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
    plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
    et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
@@ -2772,6 +2927,10 @@ html.vise-plan #plan{cursor:crosshair}
 #calageApercu .tige{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;
   vector-effect:non-scaling-stroke}
 html.cale-geste #calageApercu .poignee{cursor:grabbing}
+/* Le hall qu'on reprend s'efface le temps du geste : sans cela le contour en
+   pointillés part sur le gris qui l'attend, et l'on croit traîner une copie.
+   Posé sur les nœuds du plan seulement, il s'en va avec le bandeau. */
+#couches [data-cale]{display:none}
 .viseur.calage .calageAngle{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2)}
 .viseur.calage .calageAngle input{width:64px;padding:2px 5px;font-size:12.5px;text-align:right;
   border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
@@ -3536,14 +3695,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
-/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
-   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
-   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
-   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
-   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
-   fini avec les filtres. */
-.modale[data-genre="cote"]{background:none;place-items:center start}
-.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 /* « background-color » et non « background », comme sur le parcours et
    l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
@@ -3624,6 +3775,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La même mise en garde dans une fenêtre : le filet la sépare des gestes
+   d'installation comme il la sépare de la liste, mais il lui faut l'air d'un
+   paragraphe et non celui d'un pied de colonne. */
+.mcorps .pGarde{margin-top:15px;padding-top:13px}
 /* L'endroit que le code désignera, entre la phrase et le damier : c'est la
    seule ligne que l'exploitant relit avant d'imprimer trente affiches. */
 .mcorps p.iciOu{margin-top:10px;font-family:"Archivo",sans-serif;font-weight:600;
@@ -3712,8 +3867,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
-/* Le titre est la prise : replié, un critère tient sur une ligne, et la
-   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+/* Le titre est la prise : replié, un critère tient sur une ligne, et le
+   panneau les montre tous plutôt qu'un seul déplié. */
 .grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
   cursor:pointer;list-style:none}
 .grp-crit > summary::-webkit-details-marker{display:none}
@@ -3733,9 +3888,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
-   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
-.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+/* Un critère à cent valeurs ne pousse plus rien hors de vue : le compte et les
+   boutons sont hors du cadre qui défile, et il n'en faut donc pas un second
+   ici — deux défilements emboîtés, le doigt se trompe toujours de l'un pour
+   l'autre. Le tamis au-dessus reste, qui raccourcit la liste plutôt que de la
+   faire défiler. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px}
 .puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
   padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
   background:var(--surface-2);border:1px solid transparent;border-radius:999px}
@@ -3831,7 +3989,46 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      contenu l'accepte, d'où les `min-width:0` qui suivent. */
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .topbar,.brand{min-width:0}
-  .topbar{gap:10px}
+  /* La barre se resserre : le plan est ce qu'on vient voir, et quatorze points
+     de moins sur elle sont quatorze de plus pour le hall. Les boutons passent
+     de trente-deux points à trente — au-dessus encore de ce qu'un doigt vise
+     sans s'y reprendre — et les marges du haut et du bas cèdent trois points
+     chacune. */
+  .topbar{gap:10px;padding:calc(5px + var(--sys-haut)) 12px 5px;
+    min-height:calc(46px + var(--sys-haut))}
+  .topbar .iconbtn{width:30px;height:30px}
+  .halls{padding:2px}
+  .halls button{padding:4px 11px}
+
+  /* La barre passe par-dessus le plan plutôt que de lui prendre un rang.
+
+     Deux choses viennent avec. Le hall occupe toute la hauteur de la scène —
+     la barre ne lui retire plus rien, elle se pose dessus. Et elle peut
+     s'effacer le temps d'un geste sans que rien ne soit remis en page : une
+     scène qui change de taille pendant un glissement, c'est le SVG entier
+     recalculé au doigt posé puis au doigt levé, et la saccade avec.
+
+     Le cadrage, lui, sait ce qu'elle couvre — voir `masqueHaut` dans
+     `_js.html` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
+     elle.
+
+     Pas en administration : la bande de l'outil tient le premier rang, et
+     deux bandes superposées ne se liraient plus. */
+  /* Rangée et colonne, toutes deux écrites : la scène placée à la main sur les
+     rangées mais laissée au placement automatique pour la colonne s'en voyait
+     offrir une nouvelle, à côté de la barre au lieu d'être dessous. */
+  html:not(.mode-admin) .stage{grid-row:1/-1;grid-column:1/-1}
+  /* La barre se place explicitement elle aussi : deux éléments posés à la main
+     se superposent, quand celui qu'on laisse au placement automatique se voit
+     offrir une rangée de plus — la barre se retrouvait alors au bas de
+     l'écran, sous le plan. */
+  html:not(.mode-admin) .topbar{grid-row:1/2;
+    transition:transform .22s ease,opacity .22s ease}
+  html:not(.mode-admin) .topbar.pliee{transform:translateY(-100%);opacity:0;
+    pointer-events:none}
+  /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
+     au-dessus d'eux dans la grille, mais devant eux sur l'écran. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -3849,7 +4046,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
      « Administration » cède la place — la nuit et la marque le disent déjà. */
-  .bandeAdmin{padding:4px 12px;min-height:56px;gap:10px}
+  .bandeAdmin{padding:calc(4px + var(--sys-haut)) 12px 4px;
+    min-height:calc(56px + var(--sys-haut));gap:10px}
   .bandeMarque{width:46px;height:46px}
   .bandeNom{display:none}
   /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
@@ -3866,19 +4064,40 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      plus : on lit la liste sans perdre le plan de vue, et c'est là qu'on
      répond à « qu'y a-t-il près de l'entrée ». Tout ou rien obligeait à
      choisir entre les deux. */
+  /* Les tiroirs sont posés sur la fenêtre et non dans la grille : le retrait
+     que celle-ci s'impose ne les atteint pas, et ils le reprennent chacun pour
+     soi. Leur fond descend bien jusqu'au bord de l'écran — une bande de gris
+     sous un tiroir de couleur se verrait — mais ce qu'ils portent se retire de
+     la poignée de gestes. La part qui dépasse au repos grandit d'autant, sans
+     quoi la recherche serait passée dessous. */
   .side{
     position:fixed;left:0;right:0;bottom:0;z-index:12;
     height:82vh;height:82dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-right:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
-    transform:translateY(calc(100% - var(--replie,164px)));
+    transform:translateY(calc(100% - var(--replie,164px) - var(--sys-bas)));
     transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
   .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
   .side[data-cran="plein"]{transform:translateY(0)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
+  /* Replié, ce tiroir garde tout de même sa bande de recherche au bas de
+     l'écran. La fiche et le parcours la recouvrent ; l'itinéraire descendu à
+     son cran le plus bas est plus court qu'elle, et elle dépassait derrière
+     lui — deux bords arrondis, deux prises, et rien pour dire laquelle mène
+     quoi. Il cède donc la bande tout entière, et la reprend en se refermant
+     (voir `_js.html`). */
+  .side.cede{transform:translateY(100%)}
+  /* Et il descend aussi le temps qu'on manœuvre le plan, comme la barre du
+     salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
+     bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
+     d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
+     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     l'emporte sur eux le temps qu'elle dure. */
+  .side.pliee{transform:translateY(100%)}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
@@ -3886,17 +4105,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
-  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
+  /* Posée contre le bord de l'écran, la fenêtre y descend son fond et remonte
+     ce qu'elle porte : son pied tombait sous la poignée de gestes. */
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none;
+    padding-bottom:var(--sys-bas)}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
-  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
-     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
-     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
-  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
-  .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
+  /* La cible du pouce, et non la barre qu'il vise : celle-ci fait quatre
+     pixels de haut, la prise en faisait vingt, et le doigt en demande
+     davantage. Elle prend donc huit pixels de la marge haute de la recherche,
+     qui les lui cède — la barre ne bouge pas d'un pixel, l'écart non plus,
+     seul l'appui porte plus loin. Par de la marge et non par un débord : ce
+     qui suit se peint par-dessus, et lui reprendrait ces huit pixels au
+     moment de désigner qui reçoit l'appui.
+
+     Les trois autres tiroirs se prennent en outre par leur en-tête, ce que la
+     liste ne peut pas offrir : on n'attrape pas un champ de recherche. */
+  .poignee{display:block;width:100%;padding:10px 0 14px;background:transparent;
     touch-action:none;cursor:grab}
+  .side .search{padding-top:6px}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
     border-radius:999px;background:var(--line-strong)}
 
@@ -3947,6 +4176,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:56dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -3962,7 +4192,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
      corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
      s'agit tout en regardant le plan derrière. */
-  .detail.open[data-cran="replie"]{max-height:var(--fiche-replie,132px)}
+  /* La hauteur repliée est celle de l'en-tête, mesurée : la bande rendue au
+     système s'y ajoute, sinon c'est le nom du stand qui s'y perdrait. */
+  .detail.open[data-cran="replie"]{max-height:calc(var(--fiche-replie,132px) + var(--sys-bas))}
   .detail.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .detail.glisse{transition:none}
@@ -3970,8 +4202,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      s'écrasait au profit d'un corps qu'on ne voit plus. */
   .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
   /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
-     qu'elle surmonte porte déjà sa propre marge. */
+     qu'elle surmonte porte déjà sa propre marge — et se saisit avec elle, ce
+     qui lui donne la hauteur que la pastille n'a pas. */
   .detail > .poignee{padding:9px 0 3px}
+  /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
+     sans quoi le navigateur voit un déplacement de page dans le geste. */
+  :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}
@@ -4004,19 +4240,36 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .prog .conf .ty{order:1}
   .prog .conf .t{order:2;flex:0 0 100%}
 
-  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
-     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
-     lit — sans masquer le plan pour autant. */
+  /* Le parcours suit la fiche : même bande basse, même glissement, mêmes trois
+     crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
+     parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
   .parcours{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:68dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
+       commandes et le pied passent sous le bord de l'écran, et le bord du
+       tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
+  .parcours.open[data-cran="replie"]{max-height:calc(var(--parc-replie,132px) + var(--sys-bas))}
+  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .parcours.glisse{transition:none}
+  /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
+     leur taille et sortent par le bas, sinon ils s'écrasaient tous les trois
+     au profit d'une liste qu'on ne voit plus. */
+  .parcours > :is(.poignee,.detail-hd,.pActs,.pPied){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .parcours > .poignee{padding:9px 0 3px}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
@@ -4025,21 +4278,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .jJours{padding:8px 16px 9px}
   .jOnglet{padding:5px 10px;min-width:60px}
 
-  /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
-     lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
-     le tiroir. À soixante-seize pour cent de l'écran il recouvrait le trajet
-     qu'il venait de tracer. La moitié lui suffit, à condition que ce qu'il
-     porte s'y resserre : c'est l'objet des règles qui suivent. */
+  /* L'itinéraire suit les deux autres, crans compris, mais son cran du milieu
+     ne monte pas comme le leur : on ne le lit pas, on le remplit — et ce qu'on
+     remplit se juge sur le plan, pas dans le tiroir. À soixante-seize pour cent
+     de l'écran il recouvrait le trajet qu'il venait de tracer. La moitié lui
+     suffit, à condition que ce qu'il porte s'y resserre : c'est l'objet des
+     règles qui suivent. */
   .itineraire{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:50dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .itineraire.open{transform:translateY(0);pointer-events:auto}
+  /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
+     voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
+     liste des lieux proposés sous un champ. */
+  .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
+  .itineraire.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .itineraire.glisse{transition:none}
+  /* Seul le corps se comprime : la prise et l'en-tête gardent leur taille, et
+     c'est l'en-tête qui reste quand le tiroir descend. */
+  .itineraire > :is(.poignee,.detail-hd){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .itineraire > .poignee{padding:9px 0 3px}
   /* L'en-tête tient sur une ligne : le titre, et le bilan du trajet à sa
      suite. Le sur-titre « Se rendre » redisait le titre, et la pastille sur sa
      propre ligne coûtait la hauteur d'un champ — trois lignes pour deux mots
@@ -4054,6 +4323,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      davantage — passages empruntés, option accessible. Sans trajet, elle
      reste : c'est alors le seul état affiché. */
   .itineraire:has(.iBilan) .detail-hd .badge{display:none}
+  /* Sauf tiroir descendu : le bloc qui en disait davantage est alors sous le
+     bord de l'écran, et la pastille redevient le seul endroit où lire ce que
+     coûte le trajet qu'on regarde. */
+  .itineraire[data-cran="replie"]:has(.iBilan) .detail-hd .badge{display:inline-flex}
   .iCorps{padding:12px 16px 14px;gap:10px}
   .iChamps{gap:6px}
   .iSugg{max-height:min(160px,30dvh)}
@@ -4101,7 +4374,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    ------------------------------------------------------------ */
 .alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
-  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  /* Elle passe par-dessus la bande du salon, donc par-dessus l'horloge : son
+     fond couvre la barre du système, son texte se range dessous. */
+  padding:calc(9px + var(--sys-haut)) 16px 9px;
+  font-size:14px;font-weight:600;line-height:1.35;text-align:center;
   background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 /* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
    la couleur de l'encre plutôt que celle de l'alerte. */
@@ -4386,14 +4662,33 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vide-q" id="videQ" type="button" hidden
           title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
-      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
-           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
-           désigné des champs à proposer. -->
+      <!-- Les critères tiennent derrière ce bouton : dépliés d'office, ils
+           prendraient sur un téléphone la place du plan. Il les déplie et les
+           replie juste dessous, dans la colonne, et n'existe que si
+           l'exploitant a désigné des champs à proposer. -->
       <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
-        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        aria-expanded="false" aria-controls="panCrit"
+        title="Critères de recherche" aria-label="Critères de recherche">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
         <span class="compteur" id="nFiltres" hidden>0</span>
       </button>
+    </div>
+    <!-- Le panneau des critères, déplié dans la colonne même, sous le mot-clé
+         qu'il complète. Une fenêtre posée à côté du bouton recouvrait la liste
+         dont elle décide : on cochait sans voir ce qu'il restait. -->
+    <div class="pan-crit" id="panCrit" role="group"
+      aria-label="Critères de recherche" hidden>
+      <div class="crit-corps" id="critCorps"></div>
+      <!-- Le pied ne défile pas avec les valeurs : ce que la recherche retient
+           se lit pendant qu'on coche, et refermer est la sortie — on ne la
+           cherche pas au bout de cent puces. -->
+      <div class="crit-pied">
+        <div id="critPied"></div>
+        <div class="crit-actes">
+          <button class="btn" type="button" id="critVider">Tout effacer</button>
+          <button class="btn accent" type="button" id="critVoir">Voir les résultats</button>
+        </div>
+      </div>
     </div>
     <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
          pourquoi la liste est si courte, le panneau étant refermé. -->
@@ -4597,6 +4892,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
+      <div id="repereTransport">
+        <label class="elemChamp"><span>Mode</span>
+          <select id="repereMode" title="Ce qui passe à cet arrêt"></select></label>
+        <label class="elemChamp"><span>Ligne</span>
+          <input id="repereLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+            title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+        <label class="elemChamp"><span>Couleur</span>
+          <input type="color" class="cc" id="repereCouleur"
+            title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+      </div>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input id="imageSoc" list="listeSoc" spellcheck="false" autocomplete="off"
         placeholder="Exposant dont l'image ouvre la fiche — facultatif">
@@ -4610,6 +4915,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
+        <div id="elemTransport" hidden>
+          <label class="elemChamp"><span>Mode</span>
+            <select id="elemMode" title="Ce qui passe à cet arrêt"></select></label>
+          <label class="elemChamp"><span>Ligne</span>
+            <input id="elemLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+              title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+          <label class="elemChamp"><span>Couleur</span>
+            <input type="color" class="cc" id="elemCouleur"
+              title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+        </div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
           <span class="eyebrow">Passages vers d'autres plans</span>
@@ -4735,6 +5050,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <!-- Le parcours se hisse comme la fiche : même prise, même geste. Il
+           porte deux choses sur un téléphone — la liste retenue et la journée
+           organisée — et une hauteur figée ne pouvait convenir aux deux. -->
+      <button class="poignee" id="poigneeParcours" aria-expanded="false" aria-controls="pCorps jCorps"
+        aria-label="Agrandir le parcours"></button>
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
         <span class="eyebrow" id="pEyebrow">Mon parcours</span>
@@ -4762,13 +5082,18 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">
+      <!-- La prise de la fiche et du parcours. Celui-ci se juge plus que les
+           autres sur le plan : le baisser rend à l'œil le trajet qu'il
+           vient d'y tracer. -->
+      <button class="poignee" id="poigneeItineraire" aria-expanded="false" aria-controls="iCorps"
+        aria-label="Agrandir l'itinéraire"></button>
       <div class="detail-hd">
         <button class="close" id="closeItineraire" aria-label="Fermer">&times;</button>
         <span class="eyebrow">Se rendre</span>
         <h2>Itinéraire</h2>
         <span class="badge" id="iResume">à définir</span>
       </div>
-      <div class="iCorps">
+      <div class="iCorps" id="iCorps">
         <div class="iChamps">
           <div class="iChamp">
             <label class="eyebrow" for="iDepart">Départ</label>
@@ -4810,7 +5135,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
 <script id="data" type="application/json">/*__DATA__*/</script>
 <script>
 /* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
-   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. */
+   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. Les
+   pages construites en portent une, posée par `outils/genere.js` avec ou sans
+   le `viewport-fit` qui les étend sous les barres du système : ce repli-ci ne
+   sert donc qu'au gabarit ouvert tel quel, et il demande la même chose. */
 if (!document.querySelector('meta[name="viewport"]')){
   const mv = document.createElement("meta");
   mv.name = "viewport";
@@ -5258,6 +5586,58 @@ function poseFavicon(src){
   }
   l.type = img.slice(5, img.indexOf(";"));
   l.href = img;
+}
+
+/**
+ * La couleur dont le système peint sa barre, celle de l'heure et de la
+ * batterie.
+ *
+ * La page va maintenant jusqu'aux bords de l'écran (`viewport-fit=cover`,
+ * posé par `outils/genere.js`) : la bande du salon monte derrière l'horloge,
+ * et le système ne sait rien de ce qu'elle porte. Il n'a qu'un indice,
+ * `theme-color`, dont il tire le fond qu'il peint sous ses pictogrammes et
+ * leur noir ou leur blanc. Écrite une fois pour toutes à la construction — le
+ * crème de la surface, voir `outils/pwa.js` — elle annonçait une barre claire
+ * au-dessus d'un bandeau que le modèle du salon peint en bleu profond :
+ * l'heure s'y écrivait en sombre sur du sombre.
+ *
+ * Elle suit donc la bande qui touche le haut de l'écran — celle de
+ * l'administration quand elle est là, celle du salon sinon.
+ *
+ * La couleur se lit sur une sonde plutôt que dans le jeton : un modèle compose
+ * la sienne avec `color-mix()`, un autre l'emprunte à l'accent du salon, et
+ * seul le navigateur sait ce que cela donne. Un élément vide, peint du jeton
+ * et grand comme rien, répond en `rgb(…)` — la seule forme qu'un
+ * `theme-color` accepte.
+ *
+ * La mesure attend l'image suivante, et une seule par image : l'accent se pose
+ * en rafale pendant qu'on le cherche au nuancier, et demander un style calculé
+ * au milieu du geste aurait fait recalculer la page entière à chaque
+ * mouvement du doigt. Le système, lui, ne repeint pas sa barre soixante fois
+ * par seconde.
+ */
+let tonPrevu = 0;
+function poseTonDeLaBarre(){
+  cancelAnimationFrame(tonPrevu);
+  tonPrevu = requestAnimationFrame(() => {
+    const bande = document.querySelector(".bandeAdmin:not([hidden])") || $("bandeau");
+    if (!bande) return;
+    const sonde = document.createElement("i");
+    sonde.style.cssText = "position:absolute;width:0;height:0;background:var(--ton-barre)";
+    bande.appendChild(sonde);
+    const ton = getComputedStyle(sonde).backgroundColor;
+    sonde.remove();
+    /* Un jeton absent ou translucide ne dit rien à un système qui peint un
+       aplat : la couleur de la construction vaut mieux qu'un noir deviné. */
+    if (!ton || /^rgba\(.*,\s*0\)$/.test(ton)) return;
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m){
+      m = document.createElement("meta");
+      m.name = "theme-color";
+      document.head.appendChild(m);
+    }
+    m.content = ton;
+  });
 }
 
 /* ============================================================
@@ -6047,8 +6427,14 @@ function videRecherche(){
 /** Le nombre de valeurs retenues, tous critères confondus. */
 const nCriteres = () => [...state.crit.values()].reduce((a, l) => a + l.size, 0);
 
+/* Ce que le panneau des critères, quand il est déplié, doit relire : une valeur
+   peut tomber ailleurs que sous ses puces — une puce retirée de la bande des
+   retenus, « Tout effacer » à son pied. Posé par le remplissage, oublié à la
+   fermeture ; refermé, le panneau n'a plus rien à relire. */
+let majPanneauCrit = null;
+
 /**
- * La barre : le bouton qui ouvre les critères, et ce qui est retenu.
+ * La barre : le bouton qui déplie les critères, et ce qui est retenu.
  *
  * Les valeurs retenues restent sous les yeux, chacune sur une puce qui la
  * retire d'une pression. Sans elles, on ne saurait plus pourquoi la liste est
@@ -6058,6 +6444,8 @@ function majCriteres(){
   const btn = $("btnFiltres"), barre = $("actifs");
   if (!btn || !barre) return;
   btn.hidden = !CRITERES.length;
+  // plus rien à offrir : le panneau qui portait ces critères n'a plus d'objet
+  if (btn.hidden) fermeCriteres();
   // un panneau qui n'offrirait que des critères vides n'a rien à filtrer : il
   // ne s'ouvre que pour dire ce qui manque, et le bouton le dit aussi
   btn.classList.toggle("vide", CRITERES.every(c => c.vide));
@@ -6066,6 +6454,10 @@ function majCriteres(){
   jeton.hidden = !n;
   jeton.textContent = n;
   btn.setAttribute("aria-pressed", String(n > 0));
+
+  /* Le panneau déplié se relit ici, quelle que soit la main qui a touché au
+     critère : la sienne, une puce de la bande, « Tout effacer ». */
+  if (majPanneauCrit) majPanneauCrit();
 
   barre.hidden = !n;
   barre.innerHTML = "";
@@ -6105,133 +6497,189 @@ function majCriteres(){
 const VALEURS_TAMIS = 12;
 
 /**
- * Le panneau des critères.
+ * Le panneau des critères, déplié dans la colonne.
  *
- * Une fenêtre plutôt qu'un dépliant sous la recherche : sur un téléphone elle
- * occupe l'écran qu'il faut sans pousser la liste hors de vue, et le pouce y
- * atteint tout. Chaque groupe se replie une fois choisi — on ne règle pas
- * douze critères d'affilée — et le pied dit combien de fiches restent.
+ * Sous le mot-clé qu'il complète, et de la largeur de la liste. Une fenêtre
+ * posée à côté du bouton recouvrait cette liste au moment même où l'on décidait
+ * de ce qu'elle garde : on cochait sans voir ce qu'il restait. Déplié à sa
+ * place, le panneau la pousse vers le bas au lieu de passer devant — on coche,
+ * la liste se raccourcit dessous, le plan s'éteint derrière. Chaque groupe se
+ * replie une fois choisi — on ne règle pas douze critères d'affilée — et le
+ * pied dit combien de fiches restent.
  */
-function ouvreCriteres(){
-  ouvreModale("Critères de recherche", corps => {
-    const compte = document.createElement("p");
-    compte.className = "compte-crit";
-    /* Le pied du panneau se remplit en dernier — il parle de ce qui est coché
-       au-dessus — mais il se remet à jour à chaque puce touchée, d'où la
-       fonction que l'on garde sous la main. */
-    let majTout = () => {};
-    const dis = () => {
-      const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
-      compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
-      majTout();
+function remplitCriteres(){
+  const corps = $("critCorps"), pied = $("critPied");
+  if (!corps || !pied) return;
+  corps.innerHTML = "";
+  pied.innerHTML = "";
+  /* Ce que chaque groupe redit de lui-même quand le panneau se relit. */
+  const rappels = [];
+  const compte = document.createElement("p");
+  compte.className = "compte-crit";
+  /* Le pied du panneau se remplit en dernier — il parle de ce qui est coché
+     au-dessus — mais il se remet à jour à chaque puce touchée, d'où la
+     fonction que l'on garde sous la main. */
+  let majTout = () => {};
+  const dis = () => {
+    const n = TOUS.concat(HEBERGES).filter(o => o.kind !== "zone" && visible(o)).length;
+    compte.textContent = n + (n > 1 ? " exposants retenus" : " exposant retenu");
+    majTout();
+  };
+
+  CRITERES.forEach(c => {
+    /* Un critère replié par défaut, sauf s'il est le seul et qu'il tient à
+       l'écran : cent trente-neuf rubriques dépliées d'office repoussaient
+       les autres critères et le pied du panneau hors de vue, sur
+       téléphone comme ailleurs. Le titre dit ce qui est retenu dedans, de
+       sorte qu'un critère replié ne cache jamais un choix fait. */
+    const g = document.createElement("details");
+    g.className = "grp-crit";
+    g.open = CRITERES.length === 1 && c.valeurs.length <= VALEURS_TAMIS;
+    const h = document.createElement("summary");
+    h.innerHTML = '<span class="t"></span><span class="r"></span>';
+    h.querySelector(".t").textContent = c.libelle;
+    const retenu = h.querySelector(".r");
+    /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
+       offertes n'aidait pas à choisir — on ne coche pas un critère parce
+       qu'il en propose quinze — et cette ligne-là devait rester libre pour
+       la seule chose qu'un critère replié ne doit jamais cacher. */
+    const disRetenu = () => {
+      const n = (state.crit.get(c.cle) || new Set()).size;
+      retenu.textContent = c.vide ? "aucune valeur relevée"
+        : !n ? ""
+        : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
+      retenu.dataset.on = String(n > 0);
+      retenu.dataset.manque = String(Boolean(c.vide));
     };
+    disRetenu();
+    rappels.push(disRetenu);
+    g.appendChild(h);
 
-    CRITERES.forEach(c => {
-      /* Un critère replié par défaut, sauf s'il est le seul et qu'il tient à
-         l'écran : cent trente-neuf rubriques dépliées d'office repoussaient
-         les autres critères et le pied de la fenêtre hors de vue, sur
-         téléphone comme ailleurs. Le titre dit ce qui est retenu dedans, de
-         sorte qu'un critère replié ne cache jamais un choix fait. */
-      const g = document.createElement("details");
-      g.className = "grp-crit";
-      g.open = CRITERES.length === 1 && c.valeurs.length <= VALEURS_TAMIS;
-      const h = document.createElement("summary");
-      h.innerHTML = '<span class="t"></span><span class="r"></span>';
-      h.querySelector(".t").textContent = c.libelle;
-      const retenu = h.querySelector(".r");
-      /* Le titre ne dit que ce qui est retenu dedans. Compter les valeurs
-         offertes n'aidait pas à choisir — on ne coche pas un critère parce
-         qu'il en propose quinze — et cette ligne-là devait rester libre pour
-         la seule chose qu'un critère replié ne doit jamais cacher. */
-      const disRetenu = () => {
-        const n = (state.crit.get(c.cle) || new Set()).size;
-        retenu.textContent = c.vide ? "aucune valeur relevée"
-          : !n ? ""
-          : c.ouiNon ? "retenu" : n + " retenue" + (n > 1 ? "s" : "");
-        retenu.dataset.on = String(n > 0);
-        retenu.dataset.manque = String(Boolean(c.vide));
-      };
-      disRetenu();
-      g.appendChild(h);
+    const puces = document.createElement("div");
+    puces.className = "puces-crit";
 
-      const puces = document.createElement("div");
-      puces.className = "puces-crit";
+    /* Rien à cocher, mais quelque chose à dire : le champ est bien réglé
+       comme critère, ses valeurs se relèvent sur les fiches, et aucune n'y
+       a été trouvée. */
+    if (c.vide){
+      g.open = true;
+      const rien = document.createElement("p");
+      rien.className = "vide-crit";
+      rien.textContent = "Aucune valeur sur les fiches. Vérifiez le champ " +
+        "d'origine de ce champ dans la console, puis lancez une " +
+        "synchronisation : les valeurs proposées ici viennent d'elle.";
+      g.appendChild(rien);
+      corps.appendChild(g);
+      return;
+    }
 
-      /* Rien à cocher, mais quelque chose à dire : le champ est bien réglé
-         comme critère, ses valeurs se relèvent sur les fiches, et aucune n'y
-         a été trouvée. */
-      if (c.vide){
-        g.open = true;
-        const rien = document.createElement("p");
-        rien.className = "vide-crit";
-        rien.textContent = "Aucune valeur sur les fiches. Vérifiez le champ " +
-          "d'origine de ce champ dans la console, puis lancez une " +
-          "synchronisation : les valeurs proposées ici viennent d'elle.";
-        g.appendChild(rien);
-        corps.appendChild(g);
+    /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
+       et deux puces « oui » et « non » diraient deux fois la même chose. */
+    const offertes = c.ouiNon ? [c.valeurs[0]] : c.valeurs;
+
+    const dessine = (tamis) => {
+      puces.innerHTML = "";
+      const t = (tamis || "").trim().toLowerCase();
+      const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
+      if (!vues.length){
+        const vide = document.createElement("span");
+        vide.className = "aucune";
+        vide.textContent = "Aucune valeur ne correspond.";
+        puces.appendChild(vide);
         return;
       }
+      vues.forEach(x => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "puce-crit";
+        /* De quel critère et de quelle valeur : le panneau se relit de bout en
+           bout quand l'un d'eux tombe ailleurs, et ses puces ne lui survivent
+           pas — le tamis en refait d'autres à chaque lettre tapée. */
+        b.dataset.cle = c.cle;
+        b.dataset.val = x.v;
+        b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
+        b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
+          '<span class="l"></span><span class="n"></span>';
+        b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
+        b.querySelector(".n").textContent = x.n;
+        /* Cocher ne fait que cocher : ce que la puce change d'elle-même, son
+           titre de groupe et le compte du pied, leur revient par la relecture
+           du panneau — la bande des retenus, elle, coche déjà ainsi. */
+        b.onclick = () => basculeCritere(c.cle, x.v);
+        puces.appendChild(b);
+      });
+    };
 
-      /* Un oui/non n'a pas de valeurs à choisir : il est lui-même la valeur,
-         et deux puces « oui » et « non » diraient deux fois la même chose. */
-      const offertes = c.ouiNon ? [c.valeurs[0]] : c.valeurs;
+    if (!c.ouiNon && offertes.length > VALEURS_TAMIS){
+      const ch = document.createElement("input");
+      ch.type = "search";
+      ch.className = "tamis";
+      ch.placeholder = "Filtrer " + c.libelle.toLowerCase() + "…";
+      ch.autocomplete = "off";
+      ch.oninput = () => dessine(ch.value);
+      g.appendChild(ch);
+    }
+    dessine("");
+    g.appendChild(puces);
+    corps.appendChild(g);
+  });
 
-      const dessine = (tamis) => {
-        puces.innerHTML = "";
-        const t = (tamis || "").trim().toLowerCase();
-        const vues = t ? offertes.filter(x => x.v.toLowerCase().includes(t)) : offertes;
-        if (!vues.length){
-          const vide = document.createElement("span");
-          vide.className = "aucune";
-          vide.textContent = "Aucune valeur ne correspond.";
-          puces.appendChild(vide);
-          return;
-        }
-        vues.forEach(x => {
-          const b = document.createElement("button");
-          b.type = "button";
-          b.className = "puce-crit";
-          b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-          b.innerHTML = (c.cle === CLE_SECTEUR ? pastilleSecteur(x.v) : "") +
-            '<span class="l"></span><span class="n"></span>';
-          b.querySelector(".l").textContent = c.ouiNon ? c.libelle : x.v;
-          b.querySelector(".n").textContent = x.n;
-          b.onclick = () => {
-            basculeCritere(c.cle, x.v);
-            b.setAttribute("aria-pressed", String(critereActif(c.cle, x.v)));
-            disRetenu();
-            dis();
-          };
-          puces.appendChild(b);
-        });
-      };
+  pied.appendChild(compte);
+  /* Retenir cinquante exposants d'un geste plutôt que d'ouvrir cinquante
+     fiches : ce que la recherche vient de circonscrire est précisément ce
+     qu'un visiteur voulait mettre à son programme. Le bouton se pose sous le
+     compte, dont il est la suite — et non à côté de « Voir les résultats »,
+     dont il prendrait le rang, qui reste le geste attendu. */
+  majTout = poseToutAuParcours(pied);
+  dis();
 
-      if (!c.ouiNon && offertes.length > VALEURS_TAMIS){
-        const ch = document.createElement("input");
-        ch.type = "search";
-        ch.className = "tamis";
-        ch.placeholder = "Filtrer " + c.libelle.toLowerCase() + "…";
-        ch.autocomplete = "off";
-        ch.oninput = () => dessine(ch.value);
-        g.appendChild(ch);
-      }
-      dessine("");
-      g.appendChild(puces);
-      corps.appendChild(g);
-    });
-
-    corps.appendChild(compte);
-    /* Retenir cinquante exposants d'un geste plutôt que d'ouvrir cinquante
-       fiches : ce que la recherche vient de circonscrire est précisément ce
-       qu'un visiteur voulait mettre à son programme. Le bouton se pose sous le
-       compte, dont il est la suite — et non au pied de la fenêtre, où il aurait
-       pris le rang de « Voir les résultats », qui reste le geste attendu. */
-    majTout = poseToutAuParcours(corps, ouvreCriteres);
+  /* Relire plutôt que réécrire : réécrit, le panneau perdrait le groupe qu'on
+     vient de déplier, le tamis qu'on vient de taper et l'endroit où l'on en
+     était dans deux cents valeurs. */
+  majPanneauCrit = () => {
+    corps.querySelectorAll(".puce-crit").forEach(b =>
+      b.setAttribute("aria-pressed", String(critereActif(b.dataset.cle, b.dataset.val))));
+    rappels.forEach(f => f());
     dis();
-  }, [
-    { libelle: "Tout effacer", action: videCriteres },
-    { libelle: "Voir les résultats", genre: "primaire" },
-  ], "cote");
+  };
+}
+
+/** Le bouton est la même prise à l'aller et au retour : il déplie ce qu'il a
+ *  replié, et son état se lit sur lui. */
+function basculeCriteres(){
+  const pan = $("panCrit");
+  if (pan && pan.hidden) ouvreCriteres(); else fermeCriteres();
+}
+
+function ouvreCriteres(){
+  const pan = $("panCrit");
+  if (!pan) return;
+  remplitCriteres();
+  pan.hidden = false;
+  $("btnFiltres").setAttribute("aria-expanded", "true");
+  /* En tiroir, le panneau se déplie dans la seule bande qui dépasse, et
+     pousserait le compte et la liste sous le bord de l'écran. Le tiroir monte
+     donc, comme il monte lorsqu'on entre dans le champ de recherche : régler
+     ses critères, c'est vouloir la liste. */
+  hisseTiroir();
+}
+
+/** Replié, le panneau rend sa place à la liste. Ce qui est retenu continue de
+ *  se dire sous la recherche : les puces de la bande, elles, ne se replient
+ *  pas — sans quoi on ne saurait plus pourquoi la liste est si courte. */
+function fermeCriteres(){
+  const pan = $("panCrit");
+  if (!pan || pan.hidden) return;
+  /* Replié, le panneau emporte avec lui le bouton qu'on venait d'actionner, et
+     le clavier se retrouverait au début de la page. La main revient donc à la
+     prise, d'où elle pourra redéplier. */
+  const dedans = pan.contains(document.activeElement);
+  pan.hidden = true;
+  majPanneauCrit = null;
+  $("critCorps").innerHTML = "";
+  $("critPied").innerHTML = "";
+  $("btnFiltres").setAttribute("aria-expanded", "false");
+  if (dedans) $("btnFiltres").focus();
 }
 
 /** Quelque chose retranche-t-il de la liste ? Le mot-clé et les critères se
@@ -6926,6 +7374,46 @@ function poseVue(){
  * cours de glissement : `offsetHeight` ignore la transformation, et la fiche
  * qui s'ouvre replie le tiroir sous elle.
  */
+/* La hauteur de la barre du salon, redonnée à la feuille de style.
+
+   Sur écran étroit elle se pose par-dessus le plan : ce qui s'ancre en haut de
+   la scène — le bandeau de visée, le rappel « Vous êtes ici » — doit se ranger
+   dessous, et personne d'autre qu'elle ne sait ce qu'elle mesure. Un nom de
+   salon qui passe à la ligne la fait grandir, et la mesure suit.
+
+   Sur le corps, pour la même raison que « --replie » : posée sur la racine,
+   elle ferait repasser le style des sept mille nœuds du plan à chaque fois. */
+function mesureBarre(){
+  const b = $("bandeau");
+  if (!b) return;
+  const px = Math.round(b.getBoundingClientRect().height) + "px";
+  if (document.body.style.getPropertyValue("--barre") !== px)
+    document.body.style.setProperty("--barre", px);
+}
+mesureBarre();
+addEventListener("resize", mesureBarre);
+if (window.ResizeObserver && $("bandeau"))
+  new ResizeObserver(mesureBarre).observe($("bandeau"));
+
+/**
+ * Ce que la barre du salon cache du plan, en pixels.
+ *
+ * Sur écran étroit elle ne prend plus son rang dans la grille : elle se pose
+ * par-dessus la scène, qui occupe toute la hauteur. Le haut du plan passe donc
+ * dessous, et un cadrage qui l'ignorerait poserait derrière elle le stand
+ * qu'on vient d'ouvrir — la même faute que celle du tiroir en bas, dans
+ * l'autre sens.
+ *
+ * Ailleurs elle garde son rang et ne cache rien : écran large, administration,
+ * où la bande de l'outil tient le premier rang.
+ */
+function masqueHaut(){
+  const b = $("bandeau");
+  if (!ETROIT() || !b || document.documentElement.classList.contains("mode-admin")) return 0;
+  // au-delà, il ne resterait plus assez de plan pour que le cadrage ait un sens
+  return Math.max(0, Math.min(cadrePlan().height * .4, b.getBoundingClientRect().height));
+}
+
 function masque(){
   if (!ETROIT()) return 0;
   const r = cadrePlan();
@@ -6971,13 +7459,16 @@ function masqueDroite(){
 
 function fit(){
   const r = cadrePlan();
-  const cache = masque();
-  const hUtile = Math.max(60, r.height - cache);
+  const cache = masque(), haut = masqueHaut();
+  const hUtile = Math.max(60, r.height - cache - haut);
   const w = emp.x1 - emp.x0, h = emp.y1 - emp.y0;
   const k = Math.max(w / (r.width || 1), h / hUtile);
   view = { x: emp.x0 + w / 2 - (k * r.width) / 2,
-           // le plan se centre dans la bande visible, pas dans le cadre entier
-           y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           /* Le plan se centre dans la bande visible, pas dans le cadre
+              entier : le tiroir en mange le bas, la barre du salon le haut
+              depuis qu'elle se pose dessus, et le décalage est la différence
+              des deux. */
+           y: emp.y0 + h / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
@@ -7226,7 +7717,7 @@ function centrePoint(xy){
      Ces deux mesures ne valent qu'une fois la fiche posée : c'est « ouvre »
      qui appelle le cadrage, et non l'inverse. */
   const r = cadrePlan();
-  const decale = r.height ? (h * masque()) / (2 * r.height) : 0;
+  const decale = r.height ? (h * (masque() - masqueHaut())) / (2 * r.height) : 0;
   const decaleX = r.width ? (w * masqueDroite()) / (2 * r.width) : 0;
   /* On y va en glissant plutôt que d'un bond. Le plan sautait à l'autre bout
      du hall sans rien montrer du chemin : on y arrivait sans savoir d'où, et
@@ -8494,6 +8985,7 @@ function suitPince(){
   const r = cadrePlan();
   // le pincement change l'échelle : mêmes économies que la molette
   figeTextes();
+  plieLesBandes(true);
   const large = emp ? (emp.x1 - emp.x0) * recul() : pince.w * 8;
   const nw = Math.min(large, Math.max(6, pince.w * pince.d / Math.max(1, m.d)));
   const nh = pince.h * (nw / pince.w);
@@ -8523,7 +9015,41 @@ function suitPince(){
  * qui parle de « cursor » ferait le même travail, sans qu'on puisse choisir
  * quand.
  */
+/* Les deux bandes s'effacent le temps qu'on manipule le plan.
+
+   Celle du haut porte le salon, celle du bas la recherche ; ensemble elles
+   prennent près de deux cents points d'un écran de téléphone, et ce sont
+   exactement ceux qu'on veut voir quand on fait glisser un hall ou qu'on
+   l'agrandit. Elles se retirent donc le temps du geste et reviennent au doigt
+   levé — la barre par-dessus la scène, le tiroir sous le bord de l'écran, l'un
+   et l'autre sans que rien ne soit remis en page : le plan ne change pas de
+   taille, il se découvre.
+
+   Pas au doigt posé : un appui qui ouvre un stand les ferait clignoter pour
+   rien. C'est le mouvement qui les plie — le glissement une fois passé le
+   seuil des deux points, le pincement dès la première image.
+
+   Un filet, comme pour les textes du plan : tous les chemins ne mènent pas à
+   un doigt levé — un `pointercancel` du système, une main qui sort de l'écran
+   — et elles resteraient pliées sur un plan qu'on ne manipule plus. */
+let bandesPliees = false, filetBandes = null;
+function plieLesBandes(oui){
+  const b = $("bandeau"), tiroir = $("side");
+  if (!b || !ETROIT() || document.documentElement.classList.contains("mode-admin")) return;
+  clearTimeout(filetBandes);
+  filetBandes = oui ? setTimeout(() => plieLesBandes(false), 1200) : null;
+  if (bandesPliees === oui) return;
+  bandesPliees = oui;
+  b.classList.toggle("pliee", oui);
+  /* Le tiroir retrouve son cran en remontant : c'est une classe de plus sur
+     lui, non un cran de moins — celui qu'il avait est écrit dans son attribut,
+     et personne n'y touche ici. */
+  if (tiroir) tiroir.classList.toggle("pliee", oui);
+}
+
 const saisitPlan = (tenu) => {
+  // la main lâche : les bandes reviennent, quelle que soit la façon dont le geste finit
+  if (!tenu) plieLesBandes(false);
   if (tenu && dernierAppuiTactile) return;
   svg.style.cursor = tenu ? "grabbing" : "";
 };
@@ -8570,7 +9096,7 @@ svg.addEventListener("pointermove", e => {
   if (!drag) return;
   const r = cadrePlan(), k = view.w / r.width;
   const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k;
-  if (Math.abs(dx) + Math.abs(dy) > 2) drag.bouge = true;
+  if (Math.abs(dx) + Math.abs(dy) > 2){ drag.bouge = true; plieLesBandes(true); }
   view.x = drag.vx - dx; view.y = drag.vy - dy; rafraichitVue();
 });
 /* ------------------------------------------------------------------
@@ -8768,7 +9294,12 @@ document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !saisie && enCours){ e.preventDefault(); termineTrace(true); }
 });
 
-$("btnFiltres").onclick = ouvreCriteres;
+$("btnFiltres").onclick = basculeCriteres;
+/* « Tout effacer » ne referme pas : on efface pour recommencer, et le panneau
+   resté ouvert montre justement les critères redevenus libres. « Voir les
+   résultats » referme, lui — c'est la liste qu'on veut voir. */
+$("critVider").onclick = videCriteres;
+$("critVoir").onclick = fermeCriteres;
 $("zIn").onclick = () => zoom(.75, .5, .5);
 $("zOut").onclick = () => zoom(1.33, .5, .5);
 $("zFit").onclick = fit;
@@ -8838,6 +9369,52 @@ $("q").addEventListener("keydown", e => {
   $("side").addEventListener(t, reprendRecherche));
 
 /* ============================================================
+   Ce que les tiroirs lisent d'un geste
+
+   Deux sortes de tiroirs se manœuvrent au doigt — celui de la liste, qui
+   glisse, et ceux que la hauteur mène. Ils partagent la façon de lire le
+   geste, faute de quoi le même appui ne donnerait pas la même chose selon le
+   tiroir touché.
+   ============================================================ */
+/* Ce qu'un pouce dérive en appuyant. Six pixels ne suffisaient pas : au-delà
+   du seuil le geste passait pour un glissement, lequel, n'ayant pas atteint le
+   cran suivant, reposait celui d'où il venait — l'appui restait sans effet. */
+const GESTE_SEUIL = 10;
+/* Au-delà d'un demi-pixel par milliseconde, c'est la direction qui décide et
+   non l'endroit où le doigt s'est arrêté : un coup sec part vite et lâche tôt,
+   et jugé à l'arrivée il n'avait pas parcouru la moitié du chemin. */
+const GESTE_VIF = .5;
+
+/**
+ * Le suivi d'un geste, pour en tirer une vitesse.
+ *
+ * Elle se prend sur les cent dernières millisecondes, et non entre le dernier
+ * déplacement et le lâcher : le navigateur livre souvent les deux au même
+ * endroit, et tout coup sec comptait alors pour nul.
+ */
+function traceurDeGeste(){
+  const FENETRE = 100;
+  let trace = [];
+  return {
+    repart(){ trace = []; },
+    note(y){
+      const t = performance.now();
+      trace.push({ y: y, t: t });
+      while (trace.length > 1 && t - trace[0].t > FENETRE) trace.shift();
+    },
+    vitesse(){
+      if (trace.length < 2) return 0;
+      const a = trace[0], b = trace[trace.length - 1];
+      return b.t > a.t ? (b.y - a.y) / (b.t - a.t) : 0;
+    },
+  };
+}
+
+/** Le cran d'à côté, vers le haut (+1) ou vers le bas (-1). */
+const cranVoisin = (crans, nom, sens) =>
+  crans[Math.min(crans.length - 1, Math.max(0, crans.indexOf(nom) + sens))];
+
+/* ============================================================
    Le tiroir de la liste — écrans étroits
 
    Côte à côte, plan et liste ne tiennent pas sur un téléphone. La liste se
@@ -8845,6 +9422,32 @@ $("q").addEventListener("keydown", e => {
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La bande que le système garde au bas de l'écran — la poignée de gestes, la
+   barre d'accueil.
+
+   Les tiroirs descendent leur fond jusqu'au bord de l'écran, une bande de gris
+   sous un tiroir de couleur se voyant de loin, mais ils remontent ce qu'ils
+   portent d'autant : leur part visible au cran le plus bas vaut donc ce qu'ils
+   montrent, plus cette bande. Le geste qui les mène doit compter pareil — il
+   posait sinon, au premier millimètre parcouru par le doigt, une hauteur
+   amputée de la bande, et le tiroir sautait avant de suivre.
+
+   Mesurée sur une sonde, et non lue : `env(safe-area-inset-bottom)` appartient
+   au moteur de style, et rien de `window` ne la donne. Gardée ensuite, parce
+   que le glissement la redemande à chaque image : elle ne change qu'avec
+   l'écran, et c'est ce que dit le `resize`. */
+let _retraitBas = null;
+function retraitBas(){
+  if (_retraitBas !== null) return _retraitBas;
+  const sonde = document.createElement("i");
+  sonde.style.cssText = "position:fixed;left:0;bottom:0;width:0;height:var(--sys-bas)";
+  document.body.appendChild(sonde);
+  _retraitBas = sonde.getBoundingClientRect().height;
+  sonde.remove();
+  return _retraitBas;
+}
+addEventListener("resize", () => { _retraitBas = null; });
+
 /* La mesure du tiroir appartient à ce module, mais les bandes qui dépassent —
    les secteurs, les critères retenus — paraissent et disparaissent ailleurs :
    on leur laisse de quoi la redemander. */
@@ -8852,6 +9455,10 @@ let mesureTiroir = () => {};
 /* De même, une thématique retenue depuis une fiche doit faire monter le tiroir :
    sur téléphone la liste qui vient de changer est sous le plan. */
 let montreTiroir = () => {};
+/* Et le panneau des critères, qui se déplie dans le tiroir, le veut tout en
+   haut : déplié dans la bande qui dépasse, il y prendrait la place de ce
+   qu'elle doit montrer. */
+let hisseTiroir = () => {};
 
 (function tiroirListe(){
   const tiroir = $("side"), prise = $("poignee");
@@ -8884,6 +9491,10 @@ let montreTiroir = () => {};
     tiroir.dataset.cran = nom;
     annonce(nom);
     prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
+    /* Redescendu, le tiroir ne montre plus que la recherche, ce qui est retenu
+       et le compte : un panneau de critères resté déplié occuperait cette bande
+       à lui seul, et pousserait les trois sous le bord de l'écran. */
+    if (nom === "replie" && etroit()) fermeCriteres();
   }
 
   /* Ce qui flotte au-dessus du plan — le cartouche des points d'intérêt, les
@@ -8897,15 +9508,20 @@ let montreTiroir = () => {};
      connaître du glissement, et on revient au plan par la même touche. */
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
+  /* Sur le corps, là où « mesure » l'a posée : lue sur la racine, elle revenait
+     vide et le repli de 164 px tenait lieu de mesure. Le tiroir sautait alors
+     de l'écart au premier millimètre du glissement — soixante-quinze pixels
+     pour une bande repliée qui en fait quatre-vingt-dix. */
   const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 164;
+    parseFloat(getComputedStyle(document.body).getPropertyValue("--replie")) || 164;
 
   /* Hauteur visible du tiroir à un cran donné, en pixels. Le milieu suit la
-     règle du CSS — 46 % de la hauteur d'écran. */
+     règle du CSS — 46 % de la hauteur d'écran. Le plus bas montre ce qui a été
+     mesuré, posé au-dessus de la bande rendue au système. */
   function hauteur(nom){
     if (nom === "plein") return tiroir.offsetHeight;
     if (nom === "demi")  return Math.round(innerHeight * .46);
-    return replieePx();
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------
@@ -8915,9 +9531,13 @@ let montreTiroir = () => {};
      qui décide, pas la longueur du geste. */
   let depart = null, aGlisse = false;
 
+  const geste = traceurDeGeste();
+
   prise.addEventListener("pointerdown", e => {
     if (!etroit()) return;
-    depart = { y: e.clientY, vu: hauteur(cran()) };
+    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+    geste.repart();
+    geste.note(e.clientY);
     aGlisse = false;
     tiroir.classList.add("glisse");
     prise.setPointerCapture(e.pointerId);
@@ -8939,7 +9559,8 @@ let montreTiroir = () => {};
 
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
+    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(e.clientY);
     const vu = suit(e);
     tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
     /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
@@ -8952,8 +9573,12 @@ let montreTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
+    geste.note(e.clientY);
+    const v = geste.vitesse();
     // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
-    pose(aGlisse ? proche(vu) : cran());
+    pose(!aGlisse ? cran()
+       : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
+       : proche(vu));
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
@@ -8973,12 +9598,18 @@ let montreTiroir = () => {};
   $("list").addEventListener("click", () => { if (etroit()) replie(); });
 
   /* La fiche occupe le bas de l'écran quand elle s'ouvre — depuis la liste
-     comme depuis le plan ; le parcours prend la même bande. Le tiroir se
-     retire sous eux plutôt que de lutter pour la même place. */
-  const bandes = [$("detail"), $("parcours")].filter(Boolean);
-  const guette = new MutationObserver(() => {
-    if (etroit() && bandes.some(n => n.classList.contains("open"))) replie();
-  });
+     comme depuis le plan ; le parcours et l'itinéraire prennent la même bande.
+     Le tiroir se retire sous eux plutôt que de lutter pour la même place, et
+     s'efface entièrement : replié il garde sa bande de recherche, laquelle
+     dépassait derrière l'itinéraire descendu à son cran le plus bas — celui-ci
+     est plus court qu'elle. */
+  const bandes = [$("detail"), $("parcours"), $("itineraire")].filter(Boolean);
+  function cede(){
+    const pris = etroit() && bandes.some(n => n.classList.contains("open"));
+    if (pris) replie();
+    tiroir.classList.toggle("cede", pris);
+  }
+  const guette = new MutationObserver(cede);
   bandes.forEach(n => guette.observe(n, { attributes: true, attributeFilter: ["class"] }));
   addEventListener("keydown", e => { if (e.key === "Escape" && etroit()) replie(); });
 
@@ -8987,6 +9618,7 @@ let montreTiroir = () => {};
   addEventListener("resize", () => {
     if (!etroit()){ tiroir.style.transform = ""; replie(); }
     else mesure();
+    cede();
   });
 
   mesureTiroir = mesure;
@@ -8994,6 +9626,10 @@ let montreTiroir = () => {};
      thématique depuis le plan, et on veut voir la liste sans perdre de vue
      l'endroit d'où l'on part. */
   montreTiroir = () => { if (etroit() && cran() === "replie") pose("demi"); };
+  /* Le plein écran, et non le cran du milieu : régler ses critères, c'est
+     vouloir la liste — comme entrer dans le champ de recherche, qui hisse le
+     tiroir de la même façon. */
+  hisseTiroir = () => { if (etroit()) pose("plein"); };
   mesure();
   // les polices arrivent après le premier calcul et changent la hauteur mesurée
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(mesure);
@@ -9001,71 +9637,107 @@ let montreTiroir = () => {};
 })();
 
 /* ============================================================
-   Le tiroir de la fiche — écrans étroits
+   Les tiroirs menés par la hauteur — écrans étroits
 
-   La fiche est une bande basse elle aussi, et elle tenait sur une hauteur
-   fixe : un peu plus de la moitié de l'écran, quoi qu'elle porte. Une fiche
-   bien remplie — champs, programme, actions — s'y lisait par une fente, en
-   faisant défiler son corps trois écrans durant.
+   Trois bandes basses partagent le pied de l'écran avec la liste, et toutes
+   trois tenaient sur une hauteur fixe. La fiche : un peu plus de la moitié de
+   l'écran, quoi qu'elle porte — bien remplie, champs, programme et actions s'y
+   lisaient par une fente, en faisant défiler son corps trois écrans durant. Le
+   parcours retenu et la journée organisée avaient le défaut inverse : les deux
+   tiers de l'écran pour trois exposants, et le plan qu'on venait y chercher
+   restait derrière. L'itinéraire, enfin, recouvrait de sa moitié d'écran le
+   trajet qu'il venait d'y tracer — celui-là même qu'on lui demandait.
 
-   Elle prend donc la prise de la liste et ses trois crans. Le cran ne la fait
-   pas glisser sous le bord de l'écran comme la liste, mais change sa hauteur :
-   c'est son corps qui défile, et un tiroir descendu aurait poussé sa fin hors
-   de vue. Au cran le plus bas ne reste que l'en-tête — assez pour savoir de
-   quel stand il s'agit en regardant le plan derrière.
+   Les trois prennent donc la prise de la liste et ses trois crans. Le cran ne
+   les fait pas glisser sous le bord de l'écran comme la liste, mais change
+   leur hauteur : c'est leur corps qui défile, et un tiroir descendu aurait
+   poussé sa fin hors de vue. Au cran le plus bas ne reste que l'en-tête —
+   assez pour savoir de quel stand, de quelle journée ou de quel trajet il
+   s'agit tout en regardant le plan derrière.
    ============================================================ */
-(function tiroirFiche(){
-  const fiche = $("detail"), prise = $("poigneeFiche");
-  if (!fiche || !prise) return;
+/**
+ * Pose les trois crans sur un tiroir mené par la hauteur.
+ *
+ * @param panneau le tiroir — son en-tête est ce qui reste au cran le plus bas
+ * @param prise   la poignée qui le hisse
+ * @param cle     la variable CSS où déposer la hauteur repliée mesurée
+ * @param demi    la part de l'écran qu'il occupe au cran du milieu
+ */
+function tiroirCrante({ panneau, prise, cle, demi }){
+  const tiroir = $(panneau), poignee = $(prise);
+  if (!tiroir || !poignee) return;
   const etroit = ETROIT;
   const CRANS = ["replie", "demi", "plein"];
-  /* Le cran du milieu est celui d'avant les crans : une fiche qu'on ouvre sans
-     rien demander occupe la place qu'elle a toujours occupée. */
-  const cran = () => fiche.dataset.cran || "demi";
+  /* Le cran du milieu est celui d'avant les crans : un tiroir qu'on ouvre sans
+     rien demander occupe la place qu'il a toujours occupée. */
+  const cran = () => tiroir.dataset.cran || "demi";
 
-  /* La hauteur repliée se mesure : l'en-tête tient une ligne pour un numéro de
-     stand, trois pour une enseigne longue suivie de ses pastilles, davantage
-     quand la zone porte un logo. */
+  /* La hauteur repliée se mesure : l'en-tête de la fiche tient une ligne pour
+     un numéro de stand, trois pour une enseigne longue suivie de ses
+     pastilles, davantage quand la zone porte un logo ; celui du parcours
+     change de titre selon qu'on y lit sa liste ou sa journée. */
   function mesure(){
     if (!etroit()) return;
-    const hd = fiche.querySelector(".detail-hd");
-    const h = prise.offsetHeight + (hd ? hd.offsetHeight : 0);
-    /* Sur la fiche, et non sur la racine. Une variable posée sur la racine est
+    const hd = tiroir.querySelector(".detail-hd");
+    const h = poignee.offsetHeight + (hd ? hd.offsetHeight : 0);
+    /* Sur le tiroir, et non sur la racine. Une variable posée sur la racine est
        offerte à toute la page en héritage : le navigateur remet alors en cause
        le style de ses sept mille nœuds — cent quatre-vingts millisecondes dès
        que la valeur change, c'est-à-dire chaque fois qu'un nom de stand tient
-       sur un nombre de lignes différent. Seule la fiche lit celle-ci. */
-    if (h > 0) fiche.style.setProperty("--fiche-replie", h + "px");
+       sur un nombre de lignes différent. Seul le tiroir lit celle-ci. */
+    if (h > 0) tiroir.style.setProperty(cle, h + "px");
   }
 
   function pose(nom){
-    fiche.dataset.cran = nom;
-    prise.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
+    tiroir.dataset.cran = nom;
+    poignee.setAttribute("aria-expanded", nom === "replie" ? "false" : "true");
   }
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
+  /* Le nombre n'est qu'un garde-fou : `mesure` pose la variable à la
+     construction et à chaque ouverture, si bien qu'elle est toujours lue
+     mesurée. La hauteur d'avant la première mesure, elle, est celle que la
+     feuille de style donne en secours à `var()`, tiroir par tiroir. */
   const replieePx = () =>
-    parseFloat(getComputedStyle(fiche).getPropertyValue("--fiche-replie")) || 132;
+    parseFloat(getComputedStyle(tiroir).getPropertyValue(cle)) || 132;
 
-  /** Hauteur de la fiche à un cran donné, en pixels — les parts du CSS. */
+  /** Hauteur du tiroir à un cran donné, en pixels — les parts du CSS. */
   function hauteur(nom){
     if (nom === "plein") return Math.round(innerHeight * .92);
-    if (nom === "demi")  return Math.round(innerHeight * .56);
-    return replieePx();
+    if (nom === "demi")  return Math.round(innerHeight * demi);
+    // l'en-tête mesuré, plus la bande que le tiroir rend au système sous lui
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------
      Même geste que sur la liste, à ceci près que le doigt mène une hauteur et
-     non une position : on s'accroche au cran le plus proche de celle atteinte. */
+     non une position : on s'accroche au cran le plus proche de celle atteinte.
+
+     La prise ne se limite pas à la pastille. Elle mesure seize pixels de haut
+     quand le pouce en demande quarante : on visait, on manquait, et le tiroir
+     ne bougeait pas — ce qui se lit comme une panne, pas comme un geste raté.
+     L'en-tête qu'elle surmonte se saisit donc aussi, ce qui est de toute façon
+     l'endroit que la main vise. Ce qu'il porte de cliquable — fermer, renommer,
+     une pastille qui bascule — garde ses appuis. */
+  const INERTE = "button,a,input,select,textarea,label,[role=tab]";
+  const entete = tiroir.querySelector(".detail-hd");
+  const prises = [poignee, entete].filter(Boolean);
   let depart = null, aGlisse = false;
 
-  prise.addEventListener("pointerdown", e => {
+  const geste = traceurDeGeste();
+
+  function saisit(e){
     if (!etroit()) return;
-    depart = { y: e.clientY, vu: hauteur(cran()) };
+    /* La poignée est elle-même un bouton : le garde-fou ne vaut que pour
+       l'en-tête, où il protège les commandes qu'on y a posées. */
+    if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
+    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+    geste.repart();
+    geste.note(e.clientY);
     aGlisse = false;
-    fiche.classList.add("glisse");
-    prise.setPointerCapture(e.pointerId);
-  });
+    tiroir.classList.add("glisse");
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
 
   /** Hauteur pendant le geste, bornée aux deux crans extrêmes. */
   const suit = e =>
@@ -9081,62 +9753,90 @@ let montreTiroir = () => {};
     return choix;
   }
 
-  prise.addEventListener("pointermove", e => {
+  function bouge(e){
     if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
-    fiche.style.maxHeight = suit(e) + "px";
-  });
+    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(e.clientY);
+    tiroir.style.maxHeight = suit(e) + "px";
+  }
 
   function relache(e){
     if (!depart) return;
     const vu = suit(e);
-    fiche.classList.remove("glisse");
+    tiroir.classList.remove("glisse");
     /* La hauteur repasse au CSS, qui la tient du cran : gardée en ligne, elle
-       aurait survécu à la fermeture et figé la fiche suivante. */
-    fiche.style.maxHeight = "";
-    // un geste avorté laisse le cran d'avant
-    pose(aGlisse ? proche(vu) : cran());
+       aurait survécu à la fermeture et figé le tiroir suivant. */
+    tiroir.style.maxHeight = "";
+    geste.note(e.clientY);
+    const v = geste.vitesse();
+    // un geste avorté laisse le cran d'avant ; le clic qui suit fera le tour
+    pose(!aGlisse ? cran()
+       : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
+       : proche(vu));
     depart = null;
   }
-  prise.addEventListener("pointerup", relache);
-  prise.addEventListener("pointercancel", relache);
 
-  /* Une pression fait le tour des crans. Le clic sert aussi le clavier — la
-     poignée est un bouton — mais il suit tout glissement : on l'ignore alors. */
-  prise.addEventListener("click", () => {
+  /* Une pression fait le tour des crans — sur la pastille comme sur l'en-tête,
+     puisque c'est la même prise. Le clic sert aussi le clavier, la poignée
+     étant un bouton, mais il suit tout glissement : on l'ignore alors. */
+  function presse(e){
     if (aGlisse){ aGlisse = false; return; }
+    /* Au large, l'en-tête n'est qu'un en-tête : la poignée y est masquée et le
+       tiroir reprend sa colonne, mais l'en-tête, lui, reste cliquable — sans
+       ce garde-fou, cliquer un nom de stand posait un cran dans son dos. */
+    if (!etroit()) return;
+    if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
     bascule();
+  }
+
+  prises.forEach(n => {
+    n.addEventListener("pointerdown", saisit);
+    n.addEventListener("pointermove", bouge);
+    n.addEventListener("pointerup", relache);
+    n.addEventListener("pointercancel", relache);
+    n.addEventListener("click", presse);
   });
 
   /* Chaque ouverture repart du cran du milieu : le stand d'avant a pu demander
      toute la hauteur, celui-ci tient peut-être en trois lignes, et le plan
-     qu'on vient de désigner doit rester en vue. La fiche s'ouvre depuis deux
-     endroits — un stand, un repère de dessin — d'où la classe guettée plutôt
-     qu'un appel posé dans chacun. */
-  let ouverte = fiche.classList.contains("open");
+     qu'on vient de désigner doit rester en vue. Le tiroir s'ouvre depuis
+     plusieurs endroits — un stand, un repère de dessin, le bouton du
+     parcours — d'où la classe guettée plutôt qu'un appel posé dans chacun. */
+  let ouvert = tiroir.classList.contains("open");
   new MutationObserver(() => {
-    const o = fiche.classList.contains("open");
-    if (o && !ouverte){ pose("demi"); mesure(); }
-    ouverte = o;
-  }).observe(fiche, { attributes: true, attributeFilter: ["class"] });
+    const o = tiroir.classList.contains("open");
+    if (o && !ouvert){ pose("demi"); mesure(); }
+    ouvert = o;
+  }).observe(tiroir, { attributes: true, attributeFilter: ["class"] });
 
-  /* L'en-tête change de hauteur sans que la fiche se rouvre : un logo qui
-     arrive, les polices qui se posent, la bascule vers l'anglais. Le cran le
-     plus bas vaut ce qu'il mesure alors. */
+  /* L'en-tête change de hauteur sans que le tiroir se rouvre : un logo qui
+     arrive, les polices qui se posent, la bascule vers l'anglais, la journée
+     organisée qui prend la place de la liste retenue. Le cran le plus bas vaut
+     ce qu'il mesure alors. */
   if (window.ResizeObserver){
-    const hd = fiche.querySelector(".detail-hd");
+    const hd = tiroir.querySelector(".detail-hd");
     if (hd) new ResizeObserver(mesure).observe(hd);
   }
 
-  /* Au retour vers un grand écran, la fiche reprend sa colonne : ni hauteur
+  /* Au retour vers un grand écran, le tiroir reprend sa colonne : ni hauteur
      posée en ligne ni cran, qui s'y appliqueraient encore. */
   addEventListener("resize", () => {
-    if (!etroit()){ fiche.style.maxHeight = ""; pose("demi"); }
+    if (!etroit()){ tiroir.style.maxHeight = ""; pose("demi"); }
     else mesure();
   });
 
   mesure();
-})();
+}
+
+tiroirCrante({ panneau: "detail", prise: "poigneeFiche", cle: "--fiche-replie", demi: .56 });
+/* Le parcours monte plus haut au cran du milieu, et la feuille de style dit la
+   même part : une liste de rangs se parcourt du regard, quand une fiche se lit
+   ligne à ligne. */
+tiroirCrante({ panneau: "parcours", prise: "poigneeParcours", cle: "--parc-replie", demi: .68 });
+/* L'itinéraire s'arrête plus bas que les deux autres : la moitié de l'écran,
+   parce qu'on le remplit en regardant le plan. Les crans ne lui retirent pas
+   cette mesure — ils la lui rendent, le temps d'un geste. */
+tiroirCrante({ panneau: "itineraire", prise: "poigneeItineraire", cle: "--itin-replie", demi: .5 });
 
 /* langue — la bascule appartient à `_langue.js`, qui récrit ce qui est à
    l'écran sans recharger la page. Restent ce que le plan a mesuré ou relevé
@@ -10040,7 +10740,11 @@ function appliqueAccent(){
   /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
      sans la version éclaircie qu'un fond noir aurait réclamée. */
   const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
+  if (!base){
+    noms.forEach(n => racine.style.removeProperty(n));
+    poseTonDeLaBarre();
+    return;
+  }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
@@ -10049,6 +10753,10 @@ function appliqueAccent(){
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
+  /* Deux modèles peignent leur bandeau de l'accent, trois autres en tirent
+     leur surface : la barre du système, qui prolonge ce bandeau derrière
+     l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -10400,6 +11108,9 @@ function appliqueModele(){
   // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
   habilleModale();
   posePoliceLibelles(cle);
+  /* Le bandeau vient de changer de fond : la barre du système, qui le
+     prolonge derrière l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -12660,6 +13371,9 @@ function activeAdmin(){
      qui jusqu'ici ne servait à rien. */
   if (MONTE){ dessineDessins(); construitPanneau(); }
   majAttente();
+  /* La nuit de la marque touche désormais le haut de l'écran : c'est elle que
+     la barre du système prolonge, et non plus le bandeau du salon. */
+  poseTonDeLaBarre();
 }
 
 
@@ -14250,7 +14964,9 @@ function ajouteForme(f){
  * se consulte parfois sur un réseau de salon capricieux.
  *
  * Leur grille est celle de Material — 960 unités, origine en haut — d'où le
- * viewBox conservé tel quel et un <svg> imbriqué qui s'en charge.
+ * viewBox conservé tel quel et un <svg> imbriqué qui s'en charge. Chaque
+ * pictogramme porte donc la sienne, et celui qui vient d'ailleurs — le M du
+ * métro — garde celle de son recueil d'origine.
  */
 const PICTOS = {
   wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
@@ -14275,6 +14991,22 @@ const PICTOS = {
   parking: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-720h280q100 0 170 70t70 170q0 100-70 170t-170 70H400v240H240Zm160-400h128q33 0 56.5-23.5T608-600q0-33-23.5-56.5T528-680H400v160Z\"/>" },
   distributeur: { vb: "0 -960 960 960", d: "<path d=\"M415-360v-180h-90v-60h240v60h-90v180h-60Zm-335 0v-200q0-17 11.5-28.5T120-600h120q17 0 28.5 11.5T280-560v200h-60v-60h-80v60H80Zm60-120h80v-60h-80v60Zm480 120v-200q0-17 11.5-28.5T660-600h180q17 0 28.5 11.5T880-560v200h-60v-180h-40v140h-60v-140h-40v180h-60Z\"/>" },
   reunion: { vb: "0 -960 960 960", d: "<path d=\"M120-120v-80h80v-640h400v40h160v600h80v80H680v-600h-80v600H120Zm160-640v560-560Zm160 320q17 0 28.5-11.5T480-480q0-17-11.5-28.5T440-520q-17 0-28.5 11.5T400-480q0 17 11.5 28.5T440-440ZM280-200h240v-560H280v560Z\"/>" },
+  /* Les transports en commun. Le premier sert le générique — la zone que
+     l'exploitant a dite « Transports en commun », le repère dont on n'a pas
+     précisé le mode ; les trois autres disent lequel, et c'est à cela qu'un
+     visiteur reconnaît de loin ce qui passe là.
+
+     Le métro fait exception au recueil : ce qui annonce une bouche n'est pas
+     un wagon vu de face, c'est le M dans son anneau, et c'est lui que le
+     visiteur cherche des yeux en sortant du hall. Il vient de Simple Icons,
+     qui le verse au domaine public (CC0) — sa grille est celle de ce
+     recueil-là, vingt-quatre unités, d'où un « vb » qui n'est pas celui des
+     autres. Le tram et le bus gardent les silhouettes de Material, faute
+     d'une marque équivalente : celle du bus est déjà celle des abris. */
+  transport: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-40l60-40q-59 0-99.5-40.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 59-40.5 99.5T660-200l60 40v40H240Zm0-440h200v-120H240v120Zm420 80H240h480-60Zm-140-80h200v-120H520v120ZM340-320q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320Zm-320 40h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm180-520q-86 0-142.5 10T258-760h448q-18-20-74.5-30T480-800Zm0 40h226-448 222Z\"/>" },
+  bus: { vb: "0 -960 960 960", d: "<path d=\"M240-120q-17 0-28.5-11.5T200-160v-82q-18-20-29-44.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 29-11 53.5T760-242v82q0 17-11.5 28.5T720-120h-40q-17 0-28.5-11.5T640-160v-40H320v40q0 17-11.5 28.5T280-120h-40Zm242-640h224-448 224Zm158 280H240h480-80Zm-400-80h480v-120H240v120Zm100 240q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320ZM258-760h448q-15-17-64.5-28.5T482-800q-107 0-156.5 12.5T258-760Zm62 480h320q33 0 56.5-23.5T720-360v-120H240v120q0 33 23.5 56.5T320-280Z\"/>" },
+  metro: { vb: "0 0 24 24", d: "<path d=\"M17.708 18.099c-.202.152-.44.228-.714.228-.242 0-.471-.076-.688-.228-.218-.152-.327-.373-.327-.66V9.626h-.023l-2.984 6.057a1.453 1.453 0 0 1-.385.505c-.145.112-.337.168-.578.168-.24 0-.433-.056-.577-.168a1.442 1.442 0 0 1-.385-.505L8.063 9.627H8.04v7.811a.748.748 0 0 1-.339.66 1.23 1.23 0 0 1-.7.229c-.275 0-.508-.076-.702-.228-.193-.152-.29-.373-.29-.66V6.958c0-.304.096-.589.29-.853.192-.264.537-.396 1.036-.396.37 0 .655.084.856.252.2.169.38.421.542.757l3.277 6.754h.024l3.253-6.754c.16-.336.342-.588.543-.757.2-.168.485-.252.855-.252.498 0 .844.132 1.036.396.193.265.29.55.29.854v10.478c0 .288-.101.509-.302.66zm-5.732 4.156c5.658 0 10.279-4.64 10.279-10.327 0-5.62-4.603-10.183-10.279-10.183-5.674 0-10.23 4.536-10.23 10.183 0 5.59 4.715 10.327 10.23 10.327zm0 1.745C5.495 24 0 18.48 0 11.928 0 5.315 5.34 0 11.976 0 18.613 0 24 5.34 24 11.928 24 18.577 18.6 24 11.976 24Z\"/>" },
+  tram: { vb: "0 -960 960 960", d: "<path d=\"M160-260v-380q0-97 85-127t195-33l30-60H280v-60h400v60H550l-30 60q119 3 199.5 32.5T800-640v380q0 59-40.5 99.5T660-120l60 60v20h-80l-80-80H400l-80 80h-80v-20l60-60q-59 0-99.5-40.5T160-260Zm500-140H240h480-60ZM480-240q25 0 42.5-17.5T540-300q0-25-17.5-42.5T480-360q-25 0-42.5 17.5T420-300q0 25 17.5 42.5T480-240Zm-2-440h228-450 222ZM240-480h480v-120H240v120Zm60 280h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm178-520q-134 0-172 14.5T256-680h450q-12-14-52-27t-176-13Z\"/>" },
 };
 
 /* Les libellés qui déclenchent un pictogramme. Un libellé libre reste
@@ -14325,6 +15057,15 @@ const PICTO_MOTS = {
   "salle de reunion": "reunion",
   "réunion": "reunion",
   "reunion": "reunion",
+  "transports en commun": "transport",
+  "transports": "transport",
+  "bus": "bus",
+  "arrêt de bus": "bus",
+  "arret de bus": "bus",
+  "métro": "metro",
+  "metro": "metro",
+  "tram": "tram",
+  "tramway": "tram",
 };
 
 /** Le pictogramme que suggère un libellé, s'il en existe un. */
@@ -14370,6 +15111,7 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
   { v: "reunion",      nom: "Salle de réunion" },
   { v: "secours",      nom: "Secours" },
   { v: "sortie",       nom: "Sortie" },
+  { v: "transport",    nom: "Transports en commun" },
   { v: "vestiaire",    nom: "Vestiaire" },
   { v: "wc",           nom: "WC" },
 ].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
@@ -14378,8 +15120,13 @@ const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
    rester quelle que soit la langue de l'écran : posé depuis la version
    anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
    Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
-   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire. */
-const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) || TYPES_REPERE[0]).nom;
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire.
+
+   Les modes de transport, plus bas, se nomment de la même façon : le
+   pictogramme d'un arrêt est celui de son mode, et c'est « Métro » qu'il faut
+   lire sous la pastille, non le type qui l'a posé. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) ||
+  MODES_TRANSPORT.find(m => m.v === v) || TYPES_REPERE[0]).nom;
 const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
 
 /**
@@ -14403,6 +15150,10 @@ const TYPES_ZONE = [
   { v: "conferences",  nom: "Conférences",  picto: "reunion" },
   { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
   { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+  /* Une gare routière, un parvis de tramway : ce que le salon a dessiné comme
+     une zone et qui est, pour le visiteur qui repart, la même chose qu'un
+     arrêt. Le pictogramme est le générique — une zone n'a pas de ligne. */
+  { v: "transport",    nom: "Transports en commun", picto: "transport" },
 ];
 
 /** Le type d'une zone, s'il lui en a été donné un. */
@@ -14437,6 +15188,159 @@ const estPorte     = (p) => p === "entree" || p === "entree_seule" || p === "sor
 const ouvreEntrant = (p) => p === "entree" || p === "entree_seule";
 const ouvreSortant = (p) => p === "entree" || p === "sortie";
 
+/* ------------------------------------------------------------
+   Les transports en commun
+   ------------------------------------------------------------
+   Un arrêt n'est pas un repère comme les autres : ce que le visiteur cherche
+   n'est pas « un transport », c'est sa ligne — le 12, le T3a, le 80. Le type
+   dit donc seulement qu'il s'agit d'un transport ; deux précisions le
+   complètent, et elles ne valent que pour lui.
+
+   Le mode — bus, métro, tram — décide du pictogramme : c'est celui que la
+   signalétique pose au-dessus de la bouche ou de l'abri, et celui qu'on
+   reconnaît de loin sans lire. La ligne nomme l'arrêt et lui donne sa
+   couleur : un visiteur ne cherche pas « le métro », il cherche le 12, et
+   c'est au vert du 12 qu'il le trouve.
+   ------------------------------------------------------------ */
+
+/* Les modes, dans l'ordre où on les rencontre en sortant d'un hall. La valeur
+   est aussi la clé du pictogramme : les deux ne se séparent jamais, et un
+   mode de plus n'a qu'un dessin à ajouter au recueil. */
+const MODES_TRANSPORT = [
+  { v: "bus",   nom: "Bus" },
+  /* L'initiale sert à reconnaître une ligne écrite de deux façons : « M4 » et
+     « 4 » sont la même, « T3a » et « 3a » aussi. Celle du métro est de plus
+     dans son symbole — l'anneau porte son M — et n'a donc pas à se réécrire à
+     côté ; celle du tram fait partie du nom de la ligne, que la signalétique
+     écrit « T3a », et le pictogramme ne la dit pas. */
+  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
+  { v: "tram",  nom: "Tram",  lettre: "t" },
+];
+
+const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) || {};
+const lettreMode = (mode) => modeDit(mode).lettre || "";
+
+/** Ce repère est-il un arrêt ? Le type le dit, et lui seul : un repère nommé
+ *  « Métro » d'avant les types reste ce que son libellé en a fait. */
+const estTransport = (f) => pictoForme(f) === "transport";
+
+/** Le mode d'un arrêt, s'il a été dit. */
+const modeTransport = (f) => MODES_TRANSPORT.find(m => m.v === (f && f.mode)) || null;
+
+
+/**
+ * Le pictogramme d'un repère : celui de son type, ou celui de son mode quand
+ * le type est un transport. C'est le seul endroit où les deux se rejoignent —
+ * partout ailleurs `pictoForme` dit le type, et lui seul, parce que c'est le
+ * type qui ouvre l'entrée du cartouche et qui se cherche à la frappe.
+ *
+ * Un arrêt dont personne n'a dit le mode garde le pictogramme générique : il
+ * vaut mieux un transport sans précision qu'un bus qui n'en est pas un.
+ */
+const glypheRepere = (f) => estTransport(f)
+  ? ((modeTransport(f) || {}).v || "transport") : pictoForme(f);
+
+/**
+ * Les couleurs des lignes, telles que la signalétique les porte.
+ *
+ * Une ligne n'a pas de couleur en propre : elle a celle que son réseau lui
+ * donne, et le 1 qui est jaune à Paris est bleu à Marseille. La table est donc
+ * celle d'un réseau — l'Île-de-France, où se tiennent les salons qui nous
+ * occupent — et elle ne prétend pas à davantage. Ailleurs, et pour une ligne
+ * ouverte depuis, la couleur se règle à la main : l'exploitant a la
+ * signalétique sous les yeux, ce que cette table n'aura jamais.
+ *
+ * Le bus n'y figure pas, et ce n'est pas un oubli : la signalétique ne donne
+ * pas une couleur à chaque ligne de bus, elle en donne une au réseau entier.
+ * Un arrêt de bus garde donc la couleur de son calque, à moins qu'on ne lui
+ * en pose une.
+ */
+const COULEURS_LIGNE = {
+  metro: {
+    "1": "#FFCD00", "2": "#003CA6", "3": "#837902", "3bis": "#6EC4E8",
+    "4": "#CF009E", "5": "#FF7E2E", "6": "#6ECA97", "7": "#FA9ABA",
+    "7bis": "#6ECA97", "8": "#E19BDF", "9": "#B6BD00", "10": "#C9910D",
+    "11": "#704B1C", "12": "#007852", "13": "#6EC4E8", "14": "#62259D",
+  },
+  tram: {
+    "1": "#0064B0", "2": "#CF009E", "3a": "#FF7E2E", "3b": "#00814F",
+    "4": "#FFBE00", "5": "#662483", "6": "#E3051C", "7": "#84329B",
+    "8": "#837902",
+  },
+};
+
+/* « T3a », « t 3A », « ligne 3 bis » nomment la même ligne : la clé ne garde
+   que ce qui la distingue. L'initiale du mode tombe avec les espaces et les
+   tirets — un tram appelé « T1 » est la ligne 1 de son réseau — mais jamais
+   seule, sans quoi une ligne qui ne s'appelle que « T » deviendrait un numéro
+   vide, et prendrait la couleur de la première venue. */
+function cleLigne(mode, ligne){
+  const s = String(ligne || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+    .replace(/^(?:ligne|line)/, "");
+  const i = lettreMode(mode);
+  return i && s.length > 1 && s[0] === i ? s.slice(1) : s;
+}
+
+/** Le numéro tel qu'il s'écrit à côté du symbole : « M4 » s'y lirait deux
+ *  fois, et devient « 4 ». Ce que le symbole ne dit pas reste tel que
+ *  l'exploitant l'a tapé — « T3a » garde son T, « 3 bis » son espace, qui sont
+ *  la façon dont ces lignes s'écrivent. */
+const ligneAffichee = (mode, ligne) => {
+  const s = String(ligne || "").trim();
+  const m = modeDit(mode);
+  return m.dansLeSymbole && s.length > 1 && s[0].toLowerCase() === m.lettre &&
+         /[0-9]/.test(s[1]) ? s.slice(1).trim() : s;
+};
+
+/** La couleur que la signalétique donne à cette ligne, quand on la connaît. */
+const couleurLigne = (mode, ligne) =>
+  (COULEURS_LIGNE[mode] || {})[cleLigne(mode, ligne)] || null;
+
+/** La couleur d'un arrêt : celle que l'exploitant a posée, celle de sa ligne à
+ *  défaut. Rien si les deux manquent — la pastille reprend alors la couleur de
+ *  son calque, comme tout repère. */
+const couleurRepere = (f) => !estTransport(f) ? null
+  : (trio(f.couleur) ? f.couleur : couleurLigne(f.mode, f.ligne));
+
+/** L'encre qui se lit sur une couleur : du blanc sur le vert du 12, du noir
+ *  sur le jaune du 1 — la signalétique en décide ainsi, et pour la même
+ *  raison. */
+const encreRepere = (c) => {
+  const v = trio(c);
+  return v && luminance(v) > 0.42 ? "#0E1113" : "#FFFFFF";
+};
+
+/**
+ * Le nom d'un arrêt : « Métro 12 », « Bus 80 ».
+ *
+ * En français, parce que c'est le libellé qui s'enregistre, et qu'il doit le
+ * rester quelle que soit la langue de l'écran — posé depuis la version
+ * anglaise, il ne s'appellerait pas « Metro 12 » chez les visiteurs français.
+ * Sans ligne, il ne reste que le mode, ce qui est encore quelque chose : on
+ * sait qu'un tram passe là.
+ */
+const nomLigneFr = (mode, ligne) => [
+  modeDit(mode).nom || nomTypeRepereFr("transport"),
+  String(ligne || "").trim(),
+].filter(Boolean).join(" ");
+
+/** Le libellé qu'un repère prend quand on ne lui en donne pas : le nom de son
+ *  type, ou celui de sa ligne quand c'est un arrêt — « Métro 12 » dit plus
+ *  que « Transports en commun », et c'est ce qu'on cherche à la frappe. */
+const libelleDoffice = (type, mode, ligne) => type === "transport"
+  ? nomLigneFr(mode, ligne) : (type ? nomTypeRepereFr(type) : "");
+
+/** La couleur qu'il vaut la peine d'écrire sur l'arrêt : celle qui dit quelque
+ *  chose de plus que la table des lignes et que le calque. Écrire les deux
+ *  autres les figerait — une table corrigée ne rattraperait plus rien, et un
+ *  calque repeint laisserait ses arrêts derrière lui. */
+function couleurEcrite(mode, ligne, choisie, calque){
+  const c = String(choisie || "").toLowerCase();
+  const dejaDit = [couleurLigne(mode, ligne), calque && calque.couleur]
+    .filter(Boolean).map(x => String(x).toLowerCase());
+  return c && !dejaDit.includes(c) ? choisie : "";
+}
+
 /* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
    un repère doit se repérer de loin, sans qu'on le cherche. */
 const TAILLE_REPERE = 4;
@@ -14458,17 +15362,26 @@ function traceRepere(f){
   const dit = String(f.txt || "").trim();
   const type = pictoForme(f);
   const nom = dit || (type ? nomTypeRepere(type) : "Repère");
+  /* La couleur d'une ligne se pose sur le groupe et non sur l'aplat : la
+     pastille la prend par « currentColor », le pictogramme et le numéro
+     prennent l'encre qui se lit dessus. Sans ligne connue rien n'est posé, et
+     l'arrêt reste de la couleur de son calque comme n'importe quel repère. */
+  const fond = couleurRepere(f);
+  const teinte = fond
+    ? ' style="color:' + fond + ';--encre-poi:' + encreRepere(fond) + '"' : "";
   const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
-               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '">';
+               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
+               teinte + '>';
 
   /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
      et le navigateur se charge du cadrage — plus sûr qu'une transformation
      calculée à la main. */
-  const g = PICTOS[type];
+  const g = PICTOS[glypheRepere(f)];
   if (g){
-    /* La pastille ne porte que le pictogramme.
+    /* La pastille ne porte que le pictogramme — et le numéro de la ligne,
+     * quand c'est un arrêt.
      *
      * Le libellé s'écrivait à côté dès qu'il disait autre chose que lui —
      * « Entrée Nord » avait besoin de son nord. Mais un nom écrit à la taille
@@ -14479,13 +15392,26 @@ function traceRepere(f){
      * d'intérêt, lui, continue de les nommer tous.
      */
     const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
-    const x = f.pts[0][0] - cote / 2, y = f.pts[0][1] - cote / 2;
+    /* Le numéro de la ligne s'écrit à côté du pictogramme, comme sur les
+       plaques : le dessin dit ce qui passe, le numéro dit lequel, et la
+       pastille s'allonge de ce qu'il mesure. Lui seul s'écrit — un arrêt
+       s'appelle « Métro 12 », et le mot « Métro » est déjà dans le dessin. */
+    const ligne = estTransport(f) ? ligneAffichee(f.mode, f.ligne) : "";
+    const corps = t * 1.1;
+    const lt = ligne ? largeur(ligne, P_NOM) * corps : 0;
+    const ecart = ligne ? cote * .12 : 0;
+    const w = cote + ecart + lt;
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
     return tete +
-      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + cote.toFixed(2) +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
-      '" viewBox="' + g.vb + '">' + g.d + '</svg></g>';
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (ligne ? '<text x="' + (x + cote - m + ecart + lt / 2).toFixed(2) +
+        '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
+        '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' : "") +
+      '</g>';
   }
 
   /* Sans pictogramme, le libellé est tout ce que le repère a à montrer : le
@@ -14871,7 +15797,10 @@ function cartouchePoi(){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      tout.push({ nom: f.txt.trim(), picto: pictoForme(f) || "" });
+      /* Le pictogramme est celui du mode pour un arrêt : deux pastilles
+         « Bus » et « Métro » ne se reconnaîtraient pas sous le même dessin
+         générique. La clé le suit, et la mise en avant avec elle. */
+      tout.push({ nom: f.txt.trim(), picto: glypheRepere(f) || "" });
     }
   }
   /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
@@ -15064,7 +15993,7 @@ function mesureCartouche(){
  *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
  *  sortie avec l'entrée qui porte son nom. */
 const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
-  clePoi(String(f.txt).trim(), pictoForme(f) || "") === poiChoisi);
+  clePoi(String(f.txt).trim(), glypheRepere(f) || "") === poiChoisi);
 const phareZone = (o) => {
   const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
   return Boolean(t && clePoi(t.nom, t.picto || "") === poiChoisi);
@@ -15278,13 +16207,24 @@ function dessinPointerDown(e){
   }
   if (outil === "repere"){
     const type = $("repereType").value;
+    const transport = type === "transport";
+    const mode = transport ? $("repereMode").value : "";
+    const ligne = transport ? $("repereLigne").value.trim() : "";
     /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
-       cas ordinaire d'un WC. Sans type ni libellé, en revanche, il n'y aurait
-       rien à poser. */
-    const txt = $("repereTexte").value.trim() || (type ? nomTypeRepereFr(type) : "");
+       cas ordinaire d'un WC, et celui d'un arrêt que sa ligne nomme déjà.
+       Sans type ni libellé, en revanche, il n'y aurait rien à poser. */
+    const txt = $("repereTexte").value.trim() || libelleDoffice(type, mode, ligne);
     if (!txt){ $("repereTexte").focus(); return true; }
     // un repère se lit de loin : il naît deux fois plus grand qu'un texte
-    ajouteForme({ t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE });
+    const f = { t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE };
+    if (transport){
+      f.mode = mode;
+      if (ligne) f.ligne = ligne;
+      const c = couleurEcrite(mode, ligne, $("repereCouleur").value,
+                              trouveCalque(calqueActif));
+      if (c) f.couleur = c;
+    }
+    ajouteForme(f);
     return true;
   }
   if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
@@ -15474,7 +16414,7 @@ function choisitOutil(o){
   b.classList.toggle("mode-stand", o === "stand");
   racine.classList.toggle("mode-edition", ADMIN && o === "main");
   if (o === "texte") $("texteADessiner").focus();
-  if (o === "repere") $("repereTexte").focus();
+  if (o === "repere") montreTransport(true);
   if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
   /* L'outil image remplit la même liste, sans prendre le curseur : son premier
      geste est de choisir un fichier, et le champ n'est qu'une option — au sens
@@ -15511,7 +16451,41 @@ $("renommeOutils").onclick = () => {
    ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
 $("repereType").innerHTML =
   TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
-$("repereType").onchange = () => $("repereTexte").focus();
+
+/** Les modes de transport, pour les deux listes qui les proposent — celle de
+ *  la boîte à outils et celle du panneau d'édition. */
+const optionsModes = () => MODES_TRANSPORT
+  .map(m => '<option value="' + esc(m.v) + '">' + esc(m.nom) + '</option>').join("");
+$("repereMode").innerHTML = optionsModes();
+
+/* La couleur d'une ligne connue s'impose dès que la ligne est écrite : c'est
+   celle de la signalétique, et personne n'a à la retrouver. Celle qu'on a
+   choisie à la main tient jusqu'à la prochaine ligne connue — on pose les
+   arrêts d'un réseau les uns après les autres, et redire sa couleur à chacun
+   serait une corvée. Le calque reprend la main quand ni l'une ni l'autre n'a
+   été dite. */
+let couleurALaMain = false;
+function proposeCouleurLigne(){
+  const c = couleurLigne($("repereMode").value, $("repereLigne").value);
+  if (c){ $("repereCouleur").value = c; couleurALaMain = false; return; }
+  if (couleurALaMain) return;
+  const cal = trouveCalque(calqueActif);
+  if (cal && cal.couleur) $("repereCouleur").value = cal.couleur;
+}
+
+/* Le mode et la ligne ne disent rien d'un vestiaire : ils ne paraissent que
+   sous le type qui les appelle. Et ce n'est pas le même champ qui prend la
+   suite — d'un arrêt on attend sa ligne, du reste son libellé. */
+function montreTransport(prendLaMain){
+  const on = $("repereType").value === "transport";
+  $("outils").classList.toggle("mode-transport", on);
+  if (on) proposeCouleurLigne();
+  if (prendLaMain) (on ? $("repereLigne") : $("repereTexte")).focus();
+}
+$("repereType").onchange = () => montreTransport(true);
+$("repereMode").onchange = proposeCouleurLigne;
+$("repereLigne").oninput = proposeCouleurLigne;
+$("repereCouleur").oninput = () => { couleurALaMain = true; };
 
 $("elemSupprimer").onclick = supprimeForme;
 $("elemTexte").oninput = appliqueTexte;
@@ -15527,6 +16501,23 @@ if ($("elemFleche")) $("elemFleche").onchange = appliqueTrait;
 if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
 if ($("elemHauteur")) $("elemHauteur").oninput = () => appliqueDimension("h");
 $("elemPicto").onchange = appliquePicto;
+/* Le mode et la ligne d'un arrêt se reprennent comme son type, et dans le même
+   panneau : on juge une pastille sur le plan, pas dans une liste. */
+$("elemMode").onchange = appliqueTransport;
+$("elemLigne").oninput = appliqueTransport;
+/* La couleur, elle, se peint à chaque événement du nuancier et ne s'écrit
+   qu'au repos : la rafale ne refait que la forme tirée, jamais tous les
+   calques. Le retour en arrière tient le geste entier — on mémorise au premier
+   événement, pas à chacun. */
+let couleurEnCours = false;
+suitNuancier($("elemCouleur"), (v) => {
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  if (!couleurEnCours){ memorise(); couleurEnCours = true; }
+  const c = couleurEcrite(cible.f.mode, cible.f.ligne, v, cible.c);
+  if (c) cible.f.couleur = c; else delete cible.f.couleur;
+  redessineForme(cible.f);
+}, () => { couleurEnCours = false; enregistreDessins(); });
 /* La liste des passages revient à « Relier à… » dès que le choix est fait :
    c'est une action, pas un réglage — on en pose plusieurs à la suite. */
 $("elemLienAjout").onchange = (e) => {
@@ -15865,6 +16856,22 @@ function majElement(){
     }
   }
 
+  /* Le mode et la ligne d'un arrêt se reprennent comme son type : un 12 écrit
+     13 se corrige sans redessiner la pastille. La couleur montre celle de la
+     ligne — celle de la signalétique, ou celle qu'on a posée à sa place — et à
+     défaut celle du calque, qui est ce que la pastille porte alors. */
+  const ba = $("elemTransport");
+  if (ba){
+    const arret = f.t === "repere" && estTransport(f);
+    ba.hidden = !arret;
+    if (arret){
+      if (!$("elemMode").options.length) $("elemMode").innerHTML = optionsModes();
+      $("elemMode").value = (modeTransport(f) || MODES_TRANSPORT[0]).v;
+      $("elemLigne").value = f.ligne || "";
+      $("elemCouleur").value = couleurRepere(f) || cible.c.couleur || "#2F49D1";
+    }
+  }
+
   majLiens(f.t === "repere" ? f : null);
 
   /* Le rattachement, pour les deux formes qui en ont un. Un stand dessiné
@@ -16073,6 +17080,39 @@ function appliqueTrait(){
   enregistreDessins(); dessineDessins();
 }
 
+/**
+ * Ce qu'un arrêt dessert : son mode, sa ligne, et la couleur que la ligne lui
+ * donne.
+ *
+ * Le libellé posé d'office suit la ligne tant que personne ne l'a réécrit : un
+ * « Métro 12 » corrigé en 4 s'appelle « Métro 4 », et n'oblige pas à reprendre
+ * son nom à la main. Celui qu'un exploitant a écrit — « Métro 12, sortie
+ * Nord » — ne bouge pas.
+ *
+ * La couleur, elle, ne se lit dans le nuancier que si la ligne n'a pas bougé :
+ * changer de ligne c'est en prendre la couleur, et non garder par inadvertance
+ * celle de la précédente.
+ */
+function appliqueTransport(){
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  const f = cible.f;
+  const mode = $("elemMode").value, ligne = $("elemLigne").value.trim();
+  const memeLigne = mode === f.mode && ligne === String(f.ligne || "");
+  const choisie = memeLigne ? $("elemCouleur").value : couleurLigne(mode, ligne);
+  memorise();
+  if (f.txt === libelleDoffice(pictoForme(f), f.mode, f.ligne))
+    f.txt = libelleDoffice(pictoForme(f), mode, ligne);
+  f.mode = mode;
+  if (ligne) f.ligne = ligne; else delete f.ligne;
+  const c = couleurEcrite(mode, ligne, choisie, cible.c);
+  if (c) f.couleur = c; else delete f.couleur;
+  enregistreDessins();
+  /* Le libellé a pu suivre, et la couleur avec lui : le panneau se relit, comme
+     après tout changement de ce qu'un repère est. */
+  dessineDessins(); dessinePoignees(); majElement();
+}
+
 /** Changer ce qu'un repère est : son pictogramme suit, et avec lui ce qu'il
  *  vaut comme passage d'un plan à l'autre — une porte, un escalier, un
  *  ascenseur. Le terrain, lui, ne bouge pas : un repère ne barre rien. */
@@ -16080,7 +17120,18 @@ function appliquePicto(){
   const cible = formeSel && formeParId(formeSel);
   if (!cible || cible.f.t !== "repere") return;
   memorise();
+  const avant = pictoForme(cible.f);
   cible.f.picto = $("elemPicto").value;
+  /* Devenir un arrêt sans mode laisserait le pictogramme générique sous un
+     panneau qui en propose trois : on pose le premier, celui que le panneau
+     montre déjà. */
+  if (estTransport(cible.f) && !modeTransport(cible.f))
+    cible.f.mode = MODES_TRANSPORT[0].v;
+  /* Le libellé posé d'office suit le type : un repère nommé « WC » faute
+     d'avoir été nommé ne reste pas « WC » en devenant un ascenseur. Celui
+     qu'on a écrit à la main, lui, ne bouge pas. */
+  if (cible.f.txt === libelleDoffice(avant, cible.f.mode, cible.f.ligne))
+    cible.f.txt = libelleDoffice(cible.f.picto, cible.f.mode, cible.f.ligne);
   /* Un repère qui cesse d'être un passage garde ses liaisons écrites : elles
      ne désignent plus rien, et l'annuaire les ignore déjà — mais les retirer
      ici punirait une fausse manœuvre d'une perte qu'on ne peut pas défaire. */
@@ -17362,7 +18413,8 @@ if ($("geoHauteur")) $("geoHauteur").oninput = appliqueDimensionGeo;
    mètres.
 
    Le calage se retient par pavillon. Les autres halls du même lieu se posent
-   ensuite sans un clic : ils partagent le repère du premier.
+   ensuite sans un clic : ils partagent le repère du premier — et le bouton de
+   leur ligne dans la pile le rouvre pour tous à la fois.
    ============================================================ */
 
 /* Réservée à l'administration : la construction ne la verse que dans
@@ -17381,6 +18433,21 @@ function batimentsPoses(){
   const s = new Set();
   mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
   return s;
+}
+
+/** Un calque venu de la bibliothèque : ses formes portent une référence OSM. */
+const estBatiment = (c) => !!c && (c.formes || []).some(f => f.osm);
+
+/** Les halls de ce lieu déjà sur le plan, dans l'ordre de la bibliothèque. */
+function hallsPoses(lieu){
+  const poses = batimentsPoses();
+  return lieu.batiments.filter(b => poses.has(b.osm));
+}
+
+/** Le lieu d'où vient un calque, reconnu à la référence OSM de ses formes. */
+function lieuDuCalque(c){
+  const refs = new Set((c.formes || []).map(f => f.osm).filter(Boolean));
+  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(b.osm))) || null;
 }
 
 /** Un point du lieu, porté dans le repère du plan. */
@@ -17446,7 +18513,11 @@ function ouvreBibliotheque(){
         p.textContent = "Ce pavillon est déjà calé sur ce lieu : les bâtiments se posent directement.";
         const r = document.createElement("label");
         r.className = "biblioRecale";
-        r.innerHTML = '<input type="checkbox"> Recaler sur le plan';
+        /* L'intitulé dit que le geste emporte les halls déjà là : cocher pour
+           « placer celui-ci autrement » et voir les autres bouger avec lui
+           surprendrait, alors que c'est justement ce qu'on veut — un seul
+           repère, et des halls qui restent entre eux. */
+        r.innerHTML = '<input type="checkbox"> Reprendre le calage — les bâtiments déjà posés se déplacent aussi';
         r.querySelector("input").checked = recaler;
         r.querySelector("input").onchange = e => { recaler = e.target.checked; };
         p.appendChild(document.createElement("br"));
@@ -17465,12 +18536,21 @@ function ouvreBibliotheque(){
   }, [
     { libelle: "Annuler" },
     { libelle: "Placer sur le plan", ferme: false, action: () => {
-        const halls = lieu.batiments.filter(b => choisis.has(b.nom));
+        const t = CONF[CLE_CALAGE()];
+        const cale = !!t && t.lieu === lieu.cle;
+        const reprise = cale && recaler;
+        /* Reprendre le calage emmène les halls déjà posés : ils partagent le
+           repère qu'on rouvre, et les laisser derrière les détacherait des
+           autres. C'est aussi ce qui rend le geste possible une fois tout le
+           lieu placé — sans eux il n'y avait plus rien à cocher, et le bouton
+           ne répondait à rien. */
+        const poses = batimentsPoses();
+        const halls = lieu.batiments.filter(b =>
+          choisis.has(b.nom) || (reprise && poses.has(b.osm)));
         if (!halls.length) return;
         fermeModale();
-        const t = CONF[CLE_CALAGE()];
-        if (t && t.lieu === lieu.cle && !recaler) ajouteBatiments(lieu, halls, t);
-        else lanceCalage(lieu, halls, t && t.lieu === lieu.cle ? t : null);
+        if (cale && !recaler) ajouteBatiments(lieu, halls, t);
+        else lanceCalage(lieu, halls, cale ? t : null);
       } },
   ]);
 }
@@ -17531,8 +18611,27 @@ function lanceCalage(lieu, halls, depart){
              rayon: Math.max(x1 - x0, y1 - y0) / 2, t: t };
   racine.classList.add("cale-plan");
   $("calageBat").hidden = false;
+  effaceLeTempsDuCalage(halls);
   cadreCalage();
   dessineCalage();
+}
+
+/**
+ * Les halls qu'on reprend s'effacent, le temps du geste.
+ *
+ * Le contour en pointillés part de l'endroit exact où le gris l'attend : on
+ * croyait traîner une copie, et la place visée se lisait mal entre deux tracés
+ * superposés. L'attribut ne s'écrit que sur les nœuds du plan — rien n'en
+ * arrive aux calques ni aux réglages, et annuler ne laisse rien derrière.
+ */
+function effaceLeTempsDuCalage(halls){
+  const refs = new Set(halls.map(b => b.osm));
+  const hote = $("couches");
+  mesCalques().forEach(c => (c.formes || []).forEach(f => {
+    if (!refs.has(f.osm)) return;
+    const n = hote.querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
+    if (n) n.dataset.cale = "1";
+  }));
 }
 
 /**
@@ -17563,6 +18662,7 @@ function finCalage(){
   racine.classList.remove("cale-plan");
   const g = $("calageApercu");
   if (g) g.remove();
+  $("couches").querySelectorAll("[data-cale]").forEach(n => delete n.dataset.cale);
   $("calageBat").hidden = true;
 }
 
@@ -17575,8 +18675,14 @@ function pivoteCalage(t, a){
   return { a: a, x: c[0] - v[0], y: c[1] - v[1] };
 }
 
-/** L'angle lisible, entre 0 et 360 degrés. */
-const degresCalage = (a) => +(((a * 180 / Math.PI) % 360 + 360) % 360).toFixed(1);
+/** L'angle lisible, entre 0 inclus et 360 exclu. Arrondi d'abord, ramené dans
+ *  le tour ensuite : un calage relu sur le plan rend un angle nul au dixième
+ *  de millionième de degré près, et du mauvais côté de zéro il s'affichait
+ *  « 360 » — un contour droit qu'on venait de reprendre avait l'air tourné. */
+const degresCalage = (a) => {
+  const d = +(a * 180 / Math.PI).toFixed(1);
+  return +((d % 360 + 360) % 360).toFixed(1);
+};
 
 function dessineCalage(){
   const c = CALAGE;
@@ -17640,9 +18746,33 @@ function calagePointerUp(){
 /* ------------------------------------------------------------
    La pose : un calque par hall
    ------------------------------------------------------------ */
+/** Repose les contours d'un hall déjà là. Ils se recalculent depuis la
+ *  bibliothèque plutôt que de subir le déplacement d'un calage au suivant :
+ *  un pavillon repris dix fois ne dérive pas d'un centimètre à chaque fois. */
+function reposeBatiment(b, t){
+  mesCalques().forEach(c => {
+    if (!(c.formes || []).some(f => f.osm === b.osm)) return;
+    let j = 0;
+    /* Des formes neuves, plutôt que leurs points réécrits : l'instantané de
+       l'historique copie les tableaux mais partage les formes, si bien qu'une
+       forme retouchée sur place l'est aussi dans le passé. Un calage repris
+       déplace tous les halls d'un coup — le rendre serait long à la main. */
+    c.formes = c.formes.map(f => {
+      if (f.osm !== b.osm) return f;
+      const k = b.contours[j++];
+      return k ? Object.assign({}, f, { pts: k.map(p => poseCalage(t, p)) }) : f;
+    });
+  });
+}
+
 function ajouteBatiments(lieu, halls, t){
   memorise();
-  const neufs = halls.map((b, i) => {
+  /* Reprendre un hall, c'est déplacer celui qui est là, non le poser une
+     seconde fois : son calque garde son nom, sa couleur, son rang et son
+     cadenas, et ne reçoit que de nouveaux points. */
+  const poses = batimentsPoses();
+  halls.filter(b => poses.has(b.osm)).forEach(b => reposeBatiment(b, t));
+  const neufs = halls.filter(b => !poses.has(b.osm)).map((b, i) => {
     const id = nouvelId() + i;
     return {
       id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
@@ -17663,13 +18793,16 @@ function ajouteBatiments(lieu, halls, t){
   });
   /* Tout au fond de la pile, derrière les stands : sans rang retenu, un
      calque neuf passe devant tout le reste. Seuls les environs, le plan de
-     la ville autour du salon, restent derrière. */
-  const cles = neufs.map(c => "dessin:" + c.id);
-  const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
-  let i = 0;
-  while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
-  liste.splice(i, 0, ...cles);
-  CONF[clePile()] = liste;
+     la ville autour du salon, restent derrière. Un calage repris n'a rien à
+     ranger — les calques sont les mêmes, et à leur place. */
+  if (neufs.length){
+    const cles = neufs.map(c => "dessin:" + c.id);
+    const liste = pile().map(x => x.k).filter(k => cles.indexOf(k) < 0);
+    let i = 0;
+    while (i < liste.length && liste[i].indexOf("fond:__environs") === 0) i++;
+    liste.splice(i, 0, ...cles);
+    CONF[clePile()] = liste;
+  }
   CONF[CLE_CALAGE()] = { lieu: lieu.cle, a: +t.a.toFixed(6), x: +t.x.toFixed(2), y: +t.y.toFixed(2) };
   enregistreConf();
   enregistreDessins();
@@ -17698,6 +18831,87 @@ $("calageStop").onclick = finCalage;
 addEventListener("keydown", e => {
   if (e.key === "Escape" && CALAGE && !$("modale").classList.contains("open")) finCalage();
 });
+
+/* ------------------------------------------------------------
+   Reprendre le calage
+
+   Une fois validé, le contour n'avait plus de prise : le bandeau s'en allait
+   avec lui, et la fenêtre de la bibliothèque ne proposait plus un hall déjà
+   posé — ses cases s'y grisent. Le supprimer pour le remettre ne rendait rien
+   non plus : le calage du pavillon est retenu, et le hall revenait exactement
+   où il était, sans qu'on ait pu le tourner.
+
+   La prise vit donc là où vit le hall : sur sa ligne dans la pile. Elle rouvre
+   le même bandeau, et le rouvre pour tous les halls du lieu — ils partagent un
+   seul repère, en déplacer un seul le romprait.
+   ------------------------------------------------------------ */
+
+/** Le bouton du panneau, sur un calque venu de la bibliothèque. Le cadenas ne
+ *  l'éteint pas : il garde d'un glisser distrait, et c'est ici un geste nommé,
+ *  avec son aperçu, son angle et ses deux issues. */
+function boutonRecale(c){
+  if (!bibliothequeDispo() || !estBatiment(c)) return "";
+  const t = "Recaler les bâtiments : les glisser et les faire pivoter";
+  return '<button class="recal" title="' + t + '">' + pictoRecale() + "</button>";
+}
+
+/** Le picto : la flèche qui tourne, dans le sens du bouton « ↻ 90° » du
+ *  bandeau. Le contour du hall, essayé dessous, ne tenait pas dans douze
+ *  pixels : la boîte et la flèche s'y confondaient en une tache. */
+const pictoRecale = () =>
+  '<svg class="pictoRecale" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<path d="M9.44 3.59A4.2 4.2 0 1 1 5.27 1.86"/>' +
+  '<path d="M3.49 1.35 5.27 1.86 3.77 2.95"/></svg>';
+
+/**
+ * Le calage relu sur le plan.
+ *
+ * Le contour posé dit toujours où il est ; le réglage du pavillon, lui, n'en
+ * retient qu'un — celui du dernier lieu calé — et il ne suit ni une annulation
+ * ni un hall poussé à la main, calque ouvert. Reprendre un calage qu'il aurait
+ * seul dicté téléporterait donc le contour avant qu'on l'ait touché : on part
+ * de ce qui est à l'écran, et le réglage ne sert plus que de dernier recours.
+ *
+ * Deux points de la bibliothèque et leurs jumeaux sur le plan suffisent :
+ * l'échelle ne se règle pas, les deux repères sont en mètres.
+ */
+function calageRelu(lieu, c){
+  for (const b of lieu.batiments){
+    const f = (c.formes || []).find(x => x.osm === b.osm && x.pts && x.pts.length > 1);
+    const k = f && b.contours[0];
+    if (!k || k.length < 2) continue;
+    /* Le point le plus éloigné du premier, et non le premier qui s'en écarte :
+       les contours d'OpenStreetMap ont des segments d'un décimètre, où le
+       centimètre d'arrondi des points pèse six degrés. Sur la diagonale d'un
+       pavillon il n'en pèse plus un centième. */
+    let i = -1, d = 0;
+    k.forEach((p, j) => {
+      if (!j || !f.pts[j]) return;
+      const e = Math.hypot(p[0] - k[0][0], p[1] - k[0][1]);
+      if (e > d){ d = e; i = j; }
+    });
+    if (i < 0 || !d) continue;
+    const a = Math.atan2(f.pts[i][1] - f.pts[0][1], f.pts[i][0] - f.pts[0][0]) -
+              Math.atan2(k[i][1] - k[0][1], k[i][0] - k[0][0]);
+    const co = Math.cos(a), si = Math.sin(a);
+    return { a: a, x: f.pts[0][0] - (co * k[0][0] - si * k[0][1]),
+                   y: f.pts[0][1] - (si * k[0][0] + co * k[0][1]) };
+  }
+  return null;
+}
+
+/** Rouvre le calage sur les halls du lieu d'où vient ce calque. */
+function rouvreCalage(c){
+  if (!bibliothequeDispo()) return;
+  const lieu = lieuDuCalque(c);
+  if (!lieu) return;
+  const cale = CONF[CLE_CALAGE()];
+  const t = calageRelu(lieu, c) ||
+            (cale && cale.lieu === lieu.cle ? cale : null);
+  const halls = hallsPoses(lieu);
+  if (!t || !halls.length) return;
+  lanceCalage(lieu, halls, t);
+}
 
 /* ------------------------------------------------------------
    La mention de la source
@@ -17883,7 +19097,7 @@ function construitPanneau(){
       /* Le cadenas précède le crayon et la croix : c'est eux qu'il éteint, et
          on lit la ligne de gauche à droite — ce qui protège avant ce qui
          modifie. */
-      (x.t === "dessin" ? boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
+      (x.t === "dessin" ? boutonRecale(x.ref) + boutonMasqueCarte(x.ref) + boutonVerrou(x.ref) +
                           '<button class="ren" title="Dessiner sur ce calque">&#9998;</button>' +
                           '<button class="sup" title="Supprimer le calque">&times;</button>' : "") +
       '</span>';
@@ -17944,6 +19158,12 @@ function construitPanneau(){
       /* Le perçage du fond de carte : il n'y a de bouton que s'il y a une carte. */
       const mq = d.querySelector(".masq");
       if (mq) mq.onclick = ev => { ev.stopPropagation(); basculeMasqueCarte(x.ref); };
+      /* Reprendre le calage d'un hall de la bibliothèque. Le bouton précède le
+         cadenas parce que celui-ci ne l'éteint pas : le verrou garde d'un
+         glisser distrait, et rouvrir le calage est un geste nommé, qui se
+         valide ou s'annule. */
+      const rc = d.querySelector(".recal");
+      if (rc) rc.onclick = ev => { ev.stopPropagation(); rouvreCalage(x.ref); };
       // Le crayon ouvre les outils de dessin sur ce calque. Le renommage vit
       // dans la fenêtre de réorganisation, où l'on voit tous les calques.
       const cr = d.querySelector(".ren");
@@ -19079,8 +20299,50 @@ function ouvreOrdre(){
  * ouvrir plusieurs salons — et ne retient que des identifiants : les libellés
  * sont relus dans les données à chaque affichage, si bien qu'un exposant
  * renommé entre deux visites s'affiche sous son nouveau nom.
+ *
+ * Ce choix a un revers, et « trois semaines avant » est exactement le moment
+ * où il se paie : un navigateur fait le ménage. Safari efface tout ce qu'une
+ * page a écrit au bout de sept jours passés sans revenir sur le site — la
+ * liste préparée en août n'existe plus en septembre. Chrome et Firefox jettent
+ * les origines dont rien ne dit qu'elles comptent, quand l'appareil manque de
+ * place. Et sur iOS, l'application installée ne partage pas le stockage de
+ * Safari : préparer sa visite dans l'onglet puis poser l'icône ouvre une
+ * application vide.
+ *
+ * Trois gestes y répondent, et aucun ne demande de compte. Ce que le plan ne
+ * reconnaît plus est mis de côté au lieu d'être effacé (`MIS_DE_COTE`). Le
+ * navigateur est prié de garder ce qu'il a (`tientLeStockage`). Et la liste
+ * s'emporte hors du navigateur, dans un lien qu'on se donne à soi-même
+ * (`_partage.html`, « La copie qu'on se garde ») — le seul de ces trois gestes
+ * qui tienne contre les sept jours de Safari, contre un téléphone changé, et
+ * contre l'application installée qui démarre à vide.
  */
 let PARCOURS = { stands: [], confs: [] };
+
+/**
+ * Ce que le stockage portait et que les données ne reconnaissent pas — pour
+ * l'instant.
+ *
+ * Jeter tout de suite ce qu'on ne reconnaît plus paraissait sans risque : un
+ * stand démonté ne revient pas. Mais « les données ne le connaissent pas » et
+ * « il n'existe plus » sont deux choses, et la première arrive sans que rien
+ * n'ait disparu : l'option du programme décochée une heure vide `CONFS`, une
+ * synchronisation Klipso en cours rend un salon amputé. La liste filtrée était
+ * alors réécrite au premier signet touché, et les conférences retenues pour le
+ * mois suivant partaient pour de bon.
+ *
+ * C'est l'ornière des dessins non publiés, décrite dans `_dessin.html` : « il
+ * ne se perdait pas : il devenait invisible, puis l'enregistrement suivant
+ * l'effaçait pour de bon ». On la contourne de la même façon — ce qu'on ne
+ * comprend plus est mis de côté, daté, et réécrit avec le reste, à la place
+ * qu'il occupait. Invisible, mais pas perdu.
+ */
+let MIS_DE_COTE = { stands: [], confs: [] };
+
+/* Au-delà, un rang mis de côté s'en va vraiment. Plus long qu'aucune panne ni
+   qu'aucun réglage oublié, plus court que le temps qui sépare deux éditions —
+   au-delà duquel les identifiants ne désignent plus rien de toute façon. */
+const QUARANTAINE_JOURS = 120;
 
 /* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
    pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
@@ -19090,21 +20352,47 @@ const cleParcours = () =>
 const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
 const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
 
+/** Le jour, tel qu'il s'écrit à côté d'un rang mis de côté. */
+const jourParcours = () => new Date().toISOString().slice(0, 10);
+
+/** Un rang mis de côté depuis assez longtemps pour qu'on cesse de l'attendre.
+ *  Une date illisible vaut une date d'aujourd'hui : on garde, plutôt que de
+ *  jeter sur un doute. */
+function attenduDepuisTropLongtemps(depuis){
+  const t = Date.parse(depuis);
+  return !!t && Date.now() - t > QUARANTAINE_JOURS * 864e5;
+}
+
+/**
+ * Ranger ce que le stockage a rendu : d'un côté ce que le plan connaît, de
+ * l'autre ce qu'il ne connaît plus — avec le rang qu'il occupait, pour le lui
+ * rendre s'il revient. L'ordre d'ajout est celui du parcours, et un exposant
+ * absent le temps d'une synchronisation n'a pas à finir en queue de liste.
+ */
+function trieParcours(casier, lus, connu, dates){
+  const aujourdhui = jourParcours();
+  lus.forEach((id, i) => {
+    if (connu(id)) return PARCOURS[casier].push(id);
+    const depuis = dates[casier + ":" + id] || aujourdhui;
+    if (attenduDepuisTropLongtemps(depuis)) return;
+    MIS_DE_COTE[casier].push({ id: id, i: i, depuis: depuis });
+  });
+}
+
 function chargeParcours(){
-  try {
-    const b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {};
-    PARCOURS = {
-      stands: Array.isArray(b.stands) ? b.stands.map(String) : [],
-      confs:  Array.isArray(b.confs)  ? b.confs.map(String)  : [],
-    };
-  } catch (e) {
-    PARCOURS = { stands: [], confs: [] };   // stockage refusé ou contenu illisible
-  }
-  /* Un stand démonté ou une conférence annulée entre deux visites laisserait
-     un rang mort, qu'on ne saurait ni ouvrir ni comprendre. On ne garde que ce
-     que les données connaissent encore. */
-  PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
-  PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
+  let b = {};
+  try { b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {}; }
+  catch (e) { b = {}; }   // stockage refusé ou contenu illisible
+  const dates = b.decote && typeof b.decote === "object" ? b.decote : {};
+  PARCOURS = { stands: [], confs: [] };
+  MIS_DE_COTE = { stands: [], confs: [] };
+  trieParcours("stands", Array.isArray(b.stands) ? b.stands.map(String) : [],
+               id => parId.has(id), dates);
+  trieParcours("confs", Array.isArray(b.confs) ? b.confs.map(String) : [],
+               id => CONFS.has(id), dates);
+  /* Une liste rapportée d'une visite d'il y a trois semaines vaut qu'on
+     demande au navigateur de ne pas la jeter au premier ménage. */
+  if (PARCOURS.stands.length + PARCOURS.confs.length) tientLeStockage();
   rafraichitParcours();
   /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
      la liste relue : ils ne portent que sur des conférences qu'elle contient
@@ -19112,13 +20400,69 @@ function chargeParcours(){
   reprendRappels();
 }
 
+/**
+ * La liste telle qu'elle s'écrit : ce qui s'affiche, et ce qui attend son
+ * retour, remis où il était.
+ *
+ * Un rang mis de côté peut revenir par la porte de devant — un parcours reçu
+ * qui le reproposait, les données qui le reconnaissent à nouveau dans un autre
+ * onglet. Il est alors des deux côtés, et c'est l'exemplaire de côté qui
+ * s'efface : celui de la liste est celui que le visiteur voit.
+ */
+function parcoursAEcrire(){
+  const sortie = { stands: PARCOURS.stands.slice(), confs: PARCOURS.confs.slice() };
+  const dates = {};
+  ["stands", "confs"].forEach(casier => {
+    MIS_DE_COTE[casier].forEach(r => {
+      if (sortie[casier].indexOf(r.id) >= 0) return;
+      sortie[casier].splice(Math.min(r.i, sortie[casier].length), 0, r.id);
+      dates[casier + ":" + r.id] = r.depuis;
+    });
+  });
+  if (Object.keys(dates).length) sortie.decote = dates;
+  return sortie;
+}
+
 function enregistreParcours(){
   // navigation privée, stockage plein : la visite continue sans le parcours
-  try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+  try { localStorage.setItem(cleParcours(), JSON.stringify(parcoursAEcrire())); }
+  catch (e) {}
   /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
      elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
      se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
   synchroniseRappels();
+}
+
+/* ------------------------------------------------------------
+   Que le navigateur ne fasse pas le ménage dessus
+   ------------------------------------------------------------ */
+/**
+ * Un stockage que le navigateur tient pour jetable, et un qu'il garde.
+ *
+ * Sans rien demander, ce qu'une page écrit est « au mieux » : Chrome et Firefox
+ * l'effacent quand l'appareil manque de place, et ils commencent par les
+ * origines dont personne n'a dit qu'elles comptaient. `persist()` le dit.
+ *
+ * Trois navigateurs, trois réponses. Chromium accorde ou refuse en silence,
+ * sur ce qu'il sait de l'usage du site — l'appeler ne coûte rien à personne.
+ * Safari ne l'implémente pas, et sa purge à sept jours ne se désarme d'aucune
+ * façon : là, seule la copie emportée protège (`_partage.html`). Firefox, lui,
+ * pose la question au visiteur — d'où `demande` : on ne fait pas surgir une
+ * permission sur quelqu'un qui vient de toucher un signet, on ne la présente
+ * qu'à celui qui demande justement que sa liste tienne.
+ */
+let PERSISTANCE_DEMANDEE = false;
+async function tientLeStockage(demande){
+  const s = navigator.storage;
+  if (!s || !s.persist || !s.persisted) return false;
+  try {
+    if (await s.persisted()) return true;
+    // le refus d'hier ne se corrige pas en le redemandant à chaque signet
+    if (PERSISTANCE_DEMANDEE && !demande) return false;
+    if (!demande && /Firefox\//.test(navigator.userAgent)) return false;
+    PERSISTANCE_DEMANDEE = true;
+    return await s.persist();
+  } catch (e) { return false; }
 }
 
 /**
@@ -19155,6 +20499,9 @@ function basculeParcours(genre, id, canal){
      passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
      vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
   if (i < 0 && genre === "conf") fenetreRappel();
+  /* Et, dès qu'il y a quelque chose à perdre, les deux gestes qui l'en
+     empêchent : le navigateur prié de tenir, et la copie proposée une fois. */
+  if (i < 0){ tientLeStockage(); fenetreGarde(); }
 }
 
 /**
@@ -19182,9 +20529,13 @@ function verseAuParcours(stands, confs, canal, remplace){
   });
   enregistreParcours();
   rafraichitParcours();
+  tientLeStockage();
   /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
      n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
   ouvreParcours();
+  /* La proposition de copie attend que ce tiroir ait été vu : elle se pose
+     derrière lui (`fenetreGarde`), et non par-dessus ce qui vient d'arriver. */
+  fenetreGarde();
 }
 
 /** « 3 exposants », « 1 conférence » : un compte et son mot, accordés. */
@@ -19244,11 +20595,11 @@ function retenusPourParcours(){
  * La fenêtre qui demande avant de verser.
  *
  * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
- * sans qu'on l'ait dit : le compte est annoncé avant, et « Annuler » ramène au
- * panneau des critères plutôt que de laisser le visiteur devant le plan nu —
- * il y était pour régler sa recherche, pas pour la quitter.
+ * sans qu'on l'ait dit : le compte est annoncé avant. « Annuler » referme, et
+ * l'on retrouve derrière le panneau des critères tel qu'on l'avait laissé — il
+ * est déplié dans la colonne, cette fenêtre-ci ne lui a jamais pris sa place.
  */
-function ajouteToutAuParcours(retour){
+function ajouteToutAuParcours(){
   const r = retenusPourParcours();
   if (!r.stands.length && !r.confs.length) return;
   ouvreModale("Ajouter à mon parcours", corps => {
@@ -19257,11 +20608,7 @@ function ajouteToutAuParcours(retour){
       " à votre parcours de visite ?";
     corps.appendChild(p);
   }, [
-    /* « Annuler » rouvre le panneau plutôt que de refermer : la fenêtre est la
-       même, et la laisser se refermer par-dessus l'aurait emportée aussitôt
-       rouverte. Sans panneau où revenir, elle se referme comme n'importe quelle
-       fenêtre. */
-    { libelle: "Annuler", action: retour, ferme: !retour },
+    { libelle: "Annuler" },
     { libelle: "Ajouter", genre: "accent",
       action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
   ]);
@@ -19275,13 +20622,13 @@ function ajouteToutAuParcours(retour){
  * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
  * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
  */
-function poseToutAuParcours(hote, retour){
+function poseToutAuParcours(hote){
   if (conf("_parcours").visible === false) return () => {};
   const b = document.createElement("button");
   b.type = "button";
   b.className = "btn parc tout-parc";
   b.innerHTML = SIGNET + '<span class="l"></span>';
-  b.onclick = () => ajouteToutAuParcours(retour);
+  b.onclick = () => ajouteToutAuParcours();
   hote.appendChild(b);
   return () => {
     const r = retenusPourParcours();
@@ -19512,9 +20859,14 @@ function remplitParcours(){
   if (!stands.length && !confs.length){
     const v = document.createElement("p");
     v.className = "pVide";
+    /* La phrase promettait de tout retrouver à la visite suivante. C'est vrai
+       d'une visite à la semaine prochaine, et faux d'une visite préparée un
+       mois à l'avance sur un iPhone : le navigateur aura fait le ménage. On
+       annonce donc ce qu'on tient — la liste reste ici — et le tiroir garni
+       dit, lui, comment l'emporter ailleurs (`poseGardeParcours`). */
     v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
       "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
-      "appareil et vous y retrouverez tout à votre prochaine visite.";
+      "appareil, et vous pourrez en garder une copie pour le jour du salon.";
     hote.appendChild(v);
     return;
   }
@@ -19570,6 +20922,11 @@ function remplitParcours(){
     }));
   }
 
+  /* En dernier, et à dessein : ce qui menace la liste se lit après la liste,
+     pas avant. En tête, la mise en garde aurait accueilli chaque ouverture du
+     tiroir par un avertissement, là où le visiteur vient voir ce qu'il a
+     retenu. */
+  poseGardeParcours(hote);
 }
 
 function ouvreParcours(){
@@ -19602,6 +20959,11 @@ $("closeParcours").onclick = fermeParcours;
  */
 function videLeParcours(){
   PARCOURS = { stands: [], confs: [] };
+  /* Ce qui attendait son retour part avec le reste : la fenêtre promet que
+     rien ne permettra de les retrouver, et une réserve qui survivrait au
+     vidage ferait mentir la phrase — jusqu'à reparaître le jour où les
+     données reconnaissent à nouveau ce qu'elle gardait. */
+  MIS_DE_COTE = { stands: [], confs: [] };
   /* La visite organisée n'était que cette liste, mise en jours et en heures :
      elle s'en va avec elle, et son tracé avec elle — mais pas un itinéraire
      demandé à côté, qui ne doit rien au parcours. */
@@ -20111,6 +21473,13 @@ function ouvrePartageParcours(){
 /**
  * Les boutons du pied, selon ce que l'appareil sait faire.
  *
+ * `compte` dit si le geste est un partage. Il l'est quand la liste part à
+ * quelqu'un d'autre, et pas quand elle part à soi-même : « huit parcours
+ * partagés » doit se lire « huit visiteurs ont donné leur liste à quelqu'un »,
+ * et une copie de sauvegarde n'est pas cela. Faute de quoi, la seule question
+ * que le chiffre sache trancher — est-ce que cela arrive à quelqu'un ? — se
+ * serait brouillée le jour même où l'on a posé la copie.
+ *
  * `navigator.share` est la feuille de partage du système : c'est elle qui
  * ouvre WhatsApp, Messenger, Teams ou le courrier, avec ce que le visiteur y a
  * déjà installé — nous n'avons aucune liste d'applications à tenir, et aucune
@@ -20118,7 +21487,7 @@ function ouvrePartageParcours(){
  * plupart des navigateurs de bureau ; la copie prend alors la tête, et le
  * lien se colle où l'on veut.
  */
-function boutonsPartage(lien){
+function boutonsPartage(lien, compte){
   const partageable = typeof navigator.share === "function";
   /* Le geste d'envoyer se compte à part des ajouts : envoyer sa liste ne
      l'allonge ni ne la raccourcit, et c'est l'autre moitié de la seule question
@@ -20128,8 +21497,12 @@ function boutonsPartage(lien){
      recopier parce qu'on a raté son collage, reste un seul parcours partagé.
      Copier compte comme envoyer — sur un ordinateur c'est le seul geste
      possible, et l'écarter ferait paraître la fonction inutilisée au bureau. */
-  let compte = false;
-  const envoi = () => { if (!compte){ compte = true; mesure("partage"); } };
+  let fait = false;
+  const envoi = () => {
+    if (compte === false || fait) return;
+    fait = true;
+    mesure("partage");
+  };
 
   // retrouvé une fois : son libellé change en route, et ne le désignerait plus
   let bCopie = null;
@@ -20275,6 +21648,174 @@ function adoptePartage(stands, confs, remplace){
 }
 
 $("btnPartage").onclick = ouvrePartageParcours;
+
+/* ------------------------------------------------------------
+   La copie qu'on se garde
+
+   Le lien du partage porte le parcours entier, sans serveur ni compte. On l'a
+   fait pour le donner à quelqu'un ; il sait faire une autre chose, et la même
+   à un détail près — se le donner à soi-même.
+
+   Ce détail est ce qui manquait à une liste préparée longtemps à l'avance. Elle
+   ne vit que dans le stockage du navigateur, et un navigateur fait le ménage :
+   Safari efface tout ce qu'une page a écrit après sept jours sans revenir sur
+   le site, Chrome et Firefox jettent sous la pression du disque, un téléphone
+   se change, et sur iOS l'application installée démarre avec une mémoire à
+   elle. Aucun de ces cas ne se répare depuis la page. Un lien posé dans une
+   conversation, un courrier ou une note, si : il ne dépend plus de rien de ce
+   que le navigateur garde, et il reste bon jusqu'au démontage des stands.
+
+   D'où trois entrées vers une seule fenêtre. Une note au pied de la liste, qui
+   est là tout le temps et ne se remarque pas ; une proposition, une fois, quand
+   la liste commence à valoir quelque chose ; et la fenêtre d'installation, qui
+   est le seul endroit où la perte est certaine et non probable.
+   ------------------------------------------------------------ */
+/** Y a-t-il une liste, et un visiteur à qui la rendre ? Une borne interactive
+ *  se remet à zéro pour le suivant : elle n'a personne à qui garder quoi que
+ *  ce soit. */
+const parcoursACopier = () => !BORNE && conf("_parcours").visible !== false &&
+  !!(PARCOURS.stands.length + PARCOURS.confs.length);
+
+/**
+ * La fenêtre.
+ *
+ * Sans code QR, à la différence du partage : un écran ne se photographie pas
+ * lui-même. Ce qui compte ici est le lien, et la feuille de partage du système
+ * qui le pose là où on le retrouvera — les messages qu'on s'envoie, les notes,
+ * le courrier.
+ *
+ * `apres` rend la main à la fenêtre d'où l'on vient : l'installation propose
+ * cette copie au milieu de ses gestes, et le visiteur doit retrouver la liste
+ * des gestes là où il l'avait laissée (`_modales.html`).
+ */
+function ouvreGardeParcours(apres){
+  const lien = lienParcours();
+  ouvreModale("Garder mon parcours", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Envoyez-vous ce lien : il porte votre parcours entier. " +
+      "Ouvert le jour du salon, il le remet en place — même sur un autre " +
+      "téléphone, même si ce navigateur a fait le ménage entre-temps.";
+    corps.appendChild(p);
+
+    const champ = document.createElement("textarea");
+    champ.className = "qrLien";
+    champ.readOnly = true;
+    champ.rows = 2;
+    champ.value = lien;
+    champ.onclick = () => champ.select();
+    corps.appendChild(champ);
+
+    const note = document.createElement("p");
+    note.className = "qrNote";
+    note.textContent = "Le parcours tient dans le lien lui-même : rien n'est " +
+      "enregistré sur nos serveurs, et il n'y a ni compte ni adresse e-mail à donner.";
+    corps.appendChild(note);
+  }, boutonsPartage(lien, false), "partage");
+  if (apres) apresFermeture = apres;
+}
+
+/* Le geste qui demande que la liste tienne, et la fenêtre qui s'ensuit. Les
+   deux vont ensemble : c'est le seul moment où la question que Firefox pose
+   sur le stockage se comprend — le visiteur vient de dire qu'il y tient
+   (`tientLeStockage`). */
+const demandeGardeParcours = (apres) => {
+  tientLeStockage(true);
+  ouvreGardeParcours(apres);
+};
+
+/**
+ * La note du pied de liste.
+ *
+ * Elle dit ce qui est vrai et ce que le visiteur ne peut pas deviner : cette
+ * liste n'existe qu'ici. Pas d'alarme — la perte n'est pas certaine, et une
+ * fenêtre rouge à chaque ouverture du tiroir ferait fuir de la fonction plutôt
+ * que du risque. Une phrase, et le geste à côté.
+ */
+function poseGardeParcours(hote){
+  if (BORNE) return;
+  const bloc = document.createElement("div");
+  bloc.className = "pGarde";
+  const p = document.createElement("p");
+  p.textContent = "Ce parcours vit dans ce navigateur, et nulle part ailleurs : " +
+    "un ménage, un téléphone changé, et il n'y est plus.";
+  bloc.appendChild(p);
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn";
+  b.textContent = "En garder une copie";
+  b.onclick = () => demandeGardeParcours();
+  bloc.appendChild(b);
+  hote.appendChild(bloc);
+}
+
+/* ------------------------------------------------------------
+   La proposition, une fois
+   ------------------------------------------------------------ */
+/* À partir de combien de rangs la liste vaut qu'on interrompe pour elle. Trois :
+   deux stands se refont de mémoire, une liste de trois a demandé un moment, et
+   c'est à peu près là que le visiteur cesse de composer pour commencer à
+   compter dessus. */
+const SEUIL_GARDE = 3;
+
+let GARDE_PROPOSEE = false;
+const cleGardeProposee = () =>
+  "plan-garde:" + (SLUG || (DATA && DATA.evenement) || "");
+
+function gardeProposee(){
+  if (GARDE_PROPOSEE) return true;
+  try { return localStorage.getItem(cleGardeProposee()) === "1"; }
+  catch (e) { return false; }
+}
+/* Montrée, elle ne revient pas — même refusée, et même si la liste double
+   ensuite. Le visiteur a vu qu'on savait faire ; la note du pied de liste
+   l'attend le jour où il le voudra. */
+function retientGardeProposee(){
+  GARDE_PROPOSEE = true;
+  try { localStorage.setItem(cleGardeProposee(), "1"); } catch (e) {}
+}
+
+/**
+ * Ce qui vaut la peine d'être proposé, et le moment de le faire.
+ *
+ * Appelée à chaque rang ajouté, elle se tait presque toujours. Les conditions
+ * sont celles de la note — une liste, un visiteur — plus le seuil, la question
+ * déjà posée, et la visite guidée en cours.
+ *
+ * Une fenêtre déjà ouverte la fait attendre, mais seulement si personne
+ * n'attend déjà : la suggestion et le rappel se proposent au même instant,
+ * dans le même geste, et trois fenêtres à la file valent moins que la première
+ * bien lue. Celle-ci passe en dernier et cède la place — le signet suivant la
+ * ramènera, et le pied de la liste ne l'a jamais retirée.
+ */
+function fenetreGarde(){
+  if (gardeProposee() || TUTO || !parcoursACopier()) return;
+  if (PARCOURS.stands.length + PARCOURS.confs.length < SEUIL_GARDE) return;
+  if ($("modale").classList.contains("open")){
+    if (!apresFermeture) apresFermeture = fenetreGarde;
+    return;
+  }
+  retientGardeProposee();
+  ouvreModale("D'ici le jour du salon", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Votre parcours est enregistré sur cet appareil, et sur lui " +
+      "seul. Un navigateur qui fait le ménage, un téléphone changé, et la liste " +
+      "n'y est plus — c'est le lot d'une liste préparée longtemps à l'avance.";
+    corps.appendChild(p);
+    const a = document.createElement("p");
+    a.className = "rapAide";
+    a.textContent = "Une copie s'envoie en un geste, dans vos messages ou votre " +
+      "courrier. Elle tient dans un lien : rien ne part sur nos serveurs.";
+    corps.appendChild(a);
+  }, [
+    { libelle: "Non merci" },
+    /* La fenêtre suivante attend que celle-ci ait libéré la place : ouverte
+       dans le geste du bouton, elle serait refermée dans la foulée par la
+       fermeture de celle-ci (`_modales.html`). Le relais reste dans le même
+       geste, et la question du stockage garde donc l'appui qui l'autorise. */
+    { libelle: "Garder une copie", genre: "accent",
+      action: () => { apresFermeture = () => demandeGardeParcours(); } },
+  ]);
+}
 /* ============================================================
    11 sexies. Le rappel avant une conférence
    ============================================================ */
@@ -23412,14 +24953,14 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = cadrePlan();
-  const cache = masque(), cacheD = masqueDroite();
-  const hUtile = Math.max(60, r.height - cache);
+  const cache = masque(), cacheD = masqueDroite(), haut = masqueHaut();
+  const hUtile = Math.max(60, r.height - cache - haut);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
   const k = Math.max(w / lUtile, h / hUtile);
   view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
-           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
@@ -23769,8 +25310,9 @@ function armeVisee(r){
   if (r === "a" && pointBorne()) return;
   /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
      est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
-     le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
-     dans le bandeau, qui porte « Annuler ». Au large, la cible reste
+     le plan », car il est le seul geste qui retire le tiroir : la prise le
+     baisse sans l'emporter, et son en-tête tient toujours le bas. Abandonner
+     se dit dans le bandeau, qui porte « Annuler ». Au large, la cible reste
      l'interrupteur qu'elle était. */
   const efface = ETROIT() && $("itineraire").classList.contains("open");
   visee = (visee === r && !efface) ? null : r;
@@ -31079,6 +32621,48 @@ function retourAuxReglages(marque){
   });
 }
 
+/**
+ * Ce que l'installation fait perdre sur iOS, et le geste qui l'évite.
+ *
+ * Une application posée sur l'écran d'accueil d'iOS a son propre stockage,
+ * séparé de celui de Safari (`faconRappel` le dit déjà pour une autre raison).
+ * Le parcours composé dans l'onglet ne la suit donc pas : le visiteur qui
+ * vient de suivre nos trois gestes ouvre une application vide, et rien ne lui
+ * dit où est passée sa liste — ni comment la reprendre, puisque l'onglet qui
+ * la porte encore l'effacera au septième jour.
+ *
+ * C'est le seul endroit du plan où la perte est certaine, et non probable :
+ * ailleurs le navigateur *peut* faire le ménage, ici l'application démarre à
+ * vide à coup sûr. Elle vaut donc qu'on interrompe la liste des gestes pour
+ * elle — et qu'on y revienne après, ce que fait `revient` : le visiteur était
+ * en train d'installer, il doit retrouver les gestes là où il les a laissés.
+ *
+ * `repond` note que la fenêtre a eu une réponse. Partir garder sa liste n'est
+ * pas la refuser, et ne doit pas se compter comme un « plus tard » de plus.
+ */
+function poseGardeInstallation(corps, repond, revient){
+  const bloc = document.createElement("div");
+  bloc.className = "pGarde";
+  const p = document.createElement("p");
+  p.textContent = "L'application aura sa propre mémoire : le parcours de visite " +
+    "que vous avez commencé ici n'y sera pas. Gardez-en une copie, vous l'y " +
+    "ouvrirez d'un lien.";
+  bloc.appendChild(p);
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn";
+  b.textContent = "Garder mon parcours";
+  b.onclick = () => {
+    repond();
+    /* La fenêtre de la copie attend que celle-ci ait libéré la place, et
+       rouvre celle-ci en partant (`_modales.html`). */
+    apresFermeture = () => demandeGardeParcours(revient);
+    fermeModale();
+  };
+  bloc.appendChild(b);
+  corps.appendChild(bloc);
+}
+
 function remplitInvitation(corps, facon){
   teteInvitation(corps, "Le plan, sur votre écran d'accueil");
 
@@ -31136,8 +32720,17 @@ function ouvreInvitation(facon, apercu){
       } }
     : { libelle: "J'ai compris", genre: "accent", action: () => { reponse = "compris"; } };
 
-  ouvreModale("Installer le plan", corps => remplitInvitation(corps, facon),
-    [{ libelle: "Plus tard" }, accepte], "installe");
+  ouvreModale("Installer le plan", corps => {
+    remplitInvitation(corps, facon);
+    /* Après les gestes, et non avant : la mise en garde ne vaut que pour qui
+       va les faire. Sur iOS seulement — ailleurs l'application installée
+       partage le stockage du navigateur, et la liste suit toute seule. Et
+       jamais en aperçu, où la fenêtre est montrée à l'organisateur pour ce
+       qu'elle est, et non pour être suivie. */
+    if (!apercu && facon === "partage" && parcoursACopier())
+      poseGardeInstallation(corps, () => { reponse = "copie"; },
+                            () => ouvreInvitation(facon, apercu));
+  }, [{ libelle: "Plus tard" }, accepte], "installe");
 
   avantFermeture = () => {
     if (apercu) return retourAuxReglages("installation");
@@ -31198,6 +32791,12 @@ function ouvreRappel(facon, apercu){
         "se lance d'un geste et reste consultable sur place, même quand le " +
         "réseau ne passe plus.";
     corps.appendChild(p);
+    /* Passer à l'icône, c'est changer de stockage : la liste composée dans cet
+       onglet reste dans cet onglet. La suggestion ne paraît que sur iOS, où
+       c'est justement vrai (`faconRappel`). */
+    if (!apercu && !ouvre && parcoursACopier())
+      poseGardeInstallation(corps, () => { demandee = true; },
+                            () => ouvreRappel(facon, apercu));
   }, [
     { libelle: ouvre ? "Rester ici" : "Plus tard" },
     ouvre
@@ -32033,7 +33632,7 @@ function rameneTuto(el){
 function placeTuto(force){
   const bulle = $("tuto");
   if (!bulle || !TUTO) return;
-  const vw = document.documentElement.clientWidth, vh = innerHeight, bord = 10;
+  const vw = document.documentElement.clientWidth, bord = 10;
   const w = bulle.offsetWidth, h = bulle.offsetHeight;
   const cible = boiteTuto(TUTO.cible);
   const evite = [];
@@ -32052,17 +33651,21 @@ function placeTuto(force){
   if (ETROIT()) pese(boiteTuto($("side")), .3);
   else pese(boiteTuto(document.querySelector(".zoombar")), .5);
 
+  /* La scène, et non la fenêtre : la page descend maintenant sous les barres
+     du système, et une bulle posée au ras du bord aurait eu son bouton sous la
+     poignée de gestes. La scène, elle, s'arrête là où le système reprend la
+     main — c'est la grille qui lui rend cette bande (`_head.html` « .app »). */
+  const s = $("stage").getBoundingClientRect();
   const places = [];
   if (ETROIT()){
     const x = (vw - w) / 2;
     places.push([x, $("bandeau").getBoundingClientRect().bottom + 8]);
     const vis = boiteTuto($("viseur"));
     if (vis) places.push([x, vis.bottom + 8]);
-    places.push([x, vh - h - bord]);
+    places.push([x, s.bottom - h - bord]);
   } else {
     if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
                            [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
-    const s = $("stage").getBoundingClientRect();
     places.push([s.left + 16, s.bottom - h - 16], [s.left + 16, s.top + 16],
                 [s.right - w - 16, s.top + 16], [s.right - w - 16, s.bottom - h - 16]);
   }
@@ -32078,8 +33681,8 @@ function placeTuto(force){
   }, loin(x, y));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
-    const x = Math.round(Math.max(bord, Math.min(vw - w - bord, p[0])));
-    const y = Math.round(Math.max(bord, Math.min(vh - h - bord, p[1])));
+    const x = Math.round(Math.max(s.left + bord, Math.min(s.right - w - bord, p[0])));
+    const y = Math.round(Math.max(s.top + bord, Math.min(s.bottom - h - bord, p[1])));
     const c = cout(x, y);
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });

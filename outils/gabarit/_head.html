@@ -53,6 +53,43 @@
      translucides. Ils sont écrits ici, opaques, et aucun modèle ne les
      redéfinit. */
   --menu-fond:#FBFBF8; --menu-encre:#15181A;
+  /* Ce que le système garde pour lui.
+
+     Les pages du plan vont jusqu'aux bords de l'écran — `viewport-fit=cover`,
+     posé par `outils/genere.js` — au lieu de s'arrêter au bord des barres du
+     système. Le plan y gagne la bande de gris qu'il perdait en haut et en bas,
+     et la barre du salon monte enfin derrière l'heure : c'est tout l'objet de
+     la manœuvre. Mais l'horloge, la poignée de gestes et l'encoche se posent
+     alors sur la page, et ce qui se tenait là-dessous devient illisible ou
+     intouchable. Ces quatre jetons sont la mesure de ce qu'il faut leur
+     rendre.
+
+     Ils valent zéro partout où il n'y a rien à éviter — un écran de bureau, un
+     onglet de navigateur, un téléphone sans encoche — si bien qu'une règle qui
+     les ajoute ne déplace rien dans ces cas-là. Écrits en jetons plutôt qu'en
+     `env()` à chaque fois, parce qu'ils se lisent dans des `calc()` déjà longs
+     et qu'un nom y dit ce qu'une fonction n'expliquait pas. */
+  --sys-haut:env(safe-area-inset-top,0px);
+  --sys-bas:env(safe-area-inset-bottom,0px);
+  --sys-gauche:env(safe-area-inset-left,0px);
+  --sys-droite:env(safe-area-inset-right,0px);
+}
+/* En plein écran, il n'y a plus de barres à éviter.
+
+   Le plan ne le demande plus — `outils/pwa.js` dit au long pourquoi l'heure
+   sur la couleur du salon a été préférée à une bande noire comme à un bandeau
+   du navigateur. La règle reste pour les plein écran qui viennent d'ailleurs :
+   celui d'un navigateur de bureau, celui que le manifeste réclamerait si l'on
+   rebasculait. Le navigateur continue alors d'annoncer des retraits que plus
+   aucune barre ne justifie, et la barre du salon garderait la place d'une
+   horloge qui n'est plus là.
+
+   Les deux jetons repassent donc à zéro, et à eux seuls : les côtés gardent
+   les leurs, parce qu'en paysage l'encoche mord vraiment le bord de l'écran,
+   plein écran ou non. En haut, elle ne rencontre qu'un aplat de couleur — la
+   barre du salon — que la caméra traverse sans rien cacher. */
+@media (display-mode: fullscreen){
+  :root{--sys-haut:0px;--sys-bas:0px}
 }
 /* Un seul thème, et c'est le clair. Un plan de salon ne se lit pas le soir au
    fond d'un lit : il se consulte debout dans un hall éclairé, le plus souvent
@@ -63,9 +100,30 @@
    durant. */
 
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);
+/* Le fond du plan, et non le gris de la page : c'est lui qui paraît dans la
+   bande rendue au système en bas de l'écran, et la couture ne doit pas se voir
+   entre la scène et son pourtour. Sans réglage, le gris reprend la main. */
+body{margin:0;background:var(--c-fond,var(--ground));color:var(--ink);
   font-family:var(--sans);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased}
+/* Le rechargement par glissement, retiré au navigateur.
+
+   Un doigt qui tire vers le bas sur une page arrivée en haut de sa course la
+   fait recharger. Sur un téléphone, c'est exactement le geste des tiroirs : on
+   saisit la liste, la fiche, le parcours ou l'itinéraire pour les redescendre,
+   la prise est manquée de quelques pixels ou le tiroir est déjà au plus bas, et
+   le salon repart pour un chargement complet — la recherche tapée, le stand
+   ouvert et le parcours retenu avec lui. Rien ici n'attend d'être rafraîchi de la sorte :
+   la page redemande ses données d'elle-même, et le plan tient dans la hauteur
+   de l'écran sans jamais défiler.
+
+   Sur la racine et sur le corps à la fois : les navigateurs ne s'accordent pas
+   sur celui des deux dont la valeur commande la fenêtre. */
+html,body{overscroll-behavior-y:none}
+/* Et le geste s'arrête au tiroir au lieu de remonter à la page : arrivé au bout
+   de sa liste, le doigt qui continue emportait ce qu'il y a derrière — un
+   sursaut du plan, pour un tiroir qui ne bougeait plus. */
+.list,.detail-bd,.pCorps,.iCorps{overscroll-behavior:contain}
 button,input,textarea{font:inherit;color:inherit}
 /* Les lignes du menu déroulant héritent de l'encre du champ, jamais de son
    fond : sous « Verre » — encre blanche sur un carreau translucide — elles
@@ -95,13 +153,38 @@ button{cursor:pointer;background:none;border:none}
    se manquaient de la hauteur exacte de la barre du navigateur, si bien que le
    cartouche recouvrait la recherche et que le bouton « ajuster » passait
    dessous. `100dvh` suit cette barre et remet tout le monde d'accord. */
-.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px}
+/* La grille s'arrête au bord de ce que le système garde — en bas la poignée
+   de gestes, sur les côtés l'encoche en paysage. Tout ce qui s'ancre au bas de
+   la scène suit alors sans qu'aucune de ses règles ait à le savoir : les
+   boutons de zoom, l'échelle, le cartouche des repères et la pile des calques
+   se mesurent à la scène, qui vient de raccourcir d'autant.
+
+   Le haut n'en est pas : c'est la barre du salon qui monte sous l'horloge, et
+   elle se retire elle-même — voir « .topbar » et « .bandeAdmin ». */
+.app{user-select:none;-webkit-user-select:none;display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100vh;height:100dvh;min-height:560px;
+  padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche)}
 /* La barre se mesure à son contenu au lieu de le rogner : un nom de salon
    long — « Franchise Expo Paris 2027 » — passe à la ligne et la barre grandit
    d'autant. Tronqué, il ne disait plus quel salon on regardait, et c'est la
    seule chose que cette barre ait à dire. */
-.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:8px 18px;min-height:60px;
-  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5}
+/* Elle est la première chose que l'écran porte, et c'est pour cela qu'elle
+   passe sous la barre du système : son fond continue derrière l'heure et la
+   batterie, et l'application cesse d'être un rectangle posé sur un liseré
+   blanc. Son contenu, lui, se retire de la hauteur de cette barre — un nom de
+   salon sous l'horloge ne se lit pas. La barre grandit donc d'autant plutôt
+   que de rogner ce qu'elle porte.
+
+   « --ton-barre » est la couleur dont le système peint la sienne, et c'est
+   `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
+   telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
+   nomment plus bas — leur fond ne vient pas de leur surface. */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;
+  padding:calc(8px + var(--sys-haut)) 18px 8px;min-height:calc(60px + var(--sys-haut));
+  background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5;
+  --ton-barre:var(--surface)}
+/* Sauf en administration, où la bande de l'outil est au-dessus : c'est elle
+   qui touche le haut de l'écran, et le retrait lui revient. */
+html.mode-admin .topbar{padding-top:8px;min-height:60px}
 .brand h1{font-family:"Archivo",sans-serif;font-weight:700;font-size:17px;letter-spacing:-.02em;margin:0;
   line-height:1.18;overflow-wrap:anywhere}
 .brand h1.attente{color:var(--ink-3)}
@@ -143,7 +226,12 @@ button{cursor:pointer;background:none;border:none}
    l'écran qui ne parle pas du salon.
    ------------------------------------------------------------------ */
 .bandeAdmin{grid-column:1/-1;display:flex;align-items:center;gap:12px;
-  padding:5px 18px;min-height:66px;background:var(--m-nuit);color:var(--ink);
+  padding:calc(5px + var(--sys-haut)) 18px 5px;min-height:calc(66px + var(--sys-haut));
+  background:var(--m-nuit);color:var(--ink);
+  /* La nuit de la marque, et non la surface que la bande redéfinit juste en
+     dessous pour ses boutons : c'est le fond de la bande que le système doit
+     prolonger. */
+  --ton-barre:var(--m-nuit);
   --surface:#0E2E4E;--surface-2:#16334C;--line:#1E3C58;--line-strong:#325975;
   --ink:#FFFFFF;--ink-2:#9BB2C9;--ink-3:#7793AD;
   --accent:var(--m-cyan);--accent-soft:#123A55;--accent-ink:var(--m-nuit);
@@ -247,6 +335,29 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
 .crit-btn .compteur{position:absolute;top:-5px;right:-5px;min-width:15px;height:15px;
   padding:0 3px;border-radius:999px;background:var(--accent);color:#fff;
   font-size:10px;font-weight:600;line-height:15px;text-align:center}
+/* Déplié, le bouton garde la marque de ce qu'il a ouvert — la pastille du
+   nombre retenu, elle, dit autre chose et se peint par « aria-pressed ». */
+.crit-btn[aria-expanded="true"]{border-color:var(--line-strong);color:var(--ink)}
+
+/* Le panneau des critères, déplié dans la colonne.
+
+   Il prend la bande sous la recherche plutôt que de flotter à côté du bouton :
+   une fenêtre posée là recouvrait la liste dont elle décide, et l'on cochait
+   sans voir ce qu'il restait. Il pousse donc la liste vers le bas au lieu de
+   passer devant, et défile pour son compte quand les critères sont nombreux —
+   sans jamais prendre plus de la moitié de la colonne, faute de quoi il ne
+   resterait rien de ce qu'il filtre. */
+.pan-crit{display:flex;flex-direction:column;max-height:56%;
+  padding:2px 16px 10px;border-bottom:1px solid var(--line)}
+/* Les critères défilent, le pied ne bouge pas : le compte qu'il porte parle de
+   ce qu'on est en train de cocher, et il ne le dirait plus s'il fallait
+   descendre le chercher sous deux cents valeurs. */
+.crit-corps{min-height:0;overflow-y:auto}
+.crit-pied{flex:0 0 auto}
+.crit-actes{display:flex;gap:8px;margin-top:9px}
+.crit-actes .btn{flex:1 1 0;text-align:center}
+.crit-actes .btn.accent{background:var(--accent);border-color:var(--accent);
+  color:var(--accent-ink)}
 /* Les critères retenus : une ligne qui défile à l'étroit, plusieurs qui se
    replient au large, et rien du tout tant qu'il n'y a rien à montrer. */
 .actifs{display:flex;flex-wrap:wrap;gap:6px;padding:9px 16px;
@@ -380,7 +491,14 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    salons, pas à celui qui tient sa charte. Comme les autres couleurs réglées
    au panneau, la teinte choisie se pose telle quelle ; sans réglage, le jeton
    reste absent et le fond de la page reprend la main. */
-.stage{position:relative;overflow:hidden;overflow:clip;background:var(--c-fond,var(--ground))}
+/* « min-height:0 » pour la même raison que la liste d'à côté : une piste de
+   grille ne descend pas sous la taille de son contenu tant qu'on ne l'y
+   autorise pas, et le plan qu'elle porte se mesure à elle — les deux
+   s'arc-boutaient. La scène gardait donc la hauteur qu'elle avait avant que la
+   grille ne rende sa bande au système, et le bas du plan, ses boutons de zoom
+   et son échelle passaient sous la poignée de gestes. */
+.stage{position:relative;overflow:hidden;overflow:clip;min-height:0;
+  background:var(--c-fond,var(--ground))}
 /* Le plan lui-même, et lui seul : « .stage svg » atteignait aussi les <svg>
    imbriqués des pictogrammes de repère, qu'il étirait à la taille de la scène
    — la pastille se voyait, son glyphe partait hors du cadre, et le repère
@@ -801,6 +919,14 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 .outils.mode-repere #repereType,.outils.mode-repere #repereTexte{display:block}
 #repereType,#repereTexte,#elemPicto{width:100%;padding:6px 8px;background:var(--surface-2);
   border:1px solid var(--line);border-radius:var(--radius);font-size:12.5px}
+/* Un arrêt demande deux précisions de plus — ce qui passe là, et quelle ligne
+   — puis la couleur, pour les réseaux que la table des lignes ne connaît pas.
+   Les trois ne paraissent que sous leur type : elles ne diraient rien d'un
+   vestiaire. */
+#repereTransport,#elemTransport{display:none;flex-direction:column;gap:6px}
+.outils.mode-repere.mode-transport #repereTransport{display:flex}
+#elemTransport:not([hidden]){display:flex}
+.elemChamp .cc{flex:1;height:22px;padding:2px}
 /* Le stand dessiné se choisit avant d'être tracé : sans société à désigner, il
    n'ouvrirait aucune fiche et ne serait qu'un rectangle de plus. */
 .outils #standSoc,.outils #imageSoc{display:none}
@@ -814,8 +940,11 @@ html.sans-dessin-stand .outilsBtns button[data-o="stand"]{display:none}
 html.sans-image-stand .outils #imageSoc{display:none}
 #elemPicto[hidden]{display:none}
 .dcal .repere > rect{fill:currentColor;stroke:none}
-.dcal .repere .glyphe path{fill:var(--surface);stroke:none}
-.dcal .repere text{fill:var(--surface);font-weight:700;text-anchor:middle}
+/* L'encre d'une pastille est le fond de la page — du blanc sur la couleur du
+   calque. Un arrêt que sa ligne colore la remplace : le jaune du 1 se lit en
+   noir, et c'est la pastille qui l'a calculé en se dessinant. */
+.dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
+.dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -937,6 +1066,13 @@ html.sans-image-stand .outils #imageSoc{display:none}
 .pictoMasque{width:12px;height:12px;display:block;margin:auto}
 .pictoMasque rect{fill:none;stroke:currentColor;stroke-width:1.3}
 .pictoMasque .trou{stroke-dasharray:1.7 1.2}
+/* Reprendre le calage d'un hall de la bibliothèque. Il ne s'éteint pas avec le
+   cadenas qui le suit : voir « Reprendre le calage » dans `_batiments.html`. */
+.calq .recal{width:18px;height:18px;border:none;color:var(--ink-3);line-height:1;padding:0}
+.calq .recal:hover{color:var(--accent)}
+.pictoRecale{width:12px;height:12px;display:block;margin:auto}
+.pictoRecale path{fill:none;stroke:currentColor;stroke-width:1.3;
+  stroke-linecap:round;stroke-linejoin:round}
 .calq .ren[disabled],.calq .sup[disabled]{opacity:.3;cursor:default}
 .calq .ren[disabled]:hover,.calq .sup[disabled]:hover{color:var(--ink-3)}
 .calq.perso label span{font-weight:600}
@@ -2162,6 +2298,9 @@ button.expo:hover{background:var(--line)}
    en détache. */
 .bandeau-billet{background-color:var(--accent);border-bottom:none;color:var(--accent-ink);
   --ink:var(--accent-ink);
+  /* La souche est peinte de l'accent, et la surface n'y sert qu'aux boutons
+     translucides : c'est l'accent que le système doit prolonger. */
+  --ton-barre:var(--accent);
   /* Le rouge du retrait se pose ici sur l'accent, et non sur une surface : il
      se tire donc de l'encre qui tient dessus, claire ou sombre selon le ton. */
   --rouge:color-mix(in srgb,var(--accent-ink) 58%,#E2483A);
@@ -2221,6 +2360,9 @@ button.expo:hover{background:var(--line)}
    dégradé file de gauche à droite, la barre étant large et basse là où le
    panneau est haut et étroit. */
 .bandeau-verre{color:var(--ink);--rouge:#FFB3A8;
+  /* Le dégradé part de l'accent clair, en haut à gauche : c'est lui qui touche
+     la barre du système, et non la surface que le carreau translucide pose. */
+  --ton-barre:var(--accent-clair);
   --surface:rgba(255,255,255,.14);--surface-2:rgba(255,255,255,.14);
   --line:rgba(255,255,255,.2);--line-strong:rgba(255,255,255,.34);
   --ink:#FFFFFF;--ink-2:rgba(255,255,255,.84);--ink-3:rgba(255,255,255,.62);
@@ -2402,6 +2544,19 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La copie qu'on se garde, au pied de la liste.
+
+   Un filet la sépare de ce qui précède : elle ne parle pas des rangs retenus,
+   elle parle de la liste elle-même, et sans ce trait on la lisait comme un
+   rang de plus mal rangé. Le gris et la petite taille sont ceux d'une mention,
+   non d'une alarme — ce qu'elle annonce n'arrivera peut-être pas. Le bouton,
+   lui, prend toute la largeur : c'est une réponse, et sur un téléphone elle se
+   touche au pouce. */
+.pGarde{margin-top:2px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px}
+.pGarde p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+.pGarde .btn{display:flex;align-items:center;justify-content:center;
+  padding:8px 12px;font-size:12.5px}
 /* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
    plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
    et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
@@ -2772,6 +2927,10 @@ html.vise-plan #plan{cursor:crosshair}
 #calageApercu .tige{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:3 3;
   vector-effect:non-scaling-stroke}
 html.cale-geste #calageApercu .poignee{cursor:grabbing}
+/* Le hall qu'on reprend s'efface le temps du geste : sans cela le contour en
+   pointillés part sur le gris qui l'attend, et l'on croit traîner une copie.
+   Posé sur les nœuds du plan seulement, il s'en va avec le bandeau. */
+#couches [data-cale]{display:none}
 .viseur.calage .calageAngle{display:inline-flex;align-items:center;gap:3px;color:var(--ink-2)}
 .viseur.calage .calageAngle input{width:64px;padding:2px 5px;font-size:12.5px;text-align:right;
   border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--ink)}
@@ -3536,14 +3695,6 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .modale{position:fixed;inset:0;background:rgba(8,10,12,.5);z-index:30;display:none;
   place-items:center;padding:20px}
 .modale.open{display:grid}
-/* La fenêtre des critères se regarde en même temps que le plan : on coche, et
-   les stands s'éteignent derrière. Elle se range donc à gauche, du côté de la
-   liste dont elle décide, et laisse le plan à sa couleur — un voile gris sur ce
-   qu'on est venu voir aurait rendu le filtre invisible au moment même où il
-   agit. La surface reste cliquable et referme : toucher le plan, c'est en avoir
-   fini avec les filtres. */
-.modale[data-genre="cote"]{background:none;place-items:center start}
-.modale[data-genre="cote"] .mfen{box-shadow:0 24px 60px -20px rgba(0,0,0,.45)}
 /* « background-color » et non « background », comme sur le parcours et
    l'itinéraire : la fenêtre porte l'habillage du salon depuis qu'elle reçoit sa
    classe de modèle, plusieurs modèles y posent un dégradé ou une trame, et la
@@ -3624,6 +3775,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La même mise en garde dans une fenêtre : le filet la sépare des gestes
+   d'installation comme il la sépare de la liste, mais il lui faut l'air d'un
+   paragraphe et non celui d'un pied de colonne. */
+.mcorps .pGarde{margin-top:15px;padding-top:13px}
 /* L'endroit que le code désignera, entre la phrase et le damier : c'est la
    seule ligne que l'exploitant relit avant d'imprimer trente affiches. */
 .mcorps p.iciOu{margin-top:10px;font-family:"Archivo",sans-serif;font-weight:600;
@@ -3712,8 +3867,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    titre du groupe, lui, ne dit que ce qui y est retenu. */
 .grp-crit{padding:0;border-top:1px solid var(--line)}
 .grp-crit:first-child{border-top:none}
-/* Le titre est la prise : replié, un critère tient sur une ligne, et la
-   fenêtre montre tous les critères plutôt qu'un seul déplié. */
+/* Le titre est la prise : replié, un critère tient sur une ligne, et le
+   panneau les montre tous plutôt qu'un seul déplié. */
 .grp-crit > summary{display:flex;align-items:center;gap:9px;padding:11px 2px;
   cursor:pointer;list-style:none}
 .grp-crit > summary::-webkit-details-marker{display:none}
@@ -3733,9 +3888,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .grp-crit .tamis{width:100%;margin-bottom:8px;padding:6px 10px;font-size:12.5px;
   background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius)}
 .grp-crit .tamis:focus{border-color:var(--accent);background:var(--surface);outline:none}
-/* Un critère à cent valeurs ne pousse pas le pied de la fenêtre hors de vue :
-   il défile dans son propre cadre, et le tamis au-dessus le raccourcit. */
-.puces-crit{display:flex;flex-wrap:wrap;gap:6px;max-height:38dvh;overflow-y:auto}
+/* Un critère à cent valeurs ne pousse plus rien hors de vue : le compte et les
+   boutons sont hors du cadre qui défile, et il n'en faut donc pas un second
+   ici — deux défilements emboîtés, le doigt se trompe toujours de l'un pour
+   l'autre. Le tamis au-dessus reste, qui raccourcit la liste plutôt que de la
+   faire défiler. */
+.puces-crit{display:flex;flex-wrap:wrap;gap:6px}
 .puce-crit{display:inline-flex;align-items:center;gap:6px;max-width:100%;
   padding:6px 10px;font-size:12.5px;color:var(--ink-2);text-align:left;
   background:var(--surface-2);border:1px solid transparent;border-radius:999px}
@@ -3831,7 +3989,46 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      contenu l'accepte, d'où les `min-width:0` qui suivent. */
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr}
   .topbar,.brand{min-width:0}
-  .topbar{gap:10px}
+  /* La barre se resserre : le plan est ce qu'on vient voir, et quatorze points
+     de moins sur elle sont quatorze de plus pour le hall. Les boutons passent
+     de trente-deux points à trente — au-dessus encore de ce qu'un doigt vise
+     sans s'y reprendre — et les marges du haut et du bas cèdent trois points
+     chacune. */
+  .topbar{gap:10px;padding:calc(5px + var(--sys-haut)) 12px 5px;
+    min-height:calc(46px + var(--sys-haut))}
+  .topbar .iconbtn{width:30px;height:30px}
+  .halls{padding:2px}
+  .halls button{padding:4px 11px}
+
+  /* La barre passe par-dessus le plan plutôt que de lui prendre un rang.
+
+     Deux choses viennent avec. Le hall occupe toute la hauteur de la scène —
+     la barre ne lui retire plus rien, elle se pose dessus. Et elle peut
+     s'effacer le temps d'un geste sans que rien ne soit remis en page : une
+     scène qui change de taille pendant un glissement, c'est le SVG entier
+     recalculé au doigt posé puis au doigt levé, et la saccade avec.
+
+     Le cadrage, lui, sait ce qu'elle couvre — voir `masqueHaut` dans
+     `_js.html` : sans quoi le stand qu'on vient d'ouvrir se posait derrière
+     elle.
+
+     Pas en administration : la bande de l'outil tient le premier rang, et
+     deux bandes superposées ne se liraient plus. */
+  /* Rangée et colonne, toutes deux écrites : la scène placée à la main sur les
+     rangées mais laissée au placement automatique pour la colonne s'en voyait
+     offrir une nouvelle, à côté de la barre au lieu d'être dessous. */
+  html:not(.mode-admin) .stage{grid-row:1/-1;grid-column:1/-1}
+  /* La barre se place explicitement elle aussi : deux éléments posés à la main
+     se superposent, quand celui qu'on laisse au placement automatique se voit
+     offrir une rangée de plus — la barre se retrouvait alors au bas de
+     l'écran, sous le plan. */
+  html:not(.mode-admin) .topbar{grid-row:1/2;
+    transition:transform .22s ease,opacity .22s ease}
+  html:not(.mode-admin) .topbar.pliee{transform:translateY(-100%);opacity:0;
+    pointer-events:none}
+  /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
+     au-dessus d'eux dans la grille, mais devant eux sur l'écran. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -3849,7 +4046,8 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .stats,.brand .sub{display:none}
   /* La bande de l'outil garde sa marque et ses commandes ; le mot
      « Administration » cède la place — la nuit et la marque le disent déjà. */
-  .bandeAdmin{padding:4px 12px;min-height:56px;gap:10px}
+  .bandeAdmin{padding:calc(4px + var(--sys-haut)) 12px 4px;
+    min-height:calc(56px + var(--sys-haut));gap:10px}
   .bandeMarque{width:46px;height:46px}
   .bandeNom{display:none}
   /* « Enregistré à 14 h 32 » ne tient pas sur 412 px à côté de trois boutons :
@@ -3866,19 +4064,40 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      plus : on lit la liste sans perdre le plan de vue, et c'est là qu'on
      répond à « qu'y a-t-il près de l'entrée ». Tout ou rien obligeait à
      choisir entre les deux. */
+  /* Les tiroirs sont posés sur la fenêtre et non dans la grille : le retrait
+     que celle-ci s'impose ne les atteint pas, et ils le reprennent chacun pour
+     soi. Leur fond descend bien jusqu'au bord de l'écran — une bande de gris
+     sous un tiroir de couleur se verrait — mais ce qu'ils portent se retire de
+     la poignée de gestes. La part qui dépasse au repos grandit d'autant, sans
+     quoi la recherche serait passée dessous. */
   .side{
     position:fixed;left:0;right:0;bottom:0;z-index:12;
     height:82vh;height:82dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-right:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
-    transform:translateY(calc(100% - var(--replie,164px)));
+    transform:translateY(calc(100% - var(--replie,164px) - var(--sys-bas)));
     transition:transform .28s cubic-bezier(.32,.72,0,1);
   }
   .side[data-cran="demi"]{transform:translateY(calc(100% - 46dvh))}
   .side[data-cran="plein"]{transform:translateY(0)}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .side.glisse{transition:none}
+  /* Replié, ce tiroir garde tout de même sa bande de recherche au bas de
+     l'écran. La fiche et le parcours la recouvrent ; l'itinéraire descendu à
+     son cran le plus bas est plus court qu'elle, et elle dépassait derrière
+     lui — deux bords arrondis, deux prises, et rien pour dire laquelle mène
+     quoi. Il cède donc la bande tout entière, et la reprend en se refermant
+     (voir `_js.html`). */
+  .side.cede{transform:translateY(100%)}
+  /* Et il descend aussi le temps qu'on manœuvre le plan, comme la barre du
+     salon monte : un geste sur le hall, c'est le hall qu'on veut voir, et la
+     bande de recherche en occupe le bas. Il remonte au doigt levé, à son cran
+     d'avant — celui-ci est écrit dans son attribut, que le pli ne touche pas
+     (voir `plieLesBandes`, _js.html). Écrite après les crans, la règle
+     l'emporte sur eux le temps qu'elle dure. */
+  .side.pliee{transform:translateY(100%)}
 
   /* En tiroir, la hauteur se paie sur le plan : les bandes redeviennent une
      seule ligne qui défile, et ce qu'elles montrent déborde par le côté. */
@@ -3886,17 +4105,27 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   /* Le panneau des critères s'ouvre en bas, à portée du pouce, et non centré
      sur un écran qu'il occuperait tout entier. */
   .modale{padding:0;place-items:end stretch}
-  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none}
+  /* Posée contre le bord de l'écran, la fenêtre y descend son fond et remonte
+     ce qu'elle porte : son pied tombait sous la poignée de gestes. */
+  .mfen{width:100%;max-height:88dvh;border-radius:14px 14px 0 0;border-bottom:none;
+    padding-bottom:var(--sys-bas)}
   /* Au pouce, une puce se vise : elle gagne la hauteur que la souris n'exige pas. */
   .puce-crit{padding:8px 12px}
-  /* En tiroir, le bas de l'écran est déjà pris par la liste : la fenêtre des
-     critères monte donc en haut plutôt qu'au milieu, et le plan garde entre
-     les deux une bande d'un seul tenant, où l'on voit le filtre agir. */
-  .modale[data-genre="cote"]{place-items:start start}
   .grp-crit > summary{padding:13px 2px}
 
-  .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
+  /* La cible du pouce, et non la barre qu'il vise : celle-ci fait quatre
+     pixels de haut, la prise en faisait vingt, et le doigt en demande
+     davantage. Elle prend donc huit pixels de la marge haute de la recherche,
+     qui les lui cède — la barre ne bouge pas d'un pixel, l'écart non plus,
+     seul l'appui porte plus loin. Par de la marge et non par un débord : ce
+     qui suit se peint par-dessus, et lui reprendrait ces huit pixels au
+     moment de désigner qui reçoit l'appui.
+
+     Les trois autres tiroirs se prennent en outre par leur en-tête, ce que la
+     liste ne peut pas offrir : on n'attrape pas un champ de recherche. */
+  .poignee{display:block;width:100%;padding:10px 0 14px;background:transparent;
     touch-action:none;cursor:grab}
+  .side .search{padding-top:6px}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
     border-radius:999px;background:var(--line-strong)}
 
@@ -3947,6 +4176,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .detail{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:56dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
@@ -3962,7 +4192,9 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      un tiroir poussé sous le bord de l'écran y aurait caché la fin de son
      corps. Le cran le plus bas garde l'en-tête — on voit de quel stand il
      s'agit tout en regardant le plan derrière. */
-  .detail.open[data-cran="replie"]{max-height:var(--fiche-replie,132px)}
+  /* La hauteur repliée est celle de l'en-tête, mesurée : la bande rendue au
+     système s'y ajoute, sinon c'est le nom du stand qui s'y perdrait. */
+  .detail.open[data-cran="replie"]{max-height:calc(var(--fiche-replie,132px) + var(--sys-bas))}
   .detail.open[data-cran="plein"]{max-height:92dvh}
   /* Pendant le geste c'est la main qui mène, pas la transition. */
   .detail.glisse{transition:none}
@@ -3970,8 +4202,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      s'écrasait au profit d'un corps qu'on ne voit plus. */
   .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
   /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
-     qu'elle surmonte porte déjà sa propre marge. */
+     qu'elle surmonte porte déjà sa propre marge — et se saisit avec elle, ce
+     qui lui donne la hauteur que la pastille n'a pas. */
   .detail > .poignee{padding:9px 0 3px}
+  /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
+     sans quoi le navigateur voit un déplacement de page dans le geste. */
+  :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}
@@ -4004,19 +4240,36 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .prog .conf .ty{order:1}
   .prog .conf .t{order:2;flex:0 0 100%}
 
-  /* Le parcours suit la fiche : même bande basse, même glissement. Il monte
-     un peu plus haut — c'est une liste qu'on parcourt, pas une fiche qu'on
-     lit — sans masquer le plan pour autant. */
+  /* Le parcours suit la fiche : même bande basse, même glissement, mêmes trois
+     crans. Son cran du milieu monte un peu plus haut — c'est une liste qu'on
+     parcourt, pas une fiche qu'on lit — sans masquer le plan pour autant. */
   .parcours{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:68dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    /* Descendu au plus bas, le tiroir ne garde que son en-tête : la rangée de
+       commandes et le pied passent sous le bord de l'écran, et le bord du
+       tiroir les y coupe net plutôt que de les laisser dépasser dessous. */
+    overflow:hidden;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .parcours.open{transform:translateY(0);pointer-events:auto}
+  .parcours.open[data-cran="replie"]{max-height:calc(var(--parc-replie,132px) + var(--sys-bas))}
+  .parcours.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .parcours.glisse{transition:none}
+  /* Seul le corps se comprime : l'en-tête, les commandes et le pied gardent
+     leur taille et sortent par le bas, sinon ils s'écrasaient tous les trois
+     au profit d'une liste qu'on ne voit plus. */
+  .parcours > :is(.poignee,.detail-hd,.pActs,.pPied){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .parcours > .poignee{padding:9px 0 3px}
   .pCorps{padding:14px 16px}
   .pPied{padding:10px 16px 18px}
   .pActs{padding:11px 16px 12px}
@@ -4025,21 +4278,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .jJours{padding:8px 16px 9px}
   .jOnglet{padding:5px 10px;min-width:60px}
 
-  /* L'itinéraire suit les deux autres, mais ne monte pas comme eux : on ne le
-     lit pas, on le remplit — et ce qu'on remplit se juge sur le plan, pas dans
-     le tiroir. À soixante-seize pour cent de l'écran il recouvrait le trajet
-     qu'il venait de tracer. La moitié lui suffit, à condition que ce qu'il
-     porte s'y resserre : c'est l'objet des règles qui suivent. */
+  /* L'itinéraire suit les deux autres, crans compris, mais son cran du milieu
+     ne monte pas comme le leur : on ne le lit pas, on le remplit — et ce qu'on
+     remplit se juge sur le plan, pas dans le tiroir. À soixante-seize pour cent
+     de l'écran il recouvrait le trajet qu'il venait de tracer. La moitié lui
+     suffit, à condition que ce qu'il porte s'y resserre : c'est l'objet des
+     règles qui suivent. */
   .itineraire{
     position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;
     max-height:50dvh;
+    padding:0 var(--sys-droite) var(--sys-bas) var(--sys-gauche);
     border-left:none;border-top:1px solid var(--line);
     border-radius:14px 14px 0 0;
     box-shadow:0 -20px 45px -22px rgba(0,0,0,.45);
     z-index:13;
     transform:translateY(100%);pointer-events:none;
+    transition:transform .28s cubic-bezier(.32,.72,0,1),
+               max-height .28s cubic-bezier(.32,.72,0,1);
   }
   .itineraire.open{transform:translateY(0);pointer-events:auto}
+  /* Le cran du bas rend le trajet entier à l'œil — c'est lui qu'on est venu
+     voir ; celui du haut déroule les étapes d'un trajet qui en compte, et la
+     liste des lieux proposés sous un champ. */
+  .itineraire.open[data-cran="replie"]{max-height:calc(var(--itin-replie,64px) + var(--sys-bas))}
+  .itineraire.open[data-cran="plein"]{max-height:92dvh}
+  /* Pendant le geste c'est la main qui mène, pas la transition. */
+  .itineraire.glisse{transition:none}
+  /* Seul le corps se comprime : la prise et l'en-tête gardent leur taille, et
+     c'est l'en-tête qui reste quand le tiroir descend. */
+  .itineraire > :is(.poignee,.detail-hd){flex-shrink:0}
+  /* Comme sur la fiche : l'en-tête qu'elle surmonte porte déjà sa marge. */
+  .itineraire > .poignee{padding:9px 0 3px}
   /* L'en-tête tient sur une ligne : le titre, et le bilan du trajet à sa
      suite. Le sur-titre « Se rendre » redisait le titre, et la pastille sur sa
      propre ligne coûtait la hauteur d'un champ — trois lignes pour deux mots
@@ -4054,6 +4323,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      davantage — passages empruntés, option accessible. Sans trajet, elle
      reste : c'est alors le seul état affiché. */
   .itineraire:has(.iBilan) .detail-hd .badge{display:none}
+  /* Sauf tiroir descendu : le bloc qui en disait davantage est alors sous le
+     bord de l'écran, et la pastille redevient le seul endroit où lire ce que
+     coûte le trajet qu'on regarde. */
+  .itineraire[data-cran="replie"]:has(.iBilan) .detail-hd .badge{display:inline-flex}
   .iCorps{padding:12px 16px 14px;gap:10px}
   .iChamps{gap:6px}
   .iSugg{max-height:min(160px,30dvh)}
@@ -4101,7 +4374,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
    ------------------------------------------------------------ */
 .alerte-enr{position:fixed;inset:0 0 auto 0;z-index:80;
   display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;
-  padding:9px 16px;font-size:14px;font-weight:600;line-height:1.35;text-align:center;
+  /* Elle passe par-dessus la bande du salon, donc par-dessus l'horloge : son
+     fond couvre la barre du système, son texte se range dessous. */
+  padding:calc(9px + var(--sys-haut)) 16px 9px;
+  font-size:14px;font-weight:600;line-height:1.35;text-align:center;
   background:var(--rouge,#C2372B);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 /* Le rattrapage n'est pas une panne : il raconte une fin heureuse, et prend
    la couleur de l'encre plutôt que celle de l'alerte. */
@@ -4386,14 +4662,33 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <button class="vide-q" id="videQ" type="button" hidden
           title="Effacer la recherche" aria-label="Effacer la recherche">×</button>
       </div>
-      <!-- Les critères tiennent derrière ce bouton : dépliés, ils prendraient
-           sur un téléphone la place du plan. Il n'existe que si l'exploitant a
-           désigné des champs à proposer. -->
+      <!-- Les critères tiennent derrière ce bouton : dépliés d'office, ils
+           prendraient sur un téléphone la place du plan. Il les déplie et les
+           replie juste dessous, dans la colonne, et n'existe que si
+           l'exploitant a désigné des champs à proposer. -->
       <button class="crit-btn" id="btnFiltres" aria-pressed="false" hidden
-        aria-haspopup="dialog" title="Critères de recherche" aria-label="Critères de recherche">
+        aria-expanded="false" aria-controls="panCrit"
+        title="Critères de recherche" aria-label="Critères de recherche">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8Z"/></svg>
         <span class="compteur" id="nFiltres" hidden>0</span>
       </button>
+    </div>
+    <!-- Le panneau des critères, déplié dans la colonne même, sous le mot-clé
+         qu'il complète. Une fenêtre posée à côté du bouton recouvrait la liste
+         dont elle décide : on cochait sans voir ce qu'il restait. -->
+    <div class="pan-crit" id="panCrit" role="group"
+      aria-label="Critères de recherche" hidden>
+      <div class="crit-corps" id="critCorps"></div>
+      <!-- Le pied ne défile pas avec les valeurs : ce que la recherche retient
+           se lit pendant qu'on coche, et refermer est la sortie — on ne la
+           cherche pas au bout de cent puces. -->
+      <div class="crit-pied">
+        <div id="critPied"></div>
+        <div class="crit-actes">
+          <button class="btn" type="button" id="critVider">Tout effacer</button>
+          <button class="btn accent" type="button" id="critVoir">Voir les résultats</button>
+        </div>
+      </div>
     </div>
     <!-- Ce qui est retenu, sous les yeux : sans cela on ne saurait plus
          pourquoi la liste est si courte, le panneau étant refermé. -->
@@ -4597,6 +4892,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       </div>
       <input id="texteADessiner" placeholder="Texte à placer" autocomplete="off">
       <select id="repereType" title="Ce que le repère est"></select>
+      <div id="repereTransport">
+        <label class="elemChamp"><span>Mode</span>
+          <select id="repereMode" title="Ce qui passe à cet arrêt"></select></label>
+        <label class="elemChamp"><span>Ligne</span>
+          <input id="repereLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+            title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+        <label class="elemChamp"><span>Couleur</span>
+          <input type="color" class="cc" id="repereCouleur"
+            title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+      </div>
       <input id="repereTexte" placeholder="Libellé — « Nord », « A »…" maxlength="24">
       <input id="imageSoc" list="listeSoc" spellcheck="false" autocomplete="off"
         placeholder="Exposant dont l'image ouvre la fiche — facultatif">
@@ -4610,6 +4915,16 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
         <div class="elemTete"><span class="eyebrow" id="elemType"></span>
           <button class="btnSup" id="elemSupprimer" title="Supprimer — Suppr">&#128465;</button></div>
         <select id="elemPicto" title="Ce que le repère est" hidden></select>
+        <div id="elemTransport" hidden>
+          <label class="elemChamp"><span>Mode</span>
+            <select id="elemMode" title="Ce qui passe à cet arrêt"></select></label>
+          <label class="elemChamp"><span>Ligne</span>
+            <input id="elemLigne" maxlength="8" autocomplete="off" placeholder="12, T3a, 80…"
+              title="Le numéro de la ligne, tel que la signalétique l'écrit"></label>
+          <label class="elemChamp"><span>Couleur</span>
+            <input type="color" class="cc" id="elemCouleur"
+              title="La couleur de la ligne : posée d'office pour celles d'Île-de-France, à régler ailleurs"></label>
+        </div>
         <input id="elemTexte" placeholder="Texte" hidden>
         <div class="elemLiens" id="elemLiens" hidden>
           <span class="eyebrow">Passages vers d'autres plans</span>
@@ -4735,6 +5050,11 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="parcours" id="parcours" aria-label="Mon parcours de visite">
+      <!-- Le parcours se hisse comme la fiche : même prise, même geste. Il
+           porte deux choses sur un téléphone — la liste retenue et la journée
+           organisée — et une hauteur figée ne pouvait convenir aux deux. -->
+      <button class="poignee" id="poigneeParcours" aria-expanded="false" aria-controls="pCorps jCorps"
+        aria-label="Agrandir le parcours"></button>
       <div class="detail-hd">
         <button class="close" id="closeParcours" aria-label="Fermer">&times;</button>
         <span class="eyebrow" id="pEyebrow">Mon parcours</span>
@@ -4762,13 +5082,18 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
     </section>
 
     <section class="itineraire" id="itineraire" aria-label="Itinéraire">
+      <!-- La prise de la fiche et du parcours. Celui-ci se juge plus que les
+           autres sur le plan : le baisser rend à l'œil le trajet qu'il
+           vient d'y tracer. -->
+      <button class="poignee" id="poigneeItineraire" aria-expanded="false" aria-controls="iCorps"
+        aria-label="Agrandir l'itinéraire"></button>
       <div class="detail-hd">
         <button class="close" id="closeItineraire" aria-label="Fermer">&times;</button>
         <span class="eyebrow">Se rendre</span>
         <h2>Itinéraire</h2>
         <span class="badge" id="iResume">à définir</span>
       </div>
-      <div class="iCorps">
+      <div class="iCorps" id="iCorps">
         <div class="iChamps">
           <div class="iChamp">
             <label class="eyebrow" for="iDepart">Départ</label>

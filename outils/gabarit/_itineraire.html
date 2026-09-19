@@ -2491,14 +2491,14 @@ function cadreItineraire(){
     y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]);
   }));
   const r = cadrePlan();
-  const cache = masque(), cacheD = masqueDroite();
-  const hUtile = Math.max(60, r.height - cache);
+  const cache = masque(), cacheD = masqueDroite(), haut = masqueHaut();
+  const hUtile = Math.max(60, r.height - cache - haut);
   const lUtile = Math.max(60, (r.width || 1) - cacheD);
   const marge = 8;
   const w = Math.max(12, x1 - x0 + 2 * marge), h = Math.max(12, y1 - y0 + 2 * marge);
   const k = Math.max(w / lUtile, h / hUtile);
   view = { x: (x0 + x1) / 2 - (k * r.width) / 2 + (k * cacheD) / 2,
-           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * cache) / 2,
+           y: (y0 + y1) / 2 - (k * r.height) / 2 + (k * (cache - haut)) / 2,
            w: k * r.width, h: k * r.height };
   poseVue();
 }
@@ -2848,8 +2848,9 @@ function armeVisee(r){
   if (r === "a" && pointBorne()) return;
   /* La cible d'un champ déjà armé ne désarme pas sur un téléphone : la visée y
      est armée d'office, et ce bouton n'y a plus qu'un sens — « montre-moi tout
-     le plan », car il est le seul geste qui efface le tiroir. Abandonner se dit
-     dans le bandeau, qui porte « Annuler ». Au large, la cible reste
+     le plan », car il est le seul geste qui retire le tiroir : la prise le
+     baisse sans l'emporter, et son en-tête tient toujours le bas. Abandonner
+     se dit dans le bandeau, qui porte « Annuler ». Au large, la cible reste
      l'interrupteur qu'elle était. */
   const efface = ETROIT() && $("itineraire").classList.contains("open");
   visee = (visee === r && !efface) ? null : r;

@@ -735,7 +735,7 @@ function rameneTuto(el){
 function placeTuto(force){
   const bulle = $("tuto");
   if (!bulle || !TUTO) return;
-  const vw = document.documentElement.clientWidth, vh = innerHeight, bord = 10;
+  const vw = document.documentElement.clientWidth, bord = 10;
   const w = bulle.offsetWidth, h = bulle.offsetHeight;
   const cible = boiteTuto(TUTO.cible);
   const evite = [];
@@ -754,17 +754,21 @@ function placeTuto(force){
   if (ETROIT()) pese(boiteTuto($("side")), .3);
   else pese(boiteTuto(document.querySelector(".zoombar")), .5);
 
+  /* La scène, et non la fenêtre : la page descend maintenant sous les barres
+     du système, et une bulle posée au ras du bord aurait eu son bouton sous la
+     poignée de gestes. La scène, elle, s'arrête là où le système reprend la
+     main — c'est la grille qui lui rend cette bande (`_head.html` « .app »). */
+  const s = $("stage").getBoundingClientRect();
   const places = [];
   if (ETROIT()){
     const x = (vw - w) / 2;
     places.push([x, $("bandeau").getBoundingClientRect().bottom + 8]);
     const vis = boiteTuto($("viseur"));
     if (vis) places.push([x, vis.bottom + 8]);
-    places.push([x, vh - h - bord]);
+    places.push([x, s.bottom - h - bord]);
   } else {
     if (cible) places.push([cible.right - w, cible.bottom + 14], [cible.left, cible.bottom + 14],
                            [cible.right - w, cible.top - h - 14], [cible.left - w - 14, cible.top]);
-    const s = $("stage").getBoundingClientRect();
     places.push([s.left + 16, s.bottom - h - 16], [s.left + 16, s.top + 16],
                 [s.right - w - 16, s.top + 16], [s.right - w - 16, s.bottom - h - 16]);
   }
@@ -780,8 +784,8 @@ function placeTuto(force){
   }, loin(x, y));
   let choix = null, mieux = Infinity;
   places.forEach(p => {
-    const x = Math.round(Math.max(bord, Math.min(vw - w - bord, p[0])));
-    const y = Math.round(Math.max(bord, Math.min(vh - h - bord, p[1])));
+    const x = Math.round(Math.max(s.left + bord, Math.min(s.right - w - bord, p[0])));
+    const y = Math.round(Math.max(s.top + bord, Math.min(s.bottom - h - bord, p[1])));
     const c = cout(x, y);
     if (c < mieux){ mieux = c; choix = [x, y]; }
   });

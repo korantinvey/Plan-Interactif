@@ -76,6 +76,13 @@ function marques(html) {
  *   `tete`        — ce qui doit venir avant tout le reste (le préchargement).
  *   `application` — la page est installable : manifeste, icônes, service.
  *                   Le plan public, et lui seul (voir `outils/pwa.js`).
+ *   `pleinEcran`  — la page va jusqu'aux bords de l'écran, sous les barres du
+ *                   système : l'heure et la poignée de gestes se posent sur
+ *                   elle au lieu de la border. `_head.html` reprend alors les
+ *                   retraits par ses jetons `--sys-*`, faute de quoi le nom du
+ *                   salon passerait sous l'horloge. Les pages du plan, qu'on
+ *                   ouvre pour regarder un hall ; pas la console, qu'on lit
+ *                   dans un onglet parmi d'autres.
  *   `autonome`    — publiée seule, hors du domaine : rien à lier, pas même
  *                   une icône, le fichier voisin n'existerait pas. Ses
  *                   polices viennent donc avec elle.
@@ -86,11 +93,17 @@ function marques(html) {
  *                   que le clair et n'en veulent qu'une (voir `outils/pwa.js`).
  */
 function page(contenu, options) {
-  const { role, tete, application, autonome, deuxThemes } = options || {};
+  const { role, tete, application, autonome, deuxThemes, pleinEcran } = options || {};
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    /* `viewport-fit=cover` étend la page sous les barres du système au lieu de
+       l'arrêter à leur bord. Le plan la demandait déjà lui-même, en repli et
+       « faute de balise » — mais il n'en a jamais manqué, celle-ci étant posée
+       ici depuis toujours : le repli ne s'est donc jamais déclenché, et le plan
+       est resté bordé de gris. C'est ici que cela se décide. */
+    '<meta name="viewport" content="width=device-width, initial-scale=1' +
+      (pleinEcran ? ", viewport-fit=cover" : "") + '">\n' +
     langue(contenu) +
     (tete || "") +
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
@@ -170,7 +183,7 @@ function connecte(t) {
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
   page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
-       { tete: PRECHARGE, application: true }));
+       { tete: PRECHARGE, application: true, pleinEcran: true }));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
@@ -178,12 +191,14 @@ fs.writeFileSync(W + "plan.html",
 const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\\u003c");
 fs.writeFileSync(W + "plan-admin.html",
   page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth)
-                    .replace("/*__LIEUX__*/null", () => LIEUX), { role: "admin" }));
+                    .replace("/*__LIEUX__*/null", () => LIEUX),
+       { role: "admin", pleinEcran: true }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",
   page(tpl.replace("/*__DATA__*/", () => fs.readFileSync(D + "/plans.json", "utf8"))
-          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"), { autonome: true }));
+          .replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
+       { autonome: true, pleinEcran: true }));
 
 /* --- configuration et feuille de style livrées avec les pages --- */
 fs.copyFileSync(D + "/gabarit/_config.js", W + "config.js");
