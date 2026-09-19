@@ -13,8 +13,50 @@
  * ouvrir plusieurs salons — et ne retient que des identifiants : les libellés
  * sont relus dans les données à chaque affichage, si bien qu'un exposant
  * renommé entre deux visites s'affiche sous son nouveau nom.
+ *
+ * Ce choix a un revers, et « trois semaines avant » est exactement le moment
+ * où il se paie : un navigateur fait le ménage. Safari efface tout ce qu'une
+ * page a écrit au bout de sept jours passés sans revenir sur le site — la
+ * liste préparée en août n'existe plus en septembre. Chrome et Firefox jettent
+ * les origines dont rien ne dit qu'elles comptent, quand l'appareil manque de
+ * place. Et sur iOS, l'application installée ne partage pas le stockage de
+ * Safari : préparer sa visite dans l'onglet puis poser l'icône ouvre une
+ * application vide.
+ *
+ * Trois gestes y répondent, et aucun ne demande de compte. Ce que le plan ne
+ * reconnaît plus est mis de côté au lieu d'être effacé (`MIS_DE_COTE`). Le
+ * navigateur est prié de garder ce qu'il a (`tientLeStockage`). Et la liste
+ * s'emporte hors du navigateur, dans un lien qu'on se donne à soi-même
+ * (`_partage.html`, « La copie qu'on se garde ») — le seul de ces trois gestes
+ * qui tienne contre les sept jours de Safari, contre un téléphone changé, et
+ * contre l'application installée qui démarre à vide.
  */
 let PARCOURS = { stands: [], confs: [] };
+
+/**
+ * Ce que le stockage portait et que les données ne reconnaissent pas — pour
+ * l'instant.
+ *
+ * Jeter tout de suite ce qu'on ne reconnaît plus paraissait sans risque : un
+ * stand démonté ne revient pas. Mais « les données ne le connaissent pas » et
+ * « il n'existe plus » sont deux choses, et la première arrive sans que rien
+ * n'ait disparu : l'option du programme décochée une heure vide `CONFS`, une
+ * synchronisation Klipso en cours rend un salon amputé. La liste filtrée était
+ * alors réécrite au premier signet touché, et les conférences retenues pour le
+ * mois suivant partaient pour de bon.
+ *
+ * C'est l'ornière des dessins non publiés, décrite dans `_dessin.html` : « il
+ * ne se perdait pas : il devenait invisible, puis l'enregistrement suivant
+ * l'effaçait pour de bon ». On la contourne de la même façon — ce qu'on ne
+ * comprend plus est mis de côté, daté, et réécrit avec le reste, à la place
+ * qu'il occupait. Invisible, mais pas perdu.
+ */
+let MIS_DE_COTE = { stands: [], confs: [] };
+
+/* Au-delà, un rang mis de côté s'en va vraiment. Plus long qu'aucune panne ni
+   qu'aucun réglage oublié, plus court que le temps qui sépare deux éditions —
+   au-delà duquel les identifiants ne désignent plus rien de toute façon. */
+const QUARANTAINE_JOURS = 120;
 
 /* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
    pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
@@ -24,21 +66,47 @@ const cleParcours = () =>
 const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
 const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
 
+/** Le jour, tel qu'il s'écrit à côté d'un rang mis de côté. */
+const jourParcours = () => new Date().toISOString().slice(0, 10);
+
+/** Un rang mis de côté depuis assez longtemps pour qu'on cesse de l'attendre.
+ *  Une date illisible vaut une date d'aujourd'hui : on garde, plutôt que de
+ *  jeter sur un doute. */
+function attenduDepuisTropLongtemps(depuis){
+  const t = Date.parse(depuis);
+  return !!t && Date.now() - t > QUARANTAINE_JOURS * 864e5;
+}
+
+/**
+ * Ranger ce que le stockage a rendu : d'un côté ce que le plan connaît, de
+ * l'autre ce qu'il ne connaît plus — avec le rang qu'il occupait, pour le lui
+ * rendre s'il revient. L'ordre d'ajout est celui du parcours, et un exposant
+ * absent le temps d'une synchronisation n'a pas à finir en queue de liste.
+ */
+function trieParcours(casier, lus, connu, dates){
+  const aujourdhui = jourParcours();
+  lus.forEach((id, i) => {
+    if (connu(id)) return PARCOURS[casier].push(id);
+    const depuis = dates[casier + ":" + id] || aujourdhui;
+    if (attenduDepuisTropLongtemps(depuis)) return;
+    MIS_DE_COTE[casier].push({ id: id, i: i, depuis: depuis });
+  });
+}
+
 function chargeParcours(){
-  try {
-    const b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {};
-    PARCOURS = {
-      stands: Array.isArray(b.stands) ? b.stands.map(String) : [],
-      confs:  Array.isArray(b.confs)  ? b.confs.map(String)  : [],
-    };
-  } catch (e) {
-    PARCOURS = { stands: [], confs: [] };   // stockage refusé ou contenu illisible
-  }
-  /* Un stand démonté ou une conférence annulée entre deux visites laisserait
-     un rang mort, qu'on ne saurait ni ouvrir ni comprendre. On ne garde que ce
-     que les données connaissent encore. */
-  PARCOURS.stands = PARCOURS.stands.filter(id => parId.has(id));
-  PARCOURS.confs = PARCOURS.confs.filter(id => CONFS.has(id));
+  let b = {};
+  try { b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {}; }
+  catch (e) { b = {}; }   // stockage refusé ou contenu illisible
+  const dates = b.decote && typeof b.decote === "object" ? b.decote : {};
+  PARCOURS = { stands: [], confs: [] };
+  MIS_DE_COTE = { stands: [], confs: [] };
+  trieParcours("stands", Array.isArray(b.stands) ? b.stands.map(String) : [],
+               id => parId.has(id), dates);
+  trieParcours("confs", Array.isArray(b.confs) ? b.confs.map(String) : [],
+               id => CONFS.has(id), dates);
+  /* Une liste rapportée d'une visite d'il y a trois semaines vaut qu'on
+     demande au navigateur de ne pas la jeter au premier ménage. */
+  if (PARCOURS.stands.length + PARCOURS.confs.length) tientLeStockage();
   rafraichitParcours();
   /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
      la liste relue : ils ne portent que sur des conférences qu'elle contient
@@ -46,13 +114,69 @@ function chargeParcours(){
   reprendRappels();
 }
 
+/**
+ * La liste telle qu'elle s'écrit : ce qui s'affiche, et ce qui attend son
+ * retour, remis où il était.
+ *
+ * Un rang mis de côté peut revenir par la porte de devant — un parcours reçu
+ * qui le reproposait, les données qui le reconnaissent à nouveau dans un autre
+ * onglet. Il est alors des deux côtés, et c'est l'exemplaire de côté qui
+ * s'efface : celui de la liste est celui que le visiteur voit.
+ */
+function parcoursAEcrire(){
+  const sortie = { stands: PARCOURS.stands.slice(), confs: PARCOURS.confs.slice() };
+  const dates = {};
+  ["stands", "confs"].forEach(casier => {
+    MIS_DE_COTE[casier].forEach(r => {
+      if (sortie[casier].indexOf(r.id) >= 0) return;
+      sortie[casier].splice(Math.min(r.i, sortie[casier].length), 0, r.id);
+      dates[casier + ":" + r.id] = r.depuis;
+    });
+  });
+  if (Object.keys(dates).length) sortie.decote = dates;
+  return sortie;
+}
+
 function enregistreParcours(){
   // navigation privée, stockage plein : la visite continue sans le parcours
-  try { localStorage.setItem(cleParcours(), JSON.stringify(PARCOURS)); } catch (e) {}
+  try { localStorage.setItem(cleParcours(), JSON.stringify(parcoursAEcrire())); }
+  catch (e) {}
   /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
      elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
      se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
   synchroniseRappels();
+}
+
+/* ------------------------------------------------------------
+   Que le navigateur ne fasse pas le ménage dessus
+   ------------------------------------------------------------ */
+/**
+ * Un stockage que le navigateur tient pour jetable, et un qu'il garde.
+ *
+ * Sans rien demander, ce qu'une page écrit est « au mieux » : Chrome et Firefox
+ * l'effacent quand l'appareil manque de place, et ils commencent par les
+ * origines dont personne n'a dit qu'elles comptaient. `persist()` le dit.
+ *
+ * Trois navigateurs, trois réponses. Chromium accorde ou refuse en silence,
+ * sur ce qu'il sait de l'usage du site — l'appeler ne coûte rien à personne.
+ * Safari ne l'implémente pas, et sa purge à sept jours ne se désarme d'aucune
+ * façon : là, seule la copie emportée protège (`_partage.html`). Firefox, lui,
+ * pose la question au visiteur — d'où `demande` : on ne fait pas surgir une
+ * permission sur quelqu'un qui vient de toucher un signet, on ne la présente
+ * qu'à celui qui demande justement que sa liste tienne.
+ */
+let PERSISTANCE_DEMANDEE = false;
+async function tientLeStockage(demande){
+  const s = navigator.storage;
+  if (!s || !s.persist || !s.persisted) return false;
+  try {
+    if (await s.persisted()) return true;
+    // le refus d'hier ne se corrige pas en le redemandant à chaque signet
+    if (PERSISTANCE_DEMANDEE && !demande) return false;
+    if (!demande && /Firefox\//.test(navigator.userAgent)) return false;
+    PERSISTANCE_DEMANDEE = true;
+    return await s.persist();
+  } catch (e) { return false; }
 }
 
 /**
@@ -89,6 +213,9 @@ function basculeParcours(genre, id, canal){
      passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
      vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
   if (i < 0 && genre === "conf") fenetreRappel();
+  /* Et, dès qu'il y a quelque chose à perdre, les deux gestes qui l'en
+     empêchent : le navigateur prié de tenir, et la copie proposée une fois. */
+  if (i < 0){ tientLeStockage(); fenetreGarde(); }
 }
 
 /**
@@ -116,9 +243,13 @@ function verseAuParcours(stands, confs, canal, remplace){
   });
   enregistreParcours();
   rafraichitParcours();
+  tientLeStockage();
   /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
      n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
   ouvreParcours();
+  /* La proposition de copie attend que ce tiroir ait été vu : elle se pose
+     derrière lui (`fenetreGarde`), et non par-dessus ce qui vient d'arriver. */
+  fenetreGarde();
 }
 
 /** « 3 exposants », « 1 conférence » : un compte et son mot, accordés. */
@@ -438,9 +569,14 @@ function remplitParcours(){
   if (!stands.length && !confs.length){
     const v = document.createElement("p");
     v.className = "pVide";
+    /* La phrase promettait de tout retrouver à la visite suivante. C'est vrai
+       d'une visite à la semaine prochaine, et faux d'une visite préparée un
+       mois à l'avance sur un iPhone : le navigateur aura fait le ménage. On
+       annonce donc ce qu'on tient — la liste reste ici — et le tiroir garni
+       dit, lui, comment l'emporter ailleurs (`poseGardeParcours`). */
     v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
       "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
-      "appareil et vous y retrouverez tout à votre prochaine visite.";
+      "appareil, et vous pourrez en garder une copie pour le jour du salon.";
     hote.appendChild(v);
     return;
   }
@@ -496,6 +632,11 @@ function remplitParcours(){
     }));
   }
 
+  /* En dernier, et à dessein : ce qui menace la liste se lit après la liste,
+     pas avant. En tête, la mise en garde aurait accueilli chaque ouverture du
+     tiroir par un avertissement, là où le visiteur vient voir ce qu'il a
+     retenu. */
+  poseGardeParcours(hote);
 }
 
 function ouvreParcours(){
@@ -528,6 +669,11 @@ $("closeParcours").onclick = fermeParcours;
  */
 function videLeParcours(){
   PARCOURS = { stands: [], confs: [] };
+  /* Ce qui attendait son retour part avec le reste : la fenêtre promet que
+     rien ne permettra de les retrouver, et une réserve qui survivrait au
+     vidage ferait mentir la phrase — jusqu'à reparaître le jour où les
+     données reconnaissent à nouveau ce qu'elle gardait. */
+  MIS_DE_COTE = { stands: [], confs: [] };
   /* La journée n'était que cette liste, mise en heures : elle s'en va avec
      elle, et son tracé avec elle — mais pas un itinéraire demandé à côté,
      qui ne doit rien au parcours. */

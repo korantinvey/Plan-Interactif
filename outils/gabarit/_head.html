@@ -2432,6 +2432,19 @@ button.expo:hover{background:var(--line)}
   color:var(--ink-3);font-size:15px;line-height:1}
 .pRang .pOte:hover{border-color:var(--rouge);color:var(--rouge)}
 .pVide{font-size:13px;color:var(--ink-3);line-height:1.6}
+/* La copie qu'on se garde, au pied de la liste.
+
+   Un filet la sépare de ce qui précède : elle ne parle pas des rangs retenus,
+   elle parle de la liste elle-même, et sans ce trait on la lisait comme un
+   rang de plus mal rangé. Le gris et la petite taille sont ceux d'une mention,
+   non d'une alarme — ce qu'elle annonce n'arrivera peut-être pas. Le bouton,
+   lui, prend toute la largeur : c'est une réponse, et sur un téléphone elle se
+   touche au pouce. */
+.pGarde{margin-top:2px;padding-top:12px;border-top:1px solid var(--line);
+  display:flex;flex-direction:column;gap:8px}
+.pGarde p{margin:0;font-size:11.5px;line-height:1.5;color:var(--ink-3)}
+.pGarde .btn{display:flex;align-items:center;justify-content:center;
+  padding:8px 12px;font-size:12.5px}
 /* Le rappel avant une conférence, en tête du groupe qu'il concerne. Encadré
    plutôt que posé à même la colonne : c'est un réglage au milieu d'une liste,
    et sans cadre il se lisait comme une conférence de plus qu'on aurait mal
@@ -3537,6 +3550,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   font-family:"IBM Plex Mono",monospace;line-height:18px;height:72px;color:var(--ink-2);
   border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
 .mcorps p.qrNote{margin-top:8px;font-size:12px;color:var(--ink-3)}
+/* La même mise en garde dans une fenêtre : le filet la sépare des gestes
+   d'installation comme il la sépare de la liste, mais il lui faut l'air d'un
+   paragraphe et non celui d'un pied de colonne. */
+.mcorps .pGarde{margin-top:15px;padding-top:13px}
 /* L'endroit que le code désignera, entre la phrase et le damier : c'est la
    seule ligne que l'exploitant relit avant d'imprimer trente affiches. */
 .mcorps p.iciOu{margin-top:10px;font-family:"Archivo",sans-serif;font-weight:600;
