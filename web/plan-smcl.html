@@ -4570,8 +4570,19 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .puce-crit{padding:8px 12px}
   .grp-crit > summary{padding:13px 2px}
 
-  .poignee{display:block;width:100%;padding:10px 0 6px;background:transparent;
+  /* La cible du pouce, et non la barre qu'il vise : celle-ci fait quatre
+     pixels de haut, la prise en faisait vingt, et le doigt en demande
+     davantage. Elle prend donc huit pixels de la marge haute de la recherche,
+     qui les lui cède — la barre ne bouge pas d'un pixel, l'écart non plus,
+     seul l'appui porte plus loin. Par de la marge et non par un débord : ce
+     qui suit se peint par-dessus, et lui reprendrait ces huit pixels au
+     moment de désigner qui reçoit l'appui.
+
+     Les trois autres tiroirs se prennent en outre par leur en-tête, ce que la
+     liste ne peut pas offrir : on n'attrape pas un champ de recherche. */
+  .poignee{display:block;width:100%;padding:10px 0 14px;background:transparent;
     touch-action:none;cursor:grab}
+  .side .search{padding-top:6px}
   .poignee::before{content:"";display:block;width:38px;height:4px;margin:0 auto;
     border-radius:999px;background:var(--line-strong)}
 
@@ -4645,8 +4656,12 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
      s'écrasait au profit d'un corps qu'on ne voit plus. */
   .detail > .poignee,.detail > .detail-hd{flex-shrink:0}
   /* La prise de la fiche est plus discrète que celle de la liste : l'en-tête
-     qu'elle surmonte porte déjà sa propre marge. */
+     qu'elle surmonte porte déjà sa propre marge — et se saisit avec elle, ce
+     qui lui donne la hauteur que la pastille n'a pas. */
   .detail > .poignee{padding:9px 0 3px}
+  /* L'en-tête mène le tiroir : il lui faut le contrat tactile de la poignée,
+     sans quoi le navigateur voit un déplacement de page dans le geste. */
+  :is(.detail,.parcours,.itineraire) > .detail-hd{touch-action:none}
   .detail-hd{padding:16px 16px 13px}
   .onglets{margin:10px 16px 0}
   .detail-hd{--titre:17px}
@@ -9645,6 +9660,52 @@ $("q").addEventListener("keydown", e => {
   $("side").addEventListener(t, reprendRecherche));
 
 /* ============================================================
+   Ce que les tiroirs lisent d'un geste
+
+   Deux sortes de tiroirs se manœuvrent au doigt — celui de la liste, qui
+   glisse, et ceux que la hauteur mène. Ils partagent la façon de lire le
+   geste, faute de quoi le même appui ne donnerait pas la même chose selon le
+   tiroir touché.
+   ============================================================ */
+/* Ce qu'un pouce dérive en appuyant. Six pixels ne suffisaient pas : au-delà
+   du seuil le geste passait pour un glissement, lequel, n'ayant pas atteint le
+   cran suivant, reposait celui d'où il venait — l'appui restait sans effet. */
+const GESTE_SEUIL = 10;
+/* Au-delà d'un demi-pixel par milliseconde, c'est la direction qui décide et
+   non l'endroit où le doigt s'est arrêté : un coup sec part vite et lâche tôt,
+   et jugé à l'arrivée il n'avait pas parcouru la moitié du chemin. */
+const GESTE_VIF = .5;
+
+/**
+ * Le suivi d'un geste, pour en tirer une vitesse.
+ *
+ * Elle se prend sur les cent dernières millisecondes, et non entre le dernier
+ * déplacement et le lâcher : le navigateur livre souvent les deux au même
+ * endroit, et tout coup sec comptait alors pour nul.
+ */
+function traceurDeGeste(){
+  const FENETRE = 100;
+  let trace = [];
+  return {
+    repart(){ trace = []; },
+    note(y){
+      const t = performance.now();
+      trace.push({ y: y, t: t });
+      while (trace.length > 1 && t - trace[0].t > FENETRE) trace.shift();
+    },
+    vitesse(){
+      if (trace.length < 2) return 0;
+      const a = trace[0], b = trace[trace.length - 1];
+      return b.t > a.t ? (b.y - a.y) / (b.t - a.t) : 0;
+    },
+  };
+}
+
+/** Le cran d'à côté, vers le haut (+1) ou vers le bas (-1). */
+const cranVoisin = (crans, nom, sens) =>
+  crans[Math.min(crans.length - 1, Math.max(0, crans.indexOf(nom) + sens))];
+
+/* ============================================================
    Le tiroir de la liste — écrans étroits
 
    Côte à côte, plan et liste ne tiennent pas sur un téléphone. La liste se
@@ -9730,9 +9791,13 @@ let hisseTiroir = () => {};
      qui décide, pas la longueur du geste. */
   let depart = null, aGlisse = false;
 
+  const geste = traceurDeGeste();
+
   prise.addEventListener("pointerdown", e => {
     if (!etroit()) return;
-    depart = { y: e.clientY, vu: hauteur(cran()) };
+    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+    geste.repart();
+    geste.note(e.clientY);
     aGlisse = false;
     tiroir.classList.add("glisse");
     prise.setPointerCapture(e.pointerId);
@@ -9754,7 +9819,8 @@ let hisseTiroir = () => {};
 
   prise.addEventListener("pointermove", e => {
     if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
+    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(e.clientY);
     const vu = suit(e);
     tiroir.style.transform = "translateY(" + (tiroir.offsetHeight - vu) + "px)";
     /* Le doigt tient encore le tiroir : ce qui flotte s'efface au cran où il
@@ -9767,8 +9833,12 @@ let hisseTiroir = () => {};
     const vu = suit(e);
     tiroir.classList.remove("glisse");
     tiroir.style.transform = "";
+    geste.note(e.clientY);
+    const v = geste.vitesse();
     // un geste avorté laisse le cran d'avant, que le glissement avait annoncé
-    pose(aGlisse ? proche(vu) : cran());
+    pose(!aGlisse ? cran()
+       : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
+       : proche(vu));
     depart = null;
   }
   prise.addEventListener("pointerup", relache);
@@ -9900,16 +9970,33 @@ function tiroirCrante({ panneau, prise, cle, demi }){
 
   /* --- le glissement ------------------------------------------------------
      Même geste que sur la liste, à ceci près que le doigt mène une hauteur et
-     non une position : on s'accroche au cran le plus proche de celle atteinte. */
+     non une position : on s'accroche au cran le plus proche de celle atteinte.
+
+     La prise ne se limite pas à la pastille. Elle mesure seize pixels de haut
+     quand le pouce en demande quarante : on visait, on manquait, et le tiroir
+     ne bougeait pas — ce qui se lit comme une panne, pas comme un geste raté.
+     L'en-tête qu'elle surmonte se saisit donc aussi, ce qui est de toute façon
+     l'endroit que la main vise. Ce qu'il porte de cliquable — fermer, renommer,
+     une pastille qui bascule — garde ses appuis. */
+  const INERTE = "button,a,input,select,textarea,label,[role=tab]";
+  const entete = tiroir.querySelector(".detail-hd");
+  const prises = [poignee, entete].filter(Boolean);
   let depart = null, aGlisse = false;
 
-  poignee.addEventListener("pointerdown", e => {
+  const geste = traceurDeGeste();
+
+  function saisit(e){
     if (!etroit()) return;
-    depart = { y: e.clientY, vu: hauteur(cran()) };
+    /* La poignée est elle-même un bouton : le garde-fou ne vaut que pour
+       l'en-tête, où il protège les commandes qu'on y a posées. */
+    if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
+    depart = { y: e.clientY, vu: hauteur(cran()), cran: cran() };
+    geste.repart();
+    geste.note(e.clientY);
     aGlisse = false;
     tiroir.classList.add("glisse");
-    poignee.setPointerCapture(e.pointerId);
-  });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
 
   /** Hauteur pendant le geste, bornée aux deux crans extrêmes. */
   const suit = e =>
@@ -9925,11 +10012,12 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     return choix;
   }
 
-  poignee.addEventListener("pointermove", e => {
+  function bouge(e){
     if (!depart) return;
-    if (Math.abs(e.clientY - depart.y) > 6) aGlisse = true;
+    if (Math.abs(e.clientY - depart.y) > GESTE_SEUIL) aGlisse = true;
+    geste.note(e.clientY);
     tiroir.style.maxHeight = suit(e) + "px";
-  });
+  }
 
   function relache(e){
     if (!depart) return;
@@ -9938,18 +10026,34 @@ function tiroirCrante({ panneau, prise, cle, demi }){
     /* La hauteur repasse au CSS, qui la tient du cran : gardée en ligne, elle
        aurait survécu à la fermeture et figé le tiroir suivant. */
     tiroir.style.maxHeight = "";
-    // un geste avorté laisse le cran d'avant
-    pose(aGlisse ? proche(vu) : cran());
+    geste.note(e.clientY);
+    const v = geste.vitesse();
+    // un geste avorté laisse le cran d'avant ; le clic qui suit fera le tour
+    pose(!aGlisse ? cran()
+       : Math.abs(v) > GESTE_VIF ? cranVoisin(CRANS, depart.cran, v < 0 ? 1 : -1)
+       : proche(vu));
     depart = null;
   }
-  poignee.addEventListener("pointerup", relache);
-  poignee.addEventListener("pointercancel", relache);
 
-  /* Une pression fait le tour des crans. Le clic sert aussi le clavier — la
-     poignée est un bouton — mais il suit tout glissement : on l'ignore alors. */
-  poignee.addEventListener("click", () => {
+  /* Une pression fait le tour des crans — sur la pastille comme sur l'en-tête,
+     puisque c'est la même prise. Le clic sert aussi le clavier, la poignée
+     étant un bouton, mais il suit tout glissement : on l'ignore alors. */
+  function presse(e){
     if (aGlisse){ aGlisse = false; return; }
+    /* Au large, l'en-tête n'est qu'un en-tête : la poignée y est masquée et le
+       tiroir reprend sa colonne, mais l'en-tête, lui, reste cliquable — sans
+       ce garde-fou, cliquer un nom de stand posait un cran dans son dos. */
+    if (!etroit()) return;
+    if (e.currentTarget !== poignee && e.target.closest(INERTE)) return;
     bascule();
+  }
+
+  prises.forEach(n => {
+    n.addEventListener("pointerdown", saisit);
+    n.addEventListener("pointermove", bouge);
+    n.addEventListener("pointerup", relache);
+    n.addEventListener("pointercancel", relache);
+    n.addEventListener("click", presse);
   });
 
   /* Chaque ouverture repart du cran du milieu : le stand d'avant a pu demander
