@@ -2450,6 +2450,21 @@ button.expo:hover{background:var(--line)}
    Les sélecteurs partent de la classe et non de « #detail » : le même
    habillage sert à la fiche du plan et à son aperçu dans les réglages, qui
    porte les mêmes classes en réduction.
+
+   Les modèles qui peignent l'en-tête d'un aplat y reprennent les commandes à
+   l'encre de cet aplat : la croix, le crayon, le signet. La croix et le crayon
+   ne vivent que là ; le signet, non — le programme de la fiche en porte un par
+   conférence, sur le fond clair du corps. « Grille », « Billet » et
+   « Signalétique » le nomment donc par « .detail-hd », faute de quoi l'encre
+   de l'aplat les emportait tous, blancs sur blanc. « Brut » et « Verre »
+   donnent au signet un fond à lui, qui tient sur les deux terrains : ils s'en
+   dispensent.
+
+   La portée règle du même coup ce que le signet devenait une fois l'exposant
+   retenu : l'état retenu se peint de la couleur du salon, qui est justement
+   celle de l'aplat, et le signet s'effaçait à l'instant où l'on s'en servait.
+   Dans l'en-tête il garde l'encre de l'aplat et s'emplit — creux, pas encore ;
+   plein, c'est retenu.
    ------------------------------------------------------------ */
 
 /* Grille — l'en-tête est un aplat de la couleur du salon, le numéro du stand y
@@ -2476,7 +2491,7 @@ button.expo:hover{background:var(--line)}
 .modele-grille .detail-hd h2{color:var(--accent-ink);font-weight:700;
   text-transform:uppercase;line-height:1.1}
 .modele-grille .detail-hd .eyebrow{color:var(--accent-ink);opacity:.65}
-.modele-grille .marque,.modele-grille .close,.modele-grille .crayon{color:var(--accent-ink);
+.modele-grille .detail-hd .marque,.modele-grille .close,.modele-grille .crayon{color:var(--accent-ink);
   border-color:color-mix(in srgb,var(--accent-ink) 38%,transparent);background:none}
 .modele-grille .detail-hd .badge{border-radius:0;background:var(--accent-ink);
   color:var(--accent-base);font-weight:600}
@@ -2540,7 +2555,7 @@ button.expo:hover{background:var(--line)}
 .modele-billet .detail-hd::after{content:attr(data-code);position:absolute;right:18px;bottom:12px;
   font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:26px;letter-spacing:-.02em;
   color:var(--accent-ink);pointer-events:none}
-.modele-billet .marque,.modele-billet .close,.modele-billet .crayon{color:var(--accent-ink);
+.modele-billet .detail-hd .marque,.modele-billet .close,.modele-billet .crayon{color:var(--accent-ink);
   border-color:rgba(255,255,255,.4);background:none}
 .modele-billet .detail-hd .badge{background:rgba(255,255,255,.2);color:var(--accent-ink)}
 .modele-billet .detail-hd .badge.neuf{background:var(--accent-ink);color:var(--accent);
@@ -2688,7 +2703,7 @@ button.expo:hover{background:var(--line)}
   text-transform:uppercase;line-height:1.12}
 .modele-signal .detail-hd h2::before{content:"→ ";font-weight:500}
 .modele-signal .detail-hd .eyebrow{color:var(--accent-ink);opacity:.78}
-.modele-signal .marque,.modele-signal .close,.modele-signal .crayon{color:var(--accent-ink);
+.modele-signal .detail-hd .marque,.modele-signal .close,.modele-signal .crayon{color:var(--accent-ink);
   border-color:color-mix(in srgb,var(--accent-ink) 40%,transparent);background:none}
 .modele-signal .detail-hd .badge{background:var(--accent-ink);color:var(--accent-base);font-weight:600}
 .modele-signal .detail-hd .badge.neuf{background:var(--accent-clair);color:var(--accent-ink);
