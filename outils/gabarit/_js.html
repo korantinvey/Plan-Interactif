@@ -1,7 +1,10 @@
 <script id="data" type="application/json">/*__DATA__*/</script>
 <script>
 /* Sans viewport, un mobile rend la page dans un viewport virtuel de 980 px :
-   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. */
+   les requêtes média ne se déclenchent pas et tout est réduit à la loupe. Les
+   pages construites en portent une, posée par `outils/genere.js` avec ou sans
+   le `viewport-fit` qui les étend sous les barres du système : ce repli-ci ne
+   sert donc qu'au gabarit ouvert tel quel, et il demande la même chose. */
 if (!document.querySelector('meta[name="viewport"]')){
   const mv = document.createElement("meta");
   mv.name = "viewport";
@@ -449,6 +452,58 @@ function poseFavicon(src){
   }
   l.type = img.slice(5, img.indexOf(";"));
   l.href = img;
+}
+
+/**
+ * La couleur dont le système peint sa barre, celle de l'heure et de la
+ * batterie.
+ *
+ * La page va maintenant jusqu'aux bords de l'écran (`viewport-fit=cover`,
+ * posé par `outils/genere.js`) : la bande du salon monte derrière l'horloge,
+ * et le système ne sait rien de ce qu'elle porte. Il n'a qu'un indice,
+ * `theme-color`, dont il tire le fond qu'il peint sous ses pictogrammes et
+ * leur noir ou leur blanc. Écrite une fois pour toutes à la construction — le
+ * crème de la surface, voir `outils/pwa.js` — elle annonçait une barre claire
+ * au-dessus d'un bandeau que le modèle du salon peint en bleu profond :
+ * l'heure s'y écrivait en sombre sur du sombre.
+ *
+ * Elle suit donc la bande qui touche le haut de l'écran — celle de
+ * l'administration quand elle est là, celle du salon sinon.
+ *
+ * La couleur se lit sur une sonde plutôt que dans le jeton : un modèle compose
+ * la sienne avec `color-mix()`, un autre l'emprunte à l'accent du salon, et
+ * seul le navigateur sait ce que cela donne. Un élément vide, peint du jeton
+ * et grand comme rien, répond en `rgb(…)` — la seule forme qu'un
+ * `theme-color` accepte.
+ *
+ * La mesure attend l'image suivante, et une seule par image : l'accent se pose
+ * en rafale pendant qu'on le cherche au nuancier, et demander un style calculé
+ * au milieu du geste aurait fait recalculer la page entière à chaque
+ * mouvement du doigt. Le système, lui, ne repeint pas sa barre soixante fois
+ * par seconde.
+ */
+let tonPrevu = 0;
+function poseTonDeLaBarre(){
+  cancelAnimationFrame(tonPrevu);
+  tonPrevu = requestAnimationFrame(() => {
+    const bande = document.querySelector(".bandeAdmin:not([hidden])") || $("bandeau");
+    if (!bande) return;
+    const sonde = document.createElement("i");
+    sonde.style.cssText = "position:absolute;width:0;height:0;background:var(--ton-barre)";
+    bande.appendChild(sonde);
+    const ton = getComputedStyle(sonde).backgroundColor;
+    sonde.remove();
+    /* Un jeton absent ou translucide ne dit rien à un système qui peint un
+       aplat : la couleur de la construction vaut mieux qu'un noir deviné. */
+    if (!ton || /^rgba\(.*,\s*0\)$/.test(ton)) return;
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m){
+      m = document.createElement("meta");
+      m.name = "theme-color";
+      document.head.appendChild(m);
+    }
+    m.content = ton;
+  });
 }
 
 /* ============================================================
@@ -4155,6 +4210,32 @@ const cranVoisin = (crans, nom, sens) =>
    reste se hisse d'une pression ou d'un glissement. Choisir un résultat le
    referme — c'est le plan qu'on voulait voir, et la fiche s'ouvre par-dessus.
    ============================================================ */
+/* La bande que le système garde au bas de l'écran — la poignée de gestes, la
+   barre d'accueil.
+
+   Les tiroirs descendent leur fond jusqu'au bord de l'écran, une bande de gris
+   sous un tiroir de couleur se voyant de loin, mais ils remontent ce qu'ils
+   portent d'autant : leur part visible au cran le plus bas vaut donc ce qu'ils
+   montrent, plus cette bande. Le geste qui les mène doit compter pareil — il
+   posait sinon, au premier millimètre parcouru par le doigt, une hauteur
+   amputée de la bande, et le tiroir sautait avant de suivre.
+
+   Mesurée sur une sonde, et non lue : `env(safe-area-inset-bottom)` appartient
+   au moteur de style, et rien de `window` ne la donne. Gardée ensuite, parce
+   que le glissement la redemande à chaque image : elle ne change qu'avec
+   l'écran, et c'est ce que dit le `resize`. */
+let _retraitBas = null;
+function retraitBas(){
+  if (_retraitBas !== null) return _retraitBas;
+  const sonde = document.createElement("i");
+  sonde.style.cssText = "position:fixed;left:0;bottom:0;width:0;height:var(--sys-bas)";
+  document.body.appendChild(sonde);
+  _retraitBas = sonde.getBoundingClientRect().height;
+  sonde.remove();
+  return _retraitBas;
+}
+addEventListener("resize", () => { _retraitBas = null; });
+
 /* La mesure du tiroir appartient à ce module, mais les bandes qui dépassent —
    les secteurs, les critères retenus — paraissent et disparaissent ailleurs :
    on leur laisse de quoi la redemander. */
@@ -4215,15 +4296,20 @@ let hisseTiroir = () => {};
      connaître du glissement, et on revient au plan par la même touche. */
   const bascule = () => pose(CRANS[(CRANS.indexOf(cran()) + 1) % CRANS.length]);
 
+  /* Sur le corps, là où « mesure » l'a posée : lue sur la racine, elle revenait
+     vide et le repli de 164 px tenait lieu de mesure. Le tiroir sautait alors
+     de l'écart au premier millimètre du glissement — soixante-quinze pixels
+     pour une bande repliée qui en fait quatre-vingt-dix. */
   const replieePx = () =>
-    parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--replie")) || 164;
+    parseFloat(getComputedStyle(document.body).getPropertyValue("--replie")) || 164;
 
   /* Hauteur visible du tiroir à un cran donné, en pixels. Le milieu suit la
-     règle du CSS — 46 % de la hauteur d'écran. */
+     règle du CSS — 46 % de la hauteur d'écran. Le plus bas montre ce qui a été
+     mesuré, posé au-dessus de la bande rendue au système. */
   function hauteur(nom){
     if (nom === "plein") return tiroir.offsetHeight;
     if (nom === "demi")  return Math.round(innerHeight * .46);
-    return replieePx();
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------
@@ -4407,7 +4493,8 @@ function tiroirCrante({ panneau, prise, cle, demi }){
   function hauteur(nom){
     if (nom === "plein") return Math.round(innerHeight * .92);
     if (nom === "demi")  return Math.round(innerHeight * demi);
-    return replieePx();
+    // l'en-tête mesuré, plus la bande que le tiroir rend au système sous lui
+    return replieePx() + retraitBas();
   }
 
   /* --- le glissement ------------------------------------------------------

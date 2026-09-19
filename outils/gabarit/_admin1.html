@@ -603,7 +603,11 @@ function appliqueAccent(){
   /* La page n'a qu'un fond, et il est clair : le ton choisi se pose tel quel,
      sans la version éclaircie qu'un fond noir aurait réclamée. */
   const base = trio(conf("_accent").couleur) ? conf("_accent").couleur : null;
-  if (!base){ noms.forEach(n => racine.style.removeProperty(n)); return; }
+  if (!base){
+    noms.forEach(n => racine.style.removeProperty(n));
+    poseTonDeLaBarre();
+    return;
+  }
   const pose = (n, v) => racine.style.setProperty(n, v);
   pose("--accent", base);
   pose("--accent-base", base);
@@ -612,6 +616,10 @@ function appliqueAccent(){
   pose("--accent-ink", luminance(trio(base)) > 0.42 ? "#0E1113" : "#FFFFFF");
   pose("--accent-clair", melange(base, "#FFFFFF", 0.34));
   pose("--accent-fort", melange(base, "#000000", 0.42));
+  /* Deux modèles peignent leur bandeau de l'accent, trois autres en tirent
+     leur surface : la barre du système, qui prolonge ce bandeau derrière
+     l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -963,6 +971,9 @@ function appliqueModele(){
   // une fenêtre ouverte pendant qu'on change de modèle suit, comme les tiroirs
   habilleModale();
   posePoliceLibelles(cle);
+  /* Le bandeau vient de changer de fond : la barre du système, qui le
+     prolonge derrière l'heure, change avec lui. */
+  poseTonDeLaBarre();
 }
 
 /**
@@ -3223,6 +3234,9 @@ function activeAdmin(){
      qui jusqu'ici ne servait à rien. */
   if (MONTE){ dessineDessins(); construitPanneau(); }
   majAttente();
+  /* La nuit de la marque touche désormais le haut de l'écran : c'est elle que
+     la barre du système prolonge, et non plus le bandeau du salon. */
+  poseTonDeLaBarre();
 }
 
 
