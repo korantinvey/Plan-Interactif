@@ -2731,6 +2731,14 @@ button.expo:hover{background:var(--line)}
   border-radius:var(--radius);cursor:pointer;font-size:13.5px;color:var(--ink)}
 .jForm .jCase:hover{background:var(--surface-2)}
 .jForm .jCase input{width:17px;height:17px;flex:none;padding:0;accent-color:var(--accent)}
+/* Ce que le jour porte déjà, poussé à droite comme dans l'aperçu : le jour se
+   lit d'abord, son compte ensuite — et la case cochée d'avance s'explique
+   d'elle-même. */
+.jForm .jCase .jCaseConfs{margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-3)}
+/* Décocher un jour qui porte des conférences les laisse dehors. Ce n'est pas
+   une faute, c'est une conséquence — dite sur le ton des alertes du tiroir,
+   sous les cases, là où le geste vient d'avoir lieu. */
+.jForm .jHorsJour{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:var(--rouge)}
 
 /* Le curseur de répartition, et ce qu'il donne à voir.
 
