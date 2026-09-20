@@ -531,11 +531,13 @@ déjà le parcours entier dans son fragment, sans serveur ni compte
 (`_partage.html`) ; il sait donc se donner à soi-même. Posé dans une
 conversation, un courrier ou une note, il ne dépend plus de rien de ce que le
 navigateur garde : il rouvre la liste le jour du salon, sur un autre téléphone,
-dans l'application fraîchement installée, ou après un nettoyage. Trois portes y
-mènent — une note au pied de la liste, une proposition au troisième rang retenu
-(une seule fois, `plan-garde:<slug>`), et la fenêtre d'installation. C'est le
-seul des quatre gestes qui tienne contre les sept jours de Safari, et le seul
-que le visiteur emporte.
+dans l'application fraîchement installée, ou après un nettoyage. Deux portes y
+mènent — une note au pied de la liste, et la fenêtre d'installation —, toutes
+deux au moment où il y a quelque chose à emporter. Une troisième s'invitait
+d'elle-même au troisième rang retenu : elle proposait d'emporter une liste
+encore en train de se faire, et elle est retirée. C'est le seul des quatre
+gestes qui tienne contre les sept jours de Safari, et le seul que le visiteur
+emporte.
 
 Ce qui s'envoie ainsi ne compte pas comme un partage : « huit parcours partagés »
 doit se lire « huit visiteurs ont donné leur liste à quelqu'un », et une copie de
