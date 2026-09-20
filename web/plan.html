@@ -32902,10 +32902,11 @@ function voletEnvirons(hote){
    et le navigateur annonce l'installation à sa façon, qui suffit.
 
    Le « puis » est court, et c'est voulu : l'installation efface la marque du
-   jour au lieu de la poser, si bien que le premier rechargement qui suit
-   ramène le rappel, son bouton avec. Le taire jusqu'au lendemain aurait
-   laissé sans rien celui qui vient de poser l'icône et revient au navigateur
-   — c'est-à-dire justement celui à qui le constat parlait.
+   jour au lieu de la poser, et rouvre l'attente que la fenêtre avait close en
+   s'ouvrant. Le rappel vient donc de lui-même, dix secondes après, sans rien
+   demander au visiteur — ni un geste, ni un rechargement. L'attendre de l'un
+   ou de l'autre laissait sans rien celui qui installe et regarde le plan sans
+   y toucher : c'est-à-dire justement celui à qui le constat parlait.
    ============================================================ */
 
 /* Le plan affiché, un instant pour qu'il se peigne : une fenêtre ouverte dans
@@ -33281,6 +33282,17 @@ function invitationRetenue(){
   return !!f && /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName);
 }
 
+/* Les écouteurs qui portent l'attente, posés et retirés ensemble : entre
+   deux fenêtres le module dort, et ne coûte alors rien à un plan qu'on
+   manipule. */
+function suitLesGestes(){
+  addEventListener("pointerdown", doigtPose, true);
+  addEventListener("pointerup", doigtLeve, true);
+  addEventListener("pointercancel", doigtLeve, true);
+  addEventListener("keydown", gesteInstallation, true);
+  document.addEventListener("visibilitychange", vueInstallation);
+}
+
 function finInvitation(){
   installFini = true;
   clearTimeout(installMinuteur);
@@ -33289,6 +33301,24 @@ function finInvitation(){
   removeEventListener("pointercancel", doigtLeve, true);
   removeEventListener("keydown", gesteInstallation, true);
   document.removeEventListener("visibilitychange", vueInstallation);
+}
+
+/**
+ * Rouvrir l'attente qu'une fenêtre avait close en s'ouvrant.
+ *
+ * `finInvitation` précède chacune d'elles : une fenêtre par page, et plus rien
+ * ensuite — c'est ce qui garantit qu'on ne propose pas deux fois. Une
+ * installation fait pourtant naître ce qu'il reste à dire : l'icône est posée,
+ * et le rappel devient le seul à savoir où elle est et à savoir l'ouvrir.
+ *
+ * Sans cette reprise, il attendait un rechargement. Celui qui installe puis
+ * regarde le plan sans y toucher n'avait donc rien — et c'est justement celui
+ * qui vient de dire qu'il voulait l'application.
+ */
+function rouvreInvitation(){
+  if (!INSTALL_POSSIBLE) return;
+  installFini = false;
+  suitLesGestes();
 }
 
 /**
@@ -33382,14 +33412,16 @@ if (INSTALL_POSSIBLE){
        plan, lui, est à l'écran depuis un moment : sans ce report, le rappel
        viendrait au geste suivant, avec un bouton encore sans preneur. */
     installAccueil = performance.now();
+    /* La fenêtre qui vient de proposer l'installation avait clos l'attente en
+       s'ouvrant : on la rouvre, et le rappel se remet en chemin de lui-même.
+       Rien d'autre ne l'amènerait — ni geste ni rechargement —, et les égards
+       qui le retiennent restent les mêmes qu'avant. */
+    rouvreInvitation();
+    relanceInvitation(RAPPEL_DELAI);
   });
   // ce que le système sait de l'application, et qui décide laquelle des deux fenêtres
   verifieApplication();
-  addEventListener("pointerdown", doigtPose, true);
-  addEventListener("pointerup", doigtLeve, true);
-  addEventListener("pointercancel", doigtLeve, true);
-  addEventListener("keydown", gesteInstallation, true);
-  document.addEventListener("visibilitychange", vueInstallation);
+  suitLesGestes();
 }
 
 /* ------------------------------------------------------------
