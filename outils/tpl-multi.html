@@ -2731,6 +2731,14 @@ button.expo:hover{background:var(--line)}
   border-radius:var(--radius);cursor:pointer;font-size:13.5px;color:var(--ink)}
 .jForm .jCase:hover{background:var(--surface-2)}
 .jForm .jCase input{width:17px;height:17px;flex:none;padding:0;accent-color:var(--accent)}
+/* Ce que le jour porte déjà, poussé à droite comme dans l'aperçu : le jour se
+   lit d'abord, son compte ensuite — et la case cochée d'avance s'explique
+   d'elle-même. */
+.jForm .jCase .jCaseConfs{margin-left:auto;flex:none;font-size:11.5px;color:var(--ink-3)}
+/* Décocher un jour qui porte des conférences les laisse dehors. Ce n'est pas
+   une faute, c'est une conséquence — dite sur le ton des alertes du tiroir,
+   sous les cases, là où le geste vient d'avoir lieu. */
+.jForm .jHorsJour{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:var(--rouge)}
 
 /* Le curseur de répartition, et ce qu'il donne à voir.
 
@@ -26522,6 +26530,16 @@ let vueJournee = false;  // le tiroir montre-t-il la visite ou la liste ?
 const PLACES = new Map();   // identifiant de stand → clé du jour imposé
 
 /**
+ * Les jours qu'on a décochés alors qu'une conférence y était retenue.
+ *
+ * Le jour d'une conférence se coche de lui-même, et à chaque ouverture — mais
+ * il se décoche aussi : on a pris le train du soir, et celle de dix-huit
+ * heures ne s'aura pas. Ce refus-là tient, sans quoi rouvrir la fenêtre pour
+ * changer l'heure d'arrivée recocherait le jour dans le dos du visiteur.
+ */
+const REFUS = new Set();   // clés de jours décochés à la main
+
+/**
  * La matrice des distances, gardée d'un calcul à l'autre.
  *
  * Elle coûte un balayage du hall par arrêt : c'est le gros du calcul, et elle
@@ -26621,12 +26639,24 @@ function joursAVenir(){
  * remplies là où une seule suffisait.
  */
 function joursDefaut(dispo){
-  const dates = new Set();
-  PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
-    .map(instantConf).filter(Boolean)
-    .forEach(d => dates.add(d.cle));
+  const dates = confsParJour();
   const retenus = dispo.filter(j => dates.has(j.cle));
   return new Set((retenus.length ? retenus : dispo.slice(0, 1)).map(j => j.cle));
+}
+
+/** Les conférences retenues, rangées par jour. Ce sont elles qui cochent un
+ *  jour d'office, et qui se comptent sous sa case. Une conférence sans date
+ *  n'appartient à aucun jour : elle se dit à la fin du calcul, avec celles
+ *  qu'aucune journée ne porte. */
+function confsParJour(){
+  const m = new Map();
+  PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean).forEach(c => {
+    const d = instantConf(c);
+    if (!d) return;
+    if (!m.has(d.cle)) m.set(d.cle, []);
+    m.get(d.cle).push(c);
+  });
+  return m;
 }
 
 /* ------------------------------------------------------------
@@ -27886,17 +27916,32 @@ function remplitJournee(){
     }), true);
 
   /* Une conférence d'un jour qu'on ne vient pas n'est pas perdue : il suffit
-     d'ajouter ce jour à la visite, et le pied du tiroir sait le faire. */
-  if (SEJOUR.horsJour.length) dit("iNote", SEJOUR.horsJour.length > 1
+     d'ajouter ce jour à la visite, et le pied du tiroir sait le faire. Encore
+     faut-il que ce jour se propose encore — celui d'hier ne se coche nulle
+     part, et y envoyer chercher une case qui n'existe plus ferait douter du
+     reste. Ces conférences-là se disent, elles ne se rattrapent pas. */
+  const cochable = new Set(joursAVenir().map(x => x.cle));
+  const revolue = (c) => { const d = instantConf(c); return !!d && !cochable.has(d.cle); };
+  const ailleurs = SEJOUR.horsJour.filter(c => !revolue(c));
+  const revolues = SEJOUR.horsJour.filter(revolue);
+  const rangConf = (c) => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
+    ouvre: () => ficheConf(c.id, "parcours"),
+  });
+  if (ailleurs.length) dit("iNote", ailleurs.length > 1
     ? "Ces conférences ont lieu un jour que vous n'avez pas retenu. Reprenez " +
       "vos jours de visite pour les y faire entrer."
     : "Cette conférence a lieu un jour que vous n'avez pas retenu. Reprenez vos " +
       "jours de visite pour l'y faire entrer.");
-  groupe("Un autre jour", SEJOUR.horsJour, c => ({
-    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
-    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
-    ouvre: () => ficheConf(c.id, "parcours"),
-  }));
+  groupe("Un autre jour", ailleurs, rangConf);
+
+  if (revolues.length) dit("iNote", revolues.length > 1
+    ? "Ces conférences ont eu lieu un jour déjà passé : aucune visite ne peut " +
+      "plus les contenir."
+    : "Cette conférence a eu lieu un jour déjà passé : aucune visite ne peut " +
+      "plus la contenir.");
+  groupe("Un jour déjà passé", revolues, rangConf);
 
   groupe("En même temps qu'une autre", j.chevauchent, c => ({
     genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
@@ -28049,7 +28094,8 @@ function perimeJournee(){
  * Le parcours vidé, elle n'a plus d'objet — et son tracé non plus. Un
  * itinéraire demandé à côté, lui, ne doit rien au parcours et reste à l'écran.
  * Les jours que le visiteur avait imposés s'en vont avec : ils désignaient des
- * exposants qu'il vient d'oublier.
+ * exposants qu'il vient d'oublier. Les jours qu'il avait refusés aussi — la
+ * conférence qui motivait le refus n'est plus au parcours.
  */
 function oublieSejour(){
   if (SEJOUR && SEJOUR.jours.some(j => j.dessin && TRACE === j.dessin)){
@@ -28060,6 +28106,7 @@ function oublieSejour(){
   JOURNEE = null;
   vueJournee = false;
   PLACES.clear();
+  REFUS.clear();
 }
 
 /* ------------------------------------------------------------
@@ -28102,6 +28149,16 @@ function ouvreOrganisation(){
     ? new Set(SEJOUR.jours.map(j => j.cle).filter(c => proposables.some(p => p.cle === c)))
     : new Set();
   if (!coches.size) joursDefaut(proposables).forEach(c => coches.add(c));
+  /* Un jour où l'on vient de retenir une conférence se coche à son tour. Le
+     défaut ne jouait qu'à la première fenêtre : la deuxième s'ouvrait donc sur
+     un jour muet, et ses conférences ne ressortaient qu'après le calcul, tout
+     en bas du tiroir. Un refus dit à la main tient contre cela — mais pas
+     au-delà de la conférence qui l'a motivé, retirée du parcours depuis. */
+  const confsJour = confsParJour();
+  REFUS.forEach(cle => { if (!confsJour.has(cle)) REFUS.delete(cle); });
+  proposables.forEach(j => {
+    if (confsJour.has(j.cle) && !REFUS.has(j.cle)) coches.add(j.cle);
+  });
 
   let champHeure = null, champDepart = null, majValide = () => {};
   /* Une porte unique ne se demande pas, elle se prend : la question n'aurait
@@ -28164,7 +28221,7 @@ function ouvreOrganisation(){
       return champ;
     };
 
-    let majHeures = () => {}, poseApercu = () => {};
+    let majHeures = () => {}, poseApercu = () => {}, majDehors = () => {};
 
     /**
      * Les jours de venue.
@@ -28177,6 +28234,30 @@ function ouvreOrganisation(){
     if (proposables.length > 1){
       const g = document.createElement("div");
       g.className = "jCases";
+
+      /* Ce qu'un jour décoché laisse dehors, dit là où on le décoche.
+         Une conférence ne se déplace pas : le calcul la range déjà sous « un
+         autre jour », mais on ne l'y lit qu'après coup, au bas du tiroir — trop
+         tard pour qui croyait seulement alléger sa visite. Le dire ici ne
+         retient pas la main du visiteur : il décoche s'il le veut, en sachant
+         ce qu'il décoche. */
+      const dehors = document.createElement("p");
+      dehors.className = "jHorsJour";
+      majDehors = () => {
+        const sortis = proposables.filter(j => !coches.has(j.cle) && confsJour.has(j.cle));
+        const n = sortis.reduce((a, j) => a + confsJour.get(j.cle).length, 0);
+        dehors.hidden = !n;
+        if (!n) return;
+        /* Le jour se nomme tant qu'il est seul. Deux jours décochés se lisent
+           déjà sur leurs cases, à deux lignes d'ici, et les énumérer ferait
+           une phrase qu'on ne dit pas — « des samedi et dimanche ». */
+        dehors.textContent = sortis.length > 1
+          ? "Vos " + n + " conférences de ces journées ne seront pas dans votre visite."
+          : n > 1
+            ? "Vos " + n + " conférences du " + sortis[0].nom + " ne seront pas dans votre visite."
+            : "Votre conférence du " + sortis[0].nom + " ne sera pas dans votre visite.";
+      };
+
       proposables.forEach(j => {
         const l = document.createElement("label");
         l.className = "jCase";
@@ -28184,18 +28265,31 @@ function ouvreOrganisation(){
         c.type = "checkbox";
         c.checked = coches.has(j.cle);
         c.onchange = () => {
-          if (c.checked) coches.add(j.cle); else coches.delete(j.cle);
+          if (c.checked){ coches.add(j.cle); REFUS.delete(j.cle); }
+          else { coches.delete(j.cle); if (confsJour.has(j.cle)) REFUS.add(j.cle); }
           majHeures();
           majValide();
+          majDehors();
           poseApercu();
         };
         const s = document.createElement("span");
         s.textContent = j.nom;
         l.appendChild(c);
         l.appendChild(s);
+        /* Le compte des conférences déjà retenues ce jour-là : il dit pourquoi
+           la case est cochée d'avance, avant même qu'on songe à la décocher. */
+        const n = (confsJour.get(j.cle) || []).length;
+        if (n){
+          const m = document.createElement("small");
+          m.className = "jCaseConfs";
+          m.textContent = plurielParcours(n, "conférence") + " retenue" + (n > 1 ? "s" : "");
+          l.appendChild(m);
+        }
         g.appendChild(l);
       });
       blocLibre("Vos jours de visite", g);
+      g.parentNode.appendChild(dehors);
+      majDehors();
     }
 
     champHeure = document.createElement("input");
