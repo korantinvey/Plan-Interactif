@@ -1683,6 +1683,16 @@ html.sans-image-stand .outils #imageSoc{display:none}
    noir, et c'est la pastille qui l'a calculé en se dessinant. */
 .dcal .repere .glyphe path{fill:var(--encre-poi,var(--surface));stroke:none}
 .dcal .repere text{fill:var(--encre-poi,var(--surface));font-weight:700;text-anchor:middle}
+/* La plaque du tram : la signalétique n'y met pas la couleur en aplat, elle en
+   tire deux barres qui encadrent l'indice — « T3a » en sombre sur champ clair.
+   L'encre n'a donc plus à se calculer au tracé comme celle des autres arrêts :
+   le champ est le même pour toutes les lignes, et elle se lit dessus. */
+.dcal .repere.plaque{--encre-poi:var(--ink)}
+.dcal .repere.plaque > rect{fill:var(--surface)}
+.dcal .repere .barres rect{fill:currentColor;stroke:none}
+/* Le liseré qui marque l'arrêt ouvert est clair : posé sur une plaque claire,
+   il ne ferait que l'élargir. C'est l'encre qui le porte là. */
+.dcal .repere.plaque.sel > rect,.dcal .repere.plaque.phare > rect{stroke:var(--ink)}
 /* Un repère se lit de loin par son pictogramme, et s'ouvre au clic pour dire
    son nom : sa pastille répond donc au pointeur, sur un calque qui, lui,
    n'y répond pas. */
@@ -15975,7 +15985,11 @@ const MODES_TRANSPORT = [
      côté ; celle du tram fait partie du nom de la ligne, que la signalétique
      écrit « T3a », et le pictogramme ne la dit pas. */
   { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
-  { v: "tram",  nom: "Tram",  lettre: "t" },
+  /* Le tram porte sa couleur autrement que les deux autres. La signalétique
+     n'en fait pas un aplat : elle encadre l'indice de deux barres, sur champ
+     clair — c'est ainsi que « T3a » s'écrit sur le quai, et c'est à ces deux
+     traits qu'on le reconnaît avant d'avoir lu le numéro. */
+  { v: "tram",  nom: "Tram",  lettre: "t", plaque: true },
 ];
 
 const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) || {};
@@ -16128,9 +16142,18 @@ function traceRepere(f){
      prennent l'encre qui se lit dessus. Sans ligne connue rien n'est posé, et
      l'arrêt reste de la couleur de son calque comme n'importe quel repère. */
   const fond = couleurRepere(f);
+  /* Le tram fait exception : sa couleur ne s'étale pas, elle tient en deux
+     barres qui encadrent l'indice sur champ clair. Elle se pose donc toujours
+     sur le groupe — les barres la prennent par « currentColor », et un arrêt
+     dont la ligne est inconnue les tire de son calque, comme n'importe quel
+     repère. Mais l'encre ne se calcule plus ici : le champ est le même pour
+     toutes les lignes, et la feuille de style la donne une fois pour toutes. */
+  const plaque = Boolean(estTransport(f) && modeDit(f.mode).plaque);
   const teinte = fond
-    ? ' style="color:' + fond + ';--encre-poi:' + encreRepere(fond) + '"' : "";
-  const tete = '<g class="forme repere' + (f.id === formeSel ? " pick" : "") +
+    ? ' style="color:' + fond +
+      (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
+  const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
+               (f.id === formeSel ? " pick" : "") +
                '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
                '" tabindex="0" role="button" aria-label="' +
                esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
@@ -16152,7 +16175,11 @@ function traceRepere(f){
      * de près, et c'est la fiche qui le donne. Le cartouche des points
      * d'intérêt, lui, continue de les nommer tous.
      */
-    const cote = t * 2.4, m = cote * .15, k = cote - 2 * m;
+    const cote = t * 2.4, retrait = cote * .035;
+    /* La plaque réserve ses deux bords aux barres : le pictogramme et l'indice
+       se rangent entre elles, d'où une marge un peu plus large qu'ailleurs. */
+    const hBarre = plaque ? cote * .11 : 0;
+    const m = cote * (plaque ? .165 : .15), k = cote - 2 * m;
     /* Le numéro de la ligne s'écrit à côté du pictogramme, comme sur les
        plaques : le dessin dit ce qui passe, le numéro dit lequel, et la
        pastille s'allonge de ce qu'il mesure. Lui seul s'écrit — un arrêt
@@ -16163,9 +16190,18 @@ function traceRepere(f){
     const ecart = ligne ? cote * .12 : 0;
     const w = cote + ecart + lt;
     const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
+    /* Les barres se retirent des bords : à ras, leurs angles dépasseraient des
+       coins arrondis de la plaque. Elles s'arrondissent comme sur le quai, et
+       se groupent pour que les liserés de sélection, qui ne visent que les
+       enfants directs de la pastille, les laissent tranquilles. */
+    const barre = (by) => '<rect x="' + (x + retrait).toFixed(2) +
+      '" y="' + by.toFixed(2) + '" width="' + (w - 2 * retrait).toFixed(2) +
+      '" height="' + hBarre.toFixed(2) + '" rx="' + (hBarre / 2).toFixed(2) + '"/>';
     return tete +
       '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
       '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
+      (plaque ? '<g class="barres">' + barre(y + retrait) +
+        barre(y + cote - retrait - hBarre) + '</g>' : "") +
       '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
       '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
       '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
