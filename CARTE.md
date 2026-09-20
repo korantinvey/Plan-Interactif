@@ -217,7 +217,7 @@ Fonctions :
 
 - l.650 · Page de rapport
 
-### `_dessin.html` — 2396 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_dessin.html` — 2422 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11. Calques de dessin
 
@@ -234,25 +234,25 @@ Fonctions :
 `rayonContour` 535 · `redresseTrace` 554 · `traceGuide` 588 · `fermeIci` 595
 `ajouteForme` 600 · `pictoDe` 727 · `nomTypeRepereFr` 783 · `nomTypeRepere` 785
 `typeZone` 815 · `pictoForme` 822 · `estPorte` 842 · `ouvreEntrant` 843 · `ouvreSortant` 844
-`modeDit` 875 · `lettreMode` 876 · `estTransport` 880 · `modeTransport` 883
-`glypheRepere` 895 · `cleLigne` 932 · `ligneAffichee` 943 · `couleurLigne` 951
-`couleurRepere` 957 · `encreRepere` 963 · `nomLigneFr` 977 · `libelleDoffice` 985
-`couleurEcrite` 992 · `traceRepere` 1011 · `nomSurLePlan` 1102 · `etiquetteSociete` 1113
-`seRattache` 1141 · `societeDeForme` 1153 · `societesDuPlan` 1165
-`remplitListeSocietes` 1180 · `societeSaisie` 1188 · `traceImage` 1215
-`traceStandDessine` 1240 · `texteStandDessine` 1264 · `poseLibellesDessines` 1282
-`decoupeStand` 1303 · `marqueStandsDessines` 1315 · `rafraichitStandsDessines` 1330
-`oublieReperes` 1360 · `reperesCherchables` 1362 · `vaAuRepere` 1406 · `clePoi` 1449
-`pastillePoi` 1458 · `cartouchePoi` 1462 · `ouvrePoi` 1581 · `mesureCartouche` 1653
-`pharePoi` 1669 · `phareRepere` 1673 · `phareZone` 1675 · `eclairePoi` 1681
-`oublieChoixPoi` 1714 · `signale` 1723 · `calquePourImage` 1737 · `lienImageSaisi` 1765
-`formeImage` 1776 · `poseImage` 1785 · `ditImagePosee` 1807 · `importeImage` 1815
-`dessinPointerDown` 1866 · `dessinPointerMove` 1951 · `dessinPointerUp` 1989
-`termineTrace` 2030 · `aide` 2042 · `outilOffert` 2071 · `choisitOutil` 2074
-`enchaineStand` 2105 · `optionsModes` 2135 · `proposeCouleurLigne` 2146
-`montreTransport` 2157 · `activeCalque` 2211 · `cleVerrou` 2269 · `verrouille` 2270
-`basculeVerrou` 2272 · `pictoVerrou` 2289 · `montreRoleIti` 2323 · `creeCalque` 2354
-`demandeNom` 2367 · `renommeCalque` 2386
+`modeDit` 879 · `lettreMode` 880 · `estTransport` 884 · `modeTransport` 887
+`glypheRepere` 899 · `cleLigne` 936 · `ligneAffichee` 947 · `couleurLigne` 955
+`couleurRepere` 961 · `encreRepere` 967 · `nomLigneFr` 981 · `libelleDoffice` 989
+`couleurEcrite` 996 · `traceRepere` 1015 · `nomSurLePlan` 1128 · `etiquetteSociete` 1139
+`seRattache` 1167 · `societeDeForme` 1179 · `societesDuPlan` 1191
+`remplitListeSocietes` 1206 · `societeSaisie` 1214 · `traceImage` 1241
+`traceStandDessine` 1266 · `texteStandDessine` 1290 · `poseLibellesDessines` 1308
+`decoupeStand` 1329 · `marqueStandsDessines` 1341 · `rafraichitStandsDessines` 1356
+`oublieReperes` 1386 · `reperesCherchables` 1388 · `vaAuRepere` 1432 · `clePoi` 1475
+`pastillePoi` 1484 · `cartouchePoi` 1488 · `ouvrePoi` 1607 · `mesureCartouche` 1679
+`pharePoi` 1695 · `phareRepere` 1699 · `phareZone` 1701 · `eclairePoi` 1707
+`oublieChoixPoi` 1740 · `signale` 1749 · `calquePourImage` 1763 · `lienImageSaisi` 1791
+`formeImage` 1802 · `poseImage` 1811 · `ditImagePosee` 1833 · `importeImage` 1841
+`dessinPointerDown` 1892 · `dessinPointerMove` 1977 · `dessinPointerUp` 2015
+`termineTrace` 2056 · `aide` 2068 · `outilOffert` 2097 · `choisitOutil` 2100
+`enchaineStand` 2131 · `optionsModes` 2161 · `proposeCouleurLigne` 2172
+`montreTransport` 2183 · `activeCalque` 2237 · `cleVerrou` 2295 · `verrouille` 2296
+`basculeVerrou` 2298 · `pictoVerrou` 2315 · `montreRoleIti` 2349 · `creeCalque` 2380
+`demandeNom` 2393 · `renommeCalque` 2412
 
 Éléments :
 
@@ -324,7 +324,7 @@ Fonctions :
 `geometriePointerDown` 551 · `accrocheGeo` 581 · `geometriePointerMove` 583
 `geometriePointerUp` 633
 
-### `_head.html` — 5157 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
+### `_head.html` — 5167 l. → plan-admin.html, plan-salon.html, plan-smcl.html, plan.html
 
 Éléments :
 
