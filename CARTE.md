@@ -389,23 +389,23 @@ Fonctions :
 
 `#secours`
 
-### `_installation.html` — 905 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_installation.html` — 937 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. L'invitation à installer le plan
 
 Fonctions :
 
-`reglageInstallation` 97 · `invitationVoulue` 98 · `auDoigt` 128 · `nommeApplication` 164
-`reponsesInstallation` 182 · `retientInstallation` 187 · `jourInstallation` 196
-`invitationEcartee` 199 · `refuseInstallation` 205 · `faconInstallation` 233
-`appliInstallee` 256 · `verifieApplication` 278 · `connaitLApplication` 288
-`adresseApplication` 301 · `lanceApplication` 321 · `faconRappel` 354 · `rappelEcarte` 362
-`refuseRappel` 368 · `relanceInvitation` 386 · `gesteInstallation` 391 · `doigtPose` 395
-`doigtLeve` 396 · `vueInstallation` 399 · `accueilleInvitation` 408
-`invitationRetenue` 434 · `finInvitation` 452 · `essaieInvitation` 476
-`teteInvitation` 603 · `retourAuxReglages` 624 · `poseGardeInstallation` 651
-`remplitInvitation` 674 · `ouvreInvitation` 704 · `ouvreRappel` 783 · `ouvreRetrouve` 845
-`caseInstallation` 868
+`reglageInstallation` 98 · `invitationVoulue` 99 · `auDoigt` 129 · `nommeApplication` 165
+`reponsesInstallation` 183 · `retientInstallation` 188 · `jourInstallation` 197
+`invitationEcartee` 200 · `refuseInstallation` 206 · `faconInstallation` 234
+`appliInstallee` 257 · `verifieApplication` 279 · `connaitLApplication` 289
+`adresseApplication` 302 · `lanceApplication` 322 · `faconRappel` 355 · `rappelEcarte` 363
+`refuseRappel` 369 · `relanceInvitation` 387 · `gesteInstallation` 392 · `doigtPose` 396
+`doigtLeve` 397 · `vueInstallation` 400 · `accueilleInvitation` 409
+`invitationRetenue` 435 · `suitLesGestes` 456 · `finInvitation` 464 · `rouvreInvitation` 486
+`essaieInvitation` 506 · `teteInvitation` 635 · `retourAuxReglages` 656
+`poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
+`ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
 ### `_itineraire.html` — 3045 l. → plan-admin.html, plan-smcl.html, plan.html
 
