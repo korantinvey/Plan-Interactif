@@ -1428,6 +1428,14 @@ function vaAuRepere(id, p){
  * côté et de l'autre est la même chose pour qui cherche à déjeuner, et deux
  * pastilles identiques n'auraient rien appris. Ce que l'une a été dessinée et
  * l'autre fournie par le salon ne regarde pas le visiteur.
+ *
+ * Les transports font exception, et tous ensemble. Un hall en dessert trois,
+ * parfois six : autant de pastilles — « Métro 12 », « Tram T2 », « Tram T3a »
+ * — qui poussaient hors de l'écran ce que le cartouche avait d'autre à dire,
+ * pour une question que le visiteur ne pose pas ainsi. Il cherche par où
+ * repartir, pas la ligne 12 ; la ligne, il la lit sur le plan, où chaque arrêt
+ * garde son symbole et sa couleur. Une seule nature les récapitule donc, sous
+ * le pictogramme générique, et son compte dit combien d'arrêts elle couvre.
  */
 let poiChoisi = null;
 
@@ -1439,6 +1447,17 @@ let PICTO_SEUL = new Map();
 
 /** Ce qui fait une pastille : ce que la chose s'appelle, et ce qu'elle est. */
 const clePoi = (nom, picto) => nom + "\u0000" + (picto || PICTO_SEUL.get(nom) || "");
+
+/* Ce qui, au cartouche, est un transport : le pictogramme le dit mieux que le
+   type, car un repère d'avant les types nommé « Métro » n'a jamais eu que
+   celui-là — et le visiteur ne fait pas la différence. */
+const PICTOS_TRANSPORT = new Set(["transport"].concat(MODES_TRANSPORT.map(m => m.v)));
+
+/** La nature sous laquelle une chose entre au cartouche : son libellé et son
+ *  pictogramme, sauf pour un transport — arrêts et gares n'en font qu'une. */
+const pastillePoi = (nom, picto) => PICTOS_TRANSPORT.has(picto)
+  ? { nom: "Transports", picto: "transport" }
+  : { nom: nom, picto: picto || "" };
 
 function cartouchePoi(){
   const z = $("poi");
@@ -1452,10 +1471,10 @@ function cartouchePoi(){
     if (cal.visible === false) continue;
     for (const f of cal.formes){
       if (f.t !== "repere" || !f.txt) continue;
-      /* Le pictogramme est celui du mode pour un arrêt : deux pastilles
-         « Bus » et « Métro » ne se reconnaîtraient pas sous le même dessin
-         générique. La clé le suit, et la mise en avant avec elle. */
-      tout.push({ nom: f.txt.trim(), picto: glypheRepere(f) || "" });
+      /* Le pictogramme est celui du mode pour un arrêt ; « pastillePoi » le
+         ramène ensuite, avec le libellé de la ligne, à la nature commune des
+         transports. La clé la suit, et la mise en avant avec elle. */
+      tout.push(pastillePoi(f.txt.trim(), glypheRepere(f) || ""));
     }
   }
   /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
@@ -1464,7 +1483,7 @@ function cartouchePoi(){
   if (conf("data:zones").visible !== false){
     for (const zo of P().zones){
       const t = typeZone(zo);
-      if (t && !zo.masquee) tout.push({ nom: t.nom, picto: t.picto || "" });
+      if (t && !zo.masquee) tout.push(pastillePoi(t.nom, t.picto || ""));
     }
   }
 
@@ -1647,11 +1666,15 @@ function mesureCartouche(){
 /** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois,
  *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
  *  sortie avec l'entrée qui porte son nom. */
+const pharePoi = (nom, picto) => {
+  const o = pastillePoi(nom, picto);
+  return clePoi(o.nom, o.picto) === poiChoisi;
+};
 const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
-  clePoi(String(f.txt).trim(), glypheRepere(f) || "") === poiChoisi);
+  pharePoi(String(f.txt).trim(), glypheRepere(f) || ""));
 const phareZone = (o) => {
   const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
-  return Boolean(t && clePoi(t.nom, t.picto || "") === poiChoisi);
+  return Boolean(t && pharePoi(t.nom, t.picto || ""));
 };
 
 /** Met en avant les repères et les zones du point d'intérêt choisi. */

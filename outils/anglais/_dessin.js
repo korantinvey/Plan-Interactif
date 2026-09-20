@@ -24,6 +24,9 @@ module.exports = {
   "Transports en commun": "Public transport",
   "Vestiaire": "Cloakroom",
   "WC": "Toilets",
+  /* La nature qui, au cartouche, tient lieu de tous les arrêts. Plus courte
+     que le type dont elle vient : c'est une pastille, et elle en côtoie dix. */
+  "Transports": "Transport",
   // le mode d'un arrêt, et le nom que sa ligne lui donne
   "Bus": "Bus",
   "Métro": "Metro",
