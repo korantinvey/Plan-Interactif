@@ -35,6 +35,7 @@ module.exports = {
   "Après la fermeture": "After closing time",
   "Restés de côté": "Left out",
   "Un autre jour": "Another day",
+  "Un jour déjà passé": "A day already gone",
   "date inconnue": "date unknown",
   "En même temps qu'une autre": "At the same time as another",
   "Déjà commencées à votre arrivée": "Already started when you arrive",
@@ -91,6 +92,14 @@ module.exports = {
   "{n} journées": "{n} days",
   "Changer mes jours et mon heure": "Change my days and time",
   "Vos jours de visite": "The days you are coming",
+  "{n} conférence retenue": "{n} conference picked",
+  "{n} conférences retenues": "{n} conferences picked",
+  "Votre conférence du {jour} ne sera pas dans votre visite.":
+    "Your conference on {jour} will not be part of your visit.",
+  "Vos {n} conférences du {jour} ne seront pas dans votre visite.":
+    "Your {n} conferences on {jour} will not be part of your visit.",
+  "Vos {n} conférences de ces journées ne seront pas dans votre visite.":
+    "Your {n} conferences on those days will not be part of your visit.",
   "Heure d'arrivée, chaque jour": "Arrival time, each day",
   "On place d'abord les conférences que vous avez retenues — elles ont lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos journées. Le curseur, plus bas, dit si elles doivent se valoir ou non.":
     "The conferences you picked go in first — each on the day it takes place — then the stands are shared out between your days. The slider below says whether those days should match one another or not.",
@@ -120,6 +129,10 @@ module.exports = {
     "These conferences take place on a day you did not pick. Change the days of your visit to fit them in.",
   "Cette conférence a lieu un jour que vous n'avez pas retenu. Reprenez vos jours de visite pour l'y faire entrer.":
     "This conference takes place on a day you did not pick. Change the days of your visit to fit it in.",
+  "Ces conférences ont eu lieu un jour déjà passé : aucune visite ne peut plus les contenir.":
+    "These conferences took place on a day that is already gone: no visit can hold them now.",
+  "Cette conférence a eu lieu un jour déjà passé : aucune visite ne peut plus la contenir.":
+    "This conference took place on a day that is already gone: no visit can hold it now.",
   "{n} exposants ne tiennent pas dans les journées que vous avez retenues : ajoutez un jour, arrivez plus tôt, ou retirez ce qui passe avant.":
     "{n} exhibitors don't fit into the days you picked: add a day, arrive earlier, or remove something that comes before them.",
   "Un exposant ne tient pas dans les journées que vous avez retenues : ajoutez un jour, arrivez plus tôt, ou retirez ce qui passe avant.":
