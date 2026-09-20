@@ -33,10 +33,4 @@ module.exports = {
   "Ce parcours vit dans ce navigateur, et nulle part ailleurs : un ménage, un téléphone changé, et il n'y est plus.":
     "This visit plan lives in this browser, and nowhere else: data cleared, a new phone, and it is gone.",
   "En garder une copie": "Keep a copy of it",
-  "D'ici le jour du salon": "Between now and the show",
-  "Votre parcours est enregistré sur cet appareil, et sur lui seul. Un navigateur qui fait le ménage, un téléphone changé, et la liste n'y est plus — c'est le lot d'une liste préparée longtemps à l'avance.":
-    "Your visit plan is saved on this device, and on this one only. A browser clearing its data, a new phone, and the list is gone — such is the lot of a list drawn up long in advance.",
-  "Une copie s'envoie en un geste, dans vos messages ou votre courrier. Elle tient dans un lien : rien ne part sur nos serveurs.":
-    "A copy takes one tap, into your messages or your email. It fits in a link: nothing goes to our servers.",
-  "Garder une copie": "Keep a copy",
 };

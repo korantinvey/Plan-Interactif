@@ -213,9 +213,10 @@ function basculeParcours(genre, id, canal){
      passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
      vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
   if (i < 0 && genre === "conf") fenetreRappel();
-  /* Et, dès qu'il y a quelque chose à perdre, les deux gestes qui l'en
-     empêchent : le navigateur prié de tenir, et la copie proposée une fois. */
-  if (i < 0){ tientLeStockage(); fenetreGarde(); }
+  /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
+     navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
+     est en train de composer n'a pas encore de quoi valoir un lien gardé. */
+  if (i < 0) tientLeStockage();
 }
 
 /**
@@ -247,9 +248,6 @@ function verseAuParcours(stands, confs, canal, remplace){
   /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
      n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
   ouvreParcours();
-  /* La proposition de copie attend que ce tiroir ait été vu : elle se pose
-     derrière lui (`fenetreGarde`), et non par-dessus ce qui vient d'arriver. */
-  fenetreGarde();
 }
 
 /** « 3 exposants », « 1 conférence » : un compte et son mot, accordés. */

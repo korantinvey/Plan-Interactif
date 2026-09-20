@@ -677,10 +677,15 @@ $("btnPartage").onclick = ouvrePartageParcours;
    conversation, un courrier ou une note, si : il ne dépend plus de rien de ce
    que le navigateur garde, et il reste bon jusqu'au démontage des stands.
 
-   D'où trois entrées vers une seule fenêtre. Une note au pied de la liste, qui
-   est là tout le temps et ne se remarque pas ; une proposition, une fois, quand
-   la liste commence à valoir quelque chose ; et la fenêtre d'installation, qui
-   est le seul endroit où la perte est certaine et non probable.
+   D'où deux entrées vers une seule fenêtre, l'une et l'autre au moment où le
+   visiteur a quelque chose à emporter. Une note au pied de la liste, qui est là
+   tout le temps et ne se remarque pas ; et la fenêtre d'installation, qui est le
+   seul endroit où la perte est certaine et non probable.
+
+   Il y en avait une troisième, qui s'invitait au troisième rang retenu. Elle est
+   retirée : au troisième rang la liste est en train de se faire, et proposer
+   d'en garder une copie, c'est proposer d'emporter un travail inachevé. La copie
+   ne vaut qu'une journée composée, et le pied de la liste l'attend là.
    ------------------------------------------------------------ */
 /** Y a-t-il une liste, et un visiteur à qui la rendre ? Une borne interactive
  *  se remet à zéro pour le suivant : elle n'a personne à qui garder quoi que
@@ -758,73 +763,4 @@ function poseGardeParcours(hote){
   b.onclick = () => demandeGardeParcours();
   bloc.appendChild(b);
   hote.appendChild(bloc);
-}
-
-/* ------------------------------------------------------------
-   La proposition, une fois
-   ------------------------------------------------------------ */
-/* À partir de combien de rangs la liste vaut qu'on interrompe pour elle. Trois :
-   deux stands se refont de mémoire, une liste de trois a demandé un moment, et
-   c'est à peu près là que le visiteur cesse de composer pour commencer à
-   compter dessus. */
-const SEUIL_GARDE = 3;
-
-let GARDE_PROPOSEE = false;
-const cleGardeProposee = () =>
-  "plan-garde:" + (SLUG || (DATA && DATA.evenement) || "");
-
-function gardeProposee(){
-  if (GARDE_PROPOSEE) return true;
-  try { return localStorage.getItem(cleGardeProposee()) === "1"; }
-  catch (e) { return false; }
-}
-/* Montrée, elle ne revient pas — même refusée, et même si la liste double
-   ensuite. Le visiteur a vu qu'on savait faire ; la note du pied de liste
-   l'attend le jour où il le voudra. */
-function retientGardeProposee(){
-  GARDE_PROPOSEE = true;
-  try { localStorage.setItem(cleGardeProposee(), "1"); } catch (e) {}
-}
-
-/**
- * Ce qui vaut la peine d'être proposé, et le moment de le faire.
- *
- * Appelée à chaque rang ajouté, elle se tait presque toujours. Les conditions
- * sont celles de la note — une liste, un visiteur — plus le seuil, la question
- * déjà posée, et la visite guidée en cours.
- *
- * Une fenêtre déjà ouverte la fait attendre, mais seulement si personne
- * n'attend déjà : la suggestion et le rappel se proposent au même instant,
- * dans le même geste, et trois fenêtres à la file valent moins que la première
- * bien lue. Celle-ci passe en dernier et cède la place — le signet suivant la
- * ramènera, et le pied de la liste ne l'a jamais retirée.
- */
-function fenetreGarde(){
-  if (gardeProposee() || TUTO || !parcoursACopier()) return;
-  if (PARCOURS.stands.length + PARCOURS.confs.length < SEUIL_GARDE) return;
-  if ($("modale").classList.contains("open")){
-    if (!apresFermeture) apresFermeture = fenetreGarde;
-    return;
-  }
-  retientGardeProposee();
-  ouvreModale("D'ici le jour du salon", corps => {
-    const p = document.createElement("p");
-    p.textContent = "Votre parcours est enregistré sur cet appareil, et sur lui " +
-      "seul. Un navigateur qui fait le ménage, un téléphone changé, et la liste " +
-      "n'y est plus — c'est le lot d'une liste préparée longtemps à l'avance.";
-    corps.appendChild(p);
-    const a = document.createElement("p");
-    a.className = "rapAide";
-    a.textContent = "Une copie s'envoie en un geste, dans vos messages ou votre " +
-      "courrier. Elle tient dans un lien : rien ne part sur nos serveurs.";
-    corps.appendChild(a);
-  }, [
-    { libelle: "Non merci" },
-    /* La fenêtre suivante attend que celle-ci ait libéré la place : ouverte
-       dans le geste du bouton, elle serait refermée dans la foulée par la
-       fermeture de celle-ci (`_modales.html`). Le relais reste dans le même
-       geste, et la question du stockage garde donc l'appui qui l'autorise. */
-    { libelle: "Garder une copie", genre: "accent",
-      action: () => { apresFermeture = () => demandeGardeParcours(); } },
-  ]);
 }

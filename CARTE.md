@@ -566,7 +566,7 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 702 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 700 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -575,15 +575,15 @@ Fonctions :
 `cleParcours` 63 · `casierParcours` 66 · `dansParcours` 67 · `jourParcours` 70
 `attenduDepuisTropLongtemps` 75 · `trieParcours` 86 · `chargeParcours` 96
 `parcoursAEcrire` 126 · `enregistreParcours` 140 · `tientLeStockage` 169
-`basculeParcours` 190 · `verseAuParcours` 234 · `plurielParcours` 256
-`contenuParcours` 265 · `retenusPourParcours` 291 · `ajouteToutAuParcours` 316
-`poseToutAuParcours` 339 · `signetParcours` 365 · `boutonParcours` 371
-`rafraichitMarque` 376 · `brancheParcours` 389 · `calqueMarques` 421 · `dessineMarques` 437
-`marqueParcours` 467 · `rafraichitParcours` 481 · `instantConf` 509 · `cleTemps` 513
-`jourCourt` 519 · `nomDeStand` 526 · `rangParcours` 528 · `groupeParcours` 548
-`remplitParcours` 557 · `ouvreParcours` 646 · `fermeParcours` 658 · `videLeParcours` 674
+`basculeParcours` 190 · `verseAuParcours` 235 · `plurielParcours` 254
+`contenuParcours` 263 · `retenusPourParcours` 289 · `ajouteToutAuParcours` 314
+`poseToutAuParcours` 337 · `signetParcours` 363 · `boutonParcours` 369
+`rafraichitMarque` 374 · `brancheParcours` 387 · `calqueMarques` 419 · `dessineMarques` 435
+`marqueParcours` 465 · `rafraichitParcours` 479 · `instantConf` 507 · `cleTemps` 511
+`jourCourt` 517 · `nomDeStand` 524 · `rangParcours` 526 · `groupeParcours` 546
+`remplitParcours` 555 · `ouvreParcours` 644 · `fermeParcours` 656 · `videLeParcours` 672
 
-### `_partage.html` — 830 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_partage.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 quinquies. Partager son parcours
 
@@ -593,10 +593,8 @@ Fonctions :
 `lienParcours` 117 · `qrMotsBruts` 157 · `qrMotsUtiles` 166 · `qrMul` 177
 `qrGenerateur` 180 · `qrReste` 191 · `qrAlignements` 202 · `qrTrame` 218 · `qrChemin` 407
 `qrSvg` 429 · `ouvrePartageParcours` 446 · `boutonsPartage` 502
-`accueilleParcoursPartage` 580 · `adoptePartage` 658 · `parcoursACopier` 688
-`ouvreGardeParcours` 703 · `demandeGardeParcours` 733 · `poseGardeParcours` 746
-`cleGardeProposee` 773 · `gardeProposee` 776 · `retientGardeProposee` 784
-`fenetreGarde` 802
+`accueilleParcoursPartage` 580 · `adoptePartage` 658 · `parcoursACopier` 693
+`ouvreGardeParcours` 708 · `demandeGardeParcours` 738 · `poseGardeParcours` 751
 
 ### `_pile.html` — 538 l. → plan-admin.html, plan-smcl.html, plan.html
 
