@@ -1145,9 +1145,11 @@ const LIGNES_FICHE = [
       "logo en largeur — et sur une fiche sans logo, ils rendent les " +
       "initiales de la personne inscrite." },
   { cle: "adresse", cible: "adresse", libelle: "Adresse" },
-  { cible: "codePostal", libelle: "Code postal", montre: "avec l'adresse",
-    suit: "adresse",
-    aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
+  { cible: "codePostal", libelle: "Code postal", montre: "avec la ville",
+    suit: "ville",
+    aide: "Se pose devant la ville, sur la même ligne, comme sur une " +
+      "enveloppe. Il n'entre pas pour autant dans le filtre « Ville », qui " +
+      "fait cocher des villes et non des codes postaux." },
   { cle: "ville", cible: "ville", libelle: "Ville", critere: true },
   { cle: "pays", cible: "pays", libelle: "Pays", critere: true },
   /* La console nomme le champ plus précisément que la fiche, qui n'a qu'un
