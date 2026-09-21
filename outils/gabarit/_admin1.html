@@ -1932,8 +1932,15 @@ function blocRappel(hote){
     essai.onclick = async () => {
       essai.disabled = true;
       ditEssaiRappel(etat, "envoi");
-      ditEssaiRappel(etat, await essaieRappelReel());
-      essai.disabled = false;
+      /* Un navigateur qui rejette la demande d'autorisation, au lieu de rendre
+         « refusé », laissait le bouton éteint sur « Envoi… » indéfiniment. */
+      try {
+        ditEssaiRappel(etat, await essaieRappelReel());
+      } catch (e) {
+        ditEssaiRappel(etat, "panne");
+      } finally {
+        essai.disabled = false;
+      }
     };
   }
 

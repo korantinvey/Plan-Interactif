@@ -594,11 +594,15 @@ const ESSAI_RAPPEL_AVANCE = 30000;   // ms : le temps que la tâche de la minute
 
 async function essaieRappelReel(){
   if (!RAPPELS_API || !SLUG || !poussePossible()) return "impossible";
+  /* La demande suit le geste sans rien attendre entre les deux, comme pour
+     l'interrupteur : un `await` placé avant la ferait refuser par Safari. La
+     recherche du service en était un, juste au-dessus — sur un iPhone où
+     l'autorisation n'avait jamais été donnée, aucune invite ne paraissait et
+     l'écran annonçait un refus. Un faux diagnostic, sur le bouton dont tout
+     l'objet est de diagnostiquer. */
+  if (await Notification.requestPermission() !== "granted") return "refus";
   const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
   if (!reg) return "sansService";
-  /* La demande suit le geste sans rien attendre entre les deux, comme pour
-     l'interrupteur : un `await` placé avant la ferait refuser par Safari. */
-  if (await Notification.requestPermission() !== "granted") return "refus";
   let ab;
   try { ab = await abonne(reg); } catch (e) { return "panne"; }
   try {

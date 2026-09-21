@@ -8988,8 +8988,16 @@ function assainitRiche(html){
     de.childNodes.forEach(n => {
       if (n.nodeType === 3){ vers.appendChild(document.createTextNode(n.nodeValue)); return; }
       if (n.nodeType !== 1) return;
-      if (RICHE_MUETTES[n.tagName]) return;
-      const nom = RICHE_BALISES[n.tagName];
+      /* `tagName` n'est en capitales que pour un élément HTML : un `<svg>` ou
+         un `<math>` analysés dans un document HTML sont des éléments étrangers
+         et gardent la casse d'écriture. Les deux entrées « SVG » et « MATH » de
+         la table ne pouvaient donc jamais correspondre : ils tombaient dans la
+         branche « inconnue : on la déplie », et leurs enfants avec — dans un
+         sous-arbre SVG, `<script>` et `<style>` ont eux aussi un nom
+         minuscule, et leur texte finissait affiché en clair. */
+      const balise = n.tagName.toUpperCase();
+      if (RICHE_MUETTES[balise]) return;
+      const nom = RICHE_BALISES[balise];
       // inconnue : on la déplie, son contenu reste
       if (!nom){ copie(n, vers); return; }
       const e = document.createElement(nom);
@@ -12763,8 +12771,15 @@ function blocRappel(hote){
     essai.onclick = async () => {
       essai.disabled = true;
       ditEssaiRappel(etat, "envoi");
-      ditEssaiRappel(etat, await essaieRappelReel());
-      essai.disabled = false;
+      /* Un navigateur qui rejette la demande d'autorisation, au lieu de rendre
+         « refusé », laissait le bouton éteint sur « Envoi… » indéfiniment. */
+      try {
+        ditEssaiRappel(etat, await essaieRappelReel());
+      } catch (e) {
+        ditEssaiRappel(etat, "panne");
+      } finally {
+        essai.disabled = false;
+      }
     };
   }
 
@@ -23753,11 +23768,15 @@ const ESSAI_RAPPEL_AVANCE = 30000;   // ms : le temps que la tâche de la minute
 
 async function essaieRappelReel(){
   if (!RAPPELS_API || !SLUG || !poussePossible()) return "impossible";
+  /* La demande suit le geste sans rien attendre entre les deux, comme pour
+     l'interrupteur : un `await` placé avant la ferait refuser par Safari. La
+     recherche du service en était un, juste au-dessus — sur un iPhone où
+     l'autorisation n'avait jamais été donnée, aucune invite ne paraissait et
+     l'écran annonçait un refus. Un faux diagnostic, sur le bouton dont tout
+     l'objet est de diagnostiquer. */
+  if (await Notification.requestPermission() !== "granted") return "refus";
   const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
   if (!reg) return "sansService";
-  /* La demande suit le geste sans rien attendre entre les deux, comme pour
-     l'interrupteur : un `await` placé avant la ferait refuser par Safari. */
-  if (await Notification.requestPermission() !== "granted") return "refus";
   let ab;
   try { ab = await abonne(reg); } catch (e) { return "panne"; }
   try {

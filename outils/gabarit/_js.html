@@ -3507,8 +3507,16 @@ function assainitRiche(html){
     de.childNodes.forEach(n => {
       if (n.nodeType === 3){ vers.appendChild(document.createTextNode(n.nodeValue)); return; }
       if (n.nodeType !== 1) return;
-      if (RICHE_MUETTES[n.tagName]) return;
-      const nom = RICHE_BALISES[n.tagName];
+      /* `tagName` n'est en capitales que pour un élément HTML : un `<svg>` ou
+         un `<math>` analysés dans un document HTML sont des éléments étrangers
+         et gardent la casse d'écriture. Les deux entrées « SVG » et « MATH » de
+         la table ne pouvaient donc jamais correspondre : ils tombaient dans la
+         branche « inconnue : on la déplie », et leurs enfants avec — dans un
+         sous-arbre SVG, `<script>` et `<style>` ont eux aussi un nom
+         minuscule, et leur texte finissait affiché en clair. */
+      const balise = n.tagName.toUpperCase();
+      if (RICHE_MUETTES[balise]) return;
+      const nom = RICHE_BALISES[balise];
       // inconnue : on la déplie, son contenu reste
       if (!nom){ copie(n, vers); return; }
       const e = document.createElement(nom);

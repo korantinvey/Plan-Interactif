@@ -11,13 +11,13 @@ l'endroit où l'on corrige quoi que ce soit.
 
 ## `outils/gabarit/` — la source des pages
 
-### `_admin1.html` — 4791 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_admin1.html` — 4798 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 9. Apparence des calques
-- l.3718 · 10. Mode administration
-- l.3826 · La fiche d'une zone organisateur
-- l.4535 · Masquer une zone organisateur
-- l.4618 · Placer un libellé à la main
+- l.3725 · 10. Mode administration
+- l.3833 · La fiche d'une zone organisateur
+- l.4542 · Masquer une zone organisateur
+- l.4625 · Placer un libellé à la main
 
 Fonctions :
 
@@ -37,22 +37,22 @@ Fonctions :
 `standApercu` 1281 · `lignesApercu` 1305 · `contenuApercu` 1335 · `apercuFiche` 1372
 `apercuListe` 1450 · `apercuDuo` 1472 · `glisseFenetre` 1505 · `ouvreReglages` 1516
 `voletZones` 1631 · `champsFicheZone` 1733 · `ficheZoneEnPlace` 1803 · `voletPlan` 1821
-`blocRappel` 1869 · `ditEssaiRappel` 1973 · `voletAdmin` 1998 · `blocOptions` 2188
-`blocLangues` 2235 · `blocBarre` 2309 · `blocHoraires` 2367 · `sallesSituees` 2500
-`voletPmr` 2516 · `nomDuTon` 2607 · `svgVignette` 2616 · `barreVignette` 2618
-`vignetteDistPlan` 2622 · `vignetteDistListe` 2635 · `vignetteDistFiche` 2649
-`salonDitSes` 2669 · `coinPris` 2676 · `voletDist` 2699 · `voletApparence` 2864
-`clesFiche` 3063 · `voletOrdre` 3080 · `enregistreConf` 3667 · `rgbHex` 3674 · `hexa` 3681
-`luminance` 3685 · `ecarte` 3699 · `joli` 3714 · `retireAdmin` 3735 · `activeAdmin` 3748
-`champZone` 3852 · `champsZone` 3877 · `champSalles` 3969 · `nomDeZone` 4021
-`reduitLogo` 4055 · `cadreLogo` 4098 · `champLogo` 4170 · `editeurRiche` 4208
-`memeFicheZone` 4365 · `suitFicheZone` 4372 · `verseFicheZone` 4380 · `ficheZone` 4406
-`enregistreZone` 4431 · `basculeAffichageZone` 4546 · `marqueZonesMasquees` 4563
-`ecritColonnesEvenement` 4583 · `ecritColonneEvenement` 4614 · `cleLibelle` 4639
-`empreinteLibelle` 4655 · `placementLibelle` 4663 · `posePlacement` 4673
-`libelleAutomatique` 4690 · `modePlacementLibelles` 4699 · `majPaletteLibelle` 4718
-`choisitLibelle` 4735 · `pousseLibelle` 4742 · `libellePointerDown` 4750
-`libellePointerMove` 4766 · `libellePointerUp` 4775
+`blocRappel` 1869 · `ditEssaiRappel` 1980 · `voletAdmin` 2005 · `blocOptions` 2195
+`blocLangues` 2242 · `blocBarre` 2316 · `blocHoraires` 2374 · `sallesSituees` 2507
+`voletPmr` 2523 · `nomDuTon` 2614 · `svgVignette` 2623 · `barreVignette` 2625
+`vignetteDistPlan` 2629 · `vignetteDistListe` 2642 · `vignetteDistFiche` 2656
+`salonDitSes` 2676 · `coinPris` 2683 · `voletDist` 2706 · `voletApparence` 2871
+`clesFiche` 3070 · `voletOrdre` 3087 · `enregistreConf` 3674 · `rgbHex` 3681 · `hexa` 3688
+`luminance` 3692 · `ecarte` 3706 · `joli` 3721 · `retireAdmin` 3742 · `activeAdmin` 3755
+`champZone` 3859 · `champsZone` 3884 · `champSalles` 3976 · `nomDeZone` 4028
+`reduitLogo` 4062 · `cadreLogo` 4105 · `champLogo` 4177 · `editeurRiche` 4215
+`memeFicheZone` 4372 · `suitFicheZone` 4379 · `verseFicheZone` 4387 · `ficheZone` 4413
+`enregistreZone` 4438 · `basculeAffichageZone` 4553 · `marqueZonesMasquees` 4570
+`ecritColonnesEvenement` 4590 · `ecritColonneEvenement` 4621 · `cleLibelle` 4646
+`empreinteLibelle` 4662 · `placementLibelle` 4670 · `posePlacement` 4680
+`libelleAutomatique` 4697 · `modePlacementLibelles` 4706 · `majPaletteLibelle` 4725
+`choisitLibelle` 4742 · `pousseLibelle` 4749 · `libellePointerDown` 4757
+`libellePointerMove` 4773 · `libellePointerUp` 4782
 
 Éléments :
 
@@ -92,15 +92,15 @@ Fonctions :
 `appDuSalon` 193 · `iconeDeLApplication` 196 · `nomAppDefaut` 206 · `ecritApplication` 221
 `blocApplication` 262
 
-### `_auth-plan.html` — 201 l. → plan-admin.html
+### `_auth-plan.html` — 204 l. → plan-admin.html
 
 - l.2 · Accès à l'administration du plan
 
 Fonctions :
 
 `litLocal` 10 · `configuration` 15 · `normaliseUrlA` 19 · `sessionValide` 35
-`ecranAcces` 45 · `contenuDuJeton` 128 · `mailDuJeton` 135 · `litProfilA` 146
-`initialesDe` 159 · `poseCompte` 166
+`ecranAcces` 45 · `contenuDuJeton` 131 · `mailDuJeton` 138 · `litProfilA` 149
+`initialesDe` 162 · `poseCompte` 169
 
 Éléments :
 
@@ -466,7 +466,7 @@ Fonctions :
 `perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2061
 `lanceSejour` 2088 · `refaitSejour` 2120
 
-### `_js.html` — 5070 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 5078 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.543 · 2. Mesure de texte — largeur réelle dans la police de rendu
@@ -475,10 +475,10 @@ Fonctions :
 - l.1131 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
 - l.2362 · 6. Vue
 - l.2793 · 7. Sélection et fiche
-- l.4156 · 8. Interactions du plan
-- l.4584 · Ce que les tiroirs lisent d'un geste
-- l.4630 · Le tiroir de la liste — écrans étroits
-- l.4852 · Les tiroirs menés par la hauteur — écrans étroits
+- l.4164 · 8. Interactions du plan
+- l.4592 · Ce que les tiroirs lisent d'un geste
+- l.4638 · Le tiroir de la liste — écrans étroits
+- l.4860 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -518,13 +518,13 @@ Fonctions :
 `groupeCorps` 3079 · `corpsRange` 3092 · `momentLocal` 3127 · `programme` 3150
 `jourLong` 3183 · `ficheConf` 3194 · `lien` 3341 · `adresseWeb` 3349 · `pictoRS` 3392
 `adresseSure` 3410 · `adresseVignette` 3441 · `adresseImage` 3459 · `imageSure` 3472
-`assainitRiche` 3501 · `enBlocs` 3541 · `rangeRiche` 3554 · `ecarteClicFantome` 3582
-`nomSociete` 3591 · `societes` 3604 · `choisitExposant` 3615 · `poseMarque` 3653
-`montreMarque` 3713 · `poseCode` 3736 · `rangeMarque` 3777 · `ouvre` 3840 · `ferme` 4128
-`onglet` 4146 · `milieu` 4176 · `commencePince` 4182 · `suitPince` 4196
-`plieLesBandes` 4249 · `saisitPlan` 4263 · `cibleElargie` 4345 · `planifieFiltre` 4540
-`traceurDeGeste` 4608 · `cranVoisin` 4627 · `retraitBas` 4653 · `mesureTiroir` 4667
-`montreTiroir` 4670 · `hisseTiroir` 4674 · `tiroirCrante` 4879
+`assainitRiche` 3501 · `enBlocs` 3549 · `rangeRiche` 3562 · `ecarteClicFantome` 3590
+`nomSociete` 3599 · `societes` 3612 · `choisitExposant` 3623 · `poseMarque` 3661
+`montreMarque` 3721 · `poseCode` 3744 · `rangeMarque` 3785 · `ouvre` 3848 · `ferme` 4136
+`onglet` 4154 · `milieu` 4184 · `commencePince` 4190 · `suitPince` 4204
+`plieLesBandes` 4257 · `saisitPlan` 4271 · `cibleElargie` 4353 · `planifieFiltre` 4548
+`traceurDeGeste` 4616 · `cranVoisin` 4635 · `retraitBas` 4661 · `mesureTiroir` 4675
+`montreTiroir` 4678 · `hisseTiroir` 4682 · `tiroirCrante` 4887
 
 Éléments :
 
@@ -638,7 +638,7 @@ Fonctions :
 `sauvegardeCourante` 522 · `telechargeSauvegarde` 544 · `appliqueSauvegarde` 567
 `litSauvegarde` 601 · `brancheSauvegarde` 623
 
-### `_rappels.html` — 644 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_rappels.html` — 648 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 sexies. Le rappel avant une conférence
 
@@ -651,7 +651,7 @@ Fonctions :
 `abonnementCourant` 230 · `abonne` 239 · `synchroniseRappels` 265 · `eteintRappels` 288
 `allumeRappels` 303 · `aideRappel` 320 · `poseRappels` 336 · `cleInviteRappel` 457
 `inviteRappelFaite` 460 · `retientInviteRappel` 465 · `fenetreRappel` 500
-`proposeRappels` 533 · `essaieRappelReel` 595 · `reprendRappels` 633
+`proposeRappels` 533 · `essaieRappelReel` 595 · `reprendRappels` 637
 
 ### `_rapport-head.html` — 32 l. → rapport.html
 
