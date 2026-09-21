@@ -1,0 +1,117 @@
+# Relit chaque pull request et commente ce qu'elle y trouve.
+#
+# Les contrôles mécaniques du dépôt tiennent déjà beaucoup : `Pages` reconstruit
+# les pages, analyse le JavaScript de tout ce qui est servi et refuse une phrase
+# affichée sans traduction. Restait ce qu'aucun script ne sait voir, et qui se
+# paie après la fusion — un effet CSS ajouté au plan mais jamais rejoué dans le
+# rendu WebGL, donc invisible pour qui regarde ; une migration datée d'avant la
+# dernière de `main`, qui fait échouer le déploiement sur `main` ; un fichier
+# fabriqué corrigé en direct, que la construction suivante efface. Chacun de ces
+# trois-là est déjà arrivé.
+#
+# Ce que la relecture cherche vit dans `.claude/skills/relecture/SKILL.md`, et
+# non dans ce fichier : la même liste sert aux sessions qui relisent à la main,
+# et une liste tenue à deux endroits finit par dire deux choses.
+#
+# Elle propose, elle ne pousse pas. Les outils accordés ci-dessous ne savent que
+# lire le dépôt et écrire des commentaires — ni édition, ni commit, ni poussée —
+# et le jeton n'a que `contents: read`. Ce qu'il faut corriger se corrige à la
+# main, ou dans une session, jamais par cette tâche.
+name: Relecture
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    # Une pull request qui ne porte que des fichiers fabriqués n'a rien à relire
+    # — typiquement le commit que `Pages` ajoute quand `web/` était en retard :
+    # une ligne de gabarit en réécrit un millier, recopiées quatre fois. Le
+    # filtre ne retire que les pull requests faites *uniquement* de ces
+    # fichiers ; dès qu'une source bouge aussi, la relecture a lieu.
+    paths-ignore:
+      - 'web/**'
+      - 'CARTE.md'
+      - 'outils/tpl-multi.html'
+
+# Une poussée de plus rend la relecture précédente caduque : on l'interrompt,
+# plutôt que de payer un avis sur du code qui n'est plus là.
+concurrency:
+  group: relecture-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  relire:
+    runs-on: ubuntu-latest
+    # Une branche venue d'une bifurcation n'a pas accès aux secrets du dépôt :
+    # la tâche échouerait sans rien dire d'utile. On s'abstient.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    env:
+      CLE: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      # Sans la clé, la tâche s'arrête en vert au lieu de rougir à chaque pull
+      # request : un garde-fou absent n'est pas un défaut du code relu.
+      - name: Vérifier que la clé est posée
+        id: cle
+        run: |
+          if [ -z "$CLE" ]; then
+            echo 'Secret ANTHROPIC_API_KEY absent : relecture ignorée.'
+            echo 'Posez-le dans Settings → Secrets and variables → Actions.'
+            echo 'posee=non' >> "$GITHUB_OUTPUT"
+          else
+            echo 'posee=oui' >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.cle.outputs.posee == 'oui'
+        with:
+          # Tout l'historique : comparer l'horodatage d'une migration à la
+          # dernière de `main` demande de connaître `main`, qu'un clone
+          # superficiel ne rapporte pas.
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        if: steps.cle.outputs.posee == 'oui'
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Un seul commentaire, réécrit à chaque poussée : une pull request
+          # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
+          use_sticky_comment: true
+          prompt: |
+            DÉPÔT : ${{ github.repository }}
+            PULL REQUEST : ${{ github.event.pull_request.number }}
+            BRANCHE DE BASE : ${{ github.event.pull_request.base.ref }}
+
+            La branche de la pull request est déjà là, dans le répertoire courant.
+            Tout l'historique est là aussi : `origin/${{ github.event.pull_request.base.ref }}`
+            se lit directement, ce qu'il faut pour comparer l'horodatage d'une
+            migration ajoutée à la dernière que la base porte déjà.
+
+            Lis d'abord `.claude/skills/relecture/SKILL.md` : il dit ce que ce
+            dépôt paie cher et ce que ses contrôles mécaniques voient déjà — ne
+            signale pas ce qu'ils voient. Lis ensuite `CLAUDE.md` pour les
+            conventions, et sers-toi de `CARTE.md`, qui donne les numéros de
+            ligne, plutôt que d'ouvrir les gros modules en entier.
+
+            Relis le diff de la pull request, puis écris en français accentué.
+
+            Poste un commentaire général avec `gh pr comment` : ce que tu as
+            regardé en une phrase, puis ce que tu as trouvé, du plus grave au
+            plus léger, chaque point nommant le fichier, la ligne, le cas où ça
+            casse et la correction. Utilise
+            `mcp__github_inline_comment__create_inline_comment` (avec
+            `confirmed: true`) pour ce qui se montre mieux posé sur la ligne
+            même.
+
+            Ne dis que ce dont tu es sûr, et dis-le comme incertain quand il
+            l'est : trois remarques justes valent mieux que douze dont la
+            moitié sont des suppositions. Si tu ne trouves rien, dis-le en une
+            ligne en nommant ce que tu as vérifié — c'est une information, pas
+            un silence. Tout passe par les commentaires GitHub : ne rends rien
+            en simple message.
+          # Lire le dépôt et commenter, rien d'autre : ni `Edit`, ni `Write`,
+          # ni `git commit`, ni `git push`. La relecture propose.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(ls:*),Bash(sed -n:*)"
