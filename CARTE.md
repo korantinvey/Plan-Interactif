@@ -857,6 +857,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260916235956_les_mesures_qui_ont_attendu_le_reseau.sql` — fn enregistre_mesures
 - `20260917004611_oublier_un_rappel_que_le_programme_a_dementi.sql` — rappel_de_conference, fn empreinte_debut, fn enregistre_rappels, fn oublie_rappels_perimes
 - `20260917121232_l_avancement_d_une_synchronisation_releve_sur_la_fiche_du_salon.sql` — evenement
+- `20260921132502_un_seul_nom_de_produit_dans_le_commentaire_du_nom_de_l_application.sql` — —
 
 ## Le reste
 
