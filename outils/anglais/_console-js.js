@@ -84,7 +84,10 @@ module.exports = {
   "La géométrie des pavillons et des calques.": "The geometry of halls and layers.",
   "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan.":
     "The companies attached to the stands. Geometry and areas stay with the map.",
-  "Aucune synchronisation ne les reprend encore.": "No synchronisation picks them up yet.",
+  "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore.":
+    "The show's programme. Eventmaker serves it, and says who runs what; Klipso does not pick it up yet.",
+  "Le catalogue que chaque exposant présente, montré sur sa fiche. Eventmaker le rend ; Klipso ne le reprend pas encore.":
+    "The catalogue each exhibitor presents, shown on their record. Eventmaker serves it; Klipso does not pick it up yet.",
   "Non synchronisé": "Not synchronised",
   "Klipso": "Klipso",
   "Eventmaker": "Eventmaker",
@@ -137,6 +140,9 @@ module.exports = {
     "Adds a badge at the top of the record. The field only exists on shows that flag their newcomers.",
   "Les conférences tenues par l'exposant, où qu'elles se tiennent.": "The conferences run by the exhibitor, wherever they take place.",
   "programme non synchronisé": "programme not synchronised",
+  "catalogue non synchronisé": "catalogue not synchronised",
+  "Le catalogue de l'exposant. Il est rangé sous sa fiche d'invité et non dans ses champs : rien à désigner ici, seulement à montrer ou non.":
+    "The exhibitor's catalogue. It is filed under their guest record rather than among its fields: nothing to designate here, only to show or not.",
   "programme": "programme",
   "Le stand": "The stand",
   "L'emplacement tel que le plan le décrit. Rien ne s'y règle : ces valeurs ne sont pas des champs de fiche.":

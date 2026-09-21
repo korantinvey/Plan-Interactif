@@ -160,14 +160,46 @@ moitié en `frontend_searchable_keywords` et en `draftjs_content` : **débarrass
 des deux, 1,3 Mo pour 930 produits**, et 1 Mo pour les seuls publiés. Un
 exposant en porte quatre à la médiane, quarante-quatre au plus.
 
-Le domaine existe déjà : `sources.produits` est dans le schéma depuis
-`20260904000002_sources.sql`, la console propose `aucun · klipso · eventmaker`
-(`_console-js.html`, l. 972), et `sync-evenement` compte une étape « Produits »
-dont le poids est zéro. **Il n'y manque que le relevé**, à écrire à côté de
-`rolesParConference()` dans `_partage/eventmaker.ts`, et la charge à verser sur
-l'exposant plutôt qu'à côté : un produit sans son stand ne se cherche pas.
+Le domaine existait déjà : `sources.produits` est dans le schéma depuis
+`20260904000002_sources.sql`, et la console proposait `aucun · klipso ·
+eventmaker` sans que rien ne le lise.
 
-Ce qui reste à trancher avant d'écrire, et qui ne se tranche pas dans l'API :
-où la fiche les montre, si la recherche les remonte comme elle remonte une
-conférence, et ce que le plan fait d'une image de 500 pixels quand la fiche
-d'exposant n'en montre qu'une, son logo.
+## Ce qui est en place
+
+`_partage/eventmaker.ts` porte `produits()`, qui rend les produits publiés
+indexés par fiche d'invité. `sync-evenement` l'appelle quand le domaine
+« produits » est réglé sur Eventmaker — après les exposants, dont elle relit
+l'index, et **avant le plan**, qui compose les stands : c'est là que chaque
+catalogue se pose sur la société à laquelle il tient, titulaire ou hébergée. Le
+titulaire n'a aucun titre sur celui de qui il loge.
+
+La fiche le montre dans un volet à lui, à côté de ce que l'exposant anime :
+au-delà de 1100 px la seconde colonne porte le programme puis le catalogue ; en
+deçà, la bascule passe à trois positions — Détail, Programme, Produits — et
+chaque onglet ne paraît que s'il a de quoi remplir son volet, un exposant
+tenant souvent des conférences sans présenter de produits, ou l'inverse.
+
+La liste ne montre que la vignette et le nom ; le reste — l'image en grand, la
+présentation, les thématiques, la documentation, la vidéo — tient dans la
+fenêtre qu'un appui ouvre, comme pour une conférence. Décocher « Produits »
+dans la console ne les cache pas seulement : `plan-public` les retire de la
+charge, et ils ne partent pas du tout.
+
+Trois choses qu'on a laissées de côté, et pourquoi.
+
+**La présentation perd ses niveaux de titre.** Le relecteur de balisage
+(`assainitRiche`) ne garde que ce qu'il reconnaît, et un `<h2>` — ce
+qu'Eventmaker produit pour l'accroche d'un produit — y laisse son texte en
+paragraphe. Perdre la mise en forme vaut mieux que l'exécuter sans la
+reconnaître, et c'est la règle déjà en place pour la description d'une zone.
+
+**Un produit ne se compte pas.** Le vocabulaire des mesures est fermé — une
+cible que la synchronisation n'a pas déclarée est écartée à l'écriture — et les
+produits n'y sont pas. Mieux vaut ne rien envoyer que d'envoyer ce qui sera
+jeté sans le dire. Les déclarer comme cibles est une décision à prendre pour
+elle-même, avec ce qu'elle ajoute à la table.
+
+**La recherche ne les remonte pas.** Les sortes de la recherche se règlent une
+par une (`SORTES_RECHERCHE`), et faire répondre un exposant sur le nom d'un
+produit qu'il présente est une autre question que celle de l'afficher : elle se
+tranche sur ce qu'un visiteur cherche, pas sur ce que l'API rend.

@@ -456,6 +456,11 @@ const CHAMPS_FICHE: Record<string, string[]> = {
   linkedin: ["li"],
   instagram: ["ig"],
   nomenclature: ["nomencl"],
+  /* Le catalogue d'un exposant. Décoché, il ne part pas du tout : c'est le
+     plus lourd de ce qu'un stand porte — une présentation en HTML et deux
+     adresses d'image par produit —, et un salon qui ne veut pas le montrer
+     n'a pas à le faire voyager. */
+  produits: ["produits"],
 };
 
 /* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la

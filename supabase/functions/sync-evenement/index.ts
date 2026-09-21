@@ -21,6 +21,7 @@ import { Gaia, egal } from "../_partage/gaia.ts";
 import {
   Eventmaker, cleStand, codeSalle,
   type ExposantEm, type ConferenceEm, type ExposantConfEm, type IntervenantEm,
+  type ProduitEm,
 } from "../_partage/eventmaker.ts";
 import {
   CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibleEn,
@@ -602,13 +603,20 @@ Deno.serve(async (req) => {
       exposants: srcStands === "eventmaker" ? emplacements : 20,
       conferences: srcConf === "eventmaker" ? Math.round(emplacements / 4) : 0,
       plan: emplacements,
-      produits: 0,
+      /* Deux appels pour le plus gros catalogue du compte, là où les exposants
+         en coûtent des dizaines : l'étape est courte, et son poids dit qu'elle
+         l'est plutôt que de faire attendre la barre sur un dixième de seconde. */
+      produits: fournisseur(evt, "produits") === "eventmaker"
+        ? Math.round(emplacements / 20) : 0,
     };
     const ETAPES = [
       { cle: "exposants", libelle: "Exposants", domaine: "stands" },
       { cle: "conferences", libelle: "Conférences", domaine: "conferences" },
-      { cle: "plan", libelle: "Plan", domaine: "plan" },
+      /* Avant le plan, et non après : les produits se posent sur les stands,
+         il faut donc les tenir quand ceux-ci se composent. La liste dit
+         l'ordre où les étapes passent, la fenêtre s'y fierait à tort. */
       { cle: "produits", libelle: "Produits", domaine: "produits" },
+      { cle: "plan", libelle: "Plan", domaine: "plan" },
     ].map((e) => ({
       ...e, source: fournisseur(evt, e.domaine), poids: POIDS[e.cle] ?? 1,
     }));
@@ -894,6 +902,10 @@ Deno.serve(async (req) => {
       /* Les conférences viennent de l'événement, pas d'un pavillon : on les lit
          une fois, on les rattachera pavillon par pavillon. */
       let confEm: ConferenceEm[] | null = null;
+      /* Les produits, indexés par fiche d'invité. Nul tant que l'exploitant
+         n'en a pas réglé la source : c'est cette nullité qui dit à la charge
+         de ne pas porter la clé du tout, comme pour les exposants. */
+      let prodEm: Map<string, ProduitEm[]> | null = null;
       let exposantsConf = new Map<string, ExposantConfEm[]>();
       let intervenantsConf = new Map<string, IntervenantEm[]>();
       let animateursConf = new Map<string, IntervenantEm[]>();
@@ -933,6 +945,45 @@ Deno.serve(async (req) => {
         });
         etape("conferences", "encours", confEm.length + " conférences lues"
           + (exposantsConf.size ? ", " + exposantsConf.size + " tenues par un exposant" : ""));
+      }
+
+      /* Les produits qu'un exposant présente. Ils tiennent à sa fiche
+         d'invité, et à rien d'autre : pas de numéro à normaliser, pas de
+         dossier à rapprocher — c'est la seule chose d'Eventmaker qui se
+         rattache au plan sans appariement. `outils/eventmaker-produits.md`
+         dit pourquoi, et ce que valent les fiches qu'on écarte.
+
+         L'étape vient après les exposants, dont elle relit l'index, et avant
+         le plan, qui compose les stands. */
+      if (fournisseur(evt, "produits") === "eventmaker") {
+        etape("produits", "encours");
+        const idProd = String((evt.cles ?? {}).eventmaker ?? "");
+        if (!idProd) {
+          etape("produits", "ignoree", "identifiant de l'événement manquant");
+        } else if (!Deno.env.get("EVENTMAKER_TOKEN")) {
+          etape("produits", "ignoree", "jeton absent des secrets");
+        } else {
+          avance("produits", 0, null, "Lecture du catalogue");
+          prodEm = await new Eventmaker({
+            jeton: Deno.env.get("EVENTMAKER_TOKEN")!,
+            champs: champsEm, valeurs: valeursEm, perso: persos,
+            categories: categoriesEm,
+          }).produits(idProd);
+          let combien = 0;
+          for (const l of prodEm.values()) combien += l.length;
+          pese("produits", combien || 1);
+          avance("produits", combien, combien, "Lecture du catalogue", "produits");
+          chiffres({
+            "Produits publiés": combien,
+            "Exposants qui en présentent": prodEm.size,
+          });
+          /* L'étape se clôt ici : la lecture est ce qu'elle avait à faire.
+             Combien de ces produits trouveront un emplacement — un catalogue
+             peut tenir à une fiche qu'aucun stand du plan ne porte — se sait
+             en composant les stands, et c'est le compte du pavillon qui le
+             dit, sous « Produits posés sur un stand ». */
+          etape("produits", "fait", combien + " produits lus");
+        }
       }
 
       /* Klipso ne relève rien en lisant les stands : on ne lui demande que les
@@ -1156,6 +1207,11 @@ Deno.serve(async (req) => {
 
         const stands = [];
         let apparies = 0;
+        /* Les produits effectivement posés sur ce pavillon. Le relevé en
+           compte davantage : un catalogue peut tenir à une fiche qu'aucun
+           emplacement du plan ne porte — exposant d'un autre pavillon, fiche
+           sans numéro —, et l'écart entre les deux est ce qui se lit. */
+        let avecProduits = 0;
         const heberges = new Set<ExposantEm>();
         const parDossier = new Map<string, string>();
         for (const s of bruts) {
@@ -1225,7 +1281,7 @@ Deno.serve(async (req) => {
           /* Deux emplacements réunis font deux stands du plan, qui listent les
              mêmes sociétés : on compte les sociétés, pas les listes. */
           voisins.forEach((x) => heberges.add(x));
-          const coex = voisins.map(hebergee);
+          const coex = voisins.map((x) => hebergee(x, prodEm));
 
           /* Coordonnées et réseaux. Eventmaker les porte nativement ; Klipso
              ne les rend que si l'exploitant a désigné les champs qui les
@@ -1278,6 +1334,13 @@ Deno.serve(async (req) => {
               : lit(cibleK(cibleEn(cle)), origines,
                     Boolean(persos.find((c) => c.cle === cle)?.multiple)));
 
+          /* Les produits suivent la société, comme ses contacts et ses champs
+             propres : c'est bien sa fiche d'invité qui les porte, et un stand
+             partagé en montre autant de listes qu'il héberge d'enseignes. Le
+             titulaire n'a aucun titre sur le catalogue de ses hébergés. */
+          const produits = (ok && prodEm && em) ? (prodEm.get(em.id) ?? []) : [];
+          if (produits.length) avecProduits += produits.length;
+
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
             code,
@@ -1315,6 +1378,10 @@ Deno.serve(async (req) => {
                des stands n'hébergent personne, et l'instantané part au
                public. */
             ...(coex.length ? { coex } : {}),
+            /* La clé ne descend pas quand la société n'en présente aucun : sur
+               les salons qui tiennent un catalogue, un exposant sur cinq en
+               porte, et l'instantané est servi au public. */
+            ...(produits.length ? { produits } : {}),
             ...Object.fromEntries(Object.entries(contacts).filter(([, v]) => v)),
             /* La clé ne descend pas quand le salon ne sectorise pas :
                l'instantané est servi au public, il n'a pas à porter des
@@ -1494,6 +1561,7 @@ Deno.serve(async (req) => {
           exposants: stands.filter((s) => s.nom).length,
           ...(expoEm ? { apparies } : {}),
           ...(heberges.size ? { coexposants: heberges.size } : {}),
+          ...(avecProduits ? { produits: avecProduits } : {}),
           zones: zones.length,
           zonesNommees: zones.filter((z) => z.nom).length,
         });
@@ -1508,6 +1576,7 @@ Deno.serve(async (req) => {
           "Emplacements nommés": cumul("exposants"),
           ...(expoEm ? { "Emplacements appariés": cumul("apparies") } : {}),
           ...(cumul("coexposants") ? { "Co-exposants": cumul("coexposants") } : {}),
+          ...(prodEm ? { "Produits posés sur un stand": cumul("produits") } : {}),
           "Zones organisateur": cumul("zones"),
         });
         avance("plan", faits, plans.length, "Pavillon terminé", "pavillons");
@@ -1534,6 +1603,9 @@ Deno.serve(async (req) => {
          synchronisation ne sait pas encore lire. */
       for (const cle of ["conferences", "produits"]) {
         if (cle === "conferences" && confEm) continue;
+        /* L'étape a déjà dit ce qu'elle avait à dire, qu'elle ait lu un
+           catalogue ou constaté qu'il lui manquait de quoi le demander. */
+        if (cle === "produits" && fournisseur(evt, "produits") === "eventmaker") continue;
         const src = fournisseur(evt, cle);
         etape(cle, "ignoree",
           src === "aucun" ? "non synchronisé" : src + " — pas encore repris");
@@ -1720,8 +1792,15 @@ Deno.serve(async (req) => {
  * diverger. Ni géométrie ni numéro — elle occupe le stand de son hôte — et
  * rien qui soit vide, l'instantané étant servi tel quel au public.
  */
-function hebergee(x: ExposantEm): Record<string, unknown> {
+function hebergee(
+  x: ExposantEm,
+  produits: Map<string, ProduitEm[]> | null,
+): Record<string, unknown> {
   const o: Record<string, unknown> = { nom: x.nom };
+  // une société hébergée a son propre catalogue : le titulaire n'a aucun titre
+  // sur celui de qui il loge, et la fiche les montre chacune sous son nom
+  const siens = produits?.get(x.id) ?? [];
+  if (siens.length) o.produits = siens;
   const champs: [string, unknown][] = [
     ["plan", x.raison], ["logo", x.logo], ["site", nettoieUrl(x.site)],
     ["adr", x.adresse], ["cp", x.cp], ["ville", x.ville],

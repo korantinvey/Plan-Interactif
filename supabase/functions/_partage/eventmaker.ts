@@ -113,6 +113,11 @@ const LIBELLE_THEMATIQUES = "Thématiques du salon";
  * commercial — n'a rien à faire dans une charge utile publique.
  */
 export interface ExposantEm {
+  /* L'identifiant de la fiche d'invité. Il ne paraît nulle part et ne descend
+     pas au public : il sert à rapprocher de la société ce qui est rangé sous
+     sa fiche plutôt que sur elle — ses produits, aujourd'hui, et c'est la
+     seule clé qu'Eventmaker leur donne. */
+  id: string;
   stand: string;
   /* Le dossier de la société, et non celui du stand : un co-exposant a le sien,
      distinct de celui du titulaire avec qui il partage pourtant le numéro. */
@@ -154,6 +159,28 @@ export interface ExposantEm {
  */
 export const cleStand = (v: unknown): string =>
   String(v ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+/**
+ * Un produit tel que la fiche d'un exposant le montre.
+ *
+ * Eventmaker en porte dix-huit champs ; les autres décrivent le site public —
+ * adresse de la page, mots-clés de sa recherche, mises de côté des visiteurs —
+ * ou sont vides sur les trente-trois salons qui s'en servent, comme les
+ * collections, dont la ressource rend `[]` partout.
+ */
+export interface ProduitEm {
+  id: string;
+  nom: string;
+  /** Sa présentation, en HTML : elle s'écrit dans un éditeur. */
+  texte: string | null;
+  /** La vignette de la liste — Eventmaker la borne à 500 px. */
+  image: string | null;
+  /** L'originale, pour la fenêtre : elle n'est bornée par rien. */
+  grande: string | null;
+  doc: string | null;
+  video: string | null;
+  themes: string[];
+}
 
 /**
  * Un exposant tel qu'une conférence le désigne.
@@ -713,6 +740,90 @@ export class Eventmaker {
   }
 
   /**
+   * Les produits d'un exposant, indexés par fiche d'invité.
+   *
+   * `outils/eventmaker-produits.md` raconte l'enquête ; voici ce qu'elle a
+   * retenu. La ressource est hors documentation, comme les sessions, mais dans
+   * l'API REST et non dans le graphe : deux appels suffisent pour le plus gros
+   * catalogue du compte.
+   *
+   * Aucun filtre ne marche — `guest_id`, `published_on_website` et `q` sont
+   * acceptés sans effet et la liste revient entière, l'air d'avoir été filtrée,
+   * exactement comme `accesspoint_id` sur `/guests`. On prend tout, et on trie
+   * ici.
+   *
+   * Un produit tient à sa fiche par `guest_id`, et c'est la seule clé :
+   * `owner_guest_id` désigne un doublon de coulisses de la même société, sans
+   * nom ni courriel, qui ne porte jamais de numéro de stand — 0 sur 753 fiches
+   * mesurées sur C!Print Lyon 2026, autant sur SIDO et sur SHOP!.
+   */
+  async produits(id: string): Promise<Map<string, ProduitEm[]>> {
+    /* Les thématiques rangent les produits comme elles rangent les exposants,
+       et par les mêmes identifiants. Un salon qui n'en tient pas est le cas
+       courant : son catalogue est vide, et une panne de cet appel-là ne doit
+       pas emporter les produits eux-mêmes. */
+    const themes = await this.thematiques(id).catch((e) => {
+      console.error("catalogue des thématiques des produits :", e);
+      return new Map<string, string>();
+    });
+    const out = new Map<string, ProduitEm[]>();
+    for (let page = 1; ; page++) {
+      const l = await this.json<Record<string, any>[]>(
+        `/events/${id}/guest_products.json`,
+        { per_page: PAR_PAGE, page },
+      );
+      for (const p of l) {
+        /* Le tri qui fait tout. La moitié des entrées du compte ne sont pas
+           publiées, et ce ne sont pas des produits : l'onglet sert de
+           bloc-notes à qui le veut — « Appel dans 15 jours », « Compte » sur
+           Franchise Expo, « All categories » sur C!Print 2025. Non publié veut
+           dire pas montré, sur le site d'Eventmaker comme ici. */
+        if (!vrai(p.published_on_website)) continue;
+        const guest = String(p.guest_id ?? "");
+        const nom = String(p.name ?? "").trim();
+        if (!guest || !nom) continue;
+        const ill = (p.illustration ?? {}) as Record<string, any>;
+        const l2 = out.get(guest);
+        const produit: ProduitEm = {
+          id: String(p._id ?? ""),
+          nom,
+          /* La présentation telle que l'exposant l'a écrite. `description`
+             porte deux écritures du même texte — celle de l'éditeur, celle du
+             rendu — et seule la seconde sert : `draftjs_content` pèse autant
+             et ne dit rien de plus. Un produit sans présentation porte `{}`,
+             et non `{ html: null }`. */
+          texte: ou((p.description ?? {}).html),
+          /* Deux tailles, et deux usages. Celles d'un produit ne rejouent pas
+             le piège des avatars carrés : elles ajustent au lieu de recadrer,
+             la proportion est gardée, et `small` est donc lisible telle quelle
+             dans une liste. Elle a son revers — elle grossit ce qui était plus
+             petit qu'elle, et pèse alors le quadruple de l'originale — mais
+             cela ne touche que les petites images, déjà légères. L'originale,
+             elle, n'est bornée par rien : jusqu'à 6000 px et 1,6 Mo, d'où sa
+             place dans la fenêtre, qui n'en ouvre qu'une à la fois. */
+          image: imageDistante(ill.small?.url ?? ill.url),
+          grande: imageDistante(ill.url),
+          doc: ou((p.documentation ?? {}).url),
+          /* Eventmaker rend une chaîne vide plutôt qu'un nul sur un produit
+             sans vidéo : `ou` les ramène tous deux au même. */
+          video: ou(p.video_link),
+          themes: ((p.thematic_ids ?? []) as unknown[])
+            .map((t) => themes.get(String(t)) ?? "").filter(Boolean),
+        };
+        if (l2) l2.push(produit);
+        else out.set(guest, [produit]);
+      }
+      if (l.length < PAR_PAGE) break;
+    }
+    /* Eventmaker les rend dans l'ordre de saisie, qui n'en est pas un : un
+       exposant en porte quatre à la médiane et jusqu'à quarante-quatre, et une
+       liste qui change de rang d'une synchronisation à l'autre se lit comme si
+       le catalogue avait bougé. */
+    for (const l of out.values()) l.sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+    return out;
+  }
+
+  /**
    * Exposants, indexés deux fois : par dossier, et par numéro de stand.
    *
    * Le dossier est la bonne clé — Klipso le porte sur le stand, Eventmaker le
@@ -807,6 +918,7 @@ export class Eventmaker {
       if (String(g.status ?? "") !== INSCRIT) { ecartesNonInscrits++; continue; }
       const v = (cible: string) => ou(this.valeur(g, m, cible));
       const fiche: ExposantEm = {
+        id: String(g._id ?? ""),
         stand,
         dossier,
         nom: v("nom"),
