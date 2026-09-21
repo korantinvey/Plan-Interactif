@@ -32,7 +32,7 @@
    à tomber, la page resterait en français plutôt que de tomber avec lui. */
 window.traduit = String;
 window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
-  bascule() {}, ajoute() {}, protege() {}, donnees() {}, manques: () => null };
+  bascule() {}, offre() {}, ajoute() {}, protege() {}, donnees() {}, manques: () => null };
 
 (function () {
   "use strict";
@@ -56,7 +56,48 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
      autres — un visiteur allemand ou japonais lit plus souvent l'anglais que
      le français.
      ------------------------------------------------------------------ */
+  /* ------------------------------------------------------------------
+     Les langues que le salon offre
+
+     Toutes les pages savent l'anglais ; tous les salons n'en veulent pas. Ce
+     qu'un plan affiche vient pour moitié de ses données — noms d'exposants,
+     descriptions, intitulés — et rien ne les traduit : un exploitant qui juge
+     le résultat bancal ferme la version anglaise depuis ses réglages, et le
+     drapeau s'en va avec elle.
+
+     Le réglage vient des données, et les données arrivent après la page : le
+     temps qu'elles parviennent, un visiteur anglophone aurait déjà l'anglais
+     sous les yeux, et le verrait repasser au français. Le nœud se dénoue comme
+     celui du générique de démarrage — chaque ouverture laisse sur l'appareil
+     ce qu'elle a appris, la suivante le retrouve au premier trait. Une clé par
+     salon, nommé comme l'adresse le nomme : un même téléphone en ouvre
+     plusieurs, et ce que l'un ferme ne regarde pas l'autre. Et une clé par
+     plan : le salon ouvre l'anglais à ses visiteurs sans l'ouvrir à son
+     exploitant, et les deux pages partagent la même adresse à un chemin près.
+     Les deux bouts calculent la clé ici, donc de la même façon — une page qui
+     ne nomme aucun salon, la console, n'écrit rien et ne lit donc rien.
+     ------------------------------------------------------------------ */
+  const CHEMIN_SALON = /^\/plan-([a-z0-9][a-z0-9-]{0,63})$/;
+  function cleDesLangues() {
+    let salon = "";
+    try {
+      salon = new URLSearchParams(location.search).get("plan") ||
+        (CHEMIN_SALON.exec(location.pathname) || [])[1] || "";
+    } catch (e) {}
+    return "plan-langues:" + (racine.dataset.role === "admin" ? "admin@" : "") + salon;
+  }
+  /* Ouvert tant qu'une visite précédente n'a pas dit le contraire : un salon
+     inconnu de cet appareil offre l'anglais, quitte à le retirer dès que ses
+     données parlent. L'inverse aurait fermé la version anglaise de tous les
+     salons le temps d'un chargement. */
+  let ANGLAIS = true;
+  try { if (localStorage.getItem(cleDesLangues()) === "fr") ANGLAIS = false; } catch (e) {}
+
   function langueDemandee() {
+    /* Un salon qui n'offre que le français l'impose, `?lang=en` compris : le
+       lien vient d'une affiche imprimée avant que l'exploitant ne ferme la
+       version anglaise, et il doit mener au plan tel qu'il est aujourd'hui. */
+    if (!ANGLAIS) return "fr";
     try {
       const l = new URLSearchParams(location.search).get("lang");
       if (LANGUES.includes(l)) return l;
@@ -607,7 +648,7 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
    */
   function bascule(langue) {
     const l = LANGUES.includes(langue) ? langue : (courante === "fr" ? "en" : "fr");
-    if (l === courante) return;
+    if (l === courante || (l === "en" && !ANGLAIS)) return;
     try { localStorage.setItem(CLE, l); } catch (e) {}
     try {
       const u = new URL(location.href);
@@ -645,6 +686,10 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   };
   function majBascules() {
     document.querySelectorAll("[data-langue]").forEach((b) => {
+      /* Le salon qui n'offre que le français n'a pas de bouton : il ne mènerait
+         nulle part, et un drapeau grisé n'explique rien. */
+      b.hidden = !ANGLAIS;
+      if (!ANGLAIS) return;
       const vers = courante === "fr" ? "en" : "fr";
       b.setAttribute("translate", "no");
       b.setAttribute("lang", vers);
@@ -656,13 +701,42 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
   }
   document.addEventListener("click", (e) => {
     const b = e.target.closest && e.target.closest("[data-langue]");
-    if (b) { e.preventDefault(); bascule(); }
+    if (b) { e.preventDefault(); if (ANGLAIS) bascule(); }
   });
   document.addEventListener("DOMContentLoaded", majBascules, { once: true });
 
   window.LANGUE = {
     get code() { return courante; },
     bascule,
+    /**
+     * Ce que le salon offre : l'anglais en plus du français, ou le français
+     * seul. Retenu sur l'appareil pour la prochaine ouverture, qui partira
+     * dans la bonne langue au lieu d'en changer sous les yeux du visiteur.
+     *
+     * Le choix déjà fait sur cet appareil n'est pas effacé pour autant : il
+     * vaut pour tous les salons, et celui d'à côté offre peut-être l'anglais.
+     */
+    offre(anglais) {
+      const ouvert = anglais !== false;
+      /* Écrit seulement ce qui change : le plan se remonte à chaque pavillon
+         qu'on ouvre, et rien n'oblige le disque à le réapprendre. */
+      try {
+        const cle = cleDesLangues(), avant = localStorage.getItem(cle);
+        if (ouvert) { if (avant !== null) localStorage.removeItem(cle); }
+        else if (avant !== "fr") localStorage.setItem(cle, "fr");
+      } catch (e) {}
+      if (ouvert === ANGLAIS) return;
+      ANGLAIS = ouvert;
+      /* Le salon vient de dire le contraire de ce que l'appareil avait retenu.
+         Fermé, la page repasse au français ; rouvert, elle repart de ce que le
+         visiteur demandait — son choix, ou la langue de son navigateur. Les
+         deux fois la page change sous ses yeux, et c'est justement ce que le
+         cache évite le reste du temps : cela n'arrive qu'à la visite qui suit
+         le changement de réglage. */
+      const voulue = ouvert ? langueDemandee() : "fr";
+      if (voulue !== courante) applique(voulue, false);
+      else majBascules();
+    },
     /** La traduction d'une phrase dans la langue de la page. */
     traduit: (fr) => courante === "en" ? (traduitBrut(String(fr)) ?? String(fr)) : String(fr),
     /** La traduction anglaise, quelle que soit la langue de la page, ou `null`. */
