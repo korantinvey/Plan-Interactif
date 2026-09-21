@@ -56,7 +56,7 @@
  *
  * Le nom suit le même chemin que l'adresse de départ, et pour la même raison :
  * l'icône posée sur l'écran d'accueil doit porter le salon qu'on installe — «
- * Plan SMCL by Event2Plan » — non le produit qui le sert. La page ne peut pas
+ * Plan SMCL by Event2Map » — non le produit qui le sert. La page ne peut pas
  * le dire : le manifeste est lu avant qu'elle ait reçu quoi que ce soit de
  * l'API. Elle nomme donc le salon, `salon=<slug>`, et c'est le relais qui va
  * chercher son nom et l'écrit (`src/index.mjs` `manifeste`) — ou celui que
@@ -94,7 +94,7 @@ function manifeste() {
   return JSON.stringify({
     /* Le nom du produit, pour le seul cas où le relais n'a pas su nommer le
        salon : un manifeste demandé sans slug, ou une base muette. Autrement
-       c'est « Plan <salon> by Event2Plan » qui part (`src/index.mjs`). */
+       c'est « Plan <salon> by Event2Map » qui part (`src/index.mjs`). */
     name: "Plan interactif",
     /* Ce que le système écrit sous l'icône : place pour une douzaine de signes.
        Le relais y met le salon seul — c'est lui qu'on y cherche du regard, et

@@ -1695,7 +1695,7 @@ sans que rien ne le signale — d'où le `run_worker_first` de `wrangler.jsonc`,
 qui fait passer le script devant pour ce seul chemin.
 
 **Le nom du salon sur l'écran d'accueil.** L'application s'appelle « Plan SMCL
-by Event2Plan », et non du nom du produit : c'est le salon qu'on cherche du
+by Event2Map », et non du nom du produit : c'est le salon qu'on cherche du
 regard parmi ses icônes. Le manifeste ne peut pourtant pas le porter tel qu'il
 est fabriqué — il est lu avant que la page ait appelé l'API, donc avant qu'elle
 sache quoi que ce soit du salon. La page nomme donc le slug, `salon=…`, qu'elle
@@ -1727,7 +1727,7 @@ l'écran d'accueil ».
 L'icône se choisit entre deux : celle du produit, la même pour tous les salons,
 ou le logo du salon, déposé là. Rien de déposé, c'est celle du produit — il n'y
 a pas de mode à régler à côté de l'image, qui aurait pu la contredire. Le nom,
-lui, est un champ : vide, c'est « Plan SMCL by Event2Plan » ; écrit, c'est ce
+lui, est un champ : vide, c'est « Plan SMCL by Event2Map » ; écrit, c'est ce
 qui paraît sous l'icône, tel quel.
 
 Un seul fichier à choisir, deux images fabriquées. Android ne pose pas une

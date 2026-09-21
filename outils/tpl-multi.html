@@ -32870,7 +32870,7 @@ const INSTALL_POSSIBLE = INSTALL_PAGE && auDoigt() && supportMesure() === "web" 
  * Nommer et habiller l'application du salon qu'on regarde.
  *
  * Le manifeste porte déjà les deux : la page y nomme le salon, le relais va
- * chercher son nom, ses icônes et l'écrit — « Plan SMCL by Event2Plan », ou ce
+ * chercher son nom, ses icônes et l'écrit — « Plan SMCL by Event2Map », ou ce
  * que le salon a choisi (`outils/pwa.js`, `src/index.mjs`,
  * `_application.html`). iOS, lui, ne lit pas le manifeste pour l'écran
  * d'accueil : il prend `apple-mobile-web-app-title` et `apple-touch-icon`, des
@@ -36611,7 +36611,7 @@ function blocSponsor(hote){
 
    Il dépose donc son logo d'ici, et écrit le nom qui paraîtra dessous. Rien de
    déposé, rien d'écrit : c'est l'icône et le nom du produit, comme avant —
-   « Plan SMCL by Event2Plan », composé par le relais (`src/index.mjs`).
+   « Plan SMCL by Event2Map », composé par le relais (`src/index.mjs`).
 
    Trois choses valent d'être sues avant d'y toucher.
 
@@ -36675,7 +36675,7 @@ const NOM_APP_MAX = 64;
 /* La marque telle que le relais la pose dans le nom de l'application
    (`src/index.mjs` `MARQUE`). Le champ n'en donne qu'un exemple — mais un
    exemple faux serait un mensonge sur ce qui partira faute d'y écrire. */
-const MARQUE_NOM_APP = "Event2Plan";
+const MARQUE_NOM_APP = "Event2Map";
 
 /**
  * Sur quel fond poser le logo que le système va rogner.
