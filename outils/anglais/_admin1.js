@@ -423,4 +423,15 @@ module.exports = {
   "Version anglaise de l'administration": "English version of the administration",
   "Ces réglages, la boîte à outils et la bande du haut, sur le plan d'administration. Sans effet sur ce que voient les visiteurs.":
     "These settings, the toolbox and the top bar, on the administration map. No effect on what visitors see.",
+
+  // la barre du haut sur un téléphone, avec bande ou sans
+  "La barre du haut, sur un téléphone": "The top bar, on a phone",
+  "Un écran de téléphone se compte en lignes de stands : la bande du haut en prend trois. Le plan peut donc s'en passer, ses commandes rangées sur le hall, ou la garder pour que le nom du salon reste lu. Sans effet sur un ordinateur, où la barre ne coûte rien.":
+    "A phone screen is measured in rows of stands: the top band takes three of them. The map can do without it, its controls tucked onto the hall, or keep it so the show name stays in sight. No effect on a computer, where the bar costs nothing.",
+  "Sans bandeau": "No top bar",
+  "Le hall d'un bord à l'autre ; les commandes se posent dessus, au bord droit.":
+    "The hall from edge to edge; the controls sit on it, along the right-hand side.",
+  "Bandeau réduit": "Slim top bar",
+  "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.":
+    "A band as short as it can be: the show name, the halls, the controls.",
 };
