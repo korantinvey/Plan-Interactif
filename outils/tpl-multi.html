@@ -6191,6 +6191,8 @@ function onglets(){
 function changePlan(i){
   if (i === state.plan) return;
   state.plan = i;
+  /* Le calage que l'exploitant règle appartient au pavillon qu'il quitte. */
+  if (typeof oublieCalageEnCours === "function") oublieCalageEnCours();
   ferme();
   montePlan(); fit(); liste();
   chargeFond(i);
@@ -32021,9 +32023,27 @@ const forceCarte = (cal) =>
    d'itinéraire, au demi-mètre. */
 const RECUL_CARTE = 8;
 
+/**
+ * Le calage enregistré pour le pavillon regardé.
+ *
+ * Sur le pavillon, et non sur le salon : deux halls d'un même parc ne partagent
+ * pas toujours une origine. Au Grimaldi Forum, Klipso étale les cinq espaces
+ * sur 265 × 339 m alors que le bâtiment n'en fait que 150 de long — caler l'un
+ * posait la carte à cent mètres des autres.
+ */
+function calagePose(){
+  const p = DATA && DATA.plans ? P() : null;
+  if (!p) return null;
+  /* `undefined` et `null` ne disent pas la même chose. Le premier vient d'un
+     serveur qui ne sert pas encore le calage par pavillon : on retombe sur
+     celui du salon, le temps que les deux déploiements se rejoignent. Le
+     second est un calage retiré, et se respecte. */
+  return p.calage !== undefined ? p.calage : ((DATA && DATA.calage) || null);
+}
+
 /** Le calage qui vaut à cet instant : celui qu'on règle s'il y en a un, celui
- *  du salon sinon. Le visiteur n'a jamais que le second. */
-const calageCourant = () => ENV_CAL || (DATA && DATA.calage) || null;
+ *  du pavillon sinon. Le visiteur n'a jamais que le second. */
+const calageCourant = () => ENV_CAL || calagePose();
 
 /** Le fond retenu, s'il en est un de connu. */
 const fondCourant = () => {
@@ -32774,10 +32794,14 @@ function manqueCalage(e){
 async function enregistreCalage(cal){
   const acces = accesBase();
   if (!acces) throw new Error("aucune session : reconnectez-vous depuis la console.");
-  await base(acces, "evenement?slug=eq." + encodeURIComponent(DATA.slug), {
+  /* La page ne connaît les pavillons que par leur identifiant Klipso ;
+     `identifiants` donne celui de la base, qui seul s'écrit. */
+  const planId = (await identifiants(acces))[P().id];
+  if (!planId) throw new Error("ce pavillon n'est pas encore en base : enregistrez la configuration d'abord.");
+  await base(acces, "plan?id=eq." + planId, {
     method: "PATCH", body: JSON.stringify({ calage: cal }),
   }).catch(e => { throw manqueCalage(e); });
-  DATA.calage = cal;
+  P().calage = cal;
   oublieCache(acces);
 }
 
@@ -32787,8 +32811,9 @@ async function enregistreCalage(cal){
 async function calageEnregistre(){
   const acces = accesBase();
   if (!acces) return null;
-  const l = await base(acces,
-    "evenement?select=calage&slug=eq." + encodeURIComponent(DATA.slug));
+  const planId = (await identifiants(acces))[P().id];
+  if (!planId) return null;
+  const l = await base(acces, "plan?select=calage&id=eq." + planId);
   return l && l.length ? l[0].calage : null;
 }
 
@@ -32800,6 +32825,13 @@ async function calageEnregistre(){
 let ENV_CAL = null;
 let ENV_BATIS = [];
 let ENV_BATI = 0;
+
+/** Le réglage en cours abandonné : un calage ne vaut que pour son pavillon, et
+ *  le garder en changeant d'onglet poserait sa carte sous le suivant. Appelé
+ *  par `changePlan`. */
+function oublieCalageEnCours(){
+  ENV_CAL = null; ENV_BATIS = []; ENV_BATI = 0;
+}
 
 /**
  * Deux nombres collés depuis une carte : « 48.830212, 2.287851 ».
@@ -33213,7 +33245,7 @@ function voletEnvirons(hote){
 
   const maj = () => {
     bRegle.hidden = !ENV_CAL;
-    bEfface.hidden = !(DATA && DATA.calage);
+    bEfface.hidden = !calagePose();
   };
 
   bSitue.onclick = async () => {

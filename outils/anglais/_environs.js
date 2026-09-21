@@ -98,6 +98,8 @@ module.exports = {
   "OpenStreetMap a répondu {code}.": "OpenStreetMap answered {code}.",
   "aucune session : reconnectez-vous depuis la console.":
     "no session: sign in again from the console.",
+  "ce pavillon n'est pas encore en base : enregistrez la configuration d'abord.":
+    "this hall is not in the database yet: save the configuration first.",
   "la base ne connaît pas encore le calage : appliquez les migrations (`npm run bd`) ou attendez la mise en ligne.":
     "the database does not know about the alignment yet: apply the migrations (`npm run bd`) or wait for the next deployment.",
 
