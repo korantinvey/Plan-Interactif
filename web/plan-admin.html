@@ -32880,8 +32880,13 @@ function versLePlan(ll, cal){
  */
 function reancre(cal, pt){
   const ll = versTerre(pt, cal);
+  /* `style` en fait partie : l'adresse qu'on colle parce que celle du fond
+     rend un 404 se perdait au premier ré-ancrage — et la rotation ré-ancre à
+     chaque image du geste. La carte repartait sur le style d'origine et le
+     champ se vidait au tracé suivant, sans un mot. */
   return { lon: ll[0], lat: ll[1], x: pt[0], y: pt[1], angle: cal.angle,
-           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide };
+           fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide,
+           style: cal.style };
 }
 
 /**
@@ -33378,8 +33383,11 @@ function poseCarteGL(cal, fond){
   ditCarte("Chargement de la carte… " + String(sig).replace(/^https?:\/\//, "").slice(0, 48));
   guetteLaCarte(sig);
   chargeMapLibre().then(gl => {
-    // un autre fond a été choisi, ou la carte retirée, pendant le chargement
-    if (gen !== _genGL) return;
+    /* Un autre fond a été choisi, ou la carte retirée, pendant le chargement.
+       On rend le drapeau : sans cela il restait levé sur une carte jamais
+       posée, et tout montage suivant sortait à la première ligne — « Situer le
+       salon » ne montait plus rien, sans un mot, jusqu'au rechargement. */
+    if (gen !== _genGL){ _monteGL = false; return; }
     const v = vueGL(cal);
     _styleGL = sig;
     _carteGL = new gl.Map({
@@ -33406,9 +33414,10 @@ function poseCarteGL(cal, fond){
     });
   }).catch(e => {
     /* Le montage annulé ne condamne rien : celui qui l'a remplacé est en cours,
-       et c'est à lui de dire s'il aboutit. */
-    if (gen !== _genGL) return;
+       et c'est à lui de dire s'il aboutit. Le drapeau se rend dans les deux
+       cas, le remplaçant ayant le sien. */
     _monteGL = false;
+    if (gen !== _genGL) return;
     _echecGL = e.message;
     hote.hidden = true;
     ditCarte("Carte vectorielle indisponible (" + e.message +
@@ -33467,7 +33476,10 @@ function videCarteGL(){
      l'arrivée de la bibliothèque, sur un hôte devenu invisible. */
   _genGL++;
   const hote = $("fondCarteGL");
-  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; _monteGL = false; }
+  /* Hors du `if` : c'est quand aucune carte n'est encore posée — un montage
+     justement en vol — que le drapeau avait le plus besoin d'être rendu. */
+  _monteGL = false;
+  if (_carteGL){ _carteGL.remove(); _carteGL = null; _styleGL = ""; }
   if (hote) hote.hidden = true;
 }
 
