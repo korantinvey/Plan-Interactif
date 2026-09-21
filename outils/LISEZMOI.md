@@ -78,6 +78,14 @@ stand. Le document relève le schéma champ par champ, distingue ce qui est
 vérifié de ce qui attend un jeton, et décrit le montage retenu pour le parcours
 de visite.
 
+`eventmaker-produits.md` relève la troisième pièce du même jeu : les produits
+que les exposants présentent. Ceux-là sont bien dans l'API REST, sous
+`guest_products`, hors documentation comme les sessions, et leur `guest_id`
+désigne la fiche d'exposant que la synchronisation indexe déjà — le stand suit
+sans appariement. Le document dit lesquels des cent salons en portent, pourquoi
+seul `published_on_website` sépare un produit d'une note commerciale, ce que
+valent les trois tailles d'illustration, et où s'arrête l'anglais.
+
 ## Serveur local
 
 ```bash

@@ -72,6 +72,10 @@ module.exports = {
   "animation": "moderator",
   "Thématique": "Theme",
   "Présentation": "Presentation",
+  /* Les deux sorties d'une fiche produit : la documentation que l'exposant y a
+     jointe, et la vidéo qu'il y a liée. */
+  "Documentation": "Documentation",
+  "Vidéo": "Video",
   "Situer sur le plan": "Show on map",
   // les distinctions d'un exposant — la table de `_js.html`, dont les onglets
   // des réglages et les volets d'aide tirent leurs mots

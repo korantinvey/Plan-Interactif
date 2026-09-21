@@ -968,9 +968,9 @@ const DOMAINES = [
   ["stands",      "Exposants",   ["klipso", "eventmaker"],
    "Les sociétés rattachées aux emplacements. La géométrie et les zones restent au plan."],
   ["conferences", "Conférences", ["aucun", "klipso", "eventmaker"],
-   "Aucune synchronisation ne les reprend encore."],
+   "Le programme du salon. Eventmaker le rend, et dit qui tient quoi ; Klipso ne le reprend pas encore."],
   ["produits",    "Produits",    ["aucun", "klipso", "eventmaker"],
-   "Aucune synchronisation ne les reprend encore."],
+   "Le catalogue que chaque exposant présente, montré sur sa fiche. Eventmaker le rend ; Klipso ne le reprend pas encore."],
 ];
 const FOURNISSEURS = {
   aucun: "Non synchronisé", klipso: "Klipso", eventmaker: "Eventmaker",
@@ -1192,6 +1192,13 @@ const LIGNES_FICHE = [
      d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
   { cle: "conferences", libelle: "Conférences", fixe: origineConferences,
     aide: "Les conférences tenues par l'exposant, où qu'elles se tiennent." },
+  /* Comme les conférences : ni l'une ni l'autre ne vient de la fiche société,
+     et toutes deux ont leur volet sur la fiche plutôt qu'une ligne dans son
+     corps. D'où la colonne d'origine, qui dit d'où elles viennent. */
+  { cle: "produits", libelle: "Produits", fixe: origineProduits,
+    aide: "Le catalogue de l'exposant. Il est rangé sous sa fiche d'invité " +
+      "et non dans ses champs : rien à désigner ici, seulement à montrer " +
+      "ou non." },
 ];
 
 /* Les champs qui se taisent tant qu'on ne les a pas cochés — l'inverse de la
@@ -1216,6 +1223,13 @@ function origineConferences(e) {
   const src = source(e, "conferences");
   return src === "aucun" ? "programme non synchronisé"
     : "programme · " + (FOURNISSEURS[src] || src);
+}
+
+/** D'où vient le catalogue, dit dans la colonne d'origine. */
+function origineProduits(e) {
+  const src = source(e, "produits");
+  return src === "aucun" ? "catalogue non synchronisé"
+    : "catalogue · " + (FOURNISSEURS[src] || src);
 }
 
 /**
@@ -2583,8 +2597,9 @@ function etapesPressenties(e) {
       poids: stands === "eventmaker" ? emplacements : 20 },
     { cle: "conferences", libelle: "Conférences", source: conf,
       poids: conf === "eventmaker" ? Math.round(emplacements / 4) : 0 },
+    { cle: "produits", libelle: "Produits", source: source(e, "produits"),
+      poids: source(e, "produits") === "eventmaker" ? Math.round(emplacements / 20) : 0 },
     { cle: "plan", libelle: "Plan", source: source(e, "plan"), poids: emplacements },
-    { cle: "produits", libelle: "Produits", source: source(e, "produits"), poids: 0 },
   ];
 }
 
