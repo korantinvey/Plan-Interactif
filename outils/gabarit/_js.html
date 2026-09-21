@@ -512,6 +512,11 @@ function poseTonDeLaBarre(){
     m.content = ton;
   });
 }
+/* Le ton ne dépend pas que du modèle : il dépend aussi de la largeur. Sur un
+   téléphone la bande du salon n'est plus une bande, et c'est le fond du plan
+   qui touche la barre du système (voir `_head.html`, « max-width:900px »). Une
+   tablette qu'on tourne franchit ce seuil sans rien changer d'autre. */
+matchMedia("(max-width:900px)").addEventListener("change", () => poseTonDeLaBarre());
 
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu
