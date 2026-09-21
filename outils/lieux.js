@@ -75,6 +75,53 @@ const LIEUX = [
       ["way", 667777793, "Hall 7"],
     ],
   },
+  {
+    /* Le Grimaldi Forum n'est qu'un bâtiment dans OpenStreetMap (`way/94452775`,
+       `building=yes`) : ses espaces d'exposition sont des salles à l'intérieur,
+       sur des niveaux enterrés, et l'enveloppe ne distingue pas Ravel de
+       Diaghilev. Le contour vient donc de la fiche technique que le lieu publie,
+       relevée sur sa planche « Aménagement expositions » — barre d'échelle à
+       3,4705 pt par mètre, tracé suivi au mur intérieur puis allégé au mètre
+       et demi. 3 420 m² relevés, contre 3 614 m² annoncés hors terrasse :
+       l'écart est l'épaisseur des murs et les recoins où le relevé n'entre pas.
+
+       Un lieu par espace, et non un lieu à quatre halls : chaque espace du
+       Forum porte son propre salon, les planches sont à des échelles
+       différentes et ne disent nulle part comment les salles se placent les
+       unes par rapport aux autres. Les réunir demanderait d'inventer cela.
+
+       Le nord n'est pas donné : la planche a l'avenue Princesse Grace en haut
+       et la mer en bas. C'est le calage qui oriente, comme pour tout hall. */
+    cle: "grimaldi-ravel", nom: "Grimaldi Forum — Hall Ravel", ville: "Monaco",
+    source: "Fiche technique du Grimaldi Forum, planche « Aménagement expositions »"
+      + " (grimaldiforum.com/medias/fiches-technique/fiche-technique-ravel.pdf,"
+      + " relevée le 21 septembre 2026)",
+    batiments: [
+      {
+        nom: "Hall Ravel",
+        contours: [[
+          [-22.45,-34.18],[-22.32,-33.9],[-21.62,-30.72],[-15.68,-30.72],
+          [-14.99,-32.93],[-14.85,-30.72],[-11.94,-30.72],[-11.8,-33.63],
+          [-1.29,-33.63],[-1.15,-30.72],[4.52,-30.72],[5.21,-33.63],
+          [11.43,-33.63],[12.26,-30.72],[18.21,-30.72],[18.9,-32.93],
+          [19.04,-30.72],[24.85,-30.72],[25.82,-33.63],[31.76,-33.63],
+          [35.36,-27.96],[39.51,-26.85],[35.77,-22.42],[35.36,-10.53],
+          [26.78,-3.47],[29.41,-3.34],[27.34,-1.4],[35.36,5.1],[35.36,12.43],
+          [37.43,12.57],[35.36,15.2],[39.79,19.48],[31.62,28.34],
+          [24.99,28.34],[24.85,25.43],[19.18,25.43],[18.9,27.51],
+          [18.21,25.43],[12.26,25.43],[12.12,28.34],[4.52,28.34],[4.38,25.43],
+          [-1.29,25.43],[-1.43,28.34],[-11.8,28.34],[-11.94,25.43],
+          [-14.71,25.43],[-14.99,27.51],[-15.68,25.43],[-21.76,25.43],
+          [-21.9,28.34],[-28.95,28.34],[-30.06,25.43],[-32.41,25.71],
+          [-30.34,23.36],[-28.12,25.16],[-26.19,22.94],[-28.68,20.31],
+          [-17.89,11.74],[-20.66,8.84],[-29.37,17.55],[-28.12,20.04],
+          [-32.27,16.72],[-18.44,5.52],[-18.44,-0.71],[-14.29,-2.51],
+          [-18.44,-4.72],[-18.58,-10.8],[-27.29,-19.66],[-25.08,-21.73],
+          [-28.82,-25.47]
+        ]],
+      },
+    ],
+  },
 ];
 
 /* Un mètre d'écart toléré : c'est l'ordre de précision du cadastre dont
@@ -308,8 +355,10 @@ async function principal() {
     }
     const saisi = !Array.isArray(lieu.batiments[0]);
     sortie.lieux.push(saisi ? lieuSaisi(lieu) : await lieuOsm(lieu));
-    console.log((saisi ? "" : " ") + lieu.nom + " : " + lieu.batiments.length
-      + " bâtiments" + (saisi ? " (saisis)" : ""));
+    const n = lieu.batiments.length;
+    console.log((saisi ? "" : " ") + lieu.nom + " : " + n
+      + (n > 1 ? " bâtiments" : " bâtiment")
+      + (saisi ? (n > 1 ? " (saisis)" : " (saisi)") : ""));
   }
   fs.writeFileSync(SORTIE, JSON.stringify(sortie) + "\n");
 }
