@@ -251,6 +251,22 @@ exception : `mesure` accepte toutes les origines — un cadre ou une coque qu'on
 n'a pas prévue doit pouvoir compter sans qu'on tienne une liste, et CORS n'y
 gardait rien qu'un `curl` n'ignore.
 
+## Tenir au courant pendant le travail
+
+Un long silence ne se lit pas comme du travail en cours, il se lit comme une
+panne. Donc, pendant la réflexion comme pendant la construction, un point
+d'avancement **toutes les deux minutes environ** : une ou deux phrases disant
+ce qui vient d'être fait et ce qui se fait maintenant. Même sans résultat neuf
+— « toujours dans la relecture de `_js.html`, rien de concluant pour l'instant »
+vaut mieux que rien, parce que c'est justement l'information qui manque.
+
+Ces points ne remplacent pas la liste d'étapes, tenue à jour à mesure qu'elles
+se terminent : ils s'y ajoutent.
+
+Et **un travail long s'annonce avant d'être lancé** — une construction, une
+batterie de tests, une synchronisation, une mesure. Le dire coûte une ligne ;
+le laisser découvrir coûte toute l'attente.
+
 ## Conventions
 
 Le code, les commentaires et les messages de commit sont en **français
