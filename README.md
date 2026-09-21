@@ -2788,6 +2788,33 @@ en panne n'est pas un défaut du code relu, et une croix rouge sur chaque pull
 request du dépôt n'apprend qu'une chose, à ne plus regarder les croix rouges.
 Elle s'affiche en avertissement, ce qui se voit sans ouvrir le journal.
 
+Compter **cinq minutes** : c'est ce qu'a pris la première relecture aboutie, sur
+un diff de cinq cents lignes de source. Elle s'arrête d'office à quinze, parce
+que rien ne se lit d'une tâche avant sa fin — une relecture en cours et une
+relecture partie en boucle se ressemblent, et seule la seconde a besoin qu'on
+l'interrompe. Le diff qu'elle lit écarte `web/`, `CARTE.md` et
+`outils/tpl-multi.html` : une ligne de gabarit s'y recopie quatre fois, et ces
+quatre exemplaires noieraient le reste. Enfin son avis **remplace le
+précédent** au lieu de s'empiler : une pull request reprise cinq fois n'a pas à
+porter cinq avis dont quatre périmés.
+
+Reste un cas qui ne se voyait pas du tout : **une relecture qui aboutit sans
+rien écrire**. Elle est arrivée sur un diff de 71 000 lignes — tout le code du
+dépôt, ouvert exprès en pull request pour le passer en revue. La tâche a tourné
+deux minutes quarante, s'est vu refuser dix de ses propres appels d'outil parce
+qu'un tel diff ne se lit pas avec ce qu'on lui accorde, puis a rendu son avis
+en message simple, que l'action jette. Sur la pull request : une coche verte et
+pas un mot, exactement ce que montre une relecture satisfaite. D'où la
+vérification finale — si aucun avis n'a été posé depuis le début de la tâche,
+elle le dit sur la pull request. Elle ne parle que d'une relecture qui s'est
+réellement tenue : celle qu'arrête la garde d'identité juste en dessous n'a
+rien à dire, et se plaindre de son silence reviendrait à commenter chaque pull
+request qui touche au workflow — la première ayant été la sienne. Et le
+compte-rendu relève désormais à chaque exécution ce que la relecture a coûté,
+appels refusés compris : une dépense qu'on ne voit pas ne se juge pas. La leçon
+vaut d'être retenue : un très gros périmètre se relit par domaine, en plusieurs
+fois, pas en une pull request géante.
+
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
 file must exist and have identical content to the version on the repository's
@@ -2798,6 +2825,38 @@ request** : la tâche s'arrête, en vert, avec un avertissement dans son journal
 Elle ne vaudra qu'après la fusion. Pour la vérifier alors, il suffit de relancer
 la tâche depuis l'onglet **Actions** : le workflow est désormais celui de `main`,
 et la relecture part pour de bon.
+
+### Le correctif qu'on demande
+
+La relecture dit ce qui cloche ; `.github/workflows/correctif.yml` le répare.
+On le demande d'un commentaire `@claude …` sous une issue ou une pull request —
+ce qui marche depuis l'application GitHub d'un téléphone — ou depuis l'onglet
+**Actions**, en tapant la consigne à la main. Il corrige, valide, et la tâche
+ouvre une pull request avec le résultat.
+
+C'est la même action et le même secret que la relecture, avec une différence
+qui change tout : celui-ci a le droit d'éditer les fichiers. D'où la forme du
+workflow, qui tient à une question — jusqu'où va ce droit.
+
+**Il s'arrête à la branche.** La tâche ne pousse que sur
+`claude/correctif-<numéro d'exécution>`, un nom écrit dans le workflow : ni la
+consigne ni le modèle ne choisissent la destination, et aucun outil de poussée
+ne lui est accordé. Il édite et valide, la tâche pousse. `main` est donc hors
+d'atteinte **par construction**, et non par consigne — la seule garantie qui
+tienne, puisqu'une poussée sur `main` applique les migrations et redéploie,
+c'est-à-dire met en production sans que personne ait rien lu. La fusion reste
+un geste humain, comme pour n'importe quelle pull request.
+
+Deux choses lui sont retirées pour la même raison. Les **migrations** : il ne
+peut pas en déposer une, il écrit ce qu'il faudrait et on en décide. Les
+**pages fabriquées** : la tâche lance `npm run construire` après lui et valide
+le résultat dans un commit séparé, comme `pages.yml` le fait sur une poussée.
+
+Une demande écrite sous une pull request ouvre malgré tout sa propre branche
+depuis `main` : le correctif arrive à côté, dans sa pull request, et ne pousse
+pas sur celle d'en face. Et aucun robot n'est autorisé à le réveiller — un
+correctif que réclame un automate est une boucle qui attend son tour, là où la
+relecture, qui ne sait que commenter, ne risquait rien.
 
 ## Fabriquer les pages
 
