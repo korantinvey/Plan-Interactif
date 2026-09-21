@@ -18589,26 +18589,46 @@ const bibliothequeDispo = () => ADMIN && !!(LIEUX && LIEUX.lieux && LIEUX.lieux.
    bâtiment est un fond, il ne doit pas passer devant les stands. */
 const COULEUR_BATIMENT = "#77787e";
 
+/* ------------------------------------------------------------
+   Ce qui identifie un hall
+
+   Un hall se reconnaissait à sa référence OpenStreetMap, puisqu'il n'en venait
+   pas d'ailleurs. Les contours relevés à la main sur un plan coté n'en ont
+   pas, et leur en inventer une ferait paraître la mention d'OpenStreetMap sur
+   un plan où pas un trait n'en vient. La référence dit donc aussi la source :
+   `osm` pour ce que la bibliothèque relève du cadastre, `ref` pour le reste.
+   ------------------------------------------------------------ */
+
+/** La référence d'un hall de la bibliothèque. */
+const refBatiment = (b) => b.osm || b.ref;
+
+/** Celle d'une forme posée sur le plan. Les plans d'avant les contours saisis
+ *  ne portent que `osm` : leurs halls se reconnaissent encore. */
+const refForme = (f) => f.osm || f.ref;
+
+/** Ce que la forme emporte, la source comprise. */
+const marqueBatiment = (b) => b.osm ? { osm: b.osm } : { ref: b.ref };
+
 /** Les bâtiments déjà posés sur ce pavillon, par leur référence OSM. */
 function batimentsPoses(){
   const s = new Set();
-  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (f.osm) s.add(f.osm); }));
+  mesCalques().forEach(c => (c.formes || []).forEach(f => { if (refForme(f)) s.add(refForme(f)); }));
   return s;
 }
 
 /** Un calque venu de la bibliothèque : ses formes portent une référence OSM. */
-const estBatiment = (c) => !!c && (c.formes || []).some(f => f.osm);
+const estBatiment = (c) => !!c && (c.formes || []).some(f => refForme(f));
 
 /** Les halls de ce lieu déjà sur le plan, dans l'ordre de la bibliothèque. */
 function hallsPoses(lieu){
   const poses = batimentsPoses();
-  return lieu.batiments.filter(b => poses.has(b.osm));
+  return lieu.batiments.filter(b => poses.has(refBatiment(b)));
 }
 
 /** Le lieu d'où vient un calque, reconnu à la référence OSM de ses formes. */
 function lieuDuCalque(c){
-  const refs = new Set((c.formes || []).map(f => f.osm).filter(Boolean));
-  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(b.osm))) || null;
+  const refs = new Set((c.formes || []).map(refForme).filter(Boolean));
+  return LIEUX.lieux.find(l => l.batiments.some(b => refs.has(refBatiment(b)))) || null;
 }
 
 /** Un point du lieu, porté dans le repère du plan. */
@@ -18655,7 +18675,7 @@ function ouvreBibliotheque(){
       const ul = document.createElement("div");
       ul.className = "biblioHalls";
       lieu.batiments.forEach(b => {
-        const deja = poses.has(b.osm);
+        const deja = poses.has(refBatiment(b));
         const l = document.createElement("label");
         l.className = "biblioHall" + (deja ? " deja" : "");
         l.innerHTML = '<input type="checkbox"><span></span>' + (deja ? "<i>déjà sur le plan</i>" : "");
@@ -18707,7 +18727,7 @@ function ouvreBibliotheque(){
            ne répondait à rien. */
         const poses = batimentsPoses();
         const halls = lieu.batiments.filter(b =>
-          choisis.has(b.nom) || (reprise && poses.has(b.osm)));
+          choisis.has(b.nom) || (reprise && poses.has(refBatiment(b))));
         if (!halls.length) return;
         fermeModale();
         if (cale && !recaler) ajouteBatiments(lieu, halls, t);
@@ -18731,11 +18751,11 @@ function vueDuLieu(lieu, choisis, poses, bascule){
   lieu.batiments.forEach(b => {
     const g = document.createElementNS(ns, "path");
     g.setAttribute("d", b.contours.map(c => "M" + c.map(p => p.join(" ")).join("L") + "Z").join(""));
-    g.setAttribute("class", poses.has(b.osm) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
+    g.setAttribute("class", poses.has(refBatiment(b)) ? "deja" : choisis.has(b.nom) ? "choisi" : "");
     const titre = document.createElementNS(ns, "title");
     titre.textContent = b.nom;
     g.appendChild(titre);
-    if (!poses.has(b.osm)) g.addEventListener("click", () => bascule(b.nom));
+    if (!poses.has(refBatiment(b))) g.addEventListener("click", () => bascule(b.nom));
     s.appendChild(g);
   });
   return s;
@@ -18786,10 +18806,10 @@ function lanceCalage(lieu, halls, depart){
  * arrive aux calques ni aux réglages, et annuler ne laisse rien derrière.
  */
 function effaceLeTempsDuCalage(halls){
-  const refs = new Set(halls.map(b => b.osm));
+  const refs = new Set(halls.map(refBatiment));
   const hote = $("couches");
   mesCalques().forEach(c => (c.formes || []).forEach(f => {
-    if (!refs.has(f.osm)) return;
+    if (!refs.has(refForme(f))) return;
     const n = hote.querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
     if (n) n.dataset.cale = "1";
   }));
@@ -18916,14 +18936,14 @@ function calagePointerUp(){
  *  un pavillon repris dix fois ne dérive pas d'un centimètre à chaque fois. */
 function reposeBatiment(b, t){
   mesCalques().forEach(c => {
-    if (!(c.formes || []).some(f => f.osm === b.osm)) return;
+    if (!(c.formes || []).some(f => refForme(f) === refBatiment(b))) return;
     let j = 0;
     /* Des formes neuves, plutôt que leurs points réécrits : l'instantané de
        l'historique copie les tableaux mais partage les formes, si bien qu'une
        forme retouchée sur place l'est aussi dans le passé. Un calage repris
        déplace tous les halls d'un coup — le rendre serait long à la main. */
     c.formes = c.formes.map(f => {
-      if (f.osm !== b.osm) return f;
+      if (refForme(f) !== refBatiment(b)) return f;
       const k = b.contours[j++];
       return k ? Object.assign({}, f, { pts: k.map(p => poseCalage(t, p)) }) : f;
     });
@@ -18936,19 +18956,19 @@ function ajouteBatiments(lieu, halls, t){
      seconde fois : son calque garde son nom, sa couleur, son rang et son
      cadenas, et ne reçoit que de nouveaux points. */
   const poses = batimentsPoses();
-  halls.filter(b => poses.has(b.osm)).forEach(b => reposeBatiment(b, t));
-  const neufs = halls.filter(b => !poses.has(b.osm)).map((b, i) => {
+  halls.filter(b => poses.has(refBatiment(b))).forEach(b => reposeBatiment(b, t));
+  const neufs = halls.filter(b => !poses.has(refBatiment(b))).map((b, i) => {
     const id = nouvelId() + i;
     return {
       id: id, nom: b.nom, couleur: COULEUR_BATIMENT, rempli: false, visible: true,
-      formes: b.contours.map((k, j) => ({
+      /* La référence du hall voyage avec la forme : les colonnes du calque
+         sont fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
+         déjà posé, et, quand elle vient d'OpenStreetMap, appelle la mention
+         de la source sur le plan public. */
+      formes: b.contours.map((k, j) => Object.assign({
         t: "poly", id: id + "f" + j, ep: 3,
-        /* La référence OSM voyage avec la forme : les colonnes du calque sont
-           fixées, le contenu des formes ne l'est pas. Elle dit ce qui est
-           déjà posé, et appelle la mention de la source sur le plan public. */
-        osm: b.osm,
         pts: k.map(p => poseCalage(t, p)),
-      })),
+      }, marqueBatiment(b))),
     };
   });
   neufs.forEach(c => {
@@ -19042,7 +19062,7 @@ const pictoRecale = () =>
  */
 function calageRelu(lieu, c){
   for (const b of lieu.batiments){
-    const f = (c.formes || []).find(x => x.osm === b.osm && x.pts && x.pts.length > 1);
+    const f = (c.formes || []).find(x => refForme(x) === refBatiment(b) && x.pts && x.pts.length > 1);
     const k = f && b.contours[0];
     if (!k || k.length < 2) continue;
     /* Le point le plus éloigné du premier, et non le premier qui s'en écarte :
@@ -19084,6 +19104,10 @@ function rouvreCalage(c){
    La licence d'OpenStreetMap demande qu'on la cite partout où ses données se
    montrent, et donc sur le plan public : la mention paraît dès qu'un calque
    visible porte un contour qui en vient, et s'efface avec lui.
+
+   D'où le `f.osm` en propre, et non `refForme` : un contour relevé à la main
+   sur un plan coté ne doit rien à OpenStreetMap, et le citer à tort dirait
+   d'une donnée qu'elle vient d'ailleurs que de là où elle vient.
    ------------------------------------------------------------ */
 function mentionOsm(){
   const m = $("mentionOsm");
