@@ -2742,13 +2742,30 @@ dans le workflow : la même liste sert aux sessions Claude Code qui relisent à
 la main, et une liste tenue à deux endroits finit par dire deux choses. Pour
 étendre la relecture, c'est ce fichier qu'on complète.
 
-Il lui faut un secret de plus, `ANTHROPIC_API_KEY`, au même endroit que les
-autres — **Settings → Secrets and variables → Actions**, la clé venant de
-console.anthropic.com. Tant qu'il est absent, la tâche s'arrête en vert en
-disant qu'elle l'attend : un garde-fou qu'on n'a pas encore branché n'est pas
-un défaut du code relu, et une pull request rouge pour cette raison ferait
-douter du reste. Une branche venue d'une bifurcation est laissée de côté, les
-secrets du dépôt ne lui étant pas accessibles.
+Il lui faut un secret, au même endroit que les autres — **Settings → Secrets
+and variables → Actions**. Deux voies, et une seule à choisir :
+
+| secret | ce qu'il consomme | comment l'obtenir |
+|---|---|---|
+| `CLAUDE_CODE_OAUTH_TOKEN` | un abonnement Claude (Pro, Max, Team, Enterprise) | `claude setup-token` dans un Claude Code connecté |
+| `ANTHROPIC_API_KEY` | la facturation à l'appel | console.anthropic.com |
+
+**Le jeton d'abonnement est préféré**, parce qu'il ne coûte rien de plus que ce
+qui est déjà payé. Plus court encore : `/install-github-app`, dans Claude Code,
+installe l'application GitHub, propose de fabriquer ce jeton et pose le secret
+lui-même — il demande `gh` et les droits d'administration du dépôt. Le jeton est
+attaché au compte de qui l'a fabriqué, donc c'est sa consommation qui est
+débitée ; et il vaut longtemps sans valoir toujours, si bien qu'une relecture
+qui repasse au rouge sur une erreur d'authentification veut dire qu'il est à
+refaire. Le workflow passe les deux entrées à l'action, celle qui reste vide
+valant absente.
+
+Tant qu'aucun des deux n'est posé, la tâche s'arrête en vert en disant lequel
+elle attend, et son journal nomme la voie retenue quand il y en a une — c'est le
+seul endroit où cela se lit après coup. Un garde-fou qu'on n'a pas encore
+branché n'est pas un défaut du code relu, et une pull request rouge pour cette
+raison ferait douter du reste. Une branche venue d'une bifurcation est laissée
+de côté, les secrets du dépôt ne lui étant pas accessibles.
 
 ## Fabriquer les pages
 
