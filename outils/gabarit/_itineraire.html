@@ -2872,13 +2872,13 @@ function montreResultat(etat){
      mauvaise surprise. */
   (ROUTE.etapes || []).forEach(e => {
     if (!e.foule) return;
-    const quand = (s) => "sa conférence " +
+    const quand = (s, sujet) => sujet + " conférence " +
       (s.quoi === "sort" ? "se termine à " : "commence à ") + s.h;
     e.foule.contournees.forEach(s => dit("iNote",
-      "Le trajet contourne « " + s.nom + " » : " + quand(s) + ", et l'allée qui la " +
+      "Le trajet contourne « " + s.nom + " » : " + quand(s, "sa") + ", et l'allée qui la " +
       "borde va se remplir. Environ " + ecritDistance(s.sup) + " de plus."));
     e.foule.longees.forEach(s => dit("iNote",
-      "Le trajet longe « " + s.nom + " », dont " + quand(s) + " : attendez-vous " +
+      "Le trajet longe « " + s.nom + " », où " + quand(s, "une") + " — attendez-vous " +
       "à du monde dans l'allée."));
   });
 

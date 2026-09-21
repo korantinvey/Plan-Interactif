@@ -9,7 +9,7 @@ module.exports = {
   /* La marque n'est pas traduite — c'est un nom propre, et celui que le relais
      écrit dans le nom de l'application. L'entrée reste, sans quoi le contrôle
      la signalerait à chaque construction. */
-  "Event2Plan": "Event2Plan",
+  "Event2Map": "Event2Map",
 
   // le bloc, dans l'onglet « Admin » des réglages
   "Le plan s'installe comme une application : l'icône qui se pose sur l'écran d'accueil du visiteur, et le nom écrit dessous. Les deux se lisent au moment de l'installation — un changement vaut pour qui installera ensuite, et rejoint les autres au lancement suivant. Enregistrés d'eux-mêmes, sans attendre la publication.":

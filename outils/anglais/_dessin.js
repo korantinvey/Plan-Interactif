@@ -41,7 +41,7 @@ module.exports = {
     "Image placed in the centre of the view. Drag on the map to place another one.",
   "Image illisible.": "Unreadable image.",
   "Choisissez d'abord l'exposant à matérialiser.": "Choose the exhibitor to draw first.",
-  "Choisissez d’abord une image.": "Choose an image first.",
+  "Choisissez d'abord une image.": "Choose an image first.",
 
   // l'aide sous les outils
   "Glissez pour déplacer, les carrés pour redimensionner.": "Drag to move, use the squares to resize.",

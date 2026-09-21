@@ -445,7 +445,7 @@ Fonctions :
 `visePoi` 3014 · `visePoint` 3020 · `ouvreItineraire` 3052 · `fermeItineraire` 3080
 `versItineraire` 3090 · `versItineraireDe` 3093
 
-### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_journee.html` — 2130 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Organiser sa visite
 
@@ -460,22 +460,22 @@ Fonctions :
 `remplitOnglets` 1220 · `jourDuStand` 1249 · `ouvreChoixJour` 1261 · `figeLaVisite` 1318
 `placeSurJour` 1327 · `rendAuPlan` 1335 · `retireDuSejour` 1341 · `remplitJournee` 1351
 `ecritApercu` 1564 · `appliqueVueParcours` 1594 · `traceJournee` 1632 · `montreLeJour` 1641
-`perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2067
-`lanceSejour` 2094 · `refaitSejour` 2126
+`perimeJournee` 1656 · `oublieSejour` 1671 · `ouvreOrganisation` 1686 · `essaieSejour` 2061
+`lanceSejour` 2088 · `refaitSejour` 2120
 
-### `_js.html` — 4800 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_js.html` — 4802 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.79 · 1. Index global — la recherche porte sur tous les pavillons
 - l.543 · 2. Mesure de texte — largeur réelle dans la police de rendu
 - l.653 · 3. Rendu du pavillon courant
 - l.743 · 4. Libellés — le nom de l'exposant prime sur le numéro
 - l.879 · 5. Recherche et secteurs — sans mot-clé ni critère retenu on reste sur le
-- l.2097 · 6. Vue
-- l.2523 · 7. Sélection et fiche
-- l.3886 · 8. Interactions du plan
-- l.4314 · Ce que les tiroirs lisent d'un geste
-- l.4360 · Le tiroir de la liste — écrans étroits
-- l.4582 · Les tiroirs menés par la hauteur — écrans étroits
+- l.2099 · 6. Vue
+- l.2525 · 7. Sélection et fiche
+- l.3888 · 8. Interactions du plan
+- l.4316 · Ce que les tiroirs lisent d'un geste
+- l.4362 · Le tiroir de la liste — écrans étroits
+- l.4584 · Les tiroirs menés par la hauteur — écrans étroits
 
 Fonctions :
 
@@ -498,27 +498,27 @@ Fonctions :
 `critParSociete` 1634 · `cherchable` 1644 · `visible` 1651 · `releveHotes` 1667
 `visibleSurPlan` 1675 · `visibleSociete` 1686 · `marqueRetrait` 1702 · `appliqueFiltre` 1714
 `oublieRetrait` 1726 · `reprendRecherche` 1735 · `rangSorte` 1748 · `codeCase` 1770
-`caseNumero` 1787 · `sousLigne` 1807 · `liste` 1821 · `marqueChoisie` 1940
-`prechargeMarque` 1966 · `prechargeLesVignettes` 2023 · `chargeUnLot` 2069
-`cadrePlan` 2112 · `oublieCadre` 2113 · `figeTextes` 2129 · `rendTextes` 2137
-`cadrage` 2173 · `peintLibelles` 2178 · `detacheLibelles` 2184 · `rattacheLibelles` 2196
-`etireLibelles` 2214 · `appliqueVue` 2222 · `rafraichitVue` 2266 · `poseVue` 2280
-`mesureBarre` 2309 · `masqueHaut` 2333 · `masque` 2340 · `masqueDroite` 2372 · `fit` 2383
-`stoppeZoom` 2416 · `glisseVersVise` 2422 · `glisseVers` 2464 · `rectVisee` 2486
-`zoom` 2506 · `echelle` 2515 · `ETROIT` 2529 · `anime` 2545 · `noeud` 2569
-`canalPlan` 2579 · `rangSociete` 2587 · `select` 2596 · `centre` 2621 · `centrePoint` 2625
-`montre` 2670 · `libelleCorps` 2702 · `ordreCorps` 2719 · `groupesFiche` 2751
-`montreIntitule` 2764 · `valeurCorps` 2784 · `champCorps` 2797 · `groupeCorps` 2809
-`corpsRange` 2822 · `momentLocal` 2857 · `programme` 2880 · `jourLong` 2913
-`ficheConf` 2924 · `lien` 3071 · `adresseWeb` 3079 · `pictoRS` 3122 · `adresseSure` 3140
-`adresseVignette` 3171 · `adresseImage` 3189 · `imageSure` 3202 · `assainitRiche` 3231
-`enBlocs` 3271 · `rangeRiche` 3284 · `ecarteClicFantome` 3312 · `nomSociete` 3321
-`societes` 3334 · `choisitExposant` 3345 · `poseMarque` 3383 · `montreMarque` 3443
-`poseCode` 3466 · `rangeMarque` 3507 · `ouvre` 3570 · `ferme` 3858 · `onglet` 3876
-`milieu` 3906 · `commencePince` 3912 · `suitPince` 3926 · `plieLesBandes` 3979
-`saisitPlan` 3993 · `cibleElargie` 4075 · `planifieFiltre` 4270 · `traceurDeGeste` 4338
-`cranVoisin` 4357 · `retraitBas` 4383 · `mesureTiroir` 4397 · `montreTiroir` 4400
-`hisseTiroir` 4404 · `tiroirCrante` 4609
+`caseNumero` 1787 · `sousLigne` 1807 · `liste` 1821 · `marqueChoisie` 1942
+`prechargeMarque` 1968 · `prechargeLesVignettes` 2025 · `chargeUnLot` 2071
+`cadrePlan` 2114 · `oublieCadre` 2115 · `figeTextes` 2131 · `rendTextes` 2139
+`cadrage` 2175 · `peintLibelles` 2180 · `detacheLibelles` 2186 · `rattacheLibelles` 2198
+`etireLibelles` 2216 · `appliqueVue` 2224 · `rafraichitVue` 2268 · `poseVue` 2282
+`mesureBarre` 2311 · `masqueHaut` 2335 · `masque` 2342 · `masqueDroite` 2374 · `fit` 2385
+`stoppeZoom` 2418 · `glisseVersVise` 2424 · `glisseVers` 2466 · `rectVisee` 2488
+`zoom` 2508 · `echelle` 2517 · `ETROIT` 2531 · `anime` 2547 · `noeud` 2571
+`canalPlan` 2581 · `rangSociete` 2589 · `select` 2598 · `centre` 2623 · `centrePoint` 2627
+`montre` 2672 · `libelleCorps` 2704 · `ordreCorps` 2721 · `groupesFiche` 2753
+`montreIntitule` 2766 · `valeurCorps` 2786 · `champCorps` 2799 · `groupeCorps` 2811
+`corpsRange` 2824 · `momentLocal` 2859 · `programme` 2882 · `jourLong` 2915
+`ficheConf` 2926 · `lien` 3073 · `adresseWeb` 3081 · `pictoRS` 3124 · `adresseSure` 3142
+`adresseVignette` 3173 · `adresseImage` 3191 · `imageSure` 3204 · `assainitRiche` 3233
+`enBlocs` 3273 · `rangeRiche` 3286 · `ecarteClicFantome` 3314 · `nomSociete` 3323
+`societes` 3336 · `choisitExposant` 3347 · `poseMarque` 3385 · `montreMarque` 3445
+`poseCode` 3468 · `rangeMarque` 3509 · `ouvre` 3572 · `ferme` 3860 · `onglet` 3878
+`milieu` 3908 · `commencePince` 3914 · `suitPince` 3928 · `plieLesBandes` 3981
+`saisitPlan` 3995 · `cibleElargie` 4077 · `planifieFiltre` 4272 · `traceurDeGeste` 4340
+`cranVoisin` 4359 · `retraitBas` 4385 · `mesureTiroir` 4399 · `montreTiroir` 4402
+`hisseTiroir` 4406 · `tiroirCrante` 4611
 
 Éléments :
 
@@ -654,15 +654,15 @@ Fonctions :
 `#choixEvt` · `#choixPeriode` · `#statut` · `#lienConsole` · `#btnExcel` · `#btnRecharger`
 `#btnLangue` · `#btnTheme` · `#rapport`
 
-### `_rapport-js.html` — 443 l. → rapport.html
+### `_rapport-js.html` — 444 l. → rapport.html
 
 - l.2 · Rapport d'utilisation
 
 Fonctions :
 
 `courant` 52 · `chargeEvenements` 57 · `joursPeriode` 75 · `chargeRapport` 77 · `chiffre` 88
-`barres` 107 · `portes` 147 · `jours` 198 · `dessineRapport` 219 · `dessineBarre` 371
-`rafraichit` 394 · `videEcran` 413 · `demarre` 429
+`barres` 107 · `portes` 147 · `jours` 198 · `dessineRapport` 219 · `dessineBarre` 372
+`rafraichit` 395 · `videEcran` 414 · `demarre` 430
 
 Éléments :
 
@@ -857,6 +857,7 @@ corriger dans `outils/gabarit/` ne les changera pas.
 - `20260916235956_les_mesures_qui_ont_attendu_le_reseau.sql` — fn enregistre_mesures
 - `20260917004611_oublier_un_rappel_que_le_programme_a_dementi.sql` — rappel_de_conference, fn empreinte_debut, fn enregistre_rappels, fn oublie_rappels_perimes
 - `20260917121232_l_avancement_d_une_synchronisation_releve_sur_la_fiche_du_salon.sql` — evenement
+- `20260921132502_un_seul_nom_de_produit_dans_le_commentaire_du_nom_de_l_application.sql` — —
 
 ## Le reste
 
