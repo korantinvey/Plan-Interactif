@@ -2809,7 +2809,13 @@ vérification finale — si aucun avis n'a été posé depuis le début de la t�
 elle le dit sur la pull request. Elle ne parle que d'une relecture qui s'est
 réellement tenue : celle qu'arrête la garde d'identité juste en dessous n'a
 rien à dire, et se plaindre de son silence reviendrait à commenter chaque pull
-request qui touche au workflow — la première ayant été la sienne. Et le
+request qui touche au workflow — la première ayant été la sienne. Et que d'une
+poussée qui apporte des sources : refusionner `main` et reconstruire les pages
+laisse le diff relisible **strictement identique**, la relecture rend alors son
+avis en vingt secondes sans rien poster, et elle a raison — elle a déjà tout dit
+sur ce diff-là. La comparaison porte donc sur le diff de la pull request, pas
+sur celui de la poussée, entêtes de morceau retirées : quarante lignes venues de
+la base décalent les numéros sans rien changer à ce qu'il y a à relire. Et le
 compte-rendu relève désormais à chaque exécution ce que la relecture a coûté,
 appels refusés compris : une dépense qu'on ne voit pas ne se juge pas. La leçon
 vaut d'être retenue : un très gros périmètre se relit par domaine, en plusieurs
