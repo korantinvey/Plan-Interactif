@@ -233,7 +233,14 @@ function basculeParcours(genre, id, canal){
  * une fenêtre qui en propose un vingt et unième.
  */
 function verseAuParcours(stands, confs, canal, remplace){
-  if (remplace) PARCOURS = { stands: [], confs: [] };
+  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
+     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
+     liste reçue en septembre le jour où les données le reconnaissaient à
+     nouveau — alors qu'on avait demandé un remplacement. */
+  if (remplace){
+    PARCOURS = { stands: [], confs: [] };
+    MIS_DE_COTE = { stands: [], confs: [] };
+  }
   stands.forEach(id => {
     if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
     mesure("parcours", canal, id, "fiche_stand");

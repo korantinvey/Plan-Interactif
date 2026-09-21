@@ -22724,7 +22724,14 @@ function basculeParcours(genre, id, canal){
  * une fenêtre qui en propose un vingt et unième.
  */
 function verseAuParcours(stands, confs, canal, remplace){
-  if (remplace) PARCOURS = { stands: [], confs: [] };
+  /* La réserve part avec la liste, comme au vidage : elle s'écrit dans le
+     stockage avec elle, et un rang mis de côté en juin reparaissait dans la
+     liste reçue en septembre le jour où les données le reconnaissaient à
+     nouveau — alors qu'on avait demandé un remplacement. */
+  if (remplace){
+    PARCOURS = { stands: [], confs: [] };
+    MIS_DE_COTE = { stands: [], confs: [] };
+  }
   stands.forEach(id => {
     if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
     mesure("parcours", canal, id, "fiche_stand");
@@ -26462,7 +26469,15 @@ function candidats(q){
   const v = q.trim().toLowerCase();
   const out = [];
   DATA.plans.forEach(p => reperesDe(p).forEach(f => {
-    if (!v || String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
+    /* Sous le nom que l'écran montre — donc traduit —, et aussi sous celui des
+       données. La liste affichait « Exit », le visiteur tapait « Exit », et
+       « sortie » ne le contenait pas : la liste se vidait sur « aucun repère ne
+       porte ce nom » alors qu'il était là, et la saisie passant par ici, aucun
+       trajet ne se calculait. Choisir dans la liste marchait encore ; taper
+       non, et sur un téléphone on tape. */
+    const nom = nomRepere(f).toLowerCase();
+    if (!v || nom.indexOf(v) >= 0 ||
+        String(f.txt).toLowerCase().indexOf(v) >= 0) out.push(pointRepere(f, p));
   }));
   if (!v) return out.slice(0, 12);
 
@@ -31410,8 +31425,15 @@ function refuseMesure(refus){
     MESURE_VISITEUR = "";
     effaceJetonsVisiteur();
   } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
-    MESURE_RETENU = true;
-    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    /* Comme au démarrage, et pour la même raison : sur une borne, un visiteur
+       qui cochait le refus puis un suivant qui le décochait faisaient écrire un
+       jeton durable sur un appareil partagé, et le disaient retenu — le rapport
+       ne pouvait plus signaler qu'il recompte peut-être. */
+    if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+    else {
+      MESURE_RETENU = true;
+      MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+    }
   }
 }
 

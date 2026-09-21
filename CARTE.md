@@ -414,7 +414,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3177 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3185 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -432,21 +432,21 @@ Fonctions :
 `longueur` 1478 · `longueurDehors` 1494 · `nettoie` 1536 · `oublieFaces` 1583
 `facesLibres` 1585 · `amorce` 1658 · `faceDeSortie` 1693 · `accesDe` 1723
 `couplesAcces` 1768 · `troncon` 1801 · `pointObjet` 1844 · `pointRepere` 1851
-`candidats` 1860 · `pointSaisi` 1886 · `portesDe` 1904 · `versPorte` 1911
-`typeLiaison` 1972 · `nomRepere` 1980 · `oublieLiaisons` 1998 · `lienEcrits` 2010
-`ecritLiens` 2019 · `annuaireLiaisons` 2024 · `liensDe` 2056 · `coutLiaison` 2076
-`passagePraticable` 2083 · `passagesDe` 2091 · `sortiesDe` 2101 · `plansRelies` 2109
-`balayage` 2133 · `distanceDepuis` 2147 · `cheminLiaisons` 2174 · `routeParLiaisons` 2258
-`routeEntre` 2294 · `calculeRoute` 2333 · `couleurNappe` 2359 · `rafraichitApercu` 2365
-`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2446 · `mesureMarches` 2453
-`coupeMarche` 2468 · `distancesDesArrets` 2484 · `peintItineraire` 2496
-`lanceTracage` 2547 · `dessineItineraire` 2572 · `rafraichitBouts` 2594
-`cadreItineraire` 2617 · `champIti` 2641 · `ecritDistance` 2645 · `ecritDuree` 2653
-`fermeSugg` 2658 · `montreSugg` 2665 · `choisitPoint` 2699 · `valideSaisie` 2708
-`effaceItineraire` 2720 · `relance` 2747 · `phraseLiaison` 2798 · `montreResultat` 2812
-`bandeauVisee` 2954 · `armeVisee` 2977 · `finVisee` 2995 · `viseItineraire` 3011
-`visePoi` 3017 · `visePoint` 3023 · `ouvreItineraire` 3055 · `fermeItineraire` 3083
-`versItineraire` 3093 · `versItineraireDe` 3096
+`candidats` 1860 · `pointSaisi` 1894 · `portesDe` 1912 · `versPorte` 1919
+`typeLiaison` 1980 · `nomRepere` 1988 · `oublieLiaisons` 2006 · `lienEcrits` 2018
+`ecritLiens` 2027 · `annuaireLiaisons` 2032 · `liensDe` 2064 · `coutLiaison` 2084
+`passagePraticable` 2091 · `passagesDe` 2099 · `sortiesDe` 2109 · `plansRelies` 2117
+`balayage` 2141 · `distanceDepuis` 2155 · `cheminLiaisons` 2182 · `routeParLiaisons` 2266
+`routeEntre` 2302 · `calculeRoute` 2341 · `couleurNappe` 2367 · `rafraichitApercu` 2373
+`marchesIci` 2416 · `rayonBout` 2421 · `arreteTracage` 2454 · `mesureMarches` 2461
+`coupeMarche` 2476 · `distancesDesArrets` 2492 · `peintItineraire` 2504
+`lanceTracage` 2555 · `dessineItineraire` 2580 · `rafraichitBouts` 2602
+`cadreItineraire` 2625 · `champIti` 2649 · `ecritDistance` 2653 · `ecritDuree` 2661
+`fermeSugg` 2666 · `montreSugg` 2673 · `choisitPoint` 2707 · `valideSaisie` 2716
+`effaceItineraire` 2728 · `relance` 2755 · `phraseLiaison` 2806 · `montreResultat` 2820
+`bandeauVisee` 2962 · `armeVisee` 2985 · `finVisee` 3003 · `viseItineraire` 3019
+`visePoi` 3025 · `visePoint` 3031 · `ouvreItineraire` 3063 · `fermeItineraire` 3091
+`versItineraire` 3101 · `versItineraireDe` 3104
 
 ### `_journee.html` — 2130 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -543,7 +543,7 @@ Fonctions :
 `marquePrete` 55 · `recadreMarque` 59 · `marqueRecadree` 85 · `imageChargee` 114
 `vignetteMarque` 130 · `boiteMarque` 156 · `toileMarque` 222 · `vignetteDeLogo` 246
 
-### `_mesure.html` — 622 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_mesure.html` — 629 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 13. Mesure d'utilisation
 
@@ -554,7 +554,7 @@ Fonctions :
 `litLaFile` 299 · `ecritLaFile` 312 · `metEnFile` 327 · `retireDeLaFile` 338
 `chargeDe` 349 · `envoiePaquet` 362 · `beaconne` 387 · `pousseLaFile` 408
 `envoieMesures` 427 · `mesure` 464 · `effaceJetonsVisiteur` 530 · `refuseMesure` 548
-`ouvreConfidentialite` 568
+`ouvreConfidentialite` 575
 
 ### `_modales.html` — 189 l. → plan-admin.html, plan-smcl.html, plan.html
 
@@ -579,7 +579,7 @@ Fonctions :
 `#titre` · `#intro` · `#formMdp` · `#mdp1` · `#mdp2` · `#poser` · `#formMail` · `#mail`
 `#envoyer` · `#msg` · `#apres` · `#versConsole`
 
-### `_parcours.html` — 700 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_parcours.html` — 707 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.2 · 11 bis. Parcours de visite
 
@@ -588,13 +588,13 @@ Fonctions :
 `cleParcours` 63 · `casierParcours` 66 · `dansParcours` 67 · `jourParcours` 70
 `attenduDepuisTropLongtemps` 75 · `trieParcours` 86 · `chargeParcours` 96
 `parcoursAEcrire` 126 · `enregistreParcours` 140 · `tientLeStockage` 169
-`basculeParcours` 190 · `verseAuParcours` 235 · `plurielParcours` 254
-`contenuParcours` 263 · `retenusPourParcours` 289 · `ajouteToutAuParcours` 314
-`poseToutAuParcours` 337 · `signetParcours` 363 · `boutonParcours` 369
-`rafraichitMarque` 374 · `brancheParcours` 387 · `calqueMarques` 419 · `dessineMarques` 435
-`marqueParcours` 465 · `rafraichitParcours` 479 · `instantConf` 507 · `cleTemps` 511
-`jourCourt` 517 · `nomDeStand` 524 · `rangParcours` 526 · `groupeParcours` 546
-`remplitParcours` 555 · `ouvreParcours` 644 · `fermeParcours` 656 · `videLeParcours` 672
+`basculeParcours` 190 · `verseAuParcours` 235 · `plurielParcours` 261
+`contenuParcours` 270 · `retenusPourParcours` 296 · `ajouteToutAuParcours` 321
+`poseToutAuParcours` 344 · `signetParcours` 370 · `boutonParcours` 376
+`rafraichitMarque` 381 · `brancheParcours` 394 · `calqueMarques` 426 · `dessineMarques` 442
+`marqueParcours` 472 · `rafraichitParcours` 486 · `instantConf` 514 · `cleTemps` 518
+`jourCourt` 524 · `nomDeStand` 531 · `rangParcours` 533 · `groupeParcours` 553
+`remplitParcours` 562 · `ouvreParcours` 651 · `fermeParcours` 663 · `videLeParcours` 679
 
 ### `_partage.html` — 766 l. → plan-admin.html, plan-smcl.html, plan.html
 
