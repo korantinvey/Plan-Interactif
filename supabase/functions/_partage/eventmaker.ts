@@ -124,6 +124,10 @@ export interface ExposantEm {
   logo: string | null;
   site: string | null;
   adresse: string | null;
+  /* Le code postal garde son champ à lui jusqu'à la fiche, où il se pose
+     devant la ville. Le coller ici à la ville ferait du filtre « Ville » une
+     liste de codes postaux, et d'une ville à deux codes deux entrées. */
+  cp: string | null;
   ville: string | null;
   pays: string | null;
   tel: string | null;
@@ -807,9 +811,10 @@ export class Eventmaker {
         raison: v("raison"),
         logo: imageDistante(this.valeur(g, m, "logo")),
         site: v("site"),
-        // le code postal n'a pas de champ à lui sur la fiche : il tient sur
-        // la même ligne que la voie, comme sur une enveloppe
-        adresse: ou([v("adresse"), v("codePostal")].filter(Boolean).join(", ")),
+        adresse: v("adresse"),
+        // le code postal n'a pas de ligne à lui sur la fiche : il se pose
+        // devant la ville, comme sur une enveloppe
+        cp: v("codePostal"),
         ville: v("ville"),
         pays: v("pays"),
         tel: v("telephone"),

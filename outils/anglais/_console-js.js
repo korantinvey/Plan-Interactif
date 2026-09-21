@@ -126,8 +126,9 @@ module.exports = {
   "Le logo de l'enseigne, en tête de fiche. Sur Eventmaker, c'est « avatar » qu'il faut désigner : « avatar_medium » et « avatar_thumb » sont recadrés au carré et coupent les bords d'un logo en largeur — et sur une fiche sans logo, ils rendent les initiales de la personne inscrite.":
     "The brand's logo, at the top of the record. On Eventmaker, choose “avatar”: “avatar_medium” and “avatar_thumb” are cropped square and cut off the edges of a wide logo — and on a record without a logo, they return the registrant's initials.",
   "Code postal": "Postcode",
-  "avec l'adresse": "with the address",
-  "Rejoint l'adresse sur la même ligne, comme sur une enveloppe.": "Joins the address on the same line, as on an envelope.",
+  "avec la ville": "with the town",
+  "Se pose devant la ville, sur la même ligne, comme sur une enveloppe. Il n'entre pas pour autant dans le filtre « Ville », qui fait cocher des villes et non des codes postaux.":
+    "Sits before the town, on the same line, as on an envelope. It does not join the “Town” filter, which ticks towns and not postcodes.",
   "Téléphone société": "Company phone",
   "Les rubriques du catalogue. Plusieurs champs se cumulent.": "The catalogue categories. Several fields add up.",
   "Ce que l'exposant vient chercher ou proposer, tel que le salon le range. Un champ à valeurs multiples se sépare tout seul ; fiez-vous à l'exemple, certains salons n'y portent que des codes. Un salon qui les tient dans Eventmaker même, et non dans un champ de fiche, les porte sous « thematic_ids ».":

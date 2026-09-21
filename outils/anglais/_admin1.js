@@ -61,7 +61,7 @@ module.exports = {
   "Ateliers Ligneron": "Ateliers Ligneron",
   "Ligneron & Fils SARL": "Ligneron & Fils SARL",
   "8 rue de la Filature": "8 rue de la Filature",
-  "Nantes": "Nantes",
+  "44000 Nantes": "44000 Nantes",
   "France": "France",
   "Atelier du Marais": "Atelier du Marais",
   "Bois & Compagnie": "Bois & Compagnie",

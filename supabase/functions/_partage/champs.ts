@@ -48,7 +48,7 @@ const AFFICHAGE: Cible[] = [
   { cle: "site", libelle: "Site web" },
   { cle: "adresse", libelle: "Adresse" },
   { cle: "codePostal", libelle: "Code postal",
-    aide: "Rejoint l'adresse sur la même ligne, comme sur une enveloppe." },
+    aide: "Se pose devant la ville, sur la même ligne, comme sur une enveloppe." },
   { cle: "ville", libelle: "Ville" },
   { cle: "pays", libelle: "Pays" },
   { cle: "telephone", libelle: "Téléphone" },

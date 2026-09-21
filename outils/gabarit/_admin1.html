@@ -1035,7 +1035,8 @@ const LECTURE_CORPS = {
   raison: o => o.plan && o.plan !== o.nom ? o.plan : "",
   secteur: o => o.sect,
   adresse: o => o.adr,
-  ville: o => o.ville,
+  // le code postal se pose devant la ville, comme sur la fiche
+  ville: o => [o.cp, o.ville].filter(Boolean).join(" "),
   pays: o => o.pays,
   niveaux: o => o.niveaux > 1 ? String(o.niveaux) : "",
   telephone: o => o.tel,
@@ -1057,7 +1058,7 @@ const COURTS_CORPS = ["ville", "pays", "niveaux", "telephone"];
 const EXEMPLES_CORPS = {
   nom: "Ateliers Ligneron", code: "D14", pavillon: "Pavillon 2",
   raison: "Ligneron & Fils SARL", secteur: "Aménagement & second œuvre",
-  adresse: "8 rue de la Filature", ville: "Nantes", pays: "France",
+  adresse: "8 rue de la Filature", ville: "44000 Nantes", pays: "France",
   niveaux: "2", telephone: "02 40 00 00 00", site: "ateliers-ligneron.fr",
   facebook: "facebook.com/ligneron", linkedin: "linkedin.com/company/ligneron",
   instagram: "instagram.com/ligneron",
