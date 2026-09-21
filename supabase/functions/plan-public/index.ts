@@ -592,8 +592,15 @@ Deno.serve(async (req) => {
   // brouillons : elle ne doit jamais atterrir dans un cache partagé.
   const identifie = Boolean(req.headers.get("Authorization"));
 
-  // Un fond porte sa version dans l'adresse : il peut être gardé indéfiniment.
-  const versionne = Boolean(new URL(req.url).searchParams.get("v"));
+  /* Un fond porte sa version dans l'adresse : il peut être gardé indéfiniment
+     — mais seulement une fois cette version vérifiée. La présence d'un `v` ne
+     prouve rien : n'importe qui frappait `?fond=H1&v=<au hasard>`, et chaque
+     valeur inédite devenait une clé de cache neuve dans le stockage du relais,
+     qui n'accepte que mille écritures par jour. Seule la branche qui sait
+     recalculer la version le dit, par `versionVerifiee`. */
+  const demandee = new URL(req.url).searchParams.get("v");
+  let versionne = false;
+  const versionVerifiee = (reelle: string) => { versionne = demandee === reelle; };
 
   const repond = (corps: unknown, code = 200, cache = 30) =>
     new Response(JSON.stringify(corps), {
@@ -707,7 +714,7 @@ Deno.serve(async (req) => {
 
       const cal = await lu(
         sb.from("calque")
-          .select("cle, svg, ordre_klipso")
+          .select("cle, svg, ordre_klipso, empreinte")
           .eq("plan_id", pl.id)
           .not("svg", "is", null)
           .order("ordre_klipso", { ascending: true }),
@@ -738,7 +745,18 @@ Deno.serve(async (req) => {
           ),
         }));
 
-      return repond({ plan: fond, calques: retenus });
+      /* La version se recalcule sur ce qui part, et on ne déclare immuable que
+         si l'adresse la portait déjà. Autrement la réponse ne se garde nulle
+         part : servir le fond courant sous l'étiquette d'hier graverait pour un
+         an un dessin que le visiteur ne redemanderait jamais. */
+      versionVerifiee(
+        await versionFond(cal, identifie ? null : masques),
+      );
+      return repond(
+        { plan: fond, calques: retenus },
+        200,
+        demandee && !versionne ? 0 : 30,
+      );
     }
 
     const plans = await lu(
@@ -1009,7 +1027,6 @@ Deno.serve(async (req) => {
      * entrer dans aucun cache, et l'entête dira laquelle demander. */
     const texte = JSON.stringify(sortie);
     const version = await versionDuPlan(texte);
-    const demandee = new URL(req.url).searchParams.get("v");
     return new Response(texte, {
       headers: {
         ...CORS,
