@@ -2798,6 +2798,20 @@ quatre exemplaires noieraient le reste. Enfin son avis **remplace le
 précédent** au lieu de s'empiler : une pull request reprise cinq fois n'a pas à
 porter cinq avis dont quatre périmés.
 
+Reste un cas qui ne se voyait pas du tout : **une relecture qui aboutit sans
+rien écrire**. Elle est arrivée sur un diff de 71 000 lignes — tout le code du
+dépôt, ouvert exprès en pull request pour le passer en revue. La tâche a tourné
+deux minutes quarante, s'est vu refuser dix de ses propres appels d'outil parce
+qu'un tel diff ne se lit pas avec ce qu'on lui accorde, puis a rendu son avis
+en message simple, que l'action jette. Sur la pull request : une coche verte et
+pas un mot, exactement ce que montre une relecture satisfaite. D'où la
+vérification finale — si aucun avis n'a été posé depuis le début de la tâche,
+elle le dit sur la pull request. Et le compte-rendu relève désormais à chaque
+exécution ce que la relecture a coûté, appels refusés compris : une dépense
+qu'on ne voit pas ne se juge pas. La leçon vaut d'être retenue : un très gros
+périmètre se relit par domaine, en plusieurs fois, pas en une pull request
+géante.
+
 Et une conséquence qui surprend la première fois : **l'action refuse de tourner
 quand `relecture.yml` diffère de la version portée par `main`** — « the workflow
 file must exist and have identical content to the version on the repository's
