@@ -32903,24 +32903,38 @@ function reancre(cal, pt){
            fond: cal.fond, force: cal.force, halls: cal.halls, vide: cal.vide };
 }
 
-/** L'emprise de tous les pavillons d'un coup : ils partagent un repère, et
- *  c'est autour de l'ensemble qu'on se situe — sans quoi un salon sur deux
- *  halls n'en placerait qu'un. */
-function empriseDesPavillons(){
+/**
+ * L'emprise du pavillon qu'on situe.
+ *
+ * Du pavillon, et non du salon : depuis que le calage est descendu sur le
+ * pavillon, c'est un hall à la fois qu'on pose sur la Terre, et lui seul dit
+ * autour de quoi chercher. Réunir les pavillons ne se justifiait que s'ils
+ * partagent une origine — ce qui est faux précisément des salons qui ont fait
+ * descendre le calage. À LUXMC26, les cinq espaces du Grimaldi Forum s'étalent
+ * sur 265 × 339 m quand le bâtiment n'en couvre que 11 427 : l'union demandait
+ * à OpenStreetMap un kilomètre carré centré à cent mètres du hall, et faisait
+ * chercher un bâtiment à la taille de l'ensemble.
+ *
+ * Le repli sur l'union sert au pavillon sans emprise — il vaut mieux se situer
+ * à peu près que pas du tout.
+ */
+function emprisePavillon(){
+  const p = DATA && DATA.plans ? P() : null;
+  if (p && p.emprise) return Object.assign({}, p.emprise);
   let e = null;
-  for (const p of (DATA && DATA.plans ? DATA.plans : [])){
-    const q = p.emprise;
-    if (!q) continue;
-    e = e ? { x0: Math.min(e.x0, q.x0), y0: Math.min(e.y0, q.y0),
-              x1: Math.max(e.x1, q.x1), y1: Math.max(e.y1, q.y1) } : Object.assign({}, q);
+  for (const q of (DATA && DATA.plans ? DATA.plans : [])){
+    if (!q.emprise) continue;
+    e = e ? { x0: Math.min(e.x0, q.emprise.x0), y0: Math.min(e.y0, q.emprise.y0),
+              x1: Math.max(e.x1, q.emprise.x1), y1: Math.max(e.y1, q.emprise.y1) }
+          : Object.assign({}, q.emprise);
   }
   return e;
 }
 
-/** Le milieu de ce que le salon occupe : le point sur lequel on cale, et
+/** Le milieu de ce que ce pavillon occupe : le point sur lequel on cale, et
  *  autour duquel on tourne. */
-function centreDesPavillons(){
-  const e = empriseDesPavillons();
+function centrePavillon(){
+  const e = emprisePavillon();
   return e ? [(e.x0 + e.x1) / 2, (e.y0 + e.y1) / 2] : [0, 0];
 }
 
@@ -33691,9 +33705,9 @@ const TERRAIN_BATIS = 3;
 
 /** Le carré de terrain à fouiller, en degrés : sud, ouest, nord, est. */
 function carreDeTerrain(cal, facteur){
-  const e = empriseDesPavillons();
+  const e = emprisePavillon();
   if (!e) return null;
-  const c = centreDesPavillons();
+  const c = centrePavillon();
   const d = Math.max(e.x1 - e.x0, e.y1 - e.y0) * facteur / 2;
   let sud = 90, ouest = 180, nord = -90, est = -180;
   for (const q of [[c[0] - d, c[1] - d], [c[0] + d, c[1] - d],
@@ -34077,7 +34091,7 @@ function appliqueCalage(){
 /** Tourner autour du point qu'on regarde, et non autour d'une origine à sept
  *  kilomètres — sans quoi la carte fuit l'écran au premier degré. */
 function tourneCalage(a){
-  ENV_CAL = reancre(ENV_CAL, centreDesPavillons());
+  ENV_CAL = reancre(ENV_CAL, centrePavillon());
   ENV_CAL.angle = a;
   appliqueCalage();
 }
@@ -34328,7 +34342,7 @@ function voletEnvirons(hote){
   bSitue.onclick = async () => {
     const ll = litCoordonnees(champ.value);
     if (!ll) return dit("Il faut deux nombres à virgule, la latitude d'abord.", true);
-    const centre = centreDesPavillons();
+    const centre = centrePavillon();
     const fond = ENV_CAL && ENV_CAL.fond ? ENV_CAL.fond : "plan";
     ENV_CAL = { lon: ll.lon, lat: ll.lat, x: centre[0], y: centre[1], angle: 0, fond: fond };
     const bbox = carreDeTerrain(ENV_CAL, TERRAIN_BATIS);
