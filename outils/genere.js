@@ -93,7 +93,8 @@ function marques(html) {
  *                   que le clair et n'en veulent qu'une (voir `outils/pwa.js`).
  */
 function page(contenu, options) {
-  const { role, tete, application, autonome, deuxThemes, pleinEcran } = options || {};
+  const { role, tete, application, autonome, deuxThemes, pleinEcran,
+          salon } = options || {};
   return '<!doctype html>\n<html lang="fr"' +
     (role ? ' data-role="' + role + '"' : "") + '>\n<head>\n' +
     '<meta charset="utf-8">\n' +
@@ -104,7 +105,7 @@ function page(contenu, options) {
        est resté bordé de gris. C'est ici que cela se décide. */
     '<meta name="viewport" content="width=device-width, initial-scale=1' +
       (pleinEcran ? ", viewport-fit=cover" : "") + '">\n' +
-    langue(contenu) +
+    langue(contenu, salon) +
     (tete || "") +
     (autonome ? "" : pwa.TETE + (deuxThemes ? pwa.BARRE_DEUX_THEMES : pwa.BARRE_CLAIRE)) +
     (application && !autonome ? pwa.application(SLUG_DEFAUT) : "") +
@@ -123,11 +124,21 @@ function page(contenu, options) {
  */
 const MOTEUR_LANGUE = fs.readFileSync(D + "/gabarit/_langue.js", "utf8");
 const DICTIONNAIRE = traductions.chargeDictionnaire();
-function langue(contenu) {
+function langue(contenu, salon) {
   const table = traductions.dictionnairePour(contenu, DICTIONNAIRE);
   // du texte JSON dans une chaîne JavaScript, où `</script>` ne doit pas paraître
   const texte = JSON.stringify(JSON.stringify(table)).replace(/</g, "\\u003c");
-  return "<script>\n" + MOTEUR_LANGUE.replace("__DICTIONNAIRE__", () => texte) + "</script>\n";
+  /* Le salon que cette page montre faute de `?plan=` et de `/plan-<salon>`.
+     Le moteur tourne en tête, avant le script qui porte `data-slug` : il ne
+     peut pas le lui demander, et sans lui sa clé ne nommait aucun salon — ce
+     que l'exploitant ferme sur `/plan` ne se relisait pas sur
+     `/plan-<salon>`, et l'anglais reparaissait le temps d'un chargement. Vide
+     pour une page qui ne montre aucun plan : elle n'écrit rien, donc ne lit
+     rien. */
+  return "<script>\n" +
+    MOTEUR_LANGUE.replace("__DICTIONNAIRE__", () => texte)
+                 .replace("__SALON_DEFAUT__", () => salon || "") +
+    "</script>\n";
 }
 
 const SLUG_DEFAUT = "smcl-2026";
@@ -150,7 +161,16 @@ const SLUG_DEFAUT = "smcl-2026";
 const PRECHARGE = [
   "<script>",
   "{",
-  '  const slug = new URLSearchParams(location.search).get("plan") || "' + SLUG_DEFAUT + '";',
+  /* Le salon se lit là où il se trouve, comme dans `_js.html` `SLUG` et dans
+     `outils/pwa.js` : le paramètre qu'on partage, ou le chemin que
+     l'application installée ouvre. Ce chemin-là est le seul qu'elle ouvre —
+     elle n'a pas de `?plan=` —, si bien qu'un préchargement qui l'ignorait
+     partait chercher le salon par défaut. Sur un appareil qui l'avait déjà vu,
+     c'est son plan qui se dessinait ; sinon la version demandée n'était jamais
+     la bonne, et la réponse ne se gardait nulle part. */
+  '  const chemin = location.pathname.match(/^\\/plan-([a-z0-9][a-z0-9-]{0,63})$/);',
+  '  const slug = new URLSearchParams(location.search).get("plan") ||',
+  '    (chemin && chemin[1]) || "' + SLUG_DEFAUT + '";',
   '  const q = "' + API + '?slug=" + encodeURIComponent(slug);',
   "  /* L'entête dit quelle version se sert : cinquante octets, et c'est lui",
   "     qui nomme l'adresse du plan. */",
@@ -183,7 +203,8 @@ function connecte(t) {
 /* --- page publique : le mode administration n'est jamais activé --- */
 fs.writeFileSync(W + "plan.html",
   page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", "retireAdmin();"),
-       { tete: PRECHARGE, application: true, pleinEcran: true }));
+       { tete: PRECHARGE, application: true, pleinEcran: true,
+         salon: SLUG_DEFAUT }));
 
 /* --- page d'administration : accès après authentification --- */
 /* La bibliothèque des lieux ne sert qu'à poser des bâtiments : le visiteur
@@ -192,7 +213,7 @@ const LIEUX = fs.readFileSync(D + "/lieux.json", "utf8").trim().replace(/</g, "\
 fs.writeFileSync(W + "plan-admin.html",
   page(connecte(tpl).replace("/*__PORTE_ADMIN__*/", auth)
                     .replace("/*__LIEUX__*/null", () => LIEUX),
-       { role: "admin", pleinEcran: true }));
+       { role: "admin", pleinEcran: true, salon: SLUG_DEFAUT }));
 
 /* --- démonstration à données figées, publiable en artefact --- */
 fs.writeFileSync(W + "plan-smcl.html",

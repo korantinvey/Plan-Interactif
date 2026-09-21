@@ -88,7 +88,13 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
     let salon = "";
     try {
       salon = new URLSearchParams(location.search).get("plan") ||
-        (CHEMIN_SALON.exec(location.pathname) || [])[1] || "";
+        (CHEMIN_SALON.exec(location.pathname) || [])[1] ||
+        /* Le troisième lieu où `_js.html` `SLUG` va le chercher, que la
+           construction pose ici faute de pouvoir le demander au script qui le
+           porte : le moteur tourne avant lui. Sans cela `/plan` nu, qui est
+           bien une adresse publique, écrivait sous une clé sans salon ce que
+           `/plan-<salon>` relisait sous la sienne. */
+        "smcl-2026" || "";
     } catch (e) {}
     return "plan-langues:" + (racine.dataset.role === "admin" ? "admin@" : "") + salon;
   }
@@ -793,7 +799,9 @@ window.LANGUE = { code: "fr", traduit: String, enAnglais: () => null,
 </script>
 <script>
 {
-  const slug = new URLSearchParams(location.search).get("plan") || "smcl-2026";
+  const chemin = location.pathname.match(/^\/plan-([a-z0-9][a-z0-9-]{0,63})$/);
+  const slug = new URLSearchParams(location.search).get("plan") ||
+    (chemin && chemin[1]) || "smcl-2026";
   const q = "/api/plan?slug=" + encodeURIComponent(slug);
   /* L'entête dit quelle version se sert : cinquante octets, et c'est lui
      qui nomme l'adresse du plan. */
