@@ -502,6 +502,18 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    le retour à la ligne qui les séparait devient alors inutile. */
 .row .nm{display:block;font-weight:500;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Les trois marques d'un nouveau venu dans la liste. Le point se lit en
+   balayant la colonne sans prendre la place du nom ; le cartouche dit le mot,
+   au prix de l'ellipse qui le mange sur une enseigne longue ; la mention
+   descend sur la seconde ligne, où rien ne la tronque. */
+.row .nPoint{display:inline-block;width:7px;height:7px;border-radius:50%;
+  margin-right:7px;vertical-align:1px;background:var(--neuf-liste,var(--accent))}
+.row .nCart{display:inline-block;margin-left:7px;padding:1px 5px;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;
+  border:1px solid var(--neuf-liste,var(--accent));border-radius:2px;
+  color:var(--neuf-liste,var(--accent))}
+.row .nSous{color:var(--neuf-liste,var(--accent));font-weight:600}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 /* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
@@ -657,6 +669,18 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 /* le trait discontinu est ce qui distingue une zone d'un stand : sa sélection
    le garde */
 #marques .sel.zn{stroke-dasharray:5 4}
+/* Les marques des nouveaux venus, dans leur calque à part pour la raison qui
+   vaut pour les liserés au-dessus : une cloison mitoyenne appartient aux deux
+   stands qu'elle sépare, et le second tracé effaçait ce que le premier
+   portait. Elles ne reçoivent aucun clic — c'est le stand qu'on ouvre.
+
+   Leur teinte se règle à part de l'accent : un exploitant peut vouloir
+   distinguer ses nouveaux venus sans emprunter la couleur qui désigne déjà ce
+   qu'on a retenu. Sans réglage, c'est l'accent du salon. */
+#neufs{pointer-events:none}
+#neufs .neufPlein{fill:var(--neuf-plan,var(--accent));stroke:none}
+#neufs .neufLis{fill:none;stroke:var(--neuf-plan,var(--accent));stroke-width:2.4;
+  vector-effect:non-scaling-stroke}
 html.sans-parcours #marques .parc{display:none}
 /* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
    plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force
@@ -1481,9 +1505,46 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    ligne de script ait à le poser. Un masque plutôt qu'une image : il se peint
    de la couleur de la pastille, celle que chaque modèle lui a donnée, et un
    tampon kraft n'a pas à emporter son encre. */
-.badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
+.badge.neuf,.rubanNeuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
 .badge.neuf::before{content:"";flex:none;width:12px;height:12px;background:currentColor;
   -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
+/* Les deux autres façons d'annoncer un nouveau venu, au choix de l'exploitant
+   depuis l'onglet « Nouveaux ». La feuille de style retient celle qu'il a
+   prise : le script ne décide que du fait qu'il y en ait une, si bien qu'un
+   réglage changé se voit sur la fiche déjà ouverte.
+
+   Le coin corné se pose à gauche et non à droite, où sa référence le met : le
+   coin droit porte déjà le logo de l'exposant et la croix de fermeture, et la
+   marque passait dessous. La réserve qu'il demande est le pendant de celle
+   que les actions prennent de l'autre côté. */
+.corneNeuf{position:absolute;top:0;left:0;width:64px;height:64px;
+  overflow:hidden;pointer-events:none}
+.corneNeuf span{position:absolute;top:13px;left:-28px;width:100px;
+  padding:3px 0;text-align:center;transform:rotate(-45deg);
+  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase}
+html[data-neuf-fiche="corne"] .detail-hd .hdTete{padding-left:58px}
+/* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
+   descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
+   est déjà à l'étroit. C'est à l'exploitant d'en juger. */
+.rubanNeuf{display:flex;align-items:center;gap:7px;padding:6px 18px;
+  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase}
+.rubanNeuf::before{content:"";flex:none;width:13px;height:13px;background:currentColor;
+  -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
+/* Une seule des trois paraît. Le script les montre toutes les trois quand
+   l'exposant est neuf ; c'est ici que le choix se fait. */
+html:not([data-neuf-fiche="pastille"]) .detail-hd .badge.neuf,
+html:not([data-neuf-fiche="corne"]) .corneNeuf,
+html:not([data-neuf-fiche="bandeau"]) .rubanNeuf{display:none}
+/* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
+   pastille : l'exploitant qui la règle veut celle-là, pas celle de
+   l'habillage. Le sélecteur passe donc devant les onze modèles, qui nomment
+   tous la classe du modèle puis la pastille. */
+html[data-neuf-coul] .detail-hd .badge.neuf{
+  background:var(--neuf-fiche-doux);color:var(--neuf-fiche)}
 /* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
    un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
    plusieurs — et le clic n'est que la suite logique. */
@@ -3389,7 +3450,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .voletReg{animation:none}
   .ongReg button{transition:none}
 }
-/* Les onglets étaient quatre, ils sont sept : sur un téléphone, « Apparence »
+/* Les onglets étaient quatre, ils sont huit : sur un téléphone, « Apparence »
    et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
    resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
    ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
@@ -3434,6 +3495,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* L'onglet « Nouveaux ». Trois blocs qui posent la même question à trois
+   endroits, donc trois blocs de même forme : un intitulé, ce que la marque
+   coûte à cet endroit-là, la planche des marques, et le nuancier.
+
+   Les vignettes sont des schémas et non la chose même : une fiche réduite à
+   soixante pixels ne se lirait pas, et ce qui se juge ici est la place de la
+   marque. Le vrai rendu se voit derrière la fenêtre — le plan et la liste
+   suivent le clic. */
+.blocNeuf{margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.blocNeuf:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.blocNeuf .aNeuf{margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:62ch}
+.voletReg > .note{margin:0 0 18px;padding:9px 12px;font-size:12.5px;
+  background:var(--surface-2);border-left:3px solid var(--line-strong);
+  border-radius:0 3px 3px 0;color:var(--ink-2)}
+.choixNeuf{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.vgN{display:flex;flex-direction:column;align-items:center;gap:6px;width:92px;
+  padding:8px 6px 9px;border:1px solid var(--line);border-radius:5px;
+  background:var(--surface);cursor:pointer}
+.vgN:hover{border-color:var(--line-strong)}
+.vgN[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.vgN .ap{display:block;width:100%}
+.vgN svg{display:block;width:100%;height:auto}
+.vgN .n{font-size:11px;line-height:1.25;text-align:center;color:var(--ink-2)}
+.vgN[aria-pressed="true"] .n{color:var(--ink);font-weight:600}
+/* Chaque planche se peint de la teinte de sa propre surface : c'est ce qui
+   fait voir, avant de cliquer, ce que la couleur réglée juste dessous donne. */
+.vgN-plan .mq{fill:var(--neuf-plan,var(--accent))}
+.vgN-plan .mqT{stroke:var(--neuf-plan,var(--accent))}
+.vgN-liste .mq{fill:var(--neuf-liste,var(--accent))}
+.vgN-liste .mqT{stroke:var(--neuf-liste,var(--accent))}
+.vgN-fiche .mq{fill:var(--neuf-fiche,var(--accent))}
 /* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
    l'allure du bouton des critères de recherche une fois actif — c'en est un,
    de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
@@ -5249,11 +5341,19 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
            fiche bien remplie s'y lisait par le trou d'une serrure. -->
       <button class="poignee" id="poigneeFiche" aria-expanded="false" aria-controls="dBody"
         aria-label="Agrandir la fiche"></button>
+      <!-- Le bandeau des nouveaux venus se pose au-dessus de la tête de fiche,
+           et non dedans : c'est toute la largeur qu'il prend, et le logo de
+           l'exposant occupe déjà le coin où les deux autres marques vont. -->
+      <div class="rubanNeuf" id="dRuban" hidden>Nouvel exposant</div>
       <div class="detail-hd">
         <div class="hdActs">
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
+        <!-- Le coin corné, pour qui le préfère à la pastille. Il se glisse
+             sous les actions : la croix de fermeture reste au-dessus, sans
+             quoi la marque la recouvrirait. -->
+        <div class="corneNeuf" id="dCorne" hidden aria-hidden="true"><span>Nouveau</span></div>
         <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
@@ -6042,6 +6142,8 @@ function montePlan(){
     '<g class="stand" data-id="' + s.id + '" tabindex="0" role="button" aria-label="' +
     esc(s.nom || ("Stand " + (s.code || ""))) + '"><path d="' + s.d + '"/></g>').join("");
   emp = p.emprise;
+  // les tracés relevés valaient pour les stands du pavillon qu'on quitte
+  oublieNeufs();
   calqueActif = null;
   /* Les groupes viennent d'être réécrits : l'emplacement qu'on reprenait n'est
      plus celui-là, et il appartenait au pavillon qu'on vient de quitter. */
@@ -6094,6 +6196,140 @@ function changePlan(i){
   ferme();
   montePlan(); fit(); liste();
   chargeFond(i);
+}
+
+/* ------------------------------------------------------------
+   Les nouveaux venus
+
+   Un salon qui distingue ses nouveaux exposants le dit par un champ que la
+   synchronisation pose sur la fiche. Ce qu'on en montre se règle surface par
+   surface, depuis l'onglet « Nouveaux » des réglages : la marque qui se lit
+   bien sur une fiche qu'on ouvre — un mot — ne tient pas sur un stand qu'on
+   survole, où le rendu WebGL ne rejoue que des formes.
+   ------------------------------------------------------------ */
+
+/** Cette société est-elle un nouveau venu, et le salon le montre-t-il ? */
+const estNeuf = (x) => Boolean(x && x.neuf) && montre("stand", "nouveau");
+
+/** Un emplacement dont le titulaire ou l'un de ses hébergés vient d'arriver.
+ *  Une zone organisateur n'est jamais neuve : elle n'est pas un exposant. */
+const standNeuf = (o) => Boolean(o) && o.kind !== "zone" &&
+  societes(o).some(s => estNeuf(s.soc));
+
+/* Les marques du plan vivent hors des couches, comme les liserés de la
+   sélection et du parcours et pour la même raison : posée dans le groupe du
+   stand, une marque se faisait recouvrir par la cloison du voisin, tracé
+   après lui. Le calque ne reçoit aucun clic — c'est le stand qu'on désigne,
+   pas sa marque — et se range sous « #marques », que la sélection garde au
+   sommet. */
+function calqueNeufs(){
+  let g = $("neufs");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "neufs";
+    g.setAttribute("aria-hidden", "true");
+    svg.insertBefore(g, svg.querySelector("#marques, #itin, #apercu, #poignees"));
+  }
+  return g;
+}
+
+/* L'étincelle de la pastille, redessinée sur le plan. Le même tracé que celui
+   de la feuille de style — c'est la même distinction, et deux dessins pour
+   elle en feraient deux. */
+const ETOILE_NEUF =
+  '<path d="M9.8 0.2C9.8 5.9 13.9 10 19.6 10C13.9 10 9.8 14.1 9.8 19.8' +
+  'C9.8 14.1 5.7 10 0 10C5.7 10 9.8 5.9 9.8 0.2Z"/>' +
+  '<path d="M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6' +
+  'C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z"/>';
+
+/**
+ * La marque d'un stand, dans le mode retenu.
+ *
+ * Sa taille suit celle du stand, entre deux bornes : un demi-mètre sur une
+ * échoppe de trois mètres de côté reste visible, et la même marque à l'échelle
+ * d'un stand de cent mètres carrés en couvrirait le nom.
+ *
+ * Le coin corné se pose sur l'angle de la boîte du tracé, non sur le tracé
+ * lui-même : un stand en L n'a pas cet angle-là, et sa corne déborde dans
+ * l'allée. C'est le prix de cette marque, et le volet des réglages le dit.
+ */
+function traceNeuf(mode, p){
+  if (mode === "lisere") return '<path class="neufLis" d="' + p.getAttribute("d") + '"/>';
+  const b = p.getBBox();
+  if (!(b.width > 0) || !(b.height > 0)) return "";
+  const c = Math.min(Math.max(Math.min(b.width, b.height) * .34, .5), 1.6);
+  const n = (v) => v.toFixed(2);
+  const x = b.x + b.width, y = b.y;
+  if (mode === "corne")
+    return '<path class="neufPlein" d="M' + n(x - c) + ' ' + n(y) + 'L' + n(x) + ' ' +
+      n(y) + 'L' + n(x) + ' ' + n(y + c) + 'Z"/>';
+  if (mode === "point")
+    return '<circle class="neufPlein" cx="' + n(x - c * .58) + '" cy="' + n(y + c * .58) +
+      '" r="' + n(c * .34) + '"/>';
+  return '<g class="neufPlein" transform="translate(' + n(x - c * 1.08) + ' ' +
+    n(y + c * .08) + ') scale(' + (c / 24).toFixed(4) + ')">' + ETOILE_NEUF + '</g>';
+}
+
+/* Le relevé demande la boîte de chaque forme, que seul le navigateur sait
+   rendre : il coûte une mise en page. On le garde donc d'un geste à l'autre,
+   et on ne le refait qu'au changement de pavillon ou de mode — le retrait
+   d'une recherche, lui, ne déplace rien. */
+let NEUFS_VUS = { plan: -1, mode: "", traces: [] };
+const oublieNeufs = () => { NEUFS_VUS = { plan: -1, mode: "", traces: [] }; };
+
+function releveNeufs(mode){
+  const traces = [];
+  $("stands").querySelectorAll("g.stand").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    if (!o || !standNeuf(o)) return;
+    const p = g.querySelector("path");
+    const d = p ? traceNeuf(mode, p) : "";
+    if (d) traces.push({ id: g.dataset.id, d });
+  });
+  NEUFS_VUS = { plan: state.plan, mode, traces };
+}
+
+/**
+ * Les marques des nouveaux venus, posées sur le plan.
+ *
+ * Elles suivent le retrait d'une recherche comme les stands qu'elles
+ * désignent : une marque restée à pleine force au milieu d'un hall effacé se
+ * lirait comme un résultat.
+ */
+function dessineNeufs(){
+  if (!DATA) return;
+  const mode = modeNeuf("plan");
+  const g = calqueNeufs();
+  const eteint = $("stands").style.display === "none";
+  if (mode === "aucun" || eteint){
+    if (g.firstChild) g.textContent = "";
+    return;
+  }
+  if (NEUFS_VUS.plan !== state.plan || NEUFS_VUS.mode !== mode) releveNeufs(mode);
+  const dim = new Set();
+  $("stands").querySelectorAll("g.dim").forEach(x => dim.add(x.dataset.id));
+  g.innerHTML = NEUFS_VUS.traces.map(t =>
+    '<g class="neufM' + (dim.has(t.id) ? " dim" : "") + '">' + t.d + '</g>').join("");
+}
+
+/**
+ * La marque d'un nouveau venu dans une ligne de la liste, en trois morceaux :
+ * ce qui précède le nom, ce qui le suit, et ce qui descend sous lui. Le même
+ * découpage sert à la vraie liste et aux vignettes des réglages, sans quoi
+ * l'exploitant choisirait sa marque sur une ligne qui n'est pas la sienne —
+ * d'où le mode en second argument, que les vignettes imposent.
+ */
+function marqueNeufListe(neuf, force){
+  const vide = { avant: "", apres: "", sous: "" };
+  if (!neuf) return vide;
+  const mode = force || modeNeuf("liste");
+  if (mode === "point")
+    return { ...vide, avant: '<span class="nPoint" title="Nouvel exposant"></span>' };
+  if (mode === "cartouche")
+    return { ...vide, apres: '<span class="nCart">Nouveau</span>' };
+  if (mode === "sousligne")
+    return { ...vide, sous: '<span class="nSous">Nouvel exposant</span>' };
+  return vide;
 }
 
 /* ============================================================
@@ -7065,6 +7301,9 @@ function marqueRetrait(){
     const o = parId.get(g.dataset.id);
     g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
   });
+  // les marques des nouveaux venus vivent hors des stands : le retrait ne les
+  // atteint pas tout seul
+  dessineNeufs();
 }
 
 function appliqueFiltre(){
@@ -7247,6 +7486,9 @@ function liste(){
       ? '<span class="hall">' + esc(DATA.plans[o.p].court) + '</span>' : "";
     const rang = heberge ? o.i : -1;
     const sous = sousLigne(o);
+    /* Un hébergé se marque pour lui seul : la ligne porte son nom, pas celui
+       du stand, et son hôte peut être là depuis dix ans. */
+    const mn = marqueNeufListe(heberge ? estNeuf(o) : standNeuf(o));
     /* Le pavillon part avec la ligne. Un repère ne vit pas dans « parId » —
        c'est une forme dessinée, pas un objet du plan — et son identifiant seul
        ne dirait pas où aller le chercher. */
@@ -7254,9 +7496,12 @@ function liste(){
       '" data-sorte="' + o.kind + '" data-soc="' + rang + '" data-p="' + o.p +
       '" aria-current="' + (emplacement && state.sel === o.id && state.selSoc === rang) + '">' +
       '<span class="code">' + esc(codeCase(o)) + '</span>' +
-      '<span><span class="nm">' + esc((o.kind === "zone" ? nomDeLaZone(o) : o.nom) || o.plan ||
-        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
-      '<span class="s">' + esc(sous) + badge + '</span></span></button>';
+      '<span><span class="nm">' + mn.avant +
+        esc((o.kind === "zone" ? nomDeLaZone(o) : o.nom) || o.plan ||
+        (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) +
+        mn.apres + '</span>' +
+      '<span class="s">' + mn.sous + (mn.sous && sous ? " · " : "") + esc(sous) +
+        badge + '</span></span></button>';
   }).join("")
     : '<div class="empty">' + (DATA.plans.length > 1
         ? "Aucun résultat dans les " + DATA.plans.length + " pavillons."
@@ -8988,7 +9233,12 @@ function ouvre(o, depuis, canal, iSoc, recentrer){
      l'a posée — le champ qui la porte n'existe pas sur tous les salons — et
      que l'exploitant la laisse voir. Une zone organisateur n'est jamais
      nouvelle : elle n'est pas un exposant. */
-  $("dNeuf").hidden = zone || !soc.neuf || !montre("stand", "nouveau");
+  /* Les trois marques paraissent ou non pour la même raison ; c'est la feuille
+     de style qui retient celle que l'exploitant a choisie, sous
+     « data-neuf-fiche ». Un réglage changé se voit ainsi sur la fiche ouverte,
+     sans la rouvrir. */
+  const venu = !zone && estNeuf(soc);
+  $("dNeuf").hidden = $("dCorne").hidden = $("dRuban").hidden = !venu;
   // sur une zone, le programme qu'elle accueille ; sur un stand, les
   // conférences que son exposant tient, où qu'elles se tiennent
   /* Le programme est rattaché au stand par le dossier de son titulaire : la
@@ -10549,6 +10799,9 @@ function styleDataGroupe(nom, on){
   $(nom).style.display = on ? "" : "none";
   // le liseré du parcours est tracé hors des couches : il ne suit pas tout seul
   if (nom === "stands" || nom === "zones") marqueParcours();
+  /* Les marques des nouveaux venus non plus : la couche éteinte, elles
+     resteraient seules au-dessus d'un hall vide. */
+  if (nom === "stands") dessineNeufs();
 }
 
 function appliqueCouleursData(){
@@ -10611,6 +10864,7 @@ function appliqueApparence(){
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
+  appliqueNeuf();
   appliqueBarre();
   appliqueModele();
 }
@@ -11110,6 +11364,90 @@ function appliqueFond(){
   const v = conf("_fond").couleur;
   if (trio(v)) racine.style.setProperty("--c-fond", v);
   else racine.style.removeProperty("--c-fond");
+}
+
+/* ------------------------------------------------------------
+   Les nouveaux venus — ce que le plan en montre
+
+   Le champ vient de la synchronisation ; ce qu'on en fait voir se règle ici,
+   surface par surface. Trois questions plutôt qu'une, parce que la même marque
+   ne tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre,
+   pas sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
+
+   Les défauts ne changent rien aux salons déjà en ligne : la fiche garde la
+   pastille qu'elle portait, le plan et la liste restent nus tant que
+   l'exploitant n'a pas choisi.
+   ------------------------------------------------------------ */
+
+const MARQUES_NEUF = {
+  plan: [
+    { cle: "aucun",  nom: "Aucune" },
+    { cle: "point",  nom: "Point d'angle" },
+    { cle: "corne",  nom: "Coin corné" },
+    { cle: "etoile", nom: "Étincelle" },
+    { cle: "lisere", nom: "Liseré" },
+  ],
+  liste: [
+    { cle: "aucun",     nom: "Aucune" },
+    { cle: "point",     nom: "Point devant le nom" },
+    { cle: "cartouche", nom: "Cartouche" },
+    { cle: "sousligne", nom: "Mention sous le nom" },
+  ],
+  fiche: [
+    { cle: "aucun",    nom: "Aucune" },
+    { cle: "pastille", nom: "Pastille" },
+    { cle: "corne",    nom: "Coin corné" },
+    { cle: "bandeau",  nom: "Bandeau" },
+  ],
+};
+const NEUF_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
+
+/** La marque retenue pour une surface. Une valeur inconnue — un réglage
+ *  d'une version qui proposait autre chose — retombe sur le défaut. */
+function modeNeuf(surface){
+  const v = conf("_neuf")[surface];
+  return MARQUES_NEUF[surface].some(m => m.cle === v) ? v : NEUF_DEFAUT[surface];
+}
+
+/** La teinte réglée pour une surface, ou rien — auquel cas la feuille de style
+ *  reprend la main, et avec elle l'accent du salon. */
+const couleurNeuf = (surface) => {
+  const v = conf("_neuf")["c" + surface];
+  return trio(v) ? v : "";
+};
+
+/**
+ * Les trois marques posées sur la page : leur teinte en jetons, le mode retenu
+ * en attribut. La feuille de style fait le reste — d'où une fiche ouverte qui
+ * suit le réglage sans qu'on la rouvre.
+ *
+ * Le plan, lui, ne se déduit d'aucun attribut : ses marques sont des formes à
+ * tracer, et « dessineNeufs » les refait.
+ */
+function appliqueNeuf(){
+  ["plan", "liste", "fiche"].forEach(s => {
+    const v = couleurNeuf(s);
+    const n = "--neuf-" + s;
+    if (v) racine.style.setProperty(n, v); else racine.style.removeProperty(n);
+    racine.dataset["neuf" + s[0].toUpperCase() + s.slice(1)] = modeNeuf(s);
+  });
+  /* La pastille de la fiche se peint d'un aplat doux et d'une encre, comme
+     l'accent dont elle tenait ses deux tons : une teinte choisie doit rendre
+     les deux, sans quoi le mot disparaîtrait sur son propre fond. L'attribut
+     dit qu'il y a un réglage, et c'est lui qui fait passer la règle devant
+     celle du modèle de fiche. */
+  const f = couleurNeuf("fiche");
+  if (f){
+    racine.dataset.neufCoul = "1";
+    racine.style.setProperty("--neuf-fiche-doux", melange(f, "#FFFFFF", 0.86));
+    racine.style.setProperty("--neuf-fiche-ink",
+      luminance(trio(f)) > 0.42 ? "#0E1113" : "#FFFFFF");
+  } else {
+    delete racine.dataset.neufCoul;
+    racine.style.removeProperty("--neuf-fiche-doux");
+    racine.style.removeProperty("--neuf-fiche-ink");
+  }
+  dessineNeufs();
 }
 
 /**
@@ -11868,7 +12206,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Huit onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Neuf onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, le dernier
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -11921,6 +12259,11 @@ function ouvreReglages(ouvrir){
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
+    /* « Nouveaux » entre la fiche et l'apparence : il parle bien de l'allure
+       du plan, mais d'une allure qui dit un fait — qui vient d'arriver — et
+       non d'un habillage. Il se lit donc dans la foulée de ce que la fiche
+       montre, avant la planche des modèles. */
+    voletNeuf(volet("Nouveaux"));
     voletApparence(volet("Apparence"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
@@ -12940,6 +13283,198 @@ const TONS = [
   ["#7A5230", "Brun"], ["#3F5566", "Ardoise"], ["#25303A", "Anthracite"],
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
+
+/* Les vignettes du volet « Nouveaux ». Des schémas, et non la chose même :
+   une fiche réduite à soixante pixels ne se lirait pas, et ce qui se juge ici
+   est la place de la marque, pas le texte qu'elle porte. Le vrai rendu se
+   voit derrière la fenêtre, sur le plan et dans la liste, qui suivent le
+   choix au clic. */
+const CADRE_VIGNETTE =
+  '<rect x=".5" y=".5" width="63" height="39" rx="2" fill="var(--surface)" stroke="var(--line)"/>';
+const svgVignette = (dedans) =>
+  '<svg viewBox="0 0 64 40" aria-hidden="true">' + CADRE_VIGNETTE + dedans + '</svg>';
+const barreVignette = (x, y, l, o) =>
+  '<rect x="' + x + '" y="' + y + '" width="' + l + '" height="3" rx="1.5" ' +
+  'fill="var(--ink-3)" opacity="' + (o || .45) + '"/>';
+
+function vignetteNeufPlan(cle){
+  const stand = '<rect x="6" y="6" width="52" height="28" fill="var(--stand)" ' +
+    'stroke="var(--stand-line)"/>' + barreVignette(11, 24, 22, .5);
+  const m = cle === "point" ? '<circle class="mq" cx="50" cy="12" r="4"/>'
+    : cle === "corne" ? '<path class="mq" d="M46 6h12v12Z"/>'
+    : cle === "etoile" ? '<g class="mq" transform="translate(44 7) scale(.44)">' +
+        ETOILE_NEUF + '</g>'
+    : cle === "lisere" ? '<rect class="mqT" x="7.3" y="7.3" width="49.4" height="25.4" ' +
+        'fill="none" stroke-width="2.6"/>'
+    : "";
+  return svgVignette(stand + m);
+}
+
+function vignetteNeufListe(cle){
+  const cadre = (y) => '<rect x="6" y="' + y + '" width="11" height="8" rx="1" ' +
+    'fill="none" stroke="var(--line-strong)"/>';
+  const decale = cle === "point" ? 6 : 0;
+  const haut = cadre(7) + barreVignette(21 + decale, 9.5, cle === "cartouche" ? 18 : 26) +
+    (cle === "point" ? '<circle class="mq" cx="23" cy="11" r="2.6"/>' : "") +
+    (cle === "cartouche" ? '<rect class="mqT" x="42" y="7.2" width="15" height="7" rx="1.5" ' +
+      'fill="none" stroke-width="1.2"/>' : "") +
+    (cle === "sousligne" ? '<rect class="mq" x="21" y="15" width="17" height="2.4" rx="1.2"/>' : "");
+  const bas = cadre(cle === "sousligne" ? 24 : 22) +
+    barreVignette(21, cle === "sousligne" ? 26.5 : 24.5, 22, .3);
+  return svgVignette(haut + bas);
+}
+
+function vignetteNeufFiche(cle){
+  const m = cle === "pastille"
+      ? '<rect class="mq" x="7" y="6" width="30" height="8" rx="4" opacity=".2"/>' +
+        '<circle class="mq" cx="12.5" cy="10" r="2.2"/>' +
+        '<rect class="mq" x="17" y="8.8" width="16" height="2.4" rx="1.2" opacity=".85"/>'
+    : cle === "corne" ? '<path class="mq" d="M.5.5h17L.5 17.5Z"/>'
+    : cle === "bandeau" ? '<rect class="mq" x=".5" y=".5" width="63" height="8" rx="2"/>'
+    : "";
+  const haut = cle === "bandeau" ? 14 : cle === "corne" ? 20 : 19;
+  return svgVignette(m + barreVignette(7, haut, 40, .55) +
+    barreVignette(7, haut + 7, 22, .3) + barreVignette(7, haut + 13, 30, .3));
+}
+
+const VIGNETTES_NEUF = {
+  plan: vignetteNeufPlan, liste: vignetteNeufListe, fiche: vignetteNeufFiche,
+};
+
+/** Ce salon distingue-t-il ses nouveaux venus ? Le champ n'existe pas partout,
+ *  et un volet qui promettrait une marque qu'aucune fiche ne porte ferait
+ *  chercher une panne là où il n'y a qu'un champ vide. */
+const salonDitSesNeufs = () =>
+  Object.values((DATA || {}).plans || {}).some(pl =>
+    (pl.stands || []).some(o => o.neuf || (o.coex || []).some(x => x.neuf)));
+
+/**
+ * Ce que le plan montre de ses nouveaux exposants.
+ *
+ * Trois surfaces, trois questions : le stand qu'on survole, la ligne qu'on
+ * balaie, la fiche qu'on ouvre. La même marque ne vaut pas aux trois endroits
+ * — un mot se lit sur une fiche, se tronque dans une liste et ne se trace pas
+ * du tout sur le plan, dont le rendu WebGL ne rejoue que des formes.
+ *
+ * Chaque surface a sa teinte. L'accent du salon désigne déjà ce qu'on a
+ * retenu et ce qu'on vient d'ouvrir ; un exploitant qui veut distinguer ses
+ * nouveaux venus sans emprunter cette couleur-là doit pouvoir en choisir une
+ * autre, et pas la même partout — une marque discrète sur le plan peut
+ * s'accompagner d'un bandeau franc sur la fiche.
+ */
+function voletNeuf(hote){
+  const p = document.createElement("p");
+  p.textContent = "La synchronisation pose un champ « Nouvel exposant » sur " +
+    "les fiches des salons qui distinguent leurs nouveaux venus. Ce que le " +
+    "plan en montre se règle ici, surface par surface : le stand sur le plan, " +
+    "la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. " +
+    "Le choix se voit tout de suite derrière cette fenêtre.";
+  hote.appendChild(p);
+
+  if (!salonDitSesNeufs()){
+    const n = document.createElement("p");
+    n.className = "note";
+    n.textContent = "Aucune fiche de ce salon ne porte le champ pour l'instant : " +
+      "les marques réglées ici resteront invisibles jusqu'à ce que la source " +
+      "le renseigne.";
+    hote.appendChild(n);
+  } else if (!montre("stand", "nouveau")){
+    const n = document.createElement("p");
+    n.className = "note";
+    n.textContent = "Le champ « Nouvel exposant » est décoché dans la console : " +
+      "les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.";
+    hote.appendChild(n);
+  }
+
+  const bloc = (surface, titre, aide) => {
+    const d = document.createElement("div");
+    d.className = "blocNeuf";
+    d.innerHTML = '<span class="eyebrow tNeuf"></span><p class="aNeuf"></p>' +
+      '<div class="choixNeuf"></div>' +
+      '<div class="reglage-coul"><div class="tete">' +
+        '<span class="eyebrow">Couleur de la marque</span><span class="val"></span>' +
+        '<button type="button" class="raz">Couleur d\'origine</button></div>' +
+        '<div class="nuancier"></div></div>';
+    d.querySelector(".tNeuf").textContent = titre;
+    d.querySelector(".aNeuf").textContent = aide;
+
+    const choix = d.querySelector(".choixNeuf");
+    const tuiles = MARQUES_NEUF[surface].map(m => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "vgN vgN-" + surface;
+      b.innerHTML = '<span class="ap">' + VIGNETTES_NEUF[surface](m.cle) +
+        '</span><span class="n"></span>';
+      b.querySelector(".n").textContent = m.nom;
+      b.onclick = () => {
+        conf("_neuf")[surface] = m.cle;
+        appliqueNeuf();
+        /* La liste s'écrit ligne par ligne : son marquage tient au balisage,
+           non à la feuille de style, et ne suit pas tout seul. */
+        if (surface === "liste") liste();
+        enregistreConf();
+        majTuiles();
+      };
+      choix.appendChild(b);
+      return { b, m };
+    });
+    const majTuiles = () => tuiles.forEach(({ b, m }) =>
+      b.setAttribute("aria-pressed", String(m.cle === modeNeuf(surface))));
+    majTuiles();
+
+    const val = d.querySelector(".val");
+    const nuancier = d.querySelector(".nuancier");
+    const majPastilles = () => {
+      const v = (couleurNeuf(surface) || "").toLowerCase();
+      nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+        b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+      const n = nomDuTon(v);
+      val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
+                          : "Couleur principale";
+      const libre = nuancier.querySelector(".perso input");
+      if (libre) libre.value = couleurNeuf(surface) || jeton("--accent-base") || "#2F49D1";
+    };
+    /* Peindre ne fait que poser des jetons sur la racine : c'est ce qui peut
+       suivre la rafale du sélecteur de couleur. */
+    const peint = (v) => { conf("_neuf")["c" + surface] = v; appliqueNeuf(); majPastilles(); };
+    TONS.forEach(([ton, nom]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.ton = ton;
+      b.style.background = ton;
+      b.title = nom + " · " + ton;
+      b.setAttribute("aria-label", nom);
+      b.onclick = () => { peint(ton); enregistreConf(); };
+      nuancier.appendChild(b);
+    });
+    const libre = document.createElement("label");
+    libre.className = "perso";
+    libre.title = "Couleur libre";
+    libre.innerHTML = '<input type="color"><span></span>';
+    suitNuancier(libre.querySelector("input"), peint, enregistreConf);
+    nuancier.appendChild(libre);
+    d.querySelector(".raz").onclick = () => {
+      delete conf("_neuf")["c" + surface];
+      enregistreConf(); appliqueNeuf(); majPastilles();
+    };
+    majPastilles();
+    hote.appendChild(d);
+  };
+
+  bloc("plan", "Sur le plan",
+    "Une forme posée sur le stand. Le coin corné se place sur l'angle de la " +
+    "boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde " +
+    "dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise " +
+    "déjà.");
+  bloc("liste", "Dans la liste",
+    "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange " +
+    "sur une enseigne longue ; la mention descend sur la seconde ligne, où " +
+    "rien ne la tronque.");
+  bloc("fiche", "En tête de fiche",
+    "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le " +
+    "coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le " +
+    "bandeau prend toute la largeur et descend le nom d'une ligne.");
+}
 
 /** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il
  *  porte, et l'habillage de ses panneaux — la liste des exposants, la fiche
@@ -16499,7 +17034,7 @@ function ouvrePoi(id, depuis, recentrer){
   /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
      d'un escalier gardait la marque du stand consulté juste avant. */
   poseMarque("");
-  $("dNeuf").hidden = true;
+  $("dNeuf").hidden = $("dCorne").hidden = $("dRuban").hidden = true;
   $("dPartage").hidden = true;
   /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
      visible, elle basculait encore la visibilité de la zone d'avant. */

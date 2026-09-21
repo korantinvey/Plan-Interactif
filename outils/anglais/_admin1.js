@@ -434,4 +434,33 @@ module.exports = {
   "Bandeau réduit": "Slim top bar",
   "Une bande aussi basse que possible : le nom du salon, les pavillons, les commandes.":
     "A band as short as it can be: the show name, the halls, the controls.",
+
+  // l'onglet « Nouveaux » — ce que le plan montre de ses nouveaux exposants
+  "Nouveaux": "New arrivals",
+  "La synchronisation pose un champ « Nouvel exposant » sur les fiches des salons qui distinguent leurs nouveaux venus. Ce que le plan en montre se règle ici, surface par surface : le stand sur le plan, la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. Le choix se voit tout de suite derrière cette fenêtre.":
+    "Synchronisation puts a \u201cNew exhibitor\u201d field on the records of shows that single out their newcomers. What the map makes of it is set here, surface by surface: the stand on the map, the row in the result list, the head of the record that opens. The choice shows at once behind this window.",
+  "Aucune fiche de ce salon ne porte le champ pour l'instant : les marques réglées ici resteront invisibles jusqu'à ce que la source le renseigne.":
+    "No record in this show carries the field yet: the marks set here will stay invisible until the source fills it in.",
+  "Le champ « Nouvel exposant » est décoché dans la console : les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.":
+    "The \u201cNew exhibitor\u201d field is unticked in the console: the marks set here will only show once the field is made visible.",
+  "Couleur de la marque": "Mark colour",
+  "Sur le plan": "On the map",
+  "Une forme posée sur le stand. Le coin corné se place sur l'angle de la boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise déjà.":
+    "A shape laid on the stand. The folded corner sits on the corner of the outline's box: an L-shaped stand has no such corner, and its fold spills into the aisle. The outline, for its part, borrows the stroke selection already uses.",
+  "Dans la liste": "In the list",
+  "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange sur une enseigne longue ; la mention descend sur la seconde ligne, où rien ne la tronque.":
+    "The result row. The tag says the word, but the ellipsis eats it on a long brand name; the caption drops to the second line, where nothing truncates it.",
+  "En tête de fiche": "At the head of the record",
+  "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le bandeau prend toute la largeur et descend le nom d'une ligne.":
+    "What you read when a stand opens. The folded corner goes on the left: the right corner already carries the exhibitor's logo and the close button. The banner takes the full width and pushes the name down a line.",
+  // les marques, une planche par surface
+  "Point d'angle": "Corner dot",
+  "Coin corn\u00e9": "Folded corner",
+  "\u00c9tincelle": "Sparkle",
+  "Liser\u00e9": "Outline",
+  "Point devant le nom": "Dot before the name",
+  "Cartouche": "Tag",
+  "Mention sous le nom": "Caption under the name",
+  "Pastille": "Pill",
+  "Bandeau": "Banner",
 };
