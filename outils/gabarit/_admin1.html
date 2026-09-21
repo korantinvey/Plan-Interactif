@@ -721,15 +721,18 @@ function modeNeuf(surface){
   return MARQUES_NEUF[surface].some(m => m.cle === v) ? v : NEUF_DEFAUT[surface];
 }
 
-/** La teinte réglée pour une surface, ou rien — auquel cas la feuille de style
- *  reprend la main, et avec elle l'accent du salon. */
-const couleurNeuf = (surface) => {
-  const v = conf("_neuf")["c" + surface];
+/** La teinte des marques, ou rien — auquel cas la feuille de style reprend la
+ *  main, et avec elle l'accent du salon.
+ *
+ *  Une seule pour les trois surfaces : ce sont trois façons de dire la même
+ *  chose, et trois teintes en auraient fait trois distinctions. */
+const couleurNeuf = () => {
+  const v = conf("_neuf").couleur;
   return trio(v) ? v : "";
 };
 
 /**
- * Les trois marques posées sur la page : leur teinte en jetons, le mode retenu
+ * Les trois marques posées sur la page : leur teinte en jeton, le mode retenu
  * en attribut. La feuille de style fait le reste — d'où une fiche ouverte qui
  * suit le réglage sans qu'on la rouvre.
  *
@@ -737,27 +740,23 @@ const couleurNeuf = (surface) => {
  * tracer, et « dessineNeufs » les refait.
  */
 function appliqueNeuf(){
-  ["plan", "liste", "fiche"].forEach(s => {
-    const v = couleurNeuf(s);
-    const n = "--neuf-" + s;
-    if (v) racine.style.setProperty(n, v); else racine.style.removeProperty(n);
-    racine.dataset["neuf" + s[0].toUpperCase() + s.slice(1)] = modeNeuf(s);
-  });
+  ["plan", "liste", "fiche"].forEach(s =>
+    racine.dataset["neuf" + s[0].toUpperCase() + s.slice(1)] = modeNeuf(s));
   /* La pastille de la fiche se peint d'un aplat doux et d'une encre, comme
      l'accent dont elle tenait ses deux tons : une teinte choisie doit rendre
      les deux, sans quoi le mot disparaîtrait sur son propre fond. L'attribut
      dit qu'il y a un réglage, et c'est lui qui fait passer la règle devant
      celle du modèle de fiche. */
-  const f = couleurNeuf("fiche");
-  if (f){
+  const v = couleurNeuf();
+  if (v){
     racine.dataset.neufCoul = "1";
-    racine.style.setProperty("--neuf-fiche-doux", melange(f, "#FFFFFF", 0.86));
-    racine.style.setProperty("--neuf-fiche-ink",
-      luminance(trio(f)) > 0.42 ? "#0E1113" : "#FFFFFF");
+    racine.style.setProperty("--neuf", v);
+    racine.style.setProperty("--neuf-doux", melange(v, "#FFFFFF", 0.86));
+    racine.style.setProperty("--neuf-ink",
+      luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
   } else {
     delete racine.dataset.neufCoul;
-    racine.style.removeProperty("--neuf-fiche-doux");
-    racine.style.removeProperty("--neuf-fiche-ink");
+    ["--neuf", "--neuf-doux", "--neuf-ink"].forEach(n => racine.style.removeProperty(n));
   }
   dessineNeufs();
 }
@@ -2668,11 +2667,11 @@ const salonDitSesNeufs = () =>
  * — un mot se lit sur une fiche, se tronque dans une liste et ne se trace pas
  * du tout sur le plan, dont le rendu WebGL ne rejoue que des formes.
  *
- * Chaque surface a sa teinte. L'accent du salon désigne déjà ce qu'on a
- * retenu et ce qu'on vient d'ouvrir ; un exploitant qui veut distinguer ses
- * nouveaux venus sans emprunter cette couleur-là doit pouvoir en choisir une
- * autre, et pas la même partout — une marque discrète sur le plan peut
- * s'accompagner d'un bandeau franc sur la fiche.
+ * Une seule teinte pour les trois, en revanche, et le nuancier vient après
+ * elles. L'accent du salon désigne déjà ce qu'on a retenu et ce qu'on vient
+ * d'ouvrir, d'où le choix d'une autre couleur ; mais les trois marques disent
+ * la même chose — celui-ci vient d'arriver — et trois teintes en auraient fait
+ * trois distinctions à apprendre.
  */
 function voletNeuf(hote){
   const p = document.createElement("p");
@@ -2698,15 +2697,13 @@ function voletNeuf(hote){
     hote.appendChild(n);
   }
 
+  /* Les marques d'une surface. Le nuancier, lui, est commun : il vient après
+     les trois, au pied du volet. */
   const bloc = (surface, titre, aide) => {
     const d = document.createElement("div");
     d.className = "blocNeuf";
     d.innerHTML = '<span class="eyebrow tNeuf"></span><p class="aNeuf"></p>' +
-      '<div class="choixNeuf"></div>' +
-      '<div class="reglage-coul"><div class="tete">' +
-        '<span class="eyebrow">Couleur de la marque</span><span class="val"></span>' +
-        '<button type="button" class="raz">Couleur d\'origine</button></div>' +
-        '<div class="nuancier"></div></div>';
+      '<div class="choixNeuf"></div>';
     d.querySelector(".tNeuf").textContent = titre;
     d.querySelector(".aNeuf").textContent = aide;
 
@@ -2714,7 +2711,7 @@ function voletNeuf(hote){
     const tuiles = MARQUES_NEUF[surface].map(m => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "vgN vgN-" + surface;
+      b.className = "vgN";
       b.innerHTML = '<span class="ap">' + VIGNETTES_NEUF[surface](m.cle) +
         '</span><span class="n"></span>';
       b.querySelector(".n").textContent = m.nom;
@@ -2733,43 +2730,6 @@ function voletNeuf(hote){
     const majTuiles = () => tuiles.forEach(({ b, m }) =>
       b.setAttribute("aria-pressed", String(m.cle === modeNeuf(surface))));
     majTuiles();
-
-    const val = d.querySelector(".val");
-    const nuancier = d.querySelector(".nuancier");
-    const majPastilles = () => {
-      const v = (couleurNeuf(surface) || "").toLowerCase();
-      nuancier.querySelectorAll("button[data-ton]").forEach(b =>
-        b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
-      const n = nomDuTon(v);
-      val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
-                          : "Couleur principale";
-      const libre = nuancier.querySelector(".perso input");
-      if (libre) libre.value = couleurNeuf(surface) || jeton("--accent-base") || "#2F49D1";
-    };
-    /* Peindre ne fait que poser des jetons sur la racine : c'est ce qui peut
-       suivre la rafale du sélecteur de couleur. */
-    const peint = (v) => { conf("_neuf")["c" + surface] = v; appliqueNeuf(); majPastilles(); };
-    TONS.forEach(([ton, nom]) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.dataset.ton = ton;
-      b.style.background = ton;
-      b.title = nom + " · " + ton;
-      b.setAttribute("aria-label", nom);
-      b.onclick = () => { peint(ton); enregistreConf(); };
-      nuancier.appendChild(b);
-    });
-    const libre = document.createElement("label");
-    libre.className = "perso";
-    libre.title = "Couleur libre";
-    libre.innerHTML = '<input type="color"><span></span>';
-    suitNuancier(libre.querySelector("input"), peint, enregistreConf);
-    nuancier.appendChild(libre);
-    d.querySelector(".raz").onclick = () => {
-      delete conf("_neuf")["c" + surface];
-      enregistreConf(); appliqueNeuf(); majPastilles();
-    };
-    majPastilles();
     hote.appendChild(d);
   };
 
@@ -2786,6 +2746,54 @@ function voletNeuf(hote){
     "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le " +
     "coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le " +
     "bandeau prend toute la largeur et descend le nom d'une ligne.");
+
+  /* Un seul nuancier pour les trois, et en dernier : les trois marques disent
+     la même chose — celui-ci vient d'arriver — et trois teintes en auraient
+     fait trois distinctions à apprendre. Les vignettes du dessus s'en peignent,
+     si bien qu'une couleur choisie se voit sur les onze d'un coup. */
+  const coul = document.createElement("div");
+  coul.className = "reglage-coul coulNeuf";
+  coul.innerHTML = '<div class="tete"><span class="eyebrow">Couleur des marques</span>' +
+    '<span class="val"></span>' +
+    '<button type="button" class="raz">Couleur d\'origine</button></div>' +
+    '<div class="nuancier"></div>';
+  const val = coul.querySelector(".val");
+  const nuancier = coul.querySelector(".nuancier");
+  const majPastilles = () => {
+    const v = couleurNeuf().toLowerCase();
+    nuancier.querySelectorAll("button[data-ton]").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
+    const n = nomDuTon(v);
+    val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
+                        : "Couleur principale";
+    const libre = nuancier.querySelector(".perso input");
+    if (libre) libre.value = couleurNeuf() || jeton("--accent-base") || "#2F49D1";
+  };
+  /* Peindre ne fait que poser trois jetons sur la racine : c'est ce qui peut
+     suivre la rafale du sélecteur de couleur. */
+  const peint = (v) => { conf("_neuf").couleur = v; appliqueNeuf(); majPastilles(); };
+  TONS.forEach(([ton, nom]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ton = ton;
+    b.style.background = ton;
+    b.title = nom + " · " + ton;
+    b.setAttribute("aria-label", nom);
+    b.onclick = () => { peint(ton); enregistreConf(); };
+    nuancier.appendChild(b);
+  });
+  const libre = document.createElement("label");
+  libre.className = "perso";
+  libre.title = "Couleur libre";
+  libre.innerHTML = '<input type="color"><span></span>';
+  suitNuancier(libre.querySelector("input"), peint, enregistreConf);
+  nuancier.appendChild(libre);
+  coul.querySelector(".raz").onclick = () => {
+    delete conf("_neuf").couleur;
+    enregistreConf(); appliqueNeuf(); majPastilles();
+  };
+  hote.appendChild(coul);
+  majPastilles();
 }
 
 /** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il

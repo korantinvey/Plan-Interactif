@@ -507,13 +507,13 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    au prix de l'ellipse qui le mange sur une enseigne longue ; la mention
    descend sur la seconde ligne, où rien ne la tronque. */
 .row .nPoint{display:inline-block;width:7px;height:7px;border-radius:50%;
-  margin-right:7px;vertical-align:1px;background:var(--neuf-liste,var(--accent))}
+  margin-right:7px;vertical-align:1px;background:var(--neuf,var(--accent))}
 .row .nCart{display:inline-block;margin-left:7px;padding:1px 5px;
   font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:500;
   letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;
-  border:1px solid var(--neuf-liste,var(--accent));border-radius:2px;
-  color:var(--neuf-liste,var(--accent))}
-.row .nSous{color:var(--neuf-liste,var(--accent));font-weight:600}
+  border:1px solid var(--neuf,var(--accent));border-radius:2px;
+  color:var(--neuf,var(--accent))}
+.row .nSous{color:var(--neuf,var(--accent));font-weight:600}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 /* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
@@ -676,10 +676,11 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 
    Leur teinte se règle à part de l'accent : un exploitant peut vouloir
    distinguer ses nouveaux venus sans emprunter la couleur qui désigne déjà ce
-   qu'on a retenu. Sans réglage, c'est l'accent du salon. */
+   qu'on a retenu. La même pour les trois surfaces — elles disent la même
+   chose. Sans réglage, c'est l'accent du salon. */
 #neufs{pointer-events:none}
-#neufs .neufPlein{fill:var(--neuf-plan,var(--accent));stroke:none}
-#neufs .neufLis{fill:none;stroke:var(--neuf-plan,var(--accent));stroke-width:2.4;
+#neufs .neufPlein{fill:var(--neuf,var(--accent));stroke:none}
+#neufs .neufLis{fill:none;stroke:var(--neuf,var(--accent));stroke-width:2.4;
   vector-effect:non-scaling-stroke}
 html.sans-parcours #marques .parc{display:none}
 /* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
@@ -1521,7 +1522,7 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
   overflow:hidden;pointer-events:none}
 .corneNeuf span{position:absolute;top:13px;left:-28px;width:100px;
   padding:3px 0;text-align:center;transform:rotate(-45deg);
-  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  background:var(--neuf,var(--accent));color:var(--neuf-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
   text-transform:uppercase}
 html[data-neuf-fiche="corne"] .detail-hd .hdTete{padding-left:58px}
@@ -1529,7 +1530,7 @@ html[data-neuf-fiche="corne"] .detail-hd .hdTete{padding-left:58px}
    descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
    est déjà à l'étroit. C'est à l'exploitant d'en juger. */
 .rubanNeuf{display:flex;align-items:center;gap:7px;padding:6px 18px;
-  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  background:var(--neuf,var(--accent));color:var(--neuf-ink,var(--accent-ink));
   font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
   letter-spacing:.06em;text-transform:uppercase}
 .rubanNeuf::before{content:"";flex:none;width:13px;height:13px;background:currentColor;
@@ -1544,7 +1545,7 @@ html:not([data-neuf-fiche="bandeau"]) .rubanNeuf{display:none}
    l'habillage. Le sélecteur passe donc devant les onze modèles, qui nomment
    tous la classe du modèle puis la pastille. */
 html[data-neuf-coul] .detail-hd .badge.neuf{
-  background:var(--neuf-fiche-doux);color:var(--neuf-fiche)}
+  background:var(--neuf-doux);color:var(--neuf)}
 /* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
    un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
    plusieurs — et le clic n'est que la suite logique. */
@@ -3519,13 +3520,10 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .vgN svg{display:block;width:100%;height:auto}
 .vgN .n{font-size:11px;line-height:1.25;text-align:center;color:var(--ink-2)}
 .vgN[aria-pressed="true"] .n{color:var(--ink);font-weight:600}
-/* Chaque planche se peint de la teinte de sa propre surface : c'est ce qui
-   fait voir, avant de cliquer, ce que la couleur réglée juste dessous donne. */
-.vgN-plan .mq{fill:var(--neuf-plan,var(--accent))}
-.vgN-plan .mqT{stroke:var(--neuf-plan,var(--accent))}
-.vgN-liste .mq{fill:var(--neuf-liste,var(--accent))}
-.vgN-liste .mqT{stroke:var(--neuf-liste,var(--accent))}
-.vgN-fiche .mq{fill:var(--neuf-fiche,var(--accent))}
+/* Les trois planches se peignent de la teinte retenue, celle-là même que le
+   nuancier du bas règle : on voit ce qu'on choisit avant de cliquer. */
+.vgN .mq{fill:var(--neuf,var(--accent))}
+.vgN .mqT{stroke:var(--neuf,var(--accent))}
 /* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
    l'allure du bouton des critères de recherche une fois actif — c'en est un,
    de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
