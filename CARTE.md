@@ -409,7 +409,7 @@ Fonctions :
 `poseGardeInstallation` 683 · `remplitInvitation` 706 · `ouvreInvitation` 736
 `ouvreRappel` 815 · `ouvreRetrouve` 877 · `caseInstallation` 900
 
-### `_itineraire.html` — 3173 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_itineraire.html` — 3174 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 11 ter. Itinéraire — d'un point du salon à un autre
 
@@ -433,15 +433,15 @@ Fonctions :
 `passagePraticable` 2083 · `passagesDe` 2091 · `sortiesDe` 2101 · `plansRelies` 2109
 `balayage` 2133 · `distanceDepuis` 2147 · `cheminLiaisons` 2174 · `routeParLiaisons` 2258
 `routeEntre` 2294 · `calculeRoute` 2333 · `couleurNappe` 2359 · `rafraichitApercu` 2365
-`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2445 · `mesureMarches` 2452
-`coupeMarche` 2467 · `distancesDesArrets` 2483 · `peintItineraire` 2495
-`lanceTracage` 2543 · `dessineItineraire` 2568 · `rafraichitBouts` 2590
-`cadreItineraire` 2613 · `champIti` 2637 · `ecritDistance` 2641 · `ecritDuree` 2649
-`fermeSugg` 2654 · `montreSugg` 2661 · `choisitPoint` 2695 · `valideSaisie` 2704
-`effaceItineraire` 2716 · `relance` 2743 · `phraseLiaison` 2794 · `montreResultat` 2808
-`bandeauVisee` 2950 · `armeVisee` 2973 · `finVisee` 2991 · `viseItineraire` 3007
-`visePoi` 3013 · `visePoint` 3019 · `ouvreItineraire` 3051 · `fermeItineraire` 3079
-`versItineraire` 3089 · `versItineraireDe` 3092
+`marchesIci` 2408 · `rayonBout` 2413 · `arreteTracage` 2446 · `mesureMarches` 2453
+`coupeMarche` 2468 · `distancesDesArrets` 2484 · `peintItineraire` 2496
+`lanceTracage` 2544 · `dessineItineraire` 2569 · `rafraichitBouts` 2591
+`cadreItineraire` 2614 · `champIti` 2638 · `ecritDistance` 2642 · `ecritDuree` 2650
+`fermeSugg` 2655 · `montreSugg` 2662 · `choisitPoint` 2696 · `valideSaisie` 2705
+`effaceItineraire` 2717 · `relance` 2744 · `phraseLiaison` 2795 · `montreResultat` 2809
+`bandeauVisee` 2951 · `armeVisee` 2974 · `finVisee` 2992 · `viseItineraire` 3008
+`visePoi` 3014 · `visePoint` 3020 · `ouvreItineraire` 3052 · `fermeItineraire` 3080
+`versItineraire` 3090 · `versItineraireDe` 3093
 
 ### `_journee.html` — 2136 l. → plan-admin.html, plan-smcl.html, plan.html
 
