@@ -24,7 +24,7 @@ module.exports = {
   "Calque verrouillé": "Locked layer",
   "Supprimer le calque ?": "Delete layer?",
   "« {calque} » et ses {n} formes seront définitivement perdus.": "“{calque}” and its {n} shapes will be permanently lost.",
-  "« {calque} » et ses {n} forme seront définitivement perdus.": "“{calque}” and its {n} shape will be permanently lost.",
+  "« {calque} » et sa forme seront définitivement perdus.": "“{calque}” and its shape will be permanently lost.",
   "« {calque} » et son contenu seront définitivement perdus.": "“{calque}” and its content will be permanently lost.",
   "Supprimer": "Delete",
   "Textes des stands": "Stand labels",

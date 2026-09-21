@@ -48,7 +48,7 @@ module.exports = {
   "Ce fichier n'est pas une sauvegarde de plan.": "This file is not a map backup.",
   "Restaurer cette sauvegarde ?": "Restore this backup?",
   "Elle date du {date} et porte {calques}.": "It dates from {date} and holds {calques}.",
-  "Elle date du {date}, et vient du salon « {salon} » et porte {calques}.":
+  "Elle date du {date}, vient du salon « {salon} » et porte {calques}.":
     "It dates from {date}, comes from the show “{salon}”, and holds {calques}.",
   "Les calques et l'apparence en place seront remplacés.": "The current layers and appearance will be replaced.",
   "Les calques et l'apparence en place seront remplacés, pour autant qu'elle nomme des pavillons d'ici.":

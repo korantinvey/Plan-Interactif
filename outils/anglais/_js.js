@@ -39,7 +39,7 @@ module.exports = {
   "tous pavillons": "all halls",
   "Zone sans nom": "Unnamed area",
   "Aucun résultat dans les {n} pavillons.": "No results in the {n} halls.",
-  "Aucun résultat dans les 1 pavillons.": "No results in the hall.",
+  "Aucun résultat dans ce pavillon.": "No results in this hall.",
   "0 résultat": "0 results",
 
   // la fiche

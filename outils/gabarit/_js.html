@@ -1902,7 +1902,9 @@ function liste(){
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
-    : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
+    : '<div class="empty">' + (DATA.plans.length > 1
+        ? "Aucun résultat dans les " + DATA.plans.length + " pavillons."
+        : "Aucun résultat dans ce pavillon.") + '</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
      recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
 

@@ -7243,7 +7243,9 @@ function liste(){
         (o.kind === "zone" ? "Zone sans nom" : ("Stand " + (o.code || "")).trim())) + '</span>' +
       '<span class="s">' + esc(sous) + badge + '</span></span></button>';
   }).join("")
-    : '<div class="empty">Aucun résultat dans les ' + DATA.plans.length + ' pavillons.</div>';
+    : '<div class="empty">' + (DATA.plans.length > 1
+        ? "Aucun résultat dans les " + DATA.plans.length + " pavillons."
+        : "Aucun résultat dans ce pavillon.") + '</div>';
   /* Le canal dit d'où vient l'ouverture : la même liste sert de résultat de
      recherche quand un mot-clé est saisi, et de sommaire du pavillon sinon.
 
@@ -16804,7 +16806,7 @@ function dessinPointerDown(e){
     return true;
   }
   if (outil === "image"){
-    if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d’abord une image."; return true; }
+    if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d'abord une image."; return true; }
     enCours = formeImage([p, p]);
     return true;
   }
@@ -19772,7 +19774,7 @@ function construitPanneau(){
         const n = x.ref.formes.length;
         confirme("Supprimer le calque ?",
           "« " + x.ref.nom + " » et " +
-          (n ? "ses " + n + " forme" + (n > 1 ? "s" : "") : "son contenu") +
+          (n > 1 ? "ses " + n + " formes" : n ? "sa forme" : "son contenu") +
           " seront définitivement perdus.",
           "Supprimer", () => {
             memorise();
@@ -20666,7 +20668,7 @@ function litSauvegarde(fichier){
     const dAilleurs = s.salon && DATA?.slug && s.salon !== DATA.slug;
     confirme("Restaurer cette sauvegarde ?",
       "Elle date du " + String(s.date || "").slice(0, 10) +
-      (dAilleurs ? ", et vient du salon « " + s.salon + " »" : "") +
+      (dAilleurs ? ", vient du salon « " + s.salon + " »" : "") +
       " et porte " + compte + " calque" + (compte > 1 ? "s" : "") + " de dessin. " +
       "Les calques et l'apparence en place seront remplacés" +
       (dAilleurs ? ", pour autant qu'elle nomme des pavillons d'ici." : "."),
@@ -25863,7 +25865,7 @@ function montreResultat(etat){
       "Le trajet contourne « " + s.nom + " » : " + quand(s) + ", et l'allée qui la " +
       "borde va se remplir. Environ " + ecritDistance(s.sup) + " de plus."));
     e.foule.longees.forEach(s => dit("iNote",
-      "Le trajet longe « " + s.nom + " », dont " + quand(s) + " : attendez-vous " +
+      "Le trajet longe « " + s.nom + " » : " + quand(s) + " — attendez-vous " +
       "à du monde dans l'allée."));
   });
 
@@ -28858,8 +28860,8 @@ function ouvreOrganisation(){
   ouvreModale(proposables.length > 1 ? "Organiser ma visite" : "Organiser ma journée", corps => {
     const p = document.createElement("p");
     p.textContent = proposables.length > 1
-      ? "On place d'abord les conférences que vous avez retenues — elles ont " +
-        "lieu le jour qu'elles ont lieu — puis on répartit les stands entre vos " +
+      ? "On place d'abord les conférences que vous avez retenues — elles se " +
+        "posent le jour où elles ont lieu — puis on répartit les stands entre vos " +
         "journées. Le curseur, plus bas, dit si elles doivent se valoir ou non."
       : "On place d'abord les conférences que vous avez retenues — elles ne se " +
         "déplacent pas — puis on glisse les stands entre elles, dans l'ordre qui " +
@@ -29033,17 +29035,11 @@ function ouvreOrganisation(){
       });
       champDepart.onchange = () => poseApercu();
       bloc("Par où vous entrez", champDepart);
-    } else if (departImpose){
-      /* On dit quand même d'où l'on part : le visiteur retrouve le premier
-         pas de sa journée là où il l'attend, sans avoir à le choisir. */
-      const n = document.createElement("p");
-      n.className = "jSansPorte";
-      n.textContent = "La journée commencera à « " + departImpose.nom +
-        (DATA.plans.length > 1 ? " » (" + departImpose.detail + ")" : " »") +
-        ", la seule entrée repérée.";
-      form.appendChild(n);
-    } else {
-      /* Aucune porte marquée sur le plan : la question ne se pose pas, et son
+    } else if (!departs.length){
+      /* Une seule entrée repérée ne se dit plus : la nommer n'apprenait rien
+         à qui n'avait de toute façon rien à choisir. Reste le cas ci-dessous.
+
+         Aucune porte marquée sur le plan : la question ne se pose pas, et son
          absence se remarquerait plus que sa réponse. On dit d'où l'on partira
          plutôt que de laisser croire à un oubli — et l'exploitant qui lit son
          propre plan y reconnaît ce qu'il lui reste à poser. */
