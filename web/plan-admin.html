@@ -917,7 +917,11 @@ button{cursor:pointer;background:none;border:none}
    « --ton-barre » est la couleur dont le système peint la sienne, et c'est
    `poseTonDeLaBarre` (_js.html) qui la lui donne : la surface de la barre,
    telle que le modèle du salon l'a redéfinie. Deux modèles y échappent et se
-   nomment plus bas — leur fond ne vient pas de leur surface. */
+   nomment plus bas — leur fond ne vient pas de leur surface.
+
+   Tout cela vaut de la barre tant qu'elle est une bande. Sur un téléphone elle
+   cesse d'en être une — plus de fond, plus de rang, et ses pictos rangés au
+   bord droit du hall : voir « max-width:900px ». */
 .topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;
   padding:calc(8px + var(--sys-haut)) 18px 8px;min-height:calc(60px + var(--sys-haut));
   background:var(--surface);border-bottom:1px solid var(--line);position:relative;z-index:5;
@@ -4799,9 +4803,80 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
     transition:transform .22s ease,opacity .22s ease}
   html:not(.mode-admin) .topbar.pliee{transform:translateY(-100%);opacity:0;
     pointer-events:none}
+
+  /* ------------------------------------------------------------
+     Et sur un téléphone, elle cesse d'être une bande.
+
+     Elle prenait quarante-six points en travers du hall pour trois choses : le
+     nom du salon — que le visiteur vient de lire sur l'affiche, le code QR ou
+     l'icône qu'il a touchée —, des compteurs déjà partis plus haut, et trois
+     boutons. Restent les boutons, rangés à la verticale contre le bord droit
+     et posés sur le plan en légère transparence. Le hall commence alors au ras
+     de l'écran, et plus rien de ce qui reste ne lui prend une ligne.
+
+     L'élément, lui, reste : il garde son rang, sa transition et son pli, et
+     c'est sa hauteur que `mesureBarre` et `masqueHaut` lisent (`_js.html`).
+     Vide, elle ne vaut plus que le retrait du système — ce qui s'ancre en haut
+     de la scène remonte d'autant sans qu'aucune de leurs règles l'apprenne.
+     ------------------------------------------------------------ */
+  html:not(.mode-admin) .topbar{background:none;border-bottom:none;min-height:0;
+    align-items:flex-start;padding:calc(10px + var(--sys-haut)) 10px 0;
+    /* Le vide qu'elle laisse rend le geste au hall : transparente, elle
+       recevait encore le doigt venu saisir le plan. */
+    pointer-events:none;
+    /* Le système peint sa barre de ce qui la touche, et ce n'est plus la
+       surface de la bande : c'est le fond du plan (voir `poseTonDeLaBarre`). */
+    --ton-barre:var(--c-fond,var(--ground));
+    /* L'habillage du salon peignait cette bande, et ses jetons sont ceux de
+       l'aplat qu'il posait — l'accent de « Billet », la nuit de « Console », le
+       blanc translucide de « Verre ». Sans aplat sous eux, ils laissaient les
+       pictos illisibles sur le greige du hall : ils reviennent donc à ceux de
+       la page, comme les boutons de zoom posés sur le même plan. Les formes,
+       elles, restent au modèle — c'est la couleur qui n'a plus de fond. */
+    --surface:inherit;--surface-2:inherit;--line:inherit;--line-strong:inherit;
+    --ink:inherit;--ink-2:inherit;--ink-3:inherit;
+    --accent:inherit;--accent-soft:inherit;--accent-ink:inherit}
+  /* Ce qu'elle porte reprend le doigt pour lui — sauf pliée : invisible, elle
+     recevait encore l'appui du stand qu'elle recouvrait. */
+  html:not(.mode-admin) .topbar:not(.pliee) > *{pointer-events:auto}
+  html:not(.mode-admin) .brand{display:none}
+  /* Les pictos à la verticale, au bord droit, à la hauteur où ils étaient.
+     Hors du flux : la bande n'a plus de contenu à aligner, et sa hauteur —
+     celle que le cadrage lit — ne doit pas devenir la leur. */
+  html:not(.mode-admin) .tools{position:absolute;right:10px;
+    top:calc(10px + var(--sys-haut));flex-direction:column;gap:8px;
+    transition:transform .22s ease}
+  /* Chacun s'en va par le bord d'où il vient : les onglets remontent avec la
+     bande, les pictos sortent par la droite. */
+  html:not(.mode-admin) .topbar.pliee .tools{transform:translateX(calc(100% + 10px))}
+  /* La légère transparence : le hall se voit dessous, le liseré et l'ombre
+     suffisent à poser le bouton. Tout est réécrit ici, jusqu'à l'aplat de
+     l'accent et la pastille du parcours, parce que les modèles les peignent à
+     la main pour une bande qui n'est plus là. */
+  html:not(.mode-admin) .topbar .iconbtn{
+    background:color-mix(in srgb,var(--surface) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
+    color:var(--ink-2);box-shadow:var(--shadow)}
+  html:not(.mode-admin) .topbar .iconbtn[aria-pressed="true"]{background:var(--accent);
+    border-color:var(--accent);color:#fff}
+  html:not(.mode-admin) .topbar .compteur{background:var(--accent);color:#fff;
+    border-color:var(--surface)}
+  /* Les pavillons : une pastille au coin, qui tient sa largeur de ses onglets
+     au lieu de barrer l'écran — une bande qui le traverse prend le doigt sur
+     toute la largeur, et il n'y a plus de bande pour le justifier. Elle garde
+     le fond de la page même là où le modèle le retire : sans bande dessous, un
+     onglet écrit à même le plan ne se lit plus. */
+  html:not(.mode-admin) .topbar .halls{flex:0 1 auto;max-width:calc(100% - 52px);
+    padding:3px;background:color-mix(in srgb,var(--surface) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line-strong) 60%,transparent);
+    box-shadow:var(--shadow)}
+
   /* Ce qui s'ancre en haut de la scène se range sous elle : elle n'est plus
-     au-dessus d'eux dans la grille, mais devant eux sur l'écran. */
-  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px))}
+     au-dessus d'eux dans la grille, mais devant eux sur l'écran. Et la colonne
+     des pictos leur est interdite : centré sur toute la largeur, un bandeau
+     passait dessous. */
+  html:not(.mode-admin) :is(.viseur,.iciRappel){top:calc(12px + var(--barre,46px));
+    right:52px;max-width:calc(100% - 64px)}
   /* Deux points de moins : c'est une ligne de gagnée sur un nom de salon
      long, donc autant de hauteur laissée au plan. */
   .brand h1{font-size:15px}
@@ -6419,6 +6494,11 @@ function poseTonDeLaBarre(){
     m.content = ton;
   });
 }
+/* Le ton ne dépend pas que du modèle : il dépend aussi de la largeur. Sur un
+   téléphone la bande du salon n'est plus une bande, et c'est le fond du plan
+   qui touche la barre du système (voir `_head.html`, « max-width:900px »). Une
+   tablette qu'on tourne franchit ce seuil sans rien changer d'autre. */
+matchMedia("(max-width:900px)").addEventListener("change", () => poseTonDeLaBarre());
 
 /* ============================================================
    2. Mesure de texte — largeur réelle dans la police de rendu
@@ -34600,8 +34680,12 @@ function placeTuto(force){
   });
   if (tutoModale()) pese(boiteTuto($("modale").querySelector(".mfen")), 1.5);
   pese(boiteTuto($("poi")), .5);
-  if (ETROIT()) pese(boiteTuto($("side")), .3);
-  else pese(boiteTuto(document.querySelector(".zoombar")), .5);
+  if (ETROIT()){
+    pese(boiteTuto($("side")), .3);
+    /* Les pictos du plan flottent au coin du hall depuis que la bande du salon
+       n'en est plus une sur un téléphone : la bulle se posait dessus. */
+    pese(boiteTuto(document.querySelector(".tools")), .5);
+  } else pese(boiteTuto(document.querySelector(".zoombar")), .5);
 
   /* La scène, et non la fenêtre : la page descend maintenant sous les barres
      du système, et une bulle posée au ras du bord aurait eu son bouton sous la
