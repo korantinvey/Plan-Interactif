@@ -321,6 +321,11 @@ table.champs td.critere label.case span:empty{display:none}
 table.champs td.critere label.case input{margin:0;vertical-align:middle}
 /* L'étiquette ne sert qu'en colonne empilée, où l'en-tête a disparu. */
 table.champs td.critere .etiq{display:none;font-size:11px;color:var(--ink-3)}
+/* La seconde origine d'un champ propre au salon : celle qui porte l'anglais.
+   Sous la première et retirée d'un cran — c'est le même champ en deux temps,
+   et rien ne doit faire croire à deux champs voisins. */
+.origine-en{margin-top:8px;padding-left:10px;border-left:2px solid var(--line)}
+.origine-en .etiq{display:block;margin-bottom:3px;font-size:11px;color:var(--ink-3)}
 /* Renommer et retirer un champ propre au salon : deux boutons discrets posés
    après l'intitulé, seuls de toute la fenêtre à agir sur la ligne elle-même. */
 table.champs .outil{margin-left:6px;padding:0 5px;font-size:12px;line-height:1.4;

@@ -13,8 +13,8 @@
  *     personnalisés ne descendent qu'avec guest_metadata=true.
  */
 import {
-  DEFAUTS, PREFIXE_PERSO, imageDistante, lit, noteValeurs, ou, valeurPerso,
-  valeursRelevees, vrai,
+  DEFAUTS, PREFIXE_PERSO, SUFFIXE_EN, imageDistante, lit, noteValeurs, ou,
+  valeurPerso, valeursRelevees, vrai,
 } from "./champs.ts";
 import type { ChampPerso } from "./champs.ts";
 
@@ -138,6 +138,8 @@ export interface ExposantEm {
   themes: string[];
   /** Les champs propres au salon, par clé. Vide sur un salon qui n'en a pas. */
   perso: Record<string, string | string[]>;
+  /** L'anglais de ces mêmes champs, pour ceux dont l'exploitant l'a désigné. */
+  persoEn: Record<string, string | string[]>;
   // une pastille sur la fiche, quand le salon distingue ses nouveaux venus
   neuf: boolean;
   exclu: boolean;
@@ -405,10 +407,13 @@ export class Eventmaker {
   private perso(
     g: Record<string, any>,
     m: Record<string, string>,
+    suffixe = "",
   ): Record<string, string | string[]> {
     const out: Record<string, string | string[]> = {};
     for (const c of this.cfg.perso ?? []) {
-      const v = valeurPerso(this.valeur(g, m, PREFIXE_PERSO + c.cle, Boolean(c.multiple)));
+      const v = valeurPerso(
+        this.valeur(g, m, PREFIXE_PERSO + c.cle + suffixe, Boolean(c.multiple)),
+      );
       if (v !== null) out[c.cle] = v;
     }
     return out;
@@ -822,6 +827,10 @@ export class Eventmaker {
         nomencl: this.multiple(g, m, "nomenclature"),
         themes: this.multiple(g, m, "thematiques"),
         perso: this.perso(g, m),
+        /* L'anglais des mêmes champs, quand l'exploitant a désigné une seconde
+           origine : sans elle la table reste vide et la fiche n'a qu'une
+           version à montrer, la française, dans les deux langues. */
+        persoEn: this.perso(g, m, SUFFIXE_EN),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
       };

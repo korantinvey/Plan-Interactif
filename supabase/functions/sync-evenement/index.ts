@@ -23,9 +23,9 @@ import {
   type ExposantEm, type ConferenceEm, type ExposantConfEm, type IntervenantEm,
 } from "../_partage/eventmaker.ts";
 import {
-  CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibles,
-  decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso, vrai,
-  valeursRelevees,
+  CHOIX_MAX, DEFAUTS, PREFIXE_PERSO, champs as champsCible, champsPerso, cibleEn,
+  cibles, decoupe, imageDistante, lit, noteValeurs, ou, valeursOui, valeurPerso,
+  vrai, valeursRelevees,
 } from "../_partage/champs.ts";
 import { versAnneaux, versTrace, boite, emprise, dedans } from "../_partage/geometrie.ts";
 import { allege, textes } from "../_partage/svg.ts";
@@ -1032,6 +1032,23 @@ Deno.serve(async (req) => {
         return out;
       };
 
+      /**
+       * L'anglais de ces mêmes champs, pour ceux qui en ont une origine.
+       *
+       * Sans codification : un champ à choix porte déjà l'anglais de ses
+       * valeurs, relevé dans la source avec sa liste — c'est le texte libre,
+       * qu'aucune liste ne traduit, qui appelle une seconde origine. Elle est
+       * lue telle quelle, comme l'exploitant l'a saisie.
+       */
+      const champsDuSalonEn = (lire: (cle: string) => unknown) => {
+        const out: Record<string, string | string[]> = {};
+        for (const c of persos) {
+          const v = valeurPerso(lire(c.cle));
+          if (v !== null) out[c.cle] = v;
+        }
+        return out;
+      };
+
       let plans = await g.tout<Record<string, any>>("Plan", { fields: ["_AllFields"] });
       // Un pavillon représente plusieurs mégaoctets de SVG à alléger : on peut
       // le traiter seul si la synchronisation complète dépasse le temps imparti.
@@ -1247,6 +1264,13 @@ Deno.serve(async (req) => {
             expoEm ? em!.perso[cle]
               : lit(cibleK(PREFIXE_PERSO + cle), origines,
                     Boolean(persos.find((c) => c.cle === cle)?.multiple)));
+          /* Et leur version anglaise, quand une seconde origine la porte. Elle
+             suit le même chemin que la française : c'est la même fiche qui les
+             tient toutes les deux, et la page montre celle de sa langue. */
+          const persoEn = !ok ? {} : champsDuSalonEn((cle) =>
+            expoEm ? em!.persoEn[cle]
+              : lit(cibleK(cibleEn(cle)), origines,
+                    Boolean(persos.find((c) => c.cle === cle)?.multiple)));
 
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
@@ -1291,6 +1315,7 @@ Deno.serve(async (req) => {
             /* Un salon qui ne s'est ajouté aucun champ ne porte pas la clé :
                elle serait un objet vide sur chacun de ses stands. */
             ...(Object.keys(perso).length ? { perso } : {}),
+            ...(Object.keys(persoEn).length ? { perso_en: persoEn } : {}),
             m2: s.SurfaceBrute,
             angles: s.NbAngles,
             niveaux: s.NbNiveau,
@@ -1694,6 +1719,7 @@ function hebergee(x: ExposantEm): Record<string, unknown> {
   // les champs propres au salon suivent la société hébergée comme les autres :
   // c'est bien sa fiche à elle qui les porte
   if (Object.keys(x.perso).length) o.perso = x.perso;
+  if (Object.keys(x.persoEn).length) o.perso_en = x.persoEn;
   return o;
 }
 
