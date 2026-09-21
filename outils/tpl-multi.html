@@ -4820,10 +4820,10 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
       <button type="button" id="viseurStop">Annuler</button>
     </div>
     <!-- Le calage d'un bâtiment de la bibliothèque : le geste, l'angle au
-         degré près, et les deux issues. Voir « _batiments.html ». -->
+         quart de degré près, et les deux issues. Voir « _batiments.html ». -->
     <div class="viseur calage" id="calageBat" hidden>
       <span>Glissez le contour à sa place, et sa poignée ronde pour le faire pivoter.</span>
-      <label class="calageAngle"><input type="number" id="calageAngle" step="0.5"
+      <label class="calageAngle"><input type="number" id="calageAngle" step="0.25"
         aria-label="Angle du contour, en degrés"> °</label>
       <button type="button" id="calageQuart" title="Pivoter d'un quart de tour">↻ 90°</button>
       <button type="button" id="calageStop">Annuler</button>
@@ -18667,7 +18667,7 @@ function vueDuLieu(lieu, choisis, poses, bascule){
 
    Le contour arrive au centre de la vue, nord en haut. On le glisse à sa
    place, et sa poignée ronde le fait tourner autour de son centre ; l'angle se
-   saisit aussi au degré près dans le bandeau. Montrer deux coins, deux fois,
+   saisit aussi au quart de degré près dans le bandeau. Montrer deux coins, deux fois,
    demandait de savoir d'avance lesquels se correspondent — on les cherchait
    des yeux sur deux dessins qui ne regardent pas dans le même sens. Poser le
    contour sur le plan, c'est ce qu'on fait déjà d'une feuille de calque.
@@ -18757,13 +18757,17 @@ function pivoteCalage(t, a){
   return { a: a, x: c[0] - v[0], y: c[1] - v[1] };
 }
 
-/** L'angle lisible, entre 0 inclus et 360 exclu. Arrondi d'abord, ramené dans
- *  le tour ensuite : un calage relu sur le plan rend un angle nul au dixième
- *  de millionième de degré près, et du mauvais côté de zéro il s'affichait
- *  « 360 » — un contour droit qu'on venait de reprendre avait l'air tourné. */
+/** L'angle lisible, entre 0 inclus et 360 exclu. Deux décimales, parce que le
+ *  champ avance par quarts de degré : arrondi au dixième, un contour posé à
+ *  0,25° se relisait « 0,3 », et le pas suivant repartait de là.
+ *
+ *  Arrondi d'abord, ramené dans le tour ensuite : un calage relu sur le plan
+ *  rend un angle nul au dixième de millionième de degré près, et du mauvais
+ *  côté de zéro il s'affichait « 360 » — un contour droit qu'on venait de
+ *  reprendre avait l'air tourné. */
 const degresCalage = (a) => {
-  const d = +(a * 180 / Math.PI).toFixed(1);
-  return +((d % 360 + 360) % 360).toFixed(1);
+  const d = +(a * 180 / Math.PI).toFixed(2);
+  return +((d % 360 + 360) % 360).toFixed(2);
 };
 
 function dessineCalage(){
