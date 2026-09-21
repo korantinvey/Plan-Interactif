@@ -1755,10 +1755,10 @@ html.cale-tourne #plan{cursor:crosshair}
 #renommeOutils{font-size:12px}
 .outilsTete button:hover{color:var(--ink)}
 /* Neuf outils ne tiennent pas sur une rangée : la grille les range par cinq,
-   plutôt que de laisser les derniers déborder de la palette. Elle en range
-   huit aussi bien — le dessin des stands est une option du plan, et un salon
-   qui ne l'a pas prise n'a pas son bouton (voir « OPTIONS » de
-   « _admin1.html »). */
+   plutôt que de laisser les derniers déborder de la palette. Ils sont neuf
+   quel que soit le salon — celui qui n'a pas pris le dessin des stands garde
+   son bouton, grisé (voir « OPTIONS » de « _admin1.html »), la grille n'a donc
+   jamais de trou à combler. */
 .outilsBtns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .outilsBtns button{min-width:0;height:34px;border:1px solid var(--line);border-radius:var(--radius);
   color:var(--ink-2);font-size:15px;display:grid;place-items:center}
