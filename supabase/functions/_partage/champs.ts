@@ -60,6 +60,16 @@ const AFFICHAGE: Cible[] = [
   { cle: "nouveau", libelle: "Nouvel exposant",
     aide: "Pose une pastille sur la fiche. Valent oui : oui, o, 1, x, vrai, " +
       "true, on. Toute autre valeur ne pose rien." },
+  /* La seconde distinction qu'un exposant peut porter, et la première qui ne
+     décrive pas son ancienneté. Aucun fournisseur n'a de champ pour elle :
+     c'est le syndicat du salon qui tient ses adhérents, et l'organisateur
+     recopie la réponse dans un champ à lui — sous le nom qu'il veut, et
+     souvent avec des valeurs qui ne sont pas des oui (« À jour », « Membre
+     titulaire »). D'où l'absence de défaut, et les valeurs à désigner. */
+  { cle: "adherent", libelle: "Adhérent syndicat",
+    aide: "Marque l'exposant membre du syndicat du salon. Sans valeur " +
+      "désignée, valent oui : oui, o, 1, x, vrai, true, on ; un champ à choix " +
+      "se règle en cochant celles de ses valeurs qui comptent." },
   { cle: "exclu", libelle: "Exclu de la liste",
     aide: "Retire l'exposant du plan public, quel que soit le reste. Valent " +
       "oui : oui, o, 1, x, vrai, true, on." },

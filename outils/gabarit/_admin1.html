@@ -113,7 +113,7 @@ function styleDataGroupe(nom, on){
   if (nom === "stands" || nom === "zones") marqueParcours();
   /* Les marques des nouveaux venus non plus : la couche éteinte, elles
      resteraient seules au-dessus d'un hall vide. */
-  if (nom === "stands") dessineNeufs();
+  if (nom === "stands") dessineDists();
 }
 
 function appliqueCouleursData(){
@@ -176,7 +176,7 @@ function appliqueApparence(){
   appliqueSecteurs();
   appliqueAccent();
   appliqueFond();
-  appliqueNeuf();
+  appliqueDists();
   appliqueBarre();
   appliqueModele();
 }
@@ -679,19 +679,22 @@ function appliqueFond(){
 }
 
 /* ------------------------------------------------------------
-   Les nouveaux venus — ce que le plan en montre
+   Les distinctions — ce que le plan en montre
 
-   Le champ vient de la synchronisation ; ce qu'on en fait voir se règle ici,
-   surface par surface. Trois questions plutôt qu'une, parce que la même marque
-   ne tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre,
-   pas sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
+   Deux champs viennent de la synchronisation : le nouvel exposant, et
+   l'adhérent du syndicat du salon. Ce qu'on en fait voir se règle ici, un
+   onglet chacun et la même mécanique pour les deux.
+
+   Trois questions par distinction plutôt qu'une, parce que la même marque ne
+   tient pas aux trois endroits : un mot se lit sur une fiche qu'on ouvre, pas
+   sur un stand qu'on survole — où le rendu WebGL ne rejoue que des formes.
 
    Les défauts ne changent rien aux salons déjà en ligne : la fiche garde la
    pastille qu'elle portait, le plan et la liste restent nus tant que
    l'exploitant n'a pas choisi.
    ------------------------------------------------------------ */
 
-const MARQUES_NEUF = {
+const MARQUES_DIST = {
   plan: [
     { cle: "aucun",  nom: "Aucune" },
     { cle: "point",  nom: "Point d'angle" },
@@ -712,53 +715,59 @@ const MARQUES_NEUF = {
     { cle: "bandeau",  nom: "Bandeau" },
   ],
 };
-const NEUF_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
+const DIST_DEFAUT = { plan: "aucun", liste: "aucun", fiche: "pastille" };
 
-/** La marque retenue pour une surface. Une valeur inconnue — un réglage
- *  d'une version qui proposait autre chose — retombe sur le défaut. */
-function modeNeuf(surface){
-  const v = conf("_neuf")[surface];
-  return MARQUES_NEUF[surface].some(m => m.cle === v) ? v : NEUF_DEFAUT[surface];
+/** La marque retenue pour une surface. Une valeur inconnue — un réglage d'une
+ *  version qui proposait autre chose — retombe sur le défaut. */
+function modeDist(d, surface){
+  const v = conf(d.reglage)[surface];
+  return MARQUES_DIST[surface].some(m => m.cle === v) ? v : DIST_DEFAUT[surface];
 }
 
-/** La teinte des marques, ou rien — auquel cas la feuille de style reprend la
- *  main, et avec elle l'accent du salon.
+/** La teinte des marques d'une distinction, ou rien — auquel cas la feuille de
+ *  style reprend la main, et avec elle l'accent du salon.
  *
- *  Une seule pour les trois surfaces : ce sont trois façons de dire la même
- *  chose, et trois teintes en auraient fait trois distinctions. */
-const couleurNeuf = () => {
-  const v = conf("_neuf").couleur;
+ *  Une seule pour les trois surfaces d'une distinction : ce sont trois façons
+ *  de dire la même chose, et trois teintes en auraient fait trois distinctions.
+ *  Une par distinction en revanche, et c'est tout le sujet : deux marques de la
+ *  même couleur sur un stand ne se distinguent plus l'une de l'autre. */
+const couleurDist = (d) => {
+  const v = conf(d.reglage).couleur;
   return trio(v) ? v : "";
 };
 
 /**
- * Les trois marques posées sur la page : leur teinte en jeton, le mode retenu
- * en attribut. La feuille de style fait le reste — d'où une fiche ouverte qui
- * suit le réglage sans qu'on la rouvre.
+ * Les teintes des distinctions, posées en jetons sur la racine.
  *
- * Le plan, lui, ne se déduit d'aucun attribut : ses marques sont des formes à
- * tracer, et « dessineNeufs » les refait.
+ * Trois par distinction : sa teinte, l'aplat doux de la pastille et l'encre
+ * qui se lit dessus. La pastille se peint des deux, comme l'accent dont elle
+ * les tenait — une teinte choisie doit rendre les deux, sans quoi le mot
+ * disparaîtrait sur son propre fond.
+ *
+ * En haut plutôt que sur chaque marque : une couleur changée repeint alors les
+ * neuf cents lignes de la liste sans qu'on les réécrive, et la classe de la
+ * distinction va chercher les siens (voir `_head.html`, « .d-neuf »).
+ *
+ * Le plan, lui, ne se déduit d'aucun jeton : ses marques sont des formes à
+ * tracer, et « dessineDists » les refait. La tête de la fiche ouverte non plus,
+ * depuis qu'elles sont deux : c'est le script qui décide laquelle occupe le
+ * coin, et « refaitDistsFiche » la repose.
  */
-function appliqueNeuf(){
-  ["plan", "liste", "fiche"].forEach(s =>
-    racine.dataset["neuf" + s[0].toUpperCase() + s.slice(1)] = modeNeuf(s));
-  /* La pastille de la fiche se peint d'un aplat doux et d'une encre, comme
-     l'accent dont elle tenait ses deux tons : une teinte choisie doit rendre
-     les deux, sans quoi le mot disparaîtrait sur son propre fond. L'attribut
-     dit qu'il y a un réglage, et c'est lui qui fait passer la règle devant
-     celle du modèle de fiche. */
-  const v = couleurNeuf();
-  if (v){
-    racine.dataset.neufCoul = "1";
-    racine.style.setProperty("--neuf", v);
-    racine.style.setProperty("--neuf-doux", melange(v, "#FFFFFF", 0.86));
-    racine.style.setProperty("--neuf-ink",
-      luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
-  } else {
-    delete racine.dataset.neufCoul;
-    ["--neuf", "--neuf-doux", "--neuf-ink"].forEach(n => racine.style.removeProperty(n));
-  }
-  dessineNeufs();
+function appliqueDists(){
+  DISTINCTIONS.forEach(d => {
+    const v = couleurDist(d);
+    const n = "--d-" + d.cle;
+    if (v){
+      racine.style.setProperty(n, v);
+      racine.style.setProperty(n + "-doux", melange(v, "#FFFFFF", 0.86));
+      racine.style.setProperty(n + "-ink",
+        luminance(trio(v)) > 0.42 ? "#0E1113" : "#FFFFFF");
+    } else {
+      [n, n + "-doux", n + "-ink"].forEach(x => racine.style.removeProperty(x));
+    }
+  });
+  dessineDists();
+  refaitDistsFiche();
 }
 
 /**
@@ -1414,7 +1423,7 @@ function apercuFiche(cle, vu){
       '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>' +
       '</span><span class="close">&times;</span></div>' +
       '<div class="hdTete"><span class="eyebrow">Stand</span>' +
-        (vu.neuf ? '<span class="badge neuf">Nouvel exposant</span>' : "") +
+        (vu.neuf ? '<span class="badge dist pic d-neuf">Nouvel exposant</span>' : "") +
       '</div>' +
       '<div class="hdNom"><h2>' + esc(vu.nom) + '</h2></div>' +
       '<div class="hdBadges">' +
@@ -1517,7 +1526,7 @@ function ouvreReglages(ouvrir){
        fonction recevrait l'événement de clic, qui ne désigne aucun volet et
        les fermait tous. */
     const nomme = typeof ouvrir === "string" && ouvrir ? ouvrir : null;
-    /* Neuf onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
+    /* Dix onglets ne tiennent pas sur un téléphone : la barre y défile. Celui
        qu'on vient de retenir se ramène donc sous les yeux — sans lui, le dernier
        restait à moitié coupé après le clic, et la fenêtre ouverte droit sur lui
        ne montrait pas où l'on était. « nearest » et non « center » : la fenêtre
@@ -1570,11 +1579,13 @@ function ouvreReglages(ouvrir){
        range les champs qu'une fois qu'on sait lesquels paraissent, et son
        aperçu emprunte l'habillage que l'onglet suivant choisit. */
     voletOrdre(volet("Fiche Stand"));
-    /* « Nouveaux » entre la fiche et l'apparence : il parle bien de l'allure
-       du plan, mais d'une allure qui dit un fait — qui vient d'arriver — et
-       non d'un habillage. Il se lit donc dans la foulée de ce que la fiche
-       montre, avant la planche des modèles. */
-    voletNeuf(volet("Nouveaux"));
+    /* Les distinctions entre la fiche et l'apparence : elles parlent bien de
+       l'allure du plan, mais d'une allure qui dit un fait — qui vient
+       d'arriver, qui adhère — et non d'un habillage. Elles se lisent donc dans
+       la foulée de ce que la fiche montre, avant la planche des modèles, et
+       dans l'ordre de leur table. */
+    MAJ_COIN.length = 0;
+    DISTINCTIONS.forEach(d => voletDist(volet(d.onglet), d));
     voletApparence(volet("Apparence"));
     /* Les environs suivent l'apparence : ils ne changent rien à ce que le
        visiteur trouve, seulement à ce qu'il voit autour. Et c'est un réglage
@@ -2595,11 +2606,11 @@ const TONS = [
 ];
 const nomDuTon = (h) => (TONS.find(t => t[0].toLowerCase() === String(h).toLowerCase()) || [])[1];
 
-/* Les vignettes du volet « Nouveaux ». Des schémas, et non la chose même :
-   une fiche réduite à soixante pixels ne se lirait pas, et ce qui se juge ici
-   est la place de la marque, pas le texte qu'elle porte. Le vrai rendu se
-   voit derrière la fenêtre, sur le plan et dans la liste, qui suivent le
-   choix au clic. */
+/* Les vignettes des volets « Nouveaux » et « Adhérents ». Des schémas, et non
+   la chose même : une fiche réduite à soixante pixels ne se lirait pas, et ce
+   qui se juge ici est la place de la marque, pas le texte qu'elle porte. Le
+   vrai rendu se voit derrière la fenêtre, sur le plan et dans la liste, qui
+   suivent le choix au clic. */
 const CADRE_VIGNETTE =
   '<rect x=".5" y=".5" width="63" height="39" rx="2" fill="var(--surface)" stroke="var(--line)"/>';
 const svgVignette = (dedans) =>
@@ -2608,20 +2619,20 @@ const barreVignette = (x, y, l, o) =>
   '<rect x="' + x + '" y="' + y + '" width="' + l + '" height="3" rx="1.5" ' +
   'fill="var(--ink-3)" opacity="' + (o || .45) + '"/>';
 
-function vignetteNeufPlan(cle){
+function vignetteDistPlan(cle){
   const stand = '<rect x="6" y="6" width="52" height="28" fill="var(--stand)" ' +
     'stroke="var(--stand-line)"/>' + barreVignette(11, 24, 22, .5);
   const m = cle === "point" ? '<circle class="mq" cx="50" cy="12" r="4"/>'
     : cle === "corne" ? '<path class="mq" d="M46 6h12v12Z"/>'
     : cle === "etoile" ? '<g class="mq" transform="translate(44 7) scale(.44)">' +
-        ETOILE_NEUF + '</g>'
+        ETOILE_DIST + '</g>'
     : cle === "lisere" ? '<rect class="mqT" x="7.3" y="7.3" width="49.4" height="25.4" ' +
         'fill="none" stroke-width="2.6"/>'
     : "";
   return svgVignette(stand + m);
 }
 
-function vignetteNeufListe(cle){
+function vignetteDistListe(cle){
   const cadre = (y) => '<rect x="6" y="' + y + '" width="11" height="8" rx="1" ' +
     'fill="none" stroke="var(--line-strong)"/>';
   const decale = cle === "point" ? 6 : 0;
@@ -2635,7 +2646,7 @@ function vignetteNeufListe(cle){
   return svgVignette(haut + bas);
 }
 
-function vignetteNeufFiche(cle){
+function vignetteDistFiche(cle){
   const m = cle === "pastille"
       ? '<rect class="mq" x="7" y="6" width="30" height="8" rx="4" opacity=".2"/>' +
         '<circle class="mq" cx="12.5" cy="10" r="2.2"/>' +
@@ -2648,19 +2659,31 @@ function vignetteNeufFiche(cle){
     barreVignette(7, haut + 7, 22, .3) + barreVignette(7, haut + 13, 30, .3));
 }
 
-const VIGNETTES_NEUF = {
-  plan: vignetteNeufPlan, liste: vignetteNeufListe, fiche: vignetteNeufFiche,
+const VIGNETTES_DIST = {
+  plan: vignetteDistPlan, liste: vignetteDistListe, fiche: vignetteDistFiche,
 };
 
-/** Ce salon distingue-t-il ses nouveaux venus ? Le champ n'existe pas partout,
- *  et un volet qui promettrait une marque qu'aucune fiche ne porte ferait
- *  chercher une panne là où il n'y a qu'un champ vide. */
-const salonDitSesNeufs = () =>
+/** Ce salon distingue-t-il ses exposants de cette façon ? Le champ n'existe
+ *  pas partout, et un volet qui promettrait une marque qu'aucune fiche ne porte
+ *  ferait chercher une panne là où il n'y a qu'un champ vide. */
+const salonDitSes = (d) =>
   Object.values((DATA || {}).plans || {}).some(pl =>
-    (pl.stands || []).some(o => o.neuf || (o.coex || []).some(x => x.neuf)));
+    (pl.stands || []).some(o => o[d.champ] || (o.coex || []).some(x => x[d.champ])));
+
+/** L'autre distinction tient-elle déjà le coin de la tête de fiche ? Une seule
+ *  l'occupe — deux coins au même angle n'en feraient qu'un — et celle qui vient
+ *  après dans la table reprend sa pastille. */
+const coinPris = (d) => DISTINCTIONS.some(x =>
+  x !== d && DISTINCTIONS.indexOf(x) < DISTINCTIONS.indexOf(d) &&
+  modeDist(x, "fiche") === "corne");
+
+/* Le coin appartient aux deux volets à la fois : celui qui le prend change ce
+   que l'autre peut promettre. Les deux se rafraîchissent donc ensemble, sans
+   quoi l'onglet d'à côté gardait une aide devenue fausse. */
+const MAJ_COIN = [];
 
 /**
- * Ce que le plan montre de ses nouveaux exposants.
+ * Ce que le plan montre d'une distinction.
  *
  * Trois surfaces, trois questions : le stand qu'on survole, la ligne qu'on
  * balaie, la fiche qu'on ouvre. La même marque ne vaut pas aux trois endroits
@@ -2668,91 +2691,104 @@ const salonDitSesNeufs = () =>
  * du tout sur le plan, dont le rendu WebGL ne rejoue que des formes.
  *
  * Une seule teinte pour les trois, en revanche, et le nuancier vient après
- * elles. L'accent du salon désigne déjà ce qu'on a retenu et ce qu'on vient
- * d'ouvrir, d'où le choix d'une autre couleur ; mais les trois marques disent
- * la même chose — celui-ci vient d'arriver — et trois teintes en auraient fait
- * trois distinctions à apprendre.
+ * elles : les trois marques disent la même chose, et trois teintes en auraient
+ * fait trois distinctions à apprendre. Le texte suit la teinte, au pied du
+ * volet : c'est la dernière retouche, celle qu'on fait une fois la forme
+ * choisie.
  */
-function voletNeuf(hote){
+function voletDist(hote, d){
   const p = document.createElement("p");
-  p.textContent = "La synchronisation pose un champ « Nouvel exposant » sur " +
-    "les fiches des salons qui distinguent leurs nouveaux venus. Ce que le " +
-    "plan en montre se règle ici, surface par surface : le stand sur le plan, " +
-    "la ligne dans la liste des résultats, la tête de la fiche qu'on ouvre. " +
-    "Le choix se voit tout de suite derrière cette fenêtre.";
+  p.textContent = "La synchronisation pose un champ « " + d.nomChamp + " » sur " +
+    d.quoi + ". Ce que le plan en montre se règle ici, surface par surface : " +
+    "le stand sur le plan, la ligne dans la liste des résultats, la tête de la " +
+    "fiche qu'on ouvre. Le choix se voit tout de suite derrière cette fenêtre, " +
+    "et les deux distinctions se cumulent : un exposant qui les porte toutes " +
+    "deux montre les deux marques.";
   hote.appendChild(p);
 
-  if (!salonDitSesNeufs()){
+  const note = (t) => {
     const n = document.createElement("p");
     n.className = "note";
-    n.textContent = "Aucune fiche de ce salon ne porte le champ pour l'instant : " +
-      "les marques réglées ici resteront invisibles jusqu'à ce que la source " +
-      "le renseigne.";
+    n.textContent = t;
     hote.appendChild(n);
-  } else if (!montre("stand", "nouveau")){
-    const n = document.createElement("p");
-    n.className = "note";
-    n.textContent = "Le champ « Nouvel exposant » est décoché dans la console : " +
-      "les marques réglées ici ne paraîtront qu'une fois le champ rendu visible.";
-    hote.appendChild(n);
-  }
+  };
+  if (!salonDitSes(d))
+    note("Aucune fiche de ce salon ne porte le champ pour l'instant : les " +
+      "marques réglées ici resteront invisibles jusqu'à ce que la source le " +
+      "renseigne. Le champ se désigne dans la console, onglet « Stand ».");
+  else if (!montre("stand", d.cible))
+    note("Le champ « " + d.nomChamp + " » est décoché dans la console : les " +
+      "marques réglées ici ne paraîtront qu'une fois le champ rendu visible.");
 
-  /* Les marques d'une surface. Le nuancier, lui, est commun : il vient après
-     les trois, au pied du volet. */
+  /* Les marques d'une surface. Le nuancier et le texte, eux, sont communs aux
+     trois : ils viennent après, au pied du volet. */
   const bloc = (surface, titre, aide) => {
-    const d = document.createElement("div");
-    d.className = "blocNeuf";
-    d.innerHTML = '<span class="eyebrow tNeuf"></span><p class="aNeuf"></p>' +
-      '<div class="choixNeuf"></div>';
-    d.querySelector(".tNeuf").textContent = titre;
-    d.querySelector(".aNeuf").textContent = aide;
+    const b = document.createElement("div");
+    b.className = "blocDist";
+    b.innerHTML = '<span class="eyebrow tDist"></span><p class="aDist"></p>' +
+      '<div class="choixDist"></div>';
+    b.querySelector(".tDist").textContent = titre;
+    const aideDite = b.querySelector(".aDist");
+    aideDite.textContent = aide;
 
-    const choix = d.querySelector(".choixNeuf");
-    const tuiles = MARQUES_NEUF[surface].map(m => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "vgN";
-      b.innerHTML = '<span class="ap">' + VIGNETTES_NEUF[surface](m.cle) +
+    const choix = b.querySelector(".choixDist");
+    const tuiles = MARQUES_DIST[surface].map(m => {
+      const t = document.createElement("button");
+      t.type = "button";
+      t.className = "vgN d-" + d.cle;
+      t.innerHTML = '<span class="ap">' + VIGNETTES_DIST[surface](m.cle) +
         '</span><span class="n"></span>';
-      b.querySelector(".n").textContent = m.nom;
-      b.onclick = () => {
-        conf("_neuf")[surface] = m.cle;
-        appliqueNeuf();
+      t.querySelector(".n").textContent = m.nom;
+      t.onclick = () => {
+        conf(d.reglage)[surface] = m.cle;
+        appliqueDists();
         /* La liste s'écrit ligne par ligne : son marquage tient au balisage,
            non à la feuille de style, et ne suit pas tout seul. */
         if (surface === "liste") liste();
         enregistreConf();
-        majTuiles();
+        if (surface === "fiche") MAJ_COIN.forEach(f => f()); else majTuiles();
       };
-      choix.appendChild(b);
-      return { b, m };
+      choix.appendChild(t);
+      return { t, m };
     });
-    const majTuiles = () => tuiles.forEach(({ b, m }) =>
-      b.setAttribute("aria-pressed", String(m.cle === modeNeuf(surface))));
+    const majTuiles = () => {
+      tuiles.forEach(({ t, m }) =>
+        t.setAttribute("aria-pressed", String(m.cle === modeDist(d, surface))));
+      /* Le coin ne se partage pas, et le dire vaut mieux que le laisser
+         découvrir : la marque choisie paraîtrait simplement ailleurs. */
+      if (surface === "fiche")
+        aideDite.textContent = aide + (coinPris(d)
+          ? " Le coin corné est déjà pris par l'autre distinction : choisi ici, " +
+            "c'est la pastille qui paraîtra."
+          : "");
+    };
     majTuiles();
-    hote.appendChild(d);
+    hote.appendChild(b);
+    return majTuiles;
   };
 
   bloc("plan", "Sur le plan",
     "Une forme posée sur le stand. Le coin corné se place sur l'angle de la " +
     "boîte du tracé : un stand en L n'a pas cet angle-là, et sa corne déborde " +
     "dans l'allée. Le liseré, lui, emprunte le trait que la sélection utilise " +
-    "déjà.");
+    "déjà. Deux distinctions affichées prennent chacune un coin, l'une à " +
+    "droite et l'autre à gauche : elles ne se recouvrent pas.");
   bloc("liste", "Dans la liste",
     "La ligne des résultats. Le cartouche dit le mot, mais l'ellipse le mange " +
     "sur une enseigne longue ; la mention descend sur la seconde ligne, où " +
     "rien ne la tronque.");
-  bloc("fiche", "En tête de fiche",
+  const majFiche = bloc("fiche", "En tête de fiche",
     "Ce qu'on lit en ouvrant un stand. Le coin corné se pose à gauche : le " +
     "coin droit porte déjà le logo de l'exposant et la croix de fermeture. Le " +
     "bandeau prend toute la largeur et descend le nom d'une ligne.");
+  MAJ_COIN.push(majFiche);
 
-  /* Un seul nuancier pour les trois, et en dernier : les trois marques disent
-     la même chose — celui-ci vient d'arriver — et trois teintes en auraient
-     fait trois distinctions à apprendre. Les vignettes du dessus s'en peignent,
-     si bien qu'une couleur choisie se voit sur les onze d'un coup. */
+  /* Un seul nuancier pour les trois surfaces, et en dernier : les trois marques
+     disent la même chose, et trois teintes en auraient fait trois distinctions
+     à apprendre. Les vignettes du dessus s'en peignent, si bien qu'une couleur
+     choisie se voit sur les onze d'un coup. */
   const coul = document.createElement("div");
-  coul.className = "reglage-coul coulNeuf";
+  coul.className = "reglage-coul coulDist";
   coul.innerHTML = '<div class="tete"><span class="eyebrow">Couleur des marques</span>' +
     '<span class="val"></span>' +
     '<button type="button" class="raz">Couleur d\'origine</button></div>' +
@@ -2760,18 +2796,18 @@ function voletNeuf(hote){
   const val = coul.querySelector(".val");
   const nuancier = coul.querySelector(".nuancier");
   const majPastilles = () => {
-    const v = couleurNeuf().toLowerCase();
+    const v = couleurDist(d).toLowerCase();
     nuancier.querySelectorAll("button[data-ton]").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.ton.toLowerCase() === v)));
     const n = nomDuTon(v);
     val.textContent = v ? (n ? n + " · " + v.toUpperCase() : v.toUpperCase())
                         : "Couleur principale";
     const libre = nuancier.querySelector(".perso input");
-    if (libre) libre.value = couleurNeuf() || jeton("--accent-base") || "#2F49D1";
+    if (libre) libre.value = couleurDist(d) || jeton("--accent-base") || "#2F49D1";
   };
   /* Peindre ne fait que poser trois jetons sur la racine : c'est ce qui peut
      suivre la rafale du sélecteur de couleur. */
-  const peint = (v) => { conf("_neuf").couleur = v; appliqueNeuf(); majPastilles(); };
+  const peint = (v) => { conf(d.reglage).couleur = v; appliqueDists(); majPastilles(); };
   TONS.forEach(([ton, nom]) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -2789,11 +2825,37 @@ function voletNeuf(hote){
   suitNuancier(libre.querySelector("input"), peint, enregistreConf);
   nuancier.appendChild(libre);
   coul.querySelector(".raz").onclick = () => {
-    delete conf("_neuf").couleur;
-    enregistreConf(); appliqueNeuf(); majPastilles();
+    delete conf(d.reglage).couleur;
+    enregistreConf(); appliqueDists(); majPastilles();
   };
   hote.appendChild(coul);
   majPastilles();
+
+  /* Le texte de la marque. Un syndicat porte son nom — « Adhérent UNAM » —, et
+     un salon nomme ses nouveaux venus comme il l'entend. Ce qu'on écrit là est
+     une donnée, comme le nom d'un exposant : il paraît tel quel dans les deux
+     langues, et le dictionnaire ne le connaît pas. */
+  const champ = champZone(hote, "Texte de la marque", document.createElement("input"),
+    "Ce que la marque écrit : la pastille, le bandeau et la mention sous le " +
+    "nom le portent en entier, le cartouche et le coin corné n'en tiennent " +
+    "que deux ou trois mots. Laissez vide pour « " + d.texte + " ». Le texte " +
+    "s'affiche tel quel, y compris sur la version anglaise du plan.");
+  champ.type = "text";
+  champ.placeholder = d.texte;
+  champ.value = conf(d.reglage).texte || "";
+  /* Après un temps de repos, et non à chaque frappe : réécrire les neuf cents
+     lignes de la liste lettre par lettre se sentait sous les doigts. */
+  let minuteur = null;
+  champ.oninput = () => {
+    clearTimeout(minuteur);
+    minuteur = setTimeout(() => {
+      const t = champ.value.trim();
+      if (t) conf(d.reglage).texte = t; else delete conf(d.reglage).texte;
+      enregistreConf();
+      appliqueDists();
+      liste();
+    }, REPOS_NUANCIER);
+  };
 }
 
 /** De quoi le plan a l'air : sa couleur principale, la police des noms qu'il

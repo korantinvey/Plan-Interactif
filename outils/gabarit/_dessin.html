@@ -1625,7 +1625,8 @@ function ouvrePoi(id, depuis, recentrer){
   /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
      d'un escalier gardait la marque du stand consulté juste avant. */
   poseMarque("");
-  $("dNeuf").hidden = $("dCorne").hidden = $("dRuban").hidden = true;
+  /* Un repère n'est pas un exposant : ni nouveau venu ni adhérent. */
+  poseDistsFiche(null);
   $("dPartage").hidden = true;
   /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
      visible, elle basculait encore la visibilité de la zone d'avant. */

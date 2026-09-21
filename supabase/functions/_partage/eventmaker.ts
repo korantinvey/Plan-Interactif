@@ -142,6 +142,8 @@ export interface ExposantEm {
   persoEn: Record<string, string | string[]>;
   // une pastille sur la fiche, quand le salon distingue ses nouveaux venus
   neuf: boolean;
+  // membre du syndicat du salon, quand l'organisateur en tient la liste
+  adherent: boolean;
   exclu: boolean;
 }
 
@@ -832,6 +834,7 @@ export class Eventmaker {
            version à montrer, la française, dans les deux langues. */
         persoEn: this.perso(g, m, SUFFIXE_EN),
         neuf: vrai(this.valeur(g, m, "nouveau"), this.cfg.valeurs?.nouveau),
+        adherent: vrai(this.valeur(g, m, "adherent"), this.cfg.valeurs?.adherent),
         exclu: vrai(this.valeur(g, m, "exclu"), this.cfg.valeurs?.exclu),
       };
       /* Le stand de l'hôte, tel que la fiche le porte. Par défaut c'est son

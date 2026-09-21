@@ -1178,6 +1178,16 @@ const LIGNES_FICHE = [
     critere: true,
     aide: "Pose une pastille en tête de fiche. Le champ n'existe que sur les " +
       "salons qui distinguent leurs nouveaux venus." },
+  /* Aucun fournisseur ne porte l'adhésion : c'est le syndicat du salon qui
+     tient ses membres, et l'organisateur recopie la réponse dans un champ à
+     lui. Souvent avec des valeurs qui ne sont pas des oui — « À jour »,
+     « Membre titulaire » —, d'où les valeurs à cocher sous le champ. */
+  { cle: "adherent", cible: "adherent", libelle: "Adhérent syndicat", ouiNon: true,
+    critere: true,
+    aide: "Marque l'exposant membre du syndicat du salon. Le champ porte " +
+      "rarement un oui : cochez sous lui celles de ses valeurs qui comptent " +
+      "pour une adhésion. Ce que le plan en montre se règle depuis " +
+      "l'engrenage du plan, onglet « Adhérents »." },
   /* Seule ligne du cadre à ne pas venir de la fiche société : elle dit donc
      d'où elle vient, sans quoi l'en-tête du cadre mentirait pour elle. */
   { cle: "conferences", libelle: "Conférences", fixe: origineConferences,

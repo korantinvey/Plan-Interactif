@@ -1298,6 +1298,12 @@ Deno.serve(async (req) => {
             ...((ok && (expoEm ? em!.neuf
               : vrai(lit(cibleK("nouveau"), origines), valeurK("nouveau"))))
               ? { neuf: true } : {}),
+            /* La seconde distinction, et la même économie : la clé ne descend
+               que sur les adhérents. Elle ne remplace pas la première — un
+               nouvel adhérent porte les deux, et la page les cumule. */
+            ...((ok && (expoEm ? em!.adherent
+              : vrai(lit(cibleK("adherent"), origines), valeurK("adherent"))))
+              ? { adh: true } : {}),
             /* Les sociétés hébergées, dans l'ordre où Eventmaker les rend. La
                clé ne descend pas quand il n'y en a pas : la grande majorité
                des stands n'hébergent personne, et l'instantané part au
@@ -1716,6 +1722,7 @@ function hebergee(x: ExposantEm): Record<string, unknown> {
   if (x.nomencl.length) o.nomencl = x.nomencl;
   if (x.themes.length) o.themes = x.themes;
   if (x.neuf) o.neuf = true;
+  if (x.adherent) o.adh = true;
   // les champs propres au salon suivent la société hébergée comme les autres :
   // c'est bien sa fiche à elle qui les porte
   if (Object.keys(x.perso).length) o.perso = x.perso;
