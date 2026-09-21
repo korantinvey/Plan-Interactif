@@ -6489,12 +6489,30 @@ function indexe(d){
      confronte la base à ce que le poste garde, et il faut que ce soit ce
      salon-ci qu'il garde. */
   ouvreDessins(d);
+  /* Les réglages, posés du plus ancien écrit au plus récent.
+     Le même bloc est recopié dans chaque pavillon, un `await` par tour : un
+     envoi interrompu à mi-parcours laisse le pavillon 1 porter le réglage neuf
+     et les suivants l'ancien. Pris dans l'ordre des pavillons, c'est le dernier
+     lu qui gagnait, donc l'ancien — et le réglage neuf disparaissait au
+     rechargement, sans que rien ne le rattrape. Par date d'écriture, il tient.
+     Un visiteur ne reçoit pas cette date : ses pavillons portent tous le même
+     bloc, et l'ordre n'y décide de rien.
+     `reglagesDuSalon` au passage : un enregistrement d'avant le cloisonnement
+     porte les calques d'autres salons, qui ne désignent rien ici et
+     fausseraient la publication. */
+  const reglagesEnBase = {};
+  DATA.plans
+    .filter(p => p.apparence?.reglages && Object.keys(p.apparence.reglages).length)
+    .map(p => p.apparence)
+    .sort((a, b) => String(a.modifie_le || "").localeCompare(String(b.modifie_le || "")))
+    .forEach(a => {
+      const bloc = reglagesDuSalon(a.reglages);
+      Object.assign(reglagesEnBase, bloc);
+      Object.assign(CONF, bloc);
+    });
+
   DATA.plans.forEach(p => {
     const a = p.apparence || {};
-    // un enregistrement d'avant le cloisonnement porte les calques d'autres
-    // salons : ils ne désignent rien ici, et fausseraient la publication
-    if (a.reglages && Object.keys(a.reglages).length)
-      Object.assign(CONF, reglagesDuSalon(a.reglages));
     if (Array.isArray(a.pile) && a.pile.length) CONF["_pile:" + p.id] = a.pile;
     /* Les dessins de la base font foi, jusqu'à l'effacement d'un calque retiré
        ailleurs — sauf sur ce que ce poste n'a jamais réussi à publier : cela
@@ -6531,6 +6549,12 @@ function indexe(d){
       if (ADMIN) notePubliees(p.id, deLaBase.map(c => c.id));
     }
   });
+  /* Ce que la base disait, et non ce que la page tient : l'envoi comparera le
+     poste à cette image pour ne reposer que ce qu'on y a changé. Un réglage
+     resté sur le poste faute d'avoir pu partir s'en distingue donc encore, et
+     repart au prochain envoi — ce navigateur est le seul endroit où il est. */
+  if (ADMIN) noteReglagesCharges(reglagesEnBase);
+
   /* Les géométries que l'exploitant a reprises à la main, posées avant que
      rien ne soit dessiné : le tracé, les noms, les aimants et la grille de
      marche lisent tous la forme de l'emplacement, et doivent lire celle qui
@@ -22053,6 +22077,20 @@ function reglagesSeuls(){
   return reglagesDuSalon(CONF);
 }
 
+/* Ce que la base disait des réglages quand la page les a chargés, clé par clé
+   et rendu en texte : les valeurs sont des objets que la page retouche en
+   place, si bien qu'une copie de surface ne dirait plus rien. C'est la seule
+   chose qui distingue « ce poste l'a changé » de « ce poste l'a lu comme ça ».
+   Retenu tant qu'un envoi n'a pas tout posé : un pavillon laissé en retard
+   redemande donc la même clé au geste de réparation. */
+let REGLAGES_CHARGES = {};
+function noteReglagesCharges(enBase){
+  REGLAGES_CHARGES = {};
+  Object.keys(enBase || {}).forEach(k => {
+    REGLAGES_CHARGES[k] = JSON.stringify(enBase[k]);
+  });
+}
+
 /**
  * Demande au relais d'oublier le plan public de ce salon.
  *
@@ -22097,6 +22135,35 @@ async function pousseConfiguration(auto){
   try {
     const parKlipso = await identifiants(acces);
     const reglages = reglagesSeuls();
+    /* Ce que ce poste a changé depuis son chargement, et ce qu'il a retiré.
+       Renvoyer tout le bloc effaçait en silence ce qu'un autre administrateur
+       venait de régler : A change la couleur d'accent, B décoche un calque cinq
+       minutes plus tard, et l'accent de A disparaît pour tout le monde. Les
+       deux voisins prenaient déjà cette précaution — `calque_dessin` n'efface
+       que ce qu'il a vu en base, `ecritColonnesEvenement` relit la colonne. */
+    const changees = {};
+    Object.keys(reglages).forEach(k => {
+      /* La valeur est figée en texte ici, et c'est elle qu'on écrira : une
+         couleur retouchée pendant l'envoi resterait sinon « changée » sans que
+         le corps déjà parti la porte, et ne repartirait jamais. Figée, elle
+         garde son tour, et `revision` la fera repartir. */
+      const texte = JSON.stringify(reglages[k]);
+      if (texte !== REGLAGES_CHARGES[k]) changees[k] = texte;
+    });
+    const retirees = Object.keys(REGLAGES_CHARGES).filter(k => !(k in reglages));
+    const posees = Object.fromEntries(
+      Object.entries(changees).map(([k, texte]) => [k, JSON.parse(texte)]));
+
+    /* Les blocs que la base tient à l'instant, pour tous les pavillons d'un
+       coup : un envoi par couleur changée ne doit pas coûter une lecture par
+       pavillon en plus. */
+    const idsPlans = DATA.plans.map(p => parKlipso[p.id]).filter(Boolean);
+    const tenus = {};
+    if (idsPlans.length){
+      const lignes = await base(acces, "apparence?select=plan_id,reglages&plan_id=in.(" +
+        encodeURIComponent(idsPlans.join(",")) + ")");
+      (lignes || []).forEach(l => { tenus[l.plan_id] = l.reglages; });
+    }
     let calques = 0;
     /* Un pavillon de la page que la base ne nomme pas garde sa marque d'attente,
        et la relancerait indéfiniment : on le compte pour le dire en finissant. */
@@ -22106,13 +22173,26 @@ async function pousseConfiguration(auto){
       const planId = parKlipso[p.id];
       if (!planId){ inconnus++; continue; }
 
+      /* Un pavillon dont la base ne tient aucun bloc reçoit le nôtre en
+         entier : il n'y a là rien à ménager, et c'est ce qu'un envoi
+         interrompu laisse derrière lui. Un pavillon qui en a un le garde, et
+         n'en voit changer que les clés que ce poste a changées.
+         `reglagesDuSalon` au passage : un enregistrement d'avant le
+         cloisonnement porte des clés d'autres salons, que le plein
+         remplacement retirait au premier envoi. */
+      const bloc = tenus[planId]
+        ? reglagesDuSalon({ ...tenus[planId] })
+        : { ...reglages };
+      retirees.forEach(k => { delete bloc[k]; });
+      Object.keys(posees).forEach(k => { bloc[k] = posees[k]; });
+
       await base(acces, "apparence?on_conflict=plan_id", {
         method: "POST",
         headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
         body: JSON.stringify([{
           plan_id: planId,
           pile: CONF["_pile:" + p.id] || [],
-          reglages: reglages,
+          reglages: bloc,
           modifie_le: new Date().toISOString(),
         }]),
       });
@@ -22172,6 +22252,14 @@ async function pousseConfiguration(auto){
 
     revisionEnvoyee = cible;
     publication = false;
+    /* Tout est posé : ce que ce poste a changé est maintenant ce que la base
+       tient, et n'a plus à être reposé par-dessus un réglage venu d'ailleurs.
+       Un pavillon absent laisse au contraire ces clés en attente — le geste de
+       réparation doit pouvoir les remettre là où elles manquent. */
+    if (!inconnus){
+      Object.keys(changees).forEach(k => { REGLAGES_CHARGES[k] = changees[k]; });
+      retirees.forEach(k => { delete REGLAGES_CHARGES[k]; });
+    }
     /* La base a la configuration ; le relais garde encore l'ancienne version du
        plan public. On le lui dit tout de suite, sans quoi l'administration et le
        plan public ne montreraient pas la même chose — et c'est le plan public

@@ -792,7 +792,7 @@ Deno.serve(async (req) => {
         "Lecture des calques",
       ),
       lu(
-        sb.from("apparence").select("plan_id, pile, reglages").in("plan_id", ids),
+        sb.from("apparence").select("plan_id, pile, reglages, modifie_le").in("plan_id", ids),
         "Lecture de l'apparence",
       ),
       lu(
@@ -1003,7 +1003,17 @@ Deno.serve(async (req) => {
               return { ...c, zone: zone && zonesDuPlan.has(zone) ? zone : null };
             }),
           apparence: parApparence[p.id]
-            ? { pile: parApparence[p.id].pile, reglages: parApparence[p.id].reglages }
+            ? {
+              pile: parApparence[p.id].pile,
+              reglages: parApparence[p.id].reglages,
+              /* Quand cette ligne a été écrite, pour l'exploitant seul : le
+                 même bloc de réglages est recopié dans chaque pavillon, et
+                 c'est cette date qui dit lequel porte le plus récent quand un
+                 envoi s'est arrêté en route. Un visiteur ne s'en sert pas, et
+                 l'ajouter à ce qu'il reçoit changerait la version du plan —
+                 donc referait télécharger le plan de tous les salons. */
+              ...(identifie ? { modifie_le: parApparence[p.id].modifie_le } : {}),
+            }
             : { pile: [], reglages: {} },
           // la page reconnaît ses calques à sa propre clé ; l uuid ne lui sert
           // à rien, et changerait son identité à chaque enregistrement
