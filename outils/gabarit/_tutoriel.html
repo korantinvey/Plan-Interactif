@@ -751,8 +751,12 @@ function placeTuto(force){
   });
   if (tutoModale()) pese(boiteTuto($("modale").querySelector(".mfen")), 1.5);
   pese(boiteTuto($("poi")), .5);
-  if (ETROIT()) pese(boiteTuto($("side")), .3);
-  else pese(boiteTuto(document.querySelector(".zoombar")), .5);
+  if (ETROIT()){
+    pese(boiteTuto($("side")), .3);
+    /* Les pictos du plan flottent au coin du hall depuis que la bande du salon
+       n'en est plus une sur un téléphone : la bulle se posait dessus. */
+    pese(boiteTuto(document.querySelector(".tools")), .5);
+  } else pese(boiteTuto(document.querySelector(".zoombar")), .5);
 
   /* La scène, et non la fenêtre : la page descend maintenant sous les barres
      du système, et une bulle posée au ras du bord aurait eu son bouton sous la
