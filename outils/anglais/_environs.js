@@ -37,8 +37,8 @@ module.exports = {
   "À gauche le fond s'efface, à droite il reprend toute sa force":
     "To the left the base map fades, to the right it regains full strength",
   "Vider le hall sous le plan": "Clear the hall under the floor plan",
-  "Aucun contour de hall n'a été relevé ici : pour vider la carte sous le bâtiment, percez le fond depuis la pile des calques, sur le calque qui le dessine.":
-    "No hall outline has been surveyed here: to clear the map under the building, punch through the basemap from the layer stack, on the layer that draws it.",
+  "Aucun contour de hall n'a été relevé ici : pour vider la carte sous le bâtiment, allumez le cadre percé sur la ligne du calque qui le dessine, dans la pile des calques. Seules ses surfaces fermées percent — un trait désigne un endroit, il n'en occupe pas.":
+    "No hall outline has been surveyed here: to clear the map under the building, switch on the punched frame on the row of the layer that draws it, in the layer stack. Only its closed shapes punch through — a line marks a spot, it does not occupy one.",
   "Autre style — laissez vide sinon": "Another style — leave empty otherwise",
   "Maintenez Majuscule pendant le glissement pour tourner sans changer de mode. Un plan dessiné l'entrée vers le bas fait tourner la carte avec lui : prenez un fond sans texte, ou la vue aérienne.":
     "Hold Shift while dragging to rotate without switching mode. A floor plan drawn with its entrance at the bottom turns the base map with it: pick a base map without text, or the aerial view.",

@@ -278,7 +278,7 @@ Fonctions :
 `appliquePicto` 401 · `supprimeForme` 427 · `editionPointerDown` 437
 `editionPointerMove` 483 · `editionPointerUp` 537
 
-### `_environs.html` — 1625 l. → plan-admin.html, plan-smcl.html, plan.html
+### `_environs.html` — 1626 l. → plan-admin.html, plan-smcl.html, plan.html
 
 - l.1 · 16. Les environs — le pavillon dans son quartier
 
@@ -301,7 +301,7 @@ Fonctions :
 `armeCalage` 1185 · `pivotCalage` 1196 · `glisseCarte` 1200 · `cartePointerDown` 1207
 `cartePointerMove` 1221 · `cartePointerUp` 1240 · `ditCalage` 1248 · `ditCarte` 1257
 `majCalage` 1265 · `appliqueCalage` 1287 · `tourneCalage` 1294 · `construitCalage` 1300
-`ouvreCalage` 1464 · `fermeCalage` 1473 · `voletEnvirons` 1501
+`ouvreCalage` 1465 · `fermeCalage` 1474 · `voletEnvirons` 1502
 
 ### `_export.html` — 215 l. → admin-plans.html, rapport.html
 

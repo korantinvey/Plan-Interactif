@@ -1445,8 +1445,9 @@ function construitCalage(){
   const sansHall = document.createElement("p");
   sansHall.className = "calageAide cSansVide";
   sansHall.textContent = "Aucun contour de hall n'a été relevé ici : pour vider " +
-    "la carte sous le bâtiment, percez le fond depuis la pile des calques, sur " +
-    "le calque qui le dessine.";
+    "la carte sous le bâtiment, allumez le cadre percé sur la ligne du calque " +
+    "qui le dessine, dans la pile des calques. Seules ses surfaces fermées " +
+    "percent — un trait désigne un endroit, il n'en occupe pas.";
   corps.appendChild(sansHall);
 
   const aide = document.createElement("p");
