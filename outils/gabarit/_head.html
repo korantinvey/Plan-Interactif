@@ -502,6 +502,18 @@ html:not([lang="en"]) [data-lg="en"],html[lang="en"] [data-lg="fr"]{display:none
    le retour à la ligne qui les séparait devient alors inutile. */
 .row .nm{display:block;font-weight:500;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .s{display:block;font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Les trois marques d'un nouveau venu dans la liste. Le point se lit en
+   balayant la colonne sans prendre la place du nom ; le cartouche dit le mot,
+   au prix de l'ellipse qui le mange sur une enseigne longue ; la mention
+   descend sur la seconde ligne, où rien ne la tronque. */
+.row .nPoint{display:inline-block;width:7px;height:7px;border-radius:50%;
+  margin-right:7px;vertical-align:1px;background:var(--neuf-liste,var(--accent))}
+.row .nCart{display:inline-block;margin-left:7px;padding:1px 5px;
+  font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:500;
+  letter-spacing:.06em;text-transform:uppercase;vertical-align:1px;
+  border:1px solid var(--neuf-liste,var(--accent));border-radius:2px;
+  color:var(--neuf-liste,var(--accent))}
+.row .nSous{color:var(--neuf-liste,var(--accent));font-weight:600}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3);font-size:13px}
 
 /* Les tiroirs fermés sont garés à `translateX(100%)`, soit 340 px au-delà du
@@ -657,6 +669,18 @@ html.rendu-webgl .stage.survol-gl > svg{cursor:var(--curseur-gl,pointer)}
 /* le trait discontinu est ce qui distingue une zone d'un stand : sa sélection
    le garde */
 #marques .sel.zn{stroke-dasharray:5 4}
+/* Les marques des nouveaux venus, dans leur calque à part pour la raison qui
+   vaut pour les liserés au-dessus : une cloison mitoyenne appartient aux deux
+   stands qu'elle sépare, et le second tracé effaçait ce que le premier
+   portait. Elles ne reçoivent aucun clic — c'est le stand qu'on ouvre.
+
+   Leur teinte se règle à part de l'accent : un exploitant peut vouloir
+   distinguer ses nouveaux venus sans emprunter la couleur qui désigne déjà ce
+   qu'on a retenu. Sans réglage, c'est l'accent du salon. */
+#neufs{pointer-events:none}
+#neufs .neufPlein{fill:var(--neuf-plan,var(--accent));stroke:none}
+#neufs .neufLis{fill:none;stroke:var(--neuf-plan,var(--accent));stroke-width:2.4;
+  vector-effect:non-scaling-stroke}
 html.sans-parcours #marques .parc{display:none}
 /* Le parcours est tracé hors des couches, dans « #marques » : le retrait du
    plan ne l'atteignait donc pas, et ses liserés restaient seuls à pleine force
@@ -1481,9 +1505,46 @@ html.poi-actif #zones g.phare path{fill-opacity:.92;
    ligne de script ait à le poser. Un masque plutôt qu'une image : il se peint
    de la couleur de la pastille, celle que chaque modèle lui a donnée, et un
    tampon kraft n'a pas à emporter son encre. */
-.badge.neuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
+.badge.neuf,.rubanNeuf{--picto:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M9.8 0.2C9.8 5.9 13.9 10.0 19.6 10.0C13.9 10.0 9.8 14.1 9.8 19.8C9.8 14.1 5.7 10.0 0.0 10.0C5.7 10.0 9.8 5.9 9.8 0.2Z'/%3E%3Cpath d='M18.4 13.6C18.4 16.5 20.5 18.6 23.4 18.6C20.5 18.6 18.4 20.7 18.4 23.6C18.4 20.7 16.3 18.6 13.4 18.6C16.3 18.6 18.4 16.5 18.4 13.6Z'/%3E%3C/svg%3E")}
 .badge.neuf::before{content:"";flex:none;width:12px;height:12px;background:currentColor;
   -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
+/* Les deux autres façons d'annoncer un nouveau venu, au choix de l'exploitant
+   depuis l'onglet « Nouveaux ». La feuille de style retient celle qu'il a
+   prise : le script ne décide que du fait qu'il y en ait une, si bien qu'un
+   réglage changé se voit sur la fiche déjà ouverte.
+
+   Le coin corné se pose à gauche et non à droite, où sa référence le met : le
+   coin droit porte déjà le logo de l'exposant et la croix de fermeture, et la
+   marque passait dessous. La réserve qu'il demande est le pendant de celle
+   que les actions prennent de l'autre côté. */
+.corneNeuf{position:absolute;top:0;left:0;width:64px;height:64px;
+  overflow:hidden;pointer-events:none}
+.corneNeuf span{position:absolute;top:13px;left:-28px;width:100px;
+  padding:3px 0;text-align:center;transform:rotate(-45deg);
+  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase}
+html[data-neuf-fiche="corne"] .detail-hd .hdTete{padding-left:58px}
+/* Le bandeau prend toute la largeur : rien ne lui dispute sa place, et il
+   descend le nom d'une ligne — ce qui se paie sur l'écran étroit, où la fiche
+   est déjà à l'étroit. C'est à l'exploitant d'en juger. */
+.rubanNeuf{display:flex;align-items:center;gap:7px;padding:6px 18px;
+  background:var(--neuf-fiche,var(--accent));color:var(--neuf-fiche-ink,var(--accent-ink));
+  font-family:"Archivo",sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase}
+.rubanNeuf::before{content:"";flex:none;width:13px;height:13px;background:currentColor;
+  -webkit-mask:var(--picto) center/contain no-repeat;mask:var(--picto) center/contain no-repeat}
+/* Une seule des trois paraît. Le script les montre toutes les trois quand
+   l'exposant est neuf ; c'est ici que le choix se fait. */
+html:not([data-neuf-fiche="pastille"]) .detail-hd .badge.neuf,
+html:not([data-neuf-fiche="corne"]) .corneNeuf,
+html:not([data-neuf-fiche="bandeau"]) .rubanNeuf{display:none}
+/* La teinte choisie l'emporte sur celle que le modèle de fiche donne à la
+   pastille : l'exploitant qui la règle veut celle-là, pas celle de
+   l'habillage. Le sélecteur passe donc devant les onze modèles, qui nomment
+   tous la classe du modèle puis la pastille. */
+html[data-neuf-coul] .detail-hd .badge.neuf{
+  background:var(--neuf-fiche-doux);color:var(--neuf-fiche)}
 /* Le retour vers la liste des sociétés d'un stand partagé. Une pastille et non
    un bouton d'action : elle dit d'abord un fait — on en regarde une parmi
    plusieurs — et le clic n'est que la suite logique. */
@@ -3389,7 +3450,7 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
   .voletReg{animation:none}
   .ongReg button{transition:none}
 }
-/* Les onglets étaient quatre, ils sont sept : sur un téléphone, « Apparence »
+/* Les onglets étaient quatre, ils sont huit : sur un téléphone, « Apparence »
    et « Recherche » ne tiennent plus côte à côte à cette taille. L'intitulé
    resserre d'abord — c'est ce qui se voit le moins — et la barre défile pour
    ce qui dépasse encore, plutôt que d'écraser les mots. Les boutons y perdent
@@ -3434,6 +3495,37 @@ html.sans-parcours .marque,html.sans-parcours .btn.parc{display:none}
 .fondp .tete .eyebrow{margin-bottom:0}
 .fondp .tete .reset{margin-left:auto}
 .fondp .nuancier{gap:6px;max-width:none;margin-top:8px}
+/* L'onglet « Nouveaux ». Trois blocs qui posent la même question à trois
+   endroits, donc trois blocs de même forme : un intitulé, ce que la marque
+   coûte à cet endroit-là, la planche des marques, et le nuancier.
+
+   Les vignettes sont des schémas et non la chose même : une fiche réduite à
+   soixante pixels ne se lirait pas, et ce qui se juge ici est la place de la
+   marque. Le vrai rendu se voit derrière la fenêtre — le plan et la liste
+   suivent le clic. */
+.blocNeuf{margin:0 0 26px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.blocNeuf:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.blocNeuf .aNeuf{margin:5px 0 12px;font-size:12.5px;color:var(--ink-2);max-width:62ch}
+.voletReg > .note{margin:0 0 18px;padding:9px 12px;font-size:12.5px;
+  background:var(--surface-2);border-left:3px solid var(--line-strong);
+  border-radius:0 3px 3px 0;color:var(--ink-2)}
+.choixNeuf{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+.vgN{display:flex;flex-direction:column;align-items:center;gap:6px;width:92px;
+  padding:8px 6px 9px;border:1px solid var(--line);border-radius:5px;
+  background:var(--surface);cursor:pointer}
+.vgN:hover{border-color:var(--line-strong)}
+.vgN[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.vgN .ap{display:block;width:100%}
+.vgN svg{display:block;width:100%;height:auto}
+.vgN .n{font-size:11px;line-height:1.25;text-align:center;color:var(--ink-2)}
+.vgN[aria-pressed="true"] .n{color:var(--ink);font-weight:600}
+/* Chaque planche se peint de la teinte de sa propre surface : c'est ce qui
+   fait voir, avant de cliquer, ce que la couleur réglée juste dessous donne. */
+.vgN-plan .mq{fill:var(--neuf-plan,var(--accent))}
+.vgN-plan .mqT{stroke:var(--neuf-plan,var(--accent))}
+.vgN-liste .mq{fill:var(--neuf-liste,var(--accent))}
+.vgN-liste .mqT{stroke:var(--neuf-liste,var(--accent))}
+.vgN-fiche .mq{fill:var(--neuf-fiche,var(--accent))}
 /* Les genres de police, en filtre : un seul se montre à la fois. Ils prennent
    l'allure du bouton des critères de recherche une fois actif — c'en est un,
    de filtre —, et leur compte dit ce qu'on trouvera avant d'y aller. */
@@ -5249,11 +5341,19 @@ a.sponsorLogo:hover img,a.sponsorLogo:hover svg{filter:brightness(1.05)}
            fiche bien remplie s'y lisait par le trou d'une serrure. -->
       <button class="poignee" id="poigneeFiche" aria-expanded="false" aria-controls="dBody"
         aria-label="Agrandir la fiche"></button>
+      <!-- Le bandeau des nouveaux venus se pose au-dessus de la tête de fiche,
+           et non dedans : c'est toute la largeur qu'il prend, et le logo de
+           l'exposant occupe déjà le coin où les deux autres marques vont. -->
+      <div class="rubanNeuf" id="dRuban" hidden>Nouvel exposant</div>
       <div class="detail-hd">
         <div class="hdActs">
           <button class="marque" id="dMarque" hidden></button>
           <button class="close" id="closeDetail" aria-label="Fermer">&times;</button>
         </div>
+        <!-- Le coin corné, pour qui le préfère à la pastille. Il se glisse
+             sous les actions : la croix de fermeture reste au-dessus, sans
+             quoi la marque la recouvrirait. -->
+        <div class="corneNeuf" id="dCorne" hidden aria-hidden="true"><span>Nouveau</span></div>
         <div class="hdTete"><span class="eyebrow" id="dKind"></span><span class="badge neuf" id="dNeuf" hidden>Nouvel exposant</span></div>
         <div class="hdNom">
           <h2><span id="dName"></span><button class="crayon" id="dRen" hidden
