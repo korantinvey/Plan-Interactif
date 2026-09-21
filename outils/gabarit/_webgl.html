@@ -1306,6 +1306,15 @@ function couchesPhareNoms(){
       updateTriggers: { getColor: GL.versionModeles + ":" + pas } }));
 }
 
+/* Les pointillés du sens, tenus d'accord avec « #itin .iSens » et
+   « @keyframes defile » de la feuille de style : la période des tirets, le
+   nombre de paliers qu'ils font pour la parcourir, et le temps d'un tour.
+   Trois nombres écrits deux fois, faute de pouvoir passer une valeur de la
+   feuille de style au shader ; les changer d'un seul côté fait défiler le
+   rendu par la carte graphique à une autre allure que le rendu SVG. */
+const DEFILE_PERIODE = 18, DEFILE_PALIERS = 9, DEFILE_DUREE = .6;
+const palierDefile = t => Math.floor(t / DEFILE_DUREE * DEFILE_PALIERS);
+
 /** Une couche telle qu'elle doit paraître à cet instant. */
 function animeCouche(c){
   const ph = c.props.phare;
@@ -1315,8 +1324,9 @@ function animeCouche(c){
     const s = echellePhare(GL.temps), [x, y] = ph.centre;
     return c.clone({ modelMatrix: [s, 0, 0, 0, 0, s, 0, 0, 0, 0, 1, 0, x * (1 - s), y * (1 - s), 0, 1] });
   }
-  // « defile » : douze paliers d'un pixel en 1,1 seconde
-  if (c.props.defile && GL.bouge) return c.clone({ decalage: -(Math.floor(GL.temps / 1.1 * 12) % 12) });
+  // « defile » : neuf paliers de deux pixels en six dixièmes de seconde
+  if (c.props.defile && GL.bouge) return c.clone({
+    decalage: -(palierDefile(GL.temps) % DEFILE_PALIERS) * (DEFILE_PERIODE / DEFILE_PALIERS) });
   return c;
 }
 
@@ -1336,7 +1346,7 @@ function animeWebgl(now){
   /* Tout le plan se redessine quand une couche change : le battement se
      contente donc de trente images par seconde, et le défilement seul ne
      redessine qu'à chacun de ses paliers. */
-  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + Math.floor(GL.temps / 1.1 * 12);
+  const cle = (GL.animePhare ? Math.floor(GL.temps * 30) : "") + "|" + palierDefile(GL.temps);
   if (cle !== GL.cleAnim){ GL.cleAnim = cle; GL.deck.setProps({ layers: assembleWebgl() }); }
   GL.imageAnim = requestAnimationFrame(animeWebgl);
 }
