@@ -102,6 +102,57 @@ jobs:
         if: steps.acces.outputs.posee == 'oui'
         run: echo "instant=$(date -u -d '-2 minutes' '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
 
+      # Ce que cette poussée apporte de relisible. Une poussée qui ne fait que
+      # refusionner `main` et reconstruire les pages ne change aucune source :
+      # la relecture n'a alors rien de neuf à dire, et se taire est sa bonne
+      # réponse — le garde-fou plus bas ne doit pas le lui reprocher. C'est ce
+      # que dit déjà `paths-ignore`, qui ne sait le dire que pour une pull
+      # request entière, jamais pour une poussée dans une pull request qui
+      # porte des sources par ailleurs.
+      - name: Voir si cette poussée apporte des sources à relire
+        id: neuf
+        if: steps.acces.outputs.posee == 'oui'
+        env:
+          ACTION: ${{ github.event.action }}
+          AVANT: ${{ github.event.before }}
+          APRES: ${{ github.event.after }}
+          BASE: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          if [ "$ACTION" != "synchronize" ] || [ -z "$AVANT" ]; then
+            echo "Pull request ouverte : tout son diff est à relire."
+            echo 'relisible=oui' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Le commit d'avant peut manquer au clone — une branche réécrite, un
+          # historique élagué. On ne conclut alors rien, et l'on relit.
+          if ! git cat-file -e "$AVANT^{commit}" 2>/dev/null; then
+            echo "Le commit précédent n'est pas dans ce clone : on relit."
+            echo 'relisible=oui' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Le diff de la pull request, et non celui de la poussée : fusionner
+          # la base change le second de fond en comble sans rien changer au
+          # premier, qui est ce que la relecture lit. Les entêtes de morceau
+          # sont retirées avant de comparer — quarante lignes venues de la base
+          # plus haut dans le fichier décalent les numéros sans rien changer à
+          # ce qu'il y a à relire.
+          empreinte() {
+            git diff "$BASE...$1" -- . ':!web' ':!CARTE.md' ':!outils/tpl-multi.html' \
+              | { grep -E '^(diff --git|[-+])' || true; } \
+              | { grep -vE '^(\+\+\+|---)' || true; } \
+              | sha1sum | cut -d' ' -f1
+          }
+          if [ "$(empreinte "$AVANT")" = "$(empreinte "$APRES")" ]; then
+            echo "Cette poussée ne change rien au diff relisible de la pull"
+            echo "request — fichiers fabriqués, fusion de la base. La relecture"
+            echo "tourne quand même, mais son silence ne sera pas tenu pour une"
+            echo "panne : elle a déjà tout dit sur ce diff-là."
+            echo 'relisible=non' >> "$GITHUB_OUTPUT"
+          else
+            echo "Le diff relisible a changé : relecture pleine."
+            echo 'relisible=oui' >> "$GITHUB_OUTPUT"
+          fi
+
       # Une relecture qui n'aboutit pas ne rougit pas la pull request. C'est le
       # même raisonnement que la garde plus haut, poussé jusqu'au bout : un
       # garde-fou en panne n'est pas un défaut du code relu, et une croix rouge
@@ -262,15 +313,18 @@ jobs:
       # On regarde donc si un avis a bien été posé depuis le début de la tâche,
       # et on le dit sur la pull request quand il n'y en a pas.
       #
-      # Deux réserves, payées toutes les deux le jour où cette étape est née.
-      # Elle ne parle que d'une relecture qui s'est réellement tenue — celle
-      # qu'arrête la garde d'identité du workflow n'a rien à dire, et se
-      # plaindre de son silence revient à commenter chaque pull request qui
-      # touche à ce fichier, la première ayant été la sienne. Et en cas de
-      # doute, une requête qui échoue, elle se tait : une fausse alerte vaut
-      # moins que le silence qu'elle dénonce.
+      # Trois réserves, et chacune est une fausse alerte déjà posée pour de
+      # bon. Cette étape ne parle que d'une relecture qui s'est réellement
+      # tenue — celle qu'arrête la garde d'identité du workflow n'a rien à
+      # dire, et se plaindre de son silence revient à commenter chaque pull
+      # request qui touche à ce fichier, la première ayant été la sienne. Elle
+      # ne parle que d'une poussée qui apportait des sources : sur une
+      # reconstruction des pages, la relecture rend son avis en vingt secondes
+      # sans rien poster, et c'est juste. Et en cas de doute, une requête qui
+      # échoue, elle se tait : une fausse alerte vaut moins que le silence
+      # qu'elle dénonce.
       - name: Dire si la relecture n'a rien posé
-        if: always() && steps.relire.outcome == 'success' && steps.rapport.outputs.eu_lieu == 'oui'
+        if: always() && steps.relire.outcome == 'success' && steps.rapport.outputs.eu_lieu == 'oui' && steps.neuf.outputs.relisible == 'oui'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

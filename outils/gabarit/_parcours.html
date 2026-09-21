@@ -489,9 +489,12 @@ function rafraichitParcours(){
   if (c){ c.textContent = n; c.hidden = n === 0; }
   /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
      plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
-     liste servira. */
+     liste servira. Même geste quand le salon n'a pas pris l'option : elle se
+     voit pour être prise, et l'éteindre ferme aussi le clavier, que la feuille
+     de style seule laissait passer. Le visiteur, lui, ne voit rien
+     (`_head.html`, « sans-journee »). */
   const org = $("btnJournee");
-  if (org) org.disabled = n === 0;
+  if (org) org.disabled = n === 0 || racine.classList.contains("sans-journee");
   /* Et de même le partage : une liste vide se partage techniquement — le lien
      serait valide — mais n'apprendrait rien à personne. */
   const part = $("btnPartage");
