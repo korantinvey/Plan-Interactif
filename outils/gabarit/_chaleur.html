@@ -1,0 +1,636 @@
+
+/* ============================================================
+   14. Les compteurs d'usage, vus du plan — carte de chaleur, remise à zéro
+
+   Le rapport d'utilisation dit combien de fiches ont été ouvertes ; il ne dit
+   pas lesquelles. C'est pourtant l'autre moitié de la question, et la seule
+   qui se reporte sur le plan de l'année suivante : quel emplacement a retenu,
+   quelle travée personne n'a regardée. Les compteurs le savent — une ligne par
+   (stand, jour, canal) — mais neuf cents lignes de tableau ne se lisent pas.
+   Sur le plan, si : c'est justement la forme que l'organisateur connaît.
+
+   Elle ne vit qu'en administration. La fréquentation est une donnée
+   d'exploitation, et la base la borne au compte qui a accès au salon —
+   `audience_cibles` est en « security invoker », la page n'y ajoute rien.
+
+   Ce qu'elle montre, et ce qu'elle ne montre pas : des consultations de fiche,
+   pas des visiteurs uniques — les compter demanderait de retenir les paires
+   (stand, visiteur), soit le volume que les compteurs ont précisément
+   supprimé. Les zones organisateur n'y figurent pas : la page ne les compte
+   pas davantage, une zone n'est pas un exposant.
+   ============================================================ */
+const CHAL_PERIODES = [["7", "7 j"], ["30", "30 j"], ["90", "90 j"], ["tout", "Tout"]];
+
+/* Ce que la base a rendu pour la période en cours, et si l'on peint. Le second
+   drapeau dit aussi quand *cesser* de peindre : sans lui, la page publique
+   balaierait ses neuf cents stands à chaque montage pour n'y rien retirer. */
+let CHALEUR = null, chalOuvert = false, chalPose = false, chalJours = "30";
+/* Replié ou non — retenu d'une lecture à l'autre : qui a replié le cartouche
+   une fois travaille au plan, et n'a pas à le replier à chaque ouverture. */
+let chalReduit = false;
+
+const nbChal = (n) => Number(n || 0).toLocaleString("fr-FR");
+
+/**
+ * La rampe d'une caméra thermique : bleu, cyan, vert, jaune, orange, rouge.
+ *
+ * C'est le langage que tout le monde a déjà vu, et il se lit sans légende :
+ * personne n'a besoin qu'on lui dise que le rouge est chaud. On y perd ce que
+ * gagnait une rampe monochrome — la clarté n'avance plus d'un bout à l'autre,
+ * le jaune du milieu paraît plus vif que le rouge du bout, et le rang ne se
+ * lit plus en noir et blanc. Le cartouche porte donc les nombres, et le survol
+ * d'un stand donne le sien.
+ *
+ * Elle ne suit pas le thème : une image thermique est la même de jour comme de
+ * nuit. C'est ce qui oblige à reprendre l'encre des libellés — voir
+ * « mode-chaleur » dans la feuille de style.
+ */
+const THERMIQUE = ["#2B54D6", "#1F7DE8", "#16C4D8", "#2FCE71", "#93D82B",
+                   "#F0DC14", "#F79328", "#E22319"];
+
+function tonChaleur(t){
+  const u = Math.max(0, Math.min(1, t)) * (THERMIQUE.length - 1);
+  const i = Math.min(Math.floor(u), THERMIQUE.length - 2), f = u - i;
+  const a = THERMIQUE[i], b = THERMIQUE[i + 1];
+  const voie = (n) => Math.round(parseInt(a.slice(n, n + 2), 16) * (1 - f) +
+                                 parseInt(b.slice(n, n + 2), 16) * f);
+  return "#" + [voie(1), voie(3), voie(5)]
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Le niveau d'un stand sur l'échelle.
+ *
+ * Rapportée au maximum, elle n'aurait rien montré : sur un salon la fiche la
+ * plus ouverte l'est dix à cent fois plus que la médiane, et tout le reste du
+ * plan serait resté du même bleu. Le logarithme rend ces écarts lisibles sans
+ * changer l'ordre. Il compresse, donc il faut le dire : le cartouche porte les
+ * nombres aux bornes et au milieu de la bande, et non des pourcentages.
+ *
+ * « rangChaleur » plus bas est une rangée du panneau, pas un rang sur cette
+ * échelle : d'où ce nom-ci.
+ */
+const niveauChaleur = (n, max) => max > 0 ? Math.log1p(n) / Math.log1p(max) : 0;
+
+/** L'inverse : le nombre de consultations qu'une position de la bande vaut. */
+const valeurChaleur = (u, max) => Math.round(Math.expm1(u * Math.log1p(max)));
+
+/* ------------------------------------------------------------------
+   Lecture
+   ------------------------------------------------------------------ */
+/**
+ * Les compteurs du salon ouvert, pour la période retenue.
+ *
+ * Le plan connaît son salon par son slug, la base par son identifiant : le
+ * premier appel fait le lien, comme la publication de la configuration. On le
+ * retient — il ne change pas tant qu'on regarde le même salon.
+ */
+let _evtChaleur = null;
+async function chargeChaleur(){
+  const acces = accesBase();
+  if (!acces) throw new Error("session absente, reconnectez-vous");
+  if (!_evtChaleur){
+    const evt = await base(acces,
+      "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+    if (!evt.length) throw new Error("événement introuvable");
+    _evtChaleur = evt[0].id;
+  }
+  const r = await base(acces, "rpc/audience_cibles", {
+    method: "POST",
+    body: JSON.stringify({
+      p_evenement: _evtChaleur,
+      p_jours: chalJours === "tout" ? null : Number(chalJours),
+      p_genre: "fiche_stand",
+    }),
+  });
+  const cibles = r?.cibles || [];
+  const par = new Map(cibles.map(c => [c.id, Number(c.n) || 0]));
+  CHALEUR = {
+    par: par,
+    max: cibles.length ? Number(cibles[0].n) || 0 : 0,
+    total: Number(r?.total) || 0,
+    depuis: r?.depuis || null,
+    /* Les visiteurs distincts, et la date d'où on les compte. `v_depuis` est
+       nul pour un salon mesuré avant qu'on ne les compte : l'écran s'abstient
+       alors d'afficher des zéros, qui se liraient « personne n'est venu ». */
+    visiteurs: Number(r?.total_visiteurs) || 0,
+    presence: !!r?.v_depuis,
+    cibles: cibles,
+  };
+}
+
+/* ------------------------------------------------------------------
+   Le plan
+   ------------------------------------------------------------------ */
+/**
+ * La teinte posée sur le groupe du stand, comme celle du secteur : la feuille
+ * de style la lit de là et garde la main sur le survol et la sélection, qui
+ * doivent l'emporter. Les stands dessinés à la main la reçoivent aussi — ils
+ * découpent un emplacement, et un découpage resté blanc trouerait la carte.
+ *
+ * Appelée depuis `coloreSecteurs`, seul endroit que traversent tous les
+ * chemins qui rebâtissent les stands : changement de pavillon, montage du
+ * fond, rafraîchissement des découpages.
+ */
+function coloreChaleur(){
+  const on = chalOuvert && CHALEUR;
+  if (!on && !chalPose) return;      // rien n'a jamais été peint : rien à effacer
+  chalPose = !!on;
+  /* L'encre des libellés ne peut plus venir du thème dès que les stands
+     prennent la température : la feuille de style s'en charge, à ce drapeau. */
+  racine.classList.toggle("mode-chaleur", !!on);
+  document.querySelectorAll("#stands g, #couches .dcal .sdes[data-id]").forEach(g => {
+    const titre = g.querySelector(":scope > title.chal");
+    if (!on){
+      g.removeAttribute("data-chaleur");
+      g.style.removeProperty("--chal-c");
+      if (titre) titre.remove();
+      return;
+    }
+    const n = CHALEUR.par.get(g.dataset.id) || 0;
+    g.setAttribute("data-chaleur", "");
+    g.style.setProperty("--chal-c", tonChaleur(niveauChaleur(n, CHALEUR.max)));
+    /* Le chiffre derrière la couleur, à portée de curseur. Une carte de chaleur
+       se lit de loin mais se vérifie de près, et l'exploitant qui prépare une
+       relance a besoin du nombre, pas de la nuance. */
+    const t = titre || g.insertBefore(
+      document.createElementNS("http://www.w3.org/2000/svg", "title"), g.firstChild);
+    t.setAttribute("class", "chal");
+    const o = parId.get(g.dataset.id);
+    t.textContent = (o && (o.nom || o.code) ? (o.code ? o.code + " — " : "") +
+      (o.nom || "emplacement") + " · " : "") +
+      nbChal(n) + (n > 1 ? " consultations" : " consultation");
+  });
+}
+
+/* ------------------------------------------------------------------
+   Le cartouche
+   ------------------------------------------------------------------ */
+/** Construit une fois, à la première ouverture : la page publique n'en a pas. */
+function cartoucheChaleur(){
+  let c = $("chaleur");
+  if (c) return c;
+  c = document.createElement("div");
+  c.className = "chalbar";
+  c.id = "chaleur";
+  c.hidden = true;
+  c.innerHTML =
+    '<div class="chalTete"><span class="eyebrow">Fiches ouvertes par stand</span>' +
+    '<button type="button" id="chalReduit" aria-expanded="true">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+    '</button></div>' +
+    '<div class="chalPer" id="chalPer" role="group" aria-label="Période"></div>' +
+    '<div class="chalEch" id="chalEch" hidden><i></i>' +
+    '<div class="bornes"><span>0</span><span></span><span></span></div></div>' +
+    '<p class="chalEtat" id="chalEtat"></p>' +
+    '<ol class="chalTop" id="chalTop"></ol>';
+  $("stage").appendChild(c);
+
+  $("chalReduit").onclick = () => replieChaleur(!chalReduit);
+  const per = $("chalPer");
+  CHAL_PERIODES.forEach(([cle, lib]) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = lib;
+    b.dataset.per = cle;
+    b.setAttribute("aria-pressed", String(cle === chalJours));
+    b.onclick = () => {
+      if (chalJours === cle) return;
+      chalJours = cle;
+      per.querySelectorAll("button").forEach(x =>
+        x.setAttribute("aria-pressed", String(x.dataset.per === chalJours)));
+      rafraichitChaleur();
+    };
+    per.appendChild(b);
+  });
+  replieChaleur(chalReduit);
+  return c;
+}
+
+/**
+ * Replier le cartouche sur sa légende — et non le fermer.
+ *
+ * Une croix se lit « fermer », et celle-ci éteignait la carte en même temps
+ * que le cartouche : on masquait la légende pour mieux voir le plan, et le
+ * plan repartait tout blanc. Les deux gestes n'en faisaient qu'un, ce qui
+ * n'est vrai d'aucun des deux.
+ *
+ * Ils se séparent donc. Le chevron replie ; le bouton de la barre éteint la
+ * lecture. Et ce qu'on garde en repliant, c'est l'échelle : sur une rampe
+ * thermique la couleur ne dit pas seule ce qu'elle vaut, et une carte sans
+ * légende n'est plus qu'un coloriage.
+ */
+/**
+ * La hauteur du cartouche, rendue à la feuille de style.
+ *
+ * L'interrupteur du calque vit dans la pile, en haut à droite ; le cartouche
+ * se lit en bas du même bord. Sans cette mesure il recouvrait la pile au
+ * moment précis où l'on venait d'y cocher la case, et la liste des calques
+ * disparaissait sous ce qu'elle venait d'allumer. La pile s'arrête donc où le
+ * cartouche commence — c'est déjà ce que fait l'échelle avec le cartouche des
+ * repères, et par le même chemin.
+ */
+function mesureCartoucheChaleur(){
+  const c = $("chaleur");
+  const h = c && !c.hidden ? c.offsetHeight + 12 : 0;
+  racine.style.setProperty("--chalh", h + "px");
+}
+
+function replieChaleur(v){
+  chalReduit = v;
+  const c = $("chaleur"), b = $("chalReduit");
+  if (!c || !b) return;
+  c.classList.toggle("reduit", v);
+  b.setAttribute("aria-expanded", String(!v));
+  b.title = v ? "Déployer le cartouche" : "Replier sur la légende";
+  b.setAttribute("aria-label", b.title);
+  mesureCartoucheChaleur();
+}
+
+function ecritEtatChaleur(txt, erreur){
+  const p = $("chalEtat");
+  if (!p) return;
+  p.textContent = txt;
+  p.classList.toggle("err", !!erreur);
+}
+
+/** La bande de couleurs, et les nombres qu'elle vaut. */
+function dessineEchelleChaleur(){
+  const e = $("chalEch");
+  e.hidden = CHALEUR.max <= 0;
+  if (e.hidden) return;
+  // les arrêts de la rampe, tous : en échantillonner cinq raterait le vert
+  const arrets = THERMIQUE.join(",");
+  e.querySelector("i").style.background = "linear-gradient(90deg," + arrets + ")";
+  const b = e.querySelectorAll(".bornes span");
+  b[1].textContent = nbChal(valeurChaleur(.5, CHALEUR.max));
+  b[2].textContent = nbChal(CHALEUR.max);
+}
+
+/**
+ * Le palmarès, sous la bande.
+ *
+ * La couleur répond à « où » ; elle répond mal à « lesquels » — dix stands
+ * voisins tous rouges se ressemblent, et le premier ne se distingue pas du
+ * dixième. Le rang le dit, et le clic y mène : c'est de là qu'on part pour
+ * rappeler un exposant ou relouer l'emplacement d'à côté.
+ */
+function dessineTopChaleur(){
+  const ol = $("chalTop");
+  ol.innerHTML = "";
+  CHALEUR.cibles.slice(0, 10).forEach((c, i) => {
+    const o = parId.get(c.id);
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<span class="rang"></span><span class="code"></span>' +
+                  '<span class="nom"></span><span class="n"></span>' +
+                  '<span class="v"></span>';
+    b.querySelector(".rang").textContent = (i + 1) + ".";
+    b.querySelector(".code").textContent = c.code || "";
+    b.querySelector(".nom").textContent = c.nom || "Sans nom";
+    b.querySelector(".n").textContent = nbChal(c.n);
+    /* Les visiteurs distincts à côté des ouvertures, et seulement si on les
+       compte : un « 0 visiteur » en face de « 240 ouvertures » se lirait comme
+       une panne, alors qu'il dirait seulement que ce salon est plus vieux que
+       ce comptage. Le palmarès reste classé sur les ouvertures — changer ce
+       qu'il ordonne en même temps que ce qu'il affiche rendrait deux lectures
+       incomparables d'une période à l'autre. */
+    if (CHALEUR.presence){
+      const v = Number(c.v) || 0;
+      b.querySelector(".v").textContent = "· " + nbChal(v) + " vis.";
+    }
+    /* Une cible que le salon ne porte plus — stand retiré depuis, exposant
+       parti — garde ses consultations mais n'a plus de forme à montrer. On la
+       laisse au palmarès, la taire fausserait le total, et on retire le clic
+       plutôt que de le laisser ne rien faire. */
+    if (o){
+      b.title = "Voir sur le plan";
+      b.onclick = () => select(c.id, true);
+    } else {
+      b.disabled = true;
+      b.title = "Cet emplacement n'est plus au plan.";
+    }
+    li.appendChild(b);
+    ol.appendChild(li);
+  });
+}
+
+/** Ce que la période a donné, en une phrase. */
+function phraseChaleur(){
+  const quand = chalJours === "tout" ? "depuis le début"
+              : "sur les " + chalJours + " derniers jours";
+  if (!CHALEUR.total){
+    return CHALEUR.depuis
+      ? "Aucune fiche ouverte " + quand + "."
+      : "Aucune consultation de fiche enregistrée pour ce salon : " +
+        "les compteurs par stand n'ont encore rien reçu.";
+  }
+  const v = Number(CHALEUR.visiteurs) || 0;
+  return nbChal(CHALEUR.total) + " fiche" + (CHALEUR.total > 1 ? "s" : "") +
+    " d'exposant ouverte" + (CHALEUR.total > 1 ? "s" : "") + " " + quand + ", " +
+    "sur " + nbChal(CHALEUR.par.size) + " emplacement" + (CHALEUR.par.size > 1 ? "s" : "") +
+    /* Le second nombre est celui qu'on croyait lire dans le premier. Tant qu'il
+       n'existe pas, mieux vaut redire que le premier n'est pas lui que laisser
+       le malentendu : c'est ce chiffre-là qui part chez l'exposant. */
+    (CHALEUR.presence
+      ? ", par " + nbChal(v) + " visiteur" + (v > 1 ? "s" : "") + " distinct" +
+        (v > 1 ? "s" : "") + "."
+      : ". Consultations, non visiteurs uniques.") +
+    " La couleur suit les ouvertures ; les zones organisateur ne sont pas comptées." +
+    (CHALEUR.depuis ? " Comptage par stand depuis le " +
+      new Date(CHALEUR.depuis + "T00:00:00").toLocaleDateString("fr-FR") + "." : "");
+}
+
+async function rafraichitChaleur(){
+  ecritEtatChaleur("Lecture des compteurs…");
+  try {
+    await chargeChaleur();
+  } catch (e) {
+    CHALEUR = null;
+    coloreChaleur();
+    $("chalEch").hidden = true;
+    $("chalTop").innerHTML = "";
+    ecritEtatChaleur("Fréquentation indisponible : " + e.message, true);
+    mesureCartoucheChaleur();
+    return;
+  }
+  coloreChaleur();
+  dessineEchelleChaleur();
+  dessineTopChaleur();
+  ecritEtatChaleur(phraseChaleur());
+  // la phrase et le palmarès viennent de changer de hauteur
+  mesureCartoucheChaleur();
+}
+
+/* ------------------------------------------------------------------
+   Ouverture et fermeture
+   ------------------------------------------------------------------ */
+/**
+ * Allumer ou éteindre la lecture.
+ *
+ * La garde sur ADMIN n'est pas une ceinture de plus : c'est elle qui répond de
+ * la promesse faite au panneau — ce calque ne part jamais chez les visiteurs.
+ * Il ne se publie pas parce qu'il n'existe pas dans CONF, et il ne s'allume pas
+ * hors de l'administration parce qu'ici on refuse de l'allumer. La page
+ * publique appelle bien « coloreChaleur » comme les autres, à chaque montage :
+ * elle n'y trouve rien à peindre, et c'est tout ce qu'elle en verra.
+ */
+function montreChaleur(v){
+  if (v && !ADMIN) return;
+  if (v === chalOuvert) return;
+  chalOuvert = v;
+  /* La case du panneau n'est pas toujours celle qu'on vient de cocher : le
+     mode peut s'ouvrir au démarrage, ou depuis un autre chemin. On la remet
+     d'accord plutôt que de rebâtir la pile, qui perdrait le défilement et le
+     focus au moment même où l'on s'en sert. */
+  const b = document.querySelector("#pile .chalCase");
+  if (b) b.checked = v;
+  if (!v){
+    const c = $("chaleur");
+    if (c) c.hidden = true;
+    coloreChaleur();
+    mesureCartoucheChaleur();
+    return;
+  }
+  cartoucheChaleur().hidden = false;
+  mesureCartoucheChaleur();
+  rafraichitChaleur();
+}
+
+/* La hauteur disponible change avec la fenêtre, et le cartouche se replie tout
+   seul sur ce qui reste : la pile doit suivre. */
+addEventListener("resize", mesureCartoucheChaleur);
+
+/**
+ * Le rang du panneau des calques, sous la couche « Stands ».
+ *
+ * Sous elle parce que c'est elle qu'il repeint — c'est déjà la place des
+ * couleurs de secteur, et pour la même raison. Et sans sélecteur de couleur,
+ * seul de toute la pile : les siennes ne se choisissent pas, elles sortent des
+ * chiffres et se refont à chaque changement de période. Une pastille le dit,
+ * et dit l'autre chose qu'on ne devinerait pas — que ce calque reste sur ce
+ * poste, quoi qu'on publie.
+ */
+function rangChaleur(hote){
+  const d = document.createElement("div");
+  d.className = "calq sous";
+  d.innerHTML = '<label><input type="checkbox" class="chalCase"><span></span></label>';
+  const nom = d.querySelector("label span");
+  nom.textContent = "Carte de chaleur";
+  const p = document.createElement("i");
+  p.className = "rle";
+  p.textContent = "non publié";
+  p.title = "Une lecture pour l'exploitant : ce calque ne part jamais sur le plan public, " +
+            "et la publication de la configuration ne l'emporte pas.";
+  nom.after(p);
+  const c = d.querySelector("input");
+  c.checked = chalOuvert;
+  c.onchange = (e) => montreChaleur(e.target.checked);
+  hote.appendChild(d);
+}
+
+/* ============================================================
+   Remise à zéro des compteurs
+
+   La recette d'un plan se fait sur le plan : on ouvre des fiches, on cherche
+   une enseigne, on calcule un itinéraire — et sur la page publique, la seule
+   qui mesure. Ces gestes sont ceux de l'exploitant, et ils comptent comme ceux
+   d'un visiteur : rien ne les en distingue à l'écriture, puisque la page
+   publique ne regarde aucune session. C'est ce qui lui permet de ne poser ni
+   cookie ni identité, et c'est pourquoi le premier chiffre d'un salon est
+   toujours faux.
+
+   On ne peut pas deviner quand la recette s'arrête : la veille de l'ouverture,
+   rien ne dit au système que les visites qui suivent sont les vraies. C'est
+   donc un geste, et un geste qu'on protège — il n'y a pas de sauvegarde
+   derrière, et personne ne se relit deux fois avant de cliquer « Oui ».
+   ============================================================ */
+const NOM_VOLET_MESURE = "Statistiques";
+const MOT_RAZ = "réinitialiser";
+
+/* Le mot se compare sans ses accents : on demande une intention, pas une
+   disposition de clavier. Tout le reste — la casse, les espaces autour —
+   tombe de même. */
+const aplati = (t) => String(t || "").trim().toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/** Le volet « Statistiques » des réglages : ce que comptent les compteurs,
+ *  et le seul chemin pour les effacer. */
+function voletMesure(hote){
+  const p = document.createElement("p");
+  p.textContent = "Le plan compte ce qu'on en fait : visites, recherches, " +
+    "itinéraires, et les fiches ouvertes stand par stand. Ces chiffres " +
+    "nourrissent le rapport d'utilisation et la carte de chaleur.";
+  hote.appendChild(p);
+
+  const q = document.createElement("p");
+  q.textContent = "La recette gonfle ces compteurs — les fiches qu'on ouvre " +
+    "pour vérifier le plan sont comptées comme des visites, la page publique " +
+    "ne sachant pas qui la regarde. Remettez-les à zéro le jour où le salon " +
+    "ouvre, pour que le premier chiffre soit le bon.";
+  hote.appendChild(q);
+
+  const acts = document.createElement("div");
+  acts.className = "acts";
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn danger";
+  b.textContent = "Réinitialiser les compteurs…";
+  b.onclick = ouvreRemiseAZero;
+  acts.appendChild(b);
+  hote.appendChild(acts);
+}
+
+/** L'identifiant du salon en base, retrouvé depuis son slug et retenu. */
+async function evenementCourant(acces){
+  if (_evtChaleur) return _evtChaleur;
+  const evt = await base(acces,
+    "evenement?select=id&slug=eq." + encodeURIComponent(DATA.slug));
+  if (!evt.length) throw new Error("événement introuvable");
+  _evtChaleur = evt[0].id;
+  return _evtChaleur;
+}
+
+/**
+ * La fenêtre de confirmation.
+ *
+ * Elle fait trois choses, et la troisième est la moins évidente. Elle dit ce
+ * qui part et ce qui reste. Elle demande d'écrire le mot en toutes lettres —
+ * un bouton rouge se clique par réflexe, une phrase se tape en connaissance de
+ * cause. Et elle va chercher les chiffres en cours avant de laisser faire :
+ * cela met un nombre sur ce qu'on s'apprête à perdre, et cela prouve au
+ * passage que la base répond, plutôt que de le découvrir après avoir tapé.
+ */
+function ouvreRemiseAZero(){
+  let tally = null;
+
+  ouvreModale("Réinitialiser les compteurs", corps => {
+    const perd = document.createElement("p");
+    perd.innerHTML = "<b>Toute la mesure de ce salon sera effacée</b> : visites, " +
+      "visiteurs, recherches, itinéraires, programmes de visite, et les " +
+      "consultations de chaque stand. Le rapport d'utilisation et la carte de " +
+      "chaleur repartent de zéro, pour tous les comptes.";
+    corps.appendChild(perd);
+
+    const garde = document.createElement("p");
+    garde.textContent = "Le plan lui-même n'est pas touché : emplacements, " +
+      "exposants, dessins, calques et réglages restent tels quels.";
+    corps.appendChild(garde);
+
+    const jamais = document.createElement("p");
+    jamais.className = "alerte";
+    jamais.textContent = "Cette action est irréversible. Aucune sauvegarde n'est " +
+      "conservée : ces chiffres ne pourront pas être retrouvés.";
+    corps.appendChild(jamais);
+
+    const etat = document.createElement("p");
+    etat.className = "etatRaz";
+    etat.textContent = "Lecture des compteurs en cours…";
+    corps.appendChild(etat);
+
+    const l = document.createElement("label");
+    l.className = "razMot";
+    l.innerHTML = '<span></span><input type="text" class="nomcalque" ' +
+      'autocomplete="off" autocapitalize="none" spellcheck="false">';
+    l.querySelector("span").textContent =
+      "Pour confirmer, tapez « " + MOT_RAZ + " » :";
+    corps.appendChild(l);
+
+    const saisie = l.querySelector("input");
+    const bouton = () => $("mPied").querySelector(".danger");
+    /* En anglais, la consigne demande « reset » : le mot traduit vaut donc
+       autant que l'original, qui reste accepté — on demande une intention. */
+    const motJuste = (v) => [MOT_RAZ, traduit(MOT_RAZ)].some(m => aplati(v) === aplati(m));
+    const relit = () => {
+      const b = bouton();
+      if (b) b.disabled = !motJuste(saisie.value) || !tally;
+    };
+    saisie.oninput = relit;
+    saisie.onkeydown = (e) => {
+      const b = bouton();
+      if (e.key === "Enter" && b && !b.disabled){ e.preventDefault(); b.click(); }
+    };
+
+    /* Les chiffres en cours. Tant qu'ils ne sont pas là, le bouton reste
+       fermé : on ne détruit pas ce qu'on n'a pas pu lire. */
+    (async () => {
+      const acces = accesBase();
+      if (!acces) throw new Error("session absente, reconnectez-vous");
+      const evt = await evenementCourant(acces);
+      return base(acces, "rpc/rapport_utilisation", {
+        method: "POST",
+        // sans période : ce qu'on s'apprête à effacer, c'est tout l'historique
+        body: JSON.stringify({ p_evenement: evt }),
+      });
+    })().then(r => {
+      tally = r || {};
+      const n = (v) => nbChal(v);
+      etat.textContent = tally.depuis
+        ? "À effacer : " + n(tally.visites) + " visite" + (tally.visites > 1 ? "s" : "") +
+          ", " + n(tally.visiteurs) + " visiteur" + (tally.visiteurs > 1 ? "s" : "") +
+          ", " + n(tally.recherches) + " recherche" + (tally.recherches > 1 ? "s" : "") +
+          ", " + n(tally.stands && tally.stands.total) + " fiche" +
+          ((tally.stands && tally.stands.total) > 1 ? "s" : "") + " d'exposant, " +
+          "mesurés depuis le " +
+          new Date(tally.depuis).toLocaleDateString("fr-FR") + "."
+        : "Ce salon n'a encore aucune mesure : il n'y a rien à effacer.";
+      relit();
+    }).catch(e => {
+      etat.textContent = "Compteurs illisibles : " + e.message +
+        " — la remise à zéro échouerait de même.";
+      etat.classList.add("err");
+    });
+
+    setTimeout(() => saisie.focus(), 60);
+  }, [
+    // revenir d'où l'on vient : la fenêtre des réglages a été remplacée
+    { libelle: "Annuler", action: () => ouvreReglages(NOM_VOLET_MESURE) },
+    { libelle: "Réinitialiser", genre: "danger", ferme: false, action: lanceRemiseAZero },
+  ], "outil");
+
+  const b = $("mPied").querySelector(".danger");
+  if (b) b.disabled = true;
+}
+
+/** L'effacement lui-même, et le compte rendu de ce qui est parti. */
+async function lanceRemiseAZero(){
+  const b = $("mPied").querySelector(".danger");
+  const etat = $("mCorps").querySelector(".etatRaz");
+  if (b){ b.disabled = true; b.textContent = "Effacement…"; }
+  try {
+    const acces = accesBase();
+    if (!acces) throw new Error("session absente, reconnectez-vous");
+    const evt = await evenementCourant(acces);
+    const r = await base(acces, "rpc/reinitialise_compteurs", {
+      method: "POST", body: JSON.stringify({ p_evenement: evt }),
+    });
+    const n = Number(r?.compteurs || 0) + Number(r?.cibles || 0) +
+              Number(r?.visiteurs || 0);
+
+    /* La carte est peut-être ouverte derrière : elle montrerait des couleurs
+       qui ne reposent plus sur rien. */
+    if (chalOuvert) rafraichitChaleur();
+
+    $("mCorps").innerHTML = "";
+    const p = document.createElement("p");
+    p.textContent = n
+      ? "Compteurs remis à zéro : " + nbChal(n) + " ligne" + (n > 1 ? "s" : "") +
+        " effacée" + (n > 1 ? "s" : "") + ". Le salon repart de zéro."
+      : "Il n'y avait aucune mesure à effacer.";
+    $("mCorps").appendChild(p);
+    $("mPied").innerHTML = "";
+    const f = document.createElement("button");
+    f.className = "btn";
+    f.textContent = "Fermer";
+    f.onclick = fermeModale;
+    $("mPied").appendChild(f);
+  } catch (e) {
+    if (etat){
+      etat.textContent = "Remise à zéro impossible : " + e.message;
+      etat.classList.add("err");
+    }
+    if (b){ b.disabled = false; b.textContent = "Réinitialiser"; }
+  }
+}

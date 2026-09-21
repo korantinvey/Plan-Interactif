@@ -1,0 +1,26 @@
+{
+  // Déploiement Cloudflare : les pages de `web/` sont servies telles quelles,
+  // et un court script relaie les lectures du plan en les mettant en cache
+  // au plus près du visiteur (voir src/index.js).
+  "name": "plan-interactif",
+  "main": "./src/index.mjs",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./web",
+    "binding": "ASSETS",
+    /* Un fichier de `web/` est servi avant que le script ne tourne : c'est ce
+       qui rend les pages rapides, et c'est aussi ce qui rendait le manifeste
+       intouchable. Or celui-là doit recevoir l'adresse du salon d'où l'on
+       installe, sans quoi le plan installé rouvre toujours le même — le script
+       passe donc devant, pour ce seul chemin (voir `src/index.mjs`). */
+    "run_worker_first": ["/manifeste.webmanifest"]
+  },
+  // Le cache des lectures du plan. Déclaré ici et non dans le tableau de bord :
+  // chaque déploiement depuis Git applique ce fichier, et effacerait une
+  // liaison posée à la main. Sans elle, le Worker ne voit aucun stockage et
+  // chaque visite retombe sur Supabase — l'en-tête X-Cache dit alors « absent ».
+  // L'identifiant n'est pas un secret : il ne sert qu'avec le compte.
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "657809b94f4c480db3b248800c076e70" }
+  ]
+}

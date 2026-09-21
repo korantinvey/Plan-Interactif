@@ -1,0 +1,622 @@
+/* ============================================================
+   13. Mesure d'utilisation
+
+   L'organisateur paie le plan et ne sait pas s'il sert. Ce module compte les
+   gestes — une visite, une recherche, une fiche ouverte et par quel chemin —
+   et les pousse par paquets vers la fonction `mesure`. Le rapport se lit
+   depuis la console, sur sa page dédiée.
+
+   Chaque paquet dit aussi **par quelle porte** le plan a été atteint : un
+   navigateur, un cadre posé dans la page d'un site tiers, une installation sur
+   l'écran d'accueil, une coque d'application. Sans cela les quatre se
+   mélangeaient dans un chiffre unique, et ce chiffre ne voulait rien dire — une
+   page encadrée ouvre une visite à chaque page du site qui la porte, une
+   application repart à froid vingt fois par jour, un cadre tiers se voit
+   refuser le stockage et gonfle les visiteurs uniques. Séparées, les quatre
+   portes se lisent ; mélangées, aucune.
+
+   Pourquoi il tourne sans bandeau de consentement — et ce n'est pas faute de
+   cookie. La loi (article 82 de la loi Informatique et Libertés) vise tout ce
+   qu'une page écrit ou lit sur l'appareil du visiteur : le jeton rangé dans
+   `localStorage` en est, au même titre qu'un cookie. Ce qui dispense de
+   demander, c'est l'exemption que la CNIL accorde à la mesure d'audience, et
+   elle ne tient qu'à des conditions que chacune des lignes ci-dessous remplit :
+
+     — des statistiques pour le seul organisateur, et anonymes : le module
+       n'envoie ni adresse ni agent utilisateur, le serveur n'en enregistre pas
+       davantage, et les exposants ne reçoivent que des totaux ;
+     — un jeton tiré au hasard, propre à l'événement : il ne suit personne
+       d'un salon à l'autre, encore moins ailleurs ;
+     — treize mois de vie sur l'appareil au plus, sans que les visites les
+       prolongent (`MESURE_VIE_MOIS`) ;
+     — les données qui portent le jeton effacées au bout de quatre cents jours,
+       en base (`purge_presences`) ;
+     — une notice qui dit tout cela, et le moyen de refuser (en fin de module).
+
+   Croiser ces chiffres avec un autre fichier, remettre à un tiers autre chose
+   que des totaux, reconnaître un visiteur d'un salon à l'autre : chacun de ces
+   gestes ferait tomber l'exemption, et il faudrait alors un consentement.
+
+   La porte n'y change rien : c'est la façon dont la page est affichée, pas une
+   propriété de qui la regarde, et elle ne prend que quatre valeurs.
+
+   Il se tait complètement dans deux cas : la page à données figées, qui n'a
+   aucune API à appeler, et la page d'administration, où ce qu'on mesurerait
+   serait l'exploitant en train de préparer son salon.
+   ============================================================ */
+const MESURE_API = API ? API.replace(/[^/]*$/, "mesure") : "";
+const MESURE_ACTIVE = !!(MESURE_API && SLUG &&
+  document.documentElement.dataset.role !== "admin");
+
+/* Le refus du visiteur, gardé sur son appareil. Une seule clé pour tous les
+   salons de ce domaine : qui a dit non sur un plan n'a pas à le redire sur le
+   suivant. Retenir ce choix ne demande pas davantage de consentement que la
+   mesure elle-même — c'est un traceur « conservant le choix exprimé ».
+
+   Quand le stockage est refusé, le choix ne survit pas à la page : il n'y a
+   rien pour le garder. Le jeton, lui non plus, n'y survit pas. */
+const CLE_REFUS = "plan-mesure-refusee";
+let MESURE_REFUSEE = false;
+try { MESURE_REFUSEE = localStorage.getItem(CLE_REFUS) === "1"; } catch (e) {}
+const mesureOuverte = () => MESURE_ACTIVE && !MESURE_REFUSEE;
+
+/** Un jeton de quelques caractères, tiré du générateur du navigateur. */
+function jetonMesure(){
+  const t = new Uint8Array(9);
+  (crypto && crypto.getRandomValues ? crypto : { getRandomValues: a => {
+    for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256);
+  } }).getRandomValues(t);
+  return Array.from(t, o => o.toString(36).padStart(2, "0")).join("");
+}
+
+/* Le stockage a-t-il accepté de retenir le jeton. Faux, le jeton ne vaut que
+   pour cette ouverture, et le paquet le dit au serveur : le rapport compte
+   alors ce visiteur comme les autres — il a bien ouvert le plan — mais sait
+   qu'il le recompte peut-être, et l'annonce au lieu de gonfler une audience en
+   silence. C'est le cas ordinaire d'un cadre posé sur un site tiers. */
+let MESURE_RETENU = true;
+
+/* Treize mois : la durée de vie que la CNIL admet pour un traceur de mesure
+   d'audience dispensé de consentement. Elle court depuis le tirage, et revenir
+   sur le plan ne la prolonge pas — c'est la condition, et c'est pourquoi
+   l'échéance est écrite à côté du jeton plutôt que recalculée à chaque visite.
+   Passé ce délai, un autre jeton est tiré : le visiteur compte alors pour un
+   nouveau, ce qui est le prix de la règle, et n'arrive qu'entre deux éditions. */
+const MESURE_VIE_MOIS = 13;
+
+/* L'âge auquel la base efface ce qui porte un jeton : le défaut de
+   `purge_presences`. Il ne sert ici qu'à la notice, qui l'annonce — le changer
+   en base sans le changer ici ferait mentir la notice, et inversement. */
+const MESURE_CONSERVATION_JOURS = 400;
+
+/* Les jetons tirés avant que leur échéance soit écrite n'en portent pas. Aucun
+   n'est antérieur au 6 septembre 2026, jour où le module est né : les faire
+   expirer treize mois après ce jour-là tient la règle pour chacun d'eux, sans
+   avoir à les remplacer tous d'un coup — ce qui aurait compté chaque habitué
+   pour un nouveau visiteur, en plein salon. */
+const ECHEANCE_DES_ANCIENS = "2027-10-06";
+
+/* La date du jour, et celle de dans treize mois, au format `AAAA-MM-JJ` et
+   toutes deux en temps universel. Mêler le calendrier local et la date UTC
+   décalait l'échéance d'un jour autour d'un changement d'heure — et ce jour-là
+   pouvait tomber du mauvais côté des treize mois. */
+const jourIso = d => d.toISOString().slice(0, 10);
+function echeanceMesure(){
+  const d = new Date(), jour = d.getUTCDate();
+  d.setUTCMonth(d.getUTCMonth() + MESURE_VIE_MOIS);
+  // du 31 au mois qui n'en a que 30, le calendrier déborderait sur le suivant
+  if (d.getUTCDate() !== jour) d.setUTCDate(0);
+  return jourIso(d);
+}
+
+/**
+ * Le jeton retenu, ou un jeton volatil si le stockage est refusé.
+ *
+ * En navigation privée, ou stockage plein, l'écriture lève. On ne renonce pas
+ * à mesurer pour autant : le visiteur comptera pour un de plus, ce qui vaut
+ * mieux que de ne pas le compter du tout.
+ *
+ * Le casier est nommé plutôt que passé : quand le navigateur refuse le
+ * stockage de site — cookies bloqués — c'est la simple lecture de
+ * `localStorage` qui lève, et l'évaluer à l'appel plaçait cette lecture hors
+ * du `try`. L'exception remontait alors au corps de la page, dans le script
+ * qui porte tout le plan : plus rien ne s'affichait, pour une mesure.
+ *
+ * Le jeton est rangé avec son échéance, `{"jeton": …, "echeance": "AAAA-MM-JJ"}`.
+ * Une valeur nue est un jeton d'avant l'échéance écrite : elle reçoit la sienne.
+ */
+function jetonRetenu(cle, casier){
+  try {
+    const ou = window[casier];
+    const v = ou.getItem(cle), aujourdhui = jourIso(new Date());
+    let garde = null;
+    if (v) {
+      try { garde = JSON.parse(v); } catch (e) {}
+      if (!garde || typeof garde.jeton !== "string") {
+        garde = { jeton: v, echeance: ECHEANCE_DES_ANCIENS };
+        if (garde.echeance > aujourdhui) ou.setItem(cle, JSON.stringify(garde));
+      }
+    }
+    if (garde && garde.echeance > aujourdhui) return garde.jeton;
+    const n = { jeton: jetonMesure(), echeance: echeanceMesure() };
+    ou.setItem(cle, JSON.stringify(n));
+    return n.jeton;
+  } catch (e) {
+    MESURE_RETENU = false;
+    return jetonMesure();
+  }
+}
+
+/* Les quatre portes, dans le vocabulaire du serveur, qui écarte tout le reste.
+   Elles n'ont pas la même façon d'être reconnues, d'où l'ordre ci-dessous. */
+const SUPPORTS = ["web", "integre", "pwa", "appli"];
+
+/**
+ * Par quelle porte cette page a été atteinte.
+ *
+ * L'ordre des épreuves est celui de la certitude décroissante.
+ *
+ * Une coque d'application le **dit**, parce que rien dans la page ne permet de
+ * le voir : une vue web plein écran qui charge la page hébergée est en tout
+ * point un navigateur. C'est donc à l'hôte de l'annoncer, par `?support=appli`
+ * ajouté à l'adresse qu'il ouvre — une déclaration, pas une preuve, et le
+ * vocabulaire clos borne ce qu'elle peut raconter. Les coques qui servent la
+ * page depuis l'appareil se reconnaissent en plus à leur protocole.
+ *
+ * Un cadre se voit : le document n'est pas au sommet de sa fenêtre. La
+ * comparaison reste permise entre origines différentes, et un cadre bac à sable
+ * qui la refuserait est encadré de toute façon.
+ *
+ * Une installation sur l'écran d'accueil se lit dans le mode d'affichage.
+ * `navigator.standalone` est la forme d'iOS, qui la produit sans qu'aucun
+ * manifeste existe — ces visites se comptaient donc déjà, sous « web ».
+ *
+ * Rien de tout cela ne dit quoi que ce soit du visiteur : c'est la façon dont
+ * la page est affichée, et elle ne prend que quatre valeurs.
+ */
+function supportMesure(){
+  const dit = new URLSearchParams(location.search).get("support");
+  if (dit && SUPPORTS.includes(dit)) return dit;
+  if (/^(capacitor|ionic|app|tauri):$/.test(location.protocol)) return "appli";
+  try {
+    if (window.top !== window.self) return "integre";
+  } catch (e) { return "integre"; }
+  if (navigator.standalone === true) return "pwa";
+  try {
+    if (["standalone", "fullscreen", "minimal-ui", "window-controls-overlay"]
+        .some(m => matchMedia("(display-mode: " + m + ")").matches)) return "pwa";
+  } catch (e) {}
+  return "web";
+}
+
+/* Relevé une fois, au chargement : la porte est la façon dont la page a été
+   ouverte, et une page ouverte ne change pas de porte. Une installation faite
+   en cours de route ne vaudra donc que pour le lancement suivant — c'est aussi
+   ce qu'on veut compter. */
+const MESURE_SUPPORT = MESURE_ACTIVE ? supportMesure() : "";
+
+/* Le jeton de visiteur est rangé sous le nom de l'événement : deux salons
+   ouverts sur le même téléphone n'ont pas le même, et aucun ne vaut comme
+   identifiant hors d'ici. Ce qui distinguait deux venues du même navigateur
+   ne se transmet plus : le serveur ne le lisait pas, et une visite se compte
+   déjà par le geste qui porte ce nom.
+
+   Un visiteur qui a refusé la mesure n'en reçoit pas : ce jeton-là ne sert
+   qu'à compter, et il n'y a plus rien à compter. */
+const CLE_VISITEUR = "plan-visiteur:" + SLUG;
+
+/**
+ * Le jeton d'une borne ne se retient pas.
+ *
+ * Une borne interactive est un appareil, pas un visiteur : elle en voit
+ * passer des centaines dans la journée, et un jeton gardé sur elle les
+ * compterait tous pour un seul — l'écran le plus utilisé du salon aurait
+ * alors l'audience d'une personne. Elle tire donc un jeton neuf à chaque
+ * ouverture, et un de plus à chaque remise à zéro (voir `_borne.html`), et le
+ * paquet dit au serveur qu'il n'est pas retenu : le rapport compte ces
+ * visiteurs comme les autres, mais sait qu'il les recompte peut-être, plutôt
+ * que de gonfler une audience en silence. C'est déjà la situation d'un cadre
+ * posé sur un site tiers, et le rapport sait la dire.
+ */
+let MESURE_VISITEUR = "";
+if (mesureOuverte()){
+  if (BORNE){ MESURE_VISITEUR = jetonMesure(); MESURE_RETENU = false; }
+  else MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+}
+
+/** Le visiteur suivant d'une borne : un autre jeton, et une visite de plus. */
+function renouvelleVisiteur(){
+  if (!mesureOuverte()) return;
+  /* Ce qui attendait de partir appartient encore au visiteur précédent : le
+     paquet s'en va sous son jeton, sinon ses gestes seraient mis au compte du
+     suivant. */
+  envoieMesures();
+  MESURE_VISITEUR = jetonMesure();
+  mesure("visite");
+}
+
+/* Un geste ne vaut pas un aller-retour réseau : on accumule, et on envoie
+   quand le paquet est plein, quand la main s'arrête, ou quand la page part.
+
+   Trente secondes et non quatre : à quatre, chaque fiche ouverte au fil d'une
+   visite partait dans son propre paquet, et un visiteur produisait une
+   quinzaine de requêtes — de loin le premier poste d'appels du système, devant
+   le plan lui-même. Rien ne se perd pour autant, le départ de la page vidant
+   ce qui reste. */
+const MESURE_PAQUET = 20;
+const MESURE_DELAI = 30000;
+let _gestes = [], _envoiDiffere = null;
+
+/* ------------------------------------------------------------
+   La file : ce qui n'a pas pu partir
+
+   Le plan se consulte sans réseau — le service de second plan garde ce qui a
+   déjà servi (`_sw.js`) — et c'est justement là qu'on mesurait le moins :
+   `fetch` échouait, le `catch` se taisait, et la demi-journée passée au fond
+   d'un hall de béton ne comptait pour rien. L'organisateur lisait un salon
+   désert aux heures où il était plein, c'est-à-dire l'inverse de ce qui s'était
+   passé.
+
+   Un paquet qui n'aboutit pas est donc rangé sur l'appareil, et repart de
+   lui-même : au retour du réseau, ou à la prochaine ouverture du plan. C'est le
+   geste de `rattrapeRetard` (`_pousse.html`), et pour la même raison — personne
+   ne viendra cliquer à la place du visiteur.
+
+   Il emporte le temps qu'il a attendu, sans quoi une matinée sans réseau
+   s'entasserait à midi, à la minute où revient la barre.
+   ------------------------------------------------------------ */
+
+/* Une seule file pour tous les plans du domaine, et non une par salon : chaque
+   paquet porte déjà le sien, si bien que rouvrir n'importe quel plan renvoie
+   tout ce qui attend — y compris ce qu'a laissé un salon qu'on ne rouvrira
+   jamais. Le refus, qui vaut lui aussi pour tous, la vide d'un coup. */
+const CLE_FILE = "plan-mesures";
+
+/* Trente paquets de vingt gestes : de quoi tenir une visite entière sans
+   réseau, pour quelques dizaines de kilo-octets. Au-delà, c'est le plus ancien
+   qui cède — une mesure perdue vaut mieux qu'un stockage plein, où le
+   navigateur jetterait tout ce que le plan a rangé là, le parcours du visiteur
+   avec.
+
+   Sept jours : un salon en dure trois. Ce qui attend encore après cela ne sera
+   plus lu de personne — le rapport est rendu — et la base refuse de toute façon
+   de dater un paquet de plus d'un mois. */
+const MESURE_FILE_MAX = 30;
+const MESURE_FILE_JOURS = 7;
+
+/* Quand le stockage refuse — navigation privée, cadre tiers cloisonné, quota
+   plein — la file finit la visite en mémoire. Elle ne survivra pas à la
+   fermeture de l'onglet, mais elle survit à la coupure, et c'est l'essentiel de
+   ce qu'on venait chercher. */
+let _fileVolatile = null;
+
+/* Une entrée lisible, et pas encore périmée. Le contrôle porte sur ce qui vient
+   du stockage : une autre version de la page a pu y ranger autre chose. */
+const fraisEnFile = (e) =>
+  !!e && typeof e.pose === "number" && !!e.paquet && !!e.id &&
+  Date.now() - e.pose < MESURE_FILE_JOURS * 86400000;
+
+function litLaFile(){
+  if (_fileVolatile) return _fileVolatile;
+  try {
+    const v = JSON.parse(localStorage.getItem(CLE_FILE) || "[]");
+    return Array.isArray(v) ? v.filter(fraisEnFile) : [];
+  } catch (e) {
+    /* La lecture seule lève quand le navigateur refuse le stockage de site :
+       on bascule ici plutôt qu'à la première écriture, sans quoi chaque paquet
+       repasserait par l'exception. */
+    return (_fileVolatile = []);
+  }
+}
+
+function ecritLaFile(f){
+  if (_fileVolatile){ _fileVolatile = f; return; }
+  try {
+    if (f.length) localStorage.setItem(CLE_FILE, JSON.stringify(f));
+    else localStorage.removeItem(CLE_FILE);
+  } catch (e) {
+    /* Quota plein : ce qui reste rangé n'est plus à jour et repartirait en
+       double à la prochaine ouverture. On l'efface avant de continuer en
+       mémoire. */
+    try { localStorage.removeItem(CLE_FILE); } catch (err) {}
+    _fileVolatile = f;
+  }
+}
+
+/** Poser un paquet dans la file, et rendre l'entrée qui le porte. */
+function metEnFile(paquet){
+  const entree = { id: jetonMesure(), pose: Date.now(), paquet };
+  const f = litLaFile();
+  f.push(entree);
+  /* Le plus ancien cède quand la file déborde : ce qui vient d'être fait a le
+     plus de chances d'arriver, et le plus vieux est celui dont l'heure est déjà
+     la plus incertaine. */
+  ecritLaFile(f.slice(-MESURE_FILE_MAX));
+  return entree;
+}
+
+const retireDeLaFile = (id) => ecritLaFile(litLaFile().filter(e => e.id !== id));
+
+/**
+ * Le paquet tel qu'il part, avec le temps qu'il a attendu.
+ *
+ * Le recul est une différence entre deux lectures de la même horloge, jamais un
+ * instant : une horloge d'appareil mal réglée — le cas ordinaire d'un visiteur
+ * venu d'un autre fuseau — ne peut donc rien fausser, et le serveur n'a rien à
+ * savoir de l'heure qu'il est ici. Il est tu quand il ne dit rien, c'est-à-dire
+ * presque toujours : le cas courant reste l'envoi immédiat.
+ */
+function chargeDe(entree){
+  const recul = Math.round((Date.now() - entree.pose) / 1000);
+  return JSON.stringify(recul > 0 ? { ...entree.paquet, recul } : entree.paquet);
+}
+
+/**
+ * Un paquet vers le serveur. Rend vrai s'il n'a plus à attendre.
+ *
+ * Un refus du serveur en fait partie : un paquet illisible ou un salon qui
+ * n'est plus publié ne s'arrangeront pas en dormant une nuit, et le garder
+ * bloquerait derrière lui tout ce que la file a de bon. Seules une panne de
+ * réseau et une peine du serveur — dont il peut se relever — font attendre.
+ */
+async function envoiePaquet(entree){
+  try {
+    const r = await fetch(MESURE_API, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: chargeDe(entree), keepalive: true,
+    });
+    return r.ok || (r.status >= 400 && r.status < 500);
+  } catch (e) {
+    // la mesure ne doit jamais gêner la visite : une panne se tait, et attend
+    return false;
+  }
+}
+
+/**
+ * Le départ de la page : `fetch` y est coupé net, `sendBeacon` survit.
+ *
+ * Il ne dit pas si l'envoi est arrivé — il rend vrai dès qu'il a pris la
+ * charge — si bien qu'on retire de la file ce qu'on lui confie, faute d'une
+ * réponse que personne ne serait là pour lire. C'est ce qu'on faisait déjà, et
+ * ce qui se perd ainsi se perdait entièrement avant.
+ *
+ * Hors réseau, en revanche, rien ne part et tout reste en file. C'est le seul
+ * sens où `navigator.onLine` renseigne — « faux » est sûr, « vrai » ne promet
+ * rien (voir `panneDuChargement`) — et c'est celui dont on a besoin ici.
+ */
+function beaconne(){
+  if (!navigator.sendBeacon || navigator.onLine === false) return;
+  const restants = [];
+  for (const e of litLaFile()){
+    let parti = false;
+    // le navigateur borne ce qu'il accepte de garder : au-delà, il refuse
+    try { parti = navigator.sendBeacon(MESURE_API, chargeDe(e)); } catch (err) {}
+    if (!parti) restants.push(e);
+  }
+  ecritLaFile(restants);
+}
+
+let _pousseEnCours = false;
+
+/**
+ * Tout ce qui attend, dans l'ordre où c'est arrivé.
+ *
+ * On s'arrête au premier qui n'aboutit pas : si le réseau manque, il manque
+ * pour les trente, et les lancer tous reviendrait à les perdre tous au même
+ * instant — en trente requêtes.
+ */
+function pousseLaFile(dernier){
+  if (!mesureOuverte()) return;
+  const f = litLaFile();
+  /* La péremption s'applique même quand rien ne part : `litLaFile` l'écarte de
+     ce qu'elle rend, cette écriture-ci l'efface de l'appareil. */
+  ecritLaFile(f);
+  if (!f.length) return;
+  if (dernier) return beaconne();
+  if (_pousseEnCours) return;
+  _pousseEnCours = true;
+  (async () => {
+    for (const e of f){
+      if (!await envoiePaquet(e)) break;
+      retireDeLaFile(e.id);
+    }
+    _pousseEnCours = false;
+  })();
+}
+
+function envoieMesures(dernier){
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = null;
+  if (!mesureOuverte()) return;
+  if (_gestes.length){
+    /* Le support accompagne le paquet, non chacun de ses gestes : c'est une
+       propriété de l'ouverture de la page, pas du geste qu'on y fait, et le
+       répéter trente fois l'exposerait à se contredire. */
+    metEnFile({
+      slug: SLUG, visiteur: MESURE_VISITEUR,
+      support: MESURE_SUPPORT, retenu: MESURE_RETENU,
+      gestes: _gestes.splice(0, _gestes.length),
+    });
+  }
+  /* Rangé avant d'être tenté, et non après l'échec : au départ de la page, rien
+     de ce qui suit l'appel n'est assuré de s'exécuter — le navigateur peut
+     geler l'onglet entre les deux — et le paquet qu'on perdrait là est
+     justement le dernier, souvent le plus parlant. */
+  pousseLaFile(dernier);
+}
+
+/**
+ * Retenir un geste, et ce qu'il désignait s'il désignait quelque chose.
+ *
+ *   mesure("fiche_stand", "plan", o.id)   une fiche d'exposant, ouverte du plan
+ *   mesure("recherche")                   une recherche menée à son terme
+ *   mesure("itineraire", "", o.id, "fiche_stand")   la route jusqu'à ce stand
+ *
+ * `objet` dit ce que la cible désigne, et ne se donne que là où le genre ne le
+ * dit pas déjà : une fiche ouverte désigne l'objet qui porte son nom, un
+ * itinéraire ou un ajout au programme peut viser un stand comme une
+ * conférence. Le serveur le déduit du genre quand il manque.
+ *
+ * Le vocabulaire est celui des compteurs ; le serveur écarte ce qu'il ne
+ * connaît pas plutôt que de l'enregistrer sous un nom approximatif, et une
+ * cible que l'événement ne porte pas est écartée de même.
+ */
+function mesure(genre, canal, cible, objet){
+  if (!mesureOuverte()) return;
+  const g = { genre: genre };
+  if (canal) g.canal = canal;
+  if (cible) g.cible = cible;
+  if (cible && objet) g.objet = objet;
+  _gestes.push(g);
+  if (_gestes.length >= MESURE_PAQUET) return envoieMesures();
+  clearTimeout(_envoiDiffere);
+  _envoiDiffere = setTimeout(() => envoieMesures(), MESURE_DELAI);
+}
+
+if (MESURE_ACTIVE){
+  /* Une visite par session d'onglet. Rouvrir le plan après l'avoir fermé en
+     fait une seconde ; naviguer dedans pendant deux heures, une seule.
+
+     Ce que « une session d'onglet » dure ne dépend pas de nous, et c'est
+     précisément pourquoi le rapport sépare les portes : un lancement depuis
+     l'écran d'accueil en ouvre une neuve à chaque fois, et une page de site qui
+     porte le cadre en ouvre une par page vue. Les visites se comparent dans une
+     porte, jamais d'une porte à l'autre. */
+  const CLE_VUE = "plan-visite:" + SLUG;
+  let dejaVue = false;
+  try { dejaVue = !!sessionStorage.getItem(CLE_VUE); } catch (e) {}
+  // un refus n'écrit rien, pas même la marque d'une visite qu'on ne compte pas
+  if (!dejaVue && mesureOuverte()){
+    try { sessionStorage.setItem(CLE_VUE, "1"); } catch (e) {}
+    mesure("visite");
+  }
+
+  /* `pagehide` est le seul événement sur lequel on puisse compter partout :
+     sur mobile, une page mise en arrière-plan n'est jamais « déchargée », elle
+     est gelée puis jetée sans prévenir. */
+  addEventListener("pagehide", () => envoieMesures(true));
+  addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") envoieMesures(true);
+  });
+
+  /* Le réseau qui revient est le moment qu'on attendait : ce qui dormait repart
+     sans que le visiteur ait rien à faire. Le contraire, `offline`, ne demande
+     rien — un envoi qui échoue laisse déjà son paquet en file. */
+  addEventListener("online", () => pousseLaFile());
+
+  /* Et ce qu'une visite précédente n'a pas réussi à envoyer — l'onglet fermé
+     dans le sous-sol, la journée entière sans couverture — repart à l'ouverture
+     suivante. À tête reposée : le plan se charge, et ces paquets-là ont déjà
+     attendu des heures. */
+  if (window.requestIdleCallback) requestIdleCallback(() => pousseLaFile(), { timeout: 8000 });
+  else setTimeout(() => pousseLaFile(), 3000);
+}
+
+/* ------------------------------------------------------------
+   La notice, et le refus
+
+   L'exemption tient aussi à cela : le visiteur doit pouvoir apprendre ce
+   qu'on mesure, et s'y opposer sans rien perdre du plan. La notice le dit en
+   mots de visiteur et porte le seul réglage qui compte. Elle ne s'offre que là
+   où la page mesure : ailleurs, elle décrirait ce qui n'a pas lieu.
+
+   Elle nomme l'organisateur du salon comme celui qui en répond : le plan est
+   son service, et le prestataire qui le réalise ne traite ces chiffres que
+   pour lui. Chaque phrase y est une promesse que le code doit tenir — changer
+   une durée ici sans la changer là-bas, et la notice mentirait.
+   ------------------------------------------------------------ */
+
+/** Efface les jetons de visiteur de tous les salons gardés sur l'appareil. */
+function effaceJetonsVisiteur(){
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--){
+      const cle = localStorage.key(i);
+      if (cle && cle.startsWith("plan-visiteur:")) localStorage.removeItem(cle);
+    }
+  } catch (e) {}
+}
+
+/**
+ * Refuser la mesure, ou revenir sur son refus.
+ *
+ * Le refus vaut aussi pour ce qui attendait de partir : les gestes du paquet
+ * en cours sont jetés, et le jeton s'efface — celui de ce salon comme ceux des
+ * autres, puisque le refus les couvre tous. Revenir sur son refus repart d'un
+ * jeton neuf : le visiteur compte alors pour un nouveau, et c'est juste, rien
+ * ne le relie plus à celui d'avant.
+ */
+function refuseMesure(refus){
+  MESURE_REFUSEE = !!refus;
+  try {
+    if (refus) localStorage.setItem(CLE_REFUS, "1");
+    else localStorage.removeItem(CLE_REFUS);
+  } catch (e) {}
+  if (refus){
+    clearTimeout(_envoiDiffere);
+    _envoiDiffere = null;
+    _gestes = [];
+    // y compris ce qui attendait le réseau depuis une visite d'avant
+    ecritLaFile([]);
+    MESURE_VISITEUR = "";
+    effaceJetonsVisiteur();
+  } else if (MESURE_ACTIVE && !MESURE_VISITEUR){
+    MESURE_RETENU = true;
+    MESURE_VISITEUR = jetonRetenu(CLE_VISITEUR, "localStorage");
+  }
+}
+
+function ouvreConfidentialite(){
+  const salon = DATA && DATA.evenement;
+  ouvreModale("Confidentialité", fenetre => {
+    const corps = document.createElement("div");
+    corps.className = "notice";
+    fenetre.appendChild(corps);
+    const texte = (t, classe) => {
+      const p = document.createElement("p");
+      p.textContent = t;
+      if (classe) p.className = classe;
+      corps.appendChild(p);
+    };
+    texte((salon ? "L'organisateur de « " + salon + " »" : "L'organisateur du salon") +
+      " mesure l'usage de ce plan pour savoir s'il sert : ouvertures du plan, " +
+      "recherches, fiches consultées, itinéraires, parcours composés et partagés.");
+    texte("Aucun cookie n'est posé, et ni votre adresse IP ni votre navigateur ne " +
+      "sont enregistrés avec ces mesures. Pour compter chaque visiteur une seule " +
+      "fois, votre appareil garde un numéro tiré au hasard, propre à ce salon : il " +
+      "ne dit pas qui vous êtes, et ne vous suit nulle part ailleurs.");
+    texte("Ce numéro est remplacé au bout de " + MESURE_VIE_MOIS + " mois. Ce qui a " +
+      "été enregistré avec lui est effacé au bout de " + MESURE_CONSERVATION_JOURS +
+      " jours : seuls restent des totaux anonymes.");
+    texte("Ces chiffres servent à l'organisateur et au prestataire qui réalise le " +
+      "plan pour lui. Les exposants peuvent recevoir les totaux de leur stand, " +
+      "jamais le détail d'une visite. Vos réglages et votre parcours restent sur " +
+      "votre appareil, pour vous être rendus à la prochaine visite.");
+    /* Le plan se consulte sans réseau, et ce qu'il mesure attend alors sur
+       l'appareil : la notice ne peut pas l'omettre — elle dit ce qui y est
+       écrit, et ces paquets-là en sont. */
+    texte("Sans réseau, le plan reste consultable et ces mesures patientent sur " +
+      "votre appareil, le temps d'une reconnexion. Elles en repartent dès qu'elle " +
+      "a lieu, et s'effacent d'elles-mêmes au bout de " + MESURE_FILE_JOURS + " jours.");
+
+    const choix = document.createElement("label");
+    choix.className = "refusMesure";
+    const caseRefus = document.createElement("input");
+    caseRefus.type = "checkbox";
+    caseRefus.checked = MESURE_REFUSEE;
+    caseRefus.onchange = () => refuseMesure(caseRefus.checked);
+    choix.append(caseRefus, document.createTextNode("Ne pas mesurer mes visites"));
+    corps.appendChild(choix);
+
+    texte("Ce choix est gardé sur cet appareil, et vaut pour tous les plans de ce " +
+      "site. Pour toute question sur ces données, adressez-vous à l'organisateur " +
+      "du salon ; vous pouvez aussi saisir la CNIL.", "noteRefus");
+  }, [{ libelle: "Fermer" }]);
+}
+
+if (MESURE_ACTIVE){
+  // un refus d'une autre visite laisse peut-être derrière lui le jeton d'un
+  // salon, et les paquets qu'un autre plan n'avait pas pu envoyer
+  if (MESURE_REFUSEE){ effaceJetonsVisiteur(); ecritLaFile([]); }
+  $("piedSide").hidden = false;
+  $("btnConfidentialite").onclick = ouvreConfidentialite;
+}

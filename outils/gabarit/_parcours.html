@@ -1,0 +1,700 @@
+
+/* ============================================================
+   11 bis. Parcours de visite
+   ============================================================ */
+/**
+ * Un visiteur arrive avec trois heures et deux cents exposants devant lui. Il
+ * repère de quoi remplir sa journée depuis chez lui, puis vient relire sa
+ * liste sur place, entre deux allées.
+ *
+ * Cette liste vit dans son navigateur, et nulle part ailleurs : le plan n'a
+ * pas de comptes, et demander une inscription pour retenir trois stands ferait
+ * fuir tout le monde. Elle est rangée par événement — un même téléphone peut
+ * ouvrir plusieurs salons — et ne retient que des identifiants : les libellés
+ * sont relus dans les données à chaque affichage, si bien qu'un exposant
+ * renommé entre deux visites s'affiche sous son nouveau nom.
+ *
+ * Ce choix a un revers, et « trois semaines avant » est exactement le moment
+ * où il se paie : un navigateur fait le ménage. Safari efface tout ce qu'une
+ * page a écrit au bout de sept jours passés sans revenir sur le site — la
+ * liste préparée en août n'existe plus en septembre. Chrome et Firefox jettent
+ * les origines dont rien ne dit qu'elles comptent, quand l'appareil manque de
+ * place. Et sur iOS, l'application installée ne partage pas le stockage de
+ * Safari : préparer sa visite dans l'onglet puis poser l'icône ouvre une
+ * application vide.
+ *
+ * Trois gestes y répondent, et aucun ne demande de compte. Ce que le plan ne
+ * reconnaît plus est mis de côté au lieu d'être effacé (`MIS_DE_COTE`). Le
+ * navigateur est prié de garder ce qu'il a (`tientLeStockage`). Et la liste
+ * s'emporte hors du navigateur, dans un lien qu'on se donne à soi-même
+ * (`_partage.html`, « La copie qu'on se garde ») — le seul de ces trois gestes
+ * qui tienne contre les sept jours de Safari, contre un téléphone changé, et
+ * contre l'application installée qui démarre à vide.
+ */
+let PARCOURS = { stands: [], confs: [] };
+
+/**
+ * Ce que le stockage portait et que les données ne reconnaissent pas — pour
+ * l'instant.
+ *
+ * Jeter tout de suite ce qu'on ne reconnaît plus paraissait sans risque : un
+ * stand démonté ne revient pas. Mais « les données ne le connaissent pas » et
+ * « il n'existe plus » sont deux choses, et la première arrive sans que rien
+ * n'ait disparu : l'option du programme décochée une heure vide `CONFS`, une
+ * synchronisation Klipso en cours rend un salon amputé. La liste filtrée était
+ * alors réécrite au premier signet touché, et les conférences retenues pour le
+ * mois suivant partaient pour de bon.
+ *
+ * C'est l'ornière des dessins non publiés, décrite dans `_dessin.html` : « il
+ * ne se perdait pas : il devenait invisible, puis l'enregistrement suivant
+ * l'effaçait pour de bon ». On la contourne de la même façon — ce qu'on ne
+ * comprend plus est mis de côté, daté, et réécrit avec le reste, à la place
+ * qu'il occupait. Invisible, mais pas perdu.
+ */
+let MIS_DE_COTE = { stands: [], confs: [] };
+
+/* Au-delà, un rang mis de côté s'en va vraiment. Plus long qu'aucune panne ni
+   qu'aucun réglage oublié, plus court que le temps qui sépare deux éditions —
+   au-delà duquel les identifiants ne désignent plus rien de toute façon. */
+const QUARANTAINE_JOURS = 120;
+
+/* Le nom de l'événement sert de repli pour la page à données figées, qui n'a
+   pas de « slug » : sans lui, deux démonstrations partageraient la même liste. */
+const cleParcours = () =>
+  "plan-parcours:" + (SLUG || (DATA && DATA.evenement) || "");
+
+const casierParcours = genre => genre === "conf" ? PARCOURS.confs : PARCOURS.stands;
+const dansParcours = (genre, id) => casierParcours(genre).indexOf(String(id)) >= 0;
+
+/** Le jour, tel qu'il s'écrit à côté d'un rang mis de côté. */
+const jourParcours = () => new Date().toISOString().slice(0, 10);
+
+/** Un rang mis de côté depuis assez longtemps pour qu'on cesse de l'attendre.
+ *  Une date illisible vaut une date d'aujourd'hui : on garde, plutôt que de
+ *  jeter sur un doute. */
+function attenduDepuisTropLongtemps(depuis){
+  const t = Date.parse(depuis);
+  return !!t && Date.now() - t > QUARANTAINE_JOURS * 864e5;
+}
+
+/**
+ * Ranger ce que le stockage a rendu : d'un côté ce que le plan connaît, de
+ * l'autre ce qu'il ne connaît plus — avec le rang qu'il occupait, pour le lui
+ * rendre s'il revient. L'ordre d'ajout est celui du parcours, et un exposant
+ * absent le temps d'une synchronisation n'a pas à finir en queue de liste.
+ */
+function trieParcours(casier, lus, connu, dates){
+  const aujourdhui = jourParcours();
+  lus.forEach((id, i) => {
+    if (connu(id)) return PARCOURS[casier].push(id);
+    const depuis = dates[casier + ":" + id] || aujourdhui;
+    if (attenduDepuisTropLongtemps(depuis)) return;
+    MIS_DE_COTE[casier].push({ id: id, i: i, depuis: depuis });
+  });
+}
+
+function chargeParcours(){
+  let b = {};
+  try { b = JSON.parse(localStorage.getItem(cleParcours()) || "null") || {}; }
+  catch (e) { b = {}; }   // stockage refusé ou contenu illisible
+  const dates = b.decote && typeof b.decote === "object" ? b.decote : {};
+  PARCOURS = { stands: [], confs: [] };
+  MIS_DE_COTE = { stands: [], confs: [] };
+  trieParcours("stands", Array.isArray(b.stands) ? b.stands.map(String) : [],
+               id => parId.has(id), dates);
+  trieParcours("confs", Array.isArray(b.confs) ? b.confs.map(String) : [],
+               id => CONFS.has(id), dates);
+  /* Une liste rapportée d'une visite d'il y a trois semaines vaut qu'on
+     demande au navigateur de ne pas la jeter au premier ménage. */
+  if (PARCOURS.stands.length + PARCOURS.confs.length) tientLeStockage();
+  rafraichitParcours();
+  /* Les rappels posés lors d'une visite précédente se reprennent ici, une fois
+     la liste relue : ils ne portent que sur des conférences qu'elle contient
+     encore. */
+  reprendRappels();
+}
+
+/**
+ * La liste telle qu'elle s'écrit : ce qui s'affiche, et ce qui attend son
+ * retour, remis où il était.
+ *
+ * Un rang mis de côté peut revenir par la porte de devant — un parcours reçu
+ * qui le reproposait, les données qui le reconnaissent à nouveau dans un autre
+ * onglet. Il est alors des deux côtés, et c'est l'exemplaire de côté qui
+ * s'efface : celui de la liste est celui que le visiteur voit.
+ */
+function parcoursAEcrire(){
+  const sortie = { stands: PARCOURS.stands.slice(), confs: PARCOURS.confs.slice() };
+  const dates = {};
+  ["stands", "confs"].forEach(casier => {
+    MIS_DE_COTE[casier].forEach(r => {
+      if (sortie[casier].indexOf(r.id) >= 0) return;
+      sortie[casier].splice(Math.min(r.i, sortie[casier].length), 0, r.id);
+      dates[casier + ":" + r.id] = r.depuis;
+    });
+  });
+  if (Object.keys(dates).length) sortie.decote = dates;
+  return sortie;
+}
+
+function enregistreParcours(){
+  // navigation privée, stockage plein : la visite continue sans le parcours
+  try { localStorage.setItem(cleParcours(), JSON.stringify(parcoursAEcrire())); }
+  catch (e) {}
+  /* La liste a changé : ce que le serveur garde pour rappeler doit changer avec
+     elle. Une conférence retirée ne se rappelle plus, une conférence ajoutée
+     se rappelle — et le visiteur qui n'a rien demandé n'envoie rien. */
+  synchroniseRappels();
+}
+
+/* ------------------------------------------------------------
+   Que le navigateur ne fasse pas le ménage dessus
+   ------------------------------------------------------------ */
+/**
+ * Un stockage que le navigateur tient pour jetable, et un qu'il garde.
+ *
+ * Sans rien demander, ce qu'une page écrit est « au mieux » : Chrome et Firefox
+ * l'effacent quand l'appareil manque de place, et ils commencent par les
+ * origines dont personne n'a dit qu'elles comptaient. `persist()` le dit.
+ *
+ * Trois navigateurs, trois réponses. Chromium accorde ou refuse en silence,
+ * sur ce qu'il sait de l'usage du site — l'appeler ne coûte rien à personne.
+ * Safari ne l'implémente pas, et sa purge à sept jours ne se désarme d'aucune
+ * façon : là, seule la copie emportée protège (`_partage.html`). Firefox, lui,
+ * pose la question au visiteur — d'où `demande` : on ne fait pas surgir une
+ * permission sur quelqu'un qui vient de toucher un signet, on ne la présente
+ * qu'à celui qui demande justement que sa liste tienne.
+ */
+let PERSISTANCE_DEMANDEE = false;
+async function tientLeStockage(demande){
+  const s = navigator.storage;
+  if (!s || !s.persist || !s.persisted) return false;
+  try {
+    if (await s.persisted()) return true;
+    // le refus d'hier ne se corrige pas en le redemandant à chaque signet
+    if (PERSISTANCE_DEMANDEE && !demande) return false;
+    if (!demande && /Firefox\//.test(navigator.userAgent)) return false;
+    PERSISTANCE_DEMANDEE = true;
+    return await s.persist();
+  } catch (e) { return false; }
+}
+
+/**
+ * Retenir un rang, ou le retirer.
+ *
+ * `canal` dit d'où vient le geste, et ne sert qu'à la mesure : un ajout venu
+ * d'une proposition ne se compte pas comme un ajout qu'on est allé chercher
+ * soi-même — c'est même le seul chiffre qui dise si proposer sert à quelque
+ * chose. Absent, le geste compte comme avant, sans provenance.
+ */
+function basculeParcours(genre, id, canal){
+  const l = casierParcours(genre), k = String(id), i = l.indexOf(k);
+  // l'ordre d'ajout est celui du parcours : on ajoute donc à la fin
+  if (i < 0) l.push(k); else l.splice(i, 1);
+  enregistreParcours();
+  rafraichitParcours();
+  /* Retirer un rang est une édition autant qu'en ajouter : c'est le même
+     visiteur en train de composer sa journée, et le total des gestes les
+     compte tous les deux.
+
+     Ce qu'on rattache à l'exposant, en revanche, c'est le seul ajout : « huit
+     visiteurs m'ont mis à leur programme » se comprend, « huit m'y ont mis ou
+     retiré » ne veut rien dire. */
+  mesure("parcours", canal || "", i < 0 ? k : "",
+         genre === "conf" ? "fiche_conf" : "fiche_stand");
+  /* Un ajout peut faire basculer la proposition au premier plan : c'est ici
+     qu'on le sait, et nulle part ailleurs — le chargement d'une liste retenue
+     lors d'une visite précédente n'est pas un ajout, et accueillir le visiteur
+     par une fenêtre qu'il n'a pas demandée n'est pas la même chose. */
+  if (i < 0 && genre === "stand") fenetreSuggestion();
+  /* Et, pour une conférence, la proposition du rappel : c'est le premier
+     horaire retenu qui donne au réveil quelque chose à faire, et celui qui
+     vient de le retenir est le seul à qui la question se pose. Un lot versé n'y
+     passe pas davantage que la suggestion — le tiroir qui s'ouvre sur ce qu'on
+     vient de recevoir porte déjà l'interrupteur, en tête de ses conférences. */
+  if (i < 0 && genre === "conf") fenetreRappel();
+  /* Et, dès qu'il y a quelque chose à perdre, le geste qui l'en empêche : le
+     navigateur prié de tenir. La copie ne s'invite pas ici — une liste qu'on
+     est en train de composer n'a pas encore de quoi valoir un lien gardé. */
+  if (i < 0) tientLeStockage();
+}
+
+/**
+ * Verser un lot de rangs dans la liste.
+ *
+ * Les ajouts se comptent un à un, comme s'ils avaient été faits signet par
+ * signet : c'est bien un visiteur de plus qui a ce stand à son programme, et
+ * l'exposant a raison de le voir dans ses chiffres. Le canal dit d'où le lot
+ * vient — un parcours reçu, une recherche prise en bloc — et permet de faire la
+ * part des uns et des autres.
+ *
+ * La suggestion ne s'invite pas ici, à la différence d'un signet posé à la
+ * main : un lot qui vient d'allonger la liste de vingt exposants n'appelle pas
+ * une fenêtre qui en propose un vingt et unième.
+ */
+function verseAuParcours(stands, confs, canal, remplace){
+  if (remplace) PARCOURS = { stands: [], confs: [] };
+  stands.forEach(id => {
+    if (PARCOURS.stands.indexOf(id) < 0) PARCOURS.stands.push(id);
+    mesure("parcours", canal, id, "fiche_stand");
+  });
+  confs.forEach(id => {
+    if (PARCOURS.confs.indexOf(id) < 0) PARCOURS.confs.push(id);
+    mesure("parcours", canal, id, "fiche_conf");
+  });
+  enregistreParcours();
+  rafraichitParcours();
+  tientLeStockage();
+  /* Le tiroir s'ouvre sur ce qui vient d'arriver : sans cela le visiteur
+     n'aurait pour preuve qu'un compteur qui a changé dans la barre. */
+  ouvreParcours();
+}
+
+/** « 3 exposants », « 1 conférence » : un compte et son mot, accordés. */
+const plurielParcours = (n, mot) => n + " " + mot + (n > 1 ? "s" : "");
+
+/**
+ * Ce qu'un lot contient, en toutes lettres.
+ *
+ * Les conférences ne se mentionnent que s'il y en a : « 5 exposants et 0
+ * conférence » fait lire un manque là où il n'y a rien à lire — et un salon
+ * sans programme du tout n'a pas à voir le mot.
+ */
+const contenuParcours = (nStands, nConfs) =>
+  [nStands ? plurielParcours(nStands, "exposant") : "",
+   nConfs ? plurielParcours(nConfs, "conférence") : ""].filter(Boolean).join(" et ");
+
+/* ------------------------------------------------------------
+   Tout ce que la recherche a retenu
+   ------------------------------------------------------------ */
+/* D'où viennent les rangs pris en bloc. Le canal existait déjà pour les fiches
+   ouvertes depuis la liste des résultats : un ajout venu de là raconte la même
+   chose, et n'avait pas besoin d'un mot de plus au vocabulaire mesuré. */
+const CANAL_RECHERCHE = "recherche";
+
+/**
+ * Ce que le filtre retient, et qui n'est pas déjà dans la liste.
+ *
+ * Le périmètre est celui de la colonne des résultats, aux deux sortes près
+ * qu'un parcours ne sait pas porter : une zone ne s'y retient que par les
+ * conférences qu'elle abrite, et un repère n'est pas un rendez-vous. Une
+ * société hébergée, elle, y entre sous l'emplacement où on la trouvera — c'est
+ * déjà ce que fait le signet de sa fiche, et deux hébergées d'un même stand
+ * n'ont donc qu'un rang à elles deux.
+ *
+ * Sans mot-clé ni critère, il n'y a pas de filtre à reprendre : le salon entier
+ * n'est pas un parcours de visite, et la fonction ne rend rien plutôt que de le
+ * proposer.
+ */
+function retenusPourParcours(){
+  if (!DATA || !filtre()) return { stands: [], confs: [] };
+  const vus = new Set(), stands = [];
+  TOUS.concat(HEBERGES).forEach(o => {
+    if (o.kind === "zone" || !visible(o)) return;
+    const id = String(o.id);
+    if (vus.has(id)) return;
+    vus.add(id);
+    if (!dansParcours("stand", id)) stands.push(id);
+  });
+  /* Une conférence ne répond qu'au mot-clé — les critères décrivent une société
+     et n'ont rien à lui opposer —, ce dont « visible » se charge déjà. */
+  const confs = CONFERENCES.filter(c => visible(c) && !dansParcours("conf", c.id))
+    .map(c => String(c.id));
+  return { stands: stands, confs: confs };
+}
+
+/**
+ * La fenêtre qui demande avant de verser.
+ *
+ * Un parcours composé signet par signet ne se voit pas doubler de vingt rangs
+ * sans qu'on l'ait dit : le compte est annoncé avant. « Annuler » referme, et
+ * l'on retrouve derrière le panneau des critères tel qu'on l'avait laissé — il
+ * est déplié dans la colonne, cette fenêtre-ci ne lui a jamais pris sa place.
+ */
+function ajouteToutAuParcours(){
+  const r = retenusPourParcours();
+  if (!r.stands.length && !r.confs.length) return;
+  ouvreModale("Ajouter à mon parcours", corps => {
+    const p = document.createElement("p");
+    p.textContent = "Ajouter " + contenuParcours(r.stands.length, r.confs.length) +
+      " à votre parcours de visite ?";
+    corps.appendChild(p);
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Ajouter", genre: "accent",
+      action: () => verseAuParcours(r.stands, r.confs, CANAL_RECHERCHE, false) },
+  ]);
+}
+
+/**
+ * Le bouton qui prend tout, posé au pied d'un panneau de recherche.
+ *
+ * Rend de quoi le remettre à jour : ce qu'il propose change à chaque critère
+ * coché, et le panneau qui le porte ne se réécrit pas pour autant. Il ne paraît
+ * qu'une fois la recherche commencée, et s'éteint quand tout ce qu'elle retient
+ * est déjà retenu — en le disant, faute de quoi on le croirait en panne.
+ */
+function poseToutAuParcours(hote){
+  if (conf("_parcours").visible === false) return () => {};
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn parc tout-parc";
+  b.innerHTML = SIGNET + '<span class="l"></span>';
+  b.onclick = () => ajouteToutAuParcours();
+  hote.appendChild(b);
+  return () => {
+    const r = retenusPourParcours();
+    const reste = r.stands.length + r.confs.length;
+    b.hidden = !filtre();
+    b.disabled = !reste;
+    b.querySelector(".l").textContent = reste
+      ? "Ajouter tout à mon parcours"
+      : "Déjà dans votre parcours";
+  };
+}
+
+/* ------------------------------------------------------------
+   La marque, partout la même
+   ------------------------------------------------------------ */
+const SIGNET = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+  '<path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>';
+
+/** Le signet nu, tel qu'il se pose à côté d'une conférence du programme. */
+function signetParcours(genre, id){
+  return '<button type="button" class="marque" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '"></button>';
+}
+
+/** Le même geste, en toutes lettres : sur une fiche, la place ne manque pas. */
+function boutonParcours(genre, id){
+  return '<button type="button" class="btn parc" data-mg="' + genre +
+         '" data-mi="' + esc(id) + '">' + SIGNET + '<span class="l"></span></button>';
+}
+
+function rafraichitMarque(el){
+  const dedans = dansParcours(el.dataset.mg, el.dataset.mi);
+  el.setAttribute("aria-pressed", dedans);
+  const dit = dedans ? "Retirer de mon parcours" : "Ajouter à mon parcours";
+  el.title = dit;
+  el.setAttribute("aria-label", dit);
+  const l = el.querySelector(".l");
+  if (l) l.textContent = dedans ? "Dans mon parcours" : "Ajouter à mon parcours";
+  if (!el.querySelector("svg")) el.insertAdjacentHTML("afterbegin", SIGNET);
+}
+
+/** Rend vivantes les marques d'un fragment qu'on vient d'écrire. `canal` suit
+ *  jusqu'à la mesure, pour les fragments qu'on n'est pas allé chercher. */
+function brancheParcours(hote, canal){
+  hote.querySelectorAll("[data-mg]").forEach(el => {
+    rafraichitMarque(el);
+    el.onclick = ev => {
+      ev.stopPropagation();
+      basculeParcours(el.dataset.mg, el.dataset.mi, canal);
+    };
+  });
+}
+
+/* ------------------------------------------------------------
+   Ce que le parcours change à l'écran
+   ------------------------------------------------------------ */
+/**
+ * Les liserés du plan.
+ *
+ * Deux marques se posent sur un stand sans que les données le disent : celle
+ * de la sélection, et celle du parcours. Ni l'une ni l'autre ne se peint sur
+ * le stand lui-même — elles se recopient dans un calque à part, posé au-dessus
+ * des couches.
+ *
+ * Portées par le stand, elles disparaissaient le long des cloisons mitoyennes :
+ * deux stands voisins partagent le même segment, et celui que le plan trace en
+ * second y repassait son propre contour par-dessus le liseré du premier. Un
+ * stand pris au milieu d'un îlot n'était alors cerné que sur ses côtés libres.
+ * Une zone est logée à la même enseigne, et plus mal encore : les stands se
+ * tracent après elle et recouvrent tout ce qui passe sous eux.
+ *
+ * Recopier le tracé plus haut règle la question sans toucher à l'ordre des
+ * couches, que l'exploitant règle. L'aplat de la sélection, lui, reste sur le
+ * stand : c'est une couleur de surface, elle n'a rien à gagner à monter.
+ */
+function calqueMarques(){
+  let g = $("marques");
+  if (!g){
+    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.id = "marques";
+    // au-dessus des couches, sous le trajet et les poignées d'édition
+    svg.insertBefore(g, svg.querySelector("#itin, #apercu, #poignees"));
+  }
+  return g;
+}
+
+/**
+ * Le calque se relit dans le plan plutôt qu'il ne se tient à jour : les deux
+ * marques changent par des chemins sans rapport — un signet, un clic, un
+ * changement de pavillon — et une seule lecture les remet d'accord.
+ */
+function dessineMarques(){
+  /* Les liserés vivent hors des couches : rien ne les masquerait avec elles.
+     Une couche de données retirée par l'exploitant doit pourtant emporter les
+     marques de ce qu'elle portait, sans quoi le plan garderait des contours
+     sans stands. */
+  const montree = n => { const g = $(n); return !g || g.style.display !== "none"; };
+  const vu = { stands: montree("stands"), zones: montree("zones") };
+  let parc = "", sel = "";
+  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
+    if (!vu[g.parentNode.id]) return;
+    const p = g.querySelector("path");
+    if (!p) return;
+    /* Une zone garde son trait discontinu jusque dans sa sélection — c'est ce
+       qui la distingue d'un stand. Le parcours, lui, se veut continu partout :
+       il dit qu'on a retenu l'endroit, pas ce qu'il est. */
+    const d = ' d="' + p.getAttribute("d") + '"/>';
+    if (g.classList.contains("enparcours")) parc += '<path class="parc"' + d;
+    if (g.classList.contains("sel"))
+      sel += '<path class="sel' + (g.parentNode.id === "zones" ? " zn" : "") + '"' + d;
+  });
+  // la sélection en dernier : c'est elle qu'on vient de désigner
+  calqueMarques().innerHTML = parc + sel;
+}
+
+/**
+ * Ce qu'un visiteur a retenu, marqué sur le plan.
+ *
+ * Une zone y entre par les conférences qu'elle abrite : c'est là qu'il faudra
+ * se rendre à l'heure dite, la conférence n'ayant pas de forme propre.
+ */
+function marqueParcours(){
+  if (!DATA) return;
+  const zones = new Set();
+  PARCOURS.confs.forEach(id => {
+    const c = CONFS.get(id);
+    if (c && c.zone) zones.add(String(c.zone));
+  });
+  document.querySelectorAll("#stands > g, #zones > g").forEach(g => {
+    g.classList.toggle("enparcours",
+      PARCOURS.stands.indexOf(g.dataset.id) >= 0 || zones.has(g.dataset.id));
+  });
+  dessineMarques();
+}
+
+function rafraichitParcours(){
+  const n = PARCOURS.stands.length + PARCOURS.confs.length;
+  const c = $("nParcours");
+  if (c){ c.textContent = n; c.hidden = n === 0; }
+  /* Rien à organiser tant que rien n'est retenu : le bouton reste, éteint,
+     plutôt que d'apparaître au premier signet — sa présence dit ce à quoi la
+     liste servira. */
+  const org = $("btnJournee");
+  if (org) org.disabled = n === 0;
+  /* Et de même le partage : une liste vide se partage techniquement — le lien
+     serait valide — mais n'apprendrait rien à personne. */
+  const part = $("btnPartage");
+  if (part) part.disabled = n === 0;
+  /* Une journée calculée sur une autre liste ne vaut plus : on ne la refait
+     pas dans le dos du visiteur, on le lui dit. */
+  perimeJournee();
+  marqueParcours();
+  /* Une même conférence se voit à deux endroits — le programme de sa zone et
+     sa propre fiche — et le tiroir en montre une troisième. Toutes les marques
+     affichées doivent dire la même chose, d'où qu'on ait touché. */
+  document.querySelectorAll("[data-mg]").forEach(rafraichitMarque);
+  if ($("parcours").classList.contains("open")) remplitParcours();
+}
+
+/* ------------------------------------------------------------
+   Le tiroir
+   ------------------------------------------------------------ */
+/** De quoi ranger deux conférences dans l'ordre où on les vivra. */
+function instantConf(c){
+  const fz = DATA.fuseau;
+  return momentLocal(c.debutLocal, fz) || momentLocal(c.debut, fz);
+}
+const cleTemps = c => {
+  const d = instantConf(c);
+  // sans heure lisible, la conférence se range en fin de liste plutôt que de
+  // s'intercaler n'importe où
+  return d ? d.cle + d.h + d.min : "999999999999";
+};
+const jourCourt = d => d
+  ? JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()] + " " + d.jour + " " + MOIS[d.mois - 1]
+  : "";
+
+/** Le nom sous lequel un exposant paraît dans une liste : son enseigne, faute
+ *  de quoi ce que le plan porte, faute de quoi son numéro d'emplacement. La
+ *  fenêtre d'un parcours reçu montre les mêmes noms que le tiroir. */
+const nomDeStand = o => o.nom || o.plan || ("Stand " + (o.code || "")).trim();
+
+function rangParcours(hote, r){
+  const d = document.createElement("div");
+  d.className = "pRang";
+  d.innerHTML = '<button type="button" class="pOuvre">' +
+    (r.dessus ? '<span class="ps"></span><span class="pt"></span>'
+              : '<span class="pt"></span><span class="ps"></span>') +
+    '</button><button type="button" class="pOte" title="Retirer du parcours" ' +
+    'aria-label="Retirer du parcours">&times;</button>';
+  d.querySelector(".pt").textContent = r.titre;
+  d.querySelector(".ps").textContent = r.detail || "";
+  if (r.couleur) d.querySelector(".pOuvre").style.setProperty("--tc", r.couleur);
+  d.querySelector(".pOuvre").onclick = r.ouvre;
+  d.querySelector(".pOte").onclick = () => basculeParcours(r.genre, r.id);
+  hote.appendChild(d);
+  /* Le rang est rendu : la visite organisée y glisse un bouton de plus — celui
+     qui change l'exposant de jour — et ne veut pas réécrire la vignette pour
+     autant. */
+  return d;
+}
+
+function groupeParcours(hote, titre){
+  const g = document.createElement("div");
+  g.className = "pGroupe";
+  g.innerHTML = '<span class="eyebrow"></span>';
+  g.querySelector(".eyebrow").textContent = titre;
+  hote.appendChild(g);
+  return g;
+}
+
+function remplitParcours(){
+  const hote = $("pCorps");
+  hote.innerHTML = "";
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const confs = PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .sort((a, b) => cleTemps(a).localeCompare(cleTemps(b)));
+
+  /* Le même compte que la fenêtre d'un lot reçu, au séparateur près : ici les
+     deux moitiés se lisent en tête d'une liste, non dans une phrase. */
+  $("pResume").textContent = stands.length + confs.length
+    ? [stands.length ? plurielParcours(stands.length, "exposant") : "",
+       confs.length ? plurielParcours(confs.length, "conférence") : ""]
+        .filter(Boolean).join(" · ")
+    : "rien pour l'instant";
+  $("videParcours").hidden = !(stands.length + confs.length);
+
+  if (!stands.length && !confs.length){
+    const v = document.createElement("p");
+    v.className = "pVide";
+    /* La phrase promettait de tout retrouver à la visite suivante. C'est vrai
+       d'une visite à la semaine prochaine, et faux d'une visite préparée un
+       mois à l'avance sur un iPhone : le navigateur aura fait le ménage. On
+       annonce donc ce qu'on tient — la liste reste ici — et le tiroir garni
+       dit, lui, comment l'emporter ailleurs (`poseGardeParcours`). */
+    v.textContent = "Ouvrez la fiche d'un exposant, ou le programme d'une zone, " +
+      "et touchez le signet pour l'ajouter ici. Votre parcours reste sur cet " +
+      "appareil, et vous pourrez en garder une copie pour le jour du salon.";
+    hote.appendChild(v);
+    return;
+  }
+
+  /* Ce qui pourrait compléter la liste passe avant la liste elle-même.
+     Elle en découle, et la place logique était donc à la suite — mais sur un
+     téléphone le tiroir ne montre que trois rangs, et la proposition tombait
+     sous la ligne de flottaison d'une liste que personne ne fait défiler pour
+     voir ce qu'il y a après ce qu'il a lui-même retenu. En tête elle se voit,
+     et sa première phrase dit d'où elle vient : elle ne se prend pas pour un
+     rang du parcours. */
+  poseSuggestion(hote);
+
+  /* Les conférences d'abord : elles ont une heure, et c'est autour d'elles que
+     le reste de la journée se range. */
+  if (confs.length){
+    const g = groupeParcours(hote, "Conférences");
+    /* L'interrupteur du rappel se pose en tête du groupe qu'il concerne, et
+       nulle part ailleurs : il ne veut rien dire pour un parcours qui n'a que
+       des stands, et le proposer en tête du tiroir l'aurait fait lire comme un
+       réglage du parcours entier. */
+    poseRappels(g);
+    let jour = null;
+    confs.forEach(c => {
+      const d = instantConf(c);
+      const f = momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+      if (d && d.cle !== jour){
+        jour = d.cle;
+        const t = document.createElement("div");
+        t.className = "jour";
+        t.textContent = jourCourt(d);
+        g.appendChild(t);
+      }
+      rangParcours(g, {
+        genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+        titre: c.nom,
+        detail: (d ? d.h + "h" + d.min + (f ? " – " + f.h + "h" + f.min : "") : "") +
+                (c.salle ? " · " + c.salle : ""),
+        ouvre: () => ficheConf(c.id, "parcours"),
+      });
+    });
+  }
+
+  if (stands.length){
+    const g = groupeParcours(hote, "Exposants");
+    stands.forEach(o => rangParcours(g, {
+      genre: "stand", id: o.id, dessus: false,
+      titre: nomDeStand(o),
+      detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+      // choisir un rang, c'est vouloir le voir sur le plan : la fiche s'ouvre
+      // et le tiroir se retire, puisqu'ils occupent la même bande
+      ouvre: () => select(o.id, true, "parcours"),
+    }));
+  }
+
+  /* En dernier, et à dessein : ce qui menace la liste se lit après la liste,
+     pas avant. En tête, la mise en garde aurait accueilli chaque ouverture du
+     tiroir par un avertissement, là où le visiteur vient voir ce qu'il a
+     retenu. */
+  poseGardeParcours(hote);
+}
+
+function ouvreParcours(){
+  // la fiche et l'itinéraire occupent la même bande : ils cèdent la place
+  // plutôt que de s'y superposer
+  if ($("detail").classList.contains("open")) ferme();
+  fermeItineraire();
+  remplitParcours();
+  /* Le tiroir se rouvre sur ce qu'on y regardait : consulter une fiche depuis
+     la journée organisée ne doit pas la faire disparaître. */
+  appliqueVueParcours();
+  $("parcours").classList.add("open");
+  $("btnParcours").setAttribute("aria-pressed", "true");
+}
+function fermeParcours(){
+  const t = $("parcours");
+  if (!t || !t.classList.contains("open")) return;
+  t.classList.remove("open");
+  $("btnParcours").setAttribute("aria-pressed", "false");
+}
+
+$("btnParcours").onclick = () =>
+  $("parcours").classList.contains("open") ? fermeParcours() : ouvreParcours();
+$("closeParcours").onclick = fermeParcours;
+
+/**
+ * Tout oublier. Le visiteur le demande par le bouton ci-dessous, après
+ * confirmation ; une borne interactive le fait d'elle-même en se remettant
+ * pour le visiteur suivant, et n'a personne à qui demander.
+ */
+function videLeParcours(){
+  PARCOURS = { stands: [], confs: [] };
+  /* Ce qui attendait son retour part avec le reste : la fenêtre promet que
+     rien ne permettra de les retrouver, et une réserve qui survivrait au
+     vidage ferait mentir la phrase — jusqu'à reparaître le jour où les
+     données reconnaissent à nouveau ce qu'elle gardait. */
+  MIS_DE_COTE = { stands: [], confs: [] };
+  /* La visite organisée n'était que cette liste, mise en jours et en heures :
+     elle s'en va avec elle, et son tracé avec elle — mais pas un itinéraire
+     demandé à côté, qui ne doit rien au parcours. */
+  oublieSejour();
+  /* Les propositions écartées l'ont été sur cette liste-là : une liste vidée
+     repart de zéro, les refus avec elle. */
+  SUGG_ECARTES.clear();
+  SUGG_MONTREES.clear();
+  enregistreParcours();
+  appliqueVueParcours();
+}
+
+$("videParcours").onclick = () => confirme("Vider le parcours",
+  "Les exposants et les conférences retenus seront oubliés. Ils ne sont " +
+  "enregistrés que sur cet appareil : rien ne permettra de les retrouver.",
+  "Vider", videLeParcours);
+
+/* Échap ferme d'abord ce qui est au-dessus : une fenêtre modale se referme sur
+   le tiroir, pas avec lui. */
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("modale").classList.contains("open")) fermeParcours();
+});

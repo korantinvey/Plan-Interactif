@@ -1,0 +1,2130 @@
+/* ============================================================
+   11 ter. Organiser sa visite
+   ============================================================ */
+/**
+ * Le parcours dit ce qu'on veut voir. Il ne dit ni quel jour, ni dans quel
+ * ordre, ni si le temps y suffit — et c'est pourtant là que tout se joue :
+ * douze stands retenus au hasard des allées, deux conférences à heure fixe, et
+ * un visiteur qui repart en ayant traversé quatre fois le même hall sans voir
+ * la moitié de sa liste.
+ *
+ * On lui demande donc deux choses — quels jours il vient, à quelle heure il
+ * arrive — et on range le reste : les conférences sont des rendez-vous qu'on
+ * ne déplace pas, et qui tombent le jour qu'elles tombent ; les stands se
+ * glissent entre elles, et l'ordre retenu est celui qui fait le moins de
+ * chemin. Le temps passé sur un stand ne se devine pas depuis le plan ; c'est
+ * l'exploitant qui le fixe, salon par salon.
+ *
+ * Un salon de trois jours n'est pas trois fois le même salon. Ce qui se
+ * répartit n'est pas la liste en trois tas de taille égale, c'est la marche :
+ * un visiteur qui fait cinq kilomètres le mardi et huit cents mètres le
+ * mercredi n'a pas organisé sa visite, il a rempli son premier jour. On
+ * cherche donc des jours qui se ressemblent — et qui, chacun, tiennent entre
+ * l'ouverture et la fermeture, autour de conférences qu'on ne bouge pas.
+ *
+ * Ce qu'on rend n'est pas une promesse : une conversation s'éternise, une
+ * conférence commence en retard, et l'heure de seize heures ne vaudra plus
+ * rien à quatorze. C'est un ordre de visite, avec des heures qui disent ce
+ * qui tient et ce qui ne tient pas — et que le visiteur reprend à la main dès
+ * qu'il n'est pas d'accord.
+ */
+
+/**
+ * Ce que coûte un changement de pavillon.
+ *
+ * Les données ne disent rien de ce qui relie deux halls — ni passerelle, ni
+ * allée extérieure, ni distance — et l'itinéraire s'y coupe franchement
+ * plutôt que d'inventer un tracé. Ordonner une journée demande pourtant un
+ * prix : sans lui, l'algorithme ferait l'aller-retour entre deux pavillons
+ * comme il change d'allée, et rendrait un programme absurde.
+ *
+ * Ce forfait n'est donc pas une mesure, c'est une dissuasion : plus cher que
+ * n'importe quel détour à l'intérieur d'un seul hall, ce qui suffit à
+ * regrouper les visites pavillon par pavillon. Il ne compte jamais dans la
+ * distance annoncée — celle-ci ne porte que ce qui est tracé, et le dit.
+ */
+const TRANSFERT_M = 300;     // pour ordonner, jamais pour annoncer
+const LIAISON_M = 60;        // quand un passage déclaré joint les deux plans
+const TRANSFERT_MIN = 5;     // ce qu'on réserve dans l'horaire
+
+/**
+ * Ce qu'on accepte de marcher en plus pour que les jours se ressemblent.
+ *
+ * L'écart entre les jours se mesure dans la même unité que ce qu'ils coûtent
+ * (voir `ecartDesJours` et `chargeDuJour`), et se compare donc directement à
+ * un détour. À un, ce serait un échange à parts égales ; c'est trop peu, et
+ * pour une raison qui ne se devine pas.
+ *
+ * Un créneau borné par une conférence ne coûte rien à remplir — il dure ce
+ * qu'il dure, qu'on y visite ou qu'on y patiente. Le jour qui porte une
+ * conférence attire donc tout ce qui peut tenir avant elle, et le jour qui
+ * n'en porte aucune se retrouve avec ce qui reste : quatorze stands d'un côté,
+ * un de l'autre. Le déséquilibre est alors réel, et il faut un poids franc
+ * pour le défaire.
+ *
+ * Quatre suffit, et l'essai le montre sur ce cas-là : au-dessous, la journée
+ * de conférence garde deux ou trois stands de trop ; à quatre, les deux jours
+ * se partagent la liste à un stand près — et la marche totale est au passage
+ * la plus courte de toutes celles qu'on a essayées, l'équilibre ayant mené le
+ * calcul vers un partage plus naturel. Au-delà, plus rien ne s'améliore, et
+ * l'équilibre devient une fin en soi : on se met à traverser le salon pour
+ * égaliser deux totaux qui l'étaient déjà.
+ */
+const EQUILIBRE = 4;
+
+/* L'heure d'arrivée et la répartition voulue, d'une visite à l'autre : celui
+   qui vient deux jours de suite vient rarement à deux heures différentes, et
+   celui qui charge ses premiers jours a ses raisons — un train, un stand à
+   tenir — qui ne changent pas d'un soir à l'autre. */
+const CLE_ARRIVEE = "plan-journee-arrivee";
+const CLE_PENTE = "plan-journee-pente";
+
+/* Le temps d'immobilité du curseur au bout duquel l'aperçu se refait. Un
+   curseur envoie une rafale d'événements pendant qu'on le fait glisser, et
+   chacun demanderait une répartition entière : on laisse passer la rafale, et
+   l'on compte quand la main s'arrête. Deux dixièmes de seconde — le même repos
+   que le nuancier des calques, et pour la même raison. */
+const REPOS_APERCU = 180;
+
+let SEJOUR = null;       // tous les jours calculés, et ce qui n'entre dans aucun
+let JOURNEE = null;      // celui qu'on regarde — un élément de `SEJOUR.jours`
+let vueJournee = false;  // le tiroir montre-t-il la visite ou la liste ?
+
+/**
+ * Ce que le visiteur a placé lui-même.
+ *
+ * Le calcul propose, il ne décide pas : un exposant qu'on veut voir le premier
+ * jour se déplace d'un geste, et ce geste doit tenir. Ces choix vivent hors du
+ * séjour calculé, sinon les refaire les effacerait — or on change souvent
+ * d'heure d'arrivée après avoir rangé deux ou trois stands à la main.
+ */
+const PLACES = new Map();   // identifiant de stand → clé du jour imposé
+
+/**
+ * Les jours qu'on a décochés alors qu'une conférence y était retenue.
+ *
+ * Le jour d'une conférence se coche de lui-même, et à chaque ouverture — mais
+ * il se décoche aussi : on a pris le train du soir, et celle de dix-huit
+ * heures ne s'aura pas. Ce refus-là tient, sans quoi rouvrir la fenêtre pour
+ * changer l'heure d'arrivée recocherait le jour dans le dos du visiteur.
+ */
+const REFUS = new Set();   // clés de jours décochés à la main
+
+/**
+ * La matrice des distances, gardée d'un calcul à l'autre.
+ *
+ * Elle coûte un balayage du hall par arrêt : c'est le gros du calcul, et elle
+ * ne dépend ni des jours retenus ni de l'heure d'arrivée — seulement des
+ * arrêts. Déplacer un stand d'un jour à l'autre la referait pour rien, et le
+ * tiroir clignoterait sur « calcul… » à chaque geste. Une demande franche la
+ * jette (voir `lanceSejour`) : entre-temps, les cloisons du plan ont pu bouger
+ * sous l'exploitant qui le dessine.
+ */
+let MATRICE = null;   // { cle, D }
+
+/* ------------------------------------------------------------
+   Les heures
+   ------------------------------------------------------------ */
+const minutesDe = (d) => d ? (+d.h) * 60 + (+d.min) : null;
+const finInstant = (c) => momentLocal(c.finLocal, DATA.fuseau) || momentLocal(c.fin, DATA.fuseau);
+
+function ecritHeure(m){
+  // une journée qui déborde sur la nuit repasse par zéro plutôt que d'écrire 26h
+  const t = ((Math.round(m) % 1440) + 1440) % 1440;
+  return String(Math.floor(t / 60)).padStart(2, "0") + "h" + String(t % 60).padStart(2, "0");
+}
+function ecritMinutes(m){
+  const t = Math.max(1, Math.round(m));
+  if (t < 60) return t + " min";
+  const h = Math.floor(t / 60), r = t % 60;
+  return h + " h" + (r ? " " + r + " min" : "");
+}
+
+/* ------------------------------------------------------------
+   Les jours
+   ------------------------------------------------------------ */
+/** Une clé de jour — « 20270321 », telle que `momentLocal` la rend — relue en
+ *  date. C'est par elle que les conférences, les horaires et les choix du
+ *  visiteur se rejoignent, sans jamais passer par un fuseau. */
+const dateDeCle = (cle) => /^\d{8}$/.test(String(cle))
+  ? { an: +String(cle).slice(0, 4), mois: +String(cle).slice(4, 6), jour: +String(cle).slice(6, 8) }
+  : null;
+
+/** Le jour en deux mots — « mar. 21 » : un onglet en porte trois de front sur
+ *  un téléphone, ce que « mardi 21 mars » ne permet pas. */
+function jourBref(cle){
+  const d = dateDeCle(cle);
+  if (!d) return "";
+  return JOURS[new Date(d.an, d.mois - 1, d.jour).getDay()].slice(0, 3) + ". " + d.jour;
+}
+
+/** Les jours du salon, dans l'ordre. Ceux que l'exploitant a datés d'abord :
+ *  un salon sans conférence a des jours lui aussi, et c'est parmi eux que le
+ *  visiteur choisit les siens. À défaut, les jours où le programme a quelque
+ *  chose. */
+function joursSalon(){
+  const nomme = (cle) => ({ cle: cle, nom: jourCourt(dateDeCle(cle)), court: jourBref(cle) });
+  const dates = datesSalon();
+  if (dates.length) return dates.map(j => nomme(j.cle));
+  const vus = new Set();
+  CONFS.forEach(c => {
+    const d = instantConf(c);
+    if (d) vus.add(d.cle);
+  });
+  return [...vus].sort().map(nomme);
+}
+
+/**
+ * Les jours qu'on propose : ceux qui restent.
+ *
+ * Proposer hier n'aide personne, et le proposer à un visiteur déjà sur place
+ * ferait douter du reste : un plan qui offre d'organiser une journée révolue
+ * ne sait visiblement pas quel jour on est. La comparaison se fait à l'heure
+ * du salon, non à celle de l'appareil — un plan consulté depuis un autre
+ * fuseau se lit à l'heure du hall, et c'est elle qui dit si le jour est passé.
+ *
+ * Le jour même reste proposé tant que les portes ne sont pas fermées : on
+ * arrive à quatorze heures pour deux conférences de l'après-midi. Une fois
+ * closes, il rejoint les autres — organiser ce qui est fini ne mène à rien.
+ *
+ * Sans heure lisible — fuseau inconnu — on propose tout plutôt que rien : se
+ * tromper de quelques heures vaut mieux que de refuser une visite à qui la
+ * prépare.
+ */
+function joursAVenir(){
+  const jours = joursSalon();
+  const t = heureAuSalon();
+  if (!t) return jours;
+  const fin = horairesSalon(t.cle).fermeture;
+  const maintenant = minutesDe(t);
+  return jours.filter(j => j.cle > t.cle ||
+    (j.cle === t.cle && (fin === null || maintenant < fin)));
+}
+
+/**
+ * Les jours cochés d'avance.
+ *
+ * Ceux où le visiteur a retenu une conférence : il y vient, la question ne se
+ * pose plus. À défaut le premier qui reste — cocher tout le salon répondrait à
+ * sa place, et trois jours proposés d'office feraient trois journées à demi
+ * remplies là où une seule suffisait.
+ */
+function joursDefaut(dispo){
+  const dates = confsParJour();
+  const retenus = dispo.filter(j => dates.has(j.cle));
+  return new Set((retenus.length ? retenus : dispo.slice(0, 1)).map(j => j.cle));
+}
+
+/** Les conférences retenues, rangées par jour. Ce sont elles qui cochent un
+ *  jour d'office, et qui se comptent sous sa case. Une conférence sans date
+ *  n'appartient à aucun jour : elle se dit à la fin du calcul, avec celles
+ *  qu'aucune journée ne porte. */
+function confsParJour(){
+  const m = new Map();
+  PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean).forEach(c => {
+    const d = instantConf(c);
+    if (!d) return;
+    if (!m.has(d.cle)) m.set(d.cle, []);
+    m.get(d.cle).push(c);
+  });
+  return m;
+}
+
+/* ------------------------------------------------------------
+   Les points de la visite
+   ------------------------------------------------------------ */
+/** Là où se tient une conférence : sa zone, qui est un objet du plan. Une
+ *  conférence qui n'en a pas garde son heure et sa place dans la journée —
+ *  on ne sait simplement pas y mener. */
+function pointConf(c){
+  const z = c.zone && parId.get(String(c.zone));
+  return z ? pointObjet(z) : null;
+}
+
+/**
+ * Les départs qu'on propose : les portes par où l'on entre, et rien d'autre.
+ *
+ * La liste offrait tous les repères du salon, entrées en tête. On y lisait
+ * donc « Escalier », « WC », « Distributeur » — des endroits par lesquels on
+ * ne commence pas sa journée, et qui repoussaient les portes hors de l'écran
+ * sur un téléphone. La question posée est « par où vous entrez » : seules les
+ * portes y répondent, et parmi elles, celles qui ne sont pas des sorties
+ * seules.
+ *
+ * Un hall en a plusieurs, souvent nommées pareil : on les numérote alors, à
+ * défaut de pouvoir les distinguer autrement. Les renommer — « Entrée Nord »
+ * — reste le vrai remède, et il appartient à l'exploitant.
+ */
+function departsProposes(){
+  /* Une borne sait où elle est posée : la question n'aurait qu'une réponse, et
+     la poser ferait croire qu'il y en a d'autres. */
+  const borne = pointBorne();
+  if (borne) return [borne];
+  const l = [];
+  DATA.plans.forEach(p => portesDe(p, "entrant").forEach(f => l.push(pointRepere(f, p))));
+  const vus = new Map();
+  l.forEach(pt => vus.set(pt.nom, (vus.get(pt.nom) || 0) + 1));
+  const rang = new Map();
+  l.forEach(pt => {
+    if (vus.get(pt.nom) < 2) return;
+    const n = (rang.get(pt.nom) || 0) + 1;
+    rang.set(pt.nom, n);
+    pt.nom = pt.nom + " " + n;
+  });
+  return l.slice(0, 20);
+}
+
+/**
+ * De chaque arrêt à tous les autres.
+ *
+ * Un balayage en largeur par arrêt, et non un A* par paire : vingt arrêts
+ * font quatre cents paires, et le hall entier coûte moins cher à balayer
+ * qu'un seul chemin à chercher. La longueur obtenue est celle des allées,
+ * sans prix du virage ni du bord — de quoi comparer deux ordres de visite,
+ * ce qu'on lui demande. Le tracé montré au visiteur reste celui de `troncon`.
+ *
+ * Elle se calcule une fois pour tout le séjour, et non une fois par jour : les
+ * arrêts sont les mêmes d'un jour à l'autre, seule leur répartition change.
+ * Trois jours coûteraient sinon trois balayages du salon là où un seul dit
+ * déjà tout.
+ */
+function matriceJournee(pts, pmr){
+  const n = pts.length;
+  const D = [];
+  for (let i = 0; i < n; i++) D.push(new Float64Array(n));
+  /* Un arrêt qu'aucune allée n'atteint — un stand enclavé, un repère posé
+     dans un mur — ne doit pas sortir de la journée pour autant : on retombe
+     sur la distance à vol d'oiseau, majorée du détour qu'une allée impose. */
+  const volDoiseau = (a, b) => Math.hypot(a.xy[0] - b.xy[0], a.xy[1] - b.xy[1]) * 1.3;
+
+  const parPlan = new Map();
+  pts.forEach((pt, i) => {
+    if (!pt) return;
+    if (!parPlan.has(pt.p)) parPlan.set(pt.p, []);
+    parPlan.get(pt.p).push(i);
+  });
+
+  /* Ce qui sépare un arrêt de la sortie la plus proche de son plan : c'est
+     par là que passe tout trajet vers un autre — la porte du hall, ou
+     l'escalier qui monte à l'étage. */
+  const auxPortes = new Float64Array(n);
+  const relies = plansRelies(pmr);
+
+  parPlan.forEach((idx, ip) => {
+    const p = DATA.plans[ip];
+    const g = grille(p, pmr);
+    // l'emprise de l'arrêt : on n'accroche pas une allée à travers un voisin
+    const cases = idx.map(i => accroche(g, pts[i].xy, pts[i].d));
+    const portes = sortiesDe(p, pmr).map(f => accroche(g, f.pts[0]))
+      .filter(c => c >= 0 && g.nappe[c]);
+    idx.forEach((i, k) => {
+      const d = distancesDepuis(g, cases[k]);
+      idx.forEach((j, l) => {
+        if (j === i) return;
+        const c = cases[l];
+        D[i][j] = (c >= 0 && d[c] >= 0) ? d[c] * PAS_GRILLE : volDoiseau(pts[i], pts[j]);
+      });
+      let mieux = -1;
+      portes.forEach(c => { if (d[c] >= 0 && (mieux < 0 || d[c] < mieux)) mieux = d[c]; });
+      auxPortes[i] = mieux >= 0 ? mieux * PAS_GRILLE : 0;
+    });
+  });
+
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++){
+    if (i === j || !pts[i] || !pts[j] || pts[i].p === pts[j].p) continue;
+    /* Deux plans qu'un passage joint ne sont pas deux pavillons éloignés : le
+       premier étage se rejoint par son escalier, et l'ordre de visite doit
+       pouvoir y monter puis redescendre sans que le calcul le lui compte
+       comme une traversée du salon. */
+    const forfait = relies.has(pts[i].p + "|" + pts[j].p) ? LIAISON_M : TRANSFERT_M;
+    D[i][j] = auxPortes[i] + forfait + auxPortes[j];
+  }
+  return D;
+}
+
+/* ------------------------------------------------------------
+   L'ordre de visite, et la répartition sur les jours
+   ------------------------------------------------------------ */
+/**
+ * Ranger les stands entre les conférences, et les conférences sur leurs jours.
+ *
+ * Le problème est celui du voyageur de commerce, avec des rendez-vous en
+ * plus : l'ordre exact demanderait d'essayer toutes les permutations, et
+ * vingt stands en font deux milliards de milliards. On construit donc au plus
+ * juste — à chaque tour, le stand dont l'insertion coûte le moins, là où elle
+ * tient — puis on reprend l'ensemble par trois mouvements qui rattrapent
+ * l'essentiel : retourner un morceau de créneau, déplacer un arrêt ailleurs,
+ * et échanger deux arrêts de deux jours différents.
+ *
+ * Reste à dire ce que « coûter » veut dire, et c'est là que la première
+ * version se trompait. Elle ne comptait que les mètres. Or un créneau qui se
+ * termine sur une conférence dure ce qu'il dure, qu'on le remplisse ou non :
+ * y glisser un stand ne coûtait donc rien de plus qu'ailleurs en distance, et
+ * le calcul les entassait après la dernière conférence, où chaque insertion
+ * se payait au plus court. Le visiteur se retrouvait avec deux heures
+ * trente-neuf à patienter devant une salle, et six stands à voir ensuite.
+ *
+ * Compter le temps mort comme la marche — une minute d'attente valant une
+ * minute de marche — rapprochait du but sans y être : dans un créneau qui a
+ * du mou, les minutes de marche se retranchent exactement aux minutes
+ * d'attente, et la distance s'annule. Le coût d'une insertion valait alors
+ * « moins une visite », quel que soit le détour : tous les candidats faisaient
+ * match nul et c'est le premier rencontré qui l'emportait. Les creux se
+ * remplissaient, mais l'ordre à l'intérieur ne devait plus rien au chemin.
+ *
+ * On sépare donc les deux questions, parce que ce sont deux questions :
+ *
+ *   Ce qui pèse d'abord, c'est ce qui tombe après le dernier rendez-vous. Un
+ *   créneau borné dure ce qu'il dure ; tout ce qu'on n'y met pas s'ajoute à
+ *   la fin de la journée et rallonge l'attente d'autant. Un stand posé dans
+ *   le créneau ouvert coûte donc le temps de sa visite, converti en mètres.
+ *
+ *   Ce qui départage ensuite, c'est la distance, et elle seule — un créneau
+ *   borné ne coûte plus que ses mètres, l'attente n'y étant que ce qui reste.
+ *
+ * Le forfait n'est pas infranchissable, et c'est voulu : traverser deux
+ * pavillons pour combler vingt minutes de creux n'a rien d'un progrès. Il
+ * vaut ce que vaut la visite qu'on déplace, et un détour plus cher qu'elle
+ * l'emporte.
+ *
+ * Plusieurs jours n'ajoutent qu'une chose à tout cela : les créneaux ne sont
+ * plus ceux d'une journée mais ceux de toutes, et un stand se pose dans
+ * n'importe lequel. Une seule différence de fond — un stand posé le mardi
+ * n'est pas un stand posé le mercredi, même à distance égale, parce qu'une
+ * visite se juge aussi sur l'équilibre de ses jours. D'où le compte ci-dessous.
+ *
+ * Un stand qui ne tient nulle part reste dehors et se dit : mieux vaut une
+ * liste courte et vraie qu'un programme intenable.
+ */
+
+/**
+ * L'écart entre les jours, dans la même unité que ce qu'on lui donne.
+ *
+ * On veut un nombre, pas un discours : quelque chose qu'on puisse ajouter au
+ * total et comparer à un détour. La somme des carrés divisée par la somme
+ * vaut exactement la moyenne quand tous les jours se valent, et la dépasse
+ * d'autant qu'ils s'écartent ; leur différence est donc une grandeur de même
+ * nature que les charges qu'on compare, et nulle sur une visite équilibrée.
+ *
+ * Elle a la bonne pente, aussi : soulager le jour le plus lourd la fait
+ * descendre vite, soulager un jour déjà léger ne la fait presque pas bouger.
+ * C'est ce qu'on veut d'un rééquilibrage — qu'il s'occupe du jour qui fatigue.
+ *
+ * Un seul jour : elle vaut zéro, et le calcul retombe exactement sur celui
+ * d'avant. Une visite d'un jour ne paie rien pour une mécanique qui ne la
+ * concerne pas.
+ */
+function ecartDesJours(charges, poids){
+  let somme = 0, pesee = 0, rapportes = 0;
+  for (let i = 0; i < charges.length; i++){
+    const w = poids && poids[i] > 0 ? poids[i] : 1;
+    somme += charges[i];
+    pesee += w;
+    rapportes += charges[i] * charges[i] / w;
+  }
+  return somme > 0 ? rapportes / somme - somme / pesee : 0;
+}
+
+/**
+ * Ce que chaque jour doit porter, les uns par rapport aux autres.
+ *
+ * « Égaux » n'est pas toujours ce qu'on veut. On arrive le premier jour avec
+ * de l'élan et l'envie d'avancer, et le dernier se finit souvent par un train
+ * à prendre ; à l'inverse, un visiteur qui n'arrive qu'à midi le premier jour
+ * préfère charger les suivants. Un curseur dit lequel, et se lit ici en un
+ * poids par jour : le calcul vise alors des charges proportionnelles à ces
+ * poids plutôt qu'égales, ce qui est la même chose quand ils valent tous un.
+ *
+ * L'amplitude est bornée, et ce n'est pas de la timidité : à poids nul, un
+ * jour retenu se viderait entièrement — or le visiteur a dit qu'il venait ce
+ * jour-là, et un programme vide n'est pas une réponse. Du simple au quadruple
+ * entre le premier et le dernier est déjà une pente franche.
+ */
+const PENTE_MAX = 0.6;
+/* La pente va de -1 à +1, dans le sens où on la fait glisser : à gauche, les
+   premiers jours portent plus ; à droite, les derniers. Le signe suit donc le
+   curseur, et non l'intuition arithmétique — c'est le curseur qu'on lit. */
+function poidsDesJours(n, pente){
+  const l = [];
+  for (let i = 0; i < n; i++)
+    l.push(n > 1 ? 1 - (pente || 0) * PENTE_MAX * (1 - 2 * i / (n - 1)) : 1);
+  return l;
+}
+
+/**
+ * Ce qu'une journée coûte au visiteur, en mètres.
+ *
+ * La marche, et les visites — car ce qui pèse dans une journée de salon, ce
+ * n'est pas que le chemin : vingt minutes par stand, et douze stands font
+ * quatre heures là où l'allée qui les relie en fait vingt minutes. Équilibrer
+ * les seuls mètres laissait donc passer une journée de quatorze stands en face
+ * d'une journée d'un seul, parce que leurs distances, elles, se ressemblaient —
+ * et c'est arrivé dès qu'un jour portait une conférence et l'autre non : le
+ * créneau borné du premier accueillait tout, l'autre restait vide.
+ *
+ * Une visite se compte donc en mètres elle aussi, au pas de marche : c'est
+ * déjà la conversion dont se sert le forfait du dernier créneau, et elle rend
+ * les deux grandeurs additionnables. À nombre de stands égal, l'écart ne
+ * départage plus que les distances — ce qu'on lui demande d'abord.
+ */
+const chargeDuJour = (m, n, visiteEnMetres) => m + visiteEnMetres * n;
+
+/**
+ * La répartition, puis l'ordre.
+ *
+ * `jours` porte les créneaux de chacun — les intervalles entre rendez-vous —,
+ * `restants` les stands à poser, et `imposeDe` ceux que le visiteur a lui-même
+ * placés : ils ne vont que là où il l'a dit.
+ */
+function rangeSejour(jours, restants, dist, tempsCreneau, visiteEnMetres, imposeDe){
+  const creneaux = [];
+  jours.forEach(j => j.creneaux.forEach(c => { c.jour = j; creneaux.push(c); }));
+
+  const mesureCreneau = (c) => {
+    let m = 0, prec = c.de;
+    for (const s of c.stands){ m += dist(prec, s); prec = s; }
+    return m + dist(prec, c.vers);
+  };
+
+  /**
+   * Ce qu'un créneau coûte, en mètres.
+   *
+   * Le dernier de la journée ne bute sur rien, sinon la fermeture du salon
+   * quand elle est connue : ce qu'on y met retarde la journée d'autant, et
+   * chaque stand y porte le forfait. Les autres butent sur une conférence et
+   * ne coûtent que leur chemin — ce qu'ils ne remplissent pas se passe à
+   * patienter, ce dont le forfait rend déjà compte de l'autre côté.
+   */
+  const coutCreneau = (c) => c.dernier ? c.m + visiteEnMetres * c.stands.length : c.m;
+
+  /**
+   * Un créneau qui déborde sur son rendez-vous.
+   *
+   * Ce n'est pas un arrangement cher, c'en est un impossible : il se refuse,
+   * il ne se paie pas. La première version lui donnait un coût infini, ce qui
+   * revenait au même sur une seule journée — mais sur plusieurs, un jour rendu
+   * intenable par ses seules conférences emportait le séjour entier dans son
+   * infini, et plus rien ne se posait nulle part. Le refus se prononce donc
+   * sur le créneau qu'on touche, et le compte du séjour reste un nombre.
+   */
+  const deborde = (c) => c.tMax !== null &&
+    c.t0 + tempsCreneau(c, c.m, c.stands.length) > c.tMax;
+
+  /* Un créneau vient de changer : lui et son jour se remettent d'accord. Les
+     totaux se tiennent à jour de proche en proche — les refaire en entier à
+     chaque essai coûterait le tour de tous les créneaux pour un stand
+     déplacé d'un cran. */
+  const remet = (c) => {
+    const m = c.m, cout = c.cout, n = c.n;
+    c.m = mesureCreneau(c);
+    c.n = c.stands.length;
+    c.cout = coutCreneau(c);
+    c.jour.m += c.m - m;
+    c.jour.n += c.n - n;
+    c.jour.cout += c.cout - cout;
+  };
+  creneaux.forEach(c => { c.m = 0; c.cout = 0; c.n = 0; });
+  jours.forEach(j => { j.m = 0; j.cout = 0; j.n = 0; });
+  creneaux.forEach(remet);
+
+  /* Les mètres du séjour, sans son équilibre : ce qu'on marche, en tout. */
+  const metres = () => {
+    let t = 0;
+    for (const j of jours) t += j.cout;
+    return t;
+  };
+
+  /**
+   * Le séjour chiffré, un jour pris autrement.
+   *
+   * `sauf` permet de chiffrer ce que serait le séjour si ce jour-là mesurait
+   * autre chose, sans rien déplacer : la recherche essaie chaque stand à
+   * chaque place de chaque créneau de chaque jour, et se refait à chaque
+   * stand posé — poser puis défaire pour comparer coûterait un ordre de
+   * grandeur de plus.
+   */
+  /* La répartition visée : celle que le curseur a dite, ou l'égalité. */
+  const poids = jours.map(j => j.poids > 0 ? j.poids : 1);
+  /* L'écart se débraye le temps d'un départ — voir les deux essais, plus bas.
+     Il pèse toujours, lui, dans le compte qui les départage. */
+  let peseEcart = true;
+  const total = (sauf, m, cout, n) => {
+    const charges = [];
+    let t = 0;
+    for (const j of jours){
+      charges.push(chargeDuJour(j === sauf ? m : j.m, j === sauf ? n : j.n, visiteEnMetres));
+      t += j === sauf ? cout : j.cout;
+    }
+    return t + (peseEcart ? EQUILIBRE * ecartDesJours(charges, poids) : 0);
+  };
+
+  /* Ce qu'insérer un stand à une place ajoute au créneau : deux distances
+     gagnées contre une perdue. */
+  const ecartInsertion = (c, s, k) => {
+    const prec = k === 0 ? c.de : c.stands[k - 1];
+    const suiv = k === c.stands.length ? c.vers : c.stands[k];
+    return dist(prec, s) + dist(s, suiv) - dist(prec, suiv);
+  };
+
+  /* Poser ce qui reste, au meilleur endroit où cela tient — tous jours
+     confondus. Rend le nombre de stands posés : une reprise qui raccourcit un
+     créneau borné peut y libérer la place d'un stand refusé au premier
+     passage. */
+  const insere = (candidats) => {
+    let poses = 0;
+    while (candidats.length){
+      let choix = null;
+      for (const s of candidats){
+        const impose = imposeDe ? imposeDe(s) : null;
+        for (const c of (impose ? impose.creneaux : creneaux)){
+          const j = c.jour;
+          for (let k = 0; k <= c.stands.length; k++){
+            const d = ecartInsertion(c, s, k);
+            const m = c.m + d, n = c.stands.length + 1;
+            if (c.tMax !== null && c.t0 + tempsCreneau(c, m, n) > c.tMax) continue;
+            const t = total(j, j.m + d,
+                            j.cout + d + (c.dernier ? visiteEnMetres : 0), j.n + 1);
+            if (!choix || t < choix.t) choix = { t: t, c: c, k: k, s: s };
+          }
+        }
+      }
+      if (!choix) break;
+      choix.c.stands.splice(choix.k, 0, choix.s);
+      remet(choix.c);
+      candidats.splice(candidats.indexOf(choix.s), 1);
+      poses++;
+    }
+    return poses;
+  };
+
+  /**
+   * Deux façons de juger, parce que ce sont deux questions.
+   *
+   * Changer un stand de jour, c'est répartir : l'écart entre les jours compte
+   * avec les mètres, et c'est tout l'objet du calcul.
+   *
+   * Ranger autrement les stands d'un même jour, c'est ordonner : seuls les
+   * mètres comptent. Leur opposer l'écart aurait un effet absurde — refuser de
+   * raccourcir le jour le plus court sous prétexte que cela l'éloignerait des
+   * autres. Marcher moins n'est jamais un tort ; c'est marcher plus d'un côté
+   * que de l'autre qui en est un.
+   */
+  const reprend = (tours) => {
+    for (let tour = 0; tour < tours; tour++){
+      let gagne = false;
+
+      /* Retourner un morceau de créneau. L'ordre change, le jour ne change
+         pas : on juge sur les seuls mètres. */
+      for (const c of creneaux){
+        for (let i = 0; i < c.stands.length - 1; i++){
+          for (let k = i + 1; k < c.stands.length; k++){
+            const avant = metres(), debordait = deborde(c);
+            const copie = c.stands.slice();
+            c.stands.splice(i, k - i + 1, ...c.stands.slice(i, k + 1).reverse());
+            remet(c);
+            /* Un créneau qui débordait déjà garde le droit de raccourcir : le
+               refuser l'enfermerait dans l'ordre où on l'a trouvé. */
+            if (metres() < avant - 1e-9 && (debordait || !deborde(c))) gagne = true;
+            else { c.stands = copie; remet(c); }
+          }
+        }
+      }
+
+      /* Déplacer un arrêt ailleurs — dans un autre créneau du même jour, ou
+         dans un autre jour. C'est le mouvement qui répartit, et le seul. */
+      for (const c of creneaux){
+        for (let i = 0; i < c.stands.length; i++){
+          const s = c.stands[i];
+          const impose = imposeDe ? imposeDe(s) : null;
+          const avantM = metres(), avantT = total(), debordait = deborde(c);
+          c.stands.splice(i, 1);
+          remet(c);
+          let mieux = null;
+          for (const d of (impose ? impose.creneaux : creneaux)){
+            const meme = d.jour === c.jour;
+            const base = meme ? avantM : avantT;
+            for (let k = 0; k <= d.stands.length; k++){
+              const e = ecartInsertion(d, s, k);
+              const m = d.m + e, n = d.stands.length + 1;
+              if (d.tMax !== null && d.t0 + tempsCreneau(d, m, n) > d.tMax &&
+                  !(d === c && debordait)) continue;
+              const j = d.jour;
+              const note = meme
+                ? metres() + e + (d.dernier ? visiteEnMetres : 0)
+                : total(j, j.m + e, j.cout + e + (d.dernier ? visiteEnMetres : 0), j.n + 1);
+              /* Les gains des deux questions ne se comparent pas entre eux :
+                 on retient le meilleur de chaque camp au fil de la boucle, et
+                 c'est le premier trouvé qui l'emporte à égalité — un
+                 déplacement dans la journée avant un changement de jour, donc
+                 le moins surprenant des deux. */
+              if (note < base - 1e-9 && (!mieux || note - base < mieux.gain))
+                mieux = { gain: note - base, d: d, k: k };
+            }
+          }
+          if (mieux){ mieux.d.stands.splice(mieux.k, 0, s); remet(mieux.d); gagne = true; }
+          else { c.stands.splice(i, 0, s); remet(c); }
+        }
+      }
+
+      /* Échanger deux arrêts de deux jours différents.
+     
+         Quand chaque jour est plein, plus rien ne se déplace tout seul : le
+         créneau d'arrivée déborderait. C'est pourtant là que l'écart se creuse
+         — un jour chargé de stands lointains, l'autre d'une poignée de stands
+         voisins — et l'échange est le seul mouvement qui le réduise encore.
+         Chacun prend la place de l'autre ; le retournement du tour suivant
+         remet l'ordre d'aplomb. */
+      if (jours.length > 1) for (const a of creneaux) for (const b of creneaux){
+        if (a.jour === b.jour) continue;
+        for (let i = 0; i < a.stands.length; i++){
+          for (let k = 0; k < b.stands.length; k++){
+            const s = a.stands[i], u = b.stands[k];
+            if (imposeDe && (imposeDe(s) || imposeDe(u))) continue;
+            const avant = total();
+            a.stands[i] = u; b.stands[k] = s;
+            remet(a); remet(b);
+            if (!deborde(a) && !deborde(b) && total() < avant - 1e-9) gagne = true;
+            else { a.stands[i] = s; b.stands[k] = u; remet(a); remet(b); }
+          }
+        }
+      }
+
+      if (!gagne) break;
+    }
+  };
+
+  /* Ce que le visiteur a placé lui-même passe d'abord : il choisit son jour,
+     le calcul choisit la place. Ce qui ne tient pas le jour dit reste dehors
+     plutôt que de partir ailleurs — on ne déplace pas de son propre chef ce
+     qu'on vient de nous demander de placer là, on le dit. */
+  const imposes = imposeDe ? restants.filter(s => imposeDe(s)) : [];
+  const libres = imposeDe ? restants.filter(s => !imposeDe(s)) : restants.slice();
+
+  /* Les reprises coûtent le carré du nombre d'arrêts d'un créneau, et se
+     refont à chaque tour : trois cents exposants retenus y passeraient une
+     minute sur un téléphone de salon. On borne donc les tours par la taille
+     du problème — une liste ordinaire les a tous, une liste démesurée
+     s'arrête quand l'essentiel est pris. */
+  const tours = Math.max(3, Math.min(30,
+    Math.round(900 / Math.max(1, imposes.length + libres.length))));
+
+  /**
+   * Deux départs plutôt qu'un.
+   *
+   * La construction au plus juste pose les stands un par un, et l'ordre dans
+   * lequel elle les pose dépend de ce qu'elle compte. Compter l'écart dès la
+   * pose oriente donc la recherche dès le premier stand — et pas toujours du
+   * bon côté : mesuré sur dix stands d'un pavillon du plan SMCL, l'arrangement
+   * ainsi construit faisait cinq cent trente-huit mètres là où le meilleur
+   * partage cinq-cinq en fait quatre cent quatre-vingt-dix. Dix pour cent de
+   * marche en trop, sans un gramme d'équilibre en plus : les deux journées
+   * étaient même un peu moins semblables. Les reprises ne l'en sortaient pas
+   * — il aurait fallu échanger trois stands à la fois, et chaque échange pris
+   *   seul aggrave.
+   *
+   * On part donc deux fois. Une fois en comptant l'écart dès la pose, une fois
+   * en ne comptant que les mètres — l'équilibre ne revenant qu'aux reprises,
+   * qui savent, elles, déplacer et échanger. Les deux arrangements sont ensuite
+   * jugés au même aune, l'écart compris, et le meilleur l'emporte. Sur l'essai
+   * ci-dessus, le second rend exactement le meilleur partage cinq-cinq.
+   *
+   * Cela double le temps de la recherche, non celui du calcul : la matrice,
+   * qui en est le gros, est bâtie une fois et sert aux deux.
+   */
+  const etat = () => creneaux.map(c => c.stands.slice());
+  const remonte = (e) => {
+    creneaux.forEach((c, i) => { c.stands = e[i].slice(); });
+    creneaux.forEach(remet);
+  };
+
+  const essai = (ecartALaPose) => {
+    creneaux.forEach(c => { c.stands = []; });
+    creneaux.forEach(remet);
+    const dehorsImposes = imposes.slice(), dehorsLibres = libres.slice();
+    peseEcart = ecartALaPose;
+    if (dehorsImposes.length) insere(dehorsImposes);
+    insere(dehorsLibres);
+    peseEcart = true;
+    reprend(tours);
+    /* Sans heure de fermeture, tout finit posé au premier passage et la boucle
+       ne tourne pas. Avec, un créneau que les reprises ont raccourci peut
+       accueillir ce qu'on avait laissé dehors : on y revient, quelques fois
+       au plus, tant que cela pose quelque chose. */
+    for (let passe = 0; passe < 3 && dehorsLibres.length && insere(dehorsLibres); passe++)
+      reprend(tours);
+    return { note: total(), etat: etat(), dehors: dehorsImposes.concat(dehorsLibres) };
+  };
+
+  const avec = essai(true);
+  /* Un seul jour n'a pas d'écart à compter : le second départ rendrait le
+     premier, au mot près, et coûterait le double pour rien. */
+  const sans = jours.length > 1 ? essai(false) : avec;
+  /* À égalité, celui qui comptait l'écart dès la pose : c'est le calcul
+     qu'on décrit partout ailleurs, et le second n'est là que s'il fait mieux.
+     Un stand de moins laissé dehors l'emporte sur des mètres, toujours : une
+     visite plus courte parce qu'on y voit moins n'est pas plus courte. */
+  const mieux = sans.dehors.length < avec.dehors.length ||
+                (sans.dehors.length === avec.dehors.length && sans.note < avec.note - 1e-9);
+  const gagnant = mieux ? sans : avec;
+  remonte(gagnant.etat);
+
+  /* Ce qui n'a trouvé sa place nulle part. Les imposés en tête : ils n'ont pas
+     tenu là où on les voulait, ce qui ne se dit pas comme le reste. */
+  restants.length = 0;
+  restants.push(...gagnant.dehors);
+  return restants;
+}
+
+/* ------------------------------------------------------------
+   Le séjour, calculé
+   ------------------------------------------------------------ */
+/**
+ * Le déroulé d'un jour, une fois ses stands connus.
+ *
+ * L'ordre est arrêté ; on le traduit en heures et en tronçons. Les mètres
+ * annoncés sont ceux du tracé, pas ceux de la matrice — c'est le trait que le
+ * visiteur suivra, et non le barème qui a servi à ranger.
+ */
+function derouleJournee(j, ctx){
+  const PTS = ctx.PTS, dist = ctx.dist, enMinutes = ctx.enMinutes, tv = ctx.tv;
+  const etapes = [], arrets = [], trace = [], retards = [];
+  let t = j.arrivee, m = 0, coupe = false, rang = 0;
+
+  /**
+   * D'un arrêt au suivant.
+   *
+   * C'est le même calcul que le trajet d'un point à un autre, et pour la même
+   * raison : un escalier déclaré fait continuer la journée à l'étage au lieu
+   * de la couper au bord du plan. Un trajet en plusieurs morceaux donne
+   * plusieurs lignes dans le déroulé — on marche, on prend l'escalier, on
+   * marche encore — car c'est bien ce que le visiteur fera.
+   */
+  const rejoint = (a, b) => {
+    if (a < 0 || b < 0 || !PTS[a] || !PTS[b]) return;
+    const r = routeEntre(PTS[a], PTS[b], ctx.pmr);
+    if (r.coupe) coupe = true;
+    for (const e of r.etapes){
+      trace.push(e);
+      if (e.genre === "marche"){
+        etapes.push({ genre: "marche", m: e.m, min: enMinutes(e.m), trace: true });
+        t += enMinutes(e.m);
+        m += e.m;
+      } else if (e.genre === "liaison"){
+        /* Le temps du passage est celui que l'exploitant a fixé pour ce
+           couple-là : la journée le réserve dans l'horaire, comme elle
+           réserve le temps de marche. */
+        etapes.push(e);
+        t += e.min || 0;
+      } else {
+        etapes.push({ genre: "transfert", de: e.de, vers: e.vers, min: TRANSFERT_MIN });
+        t += TRANSFERT_MIN;
+      }
+    }
+    /* Rien de tracé alors que les deux arrêts partagent leur plan : un stand
+       enclavé, une allée introuvable. La matrice, elle, a une distance — celle
+       qui a servi à ranger la journée — et l'annoncer vaut mieux que de
+       laisser croire à un pas de porte. Entre deux plans elle porterait le
+       forfait de dissuasion, qui n'a jamais sa place dans les mètres
+       annoncés : on n'ajoute alors rien. */
+    if (PTS[a].p === PTS[b].p && !r.etapes.some(e => e.genre === "marche")){
+      const l = dist(a, b);
+      etapes.push({ genre: "marche", m: l, min: enMinutes(l), trace: false });
+      t += enMinutes(l);
+      m += l;
+    }
+  };
+
+  const pose = (i, conf) => {
+    rang++;
+    if (PTS[i]) arrets.push({ p: PTS[i].p, xy: PTS[i].xy, n: String(rang), conf: !!conf });
+    return rang;
+  };
+
+  if (ctx.iDepart >= 0){
+    arrets.push({ p: PTS[ctx.iDepart].p, xy: PTS[ctx.iDepart].xy, n: "", depart: true });
+    etapes.push({ genre: "depart", nom: ctx.depart.nom, detail: ctx.depart.detail, t: t });
+  }
+
+  let ou = ctx.iDepart;
+  j.creneaux.forEach((c, k) => {
+    c.stands.forEach(s => {
+      /* Le rangement a jugé sur la matrice, qui ignore le prix des virages et
+         des escaliers : le tracé réel peut coûter quelques minutes de plus,
+         et faire passer la dernière visite après la fermeture. On ne la
+         programme pas pour autant — on défait le trajet qui y menait, et le
+         stand rejoint ce qui n'a pas trouvé sa place. */
+      const avant = { e: etapes.length, tr: trace.length, t: t, m: m, coupe: coupe };
+      rejoint(ou, s);
+      if (j.fermeture !== null && t + tv > j.fermeture){
+        etapes.length = avant.e; trace.length = avant.tr;
+        t = avant.t; m = avant.m; coupe = avant.coupe;
+        ctx.restants.push(s);
+        return;
+      }
+      const n = pose(s, false);
+      etapes.push({ genre: "stand", n: n, o: parId.get(PTS[s].id), pt: PTS[s], t0: t, t1: t + tv });
+      t += tv;
+      ou = s;
+    });
+    const r = j.rdv[k];
+    if (!r) return;
+    rejoint(ou, r.i);
+    const arrive = t;                       // l'heure qu'il serait vraiment
+    if (arrive > r.t0 + 1) retards.push({ c: r.c, min: arrive - r.t0 });
+    /* Un creux avant le premier rendez-vous n'est pas de même nature que les
+       autres : ceux du milieu de journée sont pris entre deux choses fixes,
+       celui-là ne tient qu'à l'heure qu'on a dite en arrivant. Le visiteur
+       peut donc s'en débarrasser tout seul, et c'est la seule chose utile à
+       lui dire — le total, lui, ne changera pas d'un pouce. */
+    else if (arrive < r.t0) etapes.push({ genre: "attente", min: r.t0 - arrive,
+                                          premier: k === 0 });
+    const n = pose(r.i, true);
+    /* Le retard voyage avec la conférence : la ligne garde l'heure du
+       programme — c'est elle qui est affichée partout ailleurs — et dit à
+       côté celle où l'on y serait vraiment. Une alerte en bas de tiroir se
+       lit trop tard pour la ligne qu'elle concerne. */
+    etapes.push({ genre: "conf", n: n, c: r.c, pt: r.pt, t0: r.t0, t1: r.t1,
+                  retard: Math.max(0, arrive - r.t0) });
+    /* La conférence garde ses heures — ce sont celles du programme — mais
+       l'horloge du visiteur, elle, ne remonte pas : arriver après la fin
+       d'une séance n'est pas y assister, et la suite de la journée part de
+       l'heure qu'il est, non de celle qu'on aurait aimé. */
+    t = Math.max(arrive, r.t1);
+    /* Une conférence dont la salle n'est rattachée à aucune zone ne dit pas
+       où l'on se trouve après elle : on repart du dernier endroit connu,
+       sans quoi le trajet suivant — un changement de pavillon, souvent —
+       disparaîtrait du déroulé sans un mot. */
+    if (r.pt) ou = r.i;
+  });
+
+  j.fin = t;
+  /* Les mètres du jour, désormais ceux du tracé : ceux de la matrice ont fait
+     leur office en rangeant, et portaient un forfait qui n'est pas une
+     distance. C'est ce nombre que l'onglet du jour affiche. */
+  j.m = m;
+  j.coupe = coupe;
+  j.etapes = etapes;
+  j.arrets = arrets;
+  j.trace = trace;
+  j.nArrets = rang;
+  /* Les exposants que ce jour porte : c'est la question que pose le visiteur
+     en voulant en déplacer un — où est-il tombé ? */
+  j.ids = new Set(etapes.filter(e => e.genre === "stand" && e.o).map(e => String(e.o.id)));
+  j.retards = retards;
+  /* De quoi expliquer un creux plutôt que de le laisser sans réponse : ce
+     qu'on attend en tout, et ce qui reste programmé après le dernier
+     rendez-vous — les deux ensemble disent si l'attente était évitable. */
+  j.attente = etapes.reduce((a, e) => a + (e.genre === "attente" ? e.min : 0), 0);
+  j.tardifs = j.creneaux[j.creneaux.length - 1].stands.length;
+  return j;
+}
+
+/**
+ * Répartir, sans encore dérouler.
+ *
+ * C'est la moitié coûteuse du calcul — la matrice et le rangement — et c'est
+ * aussi la seule dont l'aperçu du curseur a besoin : pour dire combien chaque
+ * jour porte, il n'est pas utile de tracer les trajets ni d'écrire les heures.
+ * Les deux chemins passent donc par ici, et le second continue seul.
+ */
+function prepareSejour(choix, fige){
+  const pmr = ITI.pmr;
+  const tv = minutesVisite();
+  const allure = pmr ? ALLURE_PMR : ALLURE;
+  const enMinutes = (m) => m / (allure * 60);
+
+  const stands = PARCOURS.stands.map(id => parId.get(id)).filter(Boolean);
+  const horsJour = [], sansLieu = [];
+
+  /* Les conférences retenues, rangées par date. Une conférence ne se déplace
+     pas : celle qui tombe un jour qu'on ne vient pas se dit plutôt que de se
+     programmer un autre jour, où elle n'a pas lieu. */
+  const parJour = new Map(choix.jours.map(j => [j.cle, []]));
+  PARCOURS.confs.map(id => CONFS.get(id)).filter(Boolean)
+    .map(c => ({ c: c, d: instantConf(c), f: finInstant(c) }))
+    .sort((a, b) => cleTemps(a.c).localeCompare(cleTemps(b.c)))
+    .forEach(x => {
+      if (!x.d || !parJour.has(x.d.cle)){ horsJour.push(x.c); return; }
+      parJour.get(x.d.cle).push(x);
+    });
+
+  /* Les heures du salon, jour par jour. Arriver avant l'ouverture n'avance
+     rien : la journée part de l'heure où les portes s'ouvrent, et le déroulé
+     le dit plutôt que de programmer un stand devant un rideau baissé. La
+     fermeture borne le dernier créneau comme une conférence borne les autres.
+     Un salon change d'horaires d'un jour à l'autre — le dernier ferme plus
+     tôt —, et c'est bien par jour que la question se pose. */
+  const poids = poidsDesJours(choix.jours.length, choix.pente);
+  const jours = choix.jours.map((x, i) => {
+    const h = horairesSalon(x.cle);
+    const avantOuverture = h.ouverture !== null && choix.arrivee < h.ouverture;
+    return {
+      cle: x.cle, nom: x.nom, court: x.court || jourBref(x.cle),
+      ouverture: h.ouverture, fermeture: h.fermeture, poids: poids[i],
+      demandee: choix.arrivee, avantOuverture: avantOuverture,
+      arrivee: avantOuverture ? h.ouverture : choix.arrivee,
+      rdv: [], creneaux: [], passees: [], chevauchent: [],
+    };
+  });
+
+  jours.forEach(j => {
+    let finPrec = -Infinity;
+    (parJour.get(j.cle) || []).forEach(x => {
+      const t0 = minutesDe(x.d);
+      /* Une conférence commencée avant l'arrivée n'est plus un rendez-vous :
+         on ne la fait pas manquer, on la dit manquée. */
+      if (t0 < j.arrivee){ j.passees.push(x.c); return; }
+      /* Deux conférences qui se recouvrent ne se suivent pas : on ne peut pas
+         assister aux deux, et les enchaîner ferait une journée qui remonte le
+         temps. On garde celle qui commence la première — retenue plus tôt dans
+         la liste, elle est aussi celle qu'on peut encore attraper — et on dit
+         l'autre plutôt que de la programmer pour rien. */
+      if (t0 < finPrec){ j.chevauchent.push(x.c); return; }
+      const pt = pointConf(x.c);
+      if (!pt) sansLieu.push(x.c);
+      /* Sans heure de fin, on compte une heure : enchaîner aussitôt ferait un
+         programme faux, et attendre la journée entière un programme vide. */
+      const t1 = x.f ? Math.max(t0 + 5, minutesDe(x.f)) : t0 + 60;
+      j.rdv.push({ c: x.c, pt: pt, t0: t0, t1: t1 });
+      finPrec = t1;
+    });
+  });
+
+  /* Les points, dans un seul tableau, pour tout le séjour : le départ, les
+     stands, les salles. C'est leur rang qui sert d'identité partout ensuite —
+     et la matrice se calcule une fois, non une fois par jour. */
+  const PTS = [];
+  const iDepart = choix.depart ? PTS.push(choix.depart) - 1 : -1;
+  const iStands = stands.map(o => PTS.push(pointObjet(o)) - 1);
+  jours.forEach(j => j.rdv.forEach(r => { r.i = PTS.push(r.pt) - 1; }));
+
+  /* Les arrêts n'ayant pas changé, la matrice non plus : une visite qu'on
+     retouche — un stand déplacé d'un jour à l'autre — repart de celle du
+     calcul précédent. Le rang d'un point suffit à la reconnaître : il porte
+     son plan et sa position, et c'est tout ce dont le balayage dépend. */
+  const cleMatrice = (pmr ? "pmr" : "") + "|" + PTS.map(pt => pt
+    ? pt.p + ":" + Math.round(pt.xy[0]) + "," + Math.round(pt.xy[1]) : "-").join(";");
+  if (!MATRICE || MATRICE.cle !== cleMatrice)
+    MATRICE = { cle: cleMatrice, D: matriceJournee(PTS, pmr) };
+  const D = MATRICE.D;
+  /* Un bout de trajet dont on ignore un des deux bouts ne coûte rien : le
+     départ « peu importe » et une salle non située ne sont pas des détours,
+     ce sont des trous. */
+  const dist = (a, b) => (a < 0 || b < 0 || !PTS[a] || !PTS[b]) ? 0 : D[a][b];
+  const tempsCreneau = (c, m, n) => enMinutes(m) + n * tv;
+
+  /* Les intervalles entre rendez-vous, c'est là qu'on range les stands. Une
+     conférence dont la salle n'est située nulle part borne l'heure sans borner
+     le lieu : on ne sait pas s'en approcher, et on repart d'où l'on était. */
+  jours.forEach(j => {
+    let de = iDepart, t0 = j.arrivee;
+    j.rdv.forEach(r => {
+      j.creneaux.push({ de: de, t0: t0, vers: r.pt ? r.i : -1, tMax: r.t0, stands: [] });
+      if (r.pt) de = r.i;
+      t0 = r.t1;
+    });
+    j.creneaux.push({ de: de, t0: t0, vers: -1, tMax: j.fermeture,
+                      dernier: true, stands: [] });
+  });
+
+  /**
+   * Ce qui fixe le jour d'un stand, dit en rangs de points : c'est par eux que
+   * le calcul désigne les stands, et par leur identifiant qu'on les fixe.
+   *
+   * Deux sources, et elles ne se valent pas. Le visiteur d'abord — ce qu'il a
+   * placé de sa main tient, et se dit quand cela ne tient pas. Puis, pour une
+   * retouche seulement, la visite telle qu'elle était : déplacer un exposant
+   * ne doit déplacer que lui. Sans cela, le calcul reprend tout depuis le
+   * début et rend son meilleur arrangement — lequel peut être une tout autre
+   * visite, où les trois pavillons ont changé de jour. C'est un arrangement
+   * juste, et une réponse absurde à « mets celui-là le samedi ».
+   */
+  /* Un exposant retiré du parcours laisse une consigne qui ne désigne plus
+     rien : elle s'en va avec lui, sans quoi elle ressusciterait le jour où on
+     le remettrait dans la liste. */
+  PLACES.forEach((cle, id) => { if (PARCOURS.stands.indexOf(id) < 0) PLACES.delete(id); });
+
+  const idDuPoint = new Map();
+  iStands.forEach((i, k) => idDuPoint.set(i, String(stands[k].id)));
+  const parCle = new Map(jours.map(j => [j.cle, j]));
+  const jourFixe = (i, table) => {
+    const id = idDuPoint.get(i);
+    return id !== undefined && table.has(id) ? parCle.get(table.get(id)) || null : null;
+  };
+  const imposeChoisi = (i) => jourFixe(i, PLACES);
+  const imposeDe = fige
+    ? (i) => imposeChoisi(i) || jourFixe(i, fige)
+    : imposeChoisi;
+
+  /* Ce qu'une visite vaut en mètres, au pas de marche. Le chiffre sert deux
+     fois : c'est ce que coûte un stand renvoyé après le dernier rendez-vous —
+     exactement ce qu'il ajoute à la fin de la journée, et ce qu'un creux plus
+     tôt aurait absorbé sans rien coûter — et c'est la part des visites dans ce
+     qu'une journée pèse, quand on compare les jours entre eux. */
+  const restants = iStands.slice();
+  rangeSejour(jours, restants, dist, tempsCreneau, allure * 60 * tv, imposeDe);
+
+  return { choix: choix, jours: jours, PTS: PTS, dist: dist, enMinutes: enMinutes,
+           tv: tv, pmr: pmr, iDepart: iDepart, restants: restants,
+           imposeChoisi: imposeChoisi, horsJour: horsJour, sansLieu: sansLieu };
+}
+
+/**
+ * Ce que le visiteur a demandé : des jours de venue, une heure d'arrivée, un
+ * point de départ. Ce qu'on lui rend : un déroulé par jour, un tracé par jour,
+ * et la liste franche de ce qui n'a trouvé sa place nulle part.
+ */
+function calculeSejour(choix, fige){
+  const p = prepareSejour(choix, fige);
+  const jours = p.jours, PTS = p.PTS, restants = p.restants;
+  const ctx = { PTS: PTS, dist: p.dist, enMinutes: p.enMinutes, tv: p.tv, pmr: p.pmr,
+                depart: choix.depart, iDepart: p.iDepart, restants: restants };
+  jours.forEach(j => derouleJournee(j, ctx));
+
+  return {
+    choix: choix, jours: jours, pmr: p.pmr, tv: p.tv,
+    depart: choix.depart, arrivee: choix.arrivee,
+    m: jours.reduce((a, j) => a + j.m, 0),
+    /* Ce qui n'entre dans aucun jour appartient au séjour, non à l'un d'eux :
+       le montrer sous chaque journée le répéterait trois fois, l'attacher à
+       une seule le cacherait aux deux autres. */
+    restants: restants.map(i => parId.get(PTS[i].id)).filter(Boolean),
+    /* Ce qui n'a pas tenu là où le visiteur l'avait mis se dit à part. Ce qui
+       n'a pas tenu là où il était resté figé, non : il n'a rien demandé, et
+       la liste générale suffit. */
+    refuses: restants.filter(i => p.imposeChoisi(i))
+      .map(i => parId.get(PTS[i].id)).filter(Boolean),
+    /* La visite telle qu'elle est, pour la retouche suivante. */
+    assignation: new Map(jours.flatMap(j => [...j.ids].map(id => [id, j.cle]))),
+    horsJour: p.horsJour, sansLieu: p.sansLieu,
+  };
+}
+
+/**
+ * Ce que porterait chaque jour, sans rien calculer de plus.
+ *
+ * L'aperçu du curseur : le nombre de conférences et d'exposants par journée,
+ * et ce qui n'entre nulle part. On s'arrête juste après la répartition — le
+ * déroulé, les tracés et les heures coûtent le plus cher et ne diraient rien
+ * de neuf à quelqu'un qui fait glisser un curseur.
+ */
+function apercuRepartition(choix){
+  const p = prepareSejour(choix, null);
+  return {
+    jours: p.jours.map(j => ({
+      cle: j.cle, nom: j.nom, court: j.court, confs: j.rdv.length,
+      stands: j.creneaux.reduce((a, c) => a + c.stands.length, 0),
+    })),
+    restants: p.restants.length,
+  };
+}
+
+/* ------------------------------------------------------------
+   Ce que la visite montre
+   ------------------------------------------------------------ */
+function rangJournee(hote, heure, dedans, classe){
+  const d = document.createElement("div");
+  d.className = "jRang" + (classe ? " " + classe : "");
+  const h = document.createElement("span");
+  h.className = "jH";
+  h.textContent = heure || "";
+  d.appendChild(h);
+  d.appendChild(dedans);
+  hote.appendChild(d);
+  return d;
+}
+
+function lienJournee(hote, texte){
+  const s = document.createElement("span");
+  s.className = "jL";
+  s.textContent = texte;
+  rangJournee(hote, "", s, "lien");
+}
+
+/* Le picto du changement de jour : un calendrier et une flèche. Un mot
+   tiendrait mal à côté d'un arrêt sur un téléphone, et une double flèche seule
+   ne dirait pas vers quoi. */
+const PICTO_JOUR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/>' +
+  '<path d="M9 15.5h6m-2.5-2.5 2.5 2.5-2.5 2.5"/></svg>';
+
+/**
+ * Le bouton qui ouvre le choix du jour.
+ *
+ * Il se pose à côté de l'arrêt, et non dessus : l'arrêt ouvre la fiche de
+ * l'exposant, c'est ce qu'on attend d'un nom sur lequel on appuie. Il ne
+ * paraît que si la visite a plusieurs jours — déplacer vers le seul jour de
+ * la visite n'est pas un geste — et sa cible fait la taille d'un pouce.
+ */
+function boutonJour(o){
+  if (!SEJOUR || SEJOUR.jours.length < 2 || !o) return null;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "jBouge";
+  b.innerHTML = PICTO_JOUR;
+  const dit = "Changer le jour de cet exposant";
+  b.title = dit;
+  b.setAttribute("aria-label", dit);
+  b.onclick = ev => { ev.stopPropagation(); ouvreChoixJour(o); };
+  return b;
+}
+
+function arretJournee(hote, e){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "jArret" + (e.genre === "conf" ? " conf" : "");
+  b.innerHTML = '<span class="jN"></span><span class="jTxt"><span class="jT"></span>' +
+                '<span class="jS"></span></span><span class="jD"></span>';
+  b.querySelector(".jN").textContent = e.n;
+  b.querySelector(".jD").textContent = ecritMinutes(e.t1 - e.t0);
+  if (e.genre === "conf"){
+    if (e.c.couleur) b.style.setProperty("--tc", e.c.couleur);
+    b.querySelector(".jT").textContent = e.c.nom;
+    b.querySelector(".jS").textContent =
+      ([e.c.salle, e.pt ? e.pt.detail : ""].filter(Boolean).join(" · ") ||
+       "Salle non située sur le plan") +
+      (e.retard > 1 ? " · vous y seriez à " + ecritHeure(e.t0 + e.retard) : "");
+    if (e.retard > 1) b.classList.add("tard");
+    b.onclick = () => ficheConf(e.c.id, "parcours");
+  } else {
+    b.querySelector(".jT").textContent = e.pt.nom;
+    b.querySelector(".jS").textContent = e.pt.detail;
+    b.onclick = () => { if (e.o) select(e.o.id, true, "parcours"); };
+  }
+  const rang = rangJournee(hote, ecritHeure(e.t0), b);
+  /* Une conférence ne change pas de jour : elle a lieu quand elle a lieu, et
+     lui poser le bouton ferait promettre ce qu'aucun calcul ne peut tenir. */
+  if (e.genre !== "conf"){
+    const bouge = boutonJour(e.o);
+    if (bouge){
+      rang.appendChild(bouge);
+      if (PLACES.has(String(e.o.id))) bouge.classList.add("pose");
+    }
+  }
+  return rang;
+}
+
+/* ------------------------------------------------------------
+   Les onglets des jours
+   ------------------------------------------------------------ */
+/**
+ * Une rangée d'onglets, un par jour, avec ce que chacun fait marcher.
+ *
+ * C'est le seul endroit d'où l'on voit l'équilibre de la visite — trois
+ * nombres côte à côte disent d'un coup d'œil si le calcul a fait son travail,
+ * là où trois écrans successifs ne diraient rien. Elle défile latéralement :
+ * un salon de cinq jours ne tient pas en largeur sur un téléphone, et réduire
+ * les onglets jusqu'à ce qu'ils tiennent les rendrait illisibles.
+ */
+function remplitOnglets(){
+  const hote = $("jJours");
+  if (!hote) return;
+  hote.innerHTML = "";
+  if (!SEJOUR || SEJOUR.jours.length < 2) return;
+  SEJOUR.jours.forEach(j => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "jOnglet";
+    b.setAttribute("aria-pressed", String(j === JOURNEE));
+    b.innerHTML = '<span class="t"></span><span class="s"></span>';
+    b.querySelector(".t").textContent = j.court;
+    /* Un jour sans arrêt ne montre pas « 0 m » : ce n'est pas une distance
+       courte, c'est une journée vide, et le tiret le dit sans mentir. */
+    b.querySelector(".s").textContent = j.nArrets ? ecritDistance(j.m) : "—";
+    b.onclick = () => montreLeJour(j);
+    hote.appendChild(b);
+  });
+  /* L'onglet du jour regardé se ramène sous les yeux : on arrive souvent sur
+     cette rangée par un stand qu'on vient de déplacer au dernier jour, et
+     celui-ci est hors de l'écran. */
+  const vu = hote.querySelector('[aria-pressed="true"]');
+  if (vu && vu.scrollIntoView) vu.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+/* ------------------------------------------------------------
+   Changer un exposant de jour
+   ------------------------------------------------------------ */
+/** Le jour où un exposant est tombé, ou rien s'il n'entre dans aucun. */
+const jourDuStand = (id) => SEJOUR
+  ? SEJOUR.jours.find(j => j.ids && j.ids.has(String(id))) || null : null;
+
+/**
+ * La feuille de choix.
+ *
+ * Un jour par bouton, pleine largeur, avec ce que chacun porte déjà : sur un
+ * téléphone, c'est la seule forme qui se touche sans viser. Glisser un rang
+ * d'une liste à l'autre aurait demandé de tenir, de viser et de lâcher au bon
+ * endroit, dans un tiroir qui défile — un geste de bureau, pas un geste de
+ * salon.
+ */
+function ouvreChoixJour(o){
+  if (!SEJOUR) return;
+  const id = String(o.id);
+  const actuel = jourDuStand(id);
+  ouvreModale("Déplacer « " + nomDeStand(o) + " »", corps => {
+    const p = document.createElement("p");
+    p.textContent = actuel
+      ? "Choisissez le jour où vous voulez le voir. Lui seul change de journée ; le reste de votre visite ne bouge pas."
+      : "Cet exposant n'entre dans aucune de vos journées. Choisissez celui où vous voulez le voir.";
+    corps.appendChild(p);
+
+    const liste = document.createElement("div");
+    liste.className = "jChoix";
+    SEJOUR.jours.forEach(j => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "jChoixJour";
+      if (j === actuel) b.setAttribute("aria-current", "true");
+      b.innerHTML = '<span class="t"></span><span class="s"></span>';
+      b.querySelector(".t").textContent = j.nom;
+      b.querySelector(".s").textContent = j === actuel
+        ? "il y est déjà — l'y retenir"
+        : plurielParcours(j.nArrets, "arrêt") + " · " + ecritDistance(j.m);
+      b.onclick = () => { fermeModale(); placeSurJour(id, j.cle); };
+      liste.appendChild(b);
+    });
+    corps.appendChild(liste);
+
+    /* Revenir en arrière doit être aussi simple que d'avoir choisi : sans
+       cela, un jour imposé par mégarde le resterait jusqu'au prochain vidage
+       du parcours. */
+    if (PLACES.has(id)){
+      const l = document.createElement("button");
+      l.type = "button";
+      l.className = "jChoixLibre";
+      l.textContent = "Laisser le plan choisir";
+      l.onclick = () => { fermeModale(); rendAuPlan(id); };
+      corps.appendChild(l);
+    }
+
+    const ote = document.createElement("button");
+    ote.type = "button";
+    ote.className = "jChoixOte";
+    ote.textContent = "Retirer de mon parcours";
+    ote.onclick = () => { fermeModale(); retireDuSejour(id); };
+    corps.appendChild(ote);
+  }, [{ libelle: "Annuler" }]);
+}
+
+/**
+ * La visite telle qu'elle est, moins un exposant.
+ *
+ * C'est ce qu'on donne au calcul quand le visiteur retouche : chacun reste le
+ * jour où il est, et seul celui qu'on touche bouge. Sans cela le calcul
+ * reprendrait tout depuis le début — et rendrait, en toute justesse, une visite
+ * où les trois pavillons ont changé de jour parce qu'on a déplacé un stand.
+ */
+const figeLaVisite = (sauf) => {
+  const m = new Map(SEJOUR ? SEJOUR.assignation : []);
+  m.delete(String(sauf));
+  return m;
+};
+
+/** Le visiteur a dit son jour : on le retient, et on refait la visite autour.
+ *  Le jour choisi passe devant les yeux — sans quoi le stand disparaîtrait de
+ *  l'écran sans dire où il est allé. */
+function placeSurJour(id, cle){
+  const fige = figeLaVisite(id);
+  PLACES.set(String(id), cle);
+  refaitSejour(cle, fige);
+}
+
+/** Rendre au calcul le choix du jour : il reprend celui-là seul, le reste de
+ *  la visite gardant le sien. */
+function rendAuPlan(id){
+  const fige = figeLaVisite(id);
+  PLACES.delete(String(id));
+  refaitSejour("", fige);
+}
+
+function retireDuSejour(id){
+  const fige = figeLaVisite(id);
+  PLACES.delete(String(id));
+  basculeParcours("stand", id);
+  refaitSejour("", fige);
+}
+
+/* ------------------------------------------------------------
+   Le corps d'une journée
+   ------------------------------------------------------------ */
+function remplitJournee(){
+  const hote = $("jCorps");
+  hote.innerHTML = "";
+  const j = JOURNEE;
+  if (!j || !SEJOUR) return;
+  const plusieurs = SEJOUR.jours.length > 1;
+
+  /* Les notes et les alertes sont celles de l'itinéraire, classes comprises :
+     c'est la même voix qui parle du même calcul, à deux endroits du tiroir. */
+  const dit = (cls, txt) => {
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = txt;
+    hote.appendChild(p);
+    return p;
+  };
+
+  if (SEJOUR.perime) dit("iAlerte", "Votre parcours a changé depuis ce calcul : " +
+    "reprenez-le pour que la visite en tienne compte.");
+
+  /* L'heure affichée en tête n'est plus celle qu'on a saisie : sans un mot,
+     le visiteur croirait à une faute de frappe du calcul. */
+  if (j.avantOuverture) dit("iNote", "Le salon ouvre à " + ecritHeure(j.ouverture) +
+    " : la journée commence à l'ouverture, et non à " + ecritHeure(j.demandee) + ".");
+
+  const bilan = document.createElement("div");
+  bilan.className = "jBilan";
+  bilan.innerHTML = '<b></b><span></span>';
+  bilan.querySelector("b").textContent = ecritHeure(j.arrivee) + " – " + ecritHeure(j.fin);
+  bilan.querySelector("span").textContent =
+    [j.nArrets + (j.nArrets > 1 ? " arrêts" : " arrêt"),
+     (j.coupe ? "au moins " : "") + ecritDistance(j.m) + " de marche",
+     SEJOUR.pmr ? "itinéraire accessible" : ""].filter(Boolean).join(" · ");
+  /* Le total du séjour sous le total du jour : c'est la seule ligne qui dise
+     ce que la visite entière représente, et elle se lit là où l'on regarde
+     déjà les chiffres. */
+  if (plusieurs){
+    const t = document.createElement("i");
+    t.textContent = "sur " + SEJOUR.jours.length + " jours · " +
+      ecritDistance(SEJOUR.m) + " en tout";
+    bilan.appendChild(t);
+  }
+  hote.appendChild(bilan);
+
+  const fil = document.createElement("div");
+  fil.className = "jFil";
+  hote.appendChild(fil);
+
+  /* Une journée retenue sans rien à y faire n'est pas une erreur du calcul :
+     c'est un jour de trop, ou une liste trop courte, et le dire vaut mieux
+     qu'une page blanche. */
+  if (!j.nArrets) dit("iNote", plusieurs
+    ? "Rien n'est tombé sur cette journée : le calcul a tout fait tenir les " +
+      "autres jours. Retirez-la de votre visite, ou déplacez-y un exposant."
+    : "Rien à voir ce jour-là : votre parcours est vide, ou rien n'y tient.");
+
+  j.etapes.forEach(e => {
+    if (e.genre === "depart"){
+      const s = document.createElement("span");
+      s.className = "jL";
+      s.textContent = "Départ : " + e.nom;
+      rangJournee(fil, ecritHeure(e.t), s, "lien");
+    } else if (e.genre === "marche"){
+      lienJournee(fil, ecritDistance(e.m) + " · " + ecritMinutes(e.min) + " de marche" +
+        (e.trace ? "" : " (non tracé)"));
+    } else if (e.genre === "liaison"){
+      lienJournee(fil, phraseLiaison(e).s);
+    } else if (e.genre === "transfert"){
+      lienJournee(fil, "Rejoignez le " + e.vers + " · comptez " + ecritMinutes(e.min) +
+        ", ce trajet n'est pas sur le plan");
+    } else if (e.genre === "attente"){
+      lienJournee(fil, ecritMinutes(e.min) + " sur place avant le début" +
+        (e.premier && e.min >= 15
+          ? " — en arrivant à " + ecritHeure(j.arrivee + e.min) + ", vous ne perdriez rien"
+          : ""));
+    } else {
+      arretJournee(fil, e);
+    }
+  });
+
+  /* Ce qui n'entre pas dans la visite se dit, et se dit précisément : un
+     rang laissé de côté sans un mot passerait pour un oubli du calcul. Ces
+     listes empruntent leurs rangs au parcours — même vignette, même croix :
+     ce sont les mêmes choses, vues d'ailleurs. Un exposant y garde son bouton
+     de jour : c'est de là qu'on le fait entrer dans une journée. */
+  const groupe = (titre, liste, rendu, bouge) => {
+    if (!liste.length) return;
+    const g = document.createElement("div");
+    g.className = "pGroupe jReste";
+    g.innerHTML = '<span class="eyebrow"></span>';
+    g.querySelector(".eyebrow").textContent = titre;
+    liste.forEach(x => {
+      const rang = rangParcours(g, rendu(x));
+      const b = bouge ? boutonJour(x) : null;
+      if (b && rang) rang.insertBefore(b, rang.querySelector(".pOte"));
+    });
+    hote.appendChild(g);
+  };
+
+  /* Un rendez-vous qu'on n'atteint pas ne se raye pas tout seul : le visiteur
+     décidera ce qu'il sacrifie, pas nous. */
+  j.retards.forEach(r => dit("iAlerte", "« " + r.c.nom + " » : au mieux, vous y " +
+    "arriveriez " + ecritMinutes(r.min) + " après le début — le trajet n'y suffit " +
+    "pas. Arrivez plus tôt, ou retirez ce qui la précède."));
+
+  /* Ce que le visiteur a placé lui-même et qui n'a pas tenu se dit à part : il
+     ne cherche pas ce qui manque dans une liste générale, il cherche celui
+     qu'il vient de déplacer. */
+  SEJOUR.refuses.forEach(o => dit("iAlerte", "« " + nomDeStand(o) + " » ne tient pas " +
+    "le jour où vous l'avez placé. Choisissez-lui un autre jour, ou retirez ce " +
+    "qui l'y précède."));
+
+  /* Sans heure de fermeture, cette liste reste vide : un stand refusé entre
+     deux conférences finit toujours par tenir après la dernière. Avec, c'est
+     la fermeture qui l'a refusé, et c'est elle qu'on nomme — le visiteur
+     sait alors quoi changer, plutôt que de recompter ses stands. */
+  const libres = SEJOUR.restants.filter(o => !PLACES.has(String(o.id)));
+  if (libres.length && j.fermeture !== null) dit("iAlerte",
+    (libres.length > 1
+      ? libres.length + " exposants ne tiennent pas"
+      : "Un exposant ne tient pas") +
+    (plusieurs
+      ? " dans les journées que vous avez retenues : ajoutez un jour, arrivez " +
+        "plus tôt, ou retirez ce qui passe avant."
+      : " avant la fermeture du salon, à " + ecritHeure(j.fermeture) + " : " +
+        (j.arrivee >= j.fermeture
+          ? "vous arrivez après."
+          : "arrivez plus tôt, ou retirez ce qui passe avant.")));
+  groupe(SEJOUR.restants.length && j.fermeture !== null
+           ? (plusieurs ? "Dans aucune de vos journées" : "Après la fermeture")
+           : "Restés de côté",
+    SEJOUR.restants, o => ({
+      genre: "stand", id: o.id, dessus: false,
+      titre: nomDeStand(o),
+      detail: DATA.plans[o.p].libelle + (o.code ? " · " + o.code : ""),
+      ouvre: () => select(o.id, true, "parcours"),
+    }), true);
+
+  /* Une conférence d'un jour qu'on ne vient pas n'est pas perdue : il suffit
+     d'ajouter ce jour à la visite, et le pied du tiroir sait le faire. Encore
+     faut-il que ce jour se propose encore — celui d'hier ne se coche nulle
+     part, et y envoyer chercher une case qui n'existe plus ferait douter du
+     reste. Ces conférences-là se disent, elles ne se rattrapent pas. */
+  const cochable = new Set(joursAVenir().map(x => x.cle));
+  const revolue = (c) => { const d = instantConf(c); return !!d && !cochable.has(d.cle); };
+  const ailleurs = SEJOUR.horsJour.filter(c => !revolue(c));
+  const revolues = SEJOUR.horsJour.filter(revolue);
+  const rangConf = (c) => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom, detail: jourCourt(instantConf(c)) || "date inconnue",
+    ouvre: () => ficheConf(c.id, "parcours"),
+  });
+  if (ailleurs.length) dit("iNote", ailleurs.length > 1
+    ? "Ces conférences ont lieu un jour que vous n'avez pas retenu. Reprenez " +
+      "vos jours de visite pour les y faire entrer."
+    : "Cette conférence a lieu un jour que vous n'avez pas retenu. Reprenez vos " +
+      "jours de visite pour l'y faire entrer.");
+  groupe("Un autre jour", ailleurs, rangConf);
+
+  if (revolues.length) dit("iNote", revolues.length > 1
+    ? "Ces conférences ont eu lieu un jour déjà passé : aucune visite ne peut " +
+      "plus les contenir."
+    : "Cette conférence a eu lieu un jour déjà passé : aucune visite ne peut " +
+      "plus la contenir.");
+  groupe("Un jour déjà passé", revolues, rangConf);
+
+  groupe("En même temps qu'une autre", j.chevauchent, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  groupe("Déjà commencées à votre arrivée", j.passees, c => ({
+    genre: "conf", id: c.id, couleur: c.couleur, dessus: true,
+    titre: c.nom,
+    detail: (instantConf(c) ? instantConf(c).h + "h" + instantConf(c).min : "") +
+            (c.salle ? " · " + c.salle : ""),
+    ouvre: () => ficheConf(c.id, "parcours"),
+  }));
+
+  if (SEJOUR.sansLieu.length) dit("iNote", SEJOUR.sansLieu.length > 1
+    ? "Certaines conférences retenues ne sont rattachées à aucune zone du plan : " +
+      "elles gardent leur heure, mais le trajet ne peut pas y mener."
+    : "« " + SEJOUR.sansLieu[0].nom + " » n'est rattachée à aucune zone du plan : elle " +
+      "garde son heure, mais le trajet ne peut pas y mener.");
+
+  /* Une demi-heure à patienter se remarque, et sans un mot elle passe pour une
+     étourderie du calcul. On dit donc d'où elle vient — il n'y avait plus rien
+     à voir, ou l'avancer coûtait plus de marche qu'elle ne fait gagner — et ce
+     qui la comblerait. */
+  if (j.attente >= 30) dit("iNote", "Il reste " + ecritMinutes(j.attente) +
+    " d'attente dans cette journée. " + (j.tardifs
+      ? "Avancer ce qui suit la dernière conférence demanderait un détour plus " +
+        "long que le temps gagné."
+      : "Votre parcours ne contient plus rien à visiter d'ici là : ajoutez des " +
+        "exposants pour la combler."));
+
+  dit("iNote", "Comptez " + ecritMinutes(SEJOUR.tv) + " par stand. Les heures sont " +
+    "indicatives : elles supposent qu'on ne s'attarde pas, et ne tiennent compte " +
+    "ni des files ni des pauses.");
+}
+
+/**
+ * L'aperçu de la répartition, écrit sous le curseur.
+ *
+ * Un jour par ligne, et ce qu'il porte en toutes lettres. C'est le seul retour
+ * possible à un curseur qui ne déplace rien à l'écran : sans lui, on le fait
+ * glisser sans savoir ce qu'on change. Les conférences y figurent avec les
+ * exposants bien qu'elles ne bougent pas — c'est justement ce qui explique
+ * qu'un jour reste chargé quand on le décharge.
+ */
+function ecritApercu(hote, r){
+  hote.innerHTML = "";
+  r.jours.forEach(j => {
+    const d = document.createElement("div");
+    d.className = "jApercuRang";
+    d.innerHTML = '<span class="j"></span><span class="n"></span>';
+    d.querySelector(".j").textContent = j.nom;
+    /* Le même compte qu'ailleurs, et dans les mêmes mots : « 7 exposants et
+       1 conférence ». Un jour vide se dit, il ne se laisse pas en blanc. */
+    d.querySelector(".n").textContent =
+      contenuParcours(j.stands, j.confs) || "rien ce jour-là";
+    hote.appendChild(d);
+  });
+  /* Ce qui n'entre nulle part appartient au réglage autant qu'aux journées :
+     c'est en chargeant trop un seul jour qu'on le fait apparaître. */
+  if (r.restants){
+    const p = document.createElement("p");
+    p.className = "jApercuReste";
+    p.textContent = r.restants > 1
+      ? r.restants + " exposants n'entrent dans aucune de ces journées."
+      : "Un exposant n'entre dans aucune de ces journées.";
+    hote.appendChild(p);
+  }
+}
+
+/* ------------------------------------------------------------
+   Les deux vues du tiroir
+   ------------------------------------------------------------ */
+/** Le tiroir montre la liste ou la visite, jamais les deux : c'est la même
+ *  liste, lue avant puis après le calcul. */
+function appliqueVueParcours(){
+  const sur = vueJournee && !!JOURNEE;
+  const plusieurs = sur && SEJOUR && SEJOUR.jours.length > 1;
+  $("pCorps").hidden = sur;
+  /* La rangée de commandes appartient à la liste : la visite organisée a les
+     siennes, et « Organiser ma journée » posé au-dessus de la journée qu'on
+     vient d'organiser n'inviterait à rien. */
+  $("pActs").hidden = sur;
+  $("pPied").hidden = sur;
+  $("jJours").hidden = !plusieurs;
+  $("jCorps").hidden = !sur;
+  $("jPied").hidden = !sur;
+  $("pEyebrow").textContent = sur ? (plusieurs ? "Ma visite" : "Ma journée") : "Mon parcours";
+  $("pTitre").textContent = sur ? (JOURNEE.nom || "Journée organisée") : "Parcours de visite";
+  /* Le pied ne propose pas la même chose selon qu'il y a une journée ou
+     plusieurs : l'heure d'arrivée seule, ou les jours avec elle. */
+  $("jRefaire").textContent = plusieurs
+    ? "Changer mes jours et mon heure" : "Changer l'heure d'arrivée";
+  if (sur){
+    $("pResume").textContent = ecritHeure(JOURNEE.arrivee) + " – " + ecritHeure(JOURNEE.fin);
+    remplitOnglets();
+    remplitJournee();
+    traceJournee();
+  } else {
+    rafraichitParcours();
+  }
+}
+
+/**
+ * La journée reprend le trait du plan.
+ *
+ * L'itinéraire d'un point à un autre y prétend aussi, et le visiteur passe de
+ * l'un à l'autre : chacun se redonne le trait en revenant, plutôt que de
+ * laisser à l'écran le tracé de son voisin. L'objet dessiné est retenu tel
+ * quel — c'est à lui qu'on reconnaît, ailleurs, que le trait est celui de la
+ * visite et non d'un trajet demandé à côté. Un jour a le sien : passer d'un
+ * onglet à l'autre change le trait comme il change la liste.
+ */
+function traceJournee(){
+  if (!JOURNEE) return;
+  JOURNEE.dessin = JOURNEE.dessin || { etapes: JOURNEE.trace, arrets: JOURNEE.arrets };
+  if (TRACE === JOURNEE.dessin) return;
+  TRACE = JOURNEE.dessin;
+  dessineItineraire();
+}
+
+/** Passer à un jour : le tiroir, le trait et le cadrage le suivent. */
+function montreLeJour(j){
+  if (!j) return;
+  JOURNEE = j;
+  vueJournee = true;
+  appliqueVueParcours();
+  /* La journée commence dans le pavillon de son premier arrêt : c'est celui
+     qu'il faut montrer, même si l'on regardait ailleurs en la demandant. */
+  const premier = j.trace.find(e => e.genre === "marche");
+  if (premier && premier.p !== state.plan) changePlan(premier.p);
+  traceJournee();
+  if (premier) cadreItineraire();
+}
+
+/** Le parcours a changé : la visite calculée ne lui correspond plus. On ne la
+ *  refait pas dans le dos du visiteur — on le lui dit. */
+function perimeJournee(){
+  if (!SEJOUR || SEJOUR.perime) return;
+  SEJOUR.perime = true;
+  if (vueJournee) remplitJournee();
+}
+
+/**
+ * Tout oublier de la visite calculée.
+ *
+ * Le parcours vidé, elle n'a plus d'objet — et son tracé non plus. Un
+ * itinéraire demandé à côté, lui, ne doit rien au parcours et reste à l'écran.
+ * Les jours que le visiteur avait imposés s'en vont avec : ils désignaient des
+ * exposants qu'il vient d'oublier. Les jours qu'il avait refusés aussi — la
+ * conférence qui motivait le refus n'est plus au parcours.
+ */
+function oublieSejour(){
+  if (SEJOUR && SEJOUR.jours.some(j => j.dessin && TRACE === j.dessin)){
+    TRACE = null;
+    dessineItineraire();
+  }
+  SEJOUR = null;
+  JOURNEE = null;
+  vueJournee = false;
+  PLACES.clear();
+  REFUS.clear();
+}
+
+/* ------------------------------------------------------------
+   La question posée avant le calcul
+   ------------------------------------------------------------ */
+function ouvreOrganisation(){
+  /* La matrice gardée l'est pour les retouches, pas pour les demandes : un
+     plan dont les cloisons ont bougé entre-temps doit se rebalayer, et c'est
+     ici qu'on peut se le permettre. Ici, et non au moment d'organiser : entre
+     les deux, l'aperçu du curseur l'aura bâtie, et la jeter reviendrait à
+     refaire ce qu'on vient de faire sous les yeux du visiteur. */
+  MATRICE = null;
+  const tous = joursSalon();
+  const dispo = joursAVenir();
+  /* Sans date connue, on organise une journée sans nom : c'était le cas avant
+     qu'on sache en organiser plusieurs, et un salon dont l'exploitant n'a pas
+     saisi les dates doit continuer de marcher. */
+  const proposables = tous.length ? dispo : [{ cle: "", nom: "", court: "" }];
+
+  if (!proposables.length){
+    ouvreModale("Organiser ma visite", corps => {
+      const p = document.createElement("p");
+      p.textContent = "Le salon est terminé : il n'y a plus de journée à " +
+        "organiser. Votre parcours, lui, reste sur cet appareil.";
+      corps.appendChild(p);
+    }, [{ libelle: "Fermer" }]);
+    return;
+  }
+
+  let arrivee = "09:00", pente = 0;
+  try { arrivee = localStorage.getItem(CLE_ARRIVEE) || arrivee; } catch (e) {}
+  try {
+    const v = parseFloat(localStorage.getItem(CLE_PENTE));
+    if (isFinite(v)) pente = Math.max(-1, Math.min(1, v));
+  } catch (e) {}
+  const departs = departsProposes();
+  /* Les jours déjà retenus se reprennent tels quels : on rouvre souvent cette
+     fenêtre pour changer l'heure, non les jours. */
+  const coches = SEJOUR
+    ? new Set(SEJOUR.jours.map(j => j.cle).filter(c => proposables.some(p => p.cle === c)))
+    : new Set();
+  if (!coches.size) joursDefaut(proposables).forEach(c => coches.add(c));
+  /* Un jour où l'on vient de retenir une conférence se coche à son tour. Le
+     défaut ne jouait qu'à la première fenêtre : la deuxième s'ouvrait donc sur
+     un jour muet, et ses conférences ne ressortaient qu'après le calcul, tout
+     en bas du tiroir. Un refus dit à la main tient contre cela — mais pas
+     au-delà de la conférence qui l'a motivé, retirée du parcours depuis. */
+  const confsJour = confsParJour();
+  REFUS.forEach(cle => { if (!confsJour.has(cle)) REFUS.delete(cle); });
+  proposables.forEach(j => {
+    if (confsJour.has(j.cle) && !REFUS.has(j.cle)) coches.add(j.cle);
+  });
+
+  let champHeure = null, champDepart = null, majValide = () => {};
+  /* Une porte unique ne se demande pas, elle se prend : la question n'aurait
+     qu'une réponse, et la poser ferait croire qu'il y en a d'autres. */
+  const departImpose = departs.length === 1 ? departs[0] : null;
+
+  /* Ce que la fenêtre dit à l'instant. L'aperçu et le calcul le lisent au même
+     endroit : deux lectures séparées finiraient par diverger, et l'aperçu
+     montrerait alors une visite que le bouton ne rendrait pas. */
+  const choixCourant = () => {
+    // une heure illisible vaut mieux corrigée que refusée : le champ natif
+    // ne rend rien sur les navigateurs qui l'ignorent
+    const v = /^(\d{1,2}):(\d{2})$/.exec((champHeure && champHeure.value) || "");
+    /* Sans liste, le départ est celui qu'on n'a pas demandé ; avec, c'est le
+       choix du visiteur — « Peu importe » compris, qui ne vaut aucun. */
+    const d = champDepart ? champDepart.value : null;
+    return {
+      arrivee: v ? Math.min(1439, +v[1] * 60 + +v[2]) : 9 * 60,
+      jours: proposables.filter(j => coches.has(j.cle)),
+      depart: d === null ? departImpose : d === "" ? null : departs[+d],
+      pente: pente,
+    };
+  };
+
+  ouvreModale(proposables.length > 1 ? "Organiser ma visite" : "Organiser ma journée", corps => {
+    const p = document.createElement("p");
+    p.textContent = proposables.length > 1
+      ? "On place d'abord les conférences que vous avez retenues — elles se " +
+        "posent le jour où elles ont lieu — puis on répartit les stands entre vos " +
+        "journées. Le curseur, plus bas, dit si elles doivent se valoir ou non."
+      : "On place d'abord les conférences que vous avez retenues — elles ne se " +
+        "déplacent pas — puis on glisse les stands entre elles, dans l'ordre qui " +
+        "fait le moins de chemin.";
+    corps.appendChild(p);
+
+    const form = document.createElement("div");
+    form.className = "jForm";
+
+    const bloc = (libelle, champ) => {
+      const l = document.createElement("label");
+      const e = document.createElement("span");
+      e.className = "eyebrow";
+      e.textContent = libelle;
+      l.appendChild(e);
+      l.appendChild(champ);
+      form.appendChild(l);
+      return champ;
+    };
+    /* Un groupe de cases à cocher ne s'enveloppe pas d'une étiquette : elle
+       désignerait la première case, et c'est le groupe entier qu'on nomme. */
+    const blocLibre = (libelle, champ) => {
+      const d = document.createElement("div");
+      d.className = "jBloc";
+      const e = document.createElement("span");
+      e.className = "eyebrow";
+      e.textContent = libelle;
+      d.appendChild(e);
+      d.appendChild(champ);
+      form.appendChild(d);
+      return champ;
+    };
+
+    let majHeures = () => {}, poseApercu = () => {}, majDehors = () => {};
+
+    /**
+     * Les jours de venue.
+     *
+     * Une case par jour plutôt qu'une liste déroulante : on en coche deux, et
+     * il faut voir d'un coup ceux qu'on a pris. Les jours passés n'y sont pas
+     * — `joursAVenir` les a déjà écartés — et rien ne le dit, car il n'y a
+     * rien à dire : on ne remarque pas l'absence d'hier.
+     */
+    if (proposables.length > 1){
+      const g = document.createElement("div");
+      g.className = "jCases";
+
+      /* Ce qu'un jour décoché laisse dehors, dit là où on le décoche.
+         Une conférence ne se déplace pas : le calcul la range déjà sous « un
+         autre jour », mais on ne l'y lit qu'après coup, au bas du tiroir — trop
+         tard pour qui croyait seulement alléger sa visite. Le dire ici ne
+         retient pas la main du visiteur : il décoche s'il le veut, en sachant
+         ce qu'il décoche. */
+      const dehors = document.createElement("p");
+      dehors.className = "jHorsJour";
+      majDehors = () => {
+        const sortis = proposables.filter(j => !coches.has(j.cle) && confsJour.has(j.cle));
+        const n = sortis.reduce((a, j) => a + confsJour.get(j.cle).length, 0);
+        dehors.hidden = !n;
+        if (!n) return;
+        /* Le jour se nomme tant qu'il est seul. Deux jours décochés se lisent
+           déjà sur leurs cases, à deux lignes d'ici, et les énumérer ferait
+           une phrase qu'on ne dit pas — « des samedi et dimanche ». */
+        dehors.textContent = sortis.length > 1
+          ? "Vos " + n + " conférences de ces journées ne seront pas dans votre visite."
+          : n > 1
+            ? "Vos " + n + " conférences du " + sortis[0].nom + " ne seront pas dans votre visite."
+            : "Votre conférence du " + sortis[0].nom + " ne sera pas dans votre visite.";
+      };
+
+      proposables.forEach(j => {
+        const l = document.createElement("label");
+        l.className = "jCase";
+        const c = document.createElement("input");
+        c.type = "checkbox";
+        c.checked = coches.has(j.cle);
+        c.onchange = () => {
+          if (c.checked){ coches.add(j.cle); REFUS.delete(j.cle); }
+          else { coches.delete(j.cle); if (confsJour.has(j.cle)) REFUS.add(j.cle); }
+          majHeures();
+          majValide();
+          majDehors();
+          poseApercu();
+        };
+        const s = document.createElement("span");
+        s.textContent = j.nom;
+        l.appendChild(c);
+        l.appendChild(s);
+        /* Le compte des conférences déjà retenues ce jour-là : il dit pourquoi
+           la case est cochée d'avance, avant même qu'on songe à la décocher. */
+        const n = (confsJour.get(j.cle) || []).length;
+        if (n){
+          const m = document.createElement("small");
+          m.className = "jCaseConfs";
+          m.textContent = plurielParcours(n, "conférence") + " retenue" + (n > 1 ? "s" : "");
+          l.appendChild(m);
+        }
+        g.appendChild(l);
+      });
+      blocLibre("Vos jours de visite", g);
+      g.parentNode.appendChild(dehors);
+      majDehors();
+    }
+
+    champHeure = document.createElement("input");
+    champHeure.type = "time";
+    champHeure.value = arrivee;
+    /* L'heure change ce que chaque jour peut tenir : arriver à seize heures
+       vide les journées autant qu'un curseur poussé à fond. L'aperçu la suit
+       donc, comme il suit le reste. */
+    champHeure.oninput = () => poseApercu();
+    bloc(proposables.length > 1 ? "Heure d'arrivée, chaque jour" : "Heure d'arrivée", champHeure);
+    const heures = document.createElement("span");
+    heures.className = "jHeures";
+    champHeure.parentNode.appendChild(heures);
+
+    /* Les heures du salon se lisent sous l'heure d'arrivée, là où on la
+       choisit, et suivent les jours retenus : le dernier ferme souvent plus
+       tôt. Une heure gardée d'une visite précédente qui tombe avant la
+       première ouverture est ramenée à celle-ci — la garder proposerait une
+       arrivée que le calcul corrigerait aussitôt. */
+    majHeures = () => {
+      const pris = proposables.filter(j => coches.has(j.cle));
+      const hs = (pris.length ? pris : proposables).map(j => horairesSalon(j.cle));
+      const memes = hs.every(h => h.ouverture === hs[0].ouverture &&
+                                  h.fermeture === hs[0].fermeture);
+      const h = hs[0];
+      if (!memes){
+        heures.hidden = false;
+        heures.textContent = "Les horaires changent d'un jour à l'autre : chaque " +
+          "journée commence à l'ouverture de son jour.";
+      } else {
+        heures.hidden = h.ouverture === null && h.fermeture === null;
+        heures.textContent = h.ouverture !== null && h.fermeture !== null
+          ? "Le salon est ouvert de " + ecritHeure(h.ouverture) + " à " + ecritHeure(h.fermeture) + "."
+          : h.ouverture !== null ? "Le salon ouvre à " + ecritHeure(h.ouverture) + "."
+          : "Le salon ferme à " + ecritHeure(h.fermeture) + ".";
+      }
+      const tot = hs.reduce((a, x) =>
+        x.ouverture !== null && (a === null || x.ouverture < a) ? x.ouverture : a, null);
+      const v = lueHeure(champHeure.value);
+      if (tot !== null && (v === null || v < tot))
+        champHeure.value = ecritHeure(tot).replace("h", ":");
+    };
+    majHeures();
+
+    /* Un salon de plusieurs jours dont il ne reste que le dernier : le dire
+       évite de chercher où sont passés les autres. */
+    if (tous.length > 1 && proposables.length === 1){
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "Il ne reste que le " + proposables[0].nom +
+        " : c'est cette journée qu'on organise.";
+      form.appendChild(n);
+    }
+
+    if (departs.length > 1){
+      champDepart = document.createElement("select");
+      const vide = document.createElement("option");
+      vide.value = "";
+      vide.textContent = "Peu importe";
+      champDepart.appendChild(vide);
+      departs.forEach((pt, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        // le pavillon en second, et seulement s'il y en a plusieurs : sur un
+        // salon d'un seul hall, il répétait son nom à chaque ligne
+        o.textContent = pt.nom + (DATA.plans.length > 1 ? " — " + pt.detail : "");
+        if (i === 0) o.selected = true;
+        champDepart.appendChild(o);
+      });
+      champDepart.onchange = () => poseApercu();
+      bloc("Par où vous entrez", champDepart);
+    } else if (!departs.length){
+      /* Une seule entrée repérée ne se dit plus : la nommer n'apprenait rien
+         à qui n'avait de toute façon rien à choisir. Reste le cas ci-dessous.
+
+         Aucune porte marquée sur le plan : la question ne se pose pas, et son
+         absence se remarquerait plus que sa réponse. On dit d'où l'on partira
+         plutôt que de laisser croire à un oubli — et l'exploitant qui lit son
+         propre plan y reconnaît ce qu'il lui reste à poser. */
+      const n = document.createElement("p");
+      n.className = "jSansPorte";
+      n.textContent = "Aucune entrée n'est repérée sur ce plan : la journée " +
+        "commencera au premier exposant de votre liste.";
+      form.appendChild(n);
+    }
+
+    /**
+     * Le curseur, et ce qu'il donne à voir.
+     *
+     * « Des journées égales » n'est un bon réglage que pour qui a trois jours
+     * semblables devant lui. Le visiteur qui repart par le train de seize
+     * heures veut son gros jour en premier ; celui qui n'arrive que le soir du
+     * premier jour veut l'inverse. Le curseur dit lequel, et rien de plus : il
+     * ne promet pas un nombre de stands, il incline une répartition.
+     *
+     * Dessous, ce que chaque journée porterait, recalculé à mesure. C'est le
+     * seul retour possible — le curseur ne déplace rien à l'écran, et sans ce
+     * compte on le ferait glisser sans savoir ce qu'on change. Le calcul est
+     * celui de la vraie répartition, arrêté juste avant les trajets et les
+     * heures : ce qu'annonce l'aperçu est ce que « Organiser » rendra.
+     */
+    if (proposables.length > 1){
+      const g = document.createElement("div");
+      g.className = "jPente";
+      const champPente = document.createElement("input");
+      champPente.type = "range";
+      champPente.min = "-100";
+      champPente.max = "100";
+      champPente.step = "5";
+      champPente.value = String(Math.round(pente * 100));
+      champPente.setAttribute("aria-label", "Répartition entre vos journées");
+      const bornes = document.createElement("div");
+      bornes.className = "jBornes";
+      bornes.innerHTML = "<span></span><span></span>";
+      bornes.firstChild.textContent = "premiers jours";
+      bornes.lastChild.textContent = "derniers jours";
+      const dit = document.createElement("p");
+      dit.className = "jPenteDit";
+      g.appendChild(champPente);
+      g.appendChild(bornes);
+      g.appendChild(dit);
+      blocLibre("Répartition entre vos journées", g);
+
+      const apercu = document.createElement("div");
+      apercu.className = "jApercu";
+      form.appendChild(apercu);
+
+      /* Le milieu du curseur n'est pas une position parmi d'autres : c'est le
+         réglage par défaut, et il se nomme pour qu'on sache qu'on y est. */
+      const nommePente = () => {
+        dit.textContent = pente < -0.15 ? "Les premiers jours plus chargés"
+                        : pente > 0.15 ? "Les derniers jours plus chargés"
+                        : "Des journées également chargées";
+      };
+
+      let minuteur = null;
+      poseApercu = () => {
+        const pris = proposables.filter(j => coches.has(j.cle));
+        /* Un seul jour retenu n'a rien à répartir : le curseur s'éteint plutôt
+           que de promettre un réglage sans effet. */
+        const reglable = pris.length > 1;
+        g.classList.toggle("eteint", !reglable);
+        champPente.disabled = !reglable;
+        apercu.hidden = !pris.length;
+        if (!pris.length) return;
+        if (!apercu.children.length){
+          const a = document.createElement("p");
+          a.className = "jApercuReste";
+          a.textContent = "calcul…";
+          apercu.appendChild(a);
+        }
+        apercu.classList.add("calcul");
+        clearTimeout(minuteur);
+        minuteur = setTimeout(() => {
+          let r = null;
+          /* Une répartition qui n'aboutit pas ne se raconte pas ici : le
+             bouton, lui, le dira comme il faut. L'aperçu se tait. */
+          try { r = apercuRepartition(choixCourant()); } catch (e) { apercu.hidden = true; return; }
+          ecritApercu(apercu, r);
+          apercu.classList.remove("calcul");
+        }, REPOS_APERCU);
+      };
+
+      champPente.oninput = () => {
+        pente = (+champPente.value || 0) / 100;
+        nommePente();
+        poseApercu();
+      };
+      nommePente();
+    }
+
+    corps.appendChild(form);
+    poseApercu();
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Organiser", action: () => {
+      const choix = choixCourant();
+      try { localStorage.setItem(CLE_ARRIVEE, ecritHeure(choix.arrivee).replace("h", ":")); } catch (e) {}
+      try { localStorage.setItem(CLE_PENTE, String(choix.pente)); } catch (e) {}
+      lanceSejour(choix);
+    } },
+  ]);
+
+  /* Aucun jour coché n'est pas une visite : le bouton s'éteint plutôt que
+     d'organiser un séjour vide, ou d'en choisir un à la place du visiteur. Le
+     pied n'existe qu'une fois la fenêtre ouverte, d'où ce branchement après
+     coup. */
+  const valide = $("mPied").querySelector(".btn:last-child");
+  majValide = () => { valide.disabled = !coches.size; };
+  majValide();
+}
+
+/* ------------------------------------------------------------
+   Le calcul
+   ------------------------------------------------------------ */
+/** Le calcul, et ce qu'on montre s'il n'aboutit pas. Rend faux en cas
+ *  d'échec : le parcours, lui, est intact — et c'est la seule chose à dire. */
+function essaieSejour(choix, cleAffichee, fige){
+  let s = null;
+  try {
+    s = calculeSejour(choix, fige);
+  } catch (e){
+    console.warn("Visite :", e);
+    SEJOUR = null;
+    JOURNEE = null;
+    $("pResume").textContent = "—";
+    $("jJours").hidden = true;
+    $("jCorps").innerHTML = '<p class="iAlerte"></p>';
+    $("jCorps").querySelector(".iAlerte").textContent =
+      "Le calcul de la visite n'a pas abouti sur cet appareil. " +
+      "Votre parcours, lui, est intact.";
+    return false;
+  }
+  SEJOUR = s;
+  montreLeJour(s.jours.find(j => j.cle === cleAffichee) || s.jours[0]);
+  return true;
+}
+
+/**
+ * Le calcul passe par un temps mort volontaire, comme celui de l'itinéraire :
+ * une matrice, une répartition et une centaine de tronçons tiennent en une
+ * fraction de seconde sur un poste, davantage sur un téléphone de salon. On
+ * annonce d'abord, on calcule ensuite.
+ */
+function lanceSejour(choix){
+  vueJournee = true;
+  SEJOUR = null;
+  JOURNEE = null;
+  $("pCorps").hidden = $("pPied").hidden = $("pActs").hidden = true;
+  $("jJours").hidden = true;
+  $("jCorps").hidden = $("jPied").hidden = false;
+  $("pEyebrow").textContent = choix.jours.length > 1 ? "Ma visite" : "Ma journée";
+  $("pTitre").textContent = choix.jours.length > 1
+    ? plurielParcours(choix.jours.length, "journée")
+    : (choix.jours[0].nom || "Journée organisée");
+  $("pResume").textContent = "calcul…";
+  $("jCorps").innerHTML = '<p class="iNote">Recherche du meilleur ordre de visite…</p>';
+  /* Organiser une visite, c'est calculer des dizaines d'itinéraires : cela se
+     compte avec eux, faute d'un genre à soi en base. Sans cible pour autant :
+     les rattacher aux stands traversés ferait passer pour autant de demandes
+     de visiteurs ce qui n'est qu'un clic sur « organiser ». */
+  mesure("itineraire");
+  setTimeout(() => essaieSejour(choix, ""), 30);
+}
+
+/**
+ * Refaire la visite sur place — un stand déplacé, un stand retiré.
+ *
+ * Sans annonce ni temps mort : la matrice est gardée, et le reste tient en
+ * quelques dizaines de millisecondes. Afficher « calcul… » le temps d'un
+ * clignement ferait douter d'un geste qui a pourtant abouti.
+ *
+ * `fige` porte la visite telle qu'elle était : une retouche ne rebat pas les
+ * cartes, elle déplace ce qu'on lui a dit de déplacer. Reprendre l'ensemble
+ * reste possible, et c'est le pied du tiroir qui le propose en toutes lettres.
+ */
+function refaitSejour(cleAffichee, fige){
+  if (!SEJOUR) return;
+  essaieSejour(SEJOUR.choix, cleAffichee || (JOURNEE ? JOURNEE.cle : ""), fige);
+}
+
+/* ------------------------------------------------------------
+   Branchements
+   ------------------------------------------------------------ */
+$("btnJournee").onclick = ouvreOrganisation;
+$("jRefaire").onclick = ouvreOrganisation;
+$("jRetour").onclick = () => { vueJournee = false; appliqueVueParcours(); };

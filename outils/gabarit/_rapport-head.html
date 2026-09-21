@@ -1,0 +1,32 @@
+<title>Rapport d'utilisation</title>
+<meta name="robots" content="noindex">
+<!--__POLICES__-->
+
+<script src="config.js"></script>
+
+<link rel="stylesheet" href="console.css">
+
+<div class="page">
+  <header class="topbar">
+    <!-- Le rapport est un écran de l'outil, comme la console : même barre,
+         même marque. -->
+    <span class="marqueE2M"><!--__MARQUE__--></span>
+    <h1>Utilisation</h1>
+    <select id="choixEvt" aria-label="Événement"></select>
+    <span class="periode">
+      <select id="choixPeriode" aria-label="Période"></select>
+    </span>
+    <span class="statut" id="statut" role="status" aria-live="polite"></span>
+    <div class="droite">
+      <a class="btn petit" id="lienConsole" href="admin-plans">Console</a>
+      <button class="btn petit" id="btnExcel" title="Un classeur : une ligne par exposant, une colonne par provenance">Export Excel</button>
+      <button class="btn petit" id="btnRecharger">Actualiser</button>
+      <button class="icone langue" id="btnLangue" type="button" data-langue></button>
+      <button class="icone" id="btnTheme" title="Thème clair ou sombre" aria-label="Thème">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="fiche" id="rapport"></main>
+</div>

@@ -1,0 +1,2423 @@
+
+/* ============================================================
+   11. Calques de dessin
+   Des calques créés par l'exploitant, propres à un pavillon, sur lesquels
+   il trace rectangles, polygones, lignes et textes. Le tracé est enregistré
+   en mètres dans le repère du plan : il suit le zoom comme le reste.
+   ============================================================ */
+/* Un rangement par salon, et non plus un seul pour tous — la même règle que
+   pour les réglages, et un dégât de plus.
+
+   Un pavillon se nomme ici par son identifiant Klipso, et deux éditions d'un
+   même salon se le partagent : l'édition suivante se prépare en dupliquant la
+   précédente, ses plans avec. Rangés sous ce seul nom, les calques d'une
+   édition devenaient donc ceux de la voisine — le chargement les prenait pour
+   un travail que la base n'avait pas encore vu, et l'enregistrement les y
+   écrivait. Un calque supprimé revenait ainsi au chargement d'après, republié
+   depuis le salon d'à côté ; supprimé de nouveau, il revenait encore.
+
+   Les trois rangements sont cloisonnés ensemble : séparer les dessins sans
+   séparer ce qui dit d'où ils viennent — la marque d'attente, la liste des
+   clés publiées — reviendrait à les comparer à la mémoire d'un autre salon. */
+const CLE_DESSINS = "plan-dessins";
+let cleDessins = CLE_DESSINS;
+let DESSINS = {};
+
+/* Ce qui n'est pas encore parti en base.
+   Les dessins vivent à deux endroits : la base, qui fait foi pour les
+   visiteurs, et le poste, où l'exploitant travaille. Au chargement, la base
+   écrasait le poste sans rien demander — un calque tracé puis non publié
+   disparaissait au premier rechargement, alors qu'il était encore dans le
+   stockage local. Il ne se perdait pas : il devenait invisible, puis
+   l'enregistrement suivant l'effaçait pour de bon.
+
+   On retient donc, pavillon par pavillon, qu'un dessin a bougé depuis la
+   dernière publication. Ce travail-là l'emporte sur la base tant qu'il n'y est
+   pas parti — lui seul n'existe nulle part ailleurs. */
+const CLE_ATTENTE = "plan-dessins-attente";
+let cleAttente = CLE_ATTENTE;
+let ATTENTE = {};
+
+/** Le pavillon a-t-il des dessins que la base ne connaît pas encore ? */
+const enAttente = (id) => !!ATTENTE[id];
+
+/* Ce que la base a confirmé, pavillon par pavillon : la liste des clés qu'elle
+   nous a rendues au dernier chargement, ou que notre dernier envoi y a mises.
+
+   Elle répond à une question que la marque d'attente ne sait pas trancher. Un
+   calque présent ici et absent de la base a été supprimé ailleurs — il faut
+   l'oublier. Le même calque jamais confirmé n'a, lui, jamais quitté ce poste :
+   l'oublier le perd pour de bon. Faute de les distinguer, un enregistrement
+   manqué — session expirée, réseau coupé — rendait un plan nu au rechargement
+   suivant, alors que tout le travail était encore là, dans ce navigateur.
+
+   Elle sert aussi à l'envers, à la publication : on n'efface en base que ce
+   qu'on y a vu et qui a disparu depuis. Un poste qui ne connaît rien n'efface
+   rien, là où un « tout ce que je n'ai pas » emportait le travail d'à côté. */
+const CLE_PUBLIES = "plan-dessins-publies";
+let clePubliees = CLE_PUBLIES;
+let PUBLIES = {};
+
+/* Le témoin de l'adoption, un par salon. Il ne se déduit d'aucun des trois
+   rangements : un salon ouvert sans qu'on y dessine n'écrit ni ses calques ni
+   sa marque d'attente, et l'absence de ceux-là ne dit donc pas que l'ancien
+   rangement n'a pas encore été repris. */
+const CLE_REPRIS = "plan-dessins-repris";
+
+/** Un rangement du poste, ou rien de lisible : un stockage refusé — navigation
+ *  privée, quota plein — ne doit pas emporter le démarrage avec lui. */
+function litRange(cle){
+  try { return JSON.parse(localStorage.getItem(cle) || "{}") || {}; }
+  catch (e) { return {}; }
+}
+
+/**
+ * Ouvre les calques du salon qu'on vient de charger.
+ *
+ * Appelée avec les réglages, avant que le chargement ne confronte la base à ce
+ * que le poste garde : les trois rangements doivent être ceux de ce salon-ci
+ * au moment où la comparaison a lieu, sans quoi elle porterait sur le voisin.
+ */
+function ouvreDessins(d){
+  const s = salonRange(d);
+  cleDessins = CLE_DESSINS + ":" + s;
+  cleAttente = CLE_ATTENTE + ":" + s;
+  clePubliees = CLE_PUBLIES + ":" + s;
+  DESSINS = litRange(cleDessins);
+  ATTENTE = litRange(cleAttente);
+  PUBLIES = litRange(clePubliees);
+  reprendCommun(d, CLE_REPRIS + ":" + s);
+}
+
+/**
+ * Ce que l'ancien rangement commun gardait de ce salon.
+ *
+ * Il n'est pas jeté, à la différence de celui des réglages : un calque qui
+ * n'est jamais parti en base n'existe nulle part ailleurs que là, et un salon
+ * qu'on ne rouvrira qu'un jour prochain y a peut-être le sien. On n'y prend
+ * donc que les pavillons du salon ouvert, à sa première ouverture ; ensuite
+ * les deux rangements divergent, et c'est le nouveau qui fait foi.
+ *
+ * Deux éditions qui se partagent un pavillon le reprennent toutes les deux :
+ * rien ne dit à laquelle il appartenait. C'est le mélange d'avant, une
+ * dernière fois — et il se défait dès le premier enregistrement de chacune,
+ * chacune n'écrivant plus que dans le sien.
+ */
+function reprendCommun(d, temoin){
+  let fait = true;
+  try { fait = localStorage.getItem(temoin) !== null; } catch (e) {}
+  if (fait) return;
+  const miens = new Set(((d && d.plans) || []).map(p => p.id));
+  const prend = (cle, cible) => {
+    const vieux = litRange(cle);
+    Object.keys(vieux).forEach(id => { if (miens.has(id)) cible[id] = vieux[id]; });
+  };
+  prend(CLE_DESSINS, DESSINS);
+  prend(CLE_ATTENTE, ATTENTE);
+  prend(CLE_PUBLIES, PUBLIES);
+  /* Recopié dans le nouveau rangement sur-le-champ, et le témoin posé avec.
+     Sans la copie, l'adoption se perdrait au chargement suivant — un salon où
+     l'on ne dessine rien n'écrit rien de lui-même. Sans le témoin, elle se
+     referait à chaque fois, et rendrait chaque fois au salon les calques
+     qu'il a écartés depuis : c'est le retour qu'on vient de corriger. */
+  try {
+    localStorage.setItem(cleDessins, JSON.stringify(DESSINS));
+    localStorage.setItem(cleAttente, JSON.stringify(ATTENTE));
+    localStorage.setItem(clePubliees, JSON.stringify(PUBLIES));
+    localStorage.setItem(temoin, "1");
+  } catch (e) {}
+}
+
+/** Note ce que la base contient pour ce pavillon, à cet instant. */
+function notePubliees(id, cles){
+  PUBLIES[id] = cles.slice();
+  try { localStorage.setItem(clePubliees, JSON.stringify(PUBLIES)); } catch (e) {}
+}
+
+/** Ce calque a-t-il déjà été vu en base ? */
+const dejaPubliee = (id, cle) => (PUBLIES[id] || []).indexOf(cle) >= 0;
+
+/* L'instant du geste plutôt qu'un simple « oui » : l'envoi relève la marque
+   avant d'écrire et ne l'efface qu'inchangée, faute de quoi un trait tracé
+   pendant l'envoi se croyait publié — et le chargement suivant l'écrasait par
+   ce que la base, qui ne l'avait pas reçu, en disait. */
+function marqueAttente(id, oui){
+  if (oui) ATTENTE[id] = Date.now(); else delete ATTENTE[id];
+  try { localStorage.setItem(cleAttente, JSON.stringify(ATTENTE)); } catch (e) {}
+  majAttente();
+}
+
+/** Les calques de dessin du pavillon courant. Ceux du service ont été repris
+ *  au chargement ; il ne reste qu'à ouvrir la liste si elle manque. */
+const mesCalques = () => (DESSINS[P().id] = DESSINS[P().id] || []);
+const enregistreDessins = () => {
+  /* Les repères et les formes dessinées entrent dans le calcul d'itinéraire :
+     la grille de marche qui les ignore n'a plus cours, et l'annuaire des
+     passages non plus. On attend la fin du geste — dessiner en referait une à
+     chaque image, ce qui serait insoutenable. */
+  oublieGrilles();
+  oublieLiaisons();
+  // les formes posées servent d'aimants aux suivantes : le relevé a vieilli
+  oublieAimants();
+  // un repère vient peut-être d'être posé, renommé ou retiré de la recherche
+  oublieReperes();
+  rafraichitApercu();
+  /* Le geste vient d'écarter le poste de ce que la base contient : c'est vrai
+     dès la première forme tracée, et non au moment où l'on pense à publier. */
+  marqueAttente(P().id, true);
+  try { localStorage.setItem(cleDessins, JSON.stringify(DESSINS)); }
+  catch (e) {
+    // les images sont encodées dans le document : le quota se remplit vite
+    if ($("outilsAide")) $("outilsAide").textContent =
+      "Mémoire du navigateur pleine : allégez ou supprimez une image.";
+  }
+  /* Et en base, dès que le geste s'arrête : le poste n'est qu'un cache, et
+     c'est justement quand son quota déborde que la base doit avoir le dessin. */
+  programmePublication();
+};
+
+let calqueActif = null;   // id du calque en cours d'édition
+let outil = "main";
+let enCours = null;       // tracé en construction
+
+/* Historique des dessins. L'instantané ne copie que les calques et leurs
+   tableaux de formes : les formes elles-mêmes, images comprises, sont
+   partagées par référence — mémoriser reste donc quasi gratuit. */
+const HIST = [], REFAIRE = [];
+const instantane = () => mesCalques().map(c => Object.assign({}, c, { formes: c.formes.slice() }));
+function memorise(){
+  HIST.push(instantane());
+  if (HIST.length > 50) HIST.shift();
+  REFAIRE.length = 0;
+}
+function restaure(source, autre){
+  if (!source.length) return false;
+  autre.push(instantane());
+  DESSINS[P().id] = source.pop();
+  if (calqueActif && !trouveCalque(calqueActif)) activeCalque(null);
+  enregistreDessins(); dessineDessins();
+  if (ADMIN) construitPanneau();
+  return true;
+}
+function annule(){
+  // pendant un tracé, on retire le dernier sommet plutôt que l'action entière
+  if (enCours && enCours.pts.length > 1){
+    enCours.pts.pop();
+    apercu(cheminForme({ t: "ligne", pts: enCours.pts }));
+    apercuGuide(null);
+    aide();
+    return;
+  }
+  if (enCours){ termineTrace(false); return; }
+  if (!restaure(HIST, REFAIRE)) $("outilsAide").textContent = "Rien à annuler.";
+}
+function refais(){ restaure(REFAIRE, HIST); }
+
+const trouveCalque = id => mesCalques().find(c => c.id === id);
+const nouvelId = () => "d" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+
+/* --- rendu --- */
+
+/**
+ * Le tracé d'une suite de sommets, coins abattus d'un rayon donné.
+ *
+ * Un relevé de bureau d'études décrit un bâtiment ; un plan de visiteur décrit
+ * un lieu. Le second veut des murs francs et des angles doux, là où le premier
+ * détaille chaque battant de porte. D'où ce rayon : il tient en mètres, comme
+ * le reste du tracé, et suit donc le zoom au lieu de s'épaissir avec lui.
+ *
+ * Le rayon demandé n'est qu'un maximum. Un angle serré entre deux murs courts
+ * n'a pas la place de l'accueillir : la coupe s'arrête alors à la moitié du
+ * plus court des deux côtés, et l'arrondi se resserre d'autant. Sans cette
+ * limite, deux coins voisins se mangeraient l'un l'autre et le contour se
+ * retournerait.
+ */
+function cheminArrondi(pts, r, ferme){
+  const n = pts.length;
+  const droit = "M" + pts.map(p => p[0] + " " + p[1]).join("L") + (ferme ? "Z" : "");
+  if (!(r > 0) || n < 3) return droit;
+  const cm = (x) => +x.toFixed(2);
+
+  /* Les extrémités d'une ligne ouverte restent vives : il n'y a rien à
+     raccorder au-delà. */
+  const coins = new Array(n).fill(null);
+  for (let i = ferme ? 0 : 1; i <= (ferme ? n - 1 : n - 2); i++){
+    const a = pts[(i - 1 + n) % n], b = pts[i], c = pts[(i + 1) % n];
+    const lu = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    const lv = Math.hypot(c[0] - b[0], c[1] - b[1]);
+    if (!lu || !lv) continue;
+    const u = [(a[0] - b[0]) / lu, (a[1] - b[1]) / lu];
+    const v = [(c[0] - b[0]) / lv, (c[1] - b[1]) / lv];
+    // un sommet aligné ou replié sur lui-même n'a pas d'angle à adoucir
+    const theta = Math.acos(Math.max(-1, Math.min(1, u[0] * v[0] + u[1] * v[1])));
+    if (theta < .05 || Math.PI - theta < .05) continue;
+    const t = Math.min(r / Math.tan(theta / 2), lu / 2, lv / 2);
+    // le sens de l'arc suit celui du virage ; l'axe des ordonnées descend,
+    // un produit vectoriel positif tourne donc dans le sens des aiguilles
+    const sens = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]) > 0 ? 1 : 0;
+    coins[i] = { e: [cm(b[0] + u[0] * t), cm(b[1] + u[1] * t)],
+                 s: [cm(b[0] + v[0] * t), cm(b[1] + v[1] * t)],
+                 r: cm(t * Math.tan(theta / 2)), sens };
+  }
+  if (coins.every(c => !c)) return droit;
+
+  const point = (p) => p[0] + " " + p[1];
+  const depart = ferme && coins[0] ? coins[0].s : pts[0];
+  let d = "M" + point(depart);
+  for (let k = 1; k <= (ferme ? n : n - 1); k++){
+    const co = coins[k % n];
+    d += co ? "L" + point(co.e) + "A" + co.r + " " + co.r + " 0 0 " + co.sens + " " + point(co.s)
+            : "L" + point(pts[k % n]);
+  }
+  return d + (ferme ? "Z" : "");
+}
+
+/* Rectangle, image, stand dessiné : trois formes que deux coins opposés
+   suffisent à tenir. Le tracé, les poignées et le redimensionnement les
+   traitent donc ensemble. */
+const estCadre = (f) => f.t === "rect" || f.t === "image" || f.t === "stand";
+
+function cheminForme(f){
+  if (estCadre(f)){
+    const [a, b] = f.pts;
+    const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]);
+    const w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
+    // une image porte son propre cadrage : l'arrondir rognerait le visuel
+    if (f.t !== "image" && f.r > 0)
+      return cheminArrondi([[x, y], [x + w, y], [x + w, y + h], [x, y + h]], f.r, true);
+    return "M" + x + " " + y + "h" + w + "v" + h + "h" + (-w) + "Z";
+  }
+  return cheminArrondi(f.pts, f.r || 0, f.t !== "ligne");
+}
+/* --- épaisseur et style du trait ---
+   Le trait des calques ne grossit pas avec le zoom : son épaisseur se compte
+   en pixels d'écran, et l'espacement des points avec elle. Rien n'est écrit
+   tant que la forme ne demande rien — la feuille de style garde alors la main,
+   et le pointillé qui signale un rôle d'itinéraire pendant l'édition reste
+   lisible sur les tracés qu'on n'a pas réglés. */
+const EPAISSEUR_TRAIT = 2;
+
+function styleTrait(f){
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  const css = [];
+  if (ep !== EPAISSEUR_TRAIT) css.push("stroke-width:" + ep);
+  /* Des points ronds plutôt que des tirets : les bouts arrondis du trait les
+     dessinent d'eux-mêmes dès que la portion tracée est quasi nulle. */
+  if (f.pointille) css.push("stroke-dasharray:.01 " + +(ep * 2.2).toFixed(2));
+  return css.length ? ' style="' + css.join(";") + '"' : "";
+}
+
+/* --- la pointe des flèches ---
+   Une ligne dit un chemin ; une flèche dit dans quel sens on le prend — le
+   sens d'une allée, la porte par laquelle on entre, le flux d'un jour de
+   montage. C'est un réglage du trait et non une forme de plus : la ligne
+   reste la même pour l'itinéraire, qui lit ses sommets sans rien savoir de
+   sa pointe. */
+const ANGLE_FLECHE = .45;   // demi-ouverture des branches, en radians (~26°)
+
+/**
+ * La longueur des branches, en mètres, d'après le zoom du moment.
+ *
+ * Comme l'épaisseur du trait qu'elle termine, et pour la même raison : une
+ * pointe comptée en mètres suivrait le plan, et un dézoom la réduirait à rien
+ * sur une ligne restée bien visible. Elle grandit avec l'épaisseur, sans quoi
+ * un trait très épais avalerait sa propre pointe.
+ */
+function longueurFleche(f){
+  const r = cadrePlan();
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  return view.w / (r.width || 1) * (4 + ep * 3);
+}
+
+/** Les deux branches de chaque bout fléché, d'un seul tracé. */
+function cheminFleche(f){
+  const pts = f.pts;
+  if (!f.fleche || !pts || pts.length < 2) return "";
+  const bouts = [];
+  if (f.fleche !== "debut") bouts.push([pts[pts.length - 2], pts[pts.length - 1]]);
+  if (f.fleche !== "fin") bouts.push([pts[1], pts[0]]);
+  const L = longueurFleche(f);
+  let d = "";
+  for (const [a, b] of bouts){
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l = Math.hypot(dx, dy);
+    if (!l) continue;                 // deux points confondus n'indiquent rien
+    const ux = dx / l, uy = dy / l;
+    /* Chaque branche repart de la pointe vers l'arrière, tournée d'un
+       demi-angle de part et d'autre du trait. */
+    for (const sens of [1, -1]){
+      const c = Math.cos(ANGLE_FLECHE), s = Math.sin(ANGLE_FLECHE) * sens;
+      const vx = -(ux * c - uy * s), vy = -(uy * c + ux * s);
+      d += "M" + b[0].toFixed(2) + " " + b[1].toFixed(2) +
+           "L" + (b[0] + vx * L).toFixed(2) + " " + (b[1] + vy * L).toFixed(2);
+    }
+  }
+  return d;
+}
+
+/** La pointe prend la couleur et l'épaisseur du trait, jamais son pointillé
+ *  ni le remplissage de son calque : une pointe en creux, ou en trois points,
+ *  ne montre plus rien. Le style est écrit sur la balise pour tenir devant le
+ *  pointillé que le mode édition pose sur les calques porteurs d'un rôle. */
+function marqueFleche(f){
+  const d = cheminFleche(f);
+  if (!d) return "";
+  const ep = f.ep > 0 ? f.ep : EPAISSEUR_TRAIT;
+  return '<path class="fleche" style="fill:none;stroke-dasharray:none' +
+         (ep !== EPAISSEUR_TRAIT ? ";stroke-width:" + ep : "") + '" d="' + d + '"/>';
+}
+
+/** Le zoom change : les pointes se reprennent, comme les pastilles de
+ *  l'itinéraire — le trait, lui, garde son épaisseur par la feuille de style.
+ *  Un plan sans flèche ne coûte que le premier test. */
+function rafraichitFleches(){
+  const c = $("couches");
+  const pointes = c && c.querySelectorAll(".dcal .fleche");
+  if (!pointes || !pointes.length || !view) return;
+  const par = new Map();
+  for (const cal of mesCalques())
+    for (const f of cal.formes) if (f.fleche) par.set(f.id, f);
+  pointes.forEach(p => {
+    const f = par.get(p.parentNode.dataset.f);
+    if (f) p.setAttribute("d", cheminFleche(f));
+  });
+}
+
+/** Ce que la palette règle, posé sur la ligne qui vient d'être tracée. On ne
+ *  retient que l'écart au trait ordinaire : une ligne sans réglage suit son
+ *  calque, aujourd'hui comme le jour où il changera d'allure. */
+function poseTrait(f){
+  const e = $("traitEpaisseur"), s = $("traitStyle"), fl = $("traitFleche");
+  const ep = e ? parseFloat(e.value) : NaN;
+  if (isFinite(ep) && ep > 0 && ep !== EPAISSEUR_TRAIT) f.ep = ep;
+  if (s && s.value === "pointille") f.pointille = true;
+  if (fl && fl.value) f.fleche = fl.value;
+}
+
+/** Le balisage d'une forme, seule. Sorti de « dessineDessins » pour qu'un
+ *  geste puisse refaire une forme sans refaire le plan. */
+function traceForme(f){
+  return f.t === "image"
+    ? traceImage(f)
+    : f.t === "repere"
+    ? traceRepere(f)
+    : f.t === "stand"
+    ? traceStandDessine(f)
+    : f.t === "texte"
+    ? '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id + '"><text x="' + f.pts[0][0] + '" y="' + f.pts[0][1] +
+      '" font-size="' + (f.taille || 2) + '">' + esc(f.txt) + '</text></g>'
+    : '<g class="forme' + (f.id === formeSel ? " pick" : "") + '" data-f="' + f.id +
+      '"><path' + styleTrait(f) + ' d="' + cheminForme(f) + '"/>' +
+      marqueFleche(f) + '</g>';
+}
+
+function dessineDessins(){
+  const c = $("couches");
+  c.querySelectorAll(".dcal").forEach(g => g.remove());
+  for (const cal of mesCalques()){
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    const role = roleIti(cal);
+    g.setAttribute("class", "dcal" + (cal.rempli ? " plein" : "") +
+                            (role ? " role " + role : "") +
+                            (cal.id === calqueActif && ADMIN ? " editable" : ""));
+    g.dataset.dcal = cal.id;
+    g.style.color = cal.couleur || "var(--accent)";
+    g.style.display = cal.visible === false ? "none" : "";
+    g.innerHTML = cal.formes.map(traceForme).join("");
+    c.appendChild(g);
+  }
+  ordonneDom();
+  /* Un contour qui perce le fond de carte vient peut-être d'être tracé,
+     déplacé ou effacé : le gabarit de découpe suit le dessin, et lui seul sait
+     quand il a changé. */
+  if (typeof poseMasqueCarte === "function") poseMasqueCarte();
+  cartouchePoi();
+  mentionOsm();
+  /* Les stands dessinés viennent de renaître : la teinte de leur secteur et le
+     fondu du filtre se posent sur des nœuds qui n'existaient pas encore. */
+  rafraichitStandsDessines();
+}
+
+/**
+ * Une seule forme refaite, à sa place dans son calque.
+ *
+ * C'est ce dont un geste a besoin. « dessineDessins » refait les nœuds de tous
+ * les calques, puis remesure le cartouche des repères et rallume les zones :
+ * soixante-dix millisecondes, dont soixante-huit pour un cartouche que
+ * déplacer une forme ne change pas — ni son libellé, ni son type, ni la
+ * visibilité de son calque. Appelé à chaque mouvement de souris, il faisait
+ * traîner la forme d'une bonne demi-seconde derrière le pointeur, là où le
+ * tracé d'une forme neuve, qui ne passe que par « apercu », suit la main.
+ *
+ * Ne s'en trouve ici que ce qu'un déplacement périme vraiment : le tracé, la
+ * découpe du fond de carte, et le nom d'un stand dessiné.
+ */
+function redessineForme(f){
+  const g = $("couches").querySelector('.forme[data-f="' + CSS.escape(f.id) + '"]');
+  if (!g){ dessineDessins(); return; }
+  const hote = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  hote.innerHTML = traceForme(f);
+  const neuf = hote.firstElementChild;
+  if (!neuf){ dessineDessins(); return; }
+  g.replaceWith(neuf);
+  /* La mise en avant d'un point d'intérêt est posée par « eclairePoi », que
+     l'on ne rappelle pas : le nœud neuf la reprend ici, sans quoi le repère
+     qu'on déplace s'éteindrait sous le doigt. */
+  if (f.t === "repere") neuf.classList.toggle("phare", phareRepere(f));
+  // un stand dessiné porte son nom et le retrait de son secteur : tous deux
+  // se posent sur un nœud qui vient de naître
+  if (f.t === "stand") rafraichitStandsDessines();
+  /* Un contour qui perce le fond de carte vient de bouger : le gabarit de
+     découpe suit le dessin. Il se compare avant de se reposer. */
+  if (typeof poseMasqueCarte === "function") poseMasqueCarte();
+}
+
+/** La couleur d'un calque posée sans rebâtir son dessin : le groupe la porte,
+ *  et ses tracés la prennent par `currentColor`. C'est ce dont le nuancier a
+ *  besoin pendant qu'on glisse — `dessineDessins` refait tous les nœuds de
+ *  tous les calques, ce qu'une rafale d'événements ne supporte pas. */
+function peintCalque(cal){
+  const g = $("couches").querySelector('.dcal[data-dcal="' + CSS.escape(cal.id) + '"]');
+  if (g) g.style.color = cal.couleur || "var(--accent)";
+}
+
+/* --- conversion écran → repère du plan --- */
+function versPlan(clientX, clientY){
+  const r = cadrePlan();
+  return [ +(view.x + (clientX - r.left) / r.width * view.w).toFixed(2),
+           +(view.y + (clientY - r.top) / r.height * view.h).toFixed(2) ];
+}
+
+function apercu(d){
+  let el = $("apercu");
+  if (!d){ if (el) el.remove(); return; }
+  if (!el){
+    el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    el.id = "apercu";
+    svg.appendChild(el);
+  }
+  el.setAttribute("d", d);
+}
+
+/** Le trait fin qui montre sur quoi le point vient de s'aligner. */
+function apercuGuide(d){
+  let el = $("apercuGuide");
+  if (!d){ if (el) el.remove(); return; }
+  if (!el){
+    el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    el.id = "apercuGuide";
+    svg.appendChild(el);
+  }
+  el.setAttribute("d", d);
+}
+
+/* ------------------------------------------------------------
+   Aide au tracé d'un contour de hall
+   ------------------------------------------------------------
+   Le fond de plan vient d'un relevé technique : il porte l'épaisseur des
+   murs, le battant de chaque porte, le moindre décrochement de poteau. Un
+   visiteur n'a que faire de tout cela — il lui faut la silhouette du
+   pavillon, franche, pour savoir où il est. On la retrace donc par-dessus,
+   et deux choses suffisent à la rendre nette : des segments redressés, et
+   des angles adoucis. Les portes disparaissent d'elles-mêmes, puisqu'on ne
+   les suit pas.
+   ------------------------------------------------------------ */
+
+/** Ce que la main sait viser : douze pixels d'écran, convertis en mètres. */
+function toleranceTrace(){
+  const r = cadrePlan();
+  return r.width ? view.w / r.width * 12 : .3;
+}
+
+const aimanteContour = () =>
+  !$("contourAimant") || $("contourAimant").checked;
+
+const rayonContour = () => {
+  const v = parseFloat($("contourRayon") ? $("contourRayon").value : "");
+  return isFinite(v) && v > 0 ? v : 0;
+};
+
+/**
+ * Le prochain sommet, redressé.
+ *
+ * Deux corrections, dans cet ordre. La direction d'abord : elle bascule sur
+ * le huitième de tour le plus proche, ce qui donne des murs d'équerre et des
+ * pans coupés à quarante-cinq degrés sans viser. La longueur ensuite : si le
+ * point tombe près de la verticale ou de l'horizontale d'un sommet déjà posé,
+ * il s'y accroche. C'est ce second réglage qui fait qu'un contour se referme
+ * exactement là où il a commencé, au lieu de laisser un décalage d'un
+ * dixième de mètre que le zoom finit toujours par montrer.
+ *
+ * `guide` reçoit le sommet servi de référence, s'il y en a un : l'appelant en
+ * tire le trait qui l'explique.
+ */
+function redresseTrace(p, pts, guide){
+  if (guide) guide.q = null;
+  if (!pts.length || !aimanteContour()) return p;
+  const tol = toleranceTrace();
+  const b = pts[pts.length - 1];
+  const dx = p[0] - b[0], dy = p[1] - b[1];
+  const l = Math.hypot(dx, dy);
+  if (l < 1e-6) return p;
+  const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+  const ux = Math.cos(a), uy = Math.sin(a);
+  let x = b[0] + ux * l, y = b[1] + uy * l, meilleur = null;
+  for (const q of pts){
+    /* On cherche la longueur qui met le point sur l'abscisse — ou l'ordonnée
+       — du sommet q. Une direction presque parallèle à l'axe visé donnerait
+       une longueur démesurée pour un gain nul : on l'écarte. */
+    for (const axe of [0, 1]){
+      const c = axe ? uy : ux;
+      if (Math.abs(c) < .3) continue;
+      const l2 = (q[axe] - b[axe]) / c;
+      if (l2 < tol) continue;              // derrière soi, ou sur soi
+      const px = b[0] + ux * l2, py = b[1] + uy * l2;
+      const ecart = Math.hypot(px - x, py - y);
+      if (ecart < tol && (!meilleur || ecart < meilleur.ecart))
+        meilleur = { x: px, y: py, ecart, q, axe };
+    }
+  }
+  if (meilleur){
+    x = meilleur.x; y = meilleur.y;
+    if (guide) guide.q = meilleur;
+  }
+  return [+x.toFixed(2), +y.toFixed(2)];
+}
+
+/** Le trait pointillé qui relie le sommet de référence au point accroché. */
+function traceGuide(g, p){
+  if (!g || !g.q){ apercuGuide(null); return; }
+  const q = g.q.q;
+  apercuGuide("M" + q[0] + " " + q[1] + "L" + p[0] + " " + p[1]);
+}
+
+/** Le contour se referme quand on revient sur son premier sommet. */
+function fermeIci(p, pts){
+  if (pts.length < 3) return false;
+  return Math.hypot(p[0] - pts[0][0], p[1] - pts[0][1]) < toleranceTrace() * 1.5;
+}
+
+function ajouteForme(f){
+  const c = trouveCalque(calqueActif);
+  if (!c) return;
+  memorise();
+  f.id = nouvelId();
+  c.formes.push(f);
+  enregistreDessins();
+  dessineDessins();
+  aide();
+  return f.id;
+}
+
+/* Les libellés courants, pour ne pas les ressaisir à chaque salon. */
+/**
+ * Pictogrammes des points d'intérêt.
+ *
+ * Tirés de Material Symbols (Google, licence Apache 2.0), dans leur variante
+ * au trait. Ils sont recopiés ici plutôt qu'appelés à distance : une page
+ * publiée ne doit dépendre d'aucun service tiers pour s'afficher, et le plan
+ * se consulte parfois sur un réseau de salon capricieux.
+ *
+ * Leur grille est celle de Material — 960 unités, origine en haut — d'où le
+ * viewBox conservé tel quel et un <svg> imbriqué qui s'en charge. Chaque
+ * pictogramme porte donc la sienne, et celui qui vient d'ailleurs — le M du
+ * métro — garde celle de son recueil d'origine.
+ */
+const PICTOS = {
+  wc: { vb: "0 -960 960 960", d: "<path d=\"M220-80v-300h-60v-220q0-33 23.5-56.5T240-680h120q33 0 56.5 23.5T440-600v220h-60v300H220Zm80-640q-33 0-56.5-23.5T220-800q0-33 23.5-56.5T300-880q33 0 56.5 23.5T380-800q0 33-23.5 56.5T300-720ZM600-80v-240H480l102-306q8-26 29.5-40t48.5-14q27 0 48.5 14t29.5 40l102 306H720v240H600Zm60-640q-33 0-56.5-23.5T580-800q0-33 23.5-56.5T660-880q33 0 56.5 23.5T740-800q0 33-23.5 56.5T660-720Z\"/>" },
+  /* Une porte de hall est le plus souvent les deux à la fois — on y entre le
+     matin, on en ressort le soir — et le visiteur qui la cherche cherche par
+     où passer : le battant de Material reçoit donc une double flèche à la
+     place de la sienne. Les salons qui séparent les deux flux gardent les
+     deux battants d'origine, une flèche chacun. */
+  entree: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Z\"/><path d=\"M600-480 400-280v-160H280v160L80-480l200-200v160h120v-160l200 200Z\"/>" },
+  entree_seule: { vb: "0 -960 960 960", d: "<path d=\"M480-120v-80h280v-560H480v-80h280q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H480Zm-80-160-55-58 102-102H120v-80h327L345-622l55-58 200 200-200 200Z\"/>" },
+  sortie: { vb: "0 -960 960 960", d: "<path d=\"M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h280v80H200Zm440-160-55-58 102-102H360v-80h327L585-622l55-58 200 200-200 200Z\"/>" },
+  accueil: { vb: "0 -960 960 960", d: "<path d=\"M440-120v-80h320v-284q0-117-81.5-198.5T480-764q-117 0-198.5 81.5T200-484v244h-40q-33 0-56.5-23.5T80-320v-80q0-21 10.5-39.5T120-469l3-53q8-68 39.5-126t79-101q47.5-43 109-67T480-840q68 0 129 24t109 66.5Q766-707 797-649t40 126l3 52q19 9 29.5 27t10.5 38v92q0 20-10.5 38T840-249v49q0 33-23.5 56.5T760-120H440Zm-80-280q-17 0-28.5-11.5T320-440q0-17 11.5-28.5T360-480q17 0 28.5 11.5T400-440q0 17-11.5 28.5T360-400Zm240 0q-17 0-28.5-11.5T560-440q0-17 11.5-28.5T600-480q17 0 28.5 11.5T640-440q0 17-11.5 28.5T600-400Zm-359-62q-7-106 64-182t177-76q89 0 156.5 56.5T720-519q-91-1-167.5-49T435-698q-16 80-67.5 142.5T241-462Z\"/>" },
+  info: { vb: "0 -960 960 960", d: "<path d=\"M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z\"/>" },
+  restauration: { vb: "0 -960 960 960", d: "<path d=\"M280-80v-366q-51-14-85.5-56T160-600v-280h80v280h40v-280h80v280h40v-280h80v280q0 56-34.5 98T360-446v366h-80Zm400 0v-320H560v-280q0-83 58.5-141.5T760-880v800h-80Z\"/>" },
+  cafe: { vb: "0 -960 960 960", d: "<path d=\"M160-120v-80h640v80H160Zm160-160q-66 0-113-47t-47-113v-400h640q33 0 56.5 23.5T880-760v120q0 33-23.5 56.5T800-560h-80v120q0 66-47 113t-113 47H320Zm0-80h240q33 0 56.5-23.5T640-440v-320H240v320q0 33 23.5 56.5T320-360Zm400-280h80v-120h-80v120ZM320-360h-80 400-320Z\"/>" },
+  vestiaire: { vb: "0 -960 960 960", d: "<path d=\"M120-160q-17 0-28.5-11.5T80-200q0-10 4-18.5T96-232l344-258v-70q0-17 12-28.5t29-11.5q25 0 42-18t17-43q0-25-17.5-42T480-720q-25 0-42.5 17.5T420-660h-80q0-58 41-99t99-41q58 0 99 40.5t41 98.5q0 47-27.5 84T520-526v36l344 258q8 5 12 13.5t4 18.5q0 17-11.5 28.5T840-160H120Zm120-80h480L480-420 240-240Z\"/>" },
+  ascenseur: { vb: "0 -960 960 960", d: "<path d=\"M280-240h120v-160h40v-100q0-33-23.5-56.5T360-580h-40q-33 0-56.5 23.5T240-500v100h40v160Zm60-380q21 0 35.5-14.5T390-670q0-21-14.5-35.5T340-720q-21 0-35.5 14.5T290-670q0 21 14.5 35.5T340-620Zm180 100h200L620-680 520-520Zm100 240 100-160H520l100 160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0 0v-560 560Z\"/>" },
+  escalier: { vb: "0 -960 960 960", d: "<path d=\"M240-240h177v-133h103v-133h103v-134h97v-80H543v133H440v133H337v134h-97v80Zm-40 120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z\"/>" },
+  escalator: { vb: "0 -960 960 960", d: "<path d=\"M280-240h132l200-360h68q25 0 42.5-17.5T740-660q0-25-17.5-42.5T680-720H548L348-360h-68q-25 0-42.5 17.5T220-300q0 25 17.5 42.5T280-240Zm-80 120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z\"/>" },
+  secours: { vb: "0 -960 960 960", d: "<path d=\"M160-80q-33 0-56.5-23.5T80-160v-480q0-33 23.5-56.5T160-720h160v-80q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v80h160q33 0 56.5 23.5T880-640v480q0 33-23.5 56.5T800-80H160Zm0-80h640v-480H160v480Zm240-560h160v-80H400v80ZM160-160v-480 480Zm280-200v120h80v-120h120v-80H520v-120h-80v120H320v80h120Z\"/>" },
+  pmr: { vb: "0 -960 960 960", d: "<path d=\"M480-720q-33 0-56.5-23.5T400-800q0-33 23.5-56.5T480-880q33 0 56.5 23.5T560-800q0 33-23.5 56.5T480-720ZM680-80v-200H480q-33 0-56.5-23.5T400-360v-240q0-33 23.5-56.5T480-680q24 0 41.5 10.5T559-636q55 66 99.5 90.5T760-520v80q-53 0-107-23t-93-55v138h120q33 0 56.5 23.5T760-300v220h-80Zm-280 0q-83 0-141.5-58.5T200-280q0-72 45.5-127T360-476v82q-35 14-57.5 44.5T280-280q0 50 35 85t85 35q39 0 69.5-22.5T514-240h82q-14 69-69 114.5T400-80Z\"/>" },
+  parking: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-720h280q100 0 170 70t70 170q0 100-70 170t-170 70H400v240H240Zm160-400h128q33 0 56.5-23.5T608-600q0-33-23.5-56.5T528-680H400v160Z\"/>" },
+  distributeur: { vb: "0 -960 960 960", d: "<path d=\"M415-360v-180h-90v-60h240v60h-90v180h-60Zm-335 0v-200q0-17 11.5-28.5T120-600h120q17 0 28.5 11.5T280-560v200h-60v-60h-80v60H80Zm60-120h80v-60h-80v60Zm480 120v-200q0-17 11.5-28.5T660-600h180q17 0 28.5 11.5T880-560v200h-60v-180h-40v140h-60v-140h-40v180h-60Z\"/>" },
+  reunion: { vb: "0 -960 960 960", d: "<path d=\"M120-120v-80h80v-640h400v40h160v600h80v80H680v-600h-80v600H120Zm160-640v560-560Zm160 320q17 0 28.5-11.5T480-480q0-17-11.5-28.5T440-520q-17 0-28.5 11.5T400-480q0 17 11.5 28.5T440-440ZM280-200h240v-560H280v560Z\"/>" },
+  /* Les transports en commun. Le premier sert le générique — la zone que
+     l'exploitant a dite « Transports en commun », le repère dont on n'a pas
+     précisé le mode ; les trois autres disent lequel, et c'est à cela qu'un
+     visiteur reconnaît de loin ce qui passe là.
+
+     Le métro fait exception au recueil : ce qui annonce une bouche n'est pas
+     un wagon vu de face, c'est le M dans son anneau, et c'est lui que le
+     visiteur cherche des yeux en sortant du hall. Il vient de Simple Icons,
+     qui le verse au domaine public (CC0) — sa grille est celle de ce
+     recueil-là, vingt-quatre unités, d'où un « vb » qui n'est pas celui des
+     autres. Le tram et le bus gardent les silhouettes de Material, faute
+     d'une marque équivalente : celle du bus est déjà celle des abris. */
+  transport: { vb: "0 -960 960 960", d: "<path d=\"M240-120v-40l60-40q-59 0-99.5-40.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 59-40.5 99.5T660-200l60 40v40H240Zm0-440h200v-120H240v120Zm420 80H240h480-60Zm-140-80h200v-120H520v120ZM340-320q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320Zm-320 40h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm180-520q-86 0-142.5 10T258-760h448q-18-20-74.5-30T480-800Zm0 40h226-448 222Z\"/>" },
+  bus: { vb: "0 -960 960 960", d: "<path d=\"M240-120q-17 0-28.5-11.5T200-160v-82q-18-20-29-44.5T160-340v-380q0-83 77-121.5T480-880q172 0 246 37t74 123v380q0 29-11 53.5T760-242v82q0 17-11.5 28.5T720-120h-40q-17 0-28.5-11.5T640-160v-40H320v40q0 17-11.5 28.5T280-120h-40Zm242-640h224-448 224Zm158 280H240h480-80Zm-400-80h480v-120H240v120Zm100 240q25 0 42.5-17.5T400-380q0-25-17.5-42.5T340-440q-25 0-42.5 17.5T280-380q0 25 17.5 42.5T340-320Zm280 0q25 0 42.5-17.5T680-380q0-25-17.5-42.5T620-440q-25 0-42.5 17.5T560-380q0 25 17.5 42.5T620-320ZM258-760h448q-15-17-64.5-28.5T482-800q-107 0-156.5 12.5T258-760Zm62 480h320q33 0 56.5-23.5T720-360v-120H240v120q0 33 23.5 56.5T320-280Z\"/>" },
+  metro: { vb: "0 0 24 24", d: "<path d=\"M17.708 18.099c-.202.152-.44.228-.714.228-.242 0-.471-.076-.688-.228-.218-.152-.327-.373-.327-.66V9.626h-.023l-2.984 6.057a1.453 1.453 0 0 1-.385.505c-.145.112-.337.168-.578.168-.24 0-.433-.056-.577-.168a1.442 1.442 0 0 1-.385-.505L8.063 9.627H8.04v7.811a.748.748 0 0 1-.339.66 1.23 1.23 0 0 1-.7.229c-.275 0-.508-.076-.702-.228-.193-.152-.29-.373-.29-.66V6.958c0-.304.096-.589.29-.853.192-.264.537-.396 1.036-.396.37 0 .655.084.856.252.2.169.38.421.542.757l3.277 6.754h.024l3.253-6.754c.16-.336.342-.588.543-.757.2-.168.485-.252.855-.252.498 0 .844.132 1.036.396.193.265.29.55.29.854v10.478c0 .288-.101.509-.302.66zm-5.732 4.156c5.658 0 10.279-4.64 10.279-10.327 0-5.62-4.603-10.183-10.279-10.183-5.674 0-10.23 4.536-10.23 10.183 0 5.59 4.715 10.327 10.23 10.327zm0 1.745C5.495 24 0 18.48 0 11.928 0 5.315 5.34 0 11.976 0 18.613 0 24 5.34 24 11.928 24 18.577 18.6 24 11.976 24Z\"/>" },
+  tram: { vb: "0 -960 960 960", d: "<path d=\"M160-260v-380q0-97 85-127t195-33l30-60H280v-60h400v60H550l-30 60q119 3 199.5 32.5T800-640v380q0 59-40.5 99.5T660-120l60 60v20h-80l-80-80H400l-80 80h-80v-20l60-60q-59 0-99.5-40.5T160-260Zm500-140H240h480-60ZM480-240q25 0 42.5-17.5T540-300q0-25-17.5-42.5T480-360q-25 0-42.5 17.5T420-300q0 25 17.5 42.5T480-240Zm-2-440h228-450 222ZM240-480h480v-120H240v120Zm60 280h360q26 0 43-17t17-43v-140H240v140q0 26 17 43t43 17Zm178-520q-134 0-172 14.5T256-680h450q-12-14-52-27t-176-13Z\"/>" },
+};
+
+/* Les libellés qui déclenchent un pictogramme. Un libellé libre reste
+   possible : il donne alors une pastille de texte. */
+const PICTO_MOTS = {
+  "wc": "wc",
+  "toilettes": "wc",
+  "sanitaires": "wc",
+  "entrée": "entree",
+  "entree": "entree",
+  "accès": "entree",
+  "acces": "entree",
+  "sortie": "entree",
+  "issue": "entree",
+  "entrée/sortie": "entree",
+  "entree/sortie": "entree",
+  "accueil": "accueil",
+  "réception": "accueil",
+  "reception": "accueil",
+  "information": "info",
+  "informations": "info",
+  "info": "info",
+  "restauration": "restauration",
+  "restaurant": "restauration",
+  "café": "cafe",
+  "cafe": "cafe",
+  "bar": "cafe",
+  "vestiaire": "vestiaire",
+  "consigne": "vestiaire",
+  "ascenseur": "ascenseur",
+  "escalier": "escalier",
+  "escaliers": "escalier",
+  "escalator": "escalator",
+  "escalier mécanique": "escalator",
+  "escalier mecanique": "escalator",
+  "secours": "secours",
+  "infirmerie": "secours",
+  "premiers secours": "secours",
+  "pmr": "pmr",
+  "accessibilité": "pmr",
+  "accessibilite": "pmr",
+  "accessible": "pmr",
+  "parking": "parking",
+  "stationnement": "parking",
+  "distributeur": "distributeur",
+  "dab": "distributeur",
+  "salle de réunion": "reunion",
+  "salle de reunion": "reunion",
+  "réunion": "reunion",
+  "reunion": "reunion",
+  "transports en commun": "transport",
+  "transports": "transport",
+  "bus": "bus",
+  "arrêt de bus": "bus",
+  "arret de bus": "bus",
+  "métro": "metro",
+  "metro": "metro",
+  "tram": "tram",
+  "tramway": "tram",
+};
+
+/** Le pictogramme que suggère un libellé, s'il en existe un. */
+const pictoDe = (txt) => PICTO_MOTS[String(txt || "").trim().toLowerCase()] || null;
+
+/**
+ * Ce qu'un repère est, et ce qu'il s'appelle.
+ *
+ * Les deux se confondaient : le pictogramme était deviné depuis le libellé, si
+ * bien qu'un repère nommé « Entrée Nord » n'était plus une entrée — ni pour le
+ * dessin, ni pour l'itinéraire, ni pour la liste des départs. Un hall qui
+ * nomme ses portes perdait donc ce qui les rendait utiles, et il n'y avait pas
+ * moyen de nommer deux escaliers sans les déclasser tous les deux.
+ *
+ * Le type et le libellé sont donc deux choses. Le type porte les propriétés —
+ * le pictogramme, l'obstacle en fauteuil, la qualité de porte par où passe un
+ * trajet entre pavillons — et se choisit dans une liste. Le libellé ne sert
+ * qu'à distinguer un exemplaire d'un autre, et s'écrit librement.
+ *
+ * Un repère posé avant cette séparation n'a que son libellé : on continue de
+ * le deviner pour lui, et son plan s'affiche comme il le faisait. Le type
+ * s'écrit dès qu'on y touche.
+ *
+ * La liste se lit dans l'ordre alphabétique : dix-sept lignes se parcourent à
+ * l'œil, et c'est le seul ordre où l'on sait d'avance où regarder. Le tri est
+ * fait ici plutôt que laissé à la main, pour qu'un type de plus se range de
+ * lui-même. « Sans pictogramme » reste en tête, hors du tri : ce n'est pas un
+ * type mais l'absence de choix, et c'est là que `nomTypeRepere` se replie.
+ */
+const TYPES_REPERE = [{ v: "", nom: "Sans pictogramme" }].concat([
+  { v: "pmr",          nom: "Accessibilité" },
+  { v: "accueil",      nom: "Accueil" },
+  { v: "ascenseur",    nom: "Ascenseur" },
+  { v: "cafe",         nom: "Café" },
+  { v: "distributeur", nom: "Distributeur" },
+  { v: "entree_seule", nom: "Entrée" },
+  { v: "entree",       nom: "Entrée/Sortie" },
+  { v: "escalator",    nom: "Escalator" },
+  { v: "escalier",     nom: "Escalier" },
+  { v: "info",         nom: "Information" },
+  { v: "parking",      nom: "Parking" },
+  { v: "restauration", nom: "Restauration" },
+  { v: "reunion",      nom: "Salle de réunion" },
+  { v: "secours",      nom: "Secours" },
+  { v: "sortie",       nom: "Sortie" },
+  { v: "transport",    nom: "Transports en commun" },
+  { v: "vestiaire",    nom: "Vestiaire" },
+  { v: "wc",           nom: "WC" },
+].sort((a, b) => a.nom.localeCompare(b.nom, "fr")));
+/* Le nom d'un type vit sous deux formes. En français, il sert de libellé
+   enregistré — un repère posé sans libellé prend celui de son type — et doit le
+   rester quelle que soit la langue de l'écran : posé depuis la version
+   anglaise, il ne s'appellerait pas « Toilets » chez les visiteurs français.
+   Dans la langue de l'écran, il est ce qu'on lit, qu'on mesure et qu'on tape :
+   le libellé taillé à sa largeur, la recherche, le champ de l'itinéraire.
+
+   Les modes de transport, plus bas, se nomment de la même façon : le
+   pictogramme d'un arrêt est celui de son mode, et c'est « Métro » qu'il faut
+   lire sous la pastille, non le type qui l'a posé. */
+const nomTypeRepereFr = (v) => (TYPES_REPERE.find(t => t.v === v) ||
+  MODES_TRANSPORT.find(m => m.v === v) || TYPES_REPERE[0]).nom;
+const nomTypeRepere = (v) => traduit(nomTypeRepereFr(v));
+
+/**
+ * Ce qu'une zone organisateur est, quand elle est quelque chose de connu.
+ *
+ * Un visiteur qui cherche où déjeuner, où déposer son manteau ou où se tient
+ * la prochaine conférence ne cherche pas un nom : il cherche une fonction. La
+ * source n'en dit rien — une zone n'a qu'un contour et parfois un intitulé,
+ * « Atmosphère Mobilité » ou « LA SERRE », d'où l'on ne devine pas ce qu'on y
+ * fait — et c'est l'exploitant qui la donne, zone par zone, depuis sa fiche.
+ *
+ * Le type ne change rien au dessin du plan : il ouvre l'entrée du cartouche
+ * des points d'intérêt, d'où l'on retrouve d'un geste toutes les zones qui le
+ * portent. Ce sont donc les pictogrammes des repères qui le figurent — un
+ * visiteur ne distingue pas ce que l'exploitant a dessiné de ce que le salon a
+ * fourni, et n'a aucune raison de le faire.
+ */
+const TYPES_ZONE = [
+  { v: "",             nom: "Sans type" },
+  { v: "restauration", nom: "Restauration", picto: "restauration" },
+  { v: "conferences",  nom: "Conférences",  picto: "reunion" },
+  { v: "vestiaire",    nom: "Vestiaire",    picto: "vestiaire" },
+  { v: "accueil",      nom: "Accueil",      picto: "accueil" },
+  /* Une gare routière, un parvis de tramway : ce que le salon a dessiné comme
+     une zone et qui est, pour le visiteur qui repart, la même chose qu'un
+     arrêt. Le pictogramme est le générique — une zone n'a pas de ligne. */
+  { v: "transport",    nom: "Transports en commun", picto: "transport" },
+];
+
+/** Le type d'une zone, s'il lui en a été donné un. */
+const typeZone = (z) => TYPES_ZONE.find(t => t.v && z && t.v === z.type) || null;
+
+/**
+ * Le type d'un repère : celui qu'on lui a donné, ou celui que son libellé
+ * laisse deviner s'il est d'avant la séparation. Une chaîne vide est un choix
+ * — « sans pictogramme » — et non une absence : elle ne se redevine pas.
+ */
+function pictoForme(f){
+  return f.picto === undefined ? pictoDe(f.txt) : f.picto;
+}
+
+/**
+ * Les trois portes, et ce qu'on en fait.
+ *
+ * Une porte de hall sert le plus souvent dans les deux sens, et c'est
+ * « Entrée/Sortie » qui la dit. Certains salons séparent pourtant les flux —
+ * on entre par le parvis, on ressort côté parking — et le trajet qui l'ignore
+ * fait sortir le visiteur par où personne ne sort. D'où les deux types à sens
+ * unique, et ces trois lectures : ce qui est une porte, ce par quoi on entre,
+ * ce par quoi on sort.
+ *
+ * Un libellé, lui, ne dit jamais le sens : « Sortie » sur un repère d'avant
+ * les types reste une porte des deux côtés, faute de savoir si l'on y entre.
+ * Seul le type choisi dans la liste tranche — y compris celui d'un repère
+ * désigné « Sortie » avant la fusion des deux pictogrammes, qui retrouve ici
+ * ce que l'exploitant en avait dit.
+ */
+const estPorte     = (p) => p === "entree" || p === "entree_seule" || p === "sortie";
+const ouvreEntrant = (p) => p === "entree" || p === "entree_seule";
+const ouvreSortant = (p) => p === "entree" || p === "sortie";
+
+/* ------------------------------------------------------------
+   Les transports en commun
+   ------------------------------------------------------------
+   Un arrêt n'est pas un repère comme les autres : ce que le visiteur cherche
+   n'est pas « un transport », c'est sa ligne — le 12, le T3a, le 80. Le type
+   dit donc seulement qu'il s'agit d'un transport ; deux précisions le
+   complètent, et elles ne valent que pour lui.
+
+   Le mode — bus, métro, tram — décide du pictogramme : c'est celui que la
+   signalétique pose au-dessus de la bouche ou de l'abri, et celui qu'on
+   reconnaît de loin sans lire. La ligne nomme l'arrêt et lui donne sa
+   couleur : un visiteur ne cherche pas « le métro », il cherche le 12, et
+   c'est au vert du 12 qu'il le trouve.
+   ------------------------------------------------------------ */
+
+/* Les modes, dans l'ordre où on les rencontre en sortant d'un hall. La valeur
+   est aussi la clé du pictogramme : les deux ne se séparent jamais, et un
+   mode de plus n'a qu'un dessin à ajouter au recueil. */
+const MODES_TRANSPORT = [
+  { v: "bus",   nom: "Bus" },
+  /* L'initiale sert à reconnaître une ligne écrite de deux façons : « M4 » et
+     « 4 » sont la même, « T3a » et « 3a » aussi. Celle du métro est de plus
+     dans son symbole — l'anneau porte son M — et n'a donc pas à se réécrire à
+     côté ; celle du tram fait partie du nom de la ligne, que la signalétique
+     écrit « T3a », et le pictogramme ne la dit pas. */
+  { v: "metro", nom: "Métro", lettre: "m", dansLeSymbole: true },
+  /* Le tram porte sa couleur autrement que les deux autres. La signalétique
+     n'en fait pas un aplat : elle encadre l'indice de deux barres, sur champ
+     clair — c'est ainsi que « T3a » s'écrit sur le quai, et c'est à ces deux
+     traits qu'on le reconnaît avant d'avoir lu le numéro. */
+  { v: "tram",  nom: "Tram",  lettre: "t", plaque: true },
+];
+
+const modeDit = (mode) => MODES_TRANSPORT.find(m => m.v === mode) || {};
+const lettreMode = (mode) => modeDit(mode).lettre || "";
+
+/** Ce repère est-il un arrêt ? Le type le dit, et lui seul : un repère nommé
+ *  « Métro » d'avant les types reste ce que son libellé en a fait. */
+const estTransport = (f) => pictoForme(f) === "transport";
+
+/** Le mode d'un arrêt, s'il a été dit. */
+const modeTransport = (f) => MODES_TRANSPORT.find(m => m.v === (f && f.mode)) || null;
+
+
+/**
+ * Le pictogramme d'un repère : celui de son type, ou celui de son mode quand
+ * le type est un transport. C'est le seul endroit où les deux se rejoignent —
+ * partout ailleurs `pictoForme` dit le type, et lui seul, parce que c'est le
+ * type qui ouvre l'entrée du cartouche et qui se cherche à la frappe.
+ *
+ * Un arrêt dont personne n'a dit le mode garde le pictogramme générique : il
+ * vaut mieux un transport sans précision qu'un bus qui n'en est pas un.
+ */
+const glypheRepere = (f) => estTransport(f)
+  ? ((modeTransport(f) || {}).v || "transport") : pictoForme(f);
+
+/**
+ * Les couleurs des lignes, telles que la signalétique les porte.
+ *
+ * Une ligne n'a pas de couleur en propre : elle a celle que son réseau lui
+ * donne, et le 1 qui est jaune à Paris est bleu à Marseille. La table est donc
+ * celle d'un réseau — l'Île-de-France, où se tiennent les salons qui nous
+ * occupent — et elle ne prétend pas à davantage. Ailleurs, et pour une ligne
+ * ouverte depuis, la couleur se règle à la main : l'exploitant a la
+ * signalétique sous les yeux, ce que cette table n'aura jamais.
+ *
+ * Le bus n'y figure pas, et ce n'est pas un oubli : la signalétique ne donne
+ * pas une couleur à chaque ligne de bus, elle en donne une au réseau entier.
+ * Un arrêt de bus garde donc la couleur de son calque, à moins qu'on ne lui
+ * en pose une.
+ */
+const COULEURS_LIGNE = {
+  metro: {
+    "1": "#FFCD00", "2": "#003CA6", "3": "#837902", "3bis": "#6EC4E8",
+    "4": "#CF009E", "5": "#FF7E2E", "6": "#6ECA97", "7": "#FA9ABA",
+    "7bis": "#6ECA97", "8": "#E19BDF", "9": "#B6BD00", "10": "#C9910D",
+    "11": "#704B1C", "12": "#007852", "13": "#6EC4E8", "14": "#62259D",
+  },
+  tram: {
+    "1": "#0064B0", "2": "#CF009E", "3a": "#FF7E2E", "3b": "#00814F",
+    "4": "#FFBE00", "5": "#662483", "6": "#E3051C", "7": "#84329B",
+    "8": "#837902",
+  },
+};
+
+/* « T3a », « t 3A », « ligne 3 bis » nomment la même ligne : la clé ne garde
+   que ce qui la distingue. L'initiale du mode tombe avec les espaces et les
+   tirets — un tram appelé « T1 » est la ligne 1 de son réseau — mais jamais
+   seule, sans quoi une ligne qui ne s'appelle que « T » deviendrait un numéro
+   vide, et prendrait la couleur de la première venue. */
+function cleLigne(mode, ligne){
+  const s = String(ligne || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+    .replace(/^(?:ligne|line)/, "");
+  const i = lettreMode(mode);
+  return i && s.length > 1 && s[0] === i ? s.slice(1) : s;
+}
+
+/** Le numéro tel qu'il s'écrit à côté du symbole : « M4 » s'y lirait deux
+ *  fois, et devient « 4 ». Ce que le symbole ne dit pas reste tel que
+ *  l'exploitant l'a tapé — « T3a » garde son T, « 3 bis » son espace, qui sont
+ *  la façon dont ces lignes s'écrivent. */
+const ligneAffichee = (mode, ligne) => {
+  const s = String(ligne || "").trim();
+  const m = modeDit(mode);
+  return m.dansLeSymbole && s.length > 1 && s[0].toLowerCase() === m.lettre &&
+         /[0-9]/.test(s[1]) ? s.slice(1).trim() : s;
+};
+
+/** La couleur que la signalétique donne à cette ligne, quand on la connaît. */
+const couleurLigne = (mode, ligne) =>
+  (COULEURS_LIGNE[mode] || {})[cleLigne(mode, ligne)] || null;
+
+/** La couleur d'un arrêt : celle que l'exploitant a posée, celle de sa ligne à
+ *  défaut. Rien si les deux manquent — la pastille reprend alors la couleur de
+ *  son calque, comme tout repère. */
+const couleurRepere = (f) => !estTransport(f) ? null
+  : (trio(f.couleur) ? f.couleur : couleurLigne(f.mode, f.ligne));
+
+/** L'encre qui se lit sur une couleur : du blanc sur le vert du 12, du noir
+ *  sur le jaune du 1 — la signalétique en décide ainsi, et pour la même
+ *  raison. */
+const encreRepere = (c) => {
+  const v = trio(c);
+  return v && luminance(v) > 0.42 ? "#0E1113" : "#FFFFFF";
+};
+
+/**
+ * Le nom d'un arrêt : « Métro 12 », « Bus 80 ».
+ *
+ * En français, parce que c'est le libellé qui s'enregistre, et qu'il doit le
+ * rester quelle que soit la langue de l'écran — posé depuis la version
+ * anglaise, il ne s'appellerait pas « Metro 12 » chez les visiteurs français.
+ * Sans ligne, il ne reste que le mode, ce qui est encore quelque chose : on
+ * sait qu'un tram passe là.
+ */
+const nomLigneFr = (mode, ligne) => [
+  modeDit(mode).nom || nomTypeRepereFr("transport"),
+  String(ligne || "").trim(),
+].filter(Boolean).join(" ");
+
+/** Le libellé qu'un repère prend quand on ne lui en donne pas : le nom de son
+ *  type, ou celui de sa ligne quand c'est un arrêt — « Métro 12 » dit plus
+ *  que « Transports en commun », et c'est ce qu'on cherche à la frappe. */
+const libelleDoffice = (type, mode, ligne) => type === "transport"
+  ? nomLigneFr(mode, ligne) : (type ? nomTypeRepereFr(type) : "");
+
+/** La couleur qu'il vaut la peine d'écrire sur l'arrêt : celle qui dit quelque
+ *  chose de plus que la table des lignes et que le calque. Écrire les deux
+ *  autres les figerait — une table corrigée ne rattraperait plus rien, et un
+ *  calque repeint laisserait ses arrêts derrière lui. */
+function couleurEcrite(mode, ligne, choisie, calque){
+  const c = String(choisie || "").toLowerCase();
+  const dejaDit = [couleurLigne(mode, ligne), calque && calque.couleur]
+    .filter(Boolean).map(x => String(x).toLowerCase());
+  return c && !dejaDit.includes(c) ? choisie : "";
+}
+
+/* Taille de naissance d'un repère, en mètres. Un texte libre en fait deux ;
+   un repère doit se repérer de loin, sans qu'on le cherche. */
+const TAILLE_REPERE = 4;
+
+/**
+ * Un repère : une pastille dans la couleur du calque, son libellé dedans.
+ *
+ * La largeur suit le texte, mesurée dans la police de rendu — une pastille
+ * taillée au jugé serait trop courte sur « Restauration » et trop longue sur
+ * « WC ». Tout est en mètres, comme le reste du plan : le repère grandit donc
+ * avec le zoom, à l'inverse d'une épingle d'interface.
+ */
+function traceRepere(f){
+  const t = f.taille || 2;
+  /* Le repère répond au clic comme un stand : le plan ne montre plus que le
+     pictogramme, et c'est la fiche qui dit son nom. Le rôle et le libellé
+     partent avec lui, pour qui lit le plan au clavier ou à la synthèse
+     vocale. */
+  const dit = String(f.txt || "").trim();
+  const type = pictoForme(f);
+  const nom = dit || (type ? nomTypeRepere(type) : "Repère");
+  /* La couleur d'une ligne se pose sur le groupe et non sur l'aplat : la
+     pastille la prend par « currentColor », le pictogramme et le numéro
+     prennent l'encre qui se lit dessus. Sans ligne connue rien n'est posé, et
+     l'arrêt reste de la couleur de son calque comme n'importe quel repère. */
+  const fond = couleurRepere(f);
+  /* Le tram fait exception : sa couleur ne s'étale pas, elle tient en deux
+     barres qui encadrent l'indice sur champ clair. Elle se pose donc toujours
+     sur le groupe — les barres la prennent par « currentColor », et un arrêt
+     dont la ligne est inconnue les tire de son calque, comme n'importe quel
+     repère. Mais l'encre ne se calcule plus ici : le champ est le même pour
+     toutes les lignes, et la feuille de style la donne une fois pour toutes. */
+  const plaque = Boolean(estTransport(f) && modeDit(f.mode).plaque);
+  const teinte = fond
+    ? ' style="color:' + fond +
+      (plaque ? "" : ';--encre-poi:' + encreRepere(fond)) + '"' : "";
+  const tete = '<g class="forme repere' + (plaque ? " plaque" : "") +
+               (f.id === formeSel ? " pick" : "") +
+               '" data-f="' + f.id + '" data-poi="' + esc(f.id) +
+               '" tabindex="0" role="button" aria-label="' +
+               esc(nom + (type && dit ? " — " + nomTypeRepere(type) : "")) + '"' +
+               teinte + '>';
+
+  /* Un pictogramme se pose dans un <svg> imbriqué : il porte sa propre grille,
+     et le navigateur se charge du cadrage — plus sûr qu'une transformation
+     calculée à la main. */
+  const g = PICTOS[glypheRepere(f)];
+  if (g){
+    /* La pastille ne porte que le pictogramme — et le numéro de la ligne,
+     * quand c'est un arrêt.
+     *
+     * Le libellé s'écrivait à côté dès qu'il disait autre chose que lui —
+     * « Entrée Nord » avait besoin de son nord. Mais un nom écrit à la taille
+     * du plan ne se lit qu'en zoomant, et la pastille s'allongeait de tout ce
+     * texte en travers de l'allée qu'elle désigne. Le pictogramme dit ce que
+     * c'est, ce qui est la question qu'on se pose de loin ; le nom se demande
+     * de près, et c'est la fiche qui le donne. Le cartouche des points
+     * d'intérêt, lui, continue de les nommer tous.
+     */
+    const cote = t * 2.4, retrait = cote * .035;
+    /* La plaque réserve ses deux bords aux barres : le pictogramme et l'indice
+       se rangent entre elles, d'où une marge un peu plus large qu'ailleurs. */
+    const hBarre = plaque ? cote * .11 : 0;
+    const m = cote * (plaque ? .165 : .15), k = cote - 2 * m;
+    /* Le numéro de la ligne s'écrit à côté du pictogramme, comme sur les
+       plaques : le dessin dit ce qui passe, le numéro dit lequel, et la
+       pastille s'allonge de ce qu'il mesure. Lui seul s'écrit — un arrêt
+       s'appelle « Métro 12 », et le mot « Métro » est déjà dans le dessin. */
+    const ligne = estTransport(f) ? ligneAffichee(f.mode, f.ligne) : "";
+    const corps = t * 1.1;
+    const lt = ligne ? largeur(ligne, P_NOM) * corps : 0;
+    const ecart = ligne ? cote * .12 : 0;
+    const w = cote + ecart + lt;
+    const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - cote / 2;
+    /* Les barres se retirent des bords : à ras, leurs angles dépasseraient des
+       coins arrondis de la plaque. Elles s'arrondissent comme sur le quai, et
+       se groupent pour que les liserés de sélection, qui ne visent que les
+       enfants directs de la pastille, les laissent tranquilles. */
+    const barre = (by) => '<rect x="' + (x + retrait).toFixed(2) +
+      '" y="' + by.toFixed(2) + '" width="' + (w - 2 * retrait).toFixed(2) +
+      '" height="' + hBarre.toFixed(2) + '" rx="' + (hBarre / 2).toFixed(2) + '"/>';
+    return tete +
+      '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
+      '" height="' + cote.toFixed(2) + '" rx="' + (cote * .2).toFixed(2) + '"/>' +
+      (plaque ? '<g class="barres">' + barre(y + retrait) +
+        barre(y + cote - retrait - hBarre) + '</g>' : "") +
+      '<svg class="glyphe" x="' + (x + m).toFixed(2) + '" y="' + (y + m).toFixed(2) +
+      '" width="' + k.toFixed(2) + '" height="' + k.toFixed(2) +
+      '" viewBox="' + g.vb + '">' + g.d + '</svg>' +
+      (ligne ? '<text x="' + (x + cote - m + ecart + lt / 2).toFixed(2) +
+        '" y="' + (f.pts[0][1] + corps * .35).toFixed(2) +
+        '" font-size="' + corps.toFixed(2) + '">' + esc(ligne) + '</text>' : "") +
+      '</g>';
+  }
+
+  /* Sans pictogramme, le libellé est tout ce que le repère a à montrer : le
+     retirer laisserait une pastille muette. */
+  const l = largeur(nom, P_NOM) * t;
+  const w = l + t * 1.1, ht = t * 1.65;
+  const x = f.pts[0][0] - w / 2, y = f.pts[0][1] - ht / 2;
+  return tete +
+    '<rect x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2) +
+    '" height="' + ht.toFixed(2) + '" rx="' + (ht / 2).toFixed(2) + '"/>' +
+    '<text x="' + f.pts[0][0] + '" y="' + (f.pts[0][1] + t * .35).toFixed(2) +
+    '" font-size="' + t.toFixed(2) + '">' + esc(nom) + '</text></g>';
+}
+
+/* ------------------------------------------------------------
+   Les stands dessinés à la main
+   ------------------------------------------------------------
+   La synchronisation ne rend qu'une forme par dossier : un stand loué à
+   plusieurs n'en a donc qu'une, et les sociétés qui s'y installent n'existent
+   que dans une liste. Sur le plan elles ne sont nulle part, et le visiteur qui
+   cherche l'une d'elles lit le nom d'une autre peint sur la cloison.
+
+   L'exploitant les matérialise donc lui-même : il découpe le stand en autant
+   de rectangles qu'il y a d'enseignes, et rattache chacun à la société qu'il
+   désigne. Ce n'est pas un dessin de plus — la forme se lit comme un stand,
+   même aplat et même libellé, s'ouvre au clic sur la fiche complète de sa
+   société, et renvoie l'itinéraire vers le stand qui la porte : on ne marche
+   pas jusqu'à un co-exposant, on marche jusqu'à son hôte.
+   ------------------------------------------------------------ */
+
+/** Le nom d'une société tel qu'il s'écrit sur le plan — vide s'il n'y en a
+ *  pas, là où la fiche se rabat sur « Sans nom ». */
+const nomSurLePlan = (soc) => soc.nom || soc.plan || "";
+
+/**
+ * L'étiquette sous laquelle une société se désigne : « SMC2 — G55 », et pour
+ * un co-exposant « BERTRAND FRANCHISE - AU BUREAU — G55 ».
+ *
+ * Le nom vient d'abord, parce que c'est lui qu'on cherche des yeux dans une
+ * liste rangée par ordre alphabétique ; le titulaire préfixe ses hébergés pour
+ * qu'ils se lisent sous lui, et non dispersés au fil de l'alphabet. Le numéro
+ * reste en queue : deux enseignes portent parfois le même nom.
+ */
+function etiquetteSociete(o, soc){
+  const titulaire = nomSurLePlan(o);
+  const nom = nomSurLePlan(soc);
+  const tete = soc === o || !nom || nom === titulaire ? nom
+    : (titulaire || o.code) + " - " + nom;
+  return [tete, o.code].filter(Boolean).join(" — ");
+}
+
+/* Les deux sortes de formes qui se rattachent à une société, et pour deux
+   raisons. Un stand dessiné découpe un emplacement : il n'existe que par la
+   société qu'il désigne, et sans elle il ne serait qu'un rectangle muet. Une
+   image se pose d'abord pour ce qu'elle montre — le logo d'un exposant, une
+   affiche, un plan d'aménagement — et son rattachement est ce qui la rend
+   cliquable : la toucher ouvre alors la fiche, comme toucher l'emplacement.
+   D'où un champ demandé, l'autre facultatif. */
+const FORMES_RATTACHEES = new Set(["stand", "image"]);
+
+/**
+ * Cette forme accepte-t-elle qu'on la rattache maintenant ?
+ *
+ * Le stand dessiné, toujours — il n'est que cela. L'image, seulement là où le
+ * salon a pris l'option : c'est le rattachement qui se vend, non l'image, et
+ * un plan qui ne l'a pas prise pose ses images comme n'importe quel dessin.
+ *
+ * Elle ne dit rien de ce qui est déjà rattaché : « societeDeForme » continue de
+ * lire les liens en place, et une image liée avant que l'option se ferme garde
+ * le sien. On retire le geste, pas ce qu'il a produit.
+ */
+const seRattache = (f) => !!f && FORMES_RATTACHEES.has(f.t) &&
+  (f.t !== "image" || optionActive("imageStand"));
+
+/**
+ * Ce qu'une forme rattachée désigne : l'emplacement, le rang de la société, la
+ * société elle-même. Rien, si le lien ne mène plus nulle part — un stand
+ * disparu du salon, un co-exposant que la synchronisation d'hier a retiré.
+ *
+ * On ne se rabat pas alors sur le titulaire : ce serait donner à une enseigne
+ * la place d'une autre. La forme reste sur le plan, muette et sans clic, et le
+ * panneau d'édition invite à la rattacher de nouveau.
+ */
+function societeDeForme(f){
+  if (!f || !FORMES_RATTACHEES.has(f.t) || !f.stand) return null;
+  const o = parId.get(f.stand);
+  if (!o || o.kind !== "stand") return null;
+  const i = Number.isInteger(f.soc) ? f.soc : -1;
+  const soc = i < 0 ? o : (o.coex || [])[i];
+  return soc ? { o: o, i: i, soc: soc } : null;
+}
+
+/** Les sociétés du pavillon courant, parmi lesquelles se choisit ce qu'un
+ *  stand dessiné matérialise : par ordre alphabétique des titulaires, chacun
+ *  suivi de ses co-exposants, rangés à leur tour. */
+function societesDuPlan(){
+  const range = (a, b) => a.localeCompare(b, "fr", { sensitivity: "base", numeric: true });
+  const cle = (s) => nomSurLePlan(s) || s.code || "";
+  const out = [];
+  P().stands.slice().sort((a, b) => range(cle(a), cle(b))).forEach(s => {
+    const liste = societes(s)
+      .filter(x => s.code || nomSurLePlan(x.soc))
+      .map(x => ({ o: s, i: x.i, soc: x.soc,
+                   etiquette: etiquetteSociete(s, x.soc) || s.id }));
+    out.push(...liste.filter(x => x.i < 0),
+             ...liste.filter(x => x.i >= 0).sort((a, b) => range(a.etiquette, b.etiquette)));
+  });
+  return out;
+}
+
+function remplitListeSocietes(){
+  const l = $("listeSoc");
+  if (!l) return;
+  l.innerHTML = societesDuPlan()
+    .map(x => '<option value="' + esc(x.etiquette) + '">').join("");
+}
+
+/** Retrouve la société désignée par ce qui a été saisi. */
+function societeSaisie(txt){
+  const v = String(txt || "").trim().toLowerCase();
+  if (!v) return null;
+  const l = societesDuPlan();
+  return l.find(x => x.etiquette.toLowerCase() === v)
+      || l.find(x => nomSurLePlan(x.soc).toLowerCase() === v)
+      || null;
+}
+
+/**
+ * Une image posée sur le plan, et ce qu'elle désigne.
+ *
+ * Rattachée, elle porte l'identifiant de l'emplacement et le rang de la
+ * société : le clic sur le plan cherche l'ancêtre porteur d'un « data-id », et
+ * la fiche s'ouvre sans code supplémentaire — celle de l'enseigne désignée, et
+ * non le choix entre les deux, quand un stand est partagé. C'est ainsi qu'on
+ * pose le logo d'un exposant sur son emplacement.
+ *
+ * Détachée, elle reste ce qu'elle est — un dessin — et laisse passer le clic
+ * vers ce qui est dessous : un plan d'aménagement posé sur un hall n'a pas à
+ * empêcher d'ouvrir les stands qu'il recouvre.
+ *
+ * Elle n'ajoute pas de halte au clavier, là où un stand dessiné en pose une :
+ * celui-ci est le seul chemin vers une hébergée qui n'a pas de forme à elle,
+ * quand l'image, elle, est posée sur un emplacement que le clavier atteint
+ * déjà. Deux arrêts pour la même fiche ne feraient que doubler le parcours.
+ */
+function traceImage(f){
+  const l = societeDeForme(f);
+  const nom = l ? nomSurLePlan(l.soc) : "";
+  /* Le rang n'est posé que si la forme le porte. Une image d'avant le champ
+     désignait l'emplacement et non l'enseigne : sur un stand partagé, la fiche
+     doit continuer de demander laquelle on vient voir, plutôt que de trancher
+     pour le titulaire au nom d'un choix que personne n'a fait. */
+  const rang = Number.isInteger(f.soc) ? ' data-soc="' + f.soc + '"' : "";
+  return '<g class="forme' + (f.id === formeSel ? " pick" : "") + (l ? " lie" : "") +
+    '" data-f="' + f.id + '"' +
+    (l ? ' data-id="' + esc(l.o.id) + '"' + rang +
+         ' aria-label="' + esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
+    '><image href="' + f.src + '" x="' + f.pts[0][0] +
+    '" y="' + f.pts[0][1] + '" width="' + (f.pts[1][0] - f.pts[0][0]) +
+    '" height="' + (f.pts[1][1] - f.pts[0][1]) +
+    '" preserveAspectRatio="xMidYMid meet"/></g>';
+}
+
+/**
+ * Un stand dessiné, tracé comme le stand qu'il découpe.
+ *
+ * Il porte l'identifiant de son hôte et le rang de la société qu'on vient y
+ * voir : le reste de la page n'a alors rien de nouveau à apprendre — le clic,
+ * la sélection, la fiche et l'itinéraire lisent déjà ces deux-là.
+ */
+function traceStandDessine(f){
+  const l = societeDeForme(f);
+  const sel = l && l.o.id === state.sel && l.i === state.selSoc;
+  const nom = l ? nomSurLePlan(l.soc) : "";
+  return '<g class="forme sdes' + (f.id === formeSel ? " pick" : "") +
+    (l ? " lie" : "") + (sel ? " sel" : "") + '" data-f="' + f.id + '"' +
+    (l ? ' data-id="' + esc(l.o.id) + '" data-soc="' + l.i +
+         '" tabindex="0" role="button" aria-label="' +
+         esc(nom || ("Stand " + (l.o.code || "")).trim()) + '"' : "") +
+    '><path d="' + cheminForme(f) + '"/><g class="lab"></g></g>';
+}
+
+/**
+ * Le libellé d'un stand dessiné : le nom de sa société, le numéro de
+ * l'emplacement dessous — exactement ce qu'un stand du plan écrit.
+ *
+ * Il vit dans la forme et non dans « #labels », où vivent ceux du plan. Un
+ * calque de dessin peut être empilé par-dessus le calque des textes, et son
+ * aplat recouvrait alors le nom qu'il était censé porter. Attaché à sa forme,
+ * le libellé la suit jusque dans l'ordre des couches.
+ *
+ * Il se relit à chaque changement de vue, comme les autres : c'est la taille
+ * du texte à l'écran qui décide s'il est lisible ou s'il vaut mieux se taire.
+ */
+function texteStandDessine(f, pxParM){
+  const l = societeDeForme(f);
+  if (!l) return "";
+  const nom = nomSurLePlan(l.soc);
+  if (!nom && !l.o.code) return "";
+  const b = boite(f);
+  const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+  const sel = l.o.id === state.sel && l.i === state.selSoc;
+  if (!sel && (!visibleSociete(l.o, l.i) ||
+               cx < view.x - 25 || cx > view.x + view.w + 25 ||
+               cy < view.y - 25 || cy > view.y + view.h + 25)) return "";
+  return libelleEmplacement({ nom: nom, code: l.o.code }, [cx, cy],
+                            b[2] - b[0], b[3] - b[1], sel, pxParM);
+}
+
+/** Les libellés de tous les stands dessinés du pavillon, posés dans leurs
+ *  formes. Le pavillon en compte quelques dizaines au plus : on les relit
+ *  tous plutôt que de tenir à jour ce qui a bougé. */
+function poseLibellesDessines(pxParM){
+  const z = $("couches");
+  for (const cal of mesCalques()){
+    for (const f of cal.formes){
+      if (f.t !== "stand") continue;
+      const lab = z.querySelector('.sdes[data-f="' + CSS.escape(f.id) + '"] .lab');
+      if (lab) lab.innerHTML = texteStandDessine(f, pxParM);
+    }
+  }
+}
+
+/**
+ * Le découpage qui matérialise une société sur un emplacement, s'il a été
+ * dessiné.
+ *
+ * Un stand dessiné porte l'identifiant de son hôte : c'est ce qui lui donne le
+ * clic, la fiche et l'itinéraire sans rien apprendre de neuf au reste de la
+ * page. Mais quand deux enseignes se partagent un emplacement, allumer l'hôte
+ * allumerait du même coup la voisine, qu'on n'a pas demandée. La sélection
+ * s'arrête donc au découpage dès qu'il en existe un pour la société choisie.
+ */
+function decoupeStand(id, iSoc){
+  const z = (id === null || id === undefined) ? null : $("couches");
+  return (z && z.querySelector('.dcal .sdes[data-id="' + CSS.escape(String(id)) +
+                               '"][data-soc="' + Number(iSoc) + '"]')) || null;
+}
+
+/**
+ * La sélection des stands dessinés, posée sans retracer les calques : relire
+ * un calque réanalyse ses images, ce qui est cher pour un liseré qui change à
+ * chaque clic. La classe se pose donc à la main, comme le fait déjà la
+ * sélection d'édition.
+ */
+function marqueStandsDessines(){
+  $("couches").querySelectorAll(".dcal .sdes").forEach(g => {
+    g.classList.toggle("sel", g.dataset.id === state.sel &&
+                              Number(g.dataset.soc) === state.selSoc);
+  });
+}
+
+/**
+ * Ce qu'un stand dessiné reçoit une fois tracé : la teinte de son secteur, le
+ * fondu que le filtre pose sur ce qu'il écarte, et son libellé.
+ *
+ * Rien de tout cela ne tient dans le gabarit de la forme : les deux premiers
+ * se lisent dans les réglages du salon, le troisième dans la vue courante — et
+ * le premier montage a lieu avant qu'il y en ait une.
+ */
+function rafraichitStandsDessines(){
+  if (!DATA || !view) return;
+  coloreSecteurs();
+  $("couches").querySelectorAll(".dcal .sdes[data-id]").forEach(g => {
+    const o = parId.get(g.dataset.id);
+    g.classList.toggle("dim", !!o && !visibleSociete(o, Number(g.dataset.soc)));
+  });
+  const r = cadrePlan();
+  poseLibellesDessines((r.width || 1) / view.w);
+}
+
+/**
+ * Les repères, en objets de recherche.
+ *
+ * Un visiteur qui tape « vestiaire » ou « parking » cherche un endroit du
+ * salon, exactement comme il tape le nom d'une enseigne. Le cartouche du bas
+ * les récapitule déjà, mais il faut savoir qu'il existe et le parcourir des
+ * yeux : la recherche y mène en trois lettres.
+ *
+ * Ils sont relevés sur les trois pavillons, comme les stands : le sanitaire
+ * le plus proche n'est pas forcément dans celui qu'on regarde. Un calque
+ * éteint n'en donne aucun — ses repères ne sont pas sur le plan, et la liste
+ * promettrait un escalier que le visiteur ne trouverait pas.
+ *
+ * Le relevé se retient : la recherche le redemande à chaque frappe, et les
+ * dessins ne changent qu'entre deux gestes d'édition. « oublieReperes » le
+ * jette, aux mêmes endroits que les grilles d'itinéraire.
+ */
+let REPERES = null;
+
+function oublieReperes(){ REPERES = null; }
+
+function reperesCherchables(){
+  if (REPERES) return REPERES;
+  REPERES = [];
+  (DATA?.plans || []).forEach((p, i) => {
+    (DESSINS[p.id] || []).forEach(cal => {
+      if (cal.visible === false) return;
+      (cal.formes || []).forEach(f => {
+        if (f.t !== "repere") return;
+        const nom = nomRepere(f);
+        /* Le type ne compte que s'il ajoute quelque chose au libellé, et il
+           compte alors pour les deux : ce qu'on tape et ce que la ligne
+           montre. « Hall Sud » gagne à s'annoncer comme une entrée ; un repère
+           sans libellé s'appelle déjà « WC » et n'a rien à gagner d'un « WC »
+           en dessous, ni d'un second dans sa chaîne de recherche. Une chaîne
+           vide, elle, est un choix — « sans pictogramme » — et ne nomme rien
+           qu'on irait taper. */
+        const picto = pictoForme(f);
+        const type = picto ? nomTypeRepere(picto) : "";
+        const ajout = type === nom ? "" : type;
+        REPERES.push({
+          kind: "poi", id: f.id, p: i, nom: nom, type: ajout,
+          rech: (nom + " " + ajout).toLowerCase(),
+        });
+      });
+    });
+  });
+  return REPERES;
+}
+
+/**
+ * Un repère ouvert depuis la liste des résultats.
+ *
+ * Il peut vivre dans un autre pavillon que celui qu'on regarde — la recherche
+ * les balaie tous les trois — et sa fiche se lit sur le plan où il est posé.
+ * On y passe par « changePlan », qui est le chemin des onglets : il remonte le
+ * plan et va chercher le fond du pavillon qu'on n'avait pas encore ouvert. Le
+ * montage recrée les calques de dessin, d'où la pastille est relue après lui —
+ * pour que la fiche s'anime depuis elle, et non depuis rien.
+ *
+ * Le dernier argument demande que le plan vienne sur le repère ; la fiche s'en
+ * charge une fois posée. Sans lui elle s'ouvrait sur un escalier que rien ne
+ * montrait, et il restait à trouver le bouton « Centrer sur le plan » pour voir
+ * où il est — le clic dans la liste disait pourtant déjà qu'on y allait.
+ */
+function vaAuRepere(id, p){
+  changePlan(p);
+  ouvrePoi(id, $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]'),
+           true);
+}
+
+/**
+ * Cartouche des points d'intérêt.
+ *
+ * Les repères posés sur un plan se répètent — plusieurs sanitaires, plusieurs
+ * entrées — et se cherchent à l'œil. Le cartouche les récapitule ; en choisir
+ * un met en avant tous ceux qui lui ressemblent, où qu'ils soient.
+ *
+ * Une pastille tient au couple libellé + type, et non au seul libellé. Un
+ * hall nomme volontiers « Entrée » les deux portes qu'il a, puis dit de l'une
+ * qu'elle est une sortie : sous le seul libellé, les deux ne faisaient qu'une
+ * pastille — le visiteur qui demandait l'entrée se voyait montrer la porte par
+ * où l'on ne rentre pas. Deux pastilles sous le même libellé ajoutent alors ce
+ * qui les sépare, sauf à celle que son libellé dit déjà.
+ *
+ * Les zones organisateur auxquelles l'exploitant a donné un type y entrent de
+ * la même façon, et sous la même clé : ce qui s'appelle « Restauration » d'un
+ * côté et de l'autre est la même chose pour qui cherche à déjeuner, et deux
+ * pastilles identiques n'auraient rien appris. Ce que l'une a été dessinée et
+ * l'autre fournie par le salon ne regarde pas le visiteur.
+ *
+ * Les transports font exception, et tous ensemble. Un hall en dessert trois,
+ * parfois six : autant de pastilles — « Métro 12 », « Tram T2 », « Tram T3a »
+ * — qui poussaient hors de l'écran ce que le cartouche avait d'autre à dire,
+ * pour une question que le visiteur ne pose pas ainsi. Il cherche par où
+ * repartir, pas la ligne 12 ; la ligne, il la lit sur le plan, où chaque arrêt
+ * garde son symbole et sa couleur. Une seule nature les récapitule donc, sous
+ * le pictogramme générique, et son compte dit combien d'arrêts elle couvre.
+ */
+let poiChoisi = null;
+
+/* Un libellé qui ne porte qu'un seul type : ce que rejoint alors ce qu'on a
+   laissé sans pictogramme, pour que la zone « Restauration » et le repère qui
+   la nomme ne fassent pas deux pastilles, dont une muette. Rempli par
+   « cartouchePoi », relu par la clé et par la mise en avant. */
+let PICTO_SEUL = new Map();
+
+/** Ce qui fait une pastille : ce que la chose s'appelle, et ce qu'elle est. */
+const clePoi = (nom, picto) => nom + "\u0000" + (picto || PICTO_SEUL.get(nom) || "");
+
+/* Ce qui, au cartouche, est un transport : le pictogramme le dit mieux que le
+   type, car un repère d'avant les types nommé « Métro » n'a jamais eu que
+   celui-là — et le visiteur ne fait pas la différence. */
+const PICTOS_TRANSPORT = new Set(["transport"].concat(MODES_TRANSPORT.map(m => m.v)));
+
+/** La nature sous laquelle une chose entre au cartouche : son libellé et son
+ *  pictogramme, sauf pour un transport — arrêts et gares n'en font qu'une. */
+const pastillePoi = (nom, picto) => PICTOS_TRANSPORT.has(picto)
+  ? { nom: "Transports", picto: "transport" }
+  : { nom: nom, picto: picto || "" };
+
+function cartouchePoi(){
+  const z = $("poi");
+  if (!z) return;
+  /* Les pastilles vivent dans la bande, pas dans le cadre : celui-ci porte les
+     flèches, qu'un « innerHTML » remis à blanc emporterait avec elles. */
+  const d = $("poiDefile");
+  const tout = [];
+
+  for (const cal of mesCalques()){
+    if (cal.visible === false) continue;
+    for (const f of cal.formes){
+      if (f.t !== "repere" || !f.txt) continue;
+      /* Le pictogramme est celui du mode pour un arrêt ; « pastillePoi » le
+         ramène ensuite, avec le libellé de la ligne, à la nature commune des
+         transports. La clé la suit, et la mise en avant avec elle. */
+      tout.push(pastillePoi(f.txt.trim(), glypheRepere(f) || ""));
+    }
+  }
+  /* Une zone que l'exploitant a éteinte, ou tout un calque de zones retiré du
+     plan, ne comptent pas : le cartouche promettrait une restauration que le
+     visiteur ne trouverait nulle part. */
+  if (conf("data:zones").visible !== false){
+    for (const zo of P().zones){
+      const t = typeZone(zo);
+      if (t && !zo.masquee) tout.push(pastillePoi(t.nom, t.picto || ""));
+    }
+  }
+
+  const types = new Map();
+  tout.forEach(o => {
+    if (!o.picto) return;
+    if (!types.has(o.nom)) types.set(o.nom, new Set());
+    types.get(o.nom).add(o.picto);
+  });
+  PICTO_SEUL = new Map();
+  types.forEach((t, nom) => { if (t.size === 1) PICTO_SEUL.set(nom, [...t][0]); });
+
+  const parCle = new Map();
+  tout.forEach(o => {
+    const cle = clePoi(o.nom, o.picto);
+    const picto = o.picto || PICTO_SEUL.get(o.nom) || null;
+    if (!parCle.has(cle)) parCle.set(cle, { nom: o.nom, picto: picto, n: 0 });
+    parCle.get(cle).n++;
+  });
+
+  /* Ce qu'une pastille annonce : son libellé, et ce qu'elle est quand une
+     voisine porte le même libellé sans être la même chose. */
+  const homonymes = new Map();
+  parCle.forEach(o => homonymes.set(o.nom, (homonymes.get(o.nom) || 0) + 1));
+  const libellePoi = (o) => {
+    const type = o.picto ? nomTypeRepere(o.picto) : "";
+    return homonymes.get(o.nom) > 1 && type && type !== o.nom
+      ? o.nom + " · " + type : o.nom;
+  };
+
+  z.hidden = parCle.size === 0;
+  /* Le pavillon d'à côté n'a pas les mêmes points d'intérêt : ce qui n'y est
+     plus ne peut pas rester choisi, sans quoi le plan resterait en retrait
+     sans que rien n'y soit mis en avant. */
+  if (poiChoisi && !parCle.has(poiChoisi)) poiChoisi = null;
+  if (z.hidden){ poiChoisi = null; eclairePoi(); mesureCartouche(); majFondus(); return; }
+
+  /* Choisir une pastille reconstruit le cartouche, et un contenu remplacé
+     revient au début : la pastille qu'on venait d'aller chercher du doigt
+     sortait de l'écran au moment où on la retenait, et le geste était à
+     refaire. On repose donc le défilement là où il était. */
+  const defile = d.scrollLeft;
+  d.innerHTML = "";
+  [...parCle.entries()]
+    .sort((a, b) => libellePoi(a[1]).localeCompare(libellePoi(b[1]), "fr"))
+    .forEach(([cle, o]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "poiBtn";
+      b.setAttribute("aria-pressed", cle === poiChoisi);
+      const g = PICTOS[o.picto];
+      // largeur et hauteur en attributs : un <svg> sans dimension explicite
+      // s'étale à la place disponible, et le cartouche y perdait sa mise en page
+      b.innerHTML = (g
+        ? '<svg class="poiPicto" width="17" height="17" viewBox="' + g.vb +
+          '" aria-hidden="true">' + g.d + '</svg>'
+        : "") + '<span></span>' + (o.n > 1 ? '<i>' + o.n + '</i>' : "");
+      b.querySelector("span").textContent = libellePoi(o);
+      b.onclick = () => {
+        const choisit = poiChoisi !== cle;
+        poiChoisi = choisit ? cle : null;
+        /* Les repères d'un même type sont dispersés dans le hall. Les mettre
+           en avant sans reculer ne montrerait que ceux déjà à l'écran, et
+           l'exploitant conclurait qu'il n'y en a pas d'autres. On revient donc
+           sur le plan entier, où ils se comptent d'un coup d'œil. */
+        if (choisit) fit();
+        cartouchePoi();
+      };
+      d.appendChild(b);
+    });
+  d.scrollLeft = defile;
+  eclairePoi();
+  mesureCartouche();
+  /* Le bord à estomper se relit ici : une famille de repères en plus ou en
+     moins, et ce qui dépassait tient — ou l'inverse. */
+  majFondus();
+}
+
+/**
+ * La fiche d'un repère.
+ *
+ * Le plan ne montre plus que le pictogramme ; le nom n'est pas perdu pour
+ * autant, il est ce que le clic donne — comme une forme de stand donne la
+ * fiche de son exposant. On y lit ce que le repère est, comment il s'appelle,
+ * et, quand c'est un passage, ce qu'il dessert : un escalier qui monte à deux
+ * étages le dit ici, et nulle part ailleurs.
+ *
+ * La fiche est celle des stands, remplie autrement : elle partage la même
+ * bande que le parcours et l'itinéraire, et deux fiches ouvertes en même
+ * temps ne se liraient pas. Elle en reprend donc le contrat : « depuis » est
+ * la pastille d'où la fiche s'étire — le nœud, mesuré à la fin — et
+ * « recentrer » demande que le plan vienne sur le repère, ce qui n'a de sens
+ * qu'une fois la fiche posée, seule à savoir ce qu'elle masque.
+ */
+function ouvrePoi(id, depuis, recentrer){
+  const cible = formeParId(id);
+  if (!cible || cible.f.t !== "repere") return;
+  const f = cible.f, p = P();
+  fermeParcours(); fermeItineraire();
+
+  document.querySelectorAll(".sel").forEach(n => n.classList.remove("sel"));
+  const noeudPoi = $("couches").querySelector('.repere[data-poi="' + CSS.escape(id) + '"]');
+  if (noeudPoi) noeudPoi.classList.add("sel");
+
+  const type = pictoForme(f);
+  const dit = String(f.txt || "").trim();
+  $("dKind").hidden = false;
+  $("dKind").textContent = type ? nomTypeRepere(type) : "Repère";
+  $("dName").textContent = dit || (type ? nomTypeRepere(type) : "Repère");
+  /* Ni numéro ni filigrane : un repère n'en a pas, et sans cette remise à zéro
+     la fiche portait celui du stand consulté juste avant. */
+  poseCode(p, "", "");
+  /* Un repère porte un picto, jamais un logo : sans cet effacement, la fiche
+     d'un escalier gardait la marque du stand consulté juste avant. */
+  poseMarque("");
+  /* Un repère n'est pas un exposant : ni nouveau venu ni adhérent. */
+  poseDistsFiche(null);
+  $("dPartage").hidden = true;
+  /* « Affiché : oui/non » gouverne une zone organisateur, pas un repère. Restée
+     visible, elle basculait encore la visibilité de la zone d'avant. */
+  if ($("dVis")) $("dVis").hidden = true;
+  /* Un repère ne se retient pas dans un parcours : on ne visite pas un
+     escalier, on le prend. */
+  const sig = $("dMarque");
+  sig.hidden = true;
+  delete sig.dataset.mg; delete sig.dataset.mi;
+  if ($("dRen")) $("dRen").hidden = true;
+  $("dOnglets").hidden = true;
+  $("detail").classList.remove("deux");
+  onglet("detail");
+
+  /* Ce qu'un passage dessert, avec le temps qu'il demande : c'est ce qui
+     distingue deux escaliers voisins, et ce qu'un visiteur cherche à savoir
+     avant de s'y engager. */
+  const liens = typeLiaison(f) ? liensDe(f) : [];
+  const dessert = liens.length
+    ? '<div class="field"><span class="eyebrow">Mène à</span><span class="v">' +
+      liens.map(x => '<span class="ligne">' +
+        esc(x.o.p.libelle + " · " + nomRepere(x.o.f)) + " — " +
+        esc(ecritMinutes(x.min == null ? typeLiaison(f).min : x.min)) +
+        '</span>').join("") + "</span></div>"
+    : "";
+
+  $("dBody").innerHTML = '<div class="cInfos" id="dPaneInfos">' + dessert + "</div>" +
+    '<div class="acts"><button class="btn" id="dGo">Centrer sur le plan</button>' +
+    '<button class="btn itin" id="dItin">Itinéraire</button></div>';
+  $("dGo").onclick = () => centrePoint(f.pts[0]);
+  // « j'y vais » : l'arrivée est ce repère, le départ reste à dire
+  $("dItin").onclick = () => versItineraireDe(pointRepere(f, p));
+
+  $("detail").classList.add("open");
+  $("voile").classList.add("on");
+  ecarteClicFantome();
+  if (recentrer) centrePoint(f.pts[0]);
+  anime(() => rectVisee(depuis), 1);
+}
+
+/**
+ * Hauteur du cartouche, donnée au CSS.
+ *
+ * Sur un écran étroit le cartouche est assez large pour recouvrir l'échelle,
+ * qui vit dans le même coin bas. Le commentaire de la feuille de style
+ * affirmait qu'il « se retire de l'échelle » : c'était vrai sur un grand
+ * écran, où il n'atteignait pas la marge gauche. À 412 pixels il la traverse.
+ * L'échelle se pose donc au-dessus de lui, d'après sa hauteur réelle — nulle
+ * quand il est absent, auquel cas rien ne bouge.
+ */
+function mesureCartouche(){
+  const z = $("poi");
+  const h = z && !z.hidden ? z.offsetHeight + 8 : 0;
+  /* Sur le corps, et non sur la racine : le rendu WebGL guette les attributs
+     de la racine pour savoir quand une couleur ou un calque change, et il y
+     repeignait tout le plan pour une hauteur d'habillage qui ne le concerne
+     pas. Ceux qui lisent cette variable — l'échelle, la barre de zoom — sont
+     tous dans le corps, la feuille de style y trouve donc son compte. */
+  const px = h + "px";
+  if (document.body.style.getPropertyValue("--cartouche") !== px)
+    document.body.style.setProperty("--cartouche", px);
+}
+
+/** Ce qu'un point d'intérêt choisi met en avant : repères et zones à la fois,
+ *  sur la clé qui a fait la pastille — le libellé seul aurait rallumé la
+ *  sortie avec l'entrée qui porte son nom. */
+const pharePoi = (nom, picto) => {
+  const o = pastillePoi(nom, picto);
+  return clePoi(o.nom, o.picto) === poiChoisi;
+};
+const phareRepere = (f) => Boolean(poiChoisi && f && f.txt &&
+  pharePoi(String(f.txt).trim(), glypheRepere(f) || ""));
+const phareZone = (o) => {
+  const t = poiChoisi && o && o.kind === "zone" ? typeZone(o) : null;
+  return Boolean(t && pharePoi(t.nom, t.picto || ""));
+};
+
+/** Met en avant les repères et les zones du point d'intérêt choisi. */
+function eclairePoi(){
+  $("couches").querySelectorAll(".dcal .repere").forEach(g => {
+    const f = formeParId(g.dataset.f);
+    g.classList.toggle("phare", phareRepere(f && f.f));
+  });
+  $("zones").querySelectorAll("g").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.id))));
+  /* Le libellé d'une zone mise en avant est ce qui la nomme : le laisser en
+     retrait avec le reste du plan aurait effacé la seule chose qui distingue
+     deux restaurations. Il se réécrit à chaque déplacement de la vue, et
+     reprend donc sa marque dans « libelles() ». Les témoins de style du rendu
+     WebGL, qui ne nomment rien, gardent la leur. */
+  $("labels").querySelectorAll(".lbl[data-lbl]").forEach(g =>
+    g.classList.toggle("phare", phareZone(parId.get(g.dataset.lbl))));
+  racine.classList.toggle("poi-actif", !!poiChoisi);
+}
+
+/**
+ * Le retrait ne survit pas au geste qui l'ignore.
+ *
+ * Le cartouche met une famille de repères en avant et recule tout le reste à
+ * seize pour cent. Ce retrait est une réponse à une question posée — « où
+ * mange-t-on ? » — et il n'a plus rien à dire dès que le visiteur en pose une
+ * autre. Or rien sur le plan ne le levait : ouvrir la fiche d'un stand éteint,
+ * ou taper le fond pour refermer, laissaient le plan délavé et la pastille
+ * allumée. Il fallait retrouver celle-ci dans le cartouche et la rappuyer, ce
+ * que personne ne devine.
+ *
+ * Un repère ou une zone déjà mis en avant font exception : les ouvrir, c'est
+ * se servir de la mise en avant, pas en sortir. On reconnaît les uns et les
+ * autres à la marque qu'« eclairePoi » leur a posée — la même qui les tient
+ * en pleine lumière.
+ */
+function oublieChoixPoi(cible){
+  if (!poiChoisi) return;
+  if (cible && cible.classList.contains("phare")) return;
+  poiChoisi = null;
+  cartouchePoi();
+}
+
+/* Un bref halo, réservé à l'image posée automatiquement : sans lui on la
+   cherche, et on croit qu'il reste un bouton à valider. */
+function signale(id){
+  const g = $("couches").querySelector('.forme[data-f="' + CSS.escape(id) + '"]');
+  if (!g || REDUIT) return;
+  g.classList.add("neuve");
+  setTimeout(() => g.classList.remove("neuve"), 1300);
+}
+
+/* --- import d'image ---
+   L'image est réduite et convertie en data-URI : une page publiée ne peut
+   charger aucune ressource externe, tout doit vivre dans le document.   */
+let imageEnAttente = null;
+const MAX_PX = 1400;
+
+/* On ne refuse plus une image faute de calque actif : on en ouvre un. */
+function calquePourImage(){
+  if (calqueActif && trouveCalque(calqueActif)) return trouveCalque(calqueActif);
+  /* Le dernier calque s'ouvre d'office, mais pas s'il est verrouillé : l'image
+     glissée sur le plan est le seul tracé qui n'ait pas eu à choisir son
+     calque, et elle se poserait donc sur celui qu'on protège. Tous fermés, on
+     en ouvre un neuf plutôt que de refuser l'image. */
+  const libres = mesCalques().filter(c => !verrouille(c));
+  if (libres.length){ activeCalque(libres[libres.length - 1].id); return trouveCalque(calqueActif); }
+  memorise();
+  const c = { id: nouvelId(), nom: "Images", couleur: "#2F49D1",
+              rempli: false, visible: true, formes: [] };
+  mesCalques().push(c); enregistreDessins(); construitPanneau(); activeCalque(c.id);
+  return c;
+}
+
+/**
+ * L'exposant que le champ de l'outil image désigne, s'il en désigne un.
+ *
+ * Facultatif, à la différence de celui du stand dessiné : une image posée pour
+ * ce qu'elle montre — un plan d'aménagement, une affiche, une photo de hall —
+ * ne désigne personne et n'a aucune fiche à ouvrir. Nommé, il vaut pour toutes
+ * les images qu'on pose ensuite, comme la vignette choisie : on aligne souvent
+ * plusieurs logos sur le même stand partagé.
+ *
+ * Il rend ce qu'une forme retient — l'emplacement et le rang de la société —
+ * et non la société elle-même : c'est ce couple que « societeDeForme » relit,
+ * et le seul qui survive à une synchronisation.
+ */
+function lienImageSaisi(){
+  /* Le rattachement est une option du salon : fermée, la feuille de style
+     retire le champ, mais ce qu'on y avait saisi avant y reste. C'est ici
+     qu'on refuse, plutôt que de lier depuis un champ que personne ne voit. */
+  if (!optionActive("imageStand")) return null;
+  const ch = $("imageSoc");
+  const l = ch ? societeSaisie(ch.value) : null;
+  return l ? { stand: l.o.id, soc: l.i } : null;
+}
+
+/** L'image à poser, rattachée si le champ nomme quelqu'un. */
+function formeImage(pts){
+  const f = { t: "image", src: imageEnAttente.src, pts: pts };
+  const lien = lienImageSaisi();
+  if (lien){ f.stand = lien.stand; f.soc = lien.soc; }
+  return f;
+}
+
+/* Pose l'image autour d'un point, à une taille lisible au zoom courant.
+   Plus besoin de tracer un cadre : on ajuste ensuite si besoin. */
+function poseImage(centre){
+  if (!imageEnAttente) return;
+  calquePourImage();
+  const l = Math.max(4, view.w * .28);
+  const ht = l / imageEnAttente.ratio;
+  const c = centre || [view.x + view.w / 2, view.y + view.h / 2];
+  const f = formeImage(
+    [[+(c[0] - l / 2).toFixed(2), +(c[1] - ht / 2).toFixed(2)],
+     [+(c[0] + l / 2).toFixed(2), +(c[1] + ht / 2).toFixed(2)]]);
+  signale(ajouteForme(f));   // l'emplacement n'a pas été choisi : il faut le montrer
+  $("outilsAide").textContent = ditImagePosee(f,
+    "Image posée au centre de la vue. Glissez sur le plan pour en poser une autre.");
+}
+
+/**
+ * Ce qu'on dit d'une image qui vient d'être posée : à qui elle mène, ou qu'elle
+ * ne mène nulle part.
+ *
+ * C'est la seule chose qui ne se voie pas sur le plan — deux images posées se
+ * ressemblent, l'une ouvre une fiche et l'autre non — et c'est précisément ce
+ * qu'on vient de décider en remplissant le champ, ou en le laissant vide.
+ */
+function ditImagePosee(f, sinon){
+  const l = societeDeForme(f);
+  return l
+    ? "Image posée sur « " + (nomSurLePlan(l.soc) || ("Stand " + (l.o.code || "")).trim()) +
+      " » : la toucher ouvrira sa fiche."
+    : sinon;
+}
+
+function importeImage(fichier, centre){
+  if (!fichier || fichier.type.indexOf("image/") !== 0) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, MAX_PX / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k);
+      c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      const type = fichier.type === "image/jpeg" ? "image/jpeg" : "image/webp";
+      imageEnAttente = { src: c.toDataURL(type, .85), ratio: img.width / img.height };
+      const v = $("vignette");
+      v.innerHTML = '<img alt=""><span></span>';
+      v.querySelector("img").src = imageEnAttente.src;
+      v.querySelector("span").textContent =
+        Math.round(imageEnAttente.src.length / 1365) + " Ko";
+      v.dataset.prete = "1";
+      choisitOutil("image");
+      poseImage(centre);
+    };
+    img.onerror = () => { $("outilsAide").textContent = "Image illisible."; };
+    img.src = fr.result;
+  };
+  fr.readAsDataURL(fichier);
+}
+
+$("fichierImage").onchange = e => { importeImage(e.target.files[0]); e.target.value = ""; };
+$("choisirImage").onclick = () => $("fichierImage").click();
+
+/* glisser-déposer sur le plan, et collage clavier : deux chemins qui ne
+   dépendent pas de la boîte de dialogue système */
+// le pointeur sorti du plan ne vise plus rien : les points d'accrochage s'effacent
+svg.addEventListener("pointerleave", () => { if (!enCours && !geste) montreAimants(null); });
+
+svg.addEventListener("dragover", e => { if (ADMIN) e.preventDefault(); });
+svg.addEventListener("drop", e => {
+  if (!ADMIN) return;
+  e.preventDefault();
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) importeImage(f, versPlan(e.clientX, e.clientY));
+});
+addEventListener("paste", e => {
+  if (!ADMIN) return;
+  const it = [...(e.clipboardData ? e.clipboardData.items : [])]
+    .find(x => x.type.indexOf("image/") === 0);
+  if (it) importeImage(it.getAsFile());
+});
+
+/* --- gestion du geste de dessin ; renvoie true si l'événement est consommé --- */
+function dessinPointerDown(e){
+  if (editionPointerDown(e)) return true;
+  if (!ADMIN || !calqueActif || outil === "main") return false;
+  // sans cela le navigateur démarre une sélection de texte et le
+  // relâchement du pointeur ne revient jamais
+  e.preventDefault();
+  if (outil === "rect" || outil === "image" || outil === "stand"){
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+  }
+  /* Le contour de hall garde son propre redressement : deux aimantations qui
+     tirent le même point chacune de son côté ne se corrigeraient pas, elles
+     se disputeraient. */
+  const brut = versPlan(e.clientX, e.clientY);
+  const p = outil === "contour" ? brut : aimante(brut, { alt: e.altKey });
+  if (outil === "texte"){
+    const txt = $("texteADessiner").value.trim();
+    if (!txt){ $("texteADessiner").focus(); return true; }
+    ajouteForme({ t: "texte", pts: [p], txt: txt, taille: 2 });
+    return true;
+  }
+  if (outil === "repere"){
+    const type = $("repereType").value;
+    const transport = type === "transport";
+    const mode = transport ? $("repereMode").value : "";
+    const ligne = transport ? $("repereLigne").value.trim() : "";
+    /* Le libellé peut rester vide quand le pictogramme se suffit : c'est le
+       cas ordinaire d'un WC, et celui d'un arrêt que sa ligne nomme déjà.
+       Sans type ni libellé, en revanche, il n'y aurait rien à poser. */
+    const txt = $("repereTexte").value.trim() || libelleDoffice(type, mode, ligne);
+    if (!txt){ $("repereTexte").focus(); return true; }
+    // un repère se lit de loin : il naît deux fois plus grand qu'un texte
+    const f = { t: "repere", pts: [p], txt: txt, picto: type, taille: TAILLE_REPERE };
+    if (transport){
+      f.mode = mode;
+      if (ligne) f.ligne = ligne;
+      const c = couleurEcrite(mode, ligne, $("repereCouleur").value,
+                              trouveCalque(calqueActif));
+      if (c) f.couleur = c;
+    }
+    ajouteForme(f);
+    return true;
+  }
+  if (outil === "rect"){ enCours = { t: "rect", pts: [p, p] }; return true; }
+  /* Un stand dessiné ne vaut que par la société qu'il désigne : sans elle on
+     poserait un rectangle muet, invisible pour le visiteur puisqu'il n'ouvre
+     aucune fiche. On demande donc l'exposant avant le tracé, comme on demande
+     son libellé à un repère. */
+  if (outil === "stand"){
+    const l = societeSaisie($("standSoc").value);
+    if (!l){
+      $("outilsAide").textContent = "Choisissez d'abord l'exposant à matérialiser.";
+      $("standSoc").focus(); $("standSoc").select();
+      return true;
+    }
+    enCours = { t: "stand", pts: [p, p], stand: l.o.id, soc: l.i };
+    return true;
+  }
+  if (outil === "image"){
+    if (!imageEnAttente){ $("outilsAide").textContent = "Choisissez d'abord une image."; return true; }
+    enCours = formeImage([p, p]);
+    return true;
+  }
+  /* Le contour est un polygone, tracé la main tenue : chaque sommet est
+     redressé sur celui d'avant, et revenir sur le premier referme la
+     silhouette — c'est le geste que l'on cherche en arrivant là. */
+  if (outil === "contour"){
+    if (!enCours) enCours = { t: "poly", pts: [p] };
+    else {
+      const g = {};
+      const q = redresseTrace(p, enCours.pts, g);
+      if (fermeIci(q, enCours.pts) || fermeIci(p, enCours.pts)){ termineTrace(true); return true; }
+      enCours.pts.push(q);
+    }
+    apercuGuide(null);
+    apercu(cheminForme({ t: "ligne", pts: enCours.pts }));
+    aide();
+    return true;
+  }
+  // polygone et ligne : un clic par sommet
+  if (!enCours) enCours = { t: outil, pts: [p] };
+  else enCours.pts.push(p);
+  apercu(cheminForme({ ...enCours, t: "ligne" }));
+  aide();
+  return true;
+}
+function dessinPointerMove(e){
+  if (editionPointerMove(e)) return true;
+  if (!enCours){
+    /* Sans tracé commencé on ne consomme rien — la vue doit rester déplaçable
+       — mais on montre déjà ce que l'outil pourrait viser : c'est en
+       approchant du stand voisin qu'on veut savoir si son coin se saisit. */
+    if (ADMIN && calqueActif && outil !== "main" && outil !== "contour")
+      montreAimants([versPlan(e.clientX, e.clientY)], { alt: e.altKey });
+    return false;
+  }
+  const brut = versPlan(e.clientX, e.clientY);
+  const p = outil === "contour" ? brut : aimante(brut, { alt: e.altKey });
+  if (estCadre(enCours)){
+    enCours.pts[1] = p;
+    if (enCours.t === "image"){    // on respecte les proportions de l'image
+      const l = enCours.pts[1][0] - enCours.pts[0][0];
+      enCours.pts[1][1] = +(enCours.pts[0][1] + Math.abs(l) / imageEnAttente.ratio).toFixed(2);
+    }
+    apercu(cheminForme(enCours));
+    montreCote(coteCadre(enCours.pts[0], enCours.pts[1]), enCours.pts[1]);
+  } else {
+    let q = p;
+    if (outil === "contour"){
+      const g = {};
+      q = redresseTrace(p, enCours.pts, g);
+      // de retour sur le premier sommet : montrer la boucle telle qu'elle
+      // se fermerait, plutôt qu'un segment qui passe à côté
+      if (fermeIci(q, enCours.pts) || fermeIci(p, enCours.pts)){ q = enCours.pts[0]; g.q = null; }
+      traceGuide(g, q);
+    }
+    apercu(cheminForme({ t: "ligne", pts: [...enCours.pts, q] }));
+    /* Sur un tracé, la cote est celle du segment qu'on est en train de poser :
+       c'est la longueur du mur, ou du côté, qu'on cherche à faire juste. */
+    const b = enCours.pts[enCours.pts.length - 1];
+    montreCote(ecritMetres(Math.hypot(q[0] - b[0], q[1] - b[1])) + " m", q);
+  }
+  return true;
+}
+function dessinPointerUp(e){
+  if (editionPointerUp(e)) return true;
+  if (!enCours) return false;
+  if (e && e.pointerId != null){
+    try { if (svg.hasPointerCapture(e.pointerId)) svg.releasePointerCapture(e.pointerId); } catch (err) {}
+  }
+  if (estCadre(enCours)){
+    const tracee = () => Math.abs(enCours.pts[1][0] - enCours.pts[0][0]) > .3 &&
+                         Math.abs(enCours.pts[1][1] - enCours.pts[0][1]) > .3;
+    /* Un clic sans glisser n'est pas un geste manqué : c'est la demande de
+       reposer la taille précédente, une fois qu'on l'a trouvée. Le coin
+       cliqué, que l'aimant vient de poser juste, en devient l'origine. */
+    if (!tracee()) reprendTaille(enCours);
+    const pose = tracee() ? enCours : null;
+    if (pose){
+      const a = pose.pts[0], b = pose.pts[1];
+      if (pose.t === "image"){
+        pose.pts = [[Math.min(a[0], b[0]), Math.min(a[1], b[1])],
+                    [Math.max(a[0], b[0]), Math.max(a[1], b[1])]];
+        pose.src = imageEnAttente.src;
+      }
+      retientTaille(pose);
+      ajouteForme(pose);
+    }
+    enCours = null; apercu(null); apercuGuide(null); montreCote(null);
+    /* Le curseur n'a pas bougé : les points d'accrochage se recentrent sur
+       lui, plutôt que de rester autour du coin d'où partait le tracé. */
+    montreAimants(e ? [versPlan(e.clientX, e.clientY)] : null, { alt: e && e.altKey });
+    /* Un stand loué à cinq se découpe en cinq : on enchaîne, et le champ redit
+       lequel vient d'être posé plutôt que de se vider en silence. Le reste
+       reprend la palette, qui annonce alors la taille qu'un clic reposerait —
+       appelée avant, elle aurait décrit un tracé qui n'existe plus. */
+    if (pose && pose.t === "stand") enchaineStand(pose);
+    else if (pose && pose.t === "image" && $("outilsAide"))
+      $("outilsAide").textContent = ditImagePosee(pose, optionActive("imageStand")
+        ? "Image posée. Elle n'ouvre aucune fiche : nommez un exposant pour cela."
+        : "Image posée.");
+    else aide();
+  }
+  return true;   // polygone et ligne restent ouverts jusqu'à Entrée
+}
+function termineTrace(valider){
+  if (!enCours) return;
+  const mini = enCours.t === "ligne" ? 2 : 3;
+  // l'arrondi se lit à la validation : on peut le régler le tracé commencé
+  if (outil === "contour" && rayonContour() > 0) enCours.r = rayonContour();
+  // l'épaisseur et le style se lisent de même, à la fin du tracé
+  if (outil === "ligne" && enCours.t === "ligne") poseTrait(enCours);
+  if (valider && enCours.pts.length >= mini) ajouteForme(enCours);
+  enCours = null; apercu(null); apercuGuide(null); montreCote(null);
+  montreAimants(null); aide();
+}
+
+function aide(){
+  if (!$("outilsAide")) return;
+  const t = { main: formeSel ? "Glissez pour déplacer, les carrés pour redimensionner."
+                             : "Cliquez une forme de ce calque pour la modifier.",
+              rect: "Cliquez-glissez pour tracer un rectangle.",
+              poly: "Un clic par sommet, Entrée pour fermer, Échap pour annuler.",
+              contour: "Un clic par angle du hall. Revenez sur le premier point, " +
+                       "ou Entrée, pour fermer le contour.",
+              ligne: "Un clic par point, Entrée pour terminer, Échap pour annuler.",
+              texte: "Saisissez le texte, puis cliquez à l'emplacement voulu.",
+              repere: "Choisissez ou saisissez un libellé, puis cliquez à l'emplacement.",
+              stand: "Choisissez l'exposant, puis cliquez-glissez sur sa part du stand.",
+              image: imageEnAttente ? "Glissez sur le plan pour poser une autre copie."
+                                    : "Choisissez une image, ou déposez le fichier sur le plan.",
+              _: "" };
+  const n = enCours ? " (" + enCours.pts.length + " point" + (enCours.pts.length > 1 ? "s" : "") + ")" : "";
+  /* Ce qu'un simple clic reposerait, dit avec ses mesures : une taille qu'on
+     ne voit pas annoncée est une taille qu'on retrace à la main. */
+  const d = DERNIERE[outil];
+  const bis = d && !enCours
+    ? " Un clic simple repose " + ecritMetres(d[0]) + " × " + ecritMetres(d[1]) + " m." : "";
+  $("outilsAide").textContent = t[outil] + n + bis;
+}
+
+/* L'outil qui est une option du plan : le salon qui n'a pas pris le dessin des
+   stands n'a pas son bouton dans la palette (voir « OPTIONS » de
+   « _admin1.html »). L'image, elle, n'est pas une option — c'en est une de la
+   rattacher à un exposant, et c'est son champ qui s'en va. */
+const OPTION_OUTIL = { stand: "dessinStand" };
+const outilOffert = (o) => !OPTION_OUTIL[o] || optionActive(OPTION_OUTIL[o]);
+
+/* --- suppression au clic en mode sélection --- */
+function choisitOutil(o){
+  /* Le bouton retiré ne suffit pas : l'option peut se fermer alors qu'on tient
+     l'outil. On retombe sur la sélection plutôt que de refuser le geste. */
+  if (!outilOffert(o)) o = "main";
+  termineTrace(false);
+  // les points visés par l'outil qu'on quitte n'ont plus lieu d'être montrés
+  montreAimants(null);
+  outil = o;
+  const b = $("outils");
+  b.querySelectorAll(".outilsBtns button")
+    .forEach(x => x.setAttribute("aria-pressed", x.dataset.o === outil));
+  if (o !== "main") formeSel = null;
+  dessinePoignees(); majElement();
+  b.classList.toggle("mode-image", o === "image");
+  b.classList.toggle("mode-texte", o === "texte");
+  b.classList.toggle("mode-contour", o === "contour");
+  b.classList.toggle("mode-ligne", o === "ligne");
+  b.classList.toggle("mode-repere", o === "repere");
+  b.classList.toggle("mode-stand", o === "stand");
+  racine.classList.toggle("mode-edition", ADMIN && o === "main");
+  if (o === "texte") $("texteADessiner").focus();
+  if (o === "repere") montreTransport(true);
+  if (o === "stand"){ remplitListeSocietes(); $("standSoc").focus(); }
+  /* L'outil image remplit la même liste, sans prendre le curseur : son premier
+     geste est de choisir un fichier, et le champ n'est qu'une option — au sens
+     propre, puisque le salon peut ne pas l'avoir prise. */
+  if (o === "image" && optionActive("imageStand")) remplitListeSocietes();
+  aide();
+}
+
+/** Le stand posé nomme sa société, et rend la main pour la suivante. */
+function enchaineStand(f){
+  const l = societeDeForme(f);
+  const ch = $("standSoc");
+  if (l && $("outilsAide"))
+    $("outilsAide").textContent = "« " +
+      (nomSurLePlan(l.soc) || ("Stand " + (l.o.code || "")).trim()) +
+      " » matérialisé. Choisissez l'exposant suivant.";
+  if (ch){ ch.focus(); ch.select(); }
+}
+
+$("outils").querySelectorAll(".outilsBtns button")
+  .forEach(b => b.onclick = () => choisitOutil(b.dataset.o));
+$("annuleDernier").onclick = annule;
+/* Changer le pas, ou couper l'accrochage, se voit tout de suite : les points
+   montrés sont effacés, et le prochain mouvement les repose au nouveau pas. */
+if ($("aimantPas")) $("aimantPas").onchange = () => montreAimants(null);
+if ($("aimants")) $("aimants").onchange = () => montreAimants(null);
+$("fermeOutils").onclick = () => { if (calqueActif) activeCalque(calqueActif); };
+$("renommeOutils").onclick = () => {
+  const c = trouveCalque(calqueActif);
+  if (c) renommeCalque(c);
+};
+/* Le type décide de ce que le repère est ; le libellé, de ce qu'il s'appelle.
+   Poser un WC ne demande donc rien d'autre que de choisir « WC » — le libellé
+   ne sert qu'à distinguer deux exemplaires, « Entrée Nord » de « Entrée Sud ». */
+$("repereType").innerHTML =
+  TYPES_REPERE.map(t => '<option value="' + esc(t.v) + '">' + esc(t.nom) + '</option>').join("");
+
+/** Les modes de transport, pour les deux listes qui les proposent — celle de
+ *  la boîte à outils et celle du panneau d'édition. */
+const optionsModes = () => MODES_TRANSPORT
+  .map(m => '<option value="' + esc(m.v) + '">' + esc(m.nom) + '</option>').join("");
+$("repereMode").innerHTML = optionsModes();
+
+/* La couleur d'une ligne connue s'impose dès que la ligne est écrite : c'est
+   celle de la signalétique, et personne n'a à la retrouver. Celle qu'on a
+   choisie à la main tient jusqu'à la prochaine ligne connue — on pose les
+   arrêts d'un réseau les uns après les autres, et redire sa couleur à chacun
+   serait une corvée. Le calque reprend la main quand ni l'une ni l'autre n'a
+   été dite. */
+let couleurALaMain = false;
+function proposeCouleurLigne(){
+  const c = couleurLigne($("repereMode").value, $("repereLigne").value);
+  if (c){ $("repereCouleur").value = c; couleurALaMain = false; return; }
+  if (couleurALaMain) return;
+  const cal = trouveCalque(calqueActif);
+  if (cal && cal.couleur) $("repereCouleur").value = cal.couleur;
+}
+
+/* Le mode et la ligne ne disent rien d'un vestiaire : ils ne paraissent que
+   sous le type qui les appelle. Et ce n'est pas le même champ qui prend la
+   suite — d'un arrêt on attend sa ligne, du reste son libellé. */
+function montreTransport(prendLaMain){
+  const on = $("repereType").value === "transport";
+  $("outils").classList.toggle("mode-transport", on);
+  if (on) proposeCouleurLigne();
+  if (prendLaMain) (on ? $("repereLigne") : $("repereTexte")).focus();
+}
+$("repereType").onchange = () => montreTransport(true);
+$("repereMode").onchange = proposeCouleurLigne;
+$("repereLigne").oninput = proposeCouleurLigne;
+$("repereCouleur").oninput = () => { couleurALaMain = true; };
+
+$("elemSupprimer").onclick = supprimeForme;
+$("elemTexte").oninput = appliqueTexte;
+$("elemTaille").oninput = appliqueTexte;
+if ($("elemRayon")) $("elemRayon").oninput = appliqueRayon;
+/* L'épaisseur et le style se reprennent sur une ligne déjà posée : on juge un
+   trait sur le plan, pas dans une liste déroulante. */
+if ($("elemEpaisseur")) $("elemEpaisseur").onchange = appliqueTrait;
+if ($("elemStyle")) $("elemStyle").onchange = appliqueTrait;
+if ($("elemFleche")) $("elemFleche").onchange = appliqueTrait;
+/* La largeur et la hauteur au clavier : c'est le seul moyen d'obtenir deux
+   fois la même, et de rattraper un stand tracé à peu près. */
+if ($("elemLargeur")) $("elemLargeur").oninput = () => appliqueDimension("l");
+if ($("elemHauteur")) $("elemHauteur").oninput = () => appliqueDimension("h");
+$("elemPicto").onchange = appliquePicto;
+/* Le mode et la ligne d'un arrêt se reprennent comme son type, et dans le même
+   panneau : on juge une pastille sur le plan, pas dans une liste. */
+$("elemMode").onchange = appliqueTransport;
+$("elemLigne").oninput = appliqueTransport;
+/* La couleur, elle, se peint à chaque événement du nuancier et ne s'écrit
+   qu'au repos : la rafale ne refait que la forme tirée, jamais tous les
+   calques. Le retour en arrière tient le geste entier — on mémorise au premier
+   événement, pas à chacun. */
+let couleurEnCours = false;
+suitNuancier($("elemCouleur"), (v) => {
+  const cible = formeSel && formeParId(formeSel);
+  if (!cible || !estTransport(cible.f)) return;
+  if (!couleurEnCours){ memorise(); couleurEnCours = true; }
+  const c = couleurEcrite(cible.f.mode, cible.f.ligne, v, cible.c);
+  if (c) cible.f.couleur = c; else delete cible.f.couleur;
+  redessineForme(cible.f);
+}, () => { couleurEnCours = false; enregistreDessins(); });
+/* La liste des passages revient à « Relier à… » dès que le choix est fait :
+   c'est une action, pas un réglage — on en pose plusieurs à la suite. */
+$("elemLienAjout").onchange = (e) => {
+  const id = e.target.value;
+  e.target.value = "";
+  if (id) changeLien(id, true);
+};
+/* On valide le rattachement à la sortie du champ, et non à chaque frappe :
+   « SM » ne désigne personne et effacerait le lien. */
+$("elemSoc").onchange = appliqueSociete;
+$("elemSoc").onblur = appliqueSociete;
+
+function activeCalque(id){
+  /* Un calque verrouillé ne s'ouvre pas : tous les gestes d'édition — tracer,
+     saisir une forme, la déplacer, l'effacer — passent par le calque ouvert, et
+     le verrou n'a donc rien d'autre à retenir. Le panneau éteint déjà son
+     crayon ; restent les chemins de traverse, comme l'image déposée sur le
+     plan, qui aboutissent tous ici. */
+  const vise = trouveCalque(id);
+  if (vise && verrouille(vise)) return;
+  calqueActif = calqueActif === id ? null : id;
+  /* Les deux crayons du panneau — celui d'un calque, celui des textes — ne
+     peuvent pas être allumés ensemble : leurs glissers viseraient le même
+     pointeur. Entrer dans le placement des libellés referme déjà le dessin ;
+     l'inverse manquait, et le crayon des textes serait resté allumé pour un
+     mode qu'on venait de quitter. */
+  if (calqueActif && PLACE_LIBELLES) modePlacementLibelles(false);
+  // et la reprise d'une géométrie, qui vise le même pointeur
+  if (calqueActif && SORTE_GEO) modeGeometrie(null);
+  formeSel = null;
+  termineTrace(false);
+  montreAimants(null);
+  const c = trouveCalque(calqueActif);
+  { const o = $("outils"); if (o) o.classList.toggle("open", !!c); }
+  if (c && $("outilsCalque")) $("outilsCalque").textContent = "Dessin · " + c.nom;
+  montreRoleIti(c);
+  rafraichitApercu();
+  dessineDessins();   // la couche active redevient cliquable
+  dessinePoignees(); majElement();
+  /* Les lignes des calques de dessin seules : le crayon des textes porte le
+     même bouton sans être un calque, et se règle de son côté. */
+  document.querySelectorAll("#pile .calq[data-dcal]").forEach(d => {
+    const actif = d.dataset.dcal === calqueActif;
+    d.classList.toggle("actif", actif);
+    const cr = d.querySelector(".ren");
+    if (cr) cr.setAttribute("aria-pressed", actif);
+  });
+  aide();
+}
+
+/* ------------------------------------------------------------
+   Le verrou d'un calque
+   Un plan finit par porter un calque qu'on ne retouche plus : le contour du
+   hall, les murs qui barrent les trajets, le repérage posé une fois pour
+   toutes. Il reste pourtant à un clic du crayon, et une forme y part à la
+   dérive sans qu'on s'en aperçoive — on croyait dessiner sur le calque d'à
+   côté. Le cadenas de sa ligne le ferme : il ne s'ouvre plus au dessin, et ne
+   se supprime ni ne se renomme.
+
+   Ce qu'il laisse passer, il le laisse exprès. La coche qui le masque et sa
+   couleur ne touchent pas à ce qui est dessiné, et c'est justement en les
+   réglant qu'on travaille autour d'un calque qu'on protège ; son rang dans la
+   pile non plus — il se reprend d'un geste, et se voit.
+
+   Le verrou se range dans les réglages du salon, comme le rôle d'un calque
+   dans les itinéraires : la table des calques n'a pas de colonne pour lui, et
+   il part ainsi aux autres postes avec eux, tout seul. Ouvert, sa clé disparaît
+   plutôt que de valoir « non » : un calque supprimé ne laisse alors rien
+   derrière lui.
+   ------------------------------------------------------------ */
+const cleVerrou = (id) => "_verrou:" + id;
+const verrouille = (c) => !!c && !!(CONF[cleVerrou(c.id)] || {}).verrou;
+
+function basculeVerrou(c){
+  const cle = cleVerrou(c.id);
+  if (verrouille(c)) delete CONF[cle];
+  else {
+    conf(cle).verrou = true;
+    /* On ferme parfois le calque sur lequel on vient de dessiner : les outils
+       se replient avec lui, sans quoi le crayon resterait armé sur un calque
+       qu'on vient de protéger. */
+    if (calqueActif === c.id) activeCalque(null);
+  }
+  enregistreConf();
+  construitPanneau();
+}
+
+/** Le dessin du cadenas. Fermé, l'anse retombe sur le boîtier ; ouvert, elle
+ *  se relève d'un côté — à douze pixels, c'est la seule différence qui se
+ *  voie encore, là où deux teintes du même tracé se confondraient. */
+const pictoVerrou = (ferme) =>
+  '<svg class="pictoVerrou" viewBox="0 0 12 12" aria-hidden="true">' +
+  '<rect x="2.3" y="5.4" width="7.4" height="5.2" rx="1.1"/>' +
+  '<path d="' + (ferme ? "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0v1.6"
+                       : "M4.3 5.4V3.8a1.7 1.7 0 0 1 3.4 0") + '"/></svg>';
+
+/* ------------------------------------------------------------
+   Le rôle du calque dans les itinéraires
+   ------------------------------------------------------------ */
+/** Ce que le rôle change, en une phrase — sans quoi on le règle au hasard. */
+const AIDE_ROLE = {
+  "": "Ce calque n'entre pas dans le calcul des trajets.",
+  obstacle: "Ce qui est dessiné ici barre le passage à tout le monde : " +
+    "entourez les sanitaires, les locaux, les réserves. C'est le plus court chemin — " +
+    "quelques rectangles au lieu de toutes les allées.",
+  pmr: "Ce qui est dessiné ici n'est contourné qu'en itinéraire accessible : " +
+    "escaliers, escalators, pentes, emmarchements, estrades. Un pictogramme " +
+    "posé dessus les signale au visiteur, il ne les fait pas éviter.",
+  circulation: "Les trajets ne sortiront plus de ce qui est dessiné ici, et il faudra " +
+    "donc tracer toutes les allées. Faites-les telles qu'elles sont : le dégagement " +
+    "au bord est retiré tout seul.",
+  "circulation-pmr": "Ce qui est dessiné ici ne s'ouvre qu'en itinéraire accessible, " +
+    "et reste fermé aux autres : le couloir qui mène à l'ascenseur, la rampe qui " +
+    "contourne les marches. Faites-le mordre d'un bon mètre sur l'allée qu'il rejoint, " +
+    "sans quoi il débouche sur un mur — cette morsure se ferme aux autres comme le " +
+    "reste, ne barrez donc pas l'allée en travers.",
+};
+
+/* Un calque de rôle décrit le terrain, pas ce qu'on montre : l'éteindre le
+   retire de l'écran sans le retirer du calcul. C'est ce qu'on attend d'un mur,
+   et c'est assez surprenant pour être écrit sous la liste. */
+const AIDE_ROLE_MASQUE = " Masquer le calque ne change rien au calcul : " +
+  "le dessin disparaît de l'écran, pas du terrain.";
+
+function montreRoleIti(c){
+  const sel = $("roleIti");
+  if (!sel) return;
+  // la liste se remplit au premier passage : les rôles vivent dans un module
+  // assemblé après celui-ci
+  if (!sel.options.length)
+    sel.innerHTML = ROLES_ITI.map(r =>
+      '<option value="' + r.v + '">' + esc(r.nom) + '</option>').join("");
+  const r = c ? roleIti(c) : "";
+  sel.value = r;
+  $("roleAide").textContent = (AIDE_ROLE[r] || "") + (r ? AIDE_ROLE_MASQUE : "");
+}
+
+$("roleIti").onchange = e => {
+  const c = trouveCalque(calqueActif);
+  if (!c) return;
+  const v = e.target.value;
+  const cle = cleRoleIti(c.id);
+  if (v) conf(cle).role = v; else delete CONF[cle];
+  enregistreConf();
+  oublieGrilles();
+  montreRoleIti(c);
+  dessineDessins();
+  construitPanneau();
+  rafraichitApercu();
+  // le trajet affiché doit obéir sur-le-champ : c'est le seul retour visible
+  relance();
+};
+
+$("voirNappe").onchange = e => { voirNappe = e.target.checked; rafraichitApercu(); };
+
+function creeCalque(){
+  demandeNom("Nouveau calque", "Calque " + (mesCalques().length + 1), nom => {
+    memorise();
+    const c = { id: nouvelId(), nom: nom, couleur: "#2F49D1",
+                rempli: false, visible: true, formes: [] };
+    mesCalques().push(c);
+    enregistreDessins();
+    construitPanneau();
+    activeCalque(c.id);
+  });
+}
+
+/* saisie du nom dans une fenêtre : plus visible qu'un double-clic */
+function demandeNom(titre, valeur, suite){
+  let champ;
+  ouvreModale(titre, corps => {
+    champ = document.createElement("input");
+    champ.className = "nomcalque";
+    champ.value = valeur;
+    champ.setAttribute("aria-label", "Nom du calque");
+    corps.appendChild(champ);
+    setTimeout(() => { champ.focus(); champ.select(); }, 30);
+    champ.onkeydown = e => {
+      if (e.key === "Enter"){ e.preventDefault(); valide(); }
+    };
+  }, [
+    { libelle: "Annuler" },
+    { libelle: "Valider", action: () => suite((champ.value || valeur).trim() || valeur) },
+  ], "outil");
+  function valide(){ const v = (champ.value || valeur).trim() || valeur; fermeModale(); suite(v); }
+}
+
+function renommeCalque(c, apres){
+  demandeNom("Renommer le calque", c.nom, nom => {
+    memorise();
+    c.nom = nom;
+    enregistreDessins();
+    construitPanneau();
+    if (calqueActif === c.id) $("outilsCalque").textContent = "Dessin · " + c.nom;
+    if (apres) apres();
+  });
+}
+

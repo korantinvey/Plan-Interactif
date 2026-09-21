@@ -1,0 +1,281 @@
+/* ============================================================
+   La marque sans le vide qui l'entoure
+
+   Ce module est partagé par deux écrans qui n'en font pas le même usage : le
+   plan, qui recadre le logo d'une fiche quand aucune vignette n'a encore été
+   fabriquée pour lui, et la console, qui les fabrique toutes une fois pour
+   toutes et les envoie à la base.
+
+   Il vit ici plutôt qu'en double parce que la règle du recadrage doit être la
+   même des deux côtés : une vignette fabriquée autrement que ne l'aurait fait
+   la page changerait de cadrage le jour où elle remplace le logo d'origine.
+
+   Il a d'abord été écrit pour une fonction du serveur, en WebAssembly. La
+   plateforme n'accorde pas assez de temps de calcul à une fonction pour
+   décoder des images : c'est le navigateur de l'exploitant qui s'en charge,
+   une fois par salon, avec la puissance qu'une fonction n'a pas.
+   ============================================================ */
+
+/**
+ * La marque sans le vide qui l'entoure.
+ *
+ * Eventmaker range chaque logo dans le carré d'un avatar : un logo en largeur
+ * n'y tient qu'une bande au milieu, et la hauteur que la feuille accorde à la
+ * marque allait au carré entier. Sur Franchise Expo 2027, ATTILA — 486 pixels
+ * de dessin sur 500 de large, 97 de haut — s'affichait en 69 × 13 ; recadré, il
+ * prend les 300 × 59 qu'on lui réserve. Un logo sur deux y gagnait au moins le
+ * double de surface. Ce n'est pas la finesse qui manque, c'est la place : le
+ * dessin tient déjà plus de pixels qu'il n'en occupera.
+ *
+ * Le vide se reconnaît à la transparence, ou à la couleur unie des quatre
+ * coins — trois logos sur quatre de ce salon ont un fond blanc opaque. Un fond
+ * qui change d'un coin à l'autre est une image pleine : on n'y touche pas.
+ *
+ * Lire les pixels demande que la source l'autorise (CORS) ; le dépôt
+ * d'Eventmaker le fait. Une source qui refuse renvoie l'adresse telle quelle,
+ * et le logo paraît comme avant, avec ses marges — jamais moins.
+ *
+ * Le résultat est gardé par adresse pour toute la visite : rouvrir une fiche ne
+ * refait ni le chargement ni l'analyse. Il n'est pas libéré — une image par
+ * logo regardé, quelques kilo-octets quand elle est découpée, les octets reçus
+ * quand il n'y avait rien à retirer. C'est ce que le cache du navigateur
+ * gardait de toute façon, à ceci près qu'on ne peut plus se le faire reprendre
+ * au milieu d'une visite.
+ */
+const MARQUES_RECADREES = new Map();
+
+/**
+ * Une image dont on sait déjà qu'il n'y a rien à retirer.
+ *
+ * Les vignettes arrivées par lot portent leurs octets, non plus une adresse :
+ * rien ne les distinguerait d'un logo lu chez sa source, qu'il faut, lui,
+ * relire pour en retirer les marges. On le dit donc ici, une fois, plutôt que
+ * de reconnaître une vignette à la forme de son adresse — elle n'en a plus.
+ */
+function marquePrete(src){
+  MARQUES_RECADREES.set(src, Promise.resolve(src));
+}
+
+function recadreMarque(src){
+  /* Une vignette vient déjà recadrée et à la taille : la relire pour n'y rien
+     trouver à retirer coûterait le décodage qu'on a justement déplacé. */
+  if (src.indexOf("vignette=") >= 0) return Promise.resolve(src);
+  let p = MARQUES_RECADREES.get(src);
+  if (p) return p;
+  // toute panne rend l'adresse d'origine : la fiche montre alors le logo tel quel
+  p = marqueRecadree(src).catch(() => src);
+  MARQUES_RECADREES.set(src, p);
+  return p;
+}
+
+/**
+ * Le trajet d'un logo, des octets à l'image que la fiche montre.
+ *
+ * Les octets, et non une adresse posée sur une image : ils se décodent à la
+ * taille où on les veut, et resservent ensuite à tout. Le décodeur ne rend
+ * alors que ce qu'on lui demande — l'ancienne voie rasterisait l'avatar entier
+ * pour n'en lire qu'une vignette de 256 pixels, quatre-vingts millisecondes de
+ * fil principal sur un avatar de 1900, et elles tombaient pile à l'ouverture
+ * de la fiche.
+ *
+ * Ils évitent aussi un second voyage. L'image de la fiche redemandait
+ * l'adresse dès qu'il n'y avait rien à recadrer — une requête de plus quand la
+ * source ne dit pas de la garder.
+ */
+async function marqueRecadree(src){
+  let octets = null;
+  try {
+    /* Sans identité : le dépôt d'un logo n'a rien à savoir du visiteur, et la
+       mesure du plan tient à ne rien laisser fuir qu'on n'ait voulu. */
+    const r = await fetch(src, { mode: "cors", credentials: "omit" });
+    if (r.ok) octets = await r.blob();
+  } catch (e) { /* la source refuse le partage */ }
+  // refusée en CORS, la même adresse sera redemandée sans, par l'image de la fiche
+  if (!octets) return src;
+
+  const adresse = URL.createObjectURL(octets);
+  /* L'image ne sert ici qu'à donner ses dimensions — l'analyse a besoin de
+     savoir dans quel sens réduire — et de recours si le décodeur refuse de
+     découper lui-même. */
+  const im = await imageChargee(adresse);
+  if (!im) return src;
+  const boite = await boiteMarque(octets, im);
+  // rien à retirer : les octets déjà en main valent mieux qu'un second voyage
+  if (!boite) return adresse;
+  const toile = await toileMarque(octets, im, boite);
+  const b = toile && await new Promise(f => toile.toBlob(f, "image/webp"));
+  if (!b) return adresse;
+  // l'original ne sert plus : le garder doublerait la mémoire de chaque logo
+  URL.revokeObjectURL(adresse);
+  return URL.createObjectURL(b);
+}
+
+/** Une image chargée, ou `null` — jamais un rejet, l'appelant n'en ferait rien. */
+const imageChargee = (src) => new Promise(fin => {
+  const im = new Image();
+  im.onload = () => fin(im);
+  im.onerror = () => fin(null);
+  im.src = src;
+});
+
+/**
+ * Le décodage à la taille voulue, quand le navigateur le sait faire.
+ *
+ * `createImageBitmap` accepte une taille de sortie, et les navigateurs qui
+ * l'honorent ne décodent jamais l'image en grand. Ceux qui l'ignorent rendent
+ * l'original, que le dessin met de toute façon à l'échelle : ils n'y perdent
+ * que la vitesse, jamais le résultat. Celui qui refuse tout net rend `null`,
+ * et l'appelant retombe sur l'image.
+ */
+const vignetteMarque = async (octets, w, h, coupe) => {
+  try {
+    const opts = { resizeWidth: w, resizeHeight: h, resizeQuality: coupe ? "high" : "low" };
+    return coupe
+      ? await createImageBitmap(octets, coupe.x, coupe.y, coupe.w, coupe.h, opts)
+      : await createImageBitmap(octets, opts);
+  } catch (e) { return null; }
+};
+
+/* L'analyse se fait sur une réduction : le cadre d'un logo n'a pas besoin
+   d'être trouvé au pixel près, et un avatar de 1900 pixels de côté coûtait
+   quatorze mégaoctets à parcourir. La découpe, elle, se fait dans l'original,
+   bornée à trois fois la largeur affichée — de quoi rester net sur un écran
+   dense sans garder un original de 4000 pixels en mémoire. */
+const MARQUE_ANALYSE = 256, MARQUE_SORTIE = 900;
+/* La vignette qu'on fabrique une fois pour toutes vise plus serré que le
+   recadrage de secours : elle sera servie telle quelle à tous les visiteurs,
+   et la fiche ne lui accorde que trois cents pixels sur soixante-douze. Six
+   cents couvrent un écran dense sans peser trois kilo-octets de plus. */
+const VIGNETTE_SORTIE = 600;
+
+/**
+ * Le cadre du dessin dans l'image, en pixels de l'original — ou `null` quand
+ * il n'y a rien à retirer : un fond non uni, une image vide, des marges trop
+ * minces pour valoir une copie.
+ */
+async function boiteMarque(octets, im){
+  const w = im.naturalWidth, h = im.naturalHeight;
+  if (!w || !h) return null;
+  const k = Math.min(1, MARQUE_ANALYSE / Math.max(w, h));
+  const aw = Math.max(1, Math.round(w * k)), ah = Math.max(1, Math.round(h * k));
+  const analyse = document.createElement("canvas");
+  analyse.width = aw; analyse.height = ah;
+  const cx = analyse.getContext("2d", { willReadFrequently: true });
+  /* La vignette décodée à sa taille plutôt que l'original réduit au dessin :
+     c'est là que se jouait le quatre-vingts millisecondes. La taille est
+     redite au dessin, pour que le navigateur qui aurait ignoré la demande
+     donne quand même la bonne vignette. */
+  const vue = await vignetteMarque(octets, aw, ah) || im;
+  cx.drawImage(vue, 0, 0, aw, ah);
+  if (vue !== im) vue.close();
+  const d = cx.getImageData(0, 0, aw, ah).data; // lève si la source a refusé
+
+  const px = (x, y) => (y * aw + x) * 4;
+  const coins = [px(0, 0), px(aw - 1, 0), px(0, ah - 1), px(aw - 1, ah - 1)];
+  const transparent = d[coins[0] + 3] < 16;
+  // l'écart toléré couvre le bruit d'un JPEG, pas un dégradé
+  const ecart = (i, j) => Math.abs(d[i] - d[j]) + Math.abs(d[i + 1] - d[j + 1]) +
+                          Math.abs(d[i + 2] - d[j + 2]);
+  const fond = transparent
+    ? i => d[i + 3] < 16
+    : i => d[i + 3] >= 16 && ecart(i, coins[0]) < 48;
+  if (!coins.every(fond)) return null;
+
+  let x0 = aw, y0 = ah, x1 = -1, y1 = -1;
+  for (let y = 0; y < ah; y++){
+    for (let x = 0; x < aw; x++){
+      if (fond(px(x, y))) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+
+  /* Retour à l'original, avec un pixel d'analyse de plus de chaque côté : la
+     réduction a pu fondre dans le fond le bord adouci d'une lettre. */
+  let gx = Math.max(0, Math.floor((x0 - 1) / k)), gy = Math.max(0, Math.floor((y0 - 1) / k));
+  let dx = Math.min(w, Math.ceil((x1 + 2) / k)), dy = Math.min(h, Math.ceil((y1 + 2) / k));
+  /* Un fond opaque garde un liseré : collé au dessin, il en faisait une
+     étiquette découpée aux ciseaux. Un fond transparent n'a pas de bord à
+     montrer. */
+  if (!transparent){
+    const marge = Math.round(0.12 * Math.min(dx - gx, dy - gy));
+    gx = Math.max(0, gx - marge); gy = Math.max(0, gy - marge);
+    dx = Math.min(w, dx + marge); dy = Math.min(h, dy + marge);
+  }
+  const cw = dx - gx, ch = dy - gy;
+  // moins d'un dixième gagné sur chaque côté : la copie ne vaut pas sa peine
+  if (cw > 0.9 * w && ch > 0.9 * h) return null;
+  return { x: gx, y: gy, w: cw, h: ch };
+}
+
+/**
+ * La toile qui porte le dessin recadré.
+ *
+ * Le découpage est demandé au décodeur : il ne rend que la part utile, à la
+ * taille où elle s'affichera. Un navigateur qui ne sait pas découper à la
+ * volée rend `null`, et l'on redessine depuis l'image — ce que faisait
+ * l'ancienne voie, et qui reste juste.
+ */
+async function toileMarque(octets, im, b, cote){
+  const r = Math.min(1, (cote || MARQUE_SORTIE) / Math.max(b.w, b.h));
+  const sortie = document.createElement("canvas");
+  sortie.width = Math.max(1, Math.round(b.w * r));
+  sortie.height = Math.max(1, Math.round(b.h * r));
+  const sx = sortie.getContext("2d");
+  sx.imageSmoothingQuality = "high";
+  const part = await vignetteMarque(octets, sortie.width, sortie.height, b);
+  if (part){ sx.drawImage(part, 0, 0, sortie.width, sortie.height); part.close(); }
+  else sx.drawImage(im, b.x, b.y, b.w, b.h, 0, 0, sortie.width, sortie.height);
+  return sortie;
+}
+
+
+/**
+ * La vignette d'un logo, telle que la console l'envoie à la base.
+ *
+ * Le même recadrage que pour une fiche, mais rendu en octets plutôt qu'en
+ * adresse : c'est le producteur, quand `recadreMarque` est le consommateur.
+ *
+ * `null` quand la source ne rend rien d'utilisable — injoignable, partage
+ * refusé, format qu'on ne sait pas lire. Ce n'est pas une panne : le logo se
+ * chargera chez sa source, comme il l'a toujours fait.
+ */
+async function vignetteDeLogo(source){
+  let octets = null;
+  try {
+    const r = await fetch(source, { mode: "cors", credentials: "omit" });
+    if (r.ok) octets = await r.blob();
+  } catch (e) { /* la source refuse le partage */ }
+  if (!octets) return null;
+
+  const adresse = URL.createObjectURL(octets);
+  try {
+    const im = await imageChargee(adresse);
+    if (!im || !im.naturalWidth) return null;
+    const boite = await boiteMarque(octets, im);
+    /* Rien à retirer : on recadre quand même au format de sortie, pour que ce
+       qui part en base soit toujours une vignette et jamais l'original —
+       c'est tout l'intérêt de la fabriquer. */
+    const toile = await toileMarque(octets, im,
+      boite || { x: 0, y: 0, w: im.naturalWidth, h: im.naturalHeight },
+      VIGNETTE_SORTIE);
+    if (!toile) return null;
+    const b = await new Promise(f => toile.toBlob(f, "image/webp"));
+    if (!b) return null;
+    const tampon = new Uint8Array(await b.arrayBuffer());
+    /* Par tranches : « String.fromCharCode » reçoit ses octets en arguments,
+       et une image entière en dépasserait la limite. */
+    let brut = "";
+    for (let i = 0; i < tampon.length; i += 8192){
+      brut += String.fromCharCode.apply(null, tampon.subarray(i, i + 8192));
+    }
+    return { source, image: btoa(brut), largeur: toile.width, hauteur: toile.height };
+  } catch (e) {
+    return null;
+  } finally {
+    URL.revokeObjectURL(adresse);
+  }
+}
