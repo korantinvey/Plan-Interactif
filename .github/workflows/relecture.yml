@@ -94,6 +94,14 @@ jobs:
           # superficiel ne rapporte pas.
           fetch-depth: 0
 
+      # L'heure d'avant, à deux minutes près, pour reconnaître plus bas un avis
+      # posé par cette exécution d'un avis laissé par la précédente — que
+      # `--edit-last` réécrit parfois, ce qui déplace sa date.
+      - name: Relever l'heure d'avant la relecture
+        id: avant
+        if: steps.acces.outputs.posee == 'oui'
+        run: echo "instant=$(date -u -d '-2 minutes' '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+
       # Une relecture qui n'aboutit pas ne rougit pas la pull request. C'est le
       # même raisonnement que la garde plus haut, poussé jusqu'au bout : un
       # garde-fou en panne n'est pas un défaut du code relu, et une croix rouge
@@ -104,6 +112,12 @@ jobs:
         id: relire
         if: steps.acces.outputs.posee == 'oui'
         continue-on-error: true
+        # Une relecture aboutie prend cinq minutes ; passé le triple, elle
+        # tourne pour rien. Sans cette borne elle tenait le runner sans rien
+        # dire — et faute de journal avant la fin, une tâche en cours ne se
+        # distingue pas d'une tâche partie en boucle. La borne la fait échouer,
+        # donc parler : l'étape de diagnostic la nomme.
+        timeout-minutes: 15
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -117,9 +131,6 @@ jobs:
           # tâche ne part qu'à l'ouverture et à la poussée, jamais sur un
           # commentaire, et la relecture ne sait que commenter.
           allowed_bots: claude
-          # Un seul commentaire, réécrit à chaque poussée : une pull request
-          # reprise cinq fois n'a pas à porter cinq avis dont quatre périmés.
-          use_sticky_comment: true
           prompt: |
             DÉPÔT : ${{ github.repository }}
             PULL REQUEST : ${{ github.event.pull_request.number }}
@@ -137,8 +148,16 @@ jobs:
             ligne, plutôt que d'ouvrir les gros modules en entier.
 
             Relis le diff de la pull request, puis écris en français accentué.
+            Lis-le sans les fichiers fabriqués, qui recopient les sources en
+            quatre exemplaires et noieraient le reste :
 
-            Poste un commentaire général avec `gh pr comment` : ce que tu as
+                git diff origin/${{ github.event.pull_request.base.ref }}...HEAD -- . ':!web' ':!CARTE.md' ':!outils/tpl-multi.html'
+
+            Poste un commentaire général avec
+            `gh pr comment ${{ github.event.pull_request.number }} --edit-last --body-file <fichier>`,
+            et sans `--edit-last` si la commande échoue faute d'un avis
+            précédent : une pull request reprise cinq fois n'a pas à porter cinq
+            avis dont quatre périmés. Dedans : ce que tu as
             regardé en une phrase, puis ce que tu as trouvé, du plus grave au
             plus léger, chaque point nommant le fichier, la ligne, le cas où ça
             casse et la correction. Utilise
@@ -163,22 +182,30 @@ jobs:
       # débogage de GitHub n'y change rien, contrairement à ce que son message
       # laisse croire. Deux heures se sont perdues là.
       #
-      # On ne relève donc du compte-rendu que son dernier message, celui qui
-      # porte la raison — jamais ce que les outils ont lu, jamais la relecture
-      # elle-même, et seulement quand la tâche a échoué.
-      - name: Dire pourquoi la relecture a échoué
-        if: always() && steps.relire.outcome == 'failure'
+      # On ne relève donc du compte-rendu que son dernier message : ce qu'il dit
+      # de la tâche elle-même, et rien de ce qu'elle a lu ni écrit. Ce message
+      # porte deux choses. Ce que la relecture a coûté — durée, nombre
+      # d'échanges, jetons lus et écrits, dont ceux servis par le cache —, relevé
+      # à chaque exécution, parce qu'une dépense qu'on ne voit pas ne se juge
+      # pas. Et la raison d'un échec, quand il y en a un.
+      - name: Dire ce que la relecture a coûté, et pourquoi elle a échoué
+        id: rapport
+        if: always() && steps.relire.outcome != 'skipped'
         env:
           COMPTE_RENDU: ${{ steps.relire.outputs.execution_file }}
+          ISSUE: ${{ steps.relire.outcome }}
         run: |
-          echo "::warning::La relecture n'a pas abouti ; sa raison suit."
+          if [ "$ISSUE" = "failure" ]; then
+            echo "::warning::La relecture n'a pas abouti ; sa raison suit."
+          fi
           if [ -z "$COMPTE_RENDU" ] || [ ! -f "$COMPTE_RENDU" ]; then
             echo "Aucun compte-rendu : la tâche s'est arrêtée avant d'en écrire un."
             exit 0
           fi
-          python3 - "$COMPTE_RENDU" <<'PY'
-          import json, sys
+          python3 - "$COMPTE_RENDU" "$ISSUE" <<'PY'
+          import json, os, sys
           brut = open(sys.argv[1], encoding="utf-8").read().strip()
+          echoue = sys.argv[2] == "failure"
           try:
               messages = json.loads(brut)
               if isinstance(messages, dict):
@@ -187,10 +214,98 @@ jobs:
               # Le compte-rendu est parfois écrit un message par ligne.
               messages = [json.loads(l) for l in brut.splitlines() if l.strip()]
 
+          # Une relecture arrêtée avant d'avoir commencé — l'action refuse de
+          # tourner quand ce workflow diffère de celui de `main` — ne laisse
+          # aucun message `result`. C'est ce qui distingue « elle n'a rien dit »
+          # de « elle n'a pas parlé », et l'étape suivante en a besoin.
+          eu_lieu = False
           for m in messages:
-              if isinstance(m, dict) and m.get("type") == "result":
+              if not (isinstance(m, dict) and m.get("type") == "result"):
+                  continue
+              eu_lieu = True
+              duree = m.get("duration_ms")
+              if duree is not None:
+                  print("durée     :", round(duree / 1000), "s")
+              print("échanges  :", m.get("num_turns"))
+              refus = m.get("permission_denials_count")
+              if refus:
+                  print("refusés   :", refus, "appels d'outil")
+              cout = m.get("total_cost_usd")
+              if cout is not None:
+                  print("coût      :", f"{cout:.4f} USD" if cout else "0 (abonnement)")
+              for modele, u in (m.get("modelUsage") or {}).items():
+                  lus = (u.get("inputTokens") or 0)
+                  caches = (u.get("cacheReadInputTokens") or 0) + (u.get("cacheCreationInputTokens") or 0)
+                  ecrits = (u.get("outputTokens") or 0)
+                  print(f"{modele} : {lus + caches} jetons lus dont {caches} de cache, {ecrits} écrits")
+              if echoue:
                   print("sous-type :", m.get("subtype"))
                   print("en erreur :", m.get("is_error"))
                   raison = m.get("result") or m.get("error") or ""
                   print("raison    :", str(raison)[:2000] if raison else "(aucune)")
+
+          sortie = os.environ.get("GITHUB_OUTPUT")
+          if sortie:
+              with open(sortie, "a", encoding="utf-8") as f:
+                  f.write("eu_lieu=%s\n" % ("oui" if eu_lieu else "non"))
+          if not eu_lieu:
+              print("Aucun message de fin : la relecture ne s'est pas tenue.")
           PY
+
+      # Une relecture muette et une relecture satisfaite ont exactement la même
+      # tête sur la pull request : la tâche sort verte dans les deux cas. C'est
+      # arrivé sur un diff de 71 000 lignes — elle a tourné deux minutes
+      # quarante, s'est vu refuser dix de ses propres appels d'outil, puis a
+      # rendu son avis en message simple, que l'action assainit et jette. Vu de
+      # la pull request : rien, et rien ne disait que c'était rien.
+      #
+      # On regarde donc si un avis a bien été posé depuis le début de la tâche,
+      # et on le dit sur la pull request quand il n'y en a pas.
+      #
+      # Deux réserves, payées toutes les deux le jour où cette étape est née.
+      # Elle ne parle que d'une relecture qui s'est réellement tenue — celle
+      # qu'arrête la garde d'identité du workflow n'a rien à dire, et se
+      # plaindre de son silence revient à commenter chaque pull request qui
+      # touche à ce fichier, la première ayant été la sienne. Et en cas de
+      # doute, une requête qui échoue, elle se tait : une fausse alerte vaut
+      # moins que le silence qu'elle dénonce.
+      - name: Dire si la relecture n'a rien posé
+        if: always() && steps.relire.outcome == 'success' && steps.rapport.outputs.eu_lieu == 'oui'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPOT: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          DEPUIS: ${{ steps.avant.outputs.instant }}
+          EXECUTION: ${{ github.run_id }}
+        run: |
+          # `--paginate` rend un nombre par page : on les additionne. Une
+          # requête en échec rend 1, soit « un avis a été posé » — le doute se
+          # tranche du côté qui ne dit rien.
+          filtre=".[] | select(.user.login == \"claude[bot]\") | select(.updated_at > \"$DEPUIS\")"
+          compte() {
+            pages="$(gh api "repos/$DEPOT/$1/$PR/comments" --paginate \
+                       --jq "[$filtre] | length" 2>/dev/null)" || { echo 1; return; }
+            printf '%s\n' "$pages" | awk '{t += $1} END {print t + 0}'
+          }
+          generaux="$(compte issues)"
+          enligne="$(compte pulls)"
+          if [ "${generaux:-1}" -gt 0 ] || [ "${enligne:-1}" -gt 0 ]; then
+            echo "Avis posé : $generaux commentaire(s), $enligne annotation(s)."
+            exit 0
+          fi
+          echo "::warning::La relecture a abouti sans rien poster ; on le dit sur la pull request."
+          {
+            echo "La relecture a tourné jusqu'au bout **sans rien écrire ici**."
+            echo "Ne lisez donc pas ce silence comme un « rien à signaler » :"
+            echo "ce diff n'a pas été relu."
+            echo
+            echo "[Le journal de la tâche]($GITHUB_SERVER_URL/$DEPOT/actions/runs/$EXECUTION)"
+            echo "dit ce qu'elle a coûté et combien de ses appels d'outil ont été"
+            echo "refusés. Un diff très large en fait refuser beaucoup : il se"
+            echo "relit alors par domaine, en plusieurs fois."
+            echo
+            echo '---'
+            echo '_Generated by [Claude Code](https://claude.ai/code)_'
+          } > "$RUNNER_TEMP/muette.md"
+          gh pr comment "$PR" --body-file "$RUNNER_TEMP/muette.md"
