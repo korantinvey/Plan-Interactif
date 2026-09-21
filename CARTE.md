@@ -808,11 +808,11 @@ corriger dans `outils/gabarit/` ne les changera pas.
 `rendVignette` 191 · `rendVignettes` 282 · `lu` 325 · `salon` 335 · `appDuSalon` 361
 `rendIconeApp` 392 · `retraits` 493 · `ampute` 517 · `masquesDe` 560 · `masquesDuPlan` 580
 
-### `supabase/functions/sync-evenement/index.ts` — 1847 l.
+### `supabase/functions/sync-evenement/index.ts` — 1852 l.
 
 `cors` 43 · `bourre` 112 · `client` 122 · `ecrit` 144 · `gaia` 152 · `libellesChoix` 163
 `retiensAnglais` 190 · `fournisseur` 208 · `raccourci` 216 · `enClair` 253 · `range` 279
-`champsKlipso` 300 · `hebergee` 1795 · `nettoieUrl` 1823 · `groupeTextes` 1833
+`champsKlipso` 300 · `hebergee` 1800 · `nettoieUrl` 1828 · `groupeTextes` 1838
 
 ## `supabase/migrations/` — schéma, numéroté et rejouable
 

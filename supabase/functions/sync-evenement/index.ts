@@ -1339,7 +1339,12 @@ Deno.serve(async (req) => {
              partagé en montre autant de listes qu'il héberge d'enseignes. Le
              titulaire n'a aucun titre sur le catalogue de ses hébergés. */
           const produits = (ok && prodEm && em) ? (prodEm.get(em.id) ?? []) : [];
-          if (produits.length) avecProduits += produits.length;
+          /* Les hébergées comptent pour elles-mêmes. Leur catalogue est posé
+             plus haut, par `hebergee`, et part au public comme celui du
+             titulaire : l'oublier ici annonçait zéro produit sur un stand
+             partagé où seules les enseignes logées en présentent. */
+          avecProduits += produits.length +
+            coex.reduce((a, x) => a + ((x.produits as unknown[])?.length ?? 0), 0);
 
           stands.push({
             id: "s" + String(s.Id).slice(0, 8),
